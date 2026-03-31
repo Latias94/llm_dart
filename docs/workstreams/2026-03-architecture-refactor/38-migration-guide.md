@@ -205,7 +205,7 @@ expand the shared core event model.
 For structured streaming, the shared helper is now:
 
 ```dart
-await for (final event in core.streamOutput(
+final streamResult = core.streamOutputResult(
   model: model,
   prompt: [
     core.UserPromptMessage.text('Return structured JSON.'),
@@ -219,16 +219,13 @@ await for (final event in core.streamOutput(
       additionalProperties: false,
     ),
   ),
-)) {
-  switch (event) {
-    case core.OutputPartialEvent(:final partialOutput):
-      print(partialOutput);
-    case core.OutputResultEvent(:final result):
-      print(result.output);
-    default:
-      break;
-  }
 }
+
+await for (final partialOutput in streamResult.partialOutputStream) {
+  print(partialOutput);
+}
+
+print(await streamResult.output);
 ```
 
 Current streaming rule:
@@ -239,7 +236,9 @@ Current streaming rule:
   output modes
 - array outputs now also emit `OutputElementEvent`s for newly completed
   elements while staying on the same event stream
-- there is still no separate parallel `elementStream` result surface
+- `streamOutputResult(...)` adds buffered `partialOutputStream`,
+  `elementStream<T>()`, final `result`, and final `output` access above that
+  same shared event pipeline
 
 ## 7. Provider-Specific Options Migration
 

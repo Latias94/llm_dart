@@ -68,9 +68,7 @@ Future<void> runOpenAIStreamingObjectExample() async {
   }
 
   final model = llm.AI.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
-
-  print('OpenAI streaming object output');
-  await for (final event in core.streamOutput<PersonSummary>(
+  final streamResult = core.streamOutputResult<PersonSummary>(
     model: model,
     prompt: [
       core.SystemPromptMessage.text('Return structured JSON only.'),
@@ -95,16 +93,14 @@ Future<void> runOpenAIStreamingObjectExample() async {
       ),
       decode: PersonSummary.fromJson,
     ),
-  )) {
-    switch (event) {
-      case core.OutputPartialEvent<PersonSummary>(:final partialOutput):
-        print('Partial: $partialOutput');
-      case core.OutputResultEvent<PersonSummary>(:final result):
-        print('Final: ${result.output.name} / ${result.output.role}\n');
-      default:
-        break;
-    }
+  );
+
+  print('OpenAI streaming object output');
+  await for (final partialOutput in streamResult.partialOutputStream) {
+    print('Partial: $partialOutput');
   }
+  final output = await streamResult.output;
+  print('Final: ${output.name} / ${output.role}\n');
 }
 
 Future<void> runOpenAIArrayExample() async {
@@ -146,9 +142,7 @@ Future<void> runOpenAIStreamingArrayExample() async {
   }
 
   final model = llm.AI.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
-
-  print('OpenAI streaming array output');
-  await for (final event in core.streamOutput<List<String>>(
+  final streamResult = core.streamOutputResult<List<String>>(
     model: model,
     prompt: [
       core.UserPromptMessage.text(
@@ -161,16 +155,14 @@ Future<void> runOpenAIStreamingArrayExample() async {
       name: 'layout_tips',
       description: 'A short list of Flutter layout tips.',
     ),
-  )) {
-    switch (event) {
-      case core.OutputElementEvent<String>(:final element):
-        print('Element: $element');
-      case core.OutputResultEvent<List<String>>(:final result):
-        print('Final array length: ${result.output.length}\n');
-      default:
-        break;
-    }
+  );
+
+  print('OpenAI streaming array output');
+  await for (final element in streamResult.elementStream<String>()) {
+    print('Element: $element');
   }
+  final output = await streamResult.output;
+  print('Final array length: ${output.length}\n');
 }
 
 Future<void> runGoogleChoiceExample() async {

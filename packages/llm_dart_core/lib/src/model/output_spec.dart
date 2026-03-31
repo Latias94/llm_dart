@@ -465,6 +465,91 @@ final class OutputResultEvent<T> extends OutputStreamEvent<T> {
   const OutputResultEvent(this.result);
 }
 
+final class StreamOutputResult<T> {
+  final _ReplayStreamChannel<OutputStreamEvent<T>> _eventChannel =
+      _ReplayStreamChannel<OutputStreamEvent<T>>();
+  final _ReplayStreamChannel<Object?> _partialOutputChannel =
+      _ReplayStreamChannel<Object?>();
+  final _ReplayStreamChannel<Object?> _elementChannel =
+      _ReplayStreamChannel<Object?>();
+  final Completer<GenerateOutputResult<T>> _resultCompleter =
+      Completer<GenerateOutputResult<T>>();
+
+  StreamOutputResult._(Stream<OutputStreamEvent<T>> source) {
+    source.listen(
+      _handleEvent,
+      onError: _handleError,
+      onDone: _handleDone,
+      cancelOnError: true,
+    );
+  }
+
+  Stream<OutputStreamEvent<T>> get eventStream => _eventChannel.stream;
+
+  Stream<TextStreamEvent> get textStream =>
+      eventStream.transform<TextStreamEvent>(
+        StreamTransformer<OutputStreamEvent<T>, TextStreamEvent>.fromHandlers(
+          handleData: (event, sink) {
+            if (event case OutputTextStreamEvent<T>(:final streamEvent)) {
+              sink.add(streamEvent);
+            }
+          },
+        ),
+      );
+
+  Stream<Object?> get partialOutputStream => _partialOutputChannel.stream;
+
+  Stream<TElement> elementStream<TElement>() =>
+      _elementChannel.stream.cast<TElement>();
+
+  Future<GenerateOutputResult<T>> get result => _resultCompleter.future;
+
+  Future<T> get output => result.then((value) => value.output);
+
+  void _handleEvent(OutputStreamEvent<T> event) {
+    _eventChannel.add(event);
+
+    switch (event) {
+      case OutputTextStreamEvent<T>():
+        break;
+      case OutputPartialEvent<T>(:final partialOutput):
+        _partialOutputChannel.add(partialOutput);
+      case OutputElementEvent(:final element):
+        _elementChannel.add(element);
+      case OutputResultEvent<T>(:final result):
+        if (!_resultCompleter.isCompleted) {
+          _resultCompleter.complete(result);
+        }
+    }
+  }
+
+  void _handleError(Object error, StackTrace stackTrace) {
+    if (!_resultCompleter.isCompleted) {
+      _resultCompleter.completeError(error, stackTrace);
+    }
+
+    _eventChannel.addError(error, stackTrace);
+    _partialOutputChannel.addError(error, stackTrace);
+    _elementChannel.addError(error, stackTrace);
+  }
+
+  void _handleDone() {
+    if (!_resultCompleter.isCompleted) {
+      _handleError(
+        StateError(
+          'streamOutputResult completed without emitting an OutputResultEvent.',
+        ),
+        StackTrace.current,
+      );
+      return;
+    }
+
+    _eventChannel.close();
+    _partialOutputChannel.close();
+    _elementChannel.close();
+  }
+}
+
 Future<GenerateOutputResult<T>> generateOutput<T>({
   required LanguageModel model,
   required List<PromptMessage> prompt,
@@ -588,6 +673,28 @@ Stream<OutputStreamEvent<T>> streamOutput<T>({
       result: result,
       outputSpec: outputSpec,
       context: context,
+    ),
+  );
+}
+
+StreamOutputResult<T> streamOutputResult<T>({
+  required LanguageModel model,
+  required List<PromptMessage> prompt,
+  required OutputSpec<T> outputSpec,
+  List<FunctionToolDefinition> tools = const [],
+  ToolChoice? toolChoice,
+  GenerateTextOptions options = const GenerateTextOptions(),
+  CallOptions callOptions = const CallOptions(),
+}) {
+  return StreamOutputResult<T>._(
+    streamOutput(
+      model: model,
+      prompt: prompt,
+      outputSpec: outputSpec,
+      tools: tools,
+      toolChoice: toolChoice,
+      options: options,
+      callOptions: callOptions,
     ),
   );
 }
@@ -833,4 +940,79 @@ Map<String, Object?> _usageToJson(UsageStats usage) {
     if (usage.totalTokens != null) 'totalTokens': usage.totalTokens,
     if (usage.reasoningTokens != null) 'reasoningTokens': usage.reasoningTokens,
   };
+}
+
+final class _ReplayStreamChannel<T> {
+  final List<T> _history = <T>[];
+  final Set<MultiStreamController<T>> _controllers =
+      <MultiStreamController<T>>{};
+
+  Object? _error;
+  StackTrace? _stackTrace;
+  bool _isClosed = false;
+
+  Stream<T> get stream => Stream<T>.multi(
+        (controller) {
+          for (final value in _history) {
+            controller.add(value);
+          }
+
+          if (_error case final error?) {
+            controller.addError(error, _stackTrace);
+            controller.close();
+            return;
+          }
+
+          if (_isClosed) {
+            controller.close();
+            return;
+          }
+
+          _controllers.add(controller);
+          controller.onCancel = () {
+            _controllers.remove(controller);
+          };
+        },
+        isBroadcast: true,
+      );
+
+  void add(T value) {
+    if (_isClosed || _error != null) {
+      return;
+    }
+
+    _history.add(value);
+    for (final controller in _controllers.toList(growable: false)) {
+      controller.add(value);
+    }
+  }
+
+  void addError(Object error, StackTrace stackTrace) {
+    if (_isClosed || _error != null) {
+      return;
+    }
+
+    _error = error;
+    _stackTrace = stackTrace;
+    _isClosed = true;
+
+    for (final controller in _controllers.toList(growable: false)) {
+      controller.addError(error, stackTrace);
+      controller.close();
+    }
+    _controllers.clear();
+  }
+
+  void close() {
+    if (_isClosed || _error != null) {
+      return;
+    }
+
+    _isClosed = true;
+
+    for (final controller in _controllers.toList(growable: false)) {
+      controller.close();
+    }
+    _controllers.clear();
+  }
 }

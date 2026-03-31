@@ -431,17 +431,18 @@ Needs confirmation:
 
 Current recommendation:
 
-- do not widen the shared core yet
+- do not widen the low-level shared core yet
 - first prove a truthful common contract across at least OpenAI and Google for
   request shape, validation, parse failure, and streamed semantics
-- the current shared `OutputSpec` layer plus `generateOutput(...)` and
-  `streamOutput(...)` is the right narrow baseline; the remaining decision is
-  whether a separate `elementStream` result surface or deeper result-surface
-  integration is justified beyond the now-landed best-effort partial-output and
-  event-based array element contract
+- the current shared `OutputSpec` layer plus `generateOutput(...)`,
+  `streamOutput(...)`, and `streamOutputResult(...)` is now the right staged
+  baseline; the remaining decision is whether `OutputSpec` should later fold
+  into `generateText(...)` / `streamText(...)` directly
 - `51-shared-structured-output-boundary.md` records the current recommended
   direction: shared output specification over `generateText` / `streamText`
   rather than freezing standalone `generateObject` APIs as the target end state
+- `52-structured-output-result-surface.md` records the current streamed
+  result-surface increment
 
 ## 36. Whether A Shared Streamed Runner Is Worth Adding
 

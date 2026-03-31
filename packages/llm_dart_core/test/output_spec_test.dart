@@ -565,6 +565,151 @@ void main() {
     });
   });
 
+  group('streamOutputResult', () {
+    test(
+        'replays buffered partial outputs, array elements, text events, and final output',
+        () async {
+      final model = _RecordingLanguageModel(
+        generateResult: GenerateTextResult(
+          content: const [
+            TextContentPart('unused'),
+          ],
+          finishReason: FinishReason.stop,
+        ),
+        streamEvents: const [
+          ResponseMetadataEvent(
+            responseId: 'resp_stream_result',
+            modelId: 'test-model',
+          ),
+          TextStartEvent(id: 'text_1'),
+          TextDeltaEvent(
+            id: 'text_1',
+            delta: '{"elements":[{"value":"a"},',
+          ),
+          TextDeltaEvent(
+            id: 'text_1',
+            delta: '{"value":"b"}]}',
+          ),
+          TextEndEvent(id: 'text_1'),
+          FinishEvent(
+            finishReason: FinishReason.stop,
+          ),
+        ],
+      );
+
+      final streamResult = streamOutputResult<List<String>>(
+        model: model,
+        prompt: [
+          UserPromptMessage.text('Return an array.'),
+        ],
+        outputSpec: ArrayOutputSpec<String>(
+          elementSchema: JsonSchema.object(
+            properties: const {
+              'value': {'type': 'string'},
+            },
+            required: const ['value'],
+          ),
+          decodeElement: (json) {
+            final map = json as Map<String, Object?>;
+            return map['value']! as String;
+          },
+        ),
+      );
+
+      expect(await streamResult.output, ['a', 'b']);
+      expect((await streamResult.result).responseId, 'resp_stream_result');
+      expect(
+        await streamResult.partialOutputStream.toList(),
+        [
+          const <String>[],
+          const ['a', 'b'],
+        ],
+      );
+      expect(
+        await streamResult.elementStream<String>().toList(),
+        ['a', 'b'],
+      );
+
+      final textEvents = await streamResult.textStream.toList();
+      expect(
+        textEvents,
+        hasLength(6),
+      );
+      expect(textEvents.whereType<TextDeltaEvent>().length, 2);
+
+      final outputEvents = await streamResult.eventStream.toList();
+      expect(
+          outputEvents.whereType<OutputPartialEvent<List<String>>>().length, 2);
+      expect(
+        outputEvents.whereType<OutputElementEvent<String>>().length,
+        2,
+      );
+      expect(
+        outputEvents
+            .whereType<OutputResultEvent<List<String>>>()
+            .single
+            .result
+            .output,
+        ['a', 'b'],
+      );
+    });
+
+    test(
+        'propagates structured-output errors through result and replay streams',
+        () async {
+      final model = _RecordingLanguageModel(
+        generateResult: GenerateTextResult(
+          content: const [
+            TextContentPart('unused'),
+          ],
+          finishReason: FinishReason.stop,
+        ),
+        streamEvents: const [
+          TextStartEvent(id: 'text_1'),
+          TextDeltaEvent(id: 'text_1', delta: 'not-json'),
+          TextEndEvent(id: 'text_1'),
+          FinishEvent(
+            finishReason: FinishReason.stop,
+          ),
+        ],
+      );
+
+      final streamResult = streamOutputResult<Object?>(
+        model: model,
+        prompt: [
+          UserPromptMessage.text('Return JSON.'),
+        ],
+        outputSpec: JsonOutputSpec.json(
+          schema: JsonSchema.object(),
+        ),
+      );
+
+      await expectLater(
+        streamResult.output,
+        throwsA(
+          isA<ModelError>()
+              .having((error) => error.kind, 'kind', ModelErrorKind.validation),
+        ),
+      );
+
+      await expectLater(
+        streamResult.eventStream.drain<void>(),
+        throwsA(
+          isA<ModelError>()
+              .having((error) => error.kind, 'kind', ModelErrorKind.validation),
+        ),
+      );
+
+      await expectLater(
+        streamResult.partialOutputStream.drain<void>(),
+        throwsA(
+          isA<ModelError>()
+              .having((error) => error.kind, 'kind', ModelErrorKind.validation),
+        ),
+      );
+    });
+  });
+
   group('output spec validation', () {
     test('object spec rejects non-object schemas', () {
       expect(

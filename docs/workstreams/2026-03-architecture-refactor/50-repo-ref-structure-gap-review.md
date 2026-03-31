@@ -182,7 +182,8 @@ This is now the clearest gap versus the reference capability layout.
 Current status:
 
 - shared structured output now exists in `llm_dart_core` through
-  `OutputSpec`, `generateOutput(...)`, and `streamOutput(...)`
+  `OutputSpec`, `generateOutput(...)`, `streamOutput(...)`, and
+  `streamOutputResult(...)`
 - OpenAI and Google already have provider-owned JSON-schema request support
 - the shared helper already covers built-in `text`, `json`, `object`,
   `array`, and `choice` modes for final-output parsing
@@ -190,6 +191,9 @@ Current status:
   best-effort partial structured-output events during the raw
   `TextStreamEvent` sequence, emit shared array `OutputElementEvent`s for newly
   completed elements, and emit one final parsed-output event at the end
+- the higher-level streamed structured-output surface now also exposes buffered
+  `partialOutputStream`, `elementStream<T>()`, final `output`, and typed
+  `result` access without redefining `streamText(...)`
 
 What is still missing:
 
@@ -197,8 +201,9 @@ What is still missing:
   surface
 - a clearer long-term result-placement strategy if parsed output should later
   live directly beside `GenerateTextResult`
-- a decision on whether a separate `elementStream` result surface is worth
-  adding on top of the current event-based array element contract
+- a decision on whether `OutputSpec` should later fold into
+  `generateText(...)` / `streamText(...)` directly instead of staying behind
+  dedicated output helpers
 
 Why this matters:
 

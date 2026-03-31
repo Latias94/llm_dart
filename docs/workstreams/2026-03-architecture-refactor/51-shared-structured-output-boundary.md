@@ -46,8 +46,9 @@ Current status in the refactor branch:
 
 - `LanguageModel` and `generateText` already exist as shared text-generation
   entry points
-- `OutputSpec`, `generateOutput(...)`, and `streamOutput(...)` now exist as a
-  shared structured-output layer above those text helpers
+- `OutputSpec`, `generateOutput(...)`, `streamOutput(...)`, and
+  `streamOutputResult(...)` now exist as a shared structured-output layer above
+  those text helpers
 - OpenAI and Google already expose provider-owned JSON-schema
   `responseFormat` request shaping
 - legacy compatibility `jsonSchema` inputs now route through shared
@@ -57,14 +58,16 @@ Current status in the refactor branch:
   built-in JSON/object/array/choice modes
 - array outputs now also emit shared `OutputElementEvent`s through the same
   `streamOutput(...)` event stream when newly completed elements become stable
+- `streamOutputResult(...)` now also exposes buffered `partialOutputStream`,
+  `elementStream<T>()`, final `output`, and typed `result` surfaces above the
+  same shared event pipeline
 - structured output is therefore no longer only provider-owned, but the shared
   layer is still intentionally narrower than a full `streamObject` contract
 
 What is still missing in shared core:
 
 - no shared parsed-output field on `GenerateTextResult`
-- no separate `elementStream`-style result surface beside the current
-  event-based array element contract
+- no direct `OutputSpec` slot on `generateText(...)` / `streamText(...)`
 
 In other words, the capability exists on the wire, but not yet as a stable
 cross-provider contract.
@@ -233,8 +236,8 @@ The current Dart implementation has landed the first three parts of that shape:
 - final parse and validation
 - best-effort partial parsing
 
-It has also landed event-based array element emission, but it still has not
-landed a separate side-stream result surface for elements.
+It has also landed event-based array element emission and an additive
+stream-result surface for buffered element streaming.
 
 ### 2. Shared Response-Format Value
 
@@ -403,9 +406,11 @@ Recommended order:
 
 - keep expanding partial structured output only for the output modes that can
   be supported honestly
-- keep the current array `OutputElementEvent` contract
-- only add a separate `elementStream` result surface later if real users prove
-  that the event-based model is not sufficient
+- keep the current array `OutputElementEvent` contract as the low-level event
+  representation
+- re-evaluate later whether `OutputSpec` should fold into
+  `generateText(...)` / `streamText(...)` directly once the additive result
+  surface proves stable
 
 This keeps the shared boundary honest while still moving toward the mature
 reference direction.
