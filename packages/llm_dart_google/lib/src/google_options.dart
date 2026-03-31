@@ -80,6 +80,24 @@ final class GoogleChatModelSettings implements ProviderModelOptions {
   });
 }
 
+final class GoogleEmbeddingModelSettings implements ProviderModelOptions {
+  final Map<String, String> headers;
+
+  const GoogleEmbeddingModelSettings({
+    this.headers = const {},
+  });
+}
+
+final class GoogleEmbedOptions implements ProviderInvocationOptions {
+  final String? taskType;
+  final String? title;
+
+  const GoogleEmbedOptions({
+    this.taskType,
+    this.title,
+  });
+}
+
 final class GoogleGenerateTextOptions implements ProviderInvocationOptions {
   final int? candidateCount;
   final int? thinkingBudgetTokens;

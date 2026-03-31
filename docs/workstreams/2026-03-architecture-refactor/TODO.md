@@ -120,7 +120,7 @@
 - [x] Add a provider-owned Google message mapper for Flutter or other UI renderers
 - [ ] Decide whether any Google `toolCall` / `toolResponse` families should later gain richer shared projection or dedicated Flutter renderers beyond provider-owned custom replay
 - [ ] Migrate the Gemini image model
-- [ ] Migrate the Gemini embedding model
+- [x] Migrate the Gemini embedding model
 - [ ] Migrate Gemini speech and TTS
 - [ ] Migrate Gemini safety and modality options
 

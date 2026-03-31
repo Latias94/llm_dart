@@ -264,12 +264,15 @@ Current status:
   above the raw model interfaces
 - the first non-text provider migration has also landed for the OpenAI family
   through `OpenAI.embeddingModel(...)`
+- the same shared embedding boundary is now also proven for Google through
+  `Google.embeddingModel(...)`
 
 What is still missing:
 
 - provider migrations for image, speech, and transcription are still
   incomplete
-- Google and Anthropic non-text capability migrations are still incomplete
+- Google image/speech capability migrations are still incomplete
+- Anthropic non-text capability migrations are still incomplete
 - shared embedding chunk-splitting and parallel-batching policy is not yet
   frozen above the raw model interface
 

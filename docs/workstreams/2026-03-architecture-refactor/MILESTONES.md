@@ -63,6 +63,7 @@ Current status:
 - that naming direction is now also frozen: the additive call wrappers are the recommended app-facing text API, while the original helper names remain the low-level raw layer
 - `llm_dart_core` now also exposes function-based shared capability helpers for non-text calls: `embed(...)`, `embedMany(...)`, `generateImage(...)`, `generateSpeech(...)`, and `transcribe(...)`
 - the first non-text provider migration beyond raw interfaces has now also landed for the OpenAI family through `OpenAI.embeddingModel(...)`, typed `OpenAIEmbeddingModelSettings`, and typed `OpenAIEmbedOptions`
+- the same shared embedding helper boundary is now also proven for Google through `Google.embeddingModel(...)`, typed `GoogleEmbeddingModelSettings`, and typed `GoogleEmbedOptions`
 - `llm_dart_core` now also exposes `GenerateTextStepResult` as the first shared step-level snapshot wrapper without changing the single-step meaning of `generateText` / `streamText`
 - `llm_dart_core` now also exposes `GenerateTextRunResult` and `GenerateTextStepStartEvent` as runner-facing pure model primitives
 - `llm_dart_core` now also has a narrow non-streaming multi-step `GenerateTextRunner` and `runTextGeneration(...)` entrypoint that accumulates step snapshots, replays prior assistant/tool messages, and continues common function-tool steps through an app-supplied executor

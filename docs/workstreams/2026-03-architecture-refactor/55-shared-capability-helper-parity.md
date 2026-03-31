@@ -93,13 +93,18 @@ Provider-specific capability behavior should continue to stay provider-owned:
   `ProviderInvocationOptions`
 - shared helpers should pass those options through `CallOptions`
 
-The first concrete migrated example is now the OpenAI family embedding path:
+The first concrete migrated examples now include two provider families:
 
 - `OpenAI.embeddingModel(...)`
 - `OpenAIEmbeddingModelSettings`
 - `OpenAIEmbedOptions`
+- `Google.embeddingModel(...)`
+- `GoogleEmbeddingModelSettings`
+- `GoogleEmbedOptions`
 
-This keeps provider features typed without widening the shared helper surface.
+This keeps provider features typed without widening the shared helper surface,
+and it means the shared embedding helper boundary is now proven against more
+than one provider family.
 
 ## What Is Still Not Done
 
@@ -110,7 +115,8 @@ The remaining work is still real:
 - image provider migration parity is incomplete
 - speech provider migration parity is incomplete
 - transcription provider migration parity is incomplete
-- Google and Anthropic capability migration parity is incomplete
+- Google image/speech capability migration parity is incomplete
+- Anthropic capability migration parity is incomplete
 - shared embedding chunk-splitting policy is intentionally still undecided
 
 ## Conclusion

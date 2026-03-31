@@ -3,6 +3,7 @@ library;
 export 'src/google.dart';
 export 'src/google_custom_part.dart';
 export 'src/google_custom_part_summary.dart';
+export 'src/google_embedding_model.dart';
 export 'src/google_generate_content_codec.dart';
 export 'src/google_function_response_replay.dart';
 export 'src/google_language_model.dart';

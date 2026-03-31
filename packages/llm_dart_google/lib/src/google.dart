@@ -1,5 +1,6 @@
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
+import 'google_embedding_model.dart';
 import 'google_language_model.dart';
 import 'google_options.dart';
 
@@ -23,6 +24,20 @@ final class Google {
     GoogleChatModelSettings settings = const GoogleChatModelSettings(),
   }) {
     return GoogleLanguageModel(
+      apiKey: apiKey,
+      modelId: modelId,
+      transport: transport,
+      baseUrl: baseUrl,
+      settings: settings,
+    );
+  }
+
+  GoogleEmbeddingModel embeddingModel(
+    String modelId, {
+    GoogleEmbeddingModelSettings settings =
+        const GoogleEmbeddingModelSettings(),
+  }) {
+    return GoogleEmbeddingModel(
       apiKey: apiKey,
       modelId: modelId,
       transport: transport,
