@@ -264,6 +264,9 @@ Current status:
   above the raw model interfaces
 - the first non-text provider migration has also landed for the OpenAI family
   through `OpenAI.embeddingModel(...)`
+- the OpenAI family now also has package-owned speech and transcription model
+  migrations through `OpenAI.speechModel(...)` and
+  `OpenAI.transcriptionModel(...)`
 - the same shared embedding boundary is now also proven for Google through
   `Google.embeddingModel(...)`
 

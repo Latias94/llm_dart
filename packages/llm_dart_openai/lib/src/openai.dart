@@ -5,6 +5,8 @@ import 'openai_embedding_model.dart';
 import 'openai_family_profile.dart';
 import 'openai_language_model.dart';
 import 'openai_options.dart';
+import 'openai_speech_model.dart';
+import 'openai_transcription_model.dart';
 
 final class OpenAI {
   final String apiKey;
@@ -40,6 +42,34 @@ final class OpenAI {
     ProviderModelOptions settings = const OpenAIEmbeddingModelSettings(),
   }) {
     return OpenAIEmbeddingModel(
+      apiKey: apiKey,
+      modelId: modelId,
+      transport: transport,
+      profile: profile,
+      baseUrl: baseUrl,
+      settings: settings,
+    );
+  }
+
+  OpenAISpeechModel speechModel(
+    String modelId, {
+    ProviderModelOptions settings = const OpenAISpeechModelSettings(),
+  }) {
+    return OpenAISpeechModel(
+      apiKey: apiKey,
+      modelId: modelId,
+      transport: transport,
+      profile: profile,
+      baseUrl: baseUrl,
+      settings: settings,
+    );
+  }
+
+  OpenAITranscriptionModel transcriptionModel(
+    String modelId, {
+    ProviderModelOptions settings = const OpenAITranscriptionModelSettings(),
+  }) {
+    return OpenAITranscriptionModel(
       apiKey: apiKey,
       modelId: modelId,
       transport: transport,

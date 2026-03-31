@@ -29,11 +29,86 @@ final class OpenAIEmbeddingModelSettings implements ProviderModelOptions {
   });
 }
 
+final class OpenAISpeechModelSettings implements ProviderModelOptions {
+  final String? organization;
+  final String? project;
+  final Map<String, String> headers;
+
+  const OpenAISpeechModelSettings({
+    this.organization,
+    this.project,
+    this.headers = const {},
+  });
+}
+
+final class OpenAITranscriptionModelSettings implements ProviderModelOptions {
+  final String? organization;
+  final String? project;
+  final Map<String, String> headers;
+
+  const OpenAITranscriptionModelSettings({
+    this.organization,
+    this.project,
+    this.headers = const {},
+  });
+}
+
 final class OpenAIEmbedOptions implements ProviderInvocationOptions {
   final String? encodingFormat;
 
   const OpenAIEmbedOptions({
     this.encodingFormat,
+  });
+}
+
+final class OpenAISpeechOptions implements ProviderInvocationOptions {
+  final String? outputFormat;
+  final String? instructions;
+  final double? speed;
+  final String? language;
+
+  const OpenAISpeechOptions({
+    this.outputFormat,
+    this.instructions,
+    this.speed,
+    this.language,
+  });
+}
+
+enum OpenAITranscriptionResponseFormat {
+  json('json'),
+  text('text'),
+  srt('srt'),
+  verboseJson('verbose_json'),
+  vtt('vtt');
+
+  const OpenAITranscriptionResponseFormat(this.value);
+
+  final String value;
+}
+
+enum OpenAITranscriptionTimestampGranularity {
+  word('word'),
+  segment('segment');
+
+  const OpenAITranscriptionTimestampGranularity(this.value);
+
+  final String value;
+}
+
+final class OpenAITranscriptionOptions implements ProviderInvocationOptions {
+  final String? language;
+  final String? prompt;
+  final double? temperature;
+  final OpenAITranscriptionResponseFormat? responseFormat;
+  final List<OpenAITranscriptionTimestampGranularity> timestampGranularities;
+
+  const OpenAITranscriptionOptions({
+    this.language,
+    this.prompt,
+    this.temperature,
+    this.responseFormat,
+    this.timestampGranularities = const [],
   });
 }
 

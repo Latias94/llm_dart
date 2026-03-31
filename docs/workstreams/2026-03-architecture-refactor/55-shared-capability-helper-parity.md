@@ -98,6 +98,10 @@ The first concrete migrated examples now include two provider families:
 - `OpenAI.embeddingModel(...)`
 - `OpenAIEmbeddingModelSettings`
 - `OpenAIEmbedOptions`
+- `OpenAI.speechModel(...)`
+- `OpenAISpeechOptions`
+- `OpenAI.transcriptionModel(...)`
+- `OpenAITranscriptionOptions`
 - `Google.embeddingModel(...)`
 - `GoogleEmbeddingModelSettings`
 - `GoogleEmbedOptions`
@@ -113,8 +117,6 @@ This decision does **not** mean non-text capability parity is complete.
 The remaining work is still real:
 
 - image provider migration parity is incomplete
-- speech provider migration parity is incomplete
-- transcription provider migration parity is incomplete
 - Google image/speech capability migration parity is incomplete
 - Anthropic capability migration parity is incomplete
 - shared embedding chunk-splitting policy is intentionally still undecided
