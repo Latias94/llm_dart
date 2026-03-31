@@ -64,7 +64,7 @@ Current status:
 - `llm_dart_core` now also exposes function-based shared capability helpers for non-text calls: `embed(...)`, `embedMany(...)`, `generateImage(...)`, `generateSpeech(...)`, and `transcribe(...)`
 - the OpenAI family now has package-owned embedding and image model surfaces through `OpenAI.embeddingModel(...)` and `OpenAI.imageModel(...)`, with typed `OpenAIEmbeddingModelSettings` / `OpenAIImageModelSettings` and typed `OpenAIEmbedOptions` / `OpenAIImageOptions`
 - the OpenAI family now also has package-owned `speechModel(...)` and `transcriptionModel(...)` surfaces with typed provider options, byte-response speech decoding, and multipart transcription request encoding above the transport layer
-- the same shared embedding helper boundary is now also proven for Google through `Google.embeddingModel(...)`, typed `GoogleEmbeddingModelSettings`, and typed `GoogleEmbedOptions`
+- Google now also has package-owned embedding and image model surfaces through `Google.embeddingModel(...)` and `Google.imageModel(...)`, with typed `GoogleEmbeddingModelSettings` / `GoogleImageModelSettings` and typed `GoogleEmbedOptions` / `GoogleImageOptions`
 - `llm_dart_core` now also exposes `GenerateTextStepResult` as the first shared step-level snapshot wrapper without changing the single-step meaning of `generateText` / `streamText`
 - `llm_dart_core` now also exposes `GenerateTextRunResult` and `GenerateTextStepStartEvent` as runner-facing pure model primitives
 - `llm_dart_core` now also has a narrow non-streaming multi-step `GenerateTextRunner` and `runTextGeneration(...)` entrypoint that accumulates step snapshots, replays prior assistant/tool messages, and continues common function-tool steps through an app-supplied executor
@@ -72,7 +72,7 @@ Current status:
 - continuation ownership is now also frozen more clearly: common function-tool loops belong to the shared runner, while approval-gated, provider-executed, dynamic, and chat-interactive continuation remain provider-owned or session-owned
 - the stop-and-mutation boundary is now also frozen: `maxSteps` stays a guardrail, shared `stopWhen` and `prepareStep` stay out, and retry/model-switch policy remains app-owned
 - only a separate streamed runner or a tightly-constrained pre-step hook may be reconsidered later if real shared usage proves the need
-- provider-specific compatibility subset audits, broader endpoint coverage, and the remaining Google/Anthropic non-text provider migrations remain for the next step
+- provider-specific compatibility subset audits, broader endpoint coverage, and the remaining Google speech/TTS plus Anthropic non-text provider migrations remain for the next step
 
 ## M3 - Anthropic And Google
 
@@ -92,6 +92,7 @@ Current status:
 - Anthropic request encoding, result decoding, stream decoding, MCP request models, and typed options are package-owned
 - Anthropic assistant replay now keeps native tool replay paths and emits explicit warnings when unsupported assistant reasoning/file/custom replay parts are dropped
 - the Google text-generation mainline is now wired through `llm_dart_google`
+- Google now also has package-owned embedding and image model surfaces, and the current shared `ImageModel` boundary is now explicitly generation-only while image editing or variation remain provider-owned
 - Google request encoding, result decoding, stream decoding, grounding-source extraction, and typed options are package-owned
 - Google thought signatures and reasoning-file artifacts now survive assistant replay, snapshot round-trip, and follow-up prompt reconstruction
 - the shared tool-definition boundary is now frozen around common function tools and shared `ToolChoice`

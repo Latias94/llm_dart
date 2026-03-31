@@ -119,7 +119,7 @@
 - [x] Add provider-owned Google custom-part summary helpers for Flutter or other UI renderers
 - [x] Add a provider-owned Google message mapper for Flutter or other UI renderers
 - [ ] Decide whether any Google `toolCall` / `toolResponse` families should later gain richer shared projection or dedicated Flutter renderers beyond provider-owned custom replay
-- [ ] Migrate the Gemini image model
+- [x] Migrate the Gemini image model
 - [x] Migrate the Gemini embedding model
 - [ ] Migrate Gemini speech and TTS
 - [ ] Migrate Gemini safety and modality options

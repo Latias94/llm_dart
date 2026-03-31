@@ -53,8 +53,15 @@ Responsible for:
 Responsible for:
 
 - text-to-image generation
+
+Not part of the current phase-1 shared contract:
+
 - image editing
 - image variation generation
+
+Those image-editing and variation workflows should stay provider-owned until
+`llm_dart_core` has a truthful shared request model for files, masks, and other
+provider-divergent controls.
 
 ### `SpeechModel`
 

@@ -1,6 +1,7 @@
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'google_embedding_model.dart';
+import 'google_image_model.dart';
 import 'google_language_model.dart';
 import 'google_options.dart';
 
@@ -38,6 +39,19 @@ final class Google {
         const GoogleEmbeddingModelSettings(),
   }) {
     return GoogleEmbeddingModel(
+      apiKey: apiKey,
+      modelId: modelId,
+      transport: transport,
+      baseUrl: baseUrl,
+      settings: settings,
+    );
+  }
+
+  GoogleImageModel imageModel(
+    String modelId, {
+    GoogleImageModelSettings settings = const GoogleImageModelSettings(),
+  }) {
+    return GoogleImageModel(
       apiKey: apiKey,
       modelId: modelId,
       transport: transport,
