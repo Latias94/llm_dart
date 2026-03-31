@@ -37,6 +37,27 @@ void main() {
         },
       );
     });
+
+    test('builds array and string helper schemas', () {
+      final schema = JsonSchema.array(
+        items: JsonSchema.string(
+          enumValues: const ['red', 'green'],
+        ).toJson(),
+        minItems: 1,
+      );
+
+      expect(
+        schema.toJson(),
+        const {
+          'type': 'array',
+          'items': {
+            'type': 'string',
+            'enum': ['red', 'green'],
+          },
+          'minItems': 1,
+        },
+      );
+    });
   });
 
   group('GenerateTextOptions.responseFormat', () {

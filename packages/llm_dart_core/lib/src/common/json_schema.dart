@@ -30,6 +30,36 @@ final class JsonSchema {
     });
   }
 
+  factory JsonSchema.array({
+    Object? items,
+    String? description,
+    Object? minItems,
+    Object? maxItems,
+    Map<String, Object?> extra = const {},
+  }) {
+    return JsonSchema.raw({
+      'type': 'array',
+      if (description != null) 'description': description,
+      if (items != null) 'items': items,
+      if (minItems != null) 'minItems': minItems,
+      if (maxItems != null) 'maxItems': maxItems,
+      ...extra,
+    });
+  }
+
+  factory JsonSchema.string({
+    String? description,
+    List<String>? enumValues,
+    Map<String, Object?> extra = const {},
+  }) {
+    return JsonSchema.raw({
+      'type': 'string',
+      if (description != null) 'description': description,
+      if (enumValues != null) 'enum': enumValues,
+      ...extra,
+    });
+  }
+
   Map<String, Object?> toJson() => Map.unmodifiable(_json);
 }
 

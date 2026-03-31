@@ -45,6 +45,7 @@
 - [x] Define `TranscriptionModel`
 - [x] Implement `generateText`
 - [x] Implement `streamText`
+- [x] Add a first non-streaming shared structured-output helper with `OutputSpec`, `generateOutput`, and built-in `text` / `json` / `object` / `array` / `choice` modes
 - [x] Add `GenerateTextStepResult` as the shared single-step snapshot wrapper above existing request/result models
 - [x] Add initial runner-facing shared model primitives: `GenerateTextRunResult` and `GenerateTextStepStartEvent`
 - [x] Implement a minimal non-streaming single-step `GenerateTextRunner` with `onStepStart`, `onStepFinish`, and `onFinish`

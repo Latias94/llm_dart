@@ -181,17 +181,21 @@ This is now the clearest gap versus the reference capability layout.
 
 Current status:
 
-- structured output exists today mainly as provider-owned `responseFormat`
-  options
+- a first shared non-streaming structured-output helper now exists in
+  `llm_dart_core` through `OutputSpec` and `generateOutput(...)`
 - OpenAI and Google already have provider-owned JSON-schema request support
-- the common core does not yet expose `generateObject`-style or
-  `streamObject`-style entry points
+- the shared helper already covers built-in `text`, `json`, `object`,
+  `array`, and `choice` modes for final-output parsing
+- the common core still does not yet expose an integrated
+  `streamObject`-style path or partial structured-output streaming contract
 
 What is still missing:
 
-- a shared structured-generation request model
-- a shared structured-generation result model
-- a shared validation and parse failure model
+- tighter integration between structured output and the main shared text call
+  surface
+- a shared partial structured-output model for streaming
+- a clearer long-term result-placement strategy if parsed output should later
+  live directly beside `GenerateTextResult`
 - a shared streaming story for partial structured output, if we decide it is
   worth supporting
 

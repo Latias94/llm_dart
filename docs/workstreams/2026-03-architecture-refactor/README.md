@@ -162,7 +162,7 @@ This workstream is not about a file-moving refactor. It is about defining stable
 
 ### Remaining Structural Gaps Versus `repo-ref/ai`
 
-- A shared `generateObject` / `streamObject`-style module does not exist yet; structured generation still mostly enters through provider-owned `responseFormat` options.
+- A first shared structured-output helper now exists in `llm_dart_core` through `OutputSpec` and `generateOutput(...)`, but there is still no fully integrated `streamObject`-style or partial-structured-output module yet.
 - The shared runner is intentionally narrow and non-streaming; the reference still has a more mature streamed multi-step orchestration loop.
 - `llm_dart_transport` still needs its remaining productized shared infrastructure: stream chunk parsing, retry/timeout completion, and diagnostics.
 - Embedding, image, speech, and transcription already have shared interface direction, but their top-level helper and provider-migration parity are still incomplete.

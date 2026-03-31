@@ -82,6 +82,40 @@ Future<void> main() async {
 Example file:
 [quick_start.dart](E:/codes/flutter/llm_dart/example/01_getting_started/quick_start.dart)
 
+## Structured Output
+
+Shared structured generation now lives above `generateText(...)` through
+`OutputSpec` and `generateOutput(...)`.
+
+```dart
+import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/core.dart' as core;
+
+Future<void> main() async {
+  final model = llm.AI.openai(
+    apiKey: 'your-openai-key',
+  ).chatModel('gpt-4.1-mini');
+
+  final result = await core.generateOutput<String>(
+    model: model,
+    prompt: [
+      core.UserPromptMessage.text('Return a JSON object with a short title.'),
+    ],
+    outputSpec: core.ObjectOutputSpec<String>(
+      schema: core.JsonSchema.object(
+        properties: const {
+          'title': {'type': 'string'},
+        },
+        required: const ['title'],
+      ),
+      decode: (json) => json['title']! as String,
+    ),
+  );
+
+  print(result.output);
+}
+```
+
 ## Streaming
 
 The shared streaming boundary is `TextStreamEvent`.

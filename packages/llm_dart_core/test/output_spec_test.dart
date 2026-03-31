@@ -142,6 +142,139 @@ void main() {
         ),
       );
     });
+
+    test('parses object output through the shared object spec', () async {
+      final model = _RecordingLanguageModel(
+        generateResult: GenerateTextResult(
+          content: const [
+            TextContentPart('{"answer":"ok"}'),
+          ],
+          finishReason: FinishReason.stop,
+        ),
+      );
+
+      final result = await generateOutput<String>(
+        model: model,
+        prompt: [
+          UserPromptMessage.text('Return an object.'),
+        ],
+        outputSpec: ObjectOutputSpec<String>(
+          schema: JsonSchema.object(
+            properties: const {
+              'answer': {'type': 'string'},
+            },
+            required: const ['answer'],
+          ),
+          decode: (json) => json['answer']! as String,
+        ),
+      );
+
+      expect(result.output, 'ok');
+    });
+
+    test('wraps array output in a shared object schema and decodes elements',
+        () async {
+      final model = _RecordingLanguageModel(
+        generateResult: GenerateTextResult(
+          content: const [
+            TextContentPart('{"elements":[{"value":"a"},{"value":"b"}]}'),
+          ],
+          finishReason: FinishReason.stop,
+        ),
+      );
+
+      final result = await generateOutput<List<String>>(
+        model: model,
+        prompt: [
+          UserPromptMessage.text('Return an array.'),
+        ],
+        outputSpec: ArrayOutputSpec<String>(
+          elementSchema: JsonSchema.object(
+            properties: const {
+              'value': {'type': 'string'},
+            },
+            required: const ['value'],
+          ),
+          decodeElement: (json) {
+            final map = json as Map<String, Object?>;
+            return map['value']! as String;
+          },
+        ),
+      );
+
+      expect(result.output, ['a', 'b']);
+
+      final responseFormat =
+          model.lastRequest?.options.responseFormat as JsonResponseFormat?;
+      expect(responseFormat, isNotNull);
+      expect(
+        responseFormat!.schema.toJson(),
+        const {
+          'type': 'object',
+          'properties': {
+            'elements': {
+              'type': 'array',
+              'items': {
+                'type': 'object',
+                'properties': {
+                  'value': {'type': 'string'},
+                },
+                'required': ['value'],
+              },
+            },
+          },
+          'required': ['elements'],
+          'additionalProperties': false,
+        },
+      );
+    });
+
+    test('parses choice output through the shared choice spec', () async {
+      final model = _RecordingLanguageModel(
+        generateResult: GenerateTextResult(
+          content: const [
+            TextContentPart('{"result":"green"}'),
+          ],
+          finishReason: FinishReason.stop,
+        ),
+      );
+
+      final result = await generateOutput<String>(
+        model: model,
+        prompt: [
+          UserPromptMessage.text('Pick one option.'),
+        ],
+        outputSpec: ChoiceOutputSpec<String>(
+          options: const ['red', 'green', 'blue'],
+        ),
+      );
+
+      expect(result.output, 'green');
+    });
+  });
+
+  group('output spec validation', () {
+    test('object spec rejects non-object schemas', () {
+      expect(
+        () => ObjectOutputSpec.json(
+          schema: JsonSchema.array(),
+        ),
+        throwsArgumentError,
+      );
+    });
+
+    test('choice spec rejects empty or duplicate options', () {
+      expect(
+        () => ChoiceOutputSpec<String>(options: const []),
+        throwsArgumentError,
+      );
+      expect(
+        () => ChoiceOutputSpec<String>(
+          options: const ['red', 'red'],
+        ),
+        throwsArgumentError,
+      );
+    });
   });
 }
 
