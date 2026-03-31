@@ -202,6 +202,43 @@ The shared streaming boundary is `TextStreamEvent`.
 Do not treat UI-only lifecycle chunks or transport-only chunks as reasons to
 expand the shared core event model.
 
+For structured streaming, the shared helper is now:
+
+```dart
+await for (final event in core.streamOutput(
+  model: model,
+  prompt: [
+    core.UserPromptMessage.text('Return structured JSON.'),
+  ],
+  outputSpec: core.ObjectOutputSpec.json(
+    schema: core.JsonSchema.object(
+      properties: const {
+        'value': {'type': 'string'},
+      },
+      required: const ['value'],
+      additionalProperties: false,
+    ),
+  ),
+)) {
+  switch (event) {
+    case core.OutputPartialEvent(:final partialOutput):
+      print(partialOutput);
+    case core.OutputResultEvent(:final result):
+      print(result.output);
+    default:
+      break;
+  }
+}
+```
+
+Current streaming rule:
+
+- `streamOutput(...)` forwards raw `TextStreamEvent`s through
+  `OutputTextStreamEvent`
+- it now also emits best-effort `OutputPartialEvent`s for built-in structured
+  output modes
+- it still does not expose a shared array element stream yet
+
 ## 7. Provider-Specific Options Migration
 
 The root facade intentionally does not re-export every provider-owned option

@@ -27,6 +27,8 @@ final class GenerateTextResultAccumulator {
   ModelError? _error;
 
   bool get hasFinishEvent => _finishReason != null;
+  String get text =>
+      _content.whereType<TextContentPart>().map((part) => part.text).join();
 
   void apply(TextStreamEvent event) {
     switch (event) {

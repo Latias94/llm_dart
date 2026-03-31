@@ -4,6 +4,7 @@ import 'dart:convert';
 import '../common/call_options.dart';
 import '../common/json_schema.dart';
 import '../common/model_error.dart';
+import '../common/partial_json.dart';
 import '../common/provider_metadata.dart';
 import '../common/usage_stats.dart';
 import '../prompt/prompt_message.dart';
@@ -37,16 +38,24 @@ final class StructuredOutputContext {
   });
 }
 
-abstract interface class OutputSpec<T> {
+abstract class OutputSpec<T> {
+  const OutputSpec();
+
   ResponseFormat? get responseFormat;
 
   FutureOr<T> parse({
     required String text,
     required StructuredOutputContext context,
   });
+
+  FutureOr<Object?> parsePartial({
+    required String text,
+  }) {
+    return null;
+  }
 }
 
-final class TextOutputSpec implements OutputSpec<String> {
+final class TextOutputSpec extends OutputSpec<String> {
   const TextOutputSpec();
 
   @override
@@ -59,9 +68,16 @@ final class TextOutputSpec implements OutputSpec<String> {
   }) {
     return text;
   }
+
+  @override
+  String parsePartial({
+    required String text,
+  }) {
+    return text;
+  }
 }
 
-final class JsonOutputSpec<T> implements OutputSpec<T> {
+final class JsonOutputSpec<T> extends OutputSpec<T> {
   final JsonSchema schema;
   final String? name;
   final String? description;
@@ -102,9 +118,24 @@ final class JsonOutputSpec<T> implements OutputSpec<T> {
     final json = _decodeJsonText(text);
     return decode(json);
   }
+
+  @override
+  Object? parsePartial({
+    required String text,
+  }) {
+    final result = parsePartialJson(text);
+    return switch (result.state) {
+      PartialJsonParseState.undefinedInput ||
+      PartialJsonParseState.failedParse =>
+        null,
+      PartialJsonParseState.successfulParse ||
+      PartialJsonParseState.repairedParse =>
+        _freezeJsonValue(result.value),
+    };
+  }
 }
 
-final class ObjectOutputSpec<T> implements OutputSpec<T> {
+final class ObjectOutputSpec<T> extends OutputSpec<T> {
   final JsonSchema schema;
   final String? name;
   final String? description;
@@ -150,9 +181,24 @@ final class ObjectOutputSpec<T> implements OutputSpec<T> {
     );
     return decode(object);
   }
+
+  @override
+  Map<String, Object?>? parsePartial({
+    required String text,
+  }) {
+    final result = parsePartialJson(text);
+    return switch (result.state) {
+      PartialJsonParseState.undefinedInput ||
+      PartialJsonParseState.failedParse =>
+        null,
+      PartialJsonParseState.successfulParse ||
+      PartialJsonParseState.repairedParse =>
+        _tryRequireJsonObject(result.value),
+    };
+  }
 }
 
-final class ArrayOutputSpec<T> implements OutputSpec<List<T>> {
+final class ArrayOutputSpec<T> extends OutputSpec<List<T>> {
   final JsonSchema elementSchema;
   final String? name;
   final String? description;
@@ -215,9 +261,45 @@ final class ArrayOutputSpec<T> implements OutputSpec<List<T>> {
       rawElements.map(decodeElement),
     );
   }
+
+  @override
+  List<T>? parsePartial({
+    required String text,
+  }) {
+    final result = parsePartialJson(text);
+    switch (result.state) {
+      case PartialJsonParseState.undefinedInput ||
+            PartialJsonParseState.failedParse:
+        return null;
+      case PartialJsonParseState.successfulParse ||
+            PartialJsonParseState.repairedParse:
+        final object = _tryRequireJsonObject(result.value);
+        final rawElements = object?['elements'];
+        if (rawElements is! List) {
+          return null;
+        }
+
+        final candidateElements =
+            result.state == PartialJsonParseState.repairedParse &&
+                    rawElements.isNotEmpty
+                ? rawElements.take(rawElements.length - 1)
+                : rawElements;
+
+        final parsedElements = <T>[];
+        for (final rawElement in candidateElements) {
+          try {
+            parsedElements.add(decodeElement(rawElement));
+          } catch (_) {
+            continue;
+          }
+        }
+
+        return List<T>.unmodifiable(parsedElements);
+    }
+  }
 }
 
-final class ChoiceOutputSpec<T extends String> implements OutputSpec<T> {
+final class ChoiceOutputSpec<T extends String> extends OutputSpec<T> {
   final List<T> options;
   final String? name;
   final String? description;
@@ -271,6 +353,37 @@ final class ChoiceOutputSpec<T extends String> implements OutputSpec<T> {
       'Could not parse structured output choice: expected one of ${options.join(', ')}.',
     );
   }
+
+  @override
+  T? parsePartial({
+    required String text,
+  }) {
+    final result = parsePartialJson(text);
+    switch (result.state) {
+      case PartialJsonParseState.undefinedInput ||
+            PartialJsonParseState.failedParse:
+        return null;
+      case PartialJsonParseState.successfulParse ||
+            PartialJsonParseState.repairedParse:
+        final object = _tryRequireJsonObject(result.value);
+        final value = object?['result'];
+        if (value is! String) {
+          return null;
+        }
+
+        final potentialMatches = options
+            .where((option) => option.startsWith(value))
+            .toList(growable: false);
+
+        if (result.state == PartialJsonParseState.successfulParse) {
+          return potentialMatches.contains(value)
+              ? potentialMatches.firstWhere((option) => option == value)
+              : null;
+        }
+
+        return potentialMatches.length == 1 ? potentialMatches.single : null;
+    }
+  }
 }
 
 final class GenerateOutputResult<T> {
@@ -309,6 +422,12 @@ final class OutputTextStreamEvent<T> extends OutputStreamEvent<T> {
   final TextStreamEvent streamEvent;
 
   const OutputTextStreamEvent(this.streamEvent);
+}
+
+final class OutputPartialEvent<T> extends OutputStreamEvent<T> {
+  final Object? partialOutput;
+
+  const OutputPartialEvent(this.partialOutput);
 }
 
 final class OutputResultEvent<T> extends OutputStreamEvent<T> {
@@ -400,9 +519,30 @@ Stream<OutputStreamEvent<T>> streamOutput<T>({
     callOptions: callOptions,
   );
 
+  Object? lastPartialOutput;
+  var hasPartialOutput = false;
+
   await for (final event in events) {
     accumulator.apply(event);
     yield OutputTextStreamEvent<T>(event);
+
+    if (event is TextDeltaEvent || event is TextEndEvent) {
+      final partialOutput = await _tryParsePartialOutput(
+        outputSpec: outputSpec,
+        text: accumulator.text,
+      );
+
+      if (partialOutput != null &&
+          (!hasPartialOutput ||
+              !_structuredOutputValueEquals(
+                lastPartialOutput,
+                partialOutput,
+              ))) {
+        hasPartialOutput = true;
+        lastPartialOutput = partialOutput;
+        yield OutputPartialEvent<T>(partialOutput);
+      }
+    }
   }
 
   final result = accumulator.build();
@@ -571,6 +711,83 @@ Future<GenerateOutputResult<T>> _parseGenerateOutputResult<T>({
       ),
     );
   }
+}
+
+Future<Object?> _tryParsePartialOutput<T>({
+  required OutputSpec<T> outputSpec,
+  required String text,
+}) async {
+  try {
+    return await outputSpec.parsePartial(text: text);
+  } catch (_) {
+    return null;
+  }
+}
+
+Map<String, Object?>? _tryRequireJsonObject(Object? json) {
+  try {
+    return _requireJsonObject(
+      json,
+      message: 'Could not parse partial structured output object.',
+    );
+  } on FormatException {
+    return null;
+  }
+}
+
+Object? _freezeJsonValue(Object? value) {
+  return switch (value) {
+    null || bool() || num() || String() => value,
+    List() => List<Object?>.unmodifiable(
+        value.map(_freezeJsonValue),
+      ),
+    Map() => Map<String, Object?>.unmodifiable(
+        value.map(
+          (key, nestedValue) => MapEntry(
+            key as String,
+            _freezeJsonValue(nestedValue),
+          ),
+        ),
+      ),
+    _ => value,
+  };
+}
+
+bool _structuredOutputValueEquals(Object? left, Object? right) {
+  if (identical(left, right)) {
+    return true;
+  }
+
+  if (left is List && right is List) {
+    if (left.length != right.length) {
+      return false;
+    }
+
+    for (var index = 0; index < left.length; index++) {
+      if (!_structuredOutputValueEquals(left[index], right[index])) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  if (left is Map && right is Map) {
+    if (left.length != right.length) {
+      return false;
+    }
+
+    for (final entry in left.entries) {
+      if (!right.containsKey(entry.key) ||
+          !_structuredOutputValueEquals(entry.value, right[entry.key])) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  return left == right;
 }
 
 Map<String, Object?> _usageToJson(UsageStats usage) {

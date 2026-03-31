@@ -298,8 +298,18 @@ void main() {
         ),
       ).toList();
 
-      expect(events.take(5).every((event) => event is OutputTextStreamEvent),
-          isTrue);
+      expect(events[0], isA<OutputTextStreamEvent<String>>());
+      expect(events[1], isA<OutputTextStreamEvent<String>>());
+      expect(events[2], isA<OutputTextStreamEvent<String>>());
+      expect(events[3], isA<OutputPartialEvent<String>>());
+      expect(events[4], isA<OutputTextStreamEvent<String>>());
+      expect(events[5], isA<OutputTextStreamEvent<String>>());
+      expect(
+        (events[3] as OutputPartialEvent<String>).partialOutput,
+        {
+          'value': 'ok',
+        },
+      );
       final resultEvent = events.last as OutputResultEvent<String>;
       expect(resultEvent.result.output, 'ok');
       expect(resultEvent.result.responseId, 'resp_stream');
@@ -308,6 +318,158 @@ void main() {
           model.lastRequest?.options.responseFormat as JsonResponseFormat?;
       expect(responseFormat, isNotNull);
       expect(responseFormat!.name, 'answer');
+    });
+
+    test('emits partial object outputs for reparable streamed JSON', () async {
+      final model = _RecordingLanguageModel(
+        generateResult: GenerateTextResult(
+          content: const [
+            TextContentPart('unused'),
+          ],
+          finishReason: FinishReason.stop,
+        ),
+        streamEvents: const [
+          TextStartEvent(id: 'text_1'),
+          TextDeltaEvent(id: 'text_1', delta: '{"answer":"hel'),
+          TextDeltaEvent(id: 'text_1', delta: 'lo"}'),
+          TextEndEvent(id: 'text_1'),
+          FinishEvent(
+            finishReason: FinishReason.stop,
+          ),
+        ],
+      );
+
+      final events = await streamOutput<String>(
+        model: model,
+        prompt: [
+          UserPromptMessage.text('Return JSON.'),
+        ],
+        outputSpec: ObjectOutputSpec<String>(
+          schema: JsonSchema.object(
+            properties: const {
+              'answer': {'type': 'string'},
+            },
+            required: const ['answer'],
+          ),
+          decode: (json) => json['answer']! as String,
+        ),
+      ).toList();
+
+      final partialEvents = events
+          .whereType<OutputPartialEvent<String>>()
+          .toList(growable: false);
+      expect(partialEvents, hasLength(2));
+      expect(
+        partialEvents[0].partialOutput,
+        {
+          'answer': 'hel',
+        },
+      );
+      expect(
+        partialEvents[1].partialOutput,
+        {
+          'answer': 'hello',
+        },
+      );
+
+      final resultEvent = events.last as OutputResultEvent<String>;
+      expect(resultEvent.result.output, 'hello');
+    });
+
+    test('emits partial array outputs with only completed decoded elements',
+        () async {
+      final model = _RecordingLanguageModel(
+        generateResult: GenerateTextResult(
+          content: const [
+            TextContentPart('unused'),
+          ],
+          finishReason: FinishReason.stop,
+        ),
+        streamEvents: const [
+          TextStartEvent(id: 'text_1'),
+          TextDeltaEvent(
+            id: 'text_1',
+            delta: '{"elements":[{"value":"a"},',
+          ),
+          TextDeltaEvent(
+            id: 'text_1',
+            delta: '{"value":"b"}]}',
+          ),
+          TextEndEvent(id: 'text_1'),
+          FinishEvent(
+            finishReason: FinishReason.stop,
+          ),
+        ],
+      );
+
+      final events = await streamOutput<List<String>>(
+        model: model,
+        prompt: [
+          UserPromptMessage.text('Return an array.'),
+        ],
+        outputSpec: ArrayOutputSpec<String>(
+          elementSchema: JsonSchema.object(
+            properties: const {
+              'value': {'type': 'string'},
+            },
+            required: const ['value'],
+          ),
+          decodeElement: (json) {
+            final map = json as Map<String, Object?>;
+            return map['value']! as String;
+          },
+        ),
+      ).toList();
+
+      final partialEvents = events
+          .whereType<OutputPartialEvent<List<String>>>()
+          .toList(growable: false);
+      expect(partialEvents, hasLength(2));
+      expect(partialEvents[0].partialOutput, isEmpty);
+      expect(partialEvents[1].partialOutput, ['a', 'b']);
+
+      final resultEvent = events.last as OutputResultEvent<List<String>>;
+      expect(resultEvent.result.output, ['a', 'b']);
+    });
+
+    test('emits partial choice output when a repaired prefix is unambiguous',
+        () async {
+      final model = _RecordingLanguageModel(
+        generateResult: GenerateTextResult(
+          content: const [
+            TextContentPart('unused'),
+          ],
+          finishReason: FinishReason.stop,
+        ),
+        streamEvents: const [
+          TextStartEvent(id: 'text_1'),
+          TextDeltaEvent(id: 'text_1', delta: '{"result":"ur'),
+          TextDeltaEvent(id: 'text_1', delta: 'gent"}'),
+          TextEndEvent(id: 'text_1'),
+          FinishEvent(
+            finishReason: FinishReason.stop,
+          ),
+        ],
+      );
+
+      final events = await streamOutput<String>(
+        model: model,
+        prompt: [
+          UserPromptMessage.text('Pick one.'),
+        ],
+        outputSpec: ChoiceOutputSpec<String>(
+          options: const ['calm', 'urgent', 'playful'],
+        ),
+      ).toList();
+
+      final partialEvents = events
+          .whereType<OutputPartialEvent<String>>()
+          .toList(growable: false);
+      expect(partialEvents, hasLength(1));
+      expect(partialEvents.single.partialOutput, 'urgent');
+
+      final resultEvent = events.last as OutputResultEvent<String>;
+      expect(resultEvent.result.output, 'urgent');
     });
 
     test(

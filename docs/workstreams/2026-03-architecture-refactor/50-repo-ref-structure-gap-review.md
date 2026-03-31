@@ -186,16 +186,16 @@ Current status:
 - OpenAI and Google already have provider-owned JSON-schema request support
 - the shared helper already covers built-in `text`, `json`, `object`,
   `array`, and `choice` modes for final-output parsing
-- streamed text can now reuse the same shared `OutputSpec` contract and emit a
-  final parsed-output event after the raw `TextStreamEvent` sequence
-- the common core still does not yet expose a partial structured-output
-  streaming contract or any array-element streaming surface
+- streamed text can now reuse the same shared `OutputSpec` contract, emit
+  best-effort partial structured-output events during the raw
+  `TextStreamEvent` sequence, and emit one final parsed-output event at the end
+- the common core still does not yet expose any shared array-element streaming
+  surface
 
 What is still missing:
 
 - tighter integration between structured output and the main shared text call
   surface
-- a shared partial structured-output model for streaming
 - a clearer long-term result-placement strategy if parsed output should later
   live directly beside `GenerateTextResult`
 - a shared element-streaming story for arrays or other incrementally-decodable

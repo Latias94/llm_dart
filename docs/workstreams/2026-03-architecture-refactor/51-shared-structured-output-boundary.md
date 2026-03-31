@@ -52,13 +52,15 @@ Current status in the refactor branch:
   `responseFormat` request shaping
 - legacy compatibility `jsonSchema` inputs now route through shared
   `GenerateTextOptions.responseFormat` before provider-specific wire encoding
+- `streamOutput(...)` now also emits best-effort `OutputPartialEvent`s through
+  `OutputSpec.parsePartial(...)`, using a shared partial-JSON repair utility for
+  built-in JSON/object/array/choice modes
 - structured output is therefore no longer only provider-owned, but the shared
   layer is still intentionally narrower than a full `streamObject` contract
 
 What is still missing in shared core:
 
 - no shared parsed-output field on `GenerateTextResult`
-- no shared partial structured output model for `streamText`
 - no shared element-streaming model for array-like outputs
 
 In other words, the capability exists on the wire, but not yet as a stable
@@ -222,6 +224,14 @@ This keeps the architecture clear:
 - optional partial parsing
 - optional element streaming
 
+The current Dart implementation has landed the first three parts of that shape:
+
+- shared request guidance
+- final parse and validation
+- best-effort partial parsing
+
+It still has not landed a shared element stream.
+
 ### 2. Shared Response-Format Value
 
 Do not let provider packages define the shared request shape indirectly.
@@ -381,16 +391,16 @@ Recommended order:
 ### Phase 1
 
 - final parsed structured output for non-streaming `generateText`
-- a shared streaming helper that forwards raw `TextStreamEvent`s and emits one
-  final parsed-output event at the end
-- no partial structured streaming yet
+- a shared streaming helper that forwards raw `TextStreamEvent`s, emits
+  best-effort partial structured-output events, and emits one final parsed
+  output event at the end
 
 ### Phase 2
 
-- add `streamText` partial structured output only for the output modes that can
+- keep expanding partial structured output only for the output modes that can
   be supported honestly
-- start with `json` and `object`
-- only add array element streaming if real users need it
+- keep array element streaming separate until real users prove it is worth the
+  extra surface
 
 This keeps the shared boundary honest while still moving toward the mature
 reference direction.

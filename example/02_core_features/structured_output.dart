@@ -9,6 +9,7 @@ Future<void> main() async {
   print('Structured Output\n');
 
   await runOpenAIObjectExample();
+  await runOpenAIStreamingObjectExample();
   await runOpenAIArrayExample();
   await runGoogleChoiceExample();
 }
@@ -55,6 +56,54 @@ Future<void> runOpenAIObjectExample() async {
   print('Name: ${result.output.name}');
   print('Role: ${result.output.role}');
   print('Strengths: ${result.output.strengths.join(', ')}\n');
+}
+
+Future<void> runOpenAIStreamingObjectExample() async {
+  final apiKey = Platform.environment['OPENAI_API_KEY'];
+  if (apiKey == null || apiKey.isEmpty) {
+    print(
+        'Skipping OpenAI streaming object example because OPENAI_API_KEY is not set.\n');
+    return;
+  }
+
+  final model = llm.AI.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
+
+  print('OpenAI streaming object output');
+  await for (final event in core.streamOutput<PersonSummary>(
+    model: model,
+    prompt: [
+      core.SystemPromptMessage.text('Return structured JSON only.'),
+      core.UserPromptMessage.text(
+        'Stream a short profile for Grace Hopper with name, role, and two strengths.',
+      ),
+    ],
+    outputSpec: core.ObjectOutputSpec<PersonSummary>(
+      schema: core.JsonSchema.object(
+        properties: const {
+          'name': {'type': 'string'},
+          'role': {'type': 'string'},
+          'strengths': {
+            'type': 'array',
+            'items': {'type': 'string'},
+            'minItems': 2,
+            'maxItems': 2,
+          },
+        },
+        required: const ['name', 'role', 'strengths'],
+        additionalProperties: false,
+      ),
+      decode: PersonSummary.fromJson,
+    ),
+  )) {
+    switch (event) {
+      case core.OutputPartialEvent<PersonSummary>(:final partialOutput):
+        print('Partial: $partialOutput');
+      case core.OutputResultEvent<PersonSummary>(:final result):
+        print('Final: ${result.output.name} / ${result.output.role}\n');
+      default:
+        break;
+    }
+  }
 }
 
 Future<void> runOpenAIArrayExample() async {
