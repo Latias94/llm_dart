@@ -115,6 +115,7 @@
 - [x] Preserve Google mixed-tool replay IDs and server-side tool context through follow-up prompt encoding
 - [x] Add provider-owned Google custom-part parser helpers for Flutter or other UI renderers
 - [x] Add provider-owned Google custom-part summary helpers for Flutter or other UI renderers
+- [x] Add a provider-owned Google message mapper for Flutter or other UI renderers
 - [ ] Decide whether any Google `toolCall` / `toolResponse` families should later gain richer shared projection or dedicated Flutter renderers beyond provider-owned custom replay
 - [ ] Migrate the Gemini image model
 - [ ] Migrate the Gemini embedding model

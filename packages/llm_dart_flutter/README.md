@@ -237,6 +237,28 @@ void renderGoogleCustomParts(ChatUiMessage message) {
 }
 ```
 
+If the UI also needs Google-specific metadata from common parts such as thought
+signatures, `responsePart`, or Google file IDs, use the provider-owned message
+mapper beside the shared one:
+
+```dart
+import 'package:llm_dart_flutter/llm_dart_flutter.dart';
+import 'package:llm_dart_google/llm_dart_google.dart';
+
+void renderGoogleMessage(ChatUiMessage message) {
+  final shared = const ChatMessageMapper().map(message);
+  final google = const GoogleMessageMapper().map(message);
+
+  print(shared.text);
+
+  for (final detail in google.partDetails) {
+    print('${detail.type}: ${detail.label}');
+    print(detail.thoughtSignature);
+    print(detail.responsePart);
+  }
+}
+```
+
 ## Tool and Approval Flows
 
 `DefaultChatSession` supports the baseline interactive loop needed by chat UIs:
