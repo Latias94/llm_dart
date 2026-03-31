@@ -716,6 +716,7 @@ void main() {
               },
               truncation: OpenAIResponseTruncation.auto,
               user: 'user_overlay',
+              logprobs: OpenAILogProbs.enabled(),
               include: [
                 OpenAIResponsesInclude.messageOutputTextLogprobs,
               ],
@@ -751,6 +752,7 @@ void main() {
           'message.output_text.logprobs',
         ],
       );
+      expect(requestBody['top_logprobs'], 20);
       expect(requestBody['prompt_cache_key'], 'cache_overlay');
       expect(requestBody['prompt_cache_retention'], 'in_memory');
       expect(requestBody['safety_identifier'], 'safe_overlay');
@@ -785,6 +787,101 @@ void main() {
             'strict': true,
           },
         },
+      );
+    });
+
+    test('generate decodes Responses API text logprobs into provider metadata',
+        () async {
+      TransportRequest? capturedRequest;
+      const responseLogprobs = [
+        {
+          'token': 'Hello',
+          'logprob': -0.1,
+          'top_logprobs': [
+            {
+              'token': 'Hello',
+              'logprob': -0.1,
+            },
+            {
+              'token': 'Hi',
+              'logprob': -0.4,
+            },
+          ],
+        },
+      ];
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'resp_logprobs_1',
+                'model': 'gpt-4.1-mini',
+                'created_at': 1710000000,
+                'status': 'completed',
+                'output': [
+                  {
+                    'id': 'msg_logprobs_1',
+                    'type': 'message',
+                    'status': 'completed',
+                    'role': 'assistant',
+                    'content': [
+                      {
+                        'type': 'output_text',
+                        'text': 'Hello',
+                        'annotations': [],
+                        'logprobs': responseLogprobs,
+                      },
+                    ],
+                  },
+                ],
+                'usage': {
+                  'input_tokens': 4,
+                  'output_tokens': 1,
+                  'total_tokens': 5,
+                  'output_tokens_details': {
+                    'reasoning_tokens': 0,
+                  },
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel('gpt-4.1-mini');
+
+      final result = await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage.text('Say hello.'),
+          ],
+          callOptions: const CallOptions(
+            providerOptions: OpenAIGenerateTextOptions(
+              logprobs: OpenAILogProbs.top(3),
+            ),
+          ),
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(
+        requestBody['include'],
+        [
+          'message.output_text.logprobs',
+        ],
+      );
+      expect(requestBody['top_logprobs'], 3);
+
+      final textPart = result.content.whereType<TextContentPart>().single;
+      expect(
+        textPart.providerMetadata?['openai'],
+        allOf(
+          containsPair('contentType', 'output_text'),
+          containsPair('logprobs', responseLogprobs),
+        ),
       );
     });
 
@@ -1049,6 +1146,155 @@ void main() {
       final finish = events.whereType<FinishEvent>().single;
       expect(finish.finishReason, FinishReason.stop);
       expect(finish.usage?.totalTokens, 2);
+    });
+
+    test('stream maps Responses API logprobs to text event metadata', () async {
+      TransportRequest? capturedRequest;
+      const responseLogprobs = [
+        {
+          'token': 'Hello',
+          'logprob': -0.1,
+          'top_logprobs': [
+            {
+              'token': 'Hello',
+              'logprob': -0.1,
+            },
+            {
+              'token': 'Hi',
+              'logprob': -0.4,
+            },
+          ],
+        },
+      ];
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSendStream: (request) async {
+            capturedRequest = request;
+
+            return StreamingTransportResponse(
+              statusCode: 200,
+              stream: Stream.fromIterable([
+                utf8.encode(
+                  'data: ${jsonEncode({
+                        'type': 'response.created',
+                        'response': {
+                          'id': 'resp_logprobs_stream_1',
+                          'model': 'gpt-4.1-mini',
+                          'created_at': 1710000000,
+                          'service_tier': 'default',
+                        },
+                      })}\n\n',
+                ),
+                utf8.encode(
+                  'data: ${jsonEncode({
+                        'type': 'response.output_item.added',
+                        'output_index': 0,
+                        'item': {
+                          'id': 'msg_1',
+                          'type': 'message',
+                          'status': 'in_progress',
+                        },
+                      })}\n\n',
+                ),
+                utf8.encode(
+                  'data: ${jsonEncode({
+                        'type': 'response.output_text.delta',
+                        'item_id': 'msg_1',
+                        'output_index': 0,
+                        'content_index': 0,
+                        'delta': 'Hello',
+                        'logprobs': responseLogprobs,
+                      })}\n\n',
+                ),
+                utf8.encode(
+                  'data: ${jsonEncode({
+                        'type': 'response.output_text.done',
+                        'item_id': 'msg_1',
+                        'output_index': 0,
+                        'content_index': 0,
+                        'text': 'Hello',
+                        'logprobs': responseLogprobs,
+                      })}\n\n',
+                ),
+                utf8.encode(
+                  'data: ${jsonEncode({
+                        'type': 'response.completed',
+                        'response': {
+                          'id': 'resp_logprobs_stream_1',
+                          'model': 'gpt-4.1-mini',
+                          'created_at': 1710000000,
+                          'status': 'completed',
+                          'output': [
+                            {
+                              'id': 'msg_1',
+                              'type': 'message',
+                              'status': 'completed',
+                              'role': 'assistant',
+                              'content': [
+                                {
+                                  'type': 'output_text',
+                                  'text': 'Hello',
+                                  'annotations': [],
+                                  'logprobs': responseLogprobs,
+                                },
+                              ],
+                            },
+                          ],
+                          'usage': {
+                            'input_tokens': 1,
+                            'output_tokens': 1,
+                            'total_tokens': 2,
+                            'output_tokens_details': {
+                              'reasoning_tokens': 0,
+                            },
+                          },
+                        },
+                      })}\n\n',
+                ),
+              ]),
+            );
+          },
+        ),
+      ).chatModel('gpt-4.1-mini');
+
+      final events = await model
+          .stream(
+            GenerateTextRequest(
+              prompt: [
+                UserPromptMessage.text('Say hello.'),
+              ],
+              callOptions: const CallOptions(
+                providerOptions: OpenAIGenerateTextOptions(
+                  logprobs: OpenAILogProbs.top(2),
+                ),
+              ),
+            ),
+          )
+          .toList();
+
+      expect(capturedRequest, isNotNull);
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(
+        requestBody['include'],
+        [
+          'message.output_text.logprobs',
+        ],
+      );
+      expect(requestBody['top_logprobs'], 2);
+
+      final textDelta = events.whereType<TextDeltaEvent>().single;
+      expect(
+        textDelta.providerMetadata?['openai'],
+        containsPair('logprobs', responseLogprobs),
+      );
+
+      final textEnd = events.whereType<TextEndEvent>().single;
+      expect(
+        textEnd.providerMetadata?['openai'],
+        containsPair('logprobs', responseLogprobs),
+      );
     });
 
     test('stream maps output annotations to typed source events', () async {

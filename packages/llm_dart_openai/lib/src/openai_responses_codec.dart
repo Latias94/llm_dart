@@ -50,6 +50,9 @@ final class OpenAIResponsesCodec {
       input.addAll(_encodePromptMessage(message));
     }
 
+    final include = _resolveInclude(providerOptions);
+    final topLogProbs = _encodeResponsesTopLogProbs(providerOptions.logprobs);
+
     final body = <String, Object?>{
       'model': modelId,
       'input': input,
@@ -76,16 +79,14 @@ final class OpenAIResponsesCodec {
       if (providerOptions.truncation != null)
         'truncation': providerOptions.truncation!.value,
       if (providerOptions.user != null) 'user': providerOptions.user,
-      if (providerOptions.include case final include? when include.isNotEmpty)
-        'include': [
-          for (final item in include) item.value,
-        ],
+      if (include != null) 'include': include,
       if (providerOptions.promptCacheKey != null)
         'prompt_cache_key': providerOptions.promptCacheKey,
       if (providerOptions.promptCacheRetention != null)
         'prompt_cache_retention': providerOptions.promptCacheRetention!.value,
       if (providerOptions.safetyIdentifier != null)
         'safety_identifier': providerOptions.safetyIdentifier,
+      if (topLogProbs != null) 'top_logprobs': topLogProbs,
     };
 
     final encodedTools = _encodeTools(
@@ -1044,6 +1045,7 @@ final class OpenAIResponsesCodec {
               item,
               extra: {
                 'contentType': contentType,
+                'logprobs': _jsonListOrNull(contentPart['logprobs']),
               },
             ),
           ),
@@ -1375,7 +1377,36 @@ final class OpenAIResponsesCodec {
       'contentIndex': _asInt(chunk['content_index']),
       'summaryIndex': _asInt(chunk['summary_index']),
       'serviceTier': state.serviceTier,
+      'logprobs': _jsonListOrNull(chunk['logprobs']),
     });
+  }
+
+  List<String>? _resolveInclude(OpenAIGenerateTextOptions providerOptions) {
+    final values = <String>{};
+
+    if (providerOptions.include case final include?) {
+      for (final item in include) {
+        values.add(item.value);
+      }
+    }
+
+    if (providerOptions.logprobs != null) {
+      values.add(OpenAIResponsesInclude.messageOutputTextLogprobs.value);
+    }
+
+    if (values.isEmpty) {
+      return null;
+    }
+
+    return values.toList(growable: false);
+  }
+
+  int? _encodeResponsesTopLogProbs(OpenAILogProbs? logprobs) {
+    if (logprobs == null) {
+      return null;
+    }
+
+    return logprobs.topLogProbs ?? OpenAILogProbs.responsesMaxTopLogProbs;
   }
 
   Map<String, Object?>? _encodeOpenAICompactionItem(CustomPromptPart part) {
@@ -1750,6 +1781,18 @@ final class OpenAIResponsesCodec {
     }
 
     return const [];
+  }
+
+  List<Object?>? _jsonListOrNull(Object? value) {
+    if (value is List<Object?>) {
+      return value;
+    }
+
+    if (value is List) {
+      return List<Object?>.from(value);
+    }
+
+    return null;
   }
 
   String? _asString(Object? value) {

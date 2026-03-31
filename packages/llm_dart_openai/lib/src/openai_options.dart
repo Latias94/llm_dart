@@ -223,6 +223,20 @@ enum OpenAIResponsesInclude {
   final String value;
 }
 
+final class OpenAILogProbs {
+  static const int responsesMaxTopLogProbs = 20;
+
+  final int? topLogProbs;
+
+  const OpenAILogProbs.enabled() : topLogProbs = null;
+
+  const OpenAILogProbs.top(this.topLogProbs)
+      : assert(topLogProbs != null ? topLogProbs > 0 : false),
+        assert(
+          topLogProbs != null ? topLogProbs <= responsesMaxTopLogProbs : false,
+        );
+}
+
 final class OpenAIGenerateTextOptions implements ProviderInvocationOptions {
   final String? previousResponseId;
   final bool? parallelToolCalls;
@@ -233,6 +247,7 @@ final class OpenAIGenerateTextOptions implements ProviderInvocationOptions {
   final Map<String, Object?>? metadata;
   final OpenAIResponseTruncation? truncation;
   final String? user;
+  final OpenAILogProbs? logprobs;
   final List<OpenAIResponsesInclude>? include;
   final String? promptCacheKey;
   final OpenAIPromptCacheRetention? promptCacheRetention;
@@ -250,6 +265,7 @@ final class OpenAIGenerateTextOptions implements ProviderInvocationOptions {
     this.metadata,
     this.truncation,
     this.user,
+    this.logprobs,
     this.include,
     this.promptCacheKey,
     this.promptCacheRetention,
@@ -268,6 +284,7 @@ final class OpenAIGenerateTextOptions implements ProviderInvocationOptions {
     Object? metadata = _unset,
     Object? truncation = _unset,
     Object? user = _unset,
+    Object? logprobs = _unset,
     Object? include = _unset,
     Object? promptCacheKey = _unset,
     Object? promptCacheRetention = _unset,
@@ -300,6 +317,9 @@ final class OpenAIGenerateTextOptions implements ProviderInvocationOptions {
           ? this.truncation
           : truncation as OpenAIResponseTruncation?,
       user: identical(user, _unset) ? this.user : user as String?,
+      logprobs: identical(logprobs, _unset)
+          ? this.logprobs
+          : logprobs as OpenAILogProbs?,
       include: identical(include, _unset)
           ? this.include
           : include as List<OpenAIResponsesInclude>?,

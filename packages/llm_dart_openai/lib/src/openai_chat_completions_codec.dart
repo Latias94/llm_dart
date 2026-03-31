@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 
+import 'openai_options.dart';
 import 'openai_response_format.dart';
 import 'resolved_openai_options.dart';
 
@@ -136,6 +137,9 @@ final class OpenAIChatCompletionsCodec {
         'verbosity': providerOptions.common.verbosity,
       if (providerOptions.common.user != null)
         'user': providerOptions.common.user,
+      if (providerOptions.common.logprobs != null) 'logprobs': true,
+      if (providerOptions.common.logprobs case final logprobs?)
+        'top_logprobs': _encodeChatTopLogProbs(logprobs),
       if (providerOptions.xaiSearch != null)
         'search_parameters': providerOptions.xaiSearch!.toJson(),
     };
@@ -171,6 +175,7 @@ final class OpenAIChatCompletionsCodec {
     final choice = _firstChoice(response);
     final message = _asMap(choice?['message']) ?? const <String, Object?>{};
     final content = <ContentPart>[];
+    final textLogprobs = _decodeChatLogprobs(choice?['logprobs']);
 
     final decodedText = _decodeAssistantText(message);
     if (decodedText.reasoning case final reasoning? when reasoning.isNotEmpty) {
@@ -190,6 +195,7 @@ final class OpenAIChatCompletionsCodec {
           decodedText.text,
           providerMetadata: _providerMetadata({
             'finishReason': _asString(choice?['finish_reason']),
+            'logprobs': textLogprobs,
           }),
         ),
       );
@@ -241,6 +247,7 @@ final class OpenAIChatCompletionsCodec {
     }
 
     final delta = _asMap(choice['delta']) ?? const <String, Object?>{};
+    final textLogprobs = _decodeChatLogprobs(choice['logprobs']);
     final chunkUsage = _decodeUsage(_asMap(chunk['usage']));
     if (chunkUsage != null) {
       state.usage = chunkUsage;
@@ -280,6 +287,7 @@ final class OpenAIChatCompletionsCodec {
           id: _textId,
           providerMetadata: _providerMetadata({
             'responseId': state.responseId,
+            'logprobs': textLogprobs,
           }),
         );
       }
@@ -289,6 +297,7 @@ final class OpenAIChatCompletionsCodec {
         delta: contentDelta,
         providerMetadata: _providerMetadata({
           'responseId': state.responseId,
+          'logprobs': textLogprobs,
         }),
       );
     }
@@ -348,6 +357,7 @@ final class OpenAIChatCompletionsCodec {
         id: _textId,
         providerMetadata: _providerMetadata({
           'responseId': state.responseId,
+          'logprobs': textLogprobs,
         }),
       );
     }
@@ -1156,6 +1166,15 @@ final class OpenAIChatCompletionsCodec {
     });
   }
 
+  int _encodeChatTopLogProbs(OpenAILogProbs logprobs) {
+    return logprobs.topLogProbs ?? 0;
+  }
+
+  List<Object?>? _decodeChatLogprobs(Object? value) {
+    final logprobs = _asMap(value);
+    return _jsonListOrNull(logprobs?['content']);
+  }
+
   ProviderMetadata? _providerMetadata(Map<String, Object?> values) {
     final scopedValues = <String, Object?>{};
     for (final entry in values.entries) {
@@ -1329,6 +1348,18 @@ final class OpenAIChatCompletionsCodec {
     }
 
     return const [];
+  }
+
+  List<Object?>? _jsonListOrNull(Object? value) {
+    if (value is List<Object?>) {
+      return value;
+    }
+
+    if (value is List) {
+      return List<Object?>.from(value);
+    }
+
+    return null;
   }
 
   String? _asString(Object? value) {
