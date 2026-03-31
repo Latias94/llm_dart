@@ -18,6 +18,7 @@ final class OpenAIChatCompletionsRequest {
 }
 
 final class OpenAIChatCompletionsStreamState {
+  final List<Object?> logprobs = [];
   String? responseId;
   DateTime? responseTimestamp;
   String? responseModelId;
@@ -215,7 +216,11 @@ final class OpenAIChatCompletionsCodec {
       responseTimestamp: _decodeResponseTimestamp(response),
       responseModelId: _asString(response['model']),
       usage: _decodeUsage(_asMap(response['usage'])),
-      providerMetadata: _responseMetadata(response, choice),
+      providerMetadata: _responseMetadata(
+        response,
+        choice,
+        logprobs: textLogprobs,
+      ),
       warnings: warnings,
     );
   }
@@ -281,6 +286,10 @@ final class OpenAIChatCompletionsCodec {
 
     final contentDelta = _extractContentDelta(delta);
     if (contentDelta != null && contentDelta.isNotEmpty) {
+      _appendLogprobs(
+        state.logprobs,
+        textLogprobs,
+      );
       if (!state.startedText) {
         state.startedText = true;
         yield TextStartEvent(
@@ -381,6 +390,8 @@ final class OpenAIChatCompletionsCodec {
       providerMetadata: _providerMetadata({
         'responseId': state.responseId,
         'systemFingerprint': _asString(chunk['system_fingerprint']),
+        if (state.logprobs.isNotEmpty)
+          'logprobs': List<Object?>.unmodifiable(state.logprobs),
       }),
     );
   }
@@ -1157,12 +1168,15 @@ final class OpenAIChatCompletionsCodec {
 
   ProviderMetadata? _responseMetadata(
     Map<String, Object?> response,
-    Map<String, Object?>? choice,
-  ) {
+    Map<String, Object?>? choice, {
+    List<Object?>? logprobs,
+  }) {
     return _providerMetadata({
       'serviceTier': _asString(response['service_tier']),
       'systemFingerprint': _asString(response['system_fingerprint']),
       'finishReason': _asString(choice?['finish_reason']),
+      if (logprobs != null && logprobs.isNotEmpty)
+        'logprobs': List<Object?>.unmodifiable(logprobs),
     });
   }
 
@@ -1173,6 +1187,17 @@ final class OpenAIChatCompletionsCodec {
   List<Object?>? _decodeChatLogprobs(Object? value) {
     final logprobs = _asMap(value);
     return _jsonListOrNull(logprobs?['content']);
+  }
+
+  void _appendLogprobs(
+    List<Object?> into,
+    List<Object?>? logprobs,
+  ) {
+    if (logprobs == null || logprobs.isEmpty) {
+      return;
+    }
+
+    into.addAll(logprobs);
   }
 
   ProviderMetadata? _providerMetadata(Map<String, Object?> values) {

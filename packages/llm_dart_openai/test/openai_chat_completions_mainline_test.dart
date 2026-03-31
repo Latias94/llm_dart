@@ -276,6 +276,10 @@ void main() {
           containsPair('logprobs', responseLogprobs),
         ),
       );
+      expect(
+        result.providerMetadata?['openai'],
+        containsPair('logprobs', responseLogprobs),
+      );
     });
 
     test(
@@ -1159,6 +1163,15 @@ void main() {
       expect(
         textEnd.providerMetadata?['openai'],
         containsPair('responseId', 'chatcmpl_logprobs_stream_1'),
+      );
+
+      final finish = events.whereType<FinishEvent>().single;
+      expect(
+        finish.providerMetadata?['openai'],
+        allOf(
+          containsPair('responseId', 'chatcmpl_logprobs_stream_1'),
+          containsPair('logprobs', responseLogprobs),
+        ),
       );
     });
 

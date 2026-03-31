@@ -29,6 +29,7 @@ The current chat-completions codec already covers:
 - function-tool declaration and tool choice
 - assistant function-call replay for the common subset
 - tool-result replay for the common subset
+- provider-owned `logprobs` request encoding and decode
 - reasoning text decode
 - streamed reasoning, text, and tool-input aggregation
 - xAI citation decode
@@ -119,6 +120,7 @@ The meaningful remaining gaps are now:
 
 - broadened assistant replay fidelity on chat-completions
 - possible richer multimodal parity on the Responses request codec beyond the current user image/file subset, if app usage proves it is necessary
+- any future OpenAI-owned helper surface above raw provider metadata if Flutter or app-level tooling later needs richer logprob/result inspection
 - a decision on whether OpenAI compatibility should ever broaden beyond the current user multimodal plus common function-tool replay subset into richer replay-heavy histories
 
 ## Recommended Next Step

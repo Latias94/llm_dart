@@ -84,6 +84,7 @@
 - [x] Migrate OpenAI embeddings
 - [x] Migrate OpenAI image
 - [x] Migrate OpenAI speech and transcription
+- [x] Align provider-owned OpenAI `logprobs` request encoding and provider-metadata decode without widening the shared core
 - [ ] Implement provider-owned OpenAI Responses persistence options only if a concrete stored-continuation use case requires `store` / `conversation` beyond `previousResponseId`
 - [x] Turn OpenRouter into a profile
 - [x] Turn DeepSeek OpenAI-compatible into a profile

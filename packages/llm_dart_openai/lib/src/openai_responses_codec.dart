@@ -23,6 +23,7 @@ final class OpenAIResponsesStreamState {
   final Set<String> endedTextIds = {};
   final Set<String> startedReasoningIds = {};
   final Set<String> endedReasoningIds = {};
+  final List<Object?> logprobs = [];
 
   String? responseId;
   String? serviceTier;
@@ -124,11 +125,16 @@ final class OpenAIResponsesCodec {
     _throwIfError(response);
 
     final content = <ContentPart>[];
+    final collectedLogprobs = <Object?>[];
     var hasToolCalls = false;
 
     for (final item in _outputItems(response)) {
       final type = _asString(item['type']);
       if (type == 'message') {
+        _collectMessageOutputLogprobs(
+          item,
+          into: collectedLogprobs,
+        );
         content.addAll(_decodeMessageOutput(item));
         continue;
       }
@@ -177,7 +183,10 @@ final class OpenAIResponsesCodec {
       responseTimestamp: _decodeResponseTimestamp(response),
       responseModelId: _asString(response['model']),
       usage: _decodeUsage(_asMap(response['usage'])),
-      providerMetadata: _responseMetadata(response),
+      providerMetadata: _responseMetadata(
+        response,
+        logprobs: collectedLogprobs,
+      ),
       warnings: warnings,
     );
   }
@@ -272,6 +281,10 @@ final class OpenAIResponsesCodec {
 
       final delta = _asString(chunk['delta']);
       if (delta != null && delta.isNotEmpty) {
+        _appendLogprobs(
+          state.logprobs,
+          _jsonListOrNull(chunk['logprobs']),
+        );
         yield TextDeltaEvent(
           id: textId,
           delta: delta,
@@ -628,7 +641,10 @@ final class OpenAIResponsesCodec {
         ),
         rawFinishReason: state.rawFinishReason,
         usage: state.usage,
-        providerMetadata: _responseMetadata(response),
+        providerMetadata: _responseMetadata(
+          response,
+          logprobs: state.logprobs,
+        ),
       );
       return;
     }
@@ -1343,11 +1359,44 @@ final class OpenAIResponsesCodec {
     return null;
   }
 
-  ProviderMetadata? _responseMetadata(Map<String, Object?> response) {
+  ProviderMetadata? _responseMetadata(
+    Map<String, Object?> response, {
+    List<Object?> logprobs = const [],
+  }) {
     return _providerMetadata({
       'status': _asString(response['status']),
       'serviceTier': _asString(response['service_tier']),
+      if (logprobs.isNotEmpty) 'logprobs': List<Object?>.unmodifiable(logprobs),
     });
+  }
+
+  void _collectMessageOutputLogprobs(
+    Map<String, Object?> item, {
+    required List<Object?> into,
+  }) {
+    for (final rawContentPart in _asList(item['content'])) {
+      final contentPart = _asMap(rawContentPart);
+      if (contentPart == null ||
+          _asString(contentPart['type']) != 'output_text') {
+        continue;
+      }
+
+      _appendLogprobs(
+        into,
+        _jsonListOrNull(contentPart['logprobs']),
+      );
+    }
+  }
+
+  void _appendLogprobs(
+    List<Object?> into,
+    List<Object?>? logprobs,
+  ) {
+    if (logprobs == null || logprobs.isEmpty) {
+      return;
+    }
+
+    into.addAll(logprobs);
   }
 
   ProviderMetadata? _itemMetadata(

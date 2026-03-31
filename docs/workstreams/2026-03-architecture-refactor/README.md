@@ -142,6 +142,8 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Audit of which OpenAI assistant replay warning-drops are intentionally aligned with `repo-ref/ai` and which remaining gaps are still provider-owned.
 - [61-openai-responses-persistence-policy.md](61-openai-responses-persistence-policy.md)
   - Frozen conclusion that `store`, `conversation`, and `item_reference` belong to OpenAI-owned Responses persistence policy rather than the shared core.
+- [62-openai-logprobs-alignment.md](62-openai-logprobs-alignment.md)
+  - Frozen conclusion that OpenAI `logprobs` belongs to typed provider options plus provider metadata, not the shared core.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
@@ -186,6 +188,7 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - The shared runner is intentionally narrow and non-streaming; the reference still has a more mature streamed multi-step orchestration loop.
 - Shared capability helper parity now also exists in `llm_dart_core` through `embed(...)`, `embedMany(...)`, `generateImage(...)`, `generateSpeech(...)`, and `transcribe(...)`; embedding, image, and speech migrations now already exist across the OpenAI-family and Google providers through `OpenAI.embeddingModel(...)`, `OpenAI.imageModel(...)`, `OpenAI.speechModel(...)`, `Google.embeddingModel(...)`, `Google.imageModel(...)`, and `Google.speechModel(...)`, and the OpenAI family now also has package-owned `transcriptionModel(...)` migrations. The remaining gap is now Google provider-owned streamed TTS, the still-intentionally thin legacy multimodal-output projection, and the still-unfrozen question of whether embeddings later need shared chunk-splitting policy above the raw model interface; Anthropic is now mostly down to optional custom tool-reference helpers and provider-owned selection, not a replay-policy tail or a separate non-text model migration track.
 - OpenAI-family chat migration is closer to the reference now that the chat-completions path accepts user image/audio/PDF file inputs and the Responses-first compatibility route again covers the common user image/file subset; the main remaining OpenAI-owned gap is now the still-unexposed Responses persistence policy around `store`, `conversation`, and `item_reference`, while assistant replay remains intentionally conservative on the chat-completions path.
+- OpenAI provider-owned `logprobs` handling is now aligned with `repo-ref/ai` through typed `OpenAIGenerateTextOptions.logprobs`, Responses-side automatic `include/top_logprobs` encoding, and text-part / stream-event provider metadata decode, without widening the shared text-generation contract.
 - The remote chat protocol is thinner than the reference `ui-message-stream` layer, which is acceptable for now but still a conscious structural gap.
 
 ### Current Audit Signals

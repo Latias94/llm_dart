@@ -883,6 +883,10 @@ void main() {
           containsPair('logprobs', responseLogprobs),
         ),
       );
+      expect(
+        result.providerMetadata?['openai'],
+        containsPair('logprobs', responseLogprobs),
+      );
     });
 
     test(
@@ -1293,6 +1297,12 @@ void main() {
       final textEnd = events.whereType<TextEndEvent>().single;
       expect(
         textEnd.providerMetadata?['openai'],
+        containsPair('logprobs', responseLogprobs),
+      );
+
+      final finish = events.whereType<FinishEvent>().single;
+      expect(
+        finish.providerMetadata?['openai'],
         containsPair('logprobs', responseLogprobs),
       );
     });
