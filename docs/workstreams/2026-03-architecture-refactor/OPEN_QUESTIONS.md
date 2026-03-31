@@ -417,3 +417,51 @@ Resolved in the current breaking round:
   or the shared runner
 - `49-google-mixed-tool-migration-design.md` documents the frozen migration
   design
+
+## P1 - Newly Opened After The Current Refactor Round
+
+## 35. Whether Structured Generation Should Become A Shared First-Class Module
+
+Needs confirmation:
+
+- should `llm_dart_core` add shared `generateObject` / `streamObject` entry
+  points
+- or should structured generation remain provider-owned through typed
+  `responseFormat` options for now
+
+Current recommendation:
+
+- do not widen the shared core yet
+- first prove a truthful common contract across at least OpenAI and Google for
+  request shape, validation, parse failure, and streamed semantics
+
+## 36. Whether A Shared Streamed Runner Is Worth Adding
+
+Needs confirmation:
+
+- should `llm_dart_core` add a streamed multi-step runner above `streamText(...)`
+- or should the current non-streaming runner remain the only shared
+  orchestration layer for now
+
+Current recommendation:
+
+- keep the current non-streaming runner as the baseline shared layer
+- only revisit a streamed runner after transport maturity lands and at least
+  one concrete shared call path proves the need
+
+## 37. Whether The Remote Chat Protocol Should Grow Toward A Richer UI Stream
+
+Needs confirmation:
+
+- should `HttpChatTransport` later add richer remote chunk families such as
+  start/finish/metadata/abort markers
+- or should it stay intentionally thinner than the reference
+  `ui-message-stream` protocol
+
+Current recommendation:
+
+- keep the current transport protocol and shared `TextStreamEvent` boundary
+  separate
+- add richer remote-only chunk families only if reconnect, server-driven chat
+  UX, or cross-process orchestration proves that the thinner protocol is no
+  longer enough

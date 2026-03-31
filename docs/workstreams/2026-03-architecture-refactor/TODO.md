@@ -51,6 +51,7 @@
 - [x] Design and implement a narrow non-streaming multi-step text generation runner with lifecycle callbacks, synthesized `StepResult` snapshots, and app-supplied common function-tool continuation above the single-step `generateText` / `streamText` helpers
 - [x] Decide whether the shared runner should later add streaming orchestration, `prepareStep`-style mutation hooks, or broader retry/model-switch policies
 - [x] Decide whether approval-gated continuation and provider-native built-in tool continuation should stay provider/session-owned or ever gain a shared runner path
+- [ ] Decide whether structured generation should become a shared `generateObject` / `streamObject` layer instead of remaining provider-owned `responseFormat` options
 - [ ] Re-evaluate shared runner expansion only after a replay-safe approval or provider-executed continuation contract is proven across at least two provider families
 - [ ] Re-evaluate whether a constrained pre-step hook or a separate streamed runner is justified after the narrow runner is used by at least two concrete shared call paths
 - [ ] Implement `embed` / `embedMany`
@@ -152,6 +153,7 @@
 - [x] Implement `ChatSessionSnapshot` export and import
 - [x] Design and implement the baseline tool approval and output injection API
 - [x] Rewrite the Flutter integration examples
+- [ ] Decide whether `HttpChatTransport` should later gain a richer remote chunk protocol beyond serialized `TextStreamEvent` envelopes and UI snapshots
 
 ## Compatibility Layer
 

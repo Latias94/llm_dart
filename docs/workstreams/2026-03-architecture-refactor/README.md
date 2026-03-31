@@ -118,6 +118,8 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Frozen design for provider-owned native-tool forcing/selection without widening shared `ToolChoice`, including Anthropic-first and Google-model-gated constraints.
 - [49-google-mixed-tool-migration-design.md](49-google-mixed-tool-migration-design.md)
   - Frozen migration design for Gemini 3 mixed built-in/function tools, provider-owned server-side tool-context circulation, and the remaining Google-owned policy gaps after the first mixed-tool subset landed.
+- [50-repo-ref-structure-gap-review.md](50-repo-ref-structure-gap-review.md)
+  - Consolidated review of what is already structurally aligned with `repo-ref/ai`, which differences are deliberate, and which structural gaps still remain worth addressing.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
@@ -154,6 +156,15 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - Keep search typed APIs provider-owned: OpenRouter through model/profile shaping, xAI through provider-owned invocation options, and shared core only on sources/citations.
 - Keep richer provider-native replay contracts provider-owned as well, using custom parts and provider metadata instead of widening shared tool-result models.
 - Get the text generation path and the Flutter chat path right first, and migrate everything else afterward.
+- Prioritize the remaining real structural gaps over package-count parity with the reference: shared structured generation, transport maturity, carefully-scoped streamed orchestration, and capability-module parity.
+
+### Remaining Structural Gaps Versus `repo-ref/ai`
+
+- A shared `generateObject` / `streamObject`-style module does not exist yet; structured generation still mostly enters through provider-owned `responseFormat` options.
+- The shared runner is intentionally narrow and non-streaming; the reference still has a more mature streamed multi-step orchestration loop.
+- `llm_dart_transport` still needs its remaining productized shared infrastructure: stream chunk parsing, retry/timeout completion, and diagnostics.
+- Embedding, image, speech, and transcription already have shared interface direction, but their top-level helper and provider-migration parity are still incomplete.
+- The remote chat protocol is thinner than the reference `ui-message-stream` layer, which is acceptable for now but still a conscious structural gap.
 
 ### Current Audit Signals
 
