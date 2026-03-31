@@ -363,8 +363,9 @@ Resolved in the current breaking round:
 - Anthropic can mix native and shared tool declarations in one request, but
   provider-executed continuation and native result families remain
   provider-owned
-- Google native tools remain provider-owned and effectively exclusive per call,
-  with warning-based downgrade when mixed with shared tool config
+- Google native tools remain provider-owned, and Gemini 3 mixed native-plus-
+  function-tool requests now stay model-gated behind
+  `includeServerSideToolInvocations`
 - provider-native tool forcing or selection must remain provider-owned rather
   than widening shared `ToolChoice`
 - `47-provider-tool-and-continuation-matrix.md` documents the audited matrix
@@ -380,7 +381,39 @@ Resolved in the current breaking round:
   `toolChoice`
 - Anthropic is the first realistic provider candidate for a later
   provider-owned selection surface
-- Google should not expose a public native-tool selection API until the
-  migrated provider path supports a proven mixed-tool wire contract
+- Google should not expose a public native-tool selection API until a concrete
+  policy need appears beyond the current model-gated mixed-tool circulation
+  contract
 - `48-provider-owned-native-tool-selection-design.md` documents the frozen
+  design
+
+## 34. Google Mixed-Tool Migration Contract
+
+Resolved in the current breaking round:
+
+- official Gemini 3 docs now describe a broader mixed built-in/function-tool
+  `generateContent` path
+- that path depends on server-side tool-context circulation rather than just a
+  wider request-side tool list
+- `llm_dart_google` now implements a provider-owned Gemini 3 mixed-tool subset:
+  built-in tools plus function declarations in one request, guarded by
+  `includeServerSideToolInvocations`
+- current Google behavior stays intentionally conservative outside that subset:
+  non-Gemini-3 models reject the circulation flag, and native-tool calls
+  without the flag still warning-drop shared function-tool config
+- one replay prerequisite is now closed:
+  provider-originated Gemini 3 `functionCall.id` values now survive decode and
+  common function-tool continuation when the provider actually returned them
+- another replay prerequisite is now closed:
+  Google now has a provider-owned `google.result.function_response` helper for
+  exact multimodal `functionResponse.parts` follow-up replay of common
+  function-tool results
+- another circulation slice is now closed:
+  assistant-side Google server `toolCall` / `toolResponse` parts can now round
+  trip through provider-owned custom content/UI/prompt/event payloads without
+  widening the shared event model
+- the remaining Google questions are now about public selection policy and
+  richer Flutter/renderer projection, not about widening shared `ToolChoice`
+  or the shared runner
+- `49-google-mixed-tool-migration-design.md` documents the frozen migration
   design

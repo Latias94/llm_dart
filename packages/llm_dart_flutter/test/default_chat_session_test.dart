@@ -797,6 +797,161 @@ void main() {
     });
 
     test(
+        'replays Google server-side tool circulation through assistant custom prompt parts',
+        () async {
+      final capturedRequests = <ChatTransportRequest>[];
+
+      final session = DefaultChatSession(
+        transport: _FakeChatTransport(
+          onSendMessages: (request) {
+            capturedRequests.add(request);
+
+            switch (capturedRequests.length) {
+              case 1:
+                return Stream<TextStreamEvent>.fromIterable([
+                  StartEvent(),
+                  const CustomEvent(
+                    kind: 'google.result.tool_call',
+                    data: {
+                      'schema': 'google.tool_call.v1',
+                      'replayRole': 'assistant',
+                      'toolCallId': 'srvtool_1',
+                      'toolName': 'google_search',
+                      'toolCall': {
+                        'id': 'srvtool_1',
+                        'toolType': 'google_search',
+                        'query': 'Dart SDK',
+                      },
+                    },
+                    providerMetadata: ProviderMetadata({
+                      'google': {
+                        'thoughtSignature': 'sig_srvtool_1',
+                        'serverToolPart': 'toolCall',
+                        'toolCallId': 'srvtool_1',
+                        'toolType': 'google_search',
+                      },
+                    }),
+                  ),
+                  const CustomEvent(
+                    kind: 'google.result.tool_response',
+                    data: {
+                      'schema': 'google.tool_response.v1',
+                      'replayRole': 'assistant',
+                      'toolCallId': 'srvtool_1',
+                      'toolName': 'google_search',
+                      'toolResponse': {
+                        'id': 'srvtool_1',
+                        'toolType': 'google_search',
+                        'result': {
+                          'items': [
+                            {
+                              'uri': 'https://dart.dev',
+                              'title': 'Dart',
+                            },
+                          ],
+                        },
+                      },
+                    },
+                    providerMetadata: ProviderMetadata({
+                      'google': {
+                        'serverToolPart': 'toolResponse',
+                        'toolCallId': 'srvtool_1',
+                        'toolType': 'google_search',
+                      },
+                    }),
+                  ),
+                  const TextStartEvent(id: 'text-1'),
+                  const TextDeltaEvent(
+                    id: 'text-1',
+                    delta: 'Dart search finished.',
+                  ),
+                  const TextEndEvent(id: 'text-1'),
+                  const FinishEvent(finishReason: FinishReason.stop),
+                ]);
+              default:
+                return Stream<TextStreamEvent>.fromIterable([
+                  StartEvent(),
+                  const TextStartEvent(id: 'text-2'),
+                  const TextDeltaEvent(
+                    id: 'text-2',
+                    delta: 'Follow-up reply.',
+                  ),
+                  const TextEndEvent(id: 'text-2'),
+                  const FinishEvent(finishReason: FinishReason.stop),
+                ]);
+            }
+          },
+        ),
+      );
+
+      await session.sendMessage(ChatInput.text('Search for Dart.'));
+
+      final assistantMessage = session.state.messages.last;
+      final customParts = assistantMessage.parts.whereType<CustomUiPart>().toList(
+            growable: false,
+          );
+      expect(
+        customParts.map((part) => part.kind),
+        orderedEquals([
+          'google.result.tool_call',
+          'google.result.tool_response',
+        ]),
+      );
+
+      await session.sendMessage(ChatInput.text('What next?'));
+
+      expect(capturedRequests, hasLength(2));
+      final replayPrompt = capturedRequests[1].prompt;
+      expect(replayPrompt, hasLength(3));
+      final assistantPrompt = replayPrompt[1] as AssistantPromptMessage;
+      expect(assistantPrompt.parts, hasLength(3));
+
+      final replayedToolCall = assistantPrompt.parts[0] as CustomPromptPart;
+      expect(replayedToolCall.kind, 'google.result.tool_call');
+      expect(replayedToolCall.data, {
+        'schema': 'google.tool_call.v1',
+        'replayRole': 'assistant',
+        'toolCallId': 'srvtool_1',
+        'toolName': 'google_search',
+        'toolCall': {
+          'id': 'srvtool_1',
+          'toolType': 'google_search',
+          'query': 'Dart SDK',
+        },
+      });
+      expect(
+        replayedToolCall.providerMetadata!['google'],
+        containsPair('thoughtSignature', 'sig_srvtool_1'),
+      );
+
+      final replayedToolResponse = assistantPrompt.parts[1] as CustomPromptPart;
+      expect(replayedToolResponse.kind, 'google.result.tool_response');
+      expect(replayedToolResponse.data, {
+        'schema': 'google.tool_response.v1',
+        'replayRole': 'assistant',
+        'toolCallId': 'srvtool_1',
+        'toolName': 'google_search',
+        'toolResponse': {
+          'id': 'srvtool_1',
+          'toolType': 'google_search',
+          'result': {
+            'items': [
+              {
+                'uri': 'https://dart.dev',
+                'title': 'Dart',
+              },
+            ],
+          },
+        },
+      });
+
+      final replayedText = assistantPrompt.parts[2] as TextPromptPart;
+      expect(replayedText.text, 'Dart search finished.');
+
+      await session.dispose();
+    });
+
+    test(
         'replays provider-executed code-execution tool results through custom prompt parts',
         () async {
       final capturedRequests = <ChatTransportRequest>[];
@@ -2318,6 +2473,155 @@ void main() {
         replayedTextPart.providerMetadata!['google'],
         containsPair('responsePart', 'visible_text'),
       );
+
+      await exportingSession.dispose();
+      await restoredSession.dispose();
+    });
+
+    test(
+        'restores snapshots with Google server-side tool replay for follow-up requests',
+        () async {
+      final exportingSession = DefaultChatSession(
+        transport: _FakeChatTransport(
+          onSendMessages: (request) => Stream<TextStreamEvent>.fromIterable([
+            StartEvent(),
+            const CustomEvent(
+              kind: 'google.result.tool_call',
+              data: {
+                'schema': 'google.tool_call.v1',
+                'replayRole': 'assistant',
+                'toolCallId': 'srvtool_1',
+                'toolName': 'google_search',
+                'toolCall': {
+                  'id': 'srvtool_1',
+                  'toolType': 'google_search',
+                  'query': 'Dart SDK',
+                },
+              },
+              providerMetadata: ProviderMetadata({
+                'google': {
+                  'thoughtSignature': 'sig_srvtool_1',
+                  'serverToolPart': 'toolCall',
+                  'toolCallId': 'srvtool_1',
+                  'toolType': 'google_search',
+                },
+              }),
+            ),
+            const CustomEvent(
+              kind: 'google.result.tool_response',
+              data: {
+                'schema': 'google.tool_response.v1',
+                'replayRole': 'assistant',
+                'toolCallId': 'srvtool_1',
+                'toolName': 'google_search',
+                'toolResponse': {
+                  'id': 'srvtool_1',
+                  'toolType': 'google_search',
+                  'result': {
+                    'items': [
+                      {
+                        'uri': 'https://dart.dev',
+                        'title': 'Dart',
+                      },
+                    ],
+                  },
+                },
+              },
+              providerMetadata: ProviderMetadata({
+                'google': {
+                  'serverToolPart': 'toolResponse',
+                  'toolCallId': 'srvtool_1',
+                  'toolType': 'google_search',
+                },
+              }),
+            ),
+            const TextStartEvent(id: 'text-1'),
+            const TextDeltaEvent(
+              id: 'text-1',
+              delta: 'Dart search finished.',
+            ),
+            const TextEndEvent(id: 'text-1'),
+            const FinishEvent(finishReason: FinishReason.stop),
+          ]),
+        ),
+      );
+
+      await exportingSession.sendMessage(ChatInput.text('Search for Dart.'));
+
+      const codec = ChatSessionSnapshotJsonCodec();
+      final encodedSnapshot =
+          codec.encodeSnapshot(exportingSession.exportSnapshot());
+      final decodedSnapshot = codec.decodeSnapshot(encodedSnapshot);
+
+      final capturedRequests = <ChatTransportRequest>[];
+      final restoredSession = DefaultChatSession.fromSnapshot(
+        transport: _FakeChatTransport(
+          onSendMessages: (request) {
+            capturedRequests.add(request);
+            return Stream<TextStreamEvent>.fromIterable([
+              StartEvent(),
+              const TextStartEvent(id: 'text-2'),
+              const TextDeltaEvent(
+                id: 'text-2',
+                delta: 'Restored Google tool replay works.',
+              ),
+              const TextEndEvent(id: 'text-2'),
+              const FinishEvent(finishReason: FinishReason.stop),
+            ]);
+          },
+        ),
+        snapshot: decodedSnapshot,
+      );
+
+      await restoredSession.sendMessage(ChatInput.text('What next?'));
+
+      expect(capturedRequests, hasLength(1));
+      expect(capturedRequests.single.prompt, hasLength(3));
+      final assistantPrompt =
+          capturedRequests.single.prompt[1] as AssistantPromptMessage;
+      expect(assistantPrompt.parts, hasLength(3));
+
+      final replayedToolCall = assistantPrompt.parts[0] as CustomPromptPart;
+      expect(replayedToolCall.kind, 'google.result.tool_call');
+      expect(replayedToolCall.data, {
+        'schema': 'google.tool_call.v1',
+        'replayRole': 'assistant',
+        'toolCallId': 'srvtool_1',
+        'toolName': 'google_search',
+        'toolCall': {
+          'id': 'srvtool_1',
+          'toolType': 'google_search',
+          'query': 'Dart SDK',
+        },
+      });
+      expect(
+        replayedToolCall.providerMetadata!['google'],
+        containsPair('thoughtSignature', 'sig_srvtool_1'),
+      );
+
+      final replayedToolResponse = assistantPrompt.parts[1] as CustomPromptPart;
+      expect(replayedToolResponse.kind, 'google.result.tool_response');
+      expect(replayedToolResponse.data, {
+        'schema': 'google.tool_response.v1',
+        'replayRole': 'assistant',
+        'toolCallId': 'srvtool_1',
+        'toolName': 'google_search',
+        'toolResponse': {
+          'id': 'srvtool_1',
+          'toolType': 'google_search',
+          'result': {
+            'items': [
+              {
+                'uri': 'https://dart.dev',
+                'title': 'Dart',
+              },
+            ],
+          },
+        },
+      });
+
+      final replayedText = assistantPrompt.parts[2] as TextPromptPart;
+      expect(replayedText.text, 'Dart search finished.');
 
       await exportingSession.dispose();
       await restoredSession.dispose();

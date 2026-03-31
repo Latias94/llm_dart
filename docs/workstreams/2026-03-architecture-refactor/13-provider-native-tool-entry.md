@@ -46,14 +46,16 @@ These tools live in `llm_dart_google` and are passed through:
 Current behavior:
 
 - Google native tools are encoded into Google-native `tools` payloads
-- if Google native tools are active, common function-tool declarations are
-  currently ignored for that call
-- common `toolChoice` is also ignored for that call
-- the codec emits warnings instead of silently pretending that mixed-tool
-  behavior is fully normalized
+- Gemini 3 can combine Google native tools and common function-tool
+  declarations when the provider-owned
+  `includeServerSideToolInvocations` contract is enabled
+- outside that model-gated path, common function-tool declarations are ignored
+  with warnings when native Google tools are active
+- outside that model-gated path, common `toolChoice` is also ignored with
+  warnings when native Google tools are active
 
-This is intentionally conservative because Google's function-calling config and
-provider-native tools do not currently form one clean shared contract.
+This remains provider-owned because Google's mixed-tool circulation contract is
+model-gated and still not a good basis for widening the shared core.
 
 ## Anthropic
 

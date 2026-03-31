@@ -67,6 +67,7 @@ void main() {
                 'parts': [
                   {
                     'functionCall': {
+                      'id': 'call_google_1',
                       'name': 'weather',
                       'args': {
                         'city': 'Hong Kong',
@@ -110,10 +111,12 @@ void main() {
       expect(events.whereType<ReasoningEndEvent>().single.id, '1');
 
       final toolInputStart = events.whereType<ToolInputStartEvent>().single;
+      expect(toolInputStart.toolCallId, 'call_google_1');
       expect(toolInputStart.toolName, 'weather');
       final toolInputDelta = events.whereType<ToolInputDeltaEvent>().single;
       expect(toolInputDelta.delta, '{"city":"Hong Kong"}');
       final toolCall = events.whereType<ToolCallEvent>().single.toolCall;
+      expect(toolCall.toolCallId, 'call_google_1');
       expect(toolCall.toolName, 'weather');
       expect(
         toolCall.input,
@@ -243,6 +246,78 @@ void main() {
       expect(fileEvent.file.mediaType, 'application/pdf');
       expect(fileEvent.file.bytes, [1, 2, 3]);
       expect(events.whereType<ReasoningFileEvent>(), isEmpty);
+    });
+
+    test(
+        'maps server-side tool-call and tool-response parts into custom events',
+        () {
+      final state = GoogleGenerateContentStreamState();
+      final events = codec.decodeChunk(
+        {
+          'candidates': [
+            {
+              'content': {
+                'parts': [
+                  {
+                    'text': 'Before tool.',
+                  },
+                  {
+                    'toolCall': {
+                      'id': 'srvtool_1',
+                      'toolType': 'google_search',
+                      'query': 'Dart SDK',
+                    },
+                    'thoughtSignature': 'sig_srvtool_1',
+                  },
+                  {
+                    'toolResponse': {
+                      'id': 'srvtool_1',
+                      'toolType': 'google_search',
+                      'result': {
+                        'items': [
+                          {
+                            'uri': 'https://dart.dev',
+                            'title': 'Dart',
+                          },
+                        ],
+                      },
+                    },
+                  },
+                ],
+              },
+              'finishReason': 'STOP',
+            },
+          ],
+        },
+        state,
+      ).toList();
+
+      expect(events.whereType<TextStartEvent>().single.id, '0');
+      expect(events.whereType<TextEndEvent>().single.id, '0');
+      expect(events.whereType<ToolCallEvent>(), isEmpty);
+      expect(events.whereType<ToolResultEvent>(), isEmpty);
+
+      final customEvents = events.whereType<CustomEvent>().toList();
+      expect(customEvents, hasLength(2));
+
+      final toolCallReplay =
+          GoogleToolCallReplay.tryParseEvent(customEvents.first);
+      expect(toolCallReplay, isNotNull);
+      expect(toolCallReplay!.toolCallId, 'srvtool_1');
+      expect(toolCallReplay.toolName, 'google_search');
+      expect(
+        toolCallReplay.providerMetadata?.values['google'],
+        allOf(
+          containsPair('serverToolPart', 'toolCall'),
+          containsPair('thoughtSignature', 'sig_srvtool_1'),
+        ),
+      );
+
+      final toolResponseReplay =
+          GoogleToolResponseReplay.tryParseEvent(customEvents.last);
+      expect(toolResponseReplay, isNotNull);
+      expect(toolResponseReplay!.toolCallId, 'srvtool_1');
+      expect(toolResponseReplay.toolName, 'google_search');
     });
   });
 }

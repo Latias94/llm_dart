@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 
+import 'google_server_tool_replay.dart';
 import 'google_shared.dart';
 
 final class GoogleGenerateContentStreamState {
@@ -160,7 +161,12 @@ final class GoogleGenerateContentStreamCodec {
         }
 
         state.hasClientToolCalls = true;
-        final toolCallId = 'tool-${state.toolCounter++}';
+        final functionCallId = asString(functionCall?['id']);
+        final toolCallId = functionCallId ?? 'tool-${state.toolCounter++}';
+        final functionCallMetadata = mergeProviderMetadata(
+          metadata,
+          _functionCallIdMetadata(functionCallId),
+        );
         final input = normalizeJsonValue(functionCall?['args']) ??
             const <String, Object?>{};
         final encodedInput = jsonEncode(input);
@@ -168,16 +174,16 @@ final class GoogleGenerateContentStreamCodec {
         yield ToolInputStartEvent(
           toolCallId: toolCallId,
           toolName: toolName,
-          providerMetadata: metadata,
+          providerMetadata: functionCallMetadata,
         );
         yield ToolInputDeltaEvent(
           toolCallId: toolCallId,
           delta: encodedInput,
-          providerMetadata: metadata,
+          providerMetadata: functionCallMetadata,
         );
         yield ToolInputEndEvent(
           toolCallId: toolCallId,
-          providerMetadata: metadata,
+          providerMetadata: functionCallMetadata,
         );
         yield ToolCallEvent(
           toolCall: ToolCallContent(
@@ -185,8 +191,40 @@ final class GoogleGenerateContentStreamCodec {
             toolName: toolName,
             input: input,
           ),
+          providerMetadata: functionCallMetadata,
+        );
+        continue;
+      }
+
+      if (part case {'toolCall': final Object? toolCallValue}) {
+        yield* _closeOpenBlocks(state);
+
+        final toolCall = asMap(toolCallValue);
+        if (toolCall == null) {
+          continue;
+        }
+
+        final replay = GoogleToolCallReplay.fromToolCall(
+          toolCall,
           providerMetadata: metadata,
         );
+        yield replay.toCustomEvent();
+        continue;
+      }
+
+      if (part case {'toolResponse': final Object? toolResponseValue}) {
+        yield* _closeOpenBlocks(state);
+
+        final toolResponse = asMap(toolResponseValue);
+        if (toolResponse == null) {
+          continue;
+        }
+
+        final replay = GoogleToolResponseReplay.fromToolResponse(
+          toolResponse,
+          providerMetadata: metadata,
+        );
+        yield replay.toCustomEvent();
         continue;
       }
 
@@ -366,6 +404,16 @@ final class GoogleGenerateContentStreamCodec {
     return googleProviderMetadata({
       'thoughtSignature': thoughtSignature,
       if (isThought) 'thought': true,
+    });
+  }
+
+  ProviderMetadata? _functionCallIdMetadata(String? functionCallId) {
+    if (functionCallId == null || functionCallId.isEmpty) {
+      return null;
+    }
+
+    return googleProviderMetadata({
+      'functionCallId': functionCallId,
     });
   }
 

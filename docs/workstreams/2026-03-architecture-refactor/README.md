@@ -115,7 +115,9 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - [47-provider-tool-and-continuation-matrix.md](47-provider-tool-and-continuation-matrix.md)
   - Audited provider matrix for tool declaration, provider-native continuation, approval handling, warning-based downgrade rules, and shared-runner ineligibility.
 - [48-provider-owned-native-tool-selection-design.md](48-provider-owned-native-tool-selection-design.md)
-  - Frozen design for provider-owned native-tool forcing/selection without widening shared `ToolChoice`, including Anthropic-first and Google-not-yet rules.
+  - Frozen design for provider-owned native-tool forcing/selection without widening shared `ToolChoice`, including Anthropic-first and Google-model-gated constraints.
+- [49-google-mixed-tool-migration-design.md](49-google-mixed-tool-migration-design.md)
+  - Frozen migration design for Gemini 3 mixed built-in/function tools, provider-owned server-side tool-context circulation, and the remaining Google-owned policy gaps after the first mixed-tool subset landed.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
@@ -150,6 +152,7 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - Build an internal workspace first, then decide later which packages should be published separately.
 - Let the root `AI` facade expose the OpenAI-family providers as convenience constructors, while keeping legacy compatibility routing as a separate concern.
 - Keep search typed APIs provider-owned: OpenRouter through model/profile shaping, xAI through provider-owned invocation options, and shared core only on sources/citations.
+- Keep richer provider-native replay contracts provider-owned as well, using custom parts and provider metadata instead of widening shared tool-result models.
 - Get the text generation path and the Flutter chat path right first, and migrate everything else afterward.
 
 ### Current Audit Signals

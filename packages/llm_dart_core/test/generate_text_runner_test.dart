@@ -68,6 +68,11 @@ void main() {
                   'city': 'Tokyo',
                 },
               ),
+              providerMetadata: ProviderMetadata({
+                'google': {
+                  'functionCallId': 'tool-1',
+                },
+              }),
             ),
           ],
           finishReason: FinishReason.toolCalls,
@@ -145,6 +150,14 @@ void main() {
         'forecast': 'sunny',
       });
       expect(toolResult.isError, isFalse);
+      expect(
+        toolResult.providerMetadata,
+        const ProviderMetadata({
+          'google': {
+            'functionCallId': 'tool-1',
+          },
+        }),
+      );
 
       expect(runResult.steps, hasLength(2));
       expect(runResult.text, 'It is sunny in Tokyo.');

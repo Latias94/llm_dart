@@ -104,6 +104,17 @@
 - [x] Migrate the Gemini language model
 - [x] Add the initial Google native tool entry API
 - [x] Preserve Google thought signatures and thought files through prompt replay
+- [x] Re-audit Gemini 3 mixed-tool request support and tool-context circulation before exposing any public Google native-tool selection API
+- [x] Introduce a provider-owned Google `includeServerSideToolInvocations` option surface
+- [x] Preserve Google provider-originated Gemini 3 `functionCall.id` values through result decode, runner continuation, and request replay for common function-tool history
+- [x] Add a provider-owned Google `functionResponse` replay helper for multimodal Gemini 3 follow-up turns without widening the shared tool-result model
+- [x] Add provider-owned Google custom replay helpers for assistant-side `toolCall` / `toolResponse` circulation history
+- [x] Decode Google server-side `toolCall` / `toolResponse` parts into provider-owned custom content and stream events
+- [x] Enable the provider-owned Google mixed-tool circulation option for Gemini 3
+- [x] Migrate Google mixed built-in + function-tool request encoding for Gemini 3
+- [x] Preserve Google mixed-tool replay IDs and server-side tool context through follow-up prompt encoding
+- [x] Add provider-owned Google custom-part parser helpers for Flutter or other UI renderers
+- [ ] Decide whether any Google `toolCall` / `toolResponse` families should later gain richer shared projection or dedicated Flutter renderers beyond provider-owned custom replay
 - [ ] Migrate the Gemini image model
 - [ ] Migrate the Gemini embedding model
 - [ ] Migrate Gemini speech and TTS
@@ -225,4 +236,4 @@
 - [x] Freeze provider-native tool entry placement in provider packages
 - [x] Design provider-owned native-tool forcing or selection APIs without widening shared `ToolChoice`
 - [ ] Implement Anthropic provider-owned tool-selection options only if a real native-tool forcing use case appears beyond the current shared subset
-- [ ] Re-audit Google mixed-tool request support and tool-context circulation before exposing any public Google native-tool selection API
+- [ ] Expose any public Google native-tool selection or forcing API only after the Gemini 3 mixed-tool wire contract is implemented

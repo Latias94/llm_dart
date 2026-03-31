@@ -2,8 +2,10 @@ import 'dart:convert';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 
+import 'google_function_response_replay.dart';
 import 'google_options.dart';
 import 'google_response_format.dart';
+import 'google_server_tool_replay.dart';
 import 'google_shared.dart';
 import 'google_tools.dart';
 
@@ -58,7 +60,10 @@ final class GoogleGenerateContentCodec {
       }
 
       sawConversationMessage = true;
-      final encodedMessage = _encodeMessage(message);
+      final encodedMessage = _encodeMessage(
+        message,
+        modelId: modelId,
+      );
       if (encodedMessage != null) {
         contents.add(encodedMessage);
       }
@@ -132,6 +137,21 @@ final class GoogleGenerateContentCodec {
 
     final safetySettings =
         providerOptions.safetySettings ?? settings.safetySettings;
+    final includeServerSideToolInvocations =
+        providerOptions.includeServerSideToolInvocations ??
+            settings.includeServerSideToolInvocations;
+    final promptRequiresServerToolReplay =
+        _promptRequiresServerToolReplay(prompt);
+    _validateServerSideToolInvocations(
+      modelId: modelId,
+      includeServerSideToolInvocations: includeServerSideToolInvocations,
+    );
+    if (promptRequiresServerToolReplay &&
+        !includeServerSideToolInvocations) {
+      throw UnsupportedError(
+        'Google server-side tool replay requires includeServerSideToolInvocations=true for Gemini 3 follow-up requests.',
+      );
+    }
     final nativeTools = providerOptions.tools ?? settings.tools;
     final encodedNativeTools = _encodeNativeTools(
       modelId: modelId,
@@ -139,39 +159,60 @@ final class GoogleGenerateContentCodec {
       warnings: warnings,
     );
     final useNativeTools = encodedNativeTools.isNotEmpty;
+    final useMixedTools = _supportsMixedToolRequests(
+      modelId: modelId,
+      includeServerSideToolInvocations: includeServerSideToolInvocations,
+      hasNativeTools: useNativeTools,
+      hasFunctionTools: tools.isNotEmpty,
+    );
 
-    if (useNativeTools && tools.isNotEmpty) {
+    if (useNativeTools && tools.isNotEmpty && !useMixedTools) {
       warnings.add(
-        const ModelWarning(
+        ModelWarning(
           type: ModelWarningType.unsupported,
           field: 'tools',
-          message:
-              'Google native tools do not mix cleanly with common function tools yet. The common function tools have been ignored for this call.',
+          message: isGemini3Model(modelId)
+              ? 'Gemini 3 mixed Google native tools and common function tools require includeServerSideToolInvocations=true. The common function tools have been ignored for this call.'
+              : 'Google native tools do not mix cleanly with common function tools yet. The common function tools have been ignored for this call.',
         ),
       );
     }
 
-    if (useNativeTools && toolChoice != null) {
+    if (useNativeTools && toolChoice != null && !useMixedTools) {
       warnings.add(
-        const ModelWarning(
+        ModelWarning(
           type: ModelWarningType.compatibility,
           field: 'toolChoice',
-          message:
-              'toolChoice is ignored when Google native tools are enabled for this call.',
+          message: isGemini3Model(modelId)
+              ? 'toolChoice is ignored when Google native tools are enabled unless includeServerSideToolInvocations=true is set for a Gemini 3 mixed-tool request.'
+              : 'toolChoice is ignored when Google native tools are enabled for this call.',
         ),
       );
     }
 
-    final encodedFunctionTools =
-        useNativeTools ? null : _encodeFunctionTools(tools);
-    final encodedToolConfig = useNativeTools
-        ? null
-        : _encodeToolConfig(
-            tools: tools,
-            toolChoice: toolChoice,
-          );
-    final encodedTools =
-        encodedNativeTools.isNotEmpty ? encodedNativeTools : encodedFunctionTools;
+    final encodedFunctionTools = _encodeFunctionTools(tools);
+    final shouldIncludeServerSideToolInvocations =
+        includeServerSideToolInvocations &&
+            (useNativeTools ||
+                tools.isNotEmpty ||
+                promptRequiresServerToolReplay);
+    final encodedToolConfig = _encodeToolConfig(
+      tools: useMixedTools || !useNativeTools ? tools : const [],
+      toolChoice: useMixedTools || !useNativeTools ? toolChoice : null,
+      includeServerSideToolInvocations: shouldIncludeServerSideToolInvocations,
+    );
+
+    List<Object?>? encodedTools;
+    if (useMixedTools) {
+      encodedTools = [
+        ...encodedNativeTools,
+        ...?encodedFunctionTools,
+      ];
+    } else if (encodedNativeTools.isNotEmpty) {
+      encodedTools = encodedNativeTools;
+    } else {
+      encodedTools = encodedFunctionTools;
+    }
 
     final body = <String, Object?>{
       'contents': contents,
@@ -249,38 +290,48 @@ final class GoogleGenerateContentCodec {
   Map<String, Object?>? _encodeToolConfig({
     required List<FunctionToolDefinition> tools,
     required ToolChoice? toolChoice,
+    required bool includeServerSideToolInvocations,
   }) {
-    if (tools.isEmpty) {
+    if (tools.isEmpty && !includeServerSideToolInvocations) {
       return null;
     }
 
-    final hasStrictTools = tools.any((tool) => tool.strict == true);
-    String? mode;
-    List<String>? allowedFunctionNames;
+    Map<String, Object?>? functionCallingConfig;
+    if (tools.isNotEmpty) {
+      final hasStrictTools = tools.any((tool) => tool.strict == true);
+      String? mode;
+      List<String>? allowedFunctionNames;
 
-    switch (toolChoice) {
-      case null:
-        if (!hasStrictTools) {
-          return null;
-        }
-        mode = 'VALIDATED';
-      case AutoToolChoice():
-        mode = hasStrictTools ? 'VALIDATED' : 'AUTO';
-      case NoneToolChoice():
-        mode = 'NONE';
-      case RequiredToolChoice():
-        mode = hasStrictTools ? 'VALIDATED' : 'ANY';
-      case SpecificToolChoice(toolName: final toolName):
-        mode = hasStrictTools ? 'VALIDATED' : 'ANY';
-        allowedFunctionNames = [toolName];
+      switch (toolChoice) {
+        case null:
+          if (hasStrictTools) {
+            mode = 'VALIDATED';
+          }
+        case AutoToolChoice():
+          mode = hasStrictTools ? 'VALIDATED' : 'AUTO';
+        case NoneToolChoice():
+          mode = 'NONE';
+        case RequiredToolChoice():
+          mode = hasStrictTools ? 'VALIDATED' : 'ANY';
+        case SpecificToolChoice(toolName: final toolName):
+          mode = hasStrictTools ? 'VALIDATED' : 'ANY';
+          allowedFunctionNames = [toolName];
+      }
+
+      if (mode != null) {
+        functionCallingConfig = {
+          'mode': mode,
+          if (allowedFunctionNames != null)
+            'allowedFunctionNames': allowedFunctionNames,
+        };
+      }
     }
 
     return {
-      'functionCallingConfig': {
-        'mode': mode,
-        if (allowedFunctionNames != null)
-          'allowedFunctionNames': allowedFunctionNames,
-      },
+      if (includeServerSideToolInvocations)
+        'includeServerSideToolInvocations': true,
+      if (functionCallingConfig != null)
+        'functionCallingConfig': functionCallingConfig,
     };
   }
 
@@ -292,6 +343,57 @@ final class GoogleGenerateContentCodec {
         normalized.contains('nano-banana');
   }
 
+  void _validateServerSideToolInvocations({
+    required String modelId,
+    required bool includeServerSideToolInvocations,
+  }) {
+    if (!includeServerSideToolInvocations) {
+      return;
+    }
+
+    if (!isGemini3Model(modelId)) {
+      throw UnsupportedError(
+        'Google includeServerSideToolInvocations is currently only supported for Gemini 3 models.',
+      );
+    }
+  }
+
+  bool _supportsMixedToolRequests({
+    required String modelId,
+    required bool includeServerSideToolInvocations,
+    required bool hasNativeTools,
+    required bool hasFunctionTools,
+  }) {
+    return isGemini3Model(modelId) &&
+        includeServerSideToolInvocations &&
+        hasNativeTools &&
+        hasFunctionTools;
+  }
+
+  bool _promptRequiresServerToolReplay(List<PromptMessage> prompt) {
+    for (final message in prompt) {
+      final parts = switch (message) {
+        UserPromptMessage(:final parts) => parts,
+        AssistantPromptMessage(:final parts) => parts,
+        ToolPromptMessage(:final parts) => parts,
+        SystemPromptMessage(:final parts) => parts,
+      };
+
+      for (final part in parts) {
+        if (part is! CustomPromptPart) {
+          continue;
+        }
+
+        if (part.kind == GoogleToolCallReplay.kind ||
+            part.kind == GoogleToolResponseReplay.kind) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
   Map<String, Object?> _normalizeGoogleResponseSchema(
     GoogleJsonSchemaResponseFormat responseFormat,
   ) {
@@ -300,7 +402,10 @@ final class GoogleGenerateContentCodec {
     return normalized;
   }
 
-  Map<String, Object?>? _encodeMessage(PromptMessage message) {
+  Map<String, Object?>? _encodeMessage(
+    PromptMessage message, {
+    required String modelId,
+  }) {
     if (message case UserPromptMessage(:final parts)) {
       return {
         'role': 'user',
@@ -313,7 +418,12 @@ final class GoogleGenerateContentCodec {
     if (message case AssistantPromptMessage(:final parts)) {
       final encodedParts = [
         for (final part in parts)
-          if (_encodeAssistantPart(part) case final encodedPart?) encodedPart,
+          if (_encodeAssistantPart(
+            part,
+            modelId: modelId,
+          )
+              case final encodedPart?)
+            encodedPart,
       ];
       if (encodedParts.isEmpty) {
         return null;
@@ -328,7 +438,11 @@ final class GoogleGenerateContentCodec {
     if (message case ToolPromptMessage(:final toolName, :final parts)) {
       final encodedParts = [
         for (final part in parts)
-          if (_encodeToolPart(part, toolName: toolName)
+          if (_encodeToolPart(
+            part,
+            toolName: toolName,
+            modelId: modelId,
+          )
               case final encodedPart?)
             encodedPart,
       ];
@@ -375,7 +489,10 @@ final class GoogleGenerateContentCodec {
     );
   }
 
-  Map<String, Object?>? _encodeAssistantPart(PromptPart part) {
+  Map<String, Object?>? _encodeAssistantPart(
+    PromptPart part, {
+    required String modelId,
+  }) {
     final metadata = _resolveAssistantPartMetadata(part.providerMetadata);
 
     if (part is TextPromptPart) {
@@ -422,6 +539,9 @@ final class GoogleGenerateContentCodec {
     if (part is ToolCallPromptPart) {
       return {
         'functionCall': {
+          if (_shouldReplayGoogleFunctionCallId(
+              modelId, metadata.functionCallId))
+            'id': metadata.functionCallId,
           'name': part.toolName,
           'args': normalizeJsonValue(part.input) ?? const <String, Object?>{},
         },
@@ -434,6 +554,28 @@ final class GoogleGenerateContentCodec {
     }
 
     if (part is CustomPromptPart) {
+      if (part.kind == GoogleToolCallReplay.kind) {
+        final replay = GoogleToolCallReplay.parseData(
+          part.data,
+          providerMetadata: part.providerMetadata,
+        );
+        return {
+          'toolCall': replay.toToolCallJson(),
+          ..._encodeThoughtFields(metadata),
+        };
+      }
+
+      if (part.kind == GoogleToolResponseReplay.kind) {
+        final replay = GoogleToolResponseReplay.parseData(
+          part.data,
+          providerMetadata: part.providerMetadata,
+        );
+        return {
+          'toolResponse': replay.toToolResponseJson(),
+          ..._encodeThoughtFields(metadata),
+        };
+      }
+
       return null;
     }
 
@@ -445,14 +587,18 @@ final class GoogleGenerateContentCodec {
   Map<String, Object?>? _encodeToolPart(
     PromptPart part, {
     required String toolName,
+    required String modelId,
   }) {
     if (part is ToolApprovalResponsePromptPart) {
       return null;
     }
 
     if (part is ToolResultPromptPart) {
+      final functionCallId = _googleFunctionCallId(part.providerMetadata);
       return {
         'functionResponse': {
+          if (_shouldReplayGoogleFunctionCallId(modelId, functionCallId))
+            'id': functionCallId,
           'name': part.toolName,
           'response': {
             'name': part.toolName,
@@ -460,6 +606,26 @@ final class GoogleGenerateContentCodec {
           },
         },
       };
+    }
+
+    if (part is CustomPromptPart) {
+      if (part.kind == GoogleFunctionResponseReplay.kind) {
+        final replay = GoogleFunctionResponseReplay.parseData(
+          part.data,
+          providerMetadata: part.providerMetadata,
+        );
+        final functionResponse = replay.toFunctionResponseJson();
+        final functionCallId = replay.functionCallId ??
+            _googleFunctionCallId(part.providerMetadata);
+        if (_shouldReplayGoogleFunctionCallId(modelId, functionCallId) &&
+            !functionResponse.containsKey('id')) {
+          functionResponse['id'] = functionCallId;
+        }
+
+        return {
+          'functionResponse': functionResponse,
+        };
+      }
     }
 
     throw UnsupportedError(
@@ -538,7 +704,22 @@ final class GoogleGenerateContentCodec {
     return _GoogleAssistantPartMetadata(
       thought: resolved?['thought'] == true,
       thoughtSignature: asString(resolved?['thoughtSignature']),
+      functionCallId: asString(resolved?['functionCallId']),
     );
+  }
+
+  String? _googleFunctionCallId(ProviderMetadata? metadata) {
+    final primary = _providerNamespace(metadata, 'google');
+    final fallback = _providerNamespace(metadata, 'vertex');
+    return asString(primary?['functionCallId']) ??
+        asString(fallback?['functionCallId']);
+  }
+
+  bool _shouldReplayGoogleFunctionCallId(
+      String modelId, String? functionCallId) {
+    return isGemini3Model(modelId) &&
+        functionCallId != null &&
+        functionCallId.isNotEmpty;
   }
 
   Map<String, Object?>? _providerNamespace(
@@ -641,9 +822,11 @@ final class GoogleGenerateContentCodec {
 final class _GoogleAssistantPartMetadata {
   final bool thought;
   final String? thoughtSignature;
+  final String? functionCallId;
 
   const _GoogleAssistantPartMetadata({
     this.thought = false,
     this.thoughtSignature,
+    this.functionCallId,
   });
 }

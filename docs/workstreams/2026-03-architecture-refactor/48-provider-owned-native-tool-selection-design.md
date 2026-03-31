@@ -141,8 +141,10 @@ The current Google migrated path is intentionally conservative:
 - common function tools use `functionDeclarations`
 - shared `ToolChoice` maps to `toolConfig.functionCallingConfig`
 - native Google tools are provider-owned
-- when native tools are active, common function tools and shared `toolChoice`
-  are currently ignored with warnings
+- Gemini 3 can now combine native Google tools and common function tools when
+  the provider-owned `includeServerSideToolInvocations` path is enabled
+- outside that model-gated path, native-tool calls still ignore common
+  function tools and shared `toolChoice` with warnings
 
 That is the current implementation boundary, not the final ecosystem truth.
 
@@ -159,9 +161,10 @@ selection API too early.
 
 The current request codec does not yet model a stable mixed-tool contract for:
 
-- native Google search/code-execution tools
-- function declarations
-- server-side tool invocation circulation
+- provider-specific native-tool forcing semantics
+- provider-specific native-tool selection rules
+- broader Google-native tool families beyond the current audited Gemini 3
+  search/code-execution subset
 
 Until that wire contract is proven in the migrated provider path, a public
 `GoogleNativeToolChoice` or `GoogleToolPolicy` API would be guesswork.
@@ -176,8 +179,9 @@ For now:
 
 Future prerequisite before any Google selection API lands:
 
-- first migrate a real mixed-tool wire contract in the provider codec
-- then expose a provider-owned policy surface that matches that contract
+- first let the current mixed-tool contract stabilize with real policy needs
+- then expose a provider-owned policy surface that matches those needs instead
+  of inventing one preemptively
 
 ## 5. OpenAI Responses
 
@@ -211,8 +215,8 @@ That means:
 2. add provider-specific guardrails where official provider rules are already
    known
 3. if a real provider-owned selection surface is needed, land Anthropic first
-4. only revisit Google after the migrated codec supports a proven mixed-tool
-   wire contract
+4. only revisit Google after a concrete policy need appears beyond the current
+   model-gated mixed-tool circulation contract
 5. keep OpenAI built-in selection provider-owned in the Responses path
 
 ## Conclusion
@@ -224,7 +228,7 @@ The design is now frozen:
 - provider-owned selection must not silently merge with shared `toolChoice`
 - Anthropic is the first realistic candidate for a provider-owned selection
   surface
-- Google should not expose one yet until its mixed-tool wire contract is
-  actually migrated
+- Google should not expose one yet until a concrete policy need appears beyond
+  its current mixed-tool circulation contract
 
 That is the right tradeoff for `llm_dart`.

@@ -22,8 +22,8 @@ uniform tool runtime.
   rejection or warning-based downgrade for Responses-only semantics
 - Anthropic can mix common and native tool declarations in one request, but
   provider-executed MCP/native continuation remains provider-owned
-- Google native tools remain provider-owned and effectively exclusive for a
-  given call today
+- Google native tools remain provider-owned, with a Gemini 3 mixed-tool path
+  gated behind provider-owned server-side circulation settings
 - provider-native tool forcing or selection APIs must stay provider-owned
   instead of widening shared `ToolChoice`
 
@@ -135,20 +135,24 @@ Current behavior:
 - common function tools map into Google `functionDeclarations`
 - common `ToolChoice` maps into `toolConfig.functionCallingConfig`
 - Google native tools are declared through provider-owned options
-- when Google native tools are active, common function tools are ignored for the
-  call
-- when Google native tools are active, shared `toolChoice` is also ignored for
-  the call
-- the codec emits warnings instead of pretending mixed native and shared tool
-  behavior is fully normalized
+- Gemini 3 can combine native Google tools and common function tools in one
+  request when `includeServerSideToolInvocations` is enabled through
+  Google-owned settings or invocation options
+- assistant-side Google `toolCall` / `toolResponse` replay now round-trips
+  through provider-owned custom parts for those mixed follow-up turns
+- when native Google tools are active outside that model-gated path, common
+  function tools are ignored for the call with warnings
+- when native Google tools are active outside that model-gated path, shared
+  `toolChoice` is also ignored for the call with warnings
 - provider-executed native tool results such as code execution still decode into
   shared provider-executed tool content/events for rendering and replay
 
 Ownership verdict:
 
-- Google native tools stay provider-owned and effectively exclusive today
-- the current warning-based downgrade is intentional and should not be hidden
-  behind a fake shared abstraction
+- Google native tools and their circulation policy stay provider-owned even now
+  that one Gemini 3 mixed-tool subset is implemented
+- the warning-based downgrade remains intentional for calls that stay outside
+  that provider-owned mixed-tool subset
 
 ## Google Gap That Must Stay Provider-Owned
 
@@ -156,7 +160,7 @@ If Google later needs:
 
 - native-tool forcing
 - native-tool selection rules
-- mixed native-tool and function-tool policy
+- broader mixed native-tool and function-tool policy
 
 those must land in Google-owned option surfaces, not in shared `ToolChoice` or
 the shared runner.
@@ -189,7 +193,8 @@ more of the loop in one runtime:
 - OpenAI Responses built-in tools and approval continuation
 - Anthropic MCP and other provider-executed native tool families
 - Anthropic provider-native replay/result families
-- Google native search/code-execution tool declaration and policy
+- Google native search/code-execution tool declaration, mixed-tool circulation,
+  and server-side replay policy
 
 ## Warning-Based Downgrade Instead Of Normalization
 
@@ -220,8 +225,8 @@ The current provider matrix is now explicit:
 - OpenAI chat-completions is narrower and intentionally so
 - Anthropic mixes declarations more easily than Google, but native continuation
   still stays provider-owned
-- Google native tools remain exclusive and warning-driven when mixed with common
-  tool configuration
+- Google native tools remain provider-owned, with one model-gated Gemini 3
+  mixed-tool path plus warning-driven downgrade outside that subset
 
 That is the correct shape for `llm_dart`.
 

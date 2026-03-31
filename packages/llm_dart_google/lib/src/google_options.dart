@@ -70,11 +70,13 @@ final class GoogleChatModelSettings implements ProviderModelOptions {
   final Map<String, String> headers;
   final List<GoogleSafetySetting> safetySettings;
   final List<GoogleNativeTool> tools;
+  final bool includeServerSideToolInvocations;
 
   const GoogleChatModelSettings({
     this.headers = const {},
     this.safetySettings = const [],
     this.tools = const [],
+    this.includeServerSideToolInvocations = false,
   });
 }
 
@@ -87,6 +89,7 @@ final class GoogleGenerateTextOptions implements ProviderInvocationOptions {
   final String? cachedContent;
   final List<GoogleSafetySetting>? safetySettings;
   final List<GoogleNativeTool>? tools;
+  final bool? includeServerSideToolInvocations;
   final GoogleJsonSchemaResponseFormat? responseFormat;
 
   const GoogleGenerateTextOptions({
@@ -98,6 +101,7 @@ final class GoogleGenerateTextOptions implements ProviderInvocationOptions {
     this.cachedContent,
     this.safetySettings,
     this.tools,
+    this.includeServerSideToolInvocations,
     this.responseFormat,
   });
 }

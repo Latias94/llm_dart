@@ -24,6 +24,7 @@ void main() {
                 },
                 {
                   'functionCall': {
+                    'id': 'call_google_1',
                     'name': 'weather',
                     'args': {
                       'city': 'Hong Kong',
@@ -87,10 +88,12 @@ void main() {
       expect(result.usage?.reasoningTokens, 5);
 
       final toolCall = result.content.whereType<ToolCallContentPart>().single;
+      expect(toolCall.toolCall.toolCallId, 'call_google_1');
       expect(toolCall.toolCall.toolName, 'weather');
       expect(
         toolCall.providerMetadata?.values['google'],
         {
+          'functionCallId': 'call_google_1',
           'thoughtSignature': 'sig_2',
         },
       );
@@ -183,6 +186,89 @@ void main() {
           'thought': true,
         },
       );
+    });
+
+    test(
+        'decodes server-side tool-call and tool-response parts into custom content',
+        () {
+      final result = codec.decodeResponse({
+        'candidates': [
+          {
+            'content': {
+              'parts': [
+                {
+                  'toolCall': {
+                    'id': 'srvtool_1',
+                    'toolType': 'google_search',
+                    'query': 'Dart SDK',
+                  },
+                  'thoughtSignature': 'sig_srvtool_1',
+                },
+                {
+                  'toolResponse': {
+                    'id': 'srvtool_1',
+                    'toolType': 'google_search',
+                    'result': {
+                      'items': [
+                        {
+                          'uri': 'https://dart.dev',
+                          'title': 'Dart',
+                        },
+                      ],
+                    },
+                  },
+                },
+              ],
+            },
+            'finishReason': 'STOP',
+          },
+        ],
+      });
+
+      expect(result.content.whereType<ToolCallContentPart>(), isEmpty);
+      expect(result.content.whereType<ToolResultContentPart>(), isEmpty);
+
+      final customParts =
+          result.content.whereType<CustomContentPart>().toList();
+      expect(customParts, hasLength(2));
+
+      final toolCallReplay =
+          GoogleToolCallReplay.tryParseContentPart(customParts.first);
+      expect(toolCallReplay, isNotNull);
+      expect(toolCallReplay!.toolCallId, 'srvtool_1');
+      expect(toolCallReplay.toolName, 'google_search');
+      expect(toolCallReplay.toolCall, {
+        'id': 'srvtool_1',
+        'toolType': 'google_search',
+        'query': 'Dart SDK',
+      });
+      expect(
+        toolCallReplay.providerMetadata?.values['google'],
+        allOf(
+          containsPair('serverToolPart', 'toolCall'),
+          containsPair('toolCallId', 'srvtool_1'),
+          containsPair('toolType', 'google_search'),
+          containsPair('thoughtSignature', 'sig_srvtool_1'),
+        ),
+      );
+
+      final toolResponseReplay =
+          GoogleToolResponseReplay.tryParseContentPart(customParts.last);
+      expect(toolResponseReplay, isNotNull);
+      expect(toolResponseReplay!.toolCallId, 'srvtool_1');
+      expect(toolResponseReplay.toolName, 'google_search');
+      expect(toolResponseReplay.toolResponse, {
+        'id': 'srvtool_1',
+        'toolType': 'google_search',
+        'result': {
+          'items': [
+            {
+              'uri': 'https://dart.dev',
+              'title': 'Dart',
+            },
+          ],
+        },
+      });
     });
   });
 }

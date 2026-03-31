@@ -1,5 +1,6 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
 
+import 'google_server_tool_replay.dart';
 import 'google_shared.dart';
 
 final class GoogleGenerateContentResultCodec {
@@ -76,18 +77,46 @@ final class GoogleGenerateContentResultCodec {
         if (part case {'functionCall': final Object? functionCallValue}) {
           final functionCall = asMap(functionCallValue);
           final toolName = asString(functionCall?['name']);
+          final functionCallId = asString(functionCall?['id']);
           if (toolName != null) {
             hasClientToolCalls = true;
             content.add(
               ToolCallContentPart(
                 ToolCallContent(
-                  toolCallId: 'tool-$index',
+                  toolCallId: functionCallId ?? 'tool-$index',
                   toolName: toolName,
                   input: normalizeJsonValue(functionCall?['args']),
                 ),
-                providerMetadata: signatureMetadata,
+                providerMetadata: mergeProviderMetadata(
+                  signatureMetadata,
+                  _functionCallIdMetadata(functionCallId),
+                ),
               ),
             );
+          }
+          continue;
+        }
+
+        if (part case {'toolCall': final Object? toolCallValue}) {
+          final toolCall = asMap(toolCallValue);
+          if (toolCall != null) {
+            final replay = GoogleToolCallReplay.fromToolCall(
+              toolCall,
+              providerMetadata: signatureMetadata,
+            );
+            content.add(replay.toCustomContentPart());
+          }
+          continue;
+        }
+
+        if (part case {'toolResponse': final Object? toolResponseValue}) {
+          final toolResponse = asMap(toolResponseValue);
+          if (toolResponse != null) {
+            final replay = GoogleToolResponseReplay.fromToolResponse(
+              toolResponse,
+              providerMetadata: signatureMetadata,
+            );
+            content.add(replay.toCustomContentPart());
           }
           continue;
         }
@@ -189,6 +218,16 @@ final class GoogleGenerateContentResultCodec {
     return googleProviderMetadata({
       'thoughtSignature': thoughtSignature,
       if (isThought) 'thought': true,
+    });
+  }
+
+  ProviderMetadata? _functionCallIdMetadata(String? functionCallId) {
+    if (functionCallId == null || functionCallId.isEmpty) {
+      return null;
+    }
+
+    return googleProviderMetadata({
+      'functionCallId': functionCallId,
     });
   }
 

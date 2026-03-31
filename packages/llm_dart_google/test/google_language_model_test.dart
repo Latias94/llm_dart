@@ -8,7 +8,8 @@ import 'package:test/test.dart';
 
 void main() {
   group('GoogleLanguageModel', () {
-    test('generate sends generateContent requests and maps unified results',
+    test(
+        'generate keeps Google native tools exclusive and surfaces mixed-tool warnings for Gemini 3',
         () async {
       TransportRequest? capturedRequest;
 
@@ -135,6 +136,112 @@ void main() {
       expect(result.finishReason, FinishReason.stop);
       expect(result.usage?.outputTokens, 8);
       expect(result.usage?.reasoningTokens, 5);
+      expect(
+        result.warnings.map((warning) => warning.field),
+        containsAll([
+          'tools',
+          'toolChoice',
+        ]),
+      );
+    });
+
+    test(
+        'generate encodes mixed Google native tools and common function tools for Gemini 3 when includeServerSideToolInvocations is enabled',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = Google(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return const TransportResponse(
+              statusCode: 200,
+              body: {
+                'responseId': 'resp_2',
+                'modelVersion': 'gemini-3-pro-preview',
+                'candidates': [
+                  {
+                    'content': {
+                      'parts': [
+                        {
+                          'text': 'Mixed tools are enabled.',
+                        },
+                      ],
+                    },
+                    'finishReason': 'STOP',
+                  },
+                ],
+              },
+            );
+          },
+        ),
+      ).chatModel('gemini-3-pro-preview');
+
+      final result = await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage.text('Search the web and check the weather.'),
+          ],
+          tools: [
+            FunctionToolDefinition(
+              name: 'weather',
+              inputSchema: ToolJsonSchema.object(
+                properties: const {
+                  'city': {'type': 'string'},
+                },
+                required: const ['city'],
+              ),
+            ),
+          ],
+          toolChoice: const SpecificToolChoice('weather'),
+          callOptions: const CallOptions(
+            providerOptions: GoogleGenerateTextOptions(
+              includeServerSideToolInvocations: true,
+              tools: [
+                GoogleSearchTool(),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      final body = capturedRequest!.body as Map<String, Object?>;
+      expect(
+        body['tools'],
+        [
+          {
+            'googleSearch': <String, Object?>{},
+          },
+          {
+            'functionDeclarations': [
+              {
+                'name': 'weather',
+                'description': '',
+                'parameters': {
+                  'type': 'object',
+                  'properties': {
+                    'city': {'type': 'string'},
+                  },
+                  'required': ['city'],
+                },
+              },
+            ],
+          },
+        ],
+      );
+      expect(
+        body['toolConfig'],
+        {
+          'includeServerSideToolInvocations': true,
+          'functionCallingConfig': {
+            'mode': 'ANY',
+            'allowedFunctionNames': ['weather'],
+          },
+        },
+      );
+      expect(result.text, 'Mixed tools are enabled.');
+      expect(result.warnings, isEmpty);
     });
 
     test('stream sends SSE requests and maps unified events', () async {

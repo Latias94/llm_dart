@@ -199,7 +199,7 @@ Provider-specific features should be represented through:
 - provider-native tool classes belong in the owning provider package
 - provider-native tools enter through typed provider model settings or typed invocation options
 - invocation-level provider-native tool lists override model-level defaults instead of implicitly merging
-- Google may keep conservative mixed-tool behavior when native tools and common function tools do not normalize cleanly
+- Google mixed-tool declaration and circulation stay provider-owned and model-gated through Google-owned options such as `includeServerSideToolInvocations`
 - Anthropic may combine common function tools and provider-native tools when its wire format supports that directly
 
 ## D23. `reasoning-file` And Assistant Replay Fidelity Are First-Class

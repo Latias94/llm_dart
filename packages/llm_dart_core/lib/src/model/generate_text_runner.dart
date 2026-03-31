@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import '../common/call_options.dart';
+import '../common/provider_metadata.dart';
 import '../content/content_part.dart';
 import '../prompt/prompt_message.dart';
 import '../tool/tool_definition.dart';
@@ -219,6 +220,10 @@ final class GenerateTextRunner {
               toolName: toolCall.toolName,
               output: executionResult.output,
               isError: executionResult.isError,
+              providerMetadata: _toolCallProviderMetadata(
+                step,
+                toolCall.toolCallId,
+              ),
             ),
           ],
         ),
@@ -226,6 +231,19 @@ final class GenerateTextRunner {
     }
 
     return toolMessages;
+  }
+
+  ProviderMetadata? _toolCallProviderMetadata(
+    GenerateTextStepResult step,
+    String toolCallId,
+  ) {
+    for (final part in step.result.content.whereType<ToolCallContentPart>()) {
+      if (part.toolCall.toolCallId == toolCallId) {
+        return part.providerMetadata;
+      }
+    }
+
+    return null;
   }
 }
 

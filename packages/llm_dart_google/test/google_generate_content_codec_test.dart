@@ -320,6 +320,157 @@ void main() {
       );
     });
 
+    test(
+        'encodes mixed Google native tools and common function tools for Gemini 3 when includeServerSideToolInvocations is enabled',
+        () {
+      final request = codec.encodeRequest(
+        modelId: 'gemini-3-pro-preview',
+        prompt: [
+          UserPromptMessage.text('Search the web and check the weather.'),
+        ],
+        tools: [
+          FunctionToolDefinition(
+            name: 'weather',
+            inputSchema: ToolJsonSchema.object(
+              properties: const {
+                'city': {'type': 'string'},
+              },
+              required: const ['city'],
+            ),
+          ),
+        ],
+        toolChoice: const SpecificToolChoice('weather'),
+        options: const GenerateTextOptions(),
+        settings: const GoogleChatModelSettings(),
+        providerOptions: const GoogleGenerateTextOptions(
+          includeServerSideToolInvocations: true,
+          tools: [
+            GoogleSearchTool(),
+          ],
+        ),
+      );
+
+      expect(
+        request.body['tools'],
+        [
+          {
+            'googleSearch': <String, Object?>{},
+          },
+          {
+            'functionDeclarations': [
+              {
+                'name': 'weather',
+                'description': '',
+                'parameters': {
+                  'type': 'object',
+                  'properties': {
+                    'city': {'type': 'string'},
+                  },
+                  'required': ['city'],
+                },
+              },
+            ],
+          },
+        ],
+      );
+      expect(
+        request.body['toolConfig'],
+        {
+          'includeServerSideToolInvocations': true,
+          'functionCallingConfig': {
+            'mode': 'ANY',
+            'allowedFunctionNames': ['weather'],
+          },
+        },
+      );
+      expect(request.warnings, isEmpty);
+    });
+
+    test(
+        'rejects includeServerSideToolInvocations for non-Gemini-3 Google models',
+        () {
+      expect(
+        () => codec.encodeRequest(
+          modelId: 'gemini-2.5-flash',
+          prompt: [
+            UserPromptMessage.text('Search the web.'),
+          ],
+          tools: const [],
+          toolChoice: null,
+          options: const GenerateTextOptions(),
+          settings: const GoogleChatModelSettings(),
+          providerOptions: const GoogleGenerateTextOptions(
+            includeServerSideToolInvocations: true,
+          ),
+        ),
+        throwsA(
+          isA<UnsupportedError>().having(
+            (error) => error.message,
+            'message',
+            contains('Gemini 3'),
+          ),
+        ),
+      );
+    });
+
+    test(
+        'allows a call to override a model-level includeServerSideToolInvocations default',
+        () {
+      final request = codec.encodeRequest(
+        modelId: 'gemini-3-pro-preview',
+        prompt: [
+          UserPromptMessage.text('Say hello.'),
+        ],
+        tools: const [],
+        toolChoice: null,
+        options: const GenerateTextOptions(),
+        settings: const GoogleChatModelSettings(
+          includeServerSideToolInvocations: true,
+        ),
+        providerOptions: const GoogleGenerateTextOptions(
+          includeServerSideToolInvocations: false,
+        ),
+      );
+
+      expect(request.body['contents'], isNotEmpty);
+    });
+
+    test(
+        'requires includeServerSideToolInvocations for Google server-side tool replay prompt parts',
+        () {
+      expect(
+        () => codec.encodeRequest(
+          modelId: 'gemini-3-pro-preview',
+          prompt: [
+            UserPromptMessage.text('Continue the conversation.'),
+            AssistantPromptMessage(
+              parts: [
+                GoogleToolCallReplay.fromToolCall(
+                  {
+                    'id': 'srvtool_1',
+                    'toolType': 'google_search',
+                    'query': 'Dart SDK',
+                  },
+                ).toCustomPromptPart(),
+              ],
+            ),
+          ],
+          tools: const [],
+          toolChoice: null,
+          options: const GenerateTextOptions(),
+          settings: const GoogleChatModelSettings(),
+          providerOptions: const GoogleGenerateTextOptions(),
+        ),
+        throwsA(
+          isA<UnsupportedError>().having(
+            (error) => error.message,
+            'message',
+            contains('includeServerSideToolInvocations=true'),
+          ),
+        ),
+      );
+    });
+
     test('encodes structured output as responseSchema for Google', () {
       final request = codec.encodeRequest(
         modelId: 'gemini-2.5-flash',
@@ -466,6 +617,282 @@ void main() {
             {
               'text': 'Visible answer.',
               'thoughtSignature': 'sig_text',
+            },
+          ],
+        },
+      );
+    });
+
+    test('replays Gemini 3 function-call ids in assistant and tool history',
+        () {
+      final request = codec.encodeRequest(
+        modelId: 'gemini-3-pro-preview',
+        prompt: [
+          UserPromptMessage.text('Continue the conversation.'),
+          AssistantPromptMessage(
+            parts: const [
+              ToolCallPromptPart(
+                toolCallId: 'call_google_1',
+                toolName: 'weather',
+                input: {
+                  'city': 'Hong Kong',
+                },
+                providerMetadata: ProviderMetadata({
+                  'google': {
+                    'functionCallId': 'call_google_1',
+                  },
+                }),
+              ),
+            ],
+          ),
+          ToolPromptMessage(
+            toolName: 'weather',
+            parts: const [
+              ToolResultPromptPart(
+                toolCallId: 'call_google_1',
+                toolName: 'weather',
+                output: {
+                  'temperature': 28,
+                },
+                providerMetadata: ProviderMetadata({
+                  'google': {
+                    'functionCallId': 'call_google_1',
+                  },
+                }),
+              ),
+            ],
+          ),
+        ],
+        tools: const [],
+        toolChoice: null,
+        options: const GenerateTextOptions(),
+        settings: const GoogleChatModelSettings(),
+        providerOptions: const GoogleGenerateTextOptions(
+          includeServerSideToolInvocations: true,
+        ),
+      );
+
+      final contents = request.body['contents'] as List<Object?>;
+      expect(
+        contents[1],
+        {
+          'role': 'model',
+          'parts': [
+            {
+              'functionCall': {
+                'id': 'call_google_1',
+                'name': 'weather',
+                'args': {
+                  'city': 'Hong Kong',
+                },
+              },
+            },
+          ],
+        },
+      );
+      expect(
+        contents[2],
+        {
+          'role': 'user',
+          'parts': [
+            {
+              'functionResponse': {
+                'id': 'call_google_1',
+                'name': 'weather',
+                'response': {
+                  'name': 'weather',
+                  'content': {
+                    'temperature': 28,
+                  },
+                },
+              },
+            },
+          ],
+        },
+      );
+    });
+
+    test(
+        'encodes provider-owned Google function-response replay with multimodal files',
+        () {
+      final replay = GoogleFunctionResponseReplay(
+        toolCallId: 'call_google_2',
+        toolName: 'render_chart',
+        functionCallId: 'call_google_2',
+        response: {
+          'status': 'ok',
+        },
+        files: [
+          const GeneratedFile(
+            mediaType: 'image/png',
+            filename: 'chart.png',
+            bytes: [1, 2, 3],
+          ),
+          GeneratedFile(
+            mediaType: 'application/pdf',
+            filename: 'quote.pdf',
+            uri: Uri.parse('https://example.com/quote.pdf'),
+          ),
+        ],
+        extraFunctionResponseFields: const {
+          'source': 'local-cache',
+        },
+      );
+
+      final request = codec.encodeRequest(
+        modelId: 'gemini-3-pro-preview',
+        prompt: [
+          UserPromptMessage.text('Continue the conversation.'),
+          AssistantPromptMessage(
+            parts: const [
+              ToolCallPromptPart(
+                toolCallId: 'call_google_2',
+                toolName: 'render_chart',
+                input: {
+                  'metric': 'sales',
+                },
+                providerMetadata: ProviderMetadata({
+                  'google': {
+                    'functionCallId': 'call_google_2',
+                  },
+                }),
+              ),
+            ],
+          ),
+          ToolPromptMessage(
+            toolName: 'render_chart',
+            parts: [
+              replay.toCustomPromptPart(),
+            ],
+          ),
+        ],
+        tools: const [],
+        toolChoice: null,
+        options: const GenerateTextOptions(),
+        settings: const GoogleChatModelSettings(),
+        providerOptions: const GoogleGenerateTextOptions(
+          includeServerSideToolInvocations: true,
+        ),
+      );
+
+      final contents = request.body['contents'] as List<Object?>;
+      expect(
+        contents[2],
+        {
+          'role': 'user',
+          'parts': [
+            {
+              'functionResponse': {
+                'source': 'local-cache',
+                'id': 'call_google_2',
+                'name': 'render_chart',
+                'response': {
+                  'status': 'ok',
+                },
+                'parts': [
+                  {
+                    'inlineData': {
+                      'mimeType': 'image/png',
+                      'data': 'AQID',
+                      'displayName': 'chart.png',
+                    },
+                  },
+                  {
+                    'fileData': {
+                      'mimeType': 'application/pdf',
+                      'fileUri': 'https://example.com/quote.pdf',
+                      'displayName': 'quote.pdf',
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      );
+    });
+
+    test(
+        'encodes provider-owned Google server-side tool-call and tool-response replay in assistant history',
+        () {
+      final toolCallReplay = GoogleToolCallReplay.fromToolCall(
+        {
+          'id': 'srvtool_1',
+          'toolType': 'google_search',
+          'query': 'Dart SDK',
+        },
+        providerMetadata: const ProviderMetadata({
+          'google': {
+            'thoughtSignature': 'sig_srvtool_1',
+          },
+        }),
+      );
+      final toolResponseReplay = GoogleToolResponseReplay.fromToolResponse(
+        {
+          'id': 'srvtool_1',
+          'toolType': 'google_search',
+          'result': {
+            'items': [
+              {
+                'uri': 'https://dart.dev',
+                'title': 'Dart',
+              },
+            ],
+          },
+        },
+      );
+
+      final request = codec.encodeRequest(
+        modelId: 'gemini-3-pro-preview',
+        prompt: [
+          UserPromptMessage.text('Continue the conversation.'),
+          AssistantPromptMessage(
+            parts: [
+              toolCallReplay.toCustomPromptPart(),
+              toolResponseReplay.toCustomPromptPart(),
+              const TextPromptPart('Dart search finished.'),
+            ],
+          ),
+        ],
+        tools: const [],
+        toolChoice: null,
+        options: const GenerateTextOptions(),
+        settings: const GoogleChatModelSettings(),
+        providerOptions: const GoogleGenerateTextOptions(
+          includeServerSideToolInvocations: true,
+        ),
+      );
+
+      final contents = request.body['contents'] as List<Object?>;
+      expect(
+        contents[1],
+        {
+          'role': 'model',
+          'parts': [
+            {
+              'toolCall': {
+                'id': 'srvtool_1',
+                'toolType': 'google_search',
+                'query': 'Dart SDK',
+              },
+              'thoughtSignature': 'sig_srvtool_1',
+            },
+            {
+              'toolResponse': {
+                'id': 'srvtool_1',
+                'toolType': 'google_search',
+                'result': {
+                  'items': [
+                    {
+                      'uri': 'https://dart.dev',
+                      'title': 'Dart',
+                    },
+                  ],
+                },
+              },
+            },
+            {
+              'text': 'Dart search finished.',
             },
           ],
         },
