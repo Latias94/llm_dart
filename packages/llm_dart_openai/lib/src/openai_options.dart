@@ -17,6 +17,26 @@ final class OpenAIChatModelSettings implements ProviderModelOptions {
   });
 }
 
+final class OpenAIEmbeddingModelSettings implements ProviderModelOptions {
+  final String? organization;
+  final String? project;
+  final Map<String, String> headers;
+
+  const OpenAIEmbeddingModelSettings({
+    this.organization,
+    this.project,
+    this.headers = const {},
+  });
+}
+
+final class OpenAIEmbedOptions implements ProviderInvocationOptions {
+  final String? encodingFormat;
+
+  const OpenAIEmbedOptions({
+    this.encodingFormat,
+  });
+}
+
 final class OpenAIGenerateTextOptions implements ProviderInvocationOptions {
   final String? previousResponseId;
   final bool? parallelToolCalls;

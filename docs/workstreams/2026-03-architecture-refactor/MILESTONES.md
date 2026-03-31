@@ -61,6 +61,8 @@ Current status:
 - `llm_dart_core` now also exposes `OutputSpec`-based `generateOutput(...)`, `streamOutput(...)`, and `streamOutputResult(...)`, with shared validation errors, a shared streamed-result accumulator above `TextStreamEvent`, best-effort partial structured-output events on the streaming path, buffered `partialOutputStream` / `elementStream<T>()` / final `output` result surfaces, and array `OutputElementEvent`s for newly completed elements
 - `llm_dart_core` now also exposes additive main-call wrappers, `generateTextCall(...)` and `streamTextCall(...)`, so parsed output can live on a richer shared call surface without redefining the original low-level `generateText(...)` / `streamText(...)` helpers
 - that naming direction is now also frozen: the additive call wrappers are the recommended app-facing text API, while the original helper names remain the low-level raw layer
+- `llm_dart_core` now also exposes function-based shared capability helpers for non-text calls: `embed(...)`, `embedMany(...)`, `generateImage(...)`, `generateSpeech(...)`, and `transcribe(...)`
+- the first non-text provider migration beyond raw interfaces has now also landed for the OpenAI family through `OpenAI.embeddingModel(...)`, typed `OpenAIEmbeddingModelSettings`, and typed `OpenAIEmbedOptions`
 - `llm_dart_core` now also exposes `GenerateTextStepResult` as the first shared step-level snapshot wrapper without changing the single-step meaning of `generateText` / `streamText`
 - `llm_dart_core` now also exposes `GenerateTextRunResult` and `GenerateTextStepStartEvent` as runner-facing pure model primitives
 - `llm_dart_core` now also has a narrow non-streaming multi-step `GenerateTextRunner` and `runTextGeneration(...)` entrypoint that accumulates step snapshots, replays prior assistant/tool messages, and continues common function-tool steps through an app-supplied executor
@@ -68,7 +70,7 @@ Current status:
 - continuation ownership is now also frozen more clearly: common function-tool loops belong to the shared runner, while approval-gated, provider-executed, dynamic, and chat-interactive continuation remain provider-owned or session-owned
 - the stop-and-mutation boundary is now also frozen: `maxSteps` stays a guardrail, shared `stopWhen` and `prepareStep` stay out, and retry/model-switch policy remains app-owned
 - only a separate streamed runner or a tightly-constrained pre-step hook may be reconsidered later if real shared usage proves the need
-- provider-specific compatibility subset audits, broader endpoint coverage, and non-text endpoints remain for the next step
+- provider-specific compatibility subset audits, broader endpoint coverage, and the remaining non-text provider migrations remain for the next step
 
 ## M3 - Anthropic And Google
 

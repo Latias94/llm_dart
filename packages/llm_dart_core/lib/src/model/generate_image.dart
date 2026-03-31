@@ -1,0 +1,27 @@
+import '../common/call_options.dart';
+import 'image_model.dart';
+
+Future<ImageGenerationResult> generateImage({
+  required ImageModel model,
+  required String prompt,
+  int count = 1,
+  String? size,
+  CallOptions callOptions = const CallOptions(),
+}) {
+  if (count < 1) {
+    throw ArgumentError.value(
+      count,
+      'count',
+      'generateImage(...) requires count >= 1.',
+    );
+  }
+
+  return model.generate(
+    ImageGenerationRequest(
+      prompt: prompt,
+      count: count,
+      size: size,
+      callOptions: callOptions,
+    ),
+  );
+}

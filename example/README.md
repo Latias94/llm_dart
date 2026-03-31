@@ -36,10 +36,12 @@ Practical examples for the LLM Dart library, organized by learning path and use 
 - [streaming_chat.dart](02_core_features/streaming_chat.dart) - Real-time streaming
 - [cancellation_demo.dart](02_core_features/cancellation_demo.dart) - Request cancellation
 - [tool_calling.dart](02_core_features/tool_calling.dart) - Function calling
+- [embeddings_stable.dart](02_core_features/embeddings_stable.dart) - Stable shared embedding helpers
 - [enhanced_tool_calling.dart](02_core_features/enhanced_tool_calling.dart) - Advanced tool usage
 - [structured_output.dart](02_core_features/structured_output.dart) - Shared structured output
 - [assistants.dart](02_core_features/assistants.dart) - AI assistants
 - [embeddings.dart](02_core_features/embeddings.dart) - Text embeddings
+- [embeddings_stable.dart](02_core_features/embeddings_stable.dart) - Stable `embed(...)` and `embedMany(...)`
 - [audio_processing.dart](02_core_features/audio_processing.dart) - Speech/TTS
 - [image_generation.dart](02_core_features/image_generation.dart) - Image generation
 - [file_management.dart](02_core_features/file_management.dart) - File operations

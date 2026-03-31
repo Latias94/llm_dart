@@ -65,6 +65,13 @@ Current text-call layering:
 - `generateText(...)` / `streamText(...)`
   - lower-level raw single-step helpers
 
+Other shared capability helpers:
+
+- `embed(...)` / `embedMany(...)`
+- `generateImage(...)`
+- `generateSpeech(...)`
+- `transcribe(...)`
+
 ```dart
 import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
@@ -122,6 +129,33 @@ Future<void> main() async {
   print(result.output);
 }
 ```
+
+## Embeddings
+
+Shared embeddings now follow the same function-based helper direction:
+application code uses `embed(...)` / `embedMany(...)`, while providers expose
+typed capability models such as `AI.openai(...).embeddingModel(...)`.
+
+```dart
+import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/core.dart' as core;
+
+Future<void> main() async {
+  final model = llm.AI.openai(
+    apiKey: 'your-openai-key',
+  ).embeddingModel('text-embedding-3-small');
+
+  final result = await core.embed(
+    model: model,
+    value: 'Dart is optimized for client apps.',
+  );
+
+  print(result.embedding.length);
+}
+```
+
+Example file:
+[embeddings_stable.dart](E:/codes/flutter/llm_dart/example/02_core_features/embeddings_stable.dart)
 
 ## Streaming
 

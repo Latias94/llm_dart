@@ -13,6 +13,10 @@ AI assistants creation, management, and tool integration.
 ### [embeddings.dart](embeddings.dart)
 Text embeddings for semantic search and similarity analysis.
 
+### [embeddings_stable.dart](embeddings_stable.dart)
+Stable shared `embed(...)` and `embedMany(...)` helpers with
+`AI.openai(...).embeddingModel(...)`.
+
 ### [file_management.dart](file_management.dart)
 File upload, download, and management for AI workflows.
 
@@ -55,6 +59,7 @@ export GOOGLE_API_KEY="your-google-key"
 dart run capability_factory_methods.dart
 dart run assistants.dart
 dart run embeddings.dart
+dart run embeddings_stable.dart
 dart run file_management.dart
 dart run chat_basics.dart
 dart run streaming_chat.dart

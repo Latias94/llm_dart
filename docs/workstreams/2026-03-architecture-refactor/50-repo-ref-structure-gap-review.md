@@ -245,7 +245,7 @@ The wrong move would be:
 - pushing approval or provider-executed tool semantics into the core runner
 - redefining `streamText(...)` itself as a multi-step runtime
 
-### 4.3 Capability Surfaces Exist, But Capability Modules Are Not Fully Landed
+### 4.3 Capability Helper Surfaces Have Landed, But Provider Parity Is Still Incomplete
 
 The common interfaces already exist for:
 
@@ -254,17 +254,28 @@ The common interfaces already exist for:
 - speech
 - transcription
 
-But the shared capability module story is still incomplete.
+The shared capability-helper surface is no longer missing.
 
-Current gaps:
+Current status:
 
-- no shared top-level `embedMany(...)` helper yet
-- no shared top-level helper parity yet for image, speech, and transcription
-- provider migrations for those capability families are still incomplete
+- `llm_dart_core` now exposes top-level `embed(...)`, `embedMany(...)`,
+  `generateImage(...)`, `generateSpeech(...)`, and `transcribe(...)`
+- those helpers now provide the intended app-facing function-based entrypoints
+  above the raw model interfaces
+- the first non-text provider migration has also landed for the OpenAI family
+  through `OpenAI.embeddingModel(...)`
 
-This means the architecture is directionally correct, but not yet as complete
-as the reference package layout where those capabilities already exist as
-first-class product surfaces.
+What is still missing:
+
+- provider migrations for image, speech, and transcription are still
+  incomplete
+- Google and Anthropic non-text capability migrations are still incomplete
+- shared embedding chunk-splitting and parallel-batching policy is not yet
+  frozen above the raw model interface
+
+This means the architecture now has the correct shared product surface, but it
+is still not as complete as the reference package layout on provider migration
+coverage and mature capability internals.
 
 ### 4.4 The Remote UI Stream Protocol Is Still Intentionally Thin
 
@@ -313,15 +324,17 @@ If added later, it should be:
 - a separate higher-level orchestration layer above `streamText(...)`
 - still limited to genuinely shared continuation semantics
 
-### 5.3 Finish Capability Helper And Provider Migration Parity
+### 5.3 Finish Non-Text Provider Migration Parity
 
-Once the structured-generation direction is clear, finish the remaining shared
-capability modules in a consistent way:
+Once the structured-generation direction is clear, finish the remaining
+provider-migration work in a consistent way:
 
-- `embed` / `embedMany`
-- `generateImage`
-- `generateSpeech`
-- `transcribe`
+- image model migration
+- speech model migration
+- transcription model migration
+- Google and Anthropic capability migration parity
+- only then re-evaluate whether embeddings need shared chunk splitting above
+  `EmbeddingModel.embed(...)`
 
 ### 5.4 Defer Optional Cross-Cutting Modules
 
@@ -350,7 +363,8 @@ The remaining structural gaps are now narrower and clearer:
 
 - shared structured generation
 - streamed runner maturity
-- capability helper and provider migration parity
+- non-text provider migration parity and possible future embedding batching
+  policy
 - possibly richer remote UI streaming later
 
 That is a much safer place to continue refactoring from than the old

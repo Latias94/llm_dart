@@ -55,10 +55,10 @@
 - [x] Decide whether the additive `generateTextCall(...)` / `streamTextCall(...)` layer should later fold into `generateText(...)` / `streamText(...)` directly or remain the explicit higher-level result surface
 - [ ] Re-evaluate shared runner expansion only after a replay-safe approval or provider-executed continuation contract is proven across at least two provider families
 - [ ] Re-evaluate whether a constrained pre-step hook or a separate streamed runner is justified after the narrow runner is used by at least two concrete shared call paths
-- [ ] Implement `embed` / `embedMany`
-- [ ] Implement `generateImage`
-- [ ] Implement `generateSpeech`
-- [ ] Implement `transcribe`
+- [x] Implement `embed` / `embedMany`
+- [x] Implement `generateImage`
+- [x] Implement `generateSpeech`
+- [x] Implement `transcribe`
 
 ## Transport
 
@@ -80,7 +80,7 @@
 - [x] Add the initial OpenAI-family chat-completions mainline
 - [x] Migrate OpenAI responses
 - [x] Preserve OpenAI replay-critical item metadata, reasoning state, and compaction replay
-- [ ] Migrate OpenAI embeddings
+- [x] Migrate OpenAI embeddings
 - [ ] Migrate OpenAI image
 - [ ] Migrate OpenAI speech and transcription
 - [x] Turn OpenRouter into a profile
