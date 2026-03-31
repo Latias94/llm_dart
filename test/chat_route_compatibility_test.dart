@@ -63,6 +63,53 @@ void main() {
       expect(result, isTrue);
     });
 
+    test('OpenAI bridge accepts the audited user multimodal subset', () {
+      final result = canUseOpenAIChatBridge(
+        _baseConfig('gpt-4o'),
+        [
+          legacy.ChatMessage.user('Describe both inputs.'),
+          legacy.ChatMessage.image(
+            role: legacy.ChatRole.user,
+            mime: legacy.ImageMime.png,
+            data: const [1, 2, 3],
+          ),
+          legacy.ChatMessage.file(
+            role: legacy.ChatRole.user,
+            mime: legacy.FileMime.pdf,
+            data: const [4, 5, 6],
+          ),
+        ],
+        null,
+      );
+
+      expect(result, isTrue);
+    });
+
+    test(
+        'OpenAI bridge accepts the audited assistant tool-use and user tool-result subset',
+        () {
+      final toolCall = legacy.ToolCall(
+        id: 'call_1',
+        callType: 'function',
+        function: const legacy.FunctionCall(
+          name: 'weather',
+          arguments: '{"city":"Hong Kong"}',
+        ),
+      );
+
+      final result = canUseOpenAIChatBridge(
+        _baseConfig('gpt-4o'),
+        [
+          legacy.ChatMessage.user('Check the weather.'),
+          legacy.ChatMessage.toolUse(toolCalls: [toolCall]),
+          legacy.ChatMessage.toolResult(results: [toolCall]),
+        ],
+        [_weatherTool()],
+      );
+
+      expect(result, isTrue);
+    });
+
     test(
         'DeepSeek bridge accepts the audited deepseek-chat text and function-tool subset',
         () {

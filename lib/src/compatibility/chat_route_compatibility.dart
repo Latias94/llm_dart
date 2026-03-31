@@ -52,9 +52,23 @@ bool canUseOpenAIChatBridge(
   }
 
   for (final message in messages) {
-    final messageType = message.messageType;
-    if (messageType is! TextMessage) {
-      return false;
+    switch (message.messageType) {
+      case TextMessage():
+        break;
+      case ImageMessage():
+      case ImageUrlMessage():
+      case FileMessage():
+        if (message.role != ChatRole.user) {
+          return false;
+        }
+      case ToolUseMessage():
+        if (message.role != ChatRole.assistant) {
+          return false;
+        }
+      case ToolResultMessage():
+        if (message.role != ChatRole.user) {
+          return false;
+        }
     }
   }
 

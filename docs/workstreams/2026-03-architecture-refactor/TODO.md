@@ -76,7 +76,7 @@
 
 - [x] Design the OpenAI-family profile structure
 - [x] Expose OpenAI-family convenience constructors on the root `AI` facade
-- [ ] Complete OpenAI chat migration (see `58-openai-chat-migration-status.md` for the narrowed file-input gap and the remaining replay/compat policy work)
+- [ ] Complete OpenAI chat migration (see `58-openai-chat-migration-status.md` for the narrowed remaining assistant-replay and richer Responses/compat gaps)
 - [x] Add the initial OpenAI-family chat-completions mainline
 - [x] Migrate OpenAI responses
 - [x] Preserve OpenAI replay-critical item metadata, reasoning state, and compaction replay

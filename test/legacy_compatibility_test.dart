@@ -953,6 +953,210 @@ void main() {
     });
 
     test(
+        'Compat OpenAI provider routes legacy user image and file messages through the Responses bridge',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final provider = buildCompatOpenAIProvider(
+        legacy.LLMConfig(
+          apiKey: 'test-key',
+          baseUrl: 'https://api.openai.com/v1/',
+          model: 'gpt-4.1-mini',
+        ).withExtensions({
+          'customTransportClient': _FakeTransportClient(
+            onSend: (request) async {
+              capturedRequest = request;
+              return TransportResponse(
+                statusCode: 200,
+                body: {
+                  'id': 'resp_compat_multimodal',
+                  'model': 'gpt-4.1-mini',
+                  'created_at': 1710000500,
+                  'status': 'completed',
+                  'output': [
+                    {
+                      'id': 'msg_1',
+                      'type': 'message',
+                      'status': 'completed',
+                      'role': 'assistant',
+                      'content': [
+                        {
+                          'type': 'output_text',
+                          'text': 'Done.',
+                          'annotations': [],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              );
+            },
+          ),
+        }),
+      );
+
+      final response = await provider.chat([
+        legacy.ChatMessage.user('Describe both inputs.'),
+        legacy.ChatMessage.image(
+          role: legacy.ChatRole.user,
+          mime: legacy.ImageMime.png,
+          data: const [1, 2, 3, 4],
+        ),
+        legacy.ChatMessage.file(
+          role: legacy.ChatRole.user,
+          mime: legacy.FileMime.pdf,
+          data: const [5, 6, 7, 8],
+        ),
+      ]);
+
+      expect(response.text, 'Done.');
+      expect(capturedRequest, isNotNull);
+      expect(capturedRequest!.uri.toString(), contains('/responses'));
+
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(
+        requestBody['input'],
+        [
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'input_text',
+                'text': 'Describe both inputs.',
+              },
+            ],
+          },
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'input_image',
+                'image_url': 'data:image/png;base64,AQIDBA==',
+              },
+            ],
+          },
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'input_file',
+                'file_data': 'BQYHCA==',
+              },
+            ],
+          },
+        ],
+      );
+    });
+
+    test(
+        'Compat OpenAI provider routes common tool replay through the Responses bridge',
+        () async {
+      TransportRequest? capturedRequest;
+      final toolCall = legacy.ToolCall(
+        id: 'call_1',
+        callType: 'function',
+        function: const legacy.FunctionCall(
+          name: 'weather',
+          arguments: '{"city":"Hong Kong"}',
+        ),
+      );
+
+      final provider = buildCompatOpenAIProvider(
+        legacy.LLMConfig(
+          apiKey: 'test-key',
+          baseUrl: 'https://api.openai.com/v1/',
+          model: 'gpt-4.1-mini',
+          toolChoice: const legacy.AutoToolChoice(),
+        ).withExtensions({
+          'customTransportClient': _FakeTransportClient(
+            onSend: (request) async {
+              capturedRequest = request;
+              return TransportResponse(
+                statusCode: 200,
+                body: {
+                  'id': 'resp_compat_tool_replay',
+                  'model': 'gpt-4.1-mini',
+                  'created_at': 1710000500,
+                  'status': 'completed',
+                  'output': [
+                    {
+                      'id': 'msg_1',
+                      'type': 'message',
+                      'status': 'completed',
+                      'role': 'assistant',
+                      'content': [
+                        {
+                          'type': 'output_text',
+                          'text': 'Done.',
+                          'annotations': [],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              );
+            },
+          ),
+        }),
+      );
+
+      final response = await provider.chatWithTools(
+        [
+          legacy.ChatMessage.user('Check the weather.'),
+          legacy.ChatMessage.toolUse(toolCalls: [toolCall]),
+          legacy.ChatMessage.toolResult(results: [toolCall]),
+        ],
+        [
+          legacy.Tool.function(
+            name: 'weather',
+            description: 'Get weather information.',
+            parameters: const legacy.ParametersSchema(
+              schemaType: 'object',
+              properties: {
+                'city': legacy.ParameterProperty(
+                  propertyType: 'string',
+                  description: 'City name.',
+                ),
+              },
+              required: ['city'],
+            ),
+          ),
+        ],
+      );
+
+      expect(response.text, 'Done.');
+      expect(capturedRequest, isNotNull);
+      expect(capturedRequest!.uri.toString(), contains('/responses'));
+
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(
+        requestBody['input'],
+        [
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'input_text',
+                'text': 'Check the weather.',
+              },
+            ],
+          },
+          {
+            'type': 'function_call',
+            'call_id': 'call_1',
+            'name': 'weather',
+            'arguments': '{"city":"Hong Kong"}',
+          },
+          {
+            'type': 'function_call_output',
+            'call_id': 'call_1',
+            'output': '{"city":"Hong Kong"}',
+          },
+        ],
+      );
+    });
+
+    test(
         'Compat Google provider routes legacy jsonSchema through shared responseFormat',
         () async {
       TransportRequest? capturedRequest;

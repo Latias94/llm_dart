@@ -5,6 +5,90 @@ import 'package:test/test.dart';
 
 void main() {
   group('OpenAIResponsesCodec', () {
+    test('encodes user image and file prompt parts on the Responses path', () {
+      const codec = OpenAIResponsesCodec();
+
+      final request = codec.encodeRequest(
+        modelId: 'gpt-5-mini',
+        prompt: [
+          UserPromptMessage(
+            parts: const [
+              TextPromptPart('Describe both inputs.'),
+              ImagePromptPart(
+                mediaType: 'image/png',
+                bytes: [0, 1, 2, 3],
+              ),
+              FilePromptPart(
+                mediaType: 'application/pdf',
+                bytes: [1, 2, 3, 4],
+              ),
+            ],
+          ),
+        ],
+        tools: const [],
+        toolChoice: null,
+        options: const GenerateTextOptions(),
+        providerOptions: const OpenAIGenerateTextOptions(),
+        stream: false,
+      );
+
+      expect(
+        request.body['input'],
+        [
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'input_text',
+                'text': 'Describe both inputs.',
+              },
+              {
+                'type': 'input_image',
+                'image_url': 'data:image/png;base64,AAECAw==',
+              },
+              {
+                'type': 'input_file',
+                'file_data': 'AQIDBA==',
+              },
+            ],
+          },
+        ],
+      );
+    });
+
+    test('rejects URI-backed generic file prompt parts on the Responses path',
+        () {
+      const codec = OpenAIResponsesCodec();
+
+      expect(
+        () => codec.encodeRequest(
+          modelId: 'gpt-5-mini',
+          prompt: [
+            UserPromptMessage(
+              parts: [
+                FilePromptPart(
+                  mediaType: 'application/pdf',
+                  uri: Uri.parse('https://example.com/document.pdf'),
+                ),
+              ],
+            ),
+          ],
+          tools: const [],
+          toolChoice: null,
+          options: const GenerateTextOptions(),
+          providerOptions: const OpenAIGenerateTextOptions(),
+          stream: false,
+        ),
+        throwsA(
+          isA<UnsupportedError>().having(
+            (error) => error.toString(),
+            'message',
+            contains('need bytes'),
+          ),
+        ),
+      );
+    });
+
     test(
         'encodes assistant replay metadata for text, reasoning, tool calls, and compaction',
         () {

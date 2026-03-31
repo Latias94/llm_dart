@@ -109,6 +109,97 @@ void main() {
       );
     });
 
+    test('generate encodes user multimodal prompt parts for the Responses API',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'resp_multimodal',
+                'model': 'gpt-4.1-mini',
+                'created_at': 1710000000,
+                'status': 'completed',
+                'output': [
+                  {
+                    'id': 'msg_1',
+                    'type': 'message',
+                    'status': 'completed',
+                    'role': 'assistant',
+                    'content': [
+                      {
+                        'type': 'output_text',
+                        'text': 'Done.',
+                        'annotations': [],
+                      },
+                    ],
+                  },
+                ],
+                'usage': {
+                  'input_tokens': 6,
+                  'output_tokens': 1,
+                  'total_tokens': 7,
+                  'output_tokens_details': {
+                    'reasoning_tokens': 0,
+                  },
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel('gpt-4.1-mini');
+
+      await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage(
+              parts: const [
+                TextPromptPart('Describe both inputs.'),
+                ImagePromptPart(
+                  mediaType: 'image/png',
+                  bytes: [0, 1, 2, 3],
+                ),
+                FilePromptPart(
+                  mediaType: 'application/pdf',
+                  bytes: [1, 2, 3, 4],
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(
+        requestBody['input'],
+        [
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'input_text',
+                'text': 'Describe both inputs.',
+              },
+              {
+                'type': 'input_image',
+                'image_url': 'data:image/png;base64,AAECAw==',
+              },
+              {
+                'type': 'input_file',
+                'file_data': 'AQIDBA==',
+              },
+            ],
+          },
+        ],
+      );
+    });
+
     test(
         'generate forwards common tools, built-in tools, tool choice, and structured output to the Responses request body',
         () async {

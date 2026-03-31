@@ -14,10 +14,18 @@ The migrated OpenAI-family text path is split into two main lines:
 - non-Responses OpenAI-family profiles such as DeepSeek, Groq, OpenRouter, xAI, and Phind use the migrated chat-completions mainline.
 - OpenAI itself can also opt out of Responses and use the migrated chat-completions path through `useResponsesApi: false`.
 
+The current Responses path now also covers the common user multimodal subset that the legacy OpenAI compatibility layer depends on:
+
+- `ImagePromptPart` maps to `input_image`
+- image-shaped `FilePromptPart` also maps to `input_image`
+- byte-backed generic `FilePromptPart` maps to `input_file`
+- common assistant function-tool replay and user tool-result replay already map through the migrated Responses codec
+
 The current chat-completions codec already covers:
 
 - text prompt encoding
 - user image prompt encoding
+- user file prompt encoding for image, audio, and PDF
 - function-tool declaration and tool choice
 - assistant function-call replay for the common subset
 - tool-result replay for the common subset
@@ -61,6 +69,12 @@ The migrated chat-completions path now supports `FilePromptPart` for user messag
 
 This keeps the mapping aligned with the reference without widening the shared prompt model.
 
+The Responses path also now covers the user multimodal subset that the legacy compatibility route already relied on in the old provider implementation:
+
+- `ImagePromptPart`
+- image-shaped `FilePromptPart`
+- byte-backed generic `FilePromptPart`
+
 ## Deliberate Limits
 
 The following limits are still intentional for now:
@@ -71,27 +85,27 @@ The following limits are still intentional for now:
 - provider-owned PDF file-ID replay is still not exposed on the migrated chat-completions path
   - the shared `FilePromptPart` model should not be stretched into an OpenAI-only file-handle transport by accident
   - if we later need this, it should be frozen as a provider-owned hint contract, not as an implicit reinterpretation of `uri`
+- generic file prompt parts with `uri` are still rejected on the migrated Responses path
+  - this keeps the Responses codec aligned with the old compatibility subset, which only ever carried file bytes
 - assistant replay is still conservative
   - reasoning prompt parts, reasoning-file prompt parts, custom prompt parts, file prompt parts, image prompt parts, and approval prompt parts still downgrade to warnings or rejection where exact replay is not yet safe
 
-## Why Compatibility Routing Stays Conservative
+## Compatibility Routing Conclusion
 
 The legacy OpenAI compatibility provider is still Responses-first.
 
-That matters because:
+That is now acceptable for the current audited subset because:
 
-- `buildCompatOpenAIProvider(...)` currently builds the migrated OpenAI model with `useResponsesApi: true`
+- `buildCompatOpenAIProvider(...)` still builds the migrated OpenAI model with `useResponsesApi: true`
 - the legacy chat adapter already converts legacy image/file messages into `ImagePromptPart` and `FilePromptPart`
-- the migrated Responses codec still only accepts text user parts today
+- the migrated Responses codec now accepts that common user multimodal subset
+- the OpenAI compatibility gate can now safely allow user image/file traffic without introducing dynamic mainline switching
 
-So even though the migrated chat-completions path is now better aligned, that change alone does not make the compatibility route safe for multimodal OpenAI traffic.
+The compatibility route should still stay conservative for:
 
-Until either:
-
-- the Responses codec gains equivalent user multimodal support, or
-- the compatibility provider becomes request-shape aware and can switch mainlines safely,
-
-the OpenAI compatibility gate should stay conservative.
+- assistant-side multimodal replay beyond the common function-tool subset
+- approval-gated continuation
+- any future provider-owned file-handle contract
 
 ## Remaining Gaps Before `Complete OpenAI chat migration`
 
@@ -101,14 +115,14 @@ The meaningful remaining gaps are now:
 
 - broadened assistant replay fidelity on chat-completions
 - a frozen provider-owned contract if OpenAI chat-completions later needs file-ID hints
-- a decision on whether the OpenAI compatibility route should stay Responses-first or become request-shape aware
-- possible multimodal parity on the Responses request codec, if compatibility or app usage proves it is necessary
+- possible richer multimodal parity on the Responses request codec beyond the current user image/file subset, if app usage proves it is necessary
+- a decision on whether OpenAI compatibility should ever broaden beyond the current user multimodal plus common function-tool replay subset into richer replay-heavy histories
 
 ## Recommended Next Step
 
 The next OpenAI-family step should focus on one of these two paths, not both at once:
 
 1. finish more assistant replay on chat-completions if replay fidelity is the blocker
-2. clarify the Responses-vs-chat-completions compatibility routing policy if legacy multimodal migration becomes the blocker
+2. audit whether the Responses path needs any richer multimodal or replay support beyond the now-working user image/file plus common function-tool compatibility subset
 
 That keeps the workstream incremental and prevents the OpenAI family from becoming another mixed-path bus layer.

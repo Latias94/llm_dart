@@ -866,6 +866,61 @@ final class OpenAIResponsesCodec {
       };
     }
 
+    if (part is ImagePromptPart) {
+      final imageUrl = part.uri?.toString() ??
+          (part.bytes == null
+              ? null
+              : 'data:${_normalizeImageMediaTypeForDataUrl(part.mediaType)};base64,'
+                  '${base64Encode(part.bytes!)}');
+      if (imageUrl == null) {
+        throw UnsupportedError(
+          'User image prompt parts need either a URI or bytes.',
+        );
+      }
+
+      return {
+        'type': 'input_image',
+        'image_url': imageUrl,
+      };
+    }
+
+    if (part is FilePromptPart) {
+      if (part.mediaType.startsWith('image/')) {
+        final imageUrl = part.uri?.toString() ??
+            (part.bytes == null
+                ? null
+                : 'data:${_normalizeImageMediaTypeForDataUrl(part.mediaType)};base64,'
+                    '${base64Encode(part.bytes!)}');
+        if (imageUrl == null) {
+          throw UnsupportedError(
+            'User image file prompt parts need either a URI or bytes.',
+          );
+        }
+
+        return {
+          'type': 'input_image',
+          'image_url': imageUrl,
+        };
+      }
+
+      if (part.uri != null) {
+        throw UnsupportedError(
+          'User file prompt parts need bytes on the migrated OpenAI Responses path.',
+        );
+      }
+
+      if (part.bytes == null) {
+        throw UnsupportedError(
+          'User file prompt parts need bytes on the migrated OpenAI Responses path.',
+        );
+      }
+
+      return {
+        'type': 'input_file',
+        'file_data': base64Encode(part.bytes!),
+      };
+    }
+
     throw UnsupportedError(
       'User prompt part ${part.runtimeType} is not supported by the migrated Responses codec yet.',
     );
@@ -1643,6 +1698,14 @@ final class OpenAIResponsesCodec {
       createdAt * 1000,
       isUtc: true,
     );
+  }
+
+  String _normalizeImageMediaTypeForDataUrl(String mediaType) {
+    if (mediaType == 'image/*') {
+      return 'image/jpeg';
+    }
+
+    return mediaType;
   }
 }
 
