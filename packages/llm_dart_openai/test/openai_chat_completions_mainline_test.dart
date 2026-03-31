@@ -90,6 +90,7 @@ void main() {
               parallelToolCalls: true,
               serviceTier: 'flex',
               verbosity: 'low',
+              user: 'user_123',
               responseFormat: OpenAIJsonSchemaResponseFormat(
                 name: 'answer',
                 schema: {
@@ -154,6 +155,7 @@ void main() {
       expect(requestBody['parallel_tool_calls'], isTrue);
       expect(requestBody['service_tier'], 'flex');
       expect(requestBody['verbosity'], 'low');
+      expect(requestBody['user'], 'user_123');
       expect(
         requestBody['response_format'],
         {
@@ -627,6 +629,96 @@ void main() {
             (error) => error.toString(),
             'message',
             contains('file prompt media type text/plain'),
+          ),
+        ),
+      );
+
+      await expectLater(
+        model.generate(
+          GenerateTextRequest(
+            prompt: [
+              UserPromptMessage.text('hello'),
+            ],
+            callOptions: const CallOptions(
+              providerOptions: OpenAIGenerateTextOptions(
+                instructions: 'Override the conversation framing.',
+              ),
+            ),
+          ),
+        ),
+        throwsA(
+          isA<UnsupportedError>().having(
+            (error) => error.toString(),
+            'message',
+            contains('instructions'),
+          ),
+        ),
+      );
+
+      await expectLater(
+        model.generate(
+          GenerateTextRequest(
+            prompt: [
+              UserPromptMessage.text('hello'),
+            ],
+            callOptions: const CallOptions(
+              providerOptions: OpenAIGenerateTextOptions(
+                maxToolCalls: 2,
+              ),
+            ),
+          ),
+        ),
+        throwsA(
+          isA<UnsupportedError>().having(
+            (error) => error.toString(),
+            'message',
+            contains('maxToolCalls'),
+          ),
+        ),
+      );
+
+      await expectLater(
+        model.generate(
+          GenerateTextRequest(
+            prompt: [
+              UserPromptMessage.text('hello'),
+            ],
+            callOptions: const CallOptions(
+              providerOptions: OpenAIGenerateTextOptions(
+                metadata: {
+                  'traceId': 'trace_123',
+                },
+              ),
+            ),
+          ),
+        ),
+        throwsA(
+          isA<UnsupportedError>().having(
+            (error) => error.toString(),
+            'message',
+            contains('metadata'),
+          ),
+        ),
+      );
+
+      await expectLater(
+        model.generate(
+          GenerateTextRequest(
+            prompt: [
+              UserPromptMessage.text('hello'),
+            ],
+            callOptions: const CallOptions(
+              providerOptions: OpenAIGenerateTextOptions(
+                truncation: OpenAIResponseTruncation.disabled,
+              ),
+            ),
+          ),
+        ),
+        throwsA(
+          isA<UnsupportedError>().having(
+            (error) => error.toString(),
+            'message',
+            contains('truncation'),
           ),
         ),
       );

@@ -67,6 +67,15 @@ final class OpenAIResponsesCodec {
         'parallel_tool_calls': providerOptions.parallelToolCalls,
       if (providerOptions.serviceTier != null)
         'service_tier': providerOptions.serviceTier,
+      if (providerOptions.instructions != null)
+        'instructions': providerOptions.instructions,
+      if (providerOptions.maxToolCalls != null)
+        'max_tool_calls': providerOptions.maxToolCalls,
+      if (providerOptions.metadata != null)
+        'metadata': providerOptions.metadata,
+      if (providerOptions.truncation != null)
+        'truncation': providerOptions.truncation!.value,
+      if (providerOptions.user != null) 'user': providerOptions.user,
     };
 
     final encodedTools = _encodeTools(

@@ -450,6 +450,88 @@ void main() {
       );
     });
 
+    test('generate forwards OpenAI Responses provider-owned request options',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'resp_request_options',
+                'model': 'gpt-4.1-mini',
+                'created_at': 1710000000,
+                'status': 'completed',
+                'output': [
+                  {
+                    'id': 'msg_1',
+                    'type': 'message',
+                    'status': 'completed',
+                    'role': 'assistant',
+                    'content': [
+                      {
+                        'type': 'output_text',
+                        'text': 'Done.',
+                        'annotations': [],
+                      },
+                    ],
+                  },
+                ],
+                'usage': {
+                  'input_tokens': 1,
+                  'output_tokens': 1,
+                  'total_tokens': 2,
+                  'output_tokens_details': {
+                    'reasoning_tokens': 0,
+                  },
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel('gpt-4.1-mini');
+
+      await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage.text('Use provider-owned request options.'),
+          ],
+          callOptions: const CallOptions(
+            providerOptions: OpenAIGenerateTextOptions(
+              instructions: 'Keep the original system framing.',
+              maxToolCalls: 3,
+              metadata: {
+                'traceId': 'trace_123',
+                'flags': ['alpha', 'beta'],
+              },
+              truncation: OpenAIResponseTruncation.disabled,
+              user: 'user_123',
+            ),
+          ),
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(
+        requestBody,
+        allOf(
+          containsPair('instructions', 'Keep the original system framing.'),
+          containsPair('max_tool_calls', 3),
+          containsPair('metadata', {
+            'traceId': 'trace_123',
+            'flags': ['alpha', 'beta'],
+          }),
+          containsPair('truncation', 'disabled'),
+          containsPair('user', 'user_123'),
+        ),
+      );
+    });
+
     test(
         'generate forwards shared responseFormat from GenerateTextOptions to the Responses request body',
         () async {
@@ -609,6 +691,13 @@ void main() {
               parallelToolCalls: true,
               serviceTier: 'flex',
               verbosity: 'high',
+              instructions: 'Retain the response behavior.',
+              maxToolCalls: 2,
+              metadata: {
+                'traceId': 'trace_overlay',
+              },
+              truncation: OpenAIResponseTruncation.auto,
+              user: 'user_overlay',
               builtInTools: [
                 OpenAIWebSearchTool(),
               ],
@@ -622,6 +711,16 @@ void main() {
       expect(requestBody['previous_response_id'], 'resp_prev');
       expect(requestBody['parallel_tool_calls'], isTrue);
       expect(requestBody['service_tier'], 'flex');
+      expect(requestBody['instructions'], 'Retain the response behavior.');
+      expect(requestBody['max_tool_calls'], 2);
+      expect(
+        requestBody['metadata'],
+        {
+          'traceId': 'trace_overlay',
+        },
+      );
+      expect(requestBody['truncation'], 'auto');
+      expect(requestBody['user'], 'user_overlay');
       expect(
         requestBody['text'],
         {

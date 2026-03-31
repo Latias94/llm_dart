@@ -61,6 +61,30 @@ final class OpenAIChatCompletionsCodec {
       );
     }
 
+    if (providerOptions.common.instructions != null) {
+      throw UnsupportedError(
+        'OpenAI-family chat-completions requests do not support instructions. Use the Responses API mainline instead.',
+      );
+    }
+
+    if (providerOptions.common.maxToolCalls != null) {
+      throw UnsupportedError(
+        'OpenAI-family chat-completions requests do not support maxToolCalls. Use the Responses API mainline instead.',
+      );
+    }
+
+    if (providerOptions.common.metadata != null) {
+      throw UnsupportedError(
+        'OpenAI-family chat-completions requests do not support metadata. Use the Responses API mainline instead.',
+      );
+    }
+
+    if (providerOptions.common.truncation != null) {
+      throw UnsupportedError(
+        'OpenAI-family chat-completions requests do not support truncation. Use the Responses API mainline instead.',
+      );
+    }
+
     final warnings = <ModelWarning>[];
     final messages = <Map<String, Object?>>[];
 
@@ -85,6 +109,8 @@ final class OpenAIChatCompletionsCodec {
         'service_tier': providerOptions.common.serviceTier,
       if (providerOptions.common.verbosity != null)
         'verbosity': providerOptions.common.verbosity,
+      if (providerOptions.common.user != null)
+        'user': providerOptions.common.user,
       if (providerOptions.xaiSearch != null)
         'search_parameters': providerOptions.xaiSearch!.toJson(),
     };

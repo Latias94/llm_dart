@@ -195,11 +195,25 @@ final class OpenAITranscriptionOptions implements ProviderInvocationOptions {
   });
 }
 
+enum OpenAIResponseTruncation {
+  auto('auto'),
+  disabled('disabled');
+
+  const OpenAIResponseTruncation(this.value);
+
+  final String value;
+}
+
 final class OpenAIGenerateTextOptions implements ProviderInvocationOptions {
   final String? previousResponseId;
   final bool? parallelToolCalls;
   final String? serviceTier;
   final String? verbosity;
+  final String? instructions;
+  final int? maxToolCalls;
+  final Map<String, Object?>? metadata;
+  final OpenAIResponseTruncation? truncation;
+  final String? user;
   final List<OpenAIBuiltInTool>? builtInTools;
   final OpenAIJsonSchemaResponseFormat? responseFormat;
 
@@ -208,6 +222,11 @@ final class OpenAIGenerateTextOptions implements ProviderInvocationOptions {
     this.parallelToolCalls,
     this.serviceTier,
     this.verbosity,
+    this.instructions,
+    this.maxToolCalls,
+    this.metadata,
+    this.truncation,
+    this.user,
     this.builtInTools,
     this.responseFormat,
   });
@@ -217,6 +236,11 @@ final class OpenAIGenerateTextOptions implements ProviderInvocationOptions {
     Object? parallelToolCalls = _unset,
     Object? serviceTier = _unset,
     Object? verbosity = _unset,
+    Object? instructions = _unset,
+    Object? maxToolCalls = _unset,
+    Object? metadata = _unset,
+    Object? truncation = _unset,
+    Object? user = _unset,
     Object? builtInTools = _unset,
     Object? responseFormat = _unset,
   }) {
@@ -232,6 +256,19 @@ final class OpenAIGenerateTextOptions implements ProviderInvocationOptions {
           : serviceTier as String?,
       verbosity:
           identical(verbosity, _unset) ? this.verbosity : verbosity as String?,
+      instructions: identical(instructions, _unset)
+          ? this.instructions
+          : instructions as String?,
+      maxToolCalls: identical(maxToolCalls, _unset)
+          ? this.maxToolCalls
+          : maxToolCalls as int?,
+      metadata: identical(metadata, _unset)
+          ? this.metadata
+          : metadata as Map<String, Object?>?,
+      truncation: identical(truncation, _unset)
+          ? this.truncation
+          : truncation as OpenAIResponseTruncation?,
+      user: identical(user, _unset) ? this.user : user as String?,
       builtInTools: identical(builtInTools, _unset)
           ? this.builtInTools
           : builtInTools as List<OpenAIBuiltInTool>?,
