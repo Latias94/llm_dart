@@ -253,6 +253,151 @@ void main() {
       );
     });
 
+    test(
+        'generate forwards shared responseFormat from GenerateTextOptions to the Responses request body',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'resp_shared_format',
+                'model': 'gpt-4.1-mini',
+                'created_at': 1710000000,
+                'status': 'completed',
+                'output': [
+                  {
+                    'id': 'msg_1',
+                    'type': 'message',
+                    'status': 'completed',
+                    'role': 'assistant',
+                    'content': [
+                      {
+                        'type': 'output_text',
+                        'text': '{"value":"Done."}',
+                        'annotations': [],
+                      },
+                    ],
+                  },
+                ],
+                'usage': {
+                  'input_tokens': 1,
+                  'output_tokens': 1,
+                  'total_tokens': 2,
+                  'output_tokens_details': {
+                    'reasoning_tokens': 0,
+                  },
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel('gpt-4.1-mini');
+
+      await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage.text('Return JSON.'),
+          ],
+          options: GenerateTextOptions(
+            responseFormat: JsonResponseFormat(
+              name: 'answer',
+              description: 'Structured answer payload.',
+              schema: JsonSchema.object(
+                properties: const {
+                  'value': {'type': 'string'},
+                },
+                required: const ['value'],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(
+        requestBody['response_format'],
+        {
+          'type': 'json_schema',
+          'json_schema': {
+            'name': 'answer',
+            'description': 'Structured answer payload.',
+            'schema': {
+              'type': 'object',
+              'properties': {
+                'value': {'type': 'string'},
+              },
+              'required': ['value'],
+              'additionalProperties': false,
+            },
+          },
+        },
+      );
+    });
+
+    test(
+        'generate rejects configuring shared and OpenAI-specific response formats at the same time',
+        () async {
+      var sendCount = 0;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            sendCount += 1;
+            return TransportResponse(statusCode: 200, body: const {});
+          },
+        ),
+      ).chatModel('gpt-4.1-mini');
+
+      await expectLater(
+        model.generate(
+          GenerateTextRequest(
+            prompt: [
+              UserPromptMessage.text('Return JSON.'),
+            ],
+            options: GenerateTextOptions(
+              responseFormat: JsonResponseFormat(
+                schema: JsonSchema.object(
+                  properties: const {
+                    'value': {'type': 'string'},
+                  },
+                ),
+              ),
+            ),
+            callOptions: const CallOptions(
+              providerOptions: OpenAIGenerateTextOptions(
+                responseFormat: OpenAIJsonSchemaResponseFormat(
+                  name: 'answer',
+                  schema: {
+                    'type': 'object',
+                    'properties': {
+                      'value': {'type': 'string'},
+                    },
+                  },
+                ),
+              ),
+            ),
+          ),
+        ),
+        throwsA(
+          isA<ArgumentError>().having(
+            (error) => error.message,
+            'message',
+            contains('responseFormat'),
+          ),
+        ),
+      );
+
+      expect(sendCount, 0);
+    });
+
     test('generate maps source annotations to typed source references',
         () async {
       final model = OpenAI(

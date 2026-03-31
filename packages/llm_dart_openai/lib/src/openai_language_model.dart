@@ -6,6 +6,7 @@ import 'package:llm_dart_transport/llm_dart_transport.dart';
 import 'openai_chat_completions_codec.dart';
 import 'openai_family_profile.dart';
 import 'openai_options.dart';
+import 'openai_response_format.dart';
 import 'openrouter_options.dart';
 import 'resolved_openai_chat_settings.dart';
 import 'resolved_openai_options.dart';
@@ -56,9 +57,7 @@ final class OpenAILanguageModel implements LanguageModel {
 
   @override
   Future<GenerateTextResult> generate(GenerateTextRequest request) async {
-    final providerOptions = _resolveProviderOptions(
-      request.callOptions.providerOptions,
-    );
+    final providerOptions = _resolveProviderOptions(request);
     if (_usesResponsesApi) {
       final preparedRequest = _codec.encodeRequest(
         modelId: _requestModelId,
@@ -122,9 +121,7 @@ final class OpenAILanguageModel implements LanguageModel {
 
   @override
   Stream<TextStreamEvent> stream(GenerateTextRequest request) async* {
-    final providerOptions = _resolveProviderOptions(
-      request.callOptions.providerOptions,
-    );
+    final providerOptions = _resolveProviderOptions(request);
     final useResponsesApi = _usesResponsesApi;
     if (useResponsesApi) {
       final preparedRequest = _codec.encodeRequest(
@@ -246,19 +243,21 @@ final class OpenAILanguageModel implements LanguageModel {
   }
 
   ResolvedOpenAIGenerateTextOptions _resolveProviderOptions(
-    ProviderInvocationOptions? options,
+    GenerateTextRequest request,
   ) {
+    final options = request.callOptions.providerOptions;
+    final sharedResponseFormat = _resolveSharedResponseFormat(
+      request.options.responseFormat,
+    );
+
+    OpenAIGenerateTextOptions common = const OpenAIGenerateTextOptions();
+    XAILiveSearchOptions? xaiSearch;
+
     if (options == null) {
-      return const ResolvedOpenAIGenerateTextOptions();
-    }
-
-    if (options is OpenAIGenerateTextOptions) {
-      return ResolvedOpenAIGenerateTextOptions(
-        common: options,
-      );
-    }
-
-    if (options is XAIGenerateTextOptions) {
+      common = const OpenAIGenerateTextOptions();
+    } else if (options is OpenAIGenerateTextOptions) {
+      common = options;
+    } else if (options is XAIGenerateTextOptions) {
       if (profile.providerId != 'xai') {
         throw ArgumentError.value(
           options,
@@ -267,16 +266,37 @@ final class OpenAILanguageModel implements LanguageModel {
         );
       }
 
-      return ResolvedOpenAIGenerateTextOptions(
-        common: options.common,
-        xaiSearch: options.search,
+      common = options.common;
+      xaiSearch = options.search;
+    } else {
+      throw ArgumentError.value(
+        options,
+        'providerOptions',
+        'Expected OpenAIGenerateTextOptions or profile-specific OpenAI-family provider options.',
       );
     }
 
-    throw ArgumentError.value(
-      options,
-      'providerOptions',
-      'Expected OpenAIGenerateTextOptions or profile-specific OpenAI-family provider options.',
+    if (request.options.responseFormat != null &&
+        common.responseFormat != null) {
+      throw ArgumentError(
+        'GenerateTextOptions.responseFormat and OpenAIGenerateTextOptions.responseFormat cannot both be set.',
+      );
+    }
+
+    if (sharedResponseFormat != null) {
+      common = OpenAIGenerateTextOptions(
+        previousResponseId: common.previousResponseId,
+        parallelToolCalls: common.parallelToolCalls,
+        serviceTier: common.serviceTier,
+        verbosity: common.verbosity,
+        builtInTools: common.builtInTools,
+        responseFormat: sharedResponseFormat,
+      );
+    }
+
+    return ResolvedOpenAIGenerateTextOptions(
+      common: common,
+      xaiSearch: xaiSearch,
     );
   }
 
@@ -357,5 +377,23 @@ final class OpenAILanguageModel implements LanguageModel {
     }
 
     return '$modelId:online';
+  }
+
+  OpenAIJsonSchemaResponseFormat? _resolveSharedResponseFormat(
+    ResponseFormat? responseFormat,
+  ) {
+    return switch (responseFormat) {
+      null || TextResponseFormat() => null,
+      JsonResponseFormat(
+        schema: final schema,
+        name: final name,
+        description: final description,
+      ) =>
+        OpenAIJsonSchemaResponseFormat(
+          name: name ?? 'structured_output',
+          description: description,
+          schema: schema.toJson(),
+        ),
+    };
   }
 }

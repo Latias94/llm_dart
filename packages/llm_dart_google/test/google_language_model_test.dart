@@ -244,6 +244,124 @@ void main() {
       expect(result.warnings, isEmpty);
     });
 
+    test(
+        'generate forwards shared responseFormat from GenerateTextOptions to the Google request body',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = Google(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return const TransportResponse(
+              statusCode: 200,
+              body: {
+                'responseId': 'resp_structured',
+                'modelVersion': 'gemini-2.5-flash',
+                'candidates': [
+                  {
+                    'content': {
+                      'parts': [
+                        {
+                          'text': '{"answer":"Hello"}',
+                        },
+                      ],
+                    },
+                    'finishReason': 'STOP',
+                  },
+                ],
+              },
+            );
+          },
+        ),
+      ).chatModel('gemini-2.5-flash');
+
+      await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage.text('Return JSON.'),
+          ],
+          options: GenerateTextOptions(
+            responseFormat: JsonResponseFormat(
+              name: 'answer',
+              description: 'Structured answer payload.',
+              schema: JsonSchema.object(
+                properties: const {
+                  'answer': {'type': 'string'},
+                },
+                required: const ['answer'],
+                additionalProperties: false,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      final body = capturedRequest!.body as Map<String, Object?>;
+      expect(
+        body['generationConfig'],
+        {
+          'responseMimeType': 'application/json',
+          'responseSchema': {
+            'type': 'object',
+            'properties': {
+              'answer': {'type': 'string'},
+            },
+            'required': ['answer'],
+          },
+        },
+      );
+    });
+
+    test(
+        'generate rejects configuring shared and Google-specific response formats at the same time',
+        () async {
+      final model = Google(
+        apiKey: 'test-key',
+        transport: const _FakeTransportClient(),
+      ).chatModel('gemini-2.5-flash');
+
+      await expectLater(
+        model.generate(
+          GenerateTextRequest(
+            prompt: [
+              UserPromptMessage.text('Return JSON.'),
+            ],
+            options: GenerateTextOptions(
+              responseFormat: JsonResponseFormat(
+                schema: JsonSchema.object(
+                  properties: const {
+                    'answer': {'type': 'string'},
+                  },
+                ),
+              ),
+            ),
+            callOptions: const CallOptions(
+              providerOptions: GoogleGenerateTextOptions(
+                responseFormat: GoogleJsonSchemaResponseFormat(
+                  schema: {
+                    'type': 'object',
+                    'properties': {
+                      'answer': {'type': 'string'},
+                    },
+                  },
+                ),
+              ),
+            ),
+          ),
+        ),
+        throwsA(
+          isA<ArgumentError>().having(
+            (error) => error.message,
+            'message',
+            contains('responseFormat'),
+          ),
+        ),
+      );
+    });
+
     test('stream sends SSE requests and maps unified events', () async {
       TransportRequest? capturedRequest;
 

@@ -6,6 +6,7 @@ import '../content/content_part.dart';
 import '../prompt/prompt_message.dart';
 import '../stream/text_stream_event.dart';
 import '../tool/tool_definition.dart';
+import 'response_format.dart';
 
 enum FinishReason {
   stop,
@@ -23,6 +24,7 @@ final class GenerateTextOptions {
   final List<String>? stopSequences;
   final double? topP;
   final int? topK;
+  final ResponseFormat? responseFormat;
 
   const GenerateTextOptions({
     this.maxOutputTokens,
@@ -30,6 +32,7 @@ final class GenerateTextOptions {
     this.stopSequences,
     this.topP,
     this.topK,
+    this.responseFormat,
   });
 }
 

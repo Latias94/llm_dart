@@ -1,3 +1,5 @@
+import '../common/json_schema.dart';
+
 sealed class ToolChoice {
   const ToolChoice();
 }
@@ -30,10 +32,7 @@ final class ToolJsonSchema {
   /// Tool input schemas are intentionally constrained to an object root,
   /// because cross-provider function calling expects object-shaped arguments.
   factory ToolJsonSchema.raw(Map<String, Object?> schema) {
-    final normalized = _normalizeJsonObject(
-      schema,
-      path: r'$.inputSchema',
-    );
+    final normalized = JsonSchema.raw(schema).toJson();
 
     if (normalized['type'] != 'object') {
       throw ArgumentError.value(
@@ -131,70 +130,4 @@ final class FunctionToolDefinition extends ToolDefinition {
     required this.inputSchema,
     this.strict,
   });
-}
-
-Map<String, Object?> _normalizeJsonObject(
-  Map<String, Object?> value, {
-  required String path,
-}) {
-  final normalized = <String, Object?>{};
-
-  for (final entry in value.entries) {
-    normalized[entry.key] = _normalizeJsonValue(
-      entry.value,
-      path: '$path.${entry.key}',
-    );
-  }
-
-  return normalized;
-}
-
-Object? _normalizeJsonValue(
-  Object? value, {
-  required String path,
-}) {
-  return switch (value) {
-    null || bool() || num() || String() => value,
-    List() => value
-        .asMap()
-        .entries
-        .map(
-          (entry) => _normalizeJsonValue(
-            entry.value,
-            path: '$path[${entry.key}]',
-          ),
-        )
-        .toList(growable: false),
-    Map() => _normalizeAnonymousMap(value, path: path),
-    _ => throw ArgumentError.value(
-        value,
-        path,
-        'Tool schemas only support JSON-safe values.',
-      ),
-  };
-}
-
-Map<String, Object?> _normalizeAnonymousMap(
-  Map value, {
-  required String path,
-}) {
-  final normalized = <String, Object?>{};
-
-  for (final entry in value.entries) {
-    final key = entry.key;
-    if (key is! String) {
-      throw ArgumentError.value(
-        key,
-        path,
-        'Tool schemas only support string object keys.',
-      );
-    }
-
-    normalized[key] = _normalizeJsonValue(
-      entry.value,
-      path: '$path.$key',
-    );
-  }
-
-  return normalized;
 }
