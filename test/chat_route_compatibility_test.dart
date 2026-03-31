@@ -1008,32 +1008,60 @@ void main() {
     });
 
     test(
-        'Anthropic legacy extension analysis tells tool_search result traffic to stay on the old provider path',
+        'Anthropic legacy extension analysis now allows exact tool_search result replay blocks',
         () {
-      expect(
-        () => analyzeAnthropicLegacyMessageExtensions([
-          legacy.ChatMessage.user('').withExtension(
-            'anthropic',
-            {
-              'contentBlocks': [
-                {
-                  'type': 'tool_search_tool_result',
-                  'tool_use_id': 'srvtoolu_1',
-                  'content': {
-                    'query': 'docs',
-                  },
+      final analysis = analyzeAnthropicLegacyMessageExtensions([
+        legacy.ChatMessage.user('').withExtension(
+          'anthropic',
+          {
+            'contentBlocks': [
+              {
+                'type': 'tool_search_tool_result',
+                'tool_use_id': 'srvtoolu_1',
+                'content': {
+                  'type': 'tool_search_tool_search_result',
+                  'tool_references': [
+                    {
+                      'type': 'tool_reference',
+                      'tool_name': 'get_weather',
+                    },
+                  ],
                 },
-              ],
-            },
-          ),
-        ]),
-        throwsA(
-          isA<UnsupportedError>().having(
-            (error) => error.message,
-            'message',
-            contains('old Anthropic provider path'),
-          ),
+              },
+            ],
+          },
         ),
+      ]);
+
+      expect(analysis.messageAnalyses.single.promptBlocks, hasLength(1));
+      expect(
+        canUseAnthropicChatBridge(
+          _baseConfig('claude-sonnet-4-5'),
+          [
+            legacy.ChatMessage.user('').withExtension(
+              'anthropic',
+              {
+                'contentBlocks': [
+                  {
+                    'type': 'tool_search_tool_result',
+                    'tool_use_id': 'srvtoolu_1',
+                    'content': {
+                      'type': 'tool_search_tool_search_result',
+                      'tool_references': [
+                        {
+                          'type': 'tool_reference',
+                          'tool_name': 'get_weather',
+                        },
+                      ],
+                    },
+                  },
+                ],
+              },
+            ),
+          ],
+          null,
+        ),
+        isTrue,
       );
     });
 

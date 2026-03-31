@@ -1539,6 +1539,7 @@ String _fallbackAnthropicToolResultName(
     'mcp_tool_result' => 'mcp.unknown',
     'web_search_tool_result' => 'web_search',
     'web_fetch_tool_result' => 'web_fetch',
+    'tool_search_tool_result' => 'tool_search',
     _ => 'tool',
   };
 }

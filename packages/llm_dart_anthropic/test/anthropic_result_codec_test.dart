@@ -363,5 +363,76 @@ void main() {
         },
       });
     });
+
+    test('decodes tool-search tool results into custom replay parts', () {
+      final result = codec.decodeResponse({
+        'id': 'msg_6',
+        'model': 'claude-sonnet-4-5',
+        'content': [
+          {
+            'type': 'server_tool_use',
+            'id': 'srvtoolu_4',
+            'name': 'tool_search_tool_regex',
+            'input': {
+              'pattern': 'weather|forecast',
+              'limit': 5,
+            },
+          },
+          {
+            'type': 'tool_search_tool_result',
+            'tool_use_id': 'srvtoolu_4',
+            'content': {
+              'type': 'tool_search_tool_search_result',
+              'tool_references': [
+                {
+                  'type': 'tool_reference',
+                  'tool_name': 'get_weather',
+                },
+              ],
+            },
+          },
+        ],
+        'stop_reason': 'end_turn',
+        'usage': {
+          'input_tokens': 20,
+          'output_tokens': 10,
+        },
+      });
+
+      final toolResult =
+          result.content.whereType<ToolResultContentPart>().single;
+      final customPart = result.content.whereType<CustomContentPart>().single;
+
+      expect(toolResult.toolResult.toolName, 'tool_search_tool_regex');
+      expect(toolResult.toolResult.isDynamic, isTrue);
+      expect(toolResult.toolResult.output, {
+        'type': 'tool_search_tool_search_result',
+        'tool_references': [
+          {
+            'type': 'tool_reference',
+            'tool_name': 'get_weather',
+          },
+        ],
+      });
+      expect(customPart.kind, 'anthropic.result.tool_search');
+      expect(customPart.data, {
+        'replayRole': 'tool',
+        'toolCallId': 'srvtoolu_4',
+        'toolName': 'tool_search_tool_regex',
+        'block': {
+          'type': 'tool_search_tool_result',
+          'tool_use_id': 'srvtoolu_4',
+          'content': {
+            'type': 'tool_search_tool_search_result',
+            'tool_references': [
+              {
+                'type': 'tool_reference',
+                'tool_name': 'get_weather',
+              },
+            ],
+          },
+        },
+      });
+    });
   });
 }

@@ -63,16 +63,23 @@ The current minimal provider-native tool surface is:
 
 - `AnthropicWebSearchTool20250305`
 - `AnthropicCodeExecutionTool20260120`
+- `AnthropicToolSearchRegexTool20251119`
+- `AnthropicToolSearchBm25Tool20251119`
 
 These tools live in `llm_dart_anthropic` and are passed through:
 
 - `AnthropicChatModelSettings.tools`
 - `AnthropicGenerateTextOptions.tools`
+- `AnthropicChatModelSettings.deferredToolNames`
+- `AnthropicGenerateTextOptions.deferredToolNames`
 
 Current behavior:
 
 - Anthropic native tools are encoded into the same request-side `tools` array as
   common function tools
+- provider-owned `deferredToolNames` now also let Anthropic mark shared
+  function-tool declarations with `defer_loading` without widening the common
+  `FunctionToolDefinition`
 - common `AutoToolChoice` and `RequiredToolChoice` apply across the full tool
   set
 - `SpecificToolChoice` still only validates against common function-tool
@@ -103,7 +110,7 @@ By keeping provider-native tools in provider packages:
 
 This freeze still leaves open work:
 
-- broader Anthropic native tool families
+- Anthropic custom tool-reference helpers for user-defined tool-search flows
 - broader Google grounding and retrieval tool families
 - provider-specific forcing/selection APIs for native tools
 - compatibility adapters from the old extension-based tool flags

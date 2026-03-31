@@ -32,6 +32,10 @@ The current request codec can re-encode:
 - user `mcp_tool_result`
 - user `web_search_tool_result` through the Anthropic-owned custom replay path
 - user `web_fetch_tool_result` through the Anthropic-owned custom replay path
+- user `tool_search_tool_result` through the Anthropic-owned custom replay path
+- user `code_execution_tool_result` through the Anthropic-owned custom replay path
+- user `bash_code_execution_tool_result` through the Anthropic-owned custom replay path
+- user `text_editor_code_execution_tool_result` through the Anthropic-owned custom replay path
 
 The current result decoder can also recognize provider-native result families such as:
 
@@ -74,7 +78,7 @@ This rule applies both to:
 | `code_execution_tool_result` | yes, through `anthropic.result.code_execution` | fallback | provider-owned replay now works through Anthropic custom parts, but the legacy raw bridge still does not accept the raw block directly |
 | `bash_code_execution_tool_result` | yes, through `anthropic.result.code_execution` | fallback | same boundary |
 | `text_editor_code_execution_tool_result` | yes, through `anthropic.result.code_execution` | fallback | same boundary |
-| `tool_search_tool_result` | no | fallback | same reason |
+| `tool_search_tool_result` | yes, through `anthropic.result.tool_search` | allowed with restrictions | the new Anthropic prompt path can replay it through provider-owned custom parts, and the legacy raw bridge now accepts the raw block for user-role replay when it stays in the exact `type` / `tool_use_id` / map `content` shape |
 
 ## 4. Why Plain `tool_result` Needs A Stricter Legacy Rule
 
@@ -122,6 +126,7 @@ Recommended namespace direction:
 
 - `kind: "anthropic.result.web_search"`
 - `kind: "anthropic.result.web_fetch"`
+- `kind: "anthropic.result.tool_search"`
 - `kind: "anthropic.result.code_execution"`
 
 The exact names can still change, but the shape should stay provider-owned and namespaced.
@@ -160,7 +165,7 @@ Current status:
 
 - steps 1 and 2 are now implemented for `web_search_tool_result`
 - step 3 is now also implemented for `web_fetch_tool_result`
-- step 4 is now also implemented for both retrieval result families
+- step 4 is now also implemented for all three current retrieval result families
 - the provider-owned replay path is now also implemented for the execution result families through `anthropic.result.code_execution`
 - the remaining execution boundary is the legacy raw bridge, which still stays fallback-only
 
@@ -172,9 +177,11 @@ For the current breaking round, user guidance should be explicit:
 - legacy raw Anthropic `tool_result` / `mcp_tool_result` can bridge only inside the currently frozen replay-safe subset
 - provider-owned Anthropic replay for `web_search_tool_result` now works through `CustomContentPart` / `CustomUiPart` / `CustomPromptPart`
 - provider-owned Anthropic replay for `web_fetch_tool_result` now works through `CustomContentPart` / `CustomUiPart` / `CustomPromptPart`
+- provider-owned Anthropic replay for `tool_search_tool_result` now also works through `CustomContentPart` / `CustomUiPart` / `CustomPromptPart`
 - provider-owned Anthropic replay for `code_execution_tool_result`, `bash_code_execution_tool_result`, and `text_editor_code_execution_tool_result` now works through `CustomContentPart` / `CustomUiPart` / `CustomPromptPart` with `kind: "anthropic.result.code_execution"`
 - legacy raw Anthropic `web_search_tool_result` can now bridge only for user-role replay with the exact `type` / `tool_use_id` / list `content` wire shape
 - legacy raw Anthropic `web_fetch_tool_result` can now bridge only for user-role replay with the exact `type` / `tool_use_id` / map `content` wire shape
+- legacy raw Anthropic `tool_search_tool_result` can now bridge only for user-role replay with the exact `type` / `tool_use_id` / map `content` wire shape
 - legacy raw execution-oriented provider-native result blocks still fall back to the old provider path
 
 This should be documented as a fidelity boundary, not as a temporary codec omission.

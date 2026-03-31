@@ -688,6 +688,86 @@ void main() {
     });
 
     test(
+        'Anthropic legacy adapter maps tool-search result blocks into custom tool replay messages',
+        () {
+      final adapter = AnthropicLegacyChatCapabilityAdapter(
+        model: _FakeLanguageModel(),
+        config: legacy.LLMConfig(
+          apiKey: 'test-key',
+          baseUrl: 'https://example.com',
+          model: 'claude-sonnet-4-5',
+        ),
+      );
+
+      final request = adapter.buildRequest(
+        [
+          legacy.ChatMessage.assistant('').withExtension(
+            'anthropic',
+            {
+              'contentBlocks': [
+                {
+                  'type': 'server_tool_use',
+                  'id': 'srvtoolu_3',
+                  'name': 'tool_search_tool_regex',
+                  'input': {
+                    'pattern': 'weather|forecast',
+                    'limit': 5,
+                  },
+                },
+              ],
+            },
+          ),
+          legacy.ChatMessage.user('').withExtension(
+            'anthropic',
+            {
+              'contentBlocks': [
+                {
+                  'type': 'tool_search_tool_result',
+                  'tool_use_id': 'srvtoolu_3',
+                  'content': {
+                    'type': 'tool_search_tool_search_result',
+                    'tool_references': [
+                      {
+                        'type': 'tool_reference',
+                        'tool_name': 'get_weather',
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          ),
+        ],
+        null,
+      );
+
+      expect(request.prompt, hasLength(2));
+
+      final replay = request.prompt[1] as core.ToolPromptMessage;
+      expect(replay.toolName, 'tool_search_tool_regex');
+      final part = replay.parts.single as core.CustomPromptPart;
+      expect(part.kind, 'anthropic.result.tool_search');
+      expect(part.data, {
+        'replayRole': 'tool',
+        'toolCallId': 'srvtoolu_3',
+        'toolName': 'tool_search_tool_regex',
+        'block': {
+          'type': 'tool_search_tool_result',
+          'tool_use_id': 'srvtoolu_3',
+          'content': {
+            'type': 'tool_search_tool_search_result',
+            'tool_references': [
+              {
+                'type': 'tool_reference',
+                'tool_name': 'get_weather',
+              },
+            ],
+          },
+        },
+      });
+    });
+
+    test(
         'Compat OpenRouter provider maps legacy webSearchConfig into online-model settings',
         () async {
       TransportRequest? capturedRequest;

@@ -43,10 +43,10 @@ For the current breaking round, Anthropic is the concrete example.
 | `mcp_tool_result` JSON-safe subset | allowed | common/shared path | no special migration warning needed |
 | `web_search_tool_result` exact replay-safe subset | allowed | `anthropic.result.web_search` | no special migration warning needed when inside the allowlist |
 | `web_fetch_tool_result` exact replay-safe subset | allowed | `anthropic.result.web_fetch` | no special migration warning needed when inside the allowlist |
+| `tool_search_tool_result` exact replay-safe subset | allowed | `anthropic.result.tool_search` | no special migration warning needed when inside the allowlist |
 | `code_execution_tool_result` | fallback | `anthropic.result.code_execution` | tell users to move to the provider-owned replay path or stay on the old provider path |
 | `bash_code_execution_tool_result` | fallback | `anthropic.result.code_execution` | same guidance |
 | `text_editor_code_execution_tool_result` | fallback | `anthropic.result.code_execution` | same guidance |
-| `tool_search_tool_result` | fallback | not frozen yet | tell users to stay on the old provider path until a provider-owned replay path exists |
 
 ## 3. Code-Level Rule
 
@@ -89,5 +89,5 @@ Bridge-incompatible provider-native result blocks now need explicit migration-or
 
 For Anthropic specifically:
 
+- `tool_search_tool_result` should now point users at `anthropic.result.tool_search` when they need explicit provider-owned replay payloads
 - execution result families should point users at `anthropic.result.code_execution` plus old-provider fallback
-- still-unfrozen families such as `tool_search_tool_result` should point users at the old provider path only

@@ -660,6 +660,119 @@ void main() {
       );
     });
 
+    test('replays Anthropic tool-search tool results from custom prompt parts',
+        () {
+      final request = codec.encodeRequest(
+        modelId: 'claude-sonnet-4-5',
+        prompt: [
+          UserPromptMessage.text('Find the right tool first.'),
+          AssistantPromptMessage(
+            parts: const [
+              ToolCallPromptPart(
+                toolCallId: 'srvtoolu_4',
+                toolName: 'tool_search_tool_regex',
+                input: {
+                  'pattern': 'weather|forecast',
+                  'limit': 5,
+                },
+                providerExecuted: true,
+                isDynamic: true,
+              ),
+            ],
+          ),
+          ToolPromptMessage(
+            toolName: 'tool_search_tool_regex',
+            parts: const [
+              CustomPromptPart(
+                kind: 'anthropic.result.tool_search',
+                data: {
+                  'replayRole': 'tool',
+                  'toolCallId': 'srvtoolu_4',
+                  'toolName': 'tool_search_tool_regex',
+                  'block': {
+                    'type': 'tool_search_tool_result',
+                    'tool_use_id': 'srvtoolu_4',
+                    'content': {
+                      'type': 'tool_search_tool_search_result',
+                      'tool_references': [
+                        {
+                          'type': 'tool_reference',
+                          'tool_name': 'get_weather',
+                        },
+                      ],
+                    },
+                  },
+                },
+              ),
+            ],
+          ),
+          AssistantPromptMessage.text('I found the weather tool.'),
+        ],
+        tools: const [],
+        toolChoice: null,
+        options: const GenerateTextOptions(),
+        settings: const AnthropicChatModelSettings(),
+        providerOptions: const AnthropicGenerateTextOptions(),
+        stream: false,
+      );
+
+      expect(
+        request.body['messages'],
+        [
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'text',
+                'text': 'Find the right tool first.',
+              },
+            ],
+          },
+          {
+            'role': 'assistant',
+            'content': [
+              {
+                'type': 'server_tool_use',
+                'id': 'srvtoolu_4',
+                'name': 'tool_search_tool_regex',
+                'input': {
+                  'pattern': 'weather|forecast',
+                  'limit': 5,
+                },
+              },
+            ],
+          },
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'tool_search_tool_result',
+                'tool_use_id': 'srvtoolu_4',
+                'content': {
+                  'type': 'tool_search_tool_search_result',
+                  'tool_references': [
+                    {
+                      'type': 'tool_reference',
+                      'tool_name': 'get_weather',
+                    },
+                  ],
+                },
+              },
+            ],
+          },
+          {
+            'role': 'assistant',
+            'content': [
+              {
+                'type': 'text',
+                'text': 'I found the weather tool.',
+              },
+            ],
+          },
+        ],
+      );
+    });
+
     test(
         'replays Anthropic code-execution tool results from custom prompt parts',
         () {
@@ -831,6 +944,144 @@ void main() {
         {
           'type': 'auto',
         },
+      );
+    });
+
+    test(
+        'encodes Anthropic tool-search native tools and deferred function tools',
+        () {
+      final request = codec.encodeRequest(
+        modelId: 'claude-sonnet-4-5',
+        prompt: [
+          UserPromptMessage.text('Find and use the right tool.'),
+        ],
+        tools: [
+          FunctionToolDefinition(
+            name: 'get_weather',
+            inputSchema: ToolJsonSchema.object(),
+          ),
+          FunctionToolDefinition(
+            name: 'get_forecast',
+            inputSchema: ToolJsonSchema.object(),
+          ),
+        ],
+        toolChoice: const AutoToolChoice(),
+        options: const GenerateTextOptions(),
+        settings: const AnthropicChatModelSettings(
+          tools: [
+            AnthropicToolSearchRegexTool20251119(),
+          ],
+          deferredToolNames: [
+            'get_weather',
+          ],
+        ),
+        providerOptions: const AnthropicGenerateTextOptions(),
+        stream: false,
+      );
+
+      expect(
+        request.body['tools'],
+        [
+          {
+            'name': 'get_weather',
+            'input_schema': {
+              'type': 'object',
+            },
+            'defer_loading': true,
+          },
+          {
+            'name': 'get_forecast',
+            'input_schema': {
+              'type': 'object',
+            },
+          },
+          {
+            'type': 'tool_search_tool_regex_20251119',
+            'name': 'tool_search_tool_regex',
+          },
+        ],
+      );
+      expect(
+        request.body['tool_choice'],
+        {
+          'type': 'auto',
+        },
+      );
+      expect(
+        request.warnings
+            .where((warning) => warning.field == 'deferredToolNames'),
+        isEmpty,
+      );
+    });
+
+    test('normalizes deferred tool names and warns when tool-search is missing',
+        () {
+      final request = codec.encodeRequest(
+        modelId: 'claude-sonnet-4-5',
+        prompt: [
+          UserPromptMessage.text('Use a deferred tool.'),
+        ],
+        tools: [
+          FunctionToolDefinition(
+            name: 'get_weather',
+            inputSchema: ToolJsonSchema.object(),
+          ),
+        ],
+        toolChoice: const AutoToolChoice(),
+        options: const GenerateTextOptions(),
+        settings: const AnthropicChatModelSettings(),
+        providerOptions: const AnthropicGenerateTextOptions(
+          deferredToolNames: [
+            'get_weather',
+            'get_weather',
+            '',
+            'missing_tool',
+          ],
+        ),
+        stream: false,
+      );
+
+      expect(
+        request.body['tools'],
+        [
+          {
+            'name': 'get_weather',
+            'input_schema': {
+              'type': 'object',
+            },
+            'defer_loading': true,
+          },
+        ],
+      );
+
+      final deferredWarnings = request.warnings
+          .where((warning) => warning.field == 'deferredToolNames')
+          .map((warning) => warning.message)
+          .toList();
+      expect(deferredWarnings, hasLength(3));
+      expect(
+        deferredWarnings,
+        contains(
+          contains(
+            'duplicates or empty values',
+          ),
+        ),
+      );
+      expect(
+        deferredWarnings,
+        contains(
+          contains(
+            'Ignoring unknown names: missing_tool',
+          ),
+        ),
+      );
+      expect(
+        deferredWarnings,
+        contains(
+          contains(
+            'without a tool-search native tool',
+          ),
+        ),
       );
     });
 

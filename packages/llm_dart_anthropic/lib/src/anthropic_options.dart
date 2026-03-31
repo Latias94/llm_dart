@@ -30,12 +30,14 @@ final class AnthropicChatModelSettings implements ProviderModelOptions {
   final Map<String, String> headers;
   final List<String> betaFeatures;
   final List<AnthropicNativeTool> tools;
+  final List<String> deferredToolNames;
 
   const AnthropicChatModelSettings({
     this.anthropicVersion = '2023-06-01',
     this.headers = const {},
     this.betaFeatures = const [],
     this.tools = const [],
+    this.deferredToolNames = const [],
   });
 }
 
@@ -72,6 +74,7 @@ final class AnthropicGenerateTextOptions implements ProviderInvocationOptions {
   final String? container;
   final List<AnthropicMcpServer>? mcpServers;
   final List<AnthropicNativeTool>? tools;
+  final List<String>? deferredToolNames;
   final AnthropicCacheControl? toolsCacheControl;
 
   const AnthropicGenerateTextOptions({
@@ -83,6 +86,7 @@ final class AnthropicGenerateTextOptions implements ProviderInvocationOptions {
     this.container,
     this.mcpServers,
     this.tools,
+    this.deferredToolNames,
     this.toolsCacheControl,
   });
 
@@ -95,6 +99,7 @@ final class AnthropicGenerateTextOptions implements ProviderInvocationOptions {
     String? container,
     List<AnthropicMcpServer>? mcpServers,
     List<AnthropicNativeTool>? tools,
+    List<String>? deferredToolNames,
     AnthropicCacheControl? toolsCacheControl,
   }) {
     return AnthropicGenerateTextOptions(
@@ -106,6 +111,7 @@ final class AnthropicGenerateTextOptions implements ProviderInvocationOptions {
       container: container ?? this.container,
       mcpServers: mcpServers ?? this.mcpServers,
       tools: tools ?? this.tools,
+      deferredToolNames: deferredToolNames ?? this.deferredToolNames,
       toolsCacheControl: toolsCacheControl ?? this.toolsCacheControl,
     );
   }

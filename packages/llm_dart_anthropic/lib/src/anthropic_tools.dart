@@ -74,6 +74,36 @@ final class AnthropicCodeExecutionTool20260120 extends AnthropicNativeTool {
   }
 }
 
+final class AnthropicToolSearchRegexTool20251119 extends AnthropicNativeTool {
+  const AnthropicToolSearchRegexTool20251119();
+
+  @override
+  String get name => 'tool_search_tool_regex';
+
+  @override
+  Map<String, Object?> toJson() {
+    return const {
+      'type': 'tool_search_tool_regex_20251119',
+      'name': 'tool_search_tool_regex',
+    };
+  }
+}
+
+final class AnthropicToolSearchBm25Tool20251119 extends AnthropicNativeTool {
+  const AnthropicToolSearchBm25Tool20251119();
+
+  @override
+  String get name => 'tool_search_tool_bm25';
+
+  @override
+  Map<String, Object?> toJson() {
+    return const {
+      'type': 'tool_search_tool_bm25_20251119',
+      'name': 'tool_search_tool_bm25',
+    };
+  }
+}
+
 abstract final class AnthropicTools {
   static AnthropicWebSearchTool20250305 webSearch20250305({
     int? maxUses,
@@ -91,5 +121,13 @@ abstract final class AnthropicTools {
 
   static AnthropicCodeExecutionTool20260120 codeExecution20260120() {
     return const AnthropicCodeExecutionTool20260120();
+  }
+
+  static AnthropicToolSearchRegexTool20251119 toolSearchRegex20251119() {
+    return const AnthropicToolSearchRegexTool20251119();
+  }
+
+  static AnthropicToolSearchBm25Tool20251119 toolSearchBm2520251119() {
+    return const AnthropicToolSearchBm25Tool20251119();
   }
 }

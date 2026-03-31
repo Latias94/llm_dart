@@ -148,27 +148,35 @@ Why this order:
 
 ## Current Progress Snapshot
 
-The current migration has completed the thin text-generation mainline in the new package:
+The current migration now goes beyond the thin text-generation mainline.
+
+The new package already owns:
 
 - `AnthropicChatModelSettings`
 - `AnthropicGenerateTextOptions`
+- `AnthropicFilesSettings`
+- `AnthropicCacheControl`
 - `AnthropicMcpServer` and related MCP typed models
 - `AnthropicMessagesCodec`
 - `AnthropicMessagesResultCodec`
 - `AnthropicStreamCodec`
 - `AnthropicLanguageModel`
 - package-level `Anthropic` facade
-- package smoke tests for `generate()` and `stream()`
+- package-level `Anthropic.files(...)`
+- `AnthropicCodeExecutionReplay`
+- package tests for `generate()`, `stream()`, typed MCP models, files, and execution replay
 
 What this now proves:
 
 - Anthropic request encoding is package-owned rather than root-monolith-owned
 - Anthropic streaming and non-streaming responses can map into the frozen core result and stream models
+- Anthropic reasoning, native-tool replay, MCP configuration, and execution replay now all have package-owned boundaries
 - provider-specific beta/header behavior can stay in the provider package without widening the common API
+- provider-native files and execution downloads can stay provider-owned without widening shared file models
 
 What is still intentionally separate:
 
-- provider-native APIs such as Anthropic files
+- the compatibility-only legacy raw bridge and any remaining fallback-only replay families
 - any future Anthropic-only helper surface that does not belong in `LanguageModel`
 - broader capability helpers or model-specific limits that should remain package-private
 
@@ -208,6 +216,8 @@ The Anthropic text mainline should be considered migrated only when:
 Current status:
 
 - the exit criteria above are now satisfied for the Anthropic text mainline
-- follow-up work should move to provider-native APIs, broader feature coverage, provider-native result replay policy, and legacy-root cleanup rather than re-opening the basic text boundary
+- follow-up work should stay on narrower provider-native replay-policy cleanup, optional future provider-owned APIs, and legacy-root cleanup rather than re-opening the basic text boundary
 - `16-anthropic-provider-native-result-replay.md` now freezes the next replay boundary for provider-native result blocks
 - `18-anthropic-execution-replay-contract.md` now freezes the recommended payload direction for execution-oriented replay and downloadable file handles
+- `19-anthropic-provider-native-files-api.md` now freezes the provider-owned files boundary for execution file handles
+- `56-anthropic-status-reconciliation.md` now records the remaining real Anthropic gaps so stale TODO wording does not reopen already-migrated work

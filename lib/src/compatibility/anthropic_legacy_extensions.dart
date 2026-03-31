@@ -446,7 +446,17 @@ AnthropicLegacyMessageAnalysis analyzeAnthropicLegacyMessage(
         );
       }
 
-      _throwBridgeIncompatibleToolSearchResultBlock();
+      promptBlocks.add(
+        _parseProviderNativeToolResultBlock(
+          block,
+          path:
+              'messages[$messageIndex].extensions.anthropic.contentBlocks[$blockIndex]',
+          expectedType: 'tool_search_tool_result',
+          expectedContentType: Map,
+          customKind: 'anthropic.result.tool_search',
+        ),
+      );
+      continue;
     }
 
     throw UnsupportedError(
@@ -862,10 +872,9 @@ AnthropicLegacyToolResultBlock _parseProviderNativeToolResultBlock(
     block['content'],
     path: '$path.content',
   );
-  final hasExpectedContentShape =
-      expectedContentType == List
-          ? content is List
-          : expectedContentType == Map
+  final hasExpectedContentShape = expectedContentType == List
+      ? content is List
+      : expectedContentType == Map
           ? content is Map<String, Object?>
           : false;
   if (content == null || !hasExpectedContentShape) {
@@ -897,13 +906,6 @@ Never _throwBridgeIncompatibleExecutionResultBlock(String blockType) {
   throw UnsupportedError(
     'Anthropic compatibility does not bridge raw $blockType blocks in legacy message extensions yet. '
     'Use the provider-owned anthropic.result.code_execution replay path in the new Anthropic API, or keep this request on the old Anthropic provider path.',
-  );
-}
-
-Never _throwBridgeIncompatibleToolSearchResultBlock() {
-  throw UnsupportedError(
-    'Anthropic compatibility does not bridge raw tool_search_tool_result blocks yet. '
-    'Keep this request on the old Anthropic provider path until a provider-owned replay path is frozen.',
   );
 }
 

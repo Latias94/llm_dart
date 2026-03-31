@@ -890,6 +890,8 @@ final class AnthropicStreamCodec {
         return 'anthropic.result.web_fetch';
       case 'web_search_tool_result':
         return 'anthropic.result.web_search';
+      case 'tool_search_tool_result':
+        return 'anthropic.result.tool_search';
       case 'code_execution_tool_result':
       case 'bash_code_execution_tool_result':
       case 'text_editor_code_execution_tool_result':

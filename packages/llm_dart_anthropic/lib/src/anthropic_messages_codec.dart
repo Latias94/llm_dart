@@ -82,6 +82,8 @@ final class AnthropicMessagesCodec {
     final interleavedThinking = providerOptions.interleavedThinking == true;
     final mcpServers = providerOptions.mcpServers;
     final nativeTools = providerOptions.tools ?? settings.tools;
+    final deferredToolNames =
+        providerOptions.deferredToolNames ?? settings.deferredToolNames;
     var maxTokens = options.maxOutputTokens ?? _defaultMaxTokens;
     final temperature = _normalizeTemperature(
       options.temperature,
@@ -198,7 +200,9 @@ final class AnthropicMessagesCodec {
       tools: tools,
       nativeTools: nativeTools,
       toolChoice: toolChoice,
+      deferredToolNames: deferredToolNames,
       toolsCacheControl: providerOptions.toolsCacheControl,
+      warnings: warnings,
     );
 
     final body = <String, Object?>{
@@ -251,11 +255,59 @@ final class AnthropicMessagesCodec {
     required List<FunctionToolDefinition> tools,
     required List<AnthropicNativeTool> nativeTools,
     required ToolChoice? toolChoice,
+    required List<String> deferredToolNames,
     required AnthropicCacheControl? toolsCacheControl,
+    required List<ModelWarning> warnings,
   }) {
     if ((tools.isEmpty && nativeTools.isEmpty) ||
         toolChoice is NoneToolChoice) {
       return const _AnthropicToolConfiguration();
+    }
+
+    final commonToolNames = {
+      for (final tool in tools) tool.name,
+    };
+    final deferredToolNameSet = {
+      for (final toolName in deferredToolNames)
+        if (toolName.trim().isNotEmpty) toolName.trim(),
+    };
+
+    if (deferredToolNameSet.length != deferredToolNames.length) {
+      warnings.add(
+        const ModelWarning(
+          type: ModelWarningType.compatibility,
+          field: 'deferredToolNames',
+          message:
+              'Anthropic deferredToolNames contained duplicates or empty values. The request uses the normalized unique non-empty subset.',
+        ),
+      );
+    }
+
+    final unknownDeferredToolNames = deferredToolNameSet
+        .where((toolName) => !commonToolNames.contains(toolName))
+        .toList(growable: false)
+      ..sort();
+    if (unknownDeferredToolNames.isNotEmpty) {
+      warnings.add(
+        ModelWarning(
+          type: ModelWarningType.compatibility,
+          field: 'deferredToolNames',
+          message:
+              'Anthropic deferredToolNames only apply to common function tools. Ignoring unknown names: ${unknownDeferredToolNames.join(', ')}.',
+        ),
+      );
+    }
+
+    final hasToolSearchNativeTool = nativeTools.any(_isToolSearchNativeTool);
+    if (deferredToolNameSet.isNotEmpty && !hasToolSearchNativeTool) {
+      warnings.add(
+        const ModelWarning(
+          type: ModelWarningType.compatibility,
+          field: 'deferredToolNames',
+          message:
+              'Anthropic deferredToolNames are set without a tool-search native tool. The defer_loading flags will still be encoded, but they are usually only useful with Anthropic tool-search or tool-reference flows.',
+        ),
+      );
     }
 
     final encodedTools = <Map<String, Object?>>[
@@ -265,6 +317,7 @@ final class AnthropicMessagesCodec {
           if (tool.description != null) 'description': tool.description,
           'input_schema': tool.inputSchema.toJson(),
           if (tool.strict != null) 'strict': tool.strict,
+          if (deferredToolNameSet.contains(tool.name)) 'defer_loading': true,
         },
       for (final tool in nativeTools) tool.toJson(),
     ];
@@ -295,6 +348,11 @@ final class AnthropicMessagesCodec {
       tools: encodedTools,
       toolChoice: encodedToolChoice,
     );
+  }
+
+  bool _isToolSearchNativeTool(AnthropicNativeTool tool) {
+    return tool.name == 'tool_search_tool_regex' ||
+        tool.name == 'tool_search_tool_bm25';
   }
 
   void _validateThinkingCompatibleToolChoice({
@@ -739,6 +797,41 @@ final class AnthropicMessagesCodec {
             'Anthropic custom tool replay "${part.kind}" requires a non-empty tool_use_id.',
           );
         }
+
+        return block;
+      case 'anthropic.result.tool_search':
+        final payload = _asJsonObject(
+          part.data,
+          path: 'tool.custom(${part.kind})',
+        );
+        if (payload['replayRole'] != 'tool') {
+          throw UnsupportedError(
+            'Anthropic custom tool replay "${part.kind}" requires replayRole="tool".',
+          );
+        }
+
+        final block = _asJsonObject(
+          payload['block'],
+          path: 'tool.custom(${part.kind}).block',
+        );
+        final blockType = block['type'];
+        if (blockType != 'tool_search_tool_result') {
+          throw UnsupportedError(
+            'Anthropic custom tool replay "${part.kind}" requires a tool_search_tool_result block.',
+          );
+        }
+
+        final toolUseId = block['tool_use_id'];
+        if (toolUseId is! String || toolUseId.isEmpty) {
+          throw UnsupportedError(
+            'Anthropic custom tool replay "${part.kind}" requires a non-empty tool_use_id.',
+          );
+        }
+
+        _asJsonObject(
+          block['content'],
+          path: 'tool.custom(${part.kind}).block.content',
+        );
 
         return block;
       case 'anthropic.result.code_execution':

@@ -73,7 +73,7 @@ Current status:
 - continuation ownership is now also frozen more clearly: common function-tool loops belong to the shared runner, while approval-gated, provider-executed, dynamic, and chat-interactive continuation remain provider-owned or session-owned
 - the stop-and-mutation boundary is now also frozen: `maxSteps` stays a guardrail, shared `stopWhen` and `prepareStep` stay out, and retry/model-switch policy remains app-owned
 - only a separate streamed runner or a tightly-constrained pre-step hook may be reconsidered later if real shared usage proves the need
-- provider-specific compatibility subset audits, broader endpoint coverage, and the remaining Google provider-owned streamed TTS plus compatibility-side modality coverage and Anthropic non-text provider migrations remain for the next step
+- provider-specific compatibility subset audits, broader endpoint coverage, and the remaining Google provider-owned streamed TTS plus compatibility-side modality coverage remain for the next step, while Anthropic is now mostly down to narrower provider-native replay-policy cleanup
 
 ## M3 - Anthropic And Google
 
@@ -92,6 +92,8 @@ Current status:
 - the Anthropic text-generation mainline is now wired through `llm_dart_anthropic`
 - Anthropic request encoding, result decoding, stream decoding, MCP request models, and typed options are package-owned
 - Anthropic assistant replay now keeps native tool replay paths and emits explicit warnings when unsupported assistant reasoning/file/custom replay parts are dropped
+- Anthropic now also has package-owned provider-native replay paths for `web_search_tool_result`, `web_fetch_tool_result`, `tool_search_tool_result`, and execution-oriented result families, plus the provider-owned `AnthropicFiles` API for downloadable execution file handles
+- Anthropic replay-policy cleanup is now largely closed, and the provider package now also exposes public tool-search native tools plus provider-owned deferred-loading controls for common function tools; the remaining Anthropic tool gap is now mainly optional custom tool-reference helpers and any future provider-owned native-tool selection surface
 - the Google text-generation mainline is now wired through `llm_dart_google`
 - Google now also has package-owned embedding, image, and speech model surfaces, and the current shared `ImageModel` / `SpeechModel` boundaries are now explicitly generation-only while image editing, image variation, and streamed TTS remain provider-owned
 - Google request encoding, result decoding, stream decoding, grounding-source extraction, and typed options are package-owned
@@ -110,7 +112,7 @@ Current status:
 - Google now also exposes provider-owned `GoogleCustomPart` parsing helpers so Flutter or other UI layers can render those custom replay payloads through one typed entrypoint without adding Google-specific logic to `llm_dart_flutter`
 - Google now also exposes provider-owned `GoogleCustomPartSummary` helpers so Flutter or other UI layers can build lightweight render summaries without reparsing raw Google payload JSON
 - Google now also exposes a provider-owned `GoogleMessageMapper` so Flutter or other UI layers can combine Google custom replay parsing with Google-specific part metadata such as thought signatures, `responsePart`, and file/tool IDs
-- broader Google endpoints and additional Anthropic provider-native APIs remain open
+- broader Google endpoints, any future Anthropic custom tool-reference helper surface, and any future Anthropic provider-owned tool-selection surface remain open
 
 ## M4 - Community Providers
 

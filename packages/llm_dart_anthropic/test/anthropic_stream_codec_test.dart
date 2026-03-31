@@ -544,6 +544,78 @@ void main() {
       });
     });
 
+    test('emits custom replay events for tool-search tool results', () {
+      final state = AnthropicMessagesStreamState();
+      final events = <TextStreamEvent>[];
+
+      for (final chunk in <Map<String, Object?>>[
+        {
+          'type': 'content_block_start',
+          'index': 0,
+          'content_block': {
+            'type': 'server_tool_use',
+            'id': 'srvtoolu_4',
+            'name': 'tool_search_tool_regex',
+            'input': {
+              'pattern': 'weather|forecast',
+              'limit': 5,
+            },
+          },
+        },
+        {
+          'type': 'content_block_stop',
+          'index': 0,
+        },
+        {
+          'type': 'content_block_start',
+          'index': 1,
+          'content_block': {
+            'type': 'tool_search_tool_result',
+            'tool_use_id': 'srvtoolu_4',
+            'content': {
+              'type': 'tool_search_tool_search_result',
+              'tool_references': [
+                {
+                  'type': 'tool_reference',
+                  'tool_name': 'get_weather',
+                },
+              ],
+            },
+          },
+        },
+      ]) {
+        events.addAll(codec.decodeChunk(chunk, state));
+      }
+
+      expect(events[3], isA<ToolCallEvent>());
+      expect(events[4], isA<ToolResultEvent>());
+      expect(events[5], isA<CustomEvent>());
+
+      final toolResultEvent = events[4] as ToolResultEvent;
+      expect(toolResultEvent.toolResult.toolName, 'tool_search_tool_regex');
+
+      final customEvent = events[5] as CustomEvent;
+      expect(customEvent.kind, 'anthropic.result.tool_search');
+      expect(customEvent.data, {
+        'replayRole': 'tool',
+        'toolCallId': 'srvtoolu_4',
+        'toolName': 'tool_search_tool_regex',
+        'block': {
+          'type': 'tool_search_tool_result',
+          'tool_use_id': 'srvtoolu_4',
+          'content': {
+            'type': 'tool_search_tool_search_result',
+            'tool_references': [
+              {
+                'type': 'tool_reference',
+                'tool_name': 'get_weather',
+              },
+            ],
+          },
+        },
+      });
+    });
+
     test('maps error chunks to ErrorEvent', () {
       final state = AnthropicMessagesStreamState();
       final events = codec.decodeChunk(

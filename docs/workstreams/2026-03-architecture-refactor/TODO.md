@@ -95,11 +95,11 @@
 - [x] Migrate the Anthropic language model
 - [x] Add the initial Anthropic native tool entry API
 - [x] Add warning-based downgrade rules for unsupported assistant replay parts
-- [ ] Migrate the Anthropic tool codec
-- [ ] Migrate the Anthropic reasoning codec
-- [ ] Migrate the Anthropic web-search adapter
-- [ ] Migrate the Anthropic MCP connector
-- [ ] Move cache-related structures into provider metadata or custom parts
+- [x] Migrate the Anthropic tool codec
+- [x] Migrate the Anthropic reasoning codec
+- [x] Migrate the Anthropic web-search adapter
+- [x] Migrate the Anthropic MCP connector
+- [x] Move cache-related structures into provider metadata or typed provider options, while keeping `anthropic.contentBlocks` as compatibility-only input
 
 ## Google
 
@@ -182,11 +182,14 @@
 - [x] Expand Anthropic bridge coverage for lossless legacy user image and document `contentBlocks`
 - [x] Expand Anthropic bridge coverage for lossless raw assistant tool-use and user tool-result replay inside `anthropic.contentBlocks`
 - [ ] Expand Google bridge coverage for additional modality coverage beyond the text structured-output path
-- [ ] Expand Anthropic bridge coverage for provider-native result replay beyond `tool_result` / `mcp_tool_result`
+- [x] Add Anthropic tool-search native tools and provider-owned deferred-loading controls for common function tools
+- [ ] Decide whether Anthropic should add provider-owned custom tool-reference helpers for user-defined tool-search flows beyond the native tool-search subset
 - [x] Design and implement the Anthropic-owned custom prompt/content/UI path for replayable `web_search_tool_result`
 - [x] Design and implement the Anthropic-owned custom prompt/content/UI path for replayable `web_fetch_tool_result`
+- [x] Design and implement the Anthropic-owned custom prompt/content/UI path for replayable `tool_search_tool_result`
 - [x] Decide whether the legacy raw Anthropic compatibility bridge should allow `web_search_tool_result` directly or keep routing it to fallback
 - [x] Decide whether the legacy raw Anthropic compatibility bridge should allow `web_fetch_tool_result` directly or keep routing it to fallback
+- [x] Decide whether the legacy raw Anthropic compatibility bridge should allow `tool_search_tool_result` directly or keep routing it to fallback
 - [x] Write a design note for execution-oriented provider-native result replay before expanding the Anthropic bridge further
 - [x] Freeze the canonical payload contract for `anthropic.result.code_execution`
 - [x] Decide whether Anthropic code-execution result families need replay support at all before compatibility cleanup

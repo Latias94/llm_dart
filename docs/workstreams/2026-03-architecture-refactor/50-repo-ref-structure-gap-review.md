@@ -280,7 +280,9 @@ What is still missing:
   non-text capability coverage
 - Google provider-owned streamed TTS and broader compatibility-side modality
   coverage are still incomplete
-- Anthropic non-text capability migrations are still incomplete
+- Anthropic now mainly has higher-level provider-owned native-tool questions
+  such as tool-reference helpers for custom search flows and native-tool
+  selection, not a separate non-text model migration track
 - shared embedding chunk-splitting and parallel-batching policy is not yet
   frozen above the raw model interface
 
