@@ -963,6 +963,119 @@ void main() {
     });
 
     test(
+        'chat completions replay keeps assistant text and common tool calls while warning-dropping unsupported assistant parts',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'chatcmpl_assistant_replay_1',
+                'model': 'gpt-4.1-mini',
+                'created': 1710000101,
+                'choices': [
+                  {
+                    'index': 0,
+                    'finish_reason': 'stop',
+                    'message': {
+                      'role': 'assistant',
+                      'content': 'Replay accepted.',
+                    },
+                  },
+                ],
+                'usage': {
+                  'prompt_tokens': 4,
+                  'completion_tokens': 2,
+                  'total_tokens': 6,
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel(
+        'gpt-4.1-mini',
+        settings: const OpenAIChatModelSettings(
+          useResponsesApi: false,
+        ),
+      );
+
+      final result = await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage.text('Continue the conversation.'),
+            AssistantPromptMessage(
+              parts: const [
+                TextPromptPart('I will continue.'),
+                ToolCallPromptPart(
+                  toolCallId: 'call_1',
+                  toolName: 'weather',
+                  input: {
+                    'city': 'Hong Kong',
+                  },
+                ),
+                ReasoningPromptPart('private reasoning'),
+                CustomPromptPart(
+                  kind: 'openai.custom_note',
+                  data: {'state': 'hidden'},
+                ),
+                ImagePromptPart(
+                  mediaType: 'image/png',
+                  bytes: [0, 1, 2, 3],
+                ),
+                FilePromptPart(
+                  mediaType: 'application/pdf',
+                  bytes: [1, 2, 3, 4],
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(
+        requestBody['messages'],
+        [
+          {
+            'role': 'user',
+            'content': 'Continue the conversation.',
+          },
+          {
+            'role': 'assistant',
+            'content': 'I will continue.',
+            'tool_calls': [
+              {
+                'id': 'call_1',
+                'type': 'function',
+                'function': {
+                  'name': 'weather',
+                  'arguments': '{"city":"Hong Kong"}',
+                },
+              },
+            ],
+          },
+        ],
+      );
+
+      expect(result.text, 'Replay accepted.');
+      expect(
+        result.warnings.map((warning) => warning.message),
+        containsAll([
+          'Chat-completions replay dropped unsupported assistant part: ReasoningPromptPart.',
+          'Chat-completions replay dropped unsupported assistant part: CustomPromptPart.',
+          'Chat-completions replay dropped unsupported assistant part: ImagePromptPart.',
+          'Chat-completions replay dropped unsupported assistant part: FilePromptPart.',
+        ]),
+      );
+    });
+
+    test(
         'xAI chat completions encode typed live-search options and decode citations',
         () async {
       TransportRequest? capturedRequest;

@@ -39,8 +39,8 @@ The wire shapes differ, but the semantic contract is shared.
 
 - Anthropic accepts text + image + selected document/file inputs
 - Google accepts text + image + file inputs
-- OpenAI-family chat completions currently supports text + image, but not generic file prompt parts
-- OpenAI Responses currently stays text-only at the migrated request boundary
+- OpenAI-family chat completions currently supports text + image plus an OpenAI-shaped file subset for image/audio/PDF
+- OpenAI Responses currently supports text + image plus OpenAI-shaped file input on the migrated request boundary
 
 Conclusion:
 
@@ -67,6 +67,15 @@ Conclusion:
 Conclusion:
 
 - assistant reasoning replay is not a safe common replay assumption
+
+### 4. OpenAI Assistant Replay Boundaries
+
+- OpenAI-family chat completions intentionally keeps assistant replay narrow: text plus common function tool calls
+- OpenAI Responses is richer, but that extra richness is still OpenAI-owned rather than a shared cross-provider normalization contract
+
+Conclusion:
+
+- OpenAI assistant replay differences should mostly be handled as provider-owned policy, not as a reason to widen the shared prompt model
 
 ## What The Shared Prompt Model Still Gives Us
 

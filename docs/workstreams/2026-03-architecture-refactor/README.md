@@ -138,6 +138,8 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Status reconciliation for the OpenAI-family chat migration, including the narrowed chat-completions file-input gap and the still-open Responses-first compatibility policy question.
 - [59-openai-provider-owned-input-hints.md](59-openai-provider-owned-input-hints.md)
   - Frozen provider-owned OpenAI prompt-hint contract for `fileId` and `imageDetail` without widening the shared prompt model.
+- [60-openai-assistant-replay-alignment.md](60-openai-assistant-replay-alignment.md)
+  - Audit of which OpenAI assistant replay warning-drops are intentionally aligned with `repo-ref/ai` and which remaining gaps are still provider-owned.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
