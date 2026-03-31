@@ -74,6 +74,7 @@ void main() {
           responseFormat: JsonResponseFormat(
             name: 'answer',
             description: 'Structured answer payload.',
+            strict: true,
             schema: JsonSchema.object(
               properties: const {
                 'value': {'type': 'string'},
@@ -89,6 +90,7 @@ void main() {
       expect(responseFormat, isNotNull);
       expect(responseFormat!.name, 'answer');
       expect(responseFormat.description, 'Structured answer payload.');
+      expect(responseFormat.strict, isTrue);
       expect(
         responseFormat.schema.toJson(),
         const {

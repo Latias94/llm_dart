@@ -3,6 +3,7 @@ import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as modern_anthropic;
 import 'package:llm_dart/src/compatibility/compat_providers.dart';
 import 'package:llm_dart/src/compatibility/legacy_chat_adapter.dart';
 import 'package:llm_dart_core/llm_dart_core.dart' as core;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as modern_openai;
 import 'package:llm_dart_test/llm_dart_test.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 import 'package:test/test.dart';
@@ -161,6 +162,63 @@ void main() {
       expect(response.usage?.completionTokens, 7);
       expect(response.usage?.totalTokens, 18);
       expect(response.usage?.reasoningTokens, 3);
+    });
+
+    test(
+        'legacy chat adapter routes legacy jsonSchema through shared responseFormat',
+        () {
+      final adapter = LegacyChatCapabilityAdapter(
+        model: _FakeLanguageModel(),
+        config: legacy.LLMConfig(
+          apiKey: 'test-key',
+          baseUrl: 'https://example.com',
+          model: 'test-model',
+        ).withExtension(
+          'jsonSchema',
+          const legacy.StructuredOutputFormat(
+            name: 'answer',
+            description: 'Structured answer payload.',
+            strict: true,
+            schema: {
+              'type': 'object',
+              'properties': {
+                'value': {'type': 'string'},
+              },
+              'required': ['value'],
+            },
+          ),
+        ),
+        providerOptions: const modern_openai.OpenAIGenerateTextOptions(
+          verbosity: 'high',
+        ),
+      );
+
+      final request = adapter.buildRequest([
+        legacy.ChatMessage.user('Return JSON.'),
+      ], null);
+
+      final responseFormat =
+          request.options.responseFormat as core.JsonResponseFormat?;
+      expect(responseFormat, isNotNull);
+      expect(responseFormat!.name, 'answer');
+      expect(responseFormat.description, 'Structured answer payload.');
+      expect(responseFormat.strict, isTrue);
+      expect(
+        responseFormat.schema.toJson(),
+        const {
+          'type': 'object',
+          'properties': {
+            'value': {'type': 'string'},
+          },
+          'required': ['value'],
+        },
+      );
+
+      final providerOptions = request.callOptions.providerOptions
+          as modern_openai.OpenAIGenerateTextOptions?;
+      expect(providerOptions, isNotNull);
+      expect(providerOptions!.verbosity, 'high');
+      expect(providerOptions.responseFormat, isNull);
     });
 
     test('legacy chat adapter maps streaming deltas and completion events',
@@ -682,6 +740,161 @@ void main() {
     });
 
     test(
+        'Compat OpenAI provider routes legacy jsonSchema through shared responseFormat',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final provider = buildCompatOpenAIProvider(
+        legacy.LLMConfig(
+          apiKey: 'test-key',
+          baseUrl: 'https://api.openai.com/v1/',
+          model: 'gpt-4.1-mini',
+        ).withExtensions({
+          'customTransportClient': _FakeTransportClient(
+            onSend: (request) async {
+              capturedRequest = request;
+              return TransportResponse(
+                statusCode: 200,
+                body: {
+                  'id': 'resp_compat_structured',
+                  'model': 'gpt-4.1-mini',
+                  'created_at': 1710000500,
+                  'status': 'completed',
+                  'output': [
+                    {
+                      'id': 'msg_1',
+                      'type': 'message',
+                      'status': 'completed',
+                      'role': 'assistant',
+                      'content': [
+                        {
+                          'type': 'output_text',
+                          'text': '{"value":"Done."}',
+                          'annotations': [],
+                        },
+                      ],
+                    },
+                  ],
+                },
+              );
+            },
+          ),
+          'jsonSchema': const legacy.StructuredOutputFormat(
+            name: 'answer',
+            description: 'Structured answer payload.',
+            strict: true,
+            schema: {
+              'type': 'object',
+              'properties': {
+                'value': {'type': 'string'},
+              },
+              'required': ['value'],
+            },
+          ),
+        }),
+      );
+
+      final response = await provider.chat([
+        legacy.ChatMessage.user('Return JSON.'),
+      ]);
+
+      expect(response.text, '{"value":"Done."}');
+      expect(capturedRequest, isNotNull);
+
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(
+        requestBody['response_format'],
+        {
+          'type': 'json_schema',
+          'json_schema': {
+            'name': 'answer',
+            'description': 'Structured answer payload.',
+            'schema': {
+              'type': 'object',
+              'properties': {
+                'value': {'type': 'string'},
+              },
+              'required': ['value'],
+              'additionalProperties': false,
+            },
+            'strict': true,
+          },
+        },
+      );
+    });
+
+    test(
+        'Compat Google provider routes legacy jsonSchema through shared responseFormat',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final provider = buildCompatGoogleProvider(
+        legacy.LLMConfig(
+          apiKey: 'test-key',
+          baseUrl: 'https://generativelanguage.googleapis.com',
+          model: 'gemini-2.5-flash',
+        ).withExtensions({
+          'customTransportClient': _FakeTransportClient(
+            onSend: (request) async {
+              capturedRequest = request;
+              return const TransportResponse(
+                statusCode: 200,
+                body: {
+                  'responseId': 'resp_google_compat_structured',
+                  'modelVersion': 'gemini-2.5-flash',
+                  'candidates': [
+                    {
+                      'content': {
+                        'parts': [
+                          {
+                            'text': '{"value":"Done."}',
+                          },
+                        ],
+                      },
+                      'finishReason': 'STOP',
+                    },
+                  ],
+                },
+              );
+            },
+          ),
+          'jsonSchema': const legacy.StructuredOutputFormat(
+            name: 'answer',
+            schema: {
+              'type': 'object',
+              'properties': {
+                'value': {'type': 'string'},
+              },
+              'required': ['value'],
+            },
+          ),
+        }),
+      );
+
+      final response = await provider.chat([
+        legacy.ChatMessage.user('Return JSON.'),
+      ]);
+
+      expect(response.text, '{"value":"Done."}');
+      expect(capturedRequest, isNotNull);
+
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(
+        requestBody['generationConfig'],
+        {
+          'responseMimeType': 'application/json',
+          'responseSchema': {
+            'type': 'object',
+            'properties': {
+              'value': {'type': 'string'},
+            },
+            'required': ['value'],
+          },
+        },
+      );
+    });
+
+    test(
         'Compat xAI provider maps legacy live-search inputs into typed xAI request options',
         () async {
       TransportRequest? capturedRequest;
@@ -730,6 +943,7 @@ void main() {
           ),
           'jsonSchema': const legacy.StructuredOutputFormat(
             name: 'answer',
+            strict: true,
             schema: {
               'type': 'object',
               'properties': {
@@ -780,6 +994,7 @@ void main() {
               },
               'additionalProperties': false,
             },
+            'strict': true,
           },
         },
       );

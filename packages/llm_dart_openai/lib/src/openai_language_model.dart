@@ -375,11 +375,13 @@ final class OpenAILanguageModel implements LanguageModel {
         schema: final schema,
         name: final name,
         description: final description,
+        strict: final strict,
       ) =>
         OpenAIJsonSchemaResponseFormat(
           name: name ?? 'structured_output',
           description: description,
           schema: schema.toJson(),
+          strict: strict,
         ),
     };
   }

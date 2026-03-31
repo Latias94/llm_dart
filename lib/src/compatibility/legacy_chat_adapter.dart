@@ -105,6 +105,9 @@ class LegacyChatCapabilityAdapter implements ChatCapability {
         stopSequences: config.stopSequences,
         topP: config.topP,
         topK: config.topK,
+        responseFormat: _buildCompatResponseFormat(
+          config.getExtension<StructuredOutputFormat>('jsonSchema'),
+        ),
       ),
       callOptions: core.CallOptions(
         timeout: config.timeout,
@@ -556,6 +559,30 @@ String _encodeJsonValue(Object? value) {
   }
 
   return jsonEncode(value);
+}
+
+core.ResponseFormat? _buildCompatResponseFormat(StructuredOutputFormat? format) {
+  if (format == null) {
+    return null;
+  }
+
+  final schema = format.schema;
+  if (schema == null) {
+    throw ArgumentError.value(
+      format,
+      'jsonSchema',
+      'Legacy jsonSchema compatibility requires an explicit schema.',
+    );
+  }
+
+  return core.JsonResponseFormat(
+    name: format.name,
+    description: format.description,
+    strict: format.strict,
+    schema: core.JsonSchema.raw(
+      _normalizeMap(schema),
+    ),
+  );
 }
 
 Map<String, Object?> _normalizeMap(Map<String, dynamic> value) {

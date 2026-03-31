@@ -308,6 +308,7 @@ void main() {
             responseFormat: JsonResponseFormat(
               name: 'answer',
               description: 'Structured answer payload.',
+              strict: true,
               schema: JsonSchema.object(
                 properties: const {
                   'value': {'type': 'string'},
@@ -336,6 +337,7 @@ void main() {
               'required': ['value'],
               'additionalProperties': false,
             },
+            'strict': true,
           },
         },
       );

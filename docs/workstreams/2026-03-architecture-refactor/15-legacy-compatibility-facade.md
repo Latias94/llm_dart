@@ -51,6 +51,25 @@ The key rule is: no silent feature loss.
 
 If a legacy request uses a provider feature that the new path does not preserve yet, the compatibility layer must reject the bridge and stay on the old implementation.
 
+## 3.1 Shared Structured-Output Normalization
+
+Legacy `jsonSchema` input is no longer injected directly into provider-specific
+typed request options inside the compatibility builders.
+
+Frozen normalization rule:
+
+- the compatibility adapter maps legacy `StructuredOutputFormat` into shared
+  `GenerateTextOptions.responseFormat`
+- provider packages remain the only layer that encodes wire-specific
+  `response_format` payloads
+- shared `JsonResponseFormat.strict` preserves the legacy strictness flag for
+  providers that support it today
+- providers that do not have an equivalent wire field may ignore `strict`
+  explicitly
+- schema-less legacy `jsonSchema` inputs are rejected on the bridged path
+  instead of being silently dropped or encoded through a provider-specific
+  escape hatch
+
 ## 4. Provider Compatibility Snapshot
 
 The bridge allowlists are intentionally conservative.
@@ -80,6 +99,9 @@ Must fall back today:
 Reason:
 
 - the new OpenAI path now covers the main text, function-tool, built-in-tool, and structured-output request shapes, but it still does not preserve every old root-package message or extension shape
+- the compatibility adapter now normalizes legacy `jsonSchema` into shared
+  `GenerateTextOptions.responseFormat`, so OpenAI-family wire encoding stays
+  owned by the migrated provider package
 
 ### Google
 
@@ -102,6 +124,13 @@ Must fall back today:
 - unsupported response modalities
 - structured output combined with image-generation style modalities
 - unknown Google-specific root extensions
+
+Reason:
+
+- the Google bridge now uses the same shared `GenerateTextOptions.responseFormat`
+  path as the new stable API for text-only structured output, while Google
+  still keeps modality conflicts and unsupported message decoration on legacy
+  fallback
 
 ### Anthropic
 

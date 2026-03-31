@@ -54,9 +54,6 @@ ChatCapability buildCompatOpenAIProvider(LLMConfig config) {
         builtInTools: _mapOpenAIBuiltInTools(
           config.getExtension<List<OpenAIBuiltInTool>>('builtInTools'),
         ),
-        responseFormat: _mapOpenAIResponseFormat(
-          config.getExtension<StructuredOutputFormat>('jsonSchema'),
-        ),
       ),
     ),
   );
@@ -105,9 +102,6 @@ ChatCapability buildCompatOpenRouterProvider(LLMConfig config) {
         parallelToolCalls: config.getExtension<bool>('parallelToolCalls'),
         serviceTier: config.serviceTier?.value,
         verbosity: config.getExtension<String>('verbosity'),
-        responseFormat: _mapOpenAIResponseFormat(
-          config.getExtension<StructuredOutputFormat>('jsonSchema'),
-        ),
       ),
     ),
   );
@@ -152,11 +146,7 @@ ChatCapability buildCompatXAIProvider(LLMConfig config) {
       model: model,
       config: config,
       providerOptions: modern_openai.XAIGenerateTextOptions(
-        common: modern_openai.OpenAIGenerateTextOptions(
-          responseFormat: _mapOpenAIResponseFormat(
-            config.getExtension<StructuredOutputFormat>('jsonSchema'),
-          ),
-        ),
+        common: const modern_openai.OpenAIGenerateTextOptions(),
         search: _buildCompatXAILiveSearchOptions(legacyConfig),
       ),
     ),
@@ -191,9 +181,6 @@ ChatCapability buildCompatGoogleProvider(LLMConfig config) {
           config.getExtension<List<SafetySetting>>('safetySettings'),
         ),
         tools: _buildGoogleNativeTools(config),
-        responseFormat: _mapGoogleResponseFormat(
-          config.getExtension<StructuredOutputFormat>('jsonSchema'),
-        ),
       ),
     ),
   );
@@ -1147,23 +1134,6 @@ List<modern_openai.OpenAIBuiltInTool>? _mapOpenAIBuiltInTools(
   return mapped.isEmpty ? null : mapped;
 }
 
-modern_openai.OpenAIJsonSchemaResponseFormat? _mapOpenAIResponseFormat(
-  StructuredOutputFormat? format,
-) {
-  if (format == null) {
-    return null;
-  }
-
-  return modern_openai.OpenAIJsonSchemaResponseFormat(
-    name: format.name,
-    description: format.description,
-    schema: format.schema == null
-        ? null
-        : _normalizeCompatJsonValue(format.schema) as Map<String, Object?>,
-    strict: format.strict,
-  );
-}
-
 core.ProviderModelOptions _buildCompatOpenRouterModelSettings(
   LLMConfig config,
 ) {
@@ -1319,18 +1289,6 @@ modern_google.GoogleThinkingLevel? _mapGoogleThinkingLevel(Object? rawValue) {
     'high' => modern_google.GoogleThinkingLevel.high,
     _ => null,
   };
-}
-
-modern_google.GoogleJsonSchemaResponseFormat? _mapGoogleResponseFormat(
-  StructuredOutputFormat? format,
-) {
-  if (format == null || format.schema == null) {
-    return null;
-  }
-
-  return modern_google.GoogleJsonSchemaResponseFormat(
-    schema: _normalizeCompatJsonValue(format.schema) as Map<String, Object?>,
-  );
 }
 
 List<modern_google.GoogleResponseModality>? _mapGoogleResponseModalities(

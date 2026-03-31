@@ -50,6 +50,8 @@ Current status in the refactor branch:
   shared structured-output layer above those text helpers
 - OpenAI and Google already expose provider-owned JSON-schema
   `responseFormat` request shaping
+- legacy compatibility `jsonSchema` inputs now route through shared
+  `GenerateTextOptions.responseFormat` before provider-specific wire encoding
 - structured output is therefore no longer only provider-owned, but the shared
   layer is still intentionally narrower than a full `streamObject` contract
 
@@ -58,8 +60,6 @@ What is still missing in shared core:
 - no shared parsed-output field on `GenerateTextResult`
 - no shared partial structured output model for `streamText`
 - no shared element-streaming model for array-like outputs
-- no shared migration path from old compatibility `jsonSchema` inputs into the
-  new primary API
 
 In other words, the capability exists on the wire, but not yet as a stable
 cross-provider contract.
@@ -238,20 +238,26 @@ final class TextResponseFormat extends ResponseFormat {
 }
 
 final class JsonResponseFormat extends ResponseFormat {
-  final Map<String, Object?>? schema;
+  final Map<String, Object?> schema;
   final String? name;
   final String? description;
+  final bool? strict;
 
   const JsonResponseFormat({
-    this.schema,
+    required this.schema,
     this.name,
     this.description,
+    this.strict,
   });
 }
 ```
 
 Provider packages then map this shared value into their wire-specific request
 shapes.
+
+`strict` belongs to the shared value because legacy compatibility and the
+OpenAI-family migrated path both need one common request-level place to carry
+the constraint, even though not every provider encodes it.
 
 ### 3. Shared Structured Output Context
 
@@ -425,7 +431,10 @@ Use a staged migration.
 ### Step 3
 
 - add compatibility mapping from old `jsonSchema`-style legacy inputs into the
-  new shared output spec
+  shared response-format path before provider encoding
+- keep the longer-term migration target on shared `OutputSpec` helpers and the
+  stable new API, rather than treating the compatibility builder as the final
+  structured-output surface
 
 ### Step 4
 

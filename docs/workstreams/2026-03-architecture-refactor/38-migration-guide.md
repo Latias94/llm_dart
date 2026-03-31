@@ -270,6 +270,28 @@ final result = await core.generateText(
 This keeps the common request shape small while still giving providers room for
 real feature differences.
 
+### Structured Output Migration
+
+The compatibility builder still accepts legacy `jsonSchema(...)`, but that path
+is now only a bridge.
+
+Current rule:
+
+- legacy `jsonSchema` is normalized into shared
+  `GenerateTextOptions.responseFormat`
+- OpenAI-family providers currently preserve `name`, `description`, `schema`,
+  and `strict`
+- Google currently uses the shared schema payload and ignores shared fields
+  that do not map to its wire format
+- new code should prefer `OutputSpec`, `generateOutput(...)`,
+  `streamOutput(...)`, or explicit shared `JsonResponseFormat`
+- do not add new app logic that depends on provider-specific compatibility
+  injection of `responseFormat`
+
+If a legacy `jsonSchema` value does not include a real schema, the compatibility
+bridge now rejects that request shape instead of silently dropping structured
+generation.
+
 ## 8. Flutter Migration
 
 The Flutter migration should move one level up in abstraction.
@@ -352,6 +374,8 @@ provider surface has migrated.
 
 That is especially important for:
 
+- schema-less legacy `jsonSchema` requests, which now fail fast on the bridged
+  path
 - OpenRouter search beyond the audited online-model subset
 - xAI search and replay beyond the audited live-search subset
 - Anthropic provider-native result families beyond the frozen replay-safe blocks
