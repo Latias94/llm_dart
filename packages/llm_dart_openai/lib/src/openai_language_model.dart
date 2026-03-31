@@ -271,12 +271,7 @@ final class OpenAILanguageModel implements LanguageModel {
     }
 
     if (sharedResponseFormat != null) {
-      common = OpenAIGenerateTextOptions(
-        previousResponseId: common.previousResponseId,
-        parallelToolCalls: common.parallelToolCalls,
-        serviceTier: common.serviceTier,
-        verbosity: common.verbosity,
-        builtInTools: common.builtInTools,
+      common = common.copyWith(
         responseFormat: sharedResponseFormat,
       );
     }

@@ -76,13 +76,15 @@
 
 - [x] Design the OpenAI-family profile structure
 - [x] Expose OpenAI-family convenience constructors on the root `AI` facade
-- [ ] Complete OpenAI chat migration (see `58-openai-chat-migration-status.md` for the narrowed remaining assistant-replay and richer Responses/compat gaps)
+- [ ] Complete OpenAI chat migration (see `58-openai-chat-migration-status.md` and `61-openai-responses-persistence-policy.md` for the narrowed remaining assistant-replay and provider-owned Responses persistence-policy gaps)
 - [x] Add the initial OpenAI-family chat-completions mainline
 - [x] Migrate OpenAI responses
 - [x] Preserve OpenAI replay-critical item metadata, reasoning state, and compaction replay
+- [x] Freeze OpenAI Responses persistence policy for `store`, `conversation`, and `item_reference`
 - [x] Migrate OpenAI embeddings
 - [x] Migrate OpenAI image
 - [x] Migrate OpenAI speech and transcription
+- [ ] Implement provider-owned OpenAI Responses persistence options only if a concrete stored-continuation use case requires `store` / `conversation` beyond `previousResponseId`
 - [x] Turn OpenRouter into a profile
 - [x] Turn DeepSeek OpenAI-compatible into a profile
 - [x] Turn Groq OpenAI-compatible into a profile

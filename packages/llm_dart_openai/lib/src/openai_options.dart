@@ -3,6 +3,8 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 import 'openai_native_tools.dart';
 import 'openai_response_format.dart';
 
+const Object _unset = Object();
+
 final class OpenAIChatModelSettings implements ProviderModelOptions {
   final bool useResponsesApi;
   final String? organization;
@@ -209,4 +211,33 @@ final class OpenAIGenerateTextOptions implements ProviderInvocationOptions {
     this.builtInTools,
     this.responseFormat,
   });
+
+  OpenAIGenerateTextOptions copyWith({
+    Object? previousResponseId = _unset,
+    Object? parallelToolCalls = _unset,
+    Object? serviceTier = _unset,
+    Object? verbosity = _unset,
+    Object? builtInTools = _unset,
+    Object? responseFormat = _unset,
+  }) {
+    return OpenAIGenerateTextOptions(
+      previousResponseId: identical(previousResponseId, _unset)
+          ? this.previousResponseId
+          : previousResponseId as String?,
+      parallelToolCalls: identical(parallelToolCalls, _unset)
+          ? this.parallelToolCalls
+          : parallelToolCalls as bool?,
+      serviceTier: identical(serviceTier, _unset)
+          ? this.serviceTier
+          : serviceTier as String?,
+      verbosity:
+          identical(verbosity, _unset) ? this.verbosity : verbosity as String?,
+      builtInTools: identical(builtInTools, _unset)
+          ? this.builtInTools
+          : builtInTools as List<OpenAIBuiltInTool>?,
+      responseFormat: identical(responseFormat, _unset)
+          ? this.responseFormat
+          : responseFormat as OpenAIJsonSchemaResponseFormat?,
+    );
+  }
 }

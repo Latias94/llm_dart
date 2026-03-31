@@ -541,6 +541,122 @@ void main() {
     });
 
     test(
+        'generate preserves OpenAI provider options when overlaying shared responseFormat',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'resp_shared_format_overlay',
+                'model': 'gpt-4.1-mini',
+                'created_at': 1710000000,
+                'status': 'completed',
+                'output': [
+                  {
+                    'id': 'msg_1',
+                    'type': 'message',
+                    'status': 'completed',
+                    'role': 'assistant',
+                    'content': [
+                      {
+                        'type': 'output_text',
+                        'text': '{"value":"Done."}',
+                        'annotations': [],
+                      },
+                    ],
+                  },
+                ],
+                'usage': {
+                  'input_tokens': 1,
+                  'output_tokens': 1,
+                  'total_tokens': 2,
+                  'output_tokens_details': {
+                    'reasoning_tokens': 0,
+                  },
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel('gpt-4.1-mini');
+
+      await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage.text('Return JSON.'),
+          ],
+          options: GenerateTextOptions(
+            responseFormat: JsonResponseFormat(
+              name: 'answer',
+              strict: true,
+              schema: JsonSchema.object(
+                properties: const {
+                  'value': {'type': 'string'},
+                },
+                required: const ['value'],
+              ),
+            ),
+          ),
+          callOptions: const CallOptions(
+            providerOptions: OpenAIGenerateTextOptions(
+              previousResponseId: 'resp_prev',
+              parallelToolCalls: true,
+              serviceTier: 'flex',
+              verbosity: 'high',
+              builtInTools: [
+                OpenAIWebSearchTool(),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(requestBody['previous_response_id'], 'resp_prev');
+      expect(requestBody['parallel_tool_calls'], isTrue);
+      expect(requestBody['service_tier'], 'flex');
+      expect(
+        requestBody['text'],
+        {
+          'verbosity': 'high',
+        },
+      );
+      expect(
+        requestBody['tools'],
+        [
+          {
+            'type': 'web_search_preview',
+          },
+        ],
+      );
+      expect(
+        requestBody['response_format'],
+        {
+          'type': 'json_schema',
+          'json_schema': {
+            'name': 'answer',
+            'schema': {
+              'type': 'object',
+              'properties': {
+                'value': {'type': 'string'},
+              },
+              'required': ['value'],
+              'additionalProperties': false,
+            },
+            'strict': true,
+          },
+        },
+      );
+    });
+
+    test(
         'generate rejects configuring shared and OpenAI-specific response formats at the same time',
         () async {
       var sendCount = 0;
