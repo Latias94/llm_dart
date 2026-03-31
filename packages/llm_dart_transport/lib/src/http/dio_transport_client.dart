@@ -5,34 +5,49 @@ import 'package:dio/dio.dart';
 import 'package:logging/logging.dart';
 
 import '../common/transport_cancellation.dart';
+import '../common/transport_diagnostics.dart';
 import '../common/transport_exception.dart';
 import 'transport_client.dart';
 
 final class DioTransportClient implements TransportClient {
   final Dio _dio;
   final Logger _logger;
+  final TransportDiagnostics? _diagnostics;
 
   DioTransportClient({
     Dio? dio,
     Logger? logger,
+    TransportDiagnostics? diagnostics,
   })  : _dio = dio ??
             Dio(
               BaseOptions(
                 validateStatus: (_) => true,
               ),
             ),
-        _logger = logger ?? Logger('DioTransportClient');
+        _logger = logger ?? Logger('DioTransportClient'),
+        _diagnostics = diagnostics;
 
   /// Exposes the underlying Dio instance for compatibility adapters.
   Dio get dio => _dio;
 
   @override
   Future<TransportResponse> send(TransportRequest request) async {
-    request.cancellation?.throwIfCancelled();
-
-    final cancelToken = _bindCancellation(request.cancellation);
+    final requestInfo = _createRequestInfo(
+      request,
+      isStreaming: false,
+    );
+    final startedAt = DateTime.now();
+    _emitDiagnostics(
+      TransportDiagnosticsEvent(
+        kind: TransportDiagnosticsEventKind.requestStart,
+        request: requestInfo,
+        timestamp: startedAt,
+      ),
+    );
 
     try {
+      request.cancellation?.throwIfCancelled();
+      final cancelToken = _bindCancellation(request.cancellation);
       final response = await _dio.requestUri<Object?>(
         request.uri,
         data: request.body,
@@ -58,27 +73,87 @@ final class DioTransportClient implements TransportClient {
         );
       }
 
-      return TransportResponse(
+      final result = TransportResponse(
         statusCode: response.statusCode ?? 0,
         headers: headers,
         body: response.data,
       );
+      _emitDiagnostics(
+        TransportDiagnosticsEvent(
+          kind: TransportDiagnosticsEventKind.requestSuccess,
+          request: requestInfo,
+          response: _createResponseInfo(
+            statusCode: result.statusCode,
+            headers: result.headers,
+            body: result.body,
+          ),
+          timestamp: DateTime.now(),
+          duration: DateTime.now().difference(startedAt),
+        ),
+      );
+      return result;
     } on DioException catch (error) {
-      throw await _mapDioException(
+      final mapped = await _mapDioException(
         error,
         uri: request.uri,
       );
+      _emitDiagnostics(
+        TransportDiagnosticsEvent(
+          kind: TransportDiagnosticsEventKind.requestFailure,
+          request: requestInfo,
+          response: _responseInfoFromError(mapped),
+          error: mapped,
+          timestamp: DateTime.now(),
+          duration: DateTime.now().difference(startedAt),
+        ),
+      );
+      throw mapped;
+    } on TransportException catch (error) {
+      _emitDiagnostics(
+        TransportDiagnosticsEvent(
+          kind: TransportDiagnosticsEventKind.requestFailure,
+          request: requestInfo,
+          response: _responseInfoFromError(error),
+          error: error,
+          timestamp: DateTime.now(),
+          duration: DateTime.now().difference(startedAt),
+        ),
+      );
+      rethrow;
+    } catch (error) {
+      _emitDiagnostics(
+        TransportDiagnosticsEvent(
+          kind: TransportDiagnosticsEventKind.requestFailure,
+          request: requestInfo,
+          error: error,
+          timestamp: DateTime.now(),
+          duration: DateTime.now().difference(startedAt),
+        ),
+      );
+      rethrow;
     }
   }
 
   @override
   Future<StreamingTransportResponse> sendStream(
-      TransportRequest request) async {
-    request.cancellation?.throwIfCancelled();
-
-    final cancelToken = _bindCancellation(request.cancellation);
+    TransportRequest request,
+  ) async {
+    final requestInfo = _createRequestInfo(
+      request,
+      isStreaming: true,
+    );
+    final startedAt = DateTime.now();
+    _emitDiagnostics(
+      TransportDiagnosticsEvent(
+        kind: TransportDiagnosticsEventKind.requestStart,
+        request: requestInfo,
+        timestamp: startedAt,
+      ),
+    );
 
     try {
+      request.cancellation?.throwIfCancelled();
+      final cancelToken = _bindCancellation(request.cancellation);
       final response = await _dio.requestUri<Object?>(
         request.uri,
         data: request.body,
@@ -105,32 +180,123 @@ final class DioTransportClient implements TransportClient {
       }
 
       final responseBody = response.data;
-      if (responseBody is ResponseBody) {
-        return StreamingTransportResponse(
-          statusCode: response.statusCode ?? 0,
-          headers: headers,
-          stream: responseBody.stream,
-        );
-      }
+      final result = switch (responseBody) {
+        ResponseBody() => StreamingTransportResponse(
+            statusCode: response.statusCode ?? 0,
+            headers: headers,
+            stream: responseBody.stream,
+          ),
+        Stream<List<int>>() => StreamingTransportResponse(
+            statusCode: response.statusCode ?? 0,
+            headers: headers,
+            stream: responseBody,
+          ),
+        _ => throw TransportResponseFormatException(
+            'Expected a streaming response body but received ${responseBody.runtimeType}',
+            uri: request.uri,
+          ),
+      };
 
-      if (responseBody is Stream<List<int>>) {
-        return StreamingTransportResponse(
-          statusCode: response.statusCode ?? 0,
-          headers: headers,
-          stream: responseBody,
-        );
-      }
-
-      throw TransportResponseFormatException(
-        'Expected a streaming response body but received ${responseBody.runtimeType}',
-        uri: request.uri,
+      _emitDiagnostics(
+        TransportDiagnosticsEvent(
+          kind: TransportDiagnosticsEventKind.requestSuccess,
+          request: requestInfo,
+          response: _createResponseInfo(
+            statusCode: result.statusCode,
+            headers: result.headers,
+            body: responseBody,
+          ),
+          timestamp: DateTime.now(),
+          duration: DateTime.now().difference(startedAt),
+        ),
       );
+      return result;
     } on DioException catch (error) {
-      throw await _mapDioException(
+      final mapped = await _mapDioException(
         error,
         uri: request.uri,
       );
+      _emitDiagnostics(
+        TransportDiagnosticsEvent(
+          kind: TransportDiagnosticsEventKind.requestFailure,
+          request: requestInfo,
+          response: _responseInfoFromError(mapped),
+          error: mapped,
+          timestamp: DateTime.now(),
+          duration: DateTime.now().difference(startedAt),
+        ),
+      );
+      throw mapped;
+    } on TransportException catch (error) {
+      _emitDiagnostics(
+        TransportDiagnosticsEvent(
+          kind: TransportDiagnosticsEventKind.requestFailure,
+          request: requestInfo,
+          response: _responseInfoFromError(error),
+          error: error,
+          timestamp: DateTime.now(),
+          duration: DateTime.now().difference(startedAt),
+        ),
+      );
+      rethrow;
+    } catch (error) {
+      _emitDiagnostics(
+        TransportDiagnosticsEvent(
+          kind: TransportDiagnosticsEventKind.requestFailure,
+          request: requestInfo,
+          error: error,
+          timestamp: DateTime.now(),
+          duration: DateTime.now().difference(startedAt),
+        ),
+      );
+      rethrow;
     }
+  }
+
+  TransportDiagnosticsRequestInfo _createRequestInfo(
+    TransportRequest request, {
+    required bool isStreaming,
+  }) {
+    final headerNames = request.headers.keys.toList(growable: false)..sort();
+    return TransportDiagnosticsRequestInfo(
+      uri: request.uri,
+      method: request.method,
+      responseType: request.responseType,
+      timeout: request.timeout,
+      isStreaming: isStreaming,
+      hasBody: request.body != null,
+      bodyType: request.body?.runtimeType.toString(),
+      headerNames: headerNames,
+    );
+  }
+
+  TransportDiagnosticsResponseInfo _createResponseInfo({
+    required int statusCode,
+    required Map<String, String> headers,
+    required Object? body,
+  }) {
+    final headerNames = headers.keys.toList(growable: false)..sort();
+    return TransportDiagnosticsResponseInfo(
+      statusCode: statusCode,
+      headerNames: headerNames,
+      bodyType: body?.runtimeType.toString(),
+    );
+  }
+
+  TransportDiagnosticsResponseInfo? _responseInfoFromError(Object error) {
+    if (error is! TransportHttpException) {
+      return null;
+    }
+
+    return _createResponseInfo(
+      statusCode: error.statusCode,
+      headers: error.headers,
+      body: error.responseBody,
+    );
+  }
+
+  void _emitDiagnostics(TransportDiagnosticsEvent event) {
+    _diagnostics?.onEvent(event);
   }
 
   CancelToken? _bindCancellation(TransportCancellation? cancellation) {

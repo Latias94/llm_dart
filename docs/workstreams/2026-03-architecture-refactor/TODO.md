@@ -65,10 +65,10 @@
 - [x] Extract the HTTP request executor
 - [x] Extract the SSE decoder
 - [x] Extract the stream chunk parser helper
-- [ ] Extract retry, timeout, and cancellation
+- [ ] Complete retry and timeout helpers
 - [x] Replace public `CancelToken` with a transport cancellation abstraction
 - [x] Extract provider-independent error mapping
-- [ ] Define the transport diagnostics interface
+- [x] Define the transport diagnostics interface
 - [x] Define `HttpChatTransport` request and chunk codecs
 - [x] Implement `TextStreamEvent` JSON codec
 

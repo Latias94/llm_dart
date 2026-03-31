@@ -1,6 +1,7 @@
 library;
 
 export 'src/common/transport_cancellation.dart';
+export 'src/common/transport_diagnostics.dart';
 export 'src/common/transport_model_error.dart';
 export 'src/common/transport_exception.dart';
 export 'src/http/dio_transport_client.dart';

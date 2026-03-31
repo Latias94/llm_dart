@@ -244,8 +244,7 @@ infrastructure that a more mature architecture needs.
 
 Still missing:
 
-- retry, timeout, and cancellation completion
-- a transport diagnostics interface
+- retry and timeout completion
 
 This matters because broader shared orchestration and richer remote UI
 streaming are both much safer once the transport boundary is fully productized.
@@ -303,7 +302,6 @@ parity.
 Do this before broader orchestration work:
 
 - retry and timeout completion
-- diagnostics surface
 
 ### 5.2 Decide The Shared Structured-Generation Boundary
 
