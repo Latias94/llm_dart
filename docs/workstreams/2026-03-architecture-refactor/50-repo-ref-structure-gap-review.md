@@ -270,13 +270,16 @@ Current status:
 - Google now also has package-owned embedding, image, and speech model
   migrations through `Google.embeddingModel(...)`, `Google.imageModel(...)`,
   and `Google.speechModel(...)`
+- Google request-side candidate, safety, and modality controls are now also
+  split more cleanly between the text codec and the capability-specific image
+  and speech surfaces
 
 What is still missing:
 
 - provider migrations outside the OpenAI family are still incomplete for
   non-text capability coverage
-- Google provider-owned streamed TTS and safety/modality migrations are still
-  incomplete
+- Google provider-owned streamed TTS and broader compatibility-side modality
+  coverage are still incomplete
 - Anthropic non-text capability migrations are still incomplete
 - shared embedding chunk-splitting and parallel-batching policy is not yet
   frozen above the raw model interface

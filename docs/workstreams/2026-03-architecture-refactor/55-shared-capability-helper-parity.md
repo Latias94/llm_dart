@@ -129,7 +129,7 @@ The remaining work is still real:
 
 - non-text provider migration parity is still incomplete outside the OpenAI
   family
-- Google streamed TTS and safety/modality migration parity is incomplete
+- Google streamed TTS and broader compatibility-side modality coverage is incomplete
 - Anthropic capability migration parity is incomplete
 - shared embedding chunk-splitting policy is intentionally still undecided
 

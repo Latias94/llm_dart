@@ -91,10 +91,12 @@ final class GoogleEmbeddingModelSettings implements ProviderModelOptions {
 final class GoogleImageModelSettings implements ProviderModelOptions {
   final Map<String, String> headers;
   final int? maxImagesPerCall;
+  final List<GoogleSafetySetting> safetySettings;
 
   const GoogleImageModelSettings({
     this.headers = const {},
     this.maxImagesPerCall,
+    this.safetySettings = const [],
   });
 }
 
@@ -143,10 +145,12 @@ enum GooglePersonGeneration {
 final class GoogleImageOptions implements ProviderInvocationOptions {
   final GoogleImageAspectRatio? aspectRatio;
   final GooglePersonGeneration? personGeneration;
+  final List<GoogleSafetySetting>? safetySettings;
 
   const GoogleImageOptions({
     this.aspectRatio,
     this.personGeneration,
+    this.safetySettings,
   });
 }
 

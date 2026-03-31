@@ -112,6 +112,15 @@ final class GoogleImageModel implements ImageModel {
         'GoogleImageOptions.personGeneration is only supported for Imagen image models.',
       );
     }
+
+    final safetySettings = _resolveSafetySettings(options);
+    if (!isGeminiImageModel && safetySettings.isNotEmpty) {
+      throw ArgumentError.value(
+        safetySettings,
+        'request.callOptions.providerOptions.safetySettings',
+        'Google safety settings are only supported for Gemini image models. Imagen safety filters are not configurable through this surface.',
+      );
+    }
   }
 
   Map<String, Object?> _buildImagenRequest(
@@ -138,6 +147,7 @@ final class GoogleImageModel implements ImageModel {
     ImageGenerationRequest request, {
     required GoogleImageOptions? options,
   }) {
+    final safetySettings = _resolveSafetySettings(options);
     return {
       'contents': [
         {
@@ -158,7 +168,16 @@ final class GoogleImageModel implements ImageModel {
             'aspectRatio': aspectRatio.value,
           },
       },
+      if (safetySettings.isNotEmpty)
+        'safetySettings': [
+          for (final setting in safetySettings) setting.toJson(),
+        ],
     };
+  }
+
+  List<GoogleSafetySetting> _resolveSafetySettings(
+      GoogleImageOptions? options) {
+    return options?.safetySettings ?? settings.safetySettings;
   }
 
   ImageGenerationResult _decodeImagenResponse(Map<String, Object?> json) {

@@ -65,6 +65,7 @@ Current status:
 - the OpenAI family now has package-owned embedding and image model surfaces through `OpenAI.embeddingModel(...)` and `OpenAI.imageModel(...)`, with typed `OpenAIEmbeddingModelSettings` / `OpenAIImageModelSettings` and typed `OpenAIEmbedOptions` / `OpenAIImageOptions`
 - the OpenAI family now also has package-owned `speechModel(...)` and `transcriptionModel(...)` surfaces with typed provider options, byte-response speech decoding, and multipart transcription request encoding above the transport layer
 - Google now also has package-owned embedding, image, and speech model surfaces through `Google.embeddingModel(...)`, `Google.imageModel(...)`, and `Google.speechModel(...)`, with typed `GoogleEmbeddingModelSettings` / `GoogleImageModelSettings` / `GoogleSpeechModelSettings` and typed `GoogleEmbedOptions` / `GoogleImageOptions` / `GoogleSpeechOptions`
+- Google current stable surfaces now also cover text-side candidate/safety/modality options plus Gemini image safety settings, while image and speech modality selection stay on their capability-specific model surfaces instead of one generic option bag
 - `llm_dart_core` now also exposes `GenerateTextStepResult` as the first shared step-level snapshot wrapper without changing the single-step meaning of `generateText` / `streamText`
 - `llm_dart_core` now also exposes `GenerateTextRunResult` and `GenerateTextStepStartEvent` as runner-facing pure model primitives
 - `llm_dart_core` now also has a narrow non-streaming multi-step `GenerateTextRunner` and `runTextGeneration(...)` entrypoint that accumulates step snapshots, replays prior assistant/tool messages, and continues common function-tool steps through an app-supplied executor
@@ -72,7 +73,7 @@ Current status:
 - continuation ownership is now also frozen more clearly: common function-tool loops belong to the shared runner, while approval-gated, provider-executed, dynamic, and chat-interactive continuation remain provider-owned or session-owned
 - the stop-and-mutation boundary is now also frozen: `maxSteps` stays a guardrail, shared `stopWhen` and `prepareStep` stay out, and retry/model-switch policy remains app-owned
 - only a separate streamed runner or a tightly-constrained pre-step hook may be reconsidered later if real shared usage proves the need
-- provider-specific compatibility subset audits, broader endpoint coverage, and the remaining Google safety/modality plus Anthropic non-text provider migrations remain for the next step
+- provider-specific compatibility subset audits, broader endpoint coverage, and the remaining Google provider-owned streamed TTS plus compatibility-side modality coverage and Anthropic non-text provider migrations remain for the next step
 
 ## M3 - Anthropic And Google
 

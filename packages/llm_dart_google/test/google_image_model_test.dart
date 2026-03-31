@@ -200,6 +200,89 @@ void main() {
       );
     });
 
+    test('Gemini image model forwards safety settings from typed options',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = Google(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'candidates': [
+                  {
+                    'content': {
+                      'parts': [
+                        {
+                          'inlineData': {
+                            'mimeType': 'image/png',
+                            'data': base64Encode([1, 2, 3]),
+                          },
+                        },
+                      ],
+                    },
+                  },
+                ],
+              },
+            );
+          },
+        ),
+      ).imageModel(
+        'gemini-2.5-flash-image',
+        settings: const GoogleImageModelSettings(
+          safetySettings: [
+            GoogleSafetySetting(
+              category: GoogleHarmCategory.harassment,
+              threshold: GoogleHarmBlockThreshold.blockOnlyHigh,
+            ),
+          ],
+        ),
+      );
+
+      await generateImage(
+        model: model,
+        prompt: 'Draw a cat.',
+        callOptions: const CallOptions(
+          providerOptions: GoogleImageOptions(
+            safetySettings: [
+              GoogleSafetySetting(
+                category: GoogleHarmCategory.dangerousContent,
+                threshold: GoogleHarmBlockThreshold.blockMediumAndAbove,
+              ),
+            ],
+          ),
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      expect(
+        capturedRequest!.body,
+        {
+          'contents': [
+            {
+              'parts': [
+                {
+                  'text': 'Draw a cat.',
+                },
+              ],
+            },
+          ],
+          'generationConfig': {
+            'responseModalities': ['TEXT', 'IMAGE'],
+          },
+          'safetySettings': [
+            {
+              'category': 'HARM_CATEGORY_DANGEROUS_CONTENT',
+              'threshold': 'BLOCK_MEDIUM_AND_ABOVE',
+            },
+          ],
+        },
+      );
+    });
+
     test('Google image model rejects request.size', () async {
       final model = Google(
         apiKey: 'test-key',
@@ -263,6 +346,37 @@ void main() {
             (error) => error.message,
             'message',
             contains('Expected GoogleImageOptions'),
+          ),
+        ),
+      );
+    });
+
+    test('Imagen image models reject Gemini safety settings', () async {
+      final model = Google(
+        apiKey: 'test-key',
+        transport: const _FakeTransportClient(),
+      ).imageModel(
+        'imagen-3.0-generate-002',
+        settings: const GoogleImageModelSettings(
+          safetySettings: [
+            GoogleSafetySetting(
+              category: GoogleHarmCategory.harassment,
+              threshold: GoogleHarmBlockThreshold.blockOnlyHigh,
+            ),
+          ],
+        ),
+      );
+
+      await expectLater(
+        () => generateImage(
+          model: model,
+          prompt: 'Draw a cat.',
+        ),
+        throwsA(
+          isA<ArgumentError>().having(
+            (error) => error.message,
+            'message',
+            contains('Imagen safety filters are not configurable'),
           ),
         ),
       );

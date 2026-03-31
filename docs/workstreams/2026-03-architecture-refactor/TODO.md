@@ -123,7 +123,7 @@
 - [x] Migrate the Gemini embedding model
 - [x] Migrate Gemini speech and TTS
 - [ ] Decide whether Google streamed TTS should later return as a provider-owned package surface outside the shared `SpeechModel`
-- [ ] Migrate Gemini safety and modality options
+- [x] Migrate Gemini safety and modality options
 
 ## Community Providers
 
