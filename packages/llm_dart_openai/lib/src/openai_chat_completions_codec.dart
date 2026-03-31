@@ -500,12 +500,18 @@ final class OpenAIChatCompletionsCodec {
             'type': 'text',
             'text': text,
           });
-        case ImagePromptPart(:final mediaType, :final uri, :final bytes):
+        case ImagePromptPart(
+            :final mediaType,
+            :final uri,
+            :final bytes,
+            :final providerMetadata,
+          ):
           content.add(
             _encodeImageContentPart(
               mediaType: mediaType,
               uri: uri,
               bytes: bytes,
+              metadata: providerMetadata,
             ),
           );
         case FilePromptPart():
@@ -538,7 +544,12 @@ final class OpenAIChatCompletionsCodec {
     required String mediaType,
     Uri? uri,
     List<int>? bytes,
+    ProviderMetadata? metadata,
   }) {
+    final openaiMetadata = _providerMetadataValues(
+      metadata,
+      namespace: 'openai',
+    );
     final imageUrl = uri?.toString() ??
         (bytes == null
             ? null
@@ -554,6 +565,8 @@ final class OpenAIChatCompletionsCodec {
       'type': 'image_url',
       'image_url': {
         'url': imageUrl,
+        if (_asString(openaiMetadata?['imageDetail']) case final imageDetail?)
+          'detail': imageDetail,
       },
     };
   }
@@ -567,6 +580,7 @@ final class OpenAIChatCompletionsCodec {
         mediaType: part.mediaType,
         uri: part.uri,
         bytes: part.bytes,
+        metadata: part.providerMetadata,
       );
     }
 
@@ -594,6 +608,19 @@ final class OpenAIChatCompletionsCodec {
     }
 
     if (part.mediaType == 'application/pdf') {
+      final openaiMetadata = _providerMetadataValues(
+        part.providerMetadata,
+        namespace: 'openai',
+      );
+      if (_asString(openaiMetadata?['fileId']) case final fileId?) {
+        return {
+          'type': 'file',
+          'file': {
+            'file_id': fileId,
+          },
+        };
+      }
+
       if (part.uri != null) {
         throw UnsupportedError(
           'OpenAI-family chat-completions PDF file prompt parts do not support URIs. Provide bytes instead.',
@@ -638,6 +665,22 @@ final class OpenAIChatCompletionsCodec {
     }
 
     return mediaType;
+  }
+
+  Map<String, Object?>? _providerMetadataValues(
+    ProviderMetadata? metadata, {
+    required String namespace,
+  }) {
+    final value = metadata?[namespace];
+    if (value is Map<String, Object?>) {
+      return value;
+    }
+
+    if (value is Map) {
+      return Map<String, Object?>.from(value);
+    }
+
+    return null;
   }
 
   String _joinTextParts({

@@ -192,7 +192,113 @@ void main() {
               },
               {
                 'type': 'input_file',
-                'file_data': 'AQIDBA==',
+                'filename': 'part-2.pdf',
+                'file_data': 'data:application/pdf;base64,AQIDBA==',
+              },
+            ],
+          },
+        ],
+      );
+    });
+
+    test(
+        'generate encodes OpenAI-owned imageDetail and PDF file handles for the Responses API',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'resp_prompt_hints',
+                'model': 'gpt-4.1-mini',
+                'created_at': 1710000000,
+                'status': 'completed',
+                'output': [
+                  {
+                    'id': 'msg_1',
+                    'type': 'message',
+                    'status': 'completed',
+                    'role': 'assistant',
+                    'content': [
+                      {
+                        'type': 'output_text',
+                        'text': 'Done.',
+                        'annotations': [],
+                      },
+                    ],
+                  },
+                ],
+                'usage': {
+                  'input_tokens': 6,
+                  'output_tokens': 1,
+                  'total_tokens': 7,
+                  'output_tokens_details': {
+                    'reasoning_tokens': 0,
+                  },
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel('gpt-4.1-mini');
+
+      await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage(
+              parts: [
+                const ImagePromptPart(
+                  mediaType: 'image/png',
+                  providerMetadata: ProviderMetadata({
+                    'openai': {
+                      'fileId': 'assistant-img-abc123',
+                      'imageDetail': 'high',
+                    },
+                  }),
+                ),
+                const FilePromptPart(
+                  mediaType: 'application/pdf',
+                  providerMetadata: ProviderMetadata({
+                    'openai': {
+                      'fileId': 'file-pdf-12345',
+                    },
+                  }),
+                ),
+                FilePromptPart(
+                  mediaType: 'application/pdf',
+                  uri: Uri.parse('https://example.com/document.pdf'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(
+        requestBody['input'],
+        [
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'input_image',
+                'file_id': 'assistant-img-abc123',
+                'detail': 'high',
+              },
+              {
+                'type': 'input_file',
+                'file_id': 'file-pdf-12345',
+              },
+              {
+                'type': 'input_file',
+                'file_url': 'https://example.com/document.pdf',
               },
             ],
           },

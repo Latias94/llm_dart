@@ -272,6 +272,170 @@ void main() {
       );
     });
 
+    test(
+        'chat completions encode OpenAI-owned PDF file handles through provider metadata',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'chatcmpl_pdf_file_id_1',
+                'model': 'gpt-4.1-mini',
+                'created': 1710000000,
+                'choices': [
+                  {
+                    'index': 0,
+                    'finish_reason': 'stop',
+                    'message': {
+                      'role': 'assistant',
+                      'content': 'Done.',
+                    },
+                  },
+                ],
+                'usage': {
+                  'prompt_tokens': 4,
+                  'completion_tokens': 1,
+                  'total_tokens': 5,
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel(
+        'gpt-4.1-mini',
+        settings: const OpenAIChatModelSettings(
+          useResponsesApi: false,
+        ),
+      );
+
+      await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage(
+              parts: const [
+                FilePromptPart(
+                  mediaType: 'application/pdf',
+                  providerMetadata: ProviderMetadata({
+                    'openai': {
+                      'fileId': 'file-pdf-12345',
+                    },
+                  }),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(
+        requestBody['messages'],
+        [
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'file',
+                'file': {
+                  'file_id': 'file-pdf-12345',
+                },
+              },
+            ],
+          },
+        ],
+      );
+    });
+
+    test(
+        'chat completions encode OpenAI image detail through provider metadata',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'chatcmpl_image_detail_1',
+                'model': 'gpt-4.1-mini',
+                'created': 1710000000,
+                'choices': [
+                  {
+                    'index': 0,
+                    'finish_reason': 'stop',
+                    'message': {
+                      'role': 'assistant',
+                      'content': 'Done.',
+                    },
+                  },
+                ],
+                'usage': {
+                  'prompt_tokens': 4,
+                  'completion_tokens': 1,
+                  'total_tokens': 5,
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel(
+        'gpt-4.1-mini',
+        settings: const OpenAIChatModelSettings(
+          useResponsesApi: false,
+        ),
+      );
+
+      await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage(
+              parts: const [
+                ImagePromptPart(
+                  mediaType: 'image/png',
+                  bytes: [0, 1, 2, 3],
+                  providerMetadata: ProviderMetadata({
+                    'openai': {
+                      'imageDetail': 'low',
+                    },
+                  }),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(
+        requestBody['messages'],
+        [
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'image_url',
+                'image_url': {
+                  'url': 'data:image/png;base64,AAECAw==',
+                  'detail': 'low',
+                },
+              },
+            ],
+          },
+        ],
+      );
+    });
+
     test('chat completions encode audio file prompt parts', () async {
       TransportRequest? capturedRequest;
 

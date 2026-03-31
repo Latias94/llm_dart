@@ -136,6 +136,8 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Status reconciliation for the Google compatibility modality slice, including which multimodal bridge shapes are already covered and which legacy output limits remain intentional.
 - [58-openai-chat-migration-status.md](58-openai-chat-migration-status.md)
   - Status reconciliation for the OpenAI-family chat migration, including the narrowed chat-completions file-input gap and the still-open Responses-first compatibility policy question.
+- [59-openai-provider-owned-input-hints.md](59-openai-provider-owned-input-hints.md)
+  - Frozen provider-owned OpenAI prompt-hint contract for `fileId` and `imageDetail` without widening the shared prompt model.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)

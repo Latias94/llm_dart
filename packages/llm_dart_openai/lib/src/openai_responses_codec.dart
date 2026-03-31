@@ -641,7 +641,8 @@ final class OpenAIResponsesCodec {
         {
           'role': 'user',
           'content': [
-            for (final part in message.parts) _encodeUserPart(part),
+            for (var index = 0; index < message.parts.length; index++)
+              _encodeUserPart(message.parts[index], index: index),
           ],
         },
       ];
@@ -858,7 +859,10 @@ final class OpenAIResponsesCodec {
     return items;
   }
 
-  Object _encodeUserPart(PromptPart part) {
+  Object _encodeUserPart(
+    PromptPart part, {
+    required int index,
+  }) {
     if (part is TextPromptPart) {
       return {
         'type': 'input_text',
@@ -867,6 +871,19 @@ final class OpenAIResponsesCodec {
     }
 
     if (part is ImagePromptPart) {
+      final openaiMetadata = _providerMetadataValues(
+        part.providerMetadata,
+        namespace: 'openai',
+      );
+      final imageDetail = _asString(openaiMetadata?['imageDetail']);
+      if (_asString(openaiMetadata?['fileId']) case final fileId?) {
+        return {
+          'type': 'input_image',
+          'file_id': fileId,
+          if (imageDetail != null) 'detail': imageDetail,
+        };
+      }
+
       final imageUrl = part.uri?.toString() ??
           (part.bytes == null
               ? null
@@ -881,11 +898,25 @@ final class OpenAIResponsesCodec {
       return {
         'type': 'input_image',
         'image_url': imageUrl,
+        if (imageDetail != null) 'detail': imageDetail,
       };
     }
 
     if (part is FilePromptPart) {
+      final openaiMetadata = _providerMetadataValues(
+        part.providerMetadata,
+        namespace: 'openai',
+      );
       if (part.mediaType.startsWith('image/')) {
+        final imageDetail = _asString(openaiMetadata?['imageDetail']);
+        if (_asString(openaiMetadata?['fileId']) case final fileId?) {
+          return {
+            'type': 'input_image',
+            'file_id': fileId,
+            if (imageDetail != null) 'detail': imageDetail,
+          };
+        }
+
         final imageUrl = part.uri?.toString() ??
             (part.bytes == null
                 ? null
@@ -900,6 +931,36 @@ final class OpenAIResponsesCodec {
         return {
           'type': 'input_image',
           'image_url': imageUrl,
+          if (imageDetail != null) 'detail': imageDetail,
+        };
+      }
+
+      if (part.mediaType == 'application/pdf') {
+        if (_asString(openaiMetadata?['fileId']) case final fileId?) {
+          return {
+            'type': 'input_file',
+            'file_id': fileId,
+          };
+        }
+
+        if (part.uri != null) {
+          return {
+            'type': 'input_file',
+            'file_url': part.uri!.toString(),
+          };
+        }
+
+        if (part.bytes == null) {
+          throw UnsupportedError(
+            'User PDF file prompt parts need bytes, a URI, or an OpenAI fileId on the migrated Responses path.',
+          );
+        }
+
+        return {
+          'type': 'input_file',
+          'filename': part.filename ?? 'part-$index.pdf',
+          'file_data':
+              'data:application/pdf;base64,${base64Encode(part.bytes!)}',
         };
       }
 

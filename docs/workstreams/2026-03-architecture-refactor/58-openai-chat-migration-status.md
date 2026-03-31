@@ -67,6 +67,13 @@ The migrated chat-completions path now supports `FilePromptPart` for user messag
   - bytes are required
   - default filename becomes `part-{index}.pdf` when not provided
 
+The OpenAI-family codecs also now expose a provider-owned hint path for input shaping without widening the shared prompt model:
+
+- `PromptPart.providerMetadata['openai']['fileId']`
+- `PromptPart.providerMetadata['openai']['imageDetail']`
+
+That provider-owned hint contract is frozen in `59-openai-provider-owned-input-hints.md`.
+
 This keeps the mapping aligned with the reference without widening the shared prompt model.
 
 The Responses path also now covers the user multimodal subset that the legacy compatibility route already relied on in the old provider implementation:
@@ -82,9 +89,6 @@ The following limits are still intentional for now:
 - audio and PDF file parts with `uri` are rejected
   - this matches the reference direction for URL-backed audio/PDF on the chat-completions path
   - it avoids freezing a weak URL-handling contract before we decide whether provider-owned file handles need a typed path
-- provider-owned PDF file-ID replay is still not exposed on the migrated chat-completions path
-  - the shared `FilePromptPart` model should not be stretched into an OpenAI-only file-handle transport by accident
-  - if we later need this, it should be frozen as a provider-owned hint contract, not as an implicit reinterpretation of `uri`
 - generic file prompt parts with `uri` are still rejected on the migrated Responses path
   - this keeps the Responses codec aligned with the old compatibility subset, which only ever carried file bytes
 - assistant replay is still conservative
@@ -114,7 +118,6 @@ The compatibility route should still stay conservative for:
 The meaningful remaining gaps are now:
 
 - broadened assistant replay fidelity on chat-completions
-- a frozen provider-owned contract if OpenAI chat-completions later needs file-ID hints
 - possible richer multimodal parity on the Responses request codec beyond the current user image/file subset, if app usage proves it is necessary
 - a decision on whether OpenAI compatibility should ever broaden beyond the current user multimodal plus common function-tool replay subset into richer replay-heavy histories
 

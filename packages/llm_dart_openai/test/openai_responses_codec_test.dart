@@ -48,7 +48,8 @@ void main() {
               },
               {
                 'type': 'input_file',
-                'file_data': 'AQIDBA==',
+                'filename': 'part-2.pdf',
+                'file_data': 'data:application/pdf;base64,AQIDBA==',
               },
             ],
           },
@@ -56,7 +57,103 @@ void main() {
       );
     });
 
-    test('rejects URI-backed generic file prompt parts on the Responses path',
+    test(
+        'encodes OpenAI-owned fileId and imageDetail hints on the Responses path',
+        () {
+      const codec = OpenAIResponsesCodec();
+
+      final request = codec.encodeRequest(
+        modelId: 'gpt-5-mini',
+        prompt: [
+          UserPromptMessage(
+            parts: const [
+              ImagePromptPart(
+                mediaType: 'image/png',
+                providerMetadata: ProviderMetadata({
+                  'openai': {
+                    'fileId': 'assistant-img-abc123',
+                    'imageDetail': 'high',
+                  },
+                }),
+              ),
+              FilePromptPart(
+                mediaType: 'application/pdf',
+                providerMetadata: ProviderMetadata({
+                  'openai': {
+                    'fileId': 'file-pdf-12345',
+                  },
+                }),
+              ),
+            ],
+          ),
+        ],
+        tools: const [],
+        toolChoice: null,
+        options: const GenerateTextOptions(),
+        providerOptions: const OpenAIGenerateTextOptions(),
+        stream: false,
+      );
+
+      expect(
+        request.body['input'],
+        [
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'input_image',
+                'file_id': 'assistant-img-abc123',
+                'detail': 'high',
+              },
+              {
+                'type': 'input_file',
+                'file_id': 'file-pdf-12345',
+              },
+            ],
+          },
+        ],
+      );
+    });
+
+    test('encodes PDF file URIs on the Responses path', () {
+      const codec = OpenAIResponsesCodec();
+
+      final request = codec.encodeRequest(
+        modelId: 'gpt-5-mini',
+        prompt: [
+          UserPromptMessage(
+            parts: [
+              FilePromptPart(
+                mediaType: 'application/pdf',
+                uri: Uri.parse('https://example.com/document.pdf'),
+              ),
+            ],
+          ),
+        ],
+        tools: const [],
+        toolChoice: null,
+        options: const GenerateTextOptions(),
+        providerOptions: const OpenAIGenerateTextOptions(),
+        stream: false,
+      );
+
+      expect(
+        request.body['input'],
+        [
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'input_file',
+                'file_url': 'https://example.com/document.pdf',
+              },
+            ],
+          },
+        ],
+      );
+    });
+
+    test('rejects URI-backed non-PDF file prompt parts on the Responses path',
         () {
       const codec = OpenAIResponsesCodec();
 
@@ -67,8 +164,8 @@ void main() {
             UserPromptMessage(
               parts: [
                 FilePromptPart(
-                  mediaType: 'application/pdf',
-                  uri: Uri.parse('https://example.com/document.pdf'),
+                  mediaType: 'text/plain',
+                  uri: Uri.parse('https://example.com/notes.txt'),
                 ),
               ],
             ),
