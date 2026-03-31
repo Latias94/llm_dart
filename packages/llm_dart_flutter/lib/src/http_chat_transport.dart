@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
@@ -126,13 +124,9 @@ final class HttpChatTransport implements ChatTransport {
         return;
       }
 
-      final chunks = utf8.decoder.bind(response.stream);
-      await for (final frame in sseDecoder.decode(chunks)) {
-        if (frame.data.isEmpty) {
-          continue;
-        }
-
-        final chunk = chunkCodec.decodeChunk(_decodeJson(frame.data));
+      final parser = SseJsonChunkParser(sseDecoder: sseDecoder);
+      await for (final envelope in parser.parse(response.stream)) {
+        final chunk = chunkCodec.decodeChunk(envelope);
         switch (chunk) {
           case HttpChatTransportStartChunk(:final resumeToken):
             if (resumeToken != null) {
@@ -210,17 +204,6 @@ final class HttpChatTransport implements ChatTransport {
         'HttpChatTransport does not serialize CallOptions yet. Configure backend transport behavior on the transport itself, not through provider invocation options.',
       );
     }
-  }
-
-  Map<String, Object?> _decodeJson(String data) {
-    final decoded = jsonDecode(data);
-    if (decoded is Map) {
-      return Map<String, Object?>.from(decoded);
-    }
-
-    throw FormatException(
-      'Expected a JSON object SSE payload but received ${decoded.runtimeType}.',
-    );
   }
 
   void _clearResumeState(

@@ -244,7 +244,6 @@ infrastructure that a more mature architecture needs.
 
 Still missing:
 
-- a reusable stream chunk parser helper
 - retry, timeout, and cancellation completion
 - a transport diagnostics interface
 
@@ -303,7 +302,6 @@ parity.
 
 Do this before broader orchestration work:
 
-- chunk parser helper
 - retry and timeout completion
 - diagnostics surface
 

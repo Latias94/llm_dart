@@ -15,6 +15,7 @@ import 'xai_options.dart';
 
 final class OpenAILanguageModel implements LanguageModel {
   static const OpenAIResponsesCodec _codec = OpenAIResponsesCodec();
+  static const SseJsonChunkParser _streamChunkParser = SseJsonChunkParser();
   final String apiKey;
   final String baseUrl;
   final OpenAIFamilyProfile profile;
@@ -151,16 +152,9 @@ final class OpenAILanguageModel implements LanguageModel {
         );
 
         final streamState = OpenAIResponsesStreamState();
-        final decoder = const DefaultSseDecoder();
-        final chunks = utf8.decoder.bind(response.stream);
-
-        await for (final frame in decoder.decode(chunks)) {
-          if (frame.data.isEmpty || frame.data == '[DONE]') {
-            continue;
-          }
-
+        await for (final chunk in _streamChunkParser.parse(response.stream)) {
           final events = _codec.decodeStreamChunk(
-            _decodeJsonObject(frame.data),
+            chunk,
             streamState,
           );
 
@@ -202,16 +196,9 @@ final class OpenAILanguageModel implements LanguageModel {
       );
 
       final streamState = OpenAIChatCompletionsStreamState();
-      final decoder = const DefaultSseDecoder();
-      final chunks = utf8.decoder.bind(response.stream);
-
-      await for (final frame in decoder.decode(chunks)) {
-        if (frame.data.isEmpty || frame.data == '[DONE]') {
-          continue;
-        }
-
+      await for (final chunk in _streamChunkParser.parse(response.stream)) {
         final events = _chatCompletionsCodec.decodeStreamChunk(
-          _decodeJsonObject(frame.data),
+          chunk,
           streamState,
         );
 

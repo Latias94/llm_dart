@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
@@ -14,6 +12,7 @@ final class AnthropicLanguageModel implements LanguageModel {
   static const AnthropicMessagesResultCodec _resultCodec =
       AnthropicMessagesResultCodec();
   static const AnthropicStreamCodec _streamCodec = AnthropicStreamCodec();
+  static const SseJsonChunkParser _streamChunkParser = SseJsonChunkParser();
   static const String _providerId = 'anthropic';
 
   final String apiKey;
@@ -108,16 +107,9 @@ final class AnthropicLanguageModel implements LanguageModel {
       );
 
       final state = AnthropicMessagesStreamState();
-      final decoder = const DefaultSseDecoder();
-      final chunks = utf8.decoder.bind(response.stream);
-
-      await for (final frame in decoder.decode(chunks)) {
-        if (frame.data.isEmpty || frame.data == '[DONE]') {
-          continue;
-        }
-
+      await for (final chunk in _streamChunkParser.parse(response.stream)) {
         for (final event in _streamCodec.decodeChunk(
-          decodeAnthropicJsonObject(frame.data),
+          chunk,
           state,
         )) {
           yield event;

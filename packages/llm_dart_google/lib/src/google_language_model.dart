@@ -16,6 +16,7 @@ final class GoogleLanguageModel implements LanguageModel {
       GoogleGenerateContentResultCodec();
   static const GoogleGenerateContentStreamCodec _streamCodec =
       GoogleGenerateContentStreamCodec();
+  static const SseJsonChunkParser _streamChunkParser = SseJsonChunkParser();
 
   final String apiKey;
   final String baseUrl;
@@ -106,16 +107,9 @@ final class GoogleLanguageModel implements LanguageModel {
       );
 
       final state = GoogleGenerateContentStreamState();
-      final decoder = const DefaultSseDecoder();
-      final chunks = utf8.decoder.bind(response.stream);
-
-      await for (final frame in decoder.decode(chunks)) {
-        if (frame.data.isEmpty || frame.data == '[DONE]') {
-          continue;
-        }
-
+      await for (final chunk in _streamChunkParser.parse(response.stream)) {
         for (final event in _streamCodec.decodeChunk(
-          _decodeJsonObject(frame.data),
+          chunk,
           state,
         )) {
           yield event;
