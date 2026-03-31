@@ -128,3 +128,6 @@ The correct next step was to add a higher-level shared streamed result surface:
 
 This moves `llm_dart` closer to the mature `repo-ref/ai` shape while keeping
 the Dart-first layering discipline intact.
+
+The next landed slice after this note is the additive main-call result layer in
+`53-main-text-call-result-layer.md`.

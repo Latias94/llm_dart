@@ -6,6 +6,7 @@ import '../common/json_schema.dart';
 import '../common/model_error.dart';
 import '../common/partial_json.dart';
 import '../common/provider_metadata.dart';
+import '../common/replay_stream_channel.dart';
 import '../common/usage_stats.dart';
 import '../prompt/prompt_message.dart';
 import '../stream/text_stream_event.dart';
@@ -466,12 +467,12 @@ final class OutputResultEvent<T> extends OutputStreamEvent<T> {
 }
 
 final class StreamOutputResult<T> {
-  final _ReplayStreamChannel<OutputStreamEvent<T>> _eventChannel =
-      _ReplayStreamChannel<OutputStreamEvent<T>>();
-  final _ReplayStreamChannel<Object?> _partialOutputChannel =
-      _ReplayStreamChannel<Object?>();
-  final _ReplayStreamChannel<Object?> _elementChannel =
-      _ReplayStreamChannel<Object?>();
+  final ReplayStreamChannel<OutputStreamEvent<T>> _eventChannel =
+      ReplayStreamChannel<OutputStreamEvent<T>>();
+  final ReplayStreamChannel<Object?> _partialOutputChannel =
+      ReplayStreamChannel<Object?>();
+  final ReplayStreamChannel<Object?> _elementChannel =
+      ReplayStreamChannel<Object?>();
   final Completer<GenerateOutputResult<T>> _resultCompleter =
       Completer<GenerateOutputResult<T>>();
 
@@ -940,79 +941,4 @@ Map<String, Object?> _usageToJson(UsageStats usage) {
     if (usage.totalTokens != null) 'totalTokens': usage.totalTokens,
     if (usage.reasoningTokens != null) 'reasoningTokens': usage.reasoningTokens,
   };
-}
-
-final class _ReplayStreamChannel<T> {
-  final List<T> _history = <T>[];
-  final Set<MultiStreamController<T>> _controllers =
-      <MultiStreamController<T>>{};
-
-  Object? _error;
-  StackTrace? _stackTrace;
-  bool _isClosed = false;
-
-  Stream<T> get stream => Stream<T>.multi(
-        (controller) {
-          for (final value in _history) {
-            controller.add(value);
-          }
-
-          if (_error case final error?) {
-            controller.addError(error, _stackTrace);
-            controller.close();
-            return;
-          }
-
-          if (_isClosed) {
-            controller.close();
-            return;
-          }
-
-          _controllers.add(controller);
-          controller.onCancel = () {
-            _controllers.remove(controller);
-          };
-        },
-        isBroadcast: true,
-      );
-
-  void add(T value) {
-    if (_isClosed || _error != null) {
-      return;
-    }
-
-    _history.add(value);
-    for (final controller in _controllers.toList(growable: false)) {
-      controller.add(value);
-    }
-  }
-
-  void addError(Object error, StackTrace stackTrace) {
-    if (_isClosed || _error != null) {
-      return;
-    }
-
-    _error = error;
-    _stackTrace = stackTrace;
-    _isClosed = true;
-
-    for (final controller in _controllers.toList(growable: false)) {
-      controller.addError(error, stackTrace);
-      controller.close();
-    }
-    _controllers.clear();
-  }
-
-  void close() {
-    if (_isClosed || _error != null) {
-      return;
-    }
-
-    _isClosed = true;
-
-    for (final controller in _controllers.toList(growable: false)) {
-      controller.close();
-    }
-    _controllers.clear();
-  }
 }

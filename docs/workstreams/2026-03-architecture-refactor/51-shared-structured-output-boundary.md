@@ -61,6 +61,8 @@ Current status in the refactor branch:
 - `streamOutputResult(...)` now also exposes buffered `partialOutputStream`,
   `elementStream<T>()`, final `output`, and typed `result` surfaces above the
   same shared event pipeline
+- `generateTextCall(...)` and `streamTextCall(...)` now also expose an additive
+  main-call result layer above the original low-level helpers
 - structured output is therefore no longer only provider-owned, but the shared
   layer is still intentionally narrower than a full `streamObject` contract
 
@@ -68,6 +70,8 @@ What is still missing in shared core:
 
 - no shared parsed-output field on `GenerateTextResult`
 - no direct `OutputSpec` slot on `generateText(...)` / `streamText(...)`
+- no final decision yet on whether the additive call-result layer should remain
+  explicit or later replace those original helper names
 
 In other words, the capability exists on the wire, but not yet as a stable
 cross-provider contract.

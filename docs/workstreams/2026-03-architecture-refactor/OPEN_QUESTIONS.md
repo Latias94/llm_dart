@@ -435,14 +435,17 @@ Current recommendation:
 - first prove a truthful common contract across at least OpenAI and Google for
   request shape, validation, parse failure, and streamed semantics
 - the current shared `OutputSpec` layer plus `generateOutput(...)`,
-  `streamOutput(...)`, and `streamOutputResult(...)` is now the right staged
-  baseline; the remaining decision is whether `OutputSpec` should later fold
-  into `generateText(...)` / `streamText(...)` directly
+  `streamOutput(...)`, `streamOutputResult(...)`, `generateTextCall(...)`, and
+  `streamTextCall(...)` is now the right staged baseline; the remaining
+  decision is whether that additive main-call layer should later fold into
+  `generateText(...)` / `streamText(...)` directly
 - `51-shared-structured-output-boundary.md` records the current recommended
   direction: shared output specification over `generateText` / `streamText`
   rather than freezing standalone `generateObject` APIs as the target end state
 - `52-structured-output-result-surface.md` records the current streamed
   result-surface increment
+- `53-main-text-call-result-layer.md` records the additive main-call result
+  layer that now sits above the low-level helpers
 
 ## 36. Whether A Shared Streamed Runner Is Worth Adding
 

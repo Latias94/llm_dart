@@ -184,6 +184,8 @@ Current status:
 - shared structured output now exists in `llm_dart_core` through
   `OutputSpec`, `generateOutput(...)`, `streamOutput(...)`, and
   `streamOutputResult(...)`
+- the additive main-call layer now also exists through `generateTextCall(...)`
+  and `streamTextCall(...)`
 - OpenAI and Google already have provider-owned JSON-schema request support
 - the shared helper already covers built-in `text`, `json`, `object`,
   `array`, and `choice` modes for final-output parsing
@@ -201,9 +203,9 @@ What is still missing:
   surface
 - a clearer long-term result-placement strategy if parsed output should later
   live directly beside `GenerateTextResult`
-- a decision on whether `OutputSpec` should later fold into
-  `generateText(...)` / `streamText(...)` directly instead of staying behind
-  dedicated output helpers
+- a decision on whether the additive `generateTextCall(...)` /
+  `streamTextCall(...)` layer should later fold into `generateText(...)` /
+  `streamText(...)` directly instead of staying explicit
 
 Why this matters:
 

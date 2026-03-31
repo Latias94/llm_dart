@@ -24,7 +24,7 @@ Future<void> runOpenAIObjectExample() async {
   }
 
   final model = llm.AI.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
-  final result = await core.generateOutput<PersonSummary>(
+  final result = await core.generateTextCall<PersonSummary>(
     model: model,
     prompt: [
       core.SystemPromptMessage.text(
@@ -68,7 +68,7 @@ Future<void> runOpenAIStreamingObjectExample() async {
   }
 
   final model = llm.AI.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
-  final streamResult = core.streamOutputResult<PersonSummary>(
+  final streamResult = core.streamTextCall<PersonSummary>(
     model: model,
     prompt: [
       core.SystemPromptMessage.text('Return structured JSON only.'),
@@ -111,7 +111,7 @@ Future<void> runOpenAIArrayExample() async {
   }
 
   final model = llm.AI.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
-  final result = await core.generateOutput<List<String>>(
+  final result = await core.generateTextCall<List<String>>(
     model: model,
     prompt: [
       core.UserPromptMessage.text(
@@ -142,7 +142,7 @@ Future<void> runOpenAIStreamingArrayExample() async {
   }
 
   final model = llm.AI.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
-  final streamResult = core.streamOutputResult<List<String>>(
+  final streamResult = core.streamTextCall<List<String>>(
     model: model,
     prompt: [
       core.UserPromptMessage.text(
@@ -174,7 +174,7 @@ Future<void> runGoogleChoiceExample() async {
   }
 
   final model = llm.AI.google(apiKey: apiKey).chatModel('gemini-2.5-flash');
-  final result = await core.generateOutput<String>(
+  final result = await core.generateTextCall<String>(
     model: model,
     prompt: [
       core.UserPromptMessage.text(

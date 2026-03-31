@@ -20,6 +20,7 @@ export 'src/model/output_spec.dart';
 export 'src/model/response_format.dart';
 export 'src/model/speech_model.dart';
 export 'src/model/transcription_model.dart';
+export 'src/model/text_call.dart';
 export 'src/prompt/prompt_message.dart';
 export 'src/serialization/chat_ui_json_codec.dart';
 export 'src/serialization/prompt_json_codec.dart';

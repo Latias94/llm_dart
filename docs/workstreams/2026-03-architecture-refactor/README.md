@@ -124,6 +124,8 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Recommended direction for closing the structured-generation gap through a shared output-specification layer rather than freezing provider-owned `responseFormat` as the long-term API.
 - [52-structured-output-result-surface.md](52-structured-output-result-surface.md)
   - Incremental streamed structured-output result surface that adds dedicated partial-output, element, and final-output access without redefining `streamText(...)`.
+- [53-main-text-call-result-layer.md](53-main-text-call-result-layer.md)
+  - Additive main text-call result layer that exposes richer shared result surfaces without redefining the low-level helpers.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
@@ -164,7 +166,7 @@ This workstream is not about a file-moving refactor. It is about defining stable
 
 ### Remaining Structural Gaps Versus `repo-ref/ai`
 
-- Shared structured output now exists in `llm_dart_core` through `OutputSpec`, `generateOutput(...)`, `streamOutput(...)`, and `streamOutputResult(...)`; legacy compatibility `jsonSchema` now also routes through the shared `responseFormat` path, streamed structured output now has dedicated `partialOutputStream`, `elementStream<T>()`, and final `output/result` surfaces above the raw event stream, and the remaining gap is now deeper main-call integration into `generateText(...)` / `streamText(...)` themselves rather than missing streamed side surfaces.
+- Shared structured output now exists in `llm_dart_core` through `OutputSpec`, `generateOutput(...)`, `streamOutput(...)`, and `streamOutputResult(...)`, and the additive main-call layer now also exists through `generateTextCall(...)` and `streamTextCall(...)`; legacy compatibility `jsonSchema` now also routes through the shared `responseFormat` path, streamed structured output now has dedicated `partialOutputStream`, `elementStream<T>()`, and final `output/result` surfaces above the raw event stream, and the remaining gap is now whether this additive result layer should later fold into the original helper names.
 - The shared runner is intentionally narrow and non-streaming; the reference still has a more mature streamed multi-step orchestration loop.
 - Embedding, image, speech, and transcription already have shared interface direction, but their top-level helper and provider-migration parity are still incomplete.
 - The remote chat protocol is thinner than the reference `ui-message-stream` layer, which is acceptable for now but still a conscious structural gap.

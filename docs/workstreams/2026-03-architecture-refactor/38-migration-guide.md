@@ -35,6 +35,8 @@ These helpers should be treated as the stable request helpers above the model:
 
 - `generateText(...)`
 - `streamText(...)`
+- `generateTextCall(...)`
+- `streamTextCall(...)`
 
 These shared model families are already the intended stable boundary:
 
@@ -202,10 +204,10 @@ The shared streaming boundary is `TextStreamEvent`.
 Do not treat UI-only lifecycle chunks or transport-only chunks as reasons to
 expand the shared core event model.
 
-For structured streaming, the shared helper is now:
+For structured streaming, the preferred additive main-call helper is now:
 
 ```dart
-final streamResult = core.streamOutputResult(
+final streamResult = core.streamTextCall(
   model: model,
   prompt: [
     core.UserPromptMessage.text('Return structured JSON.'),
@@ -219,7 +221,7 @@ final streamResult = core.streamOutputResult(
       additionalProperties: false,
     ),
   ),
-}
+);
 
 await for (final partialOutput in streamResult.partialOutputStream) {
   print(partialOutput);
@@ -236,9 +238,10 @@ Current streaming rule:
   output modes
 - array outputs now also emit `OutputElementEvent`s for newly completed
   elements while staying on the same event stream
-- `streamOutputResult(...)` adds buffered `partialOutputStream`,
-  `elementStream<T>()`, final `result`, and final `output` access above that
-  same shared event pipeline
+- `streamOutputResult(...)` remains the dedicated structured event surface
+- `streamTextCall(...)` now adds buffered `partialOutputStream`,
+  `elementStream<T>()`, final `result`, and final `output` access while still
+  being directly iterable as `Stream<TextStreamEvent>`
 
 ## 7. Provider-Specific Options Migration
 
@@ -321,8 +324,10 @@ Current rule:
   and `strict`
 - Google currently uses the shared schema payload and ignores shared fields
   that do not map to its wire format
-- new code should prefer `OutputSpec`, `generateOutput(...)`,
-  `streamOutput(...)`, or explicit shared `JsonResponseFormat`
+- new code should prefer `OutputSpec`, `generateTextCall(...)`,
+  `streamTextCall(...)`, dedicated `generateOutput(...)` / `streamOutput(...)`
+  wrappers when their event surface is specifically desired, or explicit shared
+  `JsonResponseFormat`
 - do not add new app logic that depends on provider-specific compatibility
   injection of `responseFormat`
 
