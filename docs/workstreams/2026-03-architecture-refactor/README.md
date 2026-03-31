@@ -158,13 +158,13 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - Keep search typed APIs provider-owned: OpenRouter through model/profile shaping, xAI through provider-owned invocation options, and shared core only on sources/citations.
 - Keep richer provider-native replay contracts provider-owned as well, using custom parts and provider metadata instead of widening shared tool-result models.
 - Get the text generation path and the Flutter chat path right first, and migrate everything else afterward.
-- Prioritize the remaining real structural gaps over package-count parity with the reference: shared structured generation, transport maturity, carefully-scoped streamed orchestration, and capability-module parity.
+- Prioritize the remaining real structural gaps over package-count parity with the reference: shared structured generation, carefully-scoped streamed orchestration, capability-module parity, and the intentionally thin remote chat protocol.
 
 ### Remaining Structural Gaps Versus `repo-ref/ai`
 
 - A first shared structured-output helper now exists in `llm_dart_core` through `OutputSpec` and `generateOutput(...)`, but there is still no fully integrated `streamObject`-style or partial-structured-output module yet.
 - The shared runner is intentionally narrow and non-streaming; the reference still has a more mature streamed multi-step orchestration loop.
-- `llm_dart_transport` still needs its remaining productized shared infrastructure: retry/timeout completion.
+- `llm_dart_transport` now has its baseline shared infrastructure in place: SSE framing, JSON chunk parsing, transport diagnostics, cancellation, and transport-owned retry/timeout handling.
 - Embedding, image, speech, and transcription already have shared interface direction, but their top-level helper and provider-migration parity are still incomplete.
 - The remote chat protocol is thinner than the reference `ui-message-stream` layer, which is acceptable for now but still a conscious structural gap.
 

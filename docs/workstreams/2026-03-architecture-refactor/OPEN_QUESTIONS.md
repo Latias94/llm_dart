@@ -449,8 +449,8 @@ Needs confirmation:
 Current recommendation:
 
 - keep the current non-streaming runner as the baseline shared layer
-- only revisit a streamed runner after transport maturity lands and at least
-  one concrete shared call path proves the need
+- transport maturity is no longer the blocker; only revisit a streamed runner
+  after at least one concrete shared call path proves the need
 
 ## 37. Whether The Remote Chat Protocol Should Grow Toward A Richer UI Stream
 

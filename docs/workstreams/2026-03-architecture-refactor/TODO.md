@@ -65,7 +65,7 @@
 - [x] Extract the HTTP request executor
 - [x] Extract the SSE decoder
 - [x] Extract the stream chunk parser helper
-- [ ] Complete retry and timeout helpers
+- [x] Complete retry and timeout helpers
 - [x] Replace public `CancelToken` with a transport cancellation abstraction
 - [x] Extract provider-independent error mapping
 - [x] Define the transport diagnostics interface

@@ -173,7 +173,7 @@ surface area before the core capability modules are fully stable.
 ## 4. Real Structural Gaps Still Remaining
 
 After the recent refactor rounds, the remaining differences that still matter
-cluster into five structural gaps.
+cluster into four structural gaps.
 
 ### 4.1 No Shared Structured-Generation Module Yet
 
@@ -237,19 +237,7 @@ The wrong move would be:
 - pushing approval or provider-executed tool semantics into the core runner
 - redefining `streamText(...)` itself as a multi-step runtime
 
-### 4.3 Transport Maturity Is Still Incomplete
-
-The transport package now exists, but it still lacks part of the shared
-infrastructure that a more mature architecture needs.
-
-Still missing:
-
-- retry and timeout completion
-
-This matters because broader shared orchestration and richer remote UI
-streaming are both much safer once the transport boundary is fully productized.
-
-### 4.4 Capability Surfaces Exist, But Capability Modules Are Not Fully Landed
+### 4.3 Capability Surfaces Exist, But Capability Modules Are Not Fully Landed
 
 The common interfaces already exist for:
 
@@ -270,7 +258,7 @@ This means the architecture is directionally correct, but not yet as complete
 as the reference package layout where those capabilities already exist as
 first-class product surfaces.
 
-### 4.5 The Remote UI Stream Protocol Is Still Intentionally Thin
+### 4.4 The Remote UI Stream Protocol Is Still Intentionally Thin
 
 `llm_dart_flutter` already has:
 
@@ -297,13 +285,7 @@ cross-process orchestration later.
 The next refactor sequence should focus on the real gaps, not on package-count
 parity.
 
-### 5.1 Finish Shared Transport Maturity First
-
-Do this before broader orchestration work:
-
-- retry and timeout completion
-
-### 5.2 Decide The Shared Structured-Generation Boundary
+### 5.1 Decide The Shared Structured-Generation Boundary
 
 This is the highest-value architecture question now that text generation,
 provider-native replay, and Flutter session boundaries are largely stabilized.
@@ -313,17 +295,17 @@ The first question is not implementation detail. It is scope honesty:
 - can we define a truthful `generateObject` / `streamObject` boundary
 - or should structured generation stay provider-owned longer
 
-### 5.3 Re-Evaluate Whether A Streamed Runner Is Worth Adding
+### 5.2 Re-Evaluate Whether A Streamed Runner Is Worth Adding
 
-Only revisit this after transport maturity and after at least one concrete
-shared call path proves the need.
+Only revisit this after at least one concrete shared call path proves the
+need.
 
 If added later, it should be:
 
 - a separate higher-level orchestration layer above `streamText(...)`
 - still limited to genuinely shared continuation semantics
 
-### 5.4 Finish Capability Helper And Provider Migration Parity
+### 5.3 Finish Capability Helper And Provider Migration Parity
 
 Once the structured-generation direction is clear, finish the remaining shared
 capability modules in a consistent way:
@@ -333,7 +315,7 @@ capability modules in a consistent way:
 - `generateSpeech`
 - `transcribe`
 
-### 5.5 Defer Optional Cross-Cutting Modules
+### 5.4 Defer Optional Cross-Cutting Modules
 
 Only revisit modules such as:
 
@@ -354,12 +336,12 @@ with `repo-ref/ai` on the most important structural rules:
 - provider-owned native features
 - Flutter/session separation
 - step lifecycle living above the raw stream
+- transport-owned retry, timeout, diagnostics, and streaming helpers
 
 The remaining structural gaps are now narrower and clearer:
 
 - shared structured generation
 - streamed runner maturity
-- transport maturity
 - capability helper and provider migration parity
 - possibly richer remote UI streaming later
 

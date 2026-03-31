@@ -57,7 +57,7 @@ Current status:
 - streaming text, reasoning summaries, and function-call outputs are mapped into the new core models
 - chat-completions decoding now also covers text, reasoning text, tool calls, and streamed tool-input aggregation for the initial OpenAI-family path
 - replay-critical OpenAI Responses metadata now survives decode, session replay, and request re-encoding for assistant message IDs, message phase, reasoning encrypted content, tool-call item IDs, and compaction items
-- transport now has a concrete Dio executor, SSE decoder, cancellation abstraction, and error mapping
+- transport now has a concrete Dio executor, SSE decoder, cancellation abstraction, error mapping, per-attempt diagnostics, and transport-owned retry/timeout helpers
 - `llm_dart_core` now also exposes `GenerateTextStepResult` as the first shared step-level snapshot wrapper without changing the single-step meaning of `generateText` / `streamText`
 - `llm_dart_core` now also exposes `GenerateTextRunResult` and `GenerateTextStepStartEvent` as runner-facing pure model primitives
 - `llm_dart_core` now also has a narrow non-streaming multi-step `GenerateTextRunner` and `runTextGeneration(...)` entrypoint that accumulates step snapshots, replays prior assistant/tool messages, and continues common function-tool steps through an app-supplied executor
