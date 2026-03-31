@@ -237,7 +237,9 @@ Current streaming rule:
   `OutputTextStreamEvent`
 - it now also emits best-effort `OutputPartialEvent`s for built-in structured
   output modes
-- it still does not expose a shared array element stream yet
+- array outputs now also emit `OutputElementEvent`s for newly completed
+  elements while staying on the same event stream
+- there is still no separate parallel `elementStream` result surface
 
 ## 7. Provider-Specific Options Migration
 

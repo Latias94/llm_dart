@@ -436,8 +436,9 @@ Current recommendation:
   request shape, validation, parse failure, and streamed semantics
 - the current shared `OutputSpec` layer plus `generateOutput(...)` and
   `streamOutput(...)` is the right narrow baseline; the remaining decision is
-  whether array element streaming or deeper result-surface integration is
-  justified beyond the now-landed best-effort partial-output contract
+  whether a separate `elementStream` result surface or deeper result-surface
+  integration is justified beyond the now-landed best-effort partial-output and
+  event-based array element contract
 - `51-shared-structured-output-boundary.md` records the current recommended
   direction: shared output specification over `generateText` / `streamText`
   rather than freezing standalone `generateObject` APIs as the target end state

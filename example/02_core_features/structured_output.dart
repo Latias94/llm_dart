@@ -11,6 +11,7 @@ Future<void> main() async {
   await runOpenAIObjectExample();
   await runOpenAIStreamingObjectExample();
   await runOpenAIArrayExample();
+  await runOpenAIStreamingArrayExample();
   await runGoogleChoiceExample();
 }
 
@@ -134,6 +135,42 @@ Future<void> runOpenAIArrayExample() async {
     print('- $item');
   }
   print('');
+}
+
+Future<void> runOpenAIStreamingArrayExample() async {
+  final apiKey = Platform.environment['OPENAI_API_KEY'];
+  if (apiKey == null || apiKey.isEmpty) {
+    print(
+        'Skipping OpenAI streaming array example because OPENAI_API_KEY is not set.\n');
+    return;
+  }
+
+  final model = llm.AI.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
+
+  print('OpenAI streaming array output');
+  await for (final event in core.streamOutput<List<String>>(
+    model: model,
+    prompt: [
+      core.UserPromptMessage.text(
+        'Return three short Flutter layout tips as an array of strings.',
+      ),
+    ],
+    outputSpec: core.ArrayOutputSpec<String>(
+      elementSchema: core.JsonSchema.string(),
+      decodeElement: (json) => json! as String,
+      name: 'layout_tips',
+      description: 'A short list of Flutter layout tips.',
+    ),
+  )) {
+    switch (event) {
+      case core.OutputElementEvent<String>(:final element):
+        print('Element: $element');
+      case core.OutputResultEvent<List<String>>(:final result):
+        print('Final array length: ${result.output.length}\n');
+      default:
+        break;
+    }
+  }
 }
 
 Future<void> runGoogleChoiceExample() async {

@@ -55,13 +55,16 @@ Current status in the refactor branch:
 - `streamOutput(...)` now also emits best-effort `OutputPartialEvent`s through
   `OutputSpec.parsePartial(...)`, using a shared partial-JSON repair utility for
   built-in JSON/object/array/choice modes
+- array outputs now also emit shared `OutputElementEvent`s through the same
+  `streamOutput(...)` event stream when newly completed elements become stable
 - structured output is therefore no longer only provider-owned, but the shared
   layer is still intentionally narrower than a full `streamObject` contract
 
 What is still missing in shared core:
 
 - no shared parsed-output field on `GenerateTextResult`
-- no shared element-streaming model for array-like outputs
+- no separate `elementStream`-style result surface beside the current
+  event-based array element contract
 
 In other words, the capability exists on the wire, but not yet as a stable
 cross-provider contract.
@@ -230,7 +233,8 @@ The current Dart implementation has landed the first three parts of that shape:
 - final parse and validation
 - best-effort partial parsing
 
-It still has not landed a shared element stream.
+It has also landed event-based array element emission, but it still has not
+landed a separate side-stream result surface for elements.
 
 ### 2. Shared Response-Format Value
 
@@ -399,8 +403,9 @@ Recommended order:
 
 - keep expanding partial structured output only for the output modes that can
   be supported honestly
-- keep array element streaming separate until real users prove it is worth the
-  extra surface
+- keep the current array `OutputElementEvent` contract
+- only add a separate `elementStream` result surface later if real users prove
+  that the event-based model is not sufficient
 
 This keeps the shared boundary honest while still moving toward the mature
 reference direction.

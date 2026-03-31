@@ -428,6 +428,13 @@ void main() {
       expect(partialEvents[0].partialOutput, isEmpty);
       expect(partialEvents[1].partialOutput, ['a', 'b']);
 
+      final elementEvents = events
+          .whereType<OutputElementEvent<String>>()
+          .toList(growable: false);
+      expect(elementEvents, hasLength(2));
+      expect(elementEvents[0].element, 'a');
+      expect(elementEvents[1].element, 'b');
+
       final resultEvent = events.last as OutputResultEvent<List<String>>;
       expect(resultEvent.result.output, ['a', 'b']);
     });

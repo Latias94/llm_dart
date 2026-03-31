@@ -53,6 +53,11 @@ abstract class OutputSpec<T> {
   }) {
     return null;
   }
+
+  Iterable<OutputStreamEvent<T>> createElementEvents({
+    required Object partialOutput,
+    required Object? previousPartialOutput,
+  }) sync* {}
 }
 
 final class TextOutputSpec extends OutputSpec<String> {
@@ -297,6 +302,24 @@ final class ArrayOutputSpec<T> extends OutputSpec<List<T>> {
         return List<T>.unmodifiable(parsedElements);
     }
   }
+
+  @override
+  Iterable<OutputStreamEvent<List<T>>> createElementEvents({
+    required Object partialOutput,
+    required Object? previousPartialOutput,
+  }) sync* {
+    final partial = partialOutput as List<T>;
+    final previous = previousPartialOutput as List<T>?;
+    final previousLength = previous?.length ?? 0;
+
+    if (partial.length < previousLength) {
+      return;
+    }
+
+    for (var index = previousLength; index < partial.length; index++) {
+      yield OutputElementEvent<T>(partial[index]);
+    }
+  }
 }
 
 final class ChoiceOutputSpec<T extends String> extends OutputSpec<T> {
@@ -430,6 +453,12 @@ final class OutputPartialEvent<T> extends OutputStreamEvent<T> {
   const OutputPartialEvent(this.partialOutput);
 }
 
+final class OutputElementEvent<T> extends OutputStreamEvent<List<T>> {
+  final T element;
+
+  const OutputElementEvent(this.element);
+}
+
 final class OutputResultEvent<T> extends OutputStreamEvent<T> {
   final GenerateOutputResult<T> result;
 
@@ -538,9 +567,16 @@ Stream<OutputStreamEvent<T>> streamOutput<T>({
                 lastPartialOutput,
                 partialOutput,
               ))) {
+        final previousPartialOutput = lastPartialOutput;
         hasPartialOutput = true;
         lastPartialOutput = partialOutput;
         yield OutputPartialEvent<T>(partialOutput);
+        for (final elementEvent in outputSpec.createElementEvents(
+          partialOutput: partialOutput,
+          previousPartialOutput: previousPartialOutput,
+        )) {
+          yield elementEvent;
+        }
       }
     }
   }

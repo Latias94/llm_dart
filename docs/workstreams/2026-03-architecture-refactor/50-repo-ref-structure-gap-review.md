@@ -188,9 +188,8 @@ Current status:
   `array`, and `choice` modes for final-output parsing
 - streamed text can now reuse the same shared `OutputSpec` contract, emit
   best-effort partial structured-output events during the raw
-  `TextStreamEvent` sequence, and emit one final parsed-output event at the end
-- the common core still does not yet expose any shared array-element streaming
-  surface
+  `TextStreamEvent` sequence, emit shared array `OutputElementEvent`s for newly
+  completed elements, and emit one final parsed-output event at the end
 
 What is still missing:
 
@@ -198,8 +197,8 @@ What is still missing:
   surface
 - a clearer long-term result-placement strategy if parsed output should later
   live directly beside `GenerateTextResult`
-- a shared element-streaming story for arrays or other incrementally-decodable
-  output modes, if we decide it is worth supporting
+- a decision on whether a separate `elementStream` result surface is worth
+  adding on top of the current event-based array element contract
 
 Why this matters:
 
