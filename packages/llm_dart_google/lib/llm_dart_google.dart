@@ -12,6 +12,7 @@ export 'src/google_message_mapper.dart';
 export 'src/google_options.dart';
 export 'src/google_response_format.dart';
 export 'src/google_result_codec.dart';
+export 'src/google_speech_model.dart';
 export 'src/google_server_tool_replay.dart';
 export 'src/google_stream_codec.dart';
 export 'src/google_tools.dart';

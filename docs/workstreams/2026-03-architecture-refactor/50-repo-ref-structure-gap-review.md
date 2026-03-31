@@ -267,14 +267,16 @@ Current status:
 - the OpenAI family now also has package-owned speech and transcription model
   migrations through `OpenAI.speechModel(...)` and
   `OpenAI.transcriptionModel(...)`
-- Google now also has package-owned embedding and image model migrations
-  through `Google.embeddingModel(...)` and `Google.imageModel(...)`
+- Google now also has package-owned embedding, image, and speech model
+  migrations through `Google.embeddingModel(...)`, `Google.imageModel(...)`,
+  and `Google.speechModel(...)`
 
 What is still missing:
 
 - provider migrations outside the OpenAI family are still incomplete for
   non-text capability coverage
-- Google speech/TTS capability migrations are still incomplete
+- Google provider-owned streamed TTS and safety/modality migrations are still
+  incomplete
 - Anthropic non-text capability migrations are still incomplete
 - shared embedding chunk-splitting and parallel-batching policy is not yet
   frozen above the raw model interface

@@ -68,7 +68,14 @@ provider-divergent controls.
 Responsible for:
 
 - text-to-speech
+
+Not part of the current phase-1 shared contract:
+
 - streaming speech output
+
+Streaming TTS should stay provider-owned until `llm_dart_core` has a truthful
+shared audio-chunk and lifecycle contract instead of pretending that one
+provider's event model already generalizes across the rest.
 
 ### `TranscriptionModel`
 

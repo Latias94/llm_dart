@@ -111,12 +111,15 @@ The first concrete migrated examples now include two provider families:
 - `Google.imageModel(...)`
 - `GoogleImageModelSettings`
 - `GoogleImageOptions`
+- `Google.speechModel(...)`
+- `GoogleSpeechModelSettings`
+- `GoogleSpeechOptions`
 
 This keeps provider features typed without widening the shared helper surface.
 It also means the OpenAI-family non-text migration surface now covers
 embedding, image, speech, and transcription, Google now also has package-owned
-embedding and image model surfaces, and the shared embedding helper boundary is
-now also proven against more than one provider family.
+embedding, image, and speech model surfaces, and the shared embedding helper
+boundary is now also proven against more than one provider family.
 
 ## What Is Still Not Done
 
@@ -126,7 +129,7 @@ The remaining work is still real:
 
 - non-text provider migration parity is still incomplete outside the OpenAI
   family
-- Google speech/TTS capability migration parity is incomplete
+- Google streamed TTS and safety/modality migration parity is incomplete
 - Anthropic capability migration parity is incomplete
 - shared embedding chunk-splitting policy is intentionally still undecided
 

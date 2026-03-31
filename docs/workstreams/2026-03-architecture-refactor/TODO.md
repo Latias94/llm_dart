@@ -121,7 +121,8 @@
 - [ ] Decide whether any Google `toolCall` / `toolResponse` families should later gain richer shared projection or dedicated Flutter renderers beyond provider-owned custom replay
 - [x] Migrate the Gemini image model
 - [x] Migrate the Gemini embedding model
-- [ ] Migrate Gemini speech and TTS
+- [x] Migrate Gemini speech and TTS
+- [ ] Decide whether Google streamed TTS should later return as a provider-owned package surface outside the shared `SpeechModel`
 - [ ] Migrate Gemini safety and modality options
 
 ## Community Providers

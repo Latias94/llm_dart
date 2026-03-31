@@ -56,9 +56,10 @@ These shared model families are already the intended stable boundary:
 Do not force migration yet for areas that still do not have stable package-owned
 coverage:
 
-- Google speech and TTS
 - provider-owned image-editing or variation flows that still depend on legacy
   provider-specific request shapes
+- provider-owned streamed TTS flows that still depend on legacy audio event
+  shapes
 - Anthropic MCP and broader provider-native feature coverage beyond the frozen
   replay-safe subsets
 - Ollama and ElevenLabs

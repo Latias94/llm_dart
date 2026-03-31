@@ -4,6 +4,7 @@ import 'google_embedding_model.dart';
 import 'google_image_model.dart';
 import 'google_language_model.dart';
 import 'google_options.dart';
+import 'google_speech_model.dart';
 
 final class Google {
   static const String defaultBaseUrl =
@@ -52,6 +53,19 @@ final class Google {
     GoogleImageModelSettings settings = const GoogleImageModelSettings(),
   }) {
     return GoogleImageModel(
+      apiKey: apiKey,
+      modelId: modelId,
+      transport: transport,
+      baseUrl: baseUrl,
+      settings: settings,
+    );
+  }
+
+  GoogleSpeechModel speechModel(
+    String modelId, {
+    GoogleSpeechModelSettings settings = const GoogleSpeechModelSettings(),
+  }) {
+    return GoogleSpeechModel(
       apiKey: apiKey,
       modelId: modelId,
       transport: transport,
