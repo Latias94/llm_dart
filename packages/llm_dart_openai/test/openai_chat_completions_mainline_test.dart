@@ -189,6 +189,332 @@ void main() {
       );
     });
 
+    test(
+        'chat completions encode PDF file prompt parts with a default filename',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'chatcmpl_pdf_1',
+                'model': 'gpt-4.1-mini',
+                'created': 1710000000,
+                'choices': [
+                  {
+                    'index': 0,
+                    'finish_reason': 'stop',
+                    'message': {
+                      'role': 'assistant',
+                      'content': 'Done.',
+                    },
+                  },
+                ],
+                'usage': {
+                  'prompt_tokens': 4,
+                  'completion_tokens': 1,
+                  'total_tokens': 5,
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel(
+        'gpt-4.1-mini',
+        settings: const OpenAIChatModelSettings(
+          useResponsesApi: false,
+        ),
+      );
+
+      await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage(
+              parts: const [
+                TextPromptPart('Summarize this document.'),
+                FilePromptPart(
+                  mediaType: 'application/pdf',
+                  bytes: [1, 2, 3, 4, 5],
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(
+        requestBody['messages'],
+        [
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'text',
+                'text': 'Summarize this document.',
+              },
+              {
+                'type': 'file',
+                'file': {
+                  'filename': 'part-1.pdf',
+                  'file_data': 'data:application/pdf;base64,AQIDBAU=',
+                },
+              },
+            ],
+          },
+        ],
+      );
+    });
+
+    test('chat completions encode audio file prompt parts', () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'chatcmpl_audio_1',
+                'model': 'gpt-4.1-mini',
+                'created': 1710000000,
+                'choices': [
+                  {
+                    'index': 0,
+                    'finish_reason': 'stop',
+                    'message': {
+                      'role': 'assistant',
+                      'content': 'Done.',
+                    },
+                  },
+                ],
+                'usage': {
+                  'prompt_tokens': 4,
+                  'completion_tokens': 1,
+                  'total_tokens': 5,
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel(
+        'gpt-4.1-mini',
+        settings: const OpenAIChatModelSettings(
+          useResponsesApi: false,
+        ),
+      );
+
+      await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage(
+              parts: const [
+                FilePromptPart(
+                  mediaType: 'audio/mpeg',
+                  bytes: [1, 2, 3, 4],
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(
+        requestBody['messages'],
+        [
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'input_audio',
+                'input_audio': {
+                  'data': 'AQIDBA==',
+                  'format': 'mp3',
+                },
+              },
+            ],
+          },
+        ],
+      );
+    });
+
+    test('chat completions encode image file prompt parts as image_url',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'chatcmpl_image_1',
+                'model': 'gpt-4.1-mini',
+                'created': 1710000000,
+                'choices': [
+                  {
+                    'index': 0,
+                    'finish_reason': 'stop',
+                    'message': {
+                      'role': 'assistant',
+                      'content': 'Done.',
+                    },
+                  },
+                ],
+                'usage': {
+                  'prompt_tokens': 4,
+                  'completion_tokens': 1,
+                  'total_tokens': 5,
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel(
+        'gpt-4.1-mini',
+        settings: const OpenAIChatModelSettings(
+          useResponsesApi: false,
+        ),
+      );
+
+      await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage(
+              parts: const [
+                FilePromptPart(
+                  mediaType: 'image/png',
+                  bytes: [0, 1, 2, 3],
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(
+        requestBody['messages'],
+        [
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'image_url',
+                'image_url': {
+                  'url': 'data:image/png;base64,AAECAw==',
+                },
+              },
+            ],
+          },
+        ],
+      );
+    });
+
+    test('chat completions reject unsupported file media types before send',
+        () async {
+      var sendCount = 0;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            sendCount += 1;
+            return TransportResponse(statusCode: 200, body: const {});
+          },
+        ),
+      ).chatModel(
+        'gpt-4.1-mini',
+        settings: const OpenAIChatModelSettings(
+          useResponsesApi: false,
+        ),
+      );
+
+      await expectLater(
+        model.generate(
+          GenerateTextRequest(
+            prompt: [
+              UserPromptMessage(
+                parts: const [
+                  FilePromptPart(
+                    mediaType: 'text/plain',
+                    bytes: [1, 2, 3],
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        throwsA(
+          isA<UnsupportedError>().having(
+            (error) => error.toString(),
+            'message',
+            contains('file prompt media type text/plain'),
+          ),
+        ),
+      );
+
+      expect(sendCount, 0);
+    });
+
+    test('chat completions reject PDF file URIs before send', () async {
+      var sendCount = 0;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            sendCount += 1;
+            return TransportResponse(statusCode: 200, body: const {});
+          },
+        ),
+      ).chatModel(
+        'gpt-4.1-mini',
+        settings: const OpenAIChatModelSettings(
+          useResponsesApi: false,
+        ),
+      );
+
+      await expectLater(
+        model.generate(
+          GenerateTextRequest(
+            prompt: [
+              UserPromptMessage(
+                parts: [
+                  FilePromptPart(
+                    mediaType: 'application/pdf',
+                    uri: Uri.parse('https://example.com/document.pdf'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        throwsA(
+          isA<UnsupportedError>().having(
+            (error) => error.toString(),
+            'message',
+            contains('PDF file prompt parts do not support URIs'),
+          ),
+        ),
+      );
+
+      expect(sendCount, 0);
+    });
+
     test('chat completions stream maps reasoning, text, and tool-call deltas',
         () async {
       final model = OpenAI(

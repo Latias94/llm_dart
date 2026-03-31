@@ -134,6 +134,8 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Status reconciliation for the Anthropic workstream, including which TODO items are already implemented and which replay-policy gaps actually remain.
 - [57-google-compatibility-modality-status.md](57-google-compatibility-modality-status.md)
   - Status reconciliation for the Google compatibility modality slice, including which multimodal bridge shapes are already covered and which legacy output limits remain intentional.
+- [58-openai-chat-migration-status.md](58-openai-chat-migration-status.md)
+  - Status reconciliation for the OpenAI-family chat migration, including the narrowed chat-completions file-input gap and the still-open Responses-first compatibility policy question.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
@@ -177,6 +179,7 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - Shared structured output now exists in `llm_dart_core` through `OutputSpec`, `generateOutput(...)`, `streamOutput(...)`, and `streamOutputResult(...)`, and the additive main-call layer now also exists through `generateTextCall(...)` and `streamTextCall(...)`; legacy compatibility `jsonSchema` now also routes through the shared `responseFormat` path, streamed structured output now has dedicated `partialOutputStream`, `elementStream<T>()`, and final `output/result` surfaces above the raw event stream, and the naming direction is now frozen: the additive call layer is the app-facing text API while the original helper names remain the low-level raw layer.
 - The shared runner is intentionally narrow and non-streaming; the reference still has a more mature streamed multi-step orchestration loop.
 - Shared capability helper parity now also exists in `llm_dart_core` through `embed(...)`, `embedMany(...)`, `generateImage(...)`, `generateSpeech(...)`, and `transcribe(...)`; embedding, image, and speech migrations now already exist across the OpenAI-family and Google providers through `OpenAI.embeddingModel(...)`, `OpenAI.imageModel(...)`, `OpenAI.speechModel(...)`, `Google.embeddingModel(...)`, `Google.imageModel(...)`, and `Google.speechModel(...)`, and the OpenAI family now also has package-owned `transcriptionModel(...)` migrations. The remaining gap is now Google provider-owned streamed TTS, the still-intentionally thin legacy multimodal-output projection, and the still-unfrozen question of whether embeddings later need shared chunk-splitting policy above the raw model interface; Anthropic is now mostly down to optional custom tool-reference helpers and provider-owned selection, not a replay-policy tail or a separate non-text model migration track.
+- OpenAI-family chat migration is closer to the reference now that the chat-completions path accepts user image/audio/PDF file inputs, but the work is still not fully complete because assistant replay remains conservative and the legacy OpenAI compatibility route is still intentionally Responses-first.
 - The remote chat protocol is thinner than the reference `ui-message-stream` layer, which is acceptable for now but still a conscious structural gap.
 
 ### Current Audit Signals

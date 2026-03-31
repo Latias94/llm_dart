@@ -492,7 +492,8 @@ final class OpenAIChatCompletionsCodec {
     }
 
     final content = <Map<String, Object?>>[];
-    for (final part in message.parts) {
+    for (var index = 0; index < message.parts.length; index++) {
+      final part = message.parts[index];
       switch (part) {
         case TextPromptPart(:final text):
           content.add({
@@ -500,24 +501,19 @@ final class OpenAIChatCompletionsCodec {
             'text': text,
           });
         case ImagePromptPart(:final mediaType, :final uri, :final bytes):
-          final imageUrl = uri?.toString() ??
-              (bytes == null
-                  ? null
-                  : 'data:$mediaType;base64,${base64Encode(bytes)}');
-          if (imageUrl == null) {
-            throw UnsupportedError(
-              'User image prompt parts need either a URI or bytes.',
-            );
-          }
-          content.add({
-            'type': 'image_url',
-            'image_url': {
-              'url': imageUrl,
-            },
-          });
+          content.add(
+            _encodeImageContentPart(
+              mediaType: mediaType,
+              uri: uri,
+              bytes: bytes,
+            ),
+          );
         case FilePromptPart():
-          throw UnsupportedError(
-            'OpenAI-family chat-completions requests do not support generic file prompt parts yet.',
+          content.add(
+            _encodeFileContentPart(
+              part,
+              index: index,
+            ),
           );
         case ReasoningPromptPart():
         case ReasoningFilePromptPart():
@@ -536,6 +532,112 @@ final class OpenAIChatCompletionsCodec {
       'role': 'user',
       'content': content,
     };
+  }
+
+  Map<String, Object?> _encodeImageContentPart({
+    required String mediaType,
+    Uri? uri,
+    List<int>? bytes,
+  }) {
+    final imageUrl = uri?.toString() ??
+        (bytes == null
+            ? null
+            : 'data:${_normalizeImageMediaTypeForDataUrl(mediaType)};base64,'
+                '${base64Encode(bytes)}');
+    if (imageUrl == null) {
+      throw UnsupportedError(
+        'User image prompt parts need either a URI or bytes.',
+      );
+    }
+
+    return {
+      'type': 'image_url',
+      'image_url': {
+        'url': imageUrl,
+      },
+    };
+  }
+
+  Map<String, Object?> _encodeFileContentPart(
+    FilePromptPart part, {
+    required int index,
+  }) {
+    if (part.mediaType.startsWith('image/')) {
+      return _encodeImageContentPart(
+        mediaType: part.mediaType,
+        uri: part.uri,
+        bytes: part.bytes,
+      );
+    }
+
+    if (part.mediaType.startsWith('audio/')) {
+      if (part.uri != null) {
+        throw UnsupportedError(
+          'OpenAI-family chat-completions audio file prompt parts do not support URIs. Provide bytes instead.',
+        );
+      }
+
+      final bytes = part.bytes;
+      if (bytes == null) {
+        throw UnsupportedError(
+          'OpenAI-family chat-completions audio file prompt parts need bytes.',
+        );
+      }
+
+      return {
+        'type': 'input_audio',
+        'input_audio': {
+          'data': base64Encode(bytes),
+          'format': _encodeAudioFormat(part.mediaType),
+        },
+      };
+    }
+
+    if (part.mediaType == 'application/pdf') {
+      if (part.uri != null) {
+        throw UnsupportedError(
+          'OpenAI-family chat-completions PDF file prompt parts do not support URIs. Provide bytes instead.',
+        );
+      }
+
+      final bytes = part.bytes;
+      if (bytes == null) {
+        throw UnsupportedError(
+          'OpenAI-family chat-completions PDF file prompt parts need bytes.',
+        );
+      }
+
+      return {
+        'type': 'file',
+        'file': {
+          'filename': part.filename ?? 'part-$index.pdf',
+          'file_data': 'data:application/pdf;base64,${base64Encode(bytes)}',
+        },
+      };
+    }
+
+    throw UnsupportedError(
+      'OpenAI-family chat-completions requests do not support file prompt media type ${part.mediaType}.',
+    );
+  }
+
+  String _encodeAudioFormat(String mediaType) {
+    return switch (mediaType) {
+      'audio/wav' => 'wav',
+      'audio/mpeg' => 'mp3',
+      'audio/mp3' => 'mp3',
+      _ => throw UnsupportedError(
+          'OpenAI-family chat-completions requests do not support audio file media type $mediaType.',
+        ),
+    };
+  }
+
+  String _normalizeImageMediaTypeForDataUrl(String mediaType) {
+    if (mediaType == 'image/*') {
+      return 'image/jpeg';
+    }
+
+    return mediaType;
   }
 
   String _joinTextParts({
