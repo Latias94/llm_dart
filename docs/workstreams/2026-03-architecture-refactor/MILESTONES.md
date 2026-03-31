@@ -62,7 +62,7 @@ Current status:
 - `llm_dart_core` now also exposes additive main-call wrappers, `generateTextCall(...)` and `streamTextCall(...)`, so parsed output can live on a richer shared call surface without redefining the original low-level `generateText(...)` / `streamText(...)` helpers
 - that naming direction is now also frozen: the additive call wrappers are the recommended app-facing text API, while the original helper names remain the low-level raw layer
 - `llm_dart_core` now also exposes function-based shared capability helpers for non-text calls: `embed(...)`, `embedMany(...)`, `generateImage(...)`, `generateSpeech(...)`, and `transcribe(...)`
-- the first non-text provider migration beyond raw interfaces has now also landed for the OpenAI family through `OpenAI.embeddingModel(...)`, typed `OpenAIEmbeddingModelSettings`, and typed `OpenAIEmbedOptions`
+- the OpenAI family now has package-owned embedding and image model surfaces through `OpenAI.embeddingModel(...)` and `OpenAI.imageModel(...)`, with typed `OpenAIEmbeddingModelSettings` / `OpenAIImageModelSettings` and typed `OpenAIEmbedOptions` / `OpenAIImageOptions`
 - the OpenAI family now also has package-owned `speechModel(...)` and `transcriptionModel(...)` surfaces with typed provider options, byte-response speech decoding, and multipart transcription request encoding above the transport layer
 - the same shared embedding helper boundary is now also proven for Google through `Google.embeddingModel(...)`, typed `GoogleEmbeddingModelSettings`, and typed `GoogleEmbedOptions`
 - `llm_dart_core` now also exposes `GenerateTextStepResult` as the first shared step-level snapshot wrapper without changing the single-step meaning of `generateText` / `streamText`
@@ -72,7 +72,7 @@ Current status:
 - continuation ownership is now also frozen more clearly: common function-tool loops belong to the shared runner, while approval-gated, provider-executed, dynamic, and chat-interactive continuation remain provider-owned or session-owned
 - the stop-and-mutation boundary is now also frozen: `maxSteps` stays a guardrail, shared `stopWhen` and `prepareStep` stay out, and retry/model-switch policy remains app-owned
 - only a separate streamed runner or a tightly-constrained pre-step hook may be reconsidered later if real shared usage proves the need
-- provider-specific compatibility subset audits, broader endpoint coverage, and the remaining non-text provider migrations beyond OpenAI speech/transcription remain for the next step
+- provider-specific compatibility subset audits, broader endpoint coverage, and the remaining Google/Anthropic non-text provider migrations remain for the next step
 
 ## M3 - Anthropic And Google
 

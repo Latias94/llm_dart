@@ -41,6 +41,18 @@ final class OpenAISpeechModelSettings implements ProviderModelOptions {
   });
 }
 
+final class OpenAIImageModelSettings implements ProviderModelOptions {
+  final String? organization;
+  final String? project;
+  final Map<String, String> headers;
+
+  const OpenAIImageModelSettings({
+    this.organization,
+    this.project,
+    this.headers = const {},
+  });
+}
+
 final class OpenAITranscriptionModelSettings implements ProviderModelOptions {
   final String? organization;
   final String? project;
@@ -58,6 +70,75 @@ final class OpenAIEmbedOptions implements ProviderInvocationOptions {
 
   const OpenAIEmbedOptions({
     this.encodingFormat,
+  });
+}
+
+enum OpenAIImageStyle {
+  vivid('vivid'),
+  natural('natural');
+
+  const OpenAIImageStyle(this.value);
+
+  final String value;
+}
+
+enum OpenAIImageQuality {
+  standard('standard'),
+  hd('hd'),
+  auto('auto'),
+  low('low'),
+  medium('medium'),
+  high('high');
+
+  const OpenAIImageQuality(this.value);
+
+  final String value;
+}
+
+enum OpenAIImageBackground {
+  auto('auto'),
+  opaque('opaque'),
+  transparent('transparent');
+
+  const OpenAIImageBackground(this.value);
+
+  final String value;
+}
+
+enum OpenAIImageOutputFormat {
+  png('png'),
+  jpeg('jpeg'),
+  webp('webp');
+
+  const OpenAIImageOutputFormat(this.value);
+
+  final String value;
+}
+
+enum OpenAIImageResponseFormat {
+  url('url'),
+  base64Json('b64_json');
+
+  const OpenAIImageResponseFormat(this.value);
+
+  final String value;
+}
+
+final class OpenAIImageOptions implements ProviderInvocationOptions {
+  final OpenAIImageStyle? style;
+  final OpenAIImageQuality? quality;
+  final OpenAIImageBackground? background;
+  final OpenAIImageOutputFormat? outputFormat;
+  final OpenAIImageResponseFormat? responseFormat;
+  final String? user;
+
+  const OpenAIImageOptions({
+    this.style,
+    this.quality,
+    this.background,
+    this.outputFormat,
+    this.responseFormat,
+    this.user,
   });
 }
 

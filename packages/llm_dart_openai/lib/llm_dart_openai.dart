@@ -3,6 +3,7 @@ library;
 export 'src/openai.dart';
 export 'src/openai_embedding_model.dart';
 export 'src/openai_family_profile.dart';
+export 'src/openai_image_model.dart';
 export 'src/openai_language_model.dart';
 export 'src/openai_speech_model.dart';
 export 'src/openai_native_tools.dart';

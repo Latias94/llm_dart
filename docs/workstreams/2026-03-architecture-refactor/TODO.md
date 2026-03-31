@@ -81,7 +81,7 @@
 - [x] Migrate OpenAI responses
 - [x] Preserve OpenAI replay-critical item metadata, reasoning state, and compaction replay
 - [x] Migrate OpenAI embeddings
-- [ ] Migrate OpenAI image
+- [x] Migrate OpenAI image
 - [x] Migrate OpenAI speech and transcription
 - [x] Turn OpenRouter into a profile
 - [x] Turn DeepSeek OpenAI-compatible into a profile

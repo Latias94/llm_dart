@@ -3,6 +3,7 @@ import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'openai_embedding_model.dart';
 import 'openai_family_profile.dart';
+import 'openai_image_model.dart';
 import 'openai_language_model.dart';
 import 'openai_options.dart';
 import 'openai_speech_model.dart';
@@ -42,6 +43,20 @@ final class OpenAI {
     ProviderModelOptions settings = const OpenAIEmbeddingModelSettings(),
   }) {
     return OpenAIEmbeddingModel(
+      apiKey: apiKey,
+      modelId: modelId,
+      transport: transport,
+      profile: profile,
+      baseUrl: baseUrl,
+      settings: settings,
+    );
+  }
+
+  OpenAIImageModel imageModel(
+    String modelId, {
+    ProviderModelOptions settings = const OpenAIImageModelSettings(),
+  }) {
+    return OpenAIImageModel(
       apiKey: apiKey,
       modelId: modelId,
       transport: transport,

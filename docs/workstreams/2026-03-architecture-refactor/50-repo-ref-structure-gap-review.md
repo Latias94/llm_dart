@@ -262,8 +262,8 @@ Current status:
   `generateImage(...)`, `generateSpeech(...)`, and `transcribe(...)`
 - those helpers now provide the intended app-facing function-based entrypoints
   above the raw model interfaces
-- the first non-text provider migration has also landed for the OpenAI family
-  through `OpenAI.embeddingModel(...)`
+- the OpenAI family now has package-owned embedding and image model migrations
+  through `OpenAI.embeddingModel(...)` and `OpenAI.imageModel(...)`
 - the OpenAI family now also has package-owned speech and transcription model
   migrations through `OpenAI.speechModel(...)` and
   `OpenAI.transcriptionModel(...)`
@@ -272,8 +272,8 @@ Current status:
 
 What is still missing:
 
-- provider migrations for image, speech, and transcription are still
-  incomplete
+- provider migrations outside the OpenAI family are still incomplete for
+  non-text capability coverage
 - Google image/speech capability migrations are still incomplete
 - Anthropic non-text capability migrations are still incomplete
 - shared embedding chunk-splitting and parallel-batching policy is not yet
