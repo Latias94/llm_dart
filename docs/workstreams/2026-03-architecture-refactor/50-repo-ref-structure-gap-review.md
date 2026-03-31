@@ -342,10 +342,10 @@ If added later, it should be:
 Once the structured-generation direction is clear, finish the remaining
 provider-migration work in a consistent way:
 
-- image model migration
-- speech model migration
-- transcription model migration
-- Google and Anthropic capability migration parity
+- provider-owned streamed TTS maturity for Google
+- any remaining community-provider non-text migration work
+- optional Anthropic provider-owned tool-reference or native-tool policy work,
+  but not as a generic non-text migration blocker
 - only then re-evaluate whether embeddings need shared chunk splitting above
   `EmbeddingModel.embed(...)`
 

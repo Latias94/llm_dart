@@ -239,7 +239,7 @@ The compatibility layer is useful only if it keeps reducing the amount of legacy
 Recommended next steps:
 
 1. Expand OpenAI bridge coverage beyond text-only inputs, especially if the root package still needs richer non-text message compatibility.
-2. Expand Google bridge coverage for the remaining modality combinations, especially image-generation-adjacent request shapes that should not share the text structured-output path.
+2. Keep Google legacy multimodal-output projection narrow now that the image-generation-adjacent request bridge is covered; only revisit anything richer than the current generated-image stream marker if a real migration need appears.
 3. Expand Anthropic bridge coverage beyond the current lossless raw text, user media/document, prompt-caching, legacy tools-block, and raw tool replay subset into provider-native result replay and broader provider-managed tool-execution flows.
 4. Start marking old root-package chat extension entry points as deprecated once the bridge coverage is wide enough.
 5. Keep all bridge expansions behind route-compatibility tests so unsupported legacy shapes never degrade silently.

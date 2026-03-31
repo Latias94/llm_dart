@@ -363,6 +363,117 @@ class LegacyChatCapabilityAdapter implements ChatCapability {
   }
 }
 
+final class GoogleLegacyChatCapabilityAdapter
+    extends LegacyChatCapabilityAdapter {
+  const GoogleLegacyChatCapabilityAdapter({
+    required super.model,
+    required super.config,
+    super.providerOptions,
+  });
+
+  @override
+  Future<ChatResponse> chatWithTools(
+    List<ChatMessage> messages,
+    List<Tool>? tools, {
+    TransportCancellation? cancelToken,
+  }) async {
+    if (cancelToken?.isCancelled ?? false) {
+      throw const CancelledError();
+    }
+
+    final request = buildRequest(messages, tools);
+    final operation =
+        model.generate(request).then(_LegacyChatResponse.fromResult);
+    return _awaitWithCancellation(operation, cancelToken);
+  }
+
+  @override
+  Stream<ChatStreamEvent> chatStream(
+    List<ChatMessage> messages, {
+    List<Tool>? tools,
+    TransportCancellation? cancelToken,
+  }) async* {
+    if (cancelToken?.isCancelled ?? false) {
+      throw const CancelledError();
+    }
+
+    final request = buildRequest(messages, tools);
+    final state = _GoogleLegacyStreamState();
+
+    await for (final event in model.stream(request)) {
+      if (cancelToken?.isCancelled ?? false) {
+        throw const CancelledError();
+      }
+
+      for (final mappedEvent in _mapGoogleStreamEvent(event, state)) {
+        yield mappedEvent;
+      }
+    }
+  }
+
+  Iterable<ChatStreamEvent> _mapGoogleStreamEvent(
+    core.TextStreamEvent event,
+    _GoogleLegacyStreamState state,
+  ) sync* {
+    switch (event) {
+      case core.TextDeltaEvent(:final delta):
+        state.base.text.write(delta);
+        yield TextDeltaEvent(delta);
+      case core.ReasoningDeltaEvent(:final delta):
+        state.base.thinking.write(delta);
+        yield ThinkingDeltaEvent(delta);
+      case core.ToolInputStartEvent(:final toolCallId, :final toolName):
+        state.base.startToolCall(toolCallId, toolName);
+      case core.ToolInputDeltaEvent(:final toolCallId, :final delta):
+        final toolCall = state.base.appendToolCallDelta(toolCallId, delta);
+        if (toolCall != null) {
+          yield ToolCallDeltaEvent(toolCall);
+        }
+      case core.ToolInputErrorEvent(
+          :final toolCallId,
+          :final toolName,
+          :final errorText,
+          :final input
+        ):
+        state.base.failToolCall(
+          toolCallId: toolCallId,
+          toolName: toolName,
+          input: input,
+        );
+        yield ErrorEvent(GenericError(errorText));
+      case core.ToolCallEvent(:final toolCall):
+        final legacyToolCall = _toLegacyToolCall(
+          toolCall.toolCallId,
+          toolCall.toolName,
+          toolCall.input,
+        );
+        state.base.completeToolCall(legacyToolCall);
+        yield ToolCallDeltaEvent(legacyToolCall);
+      case core.FileEvent(:final file):
+        if (file.mediaType.startsWith('image/')) {
+          yield TextDeltaEvent('[Generated image: ${file.mediaType}]');
+        }
+      case core.FinishEvent(:final usage):
+        yield CompletionEvent(
+          _LegacyChatResponse(
+            text: state.base.text.isEmpty ? null : state.base.text.toString(),
+            toolCalls: state.base.completedToolCalls.isEmpty
+                ? null
+                : state.base.completedToolCalls,
+            thinking: state.base.thinking.isEmpty
+                ? null
+                : state.base.thinking.toString(),
+            usage: _convertUsage(usage),
+          ),
+        );
+      case core.ErrorEvent(:final error):
+        yield ErrorEvent(_toLegacyError(error));
+      default:
+        break;
+    }
+  }
+}
+
 final class _LegacyStreamState {
   final StringBuffer text = StringBuffer();
   final StringBuffer thinking = StringBuffer();
@@ -432,6 +543,10 @@ final class _LegacyToolCallState {
     required this.toolCallId,
     required this.toolName,
   });
+}
+
+final class _GoogleLegacyStreamState {
+  final _LegacyStreamState base = _LegacyStreamState();
 }
 
 final class _LegacyChatResponse implements ChatResponse {

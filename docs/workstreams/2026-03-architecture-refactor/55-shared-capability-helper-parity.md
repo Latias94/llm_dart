@@ -129,8 +129,8 @@ The remaining work is still real:
 
 - non-text provider migration parity is still incomplete outside the OpenAI
   family
-- Google streamed TTS and broader compatibility-side modality coverage is incomplete
-- Anthropic capability migration parity is incomplete
+- Google streamed TTS is still incomplete, and the legacy compatibility surface intentionally remains thinner than a rich multimodal output API
+- Anthropic no longer has a broad non-text capability migration gap; its remaining work is now mainly optional tool-reference helpers and provider-owned native-tool policy surfaces
 - shared embedding chunk-splitting policy is intentionally still undecided
 
 ## Conclusion

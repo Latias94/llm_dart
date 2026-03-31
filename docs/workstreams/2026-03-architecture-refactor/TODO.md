@@ -181,7 +181,7 @@
 - [x] Expand Anthropic bridge coverage for lossless legacy raw text `contentBlocks`
 - [x] Expand Anthropic bridge coverage for lossless legacy user image and document `contentBlocks`
 - [x] Expand Anthropic bridge coverage for lossless raw assistant tool-use and user tool-result replay inside `anthropic.contentBlocks`
-- [ ] Expand Google bridge coverage for additional modality coverage beyond the text structured-output path
+- [x] Expand Google bridge coverage for additional modality coverage beyond the text structured-output path
 - [x] Add Anthropic tool-search native tools and provider-owned deferred-loading controls for common function tools
 - [ ] Decide whether Anthropic should add provider-owned custom tool-reference helpers for user-defined tool-search flows beyond the native tool-search subset
 - [x] Design and implement the Anthropic-owned custom prompt/content/UI path for replayable `web_search_tool_result`

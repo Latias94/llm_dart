@@ -73,7 +73,7 @@ Current status:
 - continuation ownership is now also frozen more clearly: common function-tool loops belong to the shared runner, while approval-gated, provider-executed, dynamic, and chat-interactive continuation remain provider-owned or session-owned
 - the stop-and-mutation boundary is now also frozen: `maxSteps` stays a guardrail, shared `stopWhen` and `prepareStep` stay out, and retry/model-switch policy remains app-owned
 - only a separate streamed runner or a tightly-constrained pre-step hook may be reconsidered later if real shared usage proves the need
-- provider-specific compatibility subset audits, broader endpoint coverage, and the remaining Google provider-owned streamed TTS plus compatibility-side modality coverage remain for the next step, while Anthropic is now mostly down to narrower provider-native replay-policy cleanup
+- provider-specific compatibility subset audits, broader endpoint coverage, and the remaining Google provider-owned streamed TTS plus any optional legacy multimodal-output projection decisions remain for the next step, while Anthropic is now mostly down to narrower provider-native replay-policy cleanup
 
 ## M3 - Anthropic And Google
 
@@ -176,7 +176,7 @@ Current status:
 - the Groq compatibility bridge now covers the initial text-and-function-tool-definition subset while keeping tool replay, multimodal traffic, and ignored legacy extras on legacy fallback
 - the xAI compatibility bridge now covers the audited text-and-function-tool-definition subset plus the audited legacy live-search migration inputs (`liveSearch`, `searchParameters`, `webSearchEnabled`, `webSearchConfig`) for the web/news search-parameters subset, while prompt-side tool replay, multimodal traffic, unsupported search shapes, and ignored legacy extras stay on legacy fallback
 - Phind has now been explicitly audited and still remains facade-only because the legacy provider protocol is not a plain chat-completions bridge target
-- the Google compatibility bridge now covers the legacy text/multimodal mainline plus text-only structured-output request encoding
+- the Google compatibility bridge now covers the legacy text/multimodal mainline, image-generation-adjacent request settings, generated-image stream marker projection, and text-only structured-output request encoding
 - the Anthropic compatibility bridge now covers legacy prompt-cache markers, lossless raw text/user-image/user-document `contentBlocks`, lossless raw assistant `tool_use` / `server_tool_use` / `mcp_tool_use` replay, lossless raw user `tool_result` / `mcp_tool_result` replay, and `MessageBuilder` tools blocks when they can map into prompt parts, provider metadata, and typed Anthropic cache options without silent feature loss
 - Anthropic bridge gating is now explicitly anchored to request-side re-encoding fidelity, and the legacy raw bridge now explicitly allows `web_search_tool_result` and `web_fetch_tool_result` only inside exact replay-safe shapes
 - the new Anthropic replay path now preserves `web_search_tool_result` through Anthropic-owned custom content/UI/prompt parts for session replay and request re-encoding, with matching legacy raw bridge support for exact user-role replay

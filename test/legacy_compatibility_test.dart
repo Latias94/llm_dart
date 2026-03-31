@@ -294,6 +294,55 @@ void main() {
     });
 
     test(
+        'Google legacy chat adapter projects generated images to legacy stream text markers',
+        () async {
+      final fakeModel = _FakeLanguageModel(
+        onStream: (request) {
+          return Stream<core.TextStreamEvent>.fromIterable([
+            const core.TextDeltaEvent(
+              id: 'text_1',
+              delta: 'Here is the result.',
+            ),
+            core.FileEvent(
+              core.GeneratedFile(
+                mediaType: 'image/png',
+                bytes: const [1, 2, 3],
+              ),
+            ),
+            const core.FinishEvent(
+              finishReason: core.FinishReason.stop,
+            ),
+          ]);
+        },
+      );
+
+      final adapter = GoogleLegacyChatCapabilityAdapter(
+        model: fakeModel,
+        config: legacy.LLMConfig(
+          apiKey: 'test-key',
+          baseUrl: 'https://example.com',
+          model: 'gemini-2.5-flash',
+        ),
+      );
+
+      final events = await adapter.chatStream([
+        legacy.ChatMessage.user('Generate an image.'),
+      ]).toList();
+
+      expect(events, hasLength(3));
+      expect(events[0], isA<legacy.TextDeltaEvent>());
+      expect((events[0] as legacy.TextDeltaEvent).delta, 'Here is the result.');
+      expect(events[1], isA<legacy.TextDeltaEvent>());
+      expect(
+        (events[1] as legacy.TextDeltaEvent).delta,
+        '[Generated image: image/png]',
+      );
+
+      final completion = events[2] as legacy.CompletionEvent;
+      expect(completion.response.text, 'Here is the result.');
+    });
+
+    test(
         'Anthropic legacy adapter promotes cached MessageBuilder tools into the bridged request',
         () {
       final adapter = AnthropicLegacyChatCapabilityAdapter(
@@ -971,6 +1020,80 @@ void main() {
             'required': ['value'],
           },
         },
+      );
+    });
+
+    test(
+        'Compat Google provider routes legacy image-generation settings through the Google chat bridge',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final provider = buildCompatGoogleProvider(
+        legacy.LLMConfig(
+          apiKey: 'test-key',
+          baseUrl: 'https://generativelanguage.googleapis.com',
+          model: 'gemini-2.5-flash',
+        ).withExtensions({
+          'customTransportClient': _FakeTransportClient(
+            onSend: (request) async {
+              capturedRequest = request;
+              return const TransportResponse(
+                statusCode: 200,
+                body: {
+                  'responseId': 'resp_google_compat_image',
+                  'modelVersion': 'gemini-2.5-flash',
+                  'candidates': [
+                    {
+                      'content': {
+                        'parts': [
+                          {
+                            'inlineData': {
+                              'mimeType': 'image/png',
+                              'data': 'AQID',
+                            },
+                          },
+                        ],
+                      },
+                      'finishReason': 'STOP',
+                    },
+                  ],
+                },
+              );
+            },
+          ),
+          'enableImageGeneration': true,
+          'candidateCount': 1,
+          'webSearchEnabled': true,
+        }),
+      );
+
+      final response = await provider.chat([
+        legacy.ChatMessage.image(
+          role: legacy.ChatRole.user,
+          mime: legacy.ImageMime.png,
+          data: const [1, 2, 3],
+          content: 'Generate a variation.',
+        ),
+      ]);
+
+      expect(response.text, isNull);
+      expect(capturedRequest, isNotNull);
+
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(
+        requestBody['generationConfig'],
+        {
+          'candidateCount': 1,
+          'responseModalities': ['TEXT', 'IMAGE'],
+        },
+      );
+      expect(
+        requestBody['tools'],
+        [
+          {
+            'googleSearch': <String, Object?>{},
+          },
+        ],
       );
     });
 

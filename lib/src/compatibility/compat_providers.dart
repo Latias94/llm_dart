@@ -166,7 +166,7 @@ ChatCapability buildCompatGoogleProvider(LLMConfig config) {
   return CompatGoogleProvider(
     originalConfig: config,
     legacyConfig: legacyConfig,
-    adapter: LegacyChatCapabilityAdapter(
+    adapter: GoogleLegacyChatCapabilityAdapter(
       model: model,
       config: config,
       providerOptions: modern_google.GoogleGenerateTextOptions(
