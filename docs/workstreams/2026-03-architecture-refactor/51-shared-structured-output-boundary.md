@@ -46,17 +46,18 @@ Current status in the refactor branch:
 
 - `LanguageModel` and `generateText` already exist as shared text-generation
   entry points
+- `OutputSpec`, `generateOutput(...)`, and `streamOutput(...)` now exist as a
+  shared structured-output layer above those text helpers
 - OpenAI and Google already expose provider-owned JSON-schema
   `responseFormat` request shaping
-- structured output is therefore partly available, but only through
-  provider-specific typed options
+- structured output is therefore no longer only provider-owned, but the shared
+  layer is still intentionally narrower than a full `streamObject` contract
 
 What is still missing in shared core:
 
-- no shared output specification on `GenerateTextRequest`
 - no shared parsed-output field on `GenerateTextResult`
-- no shared parse-and-validate error model for structured output
 - no shared partial structured output model for `streamText`
+- no shared element-streaming model for array-like outputs
 - no shared migration path from old compatibility `jsonSchema` inputs into the
   new primary API
 
@@ -374,6 +375,8 @@ Recommended order:
 ### Phase 1
 
 - final parsed structured output for non-streaming `generateText`
+- a shared streaming helper that forwards raw `TextStreamEvent`s and emits one
+  final parsed-output event at the end
 - no partial structured streaming yet
 
 ### Phase 2

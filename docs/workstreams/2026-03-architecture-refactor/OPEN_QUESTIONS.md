@@ -434,6 +434,9 @@ Current recommendation:
 - do not widen the shared core yet
 - first prove a truthful common contract across at least OpenAI and Google for
   request shape, validation, parse failure, and streamed semantics
+- the current shared `OutputSpec` layer plus `generateOutput(...)` and
+  `streamOutput(...)` is the right narrow baseline; the remaining decision is
+  whether any richer object-specific or partial-streaming surface is justified
 - `51-shared-structured-output-boundary.md` records the current recommended
   direction: shared output specification over `generateText` / `streamText`
   rather than freezing standalone `generateObject` APIs as the target end state

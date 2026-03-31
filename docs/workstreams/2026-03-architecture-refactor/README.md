@@ -162,9 +162,8 @@ This workstream is not about a file-moving refactor. It is about defining stable
 
 ### Remaining Structural Gaps Versus `repo-ref/ai`
 
-- A first shared structured-output helper now exists in `llm_dart_core` through `OutputSpec` and `generateOutput(...)`, but there is still no fully integrated `streamObject`-style or partial-structured-output module yet.
+- Shared structured output now exists in `llm_dart_core` through `OutputSpec`, `generateOutput(...)`, and `streamOutput(...)`, but there is still no partial-structured-output or element-streaming contract yet.
 - The shared runner is intentionally narrow and non-streaming; the reference still has a more mature streamed multi-step orchestration loop.
-- `llm_dart_transport` now has its baseline shared infrastructure in place: SSE framing, JSON chunk parsing, transport diagnostics, cancellation, and transport-owned retry/timeout handling.
 - Embedding, image, speech, and transcription already have shared interface direction, but their top-level helper and provider-migration parity are still incomplete.
 - The remote chat protocol is thinner than the reference `ui-message-stream` layer, which is acceptable for now but still a conscious structural gap.
 

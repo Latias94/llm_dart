@@ -253,6 +253,149 @@ void main() {
     });
   });
 
+  group('streamOutput', () {
+    test(
+        'reuses OutputSpec on the streaming path and emits a final parsed result',
+        () async {
+      final model = _RecordingLanguageModel(
+        generateResult: GenerateTextResult(
+          content: const [
+            TextContentPart('unused'),
+          ],
+          finishReason: FinishReason.stop,
+        ),
+        streamEvents: const [
+          ResponseMetadataEvent(
+            responseId: 'resp_stream',
+            modelId: 'test-model',
+          ),
+          TextStartEvent(id: 'text_1'),
+          TextDeltaEvent(id: 'text_1', delta: '{"value":"ok"}'),
+          TextEndEvent(id: 'text_1'),
+          FinishEvent(
+            finishReason: FinishReason.stop,
+          ),
+        ],
+      );
+
+      final events = await streamOutput<String>(
+        model: model,
+        prompt: [
+          UserPromptMessage.text('Return JSON.'),
+        ],
+        outputSpec: JsonOutputSpec<String>(
+          name: 'answer',
+          schema: JsonSchema.object(
+            properties: const {
+              'value': {'type': 'string'},
+            },
+            required: const ['value'],
+          ),
+          decode: (json) {
+            final map = json as Map<String, Object?>;
+            return map['value']! as String;
+          },
+        ),
+      ).toList();
+
+      expect(events.take(5).every((event) => event is OutputTextStreamEvent),
+          isTrue);
+      final resultEvent = events.last as OutputResultEvent<String>;
+      expect(resultEvent.result.output, 'ok');
+      expect(resultEvent.result.responseId, 'resp_stream');
+
+      final responseFormat =
+          model.lastRequest?.options.responseFormat as JsonResponseFormat?;
+      expect(responseFormat, isNotNull);
+      expect(responseFormat!.name, 'answer');
+    });
+
+    test(
+        'rejects explicit GenerateTextOptions.responseFormat on the streaming path',
+        () async {
+      final model = _RecordingLanguageModel(
+        generateResult: GenerateTextResult(
+          content: const [
+            TextContentPart('unused'),
+          ],
+          finishReason: FinishReason.stop,
+        ),
+        streamEvents: const [
+          FinishEvent(
+            finishReason: FinishReason.stop,
+          ),
+        ],
+      );
+
+      await expectLater(
+        streamOutput<Object?>(
+          model: model,
+          prompt: [
+            UserPromptMessage.text('Return JSON.'),
+          ],
+          options: GenerateTextOptions(
+            responseFormat: JsonResponseFormat(
+              schema: JsonSchema.object(),
+            ),
+          ),
+          outputSpec: JsonOutputSpec.json(
+            schema: JsonSchema.object(),
+          ),
+        ).drain<void>(),
+        throwsA(
+          isA<ArgumentError>().having(
+            (error) => error.message,
+            'message',
+            contains('responseFormat'),
+          ),
+        ),
+      );
+    });
+
+    test('wraps streaming parse failures as validation ModelError', () async {
+      final model = _RecordingLanguageModel(
+        generateResult: GenerateTextResult(
+          content: const [
+            TextContentPart('unused'),
+          ],
+          finishReason: FinishReason.stop,
+        ),
+        streamEvents: const [
+          ResponseMetadataEvent(
+            responseId: 'resp_bad_stream',
+          ),
+          TextStartEvent(id: 'text_1'),
+          TextDeltaEvent(id: 'text_1', delta: 'not-json'),
+          TextEndEvent(id: 'text_1'),
+          FinishEvent(
+            finishReason: FinishReason.stop,
+          ),
+        ],
+      );
+
+      await expectLater(
+        streamOutput<Object?>(
+          model: model,
+          prompt: [
+            UserPromptMessage.text('Return JSON.'),
+          ],
+          outputSpec: JsonOutputSpec.json(
+            schema: JsonSchema.object(),
+          ),
+        ).drain<void>(),
+        throwsA(
+          isA<ModelError>()
+              .having((error) => error.kind, 'kind', ModelErrorKind.validation)
+              .having(
+                (error) => error.details,
+                'details',
+                containsPair('responseId', 'resp_bad_stream'),
+              ),
+        ),
+      );
+    });
+  });
+
   group('output spec validation', () {
     test('object spec rejects non-object schemas', () {
       expect(
@@ -280,10 +423,16 @@ void main() {
 
 final class _RecordingLanguageModel implements LanguageModel {
   final GenerateTextResult generateResult;
+  final List<TextStreamEvent> streamEvents;
   GenerateTextRequest? lastRequest;
 
   _RecordingLanguageModel({
     required this.generateResult,
+    this.streamEvents = const [
+      FinishEvent(
+        finishReason: FinishReason.stop,
+      ),
+    ],
   });
 
   @override
@@ -301,8 +450,6 @@ final class _RecordingLanguageModel implements LanguageModel {
   @override
   Stream<TextStreamEvent> stream(GenerateTextRequest request) async* {
     lastRequest = request;
-    yield const FinishEvent(
-      finishReason: FinishReason.stop,
-    );
+    yield* Stream<TextStreamEvent>.fromIterable(streamEvents);
   }
 }

@@ -7,7 +7,9 @@ import '../common/model_error.dart';
 import '../common/provider_metadata.dart';
 import '../common/usage_stats.dart';
 import '../prompt/prompt_message.dart';
+import '../stream/text_stream_event.dart';
 import '../tool/tool_definition.dart';
+import 'generate_text_result_accumulator.dart';
 import 'language_model.dart';
 import 'response_format.dart';
 
@@ -299,6 +301,22 @@ final class GenerateOutputResult<T> {
   ProviderMetadata? get providerMetadata => result.providerMetadata;
 }
 
+sealed class OutputStreamEvent<T> {
+  const OutputStreamEvent();
+}
+
+final class OutputTextStreamEvent<T> extends OutputStreamEvent<T> {
+  final TextStreamEvent streamEvent;
+
+  const OutputTextStreamEvent(this.streamEvent);
+}
+
+final class OutputResultEvent<T> extends OutputStreamEvent<T> {
+  final GenerateOutputResult<T> result;
+
+  const OutputResultEvent(this.result);
+}
+
 Future<GenerateOutputResult<T>> generateOutput<T>({
   required LanguageModel model,
   required List<PromptMessage> prompt,
@@ -337,13 +355,10 @@ Future<GenerateOutputResult<T>> generateOutput<T>({
   );
 
   try {
-    final output = await outputSpec.parse(
-      text: result.text,
-      context: context,
-    );
-    return GenerateOutputResult(
+    return _parseGenerateOutputResult(
       result: result,
-      output: output,
+      outputSpec: outputSpec,
+      context: context,
     );
   } catch (error) {
     throw ModelError.fromUnknown(
@@ -355,6 +370,50 @@ Future<GenerateOutputResult<T>> generateOutput<T>({
       ),
     );
   }
+}
+
+Stream<OutputStreamEvent<T>> streamOutput<T>({
+  required LanguageModel model,
+  required List<PromptMessage> prompt,
+  required OutputSpec<T> outputSpec,
+  List<FunctionToolDefinition> tools = const [],
+  ToolChoice? toolChoice,
+  GenerateTextOptions options = const GenerateTextOptions(),
+  CallOptions callOptions = const CallOptions(),
+}) async* {
+  if (options.responseFormat != null) {
+    throw ArgumentError(
+      'streamOutput uses OutputSpec.responseFormat and does not allow GenerateTextOptions.responseFormat at the same time.',
+    );
+  }
+
+  final accumulator = GenerateTextResultAccumulator();
+  final events = streamText(
+    model: model,
+    prompt: prompt,
+    tools: tools,
+    toolChoice: toolChoice,
+    options: _withResponseFormat(
+      options,
+      outputSpec.responseFormat,
+    ),
+    callOptions: callOptions,
+  );
+
+  await for (final event in events) {
+    accumulator.apply(event);
+    yield OutputTextStreamEvent<T>(event);
+  }
+
+  final result = accumulator.build();
+  final context = _createStructuredOutputContext(result);
+  yield OutputResultEvent<T>(
+    await _parseGenerateOutputResult(
+      result: result,
+      outputSpec: outputSpec,
+      context: context,
+    ),
+  );
 }
 
 GenerateTextOptions _withResponseFormat(
@@ -472,6 +531,46 @@ Map<String, Object?> _structuredOutputErrorDetails({
     if (context.providerMetadata != null)
       'providerMetadata': context.providerMetadata!.toJsonMap(),
   };
+}
+
+StructuredOutputContext _createStructuredOutputContext(
+  GenerateTextResult result,
+) {
+  return StructuredOutputContext(
+    responseId: result.responseId,
+    responseTimestamp: result.responseTimestamp,
+    responseModelId: result.responseModelId,
+    finishReason: result.finishReason,
+    rawFinishReason: result.rawFinishReason,
+    usage: result.usage,
+    providerMetadata: result.providerMetadata,
+  );
+}
+
+Future<GenerateOutputResult<T>> _parseGenerateOutputResult<T>({
+  required GenerateTextResult result,
+  required OutputSpec<T> outputSpec,
+  required StructuredOutputContext context,
+}) async {
+  try {
+    final output = await outputSpec.parse(
+      text: result.text,
+      context: context,
+    );
+    return GenerateOutputResult(
+      result: result,
+      output: output,
+    );
+  } catch (error) {
+    throw ModelError.fromUnknown(
+      error,
+      kind: ModelErrorKind.validation,
+      details: _structuredOutputErrorDetails(
+        text: result.text,
+        context: context,
+      ),
+    );
+  }
 }
 
 Map<String, Object?> _usageToJson(UsageStats usage) {
