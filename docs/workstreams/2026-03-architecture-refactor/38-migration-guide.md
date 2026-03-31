@@ -33,10 +33,16 @@ legacy-parity migration target.
 
 These helpers should be treated as the stable request helpers above the model:
 
-- `generateText(...)`
-- `streamText(...)`
 - `generateTextCall(...)`
 - `streamTextCall(...)`
+
+The older low-level helpers still exist:
+
+- `generateText(...)`
+- `streamText(...)`
+
+Use them when you intentionally want the raw single-step boundary rather than
+the richer app-facing call result layer.
 
 These shared model families are already the intended stable boundary:
 
@@ -74,8 +80,8 @@ guesswork.
 | `ai().openai()...build()` | `AI.openai(...).chatModel(...)` | Use this when you only need migrated chat behavior. |
 | `ai().anthropic()...build()` | `AI.anthropic(...).chatModel(...)` | Same rule. |
 | `ai().google()...build()` | `AI.google(...).chatModel(...)` | Same rule. |
-| `provider.chat(messages)` | `generateText(model: ..., prompt: ...)` | Shared result model. |
-| `provider.chatStream(messages)` | `streamText(model: ..., prompt: ...)` | Shared stream model. |
+| `provider.chat(messages)` | `generateTextCall(model: ..., prompt: ...)` | Recommended app-facing text call surface. |
+| `provider.chatStream(messages)` | `streamTextCall(model: ..., prompt: ...)` | Recommended app-facing streamed text call surface. |
 | `ChatMessage.*` | `PromptMessage.*` | Replace legacy message DTOs with replay-safe prompt messages. |
 | `Tool.function(...)` | `FunctionToolDefinition(...)` | Use `ToolJsonSchema` and `ToolChoice`. |
 | legacy preset helpers | `AI.*(...).chatModel(...)` | Preset helpers are now compatibility-only. |
@@ -114,7 +120,7 @@ Future<void> main() async {
     apiKey: 'your-openai-key',
   ).chatModel('gpt-4.1-mini');
 
-  final result = await core.generateText(
+  final result = await core.generateTextCall(
     model: model,
     prompt: [
       core.UserPromptMessage.text('Explain Dart in one sentence.'),
@@ -149,7 +155,7 @@ For direct tool-call replay, the stable shared path is:
 2. inspect `ToolCallContentPart` in the first result
 3. append `AssistantPromptMessage` with `ToolCallPromptPart`
 4. append `ToolPromptMessage` with `ToolResultPromptPart`
-5. call `generateText(...)` again
+5. call `generateTextCall(...)` again
 
 This is the replay-safe common subset.
 
@@ -178,12 +184,14 @@ await for (final event in provider.chatStream(messages)) {
 New stable path:
 
 ```dart
-await for (final event in core.streamText(
+final stream = core.streamTextCall(
   model: model,
   prompt: [
     core.UserPromptMessage.text('Solve 15 * 27 and show your reasoning.'),
   ],
-)) {
+);
+
+await for (final event in stream) {
   switch (event) {
     case core.ReasoningDeltaEvent(:final delta):
       stderr.write(delta);
@@ -199,7 +207,7 @@ await for (final event in core.streamText(
 }
 ```
 
-The shared streaming boundary is `TextStreamEvent`.
+The shared streaming boundary is still `TextStreamEvent`.
 
 Do not treat UI-only lifecycle chunks or transport-only chunks as reasons to
 expand the shared core event model.
@@ -273,7 +281,7 @@ import 'package:llm_dart/openai.dart' as openai;
 
 final model = llm.AI.openai(apiKey: 'your-openai-key').chatModel('gpt-5-mini');
 
-final result = await core.generateText(
+final result = await core.generateTextCall(
   model: model,
   prompt: [
     core.UserPromptMessage.text('Search for recent Dart SDK news.'),
@@ -295,7 +303,7 @@ import 'package:llm_dart/google.dart' as google;
 
 final model = llm.AI.google(apiKey: 'your-google-key').chatModel('gemini-2.5-flash');
 
-final result = await core.generateText(
+final result = await core.generateTextCall(
   model: model,
   prompt: [
     core.UserPromptMessage.text('Think through how layouts work in Flutter.'),
@@ -453,7 +461,7 @@ For each caller, apply this checklist:
    only needs migrated chat behavior.
 2. Replace `ChatMessage` with shared prompt messages.
 3. Replace `provider.chat(...)` or `provider.chatStream(...)` with
-   `generateText(...)` or `streamText(...)`.
+   `generateTextCall(...)` or `streamTextCall(...)`.
 4. Replace string-based provider extensions with typed `providerOptions`.
 5. Import provider-owned option types from provider entrypoints instead of the
    root facade.

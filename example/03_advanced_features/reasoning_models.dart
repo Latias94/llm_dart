@@ -20,7 +20,7 @@ Future<void> runAnthropicReasoning() async {
   }
 
   final model = llm.AI.anthropic(apiKey: apiKey).chatModel('claude-sonnet-4-5');
-  final result = await core.generateText(
+  final result = await core.generateTextCall(
     model: model,
     prompt: [
       core.UserPromptMessage.text('Solve 15% of 240 step by step.'),
@@ -42,12 +42,14 @@ Future<void> runDeepSeekReasoningStream() async {
   final model = llm.AI.deepSeek(apiKey: apiKey).chatModel('deepseek-reasoner');
 
   print('DeepSeek reasoning stream');
-  await for (final event in core.streamText(
+  final stream = core.streamTextCall(
     model: model,
     prompt: [
       core.UserPromptMessage.text('Explain why 8 * 7 = 56.'),
     ],
-  )) {
+  );
+
+  await for (final event in stream) {
     switch (event) {
       case core.ReasoningDeltaEvent(:final delta):
         stderr.write(delta);
@@ -59,6 +61,8 @@ Future<void> runDeepSeekReasoningStream() async {
         break;
     }
   }
+
+  stdout.writeln('Final text: ${await stream.text}\n');
 }
 
 Future<void> runGoogleReasoning() async {
@@ -69,7 +73,7 @@ Future<void> runGoogleReasoning() async {
   }
 
   final model = llm.AI.google(apiKey: apiKey).chatModel('gemini-2.5-flash');
-  final result = await core.generateText(
+  final result = await core.generateTextCall(
     model: model,
     prompt: [
       core.UserPromptMessage.text('Think through how layouts work in Flutter.'),

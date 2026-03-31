@@ -58,6 +58,13 @@ dart pub get
 
 Use the stable facade plus the shared core request model.
 
+Current text-call layering:
+
+- `generateTextCall(...)` / `streamTextCall(...)`
+  - recommended app-facing text generation helpers
+- `generateText(...)` / `streamText(...)`
+  - lower-level raw single-step helpers
+
 ```dart
 import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
@@ -67,7 +74,7 @@ Future<void> main() async {
     apiKey: 'your-openai-key',
   ).chatModel('gpt-4.1-mini');
 
-  final result = await core.generateText(
+  final result = await core.generateTextCall(
     model: model,
     prompt: [
       core.SystemPromptMessage.text('You are concise.'),
@@ -84,8 +91,8 @@ Example file:
 
 ## Structured Output
 
-Shared structured generation now lives above `generateText(...)` through
-`OutputSpec` and `generateOutput(...)`.
+Shared structured generation now lives above the main text-call layer through
+`OutputSpec`, `generateTextCall(...)`, and `streamTextCall(...)`.
 
 ```dart
 import 'package:llm_dart/llm_dart.dart' as llm;
@@ -96,7 +103,7 @@ Future<void> main() async {
     apiKey: 'your-openai-key',
   ).chatModel('gpt-4.1-mini');
 
-  final result = await core.generateOutput<String>(
+  final result = await core.generateTextCall<String>(
     model: model,
     prompt: [
       core.UserPromptMessage.text('Return a JSON object with a short title.'),
@@ -131,12 +138,14 @@ Future<void> main() async {
     apiKey: 'your-deepseek-key',
   ).chatModel('deepseek-reasoner');
 
-  await for (final event in core.streamText(
+  final stream = core.streamTextCall(
     model: model,
     prompt: [
       core.UserPromptMessage.text('Solve 15 * 27 and show your reasoning.'),
     ],
-  )) {
+  );
+
+  await for (final event in stream) {
     switch (event) {
       case core.ReasoningDeltaEvent(:final delta):
         stderr.write(delta);
@@ -150,6 +159,8 @@ Future<void> main() async {
         break;
     }
   }
+
+  stderr.writeln('finalText=${await stream.text}');
 }
 ```
 
@@ -182,7 +193,7 @@ Future<void> main() async {
     ),
   ];
 
-  final firstTurn = await core.generateText(
+  final firstTurn = await core.generateTextCall(
     model: model,
     prompt: [
       core.UserPromptMessage.text('What is the weather in Hong Kong?'),
@@ -194,7 +205,7 @@ Future<void> main() async {
   final toolCall =
       firstTurn.content.whereType<core.ToolCallContentPart>().single.toolCall;
 
-  final secondTurn = await core.generateText(
+  final secondTurn = await core.generateTextCall(
     model: model,
     prompt: [
       core.UserPromptMessage.text('What is the weather in Hong Kong?'),
@@ -238,7 +249,7 @@ Future<void> main() async {
     apiKey: 'your-anthropic-key',
   ).chatModel('claude-sonnet-4-5');
 
-  final result = await core.generateText(
+  final result = await core.generateTextCall(
     model: model,
     prompt: [
       core.UserPromptMessage.text('Solve 15% of 240 step by step.'),
@@ -335,7 +346,7 @@ Future<void> main() async {
     apiKey: 'your-openai-key',
   ).chatModel('gpt-5-mini');
 
-  final result = await core.generateText(
+  final result = await core.generateTextCall(
     model: model,
     prompt: [
       core.UserPromptMessage.text('Search for recent Dart SDK news.'),
@@ -363,7 +374,7 @@ Future<void> main() async {
     apiKey: 'your-xai-key',
   ).chatModel('grok-3');
 
-  final result = await core.generateText(
+  final result = await core.generateTextCall(
     model: model,
     prompt: [
       core.UserPromptMessage.text('Find the latest Grok announcements.'),
@@ -382,6 +393,9 @@ Future<void> main() async {
 ## Design Rules
 
 - Keep the shared API focused on common model semantics.
+- Prefer `generateTextCall(...)` / `streamTextCall(...)` for app-facing text
+  generation, and keep `generateText(...)` / `streamText(...)` for lower-level
+  raw access.
 - Keep provider-native features in typed provider options, provider metadata, or custom parts.
 - Keep UI/session concerns above `TextStreamEvent`.
 - Treat `ai()` and old root provider surfaces as compatibility APIs, not the target architecture.

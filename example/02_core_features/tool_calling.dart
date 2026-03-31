@@ -27,7 +27,7 @@ Future<void> main() async {
     ),
   ];
 
-  final firstTurn = await core.generateText(
+  final firstTurn = await core.generateTextCall(
     model: model,
     prompt: [
       core.UserPromptMessage.text('What is the weather in Hong Kong?'),
@@ -42,7 +42,7 @@ Future<void> main() async {
   print('Model requested tool: ${toolCall.toolName}');
   print('Input: ${toolCall.input}');
 
-  final secondTurn = await core.generateText(
+  final secondTurn = await core.generateTextCall(
     model: model,
     prompt: [
       core.UserPromptMessage.text('What is the weather in Hong Kong?'),

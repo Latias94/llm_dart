@@ -21,7 +21,7 @@ Future<void> runOpenAIExample() async {
   }
 
   final model = llm.AI.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
-  final result = await core.generateText(
+  final result = await core.generateTextCall(
     model: model,
     prompt: [
       core.SystemPromptMessage.text('You are concise.'),
@@ -42,7 +42,7 @@ Future<void> runAnthropicExample() async {
   }
 
   final model = llm.AI.anthropic(apiKey: apiKey).chatModel('claude-sonnet-4-5');
-  final result = await core.generateText(
+  final result = await core.generateTextCall(
     model: model,
     prompt: [
       core.UserPromptMessage.text('Summarize why strong typing helps APIs.'),
@@ -62,7 +62,7 @@ Future<void> runGoogleExample() async {
   }
 
   final model = llm.AI.google(apiKey: apiKey).chatModel('gemini-2.5-flash');
-  final result = await core.generateText(
+  final result = await core.generateTextCall(
     model: model,
     prompt: [
       core.UserPromptMessage.text('Give one sentence about Flutter layouts.'),

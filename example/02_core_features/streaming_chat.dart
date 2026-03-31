@@ -16,12 +16,14 @@ Future<void> main() async {
 
   print('Streaming response:\n');
 
-  await for (final event in core.streamText(
+  final stream = core.streamTextCall(
     model: model,
     prompt: [
       core.UserPromptMessage.text('Solve 15 * 27 and show your reasoning.'),
     ],
-  )) {
+  );
+
+  await for (final event in stream) {
     switch (event) {
       case core.ResponseMetadataEvent(
           :final responseId,
@@ -46,4 +48,6 @@ Future<void> main() async {
         break;
     }
   }
+
+  stderr.writeln('\n[finalText] ${await stream.text}');
 }

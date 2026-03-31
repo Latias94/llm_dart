@@ -420,32 +420,23 @@ Resolved in the current breaking round:
 
 ## P1 - Newly Opened After The Current Refactor Round
 
-## 35. Whether Structured Generation Should Become A Shared First-Class Module
+## 35. Structured Generation And Main Text Call Naming Status
 
-Needs confirmation:
+Resolved in the current breaking round:
 
-- should `llm_dart_core` add shared `generateObject` / `streamObject` entry
-  points
-- or should structured generation remain provider-owned through typed
-  `responseFormat` options for now
-
-Current recommendation:
-
-- do not widen the low-level shared core yet
-- first prove a truthful common contract across at least OpenAI and Google for
-  request shape, validation, parse failure, and streamed semantics
-- the current shared `OutputSpec` layer plus `generateOutput(...)`,
-  `streamOutput(...)`, `streamOutputResult(...)`, `generateTextCall(...)`, and
-  `streamTextCall(...)` is now the right staged baseline; the remaining
-  decision is whether that additive main-call layer should later fold into
-  `generateText(...)` / `streamText(...)` directly
-- `51-shared-structured-output-boundary.md` records the current recommended
-  direction: shared output specification over `generateText` / `streamText`
-  rather than freezing standalone `generateObject` APIs as the target end state
-- `52-structured-output-result-surface.md` records the current streamed
-  result-surface increment
+- shared structured generation should not freeze around standalone
+  `generateObject` / `streamObject` naming
+- shared structured generation should continue through `OutputSpec`
+- `generateTextCall(...)` and `streamTextCall(...)` are now the recommended
+  app-facing text call layer
+- `generateText(...)` and `streamText(...)` remain the low-level raw helpers
+- `generateOutput(...)`, `streamOutput(...)`, and `streamOutputResult(...)`
+  remain focused convenience surfaces above the same shared contracts
+- `51-shared-structured-output-boundary.md` records the output-spec boundary
+- `52-structured-output-result-surface.md` records the streamed result surface
 - `53-main-text-call-result-layer.md` records the additive main-call result
-  layer that now sits above the low-level helpers
+  layer
+- `54-main-text-api-naming-freeze.md` records the frozen naming decision
 
 ## 36. Whether A Shared Streamed Runner Is Worth Adding
 
