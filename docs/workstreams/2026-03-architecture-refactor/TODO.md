@@ -179,6 +179,7 @@
 - [x] Decompose `anthropic_legacy_extensions.dart` into focused provider-owned compatibility parser modules without changing the audited raw-block contract
 - [x] Decompose `audio_models.dart` into focused shared model modules without changing current public exports
 - [x] Decompose `tool_models.dart` into focused shared model modules without changing current public exports
+- [x] Decompose `assistant_models.dart` into focused shared/legacy model modules without changing current public exports
 - [x] Route `LLMBuilder.build()` through compat provider subclasses for OpenAI / Google / Anthropic chat
 - [x] Implement the old `ChatCapability` adapter
 - [x] Implement migration adaptation from old `ChatMessage` / `Tool` to new prompt and tool models

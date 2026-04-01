@@ -212,6 +212,7 @@ Current status:
 - `anthropic_legacy_extensions.dart` is now also decomposed into value models, top-level analyzer, raw-block parsers, and JSON/validation helpers while keeping the audited Anthropic legacy replay contract unchanged
 - `audio_models.dart` is now also decomposed into primitives, TTS, STT, metadata, and stream-event modules while keeping the shared audio model surface unchanged
 - `tool_models.dart` is now also decomposed into schema, tool-choice, structured-output, and execution modules while keeping the shared tool model surface unchanged
+- `assistant_models.dart` is now also decomposed into assistant tools/resources, entities, requests, and responses while keeping the assistant-management model surface unchanged
 - the remaining root-package compatibility cleanup is now mostly semantic tightening and deprecation planning rather than more large-file decomposition
 - the next recommended milestone is now explicit: expand provider coverage tests and renderer helpers without widening the shared event model
 - the next provider-specific implementation step is now also explicit: re-audit broader OpenRouter search mapping and any xAI subsets beyond the audited legacy live-search migration subset
