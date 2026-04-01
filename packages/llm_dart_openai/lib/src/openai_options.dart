@@ -1,5 +1,8 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
 
+export 'openai_image_types.dart';
+
+import 'openai_image_types.dart';
 import 'openai_native_tools.dart';
 import 'openai_response_format.dart';
 
@@ -10,12 +13,14 @@ final class OpenAIChatModelSettings implements ProviderModelOptions {
   final String? organization;
   final String? project;
   final Map<String, String> headers;
+  final List<OpenAIBuiltInTool> builtInTools;
 
   const OpenAIChatModelSettings({
     this.useResponsesApi = true,
     this.organization,
     this.project,
     this.headers = const {},
+    this.builtInTools = const [],
   });
 }
 
@@ -73,57 +78,6 @@ final class OpenAIEmbedOptions implements ProviderInvocationOptions {
   const OpenAIEmbedOptions({
     this.encodingFormat,
   });
-}
-
-enum OpenAIImageStyle {
-  vivid('vivid'),
-  natural('natural');
-
-  const OpenAIImageStyle(this.value);
-
-  final String value;
-}
-
-enum OpenAIImageQuality {
-  standard('standard'),
-  hd('hd'),
-  auto('auto'),
-  low('low'),
-  medium('medium'),
-  high('high');
-
-  const OpenAIImageQuality(this.value);
-
-  final String value;
-}
-
-enum OpenAIImageBackground {
-  auto('auto'),
-  opaque('opaque'),
-  transparent('transparent');
-
-  const OpenAIImageBackground(this.value);
-
-  final String value;
-}
-
-enum OpenAIImageOutputFormat {
-  png('png'),
-  jpeg('jpeg'),
-  webp('webp');
-
-  const OpenAIImageOutputFormat(this.value);
-
-  final String value;
-}
-
-enum OpenAIImageResponseFormat {
-  url('url'),
-  base64Json('b64_json');
-
-  const OpenAIImageResponseFormat(this.value);
-
-  final String value;
 }
 
 final class OpenAIImageOptions implements ProviderInvocationOptions {
@@ -262,6 +216,8 @@ final class OpenAILogProbs {
 
 final class OpenAIGenerateTextOptions implements ProviderInvocationOptions {
   final String? previousResponseId;
+  final String? conversation;
+  final bool? store;
   final bool? parallelToolCalls;
   final String? serviceTier;
   final String? verbosity;
@@ -284,6 +240,8 @@ final class OpenAIGenerateTextOptions implements ProviderInvocationOptions {
 
   const OpenAIGenerateTextOptions({
     this.previousResponseId,
+    this.conversation,
+    this.store,
     this.parallelToolCalls,
     this.serviceTier,
     this.verbosity,
@@ -307,6 +265,8 @@ final class OpenAIGenerateTextOptions implements ProviderInvocationOptions {
 
   OpenAIGenerateTextOptions copyWith({
     Object? previousResponseId = _unset,
+    Object? conversation = _unset,
+    Object? store = _unset,
     Object? parallelToolCalls = _unset,
     Object? serviceTier = _unset,
     Object? verbosity = _unset,
@@ -331,6 +291,10 @@ final class OpenAIGenerateTextOptions implements ProviderInvocationOptions {
       previousResponseId: identical(previousResponseId, _unset)
           ? this.previousResponseId
           : previousResponseId as String?,
+      conversation: identical(conversation, _unset)
+          ? this.conversation
+          : conversation as String?,
+      store: identical(store, _unset) ? this.store : store as bool?,
       parallelToolCalls: identical(parallelToolCalls, _unset)
           ? this.parallelToolCalls
           : parallelToolCalls as bool?,

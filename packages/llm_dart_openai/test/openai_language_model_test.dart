@@ -450,6 +450,394 @@ void main() {
       );
     });
 
+    test(
+        'generate forwards model-level OpenAI built-in tools to the Responses request body',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'resp_model_builtins',
+                'model': 'gpt-4.1-mini',
+                'created_at': 1710000000,
+                'status': 'completed',
+                'output': [
+                  {
+                    'id': 'msg_1',
+                    'type': 'message',
+                    'status': 'completed',
+                    'role': 'assistant',
+                    'content': [
+                      {
+                        'type': 'output_text',
+                        'text': 'Done.',
+                        'annotations': [],
+                      },
+                    ],
+                  },
+                ],
+                'usage': {
+                  'input_tokens': 1,
+                  'output_tokens': 1,
+                  'total_tokens': 2,
+                  'output_tokens_details': {
+                    'reasoning_tokens': 0,
+                  },
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel(
+        'gpt-4.1-mini',
+        settings: const OpenAIChatModelSettings(
+          builtInTools: [
+            OpenAIImageGenerationTool(
+              background: OpenAIImageBackground.opaque,
+              inputFidelity: OpenAIImageGenerationInputFidelity.high,
+              moderation: OpenAIImageGenerationModeration.auto,
+              quality: OpenAIImageQuality.high,
+              outputFormat: OpenAIImageOutputFormat.png,
+              size: OpenAIImageGenerationSize.landscape1536x1024,
+            ),
+          ],
+        ),
+      );
+
+      await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage.text('Create an image.'),
+          ],
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(
+        requestBody['tools'],
+        [
+          {
+            'type': 'image_generation',
+            'background': 'opaque',
+            'input_fidelity': 'high',
+            'moderation': 'auto',
+            'quality': 'high',
+            'output_format': 'png',
+            'size': '1536x1024',
+          },
+        ],
+      );
+    });
+
+    test(
+        'generate lets call-level built-in tools override model-level OpenAI built-in tools',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'resp_override_builtins',
+                'model': 'gpt-4.1-mini',
+                'created_at': 1710000000,
+                'status': 'completed',
+                'output': [
+                  {
+                    'id': 'msg_1',
+                    'type': 'message',
+                    'status': 'completed',
+                    'role': 'assistant',
+                    'content': [
+                      {
+                        'type': 'output_text',
+                        'text': 'Done.',
+                        'annotations': [],
+                      },
+                    ],
+                  },
+                ],
+                'usage': {
+                  'input_tokens': 1,
+                  'output_tokens': 1,
+                  'total_tokens': 2,
+                  'output_tokens_details': {
+                    'reasoning_tokens': 0,
+                  },
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel(
+        'gpt-4.1-mini',
+        settings: const OpenAIChatModelSettings(
+          builtInTools: [
+            OpenAIWebSearchTool(),
+          ],
+        ),
+      );
+
+      await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage.text('Create an image instead of searching.'),
+          ],
+          callOptions: const CallOptions(
+            providerOptions: OpenAIGenerateTextOptions(
+              builtInTools: [
+                OpenAIImageGenerationTool(
+                  background: OpenAIImageBackground.transparent,
+                  quality: OpenAIImageQuality.medium,
+                  outputFormat: OpenAIImageOutputFormat.webp,
+                  size: OpenAIImageGenerationSize.square1024,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(
+        requestBody['tools'],
+        [
+          {
+            'type': 'image_generation',
+            'background': 'transparent',
+            'quality': 'medium',
+            'output_format': 'webp',
+            'size': '1024x1024',
+          },
+        ],
+      );
+    });
+
+    test('OpenAI MCP built-in tool defaults require_approval to never', () {
+      expect(
+        OpenAIBuiltInTools.mcp(
+          serverLabel: 'zip1',
+          connectorId: 'connector_zip1',
+        ).toJson(),
+        {
+          'type': 'mcp',
+          'server_label': 'zip1',
+          'connector_id': 'connector_zip1',
+          'require_approval': 'never',
+        },
+      );
+    });
+
+    test(
+        'generate forwards OpenAI MCP built-in tools to the Responses request body',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'resp_mcp_tool',
+                'model': 'gpt-4.1-mini',
+                'created_at': 1710000000,
+                'status': 'completed',
+                'output': [
+                  {
+                    'id': 'msg_1',
+                    'type': 'message',
+                    'status': 'completed',
+                    'role': 'assistant',
+                    'content': [
+                      {
+                        'type': 'output_text',
+                        'text': 'Done.',
+                        'annotations': [],
+                      },
+                    ],
+                  },
+                ],
+                'usage': {
+                  'input_tokens': 1,
+                  'output_tokens': 1,
+                  'total_tokens': 2,
+                  'output_tokens_details': {
+                    'reasoning_tokens': 0,
+                  },
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel('gpt-4.1-mini');
+
+      await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage.text('Use the MCP short-link server.'),
+          ],
+          callOptions: const CallOptions(
+            providerOptions: OpenAIGenerateTextOptions(
+              builtInTools: [
+                OpenAIMcpTool(
+                  serverLabel: 'zip1',
+                  connectorId: 'connector_zip1',
+                  serverDescription: 'Short URL server',
+                  authorization: 'Bearer test-token',
+                  headers: {
+                    'x-tenant': 'demo',
+                  },
+                  allowedTools: OpenAIMcpAllowedTools.filter(
+                    readOnly: true,
+                    toolNames: ['create_short_url'],
+                  ),
+                  requireApproval: OpenAIMcpApprovalPolicy.neverForTools([
+                    'get_status',
+                  ]),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(
+        requestBody['tools'],
+        [
+          {
+            'type': 'mcp',
+            'server_label': 'zip1',
+            'allowed_tools': {
+              'read_only': true,
+              'tool_names': ['create_short_url'],
+            },
+            'authorization': 'Bearer test-token',
+            'connector_id': 'connector_zip1',
+            'headers': {
+              'x-tenant': 'demo',
+            },
+            'require_approval': {
+              'never': {
+                'tool_names': ['get_status'],
+              },
+            },
+            'server_description': 'Short URL server',
+          },
+        ],
+      );
+    });
+
+    test('OpenAI code interpreter built-in tool defaults to auto container',
+        () {
+      expect(
+        OpenAIBuiltInTools.codeInterpreter().toJson(),
+        {
+          'type': 'code_interpreter',
+          'container': {
+            'type': 'auto',
+          },
+        },
+      );
+    });
+
+    test(
+        'generate forwards OpenAI code interpreter built-in tools to the Responses request body',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'resp_code_interpreter_tool',
+                'model': 'gpt-4.1-mini',
+                'created_at': 1710000000,
+                'status': 'completed',
+                'output': [
+                  {
+                    'id': 'msg_1',
+                    'type': 'message',
+                    'status': 'completed',
+                    'role': 'assistant',
+                    'content': [
+                      {
+                        'type': 'output_text',
+                        'text': 'Done.',
+                        'annotations': [],
+                      },
+                    ],
+                  },
+                ],
+                'usage': {
+                  'input_tokens': 1,
+                  'output_tokens': 1,
+                  'total_tokens': 2,
+                  'output_tokens_details': {
+                    'reasoning_tokens': 0,
+                  },
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel('gpt-4.1-mini');
+
+      await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage.text('Use code interpreter with uploaded files.'),
+          ],
+          callOptions: const CallOptions(
+            providerOptions: OpenAIGenerateTextOptions(
+              builtInTools: [
+                OpenAICodeInterpreterTool(
+                  container: OpenAICodeInterpreterAutoContainer(
+                    fileIds: ['file_1', 'file_2'],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(
+        requestBody['tools'],
+        [
+          {
+            'type': 'code_interpreter',
+            'container': {
+              'type': 'auto',
+              'file_ids': ['file_1', 'file_2'],
+            },
+          },
+        ],
+      );
+    });
+
     test('generate forwards OpenAI Responses provider-owned request options',
         () async {
       TransportRequest? capturedRequest;
@@ -502,6 +890,8 @@ void main() {
           ],
           callOptions: const CallOptions(
             providerOptions: OpenAIGenerateTextOptions(
+              conversation: 'conv_123',
+              store: false,
               instructions: 'Keep the original system framing.',
               maxToolCalls: 3,
               metadata: {
@@ -524,6 +914,8 @@ void main() {
 
       expect(capturedRequest, isNotNull);
       final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(requestBody['conversation'], 'conv_123');
+      expect(requestBody['store'], isFalse);
       expect(
         requestBody['instructions'],
         'Keep the original system framing.',
@@ -548,6 +940,83 @@ void main() {
       expect(requestBody['prompt_cache_key'], 'cache_key_123');
       expect(requestBody['prompt_cache_retention'], '24h');
       expect(requestBody['safety_identifier'], 'safe_user_123');
+    });
+
+    test(
+        'generate warns when conversation and previousResponseId are both provided on the Responses path',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'resp_conversation_conflict',
+                'model': 'gpt-4.1-mini',
+                'created_at': 1710000000,
+                'status': 'completed',
+                'output': [
+                  {
+                    'id': 'msg_1',
+                    'type': 'message',
+                    'status': 'completed',
+                    'role': 'assistant',
+                    'content': [
+                      {
+                        'type': 'output_text',
+                        'text': 'Done.',
+                        'annotations': [],
+                      },
+                    ],
+                  },
+                ],
+                'usage': {
+                  'input_tokens': 1,
+                  'output_tokens': 1,
+                  'total_tokens': 2,
+                  'output_tokens_details': {
+                    'reasoning_tokens': 0,
+                  },
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel('gpt-4.1-mini');
+
+      final result = await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage.text('Continue the conversation.'),
+          ],
+          callOptions: const CallOptions(
+            providerOptions: OpenAIGenerateTextOptions(
+              conversation: 'conv_123',
+              previousResponseId: 'resp_prev',
+            ),
+          ),
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(requestBody['conversation'], 'conv_123');
+      expect(requestBody['previous_response_id'], 'resp_prev');
+      expect(
+        result.warnings,
+        contains(
+          const ModelWarning(
+            type: ModelWarningType.unsupported,
+            field: 'conversation',
+            message:
+                'conversation and previousResponseId cannot be used together',
+          ),
+        ),
+      );
     });
 
     test(
@@ -2463,6 +2932,7 @@ void main() {
           callOptions: const CallOptions(
             providerOptions: OpenAIGenerateTextOptions(
               previousResponseId: 'resp_prev',
+              store: false,
             ),
           ),
         ),

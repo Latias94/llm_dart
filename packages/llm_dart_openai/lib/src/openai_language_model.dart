@@ -270,6 +270,13 @@ final class OpenAILanguageModel implements LanguageModel {
       );
     }
 
+    if (common.builtInTools == null &&
+        settings.common.builtInTools.isNotEmpty) {
+      common = common.copyWith(
+        builtInTools: settings.common.builtInTools,
+      );
+    }
+
     if (sharedResponseFormat != null) {
       common = common.copyWith(
         responseFormat: sharedResponseFormat,

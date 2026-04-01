@@ -122,6 +122,13 @@ The compatibility route should still stay conservative for:
 
 `Complete OpenAI chat migration` should still remain open after this slice.
 
+The current remaining gaps no longer include the basic provider-owned Responses
+native-tool declaration surface, which now already covers `image_generation`
+and `mcp` without widening the shared core, now also covers
+`code_interpreter`, and they also no longer include the first provider-owned
+output/helper layer for `image_generation_call`, partial-image stream chunks,
+and `mcp_list_tools`.
+
 The meaningful remaining gaps are now:
 
 - optional richer provider-native or multimodal assistant replay on
@@ -130,13 +137,13 @@ The meaningful remaining gaps are now:
 - possible richer multimodal parity on the Responses request codec beyond the current user image/file subset, if app usage proves it is necessary
 - any future OpenAI-owned helper surface above raw provider metadata if Flutter or app-level tooling later needs richer logprob/result inspection
 - any later OpenAI-owned search-preview or other model-family request-shaping audit beyond the now-aligned chat-completions and Responses reasoning compatibility
-- a decision on whether OpenAI compatibility should ever broaden beyond the current user multimodal plus common function-tool replay subset into richer replay-heavy histories
+- a decision on whether OpenAI compatibility should ever broaden beyond the current user multimodal plus current OpenAI-owned persistence subset into richer replay-heavy histories such as hosted-tool or custom item-family continuation
 
 ## Recommended Next Step
 
 The next OpenAI-family step should focus on one of these two paths, not both at once:
 
 1. add richer provider-native replay on chat-completions only if a real product history shape proves the current aligned common subset is insufficient
-2. audit whether the Responses path needs any richer multimodal, persistence-owned request shaping, or replay support beyond the now-working user image/file plus common function-tool compatibility subset
+2. stop here and keep the remaining execution-heavy hosted-tool families deferred until a concrete use case appears, or add only a very narrow provider-owned helper layer if one concrete OpenAI output family proves worth it, but keep both directions out of the shared core
 
 That keeps the workstream incremental and prevents the OpenAI family from becoming another mixed-path bus layer.

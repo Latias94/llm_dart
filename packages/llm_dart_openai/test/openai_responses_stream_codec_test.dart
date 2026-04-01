@@ -411,5 +411,43 @@ void main() {
         containsPair('status', 'failed'),
       );
     });
+
+    test('maps image generation partial images to custom events', () {
+      const codec = OpenAIResponsesCodec();
+      final state = OpenAIResponsesStreamState()
+        ..responseId = 'resp_img'
+        ..serviceTier = 'default';
+
+      final events = codec.decodeStreamChunk(
+        {
+          'type': 'response.image_generation_call.partial_image',
+          'item_id': 'img_1',
+          'output_index': 1,
+          'partial_image_b64': 'AQID',
+        },
+        state,
+      ).toList();
+
+      final custom = events.whereType<CustomEvent>().single;
+      expect(custom.kind, 'openai.image_generation_call.partial_image');
+      expect(
+        custom.data,
+        {
+          'item_id': 'img_1',
+          'output_index': 1,
+          'partial_image_b64': 'AQID',
+        },
+      );
+      expect(
+        custom.providerMetadata?.namespace('openai'),
+        allOf(
+          containsPair('responseId', 'resp_img'),
+          containsPair('itemId', 'img_1'),
+          containsPair('itemType', 'image_generation_call.partial_image'),
+          containsPair('outputIndex', 1),
+          containsPair('serviceTier', 'default'),
+        ),
+      );
+    });
   });
 }

@@ -51,10 +51,23 @@ final class OpenAIResponsesCodec {
     final capabilities = getOpenAIModelCapabilities(modelId);
     final isReasoningModel =
         providerOptions.forceReasoning ?? capabilities.isReasoningModel;
+    final store = providerOptions.store ?? true;
+    final hasConversation = providerOptions.conversation != null;
     final systemMessageMode = providerOptions.systemMessageMode ??
         (isReasoningModel
             ? OpenAISystemMessageMode.developer
             : capabilities.systemMessageMode);
+
+    if (hasConversation && providerOptions.previousResponseId != null) {
+      warnings.add(
+        const ModelWarning(
+          type: ModelWarningType.unsupported,
+          field: 'conversation',
+          message:
+              'conversation and previousResponseId cannot be used together',
+        ),
+      );
+    }
 
     for (final message in prompt) {
       input.addAll(
@@ -62,11 +75,17 @@ final class OpenAIResponsesCodec {
           message,
           warnings,
           systemMessageMode: systemMessageMode,
+          store: store,
+          hasConversation: hasConversation,
         ),
       );
     }
 
-    final include = _resolveInclude(providerOptions);
+    final include = _resolveInclude(
+      providerOptions,
+      isReasoningModel: isReasoningModel,
+      store: store,
+    );
     final topLogProbs = _encodeResponsesTopLogProbs(providerOptions.logprobs);
 
     final body = <String, Object?>{
@@ -82,6 +101,9 @@ final class OpenAIResponsesCodec {
       if (options.topK != null) 'top_k': options.topK,
       if (providerOptions.previousResponseId != null)
         'previous_response_id': providerOptions.previousResponseId,
+      if (providerOptions.conversation != null)
+        'conversation': providerOptions.conversation,
+      if (providerOptions.store != null) 'store': providerOptions.store,
       if (providerOptions.parallelToolCalls != null)
         'parallel_tool_calls': providerOptions.parallelToolCalls,
       if (providerOptions.serviceTier != null)
@@ -437,6 +459,25 @@ final class OpenAIResponsesCodec {
       return;
     }
 
+    if (chunkType == 'response.image_generation_call.partial_image') {
+      yield CustomEvent(
+        kind: 'openai.image_generation_call.partial_image',
+        data: {
+          'item_id': _asString(chunk['item_id']),
+          'output_index': _asInt(chunk['output_index']),
+          'partial_image_b64': _asString(chunk['partial_image_b64']),
+        },
+        providerMetadata: _providerMetadata({
+          'responseId': state.responseId,
+          'itemId': _asString(chunk['item_id']),
+          'itemType': 'image_generation_call.partial_image',
+          'outputIndex': _asInt(chunk['output_index']),
+          'serviceTier': state.serviceTier,
+        }),
+      );
+      return;
+    }
+
     if (chunkType == 'response.output_item.done') {
       final item = _asMap(chunk['item']);
       if (item == null) {
@@ -698,6 +739,8 @@ final class OpenAIResponsesCodec {
     PromptMessage message,
     List<ModelWarning> warnings, {
     required OpenAISystemMessageMode systemMessageMode,
+    required bool store,
+    required bool hasConversation,
   }) {
     if (message is SystemPromptMessage) {
       if (systemMessageMode == OpenAISystemMessageMode.remove) {
@@ -735,11 +778,19 @@ final class OpenAIResponsesCodec {
     }
 
     if (message is AssistantPromptMessage) {
-      return _encodeAssistantMessage(message);
+      return _encodeAssistantMessage(
+        message,
+        warnings,
+        store: store,
+        hasConversation: hasConversation,
+      );
     }
 
     if (message is ToolPromptMessage) {
-      return _encodeToolMessage(message);
+      return _encodeToolMessage(
+        message,
+        store: store,
+      );
     }
 
     throw UnsupportedError(
@@ -843,10 +894,16 @@ final class OpenAIResponsesCodec {
     warnings.add(warning);
   }
 
-  List<Object?> _encodeAssistantMessage(AssistantPromptMessage message) {
+  List<Object?> _encodeAssistantMessage(
+    AssistantPromptMessage message,
+    List<ModelWarning> warnings, {
+    required bool store,
+    required bool hasConversation,
+  }) {
     final items = <Object?>[];
     final textContent = <Object?>[];
     final reasoningItemsById = <String, Map<String, Object?>>{};
+    final referencedReasoningIds = <String>{};
     String? textItemId;
     String? textPhase;
 
@@ -874,6 +931,17 @@ final class OpenAIResponsesCodec {
         );
         final partItemId = _asString(metadata?['itemId']);
         final partPhase = _asString(metadata?['phase']);
+
+        if (hasConversation && partItemId != null) {
+          flushTextContent();
+          continue;
+        }
+
+        if (store && partItemId != null) {
+          flushTextContent();
+          items.add(_encodeItemReference(partItemId));
+          continue;
+        }
 
         if (textContent.isNotEmpty &&
             (partItemId != textItemId || partPhase != textPhase)) {
@@ -910,6 +978,17 @@ final class OpenAIResponsesCodec {
                 'text': part.text,
               };
 
+        if (hasConversation && reasoningId != null) {
+          continue;
+        }
+
+        if (store && reasoningId != null) {
+          if (referencedReasoningIds.add(reasoningId)) {
+            items.add(_encodeItemReference(reasoningId));
+          }
+          continue;
+        }
+
         if (reasoningId != null) {
           final existingItem = reasoningItemsById[reasoningId];
           if (existingItem == null) {
@@ -928,6 +1007,15 @@ final class OpenAIResponsesCodec {
             final summary = existingItem['summary'];
             if (summaryPart != null && summary is List<Object?>) {
               summary.add(summaryPart);
+            } else if (summaryPart == null) {
+              warnings.add(
+                ModelWarning(
+                  type: ModelWarningType.other,
+                  field: 'prompt.assistant.reasoning',
+                  message:
+                      'Cannot append empty reasoning part to existing reasoning sequence. Skipping reasoning part with itemId "$reasoningId".',
+                ),
+              );
             }
             if (encryptedContent != null) {
               existingItem['encrypted_content'] = encryptedContent;
@@ -937,6 +1025,14 @@ final class OpenAIResponsesCodec {
         }
 
         if (encryptedContent == null) {
+          warnings.add(
+            const ModelWarning(
+              type: ModelWarningType.other,
+              field: 'prompt.assistant.reasoning',
+              message:
+                  'Non-OpenAI reasoning parts without itemId or encryptedContent are not sent to the OpenAI Responses API',
+            ),
+          );
           continue;
         }
 
@@ -953,15 +1049,25 @@ final class OpenAIResponsesCodec {
       flushTextContent();
 
       if (part is ToolCallPromptPart) {
-        if (part.providerExecuted) {
-          continue;
-        }
-
         final metadata = _providerMetadataValues(
           part.providerMetadata,
           namespace: 'openai',
         );
         final itemId = _asString(metadata?['itemId']);
+
+        if (hasConversation && itemId != null) {
+          continue;
+        }
+
+        if (store && itemId != null) {
+          items.add(_encodeItemReference(itemId));
+          continue;
+        }
+
+        if (part.providerExecuted) {
+          continue;
+        }
+
         items.add({
           'type': 'function_call',
           'call_id': part.toolCallId,
@@ -980,7 +1086,11 @@ final class OpenAIResponsesCodec {
           part is ReasoningFilePromptPart ||
           part is CustomPromptPart) {
         if (part is CustomPromptPart && part.kind == 'openai.compaction') {
-          final compactionItem = _encodeOpenAICompactionItem(part);
+          final compactionItem = _encodeOpenAICompactionItem(
+            part,
+            store: store,
+            hasConversation: hasConversation,
+          );
           if (compactionItem != null) {
             items.add(compactionItem);
           }
@@ -989,14 +1099,29 @@ final class OpenAIResponsesCodec {
       }
 
       if (part is ToolResultPromptPart) {
-        items.add({
-          'type': 'function_call_output',
-          'call_id': part.toolCallId,
-          'output': _encodeToolOutput(
-            output: part.output,
-            isError: part.isError,
+        if (hasConversation) {
+          continue;
+        }
+
+        final metadata = _providerMetadataValues(
+          part.providerMetadata,
+          namespace: 'openai',
+        );
+        final itemId = _asString(metadata?['itemId']) ?? part.toolCallId;
+
+        if (store) {
+          items.add(_encodeItemReference(itemId));
+          continue;
+        }
+
+        warnings.add(
+          ModelWarning(
+            type: ModelWarningType.other,
+            field: 'prompt.assistant.toolResult',
+            message:
+                'Results for OpenAI tool ${part.toolName} are not sent to the API when store is false',
           ),
-        });
+        );
         continue;
       }
 
@@ -1006,14 +1131,44 @@ final class OpenAIResponsesCodec {
     }
 
     flushTextContent();
+    if (!store) {
+      var removedUnsupportedReasoning = false;
+      items.removeWhere((item) {
+        final map = _asMap(item);
+        final shouldRemove = map != null &&
+            _asString(map['type']) == 'reasoning' &&
+            !map.containsKey('encrypted_content');
+        if (shouldRemove) {
+          removedUnsupportedReasoning = true;
+        }
+        return shouldRemove;
+      });
+
+      if (removedUnsupportedReasoning) {
+        warnings.add(
+          const ModelWarning(
+            type: ModelWarningType.other,
+            field: 'prompt.assistant.reasoning',
+            message:
+                'Reasoning parts without encrypted content are not supported when store is false. Skipping reasoning parts.',
+          ),
+        );
+      }
+    }
     return items;
   }
 
-  List<Object?> _encodeToolMessage(ToolPromptMessage message) {
+  List<Object?> _encodeToolMessage(
+    ToolPromptMessage message, {
+    required bool store,
+  }) {
     final items = <Object?>[];
 
     for (final part in message.parts) {
       if (part is ToolApprovalResponsePromptPart) {
+        if (store) {
+          items.add(_encodeItemReference(part.approvalId));
+        }
         items.add({
           'type': 'mcp_approval_response',
           'approval_request_id': part.approvalId,
@@ -1576,7 +1731,11 @@ final class OpenAIResponsesCodec {
     });
   }
 
-  List<String>? _resolveInclude(OpenAIGenerateTextOptions providerOptions) {
+  List<String>? _resolveInclude(
+    OpenAIGenerateTextOptions providerOptions, {
+    required bool isReasoningModel,
+    required bool store,
+  }) {
     final values = <String>{};
 
     if (providerOptions.include case final include?) {
@@ -1587,6 +1746,10 @@ final class OpenAIResponsesCodec {
 
     if (providerOptions.logprobs != null) {
       values.add(OpenAIResponsesInclude.messageOutputTextLogprobs.value);
+    }
+
+    if (!store && isReasoningModel) {
+      values.add(OpenAIResponsesInclude.reasoningEncryptedContent.value);
     }
 
     if (values.isEmpty) {
@@ -1604,7 +1767,11 @@ final class OpenAIResponsesCodec {
     return logprobs.topLogProbs ?? OpenAILogProbs.responsesMaxTopLogProbs;
   }
 
-  Map<String, Object?>? _encodeOpenAICompactionItem(CustomPromptPart part) {
+  Map<String, Object?>? _encodeOpenAICompactionItem(
+    CustomPromptPart part, {
+    required bool store,
+    required bool hasConversation,
+  }) {
     final data = part.data is Map
         ? Map<String, Object?>.from(part.data as Map)
         : const <String, Object?>{};
@@ -1616,6 +1783,14 @@ final class OpenAIResponsesCodec {
     final encryptedContent = _asString(metadata?['encryptedContent']) ??
         _asString(data['encrypted_content']) ??
         _asString(data['encryptedContent']);
+
+    if (hasConversation && id != null) {
+      return null;
+    }
+
+    if (store && id != null) {
+      return _encodeItemReference(id);
+    }
 
     if (id == null || encryptedContent == null) {
       return null;
@@ -1638,6 +1813,13 @@ final class OpenAIResponsesCodec {
     }
 
     return item;
+  }
+
+  Map<String, Object?> _encodeItemReference(String id) {
+    return {
+      'type': 'item_reference',
+      'id': id,
+    };
   }
 
   ProviderMetadata? _providerMetadata(Map<String, Object?> values) {

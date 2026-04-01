@@ -114,8 +114,9 @@ This slice closes another real OpenAI mainline gap with `repo-ref/ai`:
 
 The more meaningful remaining OpenAI questions are now:
 
-- whether any remaining Responses-only persistence or continuation policy
-  should later surface above `previousResponseId`
+- whether any richer Responses-only hosted-tool or custom item-family replay
+  should later surface above the now-implemented `store` / `conversation`
+  subset
 - whether any search-preview or other model-family quirks deserve separate
   audited request-shaping slices
 - whether assistant replay should ever broaden beyond the current conservative

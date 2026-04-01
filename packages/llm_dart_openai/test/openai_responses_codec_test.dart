@@ -1,5 +1,5 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
-import 'package:llm_dart_openai/src/openai_options.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
 import 'package:llm_dart_openai/src/openai_responses_codec.dart';
 import 'package:test/test.dart';
 
@@ -187,7 +187,162 @@ void main() {
     });
 
     test(
-        'encodes assistant replay metadata for text, reasoning, tool calls, and compaction',
+        'encodes full assistant replay items for text, reasoning, tool calls, and compaction when store is false',
+        () {
+      const codec = OpenAIResponsesCodec();
+
+      final request = codec.encodeRequest(
+        modelId: 'gpt-5-mini',
+        prompt: [
+          UserPromptMessage.text('Hi'),
+          AssistantPromptMessage(
+            parts: const [
+              TextPromptPart(
+                'Commentary',
+                providerMetadata: ProviderMetadata({
+                  'openai': {
+                    'itemId': 'msg_commentary',
+                    'phase': 'commentary',
+                  },
+                }),
+              ),
+              TextPromptPart(
+                'Final answer',
+                providerMetadata: ProviderMetadata({
+                  'openai': {
+                    'itemId': 'msg_final',
+                    'phase': 'final_answer',
+                  },
+                }),
+              ),
+              ReasoningPromptPart(
+                'Thinking step 1',
+                providerMetadata: ProviderMetadata({
+                  'openai': {
+                    'itemId': 'rs_1',
+                    'encryptedContent': 'enc_1',
+                  },
+                }),
+              ),
+              ReasoningPromptPart(
+                'Thinking step 2',
+                providerMetadata: ProviderMetadata({
+                  'openai': {
+                    'itemId': 'rs_1',
+                    'reasoningEncryptedContent': 'enc_2',
+                  },
+                }),
+              ),
+              ToolCallPromptPart(
+                toolCallId: 'call_1',
+                toolName: 'weather',
+                input: {
+                  'city': 'Hong Kong',
+                },
+                providerMetadata: ProviderMetadata({
+                  'openai': {
+                    'itemId': 'fc_1',
+                  },
+                }),
+              ),
+              CustomPromptPart(
+                kind: 'openai.compaction',
+                data: {
+                  'encryptedContent': 'enc_comp',
+                  'compact_threshold': 50000,
+                },
+                providerMetadata: ProviderMetadata({
+                  'openai': {
+                    'itemId': 'cmp_1',
+                  },
+                }),
+              ),
+            ],
+          ),
+        ],
+        tools: const [],
+        toolChoice: null,
+        options: const GenerateTextOptions(),
+        providerOptions: const OpenAIGenerateTextOptions(
+          store: false,
+        ),
+        stream: false,
+      );
+
+      expect(
+        request.body['input'],
+        [
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'input_text',
+                'text': 'Hi',
+              },
+            ],
+          },
+          {
+            'role': 'assistant',
+            'id': 'msg_commentary',
+            'phase': 'commentary',
+            'content': [
+              {
+                'type': 'output_text',
+                'text': 'Commentary',
+              },
+            ],
+          },
+          {
+            'role': 'assistant',
+            'id': 'msg_final',
+            'phase': 'final_answer',
+            'content': [
+              {
+                'type': 'output_text',
+                'text': 'Final answer',
+              },
+            ],
+          },
+          {
+            'type': 'reasoning',
+            'id': 'rs_1',
+            'encrypted_content': 'enc_2',
+            'summary': [
+              {
+                'type': 'summary_text',
+                'text': 'Thinking step 1',
+              },
+              {
+                'type': 'summary_text',
+                'text': 'Thinking step 2',
+              },
+            ],
+          },
+          {
+            'type': 'function_call',
+            'call_id': 'call_1',
+            'id': 'fc_1',
+            'name': 'weather',
+            'arguments': '{"city":"Hong Kong"}',
+          },
+          {
+            'type': 'compaction',
+            'id': 'cmp_1',
+            'encrypted_content': 'enc_comp',
+            'compact_threshold': 50000,
+          },
+        ],
+      );
+
+      expect(request.body['store'], isFalse);
+      expect(
+        request.body['include'],
+        contains('reasoning.encrypted_content'),
+      );
+    });
+
+    test(
+        'uses item references for stored assistant replay items by default on the Responses path',
         () {
       const codec = OpenAIResponsesCodec();
 
@@ -280,54 +435,166 @@ void main() {
             ],
           },
           {
-            'role': 'assistant',
+            'type': 'item_reference',
             'id': 'msg_commentary',
-            'phase': 'commentary',
+          },
+          {
+            'type': 'item_reference',
+            'id': 'msg_final',
+          },
+          {
+            'type': 'item_reference',
+            'id': 'rs_1',
+          },
+          {
+            'type': 'item_reference',
+            'id': 'fc_1',
+          },
+          {
+            'type': 'item_reference',
+            'id': 'cmp_1',
+          },
+        ],
+      );
+      expect(request.body.containsKey('store'), isFalse);
+    });
+
+    test('skips stored assistant replay items when conversation is set', () {
+      const codec = OpenAIResponsesCodec();
+
+      final request = codec.encodeRequest(
+        modelId: 'gpt-5-mini',
+        prompt: [
+          UserPromptMessage.text('Hi'),
+          AssistantPromptMessage(
+            parts: const [
+              TextPromptPart(
+                'Existing answer',
+                providerMetadata: ProviderMetadata({
+                  'openai': {
+                    'itemId': 'msg_existing',
+                    'phase': 'final_answer',
+                  },
+                }),
+              ),
+              TextPromptPart('New answer fragment'),
+              ReasoningPromptPart(
+                'Existing reasoning',
+                providerMetadata: ProviderMetadata({
+                  'openai': {
+                    'itemId': 'rs_existing',
+                    'encryptedContent': 'enc_existing',
+                  },
+                }),
+              ),
+              ToolCallPromptPart(
+                toolCallId: 'call_existing',
+                toolName: 'weather',
+                input: {
+                  'city': 'Hong Kong',
+                },
+                providerMetadata: ProviderMetadata({
+                  'openai': {
+                    'itemId': 'fc_existing',
+                  },
+                }),
+              ),
+              CustomPromptPart(
+                kind: 'openai.compaction',
+                data: {
+                  'encryptedContent': 'enc_comp',
+                },
+                providerMetadata: ProviderMetadata({
+                  'openai': {
+                    'itemId': 'cmp_existing',
+                  },
+                }),
+              ),
+            ],
+          ),
+        ],
+        tools: const [],
+        toolChoice: null,
+        options: const GenerateTextOptions(),
+        providerOptions: const OpenAIGenerateTextOptions(
+          conversation: 'conv_123',
+        ),
+        stream: false,
+      );
+
+      expect(
+        request.body['input'],
+        [
+          {
+            'role': 'user',
             'content': [
               {
-                'type': 'output_text',
-                'text': 'Commentary',
+                'type': 'input_text',
+                'text': 'Hi',
               },
             ],
           },
           {
             'role': 'assistant',
-            'id': 'msg_final',
-            'phase': 'final_answer',
             'content': [
               {
                 'type': 'output_text',
-                'text': 'Final answer',
+                'text': 'New answer fragment',
+              },
+            ],
+          },
+        ],
+      );
+      expect(request.body['conversation'], 'conv_123');
+    });
+
+    test(
+        'adds an item reference before MCP approval responses when store is enabled',
+        () {
+      const codec = OpenAIResponsesCodec();
+
+      final request = codec.encodeRequest(
+        modelId: 'gpt-4.1-mini',
+        prompt: [
+          UserPromptMessage.text('Approve the MCP tool.'),
+          ToolPromptMessage(
+            toolName: 'mcp.create_short_url',
+            parts: const [
+              ToolApprovalResponsePromptPart(
+                approvalId: 'approval-1',
+                toolCallId: 'approval-1',
+                approved: true,
+              ),
+            ],
+          ),
+        ],
+        tools: const [],
+        toolChoice: null,
+        options: const GenerateTextOptions(),
+        providerOptions: const OpenAIGenerateTextOptions(),
+        stream: false,
+      );
+
+      expect(
+        request.body['input'],
+        [
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'input_text',
+                'text': 'Approve the MCP tool.',
               },
             ],
           },
           {
-            'type': 'reasoning',
-            'id': 'rs_1',
-            'encrypted_content': 'enc_2',
-            'summary': [
-              {
-                'type': 'summary_text',
-                'text': 'Thinking step 1',
-              },
-              {
-                'type': 'summary_text',
-                'text': 'Thinking step 2',
-              },
-            ],
+            'type': 'item_reference',
+            'id': 'approval-1',
           },
           {
-            'type': 'function_call',
-            'call_id': 'call_1',
-            'id': 'fc_1',
-            'name': 'weather',
-            'arguments': '{"city":"Hong Kong"}',
-          },
-          {
-            'type': 'compaction',
-            'id': 'cmp_1',
-            'encrypted_content': 'enc_comp',
-            'compact_threshold': 50000,
+            'type': 'mcp_approval_response',
+            'approval_request_id': 'approval-1',
+            'approve': true,
           },
         ],
       );
@@ -401,6 +668,50 @@ void main() {
       expect(
         customPart.providerMetadata?['openai'],
         containsPair('encryptedContent', 'enc_comp'),
+      );
+    });
+
+    test('decodes image generation and mcp list tools as custom content parts',
+        () {
+      const codec = OpenAIResponsesCodec();
+
+      final result = codec.decodeGenerateResponse({
+        'id': 'resp_custom_outputs',
+        'status': 'completed',
+        'output': [
+          {
+            'id': 'img_1',
+            'type': 'image_generation_call',
+            'result': 'AAEC',
+          },
+          {
+            'id': 'mcp_tools_1',
+            'type': 'mcp_list_tools',
+            'server_label': 'zip1',
+            'tools': [
+              {
+                'name': 'create_short_url',
+              },
+              {
+                'name': 'get_status',
+              },
+            ],
+          },
+        ],
+      });
+
+      final customParts = OpenAICustomPart.parseContentParts(result.content);
+      expect(customParts, hasLength(2));
+      expect(customParts[0], isA<OpenAIImageGenerationCallCustomPart>());
+      expect(
+        (customParts[0] as OpenAIImageGenerationCallCustomPart)
+            .decodeImageBytes(),
+        [0, 1, 2],
+      );
+      expect(customParts[1], isA<OpenAIMcpListToolsCustomPart>());
+      expect(
+        (customParts[1] as OpenAIMcpListToolsCustomPart).toolNames,
+        ['create_short_url', 'get_status'],
       );
     });
   });

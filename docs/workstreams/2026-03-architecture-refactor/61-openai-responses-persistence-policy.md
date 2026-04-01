@@ -4,6 +4,11 @@
 
 This note audits the remaining OpenAI Responses gap against `repo-ref/ai` from the perspective of persistence policy rather than prompt-model shape.
 
+Implementation status:
+
+- the architectural conclusion in this note remains unchanged
+- the current implementation status now lives in [66-openai-responses-persistence-status.md](66-openai-responses-persistence-status.md)
+
 The goal is to answer one question precisely:
 
 - should `llm_dart` treat `store`, `conversation`, and `item_reference` as shared architecture, or as OpenAI-owned continuation policy?
