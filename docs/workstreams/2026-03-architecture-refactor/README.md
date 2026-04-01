@@ -6,7 +6,7 @@
 
 - `LLMConfig.extensions` and `ChatMessage.extensions` now carry too many provider-specific concerns.
 - `ChatCapability`, `AudioCapability`, `ImageGenerationCapability`, and similar interfaces are mixed with concrete provider behavior.
-- `LLMBuilder`, `capability.dart`, and `chat_models.dart` have gradually turned into bus files.
+- `LLMBuilder`, `capability.dart`, and `chat_models.dart` had gradually turned into bus files before the current root-facade decomposition pass.
 - OpenAI, OpenAI-compatible providers, DeepSeek, xAI, Groq, and Phind contain repeated code and conditional branching.
 - Flutter integration is still too close to direct provider calls and lacks a real chat-focused message and session layer.
 
@@ -166,6 +166,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Audit of the remaining root-package bus files, the frozen decomposition order, and the decision to keep the root package as a shrinking compatibility facade over smaller modules.
 - [73-llm-builder-decomposition.md](73-llm-builder-decomposition.md)
   - Status note for the internal `LLMBuilder` split into responsibility-focused same-library modules while keeping the public fluent builder API unchanged.
+- [74-chat-models-decomposition.md](74-chat-models-decomposition.md)
+  - Status note for splitting legacy chat message/value models into same-library compatibility modules while keeping the public model names unchanged.
+- [75-capability-decomposition.md](75-capability-decomposition.md)
+  - Status note for splitting the legacy capability surface into focused same-library modules while keeping the public compatibility interfaces unchanged.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
@@ -217,7 +221,7 @@ This workstream is not about a file-moving refactor. It is about defining stable
 ### Current Audit Signals
 
 - The current `lib/` directory contains 134 source files, and `providers/` alone accounts for 96 of them.
-- `LLMBuilder`, `capability.dart`, and `chat_models.dart` have already become bus files.
+- The previous root compatibility hotspots have now been decomposed into shell files plus same-library parts, so the remaining root cleanup is mostly about API semantics and deprecation policy rather than large implementation bus files.
 - `extensions/getExtension/extension` related entry points appear 258 times in `lib/`, which means string-based extensions have already become a primary design path.
 - `dio` appears 70 times across `lib/packages/test/example`, which shows that transport details have already leaked into too many layers.
 
