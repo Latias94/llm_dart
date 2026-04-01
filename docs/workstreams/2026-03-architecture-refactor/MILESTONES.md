@@ -209,6 +209,7 @@ Current status:
 - `capability.dart` is now also decomposed into provider declarations, chat, generation, audio, image, and management modules while keeping the public legacy capability surface unchanged
 - `chat_route_compatibility.dart` is now also decomposed into OpenAI-family, Google/Anthropic, and shared support modules while keeping bridge-gating decisions unchanged
 - `legacy_chat_adapter.dart` is now also decomposed into request, response, and streaming helpers while preserving subclass-owned conversion behavior such as Anthropic replay mapping
+- `anthropic_legacy_extensions.dart` is now also decomposed into value models, top-level analyzer, raw-block parsers, and JSON/validation helpers while keeping the audited Anthropic legacy replay contract unchanged
 - the remaining root-package compatibility cleanup is now mostly semantic tightening and deprecation planning rather than more large-file decomposition
 - the next recommended milestone is now explicit: expand provider coverage tests and renderer helpers without widening the shared event model
 - the next provider-specific implementation step is now also explicit: re-audit broader OpenRouter search mapping and any xAI subsets beyond the audited legacy live-search migration subset

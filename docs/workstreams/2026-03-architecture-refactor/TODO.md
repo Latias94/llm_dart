@@ -176,6 +176,7 @@
 - [x] Decompose root `chat_models.dart` into barrel-managed compatibility modules without changing current public exports
 - [x] Decompose root `capability.dart` into barrel-managed compatibility modules without changing current public exports
 - [x] Decompose compatibility route gating and the legacy chat adapter into focused compatibility modules without changing current bridge decisions
+- [x] Decompose `anthropic_legacy_extensions.dart` into focused provider-owned compatibility parser modules without changing the audited raw-block contract
 - [x] Route `LLMBuilder.build()` through compat provider subclasses for OpenAI / Google / Anthropic chat
 - [x] Implement the old `ChatCapability` adapter
 - [x] Implement migration adaptation from old `ChatMessage` / `Tool` to new prompt and tool models
