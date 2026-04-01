@@ -512,10 +512,11 @@ final class OpenAIChatCompletionsCodec {
         return const [];
       }
 
+      final encodedText = textParts.join();
       return [
         {
           'role': 'assistant',
-          if (textParts.isNotEmpty) 'content': textParts.join(),
+          'content': encodedText,
           if (encodedToolCalls.isNotEmpty) 'tool_calls': encodedToolCalls,
         },
       ];

@@ -2142,6 +2142,220 @@ void main() {
     });
 
     test(
+        'chat completions replay keeps assistant tool-only turns with empty content and encodes common tool results',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'chatcmpl_tool_only_replay_1',
+                'model': 'gpt-4.1-mini',
+                'created': 1710000102,
+                'choices': [
+                  {
+                    'index': 0,
+                    'finish_reason': 'stop',
+                    'message': {
+                      'role': 'assistant',
+                      'content': 'Replay accepted.',
+                    },
+                  },
+                ],
+                'usage': {
+                  'prompt_tokens': 5,
+                  'completion_tokens': 2,
+                  'total_tokens': 7,
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel(
+        'gpt-4.1-mini',
+        settings: const OpenAIChatModelSettings(
+          useResponsesApi: false,
+        ),
+      );
+
+      final result = await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage.text('Continue after the tool call.'),
+            AssistantPromptMessage(
+              parts: [
+                ToolCallPromptPart(
+                  toolCallId: 'call_1',
+                  toolName: 'weather',
+                  input: {
+                    'city': 'Hong Kong',
+                  },
+                ),
+              ],
+            ),
+            ToolPromptMessage(
+              toolName: 'weather',
+              parts: [
+                ToolResultPromptPart(
+                  toolCallId: 'call_1',
+                  toolName: 'weather',
+                  output: {
+                    'temperatureC': 26,
+                    'condition': 'Cloudy',
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(
+        requestBody['messages'],
+        [
+          {
+            'role': 'user',
+            'content': 'Continue after the tool call.',
+          },
+          {
+            'role': 'assistant',
+            'content': '',
+            'tool_calls': [
+              {
+                'id': 'call_1',
+                'type': 'function',
+                'function': {
+                  'name': 'weather',
+                  'arguments': '{"city":"Hong Kong"}',
+                },
+              },
+            ],
+          },
+          {
+            'role': 'tool',
+            'tool_call_id': 'call_1',
+            'content': '{"temperatureC":26,"condition":"Cloudy"}',
+          },
+        ],
+      );
+      expect(result.text, 'Replay accepted.');
+      expect(result.warnings, isEmpty);
+    });
+
+    test(
+        'chat completions replay encodes failed common tool results as fallback text',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'chatcmpl_tool_error_replay_1',
+                'model': 'gpt-4.1-mini',
+                'created': 1710000103,
+                'choices': [
+                  {
+                    'index': 0,
+                    'finish_reason': 'stop',
+                    'message': {
+                      'role': 'assistant',
+                      'content': 'Handled the failure.',
+                    },
+                  },
+                ],
+                'usage': {
+                  'prompt_tokens': 5,
+                  'completion_tokens': 2,
+                  'total_tokens': 7,
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel(
+        'gpt-4.1-mini',
+        settings: const OpenAIChatModelSettings(
+          useResponsesApi: false,
+        ),
+      );
+
+      final result = await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage.text('Continue after the failed tool call.'),
+            AssistantPromptMessage(
+              parts: [
+                ToolCallPromptPart(
+                  toolCallId: 'call_1',
+                  toolName: 'weather',
+                  input: {
+                    'city': 'Hong Kong',
+                  },
+                ),
+              ],
+            ),
+            ToolPromptMessage(
+              toolName: 'weather',
+              parts: [
+                ToolResultPromptPart(
+                  toolCallId: 'call_1',
+                  toolName: 'weather',
+                  output: null,
+                  isError: true,
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(
+        requestBody['messages'],
+        [
+          {
+            'role': 'user',
+            'content': 'Continue after the failed tool call.',
+          },
+          {
+            'role': 'assistant',
+            'content': '',
+            'tool_calls': [
+              {
+                'id': 'call_1',
+                'type': 'function',
+                'function': {
+                  'name': 'weather',
+                  'arguments': '{"city":"Hong Kong"}',
+                },
+              },
+            ],
+          },
+          {
+            'role': 'tool',
+            'tool_call_id': 'call_1',
+            'content': 'Tool execution failed',
+          },
+        ],
+      );
+      expect(result.text, 'Handled the failure.');
+      expect(result.warnings, isEmpty);
+    });
+
+    test(
         'xAI chat completions encode typed live-search options and decode citations',
         () async {
       TransportRequest? capturedRequest;

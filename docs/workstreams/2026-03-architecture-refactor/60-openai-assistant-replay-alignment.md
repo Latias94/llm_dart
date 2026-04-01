@@ -30,8 +30,17 @@ The migrated `llm_dart_openai` chat-completions codec matches that boundary:
 
 - assistant `TextPromptPart` is replayed
 - assistant common `ToolCallPromptPart` is replayed
+- user-side common `ToolResultPromptPart` replay is encoded back into `role: tool`
+  messages
 - provider-executed or dynamic tool calls are warning-dropped
 - reasoning, reasoning-file, custom, image, file, approval, and assistant-side tool-result parts are warning-dropped
+
+That common replay subset is now also locked by direct regression coverage for:
+
+- assistant text plus tool-call replay
+- assistant tool-call-only replay
+- common tool-result JSON replay
+- failed common tool-result fallback text replay
 
 Conclusion:
 
@@ -95,5 +104,6 @@ The current OpenAI assistant replay warnings are no longer the main migration bl
 
 The more valuable remaining work is:
 
-- auditing whether any additional OpenAI-owned item families deserve provider-owned support
+- auditing whether any additional OpenAI-owned item families deserve
+  provider-owned support
 - deciding whether OpenAI Responses should ever expose an explicit item-reference optimization policy
