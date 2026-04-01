@@ -170,6 +170,8 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Status note for splitting legacy chat message/value models into same-library compatibility modules while keeping the public model names unchanged.
 - [75-capability-decomposition.md](75-capability-decomposition.md)
   - Status note for splitting the legacy capability surface into focused same-library modules while keeping the public compatibility interfaces unchanged.
+- [76-compatibility-bridge-decomposition.md](76-compatibility-bridge-decomposition.md)
+  - Status note for splitting compatibility route gating and the legacy chat adapter into provider-focused and responsibility-focused modules while keeping bridge behavior unchanged.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
@@ -221,7 +223,7 @@ This workstream is not about a file-moving refactor. It is about defining stable
 ### Current Audit Signals
 
 - The current `lib/` directory contains 134 source files, and `providers/` alone accounts for 96 of them.
-- The previous root compatibility hotspots have now been decomposed into shell files plus same-library parts, so the remaining root cleanup is mostly about API semantics and deprecation policy rather than large implementation bus files.
+- The previous root compatibility hotspots have now been decomposed into shell files plus same-library parts, and the generic compatibility bridge shell has also been split; the largest remaining cleanup hotspots are now mostly provider-specific legacy parsers rather than shared root facades.
 - `extensions/getExtension/extension` related entry points appear 258 times in `lib/`, which means string-based extensions have already become a primary design path.
 - `dio` appears 70 times across `lib/packages/test/example`, which shows that transport details have already leaked into too many layers.
 
