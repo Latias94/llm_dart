@@ -176,6 +176,8 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Status note for splitting the Anthropic-specific legacy raw-block parser into focused compatibility modules while keeping the audited parser contract unchanged.
 - [78-audio-models-decomposition.md](78-audio-models-decomposition.md)
   - Status note for splitting the shared audio model surface into responsibility-focused modules while keeping the public audio API unchanged.
+- [79-tool-models-decomposition.md](79-tool-models-decomposition.md)
+  - Status note for splitting the shared tool model surface into schema, choice, output, and execution modules while keeping the public tool API unchanged.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
@@ -227,7 +229,7 @@ This workstream is not about a file-moving refactor. It is about defining stable
 ### Current Audit Signals
 
 - The current `lib/` directory contains 134 source files, and `providers/` alone accounts for 96 of them.
-- The previous root compatibility hotspots have now been decomposed into shell files plus same-library parts, the generic compatibility bridge shell has also been split, the heaviest Anthropic-specific legacy parser has been decomposed, and the shared audio model layer has now also been split; the remaining large cleanup targets are now mostly the other legacy/shared model files rather than compatibility infrastructure.
+- The previous root compatibility hotspots have now been decomposed into shell files plus same-library parts, the generic compatibility bridge shell has also been split, the heaviest Anthropic-specific legacy parser has been decomposed, and the shared audio/tool model layers have now also been split; the remaining large cleanup targets are now mostly the other legacy/shared model files and config-heavy surfaces rather than compatibility infrastructure.
 - `extensions/getExtension/extension` related entry points appear 258 times in `lib/`, which means string-based extensions have already become a primary design path.
 - `dio` appears 70 times across `lib/packages/test/example`, which shows that transport details have already leaked into too many layers.
 
