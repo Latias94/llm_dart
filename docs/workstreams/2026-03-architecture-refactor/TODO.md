@@ -170,6 +170,10 @@
 
 ## Compatibility Layer
 
+- [x] Audit the remaining root-package bus files and freeze the next decomposition order
+- [x] Decompose `compat_providers.dart` into provider-family compatibility slices and shared routing helpers without changing the current compatibility surface
+- [x] Decompose `LLMBuilder` into provider selection, common config, and capability-build implementation modules without widening the stable builder API
+- [ ] Decompose root `capability.dart` and `chat_models.dart` into barrel-managed compatibility modules without changing current public exports
 - [x] Route `LLMBuilder.build()` through compat provider subclasses for OpenAI / Google / Anthropic chat
 - [x] Implement the old `ChatCapability` adapter
 - [x] Implement migration adaptation from old `ChatMessage` / `Tool` to new prompt and tool models

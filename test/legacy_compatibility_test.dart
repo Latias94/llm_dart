@@ -1040,7 +1040,8 @@ void main() {
             'content': [
               {
                 'type': 'input_file',
-                'file_data': 'BQYHCA==',
+                'filename': 'part-0.pdf',
+                'file_data': 'data:application/pdf;base64,BQYHCA==',
               },
             ],
           },

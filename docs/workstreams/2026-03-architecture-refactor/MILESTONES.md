@@ -203,6 +203,8 @@ Current status:
 - the old root-package compatibility removal window is now frozen as “no earlier than `1.0.0`”
 - fallback-only provider-native Anthropic result families now also carry explicit migration guidance instead of generic unsupported wording
 - provider stream coverage regression tests now explicitly cover OpenAI reasoning and failed-response paths, Anthropic malformed tool-input events, and Google source/file/reasoning-file stream paths
+- the old `compat_providers.dart` implementation bus is now decomposed into provider-family compatibility slices plus shared routing helpers, keeping the root entry stable while reducing the remaining root-package coupling hotspot
+- `LLMBuilder` is now also decomposed into provider selection, common config, search/media config, capability-build, and internal helper modules while keeping the public builder API unchanged
 - the next recommended milestone is now explicit: expand provider coverage tests and renderer helpers without widening the shared event model
 - the next provider-specific implementation step is now also explicit: re-audit broader OpenRouter search mapping and any xAI subsets beyond the audited legacy live-search migration subset
 - incompatible legacy request shapes and bridge-shape conversion failures fall back to the old provider implementation instead of silently dropping provider-specific behavior

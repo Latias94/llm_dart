@@ -162,6 +162,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Status note for the landed OpenAI provider-owned output/helper layer around `image_generation_call`, partial-image stream chunks, `mcp_list_tools`, and Flutter-facing mappers.
 - [71-openai-code-interpreter-native-tool.md](71-openai-code-interpreter-native-tool.md)
   - Status note for the landed OpenAI `code_interpreter` declaration surface and the decision to keep the remaining execution-heavy hosted-tool families deferred.
+- [72-root-package-residual-structure-audit.md](72-root-package-residual-structure-audit.md)
+  - Audit of the remaining root-package bus files, the frozen decomposition order, and the decision to keep the root package as a shrinking compatibility facade over smaller modules.
+- [73-llm-builder-decomposition.md](73-llm-builder-decomposition.md)
+  - Status note for the internal `LLMBuilder` split into responsibility-focused same-library modules while keeping the public fluent builder API unchanged.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
