@@ -133,6 +133,25 @@ void main() {
         expect(json.containsKey('systemPrompt'), isFalse);
         expect(json['extensions'], isEmpty);
       });
+
+      test('should deserialize specific tool choice from JSON', () {
+        final config = LLMConfig.fromJson({
+          'apiKey': 'test-key',
+          'baseUrl': 'https://api.test.com',
+          'model': 'test-model',
+          'toolChoice': {
+            'type': 'function',
+            'function': {'name': 'test_tool'},
+          },
+          'extensions': <String, dynamic>{},
+        });
+
+        expect(
+          config.toolChoice,
+          isA<SpecificToolChoice>()
+              .having((choice) => choice.toolName, 'toolName', 'test_tool'),
+        );
+      });
     });
 
     group('ModelCapabilityConfig', () {
@@ -163,6 +182,54 @@ void main() {
         expect(config.maxContextLength, equals(32768));
         expect(config.disableTemperature, isTrue);
         expect(config.disableTopP, isTrue);
+      });
+    });
+
+    group('OpenAICompatibleProviderConfig', () {
+      test('should prefer explicit default capabilities', () {
+        final config = OpenAICompatibleProviderConfig(
+          providerId: 'test-provider',
+          displayName: 'Test Provider',
+          description: 'Test description',
+          defaultBaseUrl: 'https://api.test.com',
+          defaultModel: 'test-model',
+          supportedCapabilities: {
+            LLMCapability.chat,
+            LLMCapability.streaming,
+          },
+          defaultCapabilities: {
+            LLMCapability.chat,
+          },
+        );
+
+        expect(
+          config.effectiveDefaultCapabilities,
+          equals({
+            LLMCapability.chat,
+          }),
+        );
+      });
+
+      test('should fall back to supported capabilities', () {
+        final config = OpenAICompatibleProviderConfig(
+          providerId: 'test-provider',
+          displayName: 'Test Provider',
+          description: 'Test description',
+          defaultBaseUrl: 'https://api.test.com',
+          defaultModel: 'test-model',
+          supportedCapabilities: {
+            LLMCapability.chat,
+            LLMCapability.streaming,
+          },
+        );
+
+        expect(
+          config.effectiveDefaultCapabilities,
+          equals({
+            LLMCapability.chat,
+            LLMCapability.streaming,
+          }),
+        );
       });
     });
   });

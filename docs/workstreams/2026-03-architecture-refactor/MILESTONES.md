@@ -213,6 +213,7 @@ Current status:
 - `audio_models.dart` is now also decomposed into primitives, TTS, STT, metadata, and stream-event modules while keeping the shared audio model surface unchanged
 - `tool_models.dart` is now also decomposed into schema, tool-choice, structured-output, and execution modules while keeping the shared tool model surface unchanged
 - `assistant_models.dart` is now also decomposed into assistant tools/resources, entities, requests, and responses while keeping the assistant-management model surface unchanged
+- `core/config.dart` is now also decomposed into a library shell plus focused config, helper, provider-profile, and transformer modules while keeping the public configuration surface unchanged
 - the remaining root-package compatibility cleanup is now mostly semantic tightening and deprecation planning rather than more large-file decomposition
 - the next recommended milestone is now explicit: expand provider coverage tests and renderer helpers without widening the shared event model
 - the next provider-specific implementation step is now also explicit: re-audit broader OpenRouter search mapping and any xAI subsets beyond the audited legacy live-search migration subset
