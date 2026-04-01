@@ -76,7 +76,7 @@
 
 - [x] Design the OpenAI-family profile structure
 - [x] Expose OpenAI-family convenience constructors on the root `AI` facade
-- [ ] Complete OpenAI chat migration (see `58-openai-chat-migration-status.md`, `61-openai-responses-persistence-policy.md`, and `64-openai-chat-reasoning-compatibility.md` for the narrowed remaining assistant-replay and provider-owned request-shaping gaps)
+- [ ] Complete OpenAI chat migration (see `58-openai-chat-migration-status.md`, `61-openai-responses-persistence-policy.md`, `64-openai-chat-reasoning-compatibility.md`, and `65-openai-responses-reasoning-compatibility.md` for the narrowed remaining assistant-replay and provider-owned request-shaping gaps)
 - [x] Add the initial OpenAI-family chat-completions mainline
 - [x] Migrate OpenAI responses
 - [x] Preserve OpenAI replay-critical item metadata, reasoning state, and compaction replay
@@ -87,6 +87,7 @@
 - [x] Align provider-owned OpenAI `logprobs` request encoding and provider-metadata decode without widening the shared core
 - [x] Align OpenAI chat-completions provider-owned `systemMessageMode` shaping and default reasoning-model `developer` role without widening the shared prompt model
 - [x] Align OpenAI chat-completions provider-owned reasoning-model compatibility and `serviceTier` gating without widening the shared text-generation spec
+- [x] Align OpenAI Responses provider-owned system-message and reasoning-model compatibility without widening the shared text-generation spec
 - [ ] Implement provider-owned OpenAI Responses persistence options only if a concrete stored-continuation use case requires `store` / `conversation` beyond `previousResponseId`
 - [x] Turn OpenRouter into a profile
 - [x] Turn DeepSeek OpenAI-compatible into a profile

@@ -551,6 +551,598 @@ void main() {
     });
 
     test(
+        'generate defaults Responses system messages to developer for OpenAI reasoning models',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'resp_reasoning_system_1',
+                'model': 'gpt-5.4',
+                'created_at': 1710000000,
+                'status': 'completed',
+                'output': [
+                  {
+                    'id': 'msg_1',
+                    'type': 'message',
+                    'status': 'completed',
+                    'role': 'assistant',
+                    'content': [
+                      {
+                        'type': 'output_text',
+                        'text': 'Done.',
+                        'annotations': [],
+                      },
+                    ],
+                  },
+                ],
+                'usage': {
+                  'input_tokens': 2,
+                  'output_tokens': 1,
+                  'total_tokens': 3,
+                  'output_tokens_details': {
+                    'reasoning_tokens': 1,
+                  },
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel('gpt-5.4');
+
+      final result = await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            SystemPromptMessage.text('Think carefully.'),
+            UserPromptMessage.text('Say done.'),
+          ],
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(
+        requestBody['input'],
+        [
+          {
+            'role': 'developer',
+            'content': 'Think carefully.',
+          },
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'input_text',
+                'text': 'Say done.',
+              },
+            ],
+          },
+        ],
+      );
+      expect(result.warnings, isEmpty);
+    });
+
+    test('generate can remove Responses system messages with a warning',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'resp_remove_system_1',
+                'model': 'gpt-4.1-mini',
+                'created_at': 1710000000,
+                'status': 'completed',
+                'output': [
+                  {
+                    'id': 'msg_1',
+                    'type': 'message',
+                    'status': 'completed',
+                    'role': 'assistant',
+                    'content': [
+                      {
+                        'type': 'output_text',
+                        'text': 'Done.',
+                        'annotations': [],
+                      },
+                    ],
+                  },
+                ],
+                'usage': {
+                  'input_tokens': 1,
+                  'output_tokens': 1,
+                  'total_tokens': 2,
+                  'output_tokens_details': {
+                    'reasoning_tokens': 0,
+                  },
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel('gpt-4.1-mini');
+
+      final result = await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            SystemPromptMessage.text('Think carefully.'),
+            UserPromptMessage.text('Say done.'),
+          ],
+          callOptions: const CallOptions(
+            providerOptions: OpenAIGenerateTextOptions(
+              systemMessageMode: OpenAISystemMessageMode.remove,
+            ),
+          ),
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(
+        requestBody['input'],
+        [
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'input_text',
+                'text': 'Say done.',
+              },
+            ],
+          },
+        ],
+      );
+      expect(
+        result.warnings,
+        contains(
+          const ModelWarning(
+            type: ModelWarningType.other,
+            field: 'prompt.system',
+            message: 'system messages are removed for this model',
+          ),
+        ),
+      );
+    });
+
+    test(
+        'generate applies Responses reasoning compatibility for OpenAI reasoning models',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'resp_reasoning_options_1',
+                'model': 'o4-mini',
+                'created_at': 1710000000,
+                'status': 'completed',
+                'output': [
+                  {
+                    'id': 'msg_1',
+                    'type': 'message',
+                    'status': 'completed',
+                    'role': 'assistant',
+                    'content': [
+                      {
+                        'type': 'output_text',
+                        'text': 'Done.',
+                        'annotations': [],
+                      },
+                    ],
+                  },
+                ],
+                'usage': {
+                  'input_tokens': 1,
+                  'output_tokens': 1,
+                  'total_tokens': 2,
+                  'output_tokens_details': {
+                    'reasoning_tokens': 1,
+                  },
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel('o4-mini');
+
+      final result = await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage.text('Say done.'),
+          ],
+          options: const GenerateTextOptions(
+            maxOutputTokens: 48,
+            temperature: 0.5,
+            topP: 0.7,
+          ),
+          callOptions: const CallOptions(
+            providerOptions: OpenAIGenerateTextOptions(
+              reasoningEffort: OpenAIReasoningEffort.high,
+            ),
+          ),
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(requestBody['max_output_tokens'], 48);
+      expect(
+        requestBody['reasoning'],
+        {
+          'effort': 'high',
+        },
+      );
+      expect(requestBody.containsKey('temperature'), isFalse);
+      expect(requestBody.containsKey('top_p'), isFalse);
+      expect(
+        result.warnings,
+        containsAll([
+          const ModelWarning(
+            type: ModelWarningType.unsupported,
+            field: 'temperature',
+            message: 'temperature is not supported for reasoning models',
+          ),
+          const ModelWarning(
+            type: ModelWarningType.unsupported,
+            field: 'topP',
+            message: 'topP is not supported for reasoning models',
+          ),
+        ]),
+      );
+    });
+
+    test(
+        'generate forceReasoning applies Responses reasoning compatibility for unrecognized models',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'resp_force_reasoning_1',
+                'model': 'stealth-reasoning-model',
+                'created_at': 1710000000,
+                'status': 'completed',
+                'output': [
+                  {
+                    'id': 'msg_1',
+                    'type': 'message',
+                    'status': 'completed',
+                    'role': 'assistant',
+                    'content': [
+                      {
+                        'type': 'output_text',
+                        'text': 'Done.',
+                        'annotations': [],
+                      },
+                    ],
+                  },
+                ],
+                'usage': {
+                  'input_tokens': 2,
+                  'output_tokens': 1,
+                  'total_tokens': 3,
+                  'output_tokens_details': {
+                    'reasoning_tokens': 1,
+                  },
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel('stealth-reasoning-model');
+
+      final result = await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            SystemPromptMessage.text('Think carefully.'),
+            UserPromptMessage.text('Say done.'),
+          ],
+          options: const GenerateTextOptions(
+            temperature: 0.5,
+            topP: 0.7,
+          ),
+          callOptions: const CallOptions(
+            providerOptions: OpenAIGenerateTextOptions(
+              forceReasoning: true,
+              reasoningEffort: OpenAIReasoningEffort.low,
+            ),
+          ),
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(
+        requestBody['input'],
+        [
+          {
+            'role': 'developer',
+            'content': 'Think carefully.',
+          },
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'input_text',
+                'text': 'Say done.',
+              },
+            ],
+          },
+        ],
+      );
+      expect(
+        requestBody['reasoning'],
+        {
+          'effort': 'low',
+        },
+      );
+      expect(requestBody.containsKey('temperature'), isFalse);
+      expect(requestBody.containsKey('top_p'), isFalse);
+      expect(
+        result.warnings,
+        containsAll([
+          const ModelWarning(
+            type: ModelWarningType.unsupported,
+            field: 'temperature',
+            message: 'temperature is not supported for reasoning models',
+          ),
+          const ModelWarning(
+            type: ModelWarningType.unsupported,
+            field: 'topP',
+            message: 'topP is not supported for reasoning models',
+          ),
+        ]),
+      );
+    });
+
+    test(
+        'generate allows Responses non-reasoning parameters for gpt-5.4 when reasoningEffort is none',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'resp_reasoning_none_1',
+                'model': 'gpt-5.4',
+                'created_at': 1710000000,
+                'status': 'completed',
+                'output': [
+                  {
+                    'id': 'msg_1',
+                    'type': 'message',
+                    'status': 'completed',
+                    'role': 'assistant',
+                    'content': [
+                      {
+                        'type': 'output_text',
+                        'text': 'Done.',
+                        'annotations': [],
+                      },
+                    ],
+                  },
+                ],
+                'usage': {
+                  'input_tokens': 1,
+                  'output_tokens': 1,
+                  'total_tokens': 2,
+                  'output_tokens_details': {
+                    'reasoning_tokens': 1,
+                  },
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel('gpt-5.4');
+
+      final result = await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage.text('Say done.'),
+          ],
+          options: const GenerateTextOptions(
+            temperature: 0.5,
+            topP: 0.7,
+          ),
+          callOptions: const CallOptions(
+            providerOptions: OpenAIGenerateTextOptions(
+              reasoningEffort: OpenAIReasoningEffort.none,
+            ),
+          ),
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(
+        requestBody['reasoning'],
+        {
+          'effort': 'none',
+        },
+      );
+      expect(requestBody['temperature'], 0.5);
+      expect(requestBody['top_p'], 0.7);
+      expect(result.warnings, isEmpty);
+    });
+
+    test(
+        'generate warns about Responses reasoningEffort on non-reasoning models',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'resp_non_reasoning_warning_1',
+                'model': 'gpt-4.1-mini',
+                'created_at': 1710000000,
+                'status': 'completed',
+                'output': [
+                  {
+                    'id': 'msg_1',
+                    'type': 'message',
+                    'status': 'completed',
+                    'role': 'assistant',
+                    'content': [
+                      {
+                        'type': 'output_text',
+                        'text': 'Done.',
+                        'annotations': [],
+                      },
+                    ],
+                  },
+                ],
+                'usage': {
+                  'input_tokens': 1,
+                  'output_tokens': 1,
+                  'total_tokens': 2,
+                  'output_tokens_details': {
+                    'reasoning_tokens': 0,
+                  },
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel('gpt-4.1-mini');
+
+      final result = await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage.text('Say done.'),
+          ],
+          callOptions: const CallOptions(
+            providerOptions: OpenAIGenerateTextOptions(
+              reasoningEffort: OpenAIReasoningEffort.low,
+            ),
+          ),
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(requestBody.containsKey('reasoning'), isFalse);
+      expect(
+        result.warnings,
+        contains(
+          const ModelWarning(
+            type: ModelWarningType.unsupported,
+            field: 'reasoningEffort',
+            message:
+                'reasoningEffort is not supported for non-reasoning models',
+          ),
+        ),
+      );
+    });
+
+    test('generate warning-drops unsupported Responses flex service tiers',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'resp_service_tier_warning_1',
+                'model': 'gpt-4o-mini',
+                'created_at': 1710000000,
+                'status': 'completed',
+                'output': [
+                  {
+                    'id': 'msg_1',
+                    'type': 'message',
+                    'status': 'completed',
+                    'role': 'assistant',
+                    'content': [
+                      {
+                        'type': 'output_text',
+                        'text': 'Done.',
+                        'annotations': [],
+                      },
+                    ],
+                  },
+                ],
+                'usage': {
+                  'input_tokens': 1,
+                  'output_tokens': 1,
+                  'total_tokens': 2,
+                  'output_tokens_details': {
+                    'reasoning_tokens': 0,
+                  },
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel('gpt-4o-mini');
+
+      final result = await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage.text('Say done.'),
+          ],
+          callOptions: const CallOptions(
+            providerOptions: OpenAIGenerateTextOptions(
+              serviceTier: 'flex',
+            ),
+          ),
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(requestBody.containsKey('service_tier'), isFalse);
+      expect(
+        result.warnings,
+        contains(
+          const ModelWarning(
+            type: ModelWarningType.unsupported,
+            field: 'serviceTier',
+            message:
+                'flex processing is only available for o3, o4-mini, and gpt-5 models',
+          ),
+        ),
+      );
+    });
+
+    test(
         'generate forwards shared responseFormat from GenerateTextOptions to the Responses request body',
         () async {
       TransportRequest? capturedRequest;
@@ -707,7 +1299,7 @@ void main() {
             providerOptions: OpenAIGenerateTextOptions(
               previousResponseId: 'resp_prev',
               parallelToolCalls: true,
-              serviceTier: 'flex',
+              serviceTier: 'priority',
               verbosity: 'high',
               instructions: 'Retain the response behavior.',
               maxToolCalls: 2,
@@ -735,7 +1327,7 @@ void main() {
       final requestBody = capturedRequest!.body as Map<String, Object?>;
       expect(requestBody['previous_response_id'], 'resp_prev');
       expect(requestBody['parallel_tool_calls'], isTrue);
-      expect(requestBody['service_tier'], 'flex');
+      expect(requestBody['service_tier'], 'priority');
       expect(requestBody['instructions'], 'Retain the response behavior.');
       expect(requestBody['max_tool_calls'], 2);
       expect(

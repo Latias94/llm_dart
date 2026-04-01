@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 
+import 'openai_model_capabilities.dart';
 import 'openai_options.dart';
 import 'openai_response_format.dart';
 import 'resolved_openai_options.dart';
@@ -595,11 +596,13 @@ final class OpenAIChatCompletionsCodec {
       return mode;
     }
 
-    if (_usesOpenAIReasoningCompatibility(modelId, options)) {
-      return OpenAISystemMessageMode.developer;
-    }
+    final capabilities = getOpenAIModelCapabilities(modelId);
+    final isReasoningModel =
+        options.forceReasoning ?? capabilities.isReasoningModel;
 
-    return OpenAISystemMessageMode.system;
+    return isReasoningModel
+        ? OpenAISystemMessageMode.developer
+        : capabilities.systemMessageMode;
   }
 
   void _applyOpenAICompatibilityRules({
@@ -615,11 +618,12 @@ final class OpenAIChatCompletionsCodec {
     final isReasoningModel =
         _usesOpenAIReasoningCompatibility(modelId, providerOptions);
     final reasoningEffort = providerOptions.reasoningEffort;
+    final capabilities = getOpenAIModelCapabilities(modelId);
 
     if (isReasoningModel) {
       final supportsNonReasoningParameters =
           reasoningEffort == OpenAIReasoningEffort.none &&
-              _supportsOpenAINonReasoningParameters(modelId);
+              capabilities.supportsNonReasoningParameters;
 
       if (!supportsNonReasoningParameters) {
         _removeBodyFieldWithWarning(
@@ -683,7 +687,8 @@ final class OpenAIChatCompletionsCodec {
     required List<ModelWarning> warnings,
   }) {
     final serviceTier = body['service_tier'];
-    if (serviceTier == 'flex' && !_supportsOpenAIFlexServiceTier(modelId)) {
+    final capabilities = getOpenAIModelCapabilities(modelId);
+    if (serviceTier == 'flex' && !capabilities.supportsFlexProcessing) {
       body.remove('service_tier');
       warnings.add(
         const ModelWarning(
@@ -695,8 +700,7 @@ final class OpenAIChatCompletionsCodec {
       );
     }
 
-    if (serviceTier == 'priority' &&
-        !_supportsOpenAIPriorityServiceTier(modelId)) {
+    if (serviceTier == 'priority' && !capabilities.supportsPriorityProcessing) {
       body.remove('service_tier');
       warnings.add(
         const ModelWarning(
@@ -731,41 +735,8 @@ final class OpenAIChatCompletionsCodec {
       return false;
     }
 
-    return options.forceReasoning ?? _isOpenAIReasoningChatModel(modelId);
-  }
-
-  bool _isOpenAIReasoningChatModel(String modelId) {
-    return modelId.startsWith('o1') ||
-        modelId.startsWith('o3') ||
-        modelId.startsWith('o4-mini') ||
-        (modelId.startsWith('gpt-5') && !_isOpenAIChatOptimizedModel(modelId));
-  }
-
-  bool _isOpenAIChatOptimizedModel(String modelId) {
-    return modelId.startsWith('gpt-5') && modelId.contains('-chat');
-  }
-
-  bool _supportsOpenAINonReasoningParameters(String modelId) {
-    return modelId.startsWith('gpt-5.1') ||
-        modelId.startsWith('gpt-5.2') ||
-        modelId.startsWith('gpt-5.3') ||
-        modelId.startsWith('gpt-5.4');
-  }
-
-  bool _supportsOpenAIFlexServiceTier(String modelId) {
-    return modelId.startsWith('o3') ||
-        modelId.startsWith('o4-mini') ||
-        (modelId.startsWith('gpt-5') && !_isOpenAIChatOptimizedModel(modelId));
-  }
-
-  bool _supportsOpenAIPriorityServiceTier(String modelId) {
-    return modelId.startsWith('gpt-4') ||
-        ((modelId.startsWith('gpt-5') &&
-                !_isOpenAIChatOptimizedModel(modelId) &&
-                !modelId.startsWith('gpt-5-nano') &&
-                !modelId.startsWith('gpt-5.4-nano')) ||
-            modelId.startsWith('o3') ||
-            modelId.startsWith('o4-mini'));
+    return options.forceReasoning ??
+        getOpenAIModelCapabilities(modelId).isReasoningModel;
   }
 
   Map<String, Object?> _encodeUserPromptMessage(UserPromptMessage message) {

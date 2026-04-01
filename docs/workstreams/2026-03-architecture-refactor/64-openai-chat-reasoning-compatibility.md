@@ -129,8 +129,6 @@ This slice closes another real OpenAI chat-completions gap with `repo-ref/ai`:
 
 The more meaningful remaining questions are now:
 
-- whether the OpenAI Responses mainline should later align its own
-  provider-owned reasoning request shaping with the same level of explicitness
 - whether any search-preview model quirks deserve a separate audited
   chat-completions slice
 - whether assistant replay should ever broaden beyond the current narrow

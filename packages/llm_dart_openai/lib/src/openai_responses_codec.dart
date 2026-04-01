@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 
+import 'openai_model_capabilities.dart';
 import 'openai_native_tools.dart';
 import 'openai_options.dart';
 import 'openai_response_format.dart';
@@ -45,10 +46,24 @@ final class OpenAIResponsesCodec {
     required OpenAIGenerateTextOptions providerOptions,
     required bool stream,
   }) {
+    final warnings = <ModelWarning>[];
     final input = <Object?>[];
+    final capabilities = getOpenAIModelCapabilities(modelId);
+    final isReasoningModel =
+        providerOptions.forceReasoning ?? capabilities.isReasoningModel;
+    final systemMessageMode = providerOptions.systemMessageMode ??
+        (isReasoningModel
+            ? OpenAISystemMessageMode.developer
+            : capabilities.systemMessageMode);
 
     for (final message in prompt) {
-      input.addAll(_encodePromptMessage(message));
+      input.addAll(
+        _encodePromptMessage(
+          message,
+          warnings,
+          systemMessageMode: systemMessageMode,
+        ),
+      );
     }
 
     final include = _resolveInclude(providerOptions);
@@ -88,7 +103,24 @@ final class OpenAIResponsesCodec {
       if (providerOptions.safetyIdentifier != null)
         'safety_identifier': providerOptions.safetyIdentifier,
       if (topLogProbs != null) 'top_logprobs': topLogProbs,
+      if (isReasoningModel && providerOptions.reasoningEffort != null)
+        'reasoning': <String, Object?>{
+          'effort': providerOptions.reasoningEffort!.value,
+        },
     };
+
+    _applyOpenAIReasoningCompatibility(
+      providerOptions: providerOptions,
+      body: body,
+      warnings: warnings,
+      isReasoningModel: isReasoningModel,
+      capabilities: capabilities,
+    );
+    _applyOpenAIServiceTierCompatibility(
+      body: body,
+      warnings: warnings,
+      capabilities: capabilities,
+    );
 
     final encodedTools = _encodeTools(
       tools: tools,
@@ -115,7 +147,10 @@ final class OpenAIResponsesCodec {
       body['response_format'] = _encodeResponseFormat(responseFormat);
     }
 
-    return OpenAIResponsesRequest(body: body);
+    return OpenAIResponsesRequest(
+      body: body,
+      warnings: warnings,
+    );
   }
 
   GenerateTextResult decodeGenerateResponse(
@@ -659,11 +694,26 @@ final class OpenAIResponsesCodec {
     }
   }
 
-  List<Object?> _encodePromptMessage(PromptMessage message) {
+  List<Object?> _encodePromptMessage(
+    PromptMessage message,
+    List<ModelWarning> warnings, {
+    required OpenAISystemMessageMode systemMessageMode,
+  }) {
     if (message is SystemPromptMessage) {
+      if (systemMessageMode == OpenAISystemMessageMode.remove) {
+        warnings.add(
+          const ModelWarning(
+            type: ModelWarningType.other,
+            field: 'prompt.system',
+            message: 'system messages are removed for this model',
+          ),
+        );
+        return const [];
+      }
+
       return [
         {
-          'role': 'system',
+          'role': systemMessageMode.value,
           'content': _joinTextParts(
             role: 'system',
             parts: message.parts,
@@ -695,6 +745,102 @@ final class OpenAIResponsesCodec {
     throw UnsupportedError(
       'Unsupported prompt message type: ${message.runtimeType}',
     );
+  }
+
+  void _applyOpenAIReasoningCompatibility({
+    required OpenAIGenerateTextOptions providerOptions,
+    required Map<String, Object?> body,
+    required List<ModelWarning> warnings,
+    required bool isReasoningModel,
+    required OpenAIModelCapabilities capabilities,
+  }) {
+    final reasoningEffort = providerOptions.reasoningEffort;
+
+    if (isReasoningModel) {
+      final supportsNonReasoningParameters =
+          reasoningEffort == OpenAIReasoningEffort.none &&
+              capabilities.supportsNonReasoningParameters;
+
+      if (!supportsNonReasoningParameters) {
+        _removeBodyFieldWithWarning(
+          body,
+          'temperature',
+          warnings,
+          warning: const ModelWarning(
+            type: ModelWarningType.unsupported,
+            field: 'temperature',
+            message: 'temperature is not supported for reasoning models',
+          ),
+        );
+        _removeBodyFieldWithWarning(
+          body,
+          'top_p',
+          warnings,
+          warning: const ModelWarning(
+            type: ModelWarningType.unsupported,
+            field: 'topP',
+            message: 'topP is not supported for reasoning models',
+          ),
+        );
+      }
+
+      return;
+    }
+
+    if (reasoningEffort != null) {
+      warnings.add(
+        const ModelWarning(
+          type: ModelWarningType.unsupported,
+          field: 'reasoningEffort',
+          message: 'reasoningEffort is not supported for non-reasoning models',
+        ),
+      );
+    }
+  }
+
+  void _applyOpenAIServiceTierCompatibility({
+    required Map<String, Object?> body,
+    required List<ModelWarning> warnings,
+    required OpenAIModelCapabilities capabilities,
+  }) {
+    final serviceTier = body['service_tier'];
+    if (serviceTier == 'flex' && !capabilities.supportsFlexProcessing) {
+      body.remove('service_tier');
+      warnings.add(
+        const ModelWarning(
+          type: ModelWarningType.unsupported,
+          field: 'serviceTier',
+          message:
+              'flex processing is only available for o3, o4-mini, and gpt-5 models',
+        ),
+      );
+    }
+
+    if (serviceTier == 'priority' && !capabilities.supportsPriorityProcessing) {
+      body.remove('service_tier');
+      warnings.add(
+        const ModelWarning(
+          type: ModelWarningType.unsupported,
+          field: 'serviceTier',
+          message:
+              'priority processing is only available for supported models (gpt-4, gpt-5, gpt-5-mini, o3, o4-mini) and requires Enterprise access. gpt-5-nano is not supported',
+        ),
+      );
+    }
+  }
+
+  void _removeBodyFieldWithWarning(
+    Map<String, Object?> body,
+    String key,
+    List<ModelWarning> warnings, {
+    required ModelWarning warning,
+  }) {
+    if (!body.containsKey(key)) {
+      return;
+    }
+
+    body.remove(key);
+    warnings.add(warning);
   }
 
   List<Object?> _encodeAssistantMessage(AssistantPromptMessage message) {
