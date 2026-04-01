@@ -1,6 +1,7 @@
 import '../../../../builder/llm_builder.dart';
 import '../../../../core/capability.dart';
 import '../../../../core/web_search.dart';
+import '../../../../src/config/legacy_config_keys.dart';
 
 /// OpenRouter-specific LLM builder with provider-specific configuration methods
 ///
@@ -23,7 +24,7 @@ class OpenRouterBuilder {
   /// to the refactored compatibility bridge without pretending that richer
   /// legacy search fields have a stable wire contract.
   OpenRouterBuilder onlineSearch() {
-    _baseBuilder.extension('webSearchEnabled', true);
+    _baseBuilder.extension(LegacyExtensionKeys.webSearchEnabled, true);
     return this;
   }
 
@@ -55,12 +56,13 @@ class OpenRouterBuilder {
     bool useOnlineShortcut = true,
   }) {
     _baseBuilder.extension(
-        'webSearchConfig',
-        WebSearchConfig.openRouter(
-          maxResults: maxResults,
-          searchPrompt: searchPrompt,
-          useOnlineShortcut: useOnlineShortcut,
-        ));
+      LegacyExtensionKeys.webSearchConfig,
+      WebSearchConfig.openRouter(
+        maxResults: maxResults,
+        searchPrompt: searchPrompt,
+        useOnlineShortcut: useOnlineShortcut,
+      ),
+    );
     return this;
   }
 
@@ -82,7 +84,7 @@ class OpenRouterBuilder {
     'Use normal prompt shaping or the stable OpenRouter profile API instead.',
   )
   OpenRouterBuilder searchPrompt(String prompt) {
-    _baseBuilder.extension('searchPrompt', prompt);
+    _baseBuilder.extension(LegacyExtensionKeys.searchPrompt, prompt);
     return this;
   }
 
@@ -106,7 +108,7 @@ class OpenRouterBuilder {
     'Use onlineSearch() or an explicit :online model ID instead.',
   )
   OpenRouterBuilder useOnlineShortcut(bool enabled) {
-    _baseBuilder.extension('useOnlineShortcut', enabled);
+    _baseBuilder.extension(LegacyExtensionKeys.useOnlineShortcut, enabled);
     return this;
   }
 
@@ -121,7 +123,7 @@ class OpenRouterBuilder {
     'Use the stable OpenRouter profile API if a tested request contract lands later.',
   )
   OpenRouterBuilder maxSearchResults(int maxResults) {
-    _baseBuilder.extension('maxSearchResults', maxResults);
+    _baseBuilder.extension(LegacyExtensionKeys.maxSearchResults, maxResults);
     return this;
   }
 

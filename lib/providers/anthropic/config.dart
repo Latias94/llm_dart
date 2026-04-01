@@ -1,6 +1,7 @@
 import '../../core/config.dart';
 import '../../src/provider_defaults.dart';
 import '../../core/web_search.dart';
+import '../../src/config/legacy_config_extensions.dart';
 import '../../models/chat_models.dart';
 import '../../models/tool_models.dart';
 
@@ -66,10 +67,8 @@ class AnthropicConfig {
     List<Tool>? tools = config.tools;
 
     // Add web search tool if enabled or configured
-    final webSearchEnabled =
-        config.getExtension<bool>('webSearchEnabled') == true;
-    final webSearchConfig =
-        config.getExtension<WebSearchConfig>('webSearchConfig');
+    final webSearchEnabled = config.legacyWebSearchEnabled;
+    final webSearchConfig = config.legacyWebSearchConfig;
     if (webSearchEnabled || webSearchConfig != null) {
       tools = _addWebSearchTool(tools, webSearchConfig);
     }
@@ -92,10 +91,14 @@ class AnthropicConfig {
       user: config.user,
       serviceTier: config.serviceTier,
       // Anthropic-specific extensions
-      reasoning: config.getExtension<bool>('reasoning') ?? false,
-      thinkingBudgetTokens: config.getExtension<int>('thinkingBudgetTokens'),
-      interleavedThinking:
-          config.getExtension<bool>('interleavedThinking') ?? false,
+      reasoning:
+          config.getExtension<bool>(LegacyExtensionKeys.reasoning) ?? false,
+      thinkingBudgetTokens:
+          config.getExtension<int>(LegacyExtensionKeys.thinkingBudgetTokens),
+      interleavedThinking: config.getExtension<bool>(
+            LegacyExtensionKeys.interleavedThinking,
+          ) ??
+          false,
       originalConfig: config,
     );
   }

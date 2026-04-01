@@ -2,6 +2,7 @@ import '../../builder/llm_builder.dart';
 import '../../core/capability.dart';
 import '../../core/llm_error.dart';
 import '../../models/chat_models.dart';
+import '../../src/config/legacy_config_keys.dart';
 import 'config.dart';
 
 /// Google-specific LLM builder with provider-specific configuration methods
@@ -31,7 +32,7 @@ class GoogleLLMBuilder {
   /// - 'FACT_VERIFICATION' - For fact checking
   /// - 'CODE_RETRIEVAL_QUERY' - For code search queries
   GoogleLLMBuilder embeddingTaskType(String taskType) {
-    _baseBuilder.extension('embeddingTaskType', taskType);
+    _baseBuilder.extension(LegacyExtensionKeys.embeddingTaskType, taskType);
     return this;
   }
 
@@ -39,7 +40,7 @@ class GoogleLLMBuilder {
   ///
   /// Providing a title can improve embedding quality for retrieval tasks.
   GoogleLLMBuilder embeddingTitle(String title) {
-    _baseBuilder.extension('embeddingTitle', title);
+    _baseBuilder.extension(LegacyExtensionKeys.embeddingTitle, title);
     return this;
   }
 
@@ -48,7 +49,7 @@ class GoogleLLMBuilder {
   /// If set, the output embedding will be truncated to this dimension.
   /// Only supported by newer models (not models/embedding-001).
   GoogleLLMBuilder embeddingDimensions(int dimensions) {
-    _baseBuilder.extension('embeddingDimensions', dimensions);
+    _baseBuilder.extension(LegacyExtensionKeys.embeddingDimensions, dimensions);
     return this;
   }
 
@@ -56,49 +57,49 @@ class GoogleLLMBuilder {
   ///
   /// Valid values: ReasoningEffort.low, ReasoningEffort.medium, ReasoningEffort.high
   GoogleLLMBuilder reasoningEffort(ReasoningEffort effort) {
-    _baseBuilder.extension('reasoningEffort', effort);
+    _baseBuilder.extension(LegacyExtensionKeys.reasoningEffort, effort.value);
     return this;
   }
 
   /// Sets thinking budget tokens for reasoning models
   GoogleLLMBuilder thinkingBudgetTokens(int tokens) {
-    _baseBuilder.extension('thinkingBudgetTokens', tokens);
+    _baseBuilder.extension(LegacyExtensionKeys.thinkingBudgetTokens, tokens);
     return this;
   }
 
   /// Enables or disables including thoughts in the response
   GoogleLLMBuilder includeThoughts(bool include) {
-    _baseBuilder.extension('includeThoughts', include);
+    _baseBuilder.extension(LegacyExtensionKeys.includeThoughts, include);
     return this;
   }
 
   /// Enables image generation capability
   GoogleLLMBuilder enableImageGeneration(bool enable) {
-    _baseBuilder.extension('enableImageGeneration', enable);
+    _baseBuilder.extension(LegacyExtensionKeys.enableImageGeneration, enable);
     return this;
   }
 
   /// Sets response modalities (e.g., ['TEXT', 'IMAGE'])
   GoogleLLMBuilder responseModalities(List<String> modalities) {
-    _baseBuilder.extension('responseModalities', modalities);
+    _baseBuilder.extension(LegacyExtensionKeys.responseModalities, modalities);
     return this;
   }
 
   /// Sets safety settings for content filtering
   GoogleLLMBuilder safetySettings(List<SafetySetting> settings) {
-    _baseBuilder.extension('safetySettings', settings);
+    _baseBuilder.extension(LegacyExtensionKeys.safetySettings, settings);
     return this;
   }
 
   /// Sets maximum inline data size (default: 20MB)
   GoogleLLMBuilder maxInlineDataSize(int size) {
-    _baseBuilder.extension('maxInlineDataSize', size);
+    _baseBuilder.extension(LegacyExtensionKeys.maxInlineDataSize, size);
     return this;
   }
 
   /// Sets candidate count for response generation
   GoogleLLMBuilder candidateCount(int count) {
-    _baseBuilder.extension('candidateCount', count);
+    _baseBuilder.extension(LegacyExtensionKeys.candidateCount, count);
     return this;
   }
 

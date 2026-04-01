@@ -1,4 +1,5 @@
 import '../../core/config.dart';
+import '../../src/config/legacy_config_extensions.dart';
 import '../../src/provider_defaults.dart';
 
 /// ElevenLabs provider configuration
@@ -40,11 +41,13 @@ class ElevenLabsConfig {
       model: config.model,
       timeout: config.timeout,
       // ElevenLabs-specific extensions
-      voiceId: config.getExtension<String>('voiceId'),
-      stability: config.getExtension<double>('stability'),
-      similarityBoost: config.getExtension<double>('similarityBoost'),
-      style: config.getExtension<double>('style'),
-      useSpeakerBoost: config.getExtension<bool>('useSpeakerBoost'),
+      voiceId: config.getExtension<String>(LegacyExtensionKeys.voiceId),
+      stability: config.getExtension<double>(LegacyExtensionKeys.stability),
+      similarityBoost:
+          config.getExtension<double>(LegacyExtensionKeys.similarityBoost),
+      style: config.getExtension<double>(LegacyExtensionKeys.style),
+      useSpeakerBoost:
+          config.getExtension<bool>(LegacyExtensionKeys.useSpeakerBoost),
       originalConfig: config,
     );
   }

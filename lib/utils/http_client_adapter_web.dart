@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:logging/logging.dart';
 
 import '../core/config.dart';
+import '../src/config/legacy_config_extensions.dart';
 
 /// Web platform implementation for HTTP client adapter configuration
 class HttpClientAdapterConfig {
@@ -10,10 +11,9 @@ class HttpClientAdapterConfig {
   /// Configure HTTP client adapter with proxy and SSL settings
   /// Web platform implementation with limited functionality
   static void configureHttpClientAdapter(Dio dio, LLMConfig config) {
-    final proxyUrl = config.getExtension<String>('httpProxy');
-    final bypassSSL =
-        config.getExtension<bool>('bypassSSLVerification') ?? false;
-    final certificatePath = config.getExtension<String>('sslCertificate');
+    final proxyUrl = config.legacyHttpProxy;
+    final bypassSSL = config.legacyBypassSslVerification;
+    final certificatePath = config.legacySslCertificatePath;
 
     // Log warnings for unsupported features on web platform
     if (proxyUrl != null && proxyUrl.isNotEmpty) {

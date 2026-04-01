@@ -1,5 +1,6 @@
 import '../../models/tool_models.dart';
 import '../../core/config.dart';
+import '../../src/config/legacy_config_extensions.dart';
 import '../../src/provider_defaults.dart';
 
 /// Ollama provider configuration
@@ -72,15 +73,15 @@ class OllamaConfig {
       topK: config.topK,
       tools: config.tools,
       // Ollama-specific extensions
-      jsonSchema: config.getExtension<StructuredOutputFormat>('jsonSchema'),
-      numCtx: config.getExtension<int>('numCtx'),
-      numGpu: config.getExtension<int>('numGpu'),
-      numThread: config.getExtension<int>('numThread'),
-      numa: config.getExtension<bool>('numa'),
-      numBatch: config.getExtension<int>('numBatch'),
-      keepAlive: config.getExtension<String>('keepAlive'),
-      raw: config.getExtension<bool>('raw'),
-      reasoning: config.getExtension<bool>('reasoning'),
+      jsonSchema: config.legacyJsonSchema,
+      numCtx: config.getExtension<int>(LegacyExtensionKeys.numCtx),
+      numGpu: config.getExtension<int>(LegacyExtensionKeys.numGpu),
+      numThread: config.getExtension<int>(LegacyExtensionKeys.numThread),
+      numa: config.getExtension<bool>(LegacyExtensionKeys.numa),
+      numBatch: config.getExtension<int>(LegacyExtensionKeys.numBatch),
+      keepAlive: config.getExtension<String>(LegacyExtensionKeys.keepAlive),
+      raw: config.getExtension<bool>(LegacyExtensionKeys.raw),
+      reasoning: config.getExtension<bool>(LegacyExtensionKeys.reasoning),
       originalConfig: config,
     );
   }

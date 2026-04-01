@@ -1,5 +1,7 @@
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
+import '../src/config/legacy_config_keys.dart';
+
 /// HTTP configuration builder for LLM providers
 ///
 /// This class provides a fluent interface for configuring HTTP settings
@@ -9,57 +11,61 @@ class HttpConfig {
 
   /// Sets HTTP proxy configuration
   HttpConfig proxy(String proxyUrl) {
-    _config['httpProxy'] = proxyUrl;
+    _config[LegacyExtensionKeys.httpProxy] = proxyUrl;
     return this;
   }
 
   /// Sets custom HTTP headers
   HttpConfig headers(Map<String, String> headers) {
-    _config['customHeaders'] = headers;
+    _config[LegacyExtensionKeys.customHeaders] = headers;
     return this;
   }
 
   /// Sets a single custom HTTP header
   HttpConfig header(String name, String value) {
     final existingHeaders =
-        _config['customHeaders'] as Map<String, String>? ?? <String, String>{};
-    _config['customHeaders'] = {...existingHeaders, name: value};
+        _config[LegacyExtensionKeys.customHeaders] as Map<String, String>? ??
+            <String, String>{};
+    _config[LegacyExtensionKeys.customHeaders] = {
+      ...existingHeaders,
+      name: value,
+    };
     return this;
   }
 
   /// Enables SSL certificate verification bypass
   HttpConfig bypassSSLVerification(bool bypass) {
-    _config['bypassSSLVerification'] = bypass;
+    _config[LegacyExtensionKeys.bypassSslVerification] = bypass;
     return this;
   }
 
   /// Sets custom SSL certificate path
   HttpConfig sslCertificate(String certificatePath) {
-    _config['sslCertificate'] = certificatePath;
+    _config[LegacyExtensionKeys.sslCertificate] = certificatePath;
     return this;
   }
 
   /// Sets connection timeout
   HttpConfig connectionTimeout(Duration timeout) {
-    _config['connectionTimeout'] = timeout;
+    _config[LegacyExtensionKeys.connectionTimeout] = timeout;
     return this;
   }
 
   /// Sets receive timeout
   HttpConfig receiveTimeout(Duration timeout) {
-    _config['receiveTimeout'] = timeout;
+    _config[LegacyExtensionKeys.receiveTimeout] = timeout;
     return this;
   }
 
   /// Sets send timeout
   HttpConfig sendTimeout(Duration timeout) {
-    _config['sendTimeout'] = timeout;
+    _config[LegacyExtensionKeys.sendTimeout] = timeout;
     return this;
   }
 
   /// Enables request/response logging for debugging
   HttpConfig enableLogging(bool enable) {
-    _config['enableHttpLogging'] = enable;
+    _config[LegacyExtensionKeys.enableHttpLogging] = enable;
     return this;
   }
 
@@ -79,10 +85,10 @@ class HttpConfig {
   ///     .build();
   /// ```
   HttpConfig transportClient(TransportClient client) {
-    _config['customTransportClient'] = client;
+    _config[LegacyExtensionKeys.customTransportClient] = client;
 
     if (client case DioTransportClient(:final dio)) {
-      _config['customDio'] = dio;
+      _config[LegacyExtensionKeys.customDio] = dio;
     }
 
     return this;

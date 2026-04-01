@@ -2,9 +2,8 @@ import '../../core/capability.dart';
 import '../../core/config.dart';
 import '../../core/registry.dart';
 import '../../src/openai_compatible_configs.dart';
-import '../../core/web_search.dart';
-import '../../models/tool_models.dart';
 import '../../models/chat_models.dart';
+import '../../src/config/legacy_config_extensions.dart';
 import '../openai/openai.dart';
 import 'base_factory.dart';
 
@@ -53,7 +52,7 @@ class OpenAICompatibleProviderFactory
     String? model = config.model;
 
     // Check for webSearchEnabled flag (for OpenRouter)
-    final webSearchEnabled = config.getExtension<bool>('webSearchEnabled');
+    final webSearchEnabled = config.legacyWebSearchEnabled;
     if (webSearchEnabled == true &&
         _isOpenRouter() &&
         !_hasOnlineSuffix(model)) {
@@ -62,8 +61,7 @@ class OpenAICompatibleProviderFactory
     }
 
     // Check for webSearchConfig (for OpenRouter)
-    final webSearchConfig =
-        config.getExtension<WebSearchConfig>('webSearchConfig');
+    final webSearchConfig = config.legacyWebSearchConfig;
     if (webSearchConfig != null &&
         _isOpenRouter() &&
         !_hasOnlineSuffix(model)) {
@@ -87,18 +85,21 @@ class OpenAICompatibleProviderFactory
       user: config.user,
       serviceTier: config.serviceTier,
       // OpenAI-compatible extensions using safe access
-      reasoningEffort: ReasoningEffort.fromString(
-          config.getExtension<String>('reasoningEffort')),
-      jsonSchema: config.getExtension<StructuredOutputFormat>('jsonSchema'),
-      voice: config.getExtension<String>('voice'),
-      embeddingEncodingFormat:
-          config.getExtension<String>('embeddingEncodingFormat'),
-      embeddingDimensions: config.getExtension<int>('embeddingDimensions'),
+      reasoningEffort:
+          ReasoningEffort.fromString(config.legacyReasoningEffortValue),
+      jsonSchema: config.legacyJsonSchema,
+      voice: config.legacyVoice,
+      embeddingEncodingFormat: config.legacyEmbeddingEncodingFormat,
+      embeddingDimensions: config.legacyEmbeddingDimensions,
       // Responses API configuration (most OpenAI-compatible providers don't support this yet)
-      useResponsesAPI: config.getExtension<bool>('useResponsesAPI') ?? false,
-      previousResponseId: config.getExtension<String>('previousResponseId'),
-      builtInTools:
-          config.getExtension<List<OpenAIBuiltInTool>>('builtInTools'),
+      useResponsesAPI:
+          config.getExtension<bool>(LegacyExtensionKeys.useResponsesApi) ??
+              false,
+      previousResponseId:
+          config.getExtension<String>(LegacyExtensionKeys.previousResponseId),
+      builtInTools: config.getExtension<List<OpenAIBuiltInTool>>(
+        LegacyExtensionKeys.builtInTools,
+      ),
       originalConfig: config,
     );
   }

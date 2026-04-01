@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:logging/logging.dart';
 
 import '../core/config.dart';
+import '../src/config/legacy_config_extensions.dart';
 import 'http_client_adapter_stub.dart'
     if (dart.library.io) 'http_client_adapter_io.dart'
     if (dart.library.html) 'http_client_adapter_web.dart';
@@ -47,7 +48,7 @@ class HttpConfigUtils {
   /// Get connection timeout from config or use default
   static Duration _getConnectionTimeout(
       LLMConfig config, Duration? defaultTimeout) {
-    final customTimeout = config.getExtension<Duration>('connectionTimeout');
+    final customTimeout = config.legacyConnectionTimeout;
     return customTimeout ??
         config.timeout ??
         defaultTimeout ??
@@ -57,7 +58,7 @@ class HttpConfigUtils {
   /// Get receive timeout from config or use default
   static Duration _getReceiveTimeout(
       LLMConfig config, Duration? defaultTimeout) {
-    final customTimeout = config.getExtension<Duration>('receiveTimeout');
+    final customTimeout = config.legacyReceiveTimeout;
     return customTimeout ??
         config.timeout ??
         defaultTimeout ??
@@ -66,7 +67,7 @@ class HttpConfigUtils {
 
   /// Get send timeout from config or use default
   static Duration _getSendTimeout(LLMConfig config, Duration? defaultTimeout) {
-    final customTimeout = config.getExtension<Duration>('sendTimeout');
+    final customTimeout = config.legacySendTimeout;
     return customTimeout ??
         config.timeout ??
         defaultTimeout ??
@@ -78,14 +79,10 @@ class HttpConfigUtils {
     Map<String, String> defaultHeaders,
     LLMConfig config,
   ) {
-    final customHeaders =
-        config.getExtension<Map<String, String>>('customHeaders') ??
-            <String, String>{};
-
     // Merge headers, with custom headers taking precedence
     return {
       ...defaultHeaders,
-      ...customHeaders,
+      ...config.legacyCustomHeaders,
     };
   }
 
@@ -97,8 +94,7 @@ class HttpConfigUtils {
 
   /// Configure logging interceptor if enabled
   static void _configureLogging(Dio dio, LLMConfig config) {
-    final enableLogging =
-        config.getExtension<bool>('enableHttpLogging') ?? false;
+    final enableLogging = config.legacyEnableHttpLogging;
 
     if (enableLogging) {
       _logger.info('Enabling HTTP request/response logging');
@@ -160,9 +156,8 @@ class HttpConfigUtils {
   /// Checks for common configuration issues and logs warnings.
   static void validateHttpConfig(LLMConfig config) {
     // Check for conflicting timeout settings
-    final connectionTimeout =
-        config.getExtension<Duration>('connectionTimeout');
-    final receiveTimeout = config.getExtension<Duration>('receiveTimeout');
+    final connectionTimeout = config.legacyConnectionTimeout;
+    final receiveTimeout = config.legacyReceiveTimeout;
     final globalTimeout = config.timeout;
 
     if (connectionTimeout != null &&
@@ -178,8 +173,7 @@ class HttpConfigUtils {
     }
 
     // Check for security issues
-    final bypassSSL =
-        config.getExtension<bool>('bypassSSLVerification') ?? false;
+    final bypassSSL = config.legacyBypassSslVerification;
     if (bypassSSL) {
       if (isAdvancedHttpSupported) {
         _logger.warning(
@@ -191,7 +185,7 @@ class HttpConfigUtils {
     }
 
     // Check proxy configuration
-    final proxyUrl = config.getExtension<String>('httpProxy');
+    final proxyUrl = config.legacyHttpProxy;
     if (proxyUrl != null) {
       if (!isAdvancedHttpSupported) {
         _logger.warning(
@@ -202,7 +196,7 @@ class HttpConfigUtils {
     }
 
     // Check SSL certificate configuration
-    final certificatePath = config.getExtension<String>('sslCertificate');
+    final certificatePath = config.legacySslCertificatePath;
     if (certificatePath != null && !isAdvancedHttpSupported) {
       _logger.warning(
           '⚠️ Custom SSL certificate loading is not supported on this platform');

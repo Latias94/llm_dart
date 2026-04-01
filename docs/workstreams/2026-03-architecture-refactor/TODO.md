@@ -181,6 +181,7 @@
 - [x] Decompose `tool_models.dart` into focused shared model modules without changing current public exports
 - [x] Decompose `assistant_models.dart` into focused shared/legacy model modules without changing current public exports
 - [x] Decompose `core/config.dart` into focused configuration modules without changing current public exports
+- [x] Centralize legacy config extension keys and typed accessors before any deeper migration away from flat compatibility extensions
 - [x] Route `LLMBuilder.build()` through compat provider subclasses for OpenAI / Google / Anthropic chat
 - [x] Implement the old `ChatCapability` adapter
 - [x] Implement migration adaptation from old `ChatMessage` / `Tool` to new prompt and tool models

@@ -1,5 +1,6 @@
 import '../../builder/llm_builder.dart';
 import '../../core/capability.dart';
+import '../../src/config/legacy_config_keys.dart';
 
 /// ElevenLabs-specific LLM builder with provider-specific configuration methods
 ///
@@ -30,7 +31,7 @@ class ElevenLabsBuilder {
   ///     .build();
   /// ```
   ElevenLabsBuilder voiceId(String voiceId) {
-    _baseBuilder.extension('voiceId', voiceId);
+    _baseBuilder.extension(LegacyExtensionKeys.voiceId, voiceId);
     return this;
   }
 
@@ -44,7 +45,7 @@ class ElevenLabsBuilder {
   /// - 1.0: Maximum stability and consistency
   /// - Default: Usually around 0.75
   ElevenLabsBuilder stability(double stability) {
-    _baseBuilder.extension('stability', stability);
+    _baseBuilder.extension(LegacyExtensionKeys.stability, stability);
     return this;
   }
 
@@ -58,7 +59,10 @@ class ElevenLabsBuilder {
   /// - 1.0: Maximum similarity to original voice
   /// - Default: Usually around 0.75
   ElevenLabsBuilder similarityBoost(double similarityBoost) {
-    _baseBuilder.extension('similarityBoost', similarityBoost);
+    _baseBuilder.extension(
+      LegacyExtensionKeys.similarityBoost,
+      similarityBoost,
+    );
     return this;
   }
 
@@ -72,7 +76,7 @@ class ElevenLabsBuilder {
   /// - 1.0: Maximum style exaggeration
   /// - Default: Usually around 0.0
   ElevenLabsBuilder style(double style) {
-    _baseBuilder.extension('style', style);
+    _baseBuilder.extension(LegacyExtensionKeys.style, style);
     return this;
   }
 
@@ -85,7 +89,7 @@ class ElevenLabsBuilder {
   /// - false: Disable speaker boost
   /// - Default: true
   ElevenLabsBuilder useSpeakerBoost(bool enable) {
-    _baseBuilder.extension('useSpeakerBoost', enable);
+    _baseBuilder.extension(LegacyExtensionKeys.useSpeakerBoost, enable);
     return this;
   }
 

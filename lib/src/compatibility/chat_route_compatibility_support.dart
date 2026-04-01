@@ -1,17 +1,6 @@
 part of 'chat_route_compatibility.dart';
 
-const Set<String> _httpExtensionKeys = {
-  'customHeaders',
-  'connectionTimeout',
-  'receiveTimeout',
-  'sendTimeout',
-  'enableHttpLogging',
-  'httpProxy',
-  'bypassSSLVerification',
-  'sslCertificate',
-  'customTransportClient',
-  'customDio',
-};
+const Set<String> _httpExtensionKeys = legacyHttpExtensionKeys;
 
 bool _hasUnsupportedExtensions({
   required LLMConfig config,
@@ -51,13 +40,13 @@ bool _hasGoogleStructuredOutputConflict(
   LLMConfig config,
   List<dynamic>? responseModalities,
 ) {
-  final structuredOutput =
-      config.getExtension<StructuredOutputFormat>('jsonSchema');
+  final structuredOutput = config.legacyJsonSchema;
   if (structuredOutput == null) {
     return false;
   }
 
-  if (config.getExtension<bool>('enableImageGeneration') == true) {
+  if (config.getExtension<bool>(LegacyExtensionKeys.enableImageGeneration) ==
+      true) {
     return true;
   }
 
@@ -110,6 +99,5 @@ bool _hasAnthropicParallelToolOverride(ToolChoice? toolChoice) {
 }
 
 bool hasEnabledWebSearch(LLMConfig config) {
-  return config.getExtension<bool>('webSearchEnabled') == true ||
-      config.getExtension<WebSearchConfig>('webSearchConfig') != null;
+  return config.hasLegacyWebSearch;
 }

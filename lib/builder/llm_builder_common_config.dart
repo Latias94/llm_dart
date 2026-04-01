@@ -56,25 +56,27 @@ extension LLMBuilderCommonConfig on LLMBuilder {
 
   /// Sets the reasoning effort for models that support it (e.g., OpenAI o1, Gemini)
   LLMBuilder reasoningEffort(ReasoningEffort? effort) =>
-      _setExtension('reasoningEffort', effort?.value);
+      _setExtension(LegacyExtensionKeys.reasoningEffort, effort?.value);
 
   /// Sets structured output schema for JSON responses
   LLMBuilder jsonSchema(StructuredOutputFormat schema) =>
-      _setExtension('jsonSchema', schema);
+      _setExtension(LegacyExtensionKeys.jsonSchema, schema);
 
   /// Sets voice for text-to-speech (OpenAI providers)
-  LLMBuilder voice(String voiceName) => _setExtension('voice', voiceName);
+  LLMBuilder voice(String voiceName) =>
+      _setExtension(LegacyExtensionKeys.voice, voiceName);
 
   /// Enables reasoning/thinking for supported providers (Anthropic, OpenAI o1, Ollama)
-  LLMBuilder reasoning(bool enable) => _setExtension('reasoning', enable);
+  LLMBuilder reasoning(bool enable) =>
+      _setExtension(LegacyExtensionKeys.reasoning, enable);
 
   /// Sets thinking budget tokens for Anthropic extended thinking
   LLMBuilder thinkingBudgetTokens(int tokens) =>
-      _setExtension('thinkingBudgetTokens', tokens);
+      _setExtension(LegacyExtensionKeys.thinkingBudgetTokens, tokens);
 
   /// Enables interleaved thinking for Anthropic (Claude 4 models only)
   LLMBuilder interleavedThinking(bool enable) =>
-      _setExtension('interleavedThinking', enable);
+      _setExtension(LegacyExtensionKeys.interleavedThinking, enable);
 
   /// Sets provider-specific extension
   LLMBuilder extension(String key, dynamic value) => _setExtension(key, value);
@@ -95,8 +97,8 @@ extension LLMBuilderCommonConfig on LLMBuilder {
 
   /// Convenience methods for common extensions
   LLMBuilder embeddingEncodingFormat(String format) =>
-      extension('embeddingEncodingFormat', format);
+      extension(LegacyExtensionKeys.embeddingEncodingFormat, format);
 
   LLMBuilder embeddingDimensions(int dimensions) =>
-      extension('embeddingDimensions', dimensions);
+      extension(LegacyExtensionKeys.embeddingDimensions, dimensions);
 }

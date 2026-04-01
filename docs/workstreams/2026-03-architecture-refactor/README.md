@@ -182,6 +182,8 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Status note for splitting the assistant-management model surface into tools, entities, requests, and responses while keeping the public assistant API unchanged.
 - [81-config-decomposition.md](81-config-decomposition.md)
   - Status note for splitting the shared compatibility-era config surface into a shell, focused config parts, and isolated transformer contracts while keeping the public configuration API unchanged.
+- [82-legacy-config-extension-boundary.md](82-legacy-config-extension-boundary.md)
+  - Status note for centralizing legacy extension keys and typed accessors as a transitional step before any deeper migration away from the flat compatibility extension map.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
@@ -233,7 +235,7 @@ This workstream is not about a file-moving refactor. It is about defining stable
 ### Current Audit Signals
 
 - The current `lib/` directory contains 134 source files, and `providers/` alone accounts for 96 of them.
-- The previous root compatibility hotspots have now been decomposed into shell files plus same-library parts, the generic compatibility bridge shell has also been split, the heaviest Anthropic-specific legacy parser has been decomposed, the shared audio/tool/assistant model layers have now also been split, and `core/config.dart` has now also been reduced to a shell plus focused parts; the remaining large cleanup targets are now mostly the other legacy/shared model files and config-adjacent helpers rather than compatibility infrastructure.
+- The previous root compatibility hotspots have now been decomposed into shell files plus same-library parts, the generic compatibility bridge shell has also been split, the heaviest Anthropic-specific legacy parser has been decomposed, the shared audio/tool/assistant model layers have now also been split, `core/config.dart` has now also been reduced to a shell plus focused parts, and the old flat config-extension path now also has a centralized internal key/accessor layer; the remaining large cleanup targets are now mostly the other legacy/shared model files plus the deeper migration away from flat compatibility extensions rather than compatibility infrastructure.
 - `extensions/getExtension/extension` related entry points appear 258 times in `lib/`, which means string-based extensions have already become a primary design path.
 - `dio` appears 70 times across `lib/packages/test/example`, which shows that transport details have already leaked into too many layers.
 

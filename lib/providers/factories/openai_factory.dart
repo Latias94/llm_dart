@@ -1,9 +1,8 @@
 import '../../core/capability.dart';
 import '../../core/config.dart';
 import '../../src/provider_defaults.dart';
-import '../../core/web_search.dart';
-import '../../models/tool_models.dart';
 import '../../models/chat_models.dart';
+import '../../src/config/legacy_config_extensions.dart';
 import '../openai/openai.dart';
 import 'base_factory.dart';
 
@@ -54,15 +53,14 @@ class OpenAIProviderFactory
     String? model = config.model;
 
     // Check for webSearchEnabled flag
-    final webSearchEnabled = getExtension<bool>(config, 'webSearchEnabled');
+    final webSearchEnabled = config.legacyWebSearchEnabled;
     if (webSearchEnabled == true && !_isSearchModel(model)) {
       // Switch to search-enabled model if not already using one
       model = _getSearchModel(model);
     }
 
     // Check for webSearchConfig
-    final webSearchConfig =
-        getExtension<WebSearchConfig>(config, 'webSearchConfig');
+    final webSearchConfig = config.legacyWebSearchConfig;
     if (webSearchConfig != null && !_isSearchModel(model)) {
       model = _getSearchModel(model);
     }
@@ -84,18 +82,22 @@ class OpenAIProviderFactory
       user: config.user,
       serviceTier: config.serviceTier,
       // OpenAI-specific extensions using helper method
-      reasoningEffort: ReasoningEffort.fromString(
-          getExtension<String>(config, 'reasoningEffort')),
-      jsonSchema: getExtension<StructuredOutputFormat>(config, 'jsonSchema'),
-      voice: getExtension<String>(config, 'voice'),
-      embeddingEncodingFormat:
-          getExtension<String>(config, 'embeddingEncodingFormat'),
-      embeddingDimensions: getExtension<int>(config, 'embeddingDimensions'),
+      reasoningEffort:
+          ReasoningEffort.fromString(config.legacyReasoningEffortValue),
+      jsonSchema: config.legacyJsonSchema,
+      voice: config.legacyVoice,
+      embeddingEncodingFormat: config.legacyEmbeddingEncodingFormat,
+      embeddingDimensions: config.legacyEmbeddingDimensions,
       // Responses API configuration
-      useResponsesAPI: getExtension<bool>(config, 'useResponsesAPI') ?? false,
-      previousResponseId: getExtension<String>(config, 'previousResponseId'),
-      builtInTools:
-          getExtension<List<OpenAIBuiltInTool>>(config, 'builtInTools'),
+      useResponsesAPI:
+          getExtension<bool>(config, LegacyExtensionKeys.useResponsesApi) ??
+              false,
+      previousResponseId:
+          getExtension<String>(config, LegacyExtensionKeys.previousResponseId),
+      builtInTools: getExtension<List<OpenAIBuiltInTool>>(
+        config,
+        LegacyExtensionKeys.builtInTools,
+      ),
       originalConfig: config,
     );
   }

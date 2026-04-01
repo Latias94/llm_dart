@@ -2,7 +2,8 @@ part of 'llm_builder.dart';
 
 extension LLMBuilderWebSearchConfig on LLMBuilder {
   /// Enables web search functionality
-  LLMBuilder enableWebSearch() => extension('webSearchEnabled', true);
+  LLMBuilder enableWebSearch() =>
+      extension(LegacyExtensionKeys.webSearchEnabled, true);
 
   /// Configures web search with detailed options
   LLMBuilder webSearch({
@@ -25,7 +26,7 @@ extension LLMBuilderWebSearchConfig on LLMBuilder {
       fromDate: fromDate,
       toDate: toDate,
     );
-    return extension('webSearchConfig', config);
+    return extension(LegacyExtensionKeys.webSearchConfig, config);
   }
 
   /// Quick web search setup with basic options
@@ -56,7 +57,7 @@ extension LLMBuilderWebSearchConfig on LLMBuilder {
       mode: 'auto',
       searchType: WebSearchType.news,
     );
-    return extension('webSearchConfig', config);
+    return extension(LegacyExtensionKeys.webSearchConfig, config);
   }
 
   /// Configures search location for localized results
@@ -65,7 +66,7 @@ extension LLMBuilderWebSearchConfig on LLMBuilder {
         (_currentWebSearchConfig ?? const WebSearchConfig()).copyWith(
       location: location,
     );
-    return extension('webSearchConfig', nextConfig);
+    return extension(LegacyExtensionKeys.webSearchConfig, nextConfig);
   }
 
   /// Advanced web search configuration with full control
@@ -97,6 +98,6 @@ extension LLMBuilderWebSearchConfig on LLMBuilder {
       toDate: toDate,
       searchType: searchType,
     );
-    return extension('webSearchConfig', config);
+    return extension(LegacyExtensionKeys.webSearchConfig, config);
   }
 }

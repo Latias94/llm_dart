@@ -1,6 +1,7 @@
 import '../../models/tool_models.dart';
 import '../../models/chat_models.dart';
 import '../../core/config.dart';
+import '../../src/config/legacy_config_extensions.dart';
 
 /// Google AI harm categories
 enum HarmCategory {
@@ -128,25 +129,34 @@ class GoogleConfig {
       topK: config.topK,
       tools: config.tools,
       toolChoice: config.toolChoice,
-      jsonSchema: config.getExtension<StructuredOutputFormat>('jsonSchema'),
+      jsonSchema: config.legacyJsonSchema,
       // Google-specific extensions
-      reasoningEffort: ReasoningEffort.fromString(
-          config.getExtension<String>('reasoningEffort')),
-      thinkingBudgetTokens: config.getExtension<int>('thinkingBudgetTokens'),
-      includeThoughts: config.getExtension<bool>('includeThoughts'),
-      enableImageGeneration: config.getExtension<bool>('enableImageGeneration'),
-      responseModalities:
-          config.getExtension<List<String>>('responseModalities'),
-      safetySettings:
-          config.getExtension<List<SafetySetting>>('safetySettings'),
+      reasoningEffort:
+          ReasoningEffort.fromString(config.legacyReasoningEffortValue),
+      thinkingBudgetTokens:
+          config.getExtension<int>(LegacyExtensionKeys.thinkingBudgetTokens),
+      includeThoughts:
+          config.getExtension<bool>(LegacyExtensionKeys.includeThoughts),
+      enableImageGeneration:
+          config.getExtension<bool>(LegacyExtensionKeys.enableImageGeneration),
+      responseModalities: config.getExtension<List<String>>(
+        LegacyExtensionKeys.responseModalities,
+      ),
+      safetySettings: config.getExtension<List<SafetySetting>>(
+        LegacyExtensionKeys.safetySettings,
+      ),
       maxInlineDataSize:
-          config.getExtension<int>('maxInlineDataSize') ?? 20 * 1024 * 1024,
-      candidateCount: config.getExtension<int>('candidateCount'),
+          config.getExtension<int>(LegacyExtensionKeys.maxInlineDataSize) ??
+              20 * 1024 * 1024,
+      candidateCount:
+          config.getExtension<int>(LegacyExtensionKeys.candidateCount),
       stopSequences: config.getExtension<List<String>>('stopSequences'),
       // Embedding-specific extensions
-      embeddingTaskType: config.getExtension<String>('embeddingTaskType'),
-      embeddingTitle: config.getExtension<String>('embeddingTitle'),
-      embeddingDimensions: config.getExtension<int>('embeddingDimensions'),
+      embeddingTaskType:
+          config.getExtension<String>(LegacyExtensionKeys.embeddingTaskType),
+      embeddingTitle:
+          config.getExtension<String>(LegacyExtensionKeys.embeddingTitle),
+      embeddingDimensions: config.legacyEmbeddingDimensions,
       originalConfig: config,
     );
   }

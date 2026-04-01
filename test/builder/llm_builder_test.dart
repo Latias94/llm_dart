@@ -286,6 +286,18 @@ void main() {
         expect(builder, isNotNull);
       });
 
+      test('should normalize Google reasoning effort into string extension',
+          () {
+        final builder = LLMBuilder().google(
+          (google) => google.reasoningEffort(ReasoningEffort.high),
+        );
+
+        expect(
+          builder.currentConfig.getExtension<String>('reasoningEffort'),
+          equals('high'),
+        );
+      });
+
       test('should work without callback configuration', () {
         final builder = LLMBuilder()
             .openai()
