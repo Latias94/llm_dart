@@ -223,6 +223,16 @@ enum OpenAIResponsesInclude {
   final String value;
 }
 
+enum OpenAISystemMessageMode {
+  system('system'),
+  developer('developer'),
+  remove('remove');
+
+  const OpenAISystemMessageMode(this.value);
+
+  final String value;
+}
+
 final class OpenAILogProbs {
   static const int responsesMaxTopLogProbs = 20;
 
@@ -247,6 +257,7 @@ final class OpenAIGenerateTextOptions implements ProviderInvocationOptions {
   final Map<String, Object?>? metadata;
   final OpenAIResponseTruncation? truncation;
   final String? user;
+  final OpenAISystemMessageMode? systemMessageMode;
   final OpenAILogProbs? logprobs;
   final List<OpenAIResponsesInclude>? include;
   final String? promptCacheKey;
@@ -265,6 +276,7 @@ final class OpenAIGenerateTextOptions implements ProviderInvocationOptions {
     this.metadata,
     this.truncation,
     this.user,
+    this.systemMessageMode,
     this.logprobs,
     this.include,
     this.promptCacheKey,
@@ -284,6 +296,7 @@ final class OpenAIGenerateTextOptions implements ProviderInvocationOptions {
     Object? metadata = _unset,
     Object? truncation = _unset,
     Object? user = _unset,
+    Object? systemMessageMode = _unset,
     Object? logprobs = _unset,
     Object? include = _unset,
     Object? promptCacheKey = _unset,
@@ -317,6 +330,9 @@ final class OpenAIGenerateTextOptions implements ProviderInvocationOptions {
           ? this.truncation
           : truncation as OpenAIResponseTruncation?,
       user: identical(user, _unset) ? this.user : user as String?,
+      systemMessageMode: identical(systemMessageMode, _unset)
+          ? this.systemMessageMode
+          : systemMessageMode as OpenAISystemMessageMode?,
       logprobs: identical(logprobs, _unset)
           ? this.logprobs
           : logprobs as OpenAILogProbs?,

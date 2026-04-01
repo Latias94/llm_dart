@@ -24,6 +24,7 @@ The current Responses path now also covers the common user multimodal subset tha
 The current chat-completions codec already covers:
 
 - text prompt encoding
+- provider-owned system-message role shaping for `system`, `developer`, and `remove`
 - user image prompt encoding
 - user file prompt encoding for image, audio, and PDF
 - function-tool declaration and tool choice
@@ -121,6 +122,7 @@ The meaningful remaining gaps are now:
 - broadened assistant replay fidelity on chat-completions
 - possible richer multimodal parity on the Responses request codec beyond the current user image/file subset, if app usage proves it is necessary
 - any future OpenAI-owned helper surface above raw provider metadata if Flutter or app-level tooling later needs richer logprob/result inspection
+- any later reasoning-model parameter-compatibility audit beyond the now-aligned system-message role shaping
 - a decision on whether OpenAI compatibility should ever broaden beyond the current user multimodal plus common function-tool replay subset into richer replay-heavy histories
 
 ## Recommended Next Step

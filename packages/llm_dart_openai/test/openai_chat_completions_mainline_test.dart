@@ -191,6 +191,226 @@ void main() {
       );
     });
 
+    test(
+        'chat completions default system messages to developer for OpenAI reasoning models',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'chatcmpl_reasoning_1',
+                'model': 'gpt-5.4',
+                'created': 1710000000,
+                'choices': [
+                  {
+                    'index': 0,
+                    'finish_reason': 'stop',
+                    'message': {
+                      'role': 'assistant',
+                      'content': 'Done.',
+                    },
+                  },
+                ],
+                'usage': {
+                  'prompt_tokens': 4,
+                  'completion_tokens': 1,
+                  'total_tokens': 5,
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel(
+        'gpt-5.4',
+        settings: const OpenAIChatModelSettings(
+          useResponsesApi: false,
+        ),
+      );
+
+      final result = await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            SystemPromptMessage.text('Think carefully.'),
+            UserPromptMessage.text('Say done.'),
+          ],
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(
+        requestBody['messages'],
+        [
+          {
+            'role': 'developer',
+            'content': 'Think carefully.',
+          },
+          {
+            'role': 'user',
+            'content': 'Say done.',
+          },
+        ],
+      );
+      expect(result.warnings, isEmpty);
+    });
+
+    test(
+        'chat completions can override reasoning-model system messages back to system',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'chatcmpl_reasoning_override_1',
+                'model': 'gpt-5.4',
+                'created': 1710000000,
+                'choices': [
+                  {
+                    'index': 0,
+                    'finish_reason': 'stop',
+                    'message': {
+                      'role': 'assistant',
+                      'content': 'Done.',
+                    },
+                  },
+                ],
+                'usage': {
+                  'prompt_tokens': 4,
+                  'completion_tokens': 1,
+                  'total_tokens': 5,
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel(
+        'gpt-5.4',
+        settings: const OpenAIChatModelSettings(
+          useResponsesApi: false,
+        ),
+      );
+
+      await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            SystemPromptMessage.text('Think carefully.'),
+            UserPromptMessage.text('Say done.'),
+          ],
+          callOptions: const CallOptions(
+            providerOptions: OpenAIGenerateTextOptions(
+              systemMessageMode: OpenAISystemMessageMode.system,
+            ),
+          ),
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(
+        requestBody['messages'],
+        [
+          {
+            'role': 'system',
+            'content': 'Think carefully.',
+          },
+          {
+            'role': 'user',
+            'content': 'Say done.',
+          },
+        ],
+      );
+    });
+
+    test('chat completions can remove system messages with a warning',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'chatcmpl_system_remove_1',
+                'model': 'gpt-4.1-mini',
+                'created': 1710000000,
+                'choices': [
+                  {
+                    'index': 0,
+                    'finish_reason': 'stop',
+                    'message': {
+                      'role': 'assistant',
+                      'content': 'Done.',
+                    },
+                  },
+                ],
+                'usage': {
+                  'prompt_tokens': 3,
+                  'completion_tokens': 1,
+                  'total_tokens': 4,
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel(
+        'gpt-4.1-mini',
+        settings: const OpenAIChatModelSettings(
+          useResponsesApi: false,
+        ),
+      );
+
+      final result = await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            SystemPromptMessage.text('Be concise.'),
+            UserPromptMessage.text('Say done.'),
+          ],
+          callOptions: const CallOptions(
+            providerOptions: OpenAIGenerateTextOptions(
+              systemMessageMode: OpenAISystemMessageMode.remove,
+            ),
+          ),
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(
+        requestBody['messages'],
+        [
+          {
+            'role': 'user',
+            'content': 'Say done.',
+          },
+        ],
+      );
+      expect(
+        result.warnings,
+        contains(
+          const ModelWarning(
+            type: ModelWarningType.other,
+            field: 'prompt.system',
+            message: 'system messages are removed for this model',
+          ),
+        ),
+      );
+    });
+
     test('chat completions encode and decode text logprobs', () async {
       TransportRequest? capturedRequest;
       const responseLogprobs = [

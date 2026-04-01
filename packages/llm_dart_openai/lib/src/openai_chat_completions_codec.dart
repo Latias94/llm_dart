@@ -114,9 +114,19 @@ final class OpenAIChatCompletionsCodec {
 
     final warnings = <ModelWarning>[];
     final messages = <Map<String, Object?>>[];
+    final systemMessageMode = _resolveSystemMessageMode(
+      modelId,
+      providerOptions.common,
+    );
 
     for (final message in prompt) {
-      messages.addAll(_encodePromptMessage(message, warnings));
+      messages.addAll(
+        _encodePromptMessage(
+          message,
+          warnings,
+          systemMessageMode: systemMessageMode,
+        ),
+      );
     }
 
     final body = <String, Object?>{
@@ -398,12 +408,24 @@ final class OpenAIChatCompletionsCodec {
 
   List<Map<String, Object?>> _encodePromptMessage(
     PromptMessage message,
-    List<ModelWarning> warnings,
-  ) {
+    List<ModelWarning> warnings, {
+    required OpenAISystemMessageMode systemMessageMode,
+  }) {
     if (message is SystemPromptMessage) {
+      if (systemMessageMode == OpenAISystemMessageMode.remove) {
+        warnings.add(
+          const ModelWarning(
+            type: ModelWarningType.other,
+            field: 'prompt.system',
+            message: 'system messages are removed for this model',
+          ),
+        );
+        return const [];
+      }
+
       return [
         {
-          'role': 'system',
+          'role': systemMessageMode.value,
           'content': _joinTextParts(
             role: 'system',
             parts: message.parts,
@@ -550,6 +572,28 @@ final class OpenAIChatCompletionsCodec {
     throw UnsupportedError(
       'Unsupported prompt message type: ${message.runtimeType}.',
     );
+  }
+
+  OpenAISystemMessageMode _resolveSystemMessageMode(
+    String modelId,
+    OpenAIGenerateTextOptions options,
+  ) {
+    if (options.systemMessageMode case final mode?) {
+      return mode;
+    }
+
+    if (providerNamespace == 'openai' && _isOpenAIReasoningChatModel(modelId)) {
+      return OpenAISystemMessageMode.developer;
+    }
+
+    return OpenAISystemMessageMode.system;
+  }
+
+  bool _isOpenAIReasoningChatModel(String modelId) {
+    return modelId.startsWith('o1') ||
+        modelId.startsWith('o3') ||
+        modelId.startsWith('o4') ||
+        modelId.startsWith('gpt-5');
   }
 
   Map<String, Object?> _encodeUserPromptMessage(UserPromptMessage message) {
