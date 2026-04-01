@@ -148,12 +148,25 @@ final class OpenAIChatCompletionsCodec {
         'verbosity': providerOptions.common.verbosity,
       if (providerOptions.common.user != null)
         'user': providerOptions.common.user,
+      if (providerNamespace == 'openai' &&
+          providerOptions.common.reasoningEffort != null)
+        'reasoning_effort': providerOptions.common.reasoningEffort!.value,
+      if (providerNamespace == 'openai' &&
+          providerOptions.common.maxCompletionTokens != null)
+        'max_completion_tokens': providerOptions.common.maxCompletionTokens,
       if (providerOptions.common.logprobs != null) 'logprobs': true,
       if (providerOptions.common.logprobs case final logprobs?)
         'top_logprobs': _encodeChatTopLogProbs(logprobs),
       if (providerOptions.xaiSearch != null)
         'search_parameters': providerOptions.xaiSearch!.toJson(),
     };
+
+    _applyOpenAICompatibilityRules(
+      modelId: modelId,
+      providerOptions: providerOptions.common,
+      body: body,
+      warnings: warnings,
+    );
 
     final encodedTools = _encodeTools(tools);
     if (encodedTools.isNotEmpty) {
@@ -582,18 +595,177 @@ final class OpenAIChatCompletionsCodec {
       return mode;
     }
 
-    if (providerNamespace == 'openai' && _isOpenAIReasoningChatModel(modelId)) {
+    if (_usesOpenAIReasoningCompatibility(modelId, options)) {
       return OpenAISystemMessageMode.developer;
     }
 
     return OpenAISystemMessageMode.system;
   }
 
+  void _applyOpenAICompatibilityRules({
+    required String modelId,
+    required OpenAIGenerateTextOptions providerOptions,
+    required Map<String, Object?> body,
+    required List<ModelWarning> warnings,
+  }) {
+    if (providerNamespace != 'openai') {
+      return;
+    }
+
+    final isReasoningModel =
+        _usesOpenAIReasoningCompatibility(modelId, providerOptions);
+    final reasoningEffort = providerOptions.reasoningEffort;
+
+    if (isReasoningModel) {
+      final supportsNonReasoningParameters =
+          reasoningEffort == OpenAIReasoningEffort.none &&
+              _supportsOpenAINonReasoningParameters(modelId);
+
+      if (!supportsNonReasoningParameters) {
+        _removeBodyFieldWithWarning(
+          body,
+          'temperature',
+          warnings,
+          warning: const ModelWarning(
+            type: ModelWarningType.unsupported,
+            field: 'temperature',
+            message: 'temperature is not supported for reasoning models',
+          ),
+        );
+        _removeBodyFieldWithWarning(
+          body,
+          'top_p',
+          warnings,
+          warning: const ModelWarning(
+            type: ModelWarningType.unsupported,
+            field: 'topP',
+            message: 'topP is not supported for reasoning models',
+          ),
+        );
+        _removeBodyFieldWithWarning(
+          body,
+          'logprobs',
+          warnings,
+          warning: const ModelWarning(
+            type: ModelWarningType.unsupported,
+            field: 'logprobs',
+            message: 'logprobs is not supported for reasoning models',
+          ),
+        );
+        _removeBodyFieldWithWarning(
+          body,
+          'top_logprobs',
+          warnings,
+          warning: const ModelWarning(
+            type: ModelWarningType.unsupported,
+            field: 'topLogProbs',
+            message: 'topLogprobs is not supported for reasoning models',
+          ),
+        );
+      }
+
+      final maxTokens = body.remove('max_tokens');
+      if (maxTokens != null && !body.containsKey('max_completion_tokens')) {
+        body['max_completion_tokens'] = maxTokens;
+      }
+    }
+
+    _applyOpenAIServiceTierCompatibility(
+      modelId: modelId,
+      body: body,
+      warnings: warnings,
+    );
+  }
+
+  void _applyOpenAIServiceTierCompatibility({
+    required String modelId,
+    required Map<String, Object?> body,
+    required List<ModelWarning> warnings,
+  }) {
+    final serviceTier = body['service_tier'];
+    if (serviceTier == 'flex' && !_supportsOpenAIFlexServiceTier(modelId)) {
+      body.remove('service_tier');
+      warnings.add(
+        const ModelWarning(
+          type: ModelWarningType.unsupported,
+          field: 'serviceTier',
+          message:
+              'flex processing is only available for o3, o4-mini, and gpt-5 models',
+        ),
+      );
+    }
+
+    if (serviceTier == 'priority' &&
+        !_supportsOpenAIPriorityServiceTier(modelId)) {
+      body.remove('service_tier');
+      warnings.add(
+        const ModelWarning(
+          type: ModelWarningType.unsupported,
+          field: 'serviceTier',
+          message:
+              'priority processing is only available for supported models (gpt-4, gpt-5, gpt-5-mini, o3, o4-mini) and requires Enterprise access. gpt-5-nano is not supported',
+        ),
+      );
+    }
+  }
+
+  void _removeBodyFieldWithWarning(
+    Map<String, Object?> body,
+    String key,
+    List<ModelWarning> warnings, {
+    required ModelWarning warning,
+  }) {
+    if (!body.containsKey(key)) {
+      return;
+    }
+
+    body.remove(key);
+    warnings.add(warning);
+  }
+
+  bool _usesOpenAIReasoningCompatibility(
+    String modelId,
+    OpenAIGenerateTextOptions options,
+  ) {
+    if (providerNamespace != 'openai') {
+      return false;
+    }
+
+    return options.forceReasoning ?? _isOpenAIReasoningChatModel(modelId);
+  }
+
   bool _isOpenAIReasoningChatModel(String modelId) {
     return modelId.startsWith('o1') ||
         modelId.startsWith('o3') ||
-        modelId.startsWith('o4') ||
-        modelId.startsWith('gpt-5');
+        modelId.startsWith('o4-mini') ||
+        (modelId.startsWith('gpt-5') && !_isOpenAIChatOptimizedModel(modelId));
+  }
+
+  bool _isOpenAIChatOptimizedModel(String modelId) {
+    return modelId.startsWith('gpt-5') && modelId.contains('-chat');
+  }
+
+  bool _supportsOpenAINonReasoningParameters(String modelId) {
+    return modelId.startsWith('gpt-5.1') ||
+        modelId.startsWith('gpt-5.2') ||
+        modelId.startsWith('gpt-5.3') ||
+        modelId.startsWith('gpt-5.4');
+  }
+
+  bool _supportsOpenAIFlexServiceTier(String modelId) {
+    return modelId.startsWith('o3') ||
+        modelId.startsWith('o4-mini') ||
+        (modelId.startsWith('gpt-5') && !_isOpenAIChatOptimizedModel(modelId));
+  }
+
+  bool _supportsOpenAIPriorityServiceTier(String modelId) {
+    return modelId.startsWith('gpt-4') ||
+        ((modelId.startsWith('gpt-5') &&
+                !_isOpenAIChatOptimizedModel(modelId) &&
+                !modelId.startsWith('gpt-5-nano') &&
+                !modelId.startsWith('gpt-5.4-nano')) ||
+            modelId.startsWith('o3') ||
+            modelId.startsWith('o4-mini'));
   }
 
   Map<String, Object?> _encodeUserPromptMessage(UserPromptMessage message) {

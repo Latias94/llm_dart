@@ -25,6 +25,8 @@ The current chat-completions codec already covers:
 
 - text prompt encoding
 - provider-owned system-message role shaping for `system`, `developer`, and `remove`
+- provider-owned OpenAI reasoning-model request shaping for `reasoningEffort`, `maxCompletionTokens`, and `forceReasoning`
+- OpenAI-only reasoning-model parameter compatibility and `serviceTier` validation
 - user image prompt encoding
 - user file prompt encoding for image, audio, and PDF
 - function-tool declaration and tool choice
@@ -122,7 +124,7 @@ The meaningful remaining gaps are now:
 - broadened assistant replay fidelity on chat-completions
 - possible richer multimodal parity on the Responses request codec beyond the current user image/file subset, if app usage proves it is necessary
 - any future OpenAI-owned helper surface above raw provider metadata if Flutter or app-level tooling later needs richer logprob/result inspection
-- any later reasoning-model parameter-compatibility audit beyond the now-aligned system-message role shaping
+- any later OpenAI-owned Responses or search-preview request-shaping audit beyond the now-aligned chat-completions reasoning compatibility
 - a decision on whether OpenAI compatibility should ever broaden beyond the current user multimodal plus common function-tool replay subset into richer replay-heavy histories
 
 ## Recommended Next Step
@@ -130,6 +132,6 @@ The meaningful remaining gaps are now:
 The next OpenAI-family step should focus on one of these two paths, not both at once:
 
 1. finish more assistant replay on chat-completions if replay fidelity is the blocker
-2. audit whether the Responses path needs any richer multimodal or replay support beyond the now-working user image/file plus common function-tool compatibility subset
+2. audit whether the Responses path needs any richer multimodal, reasoning-owned request shaping, or replay support beyond the now-working user image/file plus common function-tool compatibility subset
 
 That keeps the workstream incremental and prevents the OpenAI family from becoming another mixed-path bus layer.

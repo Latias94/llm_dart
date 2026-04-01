@@ -233,6 +233,19 @@ enum OpenAISystemMessageMode {
   final String value;
 }
 
+enum OpenAIReasoningEffort {
+  none('none'),
+  minimal('minimal'),
+  low('low'),
+  medium('medium'),
+  high('high'),
+  xhigh('xhigh');
+
+  const OpenAIReasoningEffort(this.value);
+
+  final String value;
+}
+
 final class OpenAILogProbs {
   static const int responsesMaxTopLogProbs = 20;
 
@@ -258,6 +271,9 @@ final class OpenAIGenerateTextOptions implements ProviderInvocationOptions {
   final OpenAIResponseTruncation? truncation;
   final String? user;
   final OpenAISystemMessageMode? systemMessageMode;
+  final OpenAIReasoningEffort? reasoningEffort;
+  final int? maxCompletionTokens;
+  final bool? forceReasoning;
   final OpenAILogProbs? logprobs;
   final List<OpenAIResponsesInclude>? include;
   final String? promptCacheKey;
@@ -277,6 +293,9 @@ final class OpenAIGenerateTextOptions implements ProviderInvocationOptions {
     this.truncation,
     this.user,
     this.systemMessageMode,
+    this.reasoningEffort,
+    this.maxCompletionTokens,
+    this.forceReasoning,
     this.logprobs,
     this.include,
     this.promptCacheKey,
@@ -297,6 +316,9 @@ final class OpenAIGenerateTextOptions implements ProviderInvocationOptions {
     Object? truncation = _unset,
     Object? user = _unset,
     Object? systemMessageMode = _unset,
+    Object? reasoningEffort = _unset,
+    Object? maxCompletionTokens = _unset,
+    Object? forceReasoning = _unset,
     Object? logprobs = _unset,
     Object? include = _unset,
     Object? promptCacheKey = _unset,
@@ -333,6 +355,15 @@ final class OpenAIGenerateTextOptions implements ProviderInvocationOptions {
       systemMessageMode: identical(systemMessageMode, _unset)
           ? this.systemMessageMode
           : systemMessageMode as OpenAISystemMessageMode?,
+      reasoningEffort: identical(reasoningEffort, _unset)
+          ? this.reasoningEffort
+          : reasoningEffort as OpenAIReasoningEffort?,
+      maxCompletionTokens: identical(maxCompletionTokens, _unset)
+          ? this.maxCompletionTokens
+          : maxCompletionTokens as int?,
+      forceReasoning: identical(forceReasoning, _unset)
+          ? this.forceReasoning
+          : forceReasoning as bool?,
       logprobs: identical(logprobs, _unset)
           ? this.logprobs
           : logprobs as OpenAILogProbs?,
