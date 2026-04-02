@@ -89,7 +89,6 @@ The AI SDK uses transport chunks such as:
 - `start`
 - `finish`
 - `message-metadata`
-- `abort`
 
 These are not provider output semantics.
 
@@ -99,6 +98,15 @@ Recommended boundary:
 
 - keep them out of `TextStreamEvent`
 - if needed, carry them in `ChatTransportChunk` or future HTTP chat protocol revisions
+
+`AbortEvent` is the one narrow shared exception that `llm_dart` now keeps on
+purpose:
+
+- local stop and aborted-turn projection already need a first-class shared
+  lifecycle signal
+- the transport protocol may still carry an abort chunk
+- that does not imply that other message lifecycle markers belong in the shared
+  core event layer
 
 ### 2. Tool Availability And Output UI Chunks
 
@@ -166,7 +174,8 @@ Recommended rule:
 In other words:
 
 - step boundaries are shared session semantics in our architecture
-- `start` / `finish` / `abort` remain transport semantics
+- `start` / `finish` remain transport semantics
+- `AbortEvent` remains the narrow shared session-lifecycle exception
 
 ## 5. What Should Not Be Added Now
 
@@ -177,7 +186,6 @@ Specifically, do not add:
 - `MessageStartEvent`
 - `MessageFinishEvent`
 - `MessageMetadataPatchEvent`
-- `AbortEvent`
 - `ToolOutputAvailableEvent`
 - `ToolOutputErrorEvent`
 - typed `ToolWeatherUiPart` / `ToolSearchUiPart` style subclasses
@@ -211,7 +219,7 @@ Recommended next steps:
 1. keep the current `TextStreamEvent` surface stable
 2. expand provider coverage tests so migrated providers consistently emit the existing shared events when their wire protocols support them
 3. keep provider-native execution and retrieval detail in provider-owned custom events and UI parts
-4. extend transport-level protocols only when remote UI lifecycle markers or metadata patches are truly needed
+4. extend transport-level protocols only when remote UI lifecycle markers, metadata patches, or transient non-persistent UI data are truly needed
 
 This is a better use of the breaking window than introducing more core event types.
 

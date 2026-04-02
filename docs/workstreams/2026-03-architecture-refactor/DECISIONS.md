@@ -252,7 +252,8 @@ Provider-specific features should be represented through:
 ## D28. Event Completeness Follows Shared Stream Semantics, Not UI Chunk Exhaustiveness
 
 - the current `TextStreamEvent` surface is already sufficient for parity with the reference provider stream layer
-- UI transport markers such as `start`, `finish`, `message-metadata`, and `abort` must stay out of the shared core event model
+- UI transport markers such as `start`, `finish`, and `message-metadata` must stay out of the shared core event model
+- shared `AbortEvent` remains the one narrow session-lifecycle exception because aborted-turn projection and local stop flows already need a first-class shared signal
 - UI-facing tool lifecycle chunk names such as `tool-input-available` or `tool-output-available` should continue to project through `ToolCallEvent`, `ToolResultEvent`, `ToolInputErrorEvent`, and unified `ToolUiPart`
 - typed per-tool UI part subclasses do not enter the Dart core model; `ToolUiPart` remains unified with `toolName` and lifecycle state as data
 - `StepStartEvent` and `StepFinishEvent` remain valid shared Dart session semantics even though the reference UI stream locates step markers above the provider stream layer
@@ -414,3 +415,19 @@ Provider-specific features should be represented through:
 - `legacy.dart` must not become the place where new stable model APIs grow
 - the long-term goal is that `legacy.dart`, not `llm_dart.dart`, carries the
   explicit weight of compatibility expectations
+
+## D45. Transient UI Data Stays Above Persisted `ChatUiMessage` State
+
+- the remaining worthwhile chat-runtime gap versus `repo-ref/ai` is
+  transport/session support for transient `data-*` delivery, not more shared
+  core event types
+- persisted UI data should continue to use `DataUiPart<T>` inside
+  `ChatUiMessage.parts`
+- if transient UI data is added later, it must land at the
+  `ChatUiStreamChunk` / `ChatSession` / transport layer rather than in
+  `TextStreamEvent`
+- transient UI data must not enter prompt history, persisted message parts,
+  reconnect replay, or snapshots by default
+- do not add a `transient` flag directly to `DataUiPart<T>` because that would
+  blur the boundary between durable message state and non-persistent runtime
+  notifications

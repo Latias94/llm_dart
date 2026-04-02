@@ -185,6 +185,10 @@ Current status:
 - `DefaultChatSession` now also waits for stream completion after terminal `FinishEvent`, so trailing `message-finish` metadata patches can land before the assistant turn is finalized
 - the HTTP transport protocol now also has an implemented dual-stack upgrade path: request/reconnect envelopes carry `streamProtocol`, legacy `event-stream-v1` remains decode-compatible, and the preferred `ui-message-stream-v2` split now supports `transport-start`, `message-start`, `message-metadata`, and `message-finish`
 - protocol ownership is now also corrected for backend reuse: the HTTP chat transport request/chunk codecs plus the Dart SSE/reference adapter now live in `llm_dart_transport`, while `llm_dart_flutter` stays focused on the client/session transport implementation
+- the remaining worthwhile runtime gap versus `repo-ref/ai` is now also frozen
+  more narrowly: transient `data-*` delivery should stay as a transport/session
+  concern above persisted `ChatUiMessage` state rather than reopening the core
+  event model
 
 ## M6 - Compatibility Cleanup
 

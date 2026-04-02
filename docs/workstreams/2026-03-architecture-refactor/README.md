@@ -208,6 +208,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Frozen boundary for the explicit `package:llm_dart/legacy.dart`
     compatibility shell that decouples migration imports from future root
     surface slimming.
+- [93-ui-transport-transient-data-boundary.md](93-ui-transport-transient-data-boundary.md)
+  - Frozen conclusion that the remaining worthwhile chat-runtime gap versus
+    `repo-ref/ai` is transport-only transient `data-*` delivery above
+    persisted `ChatUiMessage` state, not more shared core events.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)

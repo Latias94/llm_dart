@@ -95,52 +95,53 @@ The table below compares the AI SDK UI chunk vocabulary with the current `llm_da
 | `start-step` / `finish-step` | Covered by `StepStartEvent` and `StepFinishEvent` | Freeze as-is |
 | `source-url` / `source-document` | Covered by typed `SourceReference` (`kind` plus optional `filename`) | Freeze the updated source model |
 | `file` | Covered by `FileEvent` and `GeneratedFile` | Freeze generic file model |
-| `reasoning-file` | Not represented separately | Promote to a common part/event family in the next breaking round |
+| `reasoning-file` | Covered by `ReasoningFileEvent` and `ReasoningFileUiPart` | Freeze as-is |
 | `data-*` UI chunks | Covered by `DataUiPart<T>`, `ChatTransportDataPartChunk`, and `ChatSession.addDataPart(...)` | Freeze the transport/UI-only boundary; do not add to `TextStreamEvent` |
-| `start` / `finish` / `message-metadata` / `abort` | Intentionally not in `TextStreamEvent` | Keep transport-only |
+| `start` / `finish` / `message-metadata` | Covered by `ChatUiMessageStartChunk`, `ChatUiMessageMetadataChunk`, and `ChatUiMessageFinishChunk` | Keep transport/UI-only |
+| `abort` | Covered by shared `AbortEvent` plus transport-level abort chunks | Freeze as the narrow shared session-lifecycle exception |
 | `tool-input-error` | Covered by `ToolInputErrorEvent`, projected through the existing tool error UI path | Freeze the current event/UI split |
 
-## 4. Real Gaps We Should Address
+## 4. Historical Gaps And Their Current Status
 
 Not every mismatch with the AI SDK is a real gap.
 
-The following items need explicit architectural decisions. Some earlier gaps have already been resolved. Two remaining gaps now have enough evidence to freeze their direction.
+The following items were the important review targets in this area. They are now
+either resolved or narrowed enough to freeze.
 
-### 1. `reasoning-file` Is Now A Real Common Gap
+### 1. `reasoning-file` Was A Real Common Gap And Is Now Resolved
 
-The older recommendation in this document was too conservative.
+The current implementation now preserves:
 
-After comparing our codebase with `repo-ref/ai`, there is now direct evidence that `reasoning-file` is not merely a speculative future concept:
+- `ReasoningFilePromptPart`
+- `ReasoningFileContentPart`
+- `ReasoningFileEvent`
+- `ReasoningFileUiPart`
 
-- the reference Google mainline emits `reasoning-file` in both generate and stream flows
-- the reference Google prompt converter also accepts assistant-side `reasoning-file` parts for replay
-- Google thought signatures and thought-only inline files become much harder to preserve cleanly when they are flattened into ordinary files
+Boundary rule:
 
-Recommended freeze:
+- keep one shared `GeneratedFile` payload object
+- distinguish reasoning-vs-final output by the wrapper part or event type
 
-- add first-class `ReasoningFile*` wrappers across prompt, result/content, stream, and UI layers
-- keep one shared `GeneratedFile` payload model instead of inventing a second file payload object
-- distinguish reasoning-vs-final output by the surrounding part or event type, not by widening `GeneratedFile` with provider-shaped flags
+This item is no longer an open event/UI gap.
 
-This is the one event-family expansion that is currently justified by real provider evidence.
+### 2. Assistant Replay Fidelity Is No Longer The Same Structural Gap
 
-### 2. Assistant Replay Is Too Lossy
+The current implementation now preserves:
 
-The larger problem is not only one missing event.
+- reasoning parts in assistant replay
+- reasoning files in assistant replay
+- replayable custom parts in assistant replay
+- part-level `ProviderMetadata` on replayable prompt parts
 
-The current assistant replay path is too lossy compared with the reference architecture:
+Current boundary:
 
-- `DefaultChatSession` currently rebuilds prompt history from only a subset of assistant UI parts
-- reasoning parts, reasoning files, and custom parts are not preserved in prompt history today
-- `PromptPart` currently has no part-level `ProviderMetadata`, which makes provider continuation hints such as Google thought signatures impossible to preserve faithfully
+- assistant prompt history should preserve replayable assistant semantics
+- citations, UI-only data parts, and transport markers still stay out of prompt
+  history
+- remaining lossiness is now mostly provider-owned replay policy, not a shared
+  event/UI-model flaw
 
-Recommended freeze:
-
-- assistant prompt history must preserve replayable assistant semantics rather than only display-friendly summaries
-- replayable prompt parts should support optional part-level `ProviderMetadata`
-- citations, UI-only data parts, and transport markers must still stay out of prompt history
-
-Without this rule, restored sessions can render correctly while sending semantically degraded follow-up prompts.
+This item is no longer an open event/UI gap.
 
 ### 3. `SourceReference` Is Now Explicitly Typed
 
@@ -240,18 +241,35 @@ Recommended rule:
 - do not add `DataEvent` to `TextStreamEvent`
 - use transport/session data-part ingress for streaming UI-only data instead
 
-### 2. Message Start / Finish / Metadata Patch / Abort Markers
+### 2. Message Start / Finish / Metadata Patch Markers
 
 These remain transport-level or session-level concerns:
 
 - chat transport request lifecycle
 - reconnect bookkeeping
 - UI message metadata patches
-- abort markers
 
 They should stay in `HttpChatTransport` protocol design, not in core events.
 
-### 3. Full UI-Chunk Mirroring
+### 3. Abort Semantics
+
+`AbortEvent` is the one narrow shared lifecycle exception that is now justified.
+
+Why:
+
+- local stop flows already need a first-class aborted lifecycle signal
+- `FinishEvent(finishReason: aborted)` remains the terminal compatibility
+  signal, but it is not enough on its own for all projection and session flows
+- the transport protocol may still carry an explicit abort chunk without making
+  abort purely transport-owned
+
+Boundary rule:
+
+- keep `AbortEvent` in the shared Dart event model
+- do not widen that into a broader family of message lifecycle events
+- keep message start / finish / metadata markers in transport-only chunk layers
+
+### 4. Full UI-Chunk Mirroring
 
 The AI SDK UI stream has a broader vocabulary because it is a client/server UI transport.
 
