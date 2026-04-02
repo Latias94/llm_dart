@@ -39,7 +39,7 @@ dart run mcp_connector.dart
 ```dart
 import 'package:llm_dart/anthropic.dart' as anthropic;
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/ai.dart' as llm;
 
 final model = llm.AI.anthropic(apiKey: 'your-key').chatModel('claude-sonnet-4-5');
 
@@ -65,7 +65,7 @@ print(result.text);
 ```dart
 import 'package:llm_dart/anthropic.dart' as anthropic;
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/ai.dart' as llm;
 
 final model = llm.AI.anthropic(apiKey: 'your-key').chatModel('claude-sonnet-4-5');
 
@@ -94,7 +94,7 @@ print(result.text);
 
 ```dart
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/ai.dart' as llm;
 
 final model = llm.AI.anthropic(apiKey: 'your-key').chatModel('claude-sonnet-4-5');
 
@@ -134,7 +134,7 @@ await for (final event in stream) {
 ### Stable Files Client
 
 ```dart
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/ai.dart' as llm;
 
 final files = llm.AI.anthropic(apiKey: 'your-key').files();
 

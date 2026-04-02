@@ -3,7 +3,7 @@ import 'dart:math' as math;
 
 import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/google.dart' as google;
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/ai.dart' as llm;
 
 /// Google Embeddings Examples
 ///
@@ -35,7 +35,8 @@ Future<void> demonstrateBasicEmbeddings(String apiKey) async {
       model: model,
       value: 'Hello, world!',
     );
-    print('   ✅ Single embedding: ${singleEmbedding.embedding.length} dimensions');
+    print(
+        '   ✅ Single embedding: ${singleEmbedding.embedding.length} dimensions');
 
     final multipleEmbeddings = await core.embedMany(
       model: model,
@@ -81,7 +82,8 @@ Future<void> demonstrateBatchEmbeddings(String apiKey) async {
       model: model,
       values: texts,
     );
-    print('   ✅ Batch processing: ${embeddings.embeddings.length} embeddings generated');
+    print(
+        '   ✅ Batch processing: ${embeddings.embeddings.length} embeddings generated');
     print('   📏 Embedding dimensions: ${embeddings.embeddings.first.length}');
 
     final allValues = embeddings.embeddings.expand((entry) => entry).toList();
@@ -208,9 +210,11 @@ Future<void> demonstrateSemanticSimilarity(String apiKey) async {
 }
 
 core.EmbeddingModel _createEmbeddingModel(String apiKey) {
-  return llm.AI.google(
-    apiKey: apiKey,
-  ).embeddingModel('text-embedding-004');
+  return llm.AI
+      .google(
+        apiKey: apiKey,
+      )
+      .embeddingModel('text-embedding-004');
 }
 
 double cosineSimilarity(List<double> a, List<double> b) {

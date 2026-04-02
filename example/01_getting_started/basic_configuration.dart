@@ -2,8 +2,9 @@
 
 import 'dart:io';
 
+import 'package:llm_dart/legacy.dart' as legacy;
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/ai.dart' as ai;
 
 /// Basic configuration examples using the stable model API.
 ///
@@ -162,7 +163,7 @@ Future<void> testInvalidApiKey() async {
       ],
     );
     print('Invalid API Key: unexpected success');
-  } on llm.AuthError catch (error) {
+  } on legacy.AuthError catch (error) {
     print('Invalid API Key: caught AuthError -> ${error.message}');
   } catch (error) {
     print('Invalid API Key: unexpected error -> $error');
@@ -171,8 +172,7 @@ Future<void> testInvalidApiKey() async {
 
 Future<void> testInvalidModel(String apiKey) async {
   try {
-    final model =
-        llm.AI.openai(apiKey: apiKey).chatModel('invalid-model-name');
+    final model = ai.AI.openai(apiKey: apiKey).chatModel('invalid-model-name');
     await core.generateTextCall(
       model: model,
       prompt: [
@@ -180,7 +180,7 @@ Future<void> testInvalidModel(String apiKey) async {
       ],
     );
     print('Invalid Model: unexpected success');
-  } on llm.InvalidRequestError catch (error) {
+  } on legacy.InvalidRequestError catch (error) {
     print('Invalid Model: caught InvalidRequestError -> ${error.message}');
   } catch (error) {
     print('Invalid Model: unexpected error -> $error');
@@ -200,7 +200,7 @@ Future<void> testNetworkTimeout(String apiKey) async {
       ),
     );
     print('Network Timeout: unexpected success');
-  } on llm.TimeoutError catch (error) {
+  } on legacy.TimeoutError catch (error) {
     print('Network Timeout: caught TimeoutError -> ${error.message}');
   } catch (error) {
     print('Network Timeout: unexpected error -> $error');
@@ -251,7 +251,7 @@ Future<void> demonstrateTimeoutSettings(String apiKey) async {
 }
 
 core.LanguageModel _openAIModel(String apiKey) {
-  return llm.AI.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
+  return ai.AI.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
 }
 
 String _truncate(String text, {int maxLength = 200}) {

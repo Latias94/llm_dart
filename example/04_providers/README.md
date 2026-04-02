@@ -72,7 +72,7 @@ dart run xai/live_search.dart
 
 ```dart
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/ai.dart' as llm;
 import 'package:llm_dart/openai.dart' as openai;
 
 final imageModel = llm.AI.openai(apiKey: 'your-key').imageModel('dall-e-3');
@@ -97,7 +97,7 @@ print(result.images.first.uri);
 ```dart
 import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/google.dart' as google;
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/ai.dart' as llm;
 
 final imageModel = llm.AI.google(apiKey: 'your-key')
     .imageModel('gemini-2.5-flash-image');
@@ -120,7 +120,7 @@ print(result.images.first.bytes?.length);
 ```dart
 import 'package:llm_dart/anthropic.dart' as anthropic;
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/ai.dart' as llm;
 
 final model = llm.AI.anthropic(apiKey: 'your-key').chatModel('claude-sonnet-4-5');
 
@@ -147,7 +147,7 @@ print(result.text);
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/ai.dart' as llm;
 
 final model = llm.AI.deepSeek(apiKey: 'your-key').chatModel('deepseek-reasoner');
 
@@ -174,7 +174,7 @@ await for (final event in stream) {
 
 ```dart
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/ai.dart' as llm;
 import 'package:llm_dart/openai.dart' as openai;
 
 final model = llm.AI.xai(apiKey: 'your-key').chatModel('grok-3');

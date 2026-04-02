@@ -93,7 +93,7 @@ dart run performance_optimization.dart
 
 ### Reasoning with DeepSeek R1
 ```dart
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/ai.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
 
 final model =

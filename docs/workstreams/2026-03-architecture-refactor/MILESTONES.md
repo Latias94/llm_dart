@@ -37,6 +37,8 @@ Current status:
 - the root package now also exposes `chat.dart` as the focused pure Dart
   chat-runtime entrypoint, while Flutter adapters remain outside the root
   package
+- the root package now also exposes `legacy.dart` as the explicit compatibility
+  shell for builder-era and broad-root migration imports
 - Flutter chat APIs now live behind the dedicated `llm_dart_flutter` package entrypoint instead of a root-package re-export
 - the legacy `llm_dart.dart` entry still exposes `ai()` and the old builder surface while also exporting the new `AI` facade
 - core usage, warning, and provider metadata models now have centralized merge semantics, JSON-safe provider-metadata serialization checks, and shared test coverage

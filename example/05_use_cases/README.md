@@ -74,7 +74,7 @@ dart run multimodal_app.dart --demo
 
 ### Interactive Chatbot
 ```dart
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/ai.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
 
 final model = llm.AI.openai(apiKey: 'your-key').chatModel('gpt-4.1-mini');
@@ -91,7 +91,7 @@ print(result.text);
 
 ### CLI Tool
 ```dart
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/ai.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
 
 final models = <String, core.LanguageModel>{
@@ -111,7 +111,7 @@ print(result.text);
 
 ### Web Service
 ```dart
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/ai.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
 
 final model =

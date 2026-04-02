@@ -3,7 +3,7 @@
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/ai.dart' as llm;
 
 /// Compare providers that already have stable `AI` facade constructors.
 ///
@@ -54,23 +54,29 @@ Map<String, core.LanguageModel> createProviders() {
 
   final anthropicKey = Platform.environment['ANTHROPIC_API_KEY'];
   if (anthropicKey != null && anthropicKey.isNotEmpty) {
-    providers['Anthropic'] = llm.AI.anthropic(
-      apiKey: anthropicKey,
-    ).chatModel('claude-sonnet-4-5');
+    providers['Anthropic'] = llm.AI
+        .anthropic(
+          apiKey: anthropicKey,
+        )
+        .chatModel('claude-sonnet-4-5');
   }
 
   final groqKey = Platform.environment['GROQ_API_KEY'];
   if (groqKey != null && groqKey.isNotEmpty) {
-    providers['Groq'] = llm.AI.groq(
-      apiKey: groqKey,
-    ).chatModel('llama-3.3-70b-versatile');
+    providers['Groq'] = llm.AI
+        .groq(
+          apiKey: groqKey,
+        )
+        .chatModel('llama-3.3-70b-versatile');
   }
 
   final deepSeekKey = Platform.environment['DEEPSEEK_API_KEY'];
   if (deepSeekKey != null && deepSeekKey.isNotEmpty) {
-    providers['DeepSeek'] = llm.AI.deepSeek(
-      apiKey: deepSeekKey,
-    ).chatModel('deepseek-chat');
+    providers['DeepSeek'] = llm.AI
+        .deepSeek(
+          apiKey: deepSeekKey,
+        )
+        .chatModel('deepseek-chat');
   }
 
   final xaiKey = Platform.environment['XAI_API_KEY'];
@@ -175,9 +181,11 @@ void provideRecommendations(Map<String, ProviderResult> results) {
   for (final result in successful) {
     switch (result.name) {
       case 'OpenAI':
-        print('  - OpenAI: balanced default choice and broad ecosystem support');
+        print(
+            '  - OpenAI: balanced default choice and broad ecosystem support');
       case 'Anthropic':
-        print('  - Anthropic: strong long-form reasoning and safety-oriented flows');
+        print(
+            '  - Anthropic: strong long-form reasoning and safety-oriented flows');
       case 'Groq':
         print('  - Groq: latency-sensitive workloads');
       case 'DeepSeek':
@@ -189,7 +197,8 @@ void provideRecommendations(Map<String, ProviderResult> results) {
 
   print('\nNext steps:');
   print('  - run basic_configuration.dart to understand shared options');
-  print('  - run ../02_core_features/web_search.dart for provider-owned search');
+  print(
+      '  - run ../02_core_features/web_search.dart for provider-owned search');
   print('  - inspect ../04_providers/ for provider-specific features');
 }
 

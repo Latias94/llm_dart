@@ -2,7 +2,7 @@
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/ai.dart' as llm;
 
 /// 🎭 Multimodal Application - Text, Image, and Audio Processing
 ///
@@ -118,13 +118,17 @@ EXAMPLES:
       final openaiKey = Platform.environment['OPENAI_API_KEY'];
 
       if (groqKey != null && groqKey.isNotEmpty) {
-        _chatModel = llm.AI.groq(
-          apiKey: groqKey,
-        ).chatModel('llama-3.3-70b-versatile');
+        _chatModel = llm.AI
+            .groq(
+              apiKey: groqKey,
+            )
+            .chatModel('llama-3.3-70b-versatile');
       } else if (openaiKey != null && openaiKey.isNotEmpty) {
-        _chatModel = llm.AI.openai(
-          apiKey: openaiKey,
-        ).chatModel('gpt-4.1-mini');
+        _chatModel = llm.AI
+            .openai(
+              apiKey: openaiKey,
+            )
+            .chatModel('gpt-4.1-mini');
       } else {
         throw StateError(
           'Set GROQ_API_KEY or OPENAI_API_KEY to initialize the chat model.',
@@ -139,9 +143,11 @@ EXAMPLES:
 
       if (openaiKey != null && openaiKey.isNotEmpty) {
         try {
-          _imageModel = llm.AI.openai(
-            apiKey: openaiKey,
-          ).imageModel('dall-e-3');
+          _imageModel = llm.AI
+              .openai(
+                apiKey: openaiKey,
+              )
+              .imageModel('dall-e-3');
           if (_verbose) {
             print(
               '✅ Image model initialized (${_imageModel!.providerId}/${_imageModel!.modelId})',
@@ -154,9 +160,11 @@ EXAMPLES:
         }
 
         try {
-          _speechModel = llm.AI.openai(
-            apiKey: openaiKey,
-          ).speechModel('gpt-4o-mini-tts');
+          _speechModel = llm.AI
+              .openai(
+                apiKey: openaiKey,
+              )
+              .speechModel('gpt-4o-mini-tts');
           if (_verbose) {
             print(
               '✅ Speech model initialized (${_speechModel!.providerId}/${_speechModel!.modelId})',
@@ -168,7 +176,8 @@ EXAMPLES:
           }
         }
       } else if (_verbose) {
-        print('⚠️ OpenAI media models unavailable because OPENAI_API_KEY is not set');
+        print(
+            '⚠️ OpenAI media models unavailable because OPENAI_API_KEY is not set');
       }
 
       print('🎉 Models initialized successfully!\n');

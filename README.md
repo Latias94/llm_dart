@@ -62,8 +62,12 @@ dart pub get
 
 - `package:llm_dart/llm_dart.dart`
   - root facade, stable provider entrypoints, and compatibility APIs
+- `package:llm_dart/ai.dart`
+  - focused stable AI facade plus provider entrypoints for modern model APIs
 - `package:llm_dart/chat.dart`
   - focused pure Dart chat runtime entrypoint over `llm_dart_chat`
+- `package:llm_dart/legacy.dart`
+  - explicit compatibility shell for `ai()`, `createProvider(...)`, legacy models, and builder-era APIs
 - `package:llm_dart_flutter/llm_dart_flutter.dart`
   - Flutter-specific adapters such as `ChatController`
 
@@ -86,7 +90,7 @@ Other shared capability helpers:
 - `transcribe(...)`
 
 ```dart
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/ai.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
 
 Future<void> main() async {
@@ -115,7 +119,7 @@ Shared structured generation now lives above the main text-call layer through
 `OutputSpec`, `generateTextCall(...)`, and `streamTextCall(...)`.
 
 ```dart
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/ai.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
 
 Future<void> main() async {
@@ -150,7 +154,7 @@ application code uses `embed(...)` / `embedMany(...)`, while providers expose
 typed capability models such as `AI.openai(...).embeddingModel(...)`.
 
 ```dart
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/ai.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
 
 Future<void> main() async {
@@ -177,7 +181,7 @@ The shared streaming boundary is `TextStreamEvent`.
 ```dart
 import 'dart:io';
 
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/ai.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
 
 Future<void> main() async {
@@ -219,7 +223,7 @@ Example file:
 Tool definitions live in `llm_dart_core`, and providers map them into provider-owned request codecs.
 
 ```dart
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/ai.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
 
 Future<void> main() async {
@@ -288,7 +292,7 @@ Example file:
 Reasoning is part of the common result and stream model, but replay fidelity remains provider-owned.
 
 ```dart
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/ai.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
 
 Future<void> main() async {
@@ -337,7 +341,7 @@ persistence helpers. The root `package:llm_dart/chat.dart` entrypoint stays
 pure Dart and does not re-export Flutter-only types.
 
 ```dart
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/ai.dart' as llm;
 import 'package:llm_dart_flutter/llm_dart_flutter.dart';
 
 Future<void> main() async {
@@ -405,7 +409,7 @@ OpenAI-family providers, including xAI, currently share the `openai.dart` entryp
 OpenAI Responses example:
 
 ```dart
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/ai.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/openai.dart' as openai;
 
@@ -433,7 +437,7 @@ Future<void> main() async {
 xAI live search example:
 
 ```dart
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/ai.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/openai.dart' as openai;
 
@@ -487,4 +491,12 @@ The repository still exports:
 - old root provider constructors
 - compatibility adapters for legacy chat/config surfaces
 
-These remain temporarily for migration, but new code should prefer the stable model API shown above.
+These remain temporarily for migration, but new code should prefer the stable
+model API shown above.
+
+If you still need the compatibility-era builder and broad legacy surface, prefer
+the explicit import:
+
+```dart
+import 'package:llm_dart/legacy.dart';
+```

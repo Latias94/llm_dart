@@ -35,7 +35,7 @@ dart run live_search.dart
 
 ### Live Search Query
 ```dart
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/ai.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/openai.dart' as openai;
 
@@ -58,7 +58,7 @@ print(result.text);
 
 ### Real-time Data Access
 ```dart
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/ai.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/openai.dart' as openai;
 

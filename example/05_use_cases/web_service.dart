@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/ai.dart' as llm;
 
 /// Web service example using the stable model API.
 Future<void> main() async {
@@ -49,9 +49,11 @@ class AIWebService {
   Future<void> _initializeAI() async {
     final groqKey = Platform.environment['GROQ_API_KEY'];
     if (groqKey != null && groqKey.isNotEmpty) {
-      _model = llm.AI.groq(
-        apiKey: groqKey,
-      ).chatModel('llama-3.3-70b-versatile');
+      _model = llm.AI
+          .groq(
+            apiKey: groqKey,
+          )
+          .chatModel('llama-3.3-70b-versatile');
     } else {
       final openaiKey = Platform.environment['OPENAI_API_KEY'];
       if (openaiKey == null || openaiKey.isEmpty) {
@@ -60,9 +62,11 @@ class AIWebService {
         );
       }
 
-      _model = llm.AI.openai(
-        apiKey: openaiKey,
-      ).chatModel('gpt-4.1-mini');
+      _model = llm.AI
+          .openai(
+            apiKey: openaiKey,
+          )
+          .chatModel('gpt-4.1-mini');
     }
 
     print('✅ AI model initialized (${_model.providerId}/${_model.modelId})');
@@ -352,7 +356,8 @@ class AIWebService {
         .add('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   }
 
-  Future<void> _sendJson(HttpResponse response, Map<String, dynamic> data) async {
+  Future<void> _sendJson(
+      HttpResponse response, Map<String, dynamic> data) async {
     response.headers.contentType = ContentType.json;
     response.write(jsonEncode(data));
     await response.close();

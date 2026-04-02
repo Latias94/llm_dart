@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/ai.dart' as llm;
 import 'package:llm_dart/openai.dart' as openai;
 
 /// OpenAI Audio Models Example
@@ -18,10 +18,13 @@ Future<void> main() async {
 
   print('🤖 OpenAI Audio Models Demo\n');
 
-  final speechModel = llm.AI.openai(apiKey: apiKey).speechModel('gpt-4o-mini-tts');
-  final transcriptionModel = llm.AI.openai(
-    apiKey: apiKey,
-  ).transcriptionModel('whisper-1');
+  final speechModel =
+      llm.AI.openai(apiKey: apiKey).speechModel('gpt-4o-mini-tts');
+  final transcriptionModel = llm.AI
+      .openai(
+        apiKey: apiKey,
+      )
+      .transcriptionModel('whisper-1');
 
   displaySupportedFeatures(speechModel, transcriptionModel);
   await testTextToSpeech(speechModel);
@@ -36,11 +39,13 @@ void displaySupportedFeatures(
   core.TranscriptionModel transcriptionModel,
 ) {
   print('🔍 Stable Audio Features:');
-  print('   ✅ Text-to-speech via ${speechModel.providerId}/${speechModel.modelId}');
+  print(
+      '   ✅ Text-to-speech via ${speechModel.providerId}/${speechModel.modelId}');
   print(
     '   ✅ Speech-to-text via ${transcriptionModel.providerId}/${transcriptionModel.modelId}',
   );
-  print('   ⚠️  Audio translation is not yet frozen on the stable model surface');
+  print(
+      '   ⚠️  Audio translation is not yet frozen on the stable model surface');
   print('');
 }
 
@@ -90,7 +95,8 @@ Future<void> testTextToSpeech(core.SpeechModel speechModel) async {
   print('');
 }
 
-Future<void> testSpeechToText(core.TranscriptionModel transcriptionModel) async {
+Future<void> testSpeechToText(
+    core.TranscriptionModel transcriptionModel) async {
   print('🎤 Testing Speech-to-Text');
 
   try {
@@ -140,7 +146,8 @@ Future<void> testSpeechToText(core.TranscriptionModel transcriptionModel) async 
 
 void explainTranslationBoundary() {
   print('🌐 Audio Translation Boundary');
-  print('   ℹ️  OpenAI audio translation is still exposed only through the older');
+  print(
+      '   ℹ️  OpenAI audio translation is still exposed only through the older');
   print('      compatibility capability surface.');
   print('   ℹ️  The stable model API currently freezes speech generation and');
   print('      transcription, but not a separate translation model contract.');

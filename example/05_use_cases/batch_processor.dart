@@ -6,7 +6,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/ai.dart' as llm;
 
 /// Batch processing example using the stable model API.
 Future<void> main(List<String> arguments) async {
@@ -132,9 +132,11 @@ OUTPUT FORMAT (JSONL):
       throw StateError('GROQ_API_KEY environment variable not set');
     }
 
-    _model = llm.AI.groq(
-      apiKey: groqKey,
-    ).chatModel('llama-3.3-70b-versatile');
+    _model = llm.AI
+        .groq(
+          apiKey: groqKey,
+        )
+        .chatModel('llama-3.3-70b-versatile');
 
     if (_verbose) {
       print('✅ AI model initialized (${_model.providerId}/${_model.modelId})');
@@ -206,9 +208,8 @@ class DataProcessor {
     print('⚡ Using $concurrency concurrent workers\n');
 
     for (var i = 0; i < lines.length; i += batchSize) {
-      final batchEnd = (i + batchSize < lines.length)
-          ? i + batchSize
-          : lines.length;
+      final batchEnd =
+          (i + batchSize < lines.length) ? i + batchSize : lines.length;
       final batch = lines.sublist(i, batchEnd);
 
       await processBatch(batch, outputSink);

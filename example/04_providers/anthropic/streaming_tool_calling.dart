@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/ai.dart' as llm;
 
 /// Anthropic streaming tool-calling examples built on the stable shared stream
 /// API plus Anthropic's stable chat model facade.
@@ -18,9 +18,11 @@ Future<void> main() async {
     return;
   }
 
-  final model = llm.AI.anthropic(
-    apiKey: apiKey,
-  ).chatModel('claude-sonnet-4-5');
+  final model = llm.AI
+      .anthropic(
+        apiKey: apiKey,
+      )
+      .chatModel('claude-sonnet-4-5');
 
   print('✅ Stable model created: ${model.providerId}/${model.modelId}\n');
 
@@ -231,7 +233,8 @@ Future<void> _streamToolScenario({
       case core.ToolInputEndEvent(:final toolCallId):
         final encodedInput = toolInputs[toolCallId]?.toString() ?? '{}';
         final decodedInput = _decodeJsonSafely(encodedInput);
-        print('      Input assembled for ${toolNames[toolCallId] ?? toolCallId}:');
+        print(
+            '      Input assembled for ${toolNames[toolCallId] ?? toolCallId}:');
         print('      ${_formatJson(decodedInput)}');
       case core.ToolCallEvent(:final toolCall):
         toolCalls.add(toolCall);

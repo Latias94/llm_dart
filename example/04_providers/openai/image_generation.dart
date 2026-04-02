@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/ai.dart' as llm;
 import 'package:llm_dart/openai.dart' as openai;
 
 /// OpenAI Image Generation Example
@@ -111,7 +111,8 @@ Future<void> testDALLE2Generation(String apiKey) async {
     print('      ✅ Generated ${multiResult.images.length} variation(s):');
     for (var index = 0; index < multiResult.images.length; index++) {
       final image = multiResult.images[index];
-      print('         Variation ${index + 1}: ${_describeGeneratedImage(image)}');
+      print(
+          '         Variation ${index + 1}: ${_describeGeneratedImage(image)}');
     }
 
     print('   ✅ DALL-E 2 generation completed\n');
@@ -122,7 +123,8 @@ Future<void> testDALLE2Generation(String apiKey) async {
 
 Future<void> testImageEditingBoundary() async {
   print('✂️  Image Editing:');
-  print('   ℹ️  Image editing remains compatibility-oriented in the current API.');
+  print(
+      '   ℹ️  Image editing remains compatibility-oriented in the current API.');
   print('   ℹ️  The stable `ImageModel` surface currently covers prompt-based');
   print('      generation, not file-based edit workflows.');
   print('   ✅ Boundary documented\n');
@@ -130,9 +132,12 @@ Future<void> testImageEditingBoundary() async {
 
 Future<void> testImageVariationsBoundary() async {
   print('🔄 Image Variations:');
-  print('   ℹ️  Image variations remain compatibility-oriented in the current API.');
-  print('   ℹ️  The stable `ImageModel` surface intentionally stays narrow until');
-  print('      edit and variation request shapes are redesigned as provider-owned');
+  print(
+      '   ℹ️  Image variations remain compatibility-oriented in the current API.');
+  print(
+      '   ℹ️  The stable `ImageModel` surface intentionally stays narrow until');
+  print(
+      '      edit and variation request shapes are redesigned as provider-owned');
   print('      typed inputs.');
   print('   ✅ Boundary documented\n');
 }
@@ -154,10 +159,13 @@ Future<void> testAdvancedFeatures() async {
   print('      • DALL-E 3: 1024x1024, 1792x1024, 1024x1792');
 
   print('\n   💡 Stable Architecture Notes:');
-  print('      • Use `AI.openai(...).imageModel(...)` for prompt-based generation');
-  print('      • Use `core.generateImage(...)` as the shared app-facing helper');
+  print(
+      '      • Use `AI.openai(...).imageModel(...)` for prompt-based generation');
+  print(
+      '      • Use `core.generateImage(...)` as the shared app-facing helper');
   print('      • Keep OpenAI image controls inside `OpenAIImageOptions`');
-  print('      • Do not force edit/variation flows into the shared image contract');
+  print(
+      '      • Do not force edit/variation flows into the shared image contract');
 
   print('   ✅ Advanced features overview completed\n');
 }

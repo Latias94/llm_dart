@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/google.dart' as google;
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/ai.dart' as llm;
 
 /// Google Image Generation Examples
 ///
@@ -39,9 +39,11 @@ Future<void> demonstrateGeminiImageGeneration(String apiKey) async {
   print('=' * 50);
 
   try {
-    final imageModel = llm.AI.google(
-      apiKey: apiKey,
-    ).imageModel('gemini-2.5-flash-image');
+    final imageModel = llm.AI
+        .google(
+          apiKey: apiKey,
+        )
+        .imageModel('gemini-2.5-flash-image');
 
     print('   📋 Stable model: ${imageModel.providerId}/${imageModel.modelId}');
     print('   ℹ️  Gemini image models currently support only count=1');
@@ -106,9 +108,11 @@ Future<void> demonstrateImagenGeneration(String apiKey) async {
   print('=' * 50);
 
   try {
-    final imageModel = llm.AI.google(
-      apiKey: apiKey,
-    ).imageModel('imagen-3.0-generate-002');
+    final imageModel = llm.AI
+        .google(
+          apiKey: apiKey,
+        )
+        .imageModel('imagen-3.0-generate-002');
 
     const prompt =
         'A serene mountain landscape at sunset, with a crystal clear lake reflecting the mountains, photorealistic style, high detail';
@@ -156,6 +160,7 @@ void demonstrateImageEditingBoundary() {
   print('   ℹ️  Google image editing remains compatibility oriented today.');
   print('   ℹ️  The stable `ImageModel` contract intentionally covers prompt-');
   print('      based generation only, not file-based edit requests.');
-  print('   ℹ️  This avoids baking unfinished edit/variation request shapes into');
+  print(
+      '   ℹ️  This avoids baking unfinished edit/variation request shapes into');
   print('      the shared abstraction too early.');
 }

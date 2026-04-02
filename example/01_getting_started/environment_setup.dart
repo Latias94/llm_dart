@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/ai.dart' as llm;
 
 /// Environment setup and configuration examples
 ///
@@ -71,8 +71,7 @@ Future<void> demonstrateEnvironmentVariables() async {
     if (openaiKey != null) {
       final openaiModel =
           llm.AI.openai(apiKey: openaiKey).chatModel('gpt-4.1-mini');
-      print(
-          '      ✅ OpenAI model configured (${openaiModel.runtimeType})');
+      print('      ✅ OpenAI model configured (${openaiModel.runtimeType})');
     } else {
       print('      ⚠️  OpenAI: Set OPENAI_API_KEY environment variable');
     }
@@ -80,9 +79,11 @@ Future<void> demonstrateEnvironmentVariables() async {
     // Anthropic example
     final anthropicKey = Platform.environment['ANTHROPIC_API_KEY'];
     if (anthropicKey != null) {
-      final anthropicModel = llm.AI.anthropic(
-        apiKey: anthropicKey,
-      ).chatModel('claude-sonnet-4-5');
+      final anthropicModel = llm.AI
+          .anthropic(
+            apiKey: anthropicKey,
+          )
+          .chatModel('claude-sonnet-4-5');
       print(
           '      ✅ Anthropic model configured (${anthropicModel.runtimeType})');
     } else {
@@ -519,9 +520,11 @@ core.LanguageModel? createProviderForEnvironment(String environment) {
   final apiKey = Platform.environment['OPENAI_API_KEY'];
   if (apiKey == null) return null;
 
-  return llm.AI.openai(
-    apiKey: apiKey,
-  ).chatModel(
-    environment == 'production' ? 'gpt-4.1' : 'gpt-4.1-mini',
-  );
+  return llm.AI
+      .openai(
+        apiKey: apiKey,
+      )
+      .chatModel(
+        environment == 'production' ? 'gpt-4.1' : 'gpt-4.1-mini',
+      );
 }

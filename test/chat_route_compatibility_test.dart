@@ -1,4 +1,4 @@
-import 'package:llm_dart/llm_dart.dart' as legacy;
+import 'package:llm_dart/legacy.dart' as legacy;
 import 'package:llm_dart/src/config/legacy_config_keys.dart';
 import 'package:llm_dart/src/config/legacy_provider_options.dart';
 import 'package:llm_dart/src/compatibility/chat_route_compatibility.dart';

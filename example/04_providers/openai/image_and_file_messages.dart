@@ -3,7 +3,7 @@
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/ai.dart' as llm;
 
 /// OpenAI multimodal prompt examples using the stable shared prompt-part model.
 ///
@@ -210,16 +210,21 @@ Key Points:
 
 void explainStableBoundary() {
   print('--- Stable Boundary Notes ---');
-  print('• Use prompt parts, not provider-specific message builders, in new code.');
-  print('• OpenAI-specific wire formats remain internal implementation details.');
-  print('• This stable prompt model is what Flutter-facing chat UIs should keep');
+  print(
+      '• Use prompt parts, not provider-specific message builders, in new code.');
+  print(
+      '• OpenAI-specific wire formats remain internal implementation details.');
+  print(
+      '• This stable prompt model is what Flutter-facing chat UIs should keep');
   print('  in local state, persistence, and replay flows.');
 }
 
 core.LanguageModel _model(String apiKey) {
-  return llm.AI.openai(
-    apiKey: apiKey,
-  ).chatModel('gpt-4o');
+  return llm.AI
+      .openai(
+        apiKey: apiKey,
+      )
+      .chatModel('gpt-4o');
 }
 
 Future<core.GenerateTextCallResult<dynamic>> _generate({

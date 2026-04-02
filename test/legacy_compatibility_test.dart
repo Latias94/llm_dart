@@ -1,4 +1,4 @@
-import 'package:llm_dart/llm_dart.dart' as legacy;
+import 'package:llm_dart/legacy.dart' as legacy;
 import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as modern_anthropic;
 import 'package:llm_dart/src/compatibility/compat_providers.dart';
 import 'package:llm_dart/src/compatibility/legacy_chat_adapter.dart';

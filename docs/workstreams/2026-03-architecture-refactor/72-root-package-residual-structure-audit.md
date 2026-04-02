@@ -247,6 +247,36 @@ This borrows the useful part of `repo-ref/ai`:
 
 This focused root entrypoint is now landed through `package:llm_dart/chat.dart`.
 
+### 3.6 `legacy.dart`
+
+This file is the inverse of `chat.dart`: it does not define a new modern API,
+but it gives the repository an explicit compatibility import target so the
+remaining broad root surface can shrink without trapping migration-era code on
+`llm_dart.dart`.
+
+### Decision
+
+`legacy.dart` should stay as the explicit compatibility shell.
+
+It may mirror the broad root legacy surface during the migration window,
+including:
+
+- `ai()`
+- `createProvider(...)`
+- legacy builder and compatibility model exports
+
+### Important Boundary
+
+`legacy.dart` exists to absorb compatibility expectations, not to become a new
+home for modern API growth. New focused entrypoints still belong in `ai.dart`,
+`chat.dart`, `openai.dart`, `google.dart`, `anthropic.dart`, `core.dart`, and
+`transport.dart`.
+
+### Status
+
+This explicit compatibility entrypoint is now landed through
+`package:llm_dart/legacy.dart`.
+
 ## 4. Recommended Refactor Order
 
 The safest next order is:

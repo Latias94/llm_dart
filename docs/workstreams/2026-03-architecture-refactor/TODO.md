@@ -264,6 +264,7 @@
 - [x] Rewrite the Flutter integration example
 - [x] Add a migration guide
 - [x] Repoint high-visibility README and core example entrypoints at the stable `AI` facade and provider-owned search APIs
+- [x] Add an explicit root `legacy.dart` compatibility shell before further broad-root surface slimming
 
 ## Dependency Cleanup
 

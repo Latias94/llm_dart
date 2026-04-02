@@ -493,3 +493,15 @@ Resolved in the current breaking round:
 - Flutter adapters remain outside the root package and continue through
   `package:llm_dart_flutter/llm_dart_flutter.dart`
 - `91-root-chat-entrypoint-boundary.md` documents the frozen boundary
+
+## 40. Root Legacy Entrypoint Boundary Status
+
+Resolved in the current breaking round:
+
+- the root package now exposes `package:llm_dart/legacy.dart` as the explicit
+  compatibility shell
+- migration-oriented code can depend on that compatibility entrypoint before the
+  broad `llm_dart.dart` barrel shrinks further
+- focused modern imports should continue through `ai.dart`, `chat.dart`,
+  provider entrypoints, `core.dart`, and `transport.dart`
+- `92-legacy-entrypoint-boundary.md` documents the frozen boundary

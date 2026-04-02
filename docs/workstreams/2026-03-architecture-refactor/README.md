@@ -204,6 +204,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Frozen boundary for exposing the pure Dart chat runtime through
     `package:llm_dart/chat.dart` while keeping Flutter adapters out of the root
     package.
+- [92-legacy-entrypoint-boundary.md](92-legacy-entrypoint-boundary.md)
+  - Frozen boundary for the explicit `package:llm_dart/legacy.dart`
+    compatibility shell that decouples migration imports from future root
+    surface slimming.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
@@ -248,6 +252,8 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - Let the root package expose the pure Dart chat runtime through
   `package:llm_dart/chat.dart`, but keep Flutter adapters out of that root
   entrypoint.
+- Add `package:llm_dart/legacy.dart` as the explicit compatibility shell so the
+  broad legacy import path can keep shrinking without stranding migration code.
 - Keep transport request customization in `HttpChatTransport`, but do not copy
   React-style `setMessages` or store ergonomics into the shared Dart runtime.
 - Get the text generation path and the Flutter chat path right first, and migrate everything else afterward.

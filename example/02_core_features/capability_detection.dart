@@ -3,7 +3,8 @@
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/ai.dart' as ai;
+import 'package:llm_dart/legacy.dart' as legacy;
 
 /// Capability detection through provider declarations.
 ///
@@ -33,7 +34,7 @@ import 'package:llm_dart/llm_dart.dart' as llm;
 Future<void> main() async {
   print('Capability Detection and Provider Selection\n');
 
-  llm.ensureRootRegistryBootstrap();
+  legacy.ensureRootRegistryBootstrap();
   final providers = loadExampleProviderInfo();
 
   if (providers.isEmpty) {
@@ -50,7 +51,7 @@ Future<void> main() async {
       'Capability detection remains advisory; stable calls remain model-first.');
 }
 
-List<llm.ProviderInfo> loadExampleProviderInfo() {
+List<legacy.ProviderInfo> loadExampleProviderInfo() {
   const providerOrder = [
     'openai',
     'anthropic',
@@ -65,7 +66,7 @@ List<llm.ProviderInfo> loadExampleProviderInfo() {
   ];
 
   final allProviders = {
-    for (final provider in llm.LLMProviderRegistry.getAllProviderInfo())
+    for (final provider in legacy.LLMProviderRegistry.getAllProviderInfo())
       provider.id: provider,
   };
 
@@ -75,7 +76,7 @@ List<llm.ProviderInfo> loadExampleProviderInfo() {
   ];
 }
 
-void printProviderOverview(List<llm.ProviderInfo> providers) {
+void printProviderOverview(List<legacy.ProviderInfo> providers) {
   print('--- Provider Declarations ---');
 
   final byCoverage = [...providers]..sort(
@@ -99,49 +100,49 @@ void printProviderOverview(List<llm.ProviderInfo> providers) {
   print('');
 }
 
-void printScenarioRecommendations(List<llm.ProviderInfo> providers) {
+void printScenarioRecommendations(List<legacy.ProviderInfo> providers) {
   print('--- Scenario Recommendations ---');
 
   const scenarios = [
     _CapabilityScenario(
       label: 'Flutter chat baseline',
       required: {
-        llm.LLMCapability.chat,
-        llm.LLMCapability.streaming,
-        llm.LLMCapability.toolCalling,
+        legacy.LLMCapability.chat,
+        legacy.LLMCapability.streaming,
+        legacy.LLMCapability.toolCalling,
       },
     ),
     _CapabilityScenario(
       label: 'Vision-enabled chat',
       required: {
-        llm.LLMCapability.chat,
-        llm.LLMCapability.vision,
+        legacy.LLMCapability.chat,
+        legacy.LLMCapability.vision,
       },
     ),
     _CapabilityScenario(
       label: 'Reasoning-heavy workflows',
       required: {
-        llm.LLMCapability.chat,
-        llm.LLMCapability.reasoning,
+        legacy.LLMCapability.chat,
+        legacy.LLMCapability.reasoning,
       },
     ),
     _CapabilityScenario(
       label: 'Semantic search / RAG indexing',
       required: {
-        llm.LLMCapability.embedding,
+        legacy.LLMCapability.embedding,
       },
     ),
     _CapabilityScenario(
       label: 'Speech input and output',
       required: {
-        llm.LLMCapability.textToSpeech,
-        llm.LLMCapability.speechToText,
+        legacy.LLMCapability.textToSpeech,
+        legacy.LLMCapability.speechToText,
       },
     ),
     _CapabilityScenario(
       label: 'Image generation',
       required: {
-        llm.LLMCapability.imageGeneration,
+        legacy.LLMCapability.imageGeneration,
       },
     ),
   ];
@@ -161,12 +162,12 @@ void printScenarioRecommendations(List<llm.ProviderInfo> providers) {
   print('');
 }
 
-void printBoundaryGuidance(List<llm.ProviderInfo> providers) {
+void printBoundaryGuidance(List<legacy.ProviderInfo> providers) {
   print('--- Boundary Guidance ---');
 
   final rawResponsesProviders = _providersSupportingAll(
     providers,
-    const {llm.LLMCapability.openaiResponses},
+    const {legacy.LLMCapability.openaiResponses},
   );
 
   print(
@@ -198,14 +199,14 @@ void printBoundaryGuidance(List<llm.ProviderInfo> providers) {
 }
 
 Future<void> demonstrateStableExecution(
-    List<llm.ProviderInfo> providers) async {
+    List<legacy.ProviderInfo> providers) async {
   print('--- Stable Execution After Selection ---');
 
   final candidates = _providersSupportingAll(
     providers,
     const {
-      llm.LLMCapability.chat,
-      llm.LLMCapability.streaming,
+      legacy.LLMCapability.chat,
+      legacy.LLMCapability.streaming,
     },
   );
 
@@ -247,9 +248,9 @@ Future<void> demonstrateStableExecution(
   print('');
 }
 
-List<llm.ProviderInfo> _providersSupportingAll(
-  List<llm.ProviderInfo> providers,
-  Set<llm.LLMCapability> required,
+List<legacy.ProviderInfo> _providersSupportingAll(
+  List<legacy.ProviderInfo> providers,
+  Set<legacy.LLMCapability> required,
 ) {
   return providers
       .where((provider) => required.every(provider.supports))
@@ -257,7 +258,7 @@ List<llm.ProviderInfo> _providersSupportingAll(
 }
 
 _SelectedModel? _selectStableModelFromEnvironment(
-  List<llm.ProviderInfo> candidates,
+  List<legacy.ProviderInfo> candidates,
 ) {
   for (final provider in candidates) {
     final selected = _stableModelForProvider(provider.id);
@@ -279,7 +280,7 @@ _SelectedModel? _stableModelForProvider(String providerId) {
       return _SelectedModel(
         providerId: providerId,
         modelLabel: 'OpenAI / gpt-4.1-mini',
-        model: llm.AI.openai(apiKey: apiKey).chatModel('gpt-4.1-mini'),
+        model: ai.AI.openai(apiKey: apiKey).chatModel('gpt-4.1-mini'),
       );
     case 'anthropic':
       final apiKey = Platform.environment['ANTHROPIC_API_KEY'];
@@ -289,7 +290,7 @@ _SelectedModel? _stableModelForProvider(String providerId) {
       return _SelectedModel(
         providerId: providerId,
         modelLabel: 'Anthropic / claude-sonnet-4-5',
-        model: llm.AI.anthropic(apiKey: apiKey).chatModel('claude-sonnet-4-5'),
+        model: ai.AI.anthropic(apiKey: apiKey).chatModel('claude-sonnet-4-5'),
       );
     case 'google':
       final apiKey = Platform.environment['GOOGLE_API_KEY'];
@@ -299,7 +300,7 @@ _SelectedModel? _stableModelForProvider(String providerId) {
       return _SelectedModel(
         providerId: providerId,
         modelLabel: 'Google / gemini-2.5-flash',
-        model: llm.AI.google(apiKey: apiKey).chatModel('gemini-2.5-flash'),
+        model: ai.AI.google(apiKey: apiKey).chatModel('gemini-2.5-flash'),
       );
     case 'groq':
       final apiKey = Platform.environment['GROQ_API_KEY'];
@@ -309,7 +310,7 @@ _SelectedModel? _stableModelForProvider(String providerId) {
       return _SelectedModel(
         providerId: providerId,
         modelLabel: 'Groq / llama-3.3-70b-versatile',
-        model: llm.AI.groq(apiKey: apiKey).chatModel('llama-3.3-70b-versatile'),
+        model: ai.AI.groq(apiKey: apiKey).chatModel('llama-3.3-70b-versatile'),
       );
     case 'deepseek':
       final apiKey = Platform.environment['DEEPSEEK_API_KEY'];
@@ -319,7 +320,7 @@ _SelectedModel? _stableModelForProvider(String providerId) {
       return _SelectedModel(
         providerId: providerId,
         modelLabel: 'DeepSeek / deepseek-chat',
-        model: llm.AI.deepSeek(apiKey: apiKey).chatModel('deepseek-chat'),
+        model: ai.AI.deepSeek(apiKey: apiKey).chatModel('deepseek-chat'),
       );
     case 'xai':
       final apiKey = Platform.environment['XAI_API_KEY'];
@@ -329,7 +330,7 @@ _SelectedModel? _stableModelForProvider(String providerId) {
       return _SelectedModel(
         providerId: providerId,
         modelLabel: 'xAI / grok-3',
-        model: llm.AI.xai(apiKey: apiKey).chatModel('grok-3'),
+        model: ai.AI.xai(apiKey: apiKey).chatModel('grok-3'),
       );
     case 'openrouter':
       final apiKey = Platform.environment['OPENROUTER_API_KEY'];
@@ -340,7 +341,7 @@ _SelectedModel? _stableModelForProvider(String providerId) {
         providerId: providerId,
         modelLabel: 'OpenRouter / openai/gpt-4.1-mini',
         model:
-            llm.AI.openRouter(apiKey: apiKey).chatModel('openai/gpt-4.1-mini'),
+            ai.AI.openRouter(apiKey: apiKey).chatModel('openai/gpt-4.1-mini'),
       );
     default:
       return null;
@@ -374,29 +375,29 @@ String _providerLabel(String providerId) {
   }
 }
 
-String _capabilityLabel(llm.LLMCapability capability) {
+String _capabilityLabel(legacy.LLMCapability capability) {
   switch (capability) {
-    case llm.LLMCapability.chat:
+    case legacy.LLMCapability.chat:
       return 'chat';
-    case llm.LLMCapability.streaming:
+    case legacy.LLMCapability.streaming:
       return 'streaming';
-    case llm.LLMCapability.toolCalling:
+    case legacy.LLMCapability.toolCalling:
       return 'tool calling';
-    case llm.LLMCapability.vision:
+    case legacy.LLMCapability.vision:
       return 'vision';
-    case llm.LLMCapability.reasoning:
+    case legacy.LLMCapability.reasoning:
       return 'reasoning';
-    case llm.LLMCapability.embedding:
+    case legacy.LLMCapability.embedding:
       return 'embeddings';
-    case llm.LLMCapability.textToSpeech:
+    case legacy.LLMCapability.textToSpeech:
       return 'text to speech';
-    case llm.LLMCapability.speechToText:
+    case legacy.LLMCapability.speechToText:
       return 'speech to text';
-    case llm.LLMCapability.imageGeneration:
+    case legacy.LLMCapability.imageGeneration:
       return 'image generation';
-    case llm.LLMCapability.modelListing:
+    case legacy.LLMCapability.modelListing:
       return 'model listing';
-    case llm.LLMCapability.openaiResponses:
+    case legacy.LLMCapability.openaiResponses:
       return 'openai responses';
     default:
       return capability.name;
@@ -413,22 +414,22 @@ String _truncate(String text, {int maxLength = 220}) {
 }
 
 const _highSignalCapabilities = [
-  llm.LLMCapability.chat,
-  llm.LLMCapability.streaming,
-  llm.LLMCapability.toolCalling,
-  llm.LLMCapability.vision,
-  llm.LLMCapability.reasoning,
-  llm.LLMCapability.embedding,
-  llm.LLMCapability.imageGeneration,
-  llm.LLMCapability.textToSpeech,
-  llm.LLMCapability.speechToText,
-  llm.LLMCapability.modelListing,
-  llm.LLMCapability.openaiResponses,
+  legacy.LLMCapability.chat,
+  legacy.LLMCapability.streaming,
+  legacy.LLMCapability.toolCalling,
+  legacy.LLMCapability.vision,
+  legacy.LLMCapability.reasoning,
+  legacy.LLMCapability.embedding,
+  legacy.LLMCapability.imageGeneration,
+  legacy.LLMCapability.textToSpeech,
+  legacy.LLMCapability.speechToText,
+  legacy.LLMCapability.modelListing,
+  legacy.LLMCapability.openaiResponses,
 ];
 
 final class _CapabilityScenario {
   final String label;
-  final Set<llm.LLMCapability> required;
+  final Set<legacy.LLMCapability> required;
 
   const _CapabilityScenario({
     required this.label,

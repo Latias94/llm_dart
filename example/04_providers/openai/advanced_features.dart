@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/ai.dart' as llm;
 import 'package:llm_dart/openai.dart' as openai;
 
 /// OpenAI advanced examples centered on the stable chat-model facade, shared
@@ -63,7 +63,8 @@ Show your reasoning step by step.
 
     if (response.reasoningText case final reasoning?) {
       final previewLength = reasoning.length < 240 ? reasoning.length : 240;
-      print('   Reasoning preview: ${reasoning.substring(0, previewLength)}...');
+      print(
+          '   Reasoning preview: ${reasoning.substring(0, previewLength)}...');
     } else {
       print('   Reasoning preview: <not exposed>');
     }
@@ -89,8 +90,7 @@ Future<void> demonstrateFunctionCalling(String apiKey) async {
     _weatherTool(),
     _calculatorTool(),
   ];
-  const question =
-      'What is the weather like in Tokyo and calculate 15 * 23? '
+  const question = 'What is the weather like in Tokyo and calculate 15 * 23? '
       'Use both tools before answering.';
 
   try {
@@ -171,7 +171,8 @@ Future<void> demonstrateAssistantLikeWorkflows(String apiKey) async {
     print('   ℹ️  The older Assistants/Threads convenience surfaces are still');
     print('      compatibility-oriented and are not the target architecture.');
     print('   ℹ️  For stable app code, prefer a normal chat model plus system');
-    print('      instructions, persisted prompt history, and provider-owned tools.');
+    print(
+        '      instructions, persisted prompt history, and provider-owned tools.');
 
     final response = await core.generateTextCall(
       model: model,
@@ -258,7 +259,8 @@ He lives in San Francisco and has 5 years of experience."
       ),
     );
 
-    print('      Structured response: ${_formatJson(_tryDecodeJson(structured.text))}');
+    print(
+        '      Structured response: ${_formatJson(_tryDecodeJson(structured.text))}');
     _printUsage(structured);
   } catch (error) {
     print('      ❌ Structured output error: $error');
@@ -306,10 +308,12 @@ He lives in San Francisco and has 5 years of experience."
   }
 
   print('\n   💡 Stable Configuration Tips:');
-  print('      • Use OpenAIJsonSchemaResponseFormat for provider-owned JSON output.');
+  print(
+      '      • Use OpenAIJsonSchemaResponseFormat for provider-owned JSON output.');
   print('      • Keep service tier, reasoning effort, and metadata inside');
   print('        OpenAIGenerateTextOptions.');
-  print('      • Treat legacy raw token-bias and compatibility assistants helpers');
+  print(
+      '      • Treat legacy raw token-bias and compatibility assistants helpers');
   print('        as boundary APIs until they are redesigned.');
   print('   ✅ Advanced configuration demonstration completed\n');
 }
@@ -366,7 +370,8 @@ Future<void> demonstrateStreamingFeatures(String apiKey) async {
     }
 
     final planningTextValue = (await planningStream.text).trim();
-    print('\n   First pass text length: ${planningTextValue.length} characters');
+    print(
+        '\n   First pass text length: ${planningTextValue.length} characters');
     print('   Tool calls: ${toolCalls.length}');
 
     if (toolCalls.isEmpty) {
@@ -430,9 +435,11 @@ Future<void> demonstrateStreamingFeatures(String apiKey) async {
 }
 
 core.LanguageModel _openAIModel(String apiKey, String modelId) {
-  return llm.AI.openai(
-    apiKey: apiKey,
-  ).chatModel(modelId);
+  return llm.AI
+      .openai(
+        apiKey: apiKey,
+      )
+      .chatModel(modelId);
 }
 
 core.FunctionToolDefinition _weatherTool() {

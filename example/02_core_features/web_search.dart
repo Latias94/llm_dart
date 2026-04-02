@@ -4,7 +4,7 @@ import 'dart:io';
 
 import 'package:llm_dart/anthropic.dart' as anthropic;
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/ai.dart' as llm;
 import 'package:llm_dart/openai.dart' as openai;
 
 /// Stable web-search examples built on the shared text-call layer.
@@ -47,7 +47,8 @@ Future<void> main() async {
   await runXAISearch(xaiApiKey);
   await runOpenRouterSearch(openRouterApiKey);
 
-  print('Search remains provider-owned, but the app-facing call layer is shared.');
+  print(
+      'Search remains provider-owned, but the app-facing call layer is shared.');
 }
 
 Future<void> runOpenAISearch(String? apiKey) async {
@@ -61,7 +62,8 @@ Future<void> runOpenAISearch(String? apiKey) async {
   await runSearchCase(
     label: 'OpenAI Responses web search',
     model: model,
-    prompt: 'Search for recent Dart SDK release notes and summarize the highlights.',
+    prompt:
+        'Search for recent Dart SDK release notes and summarize the highlights.',
     callOptions: const core.CallOptions(
       providerOptions: openai.OpenAIGenerateTextOptions(
         builtInTools: [openai.OpenAIWebSearchTool()],
@@ -76,8 +78,7 @@ Future<void> runAnthropicSearch(String? apiKey) async {
     return;
   }
 
-  final model =
-      llm.AI.anthropic(apiKey: apiKey).chatModel('claude-sonnet-4-5');
+  final model = llm.AI.anthropic(apiKey: apiKey).chatModel('claude-sonnet-4-5');
 
   await runSearchCase(
     label: 'Anthropic native web search',
@@ -134,14 +135,16 @@ Future<void> runOpenRouterSearch(String? apiKey) async {
     return;
   }
 
-  final model = llm.AI.openRouter(
-    apiKey: apiKey,
-  ).chatModel(
-    'openai/gpt-4.1-mini',
-    settings: const openai.OpenRouterChatModelSettings(
-      search: openai.OpenRouterSearchOptions.onlineModel(),
-    ),
-  );
+  final model = llm.AI
+      .openRouter(
+        apiKey: apiKey,
+      )
+      .chatModel(
+        'openai/gpt-4.1-mini',
+        settings: const openai.OpenRouterChatModelSettings(
+          search: openai.OpenRouterSearchOptions.onlineModel(),
+        ),
+      );
 
   await runSearchCase(
     label: 'OpenRouter online-model search',

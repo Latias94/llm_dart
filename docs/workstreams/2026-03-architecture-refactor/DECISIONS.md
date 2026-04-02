@@ -400,3 +400,17 @@ Provider-specific features should be represented through:
   boundary
 - docs should recommend `package:llm_dart/chat.dart` as the focused pure Dart
   chat-app import
+
+## D44. Root `legacy.dart` Is The Explicit Compatibility Shell
+
+- the root package may expose `package:llm_dart/legacy.dart` as the explicit
+  compatibility import target for builder-era and legacy broad-surface code
+- `legacy.dart` may mirror `llm_dart.dart` during the migration window so old
+  code can opt into a stable compatibility shell before the broad root barrel
+  shrinks
+- modern code should prefer focused entrypoints such as `ai.dart`, `chat.dart`,
+  `openai.dart`, `google.dart`, `anthropic.dart`, `core.dart`, and
+  `transport.dart`
+- `legacy.dart` must not become the place where new stable model APIs grow
+- the long-term goal is that `legacy.dart`, not `llm_dart.dart`, carries the
+  explicit weight of compatibility expectations

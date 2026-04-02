@@ -36,7 +36,7 @@ dart run xai_grok.dart
 
 ```dart
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/ai.dart' as llm;
 
 final providers = <core.LanguageModel>[
   llm.AI.groq(apiKey: 'groq-key').chatModel('llama-3.3-70b-versatile'),
