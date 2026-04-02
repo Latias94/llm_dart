@@ -198,7 +198,8 @@ This keeps the core file model honest.
 This contract reinforces the package dependency direction:
 
 - `llm_dart_core` owns shared tool, file, and custom-part semantics
-- `llm_dart_flutter` owns session persistence and prompt reconstruction
+- `llm_dart_chat` owns session persistence and prompt reconstruction
+- `llm_dart_flutter` only adds Flutter-side convenience above that runtime
 - `llm_dart_anthropic` owns execution payload parsing, replay encoding, and provider-native files APIs
 - Anthropic file downloads remain provider-native APIs, not core abstractions
 

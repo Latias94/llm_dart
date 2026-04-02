@@ -1,5 +1,5 @@
 name: llm_dart_flutter
-description: Flutter-friendly chat session abstractions for llm_dart.
+description: Flutter adapter layer above llm_dart_chat.
 version: 0.1.0-dev.0
 publish_to: none
 
@@ -10,13 +10,11 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  llm_dart_chat:
+    path: ../llm_dart_chat
   llm_dart_core:
     path: ../llm_dart_core
-  llm_dart_transport:
-    path: ../llm_dart_transport
 
 dev_dependencies:
-  llm_dart_test:
-    path: ../llm_dart_test
   lints: ^6.0.0
   test: ^1.27.0

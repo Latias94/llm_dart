@@ -1,10 +1,9 @@
 # llm_dart_flutter
 
-Flutter-facing chat transport and session abstractions for `llm_dart`.
+Flutter adapter layer for the shared `llm_dart_chat` runtime.
 
-This package is the UI-side layer above the shared `llm_dart_core` model API.
-It does not add another provider abstraction. It turns stable model stream
-semantics into an application-friendly chat session surface for Flutter.
+This package re-exports the pure Dart chat runtime and adds Flutter-specific
+adapters on top of it. It does not add another provider abstraction.
 
 The package is intentionally small:
 
@@ -13,29 +12,28 @@ The package is intentionally small:
 - no storage backend
 - no provider-specific API flattening
 
-## What This Package Owns
+## What This Package Adds
 
-`llm_dart_flutter` is responsible for the stateful UI boundary:
+`llm_dart_flutter` directly owns only the Flutter-facing adapter layer:
 
-- `ChatTransport`
-  - bridge from a direct model stream or a remote backend into session chunks
-- `DirectChatTransport`
-  - uses a local `LanguageModel`
-- `HttpChatTransport`
-  - connects Flutter to a backend over SSE
-- `ChatSession`
-  - session contract for send, stop, regenerate, tool output, approval, resume,
-    and snapshot export
-- `DefaultChatSession`
-  - default session implementation above `ChatTransport`
 - `ChatController`
   - `ValueNotifier<ChatState>` wrapper for widget integration
 - `ChatPersistenceAdapter`
-  - thin snapshot codec bridge above app-owned storage
-- `ChatMessageMapper`
-  - extracts common render summaries from `ChatUiMessage`
+  - thin controller-aware wrapper above the shared snapshot persistence helper
+- re-export of `llm_dart_chat`
+  - so Flutter apps can import one package and still use the shared runtime
 
-What stays outside this package:
+The reusable runtime itself lives in `llm_dart_chat` and owns:
+
+- `ChatTransport`
+- `DirectChatTransport`
+- `HttpChatTransport`
+- `ChatSession`
+- `DefaultChatSession`
+- `ChatMessageMapper`
+- snapshot and session persistence codecs
+
+What stays outside both packages:
 
 - provider configuration
 - typed provider options
@@ -48,8 +46,10 @@ The recommended architecture is:
 
 1. `llm_dart` selects and configures a provider model.
 2. `llm_dart_core` defines prompt, stream, result, and UI message semantics.
-3. `llm_dart_flutter` owns session state, transport adaptation, persistence
-   boundaries, and widget-friendly control surfaces.
+3. `llm_dart_chat` owns provider-agnostic session state, transport adaptation,
+   persistence boundaries, and message-mapping helpers.
+4. `llm_dart_flutter` adds widget-friendly control surfaces such as
+   `ChatController`.
 
 This keeps the unified layer focused on stable model semantics while still
 leaving room for provider-owned features through:
@@ -138,6 +138,28 @@ The transport currently serializes `GenerateTextOptions`, but does not serialize
 `CallOptions.timeout`, `CallOptions.headers`, or `CallOptions.providerOptions`.
 Backend-specific transport behavior should be configured on the transport or on
 the backend itself.
+
+If your backend is also Dart, prefer building the SSE response in
+`package:llm_dart_transport` rather than `llm_dart_flutter`:
+
+```dart
+import 'package:llm_dart_transport/llm_dart_transport.dart';
+
+final adapter = HttpChatTransportServerAdapter();
+
+final body = adapter.encodeEventSseStream(
+  eventStream: model.stream(request),
+  requestId: 'req-1',
+  messageId: 'assistant-1',
+  resumeToken: 'resume-1',
+  messageMetadata: const {
+    'serverOwned': true,
+  },
+);
+```
+
+The request/chunk codecs are transport-owned now and are re-exported here only
+for client-side compatibility.
 
 ## Persistence Example
 
@@ -364,8 +386,10 @@ Use `onToolCall` directly when:
 - Unify stable model semantics, not every provider surface.
 - Keep provider-specific features in typed provider options, metadata, or
   custom parts.
+- Keep the reusable chat runtime in `llm_dart_chat`.
 - Keep storage application-owned.
 - Keep Flutter dependencies out of `llm_dart_core`.
+- Keep Flutter-only adapters in `llm_dart_flutter`.
 - Keep this package framework-neutral beyond Flutter `foundation`.
 
 ## Non-Goals
@@ -377,9 +401,12 @@ This package does not try to provide:
 - a BLoC, Riverpod, or Provider integration layer
 - a backend implementation
 - a new provider abstraction on top of `llm_dart`
+- the framework-neutral chat runtime itself
 
 ## Related Docs
 
+- Pure Dart runtime guide:
+  `../llm_dart_chat/README.md`
 - Root package overview: `../../README.md`
 - Flutter architecture notes:
   `../../docs/workstreams/2026-03-architecture-refactor/04-flutter-chat-integration.md`

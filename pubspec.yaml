@@ -17,6 +17,7 @@ environment:
 dependencies:
   dio: ^5.9.0
   llm_dart_anthropic: ^0.1.0-dev.0
+  llm_dart_chat: ^0.1.0-dev.0
   llm_dart_core: ^0.1.0-dev.0
   llm_dart_google: ^0.1.0-dev.0
   llm_dart_openai: ^0.1.0-dev.0
@@ -32,6 +33,8 @@ dev_dependencies:
 dependency_overrides:
   llm_dart_anthropic:
     path: packages/llm_dart_anthropic
+  llm_dart_chat:
+    path: packages/llm_dart_chat
   llm_dart_core:
     path: packages/llm_dart_core
   llm_dart_google:

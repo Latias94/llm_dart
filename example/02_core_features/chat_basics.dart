@@ -1,255 +1,220 @@
 // ignore_for_file: avoid_print
+
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
 
-/// 💬 Chat Basics - Foundation of AI Interactions
-///
-/// This example demonstrates the fundamental concepts of chat-based AI:
-/// - Creating and managing conversations
-/// - Different message types and their purposes
-/// - Handling responses and metadata
-/// - Managing conversation context and history
-///
-/// Before running, set your API key:
-/// export OPENAI_API_KEY="your-key"
-/// export GROQ_API_KEY="your-key"
-void main() async {
-  print('💬 Chat Basics - Foundation of AI Interactions\n');
+import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/core.dart' as core;
 
-  // Get API key
-  final apiKey = Platform.environment['OPENAI_API_KEY'] ?? 'sk-TESTKEY';
+Future<void> main() async {
+  final apiKey = Platform.environment['OPENAI_API_KEY'];
+  if (apiKey == null || apiKey.isEmpty) {
+    print('Set OPENAI_API_KEY to run this example.');
+    return;
+  }
 
-  // Create AI provider
-  final provider = await ai()
-      .openai()
-      .apiKey(apiKey)
-      .model('gpt-4o-mini')
-      .temperature(0.7)
-      .maxTokens(500)
-      .build();
+  final model = llm.AI.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
 
-  // Demonstrate different aspects of chat
-  await demonstrateBasicChat(provider);
-  await demonstrateMessageTypes(provider);
-  await demonstrateConversationHistory(provider);
-  await demonstrateResponseMetadata(provider);
-  await demonstrateContextManagement(provider);
+  print('Chat basics with the stable shared text-call surface.\n');
 
-  print('\n✅ Chat basics completed!');
+  await demonstrateBasicChat(model);
+  await demonstrateMessageTypes(model);
+  await demonstrateConversationHistory(model);
+  await demonstrateResponseMetadata(model);
+  await demonstrateContextManagement(model);
 }
 
-/// Demonstrate basic chat functionality
-Future<void> demonstrateBasicChat(ChatCapability provider) async {
-  print('🔤 Basic Chat:\n');
+Future<void> demonstrateBasicChat(core.LanguageModel model) async {
+  print('1. Basic chat');
 
   try {
-    // Simple question and answer
-    final messages = [ChatMessage.user('What is the capital of Japan?')];
+    final result = await core.generateTextCall(
+      model: model,
+      prompt: [
+        core.UserPromptMessage.text('What is the capital of Japan?'),
+      ],
+    );
 
-    final response = await provider.chat(messages);
-
-    print('   User: What is the capital of Japan?');
-    print('   AI: ${response.text}');
-    print('   ✅ Basic chat successful\n');
-  } catch (e) {
-    print('   ❌ Basic chat failed: $e\n');
+    print('User: What is the capital of Japan?');
+    print('Assistant: ${result.text}\n');
+  } catch (error) {
+    print('Basic chat failed: $error\n');
   }
 }
 
-/// Demonstrate different message types
-Future<void> demonstrateMessageTypes(ChatCapability provider) async {
-  print('📝 Message Types:\n');
+Future<void> demonstrateMessageTypes(core.LanguageModel model) async {
+  print('2. Prompt message roles');
 
   try {
-    // Different message types in conversation
-    final messages = [
-      // System message - sets AI behavior
-      ChatMessage.system(
-          'You are a helpful math tutor. Explain concepts clearly and encourage learning.'),
+    final result = await core.generateTextCall(
+      model: model,
+      prompt: [
+        core.SystemPromptMessage.text(
+          'You are a patient algebra tutor. Explain ideas simply and clearly.',
+        ),
+        core.UserPromptMessage.text(
+          'I keep hearing about variables in algebra. What are they?',
+        ),
+        core.AssistantPromptMessage.text(
+          'Variables are placeholders for values that may change or still need '
+          'to be discovered.',
+        ),
+        core.UserPromptMessage.text(
+          'Give me a short example with x.',
+        ),
+      ],
+    );
 
-      // User message - user input
-      ChatMessage.user(
-          'I\'m struggling with algebra. Can you help me understand variables?'),
-
-      // Assistant message - previous AI response (for context)
-      ChatMessage.assistant(
-          'Of course! Variables in algebra are like containers that hold unknown values. Think of them as boxes with labels like "x" or "y" that can contain different numbers.'),
-
-      // Follow-up user message
-      ChatMessage.user('Can you give me a simple example?'),
-    ];
-
-    final response = await provider.chat(messages);
-
-    print('   System: Math tutor personality set');
-    print('   User: Asking about algebra variables');
-    print('   Assistant: Previous explanation about variables');
-    print('   User: Requesting an example');
-    print('   AI: ${response.text}');
-    print('   ✅ Message types demonstration successful\n');
-  } catch (e) {
-    print('   ❌ Message types failed: $e\n');
+    print('System -> sets behavior');
+    print('User -> provides the current question');
+    print('Assistant -> replays prior context');
+    print('Assistant reply: ${result.text}\n');
+  } catch (error) {
+    print('Prompt message role demo failed: $error\n');
   }
 }
 
-/// Demonstrate conversation history management
-Future<void> demonstrateConversationHistory(ChatCapability provider) async {
-  print('📚 Conversation History:\n');
+Future<void> demonstrateConversationHistory(core.LanguageModel model) async {
+  print('3. Conversation history');
 
   try {
-    // Build conversation step by step
-    final conversation = <ChatMessage>[];
+    final conversation = <core.PromptMessage>[];
 
-    // First exchange
-    conversation.add(ChatMessage.user('Hi! What\'s your name?'));
-    var response = await provider.chat(conversation);
-    conversation.add(ChatMessage.assistant(response.text ?? ''));
-    print('   User: Hi! What\'s your name?');
-    print('   AI: ${response.text}');
+    conversation.add(
+      core.UserPromptMessage.text('Hi. What did I just ask you to remember?'),
+    );
+    var result = await core.generateTextCall(
+      model: model,
+      prompt: conversation,
+    );
+    conversation.add(core.AssistantPromptMessage.text(result.text));
+    print('Turn 1: ${result.text}');
 
-    // Second exchange - AI remembers context
-    conversation.add(ChatMessage.user('What did I just ask you?'));
-    response = await provider.chat(conversation);
-    conversation.add(ChatMessage.assistant(response.text ?? ''));
-    print('   User: What did I just ask you?');
-    print('   AI: ${response.text}');
+    conversation.add(
+      core.UserPromptMessage.text(
+        'Remember that my favorite language is Dart. Repeat it back.',
+      ),
+    );
+    result = await core.generateTextCall(
+      model: model,
+      prompt: conversation,
+    );
+    conversation.add(core.AssistantPromptMessage.text(result.text));
+    print('Turn 2: ${result.text}');
 
-    // Third exchange - testing memory
-    conversation
-        .add(ChatMessage.user('Can you summarize our conversation so far?'));
-    response = await provider.chat(conversation);
-    print('   User: Can you summarize our conversation so far?');
-    print('   AI: ${response.text}');
-
-    print('   ✅ Conversation history maintained successfully\n');
-  } catch (e) {
-    print('   ❌ Conversation history failed: $e\n');
+    conversation.add(
+      core.UserPromptMessage.text(
+        'Now summarize this conversation in one sentence.',
+      ),
+    );
+    result = await core.generateTextCall(
+      model: model,
+      prompt: conversation,
+    );
+    print('Turn 3: ${result.text}\n');
+  } catch (error) {
+    print('Conversation history demo failed: $error\n');
   }
 }
 
-/// Demonstrate response metadata and usage statistics
-Future<void> demonstrateResponseMetadata(ChatCapability provider) async {
-  print('📊 Response Metadata:\n');
+Future<void> demonstrateResponseMetadata(core.LanguageModel model) async {
+  print('4. Response metadata');
 
   try {
-    final messages = [
-      ChatMessage.user('Explain quantum computing in exactly 100 words.')
-    ];
+    final result = await core.generateTextCall(
+      model: model,
+      prompt: [
+        core.UserPromptMessage.text(
+          'Explain quantum computing in about 80 words.',
+        ),
+      ],
+    );
 
-    final response = await provider.chat(messages);
+    print('Text: ${result.text}');
+    print('Response ID: ${result.responseId ?? "n/a"}');
+    print('Response model: ${result.responseModelId ?? "n/a"}');
 
-    print('   Question: Explain quantum computing in exactly 100 words.');
-    print('   Response: ${response.text}');
-
-    // Check usage statistics
-    if (response.usage != null) {
-      final usage = response.usage!;
-      print('\n   📈 Usage Statistics:');
-      print('      • Prompt tokens: ${usage.promptTokens}');
-      print('      • Completion tokens: ${usage.completionTokens}');
-      print('      • Total tokens: ${usage.totalTokens}');
-
-      // Calculate approximate cost (example rates)
-      final promptCost =
-          (usage.promptTokens ?? 0) * 0.00001; // $0.01 per 1K tokens
-      final completionCost =
-          (usage.completionTokens ?? 0) * 0.00003; // $0.03 per 1K tokens
-      final totalCost = promptCost + completionCost;
-      print('      • Estimated cost: \$${totalCost.toStringAsFixed(6)}');
+    final usage = result.usage;
+    if (usage != null) {
+      print('Input tokens: ${usage.inputTokens ?? "n/a"}');
+      print('Output tokens: ${usage.outputTokens ?? "n/a"}');
+      print('Total tokens: ${usage.totalTokens ?? "n/a"}');
+    } else {
+      print('Usage: n/a');
     }
 
-    // Check for thinking process (if available)
-    if (response.thinking != null && response.thinking!.isNotEmpty) {
-      print(
-          '\n   🧠 Thinking Process Available: ${response.thinking!.length} characters');
+    final reasoningText = result.reasoningText;
+    if (reasoningText != null && reasoningText.isNotEmpty) {
+      print('Reasoning text length: ${reasoningText.length}');
+    } else {
+      print('Reasoning text: not returned by this response');
     }
 
-    print('   ✅ Metadata extraction successful\n');
-  } catch (e) {
-    print('   ❌ Metadata extraction failed: $e\n');
+    print('');
+  } catch (error) {
+    print('Response metadata demo failed: $error\n');
   }
 }
 
-/// Demonstrate context management strategies
-Future<void> demonstrateContextManagement(ChatCapability provider) async {
-  print('🧠 Context Management:\n');
+Future<void> demonstrateContextManagement(core.LanguageModel model) async {
+  print('5. Context management');
 
   try {
-    // Strategy 1: Short context for focused responses
-    print('   Strategy 1: Short Context');
-    final shortContext = [ChatMessage.user('What is AI?')];
-    var response = await provider.chat(shortContext);
-    print('      Response length: ${response.text?.length ?? 0} characters');
+    final shortContext = await core.generateTextCall(
+      model: model,
+      prompt: [
+        core.UserPromptMessage.text('What is AI?'),
+      ],
+    );
 
-    // Strategy 2: Rich context for detailed responses
-    print('\n   Strategy 2: Rich Context');
-    final richContext = [
-      ChatMessage.system(
-          'You are an AI expert with deep knowledge of machine learning, neural networks, and AI history.'),
-      ChatMessage.user(
-          'I\'m a computer science student preparing for an exam.'),
-      ChatMessage.assistant(
-          'I\'d be happy to help you prepare! What specific topics would you like to review?'),
-      ChatMessage.user(
-          'What is AI? Please provide a comprehensive explanation suitable for an exam.'),
+    final richContext = await core.generateTextCall(
+      model: model,
+      prompt: [
+        core.SystemPromptMessage.text(
+          'You are helping a computer-science student prepare for an exam.',
+        ),
+        core.UserPromptMessage.text(
+          'I need a concise but exam-ready definition of AI.',
+        ),
+        core.AssistantPromptMessage.text(
+          'Sure. I can answer briefly or expand with examples.',
+        ),
+        core.UserPromptMessage.text(
+          'Give me the exam-ready version with one example.',
+        ),
+      ],
+    );
+
+    final longConversation = <core.PromptMessage>[
+      core.SystemPromptMessage.text(
+        'You summarize prior discussion accurately before answering.',
+      ),
     ];
-    response = await provider.chat(richContext);
-    print('      Response length: ${response.text?.length ?? 0} characters');
 
-    // Strategy 3: Context window management
-    print('\n   Strategy 3: Context Window Management');
-    final longConversation = <ChatMessage>[];
-
-    // Simulate a long conversation
-    for (int i = 1; i <= 5; i++) {
-      longConversation
-          .add(ChatMessage.user('Question $i: Tell me about topic $i'));
-      longConversation.add(ChatMessage.assistant(
-          'Response $i: Here is information about topic $i...'));
+    for (var index = 1; index <= 4; index += 1) {
+      longConversation.add(
+        core.UserPromptMessage.text(
+            'We discussed topic $index. Keep track of it.'),
+      );
+      longConversation.add(
+        core.AssistantPromptMessage.text(
+            'Recorded topic $index for later recall.'),
+      );
     }
 
-    // Add current question
-    longConversation
-        .add(ChatMessage.user('Summarize all the topics we\'ve discussed.'));
+    longConversation.add(
+      core.UserPromptMessage.text('List every topic we discussed so far.'),
+    );
 
-    print('      Total messages in context: ${longConversation.length}');
-    response = await provider.chat(longConversation);
-    print(
-        '      AI can reference: ${response.text?.contains('topic') == true ? 'Previous topics' : 'Limited context'}');
+    final summary = await core.generateTextCall(
+      model: model,
+      prompt: longConversation,
+    );
 
-    print('\n   💡 Context Management Tips:');
-    print('      • Short context = Faster, cheaper, focused responses');
-    print(
-        '      • Rich context = Better understanding, more relevant responses');
-    print('      • Monitor token usage to avoid hitting limits');
-    print('      • Consider summarizing old messages for long conversations');
-
-    print('   ✅ Context management demonstration successful\n');
-  } catch (e) {
-    print('   ❌ Context management failed: $e\n');
+    print('Short context response length: ${shortContext.text.length}');
+    print('Rich context response length: ${richContext.text.length}');
+    print('Long conversation message count: ${longConversation.length}');
+    print('Summary of prior topics: ${summary.text}\n');
+  } catch (error) {
+    print('Context management demo failed: $error\n');
   }
 }
-
-/// 🎯 Key Chat Concepts Summary:
-///
-/// Message Types:
-/// - System: Sets AI behavior and personality
-/// - User: Human input and questions
-/// - Assistant: AI responses (for conversation history)
-///
-/// Best Practices:
-/// 1. Use system messages to define AI behavior
-/// 2. Maintain conversation history for context
-/// 3. Monitor token usage and costs
-/// 4. Handle errors gracefully
-/// 5. Manage context window size appropriately
-///
-/// Response Data:
-/// - text: The AI's response content
-/// - usage: Token consumption statistics
-/// - thinking: Internal reasoning (some models)
-///
-/// Next Steps:
-/// - streaming_chat.dart: Real-time response streaming
-/// - tool_calling.dart: Function calling and execution
-/// - structured_output.dart: JSON and schema responses

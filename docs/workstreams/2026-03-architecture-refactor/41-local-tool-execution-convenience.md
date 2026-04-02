@@ -12,13 +12,13 @@ The remaining question was:
 
 ## Frozen Conclusion
 
-Automatic local tool execution should stay in `llm_dart_flutter`.
+Automatic local tool execution should stay in `llm_dart_chat`.
 
 That means:
 
 - `llm_dart_core` keeps only tool declaration and replay semantics
 - provider packages keep only provider request/response adaptation
-- `llm_dart_flutter` may add convenience callbacks such as `onToolCall` that
+- `llm_dart_chat` may add convenience callbacks such as `onToolCall` that
   observe a client-executed tool call and optionally return local output
 
 ## Why This Boundary Is Better
@@ -60,7 +60,7 @@ This keeps one consistent continuation path.
 The session-layer convenience may also include a small typed decode helper for
 the common "tool input is a JSON object" case.
 
-That means `llm_dart_flutter` may provide:
+That means `llm_dart_chat` may provide:
 
 - `ToolExecutionRequest.requireJsonObjectInput()`
 - `ToolExecutionRequest.decodeJsonObjectInput(...)`

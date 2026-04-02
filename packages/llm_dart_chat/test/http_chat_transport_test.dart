@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
-import 'package:llm_dart_flutter/llm_dart_flutter.dart';
+import 'package:llm_dart_chat/llm_dart_chat.dart';
 import 'package:llm_dart_test/llm_dart_test.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 import 'package:test/test.dart';
@@ -22,8 +22,28 @@ void main() {
               stream: Stream.fromIterable([
                 _sseFrame(
                   chunkCodec.encodeChunk(
-                    const HttpChatTransportStartChunk(
+                    const HttpChatTransportTransportStartChunk(
                       requestId: 'req-1',
+                      resumeToken: 'resume-1',
+                    ),
+                  ),
+                ),
+                _sseFrame(
+                  chunkCodec.encodeChunk(
+                    HttpChatTransportMessageStartChunk(
+                      messageId: 'server-msg-1',
+                      metadata: const {
+                        'serverOwned': true,
+                      },
+                    ),
+                  ),
+                ),
+                _sseFrame(
+                  chunkCodec.encodeChunk(
+                    HttpChatTransportMessageMetadataChunk(
+                      metadata: const {
+                        'phase': 'streaming',
+                      },
                     ),
                   ),
                 ),
@@ -62,6 +82,15 @@ void main() {
                 ),
                 _sseFrame(
                   chunkCodec.encodeChunk(
+                    HttpChatTransportMessageFinishChunk(
+                      metadata: const {
+                        'persisted': true,
+                      },
+                    ),
+                  ),
+                ),
+                _sseFrame(
+                  chunkCodec.encodeChunk(
                     const HttpChatTransportFinishChunk(),
                   ),
                 ),
@@ -82,10 +111,17 @@ void main() {
                 generateOptions: GenerateTextOptions(
                   temperature: 0.2,
                 ),
+                metadata: {
+                  'clientRequestId': 'req-client-1',
+                },
               ),
             ),
           )
           .toList();
+
+      final startChunk = chunks.first as ChatUiMessageStartChunk;
+      expect(startChunk.messageId, 'server-msg-1');
+      expect(startChunk.metadata['serverOwned'], isTrue);
 
       expect(capturedRequest, isNotNull);
       expect(capturedRequest!.uri, Uri.parse('https://example.com/chat'));
@@ -94,15 +130,118 @@ void main() {
 
       final body = capturedRequest!.body as Map<String, Object?>;
       expect(body['kind'], HttpChatTransportRequestJsonCodec.envelopeKind);
+      final decodedRequest =
+          const HttpChatTransportRequestJsonCodec().decodeRequest(body);
+      expect(
+        decodedRequest.streamProtocol,
+        HttpChatTransportStreamProtocol.uiMessageStreamV2,
+      );
+      expect(
+        decodedRequest.metadata,
+        {
+          'clientRequestId': 'req-client-1',
+        },
+      );
+
+      final metadataChunk = chunks[1] as ChatUiMessageMetadataChunk;
+      expect(metadataChunk.metadata['phase'], 'streaming');
 
       final events = _eventsFromChunks(chunks);
       expect(events, hasLength(3));
       expect(events[0], isA<TextStartEvent>());
       expect((events[1] as TextDeltaEvent).delta, 'Hello');
       expect((events[2] as FinishEvent).finishReason, FinishReason.stop);
+
+      final finishChunk = chunks.last as ChatUiMessageFinishChunk;
+      expect(finishChunk.metadata['persisted'], isTrue);
     });
 
-    test('maps abort chunk to aborted finish event', () async {
+    test(
+        'prepareSendMessagesRequest can override endpoint, headers, timeout, and payload',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final transport = HttpChatTransport(
+        endpoint: Uri.parse('https://example.com/chat'),
+        requestTimeout: const Duration(seconds: 3),
+        prepareSendMessagesRequest: (context) {
+          expect(context.request.trigger, ChatTransportTrigger.regenerate);
+          expect(context.payload.metadata['clientRequestId'], 'client-1');
+          expect(context.headers['accept'], 'text/event-stream');
+
+          return HttpChatTransportPreparedSendMessagesRequest(
+            endpoint: Uri.parse('https://example.com/chat/prepared'),
+            headers: {
+              ...context.headers,
+              'x-custom': '1',
+            },
+            requestTimeout: const Duration(seconds: 9),
+            overrideRequestTimeout: true,
+            payload: HttpChatTransportRequestPayload(
+              chatId: context.payload.chatId,
+              prompt: context.payload.prompt,
+              generateOptions: const GenerateTextOptions(
+                maxOutputTokens: 128,
+              ),
+              streamProtocol: context.payload.streamProtocol,
+              metadata: {
+                ...context.payload.metadata,
+                'prepared': true,
+              },
+            ),
+          );
+        },
+        transport: _FakeTransportClient(
+          onSendStream: (request) async {
+            capturedRequest = request;
+            return StreamingTransportResponse(
+              statusCode: 200,
+              stream: const Stream<List<int>>.empty(),
+            );
+          },
+        ),
+      );
+
+      await transport
+          .sendMessages(
+            ChatTransportRequest(
+              chatId: 'chat-1',
+              trigger: ChatTransportTrigger.regenerate,
+              prompt: [
+                UserPromptMessage.text('Hello'),
+              ],
+              options: const ChatRequestOptions(
+                metadata: {
+                  'clientRequestId': 'client-1',
+                },
+              ),
+            ),
+          )
+          .toList();
+
+      expect(capturedRequest, isNotNull);
+      expect(
+        capturedRequest!.uri,
+        Uri.parse('https://example.com/chat/prepared'),
+      );
+      expect(capturedRequest!.headers['x-custom'], '1');
+      expect(capturedRequest!.timeout, const Duration(seconds: 9));
+
+      final decodedRequest =
+          const HttpChatTransportRequestJsonCodec().decodeRequest(
+        capturedRequest!.body,
+      );
+      expect(decodedRequest.generateOptions.maxOutputTokens, 128);
+      expect(
+        decodedRequest.metadata,
+        {
+          'clientRequestId': 'client-1',
+          'prepared': true,
+        },
+      );
+    });
+
+    test('maps abort chunk to abort plus aborted finish events', () async {
       const chunkCodec = HttpChatTransportChunkJsonCodec();
 
       final transport = HttpChatTransport(
@@ -136,7 +275,13 @@ void main() {
           )
           .toList();
 
-      final finish = _singleEvent(chunks) as FinishEvent;
+      final events = _eventsFromChunks(chunks);
+      expect(events, hasLength(2));
+
+      final abort = events.first as AbortEvent;
+      expect(abort.reason, 'cancelled');
+
+      final finish = events.last as FinishEvent;
       expect(finish.finishReason, FinishReason.aborted);
       expect(finish.rawFinishReason, 'cancelled');
     });
@@ -352,8 +497,128 @@ void main() {
       );
       expect(reconnectRequest.chatId, 'chat-1');
       expect(reconnectRequest.resumeToken, 'resume-2');
+      expect(
+        reconnectRequest.streamProtocol,
+        HttpChatTransportStreamProtocol.uiMessageStreamV2,
+      );
 
       expect(transport.reconnect('chat-1'), isNull);
+    });
+
+    test(
+        'prepareReconnectRequest can override endpoint, headers, timeout, and payload',
+        () async {
+      final capturedRequests = <TransportRequest>[];
+      const chunkCodec = HttpChatTransportChunkJsonCodec();
+      const requestCodec = HttpChatTransportRequestJsonCodec();
+      var attempt = 0;
+
+      final transport = HttpChatTransport(
+        endpoint: Uri.parse('https://example.com/chat'),
+        requestTimeout: const Duration(seconds: 4),
+        prepareReconnectRequest: (context) {
+          expect(context.chatId, 'chat-1');
+          expect(context.resumeToken, 'resume-1');
+          expect(context.headers['accept'], 'text/event-stream');
+
+          return HttpChatTransportPreparedReconnectRequest(
+            endpoint: Uri.parse('https://example.com/chat/reconnect'),
+            headers: {
+              ...context.headers,
+              'x-reconnect': '1',
+            },
+            requestTimeout: const Duration(seconds: 11),
+            overrideRequestTimeout: true,
+            payload: HttpChatTransportReconnectRequestPayload(
+              chatId: context.payload.chatId,
+              resumeToken: context.payload.resumeToken,
+              streamProtocol: context.payload.streamProtocol,
+              metadata: const {
+                'resumeClient': 'mobile',
+              },
+            ),
+          );
+        },
+        transport: _FakeTransportClient(
+          onSendStream: (request) async {
+            capturedRequests.add(request);
+            attempt += 1;
+
+            if (attempt == 1) {
+              return StreamingTransportResponse(
+                statusCode: 200,
+                stream: Stream<List<int>>.multi((controller) {
+                  controller.add(
+                    _sseFrame(
+                      chunkCodec.encodeChunk(
+                        const HttpChatTransportStartChunk(
+                          resumeToken: 'resume-1',
+                        ),
+                      ),
+                    ),
+                  );
+                  controller.addError(StateError('socket closed'));
+                }),
+              );
+            }
+
+            if (attempt == 2) {
+              return StreamingTransportResponse(
+                statusCode: 200,
+                stream: Stream.fromIterable([
+                  _sseFrame(
+                    chunkCodec.encodeChunk(
+                      const HttpChatTransportEventChunk(
+                        FinishEvent(
+                          finishReason: FinishReason.stop,
+                        ),
+                      ),
+                    ),
+                  ),
+                  _sseFrame(
+                    chunkCodec.encodeChunk(
+                      const HttpChatTransportFinishChunk(),
+                    ),
+                  ),
+                ]),
+              );
+            }
+
+            throw StateError('Unexpected transport attempt $attempt');
+          },
+        ),
+      );
+
+      await transport
+          .sendMessages(
+            ChatTransportRequest(
+              chatId: 'chat-1',
+              prompt: [
+                UserPromptMessage.text('Hello'),
+              ],
+            ),
+          )
+          .toList();
+      await transport.reconnect('chat-1')!.toList();
+
+      expect(capturedRequests, hasLength(2));
+      final reconnectRequest = capturedRequests[1];
+      expect(
+        reconnectRequest.uri,
+        Uri.parse('https://example.com/chat/reconnect'),
+      );
+      expect(reconnectRequest.headers['x-reconnect'], '1');
+      expect(reconnectRequest.timeout, const Duration(seconds: 11));
+
+      final decodedReconnect = requestCodec.decodeReconnectRequest(
+        reconnectRequest.body,
+      );
+      expect(
+        decodedReconnect.metadata,
+        {
+          'resumeClient': 'mobile',
+        },
+      );
     });
 
     test('reconnect replays buffered data-part chunks', () async {
@@ -458,11 +723,10 @@ void main() {
           .toList();
 
       expect(firstAttemptChunks, hasLength(2));
-      expect(firstAttemptChunks[0], isA<ChatTransportDataPartChunk>());
-      expect(firstAttemptChunks[1], isA<ChatTransportEventChunk>());
+      expect(firstAttemptChunks[0], isA<ChatUiDataPartChunk<Object?>>());
+      expect(firstAttemptChunks[1], isA<ChatUiEventChunk>());
       expect(
-        ((firstAttemptChunks[1] as ChatTransportEventChunk).event as ErrorEvent)
-            .error,
+        ((firstAttemptChunks[1] as ChatUiEventChunk).event as ErrorEvent).error,
         allOf(
           isA<ModelError>(),
           predicate<ModelError>(
@@ -476,15 +740,15 @@ void main() {
 
       final resumedChunks = await transport.reconnect('chat-1')!.toList();
       expect(resumedChunks, hasLength(3));
-      expect(resumedChunks[0], isA<ChatTransportDataPartChunk>());
+      expect(resumedChunks[0], isA<ChatUiDataPartChunk<Object?>>());
       expect(
-        (((resumedChunks[0] as ChatTransportDataPartChunk).part.data
+        (((resumedChunks[0] as ChatUiDataPartChunk<Object?>).part.data
             as Map<String, Object?>)['value']),
         0.25,
       );
-      expect(resumedChunks[1], isA<ChatTransportDataPartChunk>());
+      expect(resumedChunks[1], isA<ChatUiDataPartChunk<Object?>>());
       expect(
-        (((resumedChunks[1] as ChatTransportDataPartChunk).part.data
+        (((resumedChunks[1] as ChatUiDataPartChunk<Object?>).part.data
             as Map<String, Object?>)['value']),
         1.0,
       );
@@ -576,14 +840,14 @@ List<int> _sseFrame(Map<String, Object?> payload) {
   return utf8.encode('data: ${jsonEncode(payload)}\n\n');
 }
 
-List<TextStreamEvent> _eventsFromChunks(List<ChatTransportChunk> chunks) {
+List<TextStreamEvent> _eventsFromChunks(List<ChatUiStreamChunk> chunks) {
   return chunks
-      .whereType<ChatTransportEventChunk>()
+      .whereType<ChatUiEventChunk>()
       .map((chunk) => chunk.event)
       .toList(growable: false);
 }
 
-TextStreamEvent _singleEvent(List<ChatTransportChunk> chunks) {
+TextStreamEvent _singleEvent(List<ChatUiStreamChunk> chunks) {
   final events = _eventsFromChunks(chunks);
   expect(events, hasLength(1));
   return events.single;

@@ -1,76 +1,60 @@
+import 'package:llm_dart_chat/llm_dart_chat.dart' as chat;
+
 import 'chat_controller.dart';
-import 'chat_session.dart';
-import 'chat_session_snapshot.dart';
-import 'chat_session_snapshot_json_codec.dart';
 
-abstract interface class ChatPersistenceStore {
-  Future<Object?> readSnapshot(String chatId);
-
-  Future<void> writeSnapshot(
-    String chatId,
-    Object? snapshotEnvelope,
-  );
-
-  Future<void> deleteSnapshot(String chatId);
-}
-
-/// Thin persistence helper above session snapshots.
+/// Flutter-aware persistence helper above chat session snapshots.
 ///
-/// Storage remains application-owned.
-/// This adapter only handles snapshot encoding, decoding, and restoration.
+/// The shared snapshot codec and store contracts live in `llm_dart_chat`.
+/// This adapter adds controller convenience methods without pulling Flutter
+/// types into the pure Dart runtime package.
 final class ChatPersistenceAdapter {
-  final ChatPersistenceStore store;
-  final ChatSessionSnapshotJsonCodec codec;
+  final chat.ChatPersistenceStore store;
+  final chat.ChatSessionSnapshotJsonCodec codec;
 
-  const ChatPersistenceAdapter({
+  late final chat.ChatPersistenceAdapter _adapter =
+      chat.ChatPersistenceAdapter(
+        store: store,
+        codec: codec,
+      );
+
+  ChatPersistenceAdapter({
     required this.store,
-    this.codec = const ChatSessionSnapshotJsonCodec(),
-  });
+    chat.ChatSessionSnapshotJsonCodec? codec,
+  }) : codec = codec ?? const chat.ChatSessionSnapshotJsonCodec();
 
-  Future<void> saveSnapshot(ChatSessionSnapshot snapshot) {
-    return store.writeSnapshot(
-      snapshot.chatId,
-      codec.encodeSnapshot(snapshot),
-    );
+  Future<void> saveSnapshot(chat.ChatSessionSnapshot snapshot) {
+    return _adapter.saveSnapshot(snapshot);
   }
 
-  Future<void> saveSession(ChatSession session) {
-    return saveSnapshot(session.exportSnapshot());
+  Future<void> saveSession(chat.ChatSession session) {
+    return _adapter.saveSession(session);
   }
 
   Future<void> saveController(ChatController controller) {
     return saveSnapshot(controller.exportSnapshot());
   }
 
-  Future<ChatSessionSnapshot?> loadSnapshot(String chatId) async {
-    final envelope = await store.readSnapshot(chatId);
-    if (envelope == null) {
-      return null;
-    }
-
-    return codec.decodeSnapshot(envelope);
+  Future<chat.ChatSessionSnapshot?> loadSnapshot(String chatId) {
+    return _adapter.loadSnapshot(chatId);
   }
 
   Future<void> deleteSnapshot(String chatId) {
-    return store.deleteSnapshot(chatId);
+    return _adapter.deleteSnapshot(chatId);
   }
 
-  Future<T?> restoreSession<T extends ChatSession>(
+  Future<T?> restoreSession<T extends chat.ChatSession>(
     String chatId, {
-    required T Function(ChatSessionSnapshot snapshot) createSession,
-  }) async {
-    final snapshot = await loadSnapshot(chatId);
-    if (snapshot == null) {
-      return null;
-    }
-
-    return createSession(snapshot);
+    required T Function(chat.ChatSessionSnapshot snapshot) createSession,
+  }) {
+    return _adapter.restoreSession(
+      chatId,
+      createSession: createSession,
+    );
   }
 
-  Future<ChatController?> restoreController(
+  Future<T?> restoreController<T extends ChatController>(
     String chatId, {
-    required ChatController Function(ChatSessionSnapshot snapshot)
-        createController,
+    required T Function(chat.ChatSessionSnapshot snapshot) createController,
   }) async {
     final snapshot = await loadSnapshot(chatId);
     if (snapshot == null) {

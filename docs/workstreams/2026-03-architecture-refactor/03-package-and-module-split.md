@@ -121,31 +121,50 @@ Notes:
 - this is a transition package, not a permanent final design
 - once a community provider grows substantially in complexity, it should move to its own package
 
-### 7. `llm_dart_flutter`
+### 7. `llm_dart_chat`
 
 Responsibilities:
 
 - `ChatSession`
 - `ChatTransport`
 - `ChatState`
-- Flutter-friendly controller and notifier layers
+- `DefaultChatSession`
+- direct and HTTP chat transport implementations
 - serialization and persistence helpers
+- chat message mapping and local tool-execution conveniences
+
+Notes:
+
+- this package must stay pure Dart
+- it should depend on `llm_dart_core` and `llm_dart_transport`, but not on
+  Flutter or concrete provider packages
+
+### 8. `llm_dart_flutter`
+
+Responsibilities:
+
+- `ChatController`
+- Flutter `ValueNotifier` / `Listenable` adapters
+- controller-aware persistence convenience wrappers
+- re-export of the shared chat runtime for Flutter applications
 
 Notes:
 
 - this package may depend on `flutter/foundation`
+- it should stay thinner than `llm_dart_chat`
 - the main `llm_dart` package should not require Flutter
 
-### 8. `llm_dart`
+### 9. `llm_dart`
 
 Responsibilities:
 
 - facade
 - backward-compatibility adapters
 - most common re-exports
+- focused root entrypoints such as `chat.dart` for pure Dart app integration
 - transitional implementation of the old builder APIs
 
-### 9. `llm_dart_test`
+### 10. `llm_dart_test`
 
 Responsibilities:
 
@@ -243,14 +262,29 @@ A better shape is:
 
 - `llm_dart.dart`
 - `llm_dart/core.dart`
+- `llm_dart/chat.dart`
 - `llm_dart/openai.dart`
 - `package:llm_dart_flutter/llm_dart_flutter.dart`
+
+Notes:
+
+- `llm_dart/chat.dart` should stay a thin pure Dart barrel over
+  `llm_dart_chat`, `core.dart`, `transport.dart`, and the stable `AI` facade
+- Flutter-specific adapters should remain outside the root package and continue
+  to live in `llm_dart_flutter`
 
 ## 3. Enforce One-Way Dependencies
 
 Recommended dependency direction:
 
-`core <- transport <- provider packages <- facade / flutter`
+- `llm_dart_core <- llm_dart_transport <- provider packages <- llm_dart`
+- `llm_dart_core <- llm_dart_transport <- llm_dart_chat <- llm_dart_flutter`
+
+Additional rule:
+
+- `llm_dart_chat` may also depend directly on `llm_dart_core` for shared UI and
+  state models, but `llm_dart_flutter` should not absorb runtime logic back from
+  `llm_dart_chat`
 
 Reverse dependencies should be disallowed.
 
@@ -281,6 +315,7 @@ Recommended strategy:
 - establish the workspace boundaries first
 - publish only `llm_dart` initially
 - let `llm_dart` consume the internal workspace packages
-- only evaluate separate publishing for `llm_dart_core` or `llm_dart_flutter` after the API has stabilized
+- only evaluate separate publishing for `llm_dart_core`, `llm_dart_chat`, or
+  `llm_dart_flutter` after the API has stabilized
 
 This gives the project the benefit of clean boundaries without immediately multiplying release and maintenance overhead.

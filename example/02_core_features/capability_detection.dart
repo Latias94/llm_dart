@@ -1,401 +1,449 @@
 // ignore_for_file: avoid_print
+
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
 
-/// 🔍 Capability Detection - Discover Provider Features
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/llm_dart.dart' as llm;
+
+/// Capability detection through provider declarations.
 ///
-/// This example demonstrates how to detect and compare capabilities across
-/// different AI providers using the ProviderCapabilities interface:
-/// - Check what features a provider supports
-/// - Compare capabilities across multiple providers
-/// - Make informed provider selection decisions
-/// - Understand capability limitations and variations
+/// This example intentionally separates two layers:
+/// 1. registry-level capability metadata for provider selection
+/// 2. stable `AI.*(...).chatModel(...)` creation for actual execution
 ///
-/// **Important Notes:**
+/// Capability metadata is useful for:
+/// - shortlisting providers before choosing API keys and models
+/// - documentation and migration planning
+/// - understanding provider-family boundaries
 ///
-/// 1. **Informational Purpose**: Capability detection is primarily for provider
-///    selection and documentation, not strict runtime validation.
+/// Capability metadata is not a strict runtime contract:
+/// - support can vary by model
+/// - some features stay provider-owned compatibility boundaries
+/// - successful app calls still require graceful error handling
 ///
-/// 2. **Model Variations**: Actual support may vary by specific model within
-///    the same provider (e.g., GPT-4 vs GPT-3.5, Claude Sonnet vs Haiku).
-///
-/// 3. **Runtime Detection**: Some features (like reasoning output) are detected
-///    at runtime through response parsing rather than capability declarations.
-///
-/// 4. **OpenAI-Compatible Providers**: Providers using OpenAI-compatible APIs
-///    may have different capabilities than declared.
-///
-/// **Best Practices:**
-/// - Use capability checks for provider selection
-/// - Always implement graceful error handling
-/// - Test critical features with actual API calls
-/// - Don't rely solely on capability declarations for runtime validation
-///
-/// Before running, set your API keys:
-/// export OPENAI_API_KEY="your-key"
-/// export ANTHROPIC_API_KEY="your-key"
-/// export GROQ_API_KEY="your-key"
-void main() async {
-  print('🔍 Capability Detection - Discover Provider Features\n');
+/// No credentials are required for the declaration-inspection sections.
+/// To run the optional stable execution demo, set one of:
+/// - OPENAI_API_KEY
+/// - ANTHROPIC_API_KEY
+/// - GOOGLE_API_KEY
+/// - GROQ_API_KEY
+/// - DEEPSEEK_API_KEY
+/// - XAI_API_KEY
+/// - OPENROUTER_API_KEY
+Future<void> main() async {
+  print('Capability Detection and Provider Selection\n');
 
-  // Create multiple providers for comparison
-  final providers = await createProviders();
-
-  // Demonstrate capability detection
-  await demonstrateBasicCapabilityCheck(providers);
-  await demonstrateCapabilityComparison(providers);
-  await demonstrateFeatureBasedSelection(providers);
-  await demonstrateCapabilityValidation(providers);
-
-  print('\n✅ Capability detection completed!');
-}
-
-/// Create multiple providers for capability comparison
-Future<Map<String, ProviderCapabilities>> createProviders() async {
-  final providers = <String, ProviderCapabilities>{};
-
-  // OpenAI provider (standard)
-  final openaiKey = Platform.environment['OPENAI_API_KEY'];
-  if (openaiKey != null) {
-    try {
-      final openai =
-          await ai().openai().apiKey(openaiKey).model('gpt-4o-mini').build();
-      if (openai is ProviderCapabilities) {
-        providers['OpenAI Standard'] = openai as ProviderCapabilities;
-      }
-    } catch (e) {
-      print('⚠️  Failed to create OpenAI provider: $e');
-    }
-
-    // OpenAI provider with Responses API (manual configuration)
-    try {
-      final openaiResponses = await ai()
-          .openai((openai) => openai.useResponsesAPI().webSearchTool())
-          .apiKey(openaiKey)
-          .model('gpt-4o')
-          .build();
-      if (openaiResponses is ProviderCapabilities) {
-        providers['OpenAI Responses (Manual)'] =
-            openaiResponses as ProviderCapabilities;
-      }
-    } catch (e) {
-      print('⚠️  Failed to create OpenAI Responses provider: $e');
-    }
-
-    // OpenAI provider with Responses API (using buildOpenAIResponses)
-    try {
-      final openaiResponsesAuto = await ai()
-          .openai((openai) => openai.webSearchTool())
-          .apiKey(openaiKey)
-          .model('gpt-4o')
-          .buildOpenAIResponses();
-      providers['OpenAI Responses (Auto)'] = openaiResponsesAuto;
-    } catch (e) {
-      print('⚠️  Failed to create OpenAI Responses auto provider: $e');
-    }
-  }
-
-  // Anthropic provider
-  final anthropicKey = Platform.environment['ANTHROPIC_API_KEY'];
-  if (anthropicKey != null) {
-    try {
-      final anthropic = await ai()
-          .anthropic()
-          .apiKey(anthropicKey)
-          .model('claude-3-5-haiku-20241022')
-          .build();
-      if (anthropic is ProviderCapabilities) {
-        providers['Anthropic'] = anthropic as ProviderCapabilities;
-      }
-    } catch (e) {
-      print('⚠️  Failed to create Anthropic provider: $e');
-    }
-  }
-
-  // Groq provider (speed-optimized)
-  final groqKey = Platform.environment['GROQ_API_KEY'];
-  if (groqKey != null) {
-    try {
-      final groq = await ai()
-          .groq()
-          .apiKey(groqKey)
-          .model('llama-3.1-8b-instant')
-          .build();
-      if (groq is ProviderCapabilities) {
-        providers['Groq'] = groq as ProviderCapabilities;
-      }
-    } catch (e) {
-      print('⚠️  Failed to create Groq provider: $e');
-    }
-  }
+  llm.ensureRootRegistryBootstrap();
+  final providers = loadExampleProviderInfo();
 
   if (providers.isEmpty) {
-    print('❌ No providers available. Please set at least one API key.');
-    exit(1);
+    print('No provider declarations are currently registered.');
+    return;
   }
 
-  print('📋 Created ${providers.length} providers for comparison\n');
-  return providers;
-}
+  printProviderOverview(providers);
+  printScenarioRecommendations(providers);
+  printBoundaryGuidance(providers);
+  await demonstrateStableExecution(providers);
 
-/// Demonstrate basic capability checking
-Future<void> demonstrateBasicCapabilityCheck(
-    Map<String, ProviderCapabilities> providers) async {
-  print('🔤 Basic Capability Check:\n');
-
-  for (final entry in providers.entries) {
-    final providerName = entry.key;
-    final provider = entry.value;
-
-    print('   📊 $providerName Capabilities:');
-
-    // Check core capabilities
-    final coreCapabilities = [
-      LLMCapability.chat,
-      LLMCapability.streaming,
-      LLMCapability.toolCalling,
-      LLMCapability.vision,
-      LLMCapability.reasoning,
-    ];
-
-    for (final capability in coreCapabilities) {
-      final supported = provider.supports(capability);
-      final icon = supported ? '✅' : '❌';
-      print('      $icon ${capability.name}');
-    }
-
-    print(
-        '      Total: ${provider.supportedCapabilities.length} capabilities\n');
-  }
-}
-
-/// Demonstrate capability comparison across providers
-Future<void> demonstrateCapabilityComparison(
-    Map<String, ProviderCapabilities> providers) async {
-  print('📊 Capability Comparison:\n');
-
-  // Get all unique capabilities across providers
-  final allCapabilities = <LLMCapability>{};
-  for (final provider in providers.values) {
-    allCapabilities.addAll(provider.supportedCapabilities);
-  }
-
-  // Create comparison table
-  print('   Capability Comparison Table:');
   print(
-      '   ${'Capability'.padRight(20)} | ${providers.keys.map((name) => name.padRight(12)).join(' | ')}');
-  print('   ${'-' * 20} | ${providers.keys.map((_) => '-' * 12).join(' | ')}');
+      'Capability detection remains advisory; stable calls remain model-first.');
+}
 
-  for (final capability in allCapabilities) {
-    final row = StringBuffer();
-    row.write('   ${capability.name.padRight(20)} | ');
+List<llm.ProviderInfo> loadExampleProviderInfo() {
+  const providerOrder = [
+    'openai',
+    'anthropic',
+    'google',
+    'groq',
+    'deepseek',
+    'xai',
+    'openrouter',
+    'phind',
+    'ollama',
+    'elevenlabs',
+  ];
 
-    final supportStatus = providers.values
-        .map((provider) =>
-            provider.supports(capability) ? '✅'.padRight(12) : '❌'.padRight(12))
-        .join(' | ');
-    row.write(supportStatus);
+  final allProviders = {
+    for (final provider in llm.LLMProviderRegistry.getAllProviderInfo())
+      provider.id: provider,
+  };
 
-    print(row.toString());
-  }
+  return [
+    for (final providerId in providerOrder)
+      if (allProviders.containsKey(providerId)) allProviders[providerId]!,
+  ];
+}
 
-  print('\n   📈 Capability Statistics:');
-  for (final entry in providers.entries) {
-    final name = entry.key;
-    final provider = entry.value;
-    final percentage =
-        (provider.supportedCapabilities.length / allCapabilities.length * 100)
-            .round();
+void printProviderOverview(List<llm.ProviderInfo> providers) {
+  print('--- Provider Declarations ---');
+
+  final byCoverage = [...providers]..sort(
+      (left, right) => right.supportedCapabilities.length
+          .compareTo(left.supportedCapabilities.length),
+    );
+
+  for (final provider in byCoverage) {
+    final capabilities = _highSignalCapabilities
+        .where(provider.supports)
+        .map(_capabilityLabel)
+        .join(', ');
+
     print(
-        '      • $name: ${provider.supportedCapabilities.length}/${allCapabilities.length} capabilities ($percentage%)');
+      '  ${_providerLabel(provider.id).padRight(12)} '
+      '(${provider.supportedCapabilities.length} declared): '
+      '${capabilities.isEmpty ? 'none' : capabilities}',
+    );
   }
+
   print('');
 }
 
-/// Demonstrate feature-based provider selection
-Future<void> demonstrateFeatureBasedSelection(
-    Map<String, ProviderCapabilities> providers) async {
-  print('🎯 Feature-Based Provider Selection:\n');
+void printScenarioRecommendations(List<llm.ProviderInfo> providers) {
+  print('--- Scenario Recommendations ---');
 
-  // Scenario 1: Need vision capabilities
-  print('   Scenario 1: Building a vision-enabled chatbot');
-  final visionProviders = providers.entries
-      .where((entry) => entry.value.supports(LLMCapability.vision))
-      .map((entry) => entry.key)
-      .toList();
+  const scenarios = [
+    _CapabilityScenario(
+      label: 'Flutter chat baseline',
+      required: {
+        llm.LLMCapability.chat,
+        llm.LLMCapability.streaming,
+        llm.LLMCapability.toolCalling,
+      },
+    ),
+    _CapabilityScenario(
+      label: 'Vision-enabled chat',
+      required: {
+        llm.LLMCapability.chat,
+        llm.LLMCapability.vision,
+      },
+    ),
+    _CapabilityScenario(
+      label: 'Reasoning-heavy workflows',
+      required: {
+        llm.LLMCapability.chat,
+        llm.LLMCapability.reasoning,
+      },
+    ),
+    _CapabilityScenario(
+      label: 'Semantic search / RAG indexing',
+      required: {
+        llm.LLMCapability.embedding,
+      },
+    ),
+    _CapabilityScenario(
+      label: 'Speech input and output',
+      required: {
+        llm.LLMCapability.textToSpeech,
+        llm.LLMCapability.speechToText,
+      },
+    ),
+    _CapabilityScenario(
+      label: 'Image generation',
+      required: {
+        llm.LLMCapability.imageGeneration,
+      },
+    ),
+  ];
 
-  if (visionProviders.isNotEmpty) {
-    print('      ✅ Recommended providers: ${visionProviders.join(', ')}');
-  } else {
-    print('      ❌ No providers support vision capabilities');
-  }
+  for (final scenario in scenarios) {
+    final matches = _providersSupportingAll(providers, scenario.required);
+    final requiredLabels = scenario.required.map(_capabilityLabel).join(', ');
 
-  // Scenario 2: Need reasoning capabilities
-  print('\n   Scenario 2: Building a reasoning/thinking application');
-  final reasoningProviders = providers.entries
-      .where((entry) => entry.value.supports(LLMCapability.reasoning))
-      .map((entry) => entry.key)
-      .toList();
-
-  if (reasoningProviders.isNotEmpty) {
-    print('      ✅ Recommended providers: ${reasoningProviders.join(', ')}');
-  } else {
-    print('      ❌ No providers support reasoning capabilities');
-  }
-
-  // Scenario 3: Need audio capabilities
-  print('\n   Scenario 3: Building a voice assistant');
-  final audioProviders = providers.entries
-      .where((entry) =>
-          entry.value.supports(LLMCapability.textToSpeech) ||
-          entry.value.supports(LLMCapability.speechToText))
-      .map((entry) => entry.key)
-      .toList();
-
-  if (audioProviders.isNotEmpty) {
-    print('      ✅ Recommended providers: ${audioProviders.join(', ')}');
-  } else {
-    print('      ❌ No providers support audio capabilities');
-  }
-
-  // Scenario 4: Need image generation
-  print('\n   Scenario 4: Building an image generation app');
-  final imageProviders = providers.entries
-      .where((entry) => entry.value.supports(LLMCapability.imageGeneration))
-      .map((entry) => entry.key)
-      .toList();
-
-  if (imageProviders.isNotEmpty) {
-    print('      ✅ Recommended providers: ${imageProviders.join(', ')}');
-  } else {
-    print('      ❌ No providers support image generation');
-  }
-
-  // Scenario 5: Need OpenAI Responses API features
-  print(
-      '\n   Scenario 5: Building stateful conversation app with advanced features');
-  final responsesProviders = providers.entries
-      .where((entry) => entry.value.supports(LLMCapability.openaiResponses))
-      .map((entry) => entry.key)
-      .toList();
-
-  if (responsesProviders.isNotEmpty) {
-    print('      ✅ Recommended providers: ${responsesProviders.join(', ')}');
+    print('  ${scenario.label}');
+    print('    Required: $requiredLabels');
     print(
-        '      💡 Features: Stateful conversations, background processing, built-in tools');
-  } else {
-    print('      ❌ No providers support OpenAI Responses API');
-    print(
-        '      💡 Tip: Enable with .openai((openai) => openai.useResponsesAPI())');
+      '    Candidates: '
+      '${matches.isEmpty ? 'none declared' : matches.map((provider) => _providerLabel(provider.id)).join(', ')}',
+    );
   }
+
   print('');
 }
 
-/// Demonstrate capability validation before use
-Future<void> demonstrateCapabilityValidation(
-    Map<String, ProviderCapabilities> providers) async {
-  print('🛡️ Capability Validation:\n');
+void printBoundaryGuidance(List<llm.ProviderInfo> providers) {
+  print('--- Boundary Guidance ---');
 
-  for (final entry in providers.entries) {
-    final providerName = entry.key;
-    final provider = entry.value;
+  final rawResponsesProviders = _providersSupportingAll(
+    providers,
+    const {llm.LLMCapability.openaiResponses},
+  );
 
-    print('   🔍 Validating $providerName:');
+  print(
+    '  Raw OpenAI response lifecycle boundary: '
+    '${rawResponsesProviders.isEmpty ? 'none declared' : rawResponsesProviders.map((provider) => _providerLabel(provider.id)).join(', ')}',
+  );
+  print(
+    '  Use `openaiResponses` only when you explicitly need provider-specific',
+  );
+  print(
+    '  lifecycle APIs such as fetching, continuing, or deleting raw responses.',
+  );
+  print(
+    '  For normal Flutter chat flows, keep using `AI.openai(...).chatModel(...)`',
+  );
+  print(
+    '  plus shared `generateTextCall(...)` or `streamTextCall(...)` helpers.',
+  );
+  print(
+    '  Some declared providers also remain compatibility-oriented until they',
+  );
+  print(
+    '  receive a stable facade, so declaration coverage and stable app-facing',
+  );
+  print(
+    '  surface coverage are related but not identical.',
+  );
+  print('');
+}
 
-    // Safe capability checking
-    if (provider.supports(LLMCapability.chat)) {
-      print('      ✅ Chat capability available - can use chat() method');
-    } else {
-      print('      ❌ Chat capability not available - avoid chat() method');
-    }
+Future<void> demonstrateStableExecution(
+    List<llm.ProviderInfo> providers) async {
+  print('--- Stable Execution After Selection ---');
 
-    if (provider.supports(LLMCapability.streaming)) {
-      print(
-          '      ✅ Streaming capability available - can use chatStream() method');
-    } else {
-      print(
-          '      ❌ Streaming capability not available - avoid chatStream() method');
-    }
+  final candidates = _providersSupportingAll(
+    providers,
+    const {
+      llm.LLMCapability.chat,
+      llm.LLMCapability.streaming,
+    },
+  );
 
-    if (provider.supports(LLMCapability.toolCalling)) {
-      print('      ✅ Tool calling available - can use tools parameter');
-    } else {
-      print('      ❌ Tool calling not available - avoid tools parameter');
-    }
-
-    if (provider.supports(LLMCapability.vision)) {
-      print('      ✅ Vision capability available - can send image messages');
-    } else {
-      print('      ❌ Vision capability not available - text-only messages');
-    }
-
-    if (provider.supports(LLMCapability.openaiResponses)) {
-      print(
-          '      ✅ OpenAI Responses API available - can use stateful features');
-      print('      💡 Access via: (provider as OpenAIProvider).responses');
-    } else {
-      print('      ❌ OpenAI Responses API not available - standard chat only');
-    }
-
+  final selected = _selectStableModelFromEnvironment(candidates);
+  if (selected == null) {
+    print('  No matching API key was found for the stable execution demo.');
+    print('  Capability inspection still works without credentials.');
     print('');
+    return;
   }
 
-  print('   💡 Best Practices:');
-  print(
-      '      • Use capability checks for provider selection and documentation');
-  print('      • Always implement graceful error handling for all features');
-  print('      • Test critical features with actual API calls when possible');
-  print('      • Remember that actual support may vary by specific model');
-  print(
-      '      • For reasoning: check response.thinking at runtime, not just capability');
-  print(
-      '      • For OpenAI-compatible providers: capabilities may differ from declarations');
+  print('  Selected provider: ${_providerLabel(selected.providerId)}');
+  print('  Stable model: ${selected.modelLabel}');
+
+  try {
+    final result = await core.generateTextCall(
+      model: selected.model,
+      prompt: [
+        core.SystemPromptMessage.text(
+          'You are a concise architecture assistant. Respond in one short paragraph.',
+        ),
+        core.UserPromptMessage.text(
+          'Explain why provider capability metadata helps selection but cannot replace runtime validation.',
+        ),
+      ],
+      options: const core.GenerateTextOptions(
+        maxOutputTokens: 120,
+      ),
+    );
+
+    print('  Response: ${_truncate(result.text)}');
+  } catch (error) {
+    print('  Stable call failed: $error');
+    print(
+      '  This is why capability declarations stay advisory rather than becoming a strict runtime guarantee.',
+    );
+  }
+
   print('');
 }
 
-/// 🎯 Key Capability Concepts Summary:
-///
-/// **ProviderCapabilities Interface:**
-/// - supportedCapabilities: Set of all supported capabilities
-/// - supports(capability): Check if specific capability is supported
-/// - **Note**: Primarily for informational and selection purposes
-///
-/// **LLMCapability Enum Values:**
-/// - chat: Basic chat functionality
-/// - streaming: Real-time response streaming
-/// - toolCalling: Function/tool calling
-/// - vision: Image understanding
-/// - reasoning: Thinking/reasoning processes (varies by provider!)
-/// - embedding: Vector embeddings
-/// - textToSpeech: Text-to-speech conversion
-/// - speechToText: Speech-to-text conversion
-/// - imageGeneration: Image creation
-/// - modelListing: Model discovery
-/// - fileManagement: File operations
-/// - moderation: Content moderation
-/// - assistants: Assistant management
-/// - liveSearch: Real-time web search (xAI Grok)
-/// - openaiResponses: OpenAI Responses API (stateful conversations, background processing)
-///
-/// **Important Limitations:**
-/// 1. **Model Variations**: Support varies by specific model within providers
-/// 2. **OpenAI-Compatible Providers**: May have different actual capabilities
-/// 3. **Runtime Detection**: Some features detected through response parsing
-/// 4. **Reasoning Differences**:
-///    - OpenAI o1: Internal reasoning, no visible thinking
-///    - Anthropic Claude: May output thinking process
-///    - DeepSeek Reasoner: Detailed reasoning steps
-///
-/// **Best Practices:**
-/// 1. Use capability checks for provider selection and documentation
-/// 2. Always implement graceful error handling for all features
-/// 3. Test critical features with actual API calls when possible
-/// 4. For reasoning: check `response.thinking` at runtime
-/// 5. Don't rely solely on capability declarations for validation
-/// 6. Consider capability evolution and model updates over time
-///
-/// **Next Steps:**
-/// - model_listing.dart: Discover available models
-/// - error_handling.dart: Handle capability-related errors
-/// - reasoning_models.dart: See runtime reasoning detection in action
-/// - Provider-specific examples for advanced features
+List<llm.ProviderInfo> _providersSupportingAll(
+  List<llm.ProviderInfo> providers,
+  Set<llm.LLMCapability> required,
+) {
+  return providers
+      .where((provider) => required.every(provider.supports))
+      .toList(growable: false);
+}
+
+_SelectedModel? _selectStableModelFromEnvironment(
+  List<llm.ProviderInfo> candidates,
+) {
+  for (final provider in candidates) {
+    final selected = _stableModelForProvider(provider.id);
+    if (selected != null) {
+      return selected;
+    }
+  }
+
+  return null;
+}
+
+_SelectedModel? _stableModelForProvider(String providerId) {
+  switch (providerId) {
+    case 'openai':
+      final apiKey = Platform.environment['OPENAI_API_KEY'];
+      if (apiKey == null || apiKey.isEmpty) {
+        return null;
+      }
+      return _SelectedModel(
+        providerId: providerId,
+        modelLabel: 'OpenAI / gpt-4.1-mini',
+        model: llm.AI.openai(apiKey: apiKey).chatModel('gpt-4.1-mini'),
+      );
+    case 'anthropic':
+      final apiKey = Platform.environment['ANTHROPIC_API_KEY'];
+      if (apiKey == null || apiKey.isEmpty) {
+        return null;
+      }
+      return _SelectedModel(
+        providerId: providerId,
+        modelLabel: 'Anthropic / claude-sonnet-4-5',
+        model: llm.AI.anthropic(apiKey: apiKey).chatModel('claude-sonnet-4-5'),
+      );
+    case 'google':
+      final apiKey = Platform.environment['GOOGLE_API_KEY'];
+      if (apiKey == null || apiKey.isEmpty) {
+        return null;
+      }
+      return _SelectedModel(
+        providerId: providerId,
+        modelLabel: 'Google / gemini-2.5-flash',
+        model: llm.AI.google(apiKey: apiKey).chatModel('gemini-2.5-flash'),
+      );
+    case 'groq':
+      final apiKey = Platform.environment['GROQ_API_KEY'];
+      if (apiKey == null || apiKey.isEmpty) {
+        return null;
+      }
+      return _SelectedModel(
+        providerId: providerId,
+        modelLabel: 'Groq / llama-3.3-70b-versatile',
+        model: llm.AI.groq(apiKey: apiKey).chatModel('llama-3.3-70b-versatile'),
+      );
+    case 'deepseek':
+      final apiKey = Platform.environment['DEEPSEEK_API_KEY'];
+      if (apiKey == null || apiKey.isEmpty) {
+        return null;
+      }
+      return _SelectedModel(
+        providerId: providerId,
+        modelLabel: 'DeepSeek / deepseek-chat',
+        model: llm.AI.deepSeek(apiKey: apiKey).chatModel('deepseek-chat'),
+      );
+    case 'xai':
+      final apiKey = Platform.environment['XAI_API_KEY'];
+      if (apiKey == null || apiKey.isEmpty) {
+        return null;
+      }
+      return _SelectedModel(
+        providerId: providerId,
+        modelLabel: 'xAI / grok-3',
+        model: llm.AI.xai(apiKey: apiKey).chatModel('grok-3'),
+      );
+    case 'openrouter':
+      final apiKey = Platform.environment['OPENROUTER_API_KEY'];
+      if (apiKey == null || apiKey.isEmpty) {
+        return null;
+      }
+      return _SelectedModel(
+        providerId: providerId,
+        modelLabel: 'OpenRouter / openai/gpt-4.1-mini',
+        model:
+            llm.AI.openRouter(apiKey: apiKey).chatModel('openai/gpt-4.1-mini'),
+      );
+    default:
+      return null;
+  }
+}
+
+String _providerLabel(String providerId) {
+  switch (providerId) {
+    case 'openai':
+      return 'OpenAI';
+    case 'anthropic':
+      return 'Anthropic';
+    case 'google':
+      return 'Google';
+    case 'groq':
+      return 'Groq';
+    case 'deepseek':
+      return 'DeepSeek';
+    case 'xai':
+      return 'xAI';
+    case 'openrouter':
+      return 'OpenRouter';
+    case 'phind':
+      return 'Phind';
+    case 'ollama':
+      return 'Ollama';
+    case 'elevenlabs':
+      return 'ElevenLabs';
+    default:
+      return providerId;
+  }
+}
+
+String _capabilityLabel(llm.LLMCapability capability) {
+  switch (capability) {
+    case llm.LLMCapability.chat:
+      return 'chat';
+    case llm.LLMCapability.streaming:
+      return 'streaming';
+    case llm.LLMCapability.toolCalling:
+      return 'tool calling';
+    case llm.LLMCapability.vision:
+      return 'vision';
+    case llm.LLMCapability.reasoning:
+      return 'reasoning';
+    case llm.LLMCapability.embedding:
+      return 'embeddings';
+    case llm.LLMCapability.textToSpeech:
+      return 'text to speech';
+    case llm.LLMCapability.speechToText:
+      return 'speech to text';
+    case llm.LLMCapability.imageGeneration:
+      return 'image generation';
+    case llm.LLMCapability.modelListing:
+      return 'model listing';
+    case llm.LLMCapability.openaiResponses:
+      return 'openai responses';
+    default:
+      return capability.name;
+  }
+}
+
+String _truncate(String text, {int maxLength = 220}) {
+  final normalized = text.replaceAll(RegExp(r'\s+'), ' ').trim();
+  if (normalized.length <= maxLength) {
+    return normalized;
+  }
+
+  return '${normalized.substring(0, maxLength)}...';
+}
+
+const _highSignalCapabilities = [
+  llm.LLMCapability.chat,
+  llm.LLMCapability.streaming,
+  llm.LLMCapability.toolCalling,
+  llm.LLMCapability.vision,
+  llm.LLMCapability.reasoning,
+  llm.LLMCapability.embedding,
+  llm.LLMCapability.imageGeneration,
+  llm.LLMCapability.textToSpeech,
+  llm.LLMCapability.speechToText,
+  llm.LLMCapability.modelListing,
+  llm.LLMCapability.openaiResponses,
+];
+
+final class _CapabilityScenario {
+  final String label;
+  final Set<llm.LLMCapability> required;
+
+  const _CapabilityScenario({
+    required this.label,
+    required this.required,
+  });
+}
+
+final class _SelectedModel {
+  final String providerId;
+  final String modelLabel;
+  final core.LanguageModel model;
+
+  const _SelectedModel({
+    required this.providerId,
+    required this.modelLabel,
+    required this.model,
+  });
+}

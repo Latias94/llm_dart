@@ -42,6 +42,7 @@ abstract final class LegacyExtensionKeys {
   static const parallelToolCalls = 'parallelToolCalls';
   static const logprobs = 'logprobs';
   static const topLogprobs = 'topLogprobs';
+  static const verbosity = 'verbosity';
 
   // Anthropic legacy compatibility options
   static const reasoning = 'reasoning';

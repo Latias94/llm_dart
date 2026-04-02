@@ -1,345 +1,208 @@
+// ignore_for_file: avoid_print
+
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
 
-/// Unified Web Search Example
-///
-/// This example demonstrates the unified web search functionality that works
-/// across different LLM providers with a consistent, ergonomic API.
-///
-/// **Supported Providers:**
-/// - **xAI Grok**: Live Search with real-time web/news access
-/// - **Anthropic Claude**: Web Search Tool with domain filtering
-/// - **OpenAI**: Web Search with context size control
-/// - **OpenRouter**: Online-model search via provider-owned model shaping
-/// - **Perplexity**: Native search capabilities
-///
-/// **Key Features:**
-/// - Provider-agnostic API
-/// - Automatic adaptation to each provider's implementation
-/// - Rich configuration options
-/// - Type-safe parameters
-void main() async {
-  print('🔍 Unified Web Search API Demo\n');
+import 'package:llm_dart/anthropic.dart' as anthropic;
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/openai.dart' as openai;
 
-  // Get API keys from environment
-  final xaiApiKey = Platform.environment['XAI_API_KEY'];
-  final anthropicApiKey = Platform.environment['ANTHROPIC_API_KEY'];
+/// Stable web-search examples built on the shared text-call layer.
+///
+/// This example intentionally does not use the legacy root builder helpers such
+/// as `enableWebSearch()`, `webSearch()`, or `newsSearch()`.
+///
+/// Search is not a single shared boolean in the new architecture:
+/// - OpenAI uses provider-owned built-in tools.
+/// - Anthropic uses provider-owned native tools.
+/// - xAI uses provider-owned live-search invocation options.
+/// - OpenRouter uses provider-owned model settings for `:online` shaping.
+///
+/// The shared app-facing flow stays the same:
+/// 1. Create a stable `AI.*(...).chatModel(...)`.
+/// 2. Call `generateTextCall(...)`.
+/// 3. Pass provider-specific search behavior through typed settings/options.
+Future<void> main() async {
+  print('Stable Web Search Patterns\n');
+
   final openaiApiKey = Platform.environment['OPENAI_API_KEY'];
-  final openrouterApiKey = Platform.environment['OPENROUTER_API_KEY'];
+  final anthropicApiKey = Platform.environment['ANTHROPIC_API_KEY'];
+  final xaiApiKey = Platform.environment['XAI_API_KEY'];
+  final openRouterApiKey = Platform.environment['OPENROUTER_API_KEY'];
 
-  if (xaiApiKey == null &&
+  if (openaiApiKey == null &&
       anthropicApiKey == null &&
-      openaiApiKey == null &&
-      openrouterApiKey == null) {
-    print('❌ Please set at least one API key:');
-    print('   - XAI_API_KEY for xAI Grok');
-    print('   - ANTHROPIC_API_KEY for Claude');
-    print('   - OPENAI_API_KEY for OpenAI');
-    print('   - OPENROUTER_API_KEY for OpenRouter');
+      xaiApiKey == null &&
+      openRouterApiKey == null) {
+    print('Set at least one API key to run this example:');
+    print('  OPENAI_API_KEY');
+    print('  ANTHROPIC_API_KEY');
+    print('  XAI_API_KEY');
+    print('  OPENROUTER_API_KEY');
     return;
   }
 
-  // Demo 1: Basic unified web search
-  await demoBasicWebSearch(
-      xaiApiKey, anthropicApiKey, openaiApiKey, openrouterApiKey);
+  await runOpenAISearch(openaiApiKey);
+  await runAnthropicSearch(anthropicApiKey);
+  await runXAISearch(xaiApiKey);
+  await runOpenRouterSearch(openRouterApiKey);
 
-  // Demo 2: Provider-specific configurations
-  await demoProviderSpecificConfigs(
-      xaiApiKey, anthropicApiKey, openaiApiKey, openrouterApiKey);
-
-  // Demo 3: Advanced search scenarios
-  await demoAdvancedSearchScenarios(xaiApiKey, anthropicApiKey);
-
-  // Demo 4: Configuration examples
-  await demoConfigurationExamples();
+  print('Search remains provider-owned, but the app-facing call layer is shared.');
 }
 
-/// Demo basic web search across all available providers
-Future<void> demoBasicWebSearch(String? xaiKey, String? anthropicKey,
-    String? openaiKey, String? openrouterKey) async {
-  print('🚀 Basic Web Search Demo');
-  print('=' * 50);
-
-  final query = 'What are the latest developments in AI this week?';
-  print('Query: "$query"\n');
-
-  // xAI Grok
-  if (xaiKey != null) {
-    try {
-      print('🤖 xAI Grok:');
-      final provider = await ai()
-          .xai()
-          .apiKey(xaiKey)
-          .model('grok-3')
-          .enableWebSearch()
-          .build();
-
-      final response = await provider.chat([ChatMessage.user(query)]);
-      print('   ${response.text?.substring(0, 200)}...\n');
-    } catch (e) {
-      print('   ❌ Error: $e\n');
-    }
+Future<void> runOpenAISearch(String? apiKey) async {
+  if (apiKey == null || apiKey.isEmpty) {
+    print('Skipping OpenAI because OPENAI_API_KEY is not set.\n');
+    return;
   }
 
-  // Anthropic Claude
-  if (anthropicKey != null) {
-    try {
-      print('🧠 Anthropic Claude:');
-      final provider = await ai()
-          .anthropic()
-          .apiKey(anthropicKey)
-          .model('claude-sonnet-4-20250514')
-          .enableWebSearch()
-          .build();
+  final model = llm.AI.openai(apiKey: apiKey).chatModel('gpt-5-mini');
 
-      final response = await provider.chat([ChatMessage.user(query)]);
-      print('   ${response.text?.substring(0, 200)}...\n');
-    } catch (e) {
-      print('   ❌ Error: $e\n');
-    }
-  }
-
-  // OpenAI
-  if (openaiKey != null) {
-    try {
-      print('🔍 OpenAI:');
-      final provider = await ai()
-          .openai()
-          .apiKey(openaiKey)
-          .model('gpt-4o-search-preview')
-          .enableWebSearch()
-          .build();
-
-      final response = await provider.chat([ChatMessage.user(query)]);
-      print('   ${response.text?.substring(0, 200)}...\n');
-    } catch (e) {
-      print('   ❌ Error: $e\n');
-    }
-  }
-
-  // OpenRouter
-  if (openrouterKey != null) {
-    try {
-      print('🌐 OpenRouter:');
-      final provider = await ai()
-          .openRouter()
-          .apiKey(openrouterKey)
-          .model('anthropic/claude-3.5-sonnet:online')
-          .enableWebSearch()
-          .build();
-
-      final response = await provider.chat([ChatMessage.user(query)]);
-      print('   ${response.text?.substring(0, 200)}...\n');
-    } catch (e) {
-      print('   ❌ Error: $e\n');
-    }
-  }
-
-  print('✅ Same API, different providers!\n');
+  await runSearchCase(
+    label: 'OpenAI Responses web search',
+    model: model,
+    prompt: 'Search for recent Dart SDK release notes and summarize the highlights.',
+    callOptions: const core.CallOptions(
+      providerOptions: openai.OpenAIGenerateTextOptions(
+        builtInTools: [openai.OpenAIWebSearchTool()],
+      ),
+    ),
+  );
 }
 
-/// Demo provider-specific configurations
-Future<void> demoProviderSpecificConfigs(String? xaiKey, String? anthropicKey,
-    String? openaiKey, String? openrouterKey) async {
-  print('⚙️  Provider-Specific Configurations');
-  print('=' * 50);
-
-  // xAI with news search
-  if (xaiKey != null) {
-    try {
-      print('\n1. xAI News Search:');
-      final provider = await ai()
-          .xai()
-          .apiKey(xaiKey)
-          .newsSearch(
-            maxResults: 5,
-            fromDate: '2024-12-01',
-          )
-          .build();
-
-      final response = await provider.chat(
-          [ChatMessage.user('What are the top tech news stories this month?')]);
-      print('   ${response.text?.substring(0, 200)}...\n');
-    } catch (e) {
-      print('   ❌ Error: $e\n');
-    }
+Future<void> runAnthropicSearch(String? apiKey) async {
+  if (apiKey == null || apiKey.isEmpty) {
+    print('Skipping Anthropic because ANTHROPIC_API_KEY is not set.\n');
+    return;
   }
 
-  // Anthropic with domain filtering
-  if (anthropicKey != null) {
-    try {
-      print('2. Anthropic with Domain Filtering:');
-      final provider = await ai()
-          .anthropic()
-          .apiKey(anthropicKey)
-          .webSearch(
+  final model =
+      llm.AI.anthropic(apiKey: apiKey).chatModel('claude-sonnet-4-5');
+
+  await runSearchCase(
+    label: 'Anthropic native web search',
+    model: model,
+    prompt:
+        'Find recent Flutter desktop updates and summarize the most relevant changes for app developers.',
+    callOptions: core.CallOptions(
+      providerOptions: anthropic.AnthropicGenerateTextOptions(
+        tools: [
+          anthropic.AnthropicTools.webSearch20250305(
             maxUses: 3,
-            allowedDomains: ['wikipedia.org', 'github.com', 'arxiv.org'],
-            location: WebSearchLocation.sanFrancisco(),
-          )
-          .build();
-
-      final response = await provider.chat([
-        ChatMessage.user('Find information about machine learning research')
-      ]);
-      print('   ${response.text?.substring(0, 200)}...\n');
-    } catch (e) {
-      print('   ❌ Error: $e\n');
-    }
-  }
-
-  // OpenAI with context size
-  if (openaiKey != null) {
-    try {
-      print('3. OpenAI with High Context:');
-      final provider = await ai()
-          .openai((openai) =>
-              openai.webSearch(contextSize: WebSearchContextSize.high))
-          .apiKey(openaiKey)
-          .model('gpt-4o-search-preview')
-          .build();
-
-      final response = await provider
-          .chat([ChatMessage.user('Explain quantum computing breakthroughs')]);
-      print('   ${response.text?.substring(0, 200)}...\n');
-    } catch (e) {
-      print('   ❌ Error: $e\n');
-    }
-  }
-
-  // OpenRouter with online-model search intent
-  if (openrouterKey != null) {
-    try {
-      print('4. OpenRouter with Online Search:');
-      final provider = await ai()
-          .openRouter((openrouter) => openrouter.onlineSearch())
-          .apiKey(openrouterKey)
-          .model('anthropic/claude-3.5-sonnet')
-          .build();
-
-      final response = await provider
-          .chat([ChatMessage.user('Find recent AI research papers')]);
-      print('   ${response.text?.substring(0, 200)}...\n');
-    } catch (e) {
-      print('   ❌ Error: $e\n');
-    }
-  }
+            allowedDomains: const [
+              'dart.dev',
+              'docs.flutter.dev',
+              'github.com',
+            ],
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
-/// Demo advanced search scenarios
-Future<void> demoAdvancedSearchScenarios(
-    String? xaiKey, String? anthropicKey) async {
-  print('🎯 Advanced Search Scenarios');
-  print('=' * 50);
-
-  if (xaiKey != null) {
-    try {
-      print('\n1. Real-time Information Query:');
-      final provider =
-          await ai().xai().apiKey(xaiKey).quickWebSearch(maxResults: 3).build();
-
-      final response = await provider.chat([
-        ChatMessage.user(
-            'What is the current stock price of NVIDIA and recent news about the company?')
-      ]);
-      print('   ${response.text?.substring(0, 300)}...\n');
-    } catch (e) {
-      print('   ❌ Error: $e\n');
-    }
+Future<void> runXAISearch(String? apiKey) async {
+  if (apiKey == null || apiKey.isEmpty) {
+    print('Skipping xAI because XAI_API_KEY is not set.\n');
+    return;
   }
 
-  if (anthropicKey != null) {
-    try {
-      print('2. Academic Research Query:');
-      final provider = await ai()
-          .anthropic()
-          .apiKey(anthropicKey)
-          .advancedWebSearch(
-            strategy: WebSearchStrategy.tool,
-            maxUses: 3,
-            allowedDomains: ['arxiv.org', 'scholar.google.com', 'nature.com'],
-            searchType: WebSearchType.academic,
-          )
-          .build();
+  final model = llm.AI.xai(apiKey: apiKey).chatModel('grok-3');
 
-      final response = await provider.chat([
-        ChatMessage.user(
-            'Find recent papers on large language model efficiency improvements')
-      ]);
-      print('   ${response.text?.substring(0, 300)}...\n');
-    } catch (e) {
-      print('   ❌ Error: $e\n');
-    }
-  }
+  await runSearchCase(
+    label: 'xAI live search',
+    model: model,
+    prompt:
+        'Find the latest announcements about open-source AI coding tools and summarize the trend.',
+    callOptions: const core.CallOptions(
+      providerOptions: openai.XAIGenerateTextOptions(
+        search: openai.XAILiveSearchOptions(
+          maxSearchResults: 5,
+          sources: [
+            openai.XAIWebSearchSource(),
+            openai.XAINewsSearchSource(),
+          ],
+        ),
+      ),
+    ),
+  );
 }
 
-/// Demo configuration examples (documentation purposes)
-Future<void> demoConfigurationExamples() async {
-  print('📚 Configuration Examples');
-  print('=' * 50);
+Future<void> runOpenRouterSearch(String? apiKey) async {
+  if (apiKey == null || apiKey.isEmpty) {
+    print('Skipping OpenRouter because OPENROUTER_API_KEY is not set.\n');
+    return;
+  }
 
-  print('\n1. Simple Web Search:');
-  print('''
-  final provider = await ai()
-      .xai()
-      .apiKey(apiKey)
-      .enableWebSearch()  // Just enable it!
-      .build();
-  ''');
+  final model = llm.AI.openRouter(
+    apiKey: apiKey,
+  ).chatModel(
+    'openai/gpt-4.1-mini',
+    settings: const openai.OpenRouterChatModelSettings(
+      search: openai.OpenRouterSearchOptions.onlineModel(),
+    ),
+  );
 
-  print('2. Quick Configuration:');
-  print('''
-  final provider = await ai()
-      .anthropic()
-      .apiKey(apiKey)
-      .quickWebSearch(maxResults: 5)
-      .build();
-  ''');
+  await runSearchCase(
+    label: 'OpenRouter online-model search',
+    model: model,
+    prompt:
+        'Search for recent AI infrastructure cost trends and summarize the main themes.',
+  );
+}
 
-  print('3. Provider-Specific:');
-  print('''
-  // xAI with news search
-  final xaiProvider = await ai()
-      .xai()
-      .apiKey(apiKey)
-      .newsSearch(fromDate: '2024-01-01')
-      .build();
+Future<void> runSearchCase({
+  required String label,
+  required core.LanguageModel model,
+  required String prompt,
+  core.CallOptions callOptions = const core.CallOptions(),
+}) async {
+  print('=== $label ===');
 
-  // Anthropic with domain filtering
-  final anthropicProvider = await ai()
-      .anthropic()
-      .apiKey(apiKey)
-      .webSearch(
-        allowedDomains: ['wikipedia.org'],
-        location: WebSearchLocation.london(),
-      )
-      .build();
+  try {
+    final result = await core.generateTextCall(
+      model: model,
+      prompt: [
+        core.SystemPromptMessage.text(
+          'You are a concise research assistant. Summarize the answer and keep only high-signal details.',
+        ),
+        core.UserPromptMessage.text(prompt),
+      ],
+      callOptions: callOptions,
+    );
 
-  // OpenAI with context control
-  final openaiProvider = await ai()
-      .openai((openai) => openai
-          .webSearch(contextSize: WebSearchContextSize.high))
-      .apiKey(apiKey)
-      .model('gpt-4o-search-preview')
-      .build();
-  ''');
+    print(_truncate(result.text));
 
-  print('4. Advanced Configuration:');
-  print('''
-  final provider = await ai()
-      .anthropic()
-      .apiKey(apiKey)
-      .advancedWebSearch(
-        strategy: WebSearchStrategy.tool,
-        contextSize: WebSearchContextSize.high,
-        maxUses: 3,
-        allowedDomains: ['arxiv.org', 'github.com'],
-        blockedDomains: ['spam-site.com'],
-        location: WebSearchLocation.sanFrancisco(),
-        searchType: WebSearchType.academic,
-      )
-      .build();
-  ''');
+    final sources = result.content
+        .whereType<core.SourceContentPart>()
+        .map((part) => part.source)
+        .toList(growable: false);
+    if (sources.isNotEmpty) {
+      print('Sources:');
+      for (final source in sources.take(3)) {
+        final label = source.title ?? source.uri?.toString() ?? source.sourceId;
+        print('  - $label');
+      }
+    }
 
-  print('\n✨ The unified API automatically adapts to each provider!');
+    final usage = result.usage;
+    if (usage != null) {
+      print(
+        'Usage: input=${usage.inputTokens}, output=${usage.outputTokens}, total=${usage.totalTokens}',
+      );
+    }
+  } catch (error) {
+    print('Error: $error');
+  }
+
+  print('');
+}
+
+String _truncate(String text, {int maxLength = 320}) {
+  final normalized = text.replaceAll(RegExp(r'\s+'), ' ').trim();
+  if (normalized.length <= maxLength) {
+    return normalized;
+  }
+
+  return '${normalized.substring(0, maxLength)}...';
 }

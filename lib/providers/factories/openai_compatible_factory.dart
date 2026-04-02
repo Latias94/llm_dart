@@ -1,9 +1,11 @@
 import '../../core/capability.dart';
 import '../../core/config.dart';
 import '../../core/registry.dart';
+import '../../core/web_search.dart';
 import '../../src/openai_compatible_configs.dart';
 import '../../models/chat_models.dart';
 import '../../src/config/legacy_config_extensions.dart';
+import '../../src/config/legacy_provider_options.dart';
 import '../openai/openai.dart';
 import 'base_factory.dart';
 
@@ -61,7 +63,13 @@ class OpenAICompatibleProviderFactory
     }
 
     // Check for webSearchConfig (for OpenRouter)
-    final webSearchConfig = config.legacyWebSearchConfig;
+    final webSearchConfig = _isOpenRouter()
+        ? getLegacyProviderOption<WebSearchConfig>(
+            config,
+            LegacyProviderOptionNamespaces.openrouter,
+            LegacyExtensionKeys.webSearchConfig,
+          )
+        : config.legacyWebSearchConfig;
     if (webSearchConfig != null &&
         _isOpenRouter() &&
         !_hasOnlineSuffix(model)) {
@@ -92,12 +100,17 @@ class OpenAICompatibleProviderFactory
       embeddingEncodingFormat: config.legacyEmbeddingEncodingFormat,
       embeddingDimensions: config.legacyEmbeddingDimensions,
       // Responses API configuration (most OpenAI-compatible providers don't support this yet)
-      useResponsesAPI:
-          config.getExtension<bool>(LegacyExtensionKeys.useResponsesApi) ??
-              false,
-      previousResponseId:
-          config.getExtension<String>(LegacyExtensionKeys.previousResponseId),
-      builtInTools: config.getExtension<List<OpenAIBuiltInTool>>(
+      useResponsesAPI: _getOpenAICompatibleProviderOption<bool>(
+            config,
+            LegacyExtensionKeys.useResponsesApi,
+          ) ??
+          false,
+      previousResponseId: _getOpenAICompatibleProviderOption<String>(
+        config,
+        LegacyExtensionKeys.previousResponseId,
+      ),
+      builtInTools: _getOpenAICompatibleProviderOption<List<OpenAIBuiltInTool>>(
+        config,
         LegacyExtensionKeys.builtInTools,
       ),
       originalConfig: config,
@@ -120,6 +133,21 @@ class OpenAICompatibleProviderFactory
     if (model == null) return ':online';
     if (_hasOnlineSuffix(model)) return model;
     return '$model:online';
+  }
+
+  E? _getOpenAICompatibleProviderOption<E>(
+    LLMConfig config,
+    String key,
+  ) {
+    if (_isOpenRouter()) {
+      return getLegacyProviderOption<E>(
+        config,
+        LegacyProviderOptionNamespaces.openrouter,
+        key,
+      );
+    }
+
+    return config.getExtension<E>(key);
   }
 
   /// Create factory instances for all pre-configured providers

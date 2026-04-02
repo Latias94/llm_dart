@@ -6,45 +6,12 @@ import 'package:test/test.dart';
 
 void main() {
   group('ChatPersistenceAdapter', () {
-    test('saves and loads session snapshots through the codec', () async {
-      final store = _MemoryPersistenceStore();
-      final adapter = ChatPersistenceAdapter(store: store);
-      final snapshot = ChatSessionSnapshot(
-        chatId: 'chat-1',
-        prompt: [
-          UserPromptMessage.text('Hello'),
-        ],
-        messages: [
-          ChatUiMessage(
-            id: 'user-1',
-            role: ChatUiRole.user,
-            parts: const [
-              TextUiPart(text: 'Hello'),
-            ],
-          ),
-        ],
-        status: ChatStatus.ready,
-      );
-      final session = _FakeChatSession(snapshot);
-
-      await adapter.saveSession(session);
-
-      final stored = store.snapshots['chat-1'] as Map<String, Object?>;
-      expect(stored['kind'], ChatSessionSnapshotJsonCodec.envelopeKind);
-
-      final restored = await adapter.loadSnapshot('chat-1');
-      expect(restored, isNotNull);
-      expect(restored!.chatId, 'chat-1');
-      expect(restored.prompt.single, isA<UserPromptMessage>());
-      expect(restored.messages.single.role, ChatUiRole.user);
-    });
-
     test('saves controllers and restores typed sessions and controllers',
         () async {
       final store = _MemoryPersistenceStore();
       final adapter = ChatPersistenceAdapter(store: store);
       final snapshot = ChatSessionSnapshot(
-        chatId: 'chat-2',
+        chatId: 'chat-1',
         prompt: const [],
         messages: const [],
         status: ChatStatus.awaitingTool,
@@ -58,45 +25,25 @@ void main() {
       await adapter.saveController(controller);
 
       final restoredSession = await adapter.restoreSession<_FakeChatSession>(
-        'chat-2',
+        'chat-1',
         createSession: _FakeChatSession.new,
       );
       expect(restoredSession, isNotNull);
       expect(restoredSession!.state.status, ChatStatus.awaitingTool);
 
-      final restoredController = await adapter.restoreController(
-        'chat-2',
-        createController: (snapshot) => ChatController(
-          session: _FakeChatSession(snapshot),
+      final restoredController =
+          await adapter.restoreController<ChatController>(
+        'chat-1',
+        createController: (restoredSnapshot) => ChatController(
+          session: _FakeChatSession(restoredSnapshot),
           disposeSession: false,
         ),
       );
       expect(restoredController, isNotNull);
-      expect(restoredController!.state.chatId, 'chat-2');
+      expect(restoredController!.state.chatId, 'chat-1');
 
       await controller.close();
       await restoredController.close();
-    });
-
-    test('deletes persisted snapshots', () async {
-      final store = _MemoryPersistenceStore();
-      final adapter = ChatPersistenceAdapter(store: store);
-      store.snapshots['chat-3'] = {
-        'schemaVersion': llmDartJsonSchemaVersion,
-        'kind': ChatSessionSnapshotJsonCodec.envelopeKind,
-        'data': {
-          'chatId': 'chat-3',
-          'prompt': const [],
-          'messages': const [],
-          'status': ChatStatus.ready.name,
-          'error': null,
-        },
-      };
-
-      await adapter.deleteSnapshot('chat-3');
-
-      expect(store.snapshots.containsKey('chat-3'), isFalse);
-      expect(await adapter.loadSnapshot('chat-3'), isNull);
     });
   });
 }

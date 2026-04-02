@@ -22,8 +22,8 @@ final class DefaultChatSession implements ChatSession {
   final Set<String> _scheduledToolExecutionKeys = <String>{};
 
   ChatState _state;
-  StreamSubscription<ChatTransportChunk>? _activeSubscription;
-  ChatUiAccumulator? _activeAccumulator;
+  StreamSubscription<ChatUiStreamChunk>? _activeSubscription;
+  ChatUiStreamAccumulator? _activeAccumulator;
   Completer<void>? _activeCompletion;
   int _activePromptAppendStartIndex = 0;
   bool _isDisposed = false;
@@ -114,7 +114,10 @@ final class DefaultChatSession implements ChatSession {
       ),
     );
 
-    await _runAssistantTurn(options: options);
+    await _runAssistantTurn(
+      options: options,
+      trigger: ChatTransportTrigger.sendMessage,
+    );
   }
 
   @override
@@ -151,7 +154,10 @@ final class DefaultChatSession implements ChatSession {
       ),
     );
 
-    await _runAssistantTurn(options: options);
+    await _runAssistantTurn(
+      options: options,
+      trigger: ChatTransportTrigger.regenerate,
+    );
   }
 
   @override
@@ -215,6 +221,7 @@ final class DefaultChatSession implements ChatSession {
 
     return _runAssistantTurn(
       options: update.options,
+      trigger: ChatTransportTrigger.toolOutput,
       seedAssistantMessage: updatedAssistantMessage,
     );
   }
@@ -225,7 +232,7 @@ final class DefaultChatSession implements ChatSession {
 
     final accumulator = _activeAccumulator;
     if (accumulator != null) {
-      _upsertAssistantMessage(accumulator.applyDataPart(part));
+      _upsertAssistantMessage(accumulator.apply(ChatUiDataPartChunk<T>(part)));
       return;
     }
 
@@ -316,6 +323,7 @@ final class DefaultChatSession implements ChatSession {
 
       return _runAssistantTurn(
         options: response.options,
+        trigger: ChatTransportTrigger.toolApproval,
         seedAssistantMessage: updatedAssistantMessage,
       );
     }
@@ -380,9 +388,17 @@ final class DefaultChatSession implements ChatSession {
 
     final accumulator = _activeAccumulator;
     if (accumulator != null) {
+      final abortedMessage = accumulator.apply(
+        const ChatUiEventChunk(
+          AbortEvent(),
+        ),
+      );
+      _upsertAssistantMessage(abortedMessage);
       final assistantMessage = accumulator.apply(
-        const FinishEvent(
-          finishReason: FinishReason.aborted,
+        const ChatUiEventChunk(
+          FinishEvent(
+            finishReason: FinishReason.aborted,
+          ),
         ),
       );
       _upsertAssistantMessage(assistantMessage);
@@ -453,6 +469,7 @@ final class DefaultChatSession implements ChatSession {
 
   Future<void> _runAssistantTurn({
     required ChatRequestOptions options,
+    required ChatTransportTrigger trigger,
     ChatUiMessage? seedAssistantMessage,
   }) async {
     _emitState(
@@ -465,6 +482,7 @@ final class DefaultChatSession implements ChatSession {
     final stream = transport.sendMessages(
       ChatTransportRequest(
         chatId: _state.chatId,
+        trigger: trigger,
         prompt: List<PromptMessage>.of(_promptHistory),
         options: options,
       ),
@@ -480,13 +498,13 @@ final class DefaultChatSession implements ChatSession {
   }
 
   Future<void> _consumeAssistantStream({
-    required Stream<ChatTransportChunk> stream,
+    required Stream<ChatUiStreamChunk> stream,
     required String assistantMessageId,
     required int promptAppendStartIndex,
     ChatUiMessage? seedAssistantMessage,
     bool syntheticStepStartOnSeed = true,
   }) async {
-    final accumulator = ChatUiAccumulator(
+    final accumulator = ChatUiStreamAccumulator(
       messageId: assistantMessageId,
       seedMessage: seedAssistantMessage,
     );
@@ -499,15 +517,19 @@ final class DefaultChatSession implements ChatSession {
     _activePromptAppendStartIndex = promptAppendStartIndex;
 
     if (seedAssistantMessage != null && syntheticStepStartOnSeed) {
-      latestAssistantMessage = accumulator.apply(const StepStartEvent());
+      latestAssistantMessage = accumulator.apply(
+        const ChatUiEventChunk(
+          StepStartEvent(),
+        ),
+      );
       _upsertAssistantMessage(latestAssistantMessage);
     }
 
     _activeSubscription = stream.listen(
       (chunk) async {
         switch (chunk) {
-          case ChatTransportEventChunk(:final event):
-            latestAssistantMessage = accumulator.apply(event);
+          case ChatUiEventChunk(:final event):
+            latestAssistantMessage = accumulator.apply(chunk);
             _upsertAssistantMessage(latestAssistantMessage!);
 
             if (event is ErrorEvent) {
@@ -527,25 +549,17 @@ final class DefaultChatSession implements ChatSession {
             }
 
             if (event is FinishEvent) {
-              completed = true;
-              _appendAssistantPromptIfPresent(
-                latestAssistantMessage!,
-                startPartIndex: promptAppendStartIndex,
-              );
-              _clearActiveTurn();
-              _emitState(
-                _state.copyWith(
-                  status: _deriveCompletionStatus(latestAssistantMessage),
-                  error: null,
-                ),
-              );
-              _maybeScheduleAutomaticToolExecution();
-              if (!completion.isCompleted) {
-                completion.complete();
-              }
+              // Wait for the stream to close so trailing message-metadata or
+              // message-finish chunks can still patch the final assistant
+              // message before the session transitions out of the active turn.
             }
-          case ChatTransportDataPartChunk(:final part):
-            latestAssistantMessage = accumulator.applyDataPart(part);
+          case ChatUiDataPartChunk():
+            latestAssistantMessage = accumulator.apply(chunk);
+            _upsertAssistantMessage(latestAssistantMessage!);
+          case ChatUiMessageStartChunk() ||
+                ChatUiMessageMetadataChunk() ||
+                ChatUiMessageFinishChunk():
+            latestAssistantMessage = accumulator.apply(chunk);
             _upsertAssistantMessage(latestAssistantMessage!);
         }
       },

@@ -116,6 +116,7 @@ final class OpenAITranscriptionModel implements TranscriptionModel {
         },
         body: multipart.bytes,
         timeout: request.callOptions.timeout,
+        cancellation: request.callOptions.cancellation,
         responseType: _responseTypeForResponseFormat(responseFormat),
       ),
     );

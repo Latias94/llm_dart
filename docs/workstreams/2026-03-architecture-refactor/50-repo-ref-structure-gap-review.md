@@ -112,12 +112,15 @@ mixed-tool replay path.
 
 ### 2.4 Flutter Is Separated From Core Provider Logic
 
-`llm_dart_flutter` now owns:
+`llm_dart_chat` now owns:
 
 - session orchestration
 - transport integration
 - persistence and snapshots
 - UI message projection
+
+`llm_dart_flutter` then adds Flutter adapter convenience such as
+`ChatController`.
 
 This is structurally better than the old monolith and already mirrors the
 reference lesson that UI/session concerns should not leak into the provider
@@ -292,7 +295,7 @@ coverage and mature capability internals.
 
 ### 4.4 The Remote UI Stream Protocol Is Still Intentionally Thin
 
-`llm_dart_flutter` already has:
+`llm_dart_chat` already has:
 
 - `HttpChatTransport`
 - prompt and UI codecs

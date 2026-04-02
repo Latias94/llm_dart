@@ -26,6 +26,7 @@ void main() {
     test('generateImage sends a request and decodes base64 image output',
         () async {
       TransportRequest? capturedRequest;
+      final cancelToken = TransportCancellation();
 
       final model = OpenAI(
         apiKey: 'test-key',
@@ -66,12 +67,13 @@ void main() {
         prompt: 'Draw a cat.',
         count: 1,
         size: '1024x1024',
-        callOptions: const CallOptions(
-          timeout: Duration(seconds: 5),
-          headers: {
+        callOptions: CallOptions(
+          timeout: const Duration(seconds: 5),
+          headers: const {
             'x-request': 'request-header',
           },
-          providerOptions: OpenAIImageOptions(
+          cancellation: cancelToken,
+          providerOptions: const OpenAIImageOptions(
             style: OpenAIImageStyle.vivid,
             quality: OpenAIImageQuality.hd,
             background: OpenAIImageBackground.transparent,
@@ -86,6 +88,7 @@ void main() {
           'https://api.openai.com/v1/images/generations');
       expect(capturedRequest!.method, TransportMethod.post);
       expect(capturedRequest!.timeout, const Duration(seconds: 5));
+      expect(identical(capturedRequest!.cancellation, cancelToken), isTrue);
       expect(
         capturedRequest!.headers,
         {

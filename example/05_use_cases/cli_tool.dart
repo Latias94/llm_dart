@@ -1,60 +1,39 @@
 // ignore_for_file: avoid_print
-import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
 
-/// 💻 CLI Tool Integration - Command-line AI Assistant
-///
-/// This example demonstrates how to integrate LLM Dart into a command-line tool:
-/// - Argument parsing and configuration
-/// - Interactive prompts and responses
-/// - Progress indicators and status updates
-/// - Configuration management
-///
-/// Usage:
-/// dart run cli_tool.dart --help
-/// dart run cli_tool.dart chat "Hello, how are you?"
-/// dart run cli_tool.dart --provider groq --model llama-3.1-8b-instant chat "Explain AI"
-///
-/// Before running, set your API keys:
-/// export OPENAI_API_KEY="your-key"
-/// export GROQ_API_KEY="your-key"
-void main(List<String> arguments) async {
+import 'dart:io';
+
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/llm_dart.dart' as llm;
+
+/// CLI example using the stable model API.
+Future<void> main(List<String> arguments) async {
   final cliTool = AICliTool();
   await cliTool.run(arguments);
 }
 
-/// AI-powered command-line tool
 class AICliTool {
-  // Configuration
   String _provider = 'openai';
-  String _model = 'gpt-4o-mini';
+  String _model = 'gpt-4.1-mini';
   double _temperature = 0.7;
   int _maxTokens = 1000;
   bool _verbose = false;
   bool _streaming = false;
 
-  /// Run the CLI tool with given arguments
   Future<void> run(List<String> arguments) async {
     try {
-      // Parse arguments
       final command = parseArguments(arguments);
-
       if (command == null) {
-        return; // Help was shown or invalid arguments
+        return;
       }
 
-      // Initialize AI provider
-      final aiProvider = await initializeProvider();
-
-      // Execute command
-      await executeCommand(command, aiProvider);
-    } catch (e) {
-      printError('Error: $e');
+      final model = initializeProvider();
+      await executeCommand(command, model);
+    } catch (error) {
+      printError('Error: $error');
       exit(1);
     }
   }
 
-  /// Parse command-line arguments
   String? parseArguments(List<String> arguments) {
     if (arguments.isEmpty ||
         arguments.contains('--help') ||
@@ -63,50 +42,42 @@ class AICliTool {
       return null;
     }
 
-    // Parse flags
-    for (int i = 0; i < arguments.length; i++) {
+    for (var i = 0; i < arguments.length; i++) {
       switch (arguments[i]) {
         case '--provider':
         case '-p':
           if (i + 1 < arguments.length) {
             _provider = arguments[++i];
           }
-          break;
         case '--model':
         case '-m':
           if (i + 1 < arguments.length) {
             _model = arguments[++i];
           }
-          break;
         case '--temperature':
         case '-t':
           if (i + 1 < arguments.length) {
             _temperature = double.tryParse(arguments[++i]) ?? 0.7;
           }
-          break;
         case '--max-tokens':
           if (i + 1 < arguments.length) {
             _maxTokens = int.tryParse(arguments[++i]) ?? 1000;
           }
-          break;
         case '--verbose':
         case '-v':
           _verbose = true;
-          break;
         case '--stream':
         case '-s':
           _streaming = true;
-          break;
         case 'chat':
         case 'ask':
         case 'generate':
-          // Found command, return it with remaining arguments
           if (i + 1 < arguments.length) {
             return '${arguments[i]} ${arguments.sublist(i + 1).join(' ')}';
-          } else {
-            printError('Error: Command "${arguments[i]}" requires a prompt');
-            return null;
           }
+
+          printError('Error: Command "${arguments[i]}" requires a prompt');
+          return null;
       }
     }
 
@@ -115,7 +86,6 @@ class AICliTool {
     return null;
   }
 
-  /// Show help information
   void showHelp() {
     print('''
 🤖 AI CLI Tool - Command-line AI Assistant
@@ -130,16 +100,16 @@ COMMANDS:
 
 OPTIONS:
     -p, --provider <name>     AI provider (openai, groq, anthropic) [default: openai]
-    -m, --model <name>        Model name [default: gpt-4o-mini]
+    -m, --model <name>        Model name [default: gpt-4.1-mini]
     -t, --temperature <num>   Temperature 0.0-1.0 [default: 0.7]
-    --max-tokens <num>        Maximum tokens [default: 1000]
+    --max-tokens <num>        Maximum output tokens [default: 1000]
     -s, --stream              Enable streaming responses
     -v, --verbose             Verbose output
     -h, --help                Show this help
 
 EXAMPLES:
     dart run cli_tool.dart chat "Hello, how are you?"
-    dart run cli_tool.dart -p groq -m llama-3.1-8b-instant ask "Explain quantum computing"
+    dart run cli_tool.dart -p groq -m llama-3.3-70b-versatile ask "Explain quantum computing"
     dart run cli_tool.dart --stream generate "Write a short story about AI"
 
 ENVIRONMENT VARIABLES:
@@ -149,13 +119,10 @@ ENVIRONMENT VARIABLES:
 ''');
   }
 
-  /// Initialize AI provider based on configuration
-  Future<ChatCapability> initializeProvider() async {
+  core.LanguageModel initializeProvider() {
     if (_verbose) {
       print('🔧 Initializing $_provider provider with model $_model...');
     }
-
-    final builder = ai();
 
     switch (_provider.toLowerCase()) {
       case 'openai':
@@ -163,48 +130,27 @@ ENVIRONMENT VARIABLES:
         if (apiKey == null || apiKey.isEmpty) {
           throw Exception('OPENAI_API_KEY environment variable not set');
         }
-        return await builder
-            .openai()
-            .apiKey(apiKey)
-            .model(_model)
-            .temperature(_temperature)
-            .maxTokens(_maxTokens)
-            .build();
-
+        return llm.AI.openai(apiKey: apiKey).chatModel(_model);
       case 'groq':
         final apiKey = Platform.environment['GROQ_API_KEY'];
         if (apiKey == null || apiKey.isEmpty) {
           throw Exception('GROQ_API_KEY environment variable not set');
         }
-        return await builder
-            .groq()
-            .apiKey(apiKey)
-            .model(_model)
-            .temperature(_temperature)
-            .maxTokens(_maxTokens)
-            .build();
-
+        return llm.AI.groq(apiKey: apiKey).chatModel(_model);
       case 'anthropic':
         final apiKey = Platform.environment['ANTHROPIC_API_KEY'];
         if (apiKey == null || apiKey.isEmpty) {
           throw Exception('ANTHROPIC_API_KEY environment variable not set');
         }
-        return await builder
-            .anthropic()
-            .apiKey(apiKey)
-            .model(_model)
-            .temperature(_temperature)
-            .maxTokens(_maxTokens)
-            .build();
-
+        return llm.AI.anthropic(apiKey: apiKey).chatModel(_model);
       default:
         throw Exception(
-            'Unknown provider: $_provider. Supported: openai, groq, anthropic');
+          'Unknown provider: $_provider. Supported: openai, groq, anthropic',
+        );
     }
   }
 
-  /// Execute the parsed command
-  Future<void> executeCommand(String command, ChatCapability provider) async {
+  Future<void> executeCommand(String command, core.LanguageModel model) async {
     final parts = command.split(' ');
     final commandType = parts[0];
     final prompt = parts.sublist(1).join(' ');
@@ -216,30 +162,25 @@ ENVIRONMENT VARIABLES:
 
     switch (commandType) {
       case 'chat':
-        await handleChatCommand(provider, prompt);
-        break;
+        await handleChatCommand(model, prompt);
       case 'ask':
-        await handleAskCommand(provider, prompt);
-        break;
+        await handleAskCommand(model, prompt);
       case 'generate':
-        await handleGenerateCommand(provider, prompt);
-        break;
+        await handleGenerateCommand(model, prompt);
       default:
         printError('Unknown command: $commandType');
     }
   }
 
-  /// Handle chat command (interactive conversation)
   Future<void> handleChatCommand(
-      ChatCapability provider, String initialPrompt) async {
+    core.LanguageModel model,
+    String initialPrompt,
+  ) async {
     print('🤖 Starting chat session. Type "quit" or "exit" to end.\n');
 
-    final conversation = <ChatMessage>[];
+    final conversation = <core.PromptMessage>[];
+    await processMessage(model, conversation, initialPrompt);
 
-    // Add initial prompt
-    await processMessage(provider, conversation, initialPrompt);
-
-    // Interactive loop
     while (true) {
       stdout.write('\n💬 You: ');
       final input = stdin.readLineSync();
@@ -255,66 +196,72 @@ ENVIRONMENT VARIABLES:
         continue;
       }
 
-      await processMessage(provider, conversation, input);
+      await processMessage(model, conversation, input);
     }
   }
 
-  /// Handle ask command (single question)
-  Future<void> handleAskCommand(ChatCapability provider, String prompt) async {
+  Future<void> handleAskCommand(core.LanguageModel model, String prompt) async {
     if (_verbose) {
       print('❓ Asking: $prompt\n');
     }
 
-    await processMessage(provider, [], prompt);
+    await processMessage(model, <core.PromptMessage>[], prompt);
   }
 
-  /// Handle generate command (content generation)
   Future<void> handleGenerateCommand(
-      ChatCapability provider, String prompt) async {
+    core.LanguageModel model,
+    String prompt,
+  ) async {
     if (_verbose) {
       print('✨ Generating: $prompt\n');
     }
 
-    // Add system prompt for generation
-    final messages = [
-      ChatMessage.system(
-          'You are a creative content generator. Provide high-quality, engaging content.'),
-      ChatMessage.user(prompt),
-    ];
-
-    await processMessages(provider, messages);
+    await processMessages(model, [
+      core.SystemPromptMessage.text(
+        'You are a creative content generator. Provide high-quality, engaging content.',
+      ),
+      core.UserPromptMessage.text(prompt),
+    ]);
   }
 
-  /// Process a single message and add to conversation
-  Future<void> processMessage(ChatCapability provider,
-      List<ChatMessage> conversation, String prompt) async {
-    conversation.add(ChatMessage.user(prompt));
-    await processMessages(provider, conversation);
+  Future<void> processMessage(
+    core.LanguageModel model,
+    List<core.PromptMessage> conversation,
+    String prompt,
+  ) async {
+    conversation.add(core.UserPromptMessage.text(prompt));
+    await processMessages(model, conversation);
   }
 
-  /// Process messages and get AI response
   Future<void> processMessages(
-      ChatCapability provider, List<ChatMessage> messages) async {
+    core.LanguageModel model,
+    List<core.PromptMessage> messages,
+  ) async {
     try {
       if (_streaming) {
-        await handleStreamingResponse(provider, messages);
+        await handleStreamingResponse(model, messages);
       } else {
-        await handleRegularResponse(provider, messages);
+        await handleRegularResponse(model, messages);
       }
-    } catch (e) {
-      printError('AI Error: $e');
+    } catch (error) {
+      printError('AI Error: $error');
     }
   }
 
-  /// Handle regular (non-streaming) response
   Future<void> handleRegularResponse(
-      ChatCapability provider, List<ChatMessage> messages) async {
+    core.LanguageModel model,
+    List<core.PromptMessage> messages,
+  ) async {
     if (_verbose) {
       stdout.write('🤔 Thinking...');
     }
 
     final stopwatch = Stopwatch()..start();
-    final response = await provider.chat(messages);
+    final result = await core.generateTextCall(
+      model: model,
+      prompt: messages,
+      options: _buildOptions(),
+    );
     stopwatch.stop();
 
     if (_verbose) {
@@ -323,98 +270,88 @@ ENVIRONMENT VARIABLES:
       print('🤖 AI:');
     }
 
-    print(response.text ?? 'No response generated');
+    print(result.text);
 
-    if (_verbose && response.usage != null) {
-      final usage = response.usage!;
+    if (_verbose && result.usage != null) {
+      final usage = result.usage!;
       print(
-          '\n📊 Usage: ${usage.totalTokens} tokens (${usage.promptTokens} prompt + ${usage.completionTokens} completion)');
+        '\n📊 Usage: ${usage.totalTokens} tokens (${usage.inputTokens} input + ${usage.outputTokens} output)',
+      );
     }
 
-    // Add response to conversation if it's a list we're maintaining
-    if (messages.isNotEmpty && messages.last.role == ChatRole.user) {
-      messages.add(ChatMessage.assistant(response.text ?? ''));
+    if (messages.isNotEmpty &&
+        messages.last.role == core.PromptRole.user &&
+        result.text.isNotEmpty) {
+      messages.add(core.AssistantPromptMessage.text(result.text));
     }
   }
 
-  /// Handle streaming response
   Future<void> handleStreamingResponse(
-      ChatCapability provider, List<ChatMessage> messages) async {
+    core.LanguageModel model,
+    List<core.PromptMessage> messages,
+  ) async {
     print('🤖 AI: ');
 
-    final responseBuffer = StringBuffer();
+    final stream = core.streamTextCall(
+      model: model,
+      prompt: messages,
+      options: _buildOptions(),
+    );
 
-    await for (final event in provider.chatStream(messages)) {
+    await for (final event in stream) {
       switch (event) {
-        case TextDeltaEvent(delta: final delta):
+        case core.TextDeltaEvent(:final delta):
           stdout.write(delta);
-          responseBuffer.write(delta);
-          break;
-        case CompletionEvent(response: final response):
+        case core.FinishEvent(:final usage):
           print('\n');
-          if (_verbose && response.usage != null) {
-            final usage = response.usage!;
+          if (_verbose && usage != null) {
             print('📊 Usage: ${usage.totalTokens} tokens');
           }
-          break;
-        case ErrorEvent(error: final error):
+        case core.ErrorEvent(:final error):
           printError('\nStreaming error: $error');
-          break;
-        case ThinkingDeltaEvent():
-        case ToolCallDeltaEvent():
-          // Handle other event types if needed
+        case core.ReasoningDeltaEvent():
+        case core.StepStartEvent():
+        case core.StepFinishEvent():
+        case core.StartEvent():
+        case core.ResponseMetadataEvent():
+        case core.TextStartEvent():
+        case core.TextEndEvent():
+        case core.ReasoningStartEvent():
+        case core.ReasoningEndEvent():
+        case core.ReasoningFileEvent():
+        case core.ToolInputStartEvent():
+        case core.ToolInputDeltaEvent():
+        case core.ToolInputEndEvent():
+        case core.ToolInputErrorEvent():
+        case core.ToolCallEvent():
+        case core.ToolResultEvent():
+        case core.ToolApprovalRequestEvent():
+        case core.ToolOutputDeniedEvent():
+        case core.SourceEvent():
+        case core.FileEvent():
+        case core.CustomEvent():
+        case core.AbortEvent():
+        case core.RawChunkEvent():
           break;
       }
     }
 
-    // Add response to conversation if it's a list we're maintaining
-    if (messages.isNotEmpty && messages.last.role == ChatRole.user) {
-      messages.add(ChatMessage.assistant(responseBuffer.toString()));
+    final finalText = (await stream.text).trim();
+    if (messages.isNotEmpty &&
+        messages.last.role == core.PromptRole.user &&
+        finalText.isNotEmpty) {
+      messages.add(core.AssistantPromptMessage.text(finalText));
     }
   }
 
-  /// Print error message in red
+  core.GenerateTextOptions _buildOptions() {
+    return core.GenerateTextOptions(
+      temperature: _temperature,
+      maxOutputTokens: _maxTokens,
+    );
+  }
+
   void printError(String message) {
-    print('\x1B[31m$message\x1B[0m'); // Red text
+    print('\x1B[31m$message\x1B[0m');
   }
 }
-
-/// 🎯 Key CLI Integration Concepts Summary:
-///
-/// Argument Parsing:
-/// - Command-line flags and options
-/// - Subcommands and arguments
-/// - Help and usage information
-/// - Environment variable support
-///
-/// User Experience:
-/// - Interactive prompts
-/// - Progress indicators
-/// - Colored output
-/// - Error handling
-///
-/// Configuration:
-/// - Provider selection
-/// - Model configuration
-/// - Runtime options
-/// - Environment variables
-///
-/// Features:
-/// - Single-shot questions
-/// - Interactive chat sessions
-/// - Streaming responses
-/// - Verbose output
-///
-/// Best Practices:
-/// 1. Provide clear help and usage information
-/// 2. Handle errors gracefully with meaningful messages
-/// 3. Support multiple providers and models
-/// 4. Use environment variables for API keys
-/// 5. Implement streaming for better UX
-///
-/// Next Steps:
-/// - Add configuration file support
-/// - Implement conversation history
-/// - Add more output formats (JSON, markdown)
-/// - Create shell completion scripts
-/// - Add batch processing capabilities

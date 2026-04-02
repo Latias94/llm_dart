@@ -119,6 +119,10 @@ Future<ChatCapability> createProvider({
   bool stream = false,
   double? topP,
   int? topK,
+  @Deprecated(
+    'createProvider.extensions is a legacy raw compatibility escape hatch. '
+    'Prefer typed builder/provider APIs or the stable AI facade instead.',
+  )
   Map<String, dynamic>? extensions,
 }) async {
   var builder = LLMBuilder().provider(providerId).apiKey(apiKey).model(model);

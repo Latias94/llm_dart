@@ -1,51 +1,59 @@
-# ElevenLabs Unique Features
+# ElevenLabs Provider Features
 
-Professional voice synthesis and audio processing capabilities.
+ElevenLabs is currently documented as a compatibility-oriented provider surface.
+
+Reason:
+
+- the repository does not yet expose a stable `AI.elevenlabs(...)` facade
+- ElevenLabs-specific voice controls are still tied to the older audio builder
+  surface
+- we do not want to freeze the wrong speech abstraction before the provider
+  boundary is settled
 
 ## Examples
 
 ### [audio_capabilities.dart](audio_capabilities.dart)
-Advanced voice synthesis, cloning, and real-time audio processing.
+Compatibility-oriented voice synthesis and audio processing example.
 
 ## Setup
 
 ```bash
 export ELEVENLABS_API_KEY="your-elevenlabs-api-key"
 
-# Run ElevenLabs audio example
 dart run audio_capabilities.dart
 ```
 
-## Unique Capabilities
+## Current Boundary
 
-### Professional Voice Synthesis
-- **Voice Cloning**: Create custom voices from audio samples
-- **Emotional Expression**: Natural tone and emotion control
-- **Real-time Streaming**: Low-latency audio generation
+### Compatibility Surface Today
 
-### Advanced Audio Processing
-- **High-Quality TTS**: Professional-grade voice generation
-- **Speech-to-Text**: Accurate transcription with speaker diarization
-- **Multi-language Support**: Global language coverage
-
-## Usage Examples
-
-### Voice Synthesis
 ```dart
 final audioProvider = await ai().elevenlabs().apiKey('your-key')
     .voiceId('JBFqnCBsd6RMkjVDRZzb')
     .stability(0.7)
     .similarityBoost(0.9)
     .buildAudio();
-
-final audioData = await audioProvider.textToSpeech(TTSRequest(
-  text: 'Welcome to ElevenLabs professional voice synthesis',
-  voice: 'JBFqnCBsd6RMkjVDRZzb',
-  model: 'eleven_multilingual_v2',
-));
 ```
+
+This still works, but it should be treated as transitional.
+
+### Stable Direction Later
+
+If ElevenLabs gets a frozen stable surface, it should look like the other
+migrated providers:
+
+- provider-owned model construction
+- shared app-facing speech contract where it actually fits
+- provider-owned typed voice controls instead of cross-provider leakage
+
+## Practical Guidance
+
+- If you need a stable speech facade today, OpenAI and Google already have
+  package-owned `speechModel(...)` entrypoints.
+- If you need ElevenLabs-specific voice cloning or studio controls today, use
+  the compatibility example and keep the integration isolated.
 
 ## Next Steps
 
-- [Core Features](../../02_core_features/) - Basic audio processing
-- [Advanced Features](../../03_advanced_features/) - Cross-provider audio
+- [Core Features](../../02_core_features/) - Shared audio capability examples
+- [Advanced Features](../../03_advanced_features/) - Cross-provider multimodal work

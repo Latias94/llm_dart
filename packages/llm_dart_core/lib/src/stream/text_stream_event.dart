@@ -255,6 +255,14 @@ final class FinishEvent extends TextStreamEvent {
   });
 }
 
+final class AbortEvent extends TextStreamEvent {
+  final String? reason;
+
+  const AbortEvent({
+    this.reason,
+  });
+}
+
 final class CustomEvent extends TextStreamEvent {
   final String kind;
   final Object? data;

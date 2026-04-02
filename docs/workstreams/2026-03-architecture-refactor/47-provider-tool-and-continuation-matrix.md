@@ -180,7 +180,8 @@ more of the loop in one runtime:
 
 - keep common function-tool continuation shared
 - keep provider-native continuation provider-owned
-- keep chat-interactive continuation in `llm_dart_flutter`
+- keep chat-interactive continuation in `llm_dart_chat`, with Flutter-specific
+  adapters staying in `llm_dart_flutter`
 
 ## 6. Cross-Provider Matrix
 

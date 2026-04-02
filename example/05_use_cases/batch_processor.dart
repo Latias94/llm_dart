@@ -1,108 +1,83 @@
 // ignore_for_file: avoid_print
-import 'dart:collection';
-import 'dart:io';
-import 'dart:convert';
-import 'dart:async';
-import 'package:llm_dart/llm_dart.dart';
 
-/// 📊 Batch Processing Tool - Large-scale Data Processing
-///
-/// This example demonstrates how to process large datasets with AI:
-/// - Concurrent processing with rate limiting
-/// - Progress tracking and monitoring
-/// - Error handling and retry logic
-/// - Result aggregation and reporting
-/// - Memory-efficient streaming processing
-///
-/// Usage:
-/// dart run batch_processor.dart --input data.jsonl --output results.jsonl
-/// dart run batch_processor.dart --help
-///
-/// Before running, set your API key:
-/// export GROQ_API_KEY="your-key"
-void main(List<String> arguments) async {
+import 'dart:async';
+import 'dart:collection';
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/llm_dart.dart' as llm;
+
+/// Batch processing example using the stable model API.
+Future<void> main(List<String> arguments) async {
   print('📊 Batch Processing Tool - Large-scale Data Processing\n');
 
   final processor = BatchProcessor();
   await processor.run(arguments);
 }
 
-/// Batch processing tool for large-scale AI operations
 class BatchProcessor {
-  // Configuration
   String _inputFile = '';
   String _outputFile = '';
   String _operation = 'analyze';
   int _concurrency = 3;
   int _batchSize = 10;
   bool _verbose = false;
-  final Duration _rateLimitDelay = Duration(milliseconds: 500);
+  final Duration _rateLimitDelay = const Duration(milliseconds: 500);
 
-  late ChatCapability _aiProvider;
+  late core.LanguageModel _model;
 
-  /// Run the batch processor
   Future<void> run(List<String> arguments) async {
     try {
-      // Parse arguments
       if (!parseArguments(arguments)) {
         return;
       }
 
-      // Initialize AI provider
-      await initializeAI();
-
-      // Process data
+      initializeAI();
       await processData();
 
       print('\n✅ Batch processing completed successfully!');
-    } catch (e) {
-      print('❌ Batch processing failed: $e');
+    } catch (error) {
+      print('❌ Batch processing failed: $error');
       exit(1);
     }
   }
 
-  /// Parse command-line arguments
   bool parseArguments(List<String> arguments) {
     if (arguments.isEmpty || arguments.contains('--help')) {
       showHelp();
       return false;
     }
 
-    for (int i = 0; i < arguments.length; i++) {
+    for (var i = 0; i < arguments.length; i++) {
       switch (arguments[i]) {
         case '--input':
         case '-i':
           if (i + 1 < arguments.length) {
             _inputFile = arguments[++i];
           }
-          break;
         case '--output':
         case '-o':
           if (i + 1 < arguments.length) {
             _outputFile = arguments[++i];
           }
-          break;
         case '--operation':
           if (i + 1 < arguments.length) {
             _operation = arguments[++i];
           }
-          break;
         case '--concurrency':
         case '-c':
           if (i + 1 < arguments.length) {
             _concurrency = int.tryParse(arguments[++i]) ?? 3;
           }
-          break;
         case '--batch-size':
         case '-b':
           if (i + 1 < arguments.length) {
             _batchSize = int.tryParse(arguments[++i]) ?? 10;
           }
-          break;
         case '--verbose':
         case '-v':
           _verbose = true;
-          break;
       }
     }
 
@@ -115,7 +90,6 @@ class BatchProcessor {
     return true;
   }
 
-  /// Show help information
   void showHelp() {
     print('''
 📊 Batch Processing Tool - Large-scale Data Processing
@@ -152,24 +126,21 @@ OUTPUT FORMAT (JSONL):
 ''');
   }
 
-  /// Initialize AI provider
-  Future<void> initializeAI() async {
-    final apiKey = Platform.environment['GROQ_API_KEY'] ?? 'gsk-TESTKEY';
+  void initializeAI() {
+    final groqKey = Platform.environment['GROQ_API_KEY'];
+    if (groqKey == null || groqKey.isEmpty) {
+      throw StateError('GROQ_API_KEY environment variable not set');
+    }
 
-    _aiProvider = await ai()
-        .groq()
-        .apiKey(apiKey)
-        .model('llama-3.1-8b-instant')
-        .temperature(0.3)
-        .maxTokens(1000)
-        .build();
+    _model = llm.AI.groq(
+      apiKey: groqKey,
+    ).chatModel('llama-3.3-70b-versatile');
 
     if (_verbose) {
-      print('✅ AI provider initialized');
+      print('✅ AI model initialized (${_model.providerId}/${_model.modelId})');
     }
   }
 
-  /// Process data from input file
   Future<void> processData() async {
     print('🔄 Starting batch processing...');
     print('   Input: $_inputFile');
@@ -178,7 +149,6 @@ OUTPUT FORMAT (JSONL):
     print('   Concurrency: $_concurrency');
     print('   Batch size: $_batchSize\n');
 
-    // Read input data
     final inputFile = File(_inputFile);
     if (!await inputFile.exists()) {
       throw Exception('Input file not found: $_inputFile');
@@ -188,9 +158,8 @@ OUTPUT FORMAT (JSONL):
     final outputSink = outputFile.openWrite();
 
     try {
-      // Process data in batches
       final processor = DataProcessor(
-        aiProvider: _aiProvider,
+        model: _model,
         operation: _operation,
         concurrency: _concurrency,
         verbose: _verbose,
@@ -204,9 +173,8 @@ OUTPUT FORMAT (JSONL):
   }
 }
 
-/// Data processor for handling batch operations
 class DataProcessor {
-  final ChatCapability aiProvider;
+  final core.LanguageModel model;
   final String operation;
   final int concurrency;
   final bool verbose;
@@ -217,16 +185,18 @@ class DataProcessor {
   final Stopwatch _stopwatch = Stopwatch();
 
   DataProcessor({
-    required this.aiProvider,
+    required this.model,
     required this.operation,
     required this.concurrency,
     required this.verbose,
     required this.rateLimitDelay,
   });
 
-  /// Process file in batches
   Future<void> processFile(
-      File inputFile, IOSink outputSink, int batchSize) async {
+    File inputFile,
+    IOSink outputSink,
+    int batchSize,
+  ) async {
     _stopwatch.start();
 
     final lines = await inputFile.readAsLines();
@@ -235,25 +205,25 @@ class DataProcessor {
     print('📋 Processing $totalItems items in batches of $batchSize');
     print('⚡ Using $concurrency concurrent workers\n');
 
-    // Process in batches
-    for (int i = 0; i < lines.length; i += batchSize) {
-      final batchEnd =
-          (i + batchSize < lines.length) ? i + batchSize : lines.length;
+    for (var i = 0; i < lines.length; i += batchSize) {
+      final batchEnd = (i + batchSize < lines.length)
+          ? i + batchSize
+          : lines.length;
       final batch = lines.sublist(i, batchEnd);
 
       await processBatch(batch, outputSink);
 
-      // Progress update
       final progress = ((i + batch.length) / totalItems * 100).toInt();
       print(
-          '📈 Progress: $progress% (${i + batch.length}/$totalItems) - Processed: $_processedCount, Errors: $_errorCount');
+        '📈 Progress: $progress% (${i + batch.length}/$totalItems) - '
+        'Processed: $_processedCount, Errors: $_errorCount',
+      );
     }
 
     _stopwatch.stop();
     printSummary(totalItems);
   }
 
-  /// Process a batch of items concurrently
   Future<void> processBatch(List<String> batch, IOSink outputSink) async {
     final semaphore = Semaphore(concurrency);
     final futures = <Future<void>>[];
@@ -273,10 +243,8 @@ class DataProcessor {
     await Future.wait(futures);
   }
 
-  /// Process a single item
   Future<void> processItem(String line, IOSink outputSink) async {
     try {
-      // Parse input
       final data = jsonDecode(line) as Map<String, dynamic>;
       final id = data['id'] as String;
       final text = data['text'] as String;
@@ -285,13 +253,10 @@ class DataProcessor {
         print('   🔄 Processing item $id...');
       }
 
-      // Rate limiting
       await Future.delayed(rateLimitDelay);
 
-      // Process with AI
       final result = await processWithAI(text);
 
-      // Write result
       final output = {
         'id': id,
         'input': text,
@@ -301,6 +266,8 @@ class DataProcessor {
         'metadata': {
           'processed_at': DateTime.now().millisecondsSinceEpoch,
           'operation_type': operation,
+          'provider': model.providerId,
+          'model': model.modelId,
         },
       };
 
@@ -310,42 +277,44 @@ class DataProcessor {
       if (verbose) {
         print('   ✅ Completed item $id');
       }
-    } catch (e) {
+    } catch (error) {
       _errorCount++;
       if (verbose) {
-        print('   ❌ Error processing item: $e');
+        print('   ❌ Error processing item: $error');
       }
 
-      // Write error result
       try {
         final data = jsonDecode(line) as Map<String, dynamic>;
         final errorOutput = {
           'id': data['id'],
           'input': data['text'],
-          'error': e.toString(),
+          'error': error.toString(),
           'operation': operation,
           'timestamp': DateTime.now().toIso8601String(),
         };
         outputSink.writeln(jsonEncode(errorOutput));
       } catch (_) {
-        // If we can't even parse the input, skip it
+        // Ignore malformed lines that cannot be parsed a second time.
       }
     }
   }
 
-  /// Process text with AI based on operation type
   Future<String> processWithAI(String text) async {
-    final systemPrompt = getSystemPromptForOperation(operation);
-    final messages = [
-      ChatMessage.system(systemPrompt),
-      ChatMessage.user(text),
-    ];
+    final result = await core.generateTextCall(
+      model: model,
+      prompt: [
+        core.SystemPromptMessage.text(getSystemPromptForOperation(operation)),
+        core.UserPromptMessage.text(text),
+      ],
+      options: const core.GenerateTextOptions(
+        temperature: 0.3,
+        maxOutputTokens: 1000,
+      ),
+    );
 
-    final response = await aiProvider.chat(messages);
-    return response.text ?? 'No response generated';
+    return result.text.isEmpty ? 'No response generated' : result.text;
   }
 
-  /// Get system prompt for operation type
   String getSystemPromptForOperation(String operation) {
     switch (operation) {
       case 'analyze':
@@ -361,24 +330,26 @@ class DataProcessor {
     }
   }
 
-  /// Print processing summary
   void printSummary(int totalItems) {
     final duration = _stopwatch.elapsed;
-    final itemsPerSecond = _processedCount / duration.inSeconds;
+    final seconds =
+        duration.inMilliseconds <= 0 ? 1 : duration.inMilliseconds / 1000;
+    final itemsPerSecond = _processedCount / seconds;
 
     print('\n📊 Batch Processing Summary:');
     print('   Total items: $totalItems');
     print('   Successfully processed: $_processedCount');
     print('   Errors: $_errorCount');
     print(
-        '   Success rate: ${((_processedCount / totalItems) * 100).toStringAsFixed(1)}%');
+      '   Success rate: ${((_processedCount / totalItems) * 100).toStringAsFixed(1)}%',
+    );
     print('   Total time: ${duration.inMinutes}m ${duration.inSeconds % 60}s');
     print(
-        '   Processing rate: ${itemsPerSecond.toStringAsFixed(2)} items/second');
+      '   Processing rate: ${itemsPerSecond.toStringAsFixed(2)} items/second',
+    );
   }
 }
 
-/// Simple semaphore for controlling concurrency
 class Semaphore {
   final int maxCount;
   int _currentCount;

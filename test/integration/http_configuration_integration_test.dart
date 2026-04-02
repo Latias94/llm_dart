@@ -1,5 +1,6 @@
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/src/config/legacy_config_keys.dart';
 
 void main() {
   group('HTTP Configuration Integration Tests', () {
@@ -266,7 +267,7 @@ void main() {
             .http((http) => http
                 .headers({'X-Search-Enabled': 'true'}).receiveTimeout(
                     Duration(minutes: 5)))
-            .enableWebSearch();
+            .extension(LegacyExtensionKeys.webSearchEnabled, true);
 
         expect(builder, isNotNull);
       });

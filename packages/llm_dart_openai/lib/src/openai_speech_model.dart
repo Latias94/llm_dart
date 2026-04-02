@@ -77,6 +77,7 @@ final class OpenAISpeechModel implements SpeechModel {
           if (options?.language case final language?) 'language': language,
         },
         timeout: request.callOptions.timeout,
+        cancellation: request.callOptions.cancellation,
         responseType: TransportResponseType.bytes,
       ),
     );

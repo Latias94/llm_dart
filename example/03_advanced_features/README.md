@@ -2,6 +2,17 @@
 
 Sophisticated AI capabilities for production applications with LLM Dart.
 
+This directory currently mixes two surfaces:
+
+- stable model-based examples built on `AI.*(...).chatModel(...)`
+- compatibility-oriented builder/configuration examples that still document
+  legacy HTTP and provider wiring while the migration is ongoing
+
+For new application logic, prefer the stable `AI` facade and the shared helpers
+from `package:llm_dart/core.dart`. Builder-heavy infrastructure examples in this
+directory should be read as compatibility or transitional material unless they
+already use the stable facade explicitly.
+
 ## Examples
 
 ### [reasoning_models.dart](reasoning_models.dart)
@@ -82,19 +93,23 @@ dart run performance_optimization.dart
 
 ### Reasoning with DeepSeek R1
 ```dart
-// Access AI thinking process
-final provider = await ai().deepseek().apiKey('your-key')
-    .model('deepseek-reasoner').build();
+import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/core.dart' as core;
 
-final response = await provider.chat([
-  ChatMessage.user('Solve this step by step: 15 + 27 * 3'),
-]);
+final model =
+    llm.AI.deepSeek(apiKey: 'your-key').chatModel('deepseek-reasoner');
 
-// Access thinking process
-if (response.thinking != null) {
-  print('AI Thinking: ${response.thinking}');
+final result = await core.generateTextCall(
+  model: model,
+  prompt: [
+    core.UserPromptMessage.text('Solve this step by step: 15 + 27 * 3'),
+  ],
+);
+
+if (result.reasoningText case final reasoning?) {
+  print('AI Thinking: $reasoning');
 }
-print('Answer: ${response.text}');
+print('Answer: ${result.text}');
 ```
 
 ### Multi-modal Processing

@@ -4,45 +4,59 @@ Essential functionality for building AI applications with LLM Dart.
 
 ## Examples
 
+### [web_search.dart](web_search.dart)
+Stable web-search patterns using the shared `generateTextCall(...)` layer plus
+provider-owned typed options for OpenAI, Anthropic, xAI, and OpenRouter.
+
+### [capability_detection.dart](capability_detection.dart)
+Registry-level capability inspection for provider selection and architecture
+planning, with a stable `AI.*(...).chatModel(...)` execution appendix.
+
 ### [capability_factory_methods.dart](capability_factory_methods.dart)
-Type-safe provider initialization using specialized build methods.
+Compatibility-oriented specialized `build*()` helpers for capability families
+that still live on the older root builder surface.
 
 ### [assistants.dart](assistants.dart)
-AI assistants creation, management, and tool integration.
+Provider-owned assistant lifecycle management and tool integration.
 
 ### [embeddings.dart](embeddings.dart)
-Text embeddings for semantic search and similarity analysis.
+Legacy/provider-oriented embeddings example kept during migration.
 
 ### [embeddings_stable.dart](embeddings_stable.dart)
 Stable shared `embed(...)` and `embedMany(...)` helpers with
 `AI.openai(...).embeddingModel(...)`.
 
 ### [file_management.dart](file_management.dart)
-File upload, download, and management for AI workflows.
+Provider-owned file upload, download, and management workflows.
 
 ### [chat_basics.dart](chat_basics.dart)
-Foundation of AI interactions - messages, context, and responses.
+Stable foundational chat patterns with prompt messages, conversation history,
+and response metadata.
 
 ### [streaming_chat.dart](streaming_chat.dart)
-Real-time response streaming for better user experience.
+Stable streaming chat patterns for responsive UX.
 
 ### [cancellation_demo.dart](cancellation_demo.dart)
-Request cancellation support for chat, streaming, and API operations.
+Stable cancellation for shared text calls, with model listing kept as an
+explicit compatibility boundary appendix. Streaming cancellation now surfaces
+`AbortEvent` explicitly when available while preserving the older
+`transport-cancelled` error path as a fallback boundary.
 
 ### [tool_calling.dart](tool_calling.dart)
-Function calling - let AI execute custom functions.
+Stable shared tool-calling flow with `FunctionToolDefinition` and
+tool-call replay parts.
 
 ### [enhanced_tool_calling.dart](enhanced_tool_calling.dart)
-Advanced tool calling with validation, error handling, and complex nested object structures.
+Advanced tool calling with validation, error handling, and richer schemas.
 
 ### [structured_output.dart](structured_output.dart)
-Shared `OutputSpec` examples for object, array, choice, and the new main text-call result surfaces.
+Shared `OutputSpec` examples for object, array, choice, and text result flows.
 
 ### [audio_processing.dart](audio_processing.dart)
-Text-to-speech and speech-to-text capabilities.
+Speech capability examples for text-to-speech and speech-to-text workflows.
 
 ### [image_generation.dart](image_generation.dart)
-AI-powered image creation and editing.
+AI-powered image creation and editing workflows.
 
 ### [error_handling.dart](error_handling.dart)
 Production-ready error management patterns.
@@ -56,6 +70,8 @@ export ANTHROPIC_API_KEY="your-anthropic-key"
 export GOOGLE_API_KEY="your-google-key"
 
 # Run core feature examples
+dart run web_search.dart
+dart run capability_detection.dart
 dart run capability_factory_methods.dart
 dart run assistants.dart
 dart run embeddings.dart
@@ -69,38 +85,99 @@ dart run enhanced_tool_calling.dart
 
 ## Key Concepts
 
-### Capability-Based Architecture
-- **Type Safety**: Use specialized build methods (`buildChat()`, `buildAssistant()`, `buildEmbedding()`)
-- **Provider Abstraction**: Unified interface across different AI providers
-- **Capability Detection**: Automatic feature detection and validation
+This directory intentionally mixes:
 
-### Core Capabilities
-- **Chat**: Messages, context, and response handling
-- **Assistants**: Persistent AI assistants with tools and memory
-- **Embeddings**: Vector representations for semantic search
-- **File Management**: Upload, download, and organize files for AI workflows
-- **Streaming**: Real-time response delivery
-- **Tools**: Function calling and execution
-- **Structured Output**: Shared `generateTextCall(...)` and `streamTextCall(...)` with `OutputSpec`
-- **Error Handling**: Production-ready error management
+- stable shared-model examples centered on `AI.*(...).chatModel(...)`,
+  `embeddingModel(...)`, `imageModel(...)`, `speechModel(...)`, and
+  `transcriptionModel(...)`
+- compatibility/provider examples for capability families that still depend on
+  builder-owned or provider-owned APIs during migration
+
+When starting new application code, prefer the stable facade and shared
+helpers:
+
+- `generateTextCall(...)`
+- `streamTextCall(...)`
+- `embed(...)`
+- `embedMany(...)`
+- `generateImage(...)`
+- `generateSpeech(...)`
+- `transcribe(...)`
+
+### Capability Metadata vs Stable App Code
+
+- **Stable app path**: Create models through `AI.*(...)` and keep application
+  code on the shared call layer.
+- **Capability metadata**: Use `LLMProviderRegistry` and `ProviderInfo` to
+  shortlist providers and document boundaries before you bind models.
+- **Boundary APIs**: Some families, such as assistants, raw response
+  lifecycle APIs, and certain file-management workflows, still remain
+  provider-owned.
+
+### Core Capability Areas
+
+- **Chat**: Messages, context, response generation, and streaming
+- **Tools**: Function calling and tool-result replay
+- **Structured Output**: Shared `OutputSpec`-driven result shaping
+- **Embeddings**: Vector representations for semantic search and retrieval
+- **Audio**: Text-to-speech and speech-to-text workflows
+- **Images**: Prompt-based generation and editing
+- **Assistants / Files**: Provider-specific lifecycle and storage surfaces
+- **Error Handling**: Production-ready failure patterns and fallbacks
 
 ## Usage Examples
 
-### Basic Chat
-```dart
-// Type-safe provider initialization
-final provider = await ai().openai().apiKey('your-key').buildChat();
+The snippets below are ordered intentionally:
 
-// Simple conversation
-final response = await provider.chat([
-  ChatMessage.user('Hello, how are you?'),
-]);
-print(response.text);
+- stable shared-model flows first
+- compatibility/provider-owned boundaries second
+
+### Stable Basic Chat
+
+```dart
+import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/core.dart' as core;
+
+final model = llm.AI.openai(apiKey: 'your-key').chatModel('gpt-4.1-mini');
+
+final result = await core.generateTextCall(
+  model: model,
+  prompt: [
+    core.UserPromptMessage.text('Hello, how are you?'),
+  ],
+);
+
+print(result.text);
 ```
 
-### Assistant with Tools
+### Stable Embeddings for Search
+
 ```dart
-// Create assistant with tools
+import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/core.dart' as core;
+
+final model = llm.AI.openai(
+  apiKey: 'your-key',
+).embeddingModel('text-embedding-3-small');
+
+final batch = await core.embedMany(
+  model: model,
+  values: const [
+    'Machine learning fundamentals',
+    'Deep learning neural networks',
+    'Natural language processing',
+  ],
+);
+
+print(batch.embeddings.length);
+```
+
+### Compatibility Boundary: Assistants
+
+Assistant lifecycle APIs are still provider-owned and are not yet part of the
+stable shared model facade.
+
+```dart
 final assistant = await provider.createAssistant(CreateAssistantRequest(
   model: 'gpt-4',
   name: 'Code Helper',
@@ -109,9 +186,11 @@ final assistant = await provider.createAssistant(CreateAssistantRequest(
 ));
 ```
 
-### File Management
+### Compatibility Boundary: File Management
+
+File upload and file lifecycle APIs also remain provider-owned.
+
 ```dart
-// Upload file for AI processing
 final fileBytes = await File('document.pdf').readAsBytes();
 final fileObject = await provider.uploadFile(FileUploadRequest(
   file: Uint8List.fromList(fileBytes),
@@ -120,55 +199,32 @@ final fileObject = await provider.uploadFile(FileUploadRequest(
 ));
 ```
 
-### Embeddings for Search
-```dart
-// Generate embeddings for semantic search
-final embeddings = await provider.embed([
-  'Machine learning fundamentals',
-  'Deep learning neural networks',
-  'Natural language processing',
-]);
-```
+### Provider-Specific Boundary: Anthropic Prompt Caching
 
-### Anthropic Prompt Caching
-**⚠️ ANTHROPIC ONLY**: Caching features are currently only supported by Anthropic providers.
+Anthropic prompt caching is provider-specific. See the Anthropic provider
+examples and README for the current typed guidance and migration notes:
 
-```dart
-// Message-level caching
-final systemMessage = MessageBuilder.system()
-    .text('You are a helpful AI assistant.')
-    .anthropicConfig((anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.oneHour))
-    .text('Here is a large document that will be cached...')
-    .build();
-
-// Tool-level caching (unified approach)
-final message = MessageBuilder.system()
-    .tools([tool1, tool2, tool3])
-    .anthropicConfig((anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.oneHour))
-    .text('Use these tools to help users.')
-    .build();
-```
+- [Anthropic Provider README](../04_providers/anthropic/README.md)
 
 ## Best Practices
 
-### Type Safety
-- Always use specialized build methods (`buildChat()`, `buildAssistant()`, etc.)
-- Handle null values properly with null-aware operators (`?.`, `!`)
-- Use proper error handling with try-catch blocks
-
-### Resource Management
-- Dispose of streams and controllers when done
-- Close file handles and network connections
-- Use proper async/await patterns
-
-### Performance
-- Use streaming for long responses
-- Implement proper caching for embeddings
-- Handle rate limits gracefully
+- Start new app-facing code from stable model constructors and shared helpers.
+- Use capability metadata for provider selection and documentation, not as a
+  strict runtime guarantee.
+- Treat provider-specific lifecycle surfaces as boundaries until a stable
+  shared contract exists.
+- Validate critical model behavior with real calls and graceful error handling.
+- Dispose streams, controllers, and file handles correctly.
+- Use streaming for long responses and apply caching only where the provider
+  and model explicitly support it.
 
 ## Next Steps
 
-- [Advanced Features](../03_advanced_features/) - Batch processing, real-time audio, semantic search
-- [Provider Examples](../04_providers/) - Provider-specific features and optimizations
-- [Use Cases](../05_use_cases/) - Complete applications and Flutter integration
-- [Getting Started](../01_getting_started/) - Environment setup and configuration
+- [Advanced Features](../03_advanced_features/) - Batch processing, real-time
+  audio, semantic search
+- [Provider Examples](../04_providers/) - Provider-specific features and
+  optimizations
+- [Use Cases](../05_use_cases/) - Complete applications and Flutter
+  integration
+- [Getting Started](../01_getting_started/) - Environment setup and
+  configuration

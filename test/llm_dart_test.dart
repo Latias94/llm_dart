@@ -57,6 +57,7 @@ void main() {
           stream: true,
           topP: 0.9,
           topK: 50,
+          // ignore: deprecated_member_use_from_same_package
           extensions: {'custom': 'value'},
         );
 
@@ -77,6 +78,7 @@ void main() {
           timeout: null,
           topP: null,
           topK: null,
+          // ignore: deprecated_member_use_from_same_package
           extensions: null,
         );
 
@@ -89,6 +91,7 @@ void main() {
           providerId: 'openai',
           apiKey: 'test-key',
           model: 'gpt-3.5-turbo',
+          // ignore: deprecated_member_use_from_same_package
           extensions: {},
         );
 
@@ -101,6 +104,7 @@ void main() {
           providerId: 'openai',
           apiKey: 'test-key',
           model: 'gpt-3.5-turbo',
+          // ignore: deprecated_member_use_from_same_package
           extensions: {
             'ext1': 'value1',
             'ext2': 'value2',

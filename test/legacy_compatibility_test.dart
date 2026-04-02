@@ -2,6 +2,8 @@ import 'package:llm_dart/llm_dart.dart' as legacy;
 import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as modern_anthropic;
 import 'package:llm_dart/src/compatibility/compat_providers.dart';
 import 'package:llm_dart/src/compatibility/legacy_chat_adapter.dart';
+import 'package:llm_dart/src/config/legacy_config_keys.dart';
+import 'package:llm_dart/src/config/legacy_provider_options.dart';
 import 'package:llm_dart_core/llm_dart_core.dart' as core;
 import 'package:llm_dart_openai/llm_dart_openai.dart' as modern_openai;
 import 'package:llm_dart_test/llm_dart_test.dart';
@@ -854,6 +856,63 @@ void main() {
             maxResults: 5,
             searchPrompt: 'Focus on recent developments.',
           ),
+        }),
+      );
+
+      final response = await provider.chat([
+        legacy.ChatMessage.user('Search the latest updates.'),
+      ]);
+
+      expect(response.text, 'Search ready.');
+      expect(capturedRequest, isNotNull);
+
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(requestBody['model'], 'openai/gpt-4o-mini:online');
+    });
+
+    test(
+        'Compat OpenRouter provider maps namespaced webSearchConfig into online-model settings',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final provider = buildCompatOpenRouterProvider(
+        legacy.LLMConfig(
+          apiKey: 'test-key',
+          baseUrl: 'https://openrouter.ai/api/v1/',
+          model: 'openai/gpt-4o-mini',
+        ).withExtensions({
+          'customTransportClient': _FakeTransportClient(
+            onSend: (request) async {
+              capturedRequest = request;
+              return TransportResponse(
+                statusCode: 200,
+                body: {
+                  'id': 'chatcmpl_openrouter_compat_2',
+                  'model': 'openai/gpt-4o-mini:online',
+                  'created': 1710000401,
+                  'choices': [
+                    {
+                      'index': 0,
+                      'finish_reason': 'stop',
+                      'message': {
+                        'role': 'assistant',
+                        'content': 'Search ready.',
+                      },
+                    },
+                  ],
+                },
+              );
+            },
+          ),
+          legacyProviderOptionsBagKey: {
+            LegacyProviderOptionNamespaces.openrouter: {
+              LegacyExtensionKeys.webSearchConfig:
+                  legacy.WebSearchConfig.openRouter(
+                maxResults: 5,
+                searchPrompt: 'Focus on recent developments.',
+              ),
+            },
+          },
         }),
       );
 

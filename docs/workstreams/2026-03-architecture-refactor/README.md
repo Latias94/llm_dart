@@ -8,7 +8,7 @@
 - `ChatCapability`, `AudioCapability`, `ImageGenerationCapability`, and similar interfaces are mixed with concrete provider behavior.
 - `LLMBuilder`, `capability.dart`, and `chat_models.dart` had gradually turned into bus files before the current root-facade decomposition pass.
 - OpenAI, OpenAI-compatible providers, DeepSeek, xAI, Groq, and Phind contain repeated code and conditional branching.
-- Flutter integration is still too close to direct provider calls and lacks a real chat-focused message and session layer.
+- Flutter integration historically sat too close to direct provider calls and lacked a real chat-focused message and session layer; the current runtime split is addressing that.
 
 This workstream is not about a file-moving refactor. It is about defining stable boundaries first, and then rewriting against those boundaries.
 
@@ -101,7 +101,7 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - [40-flutter-tool-orchestration-boundary.md](40-flutter-tool-orchestration-boundary.md)
   - Frozen session-layer rule for batching tool outputs and approval-driven continuation without widening shared events.
 - [41-local-tool-execution-convenience.md](41-local-tool-execution-convenience.md)
-  - Frozen boundary for `onToolCall`-style local tool execution convenience in `llm_dart_flutter`.
+  - Frozen boundary for `onToolCall`-style local tool execution convenience in `llm_dart_chat`.
 - [42-provider-capability-and-step-lifecycle-boundary.md](42-provider-capability-and-step-lifecycle-boundary.md)
   - Frozen conclusion that the remaining maturity gap versus `repo-ref/ai` is step-lifecycle orchestration above the raw stream boundary, not more shared core events or wider provider abstractions.
 - [43-single-step-calls-vs-multi-step-runner.md](43-single-step-calls-vs-multi-step-runner.md)
@@ -184,6 +184,26 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Status note for splitting the shared compatibility-era config surface into a shell, focused config parts, and isolated transformer contracts while keeping the public configuration API unchanged.
 - [82-legacy-config-extension-boundary.md](82-legacy-config-extension-boundary.md)
   - Status note for centralizing legacy extension keys and typed accessors as a transitional step before any deeper migration away from the flat compatibility extension map.
+- [83-openai-family-namespaced-provider-options.md](83-openai-family-namespaced-provider-options.md)
+  - Status note for the first OpenAI-family transition from flat compatibility extension keys toward namespaced `providerOptions` with namespaced-first and flat-fallback reads.
+- [84-shared-web-search-and-raw-extension-boundary.md](84-shared-web-search-and-raw-extension-boundary.md)
+  - Frozen boundary that marks the root shared web-search builder helpers and `createProvider(..., extensions: ...)` as compatibility-only migration surfaces rather than stable long-term API.
+- [85-public-example-surface-alignment.md](85-public-example-surface-alignment.md)
+  - Status note for aligning high-visibility examples and README entrypoints with the stable `AI` facade and provider-owned search APIs.
+- [86-stable-event-surface-alignment.md](86-stable-event-surface-alignment.md)
+  - Frozen follow-up on the narrow shared event gap versus `repo-ref/ai`, keeping `TextStreamEvent` as the model-layer stream while adding explicit abort semantics.
+- [87-dedicated-ui-stream-chunk-layer.md](87-dedicated-ui-stream-chunk-layer.md)
+  - Frozen next-step design for a dedicated UI/session chunk layer above `TextStreamEvent`, plus the split between runtime UI chunks and HTTP wire chunks.
+- [88-backend-reference-adapter-and-protocol-ownership.md](88-backend-reference-adapter-and-protocol-ownership.md)
+  - Frozen ownership for the HTTP chat transport protocol and the Dart backend reference adapter, keeping server reuse in `llm_dart_transport` rather than `llm_dart_flutter`.
+- [89-chat-runtime-vs-flutter-adapter-split.md](89-chat-runtime-vs-flutter-adapter-split.md)
+  - Frozen split between the reusable pure Dart chat runtime in `llm_dart_chat` and the thin Flutter adapter layer in `llm_dart_flutter`.
+- [90-chat-runtime-surface-gap-review.md](90-chat-runtime-surface-gap-review.md)
+  - Frozen review of which remaining `llm_dart_chat` gaps versus `repo-ref/ai` should be adopted, rejected, or deferred after the runtime split.
+- [91-root-chat-entrypoint-boundary.md](91-root-chat-entrypoint-boundary.md)
+  - Frozen boundary for exposing the pure Dart chat runtime through
+    `package:llm_dart/chat.dart` while keeping Flutter adapters out of the root
+    package.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
@@ -203,6 +223,8 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - Speech generation and transcription model interfaces
 - UI-facing chat message models
 - Stream event models
+- Explicit abort semantics across stream, UI projection, and Flutter chat transport
+- A dedicated UI/session chunk layer above `TextStreamEvent`
 
 ### Layers That Should Not Be Forced Into the Stable Unified Spec
 
@@ -219,6 +241,15 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - Let the root `AI` facade expose the OpenAI-family providers as convenience constructors, while keeping legacy compatibility routing as a separate concern.
 - Keep search typed APIs provider-owned: OpenRouter through model/profile shaping, xAI through provider-owned invocation options, and shared core only on sources/citations.
 - Keep richer provider-native replay contracts provider-owned as well, using custom parts and provider metadata instead of widening shared tool-result models.
+- Keep backend-reusable HTTP chat protocol codecs and SSE/server adapters in the pure-Dart transport layer instead of the Flutter package.
+- Keep the reusable chat runtime in `llm_dart_chat` and leave `llm_dart_flutter`
+  as a thin adapter with `ChatController` and controller-specific persistence
+  helpers.
+- Let the root package expose the pure Dart chat runtime through
+  `package:llm_dart/chat.dart`, but keep Flutter adapters out of that root
+  entrypoint.
+- Keep transport request customization in `HttpChatTransport`, but do not copy
+  React-style `setMessages` or store ergonomics into the shared Dart runtime.
 - Get the text generation path and the Flutter chat path right first, and migrate everything else afterward.
 - Prioritize the remaining real structural gaps over package-count parity with the reference: shared structured generation, carefully-scoped streamed orchestration, capability-module parity, and the intentionally thin remote chat protocol.
 

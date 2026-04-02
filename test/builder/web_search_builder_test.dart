@@ -5,6 +5,7 @@ void main() {
   group('Web Search Builder', () {
     test('searchLocation writes into webSearchConfig when no config exists',
         () {
+      // ignore: deprecated_member_use_from_same_package
       final builder = LLMBuilder().searchLocation(WebSearchLocation.newYork());
 
       final config = builder.currentConfig
@@ -15,9 +16,11 @@ void main() {
     });
 
     test('searchLocation merges into existing webSearchConfig', () {
+      // ignore: deprecated_member_use_from_same_package
       final builder = LLMBuilder().webSearch(
         maxUses: 3,
         allowedDomains: const ['wikipedia.org'],
+        // ignore: deprecated_member_use_from_same_package
       ).searchLocation(WebSearchLocation.london());
 
       final config = builder.currentConfig
@@ -30,8 +33,11 @@ void main() {
     });
 
     test('newsSearch preserves an existing search location', () {
+      // ignore: deprecated_member_use_from_same_package
       final builder = LLMBuilder()
+          // ignore: deprecated_member_use_from_same_package
           .searchLocation(WebSearchLocation.sanFrancisco())
+          // ignore: deprecated_member_use_from_same_package
           .newsSearch(
             maxResults: 10,
           );
@@ -47,8 +53,11 @@ void main() {
 
     test('advancedWebSearch preserves an existing search location by default',
         () {
+      // ignore: deprecated_member_use_from_same_package
       final builder = LLMBuilder()
+          // ignore: deprecated_member_use_from_same_package
           .searchLocation(WebSearchLocation.tokyo())
+          // ignore: deprecated_member_use_from_same_package
           .advancedWebSearch(
             strategy: WebSearchStrategy.tool,
             maxUses: 2,

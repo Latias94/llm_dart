@@ -1,310 +1,287 @@
 // ignore_for_file: avoid_print
+
 import 'dart:convert';
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
 
-/// 🌊 Anthropic Streaming Tool Calling
-///
-/// This example demonstrates Anthropic's streaming tool use capability:
-/// - Real-time tool call detection during streaming
-/// - Handling multiple tool calls in one response
-/// - Complex tool parameters with nested objects
-///
-/// Before running, set your API key:
-/// export ANTHROPIC_API_KEY="your-key"
-void main() async {
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/llm_dart.dart' as llm;
+
+/// Anthropic streaming tool-calling examples built on the stable shared stream
+/// API plus Anthropic's stable chat model facade.
+Future<void> main() async {
   print('🌊 Anthropic Streaming Tool Calling\n');
 
-  // Get API key
   final apiKey = Platform.environment['ANTHROPIC_API_KEY'];
   if (apiKey == null || apiKey.isEmpty) {
     print('❌ Error: ANTHROPIC_API_KEY environment variable not set');
-    print('   Please set it with: export ANTHROPIC_API_KEY="your-key"');
-    exit(1);
+    print('   Please set it before running this example.');
+    return;
   }
 
-  // Create Anthropic provider
-  final provider = await ai()
-      .anthropic()
-      .apiKey(apiKey)
-      .model('claude-sonnet-4-20250514')
-      .temperature(0.1)
-      .maxTokens(1000)
-      .build();
+  final model = llm.AI.anthropic(
+    apiKey: apiKey,
+  ).chatModel('claude-sonnet-4-5');
 
-  print('✅ Provider created: Claude Sonnet 4\n');
+  print('✅ Stable model created: ${model.providerId}/${model.modelId}\n');
 
-  // Demonstrate different streaming tool scenarios
-  await demonstrateBasicStreamingTool(provider);
-  await demonstrateMultipleToolsStreaming(provider);
-  await demonstrateComplexParametersStreaming(provider);
+  await demonstrateBasicStreamingTool(model);
+  await demonstrateMultipleToolsStreaming(model);
+  await demonstrateComplexParametersStreaming(model);
 
-  print('\n✅ All streaming tool calling examples completed!');
+  print('✅ All streaming tool calling examples completed!');
 }
 
-/// Demonstrate basic streaming tool call
-Future<void> demonstrateBasicStreamingTool(ChatCapability provider) async {
+Future<void> demonstrateBasicStreamingTool(core.LanguageModel model) async {
   print('🔧 Basic Streaming Tool Call:\n');
 
-  try {
-    final tools = [
-      Tool.function(
-        name: 'get_weather',
-        description: 'Get current weather for a location',
-        parameters: ParametersSchema(
-          schemaType: 'object',
-          properties: {
-            'location': ParameterProperty(
-              propertyType: 'string',
-              description: 'City name',
-            ),
-            'unit': ParameterProperty(
-              propertyType: 'string',
-              description: 'Temperature unit (celsius or fahrenheit)',
-              enumList: ['celsius', 'fahrenheit'],
-            ),
+  final tools = [
+    core.FunctionToolDefinition(
+      name: 'get_weather',
+      description: 'Get the current weather for a city.',
+      inputSchema: core.ToolJsonSchema.object(
+        properties: const {
+          'location': {
+            'type': 'string',
+            'description': 'City name to look up.',
           },
-          required: ['location'],
-        ),
+          'unit': {
+            'type': 'string',
+            'description': 'Temperature unit.',
+            'enum': ['celsius', 'fahrenheit'],
+          },
+        },
+        required: const ['location'],
       ),
-    ];
+    ),
+  ];
 
-    final messages = [
-      ChatMessage.user('What is the weather like in Tokyo? Use celsius.')
-    ];
+  print('   User: What is the weather like in Tokyo? Use celsius.');
+  print('   Available tools: get_weather');
+  print('   Streaming response:\n');
 
-    print('   User: What is the weather like in Tokyo? Use celsius.');
-    print('   Available tools: get_weather');
-    print('   Streaming response:\n');
-
-    var toolCallsDetected = <ToolCall>[];
-    var textContent = StringBuffer();
-
-    await for (final event in provider.chatStream(messages, tools: tools)) {
-      switch (event) {
-        case TextDeltaEvent(delta: final delta):
-          textContent.write(delta);
-          stdout.write(delta);
-          break;
-
-        case ToolCallDeltaEvent(toolCall: final toolCall):
-          toolCallsDetected.add(toolCall);
-          print('\n   🔧 Tool Call Detected!');
-          print('      Tool: ${toolCall.function.name}');
-          print('      ID: ${toolCall.id}');
-          final args = jsonDecode(toolCall.function.arguments);
-          print('      Arguments: $args');
-          break;
-
-        case CompletionEvent():
-          print('\n   ✅ Stream completed');
-          break;
-
-        case ErrorEvent(error: final error):
-          print('\n   ❌ Error: $error');
-          break;
-
-        case ThinkingDeltaEvent():
-          // Ignore thinking events for this example
-          break;
-      }
-    }
-
-    print('\n   Results:');
-    print('      Tool calls detected: ${toolCallsDetected.length}');
-    if (toolCallsDetected.isNotEmpty) {
-      print('      ✅ Streaming tool call working correctly!');
-    } else {
-      print('      ⚠️  No tool calls detected');
-    }
-    print('');
-  } catch (e) {
-    print('   ❌ Error: $e\n');
-  }
+  await _streamToolScenario(
+    model: model,
+    prompt: [
+      core.UserPromptMessage.text(
+        'What is the weather like in Tokyo? Use celsius.',
+      ),
+    ],
+    tools: tools,
+    expectedMinimumToolCalls: 1,
+  );
 }
 
-/// Demonstrate multiple tools in streaming
-Future<void> demonstrateMultipleToolsStreaming(ChatCapability provider) async {
+Future<void> demonstrateMultipleToolsStreaming(core.LanguageModel model) async {
   print('🔧 Multiple Tools Streaming:\n');
 
+  final tools = [
+    core.FunctionToolDefinition(
+      name: 'get_weather',
+      description: 'Get the current weather for a city.',
+      inputSchema: core.ToolJsonSchema.object(
+        properties: const {
+          'location': {
+            'type': 'string',
+            'description': 'City name to look up.',
+          },
+        },
+        required: const ['location'],
+      ),
+    ),
+    core.FunctionToolDefinition(
+      name: 'get_time',
+      description: 'Get the current time for a timezone.',
+      inputSchema: core.ToolJsonSchema.object(
+        properties: const {
+          'timezone': {
+            'type': 'string',
+            'description': 'Timezone like Asia/Tokyo.',
+          },
+        },
+        required: const ['timezone'],
+      ),
+    ),
+  ];
+
+  print('   User: What is the weather in Paris and what time is it in Tokyo?');
+  print('   Available tools: get_weather, get_time');
+  print('   Streaming response:\n');
+
+  await _streamToolScenario(
+    model: model,
+    prompt: [
+      core.UserPromptMessage.text(
+        'What is the weather in Paris and what time is it in Tokyo?',
+      ),
+    ],
+    tools: tools,
+    expectedMinimumToolCalls: 2,
+  );
+}
+
+Future<void> demonstrateComplexParametersStreaming(
+  core.LanguageModel model,
+) async {
+  print('🔧 Complex Parameters Streaming:\n');
+
+  final tools = [
+    core.FunctionToolDefinition(
+      name: 'create_event',
+      description: 'Create a calendar event.',
+      inputSchema: core.ToolJsonSchema.object(
+        properties: const {
+          'title': {
+            'type': 'string',
+            'description': 'Event title.',
+          },
+          'attendees': {
+            'type': 'array',
+            'description': 'List of attendee email addresses.',
+            'items': {
+              'type': 'string',
+            },
+          },
+          'location': {
+            'type': 'object',
+            'description': 'Event location details.',
+            'properties': {
+              'name': {
+                'type': 'string',
+                'description': 'Location name.',
+              },
+              'address': {
+                'type': 'string',
+                'description': 'Location address.',
+              },
+            },
+          },
+        },
+        required: const ['title', 'attendees'],
+      ),
+    ),
+  ];
+
+  print(
+    '   User: Create a meeting titled "Team Sync" with attendees '
+    'alice@example.com and bob@example.com at Conference Room A.',
+  );
+  print('   Available tools: create_event');
+  print('   Streaming response:\n');
+
+  await _streamToolScenario(
+    model: model,
+    prompt: [
+      core.UserPromptMessage.text(
+        'Create a meeting titled "Team Sync" with attendees '
+        'alice@example.com and bob@example.com at Conference Room A.',
+      ),
+    ],
+    tools: tools,
+    expectedMinimumToolCalls: 1,
+  );
+}
+
+Future<void> _streamToolScenario({
+  required core.LanguageModel model,
+  required List<core.PromptMessage> prompt,
+  required List<core.FunctionToolDefinition> tools,
+  required int expectedMinimumToolCalls,
+}) async {
+  final stream = core.streamTextCall(
+    model: model,
+    prompt: prompt,
+    tools: tools,
+    toolChoice: const core.RequiredToolChoice(),
+    options: const core.GenerateTextOptions(
+      temperature: 0.1,
+      maxOutputTokens: 1000,
+    ),
+  );
+
+  final toolInputs = <String, StringBuffer>{};
+  final toolNames = <String, String>{};
+  final toolCalls = <core.ToolCallContent>[];
+  final responseText = StringBuffer();
+
+  await for (final event in stream) {
+    switch (event) {
+      case core.ResponseMetadataEvent(:final responseId, :final modelId):
+        print('   [response=$responseId model=$modelId]');
+      case core.TextDeltaEvent(:final delta):
+        responseText.write(delta);
+        stdout.write(delta);
+      case core.ToolInputStartEvent(
+          :final toolCallId,
+          :final toolName,
+          :final providerExecuted,
+          :final isDynamic,
+          :final title,
+        ):
+        toolInputs[toolCallId] = StringBuffer();
+        toolNames[toolCallId] = toolName;
+        print('\n   🔧 Tool input started: $toolName');
+        print('      Call ID: $toolCallId');
+        print('      Provider executed: $providerExecuted');
+        print('      Dynamic tool: $isDynamic');
+        if (title != null && title.isNotEmpty) {
+          print('      Title: $title');
+        }
+      case core.ToolInputDeltaEvent(:final toolCallId, :final delta):
+        toolInputs.putIfAbsent(toolCallId, StringBuffer.new).write(delta);
+      case core.ToolInputEndEvent(:final toolCallId):
+        final encodedInput = toolInputs[toolCallId]?.toString() ?? '{}';
+        final decodedInput = _decodeJsonSafely(encodedInput);
+        print('      Input assembled for ${toolNames[toolCallId] ?? toolCallId}:');
+        print('      ${_formatJson(decodedInput)}');
+      case core.ToolCallEvent(:final toolCall):
+        toolCalls.add(toolCall);
+        print('   ✅ Tool call emitted: ${toolCall.toolName}');
+        print('      Tool Call ID: ${toolCall.toolCallId}');
+        print('      Input: ${_formatJson(toolCall.input)}');
+      case core.FinishEvent(:final finishReason, :final usage):
+        print('\n   ✅ Stream completed');
+        print('      Finish reason: $finishReason');
+        if (usage != null) {
+          print('      Total tokens: ${usage.totalTokens}');
+        }
+      case core.ErrorEvent(:final error):
+        print('\n   ❌ Error: $error');
+      default:
+        break;
+    }
+  }
+
+  final finalText = (await stream.text).trim();
+
+  print('\n   Results:');
+  print('      Tool calls detected: ${toolCalls.length}');
+  print(
+    '      Tool streaming status: '
+    '${toolCalls.length >= expectedMinimumToolCalls ? '✅ expected activity observed' : '⚠️ fewer tool calls than expected'}',
+  );
+  print(
+    '      Final text length: '
+    '${finalText.isNotEmpty ? finalText.length : responseText.length} characters',
+  );
+  print('');
+}
+
+Object? _decodeJsonSafely(String input) {
   try {
-    final tools = [
-      Tool.function(
-        name: 'get_weather',
-        description: 'Get current weather for a location',
-        parameters: ParametersSchema(
-          schemaType: 'object',
-          properties: {
-            'location': ParameterProperty(
-              propertyType: 'string',
-              description: 'City name',
-            ),
-          },
-          required: ['location'],
-        ),
-      ),
-      Tool.function(
-        name: 'get_time',
-        description: 'Get current time for a timezone',
-        parameters: ParametersSchema(
-          schemaType: 'object',
-          properties: {
-            'timezone': ParameterProperty(
-              propertyType: 'string',
-              description: 'Timezone name (e.g., Asia/Tokyo)',
-            ),
-          },
-          required: ['timezone'],
-        ),
-      ),
-    ];
-
-    final messages = [
-      ChatMessage.user(
-          'What is the weather in Paris and what time is it in Tokyo?')
-    ];
-
-    print(
-        '   User: What is the weather in Paris and what time is it in Tokyo?');
-    print('   Available tools: get_weather, get_time');
-    print('   Streaming response:\n');
-
-    var toolCallsDetected = <ToolCall>[];
-
-    await for (final event in provider.chatStream(messages, tools: tools)) {
-      switch (event) {
-        case TextDeltaEvent(delta: final delta):
-          stdout.write(delta);
-          break;
-
-        case ToolCallDeltaEvent(toolCall: final toolCall):
-          toolCallsDetected.add(toolCall);
-          print('\n   🔧 Tool Call #${toolCallsDetected.length} Detected!');
-          print('      Tool: ${toolCall.function.name}');
-          final args = jsonDecode(toolCall.function.arguments);
-          print('      Arguments: $args');
-          break;
-
-        case CompletionEvent():
-          print('\n   ✅ Stream completed');
-          break;
-
-        case ErrorEvent(error: final error):
-          print('\n   ❌ Error: $error');
-          break;
-
-        case ThinkingDeltaEvent():
-          break;
-      }
-    }
-
-    print('\n   Results:');
-    print('      Tool calls detected: ${toolCallsDetected.length}');
-    if (toolCallsDetected.length >= 2) {
-      print('      ✅ Multiple tool calls working correctly!');
-    } else {
-      print('      ⚠️  Expected 2 tool calls, got ${toolCallsDetected.length}');
-    }
-    print('');
-  } catch (e) {
-    print('   ❌ Error: $e\n');
+    return jsonDecode(input);
+  } catch (_) {
+    return input;
   }
 }
 
-/// Demonstrate complex parameters in streaming
-Future<void> demonstrateComplexParametersStreaming(
-    ChatCapability provider) async {
-  print('🔧 Complex Parameters Streaming:\n');
-
-  try {
-    final tools = [
-      Tool.function(
-        name: 'create_event',
-        description: 'Create a calendar event',
-        parameters: ParametersSchema(
-          schemaType: 'object',
-          properties: {
-            'title': ParameterProperty(
-              propertyType: 'string',
-              description: 'Event title',
-            ),
-            'attendees': ParameterProperty(
-              propertyType: 'array',
-              description: 'List of attendee email addresses',
-              items: ParameterProperty(
-                propertyType: 'string',
-                description: 'Email address',
-              ),
-            ),
-            'location': ParameterProperty(
-              propertyType: 'object',
-              description: 'Event location details',
-              properties: {
-                'name': ParameterProperty(
-                  propertyType: 'string',
-                  description: 'Location name',
-                ),
-                'address': ParameterProperty(
-                  propertyType: 'string',
-                  description: 'Location address',
-                ),
-              },
-            ),
-          },
-          required: ['title', 'attendees'],
-        ),
-      ),
-    ];
-
-    final messages = [
-      ChatMessage.user(
-          'Create a meeting titled "Team Sync" with attendees alice@example.com and bob@example.com at Conference Room A')
-    ];
-
-    print(
-        '   User: Create a meeting titled "Team Sync" with attendees alice@example.com and bob@example.com');
-    print('   Available tools: create_event');
-    print('   Streaming response:\n');
-
-    var toolCallsDetected = <ToolCall>[];
-
-    await for (final event in provider.chatStream(messages, tools: tools)) {
-      switch (event) {
-        case TextDeltaEvent(delta: final delta):
-          stdout.write(delta);
-          break;
-
-        case ToolCallDeltaEvent(toolCall: final toolCall):
-          toolCallsDetected.add(toolCall);
-          print('\n   🔧 Tool Call Detected!');
-          print('      Tool: ${toolCall.function.name}');
-          final args = jsonDecode(toolCall.function.arguments);
-          print('      Arguments (formatted):');
-          print('      ${JsonEncoder.withIndent('  ').convert(args)}');
-          break;
-
-        case CompletionEvent():
-          print('\n   ✅ Stream completed');
-          break;
-
-        case ErrorEvent(error: final error):
-          print('\n   ❌ Error: $error');
-          break;
-
-        case ThinkingDeltaEvent():
-          break;
-      }
-    }
-
-    print('\n   Results:');
-    print('      Tool calls detected: ${toolCallsDetected.length}');
-    if (toolCallsDetected.isNotEmpty) {
-      print('      ✅ Complex parameters working correctly!');
-    } else {
-      print('      ⚠️  No tool calls detected');
-    }
-    print('');
-  } catch (e) {
-    print('   ❌ Error: $e\n');
+String _formatJson(Object? value) {
+  if (value == null) {
+    return 'null';
   }
+
+  if (value is Map || value is List) {
+    return JsonEncoder.withIndent('  ').convert(value);
+  }
+
+  return value.toString();
 }

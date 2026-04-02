@@ -1,5 +1,7 @@
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/src/config/legacy_config_keys.dart';
+import 'package:llm_dart/src/config/legacy_provider_options.dart';
 
 void main() {
   group('LLM Builder Tests', () {
@@ -262,6 +264,33 @@ void main() {
         expect(builder, isNotNull);
       });
 
+      test(
+          'should store OpenAI-specific callback options in namespaced providerOptions',
+          () {
+        final builder = LLMBuilder().openai(
+          (openai) =>
+              openai.useResponsesAPI().parallelToolCalls(true).webSearchTool(),
+        );
+
+        expect(
+          builder.currentConfig.getExtension<bool>(
+            LegacyExtensionKeys.useResponsesApi,
+          ),
+          isNull,
+        );
+
+        final openaiOptions = legacyProviderOptionsNamespace(
+          builder.currentConfig,
+          LegacyProviderOptionNamespaces.openai,
+        );
+        expect(openaiOptions[LegacyExtensionKeys.useResponsesApi], isTrue);
+        expect(openaiOptions[LegacyExtensionKeys.parallelToolCalls], isTrue);
+        expect(
+          openaiOptions[LegacyExtensionKeys.builtInTools],
+          isA<List<OpenAIBuiltInTool>>(),
+        );
+      });
+
       test('should configure Ollama with callback', () {
         final builder = LLMBuilder().ollama((ollama) => ollama
             .numCtx(4096)
@@ -284,6 +313,36 @@ void main() {
         final builder =
             LLMBuilder().openRouter((openrouter) => openrouter.onlineSearch());
         expect(builder, isNotNull);
+      });
+
+      test(
+          'should store OpenRouter-specific search config in namespaced providerOptions',
+          () {
+        final builder = LLMBuilder().openRouter(
+          (openrouter) {
+            // ignore: deprecated_member_use_from_same_package
+            return openrouter.webSearch(
+              maxResults: 5,
+              searchPrompt: 'Focus on recent developments',
+            );
+          },
+        );
+
+        expect(
+          builder.currentConfig.getExtension<WebSearchConfig>(
+            LegacyExtensionKeys.webSearchConfig,
+          ),
+          isNull,
+        );
+
+        final openRouterOptions = legacyProviderOptionsNamespace(
+          builder.currentConfig,
+          LegacyProviderOptionNamespaces.openrouter,
+        );
+        final config = openRouterOptions[LegacyExtensionKeys.webSearchConfig]
+            as WebSearchConfig;
+        expect(config.maxResults, equals(5));
+        expect(config.searchPrompt, equals('Focus on recent developments'));
       });
 
       test('should normalize Google reasoning effort into string extension',

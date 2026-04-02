@@ -42,6 +42,7 @@ Current conclusion:
 Current conclusion:
 
 - `llm_dart_core` does not depend on Flutter
+- `llm_dart_chat` does not depend on Flutter
 - `llm_dart_flutter` may depend on `foundation`
 
 ## P1 - To Be Confirmed During Phase 1 or 2
@@ -70,17 +71,14 @@ Current recommendation:
 - merge them in phase 1
 - split later only if complexity justifies it
 
-## 7. Whether `llm_dart_flutter` Should Start in Phase 1
+## 7. Whether The Reusable Chat Runtime Should Stay Inside `llm_dart_flutter`
 
-Needs confirmation:
+Current conclusion:
 
-- should it start in parallel with core
-- or should it wait until the text mainline stabilizes
-
-Current recommendation:
-
-- define the interfaces early
-- implement the full layer in M5
+- split the reusable runtime into `llm_dart_chat`
+- keep `llm_dart_flutter` as the thin Flutter adapter layer
+- this keeps the package count medium-grained while matching the reference
+  layering principle more closely
 
 ## 8. Whether Generic Remote Provider Options Should Exist In `HttpChatTransport`
 
@@ -334,8 +332,8 @@ Resolved in the current breaking round:
 - provider-executed built-in tools stay provider-owned
 - dynamic or schema-less tool families stay provider-owned or app-owned until a
   truly common contract exists
-- Flutter chat-session timing for local outputs and approvals remains in
-  `llm_dart_flutter`
+- Flutter chat adapters remain separate, but local-output and approval timing
+  now belong to the shared `llm_dart_chat` session runtime
 - `45-continuation-ownership-matrix.md` documents the frozen ownership rule
 
 ## 31. Shared Runner Stop Policy And Mutation Hooks
@@ -452,19 +450,46 @@ Current recommendation:
 - transport maturity is no longer the blocker; only revisit a streamed runner
   after at least one concrete shared call path proves the need
 
-## 37. Whether The Remote Chat Protocol Should Grow Toward A Richer UI Stream
+## 37. Whether `llm_dart_chat` Needs A Dedicated Finish Callback Surface
 
 Needs confirmation:
 
-- should `HttpChatTransport` later add richer remote chunk families such as
-  start/finish/metadata/abort markers
-- or should it stay intentionally thinner than the reference
-  `ui-message-stream` protocol
+- should `ChatSession` later expose a dedicated `onFinish`-style callback or
+  observer surface
+- or should final-state and final-message handling continue to rely on the
+  existing `states` stream only
 
 Current recommendation:
 
-- keep the current transport protocol and shared `TextStreamEvent` boundary
-  separate
-- add richer remote-only chunk families only if reconnect, server-driven chat
-  UX, or cross-process orchestration proves that the thinner protocol is no
-  longer enough
+- keep the current `states`-driven runtime contract for now
+- only revisit a dedicated finish callback if at least two concrete Flutter or
+  backend integration cases show that state-stream diffing is too indirect
+
+## 38. Remote UI Stream Layer Status
+
+Resolved in the current breaking round:
+
+- the repository should add a dedicated UI/session chunk layer above
+  `TextStreamEvent` and below `ChatUiMessage`
+- that new layer should stay narrower than `repo-ref/ai` and should not copy a
+  second full text/tool/reasoning chunk vocabulary
+- the recommended initial runtime chunk families are `message-start`,
+  `message-metadata`, `event`, `data-part`, and `message-finish`
+- HTTP transport wire control remains separate; `checkpoint`, `keepalive`, and
+  reconnect tokens stay transport-owned rather than entering the shared UI
+  chunk model
+- a future richer HTTP protocol revision should separate `transport-start`
+  from `message-start` instead of continuing the current mixed `start` chunk
+- `87-dedicated-ui-stream-chunk-layer.md` documents the frozen direction
+
+## 39. Root Chat Entrypoint Boundary Status
+
+Resolved in the current breaking round:
+
+- the root package now exposes `package:llm_dart/chat.dart` as the focused
+  pure Dart chat-runtime entrypoint
+- that entrypoint re-exports `llm_dart_chat`, `core.dart`, `transport.dart`,
+  and the stable `AI` facade
+- Flutter adapters remain outside the root package and continue through
+  `package:llm_dart_flutter/llm_dart_flutter.dart`
+- `91-root-chat-entrypoint-boundary.md` documents the frozen boundary

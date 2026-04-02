@@ -10,7 +10,7 @@ final class DirectChatTransport implements ChatTransport {
   });
 
   @override
-  Stream<ChatTransportChunk> sendMessages(ChatTransportRequest request) {
+  Stream<ChatUiStreamChunk> sendMessages(ChatTransportRequest request) {
     return model
         .stream(
           GenerateTextRequest(
@@ -19,9 +19,9 @@ final class DirectChatTransport implements ChatTransport {
             callOptions: request.options.callOptions,
           ),
         )
-        .map<ChatTransportChunk>((event) => ChatTransportEventChunk(event));
+        .map<ChatUiStreamChunk>((event) => ChatUiEventChunk(event));
   }
 
   @override
-  Stream<ChatTransportChunk>? reconnect(String chatId) => null;
+  Stream<ChatUiStreamChunk>? reconnect(String chatId) => null;
 }

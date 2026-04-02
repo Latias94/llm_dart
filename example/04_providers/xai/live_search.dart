@@ -1,416 +1,187 @@
+// ignore_for_file: avoid_print
+
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
 
-/// xAI Grok Live Search Examples
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/openai.dart' as openai;
+
+/// xAI live search examples using the stable `AI.xai(...).chatModel(...)` API.
 ///
-/// This example demonstrates xAI's unique live search capabilities:
-/// - Real-time web search integration
-/// - Current events and news access
-/// - Live data retrieval and analysis
-/// - Search-enhanced conversations
-/// - Fact-checking with live sources
-/// - Trending topics analysis
-///
-/// Note: These features are specific to xAI's Grok models
-/// For general chat examples, see: example/02_core_features/chat_completion.dart
+/// The shared app-facing layer remains `generateTextCall(...)`, while xAI's
+/// search behavior is configured through `XAIGenerateTextOptions`.
 Future<void> main() async {
-  print('🔍 xAI Grok Live Search Examples\n');
+  print('xAI Grok Live Search Examples\n');
 
-  // Initialize xAI provider
-  final xaiProvider = await initializeXAIProvider();
-  if (xaiProvider == null) {
-    print('❌ xAI provider not available. Please set XAI_API_KEY.');
+  final apiKey = Platform.environment['XAI_API_KEY'];
+  if (apiKey == null || apiKey.isEmpty) {
+    print('Set XAI_API_KEY to run this example.');
     return;
   }
 
-  print('🚀 Demonstrating xAI Live Search Capabilities...\n');
+  final model = llm.AI.xai(apiKey: apiKey).chatModel('grok-3');
 
-  // Demonstrate different live search scenarios
-  await demonstrateBasicLiveSearch(xaiProvider);
-  await demonstrateCurrentEventsQuery(xaiProvider);
-  await demonstrateFactCheckingWithSources(xaiProvider);
-  await demonstrateTrendingTopicsAnalysis(xaiProvider);
-  await demonstrateSearchEnhancedConversation(xaiProvider);
-  await demonstrateRealTimeDataRetrieval(xaiProvider);
+  await runCurrentEventsSearch(model);
+  await runNewsFocusedSearch(model);
+  await runConversationWithFreshData(model);
 
-  print('✅ xAI live search examples completed!');
-  print('💡 xAI Grok advantages:');
-  print('   • Access to real-time web information');
-  print('   • Current events and breaking news');
-  print('   • Fact-checking with live sources');
-  print('   • Up-to-date data for analysis');
+  print('xAI live search example completed.');
 }
 
-/// Initialize xAI provider with live search capabilities
-Future<ChatCapability?> initializeXAIProvider() async {
+Future<void> runCurrentEventsSearch(core.LanguageModel model) async {
+  await runSearchCase(
+    label: 'Current events search',
+    model: model,
+    prompt: 'What are the latest developments in AI this week?',
+    search: const openai.XAILiveSearchOptions.autoWeb(
+      maxSearchResults: 5,
+    ),
+  );
+}
+
+Future<void> runNewsFocusedSearch(core.LanguageModel model) async {
+  await runSearchCase(
+    label: 'News-focused search',
+    model: model,
+    prompt:
+        'Summarize the top technology news stories from the last few days and explain why they matter.',
+    search: openai.XAILiveSearchOptions(
+      maxSearchResults: 6,
+      sources: const [
+        openai.XAINewsSearchSource(countryCode: 'US'),
+        openai.XAIWebSearchSource(
+          allowedWebsites: [
+            'techcrunch.com',
+            'theverge.com',
+            'openai.com',
+            'anthropic.com',
+          ],
+        ),
+      ],
+    ),
+  );
+}
+
+Future<void> runConversationWithFreshData(core.LanguageModel model) async {
+  print('=== Conversation with Fresh Data ===');
+
+  final history = <core.PromptMessage>[
+    core.SystemPromptMessage.text(
+      'You are a concise market research assistant.',
+    ),
+    core.UserPromptMessage.text(
+      'I am researching renewable energy companies. What should I watch first?',
+    ),
+  ];
+
+  final firstTurn = await core.generateTextCall(
+    model: model,
+    prompt: history,
+    options: const core.GenerateTextOptions(
+      temperature: 0.5,
+      maxOutputTokens: 160,
+    ),
+    callOptions: const core.CallOptions(
+      providerOptions: openai.XAIGenerateTextOptions(
+        search: openai.XAILiveSearchOptions.autoWeb(
+          maxSearchResults: 4,
+        ),
+      ),
+    ),
+  );
+
+  print('Assistant 1: ${_truncate(firstTurn.text)}');
+  _printSources(firstTurn);
+
+  history.add(core.AssistantPromptMessage.text(firstTurn.text));
+  history.add(
+    core.UserPromptMessage.text(
+      'Now compare the latest solar-related developments with what happened last year.',
+    ),
+  );
+
+  final secondTurn = await core.generateTextCall(
+    model: model,
+    prompt: history,
+    options: const core.GenerateTextOptions(
+      temperature: 0.5,
+      maxOutputTokens: 180,
+    ),
+    callOptions: core.CallOptions(
+      providerOptions: openai.XAIGenerateTextOptions(
+        search: openai.XAILiveSearchOptions(
+          maxSearchResults: 5,
+          sources: const [
+            openai.XAINewsSearchSource(countryCode: 'US'),
+            openai.XAIWebSearchSource(),
+          ],
+        ),
+      ),
+    ),
+  );
+
+  print('Assistant 2: ${_truncate(secondTurn.text)}');
+  _printSources(secondTurn);
+  print('');
+}
+
+Future<void> runSearchCase({
+  required String label,
+  required core.LanguageModel model,
+  required String prompt,
+  required openai.XAILiveSearchOptions search,
+}) async {
+  print('=== $label ===');
+
   try {
-    // Get xAI API key from environment variable
-    final apiKey = Platform.environment['XAI_API_KEY'];
+    final result = await core.generateTextCall(
+      model: model,
+      prompt: [
+        core.SystemPromptMessage.text(
+          'Use fresh search results when helpful and cite the strongest sources.',
+        ),
+        core.UserPromptMessage.text(prompt),
+      ],
+      options: const core.GenerateTextOptions(
+        temperature: 0.4,
+        maxOutputTokens: 180,
+      ),
+      callOptions: core.CallOptions(
+        providerOptions: openai.XAIGenerateTextOptions(search: search),
+      ),
+    );
 
-    if (apiKey == null || apiKey.isEmpty) {
-      print('❌ XAI_API_KEY environment variable not set.');
-      print('💡 Please set your xAI API key:');
-      print('   export XAI_API_KEY="your-actual-xai-api-key"');
-      return null;
-    }
-
-    return await ai()
-        .xai()
-        .apiKey(apiKey)
-        .model('grok-3') // Use latest Grok-3 model for live search
-        .temperature(0.7)
-        .enableWebSearch() // Enable live search functionality
-        .build();
-  } catch (e) {
-    print('⚠️  xAI provider initialization failed: $e');
-    return null;
-  }
-}
-
-/// Demonstrate basic live search functionality
-Future<void> demonstrateBasicLiveSearch(ChatCapability provider) async {
-  print('🔍 Basic Live Search:');
-
-  final searchQueries = [
-    'What are the latest developments in AI technology this week?',
-    'Current stock price of major tech companies',
-    'Recent breakthroughs in quantum computing',
-    'Latest news about space exploration missions',
-  ];
-
-  for (final query in searchQueries) {
-    print('   🔎 Query: "$query"');
-
-    try {
-      // Enable live search for this specific request
-      // xAI Grok models have live search capabilities built-in
-      final response = await provider.chat([
-        ChatMessage.user(query),
-      ]);
-
-      if (response.text != null) {
-        print('   📝 Response: ${response.text!.substring(0, 150)}...');
-        print('   🔍 Live search results integrated in response');
-      }
-    } catch (e) {
-      print('   ❌ Search failed: $e');
-    }
-
+    print(_truncate(result.text));
+    _printSources(result);
     print('');
+  } catch (error) {
+    print('Error: $error\n');
   }
 }
 
-/// Demonstrate current events and news queries
-Future<void> demonstrateCurrentEventsQuery(ChatCapability provider) async {
-  print('📰 Current Events & News:');
+void _printSources(core.GenerateTextCallResult<Object?> result) {
+  final sources = result.content
+      .whereType<core.SourceContentPart>()
+      .map((part) => part.source)
+      .toList(growable: false);
 
-  final newsQueries = [
-    'What are the top news stories today?',
-    'Latest political developments in major countries',
-    'Recent economic indicators and market trends',
-    'Breaking news in technology and science',
-    'Current weather patterns and climate events',
-  ];
+  if (sources.isEmpty) {
+    return;
+  }
 
-  for (final query in newsQueries) {
-    print('   📰 News Query: "$query"');
-
-    try {
-      // xAI Grok models automatically prioritize recent news
-      final response = await provider.chat([
-        ChatMessage.user(query),
-      ]);
-
-      if (response.text != null) {
-        print('   📄 News Summary: ${response.text!.substring(0, 200)}...');
-        print('   📰 Recent news integrated automatically by Grok');
-      }
-    } catch (e) {
-      print('   ❌ News query failed: $e');
-    }
-
-    print('');
+  print('Sources:');
+  for (final source in sources.take(4)) {
+    print(
+      '  - ${source.title ?? source.uri?.toString() ?? source.sourceId}',
+    );
   }
 }
 
-/// Demonstrate fact-checking with live sources
-Future<void> demonstrateFactCheckingWithSources(ChatCapability provider) async {
-  print('✅ Fact-Checking with Live Sources:');
-
-  final factCheckQueries = [
-    'Is it true that renewable energy costs have decreased significantly in 2024?',
-    'Verify the claim that AI models are becoming more energy efficient',
-    'Check if the recent Mars mission discoveries are accurate',
-    'Fact-check recent statements about global climate change statistics',
-  ];
-
-  for (final query in factCheckQueries) {
-    print('   🔍 Fact-Check: "$query"');
-
-    try {
-      // Grok automatically provides fact-checking with reliable sources
-      final response = await provider.chat([
-        ChatMessage.system(
-            'You are a fact-checker. Verify claims using the most recent and reliable sources. Provide source citations.'),
-        ChatMessage.user(query),
-      ]);
-
-      if (response.text != null) {
-        print('   ✅ Fact-Check Result: ${response.text!.substring(0, 180)}...');
-        print('   📚 Sources automatically verified by Grok');
-      }
-    } catch (e) {
-      print('   ❌ Fact-checking failed: $e');
-    }
-
-    print('');
-  }
-}
-
-/// Demonstrate trending topics analysis
-Future<void> demonstrateTrendingTopicsAnalysis(ChatCapability provider) async {
-  print('📈 Trending Topics Analysis:');
-
-  final trendingQueries = [
-    'What topics are trending on social media today?',
-    'Analyze current trending hashtags and their context',
-    'What are people discussing most in tech communities?',
-    'Identify emerging trends in business and finance',
-  ];
-
-  for (final query in trendingQueries) {
-    print('   📈 Trending Analysis: "$query"');
-
-    try {
-      // Grok automatically analyzes trending topics from multiple sources
-      final response = await provider.chat([
-        ChatMessage.user(query),
-      ]);
-
-      if (response.text != null) {
-        print(
-            '   📊 Trending Analysis: ${response.text!.substring(0, 160)}...');
-        print('   📈 Trending data integrated by Grok');
-      }
-    } catch (e) {
-      print('   ❌ Trending analysis failed: $e');
-    }
-
-    print('');
-  }
-}
-
-/// Demonstrate search-enhanced conversation
-Future<void> demonstrateSearchEnhancedConversation(
-    ChatCapability provider) async {
-  print('💬 Search-Enhanced Conversation:');
-
-  // Simulate a conversation where live search enhances responses
-  final conversationFlow = [
-    {
-      'user':
-          'I\'m interested in investing in renewable energy. What should I know?',
-      'context': 'Investment advice with current market data',
-    },
-    {
-      'user': 'What are the latest developments in solar technology?',
-      'context': 'Follow-up requiring recent tech news',
-    },
-    {
-      'user': 'How do current solar stocks compare to last year?',
-      'context': 'Financial data requiring live market information',
-    },
-  ];
-
-  final conversationHistory = <ChatMessage>[];
-
-  for (final turn in conversationFlow) {
-    final userMessage = turn['user'] as String;
-    final context = turn['context'] as String;
-
-    print('   👤 User: "$userMessage"');
-    print('   🎯 Context: $context');
-
-    try {
-      conversationHistory.add(ChatMessage.user(userMessage));
-
-      // Grok maintains conversation context and enhances with live search
-      final response = await provider.chat(conversationHistory);
-
-      if (response.text != null) {
-        print('   🤖 Grok: ${response.text!.substring(0, 200)}...');
-        conversationHistory.add(ChatMessage.assistant(response.text!));
-        print('   🔍 Search enhancement integrated automatically');
-      }
-    } catch (e) {
-      print('   ❌ Enhanced conversation failed: $e');
-    }
-
-    print('');
-  }
-}
-
-/// Demonstrate real-time data retrieval
-Future<void> demonstrateRealTimeDataRetrieval(ChatCapability provider) async {
-  print('⏰ Real-Time Data Retrieval:');
-
-  final realTimeQueries = [
-    'Current cryptocurrency prices for Bitcoin and Ethereum',
-    'Live weather conditions in major cities worldwide',
-    'Real-time traffic conditions in New York City',
-    'Current status of major airline flights',
-    'Live sports scores and ongoing games',
-  ];
-
-  for (final query in realTimeQueries) {
-    print('   ⏰ Real-Time Query: "$query"');
-
-    try {
-      // Grok automatically provides real-time data
-      final response = await provider.chat([
-        ChatMessage.user(query),
-      ]);
-
-      if (response.text != null) {
-        print('   📊 Real-Time Data: ${response.text!.substring(0, 180)}...');
-        print('   ⚡ Real-time data automatically integrated by Grok');
-      }
-    } catch (e) {
-      print('   ❌ Real-time data retrieval failed: $e');
-    }
-
-    print('');
-  }
-}
-
-/// xAI Live Search Configuration
-///
-/// Note: xAI Grok models have live search capabilities built-in.
-/// These options would be used if the API supported configuration.
-class XAILiveSearchConfig {
-  final bool enableLiveSearch;
-  final String? searchDepth;
-  final String? searchTimeframe;
-  final bool prioritizeNews;
-  final bool includeSourceUrls;
-  final bool includeTimestamps;
-  final bool requireSourceCitations;
-  final bool prioritizeReliableSources;
-  final List<String>? searchSources;
-  final bool trendingAnalysis;
-  final bool includePopularityMetrics;
-  final String? searchContext;
-  final bool maintainConversationContext;
-  final bool adaptSearchToConversation;
-  final bool requireRealTimeData;
-  final String? dataFreshness;
-  final bool includeDataTimestamps;
-
-  const XAILiveSearchConfig({
-    this.enableLiveSearch = true,
-    this.searchDepth,
-    this.searchTimeframe,
-    this.prioritizeNews = false,
-    this.includeSourceUrls = false,
-    this.includeTimestamps = false,
-    this.requireSourceCitations = false,
-    this.prioritizeReliableSources = false,
-    this.searchSources,
-    this.trendingAnalysis = false,
-    this.includePopularityMetrics = false,
-    this.searchContext,
-    this.maintainConversationContext = false,
-    this.adaptSearchToConversation = false,
-    this.requireRealTimeData = false,
-    this.dataFreshness,
-    this.includeDataTimestamps = false,
-  });
-}
-
-/// Utility class for xAI live search features
-class XAILiveSearchUtils {
-  /// Validate search query for optimal results
-  static bool isValidSearchQuery(String query) {
-    // Check if query is suitable for live search
-    final searchKeywords = [
-      'current',
-      'latest',
-      'recent',
-      'today',
-      'now',
-      'live',
-      'breaking',
-      'trending',
-      'update',
-      'news',
-      'real-time'
-    ];
-
-    return searchKeywords
-        .any((keyword) => query.toLowerCase().contains(keyword));
+String _truncate(String text, {int maxLength = 240}) {
+  final normalized = text.replaceAll(RegExp(r'\s+'), ' ').trim();
+  if (normalized.length <= maxLength) {
+    return normalized;
   }
 
-  /// Suggest search enhancements for better results
-  static List<String> suggestSearchEnhancements(String query) {
-    final suggestions = <String>[];
-
-    if (!query.contains('recent') && !query.contains('latest')) {
-      suggestions.add('Add "recent" or "latest" for current information');
-    }
-
-    if (!query.contains('source') && query.contains('fact')) {
-      suggestions.add('Request sources for fact-checking');
-    }
-
-    if (query.contains('trend') && !query.contains('analysis')) {
-      suggestions.add('Add "analysis" for deeper trending insights');
-    }
-
-    return suggestions;
-  }
-
-  /// Format search results for display
-  static String formatSearchResults(Map<String, dynamic> metadata) {
-    final buffer = StringBuffer();
-
-    if (metadata['search_sources'] != null) {
-      final sources = metadata['search_sources'] as List;
-      buffer.writeln('Sources consulted: ${sources.length}');
-    }
-
-    if (metadata['data_freshness'] != null) {
-      final freshness = metadata['data_freshness'] as Map;
-      buffer.writeln('Data freshness: ${freshness['last_updated']}');
-    }
-
-    if (metadata['trending_data'] != null) {
-      buffer.writeln('Trending analysis included');
-    }
-
-    return buffer.toString();
-  }
-
-  /// Check if live search is beneficial for query
-  static bool shouldUseLiveSearch(String query) {
-    final liveSearchIndicators = [
-      'current',
-      'latest',
-      'recent',
-      'today',
-      'now',
-      'live',
-      'breaking',
-      'trending',
-      'update',
-      'news',
-      'price',
-      'weather',
-      'stock',
-      'score',
-      'status'
-    ];
-
-    return liveSearchIndicators
-        .any((indicator) => query.toLowerCase().contains(indicator));
-  }
+  return '${normalized.substring(0, maxLength)}...';
 }

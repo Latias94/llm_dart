@@ -1,17 +1,34 @@
 import '../src/config/legacy_config_keys.dart';
+import '../src/config/legacy_provider_options.dart';
 
 /// Provider-specific configuration builder
 class ProviderConfig {
   final Map<String, dynamic> _config = {};
+  String? _activeOpenAIFamilyNamespace;
 
   /// OpenAI-specific configurations
-  ProviderConfig openai() => this;
+  ProviderConfig openai() {
+    _activeOpenAIFamilyNamespace = LegacyProviderOptionNamespaces.openai;
+    return this;
+  }
+
+  /// OpenRouter-specific configurations
+  ProviderConfig openRouter() {
+    _activeOpenAIFamilyNamespace = LegacyProviderOptionNamespaces.openrouter;
+    return this;
+  }
 
   /// Anthropic-specific configurations
-  ProviderConfig anthropic() => this;
+  ProviderConfig anthropic() {
+    _activeOpenAIFamilyNamespace = null;
+    return this;
+  }
 
   /// Ollama-specific configurations
-  ProviderConfig ollama() => this;
+  ProviderConfig ollama() {
+    _activeOpenAIFamilyNamespace = null;
+    return this;
+  }
 
   /// Add extension directly
   ProviderConfig extension(String key, dynamic value) {
@@ -24,19 +41,19 @@ class ProviderConfig {
 
   // OpenAI-specific configuration methods
   ProviderConfig frequencyPenalty(double penalty) =>
-      extension(LegacyExtensionKeys.frequencyPenalty, penalty);
+      _setOpenAIFamilyOption(LegacyExtensionKeys.frequencyPenalty, penalty);
   ProviderConfig presencePenalty(double penalty) =>
-      extension(LegacyExtensionKeys.presencePenalty, penalty);
+      _setOpenAIFamilyOption(LegacyExtensionKeys.presencePenalty, penalty);
   ProviderConfig logitBias(Map<String, double> bias) =>
-      extension(LegacyExtensionKeys.logitBias, bias);
+      _setOpenAIFamilyOption(LegacyExtensionKeys.logitBias, bias);
   ProviderConfig seed(int seedValue) =>
-      extension(LegacyExtensionKeys.seed, seedValue);
+      _setOpenAIFamilyOption(LegacyExtensionKeys.seed, seedValue);
   ProviderConfig parallelToolCalls(bool enabled) =>
-      extension(LegacyExtensionKeys.parallelToolCalls, enabled);
+      _setOpenAIFamilyOption(LegacyExtensionKeys.parallelToolCalls, enabled);
   ProviderConfig logprobs(bool enabled) =>
-      extension(LegacyExtensionKeys.logprobs, enabled);
+      _setOpenAIFamilyOption(LegacyExtensionKeys.logprobs, enabled);
   ProviderConfig topLogprobs(int count) =>
-      extension(LegacyExtensionKeys.topLogprobs, count);
+      _setOpenAIFamilyOption(LegacyExtensionKeys.topLogprobs, count);
 
   // Anthropic-specific configuration methods
   ProviderConfig reasoning(bool enable) =>
@@ -63,4 +80,20 @@ class ProviderConfig {
       extension(LegacyExtensionKeys.keepAlive, duration);
   ProviderConfig raw(bool enabled) =>
       extension(LegacyExtensionKeys.raw, enabled);
+
+  ProviderConfig _setOpenAIFamilyOption(String key, dynamic value) {
+    final namespace =
+        _activeOpenAIFamilyNamespace ?? LegacyProviderOptionNamespaces.openai;
+    final providerOptions = Map<String, dynamic>.from(
+      _config[legacyProviderOptionsBagKey] as Map<String, dynamic>? ?? const {},
+    );
+    final namespaceOptions = Map<String, dynamic>.from(
+      providerOptions[namespace] as Map<String, dynamic>? ?? const {},
+    );
+
+    namespaceOptions[key] = value;
+    providerOptions[namespace] = namespaceOptions;
+    _config[legacyProviderOptionsBagKey] = providerOptions;
+    return this;
+  }
 }

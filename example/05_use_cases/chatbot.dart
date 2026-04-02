@@ -1,46 +1,57 @@
 // ignore_for_file: avoid_print
-import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
 
-/// 🤖 Complete Chatbot Implementation
-///
-/// This example demonstrates how to build a production-ready chatbot with:
-/// - Multi-turn conversation management
-/// - Personality and context customization
-/// - Memory and conversation persistence
-/// - Error handling and recovery
-/// - Performance optimization
-///
-/// Before running, set your API key:
-/// export OPENAI_API_KEY="your-key"
-/// export GROQ_API_KEY="your-key"
-void main() async {
+import 'dart:io';
+
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/llm_dart.dart' as llm;
+
+/// Complete chatbot example built on the stable model API.
+Future<void> main() async {
   print('🤖 Complete Chatbot Implementation\n');
 
-  // Get API key
-  final apiKey = Platform.environment['GROQ_API_KEY'] ?? 'gsk-TESTKEY';
+  final model = _resolveChatModel();
+  if (model == null) {
+    print('Set GROQ_API_KEY or OPENAI_API_KEY to run this example.');
+    return;
+  }
 
-  // Create chatbot instance
   final chatbot = Chatbot(
-    apiKey: apiKey,
+    model: model,
     personality: ChatbotPersonality.helpful,
-    maxContextLength: 10, // Keep last 10 messages
+    maxContextLength: 10,
   );
 
   await chatbot.initialize();
 
   print('🎉 Chatbot initialized! Type "quit" to exit.\n');
-
-  // Interactive chat loop
   await runInteractiveChat(chatbot);
-
-  print('\n👋 Goodbye! Thanks for chatting!');
+  print('\n👋 Goodbye!');
 }
 
-/// Run interactive chat session
+core.LanguageModel? _resolveChatModel() {
+  final groqKey = Platform.environment['GROQ_API_KEY'];
+  if (groqKey != null && groqKey.isNotEmpty) {
+    return llm.AI
+        .groq(
+          apiKey: groqKey,
+        )
+        .chatModel('llama-3.3-70b-versatile');
+  }
+
+  final openaiKey = Platform.environment['OPENAI_API_KEY'];
+  if (openaiKey != null && openaiKey.isNotEmpty) {
+    return llm.AI
+        .openai(
+          apiKey: openaiKey,
+        )
+        .chatModel('gpt-4.1-mini');
+  }
+
+  return null;
+}
+
 Future<void> runInteractiveChat(Chatbot chatbot) async {
   while (true) {
-    // Get user input
     stdout.write('You: ');
     final userInput = stdin.readLineSync();
 
@@ -52,18 +63,16 @@ Future<void> runInteractiveChat(Chatbot chatbot) async {
       continue;
     }
 
-    // Process user message and get response
     try {
       stdout.write('Bot: ');
       await chatbot.respondToUser(userInput);
-      print(''); // New line after response
-    } catch (e) {
-      print('❌ Sorry, I encountered an error: $e');
+      print('');
+    } catch (error) {
+      print('❌ Sorry, I encountered an error: $error');
     }
   }
 }
 
-/// Chatbot personality types
 enum ChatbotPersonality {
   helpful,
   friendly,
@@ -72,116 +81,120 @@ enum ChatbotPersonality {
   technical,
 }
 
-/// Complete chatbot implementation
 class Chatbot {
-  final String apiKey;
+  final core.LanguageModel model;
   final ChatbotPersonality personality;
   final int maxContextLength;
 
-  late ChatCapability _ai;
-  final List<ChatMessage> _conversationHistory = [];
+  final List<core.PromptMessage> _conversationHistory = [];
   int _messageCount = 0;
 
   Chatbot({
-    required this.apiKey,
+    required this.model,
     required this.personality,
     this.maxContextLength = 20,
   });
 
-  /// Initialize the chatbot
   Future<void> initialize() async {
-    try {
-      _ai = await ai()
-          .groq()
-          .apiKey(apiKey)
-          .model('llama-3.1-8b-instant')
-          .temperature(_getTemperatureForPersonality())
-          .maxTokens(500)
-          .systemPrompt(_getSystemPromptForPersonality())
-          .build();
-
-      print('✅ Chatbot initialized with ${personality.name} personality');
-    } catch (e) {
-      throw Exception('Failed to initialize chatbot: $e');
-    }
+    print(
+      '✅ Chatbot initialized with ${personality.name} personality '
+      'on ${model.providerId}/${model.modelId}',
+    );
   }
 
-  /// Respond to user input with streaming
   Future<void> respondToUser(String userInput) async {
     try {
-      // Add user message to history
-      _addToHistory(ChatMessage.user(userInput));
+      _addToHistory(core.UserPromptMessage.text(userInput));
 
-      // Get AI response with streaming
+      final stream = core.streamTextCall(
+        model: model,
+        prompt: _getContextMessages(),
+        options: _requestOptions(maxOutputTokens: 500),
+      );
+
       final responseBuffer = StringBuffer();
 
-      await for (final event in _ai.chatStream(_getContextMessages())) {
+      await for (final event in stream) {
         switch (event) {
-          case TextDeltaEvent(delta: final delta):
+          case core.TextDeltaEvent(:final delta):
             stdout.write(delta);
             responseBuffer.write(delta);
-            break;
-
-          case CompletionEvent(response: final response):
-            // Add complete response to history
-            _addToHistory(ChatMessage.assistant(responseBuffer.toString()));
-
-            // Log usage statistics
-            if (response.usage != null) {
-              _logUsage(response.usage!);
+          case core.FinishEvent(:final usage):
+            if (usage != null) {
+              _logUsage(usage);
             }
-            break;
-
-          case ErrorEvent(error: final error):
+          case core.ErrorEvent(:final error):
             throw Exception('Stream error: $error');
-
-          case ThinkingDeltaEvent():
-          case ToolCallDeltaEvent():
-            // Handle other event types
+          case core.ReasoningDeltaEvent():
+          case core.StepStartEvent():
+          case core.StepFinishEvent():
+          case core.StartEvent():
+          case core.ResponseMetadataEvent():
+          case core.TextStartEvent():
+          case core.TextEndEvent():
+          case core.ReasoningStartEvent():
+          case core.ReasoningEndEvent():
+          case core.ReasoningFileEvent():
+          case core.ToolInputStartEvent():
+          case core.ToolInputDeltaEvent():
+          case core.ToolInputEndEvent():
+          case core.ToolInputErrorEvent():
+          case core.ToolCallEvent():
+          case core.ToolResultEvent():
+          case core.ToolApprovalRequestEvent():
+          case core.ToolOutputDeniedEvent():
+          case core.SourceEvent():
+          case core.FileEvent():
+          case core.CustomEvent():
+          case core.AbortEvent():
+          case core.RawChunkEvent():
             break;
         }
       }
 
+      final finalText = (await stream.text).trim();
+      final assistantText =
+          finalText.isEmpty ? responseBuffer.toString().trim() : finalText;
+      if (assistantText.isNotEmpty) {
+        _addToHistory(core.AssistantPromptMessage.text(assistantText));
+      }
+
       _messageCount++;
-    } catch (e) {
-      // Error recovery - try with simpler context
-      await _handleError(userInput, e);
+    } catch (error) {
+      await _handleError(userInput, error);
     }
   }
 
-  /// Handle errors with fallback strategies
-  Future<void> _handleError(String userInput, dynamic error) async {
+  Future<void> _handleError(String userInput, Object error) async {
     print('\n⚠️  Error occurred, trying fallback...');
 
     try {
-      // Fallback 1: Try with reduced context
-      final simpleMessages = [
-        ChatMessage.system(_getSystemPromptForPersonality()),
-        ChatMessage.user(userInput),
-      ];
+      final result = await core.generateTextCall(
+        model: model,
+        prompt: [
+          core.SystemPromptMessage.text(_getSystemPromptForPersonality()),
+          core.UserPromptMessage.text(userInput),
+        ],
+        options: _requestOptions(maxOutputTokens: 260),
+      );
 
-      final response = await _ai.chat(simpleMessages);
-      print(response.text ?? 'Sorry, I couldn\'t generate a response.');
-
-      // Add to history if successful
-      _addToHistory(ChatMessage.user(userInput));
-      _addToHistory(ChatMessage.assistant(response.text ?? ''));
-    } catch (fallbackError) {
-      // Fallback 2: Generic error response
+      print(result.text);
+      _addToHistory(core.UserPromptMessage.text(userInput));
+      _addToHistory(core.AssistantPromptMessage.text(result.text));
+    } catch (_) {
       print(
-          'I apologize, but I\'m having technical difficulties right now. Please try again in a moment.');
+        'I apologize, but I\'m having technical difficulties right now. '
+        'Please try again in a moment.',
+      );
     }
   }
 
-  /// Add message to conversation history with context management
-  void _addToHistory(ChatMessage message) {
+  void _addToHistory(core.PromptMessage message) {
     _conversationHistory.add(message);
 
-    // Manage context length (keep system message + recent messages)
     while (_conversationHistory.length > maxContextLength) {
-      // Remove oldest non-system message
-      for (int i = 0; i < _conversationHistory.length; i++) {
-        if (_conversationHistory[i].role != ChatRole.system) {
+      for (var i = 0; i < _conversationHistory.length; i++) {
+        if (_conversationHistory[i].role != core.PromptRole.system) {
           _conversationHistory.removeAt(i);
           break;
         }
@@ -189,100 +202,99 @@ class Chatbot {
     }
   }
 
-  /// Get messages for current context
-  List<ChatMessage> _getContextMessages() {
-    // Always include system message if not in history
-    final messages = <ChatMessage>[];
+  List<core.PromptMessage> _getContextMessages() {
+    final messages = <core.PromptMessage>[];
 
     if (_conversationHistory.isEmpty ||
-        _conversationHistory.first.role != ChatRole.system) {
-      messages.add(ChatMessage.system(_getSystemPromptForPersonality()));
+        _conversationHistory.first.role != core.PromptRole.system) {
+      messages.add(
+        core.SystemPromptMessage.text(_getSystemPromptForPersonality()),
+      );
     }
 
     messages.addAll(_conversationHistory);
     return messages;
   }
 
-  /// Get system prompt based on personality
   String _getSystemPromptForPersonality() {
     switch (personality) {
       case ChatbotPersonality.helpful:
         return 'You are a helpful and friendly AI assistant. Provide clear, accurate, and useful responses. Be concise but thorough.';
-
       case ChatbotPersonality.friendly:
         return 'You are a warm, friendly, and enthusiastic AI assistant. Use a conversational tone and show genuine interest in helping users.';
-
       case ChatbotPersonality.professional:
         return 'You are a professional AI assistant. Provide formal, precise, and well-structured responses. Maintain a business-appropriate tone.';
-
       case ChatbotPersonality.creative:
         return 'You are a creative and imaginative AI assistant. Think outside the box and provide innovative solutions and ideas.';
-
       case ChatbotPersonality.technical:
         return 'You are a technical AI assistant with expertise in programming, engineering, and technology. Provide detailed technical explanations.';
     }
   }
 
-  /// Get temperature setting based on personality
   double _getTemperatureForPersonality() {
     switch (personality) {
       case ChatbotPersonality.helpful:
       case ChatbotPersonality.professional:
       case ChatbotPersonality.technical:
-        return 0.3; // More focused and consistent
-
+        return 0.3;
       case ChatbotPersonality.friendly:
-        return 0.7; // Balanced
-
+        return 0.7;
       case ChatbotPersonality.creative:
-        return 0.9; // More creative and varied
+        return 0.9;
     }
   }
 
-  /// Log usage statistics
-  void _logUsage(dynamic usage) {
-    // In a real application, you might want to:
-    // - Store usage data in a database
-    // - Monitor costs and usage patterns
-    // - Implement usage limits
-    // - Generate analytics reports
+  core.GenerateTextOptions _requestOptions({int maxOutputTokens = 500}) {
+    return core.GenerateTextOptions(
+      temperature: _getTemperatureForPersonality(),
+      maxOutputTokens: maxOutputTokens,
+    );
+  }
 
+  void _logUsage(core.UsageStats usage) {
     print('\n📊 Message #$_messageCount - Tokens: ${usage.totalTokens}');
   }
 
-  /// Get conversation summary (useful for long conversations)
   Future<String> getConversationSummary() async {
     if (_conversationHistory.length < 4) {
       return 'Short conversation, no summary needed.';
     }
 
     try {
-      final summaryMessages = [
-        ChatMessage.system(
-            'Summarize the following conversation in 2-3 sentences:'),
-        ..._conversationHistory.where((m) => m.role != ChatRole.system),
-      ];
-
-      final response = await _ai.chat(summaryMessages);
-      return response.text ?? 'Unable to generate summary.';
-    } catch (e) {
-      return 'Error generating summary: $e';
+      final result = await core.generateTextCall(
+        model: model,
+        prompt: [
+          core.SystemPromptMessage.text(
+            'Summarize the following conversation in 2-3 sentences:',
+          ),
+          ..._conversationHistory.where(
+            (message) => message.role != core.PromptRole.system,
+          ),
+        ],
+        options: const core.GenerateTextOptions(
+          temperature: 0.3,
+          maxOutputTokens: 160,
+        ),
+      );
+      return result.text;
+    } catch (error) {
+      return 'Error generating summary: $error';
     }
   }
 
-  /// Reset conversation
   void resetConversation() {
     _conversationHistory.clear();
     _messageCount = 0;
     print('🔄 Conversation reset');
   }
 
-  /// Get conversation statistics
   Map<String, dynamic> getStats() {
-    final userMessages =
-        _conversationHistory.where((m) => m.role == ChatRole.user).length;
-    final assistantMessages =
-        _conversationHistory.where((m) => m.role == ChatRole.assistant).length;
+    final userMessages = _conversationHistory
+        .where((message) => message.role == core.PromptRole.user)
+        .length;
+    final assistantMessages = _conversationHistory
+        .where((message) => message.role == core.PromptRole.assistant)
+        .length;
 
     return {
       'totalMessages': _conversationHistory.length,
@@ -290,35 +302,8 @@ class Chatbot {
       'assistantMessages': assistantMessages,
       'personality': personality.name,
       'maxContextLength': maxContextLength,
+      'provider': model.providerId,
+      'model': model.modelId,
     };
   }
 }
-
-/// 🎯 Key Chatbot Features Summary:
-///
-/// Core Features:
-/// - Multi-turn conversation management
-/// - Personality customization
-/// - Context window management
-/// - Streaming responses
-/// - Error handling and recovery
-///
-/// Production Features:
-/// - Usage tracking and analytics
-/// - Conversation summarization
-/// - Memory management
-/// - Performance optimization
-/// - Graceful error handling
-///
-/// Customization Options:
-/// - Different personalities
-/// - Adjustable context length
-/// - Temperature settings
-/// - System prompt customization
-///
-/// Next Steps:
-/// - Add conversation persistence (database storage)
-/// - Implement user authentication
-/// - Add conversation export/import
-/// - Create web or mobile interface
-/// - Add multi-language support

@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
-import 'package:llm_dart_flutter/llm_dart_flutter.dart';
+import 'package:llm_dart_chat/llm_dart_chat.dart';
 import 'package:llm_dart_test/llm_dart_test.dart';
 import 'package:test/test.dart';
 
@@ -240,6 +240,10 @@ void main() {
         FinishReason.aborted,
       );
       expect(
+        assistantMessage.metadata[ChatUiMetadataKeys.isAborted],
+        isTrue,
+      );
+      expect(
         assistantMessage.parts.whereType<TextUiPart>().single.text,
         'Partial',
       );
@@ -249,9 +253,11 @@ void main() {
 
     test('regenerate replaces the latest assistant message', () async {
       var invocation = 0;
+      final capturedRequests = <ChatTransportRequest>[];
       final session = DefaultChatSession(
         transport: _FakeChatTransport(
           onSendMessages: (request) {
+            capturedRequests.add(request);
             invocation += 1;
             return Stream<TextStreamEvent>.fromIterable([
               StartEvent(),
@@ -275,6 +281,9 @@ void main() {
         session.state.messages.last.parts.whereType<TextUiPart>().single.text,
         'Second',
       );
+      expect(capturedRequests, hasLength(2));
+      expect(capturedRequests[0].trigger, ChatTransportTrigger.sendMessage);
+      expect(capturedRequests[1].trigger, ChatTransportTrigger.regenerate);
 
       await session.dispose();
     });
@@ -352,6 +361,8 @@ void main() {
 
       expect(session.state.status, ChatStatus.ready);
       expect(capturedRequests, hasLength(2));
+      expect(capturedRequests[0].trigger, ChatTransportTrigger.sendMessage);
+      expect(capturedRequests[1].trigger, ChatTransportTrigger.toolOutput);
       final toolRoundtripPrompt = capturedRequests[1].prompt;
       expect(toolRoundtripPrompt, hasLength(3));
       expect(toolRoundtripPrompt[0], isA<UserPromptMessage>());
@@ -382,6 +393,7 @@ void main() {
       await session.sendMessage(ChatInput.text('Thanks'));
 
       expect(capturedRequests, hasLength(3));
+      expect(capturedRequests[2].trigger, ChatTransportTrigger.sendMessage);
       final followUpPrompt = capturedRequests[2].prompt;
       expect(followUpPrompt, hasLength(5));
       expect(followUpPrompt[3], isA<AssistantPromptMessage>());
@@ -887,9 +899,10 @@ void main() {
       await session.sendMessage(ChatInput.text('Search for Dart.'));
 
       final assistantMessage = session.state.messages.last;
-      final customParts = assistantMessage.parts.whereType<CustomUiPart>().toList(
-            growable: false,
-          );
+      final customParts =
+          assistantMessage.parts.whereType<CustomUiPart>().toList(
+                growable: false,
+              );
       expect(
         customParts.map((part) => part.kind),
         orderedEquals([
@@ -2773,6 +2786,8 @@ void main() {
       );
 
       expect(capturedRequests, hasLength(1));
+      expect(
+          capturedRequests.single.trigger, ChatTransportTrigger.toolApproval);
       expect(capturedRequests.single.prompt, hasLength(3));
       expect(capturedRequests.single.prompt[1], isA<AssistantPromptMessage>());
       expect(capturedRequests.single.prompt[2], isA<ToolPromptMessage>());
@@ -2905,9 +2920,15 @@ void main() {
         transport: _FakeChatTransport(
           onSendMessages: (request) => const Stream<TextStreamEvent>.empty(),
           onSendMessageChunks: (request) =>
-              Stream<ChatTransportChunk>.fromIterable([
-            ChatTransportEventChunk(StartEvent()),
-            const ChatTransportDataPartChunk(
+              Stream<ChatUiStreamChunk>.fromIterable([
+            ChatUiMessageStartChunk(
+              messageId: 'server-msg-1',
+              metadata: const {
+                'serverOwned': true,
+              },
+            ),
+            ChatUiEventChunk(StartEvent()),
+            const ChatUiDataPartChunk<Object?>(
               DataUiPart<Object?>(
                 id: 'progress',
                 key: 'status',
@@ -2916,14 +2937,14 @@ void main() {
                 },
               ),
             ),
-            const ChatTransportEventChunk(TextStartEvent(id: 'text-1')),
-            const ChatTransportEventChunk(
+            const ChatUiEventChunk(TextStartEvent(id: 'text-1')),
+            const ChatUiEventChunk(
               TextDeltaEvent(
                 id: 'text-1',
                 delta: 'Hello',
               ),
             ),
-            const ChatTransportDataPartChunk(
+            const ChatUiDataPartChunk<Object?>(
               DataUiPart<Object?>(
                 id: 'progress',
                 key: 'status',
@@ -2932,9 +2953,14 @@ void main() {
                 },
               ),
             ),
-            const ChatTransportEventChunk(TextEndEvent(id: 'text-1')),
-            const ChatTransportEventChunk(
+            const ChatUiEventChunk(TextEndEvent(id: 'text-1')),
+            const ChatUiEventChunk(
               FinishEvent(finishReason: FinishReason.stop),
+            ),
+            ChatUiMessageFinishChunk(
+              metadata: const {
+                'persisted': true,
+              },
             ),
           ]),
         ),
@@ -2948,6 +2974,9 @@ void main() {
         assistantMessage.parts.whereType<TextUiPart>().single.text,
         'Hello',
       );
+      expect(assistantMessage.id, 'server-msg-1');
+      expect(assistantMessage.metadata['serverOwned'], isTrue);
+      expect(assistantMessage.metadata['persisted'], isTrue);
       final dataPart =
           assistantMessage.parts.whereType<DataUiPart<Object?>>().single;
       expect(dataPart.id, 'progress');
@@ -3084,7 +3113,7 @@ final class _FakeChatTransport implements ChatTransport {
   final Stream<TextStreamEvent> Function(ChatTransportRequest request)
       onSendMessages;
   final Stream<TextStreamEvent>? Function(String chatId)? onReconnect;
-  final Stream<ChatTransportChunk> Function(ChatTransportRequest request)?
+  final Stream<ChatUiStreamChunk> Function(ChatTransportRequest request)?
       onSendMessageChunks;
 
   const _FakeChatTransport({
@@ -3094,21 +3123,21 @@ final class _FakeChatTransport implements ChatTransport {
   });
 
   @override
-  Stream<ChatTransportChunk>? reconnect(String chatId) {
+  Stream<ChatUiStreamChunk>? reconnect(String chatId) {
     return onReconnect
         ?.call(chatId)
-        ?.map<ChatTransportChunk>((event) => ChatTransportEventChunk(event));
+        ?.map<ChatUiStreamChunk>((event) => ChatUiEventChunk(event));
   }
 
   @override
-  Stream<ChatTransportChunk> sendMessages(ChatTransportRequest request) {
+  Stream<ChatUiStreamChunk> sendMessages(ChatTransportRequest request) {
     final chunkStream = onSendMessageChunks?.call(request);
     if (chunkStream != null) {
       return chunkStream;
     }
 
     return onSendMessages(request)
-        .map<ChatTransportChunk>((event) => ChatTransportEventChunk(event));
+        .map<ChatUiStreamChunk>((event) => ChatUiEventChunk(event));
   }
 }
 

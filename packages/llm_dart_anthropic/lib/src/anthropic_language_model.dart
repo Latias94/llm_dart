@@ -63,6 +63,7 @@ final class AnthropicLanguageModel implements LanguageModel {
         ),
         body: preparedRequest.body,
         timeout: request.callOptions.timeout,
+        cancellation: request.callOptions.cancellation,
         responseType: TransportResponseType.json,
       ),
     );
@@ -103,6 +104,7 @@ final class AnthropicLanguageModel implements LanguageModel {
           ),
           body: preparedRequest.body,
           timeout: request.callOptions.timeout,
+          cancellation: request.callOptions.cancellation,
         ),
       );
 

@@ -1,117 +1,173 @@
+// ignore_for_file: avoid_print
+
 import 'dart:io';
 
-import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/openai.dart' as openai;
 
-/// Example demonstrating GPT-5 specific features
-///
-/// This example shows how to use GPT-5's new capabilities:
-/// - Verbosity control for output detail
-/// - Minimal reasoning effort for faster responses
-/// - GPT-5 model variants (gpt-5.1, gpt-5-mini, gpt-5-nano)
+/// GPT-5 examples built on the stable OpenAI chat-model facade plus typed
+/// OpenAI provider options.
 Future<void> main() async {
-  // Get API key from environment
   final apiKey = Platform.environment['OPENAI_API_KEY'];
-  if (apiKey == null) {
+  if (apiKey == null || apiKey.isEmpty) {
     print('Please set OPENAI_API_KEY environment variable');
     return;
   }
 
   print('=== GPT-5 Features Demo ===\n');
 
-  // Example 1: Using verbosity control
   await demonstrateVerbosity(apiKey);
-
-  // Example 2: Using minimal reasoning effort
   await demonstrateMinimalReasoning(apiKey);
-
-  // Example 3: Comparing GPT-5 model variants
   await compareModelVariants(apiKey);
 }
 
-/// Demonstrates verbosity control with GPT-5
 Future<void> demonstrateVerbosity(String apiKey) async {
   print('--- Verbosity Control ---');
 
-  final question = 'Explain how photosynthesis works.';
+  final model = _createModel(apiKey, 'gpt-5.1');
+  const question = 'Explain how photosynthesis works.';
 
-  // Low verbosity - terse response
-  print('\n🔹 Low Verbosity (terse):');
-  final lowProvider = await ai()
-      .openai((openai) => openai.verbosity(Verbosity.low))
-      .apiKey(apiKey)
-      .model('gpt-5.1')
-      .build();
+  try {
+    print('\n🔹 Low Verbosity (terse):');
+    final lowResponse = await _generateText(
+      model: model,
+      prompt: question,
+      maxOutputTokens: 500,
+      providerOptions: const openai.OpenAIGenerateTextOptions(
+        verbosity: 'low',
+      ),
+    );
+    print(lowResponse.text);
+    _printUsage(lowResponse);
 
-  final lowResponse = await lowProvider.chat([
-    ChatMessage.user(question),
-  ]);
-  print(lowResponse.text ?? 'No response');
+    print('\n🔹 High Verbosity (detailed):');
+    final highResponse = await _generateText(
+      model: model,
+      prompt: question,
+      maxOutputTokens: 1400,
+      timeout: const Duration(minutes: 5),
+      providerOptions: const openai.OpenAIGenerateTextOptions(
+        verbosity: 'high',
+      ),
+    );
+    print(highResponse.text);
+    _printUsage(highResponse);
 
-  // High verbosity - detailed response
-  print('\n🔹 High Verbosity (detailed):');
-  final highProvider = await ai()
-      .openai((openai) => openai.verbosity(Verbosity.high))
-      .apiKey(apiKey)
-      .model('gpt-5.1')
-      .timeout(Duration(minutes: 5)) // Longer timeout for high verbosity
-      .build();
-
-  final highResponse = await highProvider.chat([
-    ChatMessage.user(question),
-  ]);
-  print(highResponse.text ?? 'No response');
+    print(
+      '\n   Length comparison: low=${lowResponse.text.length} chars, '
+      'high=${highResponse.text.length} chars',
+    );
+  } catch (error) {
+    print('❌ Verbosity example failed: $error');
+  }
 
   print('\n${'=' * 50}\n');
 }
 
-/// Demonstrates minimal reasoning effort for faster responses
 Future<void> demonstrateMinimalReasoning(String apiKey) async {
   print('--- Minimal Reasoning Effort ---');
 
-  final provider = await ai()
-      .openai()
-      .apiKey(apiKey)
-      .model('gpt-5-mini')
-      .reasoningEffort(ReasoningEffort.minimal) // New minimal option
-      .build();
+  final model = _createModel(apiKey, 'gpt-5-mini');
 
-  print('🔹 Quick math problem with minimal reasoning:');
-  final response = await provider.chat([
-    ChatMessage.user('What is 15 * 23? Just give me the answer.'),
-  ]);
+  try {
+    print('🔹 Quick math problem with minimal reasoning:');
+    final response = await _generateText(
+      model: model,
+      prompt: 'What is 15 * 23? Just give me the answer.',
+      maxOutputTokens: 120,
+      providerOptions: const openai.OpenAIGenerateTextOptions(
+        reasoningEffort: openai.OpenAIReasoningEffort.minimal,
+        verbosity: 'low',
+      ),
+    );
 
-  print('Response: ${response.text ?? 'No response'}');
-  print('Usage: ${response.usage}');
+    print('Response: ${response.text}');
+    _printUsage(response);
+
+    if (response.reasoningText case final reasoning?) {
+      print('Reasoning text: $reasoning');
+    } else {
+      print('Reasoning text: <not exposed>');
+    }
+  } catch (error) {
+    print('❌ Minimal reasoning example failed: $error');
+  }
 
   print('\n${'=' * 50}\n');
 }
 
-/// Compares different GPT-5 model variants
 Future<void> compareModelVariants(String apiKey) async {
   print('--- GPT-5 Model Variants ---');
 
-  final models = ['gpt-5.1', 'gpt-5-mini', 'gpt-5-nano'];
-  final question = 'Write a haiku about artificial intelligence.';
+  const models = ['gpt-5.1', 'gpt-5-mini', 'gpt-5-nano'];
+  const question = 'Write a haiku about artificial intelligence.';
 
-  for (final model in models) {
-    print('\n🔹 Model: $model');
-
-    final provider = await ai().openai().apiKey(apiKey).model(model).build();
+  for (final modelId in models) {
+    print('\n🔹 Model: $modelId');
 
     try {
-      final response = await provider.chat([
-        ChatMessage.user(question),
-      ]);
+      final response = await _generateText(
+        model: _createModel(apiKey, modelId),
+        prompt: question,
+        maxOutputTokens: 160,
+        providerOptions: const openai.OpenAIGenerateTextOptions(
+          reasoningEffort: openai.OpenAIReasoningEffort.minimal,
+          verbosity: 'low',
+        ),
+      );
 
-      print('Response: ${response.text ?? 'No response'}');
-      if (response.usage != null) {
-        print('Tokens: ${response.usage!.totalTokens}');
-      }
-    } catch (e) {
-      print('Error with $model: $e');
-      print('Note: $model may not be available in your region yet.');
+      print('Response: ${response.text}');
+      _printUsage(response);
+    } catch (error) {
+      print('Error with $modelId: $error');
+      print('Note: $modelId may not be available in your account yet.');
     }
   }
 
   print('\n${'=' * 50}\n');
+}
+
+core.LanguageModel _createModel(String apiKey, String modelId) {
+  return llm.AI.openai(
+    apiKey: apiKey,
+  ).chatModel(modelId);
+}
+
+Future<core.GenerateTextCallResult<dynamic>> _generateText({
+  required core.LanguageModel model,
+  required String prompt,
+  required int maxOutputTokens,
+  openai.OpenAIGenerateTextOptions providerOptions =
+      const openai.OpenAIGenerateTextOptions(),
+  Duration? timeout,
+}) {
+  return core.generateTextCall(
+    model: model,
+    prompt: [
+      core.UserPromptMessage.text(prompt),
+    ],
+    options: core.GenerateTextOptions(
+      maxOutputTokens: maxOutputTokens,
+    ),
+    callOptions: core.CallOptions(
+      timeout: timeout,
+      providerOptions: providerOptions,
+    ),
+  );
+}
+
+void _printUsage(core.GenerateTextCallResult<dynamic> result) {
+  final usage = result.usage;
+  if (usage == null) {
+    print('Usage: <unavailable>');
+    return;
+  }
+
+  print(
+    'Usage: total=${usage.totalTokens}, '
+    'input=${usage.inputTokens}, '
+    'output=${usage.outputTokens}, '
+    'reasoning=${usage.reasoningTokens}',
+  );
 }

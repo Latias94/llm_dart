@@ -111,7 +111,8 @@ The next layers still need design and migration:
 
 - provider-native tool entry APIs
 - structured-output / JSON-output interaction with tools
-- higher-level tool execution orchestration in `llm_dart_flutter`
+- higher-level tool execution orchestration in `llm_dart_chat`, with
+  Flutter-only adapters in `llm_dart_flutter`
 - compatibility adapters from the old root package tool model
 
 But the main boundary is now stable enough to migrate providers without pushing

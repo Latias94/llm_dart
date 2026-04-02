@@ -27,6 +27,7 @@ doc/api/
 .flutter-plugins-dependencies
 
 coverage/
+*.log
 
 # Claude Code configuration
 CLAUDE.md

@@ -18,7 +18,7 @@ If these two points are not frozen early, later migration work tends to fall bac
 
 ## Current Workspace Snapshot
 
-As of 2026-03-27, the workspace package graph is:
+As of 2026-04-02, the workspace package graph is:
 
 - `llm_dart_core`
   - Dart SDK only
@@ -26,6 +26,9 @@ As of 2026-03-27, the workspace package graph is:
   - `llm_dart_core`
   - `dio`
   - `logging`
+- `llm_dart_chat`
+  - `llm_dart_core`
+  - `llm_dart_transport`
 - `llm_dart_openai`
   - `llm_dart_core`
   - `llm_dart_transport`
@@ -40,7 +43,7 @@ As of 2026-03-27, the workspace package graph is:
   - `llm_dart_transport`
 - `llm_dart_flutter`
   - `llm_dart_core`
-  - `llm_dart_transport`
+  - `llm_dart_chat`
 
 This is already directionally correct, but it is still incomplete relative to the target split:
 
@@ -168,23 +171,27 @@ llm_dart_core
    |
 llm_dart_transport
    ^
+   +------ llm_dart_chat
+   |             ^
+   |             |
+   |        llm_dart_flutter
    |
 llm_dart_openai / llm_dart_anthropic / llm_dart_google / llm_dart_community
    ^
    |
 llm_dart
-
-llm_dart_flutter -> llm_dart_core
-llm_dart_flutter -> llm_dart_transport   (only when transport reuse is necessary)
 ```
 
 Key constraints:
 
 - `llm_dart_core` must not depend on provider packages, Flutter, or HTTP libraries
 - `llm_dart_transport` must not depend on concrete provider packages
+- `llm_dart_chat` must stay pure Dart and must not depend on Flutter or
+  concrete provider packages
 - provider packages may depend on `core` and `transport`, but not on each other in cycles
 - the root `llm_dart` package should become facade and compatibility only
-- `llm_dart_flutter` must not depend on concrete provider packages
+- `llm_dart_flutter` must depend on the shared chat runtime rather than owning
+  it directly, and it must not depend on concrete provider packages
 
 ## Dependency Responsibilities Per Package
 
@@ -232,6 +239,30 @@ Current recommendation:
 - do not split out `llm_dart_transport_dio` yet
 - keep Dio hidden inside transport for now
 - only consider a deeper split if a second transport implementation becomes real
+
+## `llm_dart_chat`
+
+Responsibilities:
+
+- provider-agnostic chat session state
+- direct and HTTP chat transport implementations
+- snapshot codecs and session persistence helpers
+- chat message mapping
+- local tool execution conveniences such as `onToolCall` and
+  `ToolExecutionRegistry`
+
+Recommended runtime dependencies:
+
+- `llm_dart_core`
+- `llm_dart_transport`
+
+Why:
+
+- chat/session orchestration is reusable outside Flutter
+- CLI apps and server-side Dart backends may want the same runtime without
+  `flutter/foundation`
+- this keeps `llm_dart_flutter` thin and matches the reference architecture
+  principle without copying its package granularity
 
 ## `llm_dart_openai` / `llm_dart_anthropic` / `llm_dart_google`
 
@@ -287,21 +318,21 @@ Current status:
 
 Responsibilities:
 
-- `ChatSession`
-- `ChatState`
-- `ChatTransport`
 - `ChatController`
-- UI message projection
+- Flutter `ValueNotifier` / `Listenable` adapters
+- controller-aware persistence convenience wrappers
+- re-export of `llm_dart_chat` for Flutter consumers
 
 Dependency policy:
 
-- must depend on `llm_dart_core`
-- may depend on `llm_dart_transport` if transport reuse is needed
+- must depend on `llm_dart_chat`
+- may depend directly on `llm_dart_core` for shared type usage in adapter code
 - must not depend on concrete provider packages
 
 Why:
 
-- the Flutter layer should target model interfaces and chat-session protocols, not provider implementations
+- the Flutter layer should target the reusable chat runtime, not re-implement it
+- Flutter-only constructs such as `ValueNotifier` belong here, not in the shared runtime
 
 ## Third-Party Dependency Policy
 
@@ -319,8 +350,12 @@ The new workspace already provides one useful signal:
 
 - `llm_dart_core` has no third-party runtime dependency
 - `llm_dart_transport` owns the concrete Dio-based transport
+- `llm_dart_chat` owns the reusable session and chat-transport runtime above
+  `core` and `transport`
 - `llm_dart_openai` depends only on `core` and `transport`
-- `llm_dart_flutter` stays provider-agnostic even though it reuses transport for `HttpChatTransport`
+- `llm_dart_flutter` stays provider-agnostic and thin by depending on
+  `llm_dart_chat` instead of directly owning `HttpChatTransport`,
+  `DefaultChatSession`, and related runtime logic
 
 That is the correct direction.
 

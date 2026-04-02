@@ -48,6 +48,10 @@ The root package still needs to host:
 - legacy capability interfaces
 - legacy message/value models
 
+It may also expose focused thin entrypoints when they remain strict barrels over
+lower layers. The first approved example is `chat.dart`, which exposes the pure
+Dart chat runtime without bringing Flutter adapters back into the root package.
+
 But it should increasingly behave like a compatibility facade over smaller
 modules, not like the implementation home for migrated provider logic.
 
@@ -207,6 +211,42 @@ Recommended grouping:
 entrypoint. It should stay available during migration, but it should not keep
 forcing unrelated legacy value types into the same source file.
 
+### 3.5 `chat.dart`
+
+This file is large neither in line count nor in implementation ownership, but
+it matters architecturally because it defines whether the root package keeps a
+focused app-facing chat entrypoint or forces users to discover workspace
+packages directly.
+
+### Decision
+
+`chat.dart` should stay as a thin pure Dart convenience barrel.
+
+It may re-export:
+
+- `llm_dart_chat`
+- `core.dart`
+- `transport.dart`
+- the stable `AI` facade
+
+It must not re-export:
+
+- `llm_dart_flutter`
+- `ChatController`
+- any other Flutter-only adapter surface
+
+### Why This Matches The Reference Direction
+
+This borrows the useful part of `repo-ref/ai`:
+
+- the root package can expose a focused app-facing entrypoint
+- the entrypoint is a shell, not the implementation home
+- framework adapters remain separate from the pure runtime
+
+### Status
+
+This focused root entrypoint is now landed through `package:llm_dart/chat.dart`.
+
 ## 4. Recommended Refactor Order
 
 The safest next order is:
@@ -241,6 +281,7 @@ provider-package gap. It is now mostly a root-facade cleanup gap.
 The correct direction is:
 
 - keep the root package as a compatibility shell
+- allow focused thin root barrels such as `chat.dart` when they stay pure Dart
 - keep provider-owned logic in provider packages or compatibility slices
 - keep large root files shrinking toward thin barrels over focused modules
 

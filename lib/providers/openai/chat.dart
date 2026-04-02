@@ -4,6 +4,8 @@ import '../../core/capability.dart';
 import '../../core/llm_error.dart';
 import '../../models/chat_models.dart';
 import '../../models/tool_models.dart';
+import '../../src/config/legacy_config_keys.dart';
+import '../../src/config/legacy_provider_options.dart';
 import '../../utils/reasoning_utils.dart';
 import 'client.dart';
 import 'config.dart';
@@ -227,42 +229,56 @@ class OpenAIChat implements ChatCapability {
     // For OpenAI reasoning models, some parameters are not supported and
     // should be omitted to avoid API errors. This matches the behavior in
     // the TypeScript implementation.
-    final frequencyPenalty = config.getExtension<double>('frequencyPenalty');
+    final frequencyPenalty = _getOpenAIFamilyProviderOption<double>(
+      LegacyExtensionKeys.frequencyPenalty,
+    );
     if (frequencyPenalty != null && !isOpenAIReasoningModel) {
       body['frequency_penalty'] = frequencyPenalty;
     }
 
-    final presencePenalty = config.getExtension<double>('presencePenalty');
+    final presencePenalty = _getOpenAIFamilyProviderOption<double>(
+      LegacyExtensionKeys.presencePenalty,
+    );
     if (presencePenalty != null && !isOpenAIReasoningModel) {
       body['presence_penalty'] = presencePenalty;
     }
 
-    final logitBias = config.getExtension<Map<String, double>>('logitBias');
+    final logitBias = _getOpenAIFamilyProviderOption<Map<String, double>>(
+      LegacyExtensionKeys.logitBias,
+    );
     if (logitBias != null && logitBias.isNotEmpty && !isOpenAIReasoningModel) {
       body['logit_bias'] = logitBias;
     }
 
-    final seed = config.getExtension<int>('seed');
+    final seed = _getOpenAIFamilyProviderOption<int>(LegacyExtensionKeys.seed);
     if (seed != null) {
       body['seed'] = seed;
     }
 
-    final parallelToolCalls = config.getExtension<bool>('parallelToolCalls');
+    final parallelToolCalls = _getOpenAIFamilyProviderOption<bool>(
+      LegacyExtensionKeys.parallelToolCalls,
+    );
     if (parallelToolCalls != null) {
       body['parallel_tool_calls'] = parallelToolCalls;
     }
 
-    final logprobs = config.getExtension<bool>('logprobs');
+    final logprobs = _getOpenAIFamilyProviderOption<bool>(
+      LegacyExtensionKeys.logprobs,
+    );
     if (logprobs != null && !isOpenAIReasoningModel) {
       body['logprobs'] = logprobs;
     }
 
-    final topLogprobs = config.getExtension<int>('topLogprobs');
+    final topLogprobs = _getOpenAIFamilyProviderOption<int>(
+      LegacyExtensionKeys.topLogprobs,
+    );
     if (topLogprobs != null && !isOpenAIReasoningModel) {
       body['top_logprobs'] = topLogprobs;
     }
 
-    final verbosity = config.getExtension<String>('verbosity');
+    final verbosity = _getOpenAIFamilyProviderOption<String>(
+      LegacyExtensionKeys.verbosity,
+    );
     if (verbosity != null) {
       body['verbosity'] = verbosity;
     }
@@ -278,6 +294,25 @@ class OpenAIChat implements ChatCapability {
     }
 
     return body;
+  }
+
+  T? _getOpenAIFamilyProviderOption<T>(String key) {
+    final originalConfig = config.originalConfig;
+    if (originalConfig == null) {
+      return config.getExtension<T>(key);
+    }
+
+    final namespace = switch (client.providerId) {
+      'openai' => LegacyProviderOptionNamespaces.openai,
+      'openrouter' => LegacyProviderOptionNamespaces.openrouter,
+      _ => null,
+    };
+
+    if (namespace == null) {
+      return originalConfig.getExtension<T>(key);
+    }
+
+    return getLegacyProviderOption<T>(originalConfig, namespace, key);
   }
 
   /// Parse non-streaming response

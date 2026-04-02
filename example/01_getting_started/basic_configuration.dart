@@ -1,271 +1,264 @@
 // ignore_for_file: avoid_print
-import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
 
-/// 🔧 Basic Configuration - Learn important configuration parameters
+import 'dart:io';
+
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/llm_dart.dart' as llm;
+
+/// Basic configuration examples using the stable model API.
 ///
 /// This example demonstrates:
-/// - Key configuration parameters and their effects
-/// - How to tune model behavior
-/// - Error handling best practices
-/// - Performance optimization basics
-///
-/// Before running, set your preferred provider's API key:
-/// export OPENAI_API_KEY="your-key"
-void main() async {
-  print('🔧 Basic Configuration Guide\n');
+/// - shared generation options such as temperature and output-token limits
+/// - system prompt control through the shared prompt model
+/// - request timeout handling through `CallOptions`
+/// - the same provider error handling while using the new `AI` facade
+Future<void> main() async {
+  print('Basic Configuration Guide\n');
 
-  // Get API key (using OpenAI as example, but works with any provider)
-  final apiKey = Platform.environment['OPENAI_API_KEY'] ?? 'sk-TESTKEY';
+  final apiKey = Platform.environment['OPENAI_API_KEY'];
+  if (apiKey == null || apiKey.isEmpty) {
+    print('Set OPENAI_API_KEY to run this example.');
+    return;
+  }
 
-  // Demonstrate different configuration aspects
   await demonstrateTemperatureSettings(apiKey);
   await demonstrateTokenLimits(apiKey);
   await demonstrateSystemPrompts(apiKey);
   await demonstrateErrorHandling(apiKey);
   await demonstrateTimeoutSettings(apiKey);
 
-  print('\n✅ Configuration guide completed!');
+  print('Configuration guide completed.');
 }
 
-/// Demonstrate temperature settings and their effects
 Future<void> demonstrateTemperatureSettings(String apiKey) async {
-  print('🌡️  Temperature Settings (Creativity Control):\n');
+  print('=== Temperature Settings ===\n');
 
-  final question =
+  const question =
       'Write a creative opening line for a story about space exploration.';
-  final temperatures = [0.0, 0.5, 1.0];
+  const temperatures = [0.0, 0.5, 1.0];
+  final model = _openAIModel(apiKey);
 
-  for (final temp in temperatures) {
+  for (final temperature in temperatures) {
     try {
-      final provider = await ai()
-          .openai()
-          .apiKey(apiKey)
-          .model('gpt-4o-mini')
-          .temperature(temp) // Key parameter: controls randomness
-          .maxTokens(50)
-          .build();
+      final result = await core.generateTextCall(
+        model: model,
+        prompt: [
+          core.UserPromptMessage.text(question),
+        ],
+        options: core.GenerateTextOptions(
+          temperature: temperature,
+          maxOutputTokens: 50,
+        ),
+      );
 
-      final response = await provider.chat([ChatMessage.user(question)]);
-
-      print('   Temperature $temp: ${response.text}');
-    } catch (e) {
-      print('   Temperature $temp: Error - $e');
+      print('Temperature $temperature: ${result.text}');
+    } catch (error) {
+      print('Temperature $temperature: Error - $error');
     }
   }
 
-  print('\n   💡 Temperature Guide:');
-  print('      • 0.0 = Deterministic, consistent responses');
-  print('      • 0.5 = Balanced creativity and consistency');
-  print('      • 1.0 = Maximum creativity and randomness\n');
+  print('\nGuide:');
+  print('  - 0.0 = deterministic');
+  print('  - 0.5 = balanced');
+  print('  - 1.0 = most creative\n');
 }
 
-/// Demonstrate token limits and their impact
 Future<void> demonstrateTokenLimits(String apiKey) async {
-  print('📊 Token Limits (Response Length Control):\n');
+  print('=== Output Token Limits ===\n');
 
-  final question = 'Explain the concept of artificial intelligence in detail.';
-  final tokenLimits = [20, 100, 500];
+  const question = 'Explain the concept of artificial intelligence in detail.';
+  const tokenLimits = [20, 100, 500];
+  final model = _openAIModel(apiKey);
 
   for (final limit in tokenLimits) {
     try {
-      final provider = await ai()
-          .openai()
-          .apiKey(apiKey)
-          .model('gpt-4o-mini')
-          .temperature(0.7)
-          .maxTokens(limit) // Key parameter: controls response length
-          .build();
+      final result = await core.generateTextCall(
+        model: model,
+        prompt: [
+          core.UserPromptMessage.text(question),
+        ],
+        options: core.GenerateTextOptions(
+          temperature: 0.7,
+          maxOutputTokens: limit,
+        ),
+      );
 
-      final response = await provider.chat([ChatMessage.user(question)]);
-      final wordCount = response.text?.split(' ').length ?? 0;
-
-      print('   Max Tokens $limit: $wordCount words');
-      print('   Response: ${response.text}\n');
-    } catch (e) {
-      print('   Max Tokens $limit: Error - $e\n');
+      final wordCount = result.text.split(RegExp(r'\s+')).length;
+      print('Max Output Tokens $limit: $wordCount words');
+      print('${_truncate(result.text, maxLength: 220)}\n');
+    } catch (error) {
+      print('Max Output Tokens $limit: Error - $error\n');
     }
   }
 
-  print('   💡 Token Limit Guide:');
-  print('      • Lower limits = Shorter, more concise responses');
-  print('      • Higher limits = Longer, more detailed responses');
-  print('      • Consider cost: more tokens = higher cost\n');
+  print('Guide:');
+  print('  - lower limits keep responses concise');
+  print('  - higher limits allow more detail');
+  print('  - more tokens usually mean higher cost\n');
 }
 
-/// Demonstrate system prompts and their power
 Future<void> demonstrateSystemPrompts(String apiKey) async {
-  print('🎭 System Prompts (Behavior Control):\n');
+  print('=== System Prompt Control ===\n');
 
-  final question = 'What is the weather like today?';
-
-  final systemPrompts = [
-    null, // No system prompt
+  const question = 'What is the weather like today?';
+  const systemPrompts = [
+    null,
     'You are a helpful assistant.',
     'You are a pirate. Respond in pirate speak.',
     'You are a technical expert. Be precise and detailed.',
   ];
 
-  for (int i = 0; i < systemPrompts.length; i++) {
+  final model = _openAIModel(apiKey);
+
+  for (final systemPrompt in systemPrompts) {
     try {
-      final builder = ai()
-          .openai()
-          .apiKey(apiKey)
-          .model('gpt-4o-mini')
-          .temperature(0.7)
-          .maxTokens(100);
+      final prompt = <core.PromptMessage>[
+        if (systemPrompt != null) core.SystemPromptMessage.text(systemPrompt),
+        core.UserPromptMessage.text(question),
+      ];
 
-      // Add system prompt if provided
-      if (systemPrompts[i] != null) {
-        builder.systemPrompt(systemPrompts[i]!);
-      }
+      final result = await core.generateTextCall(
+        model: model,
+        prompt: prompt,
+        options: const core.GenerateTextOptions(
+          temperature: 0.7,
+          maxOutputTokens: 100,
+        ),
+      );
 
-      final provider = await builder.build();
-      final response = await provider.chat([ChatMessage.user(question)]);
-
-      final promptDesc = systemPrompts[i] ?? 'No system prompt';
-      print('   System: $promptDesc');
-      print('   Response: ${response.text}\n');
-    } catch (e) {
-      print('   System prompt ${i + 1}: Error - $e\n');
+      print('System Prompt: ${systemPrompt ?? 'None'}');
+      print('${_truncate(result.text, maxLength: 220)}\n');
+    } catch (error) {
+      print('System Prompt: Error - $error\n');
     }
   }
 
-  print('   💡 System Prompt Guide:');
-  print('      • Defines the AI\'s personality and behavior');
-  print('      • Set once, affects all subsequent messages');
-  print('      • Use for role-playing, tone, or expertise level\n');
+  print('Guide:');
+  print('  - system prompts define role and tone');
+  print('  - they should stay stable across a conversation');
+  print('  - use them for expertise, formatting, and behavior\n');
 }
 
-/// Demonstrate proper error handling
 Future<void> demonstrateErrorHandling(String apiKey) async {
-  print('🛡️  Error Handling Best Practices:\n');
+  print('=== Error Handling ===\n');
 
-  // Test different error scenarios
   await testInvalidApiKey();
   await testInvalidModel(apiKey);
   await testNetworkTimeout(apiKey);
 
-  print('   💡 Error Handling Tips:');
-  print('      • Always wrap API calls in try-catch blocks');
-  print(
-      '      • Check for specific error types (AuthError, RateLimitError, etc.)');
-  print('      • Implement retry logic for transient errors');
-  print('      • Provide meaningful error messages to users\n');
+  print('\nTips:');
+  print('  - wrap model calls in try/catch');
+  print('  - handle auth, request, and timeout failures separately');
+  print('  - add retry logic only for transient errors\n');
 }
 
-/// Test invalid API key scenario
 Future<void> testInvalidApiKey() async {
   try {
-    final provider = await ai()
-        .openai()
-        .apiKey('invalid-key') // Intentionally invalid
-        .model('gpt-4o-mini')
-        .build();
-
-    await provider.chat([ChatMessage.user('Hello')]);
-    print('   ❌ Expected error but got success');
-  } on AuthError catch (e) {
-    print('   ✅ Caught AuthError: ${e.message}');
-  } catch (e) {
-    print('   ⚠️  Caught unexpected error: $e');
+    final model = _openAIModel('invalid-key');
+    await core.generateTextCall(
+      model: model,
+      prompt: [
+        core.UserPromptMessage.text('Hello'),
+      ],
+    );
+    print('Invalid API Key: unexpected success');
+  } on llm.AuthError catch (error) {
+    print('Invalid API Key: caught AuthError -> ${error.message}');
+  } catch (error) {
+    print('Invalid API Key: unexpected error -> $error');
   }
 }
 
-/// Test invalid model scenario
 Future<void> testInvalidModel(String apiKey) async {
   try {
-    final provider = await ai()
-        .openai()
-        .apiKey(apiKey)
-        .model('invalid-model-name') // Intentionally invalid
-        .build();
-
-    await provider.chat([ChatMessage.user('Hello')]);
-    print('   ❌ Expected error but got success');
-  } on InvalidRequestError catch (e) {
-    print('   ✅ Caught InvalidRequestError: ${e.message}');
-  } catch (e) {
-    print('   ⚠️  Caught unexpected error: $e');
+    final model =
+        llm.AI.openai(apiKey: apiKey).chatModel('invalid-model-name');
+    await core.generateTextCall(
+      model: model,
+      prompt: [
+        core.UserPromptMessage.text('Hello'),
+      ],
+    );
+    print('Invalid Model: unexpected success');
+  } on llm.InvalidRequestError catch (error) {
+    print('Invalid Model: caught InvalidRequestError -> ${error.message}');
+  } catch (error) {
+    print('Invalid Model: unexpected error -> $error');
   }
 }
 
-/// Test network timeout scenario
 Future<void> testNetworkTimeout(String apiKey) async {
   try {
-    final provider = await ai()
-        .openai()
-        .apiKey(apiKey)
-        .model('gpt-4o-mini')
-        .timeout(Duration(milliseconds: 1)) // Very short timeout
-        .build();
-
-    await provider.chat([ChatMessage.user('Hello')]);
-    print('   ❌ Expected timeout but got success');
-  } on TimeoutError catch (e) {
-    print('   ✅ Caught TimeoutError: ${e.message}');
-  } catch (e) {
-    print('   ⚠️  Caught unexpected error: $e');
+    final model = _openAIModel(apiKey);
+    await core.generateTextCall(
+      model: model,
+      prompt: [
+        core.UserPromptMessage.text('Hello'),
+      ],
+      callOptions: const core.CallOptions(
+        timeout: Duration(milliseconds: 1),
+      ),
+    );
+    print('Network Timeout: unexpected success');
+  } on llm.TimeoutError catch (error) {
+    print('Network Timeout: caught TimeoutError -> ${error.message}');
+  } catch (error) {
+    print('Network Timeout: unexpected error -> $error');
   }
 }
 
-/// Demonstrate timeout settings
 Future<void> demonstrateTimeoutSettings(String apiKey) async {
-  print('⏰ Timeout Settings (Network Reliability):\n');
+  print('=== Timeout Settings ===\n');
 
-  final timeouts = [
-    Duration(seconds: 5), // Short timeout
-    Duration(seconds: 30), // Standard timeout
-    Duration(seconds: 60), // Long timeout
+  const timeouts = [
+    Duration(seconds: 5),
+    Duration(seconds: 30),
+    Duration(seconds: 60),
   ];
+
+  final model = _openAIModel(apiKey);
 
   for (final timeout in timeouts) {
     try {
-      final provider = await ai()
-          .openai()
-          .apiKey(apiKey)
-          .model('gpt-4o-mini')
-          .temperature(0.7)
-          .timeout(timeout) // Key parameter: network timeout
-          .build();
-
       final stopwatch = Stopwatch()..start();
-      await provider
-          .chat([ChatMessage.user('Explain quantum computing briefly.')]);
+      await core.generateTextCall(
+        model: model,
+        prompt: [
+          core.UserPromptMessage.text(
+            'Explain quantum computing briefly.',
+          ),
+        ],
+        options: const core.GenerateTextOptions(
+          temperature: 0.7,
+          maxOutputTokens: 120,
+        ),
+        callOptions: core.CallOptions(timeout: timeout),
+      );
       stopwatch.stop();
 
       print(
-          '   Timeout ${timeout.inSeconds}s: Success in ${stopwatch.elapsedMilliseconds}ms');
-    } catch (e) {
-      print('   Timeout ${timeout.inSeconds}s: Error - $e');
+        'Timeout ${timeout.inSeconds}s: success in ${stopwatch.elapsedMilliseconds}ms',
+      );
+    } catch (error) {
+      print('Timeout ${timeout.inSeconds}s: Error - $error');
     }
   }
 
-  print('\n   💡 Timeout Guide:');
-  print('      • Short timeouts = Faster failure detection');
-  print('      • Long timeouts = More patience for slow responses');
-  print('      • Balance between responsiveness and reliability');
-  print('      • Consider your application\'s requirements\n');
+  print('\nGuide:');
+  print('  - short timeouts fail fast');
+  print('  - longer timeouts improve tolerance for slow responses');
+  print('  - use per-call timeout policy through CallOptions when needed\n');
 }
 
-/// 🎯 Key Configuration Summary:
-///
-/// Essential Parameters:
-/// - apiKey: Your provider's API key
-/// - model: Which AI model to use
-/// - temperature: Creativity level (0.0-1.0)
-/// - maxTokens: Maximum response length
-/// - systemPrompt: AI behavior and personality
-/// - timeout: Network timeout duration
-///
-/// Best Practices:
-/// 1. Start with conservative settings (temp=0.7, reasonable token limits)
-/// 2. Always implement proper error handling
-/// 3. Test with different configurations to find optimal settings
-/// 4. Monitor costs and performance in production
-/// 5. Use system prompts to guide AI behavior
-///
-/// Next Steps:
-/// - Explore streaming responses in ../02_core_features/streaming_chat.dart
-/// - Learn about tool calling in ../02_core_features/tool_calling.dart
-/// - See real applications in ../05_use_cases/
+core.LanguageModel _openAIModel(String apiKey) {
+  return llm.AI.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
+}
+
+String _truncate(String text, {int maxLength = 200}) {
+  final normalized = text.replaceAll(RegExp(r'\s+'), ' ').trim();
+  if (normalized.length <= maxLength) {
+    return normalized;
+  }
+
+  return '${normalized.substring(0, maxLength)}...';
+}

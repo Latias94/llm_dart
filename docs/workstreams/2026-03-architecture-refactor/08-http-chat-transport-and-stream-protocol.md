@@ -2,7 +2,7 @@
 
 ## Goal
 
-`llm_dart_flutter` now has a stable direct-model path:
+`llm_dart_chat` now has a stable direct-model path:
 
 - `ChatSession`
 - `ChatTransport`
@@ -17,6 +17,37 @@ The goal of this document is to define a versioned HTTP transport contract that:
 - supports persistence and reconnect
 - does not force provider details into the Flutter API
 - does not pollute `TextStreamEvent` with transport-only protocol concerns
+
+## Current Status Update
+
+The original phase-1 protocol in this note has now been implemented and
+extended.
+
+Current repository status:
+
+- request and reconnect envelopes now carry an explicit `streamProtocol`
+- legacy requests without `streamProtocol` still decode as
+  `event-stream-v1`
+- `HttpChatTransport` now defaults to `ui-message-stream-v2`
+- the wire codec now supports both:
+  - legacy `start` / `finish` / `abort` chunk flows
+  - richer `transport-start` / `message-start` / `message-metadata` /
+    `message-finish` chunk flows
+- `HttpChatTransport` now maps both protocol generations into the shared
+  runtime `ChatUiStreamChunk` layer
+- the HTTP chat transport request/chunk codecs now live in
+  `llm_dart_transport`, while `llm_dart_chat` keeps compatibility re-exports
+  for client/runtime imports and `llm_dart_flutter` re-exports them
+  transitively
+- `HttpChatTransport` now also exposes request-preparation hooks for send and
+  reconnect so apps can override endpoint, headers, timeout, and transport
+  payload metadata without serializing shared `CallOptions`
+- a Dart backend reference adapter now also exists in `llm_dart_transport`
+  through `HttpChatTransportSseEncoder` and
+  `HttpChatTransportServerAdapter`
+
+That means this document is no longer only a proposal. It now also acts as the
+design record for the current dual-stack transport protocol.
 
 ## 1. Core Boundary
 
@@ -90,6 +121,13 @@ Rules:
 - `generateOptions` should contain only JSON-safe capability settings
 - backend request headers for auth, tracing, locale, or tenancy should stay in actual HTTP headers
 - backend-specific extra request payload should stay under a JSON-safe `metadata` or future transport-specific extension field
+- `streamProtocol` should explicitly declare which remote chunk vocabulary the
+  client wants back
+
+Current implemented values:
+
+- `event-stream-v1`
+- `ui-message-stream-v2`
 
 Phase-1 recommendation:
 
@@ -115,6 +153,8 @@ Rules:
 - reconnect requests should stay transport-specific
 - reconnect requests should not repeat prompt history
 - the server remains responsible for validating whether the token still maps to an in-flight stream
+- reconnect requests should carry the same `streamProtocol` preference as the
+  original request so the server can continue the same response contract
 
 ## 4. Recommended Stream Chunk Envelope
 
@@ -144,6 +184,13 @@ Recommended chunk types:
 - `error`
 - `keepalive`
 
+Current implemented additive v2 chunk types:
+
+- `transport-start`
+- `message-start`
+- `message-metadata`
+- `message-finish`
+
 ### `start`
 
 Used for transport-level session metadata.
@@ -155,6 +202,11 @@ Recommended fields:
 - `resumeToken` optional
 
 This is transport state, not model output.
+
+Current status:
+
+- `start` remains decode-compatible as the legacy v1 mixed chunk
+- `transport-start` plus `message-start` is now the preferred v2 split
 
 ### `event`
 
@@ -201,6 +253,12 @@ Rules:
 - it does not replace `FinishEvent`
 - the backend should still emit a terminal `FinishEvent` inside an `event` chunk for model completion semantics
 - the transport `finish` chunk only says the wire stream is closed cleanly
+
+Current status:
+
+- `finish` remains the transport-level stream terminator
+- `message-finish` is now the preferred v2 place for final message metadata
+  patches
 
 ### `abort`
 
@@ -279,13 +337,22 @@ Why the replay buffer is necessary:
 
 The phase-1 implementation should follow this order:
 
-1. define a `TextStreamEventJsonCodec`
-2. define `HttpChatTransport` request and chunk codecs
-3. implement SSE or NDJSON decoding in `HttpChatTransport`
-4. keep checkpoint, keepalive, start, and finish chunks transport-internal
-5. store the latest resume token and current assistant-turn replay buffer inside `HttpChatTransport`
-6. let `reconnect(chatId)` replay buffered `ChatTransportChunk` items before forwarding the resumed tail
-7. let `DefaultChatSession.resume()` rebuild the assistant turn from replay instead of trying to continue from a partial UI snapshot
+The original phase-1 steps in this section are now implemented.
+
+Current runtime status:
+
+1. `TextStreamEventJsonCodec` exists
+2. `HttpChatTransport` request and chunk codecs exist
+3. SSE decoding exists in `HttpChatTransport`
+4. checkpoint, keepalive, and transport-finish markers remain transport-local
+5. the transport now keeps replayable runtime `ChatUiStreamChunk` items rather
+   than older transport-owned wrapper chunks
+6. `reconnect(chatId)` now replays buffered runtime chunks before forwarding
+   the resumed tail
+7. `DefaultChatSession` now consumes the shared runtime chunk layer instead of
+   transport-owned event/data wrappers
+8. `llm_dart_transport` now also owns the protocol codecs plus a pure-Dart
+   backend reference adapter for runtime-chunk and SSE encoding
 
 ## 8. Deferred Question
 

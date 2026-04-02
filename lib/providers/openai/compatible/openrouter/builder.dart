@@ -2,6 +2,7 @@ import '../../../../builder/llm_builder.dart';
 import '../../../../core/capability.dart';
 import '../../../../core/web_search.dart';
 import '../../../../src/config/legacy_config_keys.dart';
+import '../../../../src/config/legacy_provider_options.dart';
 
 /// OpenRouter-specific LLM builder with provider-specific configuration methods
 ///
@@ -55,7 +56,7 @@ class OpenRouterBuilder {
     String? searchPrompt,
     bool useOnlineShortcut = true,
   }) {
-    _baseBuilder.extension(
+    _setOpenRouterProviderOption(
       LegacyExtensionKeys.webSearchConfig,
       WebSearchConfig.openRouter(
         maxResults: maxResults,
@@ -84,7 +85,7 @@ class OpenRouterBuilder {
     'Use normal prompt shaping or the stable OpenRouter profile API instead.',
   )
   OpenRouterBuilder searchPrompt(String prompt) {
-    _baseBuilder.extension(LegacyExtensionKeys.searchPrompt, prompt);
+    _setOpenRouterProviderOption(LegacyExtensionKeys.searchPrompt, prompt);
     return this;
   }
 
@@ -108,7 +109,10 @@ class OpenRouterBuilder {
     'Use onlineSearch() or an explicit :online model ID instead.',
   )
   OpenRouterBuilder useOnlineShortcut(bool enabled) {
-    _baseBuilder.extension(LegacyExtensionKeys.useOnlineShortcut, enabled);
+    _setOpenRouterProviderOption(
+      LegacyExtensionKeys.useOnlineShortcut,
+      enabled,
+    );
     return this;
   }
 
@@ -123,7 +127,10 @@ class OpenRouterBuilder {
     'Use the stable OpenRouter profile API if a tested request contract lands later.',
   )
   OpenRouterBuilder maxSearchResults(int maxResults) {
-    _baseBuilder.extension(LegacyExtensionKeys.maxSearchResults, maxResults);
+    _setOpenRouterProviderOption(
+      LegacyExtensionKeys.maxSearchResults,
+      maxResults,
+    );
     return this;
   }
 
@@ -221,5 +228,16 @@ class OpenRouterBuilder {
   /// making model listing particularly useful for discovering available options.
   Future<ModelListingCapability> buildModelListing() async {
     return _baseBuilder.buildModelListing();
+  }
+
+  void _setOpenRouterProviderOption(String key, dynamic value) {
+    final providerOptions = setLegacyProviderOption(
+      _baseBuilder.currentConfig,
+      LegacyProviderOptionNamespaces.openrouter,
+      key,
+      value,
+    );
+
+    _baseBuilder.extension(legacyProviderOptionsBagKey, providerOptions);
   }
 }

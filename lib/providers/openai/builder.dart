@@ -2,6 +2,8 @@ import '../../builder/llm_builder.dart';
 import '../../core/capability.dart';
 import '../../core/web_search.dart';
 import '../../models/chat_models.dart';
+import '../../src/config/legacy_config_keys.dart';
+import '../../src/config/legacy_provider_options.dart';
 import 'builtin_tools.dart';
 import 'provider.dart';
 
@@ -31,7 +33,7 @@ class OpenAIBuilder {
   /// - Positive values: Discourage repetition
   /// - Range: -2.0 to 2.0
   OpenAIBuilder frequencyPenalty(double penalty) {
-    _baseBuilder.extension('frequencyPenalty', penalty);
+    _setOpenAIProviderOption(LegacyExtensionKeys.frequencyPenalty, penalty);
     return this;
   }
 
@@ -46,7 +48,7 @@ class OpenAIBuilder {
   /// - Positive values: Encourage new topics
   /// - Range: -2.0 to 2.0
   OpenAIBuilder presencePenalty(double penalty) {
-    _baseBuilder.extension('presencePenalty', penalty);
+    _setOpenAIProviderOption(LegacyExtensionKeys.presencePenalty, penalty);
     return this;
   }
 
@@ -60,7 +62,7 @@ class OpenAIBuilder {
   /// - 0: No bias (default)
   /// - 100: Token is strongly encouraged
   OpenAIBuilder logitBias(Map<String, double> bias) {
-    _baseBuilder.extension('logitBias', bias);
+    _setOpenAIProviderOption(LegacyExtensionKeys.logitBias, bias);
     return this;
   }
 
@@ -70,7 +72,7 @@ class OpenAIBuilder {
   /// deterministically, such that repeated requests with the same seed
   /// and parameters should return the same result.
   OpenAIBuilder seed(int seedValue) {
-    _baseBuilder.extension('seed', seedValue);
+    _setOpenAIProviderOption(LegacyExtensionKeys.seed, seedValue);
     return this;
   }
 
@@ -82,7 +84,7 @@ class OpenAIBuilder {
   /// - true: Enable parallel tool calls (default for newer models)
   /// - false: Disable parallel tool calls (sequential execution)
   OpenAIBuilder parallelToolCalls(bool enabled) {
-    _baseBuilder.extension('parallelToolCalls', enabled);
+    _setOpenAIProviderOption(LegacyExtensionKeys.parallelToolCalls, enabled);
     return this;
   }
 
@@ -91,7 +93,7 @@ class OpenAIBuilder {
   /// Whether to return log probabilities of the output tokens.
   /// If true, returns the log probabilities of each output token.
   OpenAIBuilder logprobs(bool enabled) {
-    _baseBuilder.extension('logprobs', enabled);
+    _setOpenAIProviderOption(LegacyExtensionKeys.logprobs, enabled);
     return this;
   }
 
@@ -103,7 +105,7 @@ class OpenAIBuilder {
   ///
   /// Range: 0-20
   OpenAIBuilder topLogprobs(int count) {
-    _baseBuilder.extension('topLogprobs', count);
+    _setOpenAIProviderOption(LegacyExtensionKeys.topLogprobs, count);
     return this;
   }
 
@@ -126,7 +128,7 @@ class OpenAIBuilder {
   ///     .build();
   /// ```
   OpenAIBuilder verbosity(Verbosity level) {
-    _baseBuilder.extension('verbosity', level.value);
+    _setOpenAIProviderOption(LegacyExtensionKeys.verbosity, level.value);
     return this;
   }
 
@@ -149,7 +151,7 @@ class OpenAIBuilder {
   ///     .build();
   /// ```
   OpenAIBuilder useResponsesAPI([bool use = true]) {
-    _baseBuilder.extension('useResponsesAPI', use);
+    _setOpenAIProviderOption(LegacyExtensionKeys.useResponsesApi, use);
     return this;
   }
 
@@ -158,7 +160,8 @@ class OpenAIBuilder {
   /// Used with Responses API to maintain context across multiple API calls.
   /// This allows for multi-turn conversations with state preservation.
   OpenAIBuilder previousResponseId(String responseId) {
-    _baseBuilder.extension('previousResponseId', responseId);
+    _setOpenAIProviderOption(
+        LegacyExtensionKeys.previousResponseId, responseId);
     return this;
   }
 
@@ -169,7 +172,7 @@ class OpenAIBuilder {
   OpenAIBuilder webSearchTool() {
     final tools = _getBuiltInTools();
     tools.add(OpenAIBuiltInTools.webSearch());
-    _baseBuilder.extension('builtInTools', tools);
+    _setOpenAIProviderOption(LegacyExtensionKeys.builtInTools, tools);
     return this;
   }
 
@@ -195,7 +198,7 @@ class OpenAIBuilder {
       vectorStoreIds: vectorStoreIds,
       parameters: parameters,
     ));
-    _baseBuilder.extension('builtInTools', tools);
+    _setOpenAIProviderOption(LegacyExtensionKeys.builtInTools, tools);
     return this;
   }
 
@@ -229,14 +232,17 @@ class OpenAIBuilder {
       environment: environment,
       parameters: parameters,
     ));
-    _baseBuilder.extension('builtInTools', tools);
+    _setOpenAIProviderOption(LegacyExtensionKeys.builtInTools, tools);
     return this;
   }
 
   /// Helper method to get or create built-in tools list
   List<OpenAIBuiltInTool> _getBuiltInTools() {
-    final existingTools = _baseBuilder.currentConfig
-        .getExtension<List<OpenAIBuiltInTool>>('builtInTools');
+    final existingTools = getLegacyProviderOption<List<OpenAIBuiltInTool>>(
+      _baseBuilder.currentConfig,
+      LegacyProviderOptionNamespaces.openai,
+      LegacyExtensionKeys.builtInTools,
+    );
     return existingTools != null
         ? List.from(existingTools)
         : <OpenAIBuiltInTool>[];
@@ -261,11 +267,12 @@ class OpenAIBuilder {
   OpenAIBuilder webSearch({
     WebSearchContextSize contextSize = WebSearchContextSize.medium,
   }) {
-    _baseBuilder.extension(
-        'webSearchConfig',
-        WebSearchConfig.openai(
-          contextSize: contextSize,
-        ));
+    _setOpenAIProviderOption(
+      LegacyExtensionKeys.webSearchConfig,
+      WebSearchConfig.openai(
+        contextSize: contextSize,
+      ),
+    );
     return this;
   }
 
@@ -398,9 +405,12 @@ class OpenAIBuilder {
   /// always support `LLMCapability.openaiResponses`.
   Future<OpenAIProvider> buildOpenAIResponses() async {
     // Automatically enable Responses API if not already enabled
-    final isResponsesAPIEnabled =
-        _baseBuilder.currentConfig.getExtension<bool>('useResponsesAPI') ??
-            false;
+    final isResponsesAPIEnabled = getLegacyProviderOption<bool>(
+          _baseBuilder.currentConfig,
+          LegacyProviderOptionNamespaces.openai,
+          LegacyExtensionKeys.useResponsesApi,
+        ) ??
+        false;
     if (!isResponsesAPIEnabled) {
       useResponsesAPI(true);
     }
@@ -421,5 +431,16 @@ class OpenAIBuilder {
     }
 
     return provider;
+  }
+
+  void _setOpenAIProviderOption(String key, dynamic value) {
+    final providerOptions = setLegacyProviderOption(
+      _baseBuilder.currentConfig,
+      LegacyProviderOptionNamespaces.openai,
+      key,
+      value,
+    );
+
+    _baseBuilder.extension(legacyProviderOptionsBagKey, providerOptions);
   }
 }

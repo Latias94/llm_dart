@@ -81,6 +81,7 @@ final class OpenAIImageModel implements ImageModel {
                 .value,
         },
         timeout: request.callOptions.timeout,
+        cancellation: request.callOptions.cancellation,
         responseType: TransportResponseType.json,
       ),
     );

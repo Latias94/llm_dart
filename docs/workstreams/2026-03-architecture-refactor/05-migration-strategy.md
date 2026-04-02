@@ -79,7 +79,8 @@ Goals:
 
 Goals:
 
-- establish `llm_dart_flutter`
+- establish `llm_dart_chat`
+- keep `llm_dart_flutter` as the thin Flutter adapter
 - implement `ChatSession`, `ChatTransport`, and `ChatState`
 - provide both direct and HTTP transport
 

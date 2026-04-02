@@ -34,6 +34,8 @@ final class ChatMappedMessage {
   final ProviderMetadata? responseProviderMetadata;
   final FinishReason? finishReason;
   final String? rawFinishReason;
+  final bool isAborted;
+  final String? abortReason;
   final UsageStats? usage;
   final ProviderMetadata? finishProviderMetadata;
   final List<ModelError> errors;
@@ -61,6 +63,8 @@ final class ChatMappedMessage {
     required this.responseProviderMetadata,
     required this.finishReason,
     required this.rawFinishReason,
+    required this.isAborted,
+    required this.abortReason,
     required this.usage,
     required this.finishProviderMetadata,
     required this.errors,
@@ -133,6 +137,8 @@ final class ChatMessageMapper {
     }
 
     final metadata = message.metadata;
+    final isAborted = _asBool(metadata[ChatUiMetadataKeys.isAborted]) ??
+        metadata[ChatUiMetadataKeys.finishReason] == FinishReason.aborted;
 
     return ChatMappedMessage(
       message: message,
@@ -160,6 +166,11 @@ final class ChatMessageMapper {
               as ProviderMetadata?,
       finishReason: metadata[ChatUiMetadataKeys.finishReason] as FinishReason?,
       rawFinishReason: _asString(metadata[ChatUiMetadataKeys.rawFinishReason]),
+      isAborted: isAborted,
+      abortReason: isAborted
+          ? (_asString(metadata[ChatUiMetadataKeys.abortReason]) ??
+              _asString(metadata[ChatUiMetadataKeys.rawFinishReason]))
+          : null,
       usage: metadata[ChatUiMetadataKeys.usage] as UsageStats?,
       finishProviderMetadata:
           metadata[ChatUiMetadataKeys.finishProviderMetadata]
@@ -174,6 +185,8 @@ final class ChatMessageMapper {
   }
 
   static String? _asString(Object? value) => value is String ? value : null;
+
+  static bool? _asBool(Object? value) => value is bool ? value : null;
 
   static List<ModelWarning> _warnings(Object? value) {
     if (value is! List) {

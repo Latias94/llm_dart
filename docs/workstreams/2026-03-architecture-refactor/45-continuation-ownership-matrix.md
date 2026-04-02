@@ -123,7 +123,7 @@ That includes:
 Ownership rule:
 
 - provider packages own provider-specific approval wire details
-- `llm_dart_flutter` owns chat-session continuation timing for interactive
+- `llm_dart_chat` owns chat-session continuation timing for interactive
   approval and local tool output flows
 - non-Flutter apps may implement approval handling above the shared runner, but
   not inside it
@@ -148,12 +148,15 @@ Why:
 
 ## Flutter Session Convenience
 
-`llm_dart_flutter` may continue to offer local convenience above the shared
+`llm_dart_chat` may continue to offer local convenience above the shared
 runner boundary, such as:
 
 - local tool registries
 - automatic client-side tool callbacks
 - step-completion logic that waits for all local outputs or approvals
+
+`llm_dart_flutter` may then wrap that runtime with `ValueNotifier`-style UI
+adapters when a Flutter app wants widget-facing state integration.
 
 But that convenience must not:
 

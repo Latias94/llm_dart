@@ -3,16 +3,42 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 typedef _JsonMap = Map<String, Object?>;
 typedef _JsonList = List<Object?>;
 
+enum HttpChatTransportStreamProtocol {
+  eventStreamV1('event-stream-v1'),
+  uiMessageStreamV2('ui-message-stream-v2');
+
+  final String wireValue;
+
+  const HttpChatTransportStreamProtocol(this.wireValue);
+
+  static HttpChatTransportStreamProtocol decode(
+    String value, {
+    required String path,
+  }) {
+    for (final protocol in values) {
+      if (protocol.wireValue == value) {
+        return protocol;
+      }
+    }
+
+    throw FormatException(
+      'Unsupported HTTP chat transport stream protocol "$value" at $path.',
+    );
+  }
+}
+
 final class HttpChatTransportRequestPayload {
   final String chatId;
   final List<PromptMessage> prompt;
   final GenerateTextOptions generateOptions;
+  final HttpChatTransportStreamProtocol streamProtocol;
   final Map<String, Object?> metadata;
 
   HttpChatTransportRequestPayload({
     required this.chatId,
     required List<PromptMessage> prompt,
     this.generateOptions = const GenerateTextOptions(),
+    this.streamProtocol = HttpChatTransportStreamProtocol.uiMessageStreamV2,
     Map<String, Object?> metadata = const {},
   })  : prompt = List.unmodifiable(prompt),
         metadata = Map.unmodifiable(
@@ -23,11 +49,13 @@ final class HttpChatTransportRequestPayload {
 final class HttpChatTransportReconnectRequestPayload {
   final String chatId;
   final String resumeToken;
+  final HttpChatTransportStreamProtocol streamProtocol;
   final Map<String, Object?> metadata;
 
   HttpChatTransportReconnectRequestPayload({
     required this.chatId,
     required this.resumeToken,
+    this.streamProtocol = HttpChatTransportStreamProtocol.uiMessageStreamV2,
     Map<String, Object?> metadata = const {},
   }) : metadata = Map.unmodifiable(
           _ensureJsonMap(metadata, path: r'$.metadata'),
@@ -52,6 +80,7 @@ final class HttpChatTransportRequestJsonCodec {
         'chatId': request.chatId,
         'prompt': promptCodec.encodeMessages(request.prompt),
         'generateOptions': _encodeGenerateTextOptions(request.generateOptions),
+        'streamProtocol': request.streamProtocol.wireValue,
         if (request.metadata.isNotEmpty) 'metadata': request.metadata,
       },
     };
@@ -74,6 +103,16 @@ final class HttpChatTransportRequestJsonCodec {
         data['generateOptions'],
         path: r'$.data.generateOptions',
       ),
+      streamProtocol: switch (_asNullableJsonString(
+        data['streamProtocol'],
+        path: r'$.data.streamProtocol',
+      )) {
+        final String value => HttpChatTransportStreamProtocol.decode(
+            value,
+            path: r'$.data.streamProtocol',
+          ),
+        null => HttpChatTransportStreamProtocol.eventStreamV1,
+      },
       metadata: data['metadata'] == null
           ? const {}
           : _asJsonMap(data['metadata'], path: r'$.data.metadata'),
@@ -89,6 +128,7 @@ final class HttpChatTransportRequestJsonCodec {
       'data': {
         'chatId': request.chatId,
         'resumeToken': request.resumeToken,
+        'streamProtocol': request.streamProtocol.wireValue,
         if (request.metadata.isNotEmpty) 'metadata': request.metadata,
       },
     };
@@ -110,6 +150,16 @@ final class HttpChatTransportRequestJsonCodec {
       chatId: _asJsonString(data['chatId'], path: r'$.data.chatId'),
       resumeToken:
           _asJsonString(data['resumeToken'], path: r'$.data.resumeToken'),
+      streamProtocol: switch (_asNullableJsonString(
+        data['streamProtocol'],
+        path: r'$.data.streamProtocol',
+      )) {
+        final String value => HttpChatTransportStreamProtocol.decode(
+            value,
+            path: r'$.data.streamProtocol',
+          ),
+        null => HttpChatTransportStreamProtocol.eventStreamV1,
+      },
       metadata: data['metadata'] == null
           ? const {}
           : _asJsonMap(data['metadata'], path: r'$.data.metadata'),
@@ -165,6 +215,16 @@ sealed class HttpChatTransportChunk {
   const HttpChatTransportChunk();
 }
 
+final class HttpChatTransportTransportStartChunk extends HttpChatTransportChunk {
+  final String? requestId;
+  final String? resumeToken;
+
+  const HttpChatTransportTransportStartChunk({
+    this.requestId,
+    this.resumeToken,
+  });
+}
+
 final class HttpChatTransportStartChunk extends HttpChatTransportChunk {
   final String? requestId;
   final String? messageId;
@@ -175,6 +235,29 @@ final class HttpChatTransportStartChunk extends HttpChatTransportChunk {
     this.messageId,
     this.resumeToken,
   });
+}
+
+final class HttpChatTransportMessageStartChunk extends HttpChatTransportChunk {
+  final String messageId;
+  final Map<String, Object?> metadata;
+
+  HttpChatTransportMessageStartChunk({
+    required this.messageId,
+    Map<String, Object?> metadata = const {},
+  }) : metadata = Map.unmodifiable(
+          _ensureJsonMap(metadata, path: r'$.metadata'),
+        );
+}
+
+final class HttpChatTransportMessageMetadataChunk
+    extends HttpChatTransportChunk {
+  final Map<String, Object?> metadata;
+
+  HttpChatTransportMessageMetadataChunk({
+    required Map<String, Object?> metadata,
+  }) : metadata = Map.unmodifiable(
+          _ensureJsonMap(metadata, path: r'$.metadata'),
+        );
 }
 
 final class HttpChatTransportEventChunk extends HttpChatTransportChunk {
@@ -201,6 +284,16 @@ final class HttpChatTransportCheckpointChunk extends HttpChatTransportChunk {
 
 final class HttpChatTransportFinishChunk extends HttpChatTransportChunk {
   const HttpChatTransportFinishChunk();
+}
+
+final class HttpChatTransportMessageFinishChunk extends HttpChatTransportChunk {
+  final Map<String, Object?> metadata;
+
+  HttpChatTransportMessageFinishChunk({
+    Map<String, Object?> metadata = const {},
+  }) : metadata = Map.unmodifiable(
+          _ensureJsonMap(metadata, path: r'$.metadata'),
+        );
 }
 
 final class HttpChatTransportAbortChunk extends HttpChatTransportChunk {
@@ -238,6 +331,15 @@ final class HttpChatTransportChunkJsonCodec {
 
   Map<String, Object?> encodeChunk(HttpChatTransportChunk chunk) {
     final data = switch (chunk) {
+      HttpChatTransportTransportStartChunk(
+        :final requestId,
+        :final resumeToken,
+      ) =>
+        {
+          'type': 'transport-start',
+          if (requestId != null) 'requestId': requestId,
+          if (resumeToken != null) 'resumeToken': resumeToken,
+        },
       HttpChatTransportStartChunk(
         :final requestId,
         :final messageId,
@@ -248,6 +350,19 @@ final class HttpChatTransportChunkJsonCodec {
           if (requestId != null) 'requestId': requestId,
           if (messageId != null) 'messageId': messageId,
           if (resumeToken != null) 'resumeToken': resumeToken,
+        },
+      HttpChatTransportMessageStartChunk(
+        :final messageId,
+        :final metadata,
+      ) =>
+        {
+          'type': 'message-start',
+          'messageId': messageId,
+          if (metadata.isNotEmpty) 'metadata': metadata,
+        },
+      HttpChatTransportMessageMetadataChunk(:final metadata) => {
+          'type': 'message-metadata',
+          'metadata': metadata,
         },
       HttpChatTransportEventChunk(:final event) => {
           'type': 'event',
@@ -272,6 +387,10 @@ final class HttpChatTransportChunkJsonCodec {
         },
       HttpChatTransportFinishChunk() => {
           'type': 'finish',
+        },
+      HttpChatTransportMessageFinishChunk(:final metadata) => {
+          'type': 'message-finish',
+          if (metadata.isNotEmpty) 'metadata': metadata,
         },
       HttpChatTransportAbortChunk(:final reason) => {
           'type': 'abort',
@@ -314,6 +433,16 @@ final class HttpChatTransportChunkJsonCodec {
     final type = _asJsonString(data['type'], path: r'$.data.type');
 
     return switch (type) {
+      'transport-start' => HttpChatTransportTransportStartChunk(
+          requestId: _asNullableJsonString(
+            data['requestId'],
+            path: r'$.data.requestId',
+          ),
+          resumeToken: _asNullableJsonString(
+            data['resumeToken'],
+            path: r'$.data.resumeToken',
+          ),
+        ),
       'start' => HttpChatTransportStartChunk(
           requestId: _asNullableJsonString(
             data['requestId'],
@@ -328,6 +457,15 @@ final class HttpChatTransportChunkJsonCodec {
             path: r'$.data.resumeToken',
           ),
         ),
+      'message-start' => HttpChatTransportMessageStartChunk(
+          messageId: _asJsonString(data['messageId'], path: r'$.data.messageId'),
+          metadata: data['metadata'] == null
+              ? const {}
+              : _asJsonMap(data['metadata'], path: r'$.data.metadata'),
+        ),
+      'message-metadata' => HttpChatTransportMessageMetadataChunk(
+          metadata: _asJsonMap(data['metadata'], path: r'$.data.metadata'),
+        ),
       'event' => HttpChatTransportEventChunk(
           eventCodec.decodeEvent(data['event'], path: r'$.data.event'),
         ),
@@ -340,6 +478,11 @@ final class HttpChatTransportChunkJsonCodec {
           cursor: _asNullableJsonString(data['cursor'], path: r'$.data.cursor'),
         ),
       'finish' => const HttpChatTransportFinishChunk(),
+      'message-finish' => HttpChatTransportMessageFinishChunk(
+          metadata: data['metadata'] == null
+              ? const {}
+              : _asJsonMap(data['metadata'], path: r'$.data.metadata'),
+        ),
       'abort' => HttpChatTransportAbortChunk(
           reason: _asNullableJsonString(data['reason'], path: r'$.data.reason'),
         ),

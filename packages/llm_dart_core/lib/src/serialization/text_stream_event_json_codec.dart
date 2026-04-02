@@ -281,6 +281,10 @@ final class TextStreamEventJsonCodec {
           if (providerMetadata != null)
             'providerMetadata': _encodeProviderMetadata(providerMetadata),
         },
+      AbortEvent(:final reason) => {
+          'type': 'abort',
+          if (reason != null) 'reason': reason,
+        },
       CustomEvent(
         :final kind,
         :final data,
@@ -504,6 +508,9 @@ final class TextStreamEventJsonCodec {
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
+        ),
+      'abort' => AbortEvent(
+          reason: asNullableJsonString(map['reason'], path: '$path.reason'),
         ),
       'custom' => CustomEvent(
           kind: asJsonString(map['kind'], path: '$path.kind'),

@@ -2,6 +2,9 @@
 
 Real-time web search and live information access with Grok.
 
+New code should prefer the stable `AI.xai(...).chatModel(...)` facade plus
+typed xAI provider options from `package:llm_dart/openai.dart`.
+
 ## Examples
 
 ### [live_search.dart](live_search.dart)
@@ -32,28 +35,54 @@ dart run live_search.dart
 
 ### Live Search Query
 ```dart
-final provider = await ai().xai().apiKey('your-key')
-    .model('grok-3').build();
+import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/openai.dart' as openai;
 
-final response = await provider.chat([
-  ChatMessage.user('What are the latest AI developments this week?'),
-]);
+final model = llm.AI.xai(apiKey: 'your-key').chatModel('grok-3');
 
-// Grok automatically includes live search results
-print('Current info: ${response.text}');
+final result = await core.generateTextCall(
+  model: model,
+  prompt: [
+    core.UserPromptMessage.text('What are the latest AI developments this week?'),
+  ],
+  callOptions: const core.CallOptions(
+    providerOptions: openai.XAIGenerateTextOptions(
+      search: openai.XAILiveSearchOptions.autoWeb(maxSearchResults: 5),
+    ),
+  ),
+);
+
+print(result.text);
 ```
 
 ### Real-time Data Access
 ```dart
-final provider = await ai().xai().apiKey('your-key')
-    .model('grok-3').build();
+import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/openai.dart' as openai;
 
-final response = await provider.chat([
-  ChatMessage.user('Current Bitcoin price and market trends'),
-]);
+final model = llm.AI.xai(apiKey: 'your-key').chatModel('grok-3');
 
-// Live financial data integrated automatically
-print('Live data: ${response.text}');
+final result = await core.generateTextCall(
+  model: model,
+  prompt: [
+    core.UserPromptMessage.text('Current Bitcoin price and market trends'),
+  ],
+  callOptions: const core.CallOptions(
+    providerOptions: openai.XAIGenerateTextOptions(
+      search: const openai.XAILiveSearchOptions(
+        maxSearchResults: 4,
+        sources: [
+          openai.XAINewsSearchSource(),
+          openai.XAIWebSearchSource(),
+        ],
+      ),
+    ),
+  ),
+);
+
+print(result.text);
 ```
 
 ## Next Steps

@@ -1,5 +1,5 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
-import 'package:llm_dart_flutter/llm_dart_flutter.dart';
+import 'package:llm_dart_chat/llm_dart_chat.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -84,6 +84,8 @@ void main() {
           }),
           ChatUiMetadataKeys.finishReason: FinishReason.stop,
           ChatUiMetadataKeys.rawFinishReason: 'STOP',
+          ChatUiMetadataKeys.isAborted: false,
+          ChatUiMetadataKeys.abortReason: null,
           ChatUiMetadataKeys.usage: const UsageStats(
             inputTokens: 10,
             outputTokens: 5,
@@ -134,6 +136,8 @@ void main() {
       );
       expect(mapped.finishReason, FinishReason.stop);
       expect(mapped.rawFinishReason, 'STOP');
+      expect(mapped.isAborted, isFalse);
+      expect(mapped.abortReason, isNull);
       expect(mapped.usage!.totalTokens, 15);
       expect(
         mapped.finishProviderMetadata!.namespace('openai'),
@@ -177,6 +181,8 @@ void main() {
       expect(mapped.first.errors, isEmpty);
       expect(mapped.last.reasoningText, 'Thinking');
       expect(mapped.last.responseId, isNull);
+      expect(mapped.last.isAborted, isFalse);
+      expect(mapped.last.abortReason, isNull);
     });
   });
 }

@@ -92,7 +92,8 @@ If a step contains several provider-executed approvals:
 This keeps responsibilities honest:
 
 - `llm_dart_core` models tool semantics
-- `llm_dart_flutter` models chat-session orchestration
+- `llm_dart_chat` models chat-session orchestration
+- `llm_dart_flutter` adds Flutter-specific adapters above that runtime
 - provider packages keep owning provider-native tool wire details
 
 It also matches how Flutter applications actually behave:
@@ -106,8 +107,9 @@ It also matches how Flutter applications actually behave:
 This freeze does not require a hooks-style API like `repo-ref/ai`.
 
 If the repository later adds convenience helpers such as automatic local tool
-callbacks, those helpers should still live in `llm_dart_flutter` above the
-current session boundary.
+callbacks, those helpers should still live in `llm_dart_chat` above the
+current session boundary, with any Flutter-specific wrappers staying in
+`llm_dart_flutter`.
 
 They should not widen:
 

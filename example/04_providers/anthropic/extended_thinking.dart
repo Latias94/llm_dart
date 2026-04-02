@@ -1,24 +1,24 @@
 // ignore_for_file: avoid_print
+
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart/anthropic.dart' as anthropic;
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/llm_dart.dart' as llm;
 
 /// 🟣 Anthropic Extended Thinking - Access Claude's Reasoning Process
 ///
-/// This example demonstrates Claude's advanced thinking capabilities:
-/// - Accessing the thinking process
-/// - Step-by-step reasoning
-/// - Complex problem solving
-/// - Transparent decision making
+/// This example demonstrates Claude's extended-thinking capabilities through
+/// the stable `AI.anthropic(...).chatModel(...)` API plus typed Anthropic
+/// provider options.
 ///
 /// Before running, set your API key:
 /// export ANTHROPIC_API_KEY="your-anthropic-api-key"
-void main() async {
+Future<void> main() async {
   print('🟣 Anthropic Extended Thinking - Claude\'s Reasoning Process\n');
 
-  // Get API key
   final apiKey = Platform.environment['ANTHROPIC_API_KEY'] ?? 'sk-ant-TESTKEY';
 
-  // Demonstrate Claude's thinking capabilities
   await demonstrateBasicThinking(apiKey);
   await demonstrateComplexReasoning(apiKey);
   await demonstrateStreamingThinking(apiKey);
@@ -28,36 +28,32 @@ void main() async {
   print('\n✅ Anthropic extended thinking completed!');
 }
 
-/// Demonstrate basic thinking process
 Future<void> demonstrateBasicThinking(String apiKey) async {
   print('🧠 Basic Thinking Process:\n');
 
   try {
-    // Use Claude Sonnet 4 for thinking capabilities
-    final provider = await ai()
-        .anthropic()
-        .apiKey(apiKey)
-        .model('claude-sonnet-4-20250514')
-        .temperature(0.3) // Lower for more focused thinking
-        .maxTokens(1500)
-        .build();
-
-    final response = await provider.chat([
-      ChatMessage.user('''
+    final model = _createAnthropicModel(apiKey);
+    final response = await _generateThinkingText(
+      model: model,
+      prompt: [
+        core.UserPromptMessage.text('''
 I have a 3-gallon jug and a 5-gallon jug. I need to measure exactly 4 gallons of water.
 How can I do this? Please show your thinking process step by step.
-''')
-    ]);
+'''),
+      ],
+      maxOutputTokens: 1500,
+    );
 
     print(
-        '   Problem: Water jug puzzle (3-gallon and 5-gallon jugs, measure 4 gallons)');
-    print('   Model: claude-sonnet-4-20250514');
+      '   Problem: Water jug puzzle (3-gallon and 5-gallon jugs, measure 4 gallons)',
+    );
+    print('   Model: claude-sonnet-4-5');
 
-    // Show the thinking process if available
-    if (response.thinking != null && response.thinking!.isNotEmpty) {
+    final reasoning = response.reasoningText;
+    if (reasoning != null && reasoning.isNotEmpty) {
       print('\n   🧠 Claude\'s Thinking Process:');
       print('   ${'-' * 50}');
-      print('   ${response.thinking}');
+      print('   $reasoning');
       print('   ${'-' * 50}');
     }
 
@@ -69,25 +65,17 @@ How can I do this? Please show your thinking process step by step.
     }
 
     print('   ✅ Basic thinking demonstration completed\n');
-  } catch (e) {
-    print('   ❌ Basic thinking failed: $e\n');
+  } catch (error) {
+    print('   ❌ Basic thinking failed: $error\n');
   }
 }
 
-/// Demonstrate complex reasoning
 Future<void> demonstrateComplexReasoning(String apiKey) async {
   print('🔬 Complex Reasoning:\n');
 
   try {
-    final provider = await ai()
-        .anthropic()
-        .apiKey(apiKey)
-        .model('claude-sonnet-4-20250514')
-        .temperature(0.2) // Even lower for analytical tasks
-        .maxTokens(2000)
-        .build();
-
-    final complexProblem = '''
+    final model = _createAnthropicModel(apiKey);
+    const complexProblem = '''
 A company is considering two investment options:
 
 Option A: Invest \$100,000 now, receive \$15,000 per year for 10 years
@@ -98,21 +86,28 @@ Assuming a discount rate of 8%, which option is better?
 Please show all calculations and reasoning.
 ''';
 
-    final response = await provider.chat([ChatMessage.user(complexProblem)]);
+    final response = await _generateThinkingText(
+      model: model,
+      prompt: [
+        core.UserPromptMessage.text(complexProblem),
+      ],
+      maxOutputTokens: 2000,
+      thinkingBudgetTokens: 3072,
+    );
 
     print('   Problem: Investment analysis with NPV calculations');
 
-    if (response.thinking != null && response.thinking!.isNotEmpty) {
+    final reasoning = response.reasoningText;
+    if (reasoning != null && reasoning.isNotEmpty) {
       print('\n   🧠 Claude\'s Analytical Process:');
       print('   ${'-' * 60}');
-      // Show first part of thinking to avoid too much output
-      final thinking = response.thinking!;
-      if (thinking.length > 500) {
-        print('   ${thinking.substring(0, 500)}...');
+      if (reasoning.length > 500) {
+        print('   ${reasoning.substring(0, 500)}...');
         print(
-            '   [Thinking process continues for ${thinking.length} total characters]');
+          '   [Thinking process continues for ${reasoning.length} total characters]',
+        );
       } else {
-        print('   $thinking');
+        print('   $reasoning');
       }
       print('   ${'-' * 60}');
     }
@@ -121,33 +116,28 @@ Please show all calculations and reasoning.
     print('   ${response.text}');
 
     print('   ✅ Complex reasoning demonstration completed\n');
-  } catch (e) {
-    print('   ❌ Complex reasoning failed: $e\n');
+  } catch (error) {
+    print('   ❌ Complex reasoning failed: $error\n');
   }
 }
 
-/// Demonstrate streaming thinking
 Future<void> demonstrateStreamingThinking(String apiKey) async {
   print('🌊 Streaming Thinking Process:\n');
 
   try {
-    final provider = await ai()
-        .anthropic()
-        .apiKey(apiKey)
-        .model('claude-sonnet-4-20250514')
-        .temperature(0.4)
-        .maxTokens(1500)
-        .build();
+    final model = _createAnthropicModel(apiKey);
 
     print('   Problem: Logic puzzle with real-time thinking');
     print('   Watching Claude think in real-time...\n');
 
-    var thinkingContent = StringBuffer();
-    var responseContent = StringBuffer();
+    final thinkingContent = StringBuffer();
+    final responseContent = StringBuffer();
     var isThinking = true;
 
-    await for (final event in provider.chatStream([
-      ChatMessage.user('''
+    final stream = core.streamTextCall(
+      model: model,
+      prompt: [
+        core.UserPromptMessage.text('''
 Five friends (Alice, Bob, Carol, David, Eve) are sitting in a row.
 - Alice is not at either end
 - Bob is somewhere to the left of Carol
@@ -155,15 +145,23 @@ Five friends (Alice, Bob, Carol, David, Eve) are sitting in a row.
 - Carol is not next to Alice
 
 What is the seating arrangement? Show your reasoning.
-''')
-    ])) {
+'''),
+      ],
+      options: const core.GenerateTextOptions(
+        maxOutputTokens: 1500,
+      ),
+      callOptions: _thinkingCallOptions(
+        thinkingBudgetTokens: 3072,
+        interleavedThinking: true,
+      ),
+    );
+
+    await for (final event in stream) {
       switch (event) {
-        case ThinkingDeltaEvent(delta: final delta):
+        case core.ReasoningDeltaEvent(:final delta):
           thinkingContent.write(delta);
-          // Print thinking in gray color
           stdout.write('\x1B[90m$delta\x1B[0m');
-          break;
-        case TextDeltaEvent(delta: final delta):
+        case core.TextDeltaEvent(:final delta):
           if (isThinking) {
             print('\n\n   🎯 Claude\'s Final Answer:');
             print('   ${'-' * 40}');
@@ -171,47 +169,35 @@ What is the seating arrangement? Show your reasoning.
           }
           responseContent.write(delta);
           stdout.write(delta);
-          break;
-        case CompletionEvent(response: final response):
+        case core.FinishEvent(:final usage):
           print('\n   ${'-' * 40}');
           print('\n   ✅ Streaming thinking completed!');
 
-          if (response.usage != null) {
-            print('   📊 Usage: ${response.usage!.totalTokens} tokens');
+          if (usage != null) {
+            print('   📊 Usage: ${usage.totalTokens} tokens');
           }
 
           print('   🧠 Thinking length: ${thinkingContent.length} characters');
           print('   📝 Response length: ${responseContent.length} characters');
-          break;
-        case ErrorEvent(error: final error):
+        case core.ErrorEvent(:final error):
           print('\n   ❌ Stream error: $error');
-          break;
-        case ToolCallDeltaEvent():
-          // Handle tool call events if needed
+        default:
           break;
       }
     }
 
     print('   ✅ Streaming thinking demonstration completed\n');
-  } catch (e) {
-    print('   ❌ Streaming thinking failed: $e\n');
+  } catch (error) {
+    print('   ❌ Streaming thinking failed: $error\n');
   }
 }
 
-/// Demonstrate ethical reasoning
 Future<void> demonstrateEthicalReasoning(String apiKey) async {
   print('⚖️  Ethical Reasoning:\n');
 
   try {
-    final provider = await ai()
-        .anthropic()
-        .apiKey(apiKey)
-        .model('claude-sonnet-4-20250514')
-        .temperature(0.3)
-        .maxTokens(1500)
-        .build();
-
-    final ethicalDilemma = '''
+    final model = _createAnthropicModel(apiKey);
+    const ethicalDilemma = '''
 A self-driving car's AI must make a split-second decision:
 - Straight ahead: Hit 3 elderly pedestrians who jaywalked
 - Swerve left: Hit 1 child who is legally crossing
@@ -221,17 +207,23 @@ What should the AI decide? Consider multiple ethical frameworks
 and show your reasoning process.
 ''';
 
-    final response = await provider.chat([ChatMessage.user(ethicalDilemma)]);
+    final response = await _generateThinkingText(
+      model: model,
+      prompt: [
+        core.UserPromptMessage.text(ethicalDilemma),
+      ],
+      maxOutputTokens: 1500,
+      thinkingBudgetTokens: 3072,
+    );
 
     print('   Dilemma: Autonomous vehicle ethical decision making');
 
-    if (response.thinking != null && response.thinking!.isNotEmpty) {
+    final reasoning = response.reasoningText;
+    if (reasoning != null && reasoning.isNotEmpty) {
       print('\n   🧠 Claude\'s Ethical Reasoning:');
       print('   ${'-' * 50}');
-      // Show key parts of ethical thinking
-      final thinking = response.thinking!;
-      final lines = thinking.split('\n');
-      var importantLines = <String>[];
+      final lines = reasoning.split('\n');
+      final importantLines = <String>[];
 
       for (final line in lines) {
         final lowerLine = line.toLowerCase();
@@ -250,10 +242,12 @@ and show your reasoning process.
         }
         if (importantLines.length > 5) {
           print(
-              '   ... [${importantLines.length - 5} more ethical considerations]');
+            '   ... [${importantLines.length - 5} more ethical considerations]',
+          );
         }
       } else {
-        print('   ${thinking.substring(0, 400)}...');
+        final previewLength = reasoning.length > 400 ? 400 : reasoning.length;
+        print('   ${reasoning.substring(0, previewLength)}...');
       }
       print('   ${'-' * 50}');
     }
@@ -262,25 +256,17 @@ and show your reasoning process.
     print('   ${response.text}');
 
     print('   ✅ Ethical reasoning demonstration completed\n');
-  } catch (e) {
-    print('   ❌ Ethical reasoning failed: $e\n');
+  } catch (error) {
+    print('   ❌ Ethical reasoning failed: $error\n');
   }
 }
 
-/// Demonstrate comparative analysis
 Future<void> demonstrateComparativeAnalysis(String apiKey) async {
   print('📊 Comparative Analysis:\n');
 
   try {
-    final provider = await ai()
-        .anthropic()
-        .apiKey(apiKey)
-        .model('claude-sonnet-4-20250514')
-        .temperature(0.3)
-        .maxTokens(2000)
-        .build();
-
-    final analysisTask = '''
+    final model = _createAnthropicModel(apiKey);
+    const analysisTask = '''
 Compare and contrast three programming paradigms:
 1. Object-Oriented Programming (OOP)
 2. Functional Programming (FP)
@@ -295,70 +281,121 @@ For each paradigm, analyze:
 Provide a comprehensive comparison with examples.
 ''';
 
-    final response = await provider.chat([ChatMessage.user(analysisTask)]);
+    final response = await _generateThinkingText(
+      model: model,
+      prompt: [
+        core.UserPromptMessage.text(analysisTask),
+      ],
+      maxOutputTokens: 2000,
+      thinkingBudgetTokens: 4096,
+    );
 
     print('   Task: Programming paradigms comparative analysis');
 
-    if (response.thinking != null && response.thinking!.isNotEmpty) {
+    final reasoning = response.reasoningText;
+    if (reasoning != null && reasoning.isNotEmpty) {
       print('\n   🧠 Claude\'s Analytical Process:');
       print('   ${'-' * 55}');
 
-      // Extract key analytical points
-      final thinking = response.thinking!;
-      final sections = thinking.split('\n\n');
-      var analyticalSections = <String>[];
+      final sections = reasoning.split('\n\n');
+      final analyticalSections = <String>[];
 
       for (final section in sections) {
-        if (section.toLowerCase().contains('compare') ||
-            section.toLowerCase().contains('contrast') ||
-            section.toLowerCase().contains('analyze') ||
-            section.toLowerCase().contains('consider') ||
-            section.toLowerCase().contains('structure')) {
+        final normalized = section.toLowerCase();
+        if (normalized.contains('compare') ||
+            normalized.contains('contrast') ||
+            normalized.contains('analyze') ||
+            normalized.contains('consider') ||
+            normalized.contains('structure')) {
           analyticalSections.add(section.trim());
         }
       }
 
       if (analyticalSections.isNotEmpty) {
         for (final section in analyticalSections.take(3)) {
-          print(
-              '   ${section.substring(0, section.length > 200 ? 200 : section.length)}...');
+          final previewLength = section.length > 200 ? 200 : section.length;
+          print('   ${section.substring(0, previewLength)}...');
           print('');
         }
         if (analyticalSections.length > 3) {
           print(
-              '   ... [${analyticalSections.length - 3} more analytical sections]');
+            '   ... [${analyticalSections.length - 3} more analytical sections]',
+          );
         }
       } else {
-        print('   ${thinking.substring(0, 600)}...');
+        final previewLength = reasoning.length > 600 ? 600 : reasoning.length;
+        print('   ${reasoning.substring(0, previewLength)}...');
       }
       print('   ${'-' * 55}');
     }
 
     print('\n   🎯 Comparative Analysis:');
-    // Show first part of the analysis
-    final analysisText = response.text ?? '';
+    final analysisText = response.text;
     if (analysisText.length > 800) {
       print('   ${analysisText.substring(0, 800)}...');
       print(
-          '   [Analysis continues for ${analysisText.length} total characters]');
+        '   [Analysis continues for ${analysisText.length} total characters]',
+      );
     } else {
       print('   $analysisText');
     }
 
     print('\n   💡 Analysis Quality Indicators:');
-    final text = response.text?.toLowerCase() ?? '';
+    final text = analysisText.toLowerCase();
     print(
-        '      • Structured comparison: ${text.contains('compare') ? '✅' : '❌'}');
-    print('      • Examples provided: ${text.contains('example') ? '✅' : '❌'}');
+      '      • Structured comparison: ${text.contains('compare') ? '✅' : '❌'}',
+    );
     print(
-        '      • Pros/cons analysis: ${text.contains('advantage') || text.contains('disadvantage') ? '✅' : '❌'}');
+      '      • Examples provided: ${text.contains('example') ? '✅' : '❌'}',
+    );
     print(
-        '      • Use cases covered: ${text.contains('use case') || text.contains('suitable') ? '✅' : '❌'}');
+      '      • Pros/cons analysis: ${text.contains('advantage') || text.contains('disadvantage') ? '✅' : '❌'}',
+    );
+    print(
+      '      • Use cases covered: ${text.contains('use case') || text.contains('suitable') ? '✅' : '❌'}',
+    );
 
     print('   ✅ Comparative analysis demonstration completed\n');
-  } catch (e) {
-    print('   ❌ Comparative analysis failed: $e\n');
+  } catch (error) {
+    print('   ❌ Comparative analysis failed: $error\n');
   }
+}
+
+core.LanguageModel _createAnthropicModel(String apiKey) {
+  return llm.AI.anthropic(
+    apiKey: apiKey,
+  ).chatModel('claude-sonnet-4-5');
+}
+
+Future<core.GenerateTextCallResult<Never>> _generateThinkingText({
+  required core.LanguageModel model,
+  required List<core.PromptMessage> prompt,
+  required int maxOutputTokens,
+  int thinkingBudgetTokens = 2048,
+}) {
+  return core.generateTextCall<Never>(
+    model: model,
+    prompt: prompt,
+    options: core.GenerateTextOptions(
+      maxOutputTokens: maxOutputTokens,
+    ),
+    callOptions: _thinkingCallOptions(
+      thinkingBudgetTokens: thinkingBudgetTokens,
+    ),
+  );
+}
+
+core.CallOptions _thinkingCallOptions({
+  required int thinkingBudgetTokens,
+  bool interleavedThinking = false,
+}) {
+  return core.CallOptions(
+    providerOptions: anthropic.AnthropicGenerateTextOptions(
+      extendedThinking: true,
+      thinkingBudgetTokens: thinkingBudgetTokens,
+      interleavedThinking: interleavedThinking ? true : null,
+    ),
+  );
 }
 
 /// 🎯 Key Anthropic Thinking Concepts Summary:
@@ -376,10 +413,10 @@ Provide a comprehensive comparison with examples.
 /// - Comparative and analytical thinking
 ///
 /// Best Practices:
-/// - Use lower temperature (0.2-0.4) for analytical tasks
 /// - Allow sufficient token budget for thinking
 /// - Stream thinking for real-time insight
 /// - Analyze thinking process for quality assessment
+/// - Keep extended-thinking controls provider owned
 ///
 /// Unique Strengths:
 /// - Transparent reasoning process
@@ -388,12 +425,12 @@ Provide a comprehensive comparison with examples.
 /// - Self-reflection and verification
 ///
 /// Configuration Tips:
-/// - claude-3-5-sonnet: Best balance of thinking and performance
-/// - Lower temperature: More focused reasoning
-/// - Higher max_tokens: Allow complete thinking process
-/// - Streaming: Real-time thinking observation
+/// - claude-sonnet-4-5: Good balance of thinking and performance
+/// - Higher `thinkingBudgetTokens`: Allows deeper reasoning
+/// - Higher `maxOutputTokens`: Allows a fuller final answer
+/// - Interleaved thinking: Real-time reasoning observation
 ///
 /// Next Steps:
 /// - file_handling.dart: Document analysis with thinking
-/// - vision_capabilities.dart: Visual reasoning process
+/// - mcp_connector.dart: Typed MCP server integration
 /// - ../../03_advanced_features/reasoning_models.dart: Cross-provider comparison

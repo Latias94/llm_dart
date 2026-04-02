@@ -31,6 +31,8 @@ The legacy `ai()` builder still exists, but it is now compatibility-oriented rat
   - prompt, result, stream, and UI message models
 - `llm_dart_transport`
   - HTTP and SSE transport
+- `llm_dart_chat`
+  - pure Dart chat session, transport, snapshot, and message-mapping runtime
 - `llm_dart_openai`
   - OpenAI-family providers
 - `llm_dart_anthropic`
@@ -38,14 +40,16 @@ The legacy `ai()` builder still exists, but it is now compatibility-oriented rat
 - `llm_dart_google`
   - Google provider
 - `llm_dart_flutter`
-  - Flutter-facing chat transport and session layer
+  - thin Flutter adapter above `llm_dart_chat`
+
+Today, `llm_dart_chat` and `llm_dart_flutter` are still workspace packages
+during the refactor. The stable published package remains `llm_dart`.
 
 ## Installation
 
 ```yaml
 dependencies:
   llm_dart: ^0.10.7
-  llm_dart_flutter: ^0.1.0-dev.0
 ```
 
 Then run:
@@ -53,6 +57,15 @@ Then run:
 ```bash
 dart pub get
 ```
+
+## Focused Entry Points
+
+- `package:llm_dart/llm_dart.dart`
+  - root facade, stable provider entrypoints, and compatibility APIs
+- `package:llm_dart/chat.dart`
+  - focused pure Dart chat runtime entrypoint over `llm_dart_chat`
+- `package:llm_dart_flutter/llm_dart_flutter.dart`
+  - Flutter-specific adapters such as `ChatController`
 
 ## Quick Start
 
@@ -298,9 +311,30 @@ Future<void> main() async {
 Example file:
 [reasoning_models.dart](E:/codes/flutter/llm_dart/example/03_advanced_features/reasoning_models.dart)
 
+## Pure Dart Chat Runtime
+
+For chat runtimes outside Flutter, prefer the focused root entrypoint:
+
+```dart
+import 'package:llm_dart/chat.dart';
+```
+
+This entrypoint re-exports `DefaultChatSession`, `DirectChatTransport`,
+`HttpChatTransport`, `ChatRequestOptions`, `ChatMessageMapper`, and the stable
+`AI` facade without pulling Flutter adapters into the root package surface.
+
+Runnable pure Dart runtime example:
+[chat_runtime.dart](E:/codes/flutter/llm_dart/packages/llm_dart_chat/example/chat_runtime.dart)
+
+Package guide:
+[packages/llm_dart_chat/README.md](E:/codes/flutter/llm_dart/packages/llm_dart_chat/README.md)
+
 ## Flutter Chat Session
 
-The Flutter-facing layer sits above `TextStreamEvent` and projects it into `ChatUiMessage`.
+The reusable chat runtime lives in `llm_dart_chat`, and the Flutter package
+adds Flutter-specific adapters such as `ChatController` and controller-aware
+persistence helpers. The root `package:llm_dart/chat.dart` entrypoint stays
+pure Dart and does not re-export Flutter-only types.
 
 ```dart
 import 'package:llm_dart/llm_dart.dart' as llm;

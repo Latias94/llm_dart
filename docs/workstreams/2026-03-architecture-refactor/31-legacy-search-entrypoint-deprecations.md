@@ -1,5 +1,11 @@
 # Legacy Search Entrypoint Deprecations
 
+> Update: the later shared-boundary decision in
+> `84-shared-web-search-and-raw-extension-boundary.md` supersedes the earlier
+> "not deprecated yet" conclusion for the remaining root `LLMBuilder`
+> search helpers. This note still records the OpenRouter/xAI-specific rationale
+> that led to that broader compatibility-only freeze.
+
 ## Goal
 
 This note freezes which legacy root-package search entrypoints should now be marked deprecated after the OpenRouter and xAI search boundaries were audited.

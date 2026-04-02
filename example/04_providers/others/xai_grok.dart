@@ -1,24 +1,23 @@
 // ignore_for_file: avoid_print
+
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/openai.dart' as openai;
 
 /// 🚀 X.AI Grok Integration - Real-Time AI with Personality
 ///
-/// This example demonstrates X.AI's Grok model capabilities:
-/// - Real-time information access
-/// - Conversational AI with personality
-/// - Social media integration features
-/// - Witty and engaging responses
+/// This example demonstrates xAI's Grok model capabilities through the stable
+/// `AI.xai(...).chatModel(...)` facade.
 ///
 /// Before running, set your API key:
 /// export XAI_API_KEY="your-xai-api-key"
-void main() async {
+Future<void> main() async {
   print('🚀 X.AI Grok Integration - Real-Time AI with Personality\n');
 
-  // Get API key
   final apiKey = Platform.environment['XAI_API_KEY'] ?? 'xai-TESTKEY';
 
-  // Demonstrate Grok's unique capabilities
   await demonstrateBasicGrok(apiKey);
   await demonstratePersonalityFeatures(apiKey);
   await demonstrateRealTimeInformation(apiKey);
@@ -28,34 +27,40 @@ void main() async {
   print('\n✅ X.AI Grok integration completed!');
 }
 
-/// Demonstrate basic Grok functionality
 Future<void> demonstrateBasicGrok(String apiKey) async {
   print('🤖 Basic Grok Functionality:\n');
 
   try {
-    final provider = await ai()
-        .xai()
-        .apiKey(apiKey)
-        .model('grok-3')
-        .temperature(0.7)
-        .maxTokens(500)
-        .build();
+    final model = _createGrokModel(apiKey);
 
-    // Test basic conversation
     print('   Basic Conversation:');
-    var response = await provider.chat([
-      ChatMessage.user('Hello Grok! Tell me something interesting about AI.')
-    ]);
+    var response = await _generateText(
+      model: model,
+      prompt: [
+        core.UserPromptMessage.text(
+          'Hello Grok! Tell me something interesting about AI.',
+        ),
+      ],
+      temperature: 0.7,
+      maxOutputTokens: 500,
+    );
     print('      User: Hello Grok! Tell me something interesting about AI.');
     print('      Grok: ${response.text}\n');
 
-    // Test with system prompt
     print('   With System Prompt:');
-    response = await provider.chat([
-      ChatMessage.system(
-          'You are Grok, a witty AI assistant with a sense of humor.'),
-      ChatMessage.user('Explain quantum computing like I\'m 5 years old.')
-    ]);
+    response = await _generateText(
+      model: model,
+      prompt: [
+        core.SystemPromptMessage.text(
+          'You are Grok, a witty AI assistant with a sense of humor.',
+        ),
+        core.UserPromptMessage.text(
+          'Explain quantum computing like I\'m 5 years old.',
+        ),
+      ],
+      temperature: 0.7,
+      maxOutputTokens: 500,
+    );
     print('      System: You are Grok, a witty AI assistant...');
     print('      User: Explain quantum computing like I\'m 5 years old.');
     print('      Grok: ${response.text}');
@@ -65,24 +70,16 @@ Future<void> demonstrateBasicGrok(String apiKey) async {
     }
 
     print('   ✅ Basic Grok demonstration completed\n');
-  } catch (e) {
-    print('   ❌ Basic Grok failed: $e\n');
+  } catch (error) {
+    print('   ❌ Basic Grok failed: $error\n');
   }
 }
 
-/// Demonstrate Grok's personality features
 Future<void> demonstratePersonalityFeatures(String apiKey) async {
   print('😄 Personality Features:\n');
 
   try {
-    final provider = await ai()
-        .xai()
-        .apiKey(apiKey)
-        .model('grok-3')
-        .temperature(0.8) // Higher for more personality
-        .maxTokens(400)
-        .build();
-
+    final model = _createGrokModel(apiKey);
     final personalityTests = [
       'Tell me a joke about programming.',
       'What do you think about the meaning of life?',
@@ -93,11 +90,18 @@ Future<void> demonstratePersonalityFeatures(String apiKey) async {
     for (final test in personalityTests) {
       print('   Testing: $test');
 
-      final response = await provider.chat([
-        ChatMessage.system(
-            'Be witty, engaging, and show your personality. Don\'t be afraid to be humorous or opinionated.'),
-        ChatMessage.user(test)
-      ]);
+      final response = await _generateText(
+        model: model,
+        prompt: [
+          core.SystemPromptMessage.text(
+            'Be witty, engaging, and show your personality. '
+            'Do not be afraid to be humorous or opinionated.',
+          ),
+          core.UserPromptMessage.text(test),
+        ],
+        temperature: 0.8,
+        maxOutputTokens: 400,
+      );
 
       print('      Grok: ${response.text}\n');
     }
@@ -108,24 +112,16 @@ Future<void> demonstratePersonalityFeatures(String apiKey) async {
     print('      • Not afraid to express opinions');
     print('      • Balances humor with helpfulness');
     print('   ✅ Personality features demonstration completed\n');
-  } catch (e) {
-    print('   ❌ Personality features failed: $e\n');
+  } catch (error) {
+    print('   ❌ Personality features failed: $error\n');
   }
 }
 
-/// Demonstrate real-time information capabilities
 Future<void> demonstrateRealTimeInformation(String apiKey) async {
   print('🌐 Real-Time Information:\n');
 
   try {
-    final provider = await ai()
-        .xai()
-        .apiKey(apiKey)
-        .model('grok-3')
-        .temperature(0.3) // Lower for factual information
-        .maxTokens(600)
-        .build();
-
+    final model = _createGrokModel(apiKey);
     final realTimeQueries = [
       'What are the latest developments in AI this week?',
       'Tell me about recent tech news.',
@@ -136,11 +132,25 @@ Future<void> demonstrateRealTimeInformation(String apiKey) async {
     for (final query in realTimeQueries) {
       print('   Query: $query');
 
-      final response = await provider.chat([
-        ChatMessage.system(
-            'Provide current, up-to-date information. If you\'re not sure about recent events, be honest about your knowledge cutoff.'),
-        ChatMessage.user(query)
-      ]);
+      final response = await _generateText(
+        model: model,
+        prompt: [
+          core.SystemPromptMessage.text(
+            'Provide current, up-to-date information and cite the most '
+            'relevant live findings when available.',
+          ),
+          core.UserPromptMessage.text(query),
+        ],
+        temperature: 0.3,
+        maxOutputTokens: 600,
+        callOptions: const core.CallOptions(
+          providerOptions: openai.XAIGenerateTextOptions(
+            search: openai.XAILiveSearchOptions.autoWeb(
+              maxSearchResults: 5,
+            ),
+          ),
+        ),
+      );
 
       print('      Grok: ${response.text}\n');
     }
@@ -149,54 +159,69 @@ Future<void> demonstrateRealTimeInformation(String apiKey) async {
     print('      • Access to current information');
     print('      • Recent news and developments');
     print('      • Current events awareness');
-    print('      • Honest about knowledge limitations');
+    print('      • Typed live-search controls');
     print('   ✅ Real-time information demonstration completed\n');
-  } catch (e) {
-    print('   ❌ Real-time information failed: $e\n');
+  } catch (error) {
+    print('   ❌ Real-time information failed: $error\n');
   }
 }
 
-/// Demonstrate conversational style
 Future<void> demonstrateConversationalStyle(String apiKey) async {
   print('💬 Conversational Style:\n');
 
   try {
-    final provider = await ai()
-        .xai()
-        .apiKey(apiKey)
-        .model('grok-3')
-        .temperature(0.7)
-        .maxTokens(400)
-        .build();
+    final model = _createGrokModel(apiKey);
 
-    // Multi-turn conversation
     print('   Multi-turn Conversation:');
-    final conversation = [
-      ChatMessage.system(
-          'You are Grok. Be conversational, witty, and remember the context of our chat.'),
-      ChatMessage.user('I\'m thinking about learning to code. Any advice?'),
+    final conversation = <core.PromptMessage>[
+      core.SystemPromptMessage.text(
+        'You are Grok. Be conversational, witty, and remember the context of our chat.',
+      ),
+      core.UserPromptMessage.text(
+        'I\'m thinking about learning to code. Any advice?',
+      ),
     ];
 
-    var response = await provider.chat(conversation);
+    var response = await _generateText(
+      model: model,
+      prompt: conversation,
+      temperature: 0.7,
+      maxOutputTokens: 400,
+    );
     print('      User: I\'m thinking about learning to code. Any advice?');
     print('      Grok: ${response.text}\n');
 
-    // Continue conversation
-    conversation.add(ChatMessage.assistant(response.text ?? ''));
-    conversation.add(ChatMessage.user(
-        'I\'m particularly interested in AI and machine learning.'));
+    conversation.add(core.AssistantPromptMessage.text(response.text));
+    conversation.add(
+      core.UserPromptMessage.text(
+        'I\'m particularly interested in AI and machine learning.',
+      ),
+    );
 
-    response = await provider.chat(conversation);
+    response = await _generateText(
+      model: model,
+      prompt: conversation,
+      temperature: 0.7,
+      maxOutputTokens: 400,
+    );
     print(
-        '      User: I\'m particularly interested in AI and machine learning.');
+      '      User: I\'m particularly interested in AI and machine learning.',
+    );
     print('      Grok: ${response.text}\n');
 
-    // Another follow-up
-    conversation.add(ChatMessage.assistant(response.text ?? ''));
+    conversation.add(core.AssistantPromptMessage.text(response.text));
     conversation.add(
-        ChatMessage.user('What programming language should I start with?'));
+      core.UserPromptMessage.text(
+        'What programming language should I start with?',
+      ),
+    );
 
-    response = await provider.chat(conversation);
+    response = await _generateText(
+      model: model,
+      prompt: conversation,
+      temperature: 0.7,
+      maxOutputTokens: 400,
+    );
     print('      User: What programming language should I start with?');
     print('      Grok: ${response.text}');
 
@@ -206,96 +231,118 @@ Future<void> demonstrateConversationalStyle(String apiKey) async {
     print('      • Builds on previous responses');
     print('      • Engaging and helpful');
     print('   ✅ Conversational style demonstration completed\n');
-  } catch (e) {
-    print('   ❌ Conversational style failed: $e\n');
+  } catch (error) {
+    print('   ❌ Conversational style failed: $error\n');
   }
 }
 
-/// Demonstrate best practices
 Future<void> demonstrateBestPractices(String apiKey) async {
   print('🏆 Best Practices:\n');
 
-  // Error handling
   print('   Error Handling:');
   try {
-    final provider = await ai()
-        .xai()
-        .apiKey('invalid-key') // Intentionally invalid
-        .model('grok-3')
-        .build();
-
-    await provider.chat([ChatMessage.user('Test')]);
-  } on AuthError catch (e) {
-    print('      ✅ Properly caught AuthError: ${e.message}');
-  } catch (e) {
-    print('      ⚠️  Unexpected error type: $e');
+    final invalidModel = _createGrokModel('invalid-key');
+    await _generateText(
+      model: invalidModel,
+      prompt: [
+        core.UserPromptMessage.text('Test'),
+      ],
+      maxOutputTokens: 64,
+    );
+  } catch (error) {
+    print('      ✅ Properly surfaced provider error: $error');
   }
 
-  // Optimal configuration
   print('\n   Optimal Configuration:');
   try {
-    final optimizedProvider = await ai()
-        .xai()
-        .apiKey(apiKey)
-        .model('grok-3')
-        .temperature(0.7) // Balanced creativity
-        .maxTokens(500) // Reasonable response length
-        .systemPrompt('You are Grok, a helpful and witty AI assistant.')
-        .timeout(Duration(seconds: 30))
-        .build();
+    final model = _createGrokModel(apiKey);
+    final response = await _generateText(
+      model: model,
+      prompt: [
+        core.SystemPromptMessage.text(
+          'You are Grok, a helpful and witty AI assistant.',
+        ),
+        core.UserPromptMessage.text(
+          'Give me a creative solution to reduce plastic waste.',
+        ),
+      ],
+      temperature: 0.7,
+      maxOutputTokens: 500,
+      callOptions: const core.CallOptions(
+        timeout: Duration(seconds: 30),
+      ),
+    );
 
-    final response = await optimizedProvider.chat([
-      ChatMessage.user('Give me a creative solution to reduce plastic waste.')
-    ]);
-
-    print('      ✅ Optimized response: ${response.text?.substring(0, 150)}...');
-  } catch (e) {
-    print('      ❌ Optimization error: $e');
+    final preview = response.text.length > 150
+        ? '${response.text.substring(0, 150)}...'
+        : response.text;
+    print('      ✅ Optimized response: $preview');
+  } catch (error) {
+    print('      ❌ Optimization error: $error');
   }
 
-  // Streaming for better UX
   print('\n   Streaming for Better UX:');
   try {
-    final streamProvider = await ai()
-        .xai()
-        .apiKey(apiKey)
-        .model('grok-3')
-        .temperature(0.7)
-        .build();
-
+    final model = _createGrokModel(apiKey);
     print('      Question: Write a short poem about technology.');
     print('      Grok (streaming): ');
 
-    await for (final event in streamProvider.chatStream(
-        [ChatMessage.user('Write a short poem about technology.')])) {
+    final stream = core.streamTextCall(
+      model: model,
+      prompt: [
+        core.UserPromptMessage.text('Write a short poem about technology.'),
+      ],
+      options: const core.GenerateTextOptions(
+        temperature: 0.7,
+        maxOutputTokens: 240,
+      ),
+    );
+
+    await for (final event in stream) {
       switch (event) {
-        case TextDeltaEvent(delta: final delta):
+        case core.TextDeltaEvent(:final delta):
           stdout.write(delta);
-          break;
-        case CompletionEvent():
+        case core.FinishEvent():
           print('\n      ✅ Streaming completed');
-          break;
-        case ErrorEvent(error: final error):
+        case core.ErrorEvent(:final error):
           print('\n      ❌ Stream error: $error');
-          break;
-        case ThinkingDeltaEvent():
-        case ToolCallDeltaEvent():
-          // Handle other event types
+        default:
           break;
       }
     }
-  } catch (e) {
-    print('      ❌ Streaming error: $e');
+  } catch (error) {
+    print('      ❌ Streaming error: $error');
   }
 
   print('\n   💡 Best Practices Summary:');
   print('      • Use appropriate temperature for task type');
-  print('      • Leverage Grok\'s personality for engaging responses');
+  print('      • Use typed live-search options for current-events queries');
   print('      • Implement streaming for better user experience');
-  print('      • Handle errors gracefully');
-  print('      • Take advantage of real-time information');
+  print('      • Handle provider errors gracefully');
   print('      • Use system prompts to guide personality');
   print('   ✅ Best practices demonstration completed\n');
+}
+
+core.LanguageModel _createGrokModel(String apiKey) {
+  return llm.AI.xai(apiKey: apiKey).chatModel('grok-3');
+}
+
+Future<core.GenerateTextCallResult<Never>> _generateText({
+  required core.LanguageModel model,
+  required List<core.PromptMessage> prompt,
+  double temperature = 0.7,
+  int maxOutputTokens = 400,
+  core.CallOptions callOptions = const core.CallOptions(),
+}) {
+  return core.generateTextCall<Never>(
+    model: model,
+    prompt: prompt,
+    options: core.GenerateTextOptions(
+      temperature: temperature,
+      maxOutputTokens: maxOutputTokens,
+    ),
+    callOptions: callOptions,
+  );
 }
 
 /// 🎯 Key X.AI Grok Concepts Summary:
@@ -303,11 +350,10 @@ Future<void> demonstrateBestPractices(String apiKey) async {
 /// Unique Features:
 /// - Real-time information access
 /// - Witty and engaging personality
-/// - Social media integration capabilities
 /// - Conversational and opinionated responses
 ///
 /// Model Capabilities:
-/// - Current events awareness
+/// - Current events awareness through typed live-search options
 /// - Humor and personality
 /// - Engaging dialogue style
 /// - Balanced helpfulness and entertainment
@@ -316,6 +362,7 @@ Future<void> demonstrateBestPractices(String apiKey) async {
 /// - Higher temperature (0.7-0.8) for personality
 /// - Lower temperature (0.3-0.5) for factual queries
 /// - Use system prompts to guide personality
+/// - Enable typed live search for current-events prompts
 /// - Implement streaming for better UX
 ///
 /// Best Use Cases:
@@ -326,6 +373,5 @@ Future<void> demonstrateBestPractices(String apiKey) async {
 /// - Creative content generation
 ///
 /// Next Steps:
-/// - openrouter.dart: Multi-provider access
-/// - custom_providers.dart: Building custom integrations
+/// - ../xai/live_search.dart: Stable xAI live-search examples
 /// - ../../05_use_cases/chatbot.dart: Real-world applications

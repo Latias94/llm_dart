@@ -22,6 +22,7 @@ void main() {
     test('Imagen image model sends a predict request and decodes images',
         () async {
       TransportRequest? capturedRequest;
+      final cancelToken = TransportCancellation();
 
       final model = Google(
         apiKey: 'test-key',
@@ -56,12 +57,13 @@ void main() {
         model: model,
         prompt: 'Draw a cat.',
         count: 2,
-        callOptions: const CallOptions(
-          timeout: Duration(seconds: 5),
-          headers: {
+        callOptions: CallOptions(
+          timeout: const Duration(seconds: 5),
+          headers: const {
             'x-call': '2',
           },
-          providerOptions: GoogleImageOptions(
+          cancellation: cancelToken,
+          providerOptions: const GoogleImageOptions(
             aspectRatio: GoogleImageAspectRatio.landscape16x9,
             personGeneration: GooglePersonGeneration.allowAdult,
           ),
@@ -73,6 +75,7 @@ void main() {
         capturedRequest!.uri.toString(),
         'https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict',
       );
+      expect(identical(capturedRequest!.cancellation, cancelToken), isTrue);
       expect(capturedRequest!.headers, {
         'x-goog-api-key': 'test-key',
         'content-type': 'application/json',

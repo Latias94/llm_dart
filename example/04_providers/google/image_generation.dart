@@ -1,21 +1,17 @@
 import 'dart:io';
-import 'dart:convert';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/google.dart' as google;
+import 'package:llm_dart/llm_dart.dart' as llm;
 
 /// Google Image Generation Examples
 ///
-/// This example demonstrates Google's image generation capabilities using:
-/// 1. Gemini 2.0 Flash Preview Image Generation (conversational approach)
-/// 2. Imagen 3 (dedicated image generation model)
+/// This example demonstrates the stable Google image-model surface:
+/// 1. Gemini image generation through `imageModel(...)`
+/// 2. Imagen generation through `imageModel(...)`
 ///
-/// Google's image generation features:
-/// - Text-to-image generation
-/// - Image editing through conversational prompts
-/// - Image variations
-/// - Multiple aspect ratios support
-/// - Base64 image data output
-///
-/// Reference: https://ai.google.dev/gemini-api/docs/image-generation
+/// Image editing remains compatibility oriented and is called out explicitly
+/// instead of being forced into the shared `ImageModel` contract.
 Future<void> main() async {
   print('🎨 Google Image Generation Examples\n');
 
@@ -29,179 +25,137 @@ Future<void> main() async {
   try {
     await demonstrateGeminiImageGeneration(apiKey);
     print(
-        '⚠️  Note: Imagen 3 requires a paid account and may not be available in all regions.');
+      '⚠️  Note: Imagen 3 requires a paid account and may not be available in all regions.',
+    );
     await demonstrateImagenGeneration(apiKey);
-    await demonstrateImageEditing(apiKey);
-  } catch (e) {
-    print('❌ Error: $e');
+    demonstrateImageEditingBoundary();
+  } catch (error) {
+    print('❌ Error: $error');
   }
 }
 
-/// Demonstrate Gemini 2.0 Flash Preview Image Generation
 Future<void> demonstrateGeminiImageGeneration(String apiKey) async {
-  print('🔮 Gemini 2.0 Flash Preview Image Generation');
+  print('🔮 Gemini Image Generation');
   print('=' * 50);
 
   try {
-    // Create Google provider for Gemini image generation
-    final imageProvider = await ai()
-        .google((google) => google
-            .enableImageGeneration(true)
-            .responseModalities(['TEXT', 'IMAGE']))
-        .apiKey(apiKey)
-        .model('gemini-2.0-flash-preview-image-generation')
-        .buildImageGeneration();
+    final imageModel = llm.AI.google(
+      apiKey: apiKey,
+    ).imageModel('gemini-2.5-flash-image');
 
-    print('   📋 Provider capabilities:');
-    print('      Supported sizes: ${imageProvider.getSupportedSizes()}');
-    print('      Supported formats: ${imageProvider.getSupportedFormats()}');
-    print('      Supports editing: ${imageProvider.supportsImageEditing}');
-    print(
-        '      Supports variations: ${imageProvider.supportsImageVariations}');
+    print('   📋 Stable model: ${imageModel.providerId}/${imageModel.modelId}');
+    print('   ℹ️  Gemini image models currently support only count=1');
 
-    // Generate image with Gemini
+    const prompt =
+        'A futuristic robot assistant helping in a modern kitchen, digital art style, warm lighting, detailed';
     print('\n   🎨 Generating image with Gemini...');
-    final prompt = 'A futuristic robot assistant helping in a modern kitchen, '
-        'digital art style, warm lighting, detailed';
     print('      Prompt: "$prompt"');
 
-    final images = await imageProvider.generateImage(
+    final result = await core.generateImage(
+      model: imageModel,
       prompt: prompt,
-      batchSize: 1,
+      callOptions: const core.CallOptions(
+        providerOptions: google.GoogleImageOptions(
+          aspectRatio: google.GoogleImageAspectRatio.landscape16x9,
+          safetySettings: [
+            google.GoogleSafetySetting(
+              category: google.GoogleHarmCategory.harassment,
+              threshold: google.GoogleHarmBlockThreshold.blockOnlyHigh,
+            ),
+          ],
+        ),
+      ),
     );
 
-    print('      ✅ Generated ${images.length} image(s)');
-    for (int i = 0; i < images.length; i++) {
-      final imageData = images[i];
-      if (imageData.startsWith('data:image/')) {
-        // Extract base64 data and save to file
-        final base64Data = imageData.split(',')[1];
-        final bytes = base64Decode(base64Data);
-        final filename = 'gemini_generated_${i + 1}.png';
-        await File(filename).writeAsBytes(bytes);
+    print('      ✅ Generated ${result.images.length} image(s)');
+    for (var index = 0; index < result.images.length; index++) {
+      final image = result.images[index];
+      if (image.bytes != null) {
+        final filename = 'gemini_generated_${index + 1}.png';
+        await File(filename).writeAsBytes(image.bytes!);
         print(
-            '         Image ${i + 1}: Saved as $filename (${bytes.length} bytes)');
+          '         Image ${index + 1}: Saved as $filename (${image.bytes!.length} bytes)',
+        );
       } else {
-        print('         Image ${i + 1}: $imageData');
+        print('         Image ${index + 1}: Empty image payload');
       }
     }
-  } catch (e) {
-    print('   ❌ Gemini generation failed: $e');
+
+    final metadata = result.providerMetadata?.namespace('google');
+    if (metadata != null) {
+      print('      API: ${metadata['generationApi'] ?? 'unknown'}');
+      print('      Model version: ${metadata['modelVersion'] ?? 'unknown'}');
+
+      final revisedPrompts = metadata['revisedPrompts'];
+      if (revisedPrompts is List && revisedPrompts.isNotEmpty) {
+        print('      Revised prompt: ${revisedPrompts.first}');
+      }
+
+      final finishReasons = metadata['finishReasons'];
+      if (finishReasons is List && finishReasons.isNotEmpty) {
+        print('      Finish reason: ${finishReasons.first}');
+      }
+    }
+  } catch (error) {
+    print('   ❌ Gemini generation failed: $error');
   }
 }
 
-/// Demonstrate Imagen 3 generation
 Future<void> demonstrateImagenGeneration(String apiKey) async {
   print('\n🖼️  Imagen 3 Generation');
   print('=' * 50);
 
   try {
-    // Create Google provider for Imagen 3
-    final imageProvider = await ai()
-        .google()
-        .apiKey(apiKey)
-        .model('imagen-3.0-generate-002')
-        .buildImageGeneration();
+    final imageModel = llm.AI.google(
+      apiKey: apiKey,
+    ).imageModel('imagen-3.0-generate-002');
 
-    // Generate image with Imagen 3
+    const prompt =
+        'A serene mountain landscape at sunset, with a crystal clear lake reflecting the mountains, photorealistic style, high detail';
     print('   🎨 Generating image with Imagen 3...');
-    final prompt = 'A serene mountain landscape at sunset, '
-        'with a crystal clear lake reflecting the mountains, '
-        'photorealistic style, high detail';
     print('      Prompt: "$prompt"');
 
-    final response = await imageProvider.generateImages(
-      ImageGenerationRequest(
-        prompt: prompt,
-        count: 2,
-        size: '1:1', // Square aspect ratio
+    final result = await core.generateImage(
+      model: imageModel,
+      prompt: prompt,
+      count: 2,
+      callOptions: const core.CallOptions(
+        providerOptions: google.GoogleImageOptions(
+          aspectRatio: google.GoogleImageAspectRatio.square1x1,
+          personGeneration: google.GooglePersonGeneration.allowAdult,
+        ),
       ),
     );
 
-    print('      ✅ Generated ${response.images.length} image(s)');
-    print('      Model used: ${response.model}');
-
-    for (int i = 0; i < response.images.length; i++) {
-      final image = response.images[i];
-      if (image.data != null) {
-        final filename = 'imagen_generated_${i + 1}.png';
-        await File(filename).writeAsBytes(image.data!);
+    print('      ✅ Generated ${result.images.length} image(s)');
+    for (var index = 0; index < result.images.length; index++) {
+      final image = result.images[index];
+      if (image.bytes != null) {
+        final filename = 'imagen_generated_${index + 1}.png';
+        await File(filename).writeAsBytes(image.bytes!);
         print(
-            '         Image ${i + 1}: Saved as $filename (${image.data!.length} bytes)');
-        print('            Format: ${image.format}');
+          '         Image ${index + 1}: Saved as $filename (${image.bytes!.length} bytes)',
+        );
+      } else {
+        print('         Image ${index + 1}: Empty image payload');
       }
     }
-  } catch (e) {
-    print('   ❌ Imagen generation failed: $e');
+
+    final metadata = result.providerMetadata?.namespace('google');
+    if (metadata != null) {
+      print('      API: ${metadata['generationApi'] ?? 'unknown'}');
+    }
+  } catch (error) {
+    print('   ❌ Imagen generation failed: $error');
   }
 }
 
-/// Demonstrate image editing with Gemini
-Future<void> demonstrateImageEditing(String apiKey) async {
-  print('\n✂️  Image Editing with Gemini');
+void demonstrateImageEditingBoundary() {
+  print('\n✂️  Image Editing Boundary');
   print('=' * 50);
-
-  try {
-    // First, generate a base image
-    final imageProvider = await ai()
-        .google((google) => google
-            .enableImageGeneration(true)
-            .responseModalities(['TEXT', 'IMAGE']))
-        .apiKey(apiKey)
-        .model('gemini-2.0-flash-preview-image-generation')
-        .buildImageGeneration();
-
-    print('   🎨 Generating base image...');
-    final basePrompt = 'A simple cartoon cat sitting on a chair';
-    print('      Base prompt: "$basePrompt"');
-
-    final baseImages = await imageProvider.generateImage(
-      prompt: basePrompt,
-      batchSize: 1,
-    );
-
-    if (baseImages.isNotEmpty) {
-      // Extract image data for editing
-      final baseImageData = baseImages[0];
-      if (baseImageData.startsWith('data:image/')) {
-        final base64Data = baseImageData.split(',')[1];
-        final bytes = base64Decode(base64Data);
-
-        // Save base image
-        await File('base_image.png').writeAsBytes(bytes);
-        print('      ✅ Base image saved as base_image.png');
-
-        // Edit the image
-        print('\n   ✏️  Editing the image...');
-        final editPrompt =
-            'Add a red hat to the cat and change the chair to blue';
-        print('      Edit prompt: "$editPrompt"');
-
-        final editResponse = await imageProvider.editImage(
-          ImageEditRequest(
-            image: ImageInput.fromBytes(bytes, format: 'png'),
-            prompt: editPrompt,
-            count: 1,
-          ),
-        );
-
-        print(
-            '      ✅ Generated ${editResponse.images.length} edited image(s)');
-        if (editResponse.revisedPrompt != null) {
-          print('      Revised prompt: "${editResponse.revisedPrompt}"');
-        }
-
-        for (int i = 0; i < editResponse.images.length; i++) {
-          final image = editResponse.images[i];
-          if (image.data != null) {
-            final filename = 'edited_image_${i + 1}.png';
-            await File(filename).writeAsBytes(image.data!);
-            print('         Edited image ${i + 1}: Saved as $filename');
-          }
-        }
-      }
-    }
-  } catch (e) {
-    print('   ❌ Image editing failed: $e');
-  }
+  print('   ℹ️  Google image editing remains compatibility oriented today.');
+  print('   ℹ️  The stable `ImageModel` contract intentionally covers prompt-');
+  print('      based generation only, not file-based edit requests.');
+  print('   ℹ️  This avoids baking unfinished edit/variation request shapes into');
+  print('      the shared abstraction too early.');
 }

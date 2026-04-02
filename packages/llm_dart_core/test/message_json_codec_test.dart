@@ -274,6 +274,8 @@ void main() {
             }),
             ChatUiMetadataKeys.finishReason: FinishReason.stop,
             ChatUiMetadataKeys.rawFinishReason: 'stop',
+            ChatUiMetadataKeys.isAborted: false,
+            ChatUiMetadataKeys.abortReason: null,
             ChatUiMetadataKeys.usage: const UsageStats(
               inputTokens: 10,
               outputTokens: 4,
@@ -356,6 +358,8 @@ void main() {
         FinishReason.stop,
       );
       expect(message.metadata[ChatUiMetadataKeys.rawFinishReason], 'stop');
+      expect(message.metadata[ChatUiMetadataKeys.isAborted], isFalse);
+      expect(message.metadata[ChatUiMetadataKeys.abortReason], isNull);
       final usage = message.metadata[ChatUiMetadataKeys.usage] as UsageStats;
       expect(usage.totalTokens, 14);
 

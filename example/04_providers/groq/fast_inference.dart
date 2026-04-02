@@ -1,14 +1,17 @@
 // ignore_for_file: avoid_print
+
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/llm_dart.dart' as llm;
 
 /// Groq Fast Inference - Ultra-Speed AI Demonstration
 ///
-/// Showcases Groq's unique advantage: ultra-fast inference speeds.
+/// Showcases Groq's low-latency path through the stable model API.
 /// For basic chat functionality, see ../../02_core_features/chat_basics.dart
 ///
 /// Before running: export GROQ_API_KEY="your-groq-api-key"
-void main() async {
+Future<void> main() async {
   print('Groq Fast Inference Demo\n');
 
   final apiKey = Platform.environment['GROQ_API_KEY'] ?? 'gsk-TESTKEY';
@@ -20,19 +23,11 @@ void main() async {
   print('\nGroq speed demonstration completed!');
 }
 
-/// Demonstrate Groq's ultra-fast inference speeds
 Future<void> demonstrateSpeedBenchmark(String apiKey) async {
   print('Speed Benchmark - Groq\'s Key Advantage\n');
 
   try {
-    final provider = await ai()
-        .groq()
-        .apiKey(apiKey)
-        .model('llama-3.1-8b-instant') // Fastest model
-        .temperature(0.7)
-        .maxTokens(200)
-        .build();
-
+    final model = _createGroqModel(apiKey);
     final testQuestions = [
       'What is machine learning?',
       'Explain quantum computing.',
@@ -45,14 +40,18 @@ Future<void> demonstrateSpeedBenchmark(String apiKey) async {
 
     final times = <int>[];
 
-    for (int i = 0; i < testQuestions.length; i++) {
+    for (var index = 0; index < testQuestions.length; index++) {
+      final question = testQuestions[index];
       final stopwatch = Stopwatch()..start();
-      await provider.chat([ChatMessage.user(testQuestions[i])]);
+      await _generateText(
+        model,
+        question,
+        maxOutputTokens: 200,
+      );
       stopwatch.stop();
 
       times.add(stopwatch.elapsedMilliseconds);
-      print(
-          '${i + 1}. ${testQuestions[i]} - ${stopwatch.elapsedMilliseconds}ms');
+      print('${index + 1}. $question - ${stopwatch.elapsedMilliseconds}ms');
     }
 
     final avgTime = times.reduce((a, b) => a + b) / times.length;
@@ -64,31 +63,24 @@ Future<void> demonstrateSpeedBenchmark(String apiKey) async {
     print('• Fastest: ${minTime}ms');
     print('• Slowest: ${maxTime}ms');
     print(
-        '• Consistency: ${((maxTime - minTime) / avgTime * 100).toStringAsFixed(1)}% variation');
+      '• Consistency: ${((maxTime - minTime) / avgTime * 100).toStringAsFixed(1)}% variation',
+    );
 
     print('\nGroq Speed Advantages:');
     print('• Sub-second responses for most queries');
     print('• Consistent low latency');
     print('• Excellent for real-time applications\n');
-  } catch (e) {
-    print('Speed benchmark failed: $e\n');
+  } catch (error) {
+    print('Speed benchmark failed: $error\n');
   }
 }
 
-/// Demonstrate streaming speed performance
 Future<void> demonstrateStreamingSpeed(String apiKey) async {
   print('Streaming Speed - Real-time Performance\n');
 
   try {
-    final provider = await ai()
-        .groq()
-        .apiKey(apiKey)
-        .model('llama-3.1-8b-instant')
-        .temperature(0.7)
-        .maxTokens(300)
-        .build();
-
-    final question = 'Write a short story about a robot discovering emotions.';
+    final model = _createGroqModel(apiKey);
+    const question = 'Write a short story about a robot discovering emotions.';
     print('Question: $question');
     print('Groq (streaming): ');
 
@@ -96,26 +88,31 @@ Future<void> demonstrateStreamingSpeed(String apiKey) async {
     var firstChunkTime = 0;
     var chunkCount = 0;
 
-    await for (final event
-        in provider.chatStream([ChatMessage.user(question)])) {
+    final stream = core.streamTextCall(
+      model: model,
+      prompt: [
+        core.UserPromptMessage.text(question),
+      ],
+      options: const core.GenerateTextOptions(
+        temperature: 0.7,
+        maxOutputTokens: 300,
+      ),
+    );
+
+    await for (final event in stream) {
       switch (event) {
-        case TextDeltaEvent(delta: final delta):
+        case core.TextDeltaEvent(:final delta):
           chunkCount++;
           if (firstChunkTime == 0) {
             firstChunkTime = stopwatch.elapsedMilliseconds;
           }
           stdout.write(delta);
-          break;
-
-        case CompletionEvent():
+        case core.FinishEvent():
           stopwatch.stop();
           print('\n');
-          break;
-
-        case ErrorEvent(error: final error):
+        case core.ErrorEvent(:final error):
           print('\nStreaming error: $error');
           return;
-
         default:
           break;
       }
@@ -126,24 +123,16 @@ Future<void> demonstrateStreamingSpeed(String apiKey) async {
     print('• Total time: ${stopwatch.elapsedMilliseconds}ms');
     print('• Chunks received: $chunkCount');
     print('• Ultra-fast time to first token\n');
-  } catch (e) {
-    print('Streaming demonstration failed: $e\n');
+  } catch (error) {
+    print('Streaming demonstration failed: $error\n');
   }
 }
 
-/// Demonstrate parallel processing for high throughput
 Future<void> demonstrateParallelProcessing(String apiKey) async {
   print('Parallel Processing - High Throughput\n');
 
   try {
-    final provider = await ai()
-        .groq()
-        .apiKey(apiKey)
-        .model('llama-3.1-8b-instant')
-        .temperature(0.7)
-        .maxTokens(100)
-        .build();
-
+    final model = _createGroqModel(apiKey);
     final questions = [
       'What is AI?',
       'What is ML?',
@@ -155,34 +144,71 @@ Future<void> demonstrateParallelProcessing(String apiKey) async {
     print('Processing ${questions.length} questions in parallel...');
 
     final stopwatch = Stopwatch()..start();
-
-    // Process all questions simultaneously
-    final futures =
-        questions.map((q) => provider.chat([ChatMessage.user(q)])).toList();
-    final responses = await Future.wait(futures);
-
+    final responses = await Future.wait(
+      questions.map(
+        (question) => _generateText(
+          model,
+          question,
+          maxOutputTokens: 100,
+        ),
+      ),
+    );
     stopwatch.stop();
 
     print('\nResults:');
-    for (int i = 0; i < questions.length; i++) {
-      print('${i + 1}. ${questions[i]}');
-      print('   ${responses[i].text?.substring(0, 80)}...\n');
+    for (var index = 0; index < questions.length; index++) {
+      final text = responses[index].text;
+      final preview = text.length > 80 ? '${text.substring(0, 80)}...' : text;
+      print('${index + 1}. ${questions[index]}');
+      print('   $preview\n');
     }
 
+    final elapsedMilliseconds = stopwatch.elapsedMilliseconds;
     print('Parallel Processing Performance:');
-    print('• Total time: ${stopwatch.elapsedMilliseconds}ms');
+    print('• Total time: ${elapsedMilliseconds}ms');
     print(
-        '• Average per question: ${(stopwatch.elapsedMilliseconds / questions.length).toStringAsFixed(1)}ms');
+      '• Average per question: ${(elapsedMilliseconds / questions.length).toStringAsFixed(1)}ms',
+    );
     print(
-        '• Throughput: ${(questions.length * 1000 / stopwatch.elapsedMilliseconds).toStringAsFixed(1)} requests/sec');
+      '• Throughput: ${_itemsPerSecond(questions.length, elapsedMilliseconds).toStringAsFixed(1)} requests/sec',
+    );
 
     print('\nGroq Parallel Processing Benefits:');
     print('• High concurrent request handling');
     print('• Consistent performance under load');
     print('• Excellent for batch operations\n');
-  } catch (e) {
-    print('Parallel processing failed: $e\n');
+  } catch (error) {
+    print('Parallel processing failed: $error\n');
   }
+}
+
+core.LanguageModel _createGroqModel(String apiKey) {
+  return llm.AI.groq(apiKey: apiKey).chatModel('llama-3.1-8b-instant');
+}
+
+Future<core.GenerateTextCallResult<Never>> _generateText(
+  core.LanguageModel model,
+  String prompt, {
+  int maxOutputTokens = 200,
+}) {
+  return core.generateTextCall<Never>(
+    model: model,
+    prompt: [
+      core.UserPromptMessage.text(prompt),
+    ],
+    options: core.GenerateTextOptions(
+      temperature: 0.7,
+      maxOutputTokens: maxOutputTokens,
+    ),
+  );
+}
+
+double _itemsPerSecond(int count, int elapsedMilliseconds) {
+  if (elapsedMilliseconds <= 0) {
+    return count.toDouble();
+  }
+
+  return count * 1000 / elapsedMilliseconds;
 }
 
 /// Groq's Key Advantages:

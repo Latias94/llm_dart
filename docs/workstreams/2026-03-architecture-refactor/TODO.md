@@ -16,6 +16,7 @@
 - [x] Introduce workspace management
 - [x] Create `llm_dart_core`
 - [x] Create `llm_dart_transport`
+- [x] Create `llm_dart_chat`
 - [x] Create `llm_dart_openai` skeleton
 - [x] Create `llm_dart_anthropic` skeleton
 - [x] Create `llm_dart_google` skeleton
@@ -31,6 +32,7 @@
 - [x] Rewrite the error model
 - [x] Rewrite usage, warning, and provider metadata models
 - [x] Add common `reasoning-file` support across prompt, result, stream, and UI layers
+- [x] Add explicit shared abort semantics across `TextStreamEvent`, chat-UI projection, and Flutter chat transport/session
 - [x] Add part-level provider metadata to replayable prompt parts and codecs
 - [x] Define provider model-options and invocation-options marker interfaces
 - [x] Strengthen `SourceReference` with an explicit source kind
@@ -55,6 +57,7 @@
 - [x] Decide whether the additive `generateTextCall(...)` / `streamTextCall(...)` layer should later fold into `generateText(...)` / `streamText(...)` directly or remain the explicit higher-level result surface
 - [ ] Re-evaluate shared runner expansion only after a replay-safe approval or provider-executed continuation contract is proven across at least two provider families
 - [ ] Re-evaluate whether a constrained pre-step hook or a separate streamed runner is justified after the narrow runner is used by at least two concrete shared call paths
+- [ ] Decide whether streamed multi-step orchestration really needs richer step-start/step-finish metadata in the shared core, or whether that detail should stay in a future UI/transport chunk layer
 - [x] Implement `embed` / `embedMany`
 - [x] Implement `generateImage`
 - [x] Implement `generateSpeech`
@@ -70,6 +73,7 @@
 - [x] Extract provider-independent error mapping
 - [x] Define the transport diagnostics interface
 - [x] Define `HttpChatTransport` request and chunk codecs
+- [x] Move the HTTP chat transport protocol codecs into `llm_dart_transport` and add a pure-Dart backend SSE/reference adapter
 - [x] Implement `TextStreamEvent` JSON codec
 
 ## OpenAI Family
@@ -160,13 +164,24 @@
 - [x] Implement `ChatController`
 - [x] Implement `ChatPersistenceAdapter`
 - [x] Implement `ChatMessageMapper`
+- [x] Extract the framework-neutral chat runtime into `llm_dart_chat`
+- [x] Keep `llm_dart_flutter` as a thin Flutter adapter above `llm_dart_chat`
+- [x] Expose a focused root `chat.dart` entrypoint for the pure Dart chat runtime while keeping Flutter adapters out of the root package
+- [x] Split session persistence from Flutter controller persistence convenience
+- [x] Audit the remaining `llm_dart_chat` runtime surface against `repo-ref/ai` and adopt only transport request customization plus request metadata, not React-style local message-store mutation APIs
 - [x] Define a serialized chat chunk protocol for `HttpChatTransport`
 - [x] Design the message serialization protocol
 - [x] Implement prompt and UI JSON codecs
 - [x] Implement `ChatSessionSnapshot` export and import
 - [x] Design and implement the baseline tool approval and output injection API
 - [x] Rewrite the Flutter integration examples
-- [ ] Decide whether `HttpChatTransport` should later gain a richer remote chunk protocol beyond serialized `TextStreamEvent` envelopes and UI snapshots
+- [x] Decide that richer remote chat streaming should come through a dedicated UI/session chunk layer above `TextStreamEvent`, not by widening the shared model event surface
+- [x] Design a dedicated UI chunk layer above `TextStreamEvent` instead of continuing to overload transport/session responsibilities into the model-layer stream
+- [x] Add a shared `ChatUiStreamChunk` runtime model above `TextStreamEvent` and below `ChatUiMessage`
+- [x] Add a UI-stream accumulator/projector that merges message-start, message-metadata, event, data-part, and message-finish chunks into `ChatUiMessage`
+- [x] Refactor `DefaultChatSession` to consume the dedicated UI/session chunk layer instead of transport-owned runtime chunks
+- [x] Replace `ChatTransportChunk` outright with the dedicated `ChatUiStreamChunk` runtime chunk family in the breaking round
+- [x] Design and implement protocol negotiation plus additive HTTP transport v2 chunk families that separate `transport-start` from `message-start`
 
 ## Compatibility Layer
 
@@ -182,6 +197,8 @@
 - [x] Decompose `assistant_models.dart` into focused shared/legacy model modules without changing current public exports
 - [x] Decompose `core/config.dart` into focused configuration modules without changing current public exports
 - [x] Centralize legacy config extension keys and typed accessors before any deeper migration away from flat compatibility extensions
+- [x] Introduce namespaced OpenAI-family `providerOptions` reads/writes with flat-key fallback during the compatibility migration
+- [x] Freeze the root shared web-search helpers and `createProvider(..., extensions: ...)` as compatibility-only migration surfaces
 - [x] Route `LLMBuilder.build()` through compat provider subclasses for OpenAI / Google / Anthropic chat
 - [x] Implement the old `ChatCapability` adapter
 - [x] Implement migration adaptation from old `ChatMessage` / `Tool` to new prompt and tool models
@@ -246,6 +263,7 @@
 - [x] Rewrite the reasoning example
 - [x] Rewrite the Flutter integration example
 - [x] Add a migration guide
+- [x] Repoint high-visibility README and core example entrypoints at the stable `AI` facade and provider-owned search APIs
 
 ## Dependency Cleanup
 

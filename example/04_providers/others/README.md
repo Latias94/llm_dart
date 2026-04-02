@@ -1,64 +1,80 @@
 # Other Provider Integrations
 
-OpenAI-compatible providers and specialized integrations.
+This directory focuses on providers that ride the shared OpenAI-family contract
+through profiles such as OpenRouter, DeepSeek, Groq, and xAI.
+
+For new code, prefer stable profile facades:
+
+- `AI.openRouter(...)`
+- `AI.deepSeek(...)`
+- `AI.groq(...)`
+- `AI.xai(...)`
 
 ## Examples
 
 ### [openai_compatible.dart](openai_compatible.dart)
-Unified interface for multiple OpenAI-compatible providers.
+Transitional OpenAI-compatible provider showcase.
 
 ### [xai_grok.dart](xai_grok.dart)
-X.AI Grok integration and configuration.
+Stable xAI example built on the `AI.xai(...).chatModel(...)` facade.
 
 ## Setup
 
 ```bash
-# Set up API keys for providers you want to use
 export XAI_API_KEY="your-xai-api-key"
 export DEEPSEEK_API_KEY="your-deepseek-key"
 export GROQ_API_KEY="your-groq-key"
 export OPENROUTER_API_KEY="your-openrouter-key"
 
-# Run provider integration examples
 dart run openai_compatible.dart
 dart run xai_grok.dart
 ```
 
-## Unique Capabilities
-
-### OpenAI-Compatible Interface
-- **Unified API**: Same interface across multiple providers
-- **Provider Fallback**: Automatic failover between providers
-- **Cost Optimization**: Choose providers based on cost and performance
-
-### Specialized Integrations
-- **OpenRouter**: Access to multiple models through one API
-- **GitHub Copilot**: Coding assistance integration
-- **Together AI**: Open source model access
-
-## Usage Examples
+## Stable Usage Example
 
 ### Provider Fallback Strategy
+
 ```dart
-final providers = [
-  () => ai().groqOpenAI().apiKey('groq-key').model('llama-3.3-70b-versatile'),
-  () => ai().deepseekOpenAI().apiKey('deepseek-key').model('deepseek-chat'),
-  () => ai().openRouter().apiKey('openrouter-key').model('openai/gpt-3.5-turbo'),
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/llm_dart.dart' as llm;
+
+final providers = <core.LanguageModel>[
+  llm.AI.groq(apiKey: 'groq-key').chatModel('llama-3.3-70b-versatile'),
+  llm.AI.deepSeek(apiKey: 'deepseek-key').chatModel('deepseek-chat'),
+  llm.AI.openRouter(apiKey: 'openrouter-key').chatModel('openai/gpt-4o-mini'),
 ];
 
-for (final providerBuilder in providers) {
+for (final model in providers) {
   try {
-    final provider = await providerBuilder().build();
-    final response = await provider.chat([ChatMessage.user('Test')]);
-    print('Success: ${response.text}');
+    final response = await core.generateTextCall(
+      model: model,
+      prompt: [
+        core.UserPromptMessage.text('Test'),
+      ],
+      options: const core.GenerateTextOptions(
+        maxOutputTokens: 120,
+      ),
+    );
+    print('Success via ${model.providerId}: ${response.text}');
     break;
-  } catch (e) {
+  } catch (_) {
     print('Provider failed, trying next...');
   }
 }
 ```
 
+## Boundary Notes
+
+- OpenAI-compatible does not mean generic shared extensions. Provider-specific
+  features should still stay provider owned.
+- For example, OpenRouter online search belongs on
+  `OpenRouterChatModelSettings`, and xAI live search belongs on
+  `XAIGenerateTextOptions`.
+- This is why the architecture keeps profiles under the shared model contract
+  instead of adding more global builder flags.
+
 ## Next Steps
 
-- [Core Features](../../02_core_features/) - Basic functionality
-- [Advanced Features](../../03_advanced_features/) - Custom providers
+- [xai/](../xai/) - Stable xAI live-search examples
+- [Core Features](../../02_core_features/) - Shared text call patterns
+- [Advanced Features](../../03_advanced_features/) - Cross-provider workflows

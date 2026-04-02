@@ -1,6 +1,8 @@
 // ignore_for_file: avoid_print
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/llm_dart.dart' as llm;
 
 /// 🎭 Multimodal Application - Text, Image, and Audio Processing
 ///
@@ -28,9 +30,9 @@ void main(List<String> arguments) async {
 
 /// Comprehensive multimodal AI application
 class MultimodalApp {
-  late ChatCapability _chatProvider;
-  ImageGenerationCapability? _imageProvider;
-  AudioCapability? _audioProvider;
+  late core.LanguageModel _chatModel;
+  core.ImageModel? _imageModel;
+  core.SpeechModel? _speechModel;
 
   bool _verbose = false;
 
@@ -112,51 +114,64 @@ EXAMPLES:
     print('🔧 Initializing multimodal AI providers...');
 
     try {
-      // Initialize chat provider (Groq for fast text processing)
-      final groqKey = Platform.environment['GROQ_API_KEY'] ?? 'gsk-TESTKEY';
-      _chatProvider = await ai()
-          .groq()
-          .apiKey(groqKey)
-          .model('llama-3.1-8b-instant')
-          .temperature(0.7)
-          .maxTokens(1000)
-          .build();
+      final groqKey = Platform.environment['GROQ_API_KEY'];
+      final openaiKey = Platform.environment['OPENAI_API_KEY'];
+
+      if (groqKey != null && groqKey.isNotEmpty) {
+        _chatModel = llm.AI.groq(
+          apiKey: groqKey,
+        ).chatModel('llama-3.3-70b-versatile');
+      } else if (openaiKey != null && openaiKey.isNotEmpty) {
+        _chatModel = llm.AI.openai(
+          apiKey: openaiKey,
+        ).chatModel('gpt-4.1-mini');
+      } else {
+        throw StateError(
+          'Set GROQ_API_KEY or OPENAI_API_KEY to initialize the chat model.',
+        );
+      }
 
       if (_verbose) {
-        print('✅ Chat provider initialized (Groq)');
+        print(
+          '✅ Chat model initialized (${_chatModel.providerId}/${_chatModel.modelId})',
+        );
       }
 
-      // Initialize OpenAI for image and audio capabilities
-      final openaiKey = Platform.environment['OPENAI_API_KEY'] ?? 'sk-TESTKEY';
+      if (openaiKey != null && openaiKey.isNotEmpty) {
+        try {
+          _imageModel = llm.AI.openai(
+            apiKey: openaiKey,
+          ).imageModel('dall-e-3');
+          if (_verbose) {
+            print(
+              '✅ Image model initialized (${_imageModel!.providerId}/${_imageModel!.modelId})',
+            );
+          }
+        } catch (e) {
+          if (_verbose) {
+            print('⚠️ Image generation not available: $e');
+          }
+        }
 
-      // Use capability factory methods for type-safe initialization
-      try {
-        _imageProvider = await ai()
-            .openai()
-            .apiKey(openaiKey)
-            .model('dall-e-3')
-            .buildImageGeneration();
-        if (_verbose) {
-          print('✅ Image provider initialized (OpenAI DALL-E)');
+        try {
+          _speechModel = llm.AI.openai(
+            apiKey: openaiKey,
+          ).speechModel('gpt-4o-mini-tts');
+          if (_verbose) {
+            print(
+              '✅ Speech model initialized (${_speechModel!.providerId}/${_speechModel!.modelId})',
+            );
+          }
+        } catch (e) {
+          if (_verbose) {
+            print('⚠️ Speech generation not available: $e');
+          }
         }
-      } catch (e) {
-        if (_verbose) {
-          print('⚠️ Image generation not available: $e');
-        }
+      } else if (_verbose) {
+        print('⚠️ OpenAI media models unavailable because OPENAI_API_KEY is not set');
       }
 
-      try {
-        _audioProvider = await ai().openai().apiKey(openaiKey).buildAudio();
-        if (_verbose) {
-          print('✅ Audio provider initialized (OpenAI Whisper)');
-        }
-      } catch (e) {
-        if (_verbose) {
-          print('⚠️ Audio processing not available: $e');
-        }
-      }
-
-      print('🎉 All providers initialized successfully!\n');
+      print('🎉 Models initialized successfully!\n');
     } catch (e) {
       throw Exception('Failed to initialize providers: $e');
     }
@@ -253,7 +268,6 @@ EXAMPLES:
   Future<void> demonstrateAudioProcessing() async {
     print('🎵 Audio Processing Demo:');
 
-    // Simulate audio transcription
     final sampleAudioTexts = [
       'Hello, this is a sample audio transcription.',
       'Multimodal AI can process text, images, and audio together.',
@@ -261,11 +275,13 @@ EXAMPLES:
     ];
 
     for (final text in sampleAudioTexts) {
-      print('   🎤 Simulating audio: "$text"');
+      print('   🎤 Processing text for narration: "$text"');
 
       try {
         final processed = await processAudioText(text);
-        print('   🔊 Processed: ${processed.substring(0, 80)}...\n');
+        print('   🔊 Processed: ${processed.substring(0, 80)}...');
+        await synthesizeAudioPreview(processed);
+        print('');
       } catch (e) {
         print('   ❌ Processing failed: $e\n');
       }
@@ -280,18 +296,15 @@ EXAMPLES:
     print('   📋 Scenario: $scenario');
 
     try {
-      // Step 1: Generate text content
       print('   📝 Step 1: Generating text content...');
       final textContent = await generateContent(scenario);
       print('   ✅ Text: ${textContent.substring(0, 100)}...');
 
-      // Step 2: Generate image based on text
       print('   🎨 Step 2: Generating matching image...');
       final imagePrompt = await createImagePrompt(textContent);
       await generateImage(imagePrompt);
       print('   ✅ Image generated');
 
-      // Step 3: Create audio description
       print('   🎵 Step 3: Creating audio description...');
       final audioScript = await createAudioScript(textContent);
       print('   ✅ Audio script: ${audioScript.substring(0, 80)}...');
@@ -340,7 +353,9 @@ EXAMPLES:
     if (text != null && text.isNotEmpty) {
       try {
         final processed = await processAudioText(text);
-        print('🔊 Processed: $processed\n');
+        print('🔊 Processed: $processed');
+        await synthesizeAudioPreview(processed);
+        print('');
       } catch (e) {
         print('❌ Processing failed: $e\n');
       }
@@ -375,46 +390,41 @@ EXAMPLES:
 
   /// Analyze text content
   Future<String> analyzeText(String text) async {
-    final messages = [
-      ChatMessage.system(
-          'Analyze the given text and provide insights about its tone, key themes, sentiment, and main message. Be concise and informative.'),
-      ChatMessage.user(text),
-    ];
-
-    final response = await _chatProvider.chat(messages);
-    return response.text ?? 'Analysis not available';
+    return await _runTextTask(
+      system:
+          'Analyze the given text and provide insights about its tone, key themes, sentiment, and main message. Be concise and informative.',
+      user: text,
+      maxOutputTokens: 220,
+    );
   }
 
   /// Generate content based on prompt
   Future<String> generateContent(String prompt) async {
-    final messages = [
-      ChatMessage.system(
-          'Generate engaging, creative content based on the given prompt. Make it informative and appealing.'),
-      ChatMessage.user(prompt),
-    ];
-
-    final response = await _chatProvider.chat(messages);
-    return response.text ?? 'Content generation failed';
+    return await _runTextTask(
+      system:
+          'Generate engaging, creative content based on the given prompt. Make it informative and appealing.',
+      user: prompt,
+      maxOutputTokens: 260,
+    );
   }
 
   /// Generate image from prompt
   Future<void> generateImage(String prompt) async {
-    if (_imageProvider == null) {
+    if (_imageModel == null) {
       print('   ⚠️ Image generation not available (OpenAI API key required)');
       return;
     }
 
-    final request = ImageGenerationRequest(
+    final response = await core.generateImage(
+      model: _imageModel!,
       prompt: prompt,
       count: 1,
       size: '1024x1024',
     );
 
-    final response = await _imageProvider!.generateImages(request);
-
     if (response.images.isNotEmpty) {
       if (_verbose) {
-        print('   🖼️ Image URL: ${response.images.first.url}');
+        print('   🖼️ Image URI: ${response.images.first.uri}');
       }
     } else {
       throw Exception('No images generated');
@@ -423,43 +433,76 @@ EXAMPLES:
 
   /// Create image prompt from text content
   Future<String> createImagePrompt(String textContent) async {
-    final messages = [
-      ChatMessage.system(
-          'Based on the given text content, create a detailed image generation prompt that would create a visually appealing image to accompany the text. Focus on visual elements, style, and mood.'),
-      ChatMessage.user(textContent),
-    ];
-
-    final response = await _chatProvider.chat(messages);
-    return response.text ?? 'A generic illustration';
+    return await _runTextTask(
+      system:
+          'Based on the given text content, create a detailed image generation prompt that would create a visually appealing image to accompany the text. Focus on visual elements, style, and mood.',
+      user: textContent,
+      maxOutputTokens: 180,
+    );
   }
 
-  /// Process audio text (simulated audio processing)
+  /// Process audio text for narration
   Future<String> processAudioText(String text) async {
-    // In a real implementation, this would use _audioProvider for actual TTS/STT
-    if (_audioProvider != null) {
-      // Could use _audioProvider.textToSpeech() here for real audio processing
-      print('   🎵 Audio provider available for real processing');
+    if (_speechModel != null && _verbose) {
+      print('   🎵 Speech model available for narration preview');
     }
 
-    final messages = [
-      ChatMessage.system(
-          'Process the given text for audio narration. Improve clarity, add appropriate pauses, and suggest tone and emphasis. Return the optimized script.'),
-      ChatMessage.user(text),
-    ];
-
-    final response = await _chatProvider.chat(messages);
-    return response.text ?? 'Audio processing not available';
+    return await _runTextTask(
+      system:
+          'Process the given text for audio narration. Improve clarity, add appropriate pauses, and suggest tone and emphasis. Return the optimized script.',
+      user: text,
+      maxOutputTokens: 220,
+    );
   }
 
   /// Create audio script from text content
   Future<String> createAudioScript(String textContent) async {
-    final messages = [
-      ChatMessage.system(
-          'Convert the given text content into an engaging audio script suitable for narration. Add appropriate pauses, emphasis, and speaking directions.'),
-      ChatMessage.user(textContent),
-    ];
+    return await _runTextTask(
+      system:
+          'Convert the given text content into an engaging audio script suitable for narration. Add appropriate pauses, emphasis, and speaking directions.',
+      user: textContent,
+      maxOutputTokens: 220,
+    );
+  }
 
-    final response = await _chatProvider.chat(messages);
-    return response.text ?? 'Audio script generation failed';
+  Future<void> synthesizeAudioPreview(String script) async {
+    if (_speechModel == null) {
+      if (_verbose) {
+        print('   ⚠️ Speech synthesis not available');
+      }
+      return;
+    }
+
+    final result = await core.generateSpeech(
+      model: _speechModel!,
+      text: script,
+      voice: 'alloy',
+    );
+
+    if (_verbose) {
+      print(
+        '   🎧 Generated ${result.audioBytes.length} audio bytes (${result.mediaType ?? 'unknown media type'})',
+      );
+    }
+  }
+
+  Future<String> _runTextTask({
+    required String system,
+    required String user,
+    int maxOutputTokens = 220,
+  }) async {
+    final result = await core.generateTextCall(
+      model: _chatModel,
+      prompt: [
+        core.SystemPromptMessage.text(system),
+        core.UserPromptMessage.text(user),
+      ],
+      options: core.GenerateTextOptions(
+        temperature: 0.7,
+        maxOutputTokens: maxOutputTokens,
+      ),
+    );
+
+    return result.text;
   }
 }

@@ -1,5 +1,7 @@
 library;
 
+export 'package:llm_dart_transport/llm_dart_transport.dart'
+    show TransportCancellation, TransportCancelledException;
 export 'src/common/model_warning.dart';
 export 'src/common/model_error.dart';
 export 'src/common/call_options.dart';
@@ -34,3 +36,5 @@ export 'src/stream/text_stream_event.dart';
 export 'src/tool/tool_definition.dart';
 export 'src/ui/chat_ui_accumulator.dart';
 export 'src/ui/chat_ui_message.dart';
+export 'src/ui/chat_ui_stream_accumulator.dart';
+export 'src/ui/chat_ui_stream_chunk.dart';

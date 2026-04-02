@@ -1,212 +1,218 @@
-# OpenAI Unique Features
+# OpenAI Provider Features
 
-OpenAI-specific capabilities not available in other providers.
+OpenAI is one of the providers with the broadest stable surface in the
+refactored architecture.
 
-## Examples
+For new code, prefer:
 
-### [image_generation.dart](image_generation.dart)
-DALL-E image generation with advanced configuration options.
+- `AI.openai(...).chatModel(...)`
+- `AI.openai(...).imageModel(...)`
+- `AI.openai(...).speechModel(...)`
+- `AI.openai(...).transcriptionModel(...)`
+- shared helpers from `package:llm_dart/core.dart`
+- typed OpenAI-owned options from `package:llm_dart/openai.dart`
 
-### [audio_capabilities.dart](audio_capabilities.dart)
-Whisper speech-to-text and TTS voice synthesis.
+## Example Status
 
-### [advanced_features.dart](advanced_features.dart)
-Assistants API and specialized model features.
+### Stable or Mostly Stable Source Files
 
-### [responses_api.dart](responses_api.dart)
-OpenAI's new Responses API with built-in tools like web search, file search, and computer use.
+- [advanced_features.dart](advanced_features.dart)
+- [image_generation.dart](image_generation.dart)
+- [image_and_file_messages.dart](image_and_file_messages.dart)
+- [audio_capabilities.dart](audio_capabilities.dart)
+- [gpt5_features.dart](gpt5_features.dart)
 
-### [build_openai_responses_demo.dart](build_openai_responses_demo.dart)
-Type-safe `buildOpenAIResponses()` convenience method for automatic Responses API configuration.
+### Transitional or Compatibility-Oriented Source Files
 
-### [gpt5_features.dart](gpt5_features.dart)
-GPT-5 specific features including verbosity control, minimal reasoning, and model variants.
+- [responses_api.dart](responses_api.dart)
+- [build_openai_responses_demo.dart](build_openai_responses_demo.dart)
+
+These two files are intentionally boundary-oriented. They now explain when
+stable `chatModel(...)` usage is sufficient and when raw OpenAI response
+lifecycle APIs still require the provider-specific compatibility surface.
+
+The stable model surfaces already exist even where some provider-specific
+example files still document older builder flows.
 
 ## Setup
 
 ```bash
 export OPENAI_API_KEY="your-openai-api-key"
 
-# Run OpenAI-specific examples
 dart run image_generation.dart
+dart run image_and_file_messages.dart
 dart run audio_capabilities.dart
+dart run gpt5_features.dart
 dart run advanced_features.dart
 dart run responses_api.dart
 dart run build_openai_responses_demo.dart
-dart run gpt5_features.dart
 ```
 
-## Unique Capabilities
+## Stable Usage Examples
 
-### DALL-E Image Generation
-- **DALL-E 3**: High-quality single images with prompt enhancement
-- **DALL-E 2**: Multiple variations and image editing
-- **Advanced controls**: Style, quality, size options
+### Chat With Built-In Tools
 
-### Whisper Audio Processing
-- **Speech-to-text**: Professional transcription accuracy
-- **Audio translation**: Translate speech to English
-- **Multiple formats**: Support for various audio formats
-
-### Assistants API
-
-- **Persistent assistants**: Stateful conversations
-- **Tool integration**: Code interpreter and file search
-- **File management**: Upload and process documents
-
-### Responses API
-
-- **Built-in tools**: Web search, file search, computer use
-- **Unified interface**: Combines Chat Completions and Assistants API
-- **Multi-turn workflows**: Single API call with multiple tool uses
-- **Response chaining**: Link responses for complex workflows
-
-### GPT-5 Features
-
-- **Verbosity Control**: Adjust output detail with `low`, `medium`, `high` settings
-- **Minimal Reasoning**: Use `ReasoningEffort.minimal` for faster responses
-- **Model Variants**: Support for GPT-5 family models: `gpt-5.1`, `gpt-5-mini`, `gpt-5-nano`, and `gpt-5` (previous version)
-
-## Usage Examples
-
-### Image Generation
 ```dart
-final imageProvider = await ai().openai().apiKey('your-key')
-    .model('dall-e-3').buildImageGeneration();
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/openai.dart' as openai;
 
-final images = await imageProvider.generateImage(
-  prompt: 'A futuristic cityscape',
-  imageSize: '1024x1024',
-);
-```
+final model = llm.AI.openai(apiKey: 'your-key').chatModel('gpt-5-mini');
 
-### Audio Processing
-```dart
-final audioProvider = await ai().openai().apiKey('your-key')
-    .buildAudio();
-
-// Speech-to-text
-final transcription = await audioProvider.transcribeFile('audio.mp3');
-
-// Text-to-speech
-final audioData = await audioProvider.speech('Hello world');
-```
-
-### Assistants
-```dart
-final assistantProvider = await ai().openai().apiKey('your-key')
-    .buildAssistant();
-
-final assistant = await assistantProvider.createAssistant(
-  CreateAssistantRequest(
-    model: 'gpt-4',
-    name: 'Code Helper',
-    tools: [CodeInterpreterTool()],
+final result = await core.generateTextCall(
+  model: model,
+  prompt: [
+    core.UserPromptMessage.text('Search for recent AI developments.'),
+  ],
+  callOptions: const core.CallOptions(
+    providerOptions: openai.OpenAIGenerateTextOptions(
+      builtInTools: [
+        openai.OpenAIWebSearchTool(),
+      ],
+    ),
   ),
 );
+
+print(result.text);
 ```
 
-### GPT-5 Features
-```dart
-// Verbosity control
-final provider = await ai()
-    .openai((openai) => openai.verbosity(Verbosity.high))
-    .apiKey('your-key')
-    .model('gpt-5.1') // Recommended latest GPT-5 family model
-    .build();
-
-// Minimal reasoning for faster responses
-final fastProvider = await ai()
-    .openai()
-    .apiKey('your-key')
-    .model('gpt-5-mini') // Cost-efficient GPT-5 family variant
-    .reasoningEffort(ReasoningEffort.minimal)
-    .build();
-```
-
-### Responses API
-
-The Responses API is OpenAI's new stateful API that combines the simplicity of Chat Completions with advanced capabilities:
-
-#### Basic Usage
+### Image Generation
 
 ```dart
-// Traditional approach
-final provider = await ai()
-    .openai((openai) => openai
-        .useResponsesAPI()
-        .webSearchTool()
-        .fileSearchTool(vectorStoreIds: ['vs_123']))
-    .apiKey('your-key')
-    .model('gpt-5-mini') // Recommended cost-efficient GPT-5 family model
-    .build();
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/openai.dart' as openai;
 
-// New convenience method (recommended)
-final provider = await ai()
-    .openai((openai) => openai
-        .webSearchTool()
-        .fileSearchTool(vectorStoreIds: ['vs_123']))
-    .apiKey('your-key')
-    .model('gpt-5-mini') // Recommended cost-efficient GPT-5 family model
-    .buildOpenAIResponses(); // Automatically enables Responses API
+final imageModel = llm.AI.openai(apiKey: 'your-key').imageModel('dall-e-3');
+
+final result = await core.generateImage(
+  model: imageModel,
+  prompt: 'A futuristic cityscape',
+  count: 1,
+  size: '1024x1024',
+  callOptions: const core.CallOptions(
+    providerOptions: openai.OpenAIImageOptions(
+      quality: openai.OpenAIImageQuality.high,
+      style: openai.OpenAIImageStyle.vivid,
+    ),
+  ),
+);
+
+print(result.images.first.uri);
 ```
 
-#### Stateful Conversations
+### Speech Generation and Transcription
 
 ```dart
-// Using buildOpenAIResponses() - no casting needed!
-final provider = await ai().openai().apiKey('your-key')
-    .model('gpt-5-mini').buildOpenAIResponses();
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/openai.dart' as openai;
 
-// Direct access to Responses API
-final responses = provider.responses!;
+final speechModel = llm.AI.openai(apiKey: 'your-key').speechModel('gpt-4o-mini-tts');
+final transcriptModel = llm.AI.openai(apiKey: 'your-key').transcriptionModel('whisper-1');
 
-// Create initial response
-final response1 = await responses.chat([
-  ChatMessage.user('My name is Alice. Tell me about AI'),
-]);
+final speech = await core.generateSpeech(
+  model: speechModel,
+  text: 'Hello from llm_dart.',
+  voice: 'alloy',
+  callOptions: const core.CallOptions(
+    providerOptions: openai.OpenAISpeechOptions(
+      outputFormat: 'wav',
+      speed: 1.0,
+    ),
+  ),
+);
 
-// Continue conversation with state preservation
-final responseId = (response1 as OpenAIResponsesResponse).responseId;
-final response2 = await responses.continueConversation(responseId!, [
-  ChatMessage.user('Remember my name and explain machine learning'),
-]);
+final transcript = await core.transcribe(
+  model: transcriptModel,
+  audioBytes: speech.audioBytes,
+  mediaType: speech.mediaType,
+  callOptions: const core.CallOptions(
+    providerOptions: openai.OpenAITranscriptionOptions(
+      responseFormat: openai.OpenAITranscriptionResponseFormat.text,
+    ),
+  ),
+);
+
+print(transcript.text);
 ```
 
-#### Background Processing
+### GPT-5 Verbosity and Reasoning Controls
 
 ```dart
-// Start long-running task in background
-final backgroundResponse = await responses.chatWithToolsBackground([
-  ChatMessage.user('Write a detailed research report'),
-], null);
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/openai.dart' as openai;
 
-// Check status later
-final responseId = (backgroundResponse as OpenAIResponsesResponse).responseId;
-final result = await responses.getResponse(responseId!);
+final model = llm.AI.openai(apiKey: 'your-key').chatModel('gpt-5.1');
+
+final result = await core.generateTextCall(
+  model: model,
+  prompt: [
+    core.UserPromptMessage.text('Explain how photosynthesis works.'),
+  ],
+  callOptions: const core.CallOptions(
+    providerOptions: openai.OpenAIGenerateTextOptions(
+      verbosity: 'high',
+      reasoningEffort: openai.OpenAIReasoningEffort.minimal,
+    ),
+  ),
+);
+
+print(result.text);
+print(result.usage?.reasoningTokens);
 ```
 
-#### Response Lifecycle Management
+### Stable Multimodal Prompt Parts
 
 ```dart
-// Retrieve response by ID
-final response = await responses.getResponse('resp_123');
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/llm_dart.dart' as llm;
 
-// List input items
-final inputItems = await responses.listInputItems('resp_123');
+final model = llm.AI.openai(apiKey: 'your-key').chatModel('gpt-4o');
 
-// Delete response
-await responses.deleteResponse('resp_123');
+final result = await core.generateTextCall(
+  model: model,
+  prompt: [
+    core.UserPromptMessage(
+      parts: [
+        const core.TextPromptPart('Describe this image in one sentence.'),
+        core.ImagePromptPart(
+          mediaType: 'image/jpeg',
+          uri: Uri.parse('https://example.com/cat.jpg'),
+        ),
+      ],
+    ),
+  ],
+);
 
-// Cancel background response
-await responses.cancelResponse('resp_123');
-
-final response = await provider.chat([
-  ChatMessage.user('Search for recent AI developments'),
-]);
+print(result.text);
 ```
+
+## Capability Notes
+
+### Stable Today
+
+- provider-owned built-in tools through `OpenAIGenerateTextOptions`
+- model-level defaults through `OpenAIChatModelSettings`
+- image generation through `OpenAIImageOptions`
+- speech generation through `OpenAISpeechOptions`
+- transcription through `OpenAITranscriptionOptions`
+- GPT-5 verbosity and reasoning-effort controls through
+  `OpenAIGenerateTextOptions`
+- multimodal prompt parts through shared `ImagePromptPart` and `FilePromptPart`
+
+### Still Compatibility-Oriented
+
+- `buildAssistant()` and the legacy assistants surface
+- direct `buildOpenAIResponses()` convenience examples
+- raw response lifecycle helpers that expose provider-specific response objects
+
+Those compatibility paths still work, but they should not be treated as the
+target architecture for new Flutter or app-facing integrations.
 
 ## Next Steps
 
-- [Core Features](../../02_core_features/) - Basic chat and streaming
-- [Advanced Features](../../03_advanced_features/) - Cross-provider capabilities
+- [Core Features](../../02_core_features/) - Stable text and streaming patterns
+- [Advanced Features](../../03_advanced_features/) - Shared reasoning and tools
+- [Use Cases](../../05_use_cases/) - Complete app integration examples

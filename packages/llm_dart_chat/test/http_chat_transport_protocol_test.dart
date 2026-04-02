@@ -1,10 +1,11 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
-import 'package:llm_dart_flutter/llm_dart_flutter.dart';
+import 'package:llm_dart_chat/llm_dart_chat.dart';
 import 'package:test/test.dart';
 
 void main() {
   group('HttpChatTransportRequestJsonCodec', () {
-    test('round-trips prompt, generate options, and metadata', () {
+    test('round-trips prompt, generate options, metadata, and stream protocol',
+        () {
       const codec = HttpChatTransportRequestJsonCodec();
       final encoded = codec.encodeRequest(
         HttpChatTransportRequestPayload(
@@ -19,6 +20,7 @@ void main() {
             topP: 0.9,
             topK: 40,
           ),
+          streamProtocol: HttpChatTransportStreamProtocol.uiMessageStreamV2,
           metadata: const {
             'clientRequestId': 'req-1',
           },
@@ -35,9 +37,34 @@ void main() {
       expect(decoded.generateOptions.stopSequences, ['DONE']);
       expect(decoded.generateOptions.topP, 0.9);
       expect(decoded.generateOptions.topK, 40);
+      expect(
+        decoded.streamProtocol,
+        HttpChatTransportStreamProtocol.uiMessageStreamV2,
+      );
       expect(decoded.metadata, {
         'clientRequestId': 'req-1',
       });
+    });
+
+    test('decodes legacy request payloads without stream protocol as v1', () {
+      const codec = HttpChatTransportRequestJsonCodec();
+
+      final decoded = codec.decodeRequest({
+        'schemaVersion': llmDartJsonSchemaVersion,
+        'kind': HttpChatTransportRequestJsonCodec.envelopeKind,
+        'data': {
+          'chatId': 'chat-1',
+          'prompt': const PromptJsonCodec().encodeMessages([
+            UserPromptMessage.text('Hello'),
+          ]),
+          'generateOptions': <String, Object?>{},
+        },
+      });
+
+      expect(
+        decoded.streamProtocol,
+        HttpChatTransportStreamProtocol.eventStreamV1,
+      );
     });
 
     test('round-trips reconnect request payloads', () {
@@ -46,6 +73,7 @@ void main() {
         HttpChatTransportReconnectRequestPayload(
           chatId: 'chat-1',
           resumeToken: 'resume-2',
+          streamProtocol: HttpChatTransportStreamProtocol.uiMessageStreamV2,
           metadata: const {
             'attempt': 2,
           },
@@ -60,6 +88,10 @@ void main() {
       final decoded = codec.decodeReconnectRequest(encoded);
       expect(decoded.chatId, 'chat-1');
       expect(decoded.resumeToken, 'resume-2');
+      expect(
+        decoded.streamProtocol,
+        HttpChatTransportStreamProtocol.uiMessageStreamV2,
+      );
       expect(decoded.metadata, {
         'attempt': 2,
       });
@@ -70,10 +102,25 @@ void main() {
     test('round-trips transport chunks and text stream events', () {
       const codec = HttpChatTransportChunkJsonCodec();
       final chunks = [
+        const HttpChatTransportTransportStartChunk(
+          requestId: 'req-v2',
+          resumeToken: 'resume-v2',
+        ),
         const HttpChatTransportStartChunk(
           requestId: 'req-1',
           messageId: 'assistant-1',
           resumeToken: 'resume-1',
+        ),
+        HttpChatTransportMessageStartChunk(
+          messageId: 'assistant-2',
+          metadata: const {
+            'serverOwned': true,
+          },
+        ),
+        HttpChatTransportMessageMetadataChunk(
+          metadata: const {
+            'phase': 'streaming',
+          },
         ),
         const HttpChatTransportEventChunk(
           TextDeltaEvent(
@@ -99,6 +146,11 @@ void main() {
           resumeToken: 'resume-2',
           cursor: 'cursor-2',
         ),
+        HttpChatTransportMessageFinishChunk(
+          metadata: const {
+            'persisted': true,
+          },
+        ),
         const HttpChatTransportFinishChunk(),
         const HttpChatTransportAbortChunk(
           reason: 'cancelled',
@@ -119,17 +171,30 @@ void main() {
           .map(codec.decodeChunk)
           .toList(growable: false);
 
-      expect(decoded[0], isA<HttpChatTransportStartChunk>());
+      expect(decoded[0], isA<HttpChatTransportTransportStartChunk>());
       expect(
-        (decoded[0] as HttpChatTransportStartChunk).resumeToken,
+        (decoded[0] as HttpChatTransportTransportStartChunk).resumeToken,
+        'resume-v2',
+      );
+
+      expect(decoded[1], isA<HttpChatTransportStartChunk>());
+      expect(
+        (decoded[1] as HttpChatTransportStartChunk).resumeToken,
         'resume-1',
       );
 
-      final eventChunk = decoded[1] as HttpChatTransportEventChunk;
+      final messageStart = decoded[2] as HttpChatTransportMessageStartChunk;
+      expect(messageStart.messageId, 'assistant-2');
+      expect(messageStart.metadata['serverOwned'], isTrue);
+
+      final metadataChunk = decoded[3] as HttpChatTransportMessageMetadataChunk;
+      expect(metadataChunk.metadata['phase'], 'streaming');
+
+      final eventChunk = decoded[4] as HttpChatTransportEventChunk;
       expect(eventChunk.event, isA<TextDeltaEvent>());
       expect((eventChunk.event as TextDeltaEvent).delta, 'Hello');
 
-      final dataPartChunk = decoded[2] as HttpChatTransportDataPartChunk;
+      final dataPartChunk = decoded[5] as HttpChatTransportDataPartChunk;
       expect(dataPartChunk.part.id, 'progress');
       expect(dataPartChunk.part.key, 'status');
       expect(
@@ -137,19 +202,22 @@ void main() {
         0.5,
       );
 
-      final checkpoint = decoded[3] as HttpChatTransportCheckpointChunk;
+      final checkpoint = decoded[6] as HttpChatTransportCheckpointChunk;
       expect(checkpoint.cursor, 'cursor-2');
 
-      expect(decoded[4], isA<HttpChatTransportFinishChunk>());
-      expect((decoded[5] as HttpChatTransportAbortChunk).reason, 'cancelled');
+      final messageFinish = decoded[7] as HttpChatTransportMessageFinishChunk;
+      expect(messageFinish.metadata['persisted'], isTrue);
 
-      final error = decoded[6] as HttpChatTransportErrorChunk;
+      expect(decoded[8], isA<HttpChatTransportFinishChunk>());
+      expect((decoded[9] as HttpChatTransportAbortChunk).reason, 'cancelled');
+
+      final error = decoded[10] as HttpChatTransportErrorChunk;
       expect(error.code, 'transport_error');
       expect(error.details, {
         'retryable': false,
       });
 
-      expect(decoded[7], isA<HttpChatTransportKeepAliveChunk>());
+      expect(decoded[11], isA<HttpChatTransportKeepAliveChunk>());
     });
   });
 }

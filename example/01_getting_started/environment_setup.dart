@@ -1,5 +1,7 @@
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/llm_dart.dart' as llm;
 
 /// Environment setup and configuration examples
 ///
@@ -60,17 +62,17 @@ Future<void> demonstrateEnvironmentVariables() async {
   print('      • Rotate keys regularly');
   print('      • Use key management services in production');
 
-  // Demonstrate provider creation with environment variables
-  print('\n   🔧 Creating Providers from Environment:');
+  // Demonstrate stable model creation with environment variables
+  print('\n   🔧 Creating Models from Environment:');
 
   try {
     // OpenAI example
     final openaiKey = Platform.environment['OPENAI_API_KEY'];
     if (openaiKey != null) {
-      final openaiProvider =
-          await ai().openai().apiKey(openaiKey).model('gpt-3.5-turbo').build();
+      final openaiModel =
+          llm.AI.openai(apiKey: openaiKey).chatModel('gpt-4.1-mini');
       print(
-          '      ✅ OpenAI provider configured (${openaiProvider.runtimeType})');
+          '      ✅ OpenAI model configured (${openaiModel.runtimeType})');
     } else {
       print('      ⚠️  OpenAI: Set OPENAI_API_KEY environment variable');
     }
@@ -78,13 +80,11 @@ Future<void> demonstrateEnvironmentVariables() async {
     // Anthropic example
     final anthropicKey = Platform.environment['ANTHROPIC_API_KEY'];
     if (anthropicKey != null) {
-      final anthropicProvider = await ai()
-          .anthropic()
-          .apiKey(anthropicKey)
-          .model('claude-3-sonnet-20240229')
-          .build();
+      final anthropicModel = llm.AI.anthropic(
+        apiKey: anthropicKey,
+      ).chatModel('claude-sonnet-4-5');
       print(
-          '      ✅ Anthropic provider configured (${anthropicProvider.runtimeType})');
+          '      ✅ Anthropic model configured (${anthropicModel.runtimeType})');
     } else {
       print('      ⚠️  Anthropic: Set ANTHROPIC_API_KEY environment variable');
     }
@@ -190,7 +190,7 @@ Future<void> demonstrateDevelopmentVsProduction() async {
 
   // Create provider with environment-specific config
   try {
-    final provider = await createProviderForEnvironment(environment);
+    final provider = createProviderForEnvironment(environment);
     if (provider != null) {
       print('      ✅ Provider configured for $environment');
     }
@@ -514,18 +514,14 @@ Future<void> setupOllama() async {
   print('      💡 No API key required for local usage');
 }
 
-/// Create provider for specific environment
-Future<ChatCapability?> createProviderForEnvironment(String environment) async {
+/// Create model for specific environment
+core.LanguageModel? createProviderForEnvironment(String environment) {
   final apiKey = Platform.environment['OPENAI_API_KEY'];
   if (apiKey == null) return null;
 
-  final config = EnvironmentConfig.forEnvironment(environment);
-
-  return await ai()
-      .openai()
-      .apiKey(apiKey)
-      .model(environment == 'production' ? 'gpt-4' : 'gpt-3.5-turbo')
-      .timeout(config.timeout)
-      .temperature(config.debugMode ? 0.1 : 0.7)
-      .build();
+  return llm.AI.openai(
+    apiKey: apiKey,
+  ).chatModel(
+    environment == 'production' ? 'gpt-4.1' : 'gpt-4.1-mini',
+  );
 }

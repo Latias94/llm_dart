@@ -229,7 +229,10 @@ final class GenerateTextResultAccumulator {
             providerMetadata: event.providerMetadata,
           ),
         );
-      case StepStartEvent() || StepFinishEvent() || RawChunkEvent():
+      case StepStartEvent() ||
+            StepFinishEvent() ||
+            AbortEvent() ||
+            RawChunkEvent():
         break;
       case FinishEvent():
         _finishReason = event.finishReason;

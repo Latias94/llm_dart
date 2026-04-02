@@ -10,6 +10,7 @@ void main() {
   group('AnthropicLanguageModel', () {
     test('generate maps a messages response to the unified result', () async {
       TransportRequest? capturedRequest;
+      final cancelToken = TransportCancellation();
 
       final model = Anthropic(
         apiKey: 'test-key',
@@ -78,13 +79,14 @@ void main() {
           options: const GenerateTextOptions(
             maxOutputTokens: 200,
           ),
-          callOptions: const CallOptions(
-            timeout: Duration(seconds: 5),
-            headers: {
+          callOptions: CallOptions(
+            timeout: const Duration(seconds: 5),
+            headers: const {
               'anthropic-beta': 'prompt-caching-2024-07-31',
               'x-call': '2',
             },
-            providerOptions: AnthropicGenerateTextOptions(
+            cancellation: cancelToken,
+            providerOptions: const AnthropicGenerateTextOptions(
               extendedThinking: true,
               interleavedThinking: true,
               mcpServers: [
@@ -107,6 +109,7 @@ void main() {
       expect(capturedRequest!.method, TransportMethod.post);
       expect(capturedRequest!.responseType, TransportResponseType.json);
       expect(capturedRequest!.timeout, const Duration(seconds: 5));
+      expect(identical(capturedRequest!.cancellation, cancelToken), isTrue);
       expect(capturedRequest!.headers['x-api-key'], 'test-key');
       expect(capturedRequest!.headers['anthropic-version'], '2023-06-01');
       expect(capturedRequest!.headers['accept'], 'application/json');

@@ -1,5 +1,7 @@
 import 'package:test/test.dart';
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/src/config/legacy_config_keys.dart';
+import 'package:llm_dart/src/config/legacy_provider_options.dart';
 
 void main() {
   group('ProviderConfig', () {
@@ -17,6 +19,11 @@ void main() {
     group('Provider selection methods', () {
       test('openai() returns self for chaining', () {
         final result = config.openai();
+        expect(identical(result, config), isTrue);
+      });
+
+      test('openRouter() returns self for chaining', () {
+        final result = config.openRouter();
         expect(identical(result, config), isTrue);
       });
 
@@ -61,44 +68,81 @@ void main() {
       test('frequencyPenalty() sets frequency penalty', () {
         config.frequencyPenalty(0.5);
         final result = config.build();
-        expect(result['frequencyPenalty'], equals(0.5));
+        final providerOptions =
+            result[legacyProviderOptionsBagKey] as Map<String, dynamic>;
+        final openaiOptions =
+            providerOptions[LegacyProviderOptionNamespaces.openai]
+                as Map<String, dynamic>;
+        expect(
+            openaiOptions[LegacyExtensionKeys.frequencyPenalty], equals(0.5));
+        expect(result[LegacyExtensionKeys.frequencyPenalty], isNull);
       });
 
       test('presencePenalty() sets presence penalty', () {
         config.presencePenalty(0.3);
         final result = config.build();
-        expect(result['presencePenalty'], equals(0.3));
+        final providerOptions =
+            result[legacyProviderOptionsBagKey] as Map<String, dynamic>;
+        final openaiOptions =
+            providerOptions[LegacyProviderOptionNamespaces.openai]
+                as Map<String, dynamic>;
+        expect(openaiOptions[LegacyExtensionKeys.presencePenalty], equals(0.3));
       });
 
       test('logitBias() sets logit bias', () {
         final bias = {'token1': 0.5, 'token2': -0.3};
         config.logitBias(bias);
         final result = config.build();
-        expect(result['logitBias'], equals(bias));
+        final providerOptions =
+            result[legacyProviderOptionsBagKey] as Map<String, dynamic>;
+        final openaiOptions =
+            providerOptions[LegacyProviderOptionNamespaces.openai]
+                as Map<String, dynamic>;
+        expect(openaiOptions[LegacyExtensionKeys.logitBias], equals(bias));
       });
 
       test('seed() sets seed value', () {
         config.seed(12345);
         final result = config.build();
-        expect(result['seed'], equals(12345));
+        final providerOptions =
+            result[legacyProviderOptionsBagKey] as Map<String, dynamic>;
+        final openaiOptions =
+            providerOptions[LegacyProviderOptionNamespaces.openai]
+                as Map<String, dynamic>;
+        expect(openaiOptions[LegacyExtensionKeys.seed], equals(12345));
       });
 
       test('parallelToolCalls() enables parallel tool calls', () {
         config.parallelToolCalls(true);
         final result = config.build();
-        expect(result['parallelToolCalls'], isTrue);
+        final providerOptions =
+            result[legacyProviderOptionsBagKey] as Map<String, dynamic>;
+        final openaiOptions =
+            providerOptions[LegacyProviderOptionNamespaces.openai]
+                as Map<String, dynamic>;
+        expect(openaiOptions[LegacyExtensionKeys.parallelToolCalls], isTrue);
       });
 
       test('logprobs() enables logprobs', () {
         config.logprobs(true);
         final result = config.build();
-        expect(result['logprobs'], isTrue);
+        final providerOptions =
+            result[legacyProviderOptionsBagKey] as Map<String, dynamic>;
+        final openaiOptions =
+            providerOptions[LegacyProviderOptionNamespaces.openai]
+                as Map<String, dynamic>;
+        expect(openaiOptions[LegacyExtensionKeys.logprobs], isTrue);
       });
 
       test('topLogprobs() sets top logprobs count', () {
         config.topLogprobs(5);
         final result = config.build();
-        expect(result['topLogprobs'], equals(5));
+        final providerOptions =
+            result[legacyProviderOptionsBagKey] as Map<String, dynamic>;
+        final openaiOptions =
+            providerOptions[LegacyProviderOptionNamespaces.openai]
+                as Map<String, dynamic>;
+        expect(openaiOptions[LegacyExtensionKeys.topLogprobs], equals(5));
       });
 
       test('OpenAI configuration chaining', () {
@@ -112,12 +156,32 @@ void main() {
             .topLogprobs(3)
             .build();
 
-        expect(result['frequencyPenalty'], equals(0.2));
-        expect(result['presencePenalty'], equals(0.1));
-        expect(result['seed'], equals(67890));
-        expect(result['parallelToolCalls'], isFalse);
-        expect(result['logprobs'], isTrue);
-        expect(result['topLogprobs'], equals(3));
+        final providerOptions =
+            result[legacyProviderOptionsBagKey] as Map<String, dynamic>;
+        final openaiOptions =
+            providerOptions[LegacyProviderOptionNamespaces.openai]
+                as Map<String, dynamic>;
+        expect(
+            openaiOptions[LegacyExtensionKeys.frequencyPenalty], equals(0.2));
+        expect(openaiOptions[LegacyExtensionKeys.presencePenalty], equals(0.1));
+        expect(openaiOptions[LegacyExtensionKeys.seed], equals(67890));
+        expect(openaiOptions[LegacyExtensionKeys.parallelToolCalls], isFalse);
+        expect(openaiOptions[LegacyExtensionKeys.logprobs], isTrue);
+        expect(openaiOptions[LegacyExtensionKeys.topLogprobs], equals(3));
+      });
+
+      test(
+          'OpenRouter selection routes OpenAI-family keys into openrouter namespace',
+          () {
+        final result = config.openRouter().parallelToolCalls(false).build();
+
+        final providerOptions =
+            result[legacyProviderOptionsBagKey] as Map<String, dynamic>;
+        final openRouterOptions =
+            providerOptions[LegacyProviderOptionNamespaces.openrouter]
+                as Map<String, dynamic>;
+        expect(
+            openRouterOptions[LegacyExtensionKeys.parallelToolCalls], isFalse);
       });
     });
 
@@ -246,7 +310,12 @@ void main() {
           .extension('custom', 'value') // Generic
           .build();
 
-      expect(result['frequencyPenalty'], equals(0.1));
+      final providerOptions =
+          result[legacyProviderOptionsBagKey] as Map<String, dynamic>;
+      final openaiOptions =
+          providerOptions[LegacyProviderOptionNamespaces.openai]
+              as Map<String, dynamic>;
+      expect(openaiOptions[LegacyExtensionKeys.frequencyPenalty], equals(0.1));
       expect(result['reasoning'], isTrue);
       expect(result['numCtx'], equals(4096));
       expect(result['custom'], equals('value'));

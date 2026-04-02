@@ -8,7 +8,11 @@ bool canUseOpenAIChatBridge(
   final effectiveTools = tools ?? config.tools;
   if (_hasNonFunctionTools(effectiveTools) ||
       !_canMapOpenAIBuiltInTools(
-        config.getExtension<List<OpenAIBuiltInTool>>('builtInTools'),
+        getLegacyProviderOption<List<OpenAIBuiltInTool>>(
+          config,
+          LegacyProviderOptionNamespaces.openai,
+          LegacyExtensionKeys.builtInTools,
+        ),
       )) {
     return false;
   }
@@ -21,12 +25,21 @@ bool canUseOpenAIChatBridge(
     config: config,
     allowedKeys: {
       ..._httpExtensionKeys,
-      'useResponsesAPI',
-      'previousResponseId',
-      'parallelToolCalls',
-      'verbosity',
-      'jsonSchema',
-      'builtInTools',
+      LegacyExtensionKeys.useResponsesApi,
+      LegacyExtensionKeys.previousResponseId,
+      LegacyExtensionKeys.parallelToolCalls,
+      LegacyExtensionKeys.verbosity,
+      LegacyExtensionKeys.jsonSchema,
+      LegacyExtensionKeys.builtInTools,
+    },
+    allowedProviderOptions: {
+      LegacyProviderOptionNamespaces.openai: {
+        LegacyExtensionKeys.useResponsesApi,
+        LegacyExtensionKeys.previousResponseId,
+        LegacyExtensionKeys.parallelToolCalls,
+        LegacyExtensionKeys.verbosity,
+        LegacyExtensionKeys.builtInTools,
+      },
     },
   )) {
     return false;
@@ -142,11 +155,18 @@ bool canUseOpenRouterChatBridge(
     config: config,
     allowedKeys: {
       ..._httpExtensionKeys,
-      'parallelToolCalls',
-      'verbosity',
-      'jsonSchema',
-      'webSearchEnabled',
-      'webSearchConfig',
+      LegacyExtensionKeys.parallelToolCalls,
+      LegacyExtensionKeys.verbosity,
+      LegacyExtensionKeys.jsonSchema,
+      LegacyExtensionKeys.webSearchEnabled,
+      LegacyExtensionKeys.webSearchConfig,
+    },
+    allowedProviderOptions: {
+      LegacyProviderOptionNamespaces.openrouter: {
+        LegacyExtensionKeys.parallelToolCalls,
+        LegacyExtensionKeys.verbosity,
+        LegacyExtensionKeys.webSearchConfig,
+      },
     },
   )) {
     return false;

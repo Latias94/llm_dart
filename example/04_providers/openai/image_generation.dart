@@ -1,15 +1,15 @@
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
+
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/openai.dart' as openai;
 
 /// OpenAI Image Generation Example
 ///
-/// This example demonstrates OpenAI's DALL-E image generation capabilities
-/// including basic generation, advanced configuration, image editing, and variations.
-///
-/// **New Feature**: Uses the buildImageGeneration() capability factory method for
-/// type-safe provider building without runtime type casting.
+/// This example demonstrates the stable OpenAI image-model surface for prompt
+/// based image generation. Image editing and variations remain compatibility
+/// oriented and are intentionally documented as boundary notes.
 Future<void> main() async {
-  // Get API key from environment
   final apiKey = Platform.environment['OPENAI_API_KEY'];
   if (apiKey == null) {
     print('❌ Please set OPENAI_API_KEY environment variable');
@@ -18,211 +18,158 @@ Future<void> main() async {
 
   print('🎨 OpenAI Image Generation Demo\n');
 
-  // Test different DALL-E models
   await testDALLE3Generation(apiKey);
   await testDALLE2Generation(apiKey);
-  await testImageEditing(apiKey);
-  await testImageVariations(apiKey);
-  await testAdvancedFeatures(apiKey);
+  await testImageEditingBoundary();
+  await testImageVariationsBoundary();
+  await testAdvancedFeatures();
 
   print('✅ OpenAI image generation demo completed!');
 }
 
-/// Test DALL-E 3 image generation
 Future<void> testDALLE3Generation(String apiKey) async {
   print('🎨 DALL-E 3 Generation:');
 
   try {
-    // Create OpenAI provider for DALL-E 3 using buildImageGeneration()
-    // This provides compile-time type safety and eliminates runtime type casting
-    final imageProvider = await ai()
-        .openai()
-        .apiKey(apiKey)
-        .model('dall-e-3')
-        .buildImageGeneration(); // Type-safe image generation capability building
+    final imageModel = llm.AI.openai(apiKey: apiKey).imageModel('dall-e-3');
+    print('   🔍 Stable model: ${imageModel.providerId}/${imageModel.modelId}');
 
-    // Display capabilities
-    print('   🔍 Supported sizes: ${imageProvider.getSupportedSizes()}');
-    print('   📋 Supported formats: ${imageProvider.getSupportedFormats()}');
-    print('   ✂️  Supports editing: ${imageProvider.supportsImageEditing}');
-    print(
-        '   🔄 Supports variations: ${imageProvider.supportsImageVariations}');
-
-    // Example 1: Basic generation
     print('\n   🖼️  Basic Generation:');
-    final basicPrompt =
+    const basicPrompt =
         'A serene mountain landscape with a crystal clear lake reflection, photorealistic';
     print('      Prompt: "$basicPrompt"');
 
-    final basicImages = await imageProvider.generateImage(
+    final basicResult = await core.generateImage(
+      model: imageModel,
       prompt: basicPrompt,
-      model: 'dall-e-3',
-      imageSize: '1024x1024',
+      count: 1,
+      size: '1024x1024',
     );
 
-    print('      ✅ Generated ${basicImages.length} image(s):');
-    for (int i = 0; i < basicImages.length; i++) {
-      print('         Image ${i + 1}: ${basicImages[i]}');
+    print('      ✅ Generated ${basicResult.images.length} image(s):');
+    for (var index = 0; index < basicResult.images.length; index++) {
+      final image = basicResult.images[index];
+      print('         Image ${index + 1}: ${_describeGeneratedImage(image)}');
     }
 
-    // Example 2: Advanced generation with full configuration
     print('\n   ⚙️  Advanced Generation:');
-    final advancedRequest = ImageGenerationRequest(
+    final advancedResult = await core.generateImage(
+      model: imageModel,
       prompt:
           'A futuristic cyberpunk cityscape at night with neon lights and flying cars',
-      model: 'dall-e-3',
-      size: '1792x1024', // Landscape format
-      quality: 'hd',
-      style: 'vivid',
-      responseFormat: 'url',
+      count: 1,
+      size: '1792x1024',
+      callOptions: const core.CallOptions(
+        providerOptions: openai.OpenAIImageOptions(
+          quality: openai.OpenAIImageQuality.hd,
+          style: openai.OpenAIImageStyle.vivid,
+          responseFormat: openai.OpenAIImageResponseFormat.url,
+        ),
+      ),
     );
 
-    final advancedResponse =
-        await imageProvider.generateImages(advancedRequest);
-    print('      Model used: ${advancedResponse.model}');
-    if (advancedResponse.revisedPrompt != null) {
-      print('      Revised prompt: ${advancedResponse.revisedPrompt}');
-    }
-
-    print('      ✅ Generated ${advancedResponse.images.length} image(s):');
-    for (int i = 0; i < advancedResponse.images.length; i++) {
-      final image = advancedResponse.images[i];
-      print('         Image ${i + 1}: ${image.url}');
-      if (image.revisedPrompt != null) {
-        print('         Revised: ${image.revisedPrompt}');
+    final metadata = advancedResult.providerMetadata?.namespace('openai');
+    if (metadata != null) {
+      print('      Quality: ${metadata['quality'] ?? 'unknown'}');
+      print('      Size: ${metadata['size'] ?? 'unknown'}');
+      final revisedPrompts = metadata['revisedPrompts'];
+      if (revisedPrompts is List && revisedPrompts.isNotEmpty) {
+        print('      Revised prompt: ${revisedPrompts.first}');
       }
     }
 
+    print('      ✅ Generated ${advancedResult.images.length} image(s):');
+    for (var index = 0; index < advancedResult.images.length; index++) {
+      final image = advancedResult.images[index];
+      print('         Image ${index + 1}: ${_describeGeneratedImage(image)}');
+    }
+
     print('   ✅ DALL-E 3 generation completed\n');
-  } catch (e) {
-    print('   ❌ DALL-E 3 generation failed: $e\n');
+  } catch (error) {
+    print('   ❌ DALL-E 3 generation failed: $error\n');
   }
 }
 
-/// Test DALL-E 2 image generation
 Future<void> testDALLE2Generation(String apiKey) async {
   print('🎨 DALL-E 2 Generation:');
 
   try {
-    // Create OpenAI provider for DALL-E 2 using buildImageGeneration()
-    final imageProvider = await ai()
-        .openai()
-        .apiKey(apiKey)
-        .model('dall-e-2')
-        .buildImageGeneration(); // Type-safe image generation capability building
+    final imageModel = llm.AI.openai(apiKey: apiKey).imageModel('dall-e-2');
 
-    // Example: Multiple images with DALL-E 2
     print('   🔢 Multiple Images Generation:');
-    final multiPrompt =
+    const multiPrompt =
         'A cute robot assistant helping with daily tasks, cartoon style';
     print('      Prompt: "$multiPrompt"');
 
-    final multiImages = await imageProvider.generateImage(
+    final multiResult = await core.generateImage(
+      model: imageModel,
       prompt: multiPrompt,
-      model: 'dall-e-2',
-      imageSize: '512x512',
-      batchSize: 2, // Generate 2 images
+      count: 2,
+      size: '512x512',
     );
 
-    print('      ✅ Generated ${multiImages.length} variations:');
-    for (int i = 0; i < multiImages.length; i++) {
-      print('         Variation ${i + 1}: ${multiImages[i]}');
+    print('      ✅ Generated ${multiResult.images.length} variation(s):');
+    for (var index = 0; index < multiResult.images.length; index++) {
+      final image = multiResult.images[index];
+      print('         Variation ${index + 1}: ${_describeGeneratedImage(image)}');
     }
 
     print('   ✅ DALL-E 2 generation completed\n');
-  } catch (e) {
-    print('   ❌ DALL-E 2 generation failed: $e\n');
+  } catch (error) {
+    print('   ❌ DALL-E 2 generation failed: $error\n');
   }
 }
 
-/// Test image editing capabilities
-Future<void> testImageEditing(String apiKey) async {
+Future<void> testImageEditingBoundary() async {
   print('✂️  Image Editing:');
-
-  try {
-    // Create provider for image editing using buildImageGeneration()
-    final imageProvider = await ai()
-        .openai()
-        .apiKey(apiKey)
-        .model('dall-e-2') // Only DALL-E 2 supports editing
-        .buildImageGeneration(); // Type-safe image generation capability building
-
-    if (!imageProvider.supportsImageEditing) {
-      print('   ⏭️  Skipping - image editing not supported');
-      return;
-    }
-
-    print('   💡 Image editing requires DALL-E 2 and image files');
-    print('   📝 To test editing:');
-    print('      1. Prepare a PNG image (1024x1024 or smaller)');
-    print(
-        '      2. Optionally create a mask image (transparent areas will be edited)');
-    print('      3. Use ImageEditRequest with image and mask data');
-    print('   ✅ Image editing capability confirmed\n');
-  } catch (e) {
-    print('   ❌ Image editing test failed: $e\n');
-  }
+  print('   ℹ️  Image editing remains compatibility-oriented in the current API.');
+  print('   ℹ️  The stable `ImageModel` surface currently covers prompt-based');
+  print('      generation, not file-based edit workflows.');
+  print('   ✅ Boundary documented\n');
 }
 
-/// Test image variations
-Future<void> testImageVariations(String apiKey) async {
+Future<void> testImageVariationsBoundary() async {
   print('🔄 Image Variations:');
-
-  try {
-    // Create provider for image variations using buildImageGeneration()
-    final imageProvider = await ai()
-        .openai()
-        .apiKey(apiKey)
-        .model('dall-e-2') // Only DALL-E 2 supports variations
-        .buildImageGeneration(); // Type-safe image generation capability building
-
-    if (!imageProvider.supportsImageVariations) {
-      print('   ⏭️  Skipping - image variations not supported');
-      return;
-    }
-
-    print('   💡 Image variations require DALL-E 2 and source image');
-    print('   📝 To test variations:');
-    print('      1. Prepare a PNG image (1024x1024 or smaller)');
-    print('      2. Use ImageVariationRequest with image data');
-    print('      3. Generate multiple variations of the source image');
-    print('   ✅ Image variations capability confirmed\n');
-  } catch (e) {
-    print('   ❌ Image variations test failed: $e\n');
-  }
+  print('   ℹ️  Image variations remain compatibility-oriented in the current API.');
+  print('   ℹ️  The stable `ImageModel` surface intentionally stays narrow until');
+  print('      edit and variation request shapes are redesigned as provider-owned');
+  print('      typed inputs.');
+  print('   ✅ Boundary documented\n');
 }
 
-/// Test advanced features and configurations
-Future<void> testAdvancedFeatures(String apiKey) async {
+Future<void> testAdvancedFeatures() async {
   print('⚙️  Advanced Features:');
 
-  try {
-    // Test different configurations
-    print('   🎨 Style Options (DALL-E 3):');
-    print('      • vivid: Hyper-real and dramatic images');
-    print('      • natural: More natural, less hyper-real images');
+  print('   🎨 Style Options (OpenAIImageOptions.style):');
+  print('      • vivid: Hyper-real and dramatic images');
+  print('      • natural: More natural, less hyper-real images');
 
-    print('\n   🔍 Quality Options (DALL-E 3):');
-    print('      • standard: Standard quality (faster, cheaper)');
-    print('      • hd: High definition (slower, more expensive)');
+  print('\n   🔍 Quality Options (OpenAIImageOptions.quality):');
+  print('      • standard: Standard quality');
+  print('      • hd: High definition');
+  print('      • auto / low / medium / high: Newer image-model quality hints');
 
-    print('\n   📐 Size Options:');
-    print('      • DALL-E 2: 256x256, 512x512, 1024x1024');
-    print('      • DALL-E 3: 1024x1024, 1792x1024, 1024x1792');
+  print('\n   📐 Size Options:');
+  print('      • DALL-E 2: 256x256, 512x512, 1024x1024');
+  print('      • DALL-E 3: 1024x1024, 1792x1024, 1024x1792');
 
-    print('\n   🔢 Batch Options:');
-    print('      • DALL-E 2: 1-10 images per request');
-    print('      • DALL-E 3: 1 image per request');
+  print('\n   💡 Stable Architecture Notes:');
+  print('      • Use `AI.openai(...).imageModel(...)` for prompt-based generation');
+  print('      • Use `core.generateImage(...)` as the shared app-facing helper');
+  print('      • Keep OpenAI image controls inside `OpenAIImageOptions`');
+  print('      • Do not force edit/variation flows into the shared image contract');
 
-    print('\n   💡 Best Practices:');
-    print('      • Use descriptive, detailed prompts');
-    print('      • Specify art style, lighting, composition');
-    print('      • DALL-E 3 automatically enhances prompts');
-    print('      • Use DALL-E 2 for multiple variations');
-    print('      • Use DALL-E 3 for highest quality single images');
+  print('   ✅ Advanced features overview completed\n');
+}
 
-    print('   ✅ Advanced features overview completed\n');
-  } catch (e) {
-    print('   ❌ Advanced features test failed: $e\n');
+String _describeGeneratedImage(core.GeneratedImage image) {
+  if (image.uri != null) {
+    return image.uri.toString();
   }
+
+  if (image.bytes != null) {
+    return '${image.bytes!.length} bytes (${image.mediaType ?? 'unknown format'})';
+  }
+
+  return 'empty image payload';
 }

@@ -26,6 +26,7 @@ void main() {
     test('transcribe sends multipart data and decodes verbose JSON metadata',
         () async {
       TransportRequest? capturedRequest;
+      final cancelToken = TransportCancellation();
 
       final model = OpenAI(
         apiKey: 'test-key',
@@ -72,12 +73,13 @@ void main() {
         model: model,
         audioBytes: utf8.encode('abc'),
         mediaType: 'audio/wav',
-        callOptions: const CallOptions(
-          timeout: Duration(seconds: 5),
-          headers: {
+        callOptions: CallOptions(
+          timeout: const Duration(seconds: 5),
+          headers: const {
             'x-request': 'request-header',
           },
-          providerOptions: OpenAITranscriptionOptions(
+          cancellation: cancelToken,
+          providerOptions: const OpenAITranscriptionOptions(
             language: 'en',
             prompt: 'Prefer short output.',
             temperature: 0.2,
@@ -95,6 +97,7 @@ void main() {
       expect(capturedRequest!.method, TransportMethod.post);
       expect(capturedRequest!.responseType, TransportResponseType.json);
       expect(capturedRequest!.timeout, const Duration(seconds: 5));
+      expect(identical(capturedRequest!.cancellation, cancelToken), isTrue);
       expect(capturedRequest!.headers['authorization'], 'Bearer test-key');
       expect(capturedRequest!.headers['openai-organization'], 'org_123');
       expect(capturedRequest!.headers['openai-project'], 'proj_456');

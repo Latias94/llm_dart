@@ -1,47 +1,68 @@
-# Groq Unique Features
+# Groq Provider Features
 
-Ultra-fast AI inference with custom hardware acceleration.
+Groq already fits cleanly into the stable OpenAI-family chat facade.
+
+For new code, prefer:
+
+- `AI.groq(...).chatModel(...)`
+- shared `generateTextCall(...)` and `streamTextCall(...)`
+- provider-owned Groq profile routing instead of legacy builder setup
 
 ## Examples
 
 ### [fast_inference.dart](fast_inference.dart)
-High-speed inference optimization and performance benchmarking.
+Stable low-latency benchmark and streaming example.
 
 ## Setup
 
 ```bash
 export GROQ_API_KEY="your-groq-api-key"
 
-# Run Groq speed optimization example
 dart run fast_inference.dart
 ```
 
-## Unique Capabilities
+## Stable Usage Example
 
-### Ultra-Fast Inference
-- **Custom Hardware**: Specialized chips for AI acceleration
-- **Low Latency**: 50-100ms time to first token
-- **High Throughput**: 500-1000+ tokens per second
-
-## Usage Examples
-
-### Speed-Optimized Streaming
 ```dart
-final provider = await ai().groq().apiKey('your-key')
-    .model('llama-3.1-8b-instant').build();
+import 'dart:io';
 
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/llm_dart.dart' as llm;
+
+final model = llm.AI.groq(apiKey: 'your-key').chatModel('llama-3.1-8b-instant');
 final stopwatch = Stopwatch()..start();
 
-await for (final event in provider.chatStream([
-  ChatMessage.user('Generate a quick story'),
-])) {
-  if (event is TextDeltaEvent) {
-    print('Token: ${event.delta} (${stopwatch.elapsedMilliseconds}ms)');
+final stream = core.streamTextCall(
+  model: model,
+  prompt: [
+    core.UserPromptMessage.text('Generate a quick story.'),
+  ],
+  options: const core.GenerateTextOptions(
+    temperature: 0.7,
+    maxOutputTokens: 300,
+  ),
+);
+
+await for (final event in stream) {
+  switch (event) {
+    case core.TextDeltaEvent(:final delta):
+      stdout.write('${stopwatch.elapsedMilliseconds}ms: $delta');
+    default:
+      break;
   }
 }
 ```
 
+## Capability Notes
+
+- Groq's differentiation is mostly transport, latency, and throughput, not a
+  separate shared abstraction.
+- The stable architecture therefore keeps Groq on the shared `LanguageModel`
+  contract instead of inventing a Groq-specific app-facing interface.
+- This is the same design direction as `repo-ref/ai`: shared model contract,
+  provider-owned transport and request shaping.
+
 ## Next Steps
 
-- [Core Features](../../02_core_features/) - Basic chat and streaming
-- [Advanced Features](../../03_advanced_features/) - Performance optimization
+- [Core Features](../../02_core_features/) - Stable text and streaming patterns
+- [Advanced Features](../../03_advanced_features/) - Shared performance examples

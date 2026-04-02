@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import '../common/model_error.dart';
+import '../model/language_model.dart';
 import '../common/provider_metadata.dart';
 import '../stream/text_stream_event.dart';
 import 'chat_ui_message.dart';
@@ -328,12 +329,24 @@ final class ChatUiAccumulator {
         _activeTextPartIndexes.clear();
         _activeReasoningPartIndexes.clear();
         _partialToolInputs.clear();
+      case AbortEvent(:final reason):
+        _metadata[ChatUiMetadataKeys.isAborted] = true;
+        if (reason != null) {
+          _metadata[ChatUiMetadataKeys.abortReason] = reason;
+        }
       case FinishEvent():
         _metadata[ChatUiMetadataKeys.finishReason] = event.finishReason;
         _setMetadataIfNotNull(
           ChatUiMetadataKeys.rawFinishReason,
           event.rawFinishReason,
         );
+        if (event.finishReason == FinishReason.aborted) {
+          _metadata[ChatUiMetadataKeys.isAborted] = true;
+          _setMetadataIfNotNull(
+            ChatUiMetadataKeys.abortReason,
+            event.rawFinishReason,
+          );
+        }
         if (event.usage != null) {
           _metadata[ChatUiMetadataKeys.usage] = event.usage;
         }

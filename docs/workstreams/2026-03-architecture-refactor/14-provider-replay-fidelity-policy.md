@@ -190,7 +190,10 @@ This policy reinforces the package split:
 
 - `llm_dart_core` owns replayable semantics and provider-metadata plumbing
 - provider packages own replay encoding and replay downgrade rules
-- `llm_dart_flutter` owns prompt reconstruction and session persistence, not provider wire conversion
+- `llm_dart_chat` owns prompt reconstruction and session persistence, not
+  provider wire conversion
+- `llm_dart_flutter` may add adapter convenience above that runtime, but it
+  does not own replay policy
 - provider-native file download APIs stay outside the shared core replay contract
 
 That split is important because replay fidelity is where old architectures often re-couple the UI layer, provider layer, and transport layer again.

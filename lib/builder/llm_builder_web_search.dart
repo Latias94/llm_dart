@@ -2,10 +2,20 @@ part of 'llm_builder.dart';
 
 extension LLMBuilderWebSearchConfig on LLMBuilder {
   /// Enables web search functionality
+  @Deprecated(
+    'LLMBuilder.enableWebSearch() is a legacy compatibility migration helper. '
+    'Prefer provider-owned search APIs such as AI.anthropic(...), '
+    'AI.google(...), AI.openRouter(...), or AI.xai(...).',
+  )
   LLMBuilder enableWebSearch() =>
       extension(LegacyExtensionKeys.webSearchEnabled, true);
 
   /// Configures web search with detailed options
+  @Deprecated(
+    'LLMBuilder.webSearch() is a legacy compatibility migration helper. '
+    'Prefer provider-owned search APIs such as AI.anthropic(...), '
+    'AI.google(...), AI.openRouter(...), or AI.xai(...).',
+  )
   LLMBuilder webSearch({
     int? maxUses,
     int? maxResults,
@@ -30,6 +40,11 @@ extension LLMBuilderWebSearchConfig on LLMBuilder {
   }
 
   /// Quick web search setup with basic options
+  @Deprecated(
+    'LLMBuilder.quickWebSearch() is a legacy compatibility migration helper. '
+    'Prefer provider-owned search APIs such as AI.anthropic(...), '
+    'AI.google(...), AI.openRouter(...), or AI.xai(...).',
+  )
   LLMBuilder quickWebSearch({
     int maxResults = 5,
     List<String>? blockedDomains,
@@ -42,6 +57,11 @@ extension LLMBuilderWebSearchConfig on LLMBuilder {
   }
 
   /// Enables news search functionality
+  @Deprecated(
+    'LLMBuilder.newsSearch() is a legacy compatibility migration helper. '
+    'Prefer provider-owned search APIs such as AI.anthropic(...), '
+    'AI.google(...), AI.openRouter(...), or AI.xai(...).',
+  )
   LLMBuilder newsSearch({
     int? maxResults,
     String? fromDate,
@@ -61,6 +81,11 @@ extension LLMBuilderWebSearchConfig on LLMBuilder {
   }
 
   /// Configures search location for localized results
+  @Deprecated(
+    'LLMBuilder.searchLocation() is a legacy compatibility migration helper. '
+    'Prefer provider-owned search APIs such as AI.anthropic(...), '
+    'AI.google(...), AI.openRouter(...), or AI.xai(...).',
+  )
   LLMBuilder searchLocation(WebSearchLocation location) {
     final nextConfig =
         (_currentWebSearchConfig ?? const WebSearchConfig()).copyWith(
@@ -70,6 +95,11 @@ extension LLMBuilderWebSearchConfig on LLMBuilder {
   }
 
   /// Advanced web search configuration with full control
+  @Deprecated(
+    'LLMBuilder.advancedWebSearch() is a legacy compatibility migration helper. '
+    'Prefer provider-owned search APIs such as AI.anthropic(...), '
+    'AI.google(...), AI.openRouter(...), or AI.xai(...).',
+  )
   LLMBuilder advancedWebSearch({
     WebSearchStrategy? strategy,
     WebSearchContextSize? contextSize,

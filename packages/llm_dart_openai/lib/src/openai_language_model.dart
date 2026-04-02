@@ -80,6 +80,7 @@ final class OpenAILanguageModel implements LanguageModel {
           ),
           body: preparedRequest.body,
           timeout: request.callOptions.timeout,
+          cancellation: request.callOptions.cancellation,
           responseType: TransportResponseType.json,
         ),
       );
@@ -110,6 +111,7 @@ final class OpenAILanguageModel implements LanguageModel {
         ),
         body: preparedRequest.body,
         timeout: request.callOptions.timeout,
+        cancellation: request.callOptions.cancellation,
         responseType: TransportResponseType.json,
       ),
     );
@@ -148,6 +150,7 @@ final class OpenAILanguageModel implements LanguageModel {
             ),
             body: preparedRequest.body,
             timeout: request.callOptions.timeout,
+            cancellation: request.callOptions.cancellation,
           ),
         );
 
@@ -192,6 +195,7 @@ final class OpenAILanguageModel implements LanguageModel {
           ),
           body: preparedRequest.body,
           timeout: request.callOptions.timeout,
+          cancellation: request.callOptions.cancellation,
         ),
       );
 

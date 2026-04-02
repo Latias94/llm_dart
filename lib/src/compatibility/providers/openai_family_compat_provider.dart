@@ -15,6 +15,8 @@ import '../../../providers/openai/config.dart';
 import '../../../providers/openai/provider.dart';
 import '../../../providers/xai/config.dart';
 import '../../../providers/xai/provider.dart';
+import '../../config/legacy_config_keys.dart';
+import '../../config/legacy_provider_options.dart';
 import '../chat_route_compatibility.dart';
 import '../compat_transport.dart';
 import '../legacy_chat_adapter.dart';
@@ -40,12 +42,28 @@ ChatCapability buildCompatOpenAIProvider(LLMConfig config) {
       model: model,
       config: config,
       providerOptions: modern_openai.OpenAIGenerateTextOptions(
-        previousResponseId: config.getExtension<String>('previousResponseId'),
-        parallelToolCalls: config.getExtension<bool>('parallelToolCalls'),
+        previousResponseId: getLegacyProviderOption<String>(
+          config,
+          LegacyProviderOptionNamespaces.openai,
+          LegacyExtensionKeys.previousResponseId,
+        ),
+        parallelToolCalls: getLegacyProviderOption<bool>(
+          config,
+          LegacyProviderOptionNamespaces.openai,
+          LegacyExtensionKeys.parallelToolCalls,
+        ),
         serviceTier: config.serviceTier?.value,
-        verbosity: config.getExtension<String>('verbosity'),
+        verbosity: getLegacyProviderOption<String>(
+          config,
+          LegacyProviderOptionNamespaces.openai,
+          LegacyExtensionKeys.verbosity,
+        ),
         builtInTools: _mapOpenAIBuiltInTools(
-          config.getExtension<List<OpenAIBuiltInTool>>('builtInTools'),
+          getLegacyProviderOption<List<OpenAIBuiltInTool>>(
+            config,
+            LegacyProviderOptionNamespaces.openai,
+            LegacyExtensionKeys.builtInTools,
+          ),
         ),
       ),
     ),
@@ -90,9 +108,17 @@ ChatCapability buildCompatOpenRouterProvider(LLMConfig config) {
       model: model,
       config: config,
       providerOptions: modern_openai.OpenAIGenerateTextOptions(
-        parallelToolCalls: config.getExtension<bool>('parallelToolCalls'),
+        parallelToolCalls: getLegacyProviderOption<bool>(
+          config,
+          LegacyProviderOptionNamespaces.openrouter,
+          LegacyExtensionKeys.parallelToolCalls,
+        ),
         serviceTier: config.serviceTier?.value,
-        verbosity: config.getExtension<String>('verbosity'),
+        verbosity: getLegacyProviderOption<String>(
+          config,
+          LegacyProviderOptionNamespaces.openrouter,
+          LegacyExtensionKeys.verbosity,
+        ),
       ),
     ),
   );
@@ -488,9 +514,12 @@ final class CompatXAIProvider extends XAIProvider {
 OpenAIConfig _toLegacyOpenAIConfig(LLMConfig config) {
   var model = config.model;
   final webSearchEnabled =
-      config.getExtension<bool>('webSearchEnabled') == true;
-  final webSearchConfig =
-      config.getExtension<WebSearchConfig>('webSearchConfig');
+      config.getExtension<bool>(LegacyExtensionKeys.webSearchEnabled) == true;
+  final webSearchConfig = getLegacyProviderOption<WebSearchConfig>(
+    config,
+    LegacyProviderOptionNamespaces.openai,
+    LegacyExtensionKeys.webSearchConfig,
+  );
   if ((webSearchEnabled || webSearchConfig != null) &&
       !_isOpenAISearchModel(model)) {
     model = _openAISearchModelFor(model);
@@ -519,9 +548,22 @@ OpenAIConfig _toLegacyOpenAIConfig(LLMConfig config) {
     stopSequences: config.stopSequences,
     user: config.user,
     serviceTier: config.serviceTier,
-    useResponsesAPI: config.getExtension<bool>('useResponsesAPI') ?? false,
-    previousResponseId: config.getExtension<String>('previousResponseId'),
-    builtInTools: config.getExtension<List<OpenAIBuiltInTool>>('builtInTools'),
+    useResponsesAPI: getLegacyProviderOption<bool>(
+          config,
+          LegacyProviderOptionNamespaces.openai,
+          LegacyExtensionKeys.useResponsesApi,
+        ) ??
+        false,
+    previousResponseId: getLegacyProviderOption<String>(
+      config,
+      LegacyProviderOptionNamespaces.openai,
+      LegacyExtensionKeys.previousResponseId,
+    ),
+    builtInTools: getLegacyProviderOption<List<OpenAIBuiltInTool>>(
+      config,
+      LegacyProviderOptionNamespaces.openai,
+      LegacyExtensionKeys.builtInTools,
+    ),
     originalConfig: config,
   );
 }
@@ -529,9 +571,12 @@ OpenAIConfig _toLegacyOpenAIConfig(LLMConfig config) {
 OpenAIConfig _toLegacyOpenRouterConfig(LLMConfig config) {
   var model = config.model;
   final webSearchEnabled =
-      config.getExtension<bool>('webSearchEnabled') == true;
-  final webSearchConfig =
-      config.getExtension<WebSearchConfig>('webSearchConfig');
+      config.getExtension<bool>(LegacyExtensionKeys.webSearchEnabled) == true;
+  final webSearchConfig = getLegacyProviderOption<WebSearchConfig>(
+    config,
+    LegacyProviderOptionNamespaces.openrouter,
+    LegacyExtensionKeys.webSearchConfig,
+  );
   if ((webSearchEnabled || webSearchConfig != null) &&
       !model.endsWith(':online')) {
     model = '$model:online';
@@ -553,9 +598,22 @@ OpenAIConfig _toLegacyOpenRouterConfig(LLMConfig config) {
     stopSequences: config.stopSequences,
     user: config.user,
     serviceTier: config.serviceTier,
-    useResponsesAPI: config.getExtension<bool>('useResponsesAPI') ?? false,
-    previousResponseId: config.getExtension<String>('previousResponseId'),
-    builtInTools: config.getExtension<List<OpenAIBuiltInTool>>('builtInTools'),
+    useResponsesAPI: getLegacyProviderOption<bool>(
+          config,
+          LegacyProviderOptionNamespaces.openrouter,
+          LegacyExtensionKeys.useResponsesApi,
+        ) ??
+        false,
+    previousResponseId: getLegacyProviderOption<String>(
+      config,
+      LegacyProviderOptionNamespaces.openrouter,
+      LegacyExtensionKeys.previousResponseId,
+    ),
+    builtInTools: getLegacyProviderOption<List<OpenAIBuiltInTool>>(
+      config,
+      LegacyProviderOptionNamespaces.openrouter,
+      LegacyExtensionKeys.builtInTools,
+    ),
     originalConfig: config,
   );
 }
@@ -611,7 +669,15 @@ List<modern_openai.OpenAIBuiltInTool>? _mapOpenAIBuiltInTools(
 core.ProviderModelOptions _buildCompatOpenRouterModelSettings(
   LLMConfig config,
 ) {
-  if (hasEnabledWebSearch(config) && !config.model.endsWith(':online')) {
+  final webSearchEnabled =
+      config.getExtension<bool>(LegacyExtensionKeys.webSearchEnabled) == true;
+  final webSearchConfig = getLegacyProviderOption<WebSearchConfig>(
+    config,
+    LegacyProviderOptionNamespaces.openrouter,
+    LegacyExtensionKeys.webSearchConfig,
+  );
+  if ((webSearchEnabled || webSearchConfig != null) &&
+      !config.model.endsWith(':online')) {
     return const modern_openai.OpenRouterChatModelSettings(
       search: modern_openai.OpenRouterSearchOptions.onlineModel(),
     );

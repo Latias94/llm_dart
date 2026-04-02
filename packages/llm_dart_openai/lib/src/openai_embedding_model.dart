@@ -71,6 +71,7 @@ final class OpenAIEmbeddingModel implements EmbeddingModel {
             'encoding_format': encodingFormat,
         },
         timeout: request.callOptions.timeout,
+        cancellation: request.callOptions.cancellation,
         responseType: TransportResponseType.json,
       ),
     );

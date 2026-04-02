@@ -1,4 +1,6 @@
 import 'package:llm_dart/llm_dart.dart' as legacy;
+import 'package:llm_dart/src/config/legacy_config_keys.dart';
+import 'package:llm_dart/src/config/legacy_provider_options.dart';
 import 'package:llm_dart/src/compatibility/chat_route_compatibility.dart';
 import 'package:llm_dart/src/compatibility/anthropic_legacy_extensions.dart';
 import 'package:test/test.dart';
@@ -19,6 +21,34 @@ void main() {
         config,
         [
           legacy.ChatMessage.system('You are concise.'),
+          legacy.ChatMessage.user('Hello'),
+        ],
+        null,
+      );
+
+      expect(result, isTrue);
+    });
+
+    test(
+        'OpenAI bridge accepts namespaced providerOptions for the audited subset',
+        () {
+      final config = _baseConfig('gpt-4o').withExtensions({
+        'customTransportClient': _FakeTransportClient(),
+        legacyProviderOptionsBagKey: {
+          LegacyProviderOptionNamespaces.openai: {
+            LegacyExtensionKeys.useResponsesApi: true,
+            LegacyExtensionKeys.previousResponseId: 'resp_123',
+            LegacyExtensionKeys.parallelToolCalls: true,
+            LegacyExtensionKeys.builtInTools: <legacy.OpenAIBuiltInTool>[
+              legacy.OpenAIBuiltInTools.webSearch(),
+            ],
+          },
+        },
+      });
+
+      final result = canUseOpenAIChatBridge(
+        config,
+        [
           legacy.ChatMessage.user('Hello'),
         ],
         null,
@@ -255,6 +285,30 @@ void main() {
     });
 
     test(
+        'OpenRouter bridge accepts namespaced webSearchConfig for the audited online subset',
+        () {
+      final result = canUseOpenRouterChatBridge(
+        _baseConfig('openai/gpt-4o-mini').withExtensions({
+          legacyProviderOptionsBagKey: {
+            LegacyProviderOptionNamespaces.openrouter: {
+              LegacyExtensionKeys.webSearchConfig:
+                  legacy.WebSearchConfig.openRouter(
+                maxResults: 5,
+                searchPrompt: 'Focus on recent developments.',
+              ),
+            },
+          },
+        }),
+        [
+          legacy.ChatMessage.user('Search the latest updates.'),
+        ],
+        null,
+      );
+
+      expect(result, isTrue);
+    });
+
+    test(
         'OpenRouter bridge still rejects legacy-only openrouter search extension keys',
         () {
       final searchPromptResult = canUseOpenRouterChatBridge(
@@ -290,6 +344,25 @@ void main() {
       expect(searchPromptResult, isFalse);
       expect(useOnlineShortcutResult, isFalse);
       expect(maxSearchResultsResult, isFalse);
+    });
+
+    test('OpenRouter bridge rejects unsupported namespaced legacy search keys',
+        () {
+      final result = canUseOpenRouterChatBridge(
+        _baseConfig('openai/gpt-4o-mini').withExtensions({
+          legacyProviderOptionsBagKey: {
+            LegacyProviderOptionNamespaces.openrouter: {
+              LegacyExtensionKeys.searchPrompt: 'Focus on recent developments.',
+            },
+          },
+        }),
+        [
+          legacy.ChatMessage.user('Hello'),
+        ],
+        null,
+      );
+
+      expect(result, isFalse);
     });
 
     test(

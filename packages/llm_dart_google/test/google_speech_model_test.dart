@@ -21,6 +21,7 @@ void main() {
     test('generateSpeech sends a single-speaker request and decodes audio',
         () async {
       TransportRequest? capturedRequest;
+      final cancelToken = TransportCancellation();
 
       final model = Google(
         apiKey: 'test-key',
@@ -68,12 +69,13 @@ void main() {
         model: model,
         text: 'Hello world.',
         voice: 'Puck',
-        callOptions: const CallOptions(
-          timeout: Duration(seconds: 5),
-          headers: {
+        callOptions: CallOptions(
+          timeout: const Duration(seconds: 5),
+          headers: const {
             'x-call': '2',
           },
-          providerOptions: GoogleSpeechOptions(
+          cancellation: cancelToken,
+          providerOptions: const GoogleSpeechOptions(
             temperature: 0.4,
             topP: 0.9,
             topK: 32,
@@ -88,6 +90,7 @@ void main() {
         capturedRequest!.uri.toString(),
         'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent',
       );
+      expect(identical(capturedRequest!.cancellation, cancelToken), isTrue);
       expect(capturedRequest!.headers, {
         'x-goog-api-key': 'test-key',
         'content-type': 'application/json',

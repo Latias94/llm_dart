@@ -24,6 +24,7 @@ void main() {
     test('generateSpeech sends a bytes request and decodes audio output',
         () async {
       TransportRequest? capturedRequest;
+      final cancelToken = TransportCancellation();
 
       final model = OpenAI(
         apiKey: 'test-key',
@@ -54,12 +55,13 @@ void main() {
         model: model,
         text: 'Hello world.',
         voice: 'alloy',
-        callOptions: const CallOptions(
-          timeout: Duration(seconds: 5),
-          headers: {
+        callOptions: CallOptions(
+          timeout: const Duration(seconds: 5),
+          headers: const {
             'x-request': 'request-header',
           },
-          providerOptions: OpenAISpeechOptions(
+          cancellation: cancelToken,
+          providerOptions: const OpenAISpeechOptions(
             outputFormat: 'wav',
             instructions: 'Speak calmly.',
             speed: 1.1,
@@ -74,6 +76,7 @@ void main() {
       expect(capturedRequest!.method, TransportMethod.post);
       expect(capturedRequest!.responseType, TransportResponseType.bytes);
       expect(capturedRequest!.timeout, const Duration(seconds: 5));
+      expect(identical(capturedRequest!.cancellation, cancelToken), isTrue);
       expect(
         capturedRequest!.headers,
         {

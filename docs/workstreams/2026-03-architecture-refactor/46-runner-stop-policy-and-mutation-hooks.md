@@ -41,7 +41,8 @@ Our architecture is intentionally split:
 
 - `llm_dart_core` owns the shared low-level model contract
 - provider packages own provider-native behavior
-- `llm_dart_flutter` owns chat-session orchestration
+- `llm_dart_chat` owns chat-session orchestration
+- `llm_dart_flutter` adds Flutter-only adapters above that runtime
 - apps own higher-level policy
 
 ## 2. Freeze `maxSteps` As A Guardrail, Not A Policy DSL

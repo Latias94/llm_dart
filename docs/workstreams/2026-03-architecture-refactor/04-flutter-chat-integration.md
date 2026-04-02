@@ -11,6 +11,17 @@ The new Flutter integration surface must solve several problems that are visible
 
 For that reason, Flutter support cannot stay at the level of a conceptual README example. It needs a real, reusable UI-facing abstraction layer.
 
+## Package Ownership Update
+
+The current architecture now freezes one more package boundary:
+
+- `llm_dart_core` owns prompt, stream, result, and UI message semantics
+- `llm_dart_chat` owns the reusable pure Dart chat runtime
+- `llm_dart_flutter` owns Flutter-only adapters such as `ChatController`
+
+That means the session, transport, snapshot, and local tool-execution runtime
+should not keep drifting back into the Flutter package.
+
 ## 1. What Flutter Chat Applications Actually Need
 
 The UI layer of a chat application usually needs:
@@ -188,8 +199,8 @@ Current implementation direction:
 - approving a provider-executed tool should continue the transport-backed assistant turn
 - approving a client-executed tool should return the session to `awaitingTool` so the caller can later provide `addToolOutput`
 - if one assistant step contains several unresolved tools or approvals, the session should not continue after the first individual update; continuation should wait until the current step no longer has pending approval or client-side tool-output work
-- local convenience callbacks such as `onToolCall` may live in `llm_dart_flutter` and can auto-resolve client-executed tools by feeding the existing `addToolOutput` path; they should not widen `llm_dart_core`
-- a name-based `ToolExecutionRegistry` convenience wrapper may also live in `llm_dart_flutter` for the common `toolName -> handler` dispatch case
+- local convenience callbacks such as `onToolCall` may live in `llm_dart_chat` and can auto-resolve client-executed tools by feeding the existing `addToolOutput` path; they should not widen `llm_dart_core`
+- a name-based `ToolExecutionRegistry` convenience wrapper may also live in `llm_dart_chat` for the common `toolName -> handler` dispatch case
 - `addDataPart` should support UI-only message enrichment for the current assistant turn:
   - while the transport stream is active
   - while the session is paused in `awaitingTool`
@@ -250,11 +261,13 @@ One boundary should stay explicit:
 - reconnect replay should remain transport-owned because `ChatUiAccumulator` does not restore open text or reasoning stream IDs from an arbitrary partial UI message
 - those transport concerns should not be forced back into the core `TextStreamEvent` set unless they represent stable model semantics
 
-## 4. Do Not Pull Flutter Dependencies Back into Core
+## 4. Do Not Pull Flutter Dependencies Back Into Core Or The Shared Chat Runtime
 
-`llm_dart_flutter` should stay separate from `llm_dart_core` for the following reasons:
+`llm_dart_flutter` should stay separate from both `llm_dart_core` and
+`llm_dart_chat` for the following reasons:
 
 - `core` remains pure Dart
+- `llm_dart_chat` also remains pure Dart
 - the Flutter package can safely depend on `foundation`
 - the package can offer `ValueNotifier`, `ChangeNotifier`, or `Listenable` adapters
 - it does not force a specific framework such as BLoC, Riverpod, or Provider
@@ -263,6 +276,7 @@ One boundary should stay explicit:
 
 ## 1. Pure Dart Layer
 
+- `llm_dart_chat`
 - `ChatSession`
 - `ChatTransport`
 - `ChatState`
@@ -274,6 +288,7 @@ One boundary should stay explicit:
 
 Optional, but useful:
 
+- `llm_dart_flutter`
 - `ChatController extends ValueNotifier<ChatState>`
 - `ChatMessageMapper`
 - `ChatPersistenceAdapter`

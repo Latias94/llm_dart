@@ -18,6 +18,7 @@ void main() {
 
     test('embed sends the single embedding request shape', () async {
       TransportRequest? capturedRequest;
+      final cancelToken = TransportCancellation();
 
       final model = Google(
         apiKey: 'test-key',
@@ -51,12 +52,13 @@ void main() {
         model: model,
         value: 'hello',
         dimensions: 128,
-        callOptions: const CallOptions(
-          timeout: Duration(seconds: 5),
-          headers: {
+        callOptions: CallOptions(
+          timeout: const Duration(seconds: 5),
+          headers: const {
             'x-call': '2',
           },
-          providerOptions: GoogleEmbedOptions(
+          cancellation: cancelToken,
+          providerOptions: const GoogleEmbedOptions(
             taskType: 'SEMANTIC_SIMILARITY',
             title: 'Ignored for single queries but still provider-owned',
           ),
@@ -68,6 +70,7 @@ void main() {
         capturedRequest!.uri.toString(),
         'https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent',
       );
+      expect(identical(capturedRequest!.cancellation, cancelToken), isTrue);
       expect(capturedRequest!.headers, {
         'x-goog-api-key': 'test-key',
         'content-type': 'application/json',

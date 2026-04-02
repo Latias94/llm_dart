@@ -2,6 +2,13 @@
 
 Complete application examples showing real-world usage patterns with LLM Dart.
 
+These end-to-end examples are being migrated incrementally.
+
+For new applications, prefer injecting stable `LanguageModel` instances created
+through `AI.*(...).chatModel(...)`, or `ChatSession` abstractions from
+`llm_dart_chat`, adding `llm_dart_flutter` only when you need a widget-facing
+`ChatController`, instead of centering new code on the legacy root builder.
+
 ## Examples
 
 ### [chatbot.dart](chatbot.dart)
@@ -12,6 +19,9 @@ Command-line AI assistant with multiple provider support and argument parsing.
 
 ### [web_service.dart](web_service.dart)
 HTTP API service with authentication, rate limiting, and monitoring.
+
+### [packages/llm_dart_chat/example/chat_runtime.dart](../../packages/llm_dart_chat/example/chat_runtime.dart)
+Framework-neutral chat session patterns now live with the dedicated `llm_dart_chat` package.
 
 ### [packages/llm_dart_flutter/example/flutter_integration.dart](../../packages/llm_dart_flutter/example/flutter_integration.dart)
 Flutter app integration patterns now live with the dedicated `llm_dart_flutter` package.
@@ -34,6 +44,7 @@ export GROQ_API_KEY="your-groq-key"
 dart run chatbot.dart
 dart run cli_tool.dart --help
 dart run web_service.dart
+dart run ../../packages/llm_dart_chat/example/chat_runtime.dart
 dart run ../../packages/llm_dart_flutter/example/flutter_integration.dart
 dart run batch_processor.dart --help
 dart run multimodal_app.dart --demo
@@ -63,39 +74,59 @@ dart run multimodal_app.dart --demo
 
 ### Interactive Chatbot
 ```dart
-final chatbot = Chatbot(
-  provider: await ai().openai().apiKey('your-key').build(),
-  personality: 'helpful and friendly assistant',
-  maxContextLength: 4000,
+import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/core.dart' as core;
+
+final model = llm.AI.openai(apiKey: 'your-key').chatModel('gpt-4.1-mini');
+
+final result = await core.generateTextCall(
+  model: model,
+  prompt: [
+    core.UserPromptMessage.text('Introduce yourself like a helpful chatbot.'),
+  ],
 );
 
-await chatbot.start();
-// Interactive conversation loop with streaming
+print(result.text);
 ```
 
 ### CLI Tool
 ```dart
-final cliTool = CliTool(
-  providers: {
-    'openai': await ai().openai().apiKey('key').build(),
-    'anthropic': await ai().anthropic().apiKey('key').build(),
-  },
+import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/core.dart' as core;
+
+final models = <String, core.LanguageModel>{
+  'openai': llm.AI.openai(apiKey: 'key').chatModel('gpt-4.1-mini'),
+  'anthropic': llm.AI.anthropic(apiKey: 'key').chatModel('claude-sonnet-4-5'),
+};
+
+final result = await core.generateTextCall(
+  model: models['openai']!,
+  prompt: [
+    core.UserPromptMessage.text('Explain what this CLI command should do.'),
+  ],
 );
 
-await cliTool.run(args);
-// Command-line interface with provider selection
+print(result.text);
 ```
 
 ### Web Service
 ```dart
-final webService = WebService(
-  provider: await ai().groq().apiKey('your-key').build(),
-  authMiddleware: JwtAuthMiddleware(),
-  rateLimiter: RateLimiter(requestsPerMinute: 60),
-);
+import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/core.dart' as core;
 
-await webService.start(port: 8080);
-// RESTful API with authentication and rate limiting
+final model =
+    llm.AI.groq(apiKey: 'your-key').chatModel('llama-3.3-70b-versatile');
+
+Future<Map<String, Object?>> handleChat(String message) async {
+  final result = await core.generateTextCall(
+    model: model,
+    prompt: [
+      core.UserPromptMessage.text(message),
+    ],
+  );
+
+  return {'text': result.text};
+}
 ```
 
 ### Flutter Integration

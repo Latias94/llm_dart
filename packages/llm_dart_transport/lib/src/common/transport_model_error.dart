@@ -1,6 +1,5 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
 
-import 'transport_cancellation.dart';
 import 'transport_exception.dart';
 
 ModelError transportErrorToModelError(Object error) {

@@ -339,7 +339,7 @@ These are runtime mechanics, not conversation state.
 2. Add JSON value helpers and shared codec test fixtures
 3. Implement prompt JSON codecs in `llm_dart_core`
 4. Implement `ChatUiMessage` JSON codecs in `llm_dart_core`
-5. Add a `ChatSessionSnapshot` model and codec in `llm_dart_flutter`
+5. Add a `ChatSessionSnapshot` model and codec in `llm_dart_chat`
 6. Add round-trip tests before wiring persistence adapters
 
 ## 9. Conclusion

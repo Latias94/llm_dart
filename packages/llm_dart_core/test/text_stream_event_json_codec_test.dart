@@ -120,6 +120,9 @@ void main() {
             },
           ),
         ),
+        const AbortEvent(
+          reason: 'user cancelled',
+        ),
         const FinishEvent(
           finishReason: FinishReason.toolCalls,
           rawFinishReason: 'tool_calls',
@@ -141,9 +144,10 @@ void main() {
       final envelopeData = encoded['data'] as Map<String, Object?>;
       final encodedEvents = envelopeData['events'] as List<Object?>;
       expect((encodedEvents[2] as Map<String, Object?>)['type'], 'step-start');
+      expect((encodedEvents[15] as Map<String, Object?>)['type'], 'abort');
 
       final decoded = codec.decodeEvents(encoded);
-      expect(decoded, hasLength(16));
+      expect(decoded, hasLength(17));
       expect(decoded.first, isA<StartEvent>());
       expect(
           (decoded.first as StartEvent).warnings.single.field, 'temperature');
@@ -211,6 +215,9 @@ void main() {
       expect(error.error.kind, ModelErrorKind.provider);
       expect(error.error.code, 'soft_failure');
       expect(error.error.message, 'soft failure');
+
+      final abort = decoded[15] as AbortEvent;
+      expect(abort.reason, 'user cancelled');
     });
 
     test('decodes both canonical and legacy step-end event names', () {

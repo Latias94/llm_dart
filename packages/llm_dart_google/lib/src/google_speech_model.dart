@@ -60,6 +60,7 @@ final class GoogleSpeechModel implements SpeechModel {
         },
         body: _buildRequestBody(request, options: options),
         timeout: request.callOptions.timeout,
+        cancellation: request.callOptions.cancellation,
         responseType: TransportResponseType.json,
       ),
     );

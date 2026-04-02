@@ -24,6 +24,7 @@ void main() {
     test('embedMany sends an embeddings request and decodes the response',
         () async {
       TransportRequest? capturedRequest;
+      final cancelToken = TransportCancellation();
 
       final model = OpenAI(
         apiKey: 'test-key',
@@ -66,12 +67,13 @@ void main() {
         model: model,
         values: const ['hello', 'world'],
         dimensions: 256,
-        callOptions: const CallOptions(
-          timeout: Duration(seconds: 5),
-          headers: {
+        callOptions: CallOptions(
+          timeout: const Duration(seconds: 5),
+          headers: const {
             'x-request': 'request-header',
           },
-          providerOptions: OpenAIEmbedOptions(
+          cancellation: cancelToken,
+          providerOptions: const OpenAIEmbedOptions(
             encodingFormat: 'float',
           ),
         ),
@@ -82,6 +84,7 @@ void main() {
           'https://api.openai.com/v1/embeddings');
       expect(capturedRequest!.method, TransportMethod.post);
       expect(capturedRequest!.timeout, const Duration(seconds: 5));
+      expect(identical(capturedRequest!.cancellation, cancelToken), isTrue);
       expect(
         capturedRequest!.headers,
         {

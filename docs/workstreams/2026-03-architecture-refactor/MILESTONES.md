@@ -31,7 +31,12 @@ Current status:
 
 - the workspace package skeleton is in place
 - the workspace now also has an internal `llm_dart_test` package for shared fake transport and language-model helpers
+- the workspace now also has a dedicated `llm_dart_chat` package so reusable
+  chat/session runtime code no longer needs to live under Flutter
 - the root package now exposes a new `AI` facade plus focused entrypoints such as `ai.dart`, `core.dart`, `openai.dart`, `google.dart`, `anthropic.dart`, and `transport.dart`
+- the root package now also exposes `chat.dart` as the focused pure Dart
+  chat-runtime entrypoint, while Flutter adapters remain outside the root
+  package
 - Flutter chat APIs now live behind the dedicated `llm_dart_flutter` package entrypoint instead of a root-package re-export
 - the legacy `llm_dart.dart` entry still exposes `ai()` and the old builder surface while also exporting the new `AI` facade
 - core usage, warning, and provider metadata models now have centralized merge semantics, JSON-safe provider-metadata serialization checks, and shared test coverage
@@ -155,10 +160,29 @@ Acceptance criteria:
 
 Current status:
 
-- the baseline Flutter chat layer now has stable session, transport, controller, persistence, and message-mapper surfaces in `llm_dart_flutter`
+- the reusable chat runtime now lives in `llm_dart_chat`, including session,
+  transport, snapshot, persistence, and message-mapper surfaces
+- the root package now also exposes that pure Dart runtime through
+  `package:llm_dart/chat.dart` while keeping Flutter-only adapters outside the
+  root surface
+- `llm_dart_flutter` is now a thin adapter that adds `ChatController` and
+  controller-aware persistence convenience above the shared runtime
+- the runtime-surface review against `repo-ref/ai` is now also frozen more
+  narrowly: `llm_dart_chat` adopts transport request customization plus
+  request metadata, while React-style `setMessages` and store ergonomics stay
+  out of the shared Dart runtime
+- the stable event surface now also distinguishes abort from error more explicitly through shared `AbortEvent`, while still preserving `FinishEvent(finishReason: aborted)` as the compatibility terminal signal
 - tool continuation is now also frozen more concretely at the session layer: mixed approval and tool-output steps wait for whole-step completion before the next assistant request is triggered
 - `DefaultChatSession` now also offers an optional local `onToolCall` convenience callback for client-executed tools without pushing execute-style APIs back into `llm_dart_core`
-- `llm_dart_flutter` now also exposes `ToolExecutionRegistry` as a thin name-based wrapper above `onToolCall`
+- `llm_dart_chat` now also exposes `ToolExecutionRegistry` as a thin
+  name-based wrapper above `onToolCall`
+- `ChatUiAccumulator`, `ChatMessageMapper`, `HttpChatTransport`, and `DefaultChatSession` now also preserve abort semantics across stream projection and local session stop flows instead of collapsing everything into generic error handling
+- the next Flutter/chat architecture step is now also frozen more clearly: add a dedicated UI/session chunk layer above `TextStreamEvent` so session runtime concerns no longer depend directly on transport-owned chunk types
+- `llm_dart_core` now also has an additive `ChatUiStreamChunk` and `ChatUiStreamAccumulator` layer above `TextStreamEvent`, and that runtime message/session chunk model is now live in the Flutter session/transport path
+- `ChatTransport` now also emits the shared `ChatUiStreamChunk` runtime layer directly, `HttpChatTransport` now maps remote `messageId` into `ChatUiMessageStartChunk`, and `DefaultChatSession` now consumes `ChatUiStreamAccumulator` instead of transport-owned event/data wrappers
+- `DefaultChatSession` now also waits for stream completion after terminal `FinishEvent`, so trailing `message-finish` metadata patches can land before the assistant turn is finalized
+- the HTTP transport protocol now also has an implemented dual-stack upgrade path: request/reconnect envelopes carry `streamProtocol`, legacy `event-stream-v1` remains decode-compatible, and the preferred `ui-message-stream-v2` split now supports `transport-start`, `message-start`, `message-metadata`, and `message-finish`
+- protocol ownership is now also corrected for backend reuse: the HTTP chat transport request/chunk codecs plus the Dart SSE/reference adapter now live in `llm_dart_transport`, while `llm_dart_flutter` stays focused on the client/session transport implementation
 
 ## M6 - Compatibility Cleanup
 
@@ -195,6 +219,7 @@ Current status:
 - the new Anthropic replay path now also preserves execution-oriented provider-native result blocks through `anthropic.result.code_execution`, while keeping the legacy raw bridge conservative
 - `llm_dart_anthropic` now also exposes a provider-native `AnthropicFiles` API and file-handle helpers for execution downloads without widening the shared core
 - the event completeness audit against `repo-ref/ai` is now also frozen: the shared stream model is already sufficient, and remaining lifecycle chunk gaps are transport/UI concerns rather than missing core event types
+- that earlier event-completeness conclusion now has one narrow, implemented exception: explicit abort semantics were promoted into the shared stream layer because stable cancellation and Flutter chat transport already needed a first-class aborted lifecycle signal
 - the provider-owned search direction is now also frozen more concretely: OpenRouter search remains profile/model shaping, while xAI live search becomes provider-owned invocation options over `search_parameters`
 - the package-owned OpenRouter mainline now also accepts provider-owned online-model settings, and the compatibility bridge now allows the explicit `:online` shape plus the bare `webSearchEnabled` migration input
 - the package-owned xAI chat-completions mainline now also accepts typed `XAIGenerateTextOptions` and projects xAI citations through shared source parts and events
@@ -215,8 +240,11 @@ Current status:
 - `assistant_models.dart` is now also decomposed into assistant tools/resources, entities, requests, and responses while keeping the assistant-management model surface unchanged
 - `core/config.dart` is now also decomposed into a library shell plus focused config, helper, provider-profile, and transformer modules while keeping the public configuration surface unchanged
 - the flat compatibility `LLMConfig.extensions` path now also has a centralized internal key/accessor layer so builder, factory, transport, and compatibility code stop drifting through repeated raw string literals
+- the OpenAI family now also has a first transitional namespaced `providerOptions` layer inside the legacy root config map, with namespaced writes for OpenAI / OpenRouter-specific builder helpers plus the legacy `ProviderConfig` helper, and namespaced-first, flat-fallback reads across factories, request shaping, and compatibility routing
+- the root shared web-search builder helpers and `createProvider(..., extensions: ...)` are now also explicitly deprecated as compatibility-only migration surfaces, so provider-owned search APIs remain the only stable long-term direction
+- the public example surface is now also being pulled into line with that boundary: the core web-search example now demonstrates stable provider-owned search APIs on top of `generateTextCall(...)`, and the high-visibility example READMEs now explicitly distinguish stable `AI` facade usage from transitional compatibility builder material
 - the remaining root-package compatibility cleanup is now mostly semantic tightening and deprecation planning rather than more large-file decomposition
-- the next recommended milestone is now explicit: expand provider coverage tests and renderer helpers without widening the shared event model
+- provider coverage and renderer helper expansion are now no longer the only next-step theme; the next structural milestone is to add a dedicated UI/session chunk runtime layer above `TextStreamEvent` and split it cleanly from HTTP wire chunks
 - the next provider-specific implementation step is now also explicit: re-audit broader OpenRouter search mapping and any xAI subsets beyond the audited legacy live-search migration subset
 - incompatible legacy request shapes and bridge-shape conversion failures fall back to the old provider implementation instead of silently dropping provider-specific behavior
 - legacy stream projection is now explicitly frozen as a lossy compatibility surface; richer event semantics remain in `llm_dart_core` and `llm_dart_flutter`

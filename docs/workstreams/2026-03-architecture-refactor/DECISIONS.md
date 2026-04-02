@@ -48,10 +48,11 @@ Freeze the following three message boundaries:
 
 One message model must no longer attempt to serve all three roles.
 
-## D5. Flutter Integration Lives in Its Own Package
+## D5. Flutter Integration Uses A Split Runtime + Adapter Design
 
 - `llm_dart_core` does not depend on Flutter
-- the Flutter chat-session layer lives in `llm_dart_flutter`
+- the reusable chat-session layer lives in `llm_dart_chat`
+- `llm_dart_flutter` adds Flutter-specific adapters such as `ChatController`
 - phase 1 freezes interfaces first; widget-level implementation is not a first-phase goal
 
 ## D6. Use a Medium-Grained Workspace Split
@@ -60,6 +61,7 @@ Recommended first-phase package boundaries:
 
 - `llm_dart_core`
 - `llm_dart_transport`
+- `llm_dart_chat`
 - `llm_dart_openai`
 - `llm_dart_anthropic`
 - `llm_dart_google`
@@ -85,15 +87,17 @@ Freeze the dependency direction as:
 
 - `llm_dart_core`
 - `llm_dart_transport -> llm_dart_core`
+- `llm_dart_chat -> core + transport`
 - `llm_dart_openai / anthropic / google / community -> core + transport`
 - `llm_dart -> core + transport + provider packages`
-- `llm_dart_flutter -> core`, and optionally `transport` when needed
+- `llm_dart_flutter -> llm_dart_chat`, and optionally direct `core` imports for adapter code
 
 Explicitly disallow:
 
 - core depending back on providers
 - provider-package dependency cycles
 - Flutter packages depending on concrete provider packages
+- `llm_dart_flutter` absorbing reusable runtime logic back from `llm_dart_chat`
 
 ## D9. Third-Party Dependencies Must Stay in the Right Layer
 
@@ -228,7 +232,7 @@ Provider-specific features should be represented through:
 
 ## D26. Legacy Chat Stream Projection Stays Intentionally Lossy
 
-- the rich event model belongs in `llm_dart_core` and `llm_dart_flutter`, not in the old root-package `ChatStreamEvent` API
+- the rich event model belongs in `llm_dart_core` and `llm_dart_chat`, not in the old root-package `ChatStreamEvent` API
 - the compatibility adapter should project only the legacy stream concepts that the old API can represent directly: text deltas, thinking deltas, tool-call deltas, completion, and errors
 - start markers, response metadata, step markers, approvals, denied outputs, files, sources, custom events, and raw chunks must stay out of the old stream API
 - expanding the old stream surface to mirror the Vercel AI SDK UI chunk vocabulary is explicitly out of scope for phase 1
@@ -343,11 +347,11 @@ Provider-specific features should be represented through:
 - client-executed tool calls continue only after all pending local tool outputs for the current step have been provided
 - provider-executed approval responses continue only after the current step no longer waits for other approvals or client-side tool outputs
 - mixed approval outcomes must be decided from the whole step state, not only from the most recent approval click
-- future convenience helpers such as automatic local tool callbacks, if added, belong in `llm_dart_flutter` above the current session boundary
+- future convenience helpers such as automatic local tool callbacks belong in `llm_dart_chat` above the current session boundary, while Flutter-only adapters stay in `llm_dart_flutter`
 
-## D40. Automatic Local Tool Execution Stays In `llm_dart_flutter`
+## D40. Automatic Local Tool Execution Stays Out Of `llm_dart_core`
 
-- execute-style tool convenience such as `onToolCall` must stay in `llm_dart_flutter`, not in `llm_dart_core`
+- execute-style tool convenience such as `onToolCall` must stay in `llm_dart_chat`, not in `llm_dart_core`
 - the callback may observe a client-executed tool call and optionally return a local tool output or local tool error result
 - automatic local tool execution must reuse the existing `addToolOutput` continuation path instead of introducing a second protocol
 - provider-executed tools stay out of this convenience surface
@@ -363,3 +367,36 @@ Provider-specific features should be represented through:
 - that callback layer should build `StepResult`-style snapshots from existing common models such as content parts, tool calls/results, sources, files, finish metadata, usage, warnings, and provider metadata
 - Flutter chat/session APIs must stay independent from that future step-lifecycle callback layer
 - provider-native capabilities must remain provider-owned even after such lifecycle hooks exist; callbacks are not a new excuse to widen the common request or event model
+
+## D42. Chat Runtime Alignment Adopts Transport Request Customization, Not React Store APIs
+
+- `llm_dart_chat` should adopt request-side transport maturity where it is
+  genuinely shared runtime infrastructure:
+  - explicit transport request triggers
+  - JSON-safe request metadata
+  - `HttpChatTransport` request customization hooks for send and reconnect
+- those hooks belong to the transport/session boundary and must not serialize
+  typed provider invocation options into the generic HTTP chat protocol
+- `ChatSession` must not adopt generic local message-store mutation APIs such
+  as `setMessages`
+- React/UI-framework store subscription ergonomics remain adapter concerns and
+  stay out of the shared Dart runtime
+- callback-heavy continuation policy copied from `repo-ref/ai`
+  `sendAutomaticallyWhen` should not enter `llm_dart_chat` unless a concrete
+  Dart-side requirement is proven later
+
+## D43. Root `chat.dart` Exposes Pure Dart Chat Runtime, Not Flutter Adapters
+
+- the root package may expose a focused `package:llm_dart/chat.dart` entrypoint
+  as a thin convenience shell over `llm_dart_chat`
+- that entrypoint may also re-export `core.dart`, `transport.dart`, and the
+  stable `AI` facade so pure Dart chat applications do not need a second root
+  import
+- the root `chat.dart` entrypoint must not re-export `llm_dart_flutter`,
+  `ChatController`, or other Flutter-only adapter types
+- `llm_dart_flutter` remains the only Flutter-specific package entrypoint
+- `llm_dart.dart` should not absorb `chat.dart` back into the broad root barrel
+  when that would reintroduce ambiguous exports or weaken the focused-entrypoint
+  boundary
+- docs should recommend `package:llm_dart/chat.dart` as the focused pure Dart
+  chat-app import

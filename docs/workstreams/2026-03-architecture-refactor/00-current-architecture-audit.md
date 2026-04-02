@@ -200,7 +200,8 @@ That means:
 
 Target mapping:
 
-- `llm_dart_flutter` should become the chat-facing integration layer.
+- `llm_dart_chat` should become the chat-facing runtime layer.
+- `llm_dart_flutter` should stay the thin Flutter adapter layer.
 - The core data structures should be organized around `ChatUiMessage(parts)` and `TextStreamEvent`.
 - Direct provider transport and HTTP transport should both be first-class modes.
 
@@ -257,7 +258,7 @@ The principle for this project should therefore be:
 | `lib/providers/deepseek/xai/groq/phind/*` | OpenAI-compatible repetition | OpenAI family profile model |
 | `lib/providers/anthropic/*` | reasoning/MCP/web search mixed into the mainline | Dedicated `llm_dart_anthropic` package |
 | `lib/providers/google/*` | chat/image/embedding/tts live in one undifferentiated provider area | Dedicated `llm_dart_google` package |
-| direct provider calling mode | Flutter session layer is missing | `llm_dart_flutter` with `ChatSession` and `ChatTransport` |
+| direct provider calling mode | Flutter/session runtime layer is missing | `llm_dart_chat` for `ChatSession` and `ChatTransport`, plus `llm_dart_flutter` for adapters |
 
 ## Recommended Migration Waves
 
@@ -291,6 +292,7 @@ The principle for this project should therefore be:
 
 ### Wave 5
 
+- Establish `llm_dart_chat`
 - Establish `llm_dart_flutter`
 - Establish direct and HTTP chat transport
 - Establish UI projection, tool approval, and tool result injection

@@ -1,8 +1,10 @@
 import '../../core/capability.dart';
 import '../../core/config.dart';
+import '../../core/web_search.dart';
 import '../../src/provider_defaults.dart';
 import '../../models/chat_models.dart';
 import '../../src/config/legacy_config_extensions.dart';
+import '../../src/config/legacy_provider_options.dart';
 import '../openai/openai.dart';
 import 'base_factory.dart';
 
@@ -60,7 +62,11 @@ class OpenAIProviderFactory
     }
 
     // Check for webSearchConfig
-    final webSearchConfig = config.legacyWebSearchConfig;
+    final webSearchConfig = getLegacyProviderOption<WebSearchConfig>(
+      config,
+      LegacyProviderOptionNamespaces.openai,
+      LegacyExtensionKeys.webSearchConfig,
+    );
     if (webSearchConfig != null && !_isSearchModel(model)) {
       model = _getSearchModel(model);
     }
@@ -89,13 +95,20 @@ class OpenAIProviderFactory
       embeddingEncodingFormat: config.legacyEmbeddingEncodingFormat,
       embeddingDimensions: config.legacyEmbeddingDimensions,
       // Responses API configuration
-      useResponsesAPI:
-          getExtension<bool>(config, LegacyExtensionKeys.useResponsesApi) ??
-              false,
-      previousResponseId:
-          getExtension<String>(config, LegacyExtensionKeys.previousResponseId),
-      builtInTools: getExtension<List<OpenAIBuiltInTool>>(
+      useResponsesAPI: getLegacyProviderOption<bool>(
+            config,
+            LegacyProviderOptionNamespaces.openai,
+            LegacyExtensionKeys.useResponsesApi,
+          ) ??
+          false,
+      previousResponseId: getLegacyProviderOption<String>(
         config,
+        LegacyProviderOptionNamespaces.openai,
+        LegacyExtensionKeys.previousResponseId,
+      ),
+      builtInTools: getLegacyProviderOption<List<OpenAIBuiltInTool>>(
+        config,
+        LegacyProviderOptionNamespaces.openai,
         LegacyExtensionKeys.builtInTools,
       ),
       originalConfig: config,

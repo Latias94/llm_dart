@@ -212,7 +212,8 @@ The richer stream semantics remain available through:
 
 - `llm_dart_core` `TextStreamEvent`
 - `ChatUiAccumulator`
-- `llm_dart_flutter` chat/session/transport layers
+- `llm_dart_chat` chat/session/transport runtime
+- `llm_dart_flutter` adapter helpers above that runtime
 - the typed package-owned provider APIs
 
 ## 6. Why We Should Not Mirror The AI SDK UI Chunk Protocol Into Legacy APIs
@@ -223,12 +224,13 @@ Reasons:
 
 - the old API has no stable message/chunk transport contract
 - adding many legacy-only event classes would expand a surface we already intend to deprecate
-- Flutter integration already has a better long-term home in `llm_dart_flutter`
+- chat integration already has a better long-term home in `llm_dart_chat`, with
+  Flutter-specific adapters in `llm_dart_flutter`
 - the compatibility layer should shrink migration risk, not become a second architecture
 
 The correct long-term direction is:
 
-- keep the rich event model in the new core and Flutter layers
+- keep the rich event model in the new core and chat runtime layers
 - keep the old stream projection deliberately minimal
 - deprecate the old stream API instead of trying to teach it every new concept
 

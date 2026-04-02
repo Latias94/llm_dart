@@ -109,6 +109,8 @@ void main() {
         responseMetadata['openai'],
         containsPair('serviceTier', 'default'),
       );
+      expect(message.metadata[ChatUiMetadataKeys.isAborted], isNull);
+      expect(message.metadata[ChatUiMetadataKeys.abortReason], isNull);
     });
 
     test('accumulates partial tool input and updates a single tool part', () {
@@ -491,6 +493,34 @@ void main() {
       final errors =
           message.metadata[ChatUiMetadataKeys.errors] as List<ModelError>;
       expect(errors.single.message, 'soft failure');
+    });
+
+    test('captures abort metadata independently from terminal finish state',
+        () {
+      final accumulator = ChatUiAccumulator(messageId: 'assistant-1');
+
+      accumulator.apply(
+        const AbortEvent(
+          reason: 'user cancelled',
+        ),
+      );
+
+      final message = accumulator.apply(
+        const FinishEvent(
+          finishReason: FinishReason.aborted,
+          rawFinishReason: 'user cancelled',
+        ),
+      );
+
+      expect(message.metadata[ChatUiMetadataKeys.isAborted], isTrue);
+      expect(
+        message.metadata[ChatUiMetadataKeys.abortReason],
+        'user cancelled',
+      );
+      expect(
+        message.metadata[ChatUiMetadataKeys.finishReason],
+        FinishReason.aborted,
+      );
     });
 
     test('continues an existing assistant message across steps', () {

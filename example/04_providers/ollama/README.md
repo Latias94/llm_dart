@@ -1,100 +1,69 @@
-# Ollama Unique Features
+# Ollama Provider Features
 
-Local AI model deployment for privacy and offline capabilities.
+Ollama is intentionally still documented as a compatibility-oriented provider
+surface in this repository.
+
+Reason:
+
+- the local runtime configuration surface is broader than the current frozen
+  `AI.*(...).chatModel(...)` facade
+- model-local controls such as GPU threads, memory tuning, and local reasoning
+  flags have not been redesigned into a stable provider-owned model API yet
 
 ## Examples
 
 ### [advanced_features.dart](advanced_features.dart)
-Local model deployment, performance optimization, and custom configurations.
+Compatibility-oriented local deployment and tuning example.
 
 ### [thinking_example.dart](thinking_example.dart)
-Reasoning and thinking capabilities with local models.
+Compatibility-oriented reasoning and thinking example.
 
 ## Setup
 
 ```bash
-# Install Ollama
 curl -fsSL https://ollama.ai/install.sh | sh
-
-# Download a model
 ollama pull llama3.2
-
-# Start Ollama server
 ollama serve
 
-# Run Ollama example
 dart run advanced_features.dart
 dart run thinking_example.dart
 ```
 
-## Unique Capabilities
+## Current Boundary
 
-### Local Deployment
-- **Complete Privacy**: No data sent to external servers
-- **Offline Operation**: Works without internet connection
-- **Cost-Free**: No API charges after initial setup
+### Compatibility Surface Today
 
-### Performance Control
-- **Hardware Optimization**: GPU acceleration and CPU tuning
-- **Custom Models**: Import and fine-tune your own models
-- **Resource Management**: Control memory and processing allocation
-
-### Reasoning Models
-- **Local Thinking**: Run reasoning models completely offline
-- **Privacy-First**: No thinking process sent to external servers
-- **Cost-Free Reasoning**: No API charges for complex reasoning tasks
-
-## Usage Examples
-
-### Local Model Configuration
 ```dart
 final provider = await ai().ollama()
     .baseUrl('http://localhost:11434')
     .model('llama3.2')
-    .numGpu(1)           // GPU acceleration
-    .numThread(8)        // CPU threads
+    .numGpu(1)
+    .numThread(8)
     .build();
-
-final response = await provider.chat([
-  ChatMessage.user('Explain quantum computing'),
-]);
-
-// All processing happens locally
-print('Local response: ${response.text}');
 ```
 
-### Privacy-Focused Setup
-```dart
-// Completely offline operation
-final provider = await ai().ollama()
-    .baseUrl('http://localhost:11434')
-    .model('phi3')       // Lightweight model
-    .build();
+This still works, but it should be read as a transitional surface rather than
+the long-term public architecture.
 
-// No data leaves your machine
-final response = await provider.chat([
-  ChatMessage.user('Analyze this sensitive document'),
-]);
-```
+### Planned Stable Direction
 
-### Reasoning Models
-```dart
-// Local reasoning with thinking process
-final provider = await ai().ollama()
-    .baseUrl('http://localhost:11434')
-    .model('gpt-oss:latest') // Reasoning model
-    .reasoning(true)         // Enable reasoning process
-    .build();
+When Ollama gets a stable facade, it should follow the same design rules as the
+other migrated providers:
 
-final response = await provider.chat([
-  ChatMessage.user('Solve this step by step: What is 15 * 23 + 7 * 11?'),
-]);
+- provider-owned model construction
+- shared `LanguageModel` app-facing contract
+- provider-owned typed local runtime settings instead of raw builder coupling
 
-print('Thinking: ${response.thinking}');
-print('Answer: ${response.text}');
-```
+## Why Ollama Is Different
+
+- local deployment is a real product boundary, not just another remote profile
+- runtime tuning is model-session configuration, not simple per-call options
+- privacy and offline concerns often require more explicit lifecycle controls
+
+That means forcing Ollama into the current stable facade too early would create
+the wrong abstraction.
 
 ## Next Steps
 
-- [Core Features](../../02_core_features/) - Basic chat and streaming
-- [Advanced Features](../../03_advanced_features/) - Custom provider setup
+- [Core Features](../../02_core_features/) - Shared chat contract examples
+- [Advanced Features](../../03_advanced_features/) - Custom provider patterns
