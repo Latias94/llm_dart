@@ -423,9 +423,10 @@ Provider-specific features should be represented through:
   core event types
 - persisted UI data should continue to use `DataUiPart<T>` inside
   `ChatUiMessage.parts`
-- if transient UI data is added later, it must land at the
-  `ChatUiStreamChunk` / `ChatSession` / transport layer rather than in
-  `TextStreamEvent`
+- transient UI data now lands at the `ChatUiStreamChunk` / `ChatSession` /
+  transport layer rather than in `TextStreamEvent`
+- the framework-neutral delivery hook is a session/controller side-channel
+  stream, not a Flutter-specific callback contract
 - transient UI data must not enter prompt history, persisted message parts,
   reconnect replay, or snapshots by default
 - do not add a `transient` flag directly to `DataUiPart<T>` because that would

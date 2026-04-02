@@ -49,6 +49,9 @@ final class ChatController extends ValueNotifier<ChatState> {
 
   Stream<ChatState> get states => session.states;
 
+  Stream<DataUiPart<Object?>> get transientDataParts =>
+      session.transientDataParts;
+
   Future<void> sendMessage(
     ChatInput input, {
     ChatRequestOptions options = const ChatRequestOptions(),

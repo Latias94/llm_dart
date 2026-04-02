@@ -300,6 +300,8 @@ final class HttpChatTransport implements ChatTransport {
             final replayChunk = ChatUiDataPartChunk<Object?>(part);
             state.replayChunks.add(replayChunk);
             yield replayChunk;
+          case HttpChatTransportTransientDataPartChunk(:final part):
+            yield ChatUiTransientDataPartChunk<Object?>(part);
           case HttpChatTransportAbortChunk(:final reason):
             _clearResumeState(chatId, state);
             yield ChatUiEventChunk(

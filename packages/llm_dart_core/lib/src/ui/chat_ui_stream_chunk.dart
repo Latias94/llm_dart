@@ -35,6 +35,12 @@ final class ChatUiDataPartChunk<T> extends ChatUiStreamChunk {
   const ChatUiDataPartChunk(this.part);
 }
 
+final class ChatUiTransientDataPartChunk<T> extends ChatUiStreamChunk {
+  final DataUiPart<T> part;
+
+  const ChatUiTransientDataPartChunk(this.part);
+}
+
 final class ChatUiMessageFinishChunk extends ChatUiStreamChunk {
   final Map<String, Object?> metadata;
 

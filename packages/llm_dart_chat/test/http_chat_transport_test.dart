@@ -758,6 +758,106 @@ void main() {
       );
     });
 
+    test('transient data chunks are delivered but not replayed on reconnect',
+        () async {
+      const chunkCodec = HttpChatTransportChunkJsonCodec();
+      var attempt = 0;
+
+      final transport = HttpChatTransport(
+        endpoint: Uri.parse('https://example.com/chat'),
+        transport: _FakeTransportClient(
+          onSendStream: (request) async {
+            attempt += 1;
+
+            if (attempt == 1) {
+              return StreamingTransportResponse(
+                statusCode: 200,
+                stream: Stream<List<int>>.multi((controller) {
+                  controller.add(
+                    _sseFrame(
+                      chunkCodec.encodeChunk(
+                        const HttpChatTransportStartChunk(
+                          resumeToken: 'resume-1',
+                        ),
+                      ),
+                    ),
+                  );
+                  controller.add(
+                    _sseFrame(
+                      chunkCodec.encodeChunk(
+                        const HttpChatTransportTransientDataPartChunk(
+                          DataUiPart<Object?>(
+                            id: 'heartbeat',
+                            key: 'tool-status',
+                            data: {
+                              'phase': 'running',
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                  controller.addError(StateError('socket closed'));
+                }),
+              );
+            }
+
+            if (attempt == 2) {
+              return StreamingTransportResponse(
+                statusCode: 200,
+                stream: Stream.fromIterable([
+                  _sseFrame(
+                    chunkCodec.encodeChunk(
+                      const HttpChatTransportStartChunk(
+                        resumeToken: 'resume-2',
+                      ),
+                    ),
+                  ),
+                  _sseFrame(
+                    chunkCodec.encodeChunk(
+                      const HttpChatTransportEventChunk(
+                        FinishEvent(
+                          finishReason: FinishReason.stop,
+                        ),
+                      ),
+                    ),
+                  ),
+                  _sseFrame(
+                    chunkCodec.encodeChunk(
+                      const HttpChatTransportFinishChunk(),
+                    ),
+                  ),
+                ]),
+              );
+            }
+
+            throw StateError('Unexpected transport attempt $attempt');
+          },
+        ),
+      );
+
+      final firstAttemptChunks = await transport
+          .sendMessages(
+            ChatTransportRequest(
+              chatId: 'chat-1',
+              prompt: [
+                UserPromptMessage.text('Hello'),
+              ],
+            ),
+          )
+          .toList();
+
+      expect(firstAttemptChunks[0], isA<ChatUiTransientDataPartChunk<Object?>>());
+      expect(firstAttemptChunks[1], isA<ChatUiEventChunk>());
+
+      final resumedChunks = await transport.reconnect('chat-1')!.toList();
+      expect(resumedChunks, hasLength(1));
+      expect(
+        (_singleEvent(resumedChunks) as FinishEvent).finishReason,
+        FinishReason.stop,
+      );
+    });
+
     test('clears reconnect state after a successful terminal finish', () async {
       const chunkCodec = HttpChatTransportChunkJsonCodec();
 

@@ -142,6 +142,15 @@ void main() {
             },
           ),
         ),
+        const HttpChatTransportTransientDataPartChunk(
+          DataUiPart<Object?>(
+            id: 'heartbeat',
+            key: 'tool-status',
+            data: {
+              'phase': 'running',
+            },
+          ),
+        ),
         const HttpChatTransportCheckpointChunk(
           resumeToken: 'resume-2',
           cursor: 'cursor-2',
@@ -202,22 +211,31 @@ void main() {
         0.5,
       );
 
-      final checkpoint = decoded[6] as HttpChatTransportCheckpointChunk;
+      final transientDataPartChunk =
+          decoded[6] as HttpChatTransportTransientDataPartChunk;
+      expect(transientDataPartChunk.part.id, 'heartbeat');
+      expect(transientDataPartChunk.part.key, 'tool-status');
+      expect(
+        (transientDataPartChunk.part.data as Map<String, Object?>)['phase'],
+        'running',
+      );
+
+      final checkpoint = decoded[7] as HttpChatTransportCheckpointChunk;
       expect(checkpoint.cursor, 'cursor-2');
 
-      final messageFinish = decoded[7] as HttpChatTransportMessageFinishChunk;
+      final messageFinish = decoded[8] as HttpChatTransportMessageFinishChunk;
       expect(messageFinish.metadata['persisted'], isTrue);
 
-      expect(decoded[8], isA<HttpChatTransportFinishChunk>());
-      expect((decoded[9] as HttpChatTransportAbortChunk).reason, 'cancelled');
+      expect(decoded[9], isA<HttpChatTransportFinishChunk>());
+      expect((decoded[10] as HttpChatTransportAbortChunk).reason, 'cancelled');
 
-      final error = decoded[10] as HttpChatTransportErrorChunk;
+      final error = decoded[11] as HttpChatTransportErrorChunk;
       expect(error.code, 'transport_error');
       expect(error.details, {
         'retryable': false,
       });
 
-      expect(decoded[11], isA<HttpChatTransportKeepAliveChunk>());
+      expect(decoded[12], isA<HttpChatTransportKeepAliveChunk>());
     });
   });
 }

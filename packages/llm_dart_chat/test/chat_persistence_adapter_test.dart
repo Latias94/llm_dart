@@ -108,6 +108,8 @@ final class _MemoryPersistenceStore implements ChatPersistenceStore {
 final class _FakeChatSession implements ChatSession {
   final StreamController<ChatState> _statesController =
       StreamController<ChatState>.broadcast(sync: true);
+  final StreamController<DataUiPart<Object?>> _transientDataPartsController =
+      StreamController<DataUiPart<Object?>>.broadcast(sync: true);
 
   final ChatState _state;
   final ChatSessionSnapshot _snapshot;
@@ -127,6 +129,10 @@ final class _FakeChatSession implements ChatSession {
 
   @override
   Stream<ChatState> get states => _statesController.stream;
+
+  @override
+  Stream<DataUiPart<Object?>> get transientDataParts =>
+      _transientDataPartsController.stream;
 
   @override
   Future<void> sendMessage(
@@ -164,6 +170,9 @@ final class _FakeChatSession implements ChatSession {
   @override
   Future<void> dispose() async {
     disposeCount += 1;
+    if (!_transientDataPartsController.isClosed) {
+      await _transientDataPartsController.close();
+    }
     if (!_statesController.isClosed) {
       await _statesController.close();
     }

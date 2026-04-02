@@ -5,6 +5,7 @@ export 'package:llm_dart_transport/llm_dart_transport.dart'
         HttpChatTransportChunk,
         HttpChatTransportChunkJsonCodec,
         HttpChatTransportDataPartChunk,
+        HttpChatTransportTransientDataPartChunk,
         HttpChatTransportErrorChunk,
         HttpChatTransportEventChunk,
         HttpChatTransportFinishChunk,

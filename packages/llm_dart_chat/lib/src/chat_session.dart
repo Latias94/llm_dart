@@ -167,6 +167,8 @@ abstract interface class ChatSession {
 
   Stream<ChatState> get states;
 
+  Stream<DataUiPart<Object?>> get transientDataParts;
+
   Future<void> sendMessage(
     ChatInput input, {
     ChatRequestOptions options = const ChatRequestOptions(),

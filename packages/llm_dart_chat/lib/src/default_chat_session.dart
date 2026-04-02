@@ -17,6 +17,7 @@ final class DefaultChatSession implements ChatSession {
   final ChatTransport transport;
   final ChatOnToolCall? onToolCall;
   final StreamController<ChatState> _statesController;
+  final StreamController<DataUiPart<Object?>> _transientDataPartsController;
   final List<PromptMessage> _promptHistory = [];
   final MessageIdGenerator _messageIdGenerator;
   final Set<String> _scheduledToolExecutionKeys = <String>{};
@@ -78,6 +79,8 @@ final class DefaultChatSession implements ChatSession {
     required List<PromptMessage> initialPrompt,
     MessageIdGenerator? messageIdGenerator,
   })  : _statesController = StreamController<ChatState>.broadcast(sync: true),
+        _transientDataPartsController =
+            StreamController<DataUiPart<Object?>>.broadcast(sync: true),
         _messageIdGenerator = messageIdGenerator ??
             _sequentialMessageId(
               existingIds: initialState.messages.map((message) => message.id),
@@ -92,6 +95,10 @@ final class DefaultChatSession implements ChatSession {
 
   @override
   Stream<ChatState> get states => _statesController.stream;
+
+  @override
+  Stream<DataUiPart<Object?>> get transientDataParts =>
+      _transientDataPartsController.stream;
 
   @override
   Future<void> sendMessage(
@@ -464,6 +471,9 @@ final class DefaultChatSession implements ChatSession {
     }
     _clearActiveTurn();
     _isDisposed = true;
+    if (!_transientDataPartsController.isClosed) {
+      await _transientDataPartsController.close();
+    }
     await _statesController.close();
   }
 
@@ -556,6 +566,14 @@ final class DefaultChatSession implements ChatSession {
           case ChatUiDataPartChunk():
             latestAssistantMessage = accumulator.apply(chunk);
             _upsertAssistantMessage(latestAssistantMessage!);
+          case ChatUiTransientDataPartChunk(:final part):
+            _emitTransientDataPart(
+              DataUiPart<Object?>(
+                id: part.id,
+                key: part.key,
+                data: part.data,
+              ),
+            );
           case ChatUiMessageStartChunk() ||
                 ChatUiMessageMetadataChunk() ||
                 ChatUiMessageFinishChunk():
@@ -643,6 +661,12 @@ final class DefaultChatSession implements ChatSession {
     _state = state;
     if (!_isDisposed && !_statesController.isClosed) {
       _statesController.add(state);
+    }
+  }
+
+  void _emitTransientDataPart(DataUiPart<Object?> part) {
+    if (!_isDisposed && !_transientDataPartsController.isClosed) {
+      _transientDataPartsController.add(part);
     }
   }
 

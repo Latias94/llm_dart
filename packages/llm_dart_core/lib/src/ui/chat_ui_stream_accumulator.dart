@@ -49,6 +49,8 @@ final class ChatUiStreamAccumulator {
         return _messageAccumulator.apply(chunk.event);
       case ChatUiDataPartChunk():
         return _messageAccumulator.applyDataPart(chunk.part);
+      case ChatUiTransientDataPartChunk():
+        return _messageAccumulator.message;
       case ChatUiMessageFinishChunk():
         return _applyMessagePatch(
           metadataPatch: chunk.metadata,

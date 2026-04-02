@@ -189,6 +189,10 @@ Current status:
   more narrowly: transient `data-*` delivery should stay as a transport/session
   concern above persisted `ChatUiMessage` state rather than reopening the core
   event model
+- that transient transport/session gap is now also implemented: the shared
+  runtime exposes transient data through a framework-neutral side-channel,
+  keeps it out of persisted `ChatUiMessage` state and snapshots, and excludes
+  it from reconnect replay by default
 
 ## M6 - Compatibility Cleanup
 

@@ -2,12 +2,13 @@
 
 ## Goal
 
-This document freezes the current conclusion after comparing our chat runtime
-with the `repo-ref/ai` UI message stream design:
+This document freezes the boundary after comparing our chat runtime with the
+`repo-ref/ai` UI message stream design and records the current implementation:
 
-> The next potentially useful adoption is not a new `TextStreamEvent` family.
-> It is an explicit transport/session path for transient `data-*` updates that
-> should reach the UI without becoming persisted message state.
+> The worthwhile adoption was not a new `TextStreamEvent` family.
+> It was an explicit transport/session path for transient `data-*` updates that
+> reach the UI without becoming persisted message state, and that path is now
+> implemented in the current breaking round.
 
 ## 1. Current `llm_dart` Status
 
@@ -52,9 +53,9 @@ It is also **not** a gap in the persisted `ChatUiMessage` data model.
 
 The actual gap is narrower:
 
-- `llm_dart` currently has persisted UI data parts
-- `llm_dart` does not yet have an explicit non-persistent transient UI-data
-  channel above `ChatUiMessage`
+- `llm_dart` already had persisted UI data parts
+- `llm_dart` now also has an explicit non-persistent transient UI-data channel
+  above `ChatUiMessage`
 
 That means the remaining worthwhile adoption target belongs to:
 
@@ -84,7 +85,7 @@ mix two different meanings into one type:
 That ambiguity would make snapshot, reconnect, and serializer behavior much
 harder to reason about.
 
-### 2. If Adopted, Add Transient Delivery At The Chunk Layer
+### 2. Add Transient Delivery At The Chunk Layer
 
 If the runtime adopts this feature, it should land as one of:
 
@@ -113,28 +114,40 @@ instead.
 
 Transient data is only useful if application code can observe it directly.
 
-If implemented later, `llm_dart_chat` should provide an explicit delivery path
-such as:
+`llm_dart_chat` now provides an explicit delivery path through:
 
-- a session callback
-- a side-channel stream
-- or a controller-level transient-data listener
+- `ChatSession.transientDataParts`
+- `ChatController.transientDataParts`
 
-The shared runtime should not force Flutter-specific widget patterns, but it
-should offer a framework-neutral delivery hook.
+The shared runtime still does not force Flutter-specific widget patterns, and
+the delivery hook remains framework-neutral.
 
 ## 5. Recommended Implementation Order
 
-If this gap becomes worth closing during the breaking window, the implementation
-order should be:
+The breaking-round implementation followed this order:
 
 1. freeze the chunk shape and wire semantics
 2. add a framework-neutral transient-data delivery hook in `llm_dart_chat`
 3. extend the HTTP v2 chunk codec without changing `TextStreamEvent`
 4. verify that reconnect replay excludes transient data by default
-5. add session, transport, and snapshot tests for persistent vs transient data
+5. add session, transport, and projection tests for persistent vs transient
+   data
 
-## 6. Non-Goals
+## 6. Current Implementation Summary
+
+The implemented transient path now works as follows:
+
+- `ChatUiTransientDataPartChunk<T>` carries non-persistent UI data above
+  `ChatUiMessage`
+- `ChatUiStreamAccumulator` ignores transient chunks for persisted message
+  projection
+- `DefaultChatSession` forwards transient data through
+  `transientDataParts` without storing it in session snapshots or prompt
+  history
+- HTTP `ui-message-stream-v2` can encode `transient-data-part` chunks
+- reconnect replay still excludes transient data by default
+
+## 7. Non-Goals
 
 The following should remain out of scope:
 
@@ -144,7 +157,7 @@ The following should remain out of scope:
 - widening `ChatUiMessage.parts` with a mixed persistent/transient contract
 - copying the full `repo-ref/ai` client callback surface into Dart
 
-## 7. Conclusion
+## 8. Conclusion
 
 The event model itself is now mature enough.
 
@@ -152,7 +165,8 @@ The remaining worthwhile gap versus `repo-ref/ai` is a transport/session
 ergonomics gap:
 
 - persisted UI data is already covered
-- transient UI data is the next optional improvement
+- transient UI data is now implemented as the narrow transport/session
+  improvement
 - that improvement should stay above `TextStreamEvent`
 - that improvement should stay outside persisted `ChatUiMessage` state by
   default

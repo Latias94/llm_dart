@@ -2985,6 +2985,62 @@ void main() {
       await session.dispose();
     });
 
+    test(
+        'emits transient transport data through the side channel without persisting it',
+        () async {
+      final session = DefaultChatSession(
+        transport: _FakeChatTransport(
+          onSendMessages: (request) => const Stream<TextStreamEvent>.empty(),
+          onSendMessageChunks: (request) =>
+              Stream<ChatUiStreamChunk>.fromIterable([
+            const ChatUiTransientDataPartChunk<Object?>(
+              DataUiPart<Object?>(
+                id: 'heartbeat',
+                key: 'tool-status',
+                data: {
+                  'phase': 'running',
+                },
+              ),
+            ),
+            const ChatUiEventChunk(TextStartEvent(id: 'text-1')),
+            const ChatUiEventChunk(
+              TextDeltaEvent(
+                id: 'text-1',
+                delta: 'Hello',
+              ),
+            ),
+            const ChatUiEventChunk(TextEndEvent(id: 'text-1')),
+            const ChatUiEventChunk(
+              FinishEvent(finishReason: FinishReason.stop),
+            ),
+          ]),
+        ),
+      );
+
+      final transientPartFuture = session.transientDataParts.first;
+
+      await session.sendMessage(ChatInput.text('Hi'));
+
+      final transientPart = await transientPartFuture;
+      expect(transientPart.id, 'heartbeat');
+      expect(
+        (transientPart.data as Map<String, Object?>)['phase'],
+        'running',
+      );
+
+      final assistantMessage = session.state.messages.last;
+      expect(
+        assistantMessage.parts.whereType<DataUiPart<Object?>>(),
+        isEmpty,
+      );
+      expect(
+        assistantMessage.parts.whereType<TextUiPart>().single.text,
+        'Hello',
+      );
+
+      await session.dispose();
+    });
+
     test('transitions to error state when the stream emits ErrorEvent',
         () async {
       final session = DefaultChatSession(

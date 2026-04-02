@@ -228,6 +228,17 @@ final class HttpChatTransportServerAdapter {
               data: part.data,
             ),
           );
+        case ChatUiTransientDataPartChunk(:final part):
+          if (streamProtocol ==
+              HttpChatTransportStreamProtocol.uiMessageStreamV2) {
+            yield HttpChatTransportTransientDataPartChunk(
+              DataUiPart<Object?>(
+                id: part.id,
+                key: part.key,
+                data: part.data,
+              ),
+            );
+          }
         case ChatUiMessageFinishChunk(:final metadata):
           if (streamProtocol ==
               HttpChatTransportStreamProtocol.uiMessageStreamV2) {

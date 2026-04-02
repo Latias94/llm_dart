@@ -89,12 +89,42 @@ void main() {
       await session.dispose();
       expect(session.disposeCount, 1);
     });
+
+    test('forwards transient data parts from the session', () async {
+      final session = _FakeChatSession(
+        ChatState(
+          chatId: 'chat-1',
+          messages: const [],
+        ),
+      );
+      final controller = ChatController(session: session);
+
+      final nextTransientPart = controller.transientDataParts.first;
+      session.emitTransientDataPart(
+        const DataUiPart<Object?>(
+          id: 'heartbeat',
+          key: 'tool-status',
+          data: {
+            'phase': 'running',
+          },
+        ),
+      );
+
+      final part = await nextTransientPart;
+      expect(part.id, 'heartbeat');
+      expect(part.key, 'tool-status');
+      expect((part.data as Map<String, Object?>)['phase'], 'running');
+
+      await controller.close();
+    });
   });
 }
 
 final class _FakeChatSession implements ChatSession {
   final StreamController<ChatState> _statesController =
       StreamController<ChatState>.broadcast(sync: true);
+  final StreamController<DataUiPart<Object?>> _transientDataPartsController =
+      StreamController<DataUiPart<Object?>>.broadcast(sync: true);
 
   ChatState _state;
   final List<String> sentMessages = [];
@@ -115,6 +145,14 @@ final class _FakeChatSession implements ChatSession {
 
   @override
   Stream<ChatState> get states => _statesController.stream;
+
+  @override
+  Stream<DataUiPart<Object?>> get transientDataParts =>
+      _transientDataPartsController.stream;
+
+  void emitTransientDataPart(DataUiPart<Object?> part) {
+    _transientDataPartsController.add(part);
+  }
 
   @override
   Future<void> sendMessage(
@@ -176,6 +214,9 @@ final class _FakeChatSession implements ChatSession {
   @override
   Future<void> dispose() async {
     disposeCount += 1;
+    if (!_transientDataPartsController.isClosed) {
+      await _transientDataPartsController.close();
+    }
     if (!_statesController.isClosed) {
       await _statesController.close();
     }

@@ -125,5 +125,41 @@ void main() {
       );
       expect(messages.last.parts.whereType<TextUiPart>().single.text, 'Hi');
     });
+
+    test('ignores transient data chunks in persisted message projection',
+        () async {
+      final chunks = Stream<ChatUiStreamChunk>.fromIterable([
+        const ChatUiTransientDataPartChunk<Object?>(
+          DataUiPart<Object?>(
+            id: 'status',
+            key: 'progress',
+            data: {
+              'value': 0.25,
+            },
+          ),
+        ),
+        const ChatUiEventChunk(
+          TextStartEvent(id: 'text-1'),
+        ),
+        const ChatUiEventChunk(
+          TextDeltaEvent(
+            id: 'text-1',
+            delta: 'Hi',
+          ),
+        ),
+        const ChatUiEventChunk(
+          TextEndEvent(id: 'text-1'),
+        ),
+      ]);
+
+      final messages = await projectChatUiStreamChunkStream(
+        chunks,
+        messageId: 'assistant-1',
+      ).toList();
+
+      expect(messages, hasLength(4));
+      expect(messages.last.parts.whereType<DataUiPart<Object?>>(), isEmpty);
+      expect(messages.last.parts.whereType<TextUiPart>().single.text, 'Hi');
+    });
   });
 }

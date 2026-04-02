@@ -272,6 +272,13 @@ final class HttpChatTransportDataPartChunk extends HttpChatTransportChunk {
   const HttpChatTransportDataPartChunk(this.part);
 }
 
+final class HttpChatTransportTransientDataPartChunk
+    extends HttpChatTransportChunk {
+  final DataUiPart<Object?> part;
+
+  const HttpChatTransportTransientDataPartChunk(this.part);
+}
+
 final class HttpChatTransportCheckpointChunk extends HttpChatTransportChunk {
   final String resumeToken;
   final String? cursor;
@@ -376,6 +383,14 @@ final class HttpChatTransportChunkJsonCodec {
             'data': _ensureJsonValue(part.data, path: r'$.data.part.data'),
           },
         },
+      HttpChatTransportTransientDataPartChunk(:final part) => {
+          'type': 'transient-data-part',
+          'part': {
+            if (part.id != null) 'id': part.id,
+            'key': part.key,
+            'data': _ensureJsonValue(part.data, path: r'$.data.part.data'),
+          },
+        },
       HttpChatTransportCheckpointChunk(
         :final resumeToken,
         :final cursor,
@@ -470,6 +485,9 @@ final class HttpChatTransportChunkJsonCodec {
           eventCodec.decodeEvent(data['event'], path: r'$.data.event'),
         ),
       'data-part' => HttpChatTransportDataPartChunk(
+          _decodeDataPart(data['part'], path: r'$.data.part'),
+        ),
+      'transient-data-part' => HttpChatTransportTransientDataPartChunk(
           _decodeDataPart(data['part'], path: r'$.data.part'),
         ),
       'checkpoint' => HttpChatTransportCheckpointChunk(

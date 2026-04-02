@@ -160,5 +160,50 @@ void main() {
       expect((chunks[1] as HttpChatTransportEventChunk).event, isA<TextStartEvent>());
       expect(chunks[2], isA<HttpChatTransportFinishChunk>());
     });
+
+    test('encodes transient data chunks only for v2 streams', () async {
+      const adapter = HttpChatTransportServerAdapter();
+
+      final v2Chunks = await adapter
+          .encodeUiChunkStream(
+            stream: Stream.fromIterable([
+              const ChatUiTransientDataPartChunk<Object?>(
+                DataUiPart<Object?>(
+                  id: 'heartbeat',
+                  key: 'tool-status',
+                  data: {
+                    'phase': 'running',
+                  },
+                ),
+              ),
+            ]),
+          )
+          .toList();
+
+      expect(v2Chunks[0], isA<HttpChatTransportTransientDataPartChunk>());
+      expect(v2Chunks[1], isA<HttpChatTransportFinishChunk>());
+
+      final v1Chunks = await adapter
+          .encodeUiChunkStream(
+            streamProtocol: HttpChatTransportStreamProtocol.eventStreamV1,
+            requestId: 'req-legacy',
+            stream: Stream.fromIterable([
+              const ChatUiTransientDataPartChunk<Object?>(
+                DataUiPart<Object?>(
+                  id: 'heartbeat',
+                  key: 'tool-status',
+                  data: {
+                    'phase': 'running',
+                  },
+                ),
+              ),
+            ]),
+          )
+          .toList();
+
+      expect(v1Chunks, hasLength(2));
+      expect(v1Chunks[0], isA<HttpChatTransportStartChunk>());
+      expect(v1Chunks[1], isA<HttpChatTransportFinishChunk>());
+    });
   });
 }

@@ -224,10 +224,10 @@ Resolved in the current breaking round:
 - `ToolCallEvent`, `ToolResultEvent`, `ToolInputErrorEvent`, and unified `ToolUiPart` remain the correct Dart mapping for tool lifecycle state
 - `StepStartEvent` and `StepFinishEvent` remain shared Dart session semantics even though the reference UI protocol places step markers above the provider stream layer
 - `AbortEvent` is now the narrow shared lifecycle exception for aborted-turn projection and local stop flows rather than evidence that full message lifecycle markers belong in the core event layer
-- the next optional adoption target is transport-only transient UI data delivery above persisted `ChatUiMessage` state, not more shared core events
+- the transport-only transient UI-data target is now implemented above persisted `ChatUiMessage` state through runtime/session chunks and a framework-neutral side-channel, not through more shared core events
 - the shared event-envelope codec should use `step-start` / `step-end` as the canonical serialized names while keeping legacy `step-finish` decode-compatible during migration
 - `20-event-completeness-audit.md` documents the frozen conclusion
-- `93-ui-transport-transient-data-boundary.md` documents the remaining transport/session gap
+- `93-ui-transport-transient-data-boundary.md` documents the frozen boundary and the implemented transient delivery path
 
 ## 22. Root OpenAI-Family Facade Status
 

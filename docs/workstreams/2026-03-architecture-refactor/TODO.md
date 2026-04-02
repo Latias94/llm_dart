@@ -183,7 +183,7 @@
 - [x] Replace `ChatTransportChunk` outright with the dedicated `ChatUiStreamChunk` runtime chunk family in the breaking round
 - [x] Design and implement protocol negotiation plus additive HTTP transport v2 chunk families that separate `transport-start` from `message-start`
 - [x] Audit the remaining `repo-ref/ai` chat-runtime event gap and freeze transient `data-*` delivery as a transport/session concern rather than a new core event family
-- [ ] Decide whether to add non-persistent transient UI-data chunks plus a framework-neutral delivery hook above persisted `ChatUiMessage` state
+- [x] Add non-persistent transient UI-data chunks plus a framework-neutral delivery hook above persisted `ChatUiMessage` state
 
 ## Compatibility Layer
 
