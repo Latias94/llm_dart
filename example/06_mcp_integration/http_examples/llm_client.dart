@@ -1,7 +1,7 @@
 // ignore_for_file: avoid_print
 import 'dart:convert';
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy.dart';
 import 'package:mcp_dart/mcp_dart.dart' hide Tool;
 
 /// HTTP LLM Integration - Real AI Agents with HTTP MCP Tools

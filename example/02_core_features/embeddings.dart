@@ -1,5 +1,5 @@
 import 'dart:math';
-import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy.dart';
 
 /// Comprehensive embeddings examples using the unified EmbeddingCapability interface
 ///

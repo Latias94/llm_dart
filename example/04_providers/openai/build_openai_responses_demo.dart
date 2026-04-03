@@ -3,7 +3,7 @@
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/legacy.dart' as llm;
 import 'package:llm_dart/openai.dart' as openai;
 
 /// Compatibility-boundary demo for `buildOpenAIResponses()`.

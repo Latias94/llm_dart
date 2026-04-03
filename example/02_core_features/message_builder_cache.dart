@@ -1,4 +1,4 @@
-import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy.dart';
 
 /// Example demonstrating MessageBuilder with Anthropic caching
 ///

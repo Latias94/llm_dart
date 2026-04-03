@@ -1,7 +1,7 @@
 // ignore_for_file: avoid_print
 import 'dart:io';
 import 'dart:async';
-import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy.dart';
 
 /// ⚡ Performance Optimization - Speed and Efficiency
 ///

@@ -1,7 +1,7 @@
 // ignore_for_file: avoid_print
 import 'dart:io';
 import 'dart:convert';
-import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy.dart';
 import 'package:mcp_dart/mcp_dart.dart' hide Tool;
 
 /// stdio LLM Integration - AI Agents with stdio MCP Tools

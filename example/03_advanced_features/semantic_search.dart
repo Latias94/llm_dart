@@ -1,5 +1,5 @@
 import 'dart:math';
-import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy.dart';
 
 /// Advanced semantic search implementation using embeddings
 ///

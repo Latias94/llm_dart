@@ -267,6 +267,7 @@
 - [x] Add a migration guide
 - [x] Repoint high-visibility README and core example entrypoints at the stable `AI` facade and provider-owned search APIs
 - [x] Add an explicit root `legacy.dart` compatibility shell before further broad-root surface slimming
+- [x] Repoint the remaining builder-era and compatibility examples from `llm_dart.dart` to `legacy.dart`
 
 ## Dependency Cleanup
 

@@ -1,6 +1,6 @@
 // ignore_for_file: avoid_print
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy.dart';
 
 /// 📋 Model Listing - Explore Available Models
 ///

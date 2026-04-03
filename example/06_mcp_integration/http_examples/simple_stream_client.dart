@@ -1,7 +1,7 @@
 // ignore_for_file: avoid_print
 import 'dart:convert';
 import 'dart:io';
-import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy.dart';
 import 'package:mcp_dart/mcp_dart.dart' hide Tool;
 
 /// Simple HTTP Streaming LLM Integration - Streaming Tool Use Demo

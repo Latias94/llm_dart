@@ -1,4 +1,4 @@
-import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy.dart';
 
 /// Comprehensive assistants examples using the unified AssistantCapability interface
 ///

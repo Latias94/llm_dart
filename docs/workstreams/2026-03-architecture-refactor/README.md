@@ -212,6 +212,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Frozen boundary and current implementation for transport-only transient
     `data-*` delivery above persisted `ChatUiMessage` state, without adding
     more shared core events.
+- [94-example-entrypoint-import-alignment.md](94-example-entrypoint-import-alignment.md)
+  - Frozen import boundary for examples: modern samples use focused entrypoints,
+    while builder-era or compatibility examples use `legacy.dart` instead of
+    the broad root barrel.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)

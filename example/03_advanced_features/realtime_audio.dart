@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:math';
-import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy.dart';
 
 /// Real-time audio processing examples using AudioCapability
 ///

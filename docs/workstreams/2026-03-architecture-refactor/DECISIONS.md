@@ -432,3 +432,15 @@ Provider-specific features should be represented through:
 - do not add a `transient` flag directly to `DataUiPart<T>` because that would
   blur the boundary between durable message state and non-persistent runtime
   notifications
+
+## D46. Examples Must Not Teach The Broad Root Barrel By Default
+
+- examples that demonstrate modern stable usage should prefer focused
+  entrypoints such as `ai.dart`, `chat.dart`, `core.dart`, `openai.dart`,
+  `google.dart`, and `anthropic.dart`
+- examples that intentionally demonstrate builder-era or compatibility flows
+  should prefer `package:llm_dart/legacy.dart`
+- the broad `package:llm_dart/llm_dart.dart` barrel may remain public during
+  migration, but examples should stop treating it as the default import path
+- this boundary exists so future root-barrel slimming can happen without
+  example code quietly reintroducing broad-surface expectations

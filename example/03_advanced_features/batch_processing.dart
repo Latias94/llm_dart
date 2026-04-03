@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:collection';
-import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy.dart';
 
 /// Advanced batch processing examples for LLM operations
 ///
