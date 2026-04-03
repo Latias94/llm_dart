@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy.dart';
 
 /// Test suite for MessageBuilder tool caching functionality
 /// Tests that tools are cached at MessageBuilder level with all other content

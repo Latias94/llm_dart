@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy.dart';
 
 /// Test suite for Anthropic API request structure validation
 /// Tests that _buildRequestBody produces correct API request structure

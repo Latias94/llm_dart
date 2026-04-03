@@ -28,7 +28,9 @@ The root package should expose:
 
 That entrypoint is the explicit compatibility shell for migration-era code.
 
-During the migration window, it may mirror the broad legacy root surface.
+During the migration window, it may mirror the broad legacy root surface, but
+it should do so through its own explicit export list rather than by blindly
+re-exporting `llm_dart.dart`.
 
 ## Intended Usage
 
@@ -75,7 +77,9 @@ This decision does not mean:
 This boundary is now implemented through:
 
 - `lib/legacy.dart`
+- explicit compatibility exports owned directly by `legacy.dart` instead of an
+  indirect `export 'llm_dart.dart'` shortcut
 - README guidance that distinguishes focused entrypoints from compatibility
   imports
-- compatibility-oriented tests that can start moving to the explicit legacy
-  barrel
+- compatibility-oriented examples and tests that can move to the explicit
+  legacy barrel before the broad root barrel shrinks further

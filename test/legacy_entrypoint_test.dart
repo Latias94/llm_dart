@@ -16,5 +16,13 @@ void main() {
 
       expect(provider.toString(), contains('OpenAIProvider'));
     });
+
+    test('keeps broad compatibility exports independently of llm_dart.dart', () {
+      expect(() => legacy.LLMBuilder(), returnsNormally);
+      expect(legacy.ChatMessage, isA<Type>());
+      expect(legacy.ToolCall, isA<Type>());
+      expect(legacy.HttpConfig, isA<Type>());
+      expect(legacy.Utf8StreamDecoder, isA<Type>());
+    });
   });
 }

@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy.dart';
 
 // Mock ChatResponse implementation
 class MockChatResponse implements ChatResponse {

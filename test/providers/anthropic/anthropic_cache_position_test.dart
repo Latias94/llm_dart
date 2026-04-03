@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy.dart';
 
 /// Test suite for Anthropic prompt caching position behavior
 /// Tests the specific scenario where cache is applied in the middle of content

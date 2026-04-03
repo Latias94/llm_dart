@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy.dart';
 import 'package:llm_dart/src/config/legacy_config_keys.dart';
 import 'package:llm_dart/src/config/legacy_provider_options.dart';
 

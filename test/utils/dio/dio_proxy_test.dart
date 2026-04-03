@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy.dart';
 import 'dio_proxy_test_stub.dart'
     if (dart.library.io) 'dio_proxy_test_io.dart'
     if (dart.library.html) 'dio_proxy_test_web.dart';

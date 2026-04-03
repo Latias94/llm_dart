@@ -406,9 +406,9 @@ Provider-specific features should be represented through:
 
 - the root package may expose `package:llm_dart/legacy.dart` as the explicit
   compatibility import target for builder-era and legacy broad-surface code
-- `legacy.dart` may mirror `llm_dart.dart` during the migration window so old
-  code can opt into a stable compatibility shell before the broad root barrel
-  shrinks
+- `legacy.dart` should own its broad compatibility export list explicitly
+  before `llm_dart.dart` shrinks, so root-barrel slimming does not implicitly
+  narrow the compatibility shell
 - modern code should prefer focused entrypoints such as `ai.dart`, `chat.dart`,
   `openai.dart`, `google.dart`, `anthropic.dart`, `core.dart`, and
   `transport.dart`

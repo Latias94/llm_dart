@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy.dart';
 
 /// Test suite for the MessageBuilder tools fix
 /// This tests the specific issue reported in #15 where MessageBuilder.tools()

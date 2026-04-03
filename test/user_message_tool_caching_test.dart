@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy.dart';
 
 /// Test suite for user message tool caching functionality
 /// This addresses the issue reported by okandemirofficial

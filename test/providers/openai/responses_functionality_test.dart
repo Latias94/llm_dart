@@ -6,7 +6,7 @@
 library;
 
 import 'package:test/test.dart';
-import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy.dart';
 import 'package:llm_dart/providers/openai/responses_capability.dart';
 
 void main() {

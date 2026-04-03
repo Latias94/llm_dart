@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy.dart';
 
 /// Test suite to verify that tools are not duplicated in system and tools arrays
 /// This tests the fix for the bug where tools appeared in both places

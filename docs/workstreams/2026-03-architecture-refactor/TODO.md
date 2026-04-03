@@ -268,6 +268,7 @@
 - [x] Repoint high-visibility README and core example entrypoints at the stable `AI` facade and provider-owned search APIs
 - [x] Add an explicit root `legacy.dart` compatibility shell before further broad-root surface slimming
 - [x] Repoint the remaining builder-era and compatibility examples from `llm_dart.dart` to `legacy.dart`
+- [x] Decouple `legacy.dart` exports from `llm_dart.dart` before the next broad-root slimming round
 
 ## Dependency Cleanup
 
