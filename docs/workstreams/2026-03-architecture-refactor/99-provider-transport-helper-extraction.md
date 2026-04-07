@@ -143,6 +143,7 @@ Current state:
 - root `HttpConfigUtils` is now a compatibility mapper, not the implementation
 - root `DioClientFactory` is now a compatibility wrapper, not the
   implementation home
+- Ollama and ElevenLabs now also own their local default values instead of
+  importing root `provider_defaults.dart`
 - remaining root-local blockers are now more clearly narrowed to compatibility
-  config shaping around custom transport/Dio overrides, provider defaults, and
-  root error mapping
+  config shaping around custom transport/Dio overrides and root error mapping

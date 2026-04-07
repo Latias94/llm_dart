@@ -1,7 +1,7 @@
 import '../../core/config.dart';
 import '../../src/config/legacy_dio_client_overrides.dart';
 import '../../src/config/legacy_config_extensions.dart';
-import '../../src/provider_defaults.dart';
+import 'defaults.dart';
 
 /// ElevenLabs provider configuration
 ///
@@ -24,7 +24,7 @@ class ElevenLabsConfig with LegacyDioClientOverrides {
 
   const ElevenLabsConfig({
     required this.apiKey,
-    this.baseUrl = ProviderDefaults.elevenLabsBaseUrl,
+    this.baseUrl = ElevenLabsDefaults.baseUrl,
     this.voiceId,
     this.model,
     this.timeout,
@@ -74,19 +74,17 @@ class ElevenLabsConfig with LegacyDioClientOverrides {
   bool get supportsRealTimeStreaming => true;
 
   /// Get the default voice ID
-  String get defaultVoiceId =>
-      voiceId ?? ProviderDefaults.elevenLabsDefaultVoiceId;
+  String get defaultVoiceId => voiceId ?? ElevenLabsDefaults.defaultVoiceId;
 
   /// Get the default TTS model (matches ElevenLabs API documentation)
-  String get defaultTTSModel =>
-      model ?? ProviderDefaults.elevenLabsDefaultTTSModel;
+  String get defaultTTSModel => model ?? ElevenLabsDefaults.defaultTtsModel;
 
   /// Get the default STT model (matches ElevenLabs API documentation)
-  String get defaultSTTModel => ProviderDefaults.elevenLabsDefaultSTTModel;
+  String get defaultSTTModel => ElevenLabsDefaults.defaultSttModel;
 
   /// Get supported audio formats
   List<String> get supportedAudioFormats =>
-      ProviderDefaults.elevenLabsSupportedAudioFormats;
+      ElevenLabsDefaults.supportedAudioFormats;
 
   /// Get voice settings for TTS
   Map<String, dynamic> get voiceSettings => {

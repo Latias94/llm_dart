@@ -153,8 +153,9 @@ The remaining blocking utility work is therefore narrower than it was when this
 boundary was first frozen:
 
 - `HttpResponseHandler`
-- compatibility config/default shaping around `legacy_dio_client_overrides`,
-  `legacy_config_extensions`, and `provider_defaults`
+- compatibility config shaping around `legacy_dio_client_overrides` and
+  `legacy_config_extensions`
+- builder-era compatibility hooks such as `LLMBuilder` and legacy config keys
 
 The shared configurable Dio setup path has also now moved in the right
 direction:
@@ -166,6 +167,8 @@ direction:
 - provider `dio_strategy.dart` files and provider clients now also use
   transport-owned provider-Dio abstractions directly instead of depending on a
   root-local Dio utility implementation
+- Ollama and ElevenLabs now also use provider-owned local defaults instead of
+  importing root `provider_defaults.dart`
 
 Until those are either extracted, replaced, or intentionally left behind in the
 root compatibility shell, the package move remains premature.

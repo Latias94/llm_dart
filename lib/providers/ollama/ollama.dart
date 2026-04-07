@@ -35,6 +35,7 @@ library;
 
 import '../../models/tool_models.dart';
 import 'config.dart';
+import 'defaults.dart';
 import 'provider.dart';
 
 // Core exports
@@ -72,9 +73,9 @@ OllamaProvider createOllamaProvider({
   bool? reasoning,
 }) {
   final config = OllamaConfig(
-    baseUrl: baseUrl ?? 'http://localhost:11434',
+    baseUrl: baseUrl ?? OllamaDefaults.baseUrl,
     apiKey: apiKey,
-    model: model ?? 'llama3.2',
+    model: model ?? OllamaDefaults.defaultModel,
     maxTokens: maxTokens,
     temperature: temperature,
     systemPrompt: systemPrompt,
@@ -98,8 +99,8 @@ OllamaProvider createOllamaProvider({
 
 /// Create an Ollama provider for chat
 OllamaProvider createOllamaChatProvider({
-  String baseUrl = 'http://localhost:11434',
-  String model = 'llama3.2',
+  String baseUrl = OllamaDefaults.baseUrl,
+  String model = OllamaDefaults.defaultModel,
   String? systemPrompt,
   double? temperature,
   int? maxTokens,
@@ -115,7 +116,7 @@ OllamaProvider createOllamaChatProvider({
 
 /// Create an Ollama provider for vision tasks
 OllamaProvider createOllamaVisionProvider({
-  String baseUrl = 'http://localhost:11434',
+  String baseUrl = OllamaDefaults.baseUrl,
   String model = 'llava',
   String? systemPrompt,
   double? temperature,
@@ -132,7 +133,7 @@ OllamaProvider createOllamaVisionProvider({
 
 /// Create an Ollama provider for code generation
 OllamaProvider createOllamaCodeProvider({
-  String baseUrl = 'http://localhost:11434',
+  String baseUrl = OllamaDefaults.baseUrl,
   String model = 'codellama',
   String? systemPrompt,
   double? temperature,
@@ -149,7 +150,7 @@ OllamaProvider createOllamaCodeProvider({
 
 /// Create an Ollama provider for embeddings
 OllamaProvider createOllamaEmbeddingProvider({
-  String baseUrl = 'http://localhost:11434',
+  String baseUrl = OllamaDefaults.baseUrl,
   String model = 'nomic-embed-text',
 }) {
   return createOllamaProvider(
@@ -160,8 +161,8 @@ OllamaProvider createOllamaEmbeddingProvider({
 
 /// Create an Ollama provider for completion tasks
 OllamaProvider createOllamaCompletionProvider({
-  String baseUrl = 'http://localhost:11434',
-  String model = 'llama3.2',
+  String baseUrl = OllamaDefaults.baseUrl,
+  String model = OllamaDefaults.defaultModel,
   double? temperature,
   int? maxTokens,
 }) {
@@ -175,7 +176,7 @@ OllamaProvider createOllamaCompletionProvider({
 
 /// Create an Ollama provider for reasoning tasks
 OllamaProvider createOllamaReasoningProvider({
-  String baseUrl = 'http://localhost:11434',
+  String baseUrl = OllamaDefaults.baseUrl,
   String model = 'gpt-oss:latest',
   String? systemPrompt,
   bool reasoning = true,

@@ -2,7 +2,7 @@ import '../../models/tool_models.dart';
 import '../../core/config.dart';
 import '../../src/config/legacy_dio_client_overrides.dart';
 import '../../src/config/legacy_config_extensions.dart';
-import '../../src/provider_defaults.dart';
+import 'defaults.dart';
 
 /// Ollama provider configuration
 ///
@@ -37,9 +37,9 @@ class OllamaConfig with LegacyDioClientOverrides {
   final LLMConfig? _originalConfig;
 
   const OllamaConfig({
-    this.baseUrl = ProviderDefaults.ollamaBaseUrl,
+    this.baseUrl = OllamaDefaults.baseUrl,
     this.apiKey,
-    this.model = ProviderDefaults.ollamaDefaultModel,
+    this.model = OllamaDefaults.defaultModel,
     this.maxTokens,
     this.temperature,
     this.systemPrompt,
