@@ -236,6 +236,7 @@ Current status:
 - `llm_dart_anthropic` now also exposes a provider-native `AnthropicFiles` API and file-handle helpers for execution downloads without widening the shared core
 - the event completeness audit against `repo-ref/ai` is now also frozen: the shared stream model is already sufficient, and remaining lifecycle chunk gaps are transport/UI concerns rather than missing core event types
 - that earlier event-completeness conclusion now has one narrow, implemented exception: explicit abort semantics were promoted into the shared stream layer because stable cancellation and Flutter chat transport already needed a first-class aborted lifecycle signal
+- the modern entrypoint story is now also frozen more clearly: `package:llm_dart/llm_dart.dart` is the default documented modern import, `package:llm_dart/ai.dart` remains an explicit equivalent alias, and `package:llm_dart/legacy.dart` owns compatibility expectations
 - the provider-owned search direction is now also frozen more concretely: OpenRouter search remains profile/model shaping, while xAI live search becomes provider-owned invocation options over `search_parameters`
 - the package-owned OpenRouter mainline now also accepts provider-owned online-model settings, and the compatibility bridge now allows the explicit `:online` shape plus the bare `webSearchEnabled` migration input
 - the package-owned xAI chat-completions mainline now also accepts typed `XAIGenerateTextOptions` and projects xAI citations through shared source parts and events

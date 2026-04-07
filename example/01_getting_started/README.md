@@ -2,12 +2,17 @@
 
 Basic examples to get you up and running with LLM Dart.
 
-The primary entry path for new code is the stable `AI.*(...).chatModel(...)`
-facade plus the shared helpers in `package:llm_dart/core.dart`.
+The default modern entry path for new code is
+`package:llm_dart/llm_dart.dart` plus the stable
+`AI.*(...).chatModel(...)` facade and the shared helpers in
+`package:llm_dart/core.dart`.
 
-Some older examples in this directory still demonstrate compatibility-oriented
-builder flows while the migration is in progress. Prefer `quick_start.dart`
-when you want the current recommended shape.
+`package:llm_dart/ai.dart` remains available as an equivalent explicit alias
+when you want a named AI-focused import style.
+
+Some examples in this directory still use `package:llm_dart/legacy.dart` for
+compatibility-oriented error types while the migration is in progress. Prefer
+`quick_start.dart` when you want the current recommended shape.
 
 ## Examples
 

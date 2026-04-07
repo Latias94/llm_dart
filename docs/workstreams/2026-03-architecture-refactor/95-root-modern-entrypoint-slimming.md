@@ -75,6 +75,9 @@ This change does not mean:
 This boundary is now implemented through:
 
 - `lib/llm_dart.dart` shrinking to a thin modern re-export of `ai.dart`
+- `package:llm_dart/llm_dart.dart` becoming the default documented modern
+  import, with `package:llm_dart/ai.dart` retained as the explicit equivalent
+  alias
 - `lib/legacy.dart` carrying the compatibility surface explicitly
 - root entrypoint tests that validate the modern surface only
 - compatibility examples and tests importing `legacy.dart` instead of relying

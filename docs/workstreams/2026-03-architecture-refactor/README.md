@@ -220,6 +220,9 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Frozen first shrink step for `llm_dart.dart`, turning the default root
     entrypoint into a thin modern surface while leaving compatibility APIs in
     `legacy.dart`.
+- [96-root-vs-ai-entrypoint-alias-boundary.md](96-root-vs-ai-entrypoint-alias-boundary.md)
+  - Frozen boundary that keeps `llm_dart.dart` as the default modern import
+    while retaining `ai.dart` as an explicit equivalent alias.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
@@ -264,6 +267,9 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - Let the root package expose the pure Dart chat runtime through
   `package:llm_dart/chat.dart`, but keep Flutter adapters out of that root
   entrypoint.
+- Use `package:llm_dart/llm_dart.dart` as the default documented modern import,
+  while keeping `package:llm_dart/ai.dart` as an explicit equivalent alias when
+  teams want a named AI-focused shell.
 - Add `package:llm_dart/legacy.dart` as the explicit compatibility shell so the
   broad legacy import path can keep shrinking without stranding migration code.
 - Keep transport request customization in `HttpChatTransport`, but do not copy

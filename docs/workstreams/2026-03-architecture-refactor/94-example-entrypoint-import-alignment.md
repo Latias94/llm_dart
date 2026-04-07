@@ -2,104 +2,108 @@
 
 ## Goal
 
-Before shrinking the broad root `package:llm_dart/llm_dart.dart` surface any
-further, example code should stop using that barrel as the default import.
+Now that `package:llm_dart/llm_dart.dart` has already shrunk to the modern
+stable surface, examples should teach entrypoints according to API intent
+instead of drifting between legacy compatibility and explicit aliases.
 
-This note freezes the import boundary for examples.
+This note updates the example-import rule after the root-slimming round.
 
 ## Problem
 
-The repository already has clearer public entrypoints:
+The repository now has three distinct import categories:
 
+- `package:llm_dart/llm_dart.dart`
 - `package:llm_dart/ai.dart`
-- `package:llm_dart/chat.dart`
+- focused capability or provider shells such as `chat.dart`, `core.dart`,
+  `openai.dart`, `google.dart`, and `anthropic.dart`
 - `package:llm_dart/legacy.dart`
-- provider-focused shells such as `openai.dart`, `google.dart`, and
-  `anthropic.dart`
 
-If examples continue importing `package:llm_dart/llm_dart.dart` directly, they
-keep teaching the broadest import path even after the architecture has already
-split into:
+Before the root barrel was slimmed, avoiding `llm_dart.dart` in examples helped
+prevent the broad legacy surface from being taught by default.
 
-- stable modern entrypoints
-- pure Dart chat runtime entrypoints
-- explicit compatibility entrypoints
+After that shrink step, continuing to teach only `ai.dart` in quick-start and
+high-visibility examples creates a new ambiguity instead:
 
-That slows future root-barrel slimming because examples keep reintroducing the
-idea that everything should come from one broad import.
+- users see `llm_dart.dart` as the package-default import path
+- examples keep implying that `ai.dart` is a different primary surface
+- compatibility and modern guidance stop feeling clearly separated
 
 ## Decision
 
-Examples should follow these rules:
+Examples should now follow these rules:
 
-### 1. Stable Modern Examples Use Focused Entrypoints
+### 1. Default Modern Getting-Started Examples Use `llm_dart.dart`
+
+Use `package:llm_dart/llm_dart.dart` for:
+
+- README quick-start snippets
+- first-step onboarding examples
+- generic stable `AI.*(...).chatModel(...)` usage
+- shared helper flows that do not need a narrower focused entrypoint
+
+This makes the package-default import path match the package-default teaching
+path.
+
+### 2. `ai.dart` Stays Valid As An Explicit Equivalent Alias
+
+Use `package:llm_dart/ai.dart` only when an example intentionally wants:
+
+- an explicit named AI import style
+- consistency with other focused root shells
+- migration guidance that compares root and explicit modern aliases
+
+Examples must not imply that `ai.dart` exposes a broader or different stable
+surface than `llm_dart.dart`.
+
+### 3. Focused Entrypoints Still Matter
 
 Use focused entrypoints such as:
 
-- `package:llm_dart/ai.dart`
 - `package:llm_dart/chat.dart`
 - `package:llm_dart/core.dart`
 - `package:llm_dart/openai.dart`
 - `package:llm_dart/google.dart`
 - `package:llm_dart/anthropic.dart`
 
-This applies when an example is centered on:
+when the example is specifically about pure Dart chat runtime concerns,
+provider-owned options, or narrower stable ownership boundaries.
 
-- `AI.*(...).chatModel(...)`
-- shared helper APIs such as `generateTextCall(...)`
-- pure Dart chat runtime integration
-- provider-owned typed settings in the new package split
-
-### 2. Builder-Era Or Compatibility Examples Use `legacy.dart`
+### 4. Compatibility Examples Still Use `legacy.dart`
 
 Use `package:llm_dart/legacy.dart` when an example intentionally depends on:
 
 - `ai()`
 - `createProvider(...)`
-- builder-era `build*()` flows
-- legacy `ChatCapability`
-- legacy `ChatMessage`
-- `MessageBuilder`
-- compatibility-only provider helpers such as old root-package provider
-  factories
-
-### 3. Do Not Default To `llm_dart.dart` In Examples
-
-The broad root barrel remains public during the migration window, but examples
-should no longer treat it as the default teaching surface.
-
-It may still stay in:
-
-- explicit root-entrypoint tests
-- migration documentation that compares old and new imports
-- intentionally broad compatibility coverage
+- `LLMBuilder`
+- legacy chat/config/value models
+- compatibility-only root utilities or error types
 
 ## Why This Helps
 
-This keeps example guidance aligned with the architecture we already froze:
+This preserves the architectural lesson we want:
 
-- focused modern usage teaches focused entrypoints
-- compatibility usage teaches `legacy.dart`
-- the root barrel can keep slimming without silently breaking example intent
+- the package-default root import is now safe to teach for modern stable usage
+- `ai.dart` remains a supported explicit alias, not a second competing default
+- focused entrypoints still communicate narrower ownership clearly
+- compatibility guidance stays visibly separate through `legacy.dart`
 
-This also matches the useful structural lesson from `repo-ref/ai` without
-copying its package count: entrypoints should communicate ownership and API
-intent clearly.
+That gives `llm_dart` a cleaner onboarding story while keeping the deliberate
+modularity we adopted from `repo-ref/ai`.
 
 ## Non-Goals
 
 This change does not mean:
 
-- every example must be rewritten to the stable `AI` facade immediately
-- builder-era examples disappear before compatibility cleanup is done
-- `package:llm_dart/llm_dart.dart` stops existing in the same patch
+- every example must import the root barrel
+- focused provider or chat entrypoints should disappear
+- `ai.dart` should be deprecated
+- compatibility examples should be rewritten to hide legacy behavior
 
 ## Status
 
-This alignment is now implemented for the remaining example files that still
-needed builder-era or compatibility imports:
+This alignment is now considered the target state for public docs and example
+cleanup:
 
-- they now import `package:llm_dart/legacy.dart`
-- modern examples and README snippets continue to prefer focused entrypoints
-- the next root-slimming round can focus on tests and export pruning instead of
-  fixing example ambiguity first
+- README and getting-started examples should default to `llm_dart.dart`
+- `ai.dart` should be documented as the explicit equivalent alias
+- `legacy.dart` should remain the explicit compatibility teaching surface

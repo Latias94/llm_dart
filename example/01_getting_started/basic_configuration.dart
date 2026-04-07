@@ -2,9 +2,9 @@
 
 import 'dart:io';
 
-import 'package:llm_dart/legacy.dart' as legacy;
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/ai.dart' as ai;
+import 'package:llm_dart/legacy.dart' as legacy;
+import 'package:llm_dart/llm_dart.dart' as llm;
 
 /// Basic configuration examples using the stable model API.
 ///
@@ -172,7 +172,8 @@ Future<void> testInvalidApiKey() async {
 
 Future<void> testInvalidModel(String apiKey) async {
   try {
-    final model = ai.AI.openai(apiKey: apiKey).chatModel('invalid-model-name');
+    final model =
+        llm.AI.openai(apiKey: apiKey).chatModel('invalid-model-name');
     await core.generateTextCall(
       model: model,
       prompt: [
@@ -251,7 +252,7 @@ Future<void> demonstrateTimeoutSettings(String apiKey) async {
 }
 
 core.LanguageModel _openAIModel(String apiKey) {
-  return ai.AI.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
+  return llm.AI.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
 }
 
 String _truncate(String text, {int maxLength = 200}) {

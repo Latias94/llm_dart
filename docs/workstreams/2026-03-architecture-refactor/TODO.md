@@ -270,6 +270,7 @@
 - [x] Repoint the remaining builder-era and compatibility examples from `llm_dart.dart` to `legacy.dart`
 - [x] Decouple `legacy.dart` exports from `llm_dart.dart` before the next broad-root slimming round
 - [x] Shrink `llm_dart.dart` to the modern stable surface and move remaining compatibility expectations behind `legacy.dart`
+- [x] Freeze the default-root versus explicit-`ai.dart` alias boundary and align public docs with that import guidance
 
 ## Dependency Cleanup
 

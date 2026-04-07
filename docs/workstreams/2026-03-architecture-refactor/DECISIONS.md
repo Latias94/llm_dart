@@ -457,3 +457,16 @@ Provider-specific features should be represented through:
   exported from the default root barrel
 - those compatibility expectations now belong behind
   `package:llm_dart/legacy.dart`
+
+## D48. `ai.dart` Remains An Explicit Alias Of The Root Modern Surface
+
+- `package:llm_dart/llm_dart.dart` is the default documented import for modern
+  onboarding and general stable usage
+- `package:llm_dart/ai.dart` remains a public, stable, explicit alias of that
+  same modern surface
+- docs, examples, and tests must not imply that `ai.dart` exposes a broader or
+  semantically different stable API than the root modern entrypoint
+- teams may still choose `ai.dart` when they prefer a named import that makes
+  AI ownership explicit
+- compatibility growth must continue to land in `package:llm_dart/legacy.dart`,
+  not in either modern entrypoint
