@@ -41,7 +41,6 @@ The Ollama implementation imports root-local modules such as:
 - `../../builder/llm_builder.dart`
 - `../../src/config/legacy_config_extensions.dart`
 - `../../src/provider_defaults.dart`
-- `../../src/dio_cancellation_adapter.dart`
 - `../../utils/dio_client_factory.dart`
 - `../../utils/http_response_handler.dart`
 - `../../utils/utf8_stream_decoder.dart`
@@ -64,7 +63,6 @@ The ElevenLabs implementation imports root-local modules such as:
 - `../../src/config/legacy_config_keys.dart`
 - `../../src/config/legacy_config_extensions.dart`
 - `../../src/provider_defaults.dart`
-- `../../src/dio_cancellation_adapter.dart`
 - `../../utils/dio_client_factory.dart`
 
 It is in the same situation: package move is blocked by root-local
@@ -146,6 +144,17 @@ The blocking imports show what must be addressed first:
 - root-local capability and legacy message models
 - root-local provider defaults helpers
 - root-local Dio/client helper utilities that still live outside transport
+
+One transport-ish helper has already moved in the right direction:
+
+- the shared Dio cancellation adapter now lives in `llm_dart_transport`
+
+The remaining blocking utility work is therefore narrower than it was when this
+boundary was first frozen:
+
+- `DioClientFactory`
+- `HttpConfigUtils`
+- `HttpResponseHandler`
 
 Until those are either extracted, replaced, or intentionally left behind in the
 root compatibility shell, the package move remains premature.

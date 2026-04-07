@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:llm_dart_transport/llm_dart_transport.dart'
+    show bindDioCancellation;
 import 'package:logging/logging.dart';
 
 import '../../core/cancellation.dart';
 import '../../core/llm_error.dart';
-import '../../src/dio_cancellation_adapter.dart';
 import '../../utils/dio_client_factory.dart';
 import 'config.dart';
 import 'dio_strategy.dart';

@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
+import 'package:llm_dart_transport/llm_dart_transport.dart'
+    show bindDioCancellation;
 import 'package:logging/logging.dart';
 
 import '../core/capability.dart';
@@ -9,7 +11,6 @@ import '../core/config.dart';
 import '../core/llm_error.dart';
 import '../models/chat_models.dart';
 import '../models/tool_models.dart';
-import 'dio_cancellation_adapter.dart';
 import '../utils/http_config_utils.dart';
 import '../utils/log_sanitizer.dart';
 

@@ -1,6 +1,8 @@
+import 'package:llm_dart_transport/llm_dart_transport.dart'
+    show bindDioCancellation;
+
 import '../../core/capability.dart';
 import '../../models/chat_models.dart';
-import '../../src/dio_cancellation_adapter.dart';
 import 'client.dart';
 import 'config.dart';
 

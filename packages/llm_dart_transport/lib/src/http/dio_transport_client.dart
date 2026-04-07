@@ -8,6 +8,7 @@ import '../common/transport_cancellation.dart';
 import '../common/transport_diagnostics.dart';
 import '../common/transport_exception.dart';
 import '../common/transport_retry.dart';
+import 'dio_cancellation_adapter.dart';
 import 'transport_client.dart';
 
 final class DioTransportClient implements TransportClient {
@@ -171,7 +172,7 @@ final class DioTransportClient implements TransportClient {
 
       try {
         request.cancellation?.throwIfCancelled();
-        final cancelToken = _bindCancellation(request.cancellation);
+        final cancelToken = bindDioCancellation(request.cancellation);
         final success = await sendAttempt(cancelToken);
         final finishedAt = DateTime.now();
         _emitDiagnostics(
@@ -314,22 +315,6 @@ final class DioTransportClient implements TransportClient {
 
   void _emitDiagnostics(TransportDiagnosticsEvent event) {
     _diagnostics?.onEvent(event);
-  }
-
-  CancelToken? _bindCancellation(TransportCancellation? cancellation) {
-    if (cancellation == null) {
-      return null;
-    }
-
-    final cancelToken = CancelToken();
-    unawaited(
-      cancellation.whenCancelled.then((reason) {
-        if (!cancelToken.isCancelled) {
-          cancelToken.cancel(reason);
-        }
-      }),
-    );
-    return cancelToken;
   }
 
   Future<void> _waitForRetryDelay(

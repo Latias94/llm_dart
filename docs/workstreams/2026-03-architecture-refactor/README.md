@@ -229,6 +229,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - [98-community-provider-migration-boundary.md](98-community-provider-migration-boundary.md)
   - Frozen boundary for making `llm_dart_community` real without inverting
     dependency direction or blindly moving compatibility-era provider code.
+- [99-provider-transport-helper-extraction.md](99-provider-transport-helper-extraction.md)
+  - Status note for which provider-shared Dio helpers already moved into
+    `llm_dart_transport`, and which compatibility-shaped utilities still block
+    community-provider migration.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
@@ -301,9 +305,15 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - The previous root compatibility hotspots have now been decomposed into shell files plus same-library parts, the generic compatibility bridge shell has also been split, the heaviest Anthropic-specific legacy parser has been decomposed, the shared audio/tool/assistant model layers have now also been split, `core/config.dart` has now also been reduced to a shell plus focused parts, and the old flat config-extension path now also has a centralized internal key/accessor layer; the remaining large cleanup targets are now mostly the other legacy/shared model files plus the deeper migration away from flat compatibility extensions rather than compatibility infrastructure.
 - the earlier `llm_dart_core <-> llm_dart_transport` package cycle is now
   fixed by moving shared request-cancellation primitives into `llm_dart_core`
+- the shared provider-side Dio cancellation binding has now also moved into
+  `llm_dart_transport`, so provider code no longer depends on a root-local
+  `src/dio_cancellation_adapter.dart` implementation file
 - `llm_dart_community` now exists as a workspace package, but it still exposes
   only an empty barrel while root-local provider code continues to carry
   community-provider weight
+- the next remaining shared-helper blocker for community-provider migration is
+  no longer cancellation; it is the compatibility-shaped Dio setup path still
+  centered on `HttpConfigUtils`, `DioClientFactory`, and root error mapping
 - `extensions/getExtension/extension` related entry points appear 258 times in `lib/`, which means string-based extensions have already become a primary design path.
 - `dio` appears 70 times across `lib/packages/test/example`, which shows that transport details have already leaked into too many layers.
 

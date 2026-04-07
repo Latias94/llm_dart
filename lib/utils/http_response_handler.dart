@@ -1,11 +1,12 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
+import 'package:llm_dart_transport/llm_dart_transport.dart'
+    show bindDioCancellation;
 import 'package:logging/logging.dart';
 
 import '../core/cancellation.dart';
 import '../core/llm_error.dart';
-import '../src/dio_cancellation_adapter.dart';
 import 'log_sanitizer.dart';
 
 /// Unified HTTP response handler for all providers

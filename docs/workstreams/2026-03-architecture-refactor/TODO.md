@@ -143,8 +143,10 @@
 ## Structural Cleanup
 
 - [x] Break the current `llm_dart_core <-> llm_dart_transport` package cycle without introducing a finer-grained public utility package
+- [x] Move the shared Dio cancellation adapter into `llm_dart_transport` and switch root/provider code away from a root-local adapter implementation
 - [ ] Make `llm_dart_community` a real migration target instead of an empty landing-zone package
 - [ ] Decouple Ollama and ElevenLabs from root-local compatibility imports before moving real implementation weight into `llm_dart_community`
+- [ ] Extract transport-owned configurable Dio setup primitives so provider migration stops depending on root `HttpConfigUtils` and the current compatibility-shaped `DioClientFactory`
 - [ ] Audit whether provider-focused root entrypoints should stop re-exporting `AI`, `core.dart`, and `transport.dart` once the modern import boundary is fully stable
 - [ ] Remove direct `dio` and `logging` runtime dependencies from the root package after the remaining local compatibility/provider code moves out
 
