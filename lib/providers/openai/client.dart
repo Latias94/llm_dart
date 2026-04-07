@@ -2,14 +2,17 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart'
-    show ProviderDioClientFactory, Utf8StreamDecoder, bindDioCancellation;
+    show
+        LogSanitizer,
+        ProviderDioClientFactory,
+        Utf8StreamDecoder,
+        bindDioCancellation;
 import 'package:logging/logging.dart';
 
 import '../../core/cancellation.dart';
 import '../../core/llm_error.dart';
 import '../../models/chat_models.dart';
 import '../../utils/http_response_handler.dart';
-import '../../utils/log_sanitizer.dart';
 import 'config.dart';
 import 'dio_strategy.dart';
 

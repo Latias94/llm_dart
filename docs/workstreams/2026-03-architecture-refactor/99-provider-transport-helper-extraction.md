@@ -77,6 +77,24 @@ That means:
 - the root `utils/utf8_stream_decoder.dart` file is now only a compatibility
   re-export
 
+### 6. Log sanitization and JSON-object response decoding primitives now also
+live in `llm_dart_transport`
+
+The transport package now also owns:
+
+- `LogSanitizer`
+- `JsonObjectResponseDecoder`
+
+That means:
+
+- sensitive-request logging rules no longer need to live only in the root
+  package
+- JSON-object response parsing no longer needs to be implemented only inside
+  root `HttpResponseHandler`
+- root `utils/log_sanitizer.dart` is now a compatibility re-export
+- root `HttpResponseHandler` is now a narrower compatibility wrapper around
+  transport-owned parsing plus root-owned `LLMError` mapping
+
 ## Why This Helper Belonged In Transport
 
 `bindDioCancellation(...)` only does one thing:
@@ -155,10 +173,12 @@ Current state:
 - configurable Dio setup is transport-owned
 - provider-facing Dio strategy/factory abstractions are transport-owned
 - the shared UTF-8 stream decoder is transport-owned
+- shared log sanitization and JSON-object response decoding are transport-owned
 - root `HttpConfigUtils` is now a compatibility mapper, not the implementation
 - root `DioClientFactory` is now a compatibility wrapper, not the
   implementation home
 - Ollama and ElevenLabs now also own their local default values instead of
   importing root `provider_defaults.dart`
 - remaining root-local blockers are now more clearly narrowed to compatibility
-  config shaping around custom transport/Dio overrides and root error mapping
+  config shaping around custom transport/Dio overrides and the remaining
+  root-owned `LLMError` mapping

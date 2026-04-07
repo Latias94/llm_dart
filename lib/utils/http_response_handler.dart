@@ -2,12 +2,15 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart'
-    show bindDioCancellation;
+    show
+        JsonObjectResponseDecoder,
+        LogSanitizer,
+        TransportResponseFormatException,
+        bindDioCancellation;
 import 'package:logging/logging.dart';
 
 import '../core/cancellation.dart';
 import '../core/llm_error.dart';
-import 'log_sanitizer.dart';
 
 /// Unified HTTP response handler for all providers
 ///
@@ -29,55 +32,15 @@ class HttpResponseHandler {
     final provider = providerName ?? 'Unknown';
 
     try {
-      // Handle direct JSON object
-      if (responseData is Map<String, dynamic>) {
-        return responseData;
-      }
-
-      // Handle JSON string
-      if (responseData is String) {
-        // Check if it's HTML (common error case)
-        if (responseData.trim().startsWith('<')) {
-          _logger.severe('$provider API returned HTML instead of JSON');
-          throw ResponseFormatError(
-            '$provider API returned HTML page instead of JSON response. '
-            'This usually indicates an incorrect API endpoint or authentication issue.',
-            responseData.length > 500
-                ? '${responseData.substring(0, 500)}...'
-                : responseData,
-          );
-        }
-
-        // Try to parse as JSON
-        try {
-          final jsonData = jsonDecode(responseData);
-          if (jsonData is Map<String, dynamic>) {
-            return jsonData;
-          } else {
-            throw ResponseFormatError(
-              '$provider API returned JSON that is not an object',
-              responseData.length > 500
-                  ? '${responseData.substring(0, 500)}...'
-                  : responseData,
-            );
-          }
-        } on FormatException catch (e) {
-          _logger.severe('$provider API returned invalid JSON: ${e.message}');
-          throw ResponseFormatError(
-            '$provider API returned invalid JSON: ${e.message}',
-            responseData.length > 500
-                ? '${responseData.substring(0, 500)}...'
-                : responseData,
-          );
-        }
-      }
-
-      // Handle other types
+      return JsonObjectResponseDecoder.decode(
+        responseData,
+        sourceName: provider,
+      );
+    } on TransportResponseFormatException catch (e) {
+      _logger.severe(e.message);
       throw ResponseFormatError(
-        '$provider API returned unexpected response type: ${responseData.runtimeType}',
-        responseData.toString().length > 500
-            ? '${responseData.toString().substring(0, 500)}...'
-            : responseData.toString(),
+        e.message,
+        e.responseBody?.toString() ?? '',
       );
     } catch (e) {
       if (e is LLMError) {

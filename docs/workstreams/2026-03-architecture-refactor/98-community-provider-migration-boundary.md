@@ -146,7 +146,7 @@ One transport-ish helper has already moved in the right direction:
 The remaining blocking utility work is therefore narrower than it was when this
 boundary was first frozen:
 
-- `HttpResponseHandler`
+- `HttpResponseHandler` as a root error-mapping wrapper
 - compatibility config shaping around `legacy_dio_client_overrides` and
   `legacy_config_extensions`
 - builder-era compatibility hooks such as `LLMBuilder` and legacy config keys
@@ -165,6 +165,9 @@ direction:
   importing root `provider_defaults.dart`
 - the shared `Utf8StreamDecoder` now also lives in `llm_dart_transport`, with
   the old root utility path reduced to a compatibility re-export
+- shared log sanitization and JSON-object response decoding primitives now also
+  live in `llm_dart_transport`, so the root `HttpResponseHandler` is narrower
+  than before even though it still owns legacy `LLMError` mapping
 
 Until those are either extracted, replaced, or intentionally left behind in the
 root compatibility shell, the package move remains premature.

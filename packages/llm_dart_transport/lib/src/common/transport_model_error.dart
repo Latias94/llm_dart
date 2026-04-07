@@ -49,6 +49,8 @@ ModelError transportErrorToModelError(Object error) {
         isRetryable: false,
         details: {
           if (error.uri != null) 'uri': error.uri.toString(),
+          if (error.responseBody != null)
+            'responseBody': _jsonSafeOrString(error.responseBody),
         },
         originalType: error.runtimeType.toString(),
       ),

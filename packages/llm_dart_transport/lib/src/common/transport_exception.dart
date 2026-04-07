@@ -42,8 +42,11 @@ final class TransportNetworkException extends TransportException {
 }
 
 final class TransportResponseFormatException extends TransportException {
+  final Object? responseBody;
+
   const TransportResponseFormatException(
     super.message, {
+    this.responseBody,
     super.uri,
     super.cause,
   });

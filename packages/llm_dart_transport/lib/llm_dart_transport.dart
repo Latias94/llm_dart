@@ -12,6 +12,8 @@ export 'src/http/provider_dio_client_factory.dart';
 export 'src/http/dio_transport_client.dart';
 export 'src/http/http_chat_transport_protocol.dart';
 export 'src/http/http_chat_transport_server_adapter.dart';
+export 'src/http/json_object_response_decoder.dart';
+export 'src/http/log_sanitizer.dart';
 export 'src/http/sse_decoder.dart';
 export 'src/http/sse_json_chunk_parser.dart';
 export 'src/http/transport_client.dart';
