@@ -226,6 +226,9 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - [97-dependency-direction-and-export-graph-audit.md](97-dependency-direction-and-export-graph-audit.md)
   - Current audit of the remaining package-graph violations and export-graph
     ambiguities after the entrypoint cleanup round.
+- [98-community-provider-migration-boundary.md](98-community-provider-migration-boundary.md)
+  - Frozen boundary for making `llm_dart_community` real without inverting
+    dependency direction or blindly moving compatibility-era provider code.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)

@@ -483,3 +483,16 @@ Provider-specific features should be represented through:
   cancellation; the medium-grained package strategy still stands
 - `llm_dart_transport` may continue depending on `llm_dart_core` for shared
   model and codec types
+
+## D50. `llm_dart_community` Must Not Depend On Root Compatibility Surfaces
+
+- `llm_dart_community` may depend on `llm_dart_core` and
+  `llm_dart_transport`
+- `llm_dart_community` must not depend on the root `llm_dart` package or on
+  root-local compatibility builders as an implementation layer
+- current compatibility-era Ollama and ElevenLabs behavior should stay rooted in
+  the root compatibility shell until their provider-owned code is actually
+  decoupled from root-local legacy types and utilities
+- do not move Ollama or ElevenLabs into `llm_dart_community` through a blind
+  file relocation that would either invert dependency direction or duplicate
+  broad compatibility APIs
