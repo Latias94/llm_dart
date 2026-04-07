@@ -170,6 +170,9 @@ direction:
   than before even though it still owns legacy `LLMError` mapping
 - Ollama and ElevenLabs configs now also own provider-side `dioOverrides`
   data directly instead of mixing in root `LegacyDioClientOverrides`
+- Ollama and ElevenLabs builder DSL implementations now also live under the
+  root compatibility layer, while the old provider-path files are only thin
+  compatibility exports
 
 Until those are either extracted, replaced, or intentionally left behind in the
 root compatibility shell, the package move remains premature.

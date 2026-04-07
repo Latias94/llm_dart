@@ -1,9 +1,9 @@
 import '../providers/anthropic/builder.dart';
-import '../providers/elevenlabs/builder.dart';
 import '../providers/google/builder.dart';
-import '../providers/ollama/builder.dart';
 import '../providers/openai/builder.dart';
 import '../providers/openai/compatible/openrouter/builder.dart';
+import '../src/compatibility/builders/elevenlabs_builder.dart';
+import '../src/compatibility/builders/ollama_builder.dart';
 import 'llm_builder.dart';
 
 /// Provider-specific convenience methods layered on top of [LLMBuilder].

@@ -323,6 +323,9 @@ This workstream is not about a file-moving refactor. It is about defining stable
   `HttpResponseHandler` reduced to compatibility shells
 - Ollama and ElevenLabs configs now also carry provider-owned `dioOverrides`
   values instead of mixing in root `LegacyDioClientOverrides`
+- Ollama and ElevenLabs builder DSL implementations now also live under the
+  root compatibility layer, with provider-path builder files reduced to thin
+  compatibility exports
 - `llm_dart_community` now exists as a workspace package, but it still exposes
   only an empty barrel while root-local provider code continues to carry
   community-provider weight
