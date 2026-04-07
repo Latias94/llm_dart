@@ -153,8 +153,15 @@ The remaining blocking utility work is therefore narrower than it was when this
 boundary was first frozen:
 
 - `DioClientFactory`
-- `HttpConfigUtils`
 - `HttpResponseHandler`
+
+The shared configurable Dio setup path has also now moved in the right
+direction:
+
+- `llm_dart_transport` now owns reusable configurable Dio setup through
+  transport-side config and factory helpers
+- root `HttpConfigUtils` is now only a compatibility mapper from `LLMConfig`
+  into that transport-owned layer
 
 Until those are either extracted, replaced, or intentionally left behind in the
 root compatibility shell, the package move remains premature.

@@ -308,12 +308,16 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - the shared provider-side Dio cancellation binding has now also moved into
   `llm_dart_transport`, so provider code no longer depends on a root-local
   `src/dio_cancellation_adapter.dart` implementation file
+- the reusable configurable Dio setup path has now also moved into
+  `llm_dart_transport`, with root `HttpConfigUtils` reduced to a compatibility
+  mapper over transport-owned config/factory helpers
 - `llm_dart_community` now exists as a workspace package, but it still exposes
   only an empty barrel while root-local provider code continues to carry
   community-provider weight
 - the next remaining shared-helper blocker for community-provider migration is
-  no longer cancellation; it is the compatibility-shaped Dio setup path still
-  centered on `HttpConfigUtils`, `DioClientFactory`, and root error mapping
+  no longer cancellation or reusable Dio setup; it is the remaining
+  compatibility-shaped utility ownership still centered on root
+  `DioClientFactory` policy and root error mapping
 - `extensions/getExtension/extension` related entry points appear 258 times in `lib/`, which means string-based extensions have already become a primary design path.
 - `dio` appears 70 times across `lib/packages/test/example`, which shows that transport details have already leaked into too many layers.
 

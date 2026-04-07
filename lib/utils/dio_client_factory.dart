@@ -1,7 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
-import '../core/base_http_provider.dart';
 import '../core/config.dart';
 import '../src/config/legacy_config_extensions.dart';
 
@@ -113,14 +112,24 @@ class DioClientFactory {
     ProviderDioStrategy strategy,
     dynamic config,
   ) {
-    final originalConfig =
-        config.originalConfig ?? _createFallbackConfig(strategy, config);
+    final LLMConfig originalConfig =
+        (config.originalConfig as LLMConfig?) ??
+        _createFallbackConfig(strategy, config);
 
-    final dio = BaseHttpProvider.createConfiguredDio(
-      baseUrl: strategy.getBaseUrl(config),
-      headers: strategy.buildHeaders(config),
-      config: originalConfig,
-      timeout: strategy.getTimeout(config),
+    final dio = DioHttpClientFactory.createConfiguredDio(
+      config: DioHttpClientConfig(
+        baseUrl: strategy.getBaseUrl(config),
+        defaultHeaders: strategy.buildHeaders(config),
+        customHeaders: originalConfig.legacyCustomHeaders,
+        timeout: originalConfig.timeout ?? strategy.getTimeout(config),
+        connectionTimeout: originalConfig.legacyConnectionTimeout,
+        receiveTimeout: originalConfig.legacyReceiveTimeout,
+        sendTimeout: originalConfig.legacySendTimeout,
+        enableLogging: originalConfig.legacyEnableHttpLogging,
+        proxyUrl: originalConfig.legacyHttpProxy,
+        bypassSslVerification: originalConfig.legacyBypassSslVerification,
+        certificatePath: originalConfig.legacySslCertificatePath,
+      ),
     );
 
     // Apply provider-specific enhancements
