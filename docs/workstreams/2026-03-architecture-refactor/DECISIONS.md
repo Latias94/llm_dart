@@ -444,3 +444,16 @@ Provider-specific features should be represented through:
   migration, but examples should stop treating it as the default import path
 - this boundary exists so future root-barrel slimming can happen without
   example code quietly reintroducing broad-surface expectations
+
+## D47. Root `llm_dart.dart` Is Now The Modern Default Entrypoint
+
+- after `legacy.dart` became an explicit compatibility shell with its own
+  export list, `package:llm_dart/llm_dart.dart` should shrink to a thin modern
+  default entrypoint
+- in the current breaking round, that root barrel now re-exports the same
+  stable surface as `package:llm_dart/ai.dart`
+- builder-era compatibility APIs such as `ai()`, `createProvider(...)`,
+  `LLMBuilder`, legacy models, and compatibility utilities should no longer be
+  exported from the default root barrel
+- those compatibility expectations now belong behind
+  `package:llm_dart/legacy.dart`

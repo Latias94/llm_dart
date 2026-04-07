@@ -6,7 +6,8 @@ import 'package:llm_dart_transport/llm_dart_transport.dart';
 /// Stable model-factory facade for the refactored architecture.
 ///
 /// This is the new primary entry path for the root package.
-/// The legacy [ai] builder remains available as a compatibility surface.
+/// The legacy builder surface remains available through
+/// `package:llm_dart/legacy.dart`.
 final class AI {
   const AI._();
 

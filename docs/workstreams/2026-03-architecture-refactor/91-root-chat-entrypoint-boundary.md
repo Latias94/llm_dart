@@ -40,12 +40,14 @@ That entrypoint must not re-export:
 
 ## Why This Boundary Fits `llm_dart`
 
-This gives the repository three clear app-facing choices:
+This gives the repository four clear app-facing choices:
 
 - `package:llm_dart/llm_dart.dart`
-  - general root facade plus compatibility surface
+  - default modern root facade
 - `package:llm_dart/chat.dart`
   - focused pure Dart chat runtime
+- `package:llm_dart/legacy.dart`
+  - explicit compatibility shell
 - `package:llm_dart_flutter/llm_dart_flutter.dart`
   - Flutter-specific controller and adapter surface
 
@@ -74,8 +76,9 @@ Recommended guidance after this freeze:
 - use `package:llm_dart/chat.dart` for pure Dart chat applications
 - use `package:llm_dart_flutter/llm_dart_flutter.dart` when Flutter adapters
   such as `ChatController` are needed
-- keep `package:llm_dart/llm_dart.dart` as the broader root entrypoint and
-  compatibility shell
+- keep `package:llm_dart/llm_dart.dart` as the default modern root entrypoint
+- use `package:llm_dart/legacy.dart` when compatibility-era builder or broad
+  legacy surface imports are still required
 - do not merge `chat.dart` back into the wide `llm_dart.dart` barrel if that
   would recreate ambiguous exports or blur the focused-entrypoint boundary
 

@@ -216,6 +216,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Frozen import boundary for examples: modern samples use focused entrypoints,
     while builder-era or compatibility examples use `legacy.dart` instead of
     the broad root barrel.
+- [95-root-modern-entrypoint-slimming.md](95-root-modern-entrypoint-slimming.md)
+  - Frozen first shrink step for `llm_dart.dart`, turning the default root
+    entrypoint into a thin modern surface while leaving compatibility APIs in
+    `legacy.dart`.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)

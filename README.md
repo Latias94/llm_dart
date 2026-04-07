@@ -21,12 +21,13 @@ The new primary entry path is:
 - `AI.openRouter(...).chatModel(...)`
 - `AI.xai(...).chatModel(...)`
 
-The legacy `ai()` builder still exists, but it is now compatibility-oriented rather than the recommended main API.
+The legacy `ai()` builder still exists through `package:llm_dart/legacy.dart`,
+but it is now compatibility-oriented rather than the recommended main API.
 
 ## Packages
 
 - `llm_dart`
-  - root facade and legacy compatibility surface
+  - modern default root facade over the stable migrated model API
 - `llm_dart_core`
   - prompt, result, stream, and UI message models
 - `llm_dart_transport`
@@ -61,7 +62,7 @@ dart pub get
 ## Focused Entry Points
 
 - `package:llm_dart/llm_dart.dart`
-  - root facade, stable provider entrypoints, and compatibility APIs
+  - default modern root entrypoint, equivalent stable surface to `ai.dart`
 - `package:llm_dart/ai.dart`
   - focused stable AI facade plus provider entrypoints for modern model APIs
 - `package:llm_dart/chat.dart`
@@ -485,7 +486,7 @@ Future<void> main() async {
 
 ## Legacy Compatibility
 
-The repository still exports:
+The repository still keeps compatibility APIs through `package:llm_dart/legacy.dart`, including:
 
 - the old `ai()` builder
 - old root provider constructors

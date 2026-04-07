@@ -94,7 +94,7 @@ guesswork.
 Old compatibility path:
 
 ```dart
-import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/legacy.dart';
 
 Future<void> main() async {
   final provider = await ai()
@@ -263,7 +263,10 @@ That boundary is part of the new design.
 Use this rule:
 
 - `package:llm_dart/llm_dart.dart`
-  - import for the stable `AI` facade
+  - import for the default modern stable root surface
+- `package:llm_dart/legacy.dart`
+  - import for compatibility-era builder flows such as `ai()` and
+    `createProvider(...)`
 - `package:llm_dart/core.dart`
   - import for shared prompt, result, tool, and stream types
 - `package:llm_dart/openai.dart`

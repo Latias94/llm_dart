@@ -269,6 +269,7 @@
 - [x] Add an explicit root `legacy.dart` compatibility shell before further broad-root surface slimming
 - [x] Repoint the remaining builder-era and compatibility examples from `llm_dart.dart` to `legacy.dart`
 - [x] Decouple `legacy.dart` exports from `llm_dart.dart` before the next broad-root slimming round
+- [x] Shrink `llm_dart.dart` to the modern stable surface and move remaining compatibility expectations behind `legacy.dart`
 
 ## Dependency Cleanup
 
