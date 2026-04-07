@@ -140,6 +140,13 @@
 - [ ] Decide whether Google streamed TTS should later return as a provider-owned package surface outside the shared `SpeechModel`
 - [x] Migrate Gemini safety and modality options
 
+## Structural Cleanup
+
+- [ ] Break the current `llm_dart_core <-> llm_dart_transport` package cycle without introducing a finer-grained public utility package
+- [ ] Make `llm_dart_community` a real migration target instead of an empty landing-zone package
+- [ ] Audit whether provider-focused root entrypoints should stop re-exporting `AI`, `core.dart`, and `transport.dart` once the modern import boundary is fully stable
+- [ ] Remove direct `dio` and `logging` runtime dependencies from the root package after the remaining local compatibility/provider code moves out
+
 ## Community Providers
 
 - [ ] Migrate Ollama

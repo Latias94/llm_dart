@@ -470,3 +470,16 @@ Provider-specific features should be represented through:
   AI ownership explicit
 - compatibility growth must continue to land in `package:llm_dart/legacy.dart`,
   not in either modern entrypoint
+
+## D49. `llm_dart_core` Must Stop Depending On `llm_dart_transport`
+
+- the current `llm_dart_core <-> llm_dart_transport` package cycle is a
+  temporary architecture violation, not an accepted steady state
+- `llm_dart_core` must not keep importing or re-exporting
+  `llm_dart_transport`
+- shared request-lifecycle primitives such as cancellation must move to a
+  placement that restores one-way dependency direction
+- do not solve this by adding another tiny public workspace package only for
+  cancellation; the medium-grained package strategy still stands
+- `llm_dart_transport` may continue depending on `llm_dart_core` for shared
+  model and codec types
