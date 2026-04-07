@@ -321,13 +321,15 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - shared log sanitization and JSON-object response decoding now also live in
   `llm_dart_transport`, with root `log_sanitizer.dart` and the parsing half of
   `HttpResponseHandler` reduced to compatibility shells
+- Ollama and ElevenLabs configs now also carry provider-owned `dioOverrides`
+  values instead of mixing in root `LegacyDioClientOverrides`
 - `llm_dart_community` now exists as a workspace package, but it still exposes
   only an empty barrel while root-local provider code continues to carry
   community-provider weight
 - the next remaining shared-helper blocker for community-provider migration is
   no longer cancellation, provider-facing Dio setup, provider defaults, or the
   shared UTF-8 decoder; it is the remaining compatibility-shaped config
-  ownership plus the root `LLMError` mapping that still lives in
+  adaptation plus the root `LLMError` mapping that still lives in
   `HttpResponseHandler`
 - `extensions/getExtension/extension` related entry points appear 258 times in `lib/`, which means string-based extensions have already become a primary design path.
 - `dio` appears 70 times across `lib/packages/test/example`, which shows that transport details have already leaked into too many layers.

@@ -1,5 +1,7 @@
+import 'package:llm_dart_transport/llm_dart_transport.dart'
+    show DioClientOverrides, DioTransportClient, ImmutableDioClientOverrides;
+
 import '../../core/config.dart';
-import '../../src/config/legacy_dio_client_overrides.dart';
 import '../../src/config/legacy_config_extensions.dart';
 import 'defaults.dart';
 
@@ -7,13 +9,13 @@ import 'defaults.dart';
 ///
 /// This class contains all configuration options for the ElevenLabs providers.
 /// ElevenLabs specializes in text-to-speech and speech-to-text capabilities.
-class ElevenLabsConfig with LegacyDioClientOverrides {
+class ElevenLabsConfig {
   final String apiKey;
   final String baseUrl;
   final String? voiceId;
   final String? model;
-  @override
   final Duration? timeout;
+  final DioClientOverrides? dioOverrides;
   final double? stability;
   final double? similarityBoost;
   final double? style;
@@ -28,6 +30,7 @@ class ElevenLabsConfig with LegacyDioClientOverrides {
     this.voiceId,
     this.model,
     this.timeout,
+    this.dioOverrides,
     this.stability,
     this.similarityBoost,
     this.style,
@@ -42,6 +45,7 @@ class ElevenLabsConfig with LegacyDioClientOverrides {
       baseUrl: config.baseUrl,
       model: config.model,
       timeout: config.timeout,
+      dioOverrides: _legacyDioOverridesFromConfig(config),
       // ElevenLabs-specific extensions
       voiceId: config.getExtension<String>(LegacyExtensionKeys.voiceId),
       stability: config.getExtension<double>(LegacyExtensionKeys.stability),
@@ -58,7 +62,6 @@ class ElevenLabsConfig with LegacyDioClientOverrides {
   T? getExtension<T>(String key) => _originalConfig?.getExtension<T>(key);
 
   /// Get the original LLMConfig for HTTP configuration
-  @override
   LLMConfig? get originalConfig => _originalConfig;
 
   /// Check if this configuration supports text-to-speech
@@ -100,6 +103,7 @@ class ElevenLabsConfig with LegacyDioClientOverrides {
     String? voiceId,
     String? model,
     Duration? timeout,
+    DioClientOverrides? dioOverrides,
     double? stability,
     double? similarityBoost,
     double? style,
@@ -111,9 +115,44 @@ class ElevenLabsConfig with LegacyDioClientOverrides {
         voiceId: voiceId ?? this.voiceId,
         model: model ?? this.model,
         timeout: timeout ?? this.timeout,
+        dioOverrides: dioOverrides ?? this.dioOverrides,
         stability: stability ?? this.stability,
         similarityBoost: similarityBoost ?? this.similarityBoost,
         style: style ?? this.style,
         useSpeakerBoost: useSpeakerBoost ?? this.useSpeakerBoost,
+        originalConfig: _originalConfig,
       );
+}
+
+DioClientOverrides? _legacyDioOverridesFromConfig(LLMConfig config) {
+  final customTransport = config.legacyTransportClient;
+  final customDio = switch (customTransport) {
+    DioTransportClient(:final dio) => dio,
+    _ => config.legacyCustomDio,
+  };
+
+  if (customDio == null &&
+      config.legacyCustomHeaders.isEmpty &&
+      !config.legacyEnableHttpLogging &&
+      config.legacyHttpProxy == null &&
+      !config.legacyBypassSslVerification &&
+      config.legacySslCertificatePath == null &&
+      config.legacyConnectionTimeout == null &&
+      config.legacyReceiveTimeout == null &&
+      config.legacySendTimeout == null) {
+    return null;
+  }
+
+  return ImmutableDioClientOverrides(
+    customDio: customDio,
+    customHeaders: config.legacyCustomHeaders,
+    enableHttpLogging: config.legacyEnableHttpLogging,
+    proxyUrl: config.legacyHttpProxy,
+    bypassSslVerification: config.legacyBypassSslVerification,
+    certificatePath: config.legacySslCertificatePath,
+    connectionTimeout: config.legacyConnectionTimeout,
+    receiveTimeout: config.legacyReceiveTimeout,
+    sendTimeout: config.legacySendTimeout,
+    timeout: config.timeout,
+  );
 }

@@ -28,6 +28,7 @@ class OllamaClient {
     dio = ProviderDioClientFactory.create(
       strategy: OllamaDioStrategy(),
       config: config,
+      overrides: config.dioOverrides,
     );
   }
 

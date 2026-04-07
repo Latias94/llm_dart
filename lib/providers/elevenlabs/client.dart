@@ -24,6 +24,7 @@ class ElevenLabsClient {
     _dio = ProviderDioClientFactory.create(
       strategy: ElevenLabsDioStrategy(),
       config: config,
+      overrides: config.dioOverrides,
     );
   }
 

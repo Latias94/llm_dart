@@ -1,6 +1,8 @@
+import 'package:llm_dart_transport/llm_dart_transport.dart'
+    show DioClientOverrides, DioTransportClient, ImmutableDioClientOverrides;
+
 import '../../models/tool_models.dart';
 import '../../core/config.dart';
-import '../../src/config/legacy_dio_client_overrides.dart';
 import '../../src/config/legacy_config_extensions.dart';
 import 'defaults.dart';
 
@@ -8,15 +10,15 @@ import 'defaults.dart';
 ///
 /// This class contains all configuration options for the Ollama providers.
 /// It's extracted from the main provider to improve modularity and reusability.
-class OllamaConfig with LegacyDioClientOverrides {
+class OllamaConfig {
   final String baseUrl;
   final String? apiKey;
   final String model;
   final int? maxTokens;
   final double? temperature;
   final String? systemPrompt;
-  @override
   final Duration? timeout;
+  final DioClientOverrides? dioOverrides;
 
   final double? topP;
   final int? topK;
@@ -44,6 +46,7 @@ class OllamaConfig with LegacyDioClientOverrides {
     this.temperature,
     this.systemPrompt,
     this.timeout,
+    this.dioOverrides,
     this.topP,
     this.topK,
     this.tools,
@@ -70,6 +73,7 @@ class OllamaConfig with LegacyDioClientOverrides {
       temperature: config.temperature,
       systemPrompt: config.systemPrompt,
       timeout: config.timeout,
+      dioOverrides: _legacyDioOverridesFromConfig(config),
 
       topP: config.topP,
       topK: config.topK,
@@ -92,7 +96,6 @@ class OllamaConfig with LegacyDioClientOverrides {
   T? getExtension<T>(String key) => _originalConfig?.getExtension<T>(key);
 
   /// Get the original LLMConfig for HTTP configuration
-  @override
   LLMConfig? get originalConfig => _originalConfig;
 
   /// Check if this model supports reasoning/thinking
@@ -169,6 +172,7 @@ class OllamaConfig with LegacyDioClientOverrides {
     double? temperature,
     String? systemPrompt,
     Duration? timeout,
+    DioClientOverrides? dioOverrides,
     double? topP,
     int? topK,
     List<Tool>? tools,
@@ -191,6 +195,7 @@ class OllamaConfig with LegacyDioClientOverrides {
         temperature: temperature ?? this.temperature,
         systemPrompt: systemPrompt ?? this.systemPrompt,
         timeout: timeout ?? this.timeout,
+        dioOverrides: dioOverrides ?? this.dioOverrides,
         topP: topP ?? this.topP,
         topK: topK ?? this.topK,
         tools: tools ?? this.tools,
@@ -203,5 +208,39 @@ class OllamaConfig with LegacyDioClientOverrides {
         keepAlive: keepAlive ?? this.keepAlive,
         raw: raw ?? this.raw,
         reasoning: reasoning ?? this.reasoning,
+        originalConfig: _originalConfig,
       );
+}
+
+DioClientOverrides? _legacyDioOverridesFromConfig(LLMConfig config) {
+  final customTransport = config.legacyTransportClient;
+  final customDio = switch (customTransport) {
+    DioTransportClient(:final dio) => dio,
+    _ => config.legacyCustomDio,
+  };
+
+  if (customDio == null &&
+      config.legacyCustomHeaders.isEmpty &&
+      !config.legacyEnableHttpLogging &&
+      config.legacyHttpProxy == null &&
+      !config.legacyBypassSslVerification &&
+      config.legacySslCertificatePath == null &&
+      config.legacyConnectionTimeout == null &&
+      config.legacyReceiveTimeout == null &&
+      config.legacySendTimeout == null) {
+    return null;
+  }
+
+  return ImmutableDioClientOverrides(
+    customDio: customDio,
+    customHeaders: config.legacyCustomHeaders,
+    enableHttpLogging: config.legacyEnableHttpLogging,
+    proxyUrl: config.legacyHttpProxy,
+    bypassSslVerification: config.legacyBypassSslVerification,
+    certificatePath: config.legacySslCertificatePath,
+    connectionTimeout: config.legacyConnectionTimeout,
+    receiveTimeout: config.legacyReceiveTimeout,
+    sendTimeout: config.legacySendTimeout,
+    timeout: config.timeout,
+  );
 }

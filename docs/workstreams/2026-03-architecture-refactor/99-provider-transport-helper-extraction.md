@@ -84,6 +84,7 @@ The transport package now also owns:
 
 - `LogSanitizer`
 - `JsonObjectResponseDecoder`
+- `ImmutableDioClientOverrides`
 
 That means:
 
@@ -91,6 +92,8 @@ That means:
   package
 - JSON-object response parsing no longer needs to be implemented only inside
   root `HttpResponseHandler`
+- provider configs can now carry transport-owned override data without mixing
+  in a root compatibility adapter
 - root `utils/log_sanitizer.dart` is now a compatibility re-export
 - root `HttpResponseHandler` is now a narrower compatibility wrapper around
   transport-owned parsing plus root-owned `LLMError` mapping
@@ -174,11 +177,14 @@ Current state:
 - provider-facing Dio strategy/factory abstractions are transport-owned
 - the shared UTF-8 stream decoder is transport-owned
 - shared log sanitization and JSON-object response decoding are transport-owned
+- immutable provider-facing Dio override data can now also be transport-owned
 - root `HttpConfigUtils` is now a compatibility mapper, not the implementation
 - root `DioClientFactory` is now a compatibility wrapper, not the
   implementation home
 - Ollama and ElevenLabs now also own their local default values instead of
   importing root `provider_defaults.dart`
+- Ollama and ElevenLabs configs now also own their provider-side Dio override
+  data instead of mixing in root `LegacyDioClientOverrides`
 - remaining root-local blockers are now more clearly narrowed to compatibility
-  config shaping around custom transport/Dio overrides and the remaining
-  root-owned `LLMError` mapping
+  config shaping around legacy extension reads/builder adaptation and the
+  remaining root-owned `LLMError` mapping

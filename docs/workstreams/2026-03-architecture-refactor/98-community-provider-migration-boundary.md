@@ -147,8 +147,8 @@ The remaining blocking utility work is therefore narrower than it was when this
 boundary was first frozen:
 
 - `HttpResponseHandler` as a root error-mapping wrapper
-- compatibility config shaping around `legacy_dio_client_overrides` and
-  `legacy_config_extensions`
+- compatibility config shaping around `legacy_config_extensions` and
+  builder-era root config adaptation
 - builder-era compatibility hooks such as `LLMBuilder` and legacy config keys
 
 The shared configurable Dio setup path has also now moved in the right
@@ -168,6 +168,8 @@ direction:
 - shared log sanitization and JSON-object response decoding primitives now also
   live in `llm_dart_transport`, so the root `HttpResponseHandler` is narrower
   than before even though it still owns legacy `LLMError` mapping
+- Ollama and ElevenLabs configs now also own provider-side `dioOverrides`
+  data directly instead of mixing in root `LegacyDioClientOverrides`
 
 Until those are either extracted, replaced, or intentionally left behind in the
 root compatibility shell, the package move remains premature.
