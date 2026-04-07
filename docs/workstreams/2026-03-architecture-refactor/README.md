@@ -273,9 +273,8 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - Use `package:llm_dart/llm_dart.dart` as the default documented modern import,
   while keeping `package:llm_dart/ai.dart` as an explicit equivalent alias when
   teams want a named AI-focused shell.
-- Restore the one-way package graph by removing the current
-  `llm_dart_core <-> llm_dart_transport` cycle before deeper package migration
-  continues.
+- Keep the one-way package graph intact now that the earlier
+  `llm_dart_core <-> llm_dart_transport` cycle has been removed.
 - Add `package:llm_dart/legacy.dart` as the explicit compatibility shell so the
   broad legacy import path can keep shrinking without stranding migration code.
 - Keep transport request customization in `HttpChatTransport`, but do not copy
@@ -297,9 +296,8 @@ This workstream is not about a file-moving refactor. It is about defining stable
 
 - The current `lib/` directory contains 134 source files, and `providers/` alone accounts for 96 of them.
 - The previous root compatibility hotspots have now been decomposed into shell files plus same-library parts, the generic compatibility bridge shell has also been split, the heaviest Anthropic-specific legacy parser has been decomposed, the shared audio/tool/assistant model layers have now also been split, `core/config.dart` has now also been reduced to a shell plus focused parts, and the old flat config-extension path now also has a centralized internal key/accessor layer; the remaining large cleanup targets are now mostly the other legacy/shared model files plus the deeper migration away from flat compatibility extensions rather than compatibility infrastructure.
-- the workspace still has a real `llm_dart_core <-> llm_dart_transport`
-  package cycle caused by core importing and re-exporting transport-owned
-  cancellation types
+- the earlier `llm_dart_core <-> llm_dart_transport` package cycle is now
+  fixed by moving shared request-cancellation primitives into `llm_dart_core`
 - `llm_dart_community` now exists as a workspace package, but it still exposes
   only an empty barrel while root-local provider code continues to carry
   community-provider weight

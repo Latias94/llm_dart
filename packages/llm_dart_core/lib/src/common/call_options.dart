@@ -1,6 +1,5 @@
-import 'package:llm_dart_transport/llm_dart_transport.dart';
-
 import 'provider_options.dart';
+import 'transport_cancellation.dart';
 
 final class CallOptions {
   final Duration? timeout;

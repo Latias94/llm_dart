@@ -1,13 +1,12 @@
 library;
 
-export 'package:llm_dart_transport/llm_dart_transport.dart'
-    show TransportCancellation, TransportCancelledException;
 export 'src/common/model_warning.dart';
 export 'src/common/model_error.dart';
 export 'src/common/call_options.dart';
 export 'src/common/json_schema.dart';
 export 'src/common/provider_metadata.dart';
 export 'src/common/provider_options.dart';
+export 'src/common/transport_cancellation.dart';
 export 'src/common/usage_stats.dart';
 export 'src/content/content_part.dart';
 export 'src/model/embed.dart';

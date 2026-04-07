@@ -355,7 +355,7 @@ final class DioTransportClient implements TransportClient {
     }
   }
 
-  Future<TransportException> _mapDioException(
+  Future<Object> _mapDioException(
     DioException error, {
     required Uri uri,
   }) async {

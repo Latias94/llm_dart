@@ -40,7 +40,8 @@ Current `pubspec.yaml` relationships:
   - still directly depends on `dio`
   - still directly depends on `logging`
 - `llm_dart_core`
-  - currently depends on `llm_dart_transport`
+  - no longer depends on `llm_dart_transport`
+  - now owns the shared request-cancellation primitives
 - `llm_dart_transport`
   - depends on `llm_dart_core`
   - depends on `dio`
@@ -105,23 +106,31 @@ But the broader export graph is still wide:
 
 ## Findings
 
-### 1. The Workspace Still Has A Real `core <-> transport` Package Cycle
+### 1. The Workspace Previously Had A Real `core <-> transport` Package Cycle
 
-This is the clearest structural violation.
+This was the clearest structural violation at audit time.
 
 Evidence:
 
-- `packages/llm_dart_core/pubspec.yaml` depends on `llm_dart_transport`
 - `packages/llm_dart_transport/pubspec.yaml` depends on `llm_dart_core`
-- `packages/llm_dart_core/lib/src/common/call_options.dart` imports
-  `package:llm_dart_transport/llm_dart_transport.dart`
-- `packages/llm_dart_core/lib/llm_dart_core.dart` re-exports transport
-  cancellation types
+- `packages/llm_dart_core/lib/src/common/call_options.dart` needed a shared
+  cancellation token for the common call surface
+- `packages/llm_dart_core/lib/llm_dart_core.dart` had been re-exporting
+  transport-owned cancellation types
 
-This directly contradicts the frozen one-way dependency decision.
+This directly contradicted the frozen one-way dependency decision.
 
-The current cycle exists mostly because request cancellation still lives in a
+The cycle existed mostly because request cancellation lived in a
 transport-owned surface while `CallOptions` also needs it as a common model API.
+
+### Status
+
+This gap is now fixed:
+
+- shared `TransportCancellation` and `TransportCancelledException` now live in
+  `llm_dart_core`
+- `llm_dart_transport` re-exports those types instead of owning them
+- `llm_dart_core` no longer depends on `llm_dart_transport`
 
 ### 2. The Root Package Still Acts As Both Modern Facade And Legacy Host
 
@@ -196,20 +205,17 @@ the intended steady-state design.
 
 ## Recommended Direction
 
-### 1. Break The `core <-> transport` Cycle Before More Package Migration
+### 1. Keep The `core -> transport` Edge Removed During Further Migration
 
-This should be the next structural correction.
+This was the first required structural correction, and it is now implemented.
 
-Preferred direction:
+The follow-up rule is:
 
 - keep the medium-grained workspace strategy
-- do not add another tiny public package only for cancellation
-- move shared request-lifecycle cancellation primitives to a placement that
-  keeps `llm_dart_core` independent from `llm_dart_transport`
+- do not reintroduce any new `llm_dart_core -> llm_dart_transport` dependency
+- keep shared request-lifecycle primitives in a core-owned placement when they
+  are part of common model APIs
 - keep `llm_dart_transport -> llm_dart_core`, not the other way around
-
-In practice, that likely means the common cancellation token should stop being a
-transport-owned export.
 
 ### 2. Make `llm_dart_community` A Real Migration Target
 
@@ -261,12 +267,12 @@ This audit does not recommend:
 
 ## Status
 
-The root modern entrypoint story is now much healthier than before, but the
-package graph still has one hard architecture violation and two large migration
-tails:
+The root modern entrypoint story is now much healthier than before, and the
+package graph is back on the intended one-way path. The remaining large
+migration tails are now:
 
-- the `llm_dart_core <-> llm_dart_transport` cycle
 - the still-empty `llm_dart_community` landing zone
 - the still-heavy root compatibility and provider host role
+- the still-overwide provider-focused root shells
 
 Those should be treated as the next structural cleanup frontier.

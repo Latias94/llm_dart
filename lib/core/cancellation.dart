@@ -39,11 +39,11 @@
 /// will abort all operations bound to that token.
 library;
 
-export 'package:llm_dart_transport/llm_dart_transport.dart'
+export 'package:llm_dart_core/llm_dart_core.dart'
     show TransportCancellation, TransportCancelledException;
 
 import 'package:dio/dio.dart' as dio;
-import 'package:llm_dart_transport/llm_dart_transport.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
 import 'llm_error.dart';
 
 @Deprecated('Use TransportCancellation instead.')
