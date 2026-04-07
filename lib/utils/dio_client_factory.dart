@@ -4,198 +4,92 @@ import 'package:llm_dart_transport/llm_dart_transport.dart';
 import '../core/config.dart';
 import '../src/config/legacy_config_extensions.dart';
 
-/// Strategy interface for provider-specific Dio configuration
-///
-/// Each provider implements this interface to define their specific
-/// requirements for HTTP client setup, including headers, authentication,
-/// and custom enhancements.
-abstract class ProviderDioStrategy {
-  /// Provider name for logging and debugging
-  String get providerName;
+export 'package:llm_dart_transport/llm_dart_transport.dart'
+    show
+        BaseProviderDioStrategy,
+        DioClientOverrides,
+        DioEnhancer,
+        HeaderEnhancer,
+        InterceptorEnhancer,
+        ProviderDioStrategy;
 
-  /// Build provider-specific HTTP headers
-  Map<String, String> buildHeaders(dynamic config);
-
-  /// Get list of provider-specific enhancers
-  List<DioEnhancer> getEnhancers(dynamic config);
-
-  /// Get base URL for the provider
-  String getBaseUrl(dynamic config);
-
-  /// Get timeout configuration
-  Duration? getTimeout(dynamic config);
-}
-
-/// Interface for composable Dio enhancements
-///
-/// Enhancers can add interceptors, modify configuration, or apply
-/// other customizations to a Dio instance. They are applied in order
-/// and can be combined flexibly.
-abstract class DioEnhancer {
-  /// Apply enhancement to the Dio instance
-  void enhance(Dio dio, dynamic config);
-
-  /// Enhancement name for debugging
-  String get name;
-}
-
-/// Unified factory for creating Dio clients across all providers
-///
-/// This factory eliminates code duplication by providing a consistent
-/// approach to Dio client creation while allowing provider-specific
-/// customizations through the strategy pattern.
+/// Compatibility wrapper around the transport-owned provider Dio client factory.
 class DioClientFactory {
-  /// Create a configured Dio client using provider strategy
-  ///
-  /// Priority order:
-  /// 1. Custom Dio client (if provided via extensions)
-  /// 2. HTTP configuration with provider strategy
-  /// 3. Provider defaults
+  /// Create a configured Dio client using provider strategy.
   static Dio create({
     required ProviderDioStrategy strategy,
     required dynamic config,
   }) {
-    // Extract custom Dio from config extensions
-    final customDio = _extractCustomDio(config);
-
-    if (customDio != null) {
-      // Use custom Dio with provider-specific enhancements
-      return _enhanceCustomDio(customDio, strategy, config);
-    } else {
-      // Create new Dio with unified configuration
-      return _createConfiguredDio(strategy, config);
-    }
+    return ProviderDioClientFactory.create(
+      strategy: strategy,
+      config: config,
+      overrides: _resolveOverrides(strategy, config),
+    );
   }
 
-  /// Extract custom Dio from config extensions
-  static Dio? _extractCustomDio(dynamic config) {
+  static DioClientOverrides? _resolveOverrides(
+    ProviderDioStrategy strategy,
+    dynamic config,
+  ) {
+    if (config is DioClientOverrides) {
+      return config;
+    }
+
     final originalConfig = config.originalConfig as LLMConfig?;
-    if (originalConfig != null) {
-      final customTransport = originalConfig.legacyTransportClient;
-      if (customTransport case DioTransportClient(:final dio)) {
-        return dio;
-      }
-
-      return originalConfig.legacyCustomDio;
-    }
-    return null;
-  }
-
-  /// Enhance custom Dio with provider-specific requirements
-  static Dio _enhanceCustomDio(
-    Dio customDio,
-    ProviderDioStrategy strategy,
-    dynamic config,
-  ) {
-    // Ensure base URL is set if not already configured
-    if (customDio.options.baseUrl.isEmpty) {
-      customDio.options.baseUrl = strategy.getBaseUrl(config);
+    if (originalConfig == null) {
+      return null;
     }
 
-    // Merge essential headers (user's headers take precedence)
-    final essentialHeaders = strategy.buildHeaders(config);
-    for (final entry in essentialHeaders.entries) {
-      customDio.options.headers.putIfAbsent(entry.key, () => entry.value);
-    }
-
-    // Apply provider-specific enhancements
-    final enhancers = strategy.getEnhancers(config);
-    for (final enhancer in enhancers) {
-      enhancer.enhance(customDio, config);
-    }
-
-    return customDio;
-  }
-
-  /// Create new configured Dio instance
-  static Dio _createConfiguredDio(
-    ProviderDioStrategy strategy,
-    dynamic config,
-  ) {
-    final LLMConfig originalConfig =
-        (config.originalConfig as LLMConfig?) ??
-        _createFallbackConfig(strategy, config);
-
-    final dio = DioHttpClientFactory.createConfiguredDio(
-      config: DioHttpClientConfig(
-        baseUrl: strategy.getBaseUrl(config),
-        defaultHeaders: strategy.buildHeaders(config),
-        customHeaders: originalConfig.legacyCustomHeaders,
-        timeout: originalConfig.timeout ?? strategy.getTimeout(config),
-        connectionTimeout: originalConfig.legacyConnectionTimeout,
-        receiveTimeout: originalConfig.legacyReceiveTimeout,
-        sendTimeout: originalConfig.legacySendTimeout,
-        enableLogging: originalConfig.legacyEnableHttpLogging,
-        proxyUrl: originalConfig.legacyHttpProxy,
-        bypassSslVerification: originalConfig.legacyBypassSslVerification,
-        certificatePath: originalConfig.legacySslCertificatePath,
-      ),
-    );
-
-    // Apply provider-specific enhancements
-    final enhancers = strategy.getEnhancers(config);
-    for (final enhancer in enhancers) {
-      enhancer.enhance(dio, config);
-    }
-
-    return dio;
-  }
-
-  /// Create minimal fallback config when originalConfig is not available
-  static LLMConfig _createFallbackConfig(
-    ProviderDioStrategy strategy,
-    dynamic config,
-  ) {
-    return LLMConfig(
-      baseUrl: strategy.getBaseUrl(config),
-      model: config.model,
-      apiKey: config.apiKey,
-      timeout: strategy.getTimeout(config),
+    return _LegacyConfigDioClientOverrides(
+      originalConfig,
+      fallbackTimeout: strategy.getTimeout(config),
     );
   }
 }
 
-/// Base implementation for common provider strategy patterns
-abstract class BaseProviderDioStrategy implements ProviderDioStrategy {
-  @override
-  String getBaseUrl(dynamic config) => config.baseUrl;
+final class _LegacyConfigDioClientOverrides implements DioClientOverrides {
+  final LLMConfig _config;
+  final Duration? _fallbackTimeout;
+
+  const _LegacyConfigDioClientOverrides(
+    this._config, {
+    Duration? fallbackTimeout,
+  }) : _fallbackTimeout = fallbackTimeout;
 
   @override
-  Duration? getTimeout(dynamic config) => config.timeout;
+  bool get bypassSslVerification => _config.legacyBypassSslVerification;
 
   @override
-  List<DioEnhancer> getEnhancers(dynamic config) => [];
-}
-
-/// Interceptor-based enhancer for adding custom interceptors
-class InterceptorEnhancer implements DioEnhancer {
-  final Interceptor interceptor;
-  final String _name;
-
-  InterceptorEnhancer(this.interceptor, this._name);
+  String? get certificatePath => _config.legacySslCertificatePath;
 
   @override
-  void enhance(Dio dio, dynamic config) {
-    dio.interceptors.add(interceptor);
+  Duration? get connectionTimeout => _config.legacyConnectionTimeout;
+
+  @override
+  Dio? get customDio {
+    final customTransport = _config.legacyTransportClient;
+    if (customTransport case DioTransportClient(:final dio)) {
+      return dio;
+    }
+
+    return _config.legacyCustomDio;
   }
 
   @override
-  String get name => _name;
-}
-
-/// Header-based enhancer for dynamic header modification
-class HeaderEnhancer implements DioEnhancer {
-  final Map<String, String> Function(dynamic config) headerBuilder;
-  final String _name;
-
-  HeaderEnhancer(this.headerBuilder, this._name);
+  Map<String, String> get customHeaders => _config.legacyCustomHeaders;
 
   @override
-  void enhance(Dio dio, dynamic config) {
-    final headers = headerBuilder(config);
-    dio.options.headers.addAll(headers);
-  }
+  bool get enableHttpLogging => _config.legacyEnableHttpLogging;
 
   @override
-  String get name => _name;
+  String? get proxyUrl => _config.legacyHttpProxy;
+
+  @override
+  Duration? get receiveTimeout => _config.legacyReceiveTimeout;
+
+  @override
+  Duration? get sendTimeout => _config.legacySendTimeout;
+
+  @override
+  Duration? get timeout => _config.timeout ?? _fallbackTimeout;
 }

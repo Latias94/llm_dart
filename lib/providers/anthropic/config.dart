@@ -1,6 +1,7 @@
 import '../../core/config.dart';
 import '../../src/provider_defaults.dart';
 import '../../core/web_search.dart';
+import '../../src/config/legacy_dio_client_overrides.dart';
 import '../../src/config/legacy_config_extensions.dart';
 import '../../models/chat_models.dart';
 import '../../models/tool_models.dart';
@@ -16,13 +17,14 @@ import '../../models/tool_models.dart';
 /// - Vision: https://docs.anthropic.com/en/docs/build-with-claude/vision
 /// - Tool Use: https://docs.anthropic.com/en/docs/tool-use
 /// - PDF Support: https://docs.anthropic.com/en/docs/build-with-claude/pdf-support
-class AnthropicConfig {
+class AnthropicConfig with LegacyDioClientOverrides {
   final String apiKey;
   final String baseUrl;
   final String model;
   final int? maxTokens;
   final double? temperature;
   final String? systemPrompt;
+  @override
   final Duration? timeout;
   final bool stream;
   final double? topP;
@@ -141,6 +143,7 @@ class AnthropicConfig {
   T? getExtension<T>(String key) => _originalConfig?.getExtension<T>(key);
 
   /// Get the original LLMConfig for HTTP configuration
+  @override
   LLMConfig? get originalConfig => _originalConfig;
 
   /// Check if this model supports reasoning/thinking

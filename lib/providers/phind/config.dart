@@ -1,17 +1,19 @@
 import '../../models/tool_models.dart';
 import '../../core/config.dart';
+import '../../src/config/legacy_dio_client_overrides.dart';
 
 /// Phind provider configuration
 ///
 /// This class contains all configuration options for the Phind providers.
 /// Phind is a coding-focused AI assistant with specialized models.
-class PhindConfig {
+class PhindConfig with LegacyDioClientOverrides {
   final String apiKey;
   final String baseUrl;
   final String model;
   final int? maxTokens;
   final double? temperature;
   final String? systemPrompt;
+  @override
   final Duration? timeout;
 
   final double? topP;
@@ -59,6 +61,7 @@ class PhindConfig {
   T? getExtension<T>(String key) => _originalConfig?.getExtension<T>(key);
 
   /// Get the original LLMConfig for HTTP configuration
+  @override
   LLMConfig? get originalConfig => _originalConfig;
 
   /// Check if this model supports tool calling

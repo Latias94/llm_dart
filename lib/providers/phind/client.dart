@@ -1,12 +1,11 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart'
-    show bindDioCancellation;
+    show ProviderDioClientFactory, bindDioCancellation;
 import 'package:logging/logging.dart';
 
 import '../../core/cancellation.dart';
 import '../../core/llm_error.dart';
-import '../../utils/dio_client_factory.dart';
 import 'config.dart';
 import 'dio_strategy.dart';
 
@@ -22,7 +21,7 @@ class PhindClient {
 
   PhindClient(this.config) {
     // Use unified Dio client factory with Phind-specific strategy
-    _dio = DioClientFactory.create(
+    _dio = ProviderDioClientFactory.create(
       strategy: PhindDioStrategy(),
       config: config,
     );

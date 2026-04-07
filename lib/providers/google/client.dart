@@ -1,10 +1,9 @@
 import 'package:dio/dio.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart'
-    show bindDioCancellation;
+    show ProviderDioClientFactory, bindDioCancellation;
 import 'package:logging/logging.dart';
 
 import '../../core/cancellation.dart';
-import '../../utils/dio_client_factory.dart';
 import '../../utils/http_response_handler.dart';
 import '../../utils/utf8_stream_decoder.dart';
 import 'config.dart';
@@ -26,7 +25,7 @@ class GoogleClient {
 
   GoogleClient(this.config) {
     // Use unified Dio client factory with Google-specific strategy
-    dio = DioClientFactory.create(
+    dio = ProviderDioClientFactory.create(
       strategy: GoogleDioStrategy(),
       config: config,
     );

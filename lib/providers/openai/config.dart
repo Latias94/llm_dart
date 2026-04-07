@@ -1,6 +1,7 @@
 import '../../models/tool_models.dart';
 import '../../models/chat_models.dart';
 import '../../core/config.dart';
+import '../../src/config/legacy_dio_client_overrides.dart';
 import '../../src/provider_defaults.dart';
 import 'builtin_tools.dart';
 
@@ -8,13 +9,14 @@ import 'builtin_tools.dart';
 ///
 /// This class contains all configuration options for the OpenAI providers.
 /// It's extracted from the main provider to improve modularity and reusability.
-class OpenAIConfig {
+class OpenAIConfig with LegacyDioClientOverrides {
   final String apiKey;
   final String baseUrl;
   final String model;
   final int? maxTokens;
   final double? temperature;
   final String? systemPrompt;
+  @override
   final Duration? timeout;
 
   final double? topP;
@@ -72,6 +74,7 @@ class OpenAIConfig {
   T? getExtension<T>(String key) => _originalConfig?.getExtension<T>(key);
 
   /// Get the original LLMConfig for HTTP configuration
+  @override
   LLMConfig? get originalConfig => _originalConfig;
 
   OpenAIConfig copyWith({

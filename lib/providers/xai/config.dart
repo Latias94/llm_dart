@@ -1,6 +1,7 @@
 import '../../models/tool_models.dart';
 import '../../core/config.dart';
 import '../../core/web_search.dart';
+import '../../src/config/legacy_dio_client_overrides.dart';
 
 /// Search source configuration for search parameters
 class SearchSource {
@@ -167,13 +168,14 @@ class SearchParameters {
 ///
 /// This class contains all configuration options for the xAI providers.
 /// It's extracted from the main provider to improve modularity and reusability.
-class XAIConfig {
+class XAIConfig with LegacyDioClientOverrides {
   final String apiKey;
   final String baseUrl;
   final String model;
   final int? maxTokens;
   final double? temperature;
   final String? systemPrompt;
+  @override
   final Duration? timeout;
 
   final double? topP;
@@ -291,6 +293,7 @@ class XAIConfig {
   T? getExtension<T>(String key) => _originalConfig?.getExtension<T>(key);
 
   /// Get the original LLMConfig for HTTP configuration
+  @override
   LLMConfig? get originalConfig => _originalConfig;
 
   /// Check if this model supports reasoning/thinking

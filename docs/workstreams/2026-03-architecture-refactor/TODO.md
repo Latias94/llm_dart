@@ -145,9 +145,10 @@
 - [x] Break the current `llm_dart_core <-> llm_dart_transport` package cycle without introducing a finer-grained public utility package
 - [x] Move the shared Dio cancellation adapter into `llm_dart_transport` and switch root/provider code away from a root-local adapter implementation
 - [x] Extract transport-owned configurable Dio setup primitives so reusable HTTP client setup no longer lives only under root `HttpConfigUtils`
+- [x] Move provider-facing Dio strategy/factory abstractions into `llm_dart_transport` and reduce root `DioClientFactory` to a compatibility wrapper
 - [ ] Make `llm_dart_community` a real migration target instead of an empty landing-zone package
 - [ ] Decouple Ollama and ElevenLabs from root-local compatibility imports before moving real implementation weight into `llm_dart_community`
-- [ ] Re-home or replace the current compatibility-shaped root `DioClientFactory` once custom transport/Dio override policy is frozen
+- [ ] Freeze whether the current root `legacy_dio_client_overrides` mapper should survive as a compatibility shell or be replaced by provider-owned modern config/override surfaces
 - [ ] Decide whether `HttpResponseHandler` should stay root compatibility-owned or be split into provider-owned parsing plus shared transport failure handling
 - [ ] Audit whether provider-focused root entrypoints should stop re-exporting `AI`, `core.dart`, and `transport.dart` once the modern import boundary is fully stable
 - [ ] Remove direct `dio` and `logging` runtime dependencies from the root package after the remaining local compatibility/provider code moves out

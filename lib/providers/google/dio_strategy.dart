@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
-import '../../utils/dio_client_factory.dart';
+import 'package:llm_dart_transport/llm_dart_transport.dart';
+
 import 'config.dart';
 
 /// Google-specific Dio strategy implementation

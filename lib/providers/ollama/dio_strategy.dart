@@ -1,4 +1,5 @@
-import '../../utils/dio_client_factory.dart';
+import 'package:llm_dart_transport/llm_dart_transport.dart';
+
 import 'config.dart';
 
 /// Ollama-specific Dio strategy implementation

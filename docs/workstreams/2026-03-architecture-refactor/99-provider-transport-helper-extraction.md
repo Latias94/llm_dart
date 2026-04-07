@@ -44,6 +44,25 @@ The remaining compatibility-oriented provider factory still lives in the root
 package, but it now builds configured Dio instances through the transport-owned
 factory instead of routing through `BaseHttpProvider.createConfiguredDio(...)`.
 
+### 4. Provider-facing Dio strategy and factory abstractions now live in
+`llm_dart_transport`
+
+The transport package now also owns:
+
+- `ProviderDioStrategy`
+- `BaseProviderDioStrategy`
+- `DioEnhancer`
+- `ProviderDioClientFactory`
+- `DioClientOverrides`
+
+That means:
+
+- provider `dio_strategy.dart` files no longer need a root-local utility import
+- provider clients can build configured Dio instances through transport-owned
+  APIs directly
+- the root `DioClientFactory` is now a compatibility wrapper instead of the
+  implementation home
+
 ## Why This Helper Belonged In Transport
 
 `bindDioCancellation(...)` only does one thing:
@@ -67,6 +86,7 @@ After these moves, current provider code no longer needs:
 - a root-local `src/dio_cancellation_adapter.dart` implementation
 - a root-local reusable Dio setup implementation
 - root-local platform adapter helper implementations for configurable Dio setup
+- a root-local provider-facing Dio strategy/factory implementation
 
 This matters because Ollama and ElevenLabs had both depended on that root-local
 transport-ish utility layer before any package move could even be discussed.
@@ -81,14 +101,14 @@ clear false dependencies from the path:
 
 ### `DioClientFactory`
 
-`lib/utils/dio_client_factory.dart` still depends on root-local compatibility
-shaping through:
+`lib/utils/dio_client_factory.dart` is now only a compatibility wrapper, but
+the root compatibility layer still owns legacy override shaping through:
 
 - `LLMConfig`
 - legacy config accessors such as custom transport and raw Dio overrides
 
-So even though it is transport-heavy code, it is not transport-package-ready
-yet.
+That means provider clients no longer need this file directly, but the old
+root compatibility surface still does.
 
 ### `HttpResponseHandler`
 
@@ -104,8 +124,9 @@ The next step should not reopen the already-landed transport-helper work.
 
 It should narrow the remaining compatibility ownership:
 
-1. decide whether root `DioClientFactory` should stay as a compatibility-only
-   mapper or be replaced by a thinner transport-facing/provider-private helper
+1. decide whether the new root `legacy_dio_client_overrides` shaping should
+   remain a compatibility-only mapper or be replaced by provider-owned modern
+   config/override surfaces
 2. decide whether `HttpResponseHandler` stays compatibility-owned because of
    `LLMError`, or whether provider packages should eventually own more of their
    response/error mapping directly
@@ -118,7 +139,10 @@ Current state:
 
 - cancellation binding is transport-owned
 - configurable Dio setup is transport-owned
+- provider-facing Dio strategy/factory abstractions are transport-owned
 - root `HttpConfigUtils` is now a compatibility mapper, not the implementation
-- root `DioClientFactory` no longer depends on `BaseHttpProvider`
+- root `DioClientFactory` is now a compatibility wrapper, not the
+  implementation home
 - remaining root-local blockers are now more clearly narrowed to compatibility
-  config shaping around custom transport/Dio overrides and root error mapping
+  config shaping around custom transport/Dio overrides, provider defaults, and
+  root error mapping

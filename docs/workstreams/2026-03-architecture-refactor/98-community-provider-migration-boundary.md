@@ -152,8 +152,9 @@ One transport-ish helper has already moved in the right direction:
 The remaining blocking utility work is therefore narrower than it was when this
 boundary was first frozen:
 
-- `DioClientFactory`
 - `HttpResponseHandler`
+- compatibility config/default shaping around `legacy_dio_client_overrides`,
+  `legacy_config_extensions`, and `provider_defaults`
 
 The shared configurable Dio setup path has also now moved in the right
 direction:
@@ -162,6 +163,9 @@ direction:
   transport-side config and factory helpers
 - root `HttpConfigUtils` is now only a compatibility mapper from `LLMConfig`
   into that transport-owned layer
+- provider `dio_strategy.dart` files and provider clients now also use
+  transport-owned provider-Dio abstractions directly instead of depending on a
+  root-local Dio utility implementation
 
 Until those are either extracted, replaced, or intentionally left behind in the
 root compatibility shell, the package move remains premature.

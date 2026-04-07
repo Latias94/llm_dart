@@ -1,4 +1,5 @@
 import '../../core/config.dart';
+import '../../src/config/legacy_dio_client_overrides.dart';
 import '../../src/config/legacy_config_extensions.dart';
 import '../../src/provider_defaults.dart';
 
@@ -6,11 +7,12 @@ import '../../src/provider_defaults.dart';
 ///
 /// This class contains all configuration options for the ElevenLabs providers.
 /// ElevenLabs specializes in text-to-speech and speech-to-text capabilities.
-class ElevenLabsConfig {
+class ElevenLabsConfig with LegacyDioClientOverrides {
   final String apiKey;
   final String baseUrl;
   final String? voiceId;
   final String? model;
+  @override
   final Duration? timeout;
   final double? stability;
   final double? similarityBoost;
@@ -56,6 +58,7 @@ class ElevenLabsConfig {
   T? getExtension<T>(String key) => _originalConfig?.getExtension<T>(key);
 
   /// Get the original LLMConfig for HTTP configuration
+  @override
   LLMConfig? get originalConfig => _originalConfig;
 
   /// Check if this configuration supports text-to-speech
