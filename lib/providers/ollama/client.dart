@@ -1,12 +1,11 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart'
-    show ProviderDioClientFactory, bindDioCancellation;
+    show ProviderDioClientFactory, Utf8StreamDecoder, bindDioCancellation;
 import 'package:logging/logging.dart';
 
 import '../../core/cancellation.dart';
 import '../../utils/http_response_handler.dart';
-import '../../utils/utf8_stream_decoder.dart';
 import 'config.dart';
 import 'dio_strategy.dart';
 

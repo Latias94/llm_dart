@@ -15,3 +15,4 @@ export 'src/http/http_chat_transport_server_adapter.dart';
 export 'src/http/sse_decoder.dart';
 export 'src/http/sse_json_chunk_parser.dart';
 export 'src/http/transport_client.dart';
+export 'src/http/utf8_stream_decoder.dart';

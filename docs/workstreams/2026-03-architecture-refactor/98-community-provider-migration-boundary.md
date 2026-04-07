@@ -40,10 +40,7 @@ The Ollama implementation imports root-local modules such as:
 - `../../models/tool_models.dart`
 - `../../builder/llm_builder.dart`
 - `../../src/config/legacy_config_extensions.dart`
-- `../../src/provider_defaults.dart`
-- `../../utils/dio_client_factory.dart`
 - `../../utils/http_response_handler.dart`
-- `../../utils/utf8_stream_decoder.dart`
 
 That means the current Ollama code is still rooted in the legacy compatibility
 surface, not only in lower-layer package APIs.
@@ -62,8 +59,6 @@ The ElevenLabs implementation imports root-local modules such as:
 - `../../builder/llm_builder.dart`
 - `../../src/config/legacy_config_keys.dart`
 - `../../src/config/legacy_config_extensions.dart`
-- `../../src/provider_defaults.dart`
-- `../../utils/dio_client_factory.dart`
 
 It is in the same situation: package move is blocked by root-local
 compatibility ownership.
@@ -142,8 +137,7 @@ The blocking imports show what must be addressed first:
 
 - root-local config and extension shaping
 - root-local capability and legacy message models
-- root-local provider defaults helpers
-- root-local Dio/client helper utilities that still live outside transport
+- root-local response/error helpers and builder hooks
 
 One transport-ish helper has already moved in the right direction:
 
@@ -169,6 +163,8 @@ direction:
   root-local Dio utility implementation
 - Ollama and ElevenLabs now also use provider-owned local defaults instead of
   importing root `provider_defaults.dart`
+- the shared `Utf8StreamDecoder` now also lives in `llm_dart_transport`, with
+  the old root utility path reduced to a compatibility re-export
 
 Until those are either extracted, replaced, or intentionally left behind in the
 root compatibility shell, the package move remains premature.

@@ -316,13 +316,15 @@ This workstream is not about a file-moving refactor. It is about defining stable
   Dio utility implementation
 - Ollama and ElevenLabs now also keep their local default values in provider
   modules instead of importing root `provider_defaults.dart`
+- the shared `Utf8StreamDecoder` now also lives in `llm_dart_transport`, with
+  the old root utility path reduced to a compatibility re-export
 - `llm_dart_community` now exists as a workspace package, but it still exposes
   only an empty barrel while root-local provider code continues to carry
   community-provider weight
 - the next remaining shared-helper blocker for community-provider migration is
-  no longer cancellation, provider-facing Dio setup, or provider defaults; it
-  is the remaining compatibility-shaped config ownership plus root error
-  mapping
+  no longer cancellation, provider-facing Dio setup, provider defaults, or the
+  shared UTF-8 decoder; it is the remaining compatibility-shaped config
+  ownership plus root error mapping
 - `extensions/getExtension/extension` related entry points appear 258 times in `lib/`, which means string-based extensions have already become a primary design path.
 - `dio` appears 70 times across `lib/packages/test/example`, which shows that transport details have already leaked into too many layers.
 

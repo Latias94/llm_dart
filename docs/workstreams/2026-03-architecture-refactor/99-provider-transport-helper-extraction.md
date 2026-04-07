@@ -63,6 +63,20 @@ That means:
 - the root `DioClientFactory` is now a compatibility wrapper instead of the
   implementation home
 
+### 5. The shared UTF-8 streaming decoder now also lives in
+`llm_dart_transport`
+
+The transport package now also owns:
+
+- `Utf8StreamDecoder`
+- `Utf8StreamDecoderExtension`
+
+That means:
+
+- provider clients no longer need a root-local UTF-8 streaming helper
+- the root `utils/utf8_stream_decoder.dart` file is now only a compatibility
+  re-export
+
 ## Why This Helper Belonged In Transport
 
 `bindDioCancellation(...)` only does one thing:
@@ -140,6 +154,7 @@ Current state:
 - cancellation binding is transport-owned
 - configurable Dio setup is transport-owned
 - provider-facing Dio strategy/factory abstractions are transport-owned
+- the shared UTF-8 stream decoder is transport-owned
 - root `HttpConfigUtils` is now a compatibility mapper, not the implementation
 - root `DioClientFactory` is now a compatibility wrapper, not the
   implementation home
