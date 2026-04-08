@@ -233,6 +233,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Status note for which provider-shared Dio helpers already moved into
     `llm_dart_transport`, and which compatibility-shaped utilities still block
     community-provider migration.
+- [100-community-provider-modern-surface-plan.md](100-community-provider-modern-surface-plan.md)
+  - Frozen recommendation for splitting community providers into package-owned
+    modern model APIs plus root legacy shells, including the suggested Ollama-
+    first then ElevenLabs sequence.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
