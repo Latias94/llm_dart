@@ -241,6 +241,14 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Execution-focused plan for thinning the remaining root Ollama and
     ElevenLabs provider shells after the first package-owned community model
     surfaces landed.
+- [102-community-provider-extra-api-policy.md](102-community-provider-extra-api-policy.md)
+  - Frozen policy for which provider-specific community-provider extras should
+    remain legacy-only or provider-owned instead of widening shared modern
+    model surfaces.
+- [103-ollama-residual-completion-and-model-listing-policy.md](103-ollama-residual-completion-and-model-listing-policy.md)
+  - Frozen policy for keeping Ollama `/api/generate` completion and model
+    listing outside the shared modern community surface unless a concrete
+    provider-owned typed helper is justified later.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
@@ -343,9 +351,17 @@ This workstream is not about a file-moving refactor. It is about defining stable
   `ElevenLabs.speechModel(...)` and `ElevenLabs.transcriptionModel(...)`, so
   the package is no longer just an empty barrel and now already carries both
   local-model and audio-focused modern entrypoints
+- the provider-specific extra-API policy is now also frozen more explicitly:
+  shared modern surfaces stay narrow, while provider-specific catalog,
+  realtime, admin, and file-path convenience APIs remain provider-owned or
+  compatibility-only until a concrete typed helper is justified
 - Ollama and ElevenLabs builder DSL implementations now also live under the
   root compatibility layer, with provider-path builder files reduced to thin
   compatibility exports
+- Ollama residual completion and model-listing ownership is now also frozen:
+  `/api/generate` completion remains a compatibility-era root path, and model
+  listing remains provider-owned or compatibility-only instead of being treated
+  as unfinished shared modern migration work
 - `llm_dart_community` now exists as a real workspace migration target, but
   root-local provider code still continues to carry too much
   compatibility-era community-provider weight

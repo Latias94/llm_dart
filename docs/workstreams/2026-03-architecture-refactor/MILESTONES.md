@@ -195,6 +195,11 @@ Current status:
   move every provider HTTP endpoint into the modern package surface, so catalog,
   realtime, admin, and file-path convenience APIs stay legacy-only or
   provider-owned unless a concrete typed helper is justified
+- Ollama residual non-shared ownership is now also frozen more explicitly:
+  `/api/generate` completion remains a compatibility-era root path because the
+  shared modern core has no `CompletionModel`, while model listing remains a
+  provider-owned or compatibility-only concern instead of being treated as
+  missing shared modern package parity
 
 ## M5 - Flutter Chat Layer
 

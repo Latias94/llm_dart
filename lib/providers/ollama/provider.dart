@@ -35,8 +35,10 @@ class OllamaProvider
   // Capability modules
   late final OllamaChat _chat;
   late final LegacyChatCapabilityAdapter _compatChat;
+  // Legacy-only residual shell for Ollama's provider-shaped /api/generate path.
   late final OllamaCompletion _completion;
   late final core.EmbeddingModel _embeddingModel;
+  // Provider-owned catalog shell; not part of the shared modern model surface.
   late final OllamaModels _models;
 
   OllamaProvider(this.config)
