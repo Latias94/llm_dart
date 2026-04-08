@@ -7,12 +7,12 @@ import '../../core/capability.dart';
 import '../../models/chat_models.dart';
 import '../../models/tool_models.dart';
 import '../../src/compatibility/providers/compat_provider_support.dart';
+import '../../src/compatibility/providers/ollama/ollama_chat_compat.dart';
+import '../../src/compatibility/providers/ollama/ollama_completion_compat.dart';
+import '../../src/compatibility/providers/ollama/ollama_models_compat.dart';
 import '../../src/compatibility/providers/ollama_compat_shell_support.dart';
 import 'client.dart';
 import 'config.dart';
-import 'chat.dart';
-import 'completion.dart';
-import 'models.dart';
 
 /// Compatibility-first root Ollama provider shell.
 ///

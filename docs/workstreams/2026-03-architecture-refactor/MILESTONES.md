@@ -228,6 +228,11 @@ Current status:
   response-mapping glue no longer live inline in
   `lib/providers/elevenlabs/provider.dart`, but in a dedicated root
   compatibility support module
+- the remaining Ollama completion/model-listing files and ElevenLabs
+  audio/model-helper files now also live under explicit root compatibility
+  ownership, while the public `lib/providers/...` entry files have been
+  reduced to thin compatibility exports and the root provider shells import the
+  compatibility modules directly
 
 ## M5 - Flutter Chat Layer
 

@@ -5,11 +5,11 @@ import '../../models/tool_models.dart';
 import '../../models/audio_models.dart';
 import '../../src/compatibility/providers/compat_provider_support.dart'
     show isCompatibilityError;
+import '../../src/compatibility/providers/elevenlabs/elevenlabs_audio_compat.dart';
+import '../../src/compatibility/providers/elevenlabs/elevenlabs_models_compat.dart';
 import '../../src/compatibility/providers/elevenlabs_compat_shell_support.dart';
-import 'audio.dart';
 import 'client.dart';
 import 'config.dart';
-import 'models.dart';
 
 /// Compatibility-first root ElevenLabs provider shell.
 ///

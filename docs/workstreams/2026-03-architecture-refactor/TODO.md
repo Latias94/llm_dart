@@ -170,13 +170,14 @@
 - [x] Freeze Ollama model listing as provider-owned or compatibility-only instead of widening the shared modern package surface
 - [x] Thin the root Ollama shell for chat and embeddings by delegating replay-safe shared-capability paths into `llm_dart_community` while preserving fallback for named-message and duplicate-system-prompt legacy cases
 - [x] Thin the root ElevenLabs shell for text-to-speech and direct-audio transcription by delegating shared-capability paths into `llm_dart_community` while preserving legacy fallback for file input and provider-only audio/admin features
-- [ ] Thin the root Ollama and ElevenLabs providers into explicit legacy delegation shells above package-owned modern community models
+- [x] Thin the root Ollama and ElevenLabs providers into explicit legacy delegation shells above package-owned modern community models
 - [x] Add the first package-owned Ollama `EmbeddingModel` slice in `llm_dart_community`
 - [x] Expand the package-owned Ollama modern slice with `LanguageModel`
 - [ ] Close the remaining Ollama modern fidelity gaps after the first replay re-audit, especially explicit `toolChoice` forcing, non-inline multimodal inputs, and the lack of a native replay-time tool error flag
 - [x] Add the first package-owned ElevenLabs `SpeechModel` / `TranscriptionModel` slice in `llm_dart_community`
 - [ ] Migrate Ollama
 - [ ] Migrate ElevenLabs
+- [ ] Audit whether any remaining community-provider event or metadata gaps still block moving more provider logic out of the root compatibility shells
 - [ ] Decide whether file-based ElevenLabs transcription should remain legacy-only or gain a provider-owned modern helper outside the shared `TranscriptionModel`
 - [ ] Decide which remaining ElevenLabs voice/realtime/admin capabilities should stay provider-owned outside the shared audio model surfaces
 - [ ] Evaluate whether community providers should later split into dedicated packages

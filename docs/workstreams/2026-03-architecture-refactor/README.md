@@ -264,6 +264,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Status note for moving ElevenLabs root-shell modern-bridge glue out of
     `lib/providers/elevenlabs/provider.dart` and into the root compatibility
     layer.
+- [108-community-residual-module-relocation.md](108-community-residual-module-relocation.md)
+  - Status note for relocating remaining Ollama and ElevenLabs residual
+    implementation modules under explicit root compatibility ownership while
+    reducing the public provider files to thin exports.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
