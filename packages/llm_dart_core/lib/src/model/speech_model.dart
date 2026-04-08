@@ -1,5 +1,7 @@
 import '../common/call_options.dart';
+import '../common/model_warning.dart';
 import '../common/provider_metadata.dart';
+import 'model_response_metadata.dart';
 
 final class SpeechGenerationRequest {
   final String text;
@@ -16,11 +18,15 @@ final class SpeechGenerationRequest {
 final class SpeechGenerationResult {
   final List<int> audioBytes;
   final String? mediaType;
+  final List<ModelWarning> warnings;
+  final ModelResponseMetadata? responseMetadata;
   final ProviderMetadata? providerMetadata;
 
   const SpeechGenerationResult({
     required this.audioBytes,
     this.mediaType,
+    this.warnings = const [],
+    this.responseMetadata,
     this.providerMetadata,
   });
 }

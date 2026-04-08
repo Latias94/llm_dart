@@ -242,6 +242,11 @@ Current status:
   for warnings, response metadata, and typed transcription segments/language/
   duration, while provider-specific audio/admin extras still remain
   provider-owned
+- that shared non-text result enrichment has now also landed for the first
+  slice: `llm_dart_core` now exposes `ModelResponseMetadata` plus richer speech
+  and transcription result fields, and the package-owned modern ElevenLabs
+  models already populate those shared fields while still preserving
+  provider-owned extra metadata
 
 ## M5 - Flutter Chat Layer
 

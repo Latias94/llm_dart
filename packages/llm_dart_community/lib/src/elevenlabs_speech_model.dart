@@ -92,6 +92,11 @@ final class ElevenLabsSpeechModel implements SpeechModel {
       audioBytes: audioBytes,
       mediaType: lookupHeader(response.headers, 'content-type') ??
           _defaultMediaTypeForOutputFormat(outputFormat),
+      responseMetadata: ModelResponseMetadata(
+        timestamp: DateTime.now().toUtc(),
+        modelId: modelId,
+        headers: response.headers,
+      ),
       providerMetadata: elevenLabsResponseMetadata(response.headers),
     );
   }

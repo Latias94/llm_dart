@@ -276,6 +276,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Proposed shared-core result boundary for speech and transcription that adds
     warnings, response metadata, and typed transcript structure without copying
     the full response-wrapper complexity of `repo-ref/ai`.
+- [111-shared-nontext-result-enrichment.md](111-shared-nontext-result-enrichment.md)
+  - Status note for the landed first shared non-text result enrichment in
+    `llm_dart_core` plus the first ElevenLabs modern-model adoption of the new
+    fields.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)

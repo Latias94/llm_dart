@@ -125,6 +125,7 @@ final class ElevenLabsTranscriptionModel implements TranscriptionModel {
       );
     }
 
+    final segments = _decodeSegments(json['words']);
     final responseMetadata = elevenLabsResponseMetadata(response.headers);
     final bodyMetadata = ProviderMetadata.forNamespace(
       'elevenlabs',
@@ -141,6 +142,14 @@ final class ElevenLabsTranscriptionModel implements TranscriptionModel {
 
     return TranscriptionResult(
       text: text,
+      segments: segments,
+      language: _asString(json['language_code']),
+      durationSeconds: segments.isEmpty ? null : segments.last.endSeconds,
+      responseMetadata: ModelResponseMetadata(
+        timestamp: DateTime.now().toUtc(),
+        modelId: modelId,
+        headers: response.headers,
+      ),
       providerMetadata: ProviderMetadata.mergeNullable(
         responseMetadata,
         bodyMetadata,
@@ -209,3 +218,25 @@ Map<String, Object?> _decodeJsonObject(Object? body) {
 }
 
 String? _asString(Object? value) => value is String ? value : null;
+
+List<TranscriptionSegment> _decodeSegments(Object? value) {
+  if (value is! List || value.isEmpty) {
+    return const [];
+  }
+
+  return value
+      .whereType<Map>()
+      .map(
+        (item) => Map<String, Object?>.from(item),
+      )
+      .map(
+        (item) => TranscriptionSegment(
+          text: _asString(item['text']) ?? '',
+          startSeconds: _asDouble(item['start']) ?? 0,
+          endSeconds: _asDouble(item['end']) ?? 0,
+        ),
+      )
+      .toList(growable: false);
+}
+
+double? _asDouble(Object? value) => value is num ? value.toDouble() : null;

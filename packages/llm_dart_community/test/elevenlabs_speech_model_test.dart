@@ -139,6 +139,14 @@ void main() {
       );
       expect(result.audioBytes, [1, 2, 3, 4]);
       expect(result.mediaType, 'audio/mpeg');
+      expect(result.warnings, isEmpty);
+      expect(result.responseMetadata, isNotNull);
+      expect(result.responseMetadata!.modelId, 'eleven_multilingual_v2');
+      expect(result.responseMetadata!.timestamp, isA<DateTime>());
+      expect(
+        result.responseMetadata!.headers,
+        containsPair('x-request-id', 'req_123'),
+      );
       expect(
         result.providerMetadata?.namespace('elevenlabs'),
         {

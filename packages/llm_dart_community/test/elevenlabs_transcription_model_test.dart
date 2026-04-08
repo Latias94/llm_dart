@@ -125,6 +125,20 @@ void main() {
       expect(bodyText, contains('pcm_s16le_16'));
 
       expect(result.text, 'hello world');
+      expect(result.language, 'en');
+      expect(result.durationSeconds, 0.5);
+      expect(result.warnings, isEmpty);
+      expect(result.segments, hasLength(1));
+      expect(result.segments.first.text, 'hello');
+      expect(result.segments.first.startSeconds, 0.0);
+      expect(result.segments.first.endSeconds, 0.5);
+      expect(result.responseMetadata, isNotNull);
+      expect(result.responseMetadata!.modelId, 'scribe_v1');
+      expect(result.responseMetadata!.timestamp, isA<DateTime>());
+      expect(
+        result.responseMetadata!.headers,
+        containsPair('x-request-id', 'req_456'),
+      );
       expect(
         result.providerMetadata?.namespace('elevenlabs'),
         {
