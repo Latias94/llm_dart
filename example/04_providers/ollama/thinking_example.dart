@@ -4,7 +4,11 @@ import 'package:llm_dart/legacy.dart';
 
 /// 🦙 Ollama Thinking - Local Reasoning with Open Models
 ///
-/// This example demonstrates Ollama's thinking capabilities with reasoning models:
+/// This example intentionally uses the compatibility shell because it focuses
+/// on provider-specific local reasoning controls beyond the current shared-capability
+/// `llm_dart_community` Ollama model surface.
+///
+/// It demonstrates Ollama's thinking capabilities with reasoning models:
 /// - Local inference with thinking models
 /// - Step-by-step reasoning process
 /// - Streaming thinking observations

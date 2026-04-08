@@ -4,7 +4,11 @@ import 'package:llm_dart/legacy.dart';
 
 /// 🚀 Ollama Advanced Features - Performance & Optimization
 ///
-/// This example demonstrates advanced Ollama features:
+/// This example intentionally uses the compatibility shell because it focuses
+/// on provider-specific local runtime tuning beyond the current shared-capability
+/// `llm_dart_community` Ollama model surface.
+///
+/// It demonstrates advanced Ollama features such as:
 /// - Performance optimization with GPU acceleration
 /// - Context length management
 /// - Multimodal capabilities (vision models)

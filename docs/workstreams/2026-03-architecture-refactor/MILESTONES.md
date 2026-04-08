@@ -205,6 +205,12 @@ Current status:
   wrappers now carry deprecation markers where the base compatibility
   constructor or package-owned modern community surface is the more honest next
   step
+- the public entry story for community providers is now also frozen more
+  clearly: the root README, provider example READMEs, and the new
+  `llm_dart_community` package guide now teach modern Ollama and ElevenLabs
+  shared-capability usage through the community package, while keeping the
+  root/provider example directories explicitly positioned as
+  compatibility-oriented residual surfaces
 
 ## M5 - Flutter Chat Layer
 

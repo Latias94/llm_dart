@@ -3,11 +3,13 @@ import 'package:llm_dart/legacy.dart';
 
 /// ElevenLabs Audio Capabilities Example
 ///
-/// This example demonstrates the unified AudioCapability interface
-/// with ElevenLabs' advanced text-to-speech and speech-to-text features.
+/// This example intentionally uses the compatibility audio shell because it
+/// demonstrates provider-specific voice controls and broader audio features
+/// beyond the shared `speechModel(...)` and `transcriptionModel(...)` surfaces
+/// in `llm_dart_community`.
 ///
-/// **New Feature**: Uses the buildAudio() capability factory method for
-/// type-safe provider building without runtime type casting.
+/// It also demonstrates the older `buildAudio()` path on purpose because the
+/// example covers the broader compatibility-oriented audio capability surface.
 Future<void> main() async {
   // Get API key from environment
   final apiKey = Platform.environment['ELEVENLABS_API_KEY'];
@@ -18,8 +20,9 @@ Future<void> main() async {
 
   print('🎙️ ElevenLabs Audio Capabilities Demo\n');
 
-  // Create ElevenLabs provider with high-quality voice settings using buildAudio()
-  // This provides compile-time type safety and eliminates runtime type casting
+  // Create an ElevenLabs provider through the compatibility audio shell because
+  // this example needs broader provider-specific audio behavior than the shared
+  // modern speech/transcription models currently expose.
   final audioProvider = await ai()
       .elevenlabs((elevenlabs) => elevenlabs
           .voiceId('JBFqnCBsd6RMkjVDRZzb') // High-quality voice
@@ -27,7 +30,7 @@ Future<void> main() async {
           .similarityBoost(0.75)
           .style(0.2))
       .apiKey(apiKey)
-      .buildAudio(); // Type-safe audio capability building
+      .buildAudio();
 
   // Display supported features
   await displaySupportedFeatures(audioProvider);

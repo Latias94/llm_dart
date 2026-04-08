@@ -162,7 +162,7 @@
 
 ## Community Providers
 
-- [ ] Freeze the split between root legacy community-provider shells and package-owned modern community model APIs
+- [x] Freeze the split between root legacy community-provider shells and package-owned modern community model APIs
 - [x] Freeze the policy for provider-specific community-provider extras versus shared modern model surfaces
 - [x] Freeze Ollama `/api/generate` completion as compatibility-only unless a concrete provider-owned modern helper is justified
 - [x] Freeze Ollama model listing as provider-owned or compatibility-only instead of widening the shared modern package surface
@@ -304,6 +304,7 @@
 - [x] Decouple `legacy.dart` exports from `llm_dart.dart` before the next broad-root slimming round
 - [x] Shrink `llm_dart.dart` to the modern stable surface and move remaining compatibility expectations behind `legacy.dart`
 - [x] Freeze the default-root versus explicit-`ai.dart` alias boundary and align public docs with that import guidance
+- [x] Align public README and provider example guidance with `llm_dart_community` as the modern Ollama/ElevenLabs shared-capability entrypoint
 
 ## Dependency Cleanup
 

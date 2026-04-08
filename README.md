@@ -21,12 +21,24 @@ The new primary entry path is:
 - `AI.openRouter(...).chatModel(...)`
 - `AI.xai(...).chatModel(...)`
 
+Within this workspace, the modern shared-capability path for the current
+community providers now lives in:
+
+- `package:llm_dart_community/llm_dart_community.dart` for
+  `Ollama(...).chatModel(...)`, `Ollama(...).embeddingModel(...)`,
+  `ElevenLabs(...).speechModel(...)`, and
+  `ElevenLabs(...).transcriptionModel(...)`
+
 The legacy `ai()` builder still exists through `package:llm_dart/legacy.dart`,
 but it is now compatibility-oriented rather than the recommended main API.
 
 For modern code, prefer `package:llm_dart/llm_dart.dart` as the default import.
 `package:llm_dart/ai.dart` remains the explicit equivalent alias when you want a
 named AI-focused shell.
+
+For Ollama and ElevenLabs specifically, the root compatibility shells should now
+be read as broader provider-specific migration surfaces rather than the primary
+shared-capability entrypoint.
 
 ## Packages
 
@@ -44,11 +56,15 @@ named AI-focused shell.
   - Anthropic provider
 - `llm_dart_google`
   - Google provider
+- `llm_dart_community`
+  - workspace package for modern Ollama chat/embeddings and ElevenLabs speech/transcription shared-capability surfaces
 - `llm_dart_flutter`
   - thin Flutter adapter above `llm_dart_chat`
 
 Today, `llm_dart_chat` and `llm_dart_flutter` are still workspace packages
 during the refactor. The stable published package remains `llm_dart`.
+`llm_dart_community` is also currently a workspace package in that same
+refactor path.
 
 ## Installation
 
@@ -73,6 +89,8 @@ dart pub get
   - focused pure Dart chat runtime entrypoint over `llm_dart_chat`
 - `package:llm_dart/legacy.dart`
   - explicit compatibility shell for `ai()`, `createProvider(...)`, legacy models, and builder-era APIs
+- `package:llm_dart_community/llm_dart_community.dart`
+  - workspace-only modern community-provider entrypoint for Ollama chat/embeddings and ElevenLabs speech/transcription shared-capability models
 - `package:llm_dart_flutter/llm_dart_flutter.dart`
   - Flutter-specific adapters such as `ChatController`
 
@@ -476,13 +494,20 @@ Future<void> main() async {
 - Keep provider-native features in typed provider options, provider metadata, or custom parts.
 - Keep UI/session concerns above `TextStreamEvent`.
 - Treat `ai()` and old root provider surfaces as compatibility APIs, not the target architecture.
+- Treat the root Ollama and ElevenLabs surfaces as compatibility-first shells
+  when the modern shared-capability path already exists in
+  `llm_dart_community`.
 
 ## Current Reference Docs
 
+- Community provider workspace guide:
+  [packages/llm_dart_community/README.md](E:/codes/flutter/llm_dart/packages/llm_dart_community/README.md)
 - Migration guide:
   [38-migration-guide.md](E:/codes/flutter/llm_dart/docs/workstreams/2026-03-architecture-refactor/38-migration-guide.md)
 - Architecture workstream index:
   [docs/workstreams/2026-03-architecture-refactor/README.md](E:/codes/flutter/llm_dart/docs/workstreams/2026-03-architecture-refactor/README.md)
+- Community provider public-entry guidance:
+  [104-community-provider-public-entry-guidance.md](E:/codes/flutter/llm_dart/docs/workstreams/2026-03-architecture-refactor/104-community-provider-public-entry-guidance.md)
 - Prompt normalization contract:
   [37-prompt-normalization-contract.md](E:/codes/flutter/llm_dart/docs/workstreams/2026-03-architecture-refactor/37-prompt-normalization-contract.md)
 - Stream coverage matrix:

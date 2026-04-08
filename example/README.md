@@ -66,14 +66,24 @@ Practical examples for the LLM Dart library, organized by learning path and use 
 ### Provider Examples
 *Provider-specific features*
 
+Most provider directories now follow one of two roles:
+
+- stable model examples for providers that already have a root `AI.*(...)` facade
+- compatibility or provider-specific residual examples for broader legacy shells
+
+Ollama and ElevenLabs now also have modern shared-capability surfaces in the
+workspace `llm_dart_community` package. The directories below focus on the
+remaining provider-specific or compatibility-oriented flows rather than the
+shared-capability happy path.
+
 | Provider | Features | Directory |
 |----------|----------|-----------|
 | OpenAI | GPT, DALL-E, assistants | [openai/](04_providers/openai/) |
 | Anthropic | Claude, thinking | [anthropic/](04_providers/anthropic/) |
 | DeepSeek | Reasoning, cost-effective | [deepseek/](04_providers/deepseek/) |
 | Groq | Fast inference | [groq/](04_providers/groq/) |
-| Ollama | Local models | [ollama/](04_providers/ollama/) |
-| ElevenLabs | Voice synthesis | [elevenlabs/](04_providers/elevenlabs/) |
+| Ollama | Compatibility shell for local runtime tuning and reasoning | [ollama/](04_providers/ollama/) |
+| ElevenLabs | Compatibility shell for voice controls and broader audio flows | [elevenlabs/](04_providers/elevenlabs/) |
 | xAI | Live search, Grok | [xai/](04_providers/xai/) |
 | Others | OpenAI-compatible | [others/](04_providers/others/) |
 
@@ -140,5 +150,6 @@ dart run 05_use_cases/multimodal_app.dart --demo
 ## Resources
 
 - [Main Documentation](../README.md)
+- [Community Provider Workspace Guide](../packages/llm_dart_community/README.md)
 - [API Reference](https://pub.dev/documentation/llm_dart/)
 - [GitHub Issues](https://github.com/your-repo/llm_dart/issues)

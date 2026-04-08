@@ -249,6 +249,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Frozen policy for keeping Ollama `/api/generate` completion and model
     listing outside the shared modern community surface unless a concrete
     provider-owned typed helper is justified later.
+- [104-community-provider-public-entry-guidance.md](104-community-provider-public-entry-guidance.md)
+  - Frozen public-entry guidance that teaches `llm_dart_community` as the
+    modern shared-capability home for Ollama and ElevenLabs while keeping root
+    provider shells explicitly compatibility-first.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
@@ -366,6 +370,11 @@ This workstream is not about a file-moving refactor. It is about defining stable
   explicitly as compatibility-first shells, and their legacy preset helper
   wrappers are now deprecated where callers should move either to the base root
   constructor or to the modern `llm_dart_community` shared-capability surface
+- the public entry story is now also aligned with that split: the root README,
+  provider example READMEs, and the new `llm_dart_community` package guide now
+  present modern Ollama and ElevenLabs shared-capability usage through the
+  community package, while the remaining root/provider examples are documented
+  as compatibility-oriented residual surfaces
 - `llm_dart_community` now exists as a real workspace migration target, but
   root-local provider code still continues to carry too much
   compatibility-era community-provider weight

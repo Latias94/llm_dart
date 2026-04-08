@@ -1,19 +1,50 @@
 # ElevenLabs Provider Features
 
-ElevenLabs is currently documented as a compatibility-oriented provider surface.
+ElevenLabs now has modern shared-capability surfaces in this workspace through
+`package:llm_dart_community/llm_dart_community.dart`:
 
-Reason:
+- `ElevenLabs(...).speechModel(...)`
+- `ElevenLabs(...).transcriptionModel(...)`
 
-- the repository does not yet expose a stable `AI.elevenlabs(...)` facade
-- ElevenLabs-specific voice controls are still tied to the older audio builder
-  surface
-- we do not want to freeze the wrong speech abstraction before the provider
-  boundary is settled
+This directory intentionally stays compatibility-oriented because it focuses on
+voice and audio features that are broader than the shared modern speech and
+transcription surfaces.
+
+## When To Use Which Path
+
+### Prefer The Modern Community Surface
+
+Use `llm_dart_community` when you need shared-capability speech generation or
+direct-audio transcription:
+
+```dart
+import 'package:llm_dart_community/llm_dart_community.dart' as community;
+import 'package:llm_dart_core/llm_dart_core.dart' as core;
+
+final speechModel = community.ElevenLabs(
+  apiKey: 'your-elevenlabs-key',
+).speechModel('eleven_multilingual_v2');
+
+final result = await core.generateSpeech(
+  model: speechModel,
+  text: 'Speak clearly and slowly.',
+);
+```
+
+### Use This Directory's Examples
+
+Use the compatibility shell in this directory when you need broader
+provider-specific behavior such as:
+
+- voice ID defaults and richer voice controls
+- compatibility audio-capability helpers
+- file-path convenience flows and broader audio shell behavior
+- realtime, catalog, or admin-style provider-specific APIs
 
 ## Examples
 
 ### [audio_capabilities.dart](audio_capabilities.dart)
-Compatibility-oriented voice synthesis and audio processing example.
+Compatibility-oriented voice synthesis and broader audio-shell example.
 
 ## Setup
 
@@ -23,9 +54,9 @@ export ELEVENLABS_API_KEY="your-elevenlabs-api-key"
 dart run audio_capabilities.dart
 ```
 
-## Current Boundary
+## Compatibility Boundary
 
-### Compatibility Surface Today
+### Compatibility Surface
 
 ```dart
 final audioProvider = await ai().elevenlabs().apiKey('your-key')
@@ -35,25 +66,21 @@ final audioProvider = await ai().elevenlabs().apiKey('your-key')
     .buildAudio();
 ```
 
-This still works, but it should be treated as transitional.
+This still works, but it should be treated as a transitional shell above the
+package-owned modern ElevenLabs models rather than the target architecture for
+shared-capability app code.
 
-### Stable Direction Later
+## What Is Not Being Forced Into The Shared Surface
 
-If ElevenLabs gets a frozen stable surface, it should look like the other
-migrated providers:
-
-- provider-owned model construction
-- shared app-facing speech contract where it actually fits
-- provider-owned typed voice controls instead of cross-provider leakage
-
-## Practical Guidance
-
-- If you need a stable speech facade today, OpenAI and Google already have
-  package-owned `speechModel(...)` entrypoints.
-- If you need ElevenLabs-specific voice cloning or studio controls today, use
-  the compatibility example and keep the integration isolated.
+- voice catalogs, cloning, and studio-style controls
+- realtime or session-oriented audio APIs
+- file-path convenience helpers that go beyond the shared byte-oriented
+  `TranscriptionModel`
+- provider admin or account management endpoints
 
 ## Next Steps
 
+- [Community Provider Workspace Guide](../../../packages/llm_dart_community/README.md) - Modern Ollama and ElevenLabs shared-capability surfaces
 - [Core Features](../../02_core_features/) - Shared audio capability examples
 - [Advanced Features](../../03_advanced_features/) - Cross-provider multimodal work
+- [Migration Guide](../../../docs/workstreams/2026-03-architecture-refactor/38-migration-guide.md) - Current migration recommendations

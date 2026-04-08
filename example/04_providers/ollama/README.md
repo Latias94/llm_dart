@@ -1,22 +1,56 @@
 # Ollama Provider Features
 
-Ollama is intentionally still documented as a compatibility-oriented provider
-surface in this repository.
+Ollama now has modern shared-capability surfaces in this workspace through
+`package:llm_dart_community/llm_dart_community.dart`:
 
-Reason:
+- `Ollama(...).chatModel(...)`
+- `Ollama(...).embeddingModel(...)`
 
-- the local runtime configuration surface is broader than the current frozen
-  `AI.*(...).chatModel(...)` facade
-- model-local controls such as GPU threads, memory tuning, and local reasoning
-  flags have not been redesigned into a stable provider-owned model API yet
+This directory intentionally stays compatibility-oriented because it focuses on
+provider-specific local runtime behavior that is broader than the shared modern
+surface.
+
+## When To Use Which Path
+
+### Prefer The Modern Community Surface
+
+Use `llm_dart_community` when you only need shared-capability application code
+for chat or embeddings:
+
+```dart
+import 'package:llm_dart_community/llm_dart_community.dart' as community;
+import 'package:llm_dart_core/llm_dart_core.dart' as core;
+
+final model = community.Ollama(
+  baseUrl: 'http://localhost:11434',
+).chatModel('llama3.2');
+
+final result = await core.generateTextCall(
+  model: model,
+  prompt: [
+    core.UserPromptMessage.text('Summarize why local models are useful.'),
+  ],
+);
+```
+
+### Use This Directory's Examples
+
+Use the compatibility shell in this directory when you need broader local
+deployment and tuning behavior such as:
+
+- `numGpu`, `numThread`, `numCtx`, `numBatch`, and `numa`
+- `keepAlive` and local model memory tuning
+- reasoning-specific local flags and broader runtime control
+- residual compatibility-only flows such as `/api/generate`
 
 ## Examples
 
 ### [advanced_features.dart](advanced_features.dart)
-Compatibility-oriented local deployment and tuning example.
+Compatibility-oriented local deployment and tuning example with explicit local
+runtime controls.
 
 ### [thinking_example.dart](thinking_example.dart)
-Compatibility-oriented reasoning and thinking example.
+Compatibility-oriented reasoning and local thinking example.
 
 ## Setup
 
@@ -29,9 +63,9 @@ dart run advanced_features.dart
 dart run thinking_example.dart
 ```
 
-## Current Boundary
+## Compatibility Boundary
 
-### Compatibility Surface Today
+### Compatibility Surface
 
 ```dart
 final provider = await ai().ollama()
@@ -42,28 +76,20 @@ final provider = await ai().ollama()
     .build();
 ```
 
-This still works, but it should be read as a transitional surface rather than
-the long-term public architecture.
+This still works, but it should be read as a transitional shell above the
+package-owned modern Ollama models rather than the target architecture for
+shared-capability app code.
 
-### Planned Stable Direction
+## What Is Not Being Forced Into The Shared Surface
 
-When Ollama gets a stable facade, it should follow the same design rules as the
-other migrated providers:
-
-- provider-owned model construction
-- shared `LanguageModel` app-facing contract
-- provider-owned typed local runtime settings instead of raw builder coupling
-
-## Why Ollama Is Different
-
-- local deployment is a real product boundary, not just another remote profile
-- runtime tuning is model-session configuration, not simple per-call options
-- privacy and offline concerns often require more explicit lifecycle controls
-
-That means forcing Ollama into the current stable facade too early would create
-the wrong abstraction.
+- model listing is still provider-owned or compatibility-only
+- `/api/generate` completion is still compatibility-only
+- broader local runtime and lifecycle controls should stay provider-owned unless
+  a concrete typed modern helper is justified later
 
 ## Next Steps
 
+- [Community Provider Workspace Guide](../../../packages/llm_dart_community/README.md) - Modern Ollama and ElevenLabs shared-capability surfaces
 - [Core Features](../../02_core_features/) - Shared chat contract examples
 - [Advanced Features](../../03_advanced_features/) - Custom provider patterns
+- [Migration Guide](../../../docs/workstreams/2026-03-architecture-refactor/38-migration-guide.md) - Current migration recommendations
