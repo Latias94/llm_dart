@@ -53,8 +53,9 @@ void main() {
     });
 
     test(
-        'createOllamaReasoningProvider should create provider with thinking enabled',
+        'deprecated createOllamaReasoningProvider should still create provider',
         () {
+      // ignore: deprecated_member_use_from_same_package
       final provider = createOllamaReasoningProvider(
         baseUrl: 'http://localhost:11434',
         model: 'gpt-oss:latest',

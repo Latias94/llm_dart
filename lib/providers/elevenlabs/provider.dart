@@ -15,11 +15,13 @@ import 'client.dart';
 import 'config.dart';
 import 'models.dart';
 
-/// ElevenLabs Provider implementation
+/// Compatibility-first root ElevenLabs provider shell.
 ///
-/// This is the main provider class that implements audio capabilities
-/// and delegates to specialized modules for different functionalities.
-/// ElevenLabs specializes in text-to-speech and speech-to-text services.
+/// New shared-capability mainlines should prefer the package-owned modern
+/// surfaces in `llm_dart_community` where possible. This root provider remains
+/// the migration-era adapter that preserves legacy audio capability interfaces,
+/// fallback routing, and residual provider-shaped APIs such as voice catalogs,
+/// realtime flows, and account/model helpers.
 class ElevenLabsProvider implements ChatCapability, AudioCapability {
   final ElevenLabsConfig config;
   final ElevenLabsClient client;

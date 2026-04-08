@@ -200,6 +200,11 @@ Current status:
   shared modern core has no `CompletionModel`, while model listing remains a
   provider-owned or compatibility-only concern instead of being treated as
   missing shared modern package parity
+- root Ollama and ElevenLabs provider entrypoints are now also marked more
+  explicitly as compatibility-first shells, and their extra preset helper
+  wrappers now carry deprecation markers where the base compatibility
+  constructor or package-owned modern community surface is the more honest next
+  step
 
 ## M5 - Flutter Chat Layer
 

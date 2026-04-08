@@ -27,6 +27,14 @@ These paths are already the recommended primary API:
 - `AI.google(...).chatModel(...)`
 - `AI.anthropic(...).chatModel(...)`
 
+These provider-package shared-capability paths are also now valid modern
+migration targets:
+
+- `package:llm_dart_community/llm_dart_community.dart` `Ollama(...).chatModel(...)`
+- `package:llm_dart_community/llm_dart_community.dart` `Ollama(...).embeddingModel(...)`
+- `package:llm_dart_community/llm_dart_community.dart` `ElevenLabs(...).speechModel(...)`
+- `package:llm_dart_community/llm_dart_community.dart` `ElevenLabs(...).transcriptionModel(...)`
+
 `AI.phind(...).chatModel(...)` also exists as a stable facade entrypoint, but it
 should currently be treated as a direct new-path experiment rather than a
 legacy-parity migration target.
@@ -62,7 +70,9 @@ coverage:
   shapes
 - Anthropic MCP and broader provider-native feature coverage beyond the frozen
   replay-safe subsets
-- Ollama and ElevenLabs
+- Ollama `/api/generate` completion and model listing
+- ElevenLabs voice catalogs, realtime audio, file-path convenience
+  transcription, and model/account helpers
 - any legacy Phind request that depends on parity with the old provider protocol
 - bridge-incompatible provider-native replay shapes that the compatibility layer
   still rejects on purpose
@@ -71,6 +81,12 @@ If you need those old surfaces, prefer:
 
 - the base compatibility constructors for that provider family
 - the existing old provider path
+
+For Ollama and ElevenLabs specifically:
+
+- prefer `llm_dart_community` modern models for shared-capability code
+- prefer root `OllamaProvider` / `ElevenLabsProvider` only when you still need
+  compatibility-era capability interfaces or provider-specific residual APIs
 
 Do not migrate those call sites into the new API just to keep old behavior by
 guesswork.

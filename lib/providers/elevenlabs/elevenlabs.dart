@@ -1,15 +1,15 @@
-/// Modular ElevenLabs Provider
+/// Compatibility-first root ElevenLabs provider entrypoint.
 ///
-/// This library provides a modular implementation of the ElevenLabs provider
-/// following the same architecture pattern as other providers.
+/// For new shared-capability code, prefer the package-owned modern ElevenLabs
+/// surfaces in `package:llm_dart_community/llm_dart_community.dart`:
 ///
-/// **Key Features:**
-/// - High-quality text-to-speech synthesis
-/// - Speech-to-text transcription
-/// - Voice cloning and customization
-/// - Multiple language support
-/// - Real-time streaming capabilities
-/// - Modular architecture for easy maintenance
+/// - `ElevenLabs(...).speechModel(...)`
+/// - `ElevenLabs(...).transcriptionModel(...)`
+///
+/// Keep this root entrypoint only when you still need the legacy root provider
+/// surface, compatibility audio capability interfaces, or residual
+/// provider-shaped APIs such as voice catalogs, realtime audio, and account
+/// helpers.
 ///
 /// **Usage:**
 /// ```dart
@@ -79,6 +79,13 @@ ElevenLabsProvider createElevenLabsProvider({
   return ElevenLabsProvider(config);
 }
 
+@Deprecated(
+  'createElevenLabsTTSProvider() is a legacy preset helper. '
+  'Prefer package:llm_dart_community/llm_dart_community.dart '
+  'ElevenLabs(...).speechModel(...) for the modern shared-capability path, or '
+  'createElevenLabsProvider(...) when you still need the old root-package provider surface.',
+)
+
 /// Create an ElevenLabs provider optimized for high-quality TTS
 ElevenLabsProvider createElevenLabsTTSProvider({
   required String apiKey,
@@ -102,6 +109,13 @@ ElevenLabsProvider createElevenLabsTTSProvider({
   return ElevenLabsProvider(config);
 }
 
+@Deprecated(
+  'createElevenLabsSTTProvider() is a legacy preset helper. '
+  'Prefer package:llm_dart_community/llm_dart_community.dart '
+  'ElevenLabs(...).transcriptionModel(...) for the modern shared-capability path, or '
+  'createElevenLabsProvider(...) when you still need the old root-package provider surface.',
+)
+
 /// Create an ElevenLabs provider optimized for STT
 ElevenLabsProvider createElevenLabsSTTProvider({
   required String apiKey,
@@ -114,6 +128,13 @@ ElevenLabsProvider createElevenLabsSTTProvider({
 
   return ElevenLabsProvider(config);
 }
+
+@Deprecated(
+  'createElevenLabsCustomVoiceProvider() is a legacy preset helper. '
+  'Prefer createElevenLabsProvider(...) for root-package compatibility, or '
+  'package:llm_dart_community/llm_dart_community.dart ElevenLabs(...).speechModel(...) '
+  'for the modern shared-capability path when speech generation is enough.',
+)
 
 /// Create an ElevenLabs provider with custom voice settings
 ElevenLabsProvider createElevenLabsCustomVoiceProvider({
@@ -137,6 +158,12 @@ ElevenLabsProvider createElevenLabsCustomVoiceProvider({
 
   return ElevenLabsProvider(config);
 }
+
+@Deprecated(
+  'createElevenLabsStreamingProvider() is a legacy preset helper. '
+  'Prefer createElevenLabsProvider(...) when you still need the old root-package '
+  'realtime-oriented provider surface. There is currently no shared modern realtime audio path.',
+)
 
 /// Create an ElevenLabs provider for real-time streaming
 ElevenLabsProvider createElevenLabsStreamingProvider({

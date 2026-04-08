@@ -16,11 +16,13 @@ import 'chat.dart';
 import 'completion.dart';
 import 'models.dart';
 
-/// Ollama provider implementation
+/// Compatibility-first root Ollama provider shell.
 ///
-/// This provider implements multiple capabilities and delegates
-/// to specialized capability modules for different functionalities.
-/// Ollama is designed for local deployment and supports various models.
+/// New shared-capability mainlines should prefer the package-owned modern
+/// surfaces in `llm_dart_community` where possible. This root provider remains
+/// the migration-era adapter that preserves legacy capability interfaces,
+/// fallback routing, and residual provider-shaped APIs such as completion and
+/// model listing.
 class OllamaProvider
     implements
         ChatCapability,

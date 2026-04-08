@@ -120,6 +120,40 @@ Reason:
 - the stable path is `AI.phind(...).chatModel(...)`
 - these helpers only encode old prompt/model presets for the legacy provider surface
 
+### Ollama preset helpers
+
+- `createOllamaChatProvider()`
+- `createOllamaVisionProvider()`
+- `createOllamaCodeProvider()`
+- `createOllamaEmbeddingProvider()`
+- `createOllamaCompletionProvider()`
+- `createOllamaReasoningProvider()`
+
+Reason:
+
+- `llm_dart_community` now owns real package-owned modern Ollama shared-capability
+  surfaces for chat and embeddings
+- the remaining preset helpers are still compatibility conveniences on top of
+  the old root provider surface
+- callers that still need the old root provider should use
+  `createOllamaProvider(...)` directly instead of another preset wrapper
+
+### ElevenLabs preset helpers
+
+- `createElevenLabsTTSProvider()`
+- `createElevenLabsSTTProvider()`
+- `createElevenLabsCustomVoiceProvider()`
+- `createElevenLabsStreamingProvider()`
+
+Reason:
+
+- `llm_dart_community` now owns real package-owned modern ElevenLabs shared-capability
+  surfaces for speech generation and transcription
+- the remaining preset helpers are compatibility conveniences on top of the old
+  root provider surface
+- callers that still need the old root provider should use
+  `createElevenLabsProvider(...)` directly instead of another preset wrapper
+
 ## 3. Not Deprecated Yet
 
 The following surfaces should stay available without new deprecation markers for now:
@@ -129,7 +163,6 @@ The following surfaces should stay available without new deprecation markers for
 - `createGoogleImageGenerationProvider()` and `createGoogleEmbeddingProvider()` because the stable primary API does not yet replace those old root-package entry paths
 - `buildOpenAIResponses()` because the new stable root facade does not yet replace the old Responses-oriented root provider surface
 - `buildGoogleTTS()` because the new stable root facade does not yet replace the old Google TTS root provider surface
-- Ollama and ElevenLabs preset helpers, because those providers do not yet have stable package-owned primary facades in the root package
 
 This is intentional.
 

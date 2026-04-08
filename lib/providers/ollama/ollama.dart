@@ -1,14 +1,14 @@
-/// Modular Ollama Provider
+/// Compatibility-first root Ollama provider entrypoint.
 ///
-/// This library provides a modular implementation of the Ollama provider
+/// For new shared-capability code, prefer the package-owned modern Ollama
+/// surfaces in `package:llm_dart_community/llm_dart_community.dart`:
 ///
-/// **Key Benefits:**
-/// - Single Responsibility: Each module handles one capability
-/// - Easier Testing: Modules can be tested independently
-/// - Better Maintainability: Changes isolated to specific modules
-/// - Cleaner Code: Smaller, focused classes
-/// - Reusability: Modules can be reused across providers
-/// - Local Deployment: Designed for local Ollama instances
+/// - `Ollama(...).chatModel(...)`
+/// - `Ollama(...).embeddingModel(...)`
+///
+/// Keep this root entrypoint only when you still need the legacy root provider
+/// surface, compatibility capability interfaces, or residual provider-shaped
+/// APIs such as `/api/generate` completion and model listing.
 ///
 /// **Usage:**
 /// ```dart
@@ -97,6 +97,13 @@ OllamaProvider createOllamaProvider({
   return OllamaProvider(config);
 }
 
+@Deprecated(
+  'createOllamaChatProvider() is a legacy preset helper. '
+  'Prefer package:llm_dart_community/llm_dart_community.dart '
+  'Ollama(...).chatModel(...) for the modern shared-capability path, or '
+  'createOllamaProvider(...) when you still need the old root-package provider surface.',
+)
+
 /// Create an Ollama provider for chat
 OllamaProvider createOllamaChatProvider({
   String baseUrl = OllamaDefaults.baseUrl,
@@ -113,6 +120,13 @@ OllamaProvider createOllamaChatProvider({
     maxTokens: maxTokens,
   );
 }
+
+@Deprecated(
+  'createOllamaVisionProvider() is a legacy preset helper. '
+  'Prefer createOllamaProvider(...) for root-package compatibility, or '
+  'package:llm_dart_community/llm_dart_community.dart Ollama(...).chatModel(...) '
+  'for the modern shared-capability path when chat behavior is enough.',
+)
 
 /// Create an Ollama provider for vision tasks
 OllamaProvider createOllamaVisionProvider({
@@ -131,6 +145,13 @@ OllamaProvider createOllamaVisionProvider({
   );
 }
 
+@Deprecated(
+  'createOllamaCodeProvider() is a legacy preset helper. '
+  'Prefer createOllamaProvider(...) for root-package compatibility, or '
+  'package:llm_dart_community/llm_dart_community.dart Ollama(...).chatModel(...) '
+  'for the modern shared-capability path when chat behavior is enough.',
+)
+
 /// Create an Ollama provider for code generation
 OllamaProvider createOllamaCodeProvider({
   String baseUrl = OllamaDefaults.baseUrl,
@@ -148,6 +169,13 @@ OllamaProvider createOllamaCodeProvider({
   );
 }
 
+@Deprecated(
+  'createOllamaEmbeddingProvider() is a legacy preset helper. '
+  'Prefer package:llm_dart_community/llm_dart_community.dart '
+  'Ollama(...).embeddingModel(...) for the modern shared-capability path, or '
+  'createOllamaProvider(...) when you still need the old root-package provider surface.',
+)
+
 /// Create an Ollama provider for embeddings
 OllamaProvider createOllamaEmbeddingProvider({
   String baseUrl = OllamaDefaults.baseUrl,
@@ -158,6 +186,12 @@ OllamaProvider createOllamaEmbeddingProvider({
     model: model,
   );
 }
+
+@Deprecated(
+  'createOllamaCompletionProvider() is a legacy preset helper. '
+  'Prefer createOllamaProvider(...) when you still need the old root-package '
+  'completion surface. There is currently no shared modern CompletionModel path.',
+)
 
 /// Create an Ollama provider for completion tasks
 OllamaProvider createOllamaCompletionProvider({
@@ -173,6 +207,13 @@ OllamaProvider createOllamaCompletionProvider({
     maxTokens: maxTokens,
   );
 }
+
+@Deprecated(
+  'createOllamaReasoningProvider() is a legacy preset helper. '
+  'Prefer createOllamaProvider(...) for root-package compatibility, or '
+  'package:llm_dart_community/llm_dart_community.dart Ollama(...).chatModel(...) '
+  'for the modern shared-capability path when chat behavior is enough.',
+)
 
 /// Create an Ollama provider for reasoning tasks
 OllamaProvider createOllamaReasoningProvider({

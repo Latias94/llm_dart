@@ -362,6 +362,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   `/api/generate` completion remains a compatibility-era root path, and model
   listing remains provider-owned or compatibility-only instead of being treated
   as unfinished shared modern migration work
+- root Ollama and ElevenLabs provider entrypoints are now also described more
+  explicitly as compatibility-first shells, and their legacy preset helper
+  wrappers are now deprecated where callers should move either to the base root
+  constructor or to the modern `llm_dart_community` shared-capability surface
 - `llm_dart_community` now exists as a real workspace migration target, but
   root-local provider code still continues to carry too much
   compatibility-era community-provider weight
