@@ -159,6 +159,13 @@ Current status:
 - those first slices establish the namespace, typed settings, transport-only
   dependency direction, stream/generate/audio request ownership, and
   dedicated package test pattern
+- the root Ollama legacy shell now also delegates replay-safe chat and
+  embedding paths into the package-owned `llm_dart_community` models instead
+  of keeping duplicate primary request codecs entirely under root
+- that Ollama delegation still preserves explicit fallback for legacy-only edge
+  cases such as named messages and duplicate system-prompt shaping, so the
+  shell is thinner without pretending every old request shape is already
+  migrated
 - the modern Ollama chat slice now also preserves assistant reasoning through
   Ollama's `thinking` field, replays assistant tool calls with Ollama-shaped
   `type/function.index` entries, and replays tool results through `tool_name`

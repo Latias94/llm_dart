@@ -17,6 +17,23 @@ The next blocker is no longer dependency direction.
 The next blocker is that the root package still owns too much legacy community
 provider behavior.
 
+## Current Status
+
+One meaningful first thinning step has now landed for Ollama:
+
+- the root `OllamaProvider` chat path now delegates replay-safe requests into
+  the package-owned `llm_dart_community` chat model
+- the root `OllamaProvider` embedding path now delegates directly into the
+  package-owned `llm_dart_community` embedding model
+- the root shell still keeps a conservative fallback for legacy-only edge cases
+  such as named messages and duplicate system-prompt shaping
+
+That means the next question is no longer whether root Ollama can start
+delegating at all.
+
+The next question is how far that delegation should go, and how the same
+thinning pattern should now be applied to ElevenLabs.
+
 ## What Still Lives In The Root Shells
 
 ### Ollama
