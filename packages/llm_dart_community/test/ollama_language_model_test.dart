@@ -70,6 +70,7 @@ void main() {
           UserPromptMessage.text('What is the weather?'),
           AssistantPromptMessage(
             parts: const [
+              ReasoningPromptPart('Need weather data'),
               ToolCallPromptPart(
                 toolCallId: 'tool-1',
                 toolName: 'weather',
@@ -167,9 +168,12 @@ void main() {
             {
               'role': 'assistant',
               'content': '',
+              'thinking': 'Need weather data',
               'tool_calls': [
                 {
+                  'type': 'function',
                   'function': {
+                    'index': 0,
                     'name': 'weather',
                     'arguments': {
                       'city': 'Shanghai',
@@ -180,7 +184,7 @@ void main() {
             },
             {
               'role': 'tool',
-              'name': 'weather',
+              'tool_name': 'weather',
               'content': '{"tempC":20}',
             },
           ],
@@ -261,6 +265,80 @@ void main() {
           'doneReason': 'stop',
           'totalDurationNanos': 123,
         },
+      );
+    });
+
+    test('generate warns when replaying tool errors as plain tool content',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = Ollama(
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return const TransportResponse(
+              statusCode: 200,
+              body: {
+                'model': 'llama3.2',
+                'done': true,
+                'message': {
+                  'content': 'Handled',
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel('llama3.2');
+
+      final result = await generateText(
+        model: model,
+        prompt: [
+          UserPromptMessage.text('Handle the failed tool result.'),
+          ToolPromptMessage(
+            toolName: 'weather',
+            parts: const [
+              ToolResultPromptPart(
+                toolCallId: 'tool-1',
+                toolName: 'weather',
+                output: {
+                  'error': 'timeout',
+                },
+                isError: true,
+              ),
+            ],
+          ),
+        ],
+      );
+
+      expect(capturedRequest, isNotNull);
+      expect(
+        capturedRequest!.body,
+        {
+          'model': 'llama3.2',
+          'messages': [
+            {
+              'role': 'user',
+              'content': 'Handle the failed tool result.',
+            },
+            {
+              'role': 'tool',
+              'tool_name': 'weather',
+              'content': '{"error":"timeout"}',
+            },
+          ],
+          'stream': false,
+        },
+      );
+      expect(
+        result.warnings,
+        const [
+          ModelWarning(
+            type: ModelWarningType.compatibility,
+            field: 'prompt',
+            message:
+                'Ollama does not support replaying tool error state separately. The tool result has been sent as a plain tool content message.',
+          ),
+        ],
       );
     });
 

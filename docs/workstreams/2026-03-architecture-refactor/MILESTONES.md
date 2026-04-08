@@ -159,9 +159,18 @@ Current status:
 - those first slices establish the namespace, typed settings, transport-only
   dependency direction, stream/generate/audio request ownership, and
   dedicated package test pattern
+- the modern Ollama chat slice now also preserves assistant reasoning through
+  Ollama's `thinking` field, replays assistant tool calls with Ollama-shaped
+  `type/function.index` entries, and replays tool results through `tool_name`
+  instead of legacy compatibility-shaped fields
 - the next higher-value community step is no longer "make community real at
   all", but "re-audit Ollama modern fidelity and keep slimming the remaining
   compatibility-era root shells"
+- the remaining Ollama fidelity gaps are now narrower and explicit: shared
+  `toolChoice` forcing still cannot be mapped truthfully, non-inline
+  multimodal inputs still require caller-owned byte loading, and tool error
+  state still degrades to warning-based plain tool-content replay because
+  Ollama has no dedicated replay field for it
 - ElevenLabs modern migration is now no longer hypothetical; the remaining
   work is to keep provider-shaped audio APIs such as voice catalogs, cloning,
   and realtime flows provider-owned instead of forcing them into shared audio

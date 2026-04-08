@@ -268,9 +268,7 @@ final class OllamaLanguageModel implements LanguageModel {
           },
         ],
       UserPromptMessage() => [_encodeUserMessage(message, warnings: warnings)],
-      AssistantPromptMessage() => [
-          _encodeAssistantMessage(message, warnings: warnings),
-        ],
+      AssistantPromptMessage() => [_encodeAssistantMessage(message)],
       ToolPromptMessage() => _encodeToolMessage(message, warnings: warnings),
     };
   }
@@ -323,11 +321,9 @@ final class OllamaLanguageModel implements LanguageModel {
     };
   }
 
-  Map<String, Object?> _encodeAssistantMessage(
-    AssistantPromptMessage message, {
-    required List<ModelWarning> warnings,
-  }) {
+  Map<String, Object?> _encodeAssistantMessage(AssistantPromptMessage message) {
     final textParts = <String>[];
+    final reasoningParts = <String>[];
     final toolCalls = <Map<String, Object?>>[];
 
     for (final part in message.parts) {
@@ -335,21 +331,15 @@ final class OllamaLanguageModel implements LanguageModel {
         case TextPromptPart(:final text):
           textParts.add(text);
         case ReasoningPromptPart(:final text):
-          warnings.add(
-            ModelWarning(
-              type: ModelWarningType.compatibility,
-              field: 'prompt',
-              message:
-                  'Ollama does not support replaying assistant reasoning as a separate prompt field. The reasoning text has been appended to the assistant content.',
-            ),
-          );
-          textParts.add(text);
+          reasoningParts.add(text);
         case ToolCallPromptPart(
             toolName: final toolName,
             input: final input,
           ):
           toolCalls.add({
+            'type': 'function',
             'function': {
+              'index': toolCalls.length,
               'name': toolName,
               'arguments': _normalizeToolInput(input),
             },
@@ -364,6 +354,7 @@ final class OllamaLanguageModel implements LanguageModel {
     return {
       'role': 'assistant',
       'content': textParts.join('\n'),
+      if (reasoningParts.isNotEmpty) 'thinking': reasoningParts.join('\n'),
       if (toolCalls.isNotEmpty) 'tool_calls': toolCalls,
     };
   }
@@ -379,10 +370,22 @@ final class OllamaLanguageModel implements LanguageModel {
         case ToolResultPromptPart(
             toolName: final toolName,
             output: final output,
+            isError: final isError,
           ):
+          if (isError) {
+            _addWarningOnce(
+              warnings,
+              const ModelWarning(
+                type: ModelWarningType.compatibility,
+                field: 'prompt',
+                message:
+                    'Ollama does not support replaying tool error state separately. The tool result has been sent as a plain tool content message.',
+              ),
+            );
+          }
           encodedMessages.add({
             'role': 'tool',
-            'name': toolName,
+            'tool_name': toolName,
             'content': _stringifyToolOutput(output),
           });
         default:
@@ -695,6 +698,11 @@ int? _asInt(Object? value) => value is num ? value.toInt() : null;
 DateTime? _parseTimestamp(Object? value) {
   if (value is! String || value.isEmpty) return null;
   return DateTime.tryParse(value);
+}
+
+void _addWarningOnce(List<ModelWarning> warnings, ModelWarning warning) {
+  if (warnings.contains(warning)) return;
+  warnings.add(warning);
 }
 
 Object? _normalizeToolInput(Object? input) {

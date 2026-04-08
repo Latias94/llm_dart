@@ -46,6 +46,33 @@ This means the next blocker is no longer transport helper ownership.
 It is how much real API ownership can move into the community package without
 dragging legacy compatibility surfaces with it.
 
+## Current Ollama Modern Fidelity Status
+
+The initial package-owned Ollama slice is no longer just a placeholder.
+
+It now already aligns with the provider's real wire contract in several
+important places:
+
+- assistant replay preserves reasoning through Ollama's `thinking` field
+  instead of flattening it into plain assistant text
+- assistant tool-call replay uses Ollama-shaped `type: "function"` entries
+  plus stable per-message `function.index` values
+- tool-result replay uses `tool_name`, which matches Ollama's documented
+  tool-calling follow-up format better than compatibility-era root fields
+
+The remaining gaps are now narrower and should stay explicit:
+
+- shared `toolChoice.required` / `toolChoice.specific` cannot be mapped
+  truthfully because Ollama still leaves tool selection to the model
+- multimodal replay still requires caller-owned inline bytes rather than
+  implicit URI fetching
+- shared tool-result `isError` cannot be preserved as a dedicated Ollama field,
+  so the modern slice can only replay the content and emit a compatibility
+  warning
+
+That is the right shape for the next step: tighten truthful replay, not widen
+the shared abstraction.
+
 ## What We Should Not Do
 
 We should not continue chasing "package move readiness" by deleting imports one
