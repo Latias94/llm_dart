@@ -164,7 +164,8 @@
 
 - [ ] Freeze the split between root legacy community-provider shells and package-owned modern community model APIs
 - [x] Add the first package-owned Ollama `EmbeddingModel` slice in `llm_dart_community`
-- [ ] Expand the package-owned Ollama modern slice with `LanguageModel`
+- [x] Expand the package-owned Ollama modern slice with `LanguageModel`
+- [ ] Re-audit Ollama modern prompt replay, multimodal input, and tool-calling fidelity against the shared `LanguageModel` contract
 - [ ] Add the first package-owned ElevenLabs `SpeechModel` / `TranscriptionModel` slice in `llm_dart_community`
 - [ ] Migrate Ollama
 - [ ] Migrate ElevenLabs

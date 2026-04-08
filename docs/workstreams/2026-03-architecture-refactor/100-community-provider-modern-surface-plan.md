@@ -25,6 +25,8 @@ One initial modern toe-hold has now also landed:
 
 - `llm_dart_community` now exposes a package-owned `Ollama.embeddingModel(...)`
   surface backed by `EmbeddingModel`
+- `llm_dart_community` now also exposes a package-owned `Ollama.chatModel(...)`
+  surface backed by `LanguageModel`
 
 What remains is more fundamental:
 
@@ -158,12 +160,16 @@ Cons:
 Use a hybrid sequence:
 
 1. Freeze the legacy-shell split now.
-2. Use the landed package-owned Ollama embedding slice as the pattern baseline.
+2. Use the landed package-owned Ollama embedding/chat slices as the pattern
+   baseline.
 3. Expand the Ollama modern slice with local-chat value next:
-   - shared `LanguageModel`
+   - keep the existing shared `LanguageModel`
    - keep the existing `EmbeddingModel`
-   - provider-owned typed Ollama settings
-   - no legacy builder/factory behavior in the package-owned layer
+   - broaden prompt/stream/tool replay coverage only where the shared contract
+     is truthful
+   - keep provider-owned typed Ollama settings and invocation options
+   - do not reintroduce legacy builder/factory behavior in the package-owned
+     layer
 4. Move ElevenLabs next as the first package-owned audio-focused community
    slice:
    - shared `SpeechModel`

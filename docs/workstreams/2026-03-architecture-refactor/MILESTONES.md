@@ -153,11 +153,13 @@ Acceptance criteria:
 Current status:
 
 - `llm_dart_community` now owns its first package-owned modern community
-  surface through `Ollama.embeddingModel(...)`
-- that first slice establishes the namespace, typed settings, transport-only
-  dependency direction, and dedicated package test pattern
-- the next higher-value community step is still the package-owned Ollama
-  `LanguageModel` slice for local chat usage
+  surfaces through `Ollama.embeddingModel(...)` and `Ollama.chatModel(...)`
+- those first slices establish the namespace, typed settings, transport-only
+  dependency direction, stream/generate request/response ownership, and
+  dedicated package test pattern
+- the next higher-value community step is no longer "make community real at
+  all", but "re-audit Ollama modern fidelity and then land ElevenLabs modern
+  audio surfaces"
 - ElevenLabs modern migration remains open after that as the first audio-focused
   community surface
 

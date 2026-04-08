@@ -1,0 +1,728 @@
+import 'dart:convert';
+
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_transport/llm_dart_transport.dart';
+
+import 'ollama_options.dart';
+
+final class OllamaLanguageModel implements LanguageModel {
+  final String? apiKey;
+  final String baseUrl;
+  final TransportClient transport;
+  final OllamaChatModelSettings settings;
+
+  @override
+  final String modelId;
+
+  OllamaLanguageModel({
+    required this.modelId,
+    required this.transport,
+    String? apiKey,
+    String? baseUrl,
+    this.settings = const OllamaChatModelSettings(),
+  })  : apiKey = _normalizeApiKey(apiKey),
+        baseUrl = _normalizeBaseUrl(baseUrl);
+
+  @override
+  String get providerId => 'ollama';
+
+  Uri get chatUri => Uri.parse('$baseUrl/api/chat');
+
+  Map<String, String> get defaultHeaders => {
+        'content-type': 'application/json',
+        'accept': 'application/json',
+        if (apiKey case final auth?) 'authorization': 'Bearer $auth',
+        ...settings.headers,
+      };
+
+  @override
+  Future<GenerateTextResult> generate(GenerateTextRequest request) async {
+    final preparedRequest = _prepareRequest(request, stream: false);
+    final response = await transport.send(
+      TransportRequest(
+        uri: chatUri,
+        method: TransportMethod.post,
+        headers: {
+          ...defaultHeaders,
+          if (request.callOptions.headers case final headers?) ...headers,
+        },
+        body: preparedRequest.body,
+        timeout: request.callOptions.timeout,
+        cancellation: request.callOptions.cancellation,
+        responseType: TransportResponseType.json,
+      ),
+    );
+
+    return _decodeGenerateResponse(
+      _decodeJsonObject(response.body),
+      warnings: preparedRequest.warnings,
+    );
+  }
+
+  @override
+  Stream<TextStreamEvent> stream(GenerateTextRequest request) async* {
+    final preparedRequest = _prepareRequest(request, stream: true);
+    yield StartEvent(warnings: preparedRequest.warnings);
+
+    try {
+      final response = await transport.sendStream(
+        TransportRequest(
+          uri: chatUri,
+          method: TransportMethod.post,
+          headers: {
+            ...defaultHeaders,
+            'accept': 'application/x-ndjson',
+            if (request.callOptions.headers case final headers?) ...headers,
+          },
+          body: preparedRequest.body,
+          timeout: request.callOptions.timeout,
+          cancellation: request.callOptions.cancellation,
+        ),
+      );
+
+      final utf8Decoder = Utf8StreamDecoder();
+      final state = _OllamaStreamState();
+      await for (final chunk in response.stream) {
+        final decoded = utf8Decoder.decode(chunk);
+        if (decoded.isEmpty) continue;
+        for (final event in _decodeStreamText(decoded, state)) {
+          yield event;
+        }
+      }
+
+      final remaining = utf8Decoder.flush();
+      if (remaining.isNotEmpty) {
+        for (final event in _decodeStreamText('$remaining\n', state)) {
+          yield event;
+        }
+      }
+
+      final pendingLine = state.buffer.toString().trim();
+      if (pendingLine.isNotEmpty) {
+        state.buffer.clear();
+        for (final event in _decodeStreamJsonChunk(
+          _decodeJsonObject(pendingLine),
+          state,
+        )) {
+          yield event;
+        }
+      }
+    } catch (error) {
+      yield ErrorEvent(transportErrorToModelError(error));
+    }
+  }
+
+  _PreparedOllamaRequest _prepareRequest(
+    GenerateTextRequest request, {
+    required bool stream,
+  }) {
+    if (request.prompt.isEmpty) {
+      throw ArgumentError(
+          'Ollama requests require at least one prompt message.');
+    }
+
+    final warnings = <ModelWarning>[];
+    final providerOptions = _resolveProviderOptions(request);
+    final responseFormat = _resolveResponseFormat(
+      request.options.responseFormat,
+      warnings: warnings,
+    );
+    final tools = _resolveTools(
+      request.tools,
+      toolChoice: request.toolChoice,
+      warnings: warnings,
+    );
+
+    final messages = <Map<String, Object?>>[];
+    for (final message in request.prompt) {
+      messages.addAll(_encodePromptMessage(message, warnings: warnings));
+    }
+
+    final options = <String, Object?>{
+      if (request.options.temperature != null)
+        'temperature': request.options.temperature,
+      if (request.options.topP != null) 'top_p': request.options.topP,
+      if (request.options.topK != null) 'top_k': request.options.topK,
+      if (request.options.maxOutputTokens != null)
+        'num_predict': request.options.maxOutputTokens,
+      if (request.options.stopSequences case final stopSequences?
+          when stopSequences.isNotEmpty)
+        'stop': stopSequences,
+      if (providerOptions?.numCtx != null) 'num_ctx': providerOptions!.numCtx,
+      if (providerOptions?.numGpu != null) 'num_gpu': providerOptions!.numGpu,
+      if (providerOptions?.numThread != null)
+        'num_thread': providerOptions!.numThread,
+      if (providerOptions?.numBatch != null)
+        'num_batch': providerOptions!.numBatch,
+      if (providerOptions?.numa != null) 'numa': providerOptions!.numa,
+    };
+
+    return _PreparedOllamaRequest(
+      body: {
+        'model': modelId,
+        'messages': messages,
+        'stream': stream,
+        if (options.isNotEmpty) 'options': options,
+        if (responseFormat != null) 'format': responseFormat,
+        if (tools.isNotEmpty) 'tools': tools,
+        if (providerOptions?.keepAlive case final keepAlive?)
+          'keep_alive': keepAlive,
+        if (providerOptions?.raw case final raw?) 'raw': raw,
+        if (providerOptions?.reasoning case final reasoning?)
+          'think': reasoning,
+      },
+      warnings: warnings,
+    );
+  }
+
+  OllamaGenerateTextOptions? _resolveProviderOptions(
+      GenerateTextRequest request) {
+    final providerOptions = request.callOptions.providerOptions;
+    if (providerOptions == null) return null;
+    if (providerOptions is OllamaGenerateTextOptions) return providerOptions;
+
+    throw ArgumentError.value(
+      providerOptions,
+      'request.callOptions.providerOptions',
+      'Expected OllamaGenerateTextOptions for Ollama language models.',
+    );
+  }
+
+  Object? _resolveResponseFormat(
+    ResponseFormat? responseFormat, {
+    required List<ModelWarning> warnings,
+  }) {
+    return switch (responseFormat) {
+      null || TextResponseFormat() => null,
+      JsonResponseFormat(
+        schema: final schema,
+        name: final name,
+        description: final description,
+        strict: final strict,
+      ) =>
+        () {
+          if (name != null || description != null || strict != null) {
+            warnings.add(
+              const ModelWarning(
+                type: ModelWarningType.compatibility,
+                field: 'options.responseFormat',
+                message:
+                    'Ollama only supports the shared JSON schema body. responseFormat name, description, and strict are ignored.',
+              ),
+            );
+          }
+          return schema.toJson();
+        }(),
+    };
+  }
+
+  List<Map<String, Object?>> _resolveTools(
+    List<FunctionToolDefinition> tools, {
+    required ToolChoice? toolChoice,
+    required List<ModelWarning> warnings,
+  }) {
+    final shouldIncludeTools = switch (toolChoice) {
+      NoneToolChoice() => false,
+      _ => true,
+    };
+    if (!shouldIncludeTools) return const [];
+
+    if (toolChoice is RequiredToolChoice || toolChoice is SpecificToolChoice) {
+      warnings.add(
+        const ModelWarning(
+          type: ModelWarningType.compatibility,
+          field: 'toolChoice',
+          message:
+              'Ollama does not support explicit toolChoice control. Declared tools remain available for provider-side automatic selection.',
+        ),
+      );
+    }
+
+    return tools
+        .map(
+          (tool) => {
+            'type': 'function',
+            'function': {
+              'name': tool.name,
+              if (tool.description != null) 'description': tool.description,
+              'parameters': tool.inputSchema.toJson(),
+            },
+          },
+        )
+        .toList(growable: false);
+  }
+
+  List<Map<String, Object?>> _encodePromptMessage(
+    PromptMessage message, {
+    required List<ModelWarning> warnings,
+  }) {
+    return switch (message) {
+      SystemPromptMessage() => [
+          {
+            'role': 'system',
+            'content': _collectTextParts(
+              message.parts,
+              messageRole: 'system',
+              warnings: warnings,
+            ),
+          },
+        ],
+      UserPromptMessage() => [_encodeUserMessage(message, warnings: warnings)],
+      AssistantPromptMessage() => [
+          _encodeAssistantMessage(message, warnings: warnings),
+        ],
+      ToolPromptMessage() => _encodeToolMessage(message, warnings: warnings),
+    };
+  }
+
+  Map<String, Object?> _encodeUserMessage(
+    UserPromptMessage message, {
+    required List<ModelWarning> warnings,
+  }) {
+    final textParts = <String>[];
+    final images = <String>[];
+
+    for (final part in message.parts) {
+      switch (part) {
+        case TextPromptPart(:final text):
+          textParts.add(text);
+        case ImagePromptPart(bytes: final bytes?) when bytes.isNotEmpty:
+          images.add(base64Encode(bytes));
+        case FilePromptPart(
+              mediaType: final mediaType,
+              bytes: final bytes?,
+            )
+            when mediaType.startsWith('image/') && bytes.isNotEmpty:
+          images.add(base64Encode(bytes));
+        case ImagePromptPart():
+        case FilePromptPart():
+          throw UnsupportedError(
+            'Ollama currently requires inline image bytes for multimodal prompt parts.',
+          );
+        case ReasoningPromptPart(:final text):
+          warnings.add(
+            ModelWarning(
+              type: ModelWarningType.compatibility,
+              field: 'prompt',
+              message:
+                  'Ollama does not have a dedicated user reasoning-input field. The reasoning text has been appended to the user content.',
+            ),
+          );
+          textParts.add(text);
+        default:
+          throw UnsupportedError(
+            'Ollama user prompt part ${part.runtimeType} is not supported yet.',
+          );
+      }
+    }
+
+    return {
+      'role': 'user',
+      'content': textParts.join('\n'),
+      if (images.isNotEmpty) 'images': images,
+    };
+  }
+
+  Map<String, Object?> _encodeAssistantMessage(
+    AssistantPromptMessage message, {
+    required List<ModelWarning> warnings,
+  }) {
+    final textParts = <String>[];
+    final toolCalls = <Map<String, Object?>>[];
+
+    for (final part in message.parts) {
+      switch (part) {
+        case TextPromptPart(:final text):
+          textParts.add(text);
+        case ReasoningPromptPart(:final text):
+          warnings.add(
+            ModelWarning(
+              type: ModelWarningType.compatibility,
+              field: 'prompt',
+              message:
+                  'Ollama does not support replaying assistant reasoning as a separate prompt field. The reasoning text has been appended to the assistant content.',
+            ),
+          );
+          textParts.add(text);
+        case ToolCallPromptPart(
+            toolName: final toolName,
+            input: final input,
+          ):
+          toolCalls.add({
+            'function': {
+              'name': toolName,
+              'arguments': _normalizeToolInput(input),
+            },
+          });
+        default:
+          throw UnsupportedError(
+            'Ollama assistant prompt part ${part.runtimeType} is not supported yet.',
+          );
+      }
+    }
+
+    return {
+      'role': 'assistant',
+      'content': textParts.join('\n'),
+      if (toolCalls.isNotEmpty) 'tool_calls': toolCalls,
+    };
+  }
+
+  List<Map<String, Object?>> _encodeToolMessage(
+    ToolPromptMessage message, {
+    required List<ModelWarning> warnings,
+  }) {
+    final encodedMessages = <Map<String, Object?>>[];
+
+    for (final part in message.parts) {
+      switch (part) {
+        case ToolResultPromptPart(
+            toolName: final toolName,
+            output: final output,
+          ):
+          encodedMessages.add({
+            'role': 'tool',
+            'name': toolName,
+            'content': _stringifyToolOutput(output),
+          });
+        default:
+          throw UnsupportedError(
+            'Ollama tool prompt part ${part.runtimeType} is not supported yet.',
+          );
+      }
+    }
+
+    return encodedMessages;
+  }
+
+  String _collectTextParts(
+    List<PromptPart> parts, {
+    required String messageRole,
+    required List<ModelWarning> warnings,
+  }) {
+    final textParts = <String>[];
+
+    for (final part in parts) {
+      switch (part) {
+        case TextPromptPart(:final text):
+          textParts.add(text);
+        case ReasoningPromptPart(:final text):
+          warnings.add(
+            ModelWarning(
+              type: ModelWarningType.compatibility,
+              field: 'prompt',
+              message:
+                  'Ollama does not support replaying $messageRole reasoning as a separate prompt field. The reasoning text has been appended to the message content.',
+            ),
+          );
+          textParts.add(text);
+        default:
+          throw UnsupportedError(
+            'Ollama $messageRole prompt part ${part.runtimeType} is not supported yet.',
+          );
+      }
+    }
+
+    return textParts.join('\n');
+  }
+
+  GenerateTextResult _decodeGenerateResponse(
+    Map<String, Object?> json, {
+    required List<ModelWarning> warnings,
+  }) {
+    final content = <ContentPart>[
+      ..._decodeReasoningContent(json),
+      ..._decodeTextContent(json),
+      ..._decodeToolCallContent(json),
+    ];
+
+    return GenerateTextResult(
+      content: content,
+      finishReason: _decodeFinishReason(
+        json,
+        hasToolCalls: content.whereType<ToolCallContentPart>().isNotEmpty,
+      ),
+      rawFinishReason: _asString(json['done_reason']),
+      responseModelId: _asString(json['model']) ?? modelId,
+      responseTimestamp: _parseTimestamp(json['created_at']),
+      usage: _decodeUsage(json),
+      providerMetadata: _decodeProviderMetadata(json),
+      warnings: warnings,
+    );
+  }
+
+  Iterable<TextStreamEvent> _decodeStreamText(
+    String chunk,
+    _OllamaStreamState state,
+  ) sync* {
+    state.buffer.write(chunk);
+    final buffered = state.buffer.toString();
+    final lines = buffered.split('\n');
+    state.buffer
+      ..clear()
+      ..write(lines.removeLast());
+
+    for (final line in lines) {
+      final trimmed = line.trim();
+      if (trimmed.isEmpty) continue;
+      yield* _decodeStreamJsonChunk(_decodeJsonObject(trimmed), state);
+    }
+  }
+
+  Iterable<TextStreamEvent> _decodeStreamJsonChunk(
+    Map<String, Object?> json,
+    _OllamaStreamState state,
+  ) sync* {
+    if (!state.metadataEmitted) {
+      state.metadataEmitted = true;
+      yield ResponseMetadataEvent(
+        modelId: _asString(json['model']) ?? modelId,
+        timestamp: _parseTimestamp(json['created_at']),
+        providerMetadata: _decodeProviderMetadata(json),
+      );
+    }
+
+    final message = _asObject(json['message']);
+    final thinking = _asString(message?['thinking']);
+    if (thinking != null && thinking.isNotEmpty) {
+      if (!state.reasoningStarted) {
+        state.reasoningStarted = true;
+        yield const ReasoningStartEvent(id: _ollamaReasoningPartId);
+      }
+      yield ReasoningDeltaEvent(id: _ollamaReasoningPartId, delta: thinking);
+    }
+
+    final text = _asString(message?['content']);
+    if (text != null && text.isNotEmpty) {
+      if (!state.textStarted) {
+        state.textStarted = true;
+        yield const TextStartEvent(id: _ollamaTextPartId);
+      }
+      yield TextDeltaEvent(id: _ollamaTextPartId, delta: text);
+    }
+
+    final toolCalls = _decodeToolCalls(message);
+    for (final toolCall in toolCalls) {
+      if (!state.emittedToolCallIds.add(toolCall.toolCallId)) continue;
+      yield ToolCallEvent(toolCall: toolCall);
+    }
+
+    if (json['done'] != true) return;
+
+    if (state.reasoningStarted && !state.reasoningEnded) {
+      state.reasoningEnded = true;
+      yield const ReasoningEndEvent(id: _ollamaReasoningPartId);
+    }
+
+    if (state.textStarted && !state.textEnded) {
+      state.textEnded = true;
+      yield const TextEndEvent(id: _ollamaTextPartId);
+    }
+
+    yield FinishEvent(
+      finishReason: _decodeFinishReason(
+        json,
+        hasToolCalls: state.emittedToolCallIds.isNotEmpty,
+      ),
+      rawFinishReason: _asString(json['done_reason']),
+      usage: _decodeUsage(json),
+      providerMetadata: _decodeProviderMetadata(json),
+    );
+  }
+
+  List<ContentPart> _decodeTextContent(Map<String, Object?> json) {
+    final message = _asObject(json['message']);
+    final text = _asString(message?['content']) ?? _asString(json['response']);
+    if (text == null || text.isEmpty) return const [];
+    return [TextContentPart(text)];
+  }
+
+  List<ContentPart> _decodeReasoningContent(Map<String, Object?> json) {
+    final message = _asObject(json['message']);
+    final text = _asString(message?['thinking']) ?? _asString(json['thinking']);
+    if (text == null || text.isEmpty) return const [];
+    return [ReasoningContentPart(text)];
+  }
+
+  List<ContentPart> _decodeToolCallContent(Map<String, Object?> json) {
+    final toolCalls = _decodeToolCalls(_asObject(json['message']));
+    if (toolCalls.isEmpty) return const [];
+    return toolCalls
+        .map((toolCall) => ToolCallContentPart(toolCall))
+        .toList(growable: false);
+  }
+
+  List<ToolCallContent> _decodeToolCalls(Map<String, Object?>? message) {
+    final toolCalls = message?['tool_calls'];
+    if (toolCalls is! List || toolCalls.isEmpty) return const [];
+
+    return toolCalls.asMap().entries.map((entry) {
+      final item = entry.value;
+      if (item is! Map) {
+        throw StateError(
+          'Expected Ollama tool_calls[${entry.key}] to be a JSON object.',
+        );
+      }
+
+      final map = Map<String, Object?>.from(item);
+      final function = _asObject(map['function']);
+      if (function == null) {
+        throw StateError(
+          'Expected Ollama tool_calls[${entry.key}] to contain a function object.',
+        );
+      }
+
+      final name = _asString(function['name']);
+      if (name == null || name.isEmpty) {
+        throw StateError(
+          'Expected Ollama tool call ${entry.key} to contain a function name.',
+        );
+      }
+
+      return ToolCallContent(
+        toolCallId: _asString(map['id']) ?? 'ollama-tool-${entry.key}-$name',
+        toolName: name,
+        input: _normalizeDecodedToolArguments(function['arguments']),
+      );
+    }).toList(growable: false);
+  }
+
+  UsageStats? _decodeUsage(Map<String, Object?> json) {
+    final inputTokens = _asInt(json['prompt_eval_count']);
+    final outputTokens = _asInt(json['eval_count']);
+    final usage = UsageStats(
+      inputTokens: inputTokens,
+      outputTokens: outputTokens,
+      totalTokens: switch ((inputTokens, outputTokens)) {
+        (final input?, final output?) => input + output,
+        _ => null,
+      },
+    );
+    return usage.isEmpty ? null : usage;
+  }
+
+  ProviderMetadata? _decodeProviderMetadata(Map<String, Object?> json) {
+    final values = <String, Object?>{
+      if (json['created_at'] != null) 'createdAt': json['created_at'],
+      if (json['done_reason'] != null) 'doneReason': json['done_reason'],
+      if (json['total_duration'] != null)
+        'totalDurationNanos': json['total_duration'],
+      if (json['load_duration'] != null)
+        'loadDurationNanos': json['load_duration'],
+      if (json['prompt_eval_duration'] != null)
+        'promptEvalDurationNanos': json['prompt_eval_duration'],
+      if (json['eval_duration'] != null)
+        'evalDurationNanos': json['eval_duration'],
+    };
+    if (values.isEmpty) return null;
+    return ProviderMetadata.forNamespace('ollama', values);
+  }
+
+  FinishReason _decodeFinishReason(
+    Map<String, Object?> json, {
+    required bool hasToolCalls,
+  }) {
+    if (hasToolCalls) return FinishReason.toolCalls;
+    return switch (_asString(json['done_reason'])) {
+      'stop' || null => FinishReason.stop,
+      'length' => FinishReason.maxTokens,
+      'abort' => FinishReason.aborted,
+      'error' => FinishReason.error,
+      _ => FinishReason.other,
+    };
+  }
+}
+
+const _ollamaTextPartId = 'ollama-text';
+const _ollamaReasoningPartId = 'ollama-reasoning';
+
+final class _PreparedOllamaRequest {
+  final Map<String, Object?> body;
+  final List<ModelWarning> warnings;
+
+  _PreparedOllamaRequest({
+    required Map<String, Object?> body,
+    List<ModelWarning> warnings = const [],
+  })  : body = Map.unmodifiable(body),
+        warnings = List.unmodifiable(warnings);
+}
+
+final class _OllamaStreamState {
+  final StringBuffer buffer = StringBuffer();
+  final Set<String> emittedToolCallIds = <String>{};
+  bool metadataEmitted = false;
+  bool textStarted = false;
+  bool textEnded = false;
+  bool reasoningStarted = false;
+  bool reasoningEnded = false;
+}
+
+String _normalizeBaseUrl(String? baseUrl) {
+  final normalized =
+      (baseUrl == null || baseUrl.isEmpty) ? ollamaDefaultBaseUrl : baseUrl;
+  return normalized.endsWith('/')
+      ? normalized.substring(0, normalized.length - 1)
+      : normalized;
+}
+
+String? _normalizeApiKey(String? apiKey) {
+  if (apiKey == null || apiKey.isEmpty) return null;
+  return apiKey;
+}
+
+Map<String, Object?> _decodeJsonObject(Object? body) {
+  if (body is Map<String, Object?>) return body;
+  if (body is Map) return Map<String, Object?>.from(body);
+  if (body is String) {
+    final decoded = jsonDecode(body);
+    if (decoded is Map) return Map<String, Object?>.from(decoded);
+  }
+  throw StateError(
+    'Expected an Ollama JSON object response but received ${body.runtimeType}.',
+  );
+}
+
+Map<String, Object?>? _asObject(Object? value) {
+  if (value is Map<String, Object?>) return value;
+  if (value is Map) return Map<String, Object?>.from(value);
+  return null;
+}
+
+String? _asString(Object? value) => value is String ? value : null;
+
+int? _asInt(Object? value) => value is num ? value.toInt() : null;
+
+DateTime? _parseTimestamp(Object? value) {
+  if (value is! String || value.isEmpty) return null;
+  return DateTime.tryParse(value);
+}
+
+Object? _normalizeToolInput(Object? input) {
+  return switch (input) {
+    null || bool() || num() || String() || List() || Map() => input,
+    _ => jsonDecode(jsonEncode(input)),
+  };
+}
+
+Object? _normalizeDecodedToolArguments(Object? arguments) {
+  if (arguments is String) {
+    final trimmed = arguments.trim();
+    if (trimmed.isEmpty) return null;
+    try {
+      return jsonDecode(trimmed);
+    } catch (_) {
+      return arguments;
+    }
+  }
+  if (arguments is Map) return Map<String, Object?>.from(arguments);
+  if (arguments is List) return List<Object?>.from(arguments);
+  return arguments;
+}
+
+String _stringifyToolOutput(Object? output) {
+  return switch (output) {
+    null => '',
+    String() => output,
+    _ => jsonEncode(output),
+  };
+}
