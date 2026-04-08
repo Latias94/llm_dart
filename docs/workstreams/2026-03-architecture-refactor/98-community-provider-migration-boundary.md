@@ -146,9 +146,10 @@ One transport-ish helper has already moved in the right direction:
 The remaining blocking utility work is therefore narrower than it was when this
 boundary was first frozen:
 
-- `HttpResponseHandler` as a root error-mapping wrapper
 - compatibility config shaping around `legacy_config_extensions` and
   builder-era root config adaptation
+- root-owned `LLMError` and Dio error-mapping utilities still imported by
+  community-provider modules
 - builder-era compatibility hooks such as `LLMBuilder` and legacy config keys
 
 The shared configurable Dio setup path has also now moved in the right
@@ -177,6 +178,8 @@ direction:
 - Ollama and ElevenLabs builder DSL implementations now also live under the
   root compatibility layer, while the old provider-path files are only thin
   compatibility exports
+- Ollama no longer depends on root `HttpResponseHandler`; it now uses
+  transport-owned JSON/logging primitives plus root error mapping directly
 
 Until those are either extracted, replaced, or intentionally left behind in the
 root compatibility shell, the package move remains premature.
@@ -232,3 +235,6 @@ The correct next step is:
 - treat legacy config shaping as compatibility-only infrastructure: provider
   config types should own provider fields plus transport-owned override values,
   while any `LLMConfig` adaptation remains outside those config types
+- focus the next decoupling round on root error ownership and the remaining
+  capability/message/audio compatibility imports, not on transport helpers that
+  are already off the direct community-provider path

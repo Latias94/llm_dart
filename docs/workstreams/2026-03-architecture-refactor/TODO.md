@@ -151,6 +151,7 @@
 - [x] Move shared log sanitization and JSON-object response decoding into `llm_dart_transport` and narrow root `HttpResponseHandler` to a compatibility wrapper
 - [x] Move Ollama and ElevenLabs provider-side Dio override data out of the root `LegacyDioClientOverrides` mixin and into transport-owned override values
 - [x] Move Ollama and ElevenLabs legacy `fromLLMConfig` / `originalConfig` shaping out of provider config types and into explicit compatibility adapters
+- [x] Remove Ollama's direct dependency on root `HttpResponseHandler` by using transport-owned JSON decode/logging primitives plus provider-local error mapping
 - [x] Move Ollama and ElevenLabs builder DSL implementations out of provider directories and into the root compatibility layer, leaving thin compatibility exports behind
 - [ ] Make `llm_dart_community` a real migration target instead of an empty landing-zone package
 - [ ] Decouple Ollama and ElevenLabs from root-local compatibility imports before moving real implementation weight into `llm_dart_community`

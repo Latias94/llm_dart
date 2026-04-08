@@ -327,6 +327,8 @@ This workstream is not about a file-moving refactor. It is about defining stable
   `getExtension(...)`, or `originalConfig` directly; that shaping now lives in
   explicit compatibility adapters, and root `DioClientFactory` no longer
   probes `originalConfig` dynamically
+- Ollama no longer depends on root `HttpResponseHandler` and now uses
+  transport-owned JSON/logging primitives with provider-local error mapping
 - Ollama and ElevenLabs builder DSL implementations now also live under the
   root compatibility layer, with provider-path builder files reduced to thin
   compatibility exports
@@ -335,10 +337,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   community-provider weight
 - the next remaining shared-helper blocker for community-provider migration is
   no longer cancellation, provider-facing Dio setup, provider defaults, the
-  shared UTF-8 decoder, provider-config-owned legacy adaptation, or dynamic
-  root Dio override probing; it is the remaining compatibility builder/factory
-  shell plus the root `LLMError` mapping that still lives in
-  `HttpResponseHandler`
+  shared UTF-8 decoder, provider-config-owned legacy adaptation, dynamic root
+  Dio override probing, or Ollama's earlier `HttpResponseHandler` dependency;
+  it is the remaining compatibility builder/factory shell, root error
+  ownership, and the capability/message/audio compatibility surfaces
 - `extensions/getExtension/extension` related entry points appear 258 times in `lib/`, which means string-based extensions have already become a primary design path.
 - `dio` appears 70 times across `lib/packages/test/example`, which shows that transport details have already leaked into too many layers.
 

@@ -1,11 +1,17 @@
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart'
-    show ProviderDioClientFactory, Utf8StreamDecoder, bindDioCancellation;
+    show
+        JsonObjectResponseDecoder,
+        LogSanitizer,
+        ProviderDioClientFactory,
+        TransportCancellation,
+        TransportResponseFormatException,
+        Utf8StreamDecoder,
+        bindDioCancellation;
 import 'package:logging/logging.dart';
 
-import '../../core/cancellation.dart';
-import '../../utils/http_response_handler.dart';
+import '../../core/llm_error.dart';
 import 'config.dart';
 import 'dio_strategy.dart';
 
@@ -38,14 +44,44 @@ class OllamaClient {
     Map<String, dynamic> data, {
     TransportCancellation? cancelToken,
   }) async {
-    return HttpResponseHandler.postJson(
-      dio,
-      endpoint,
-      data,
-      providerName: 'Ollama',
-      logger: logger,
-      cancelToken: cancelToken,
-    );
+    try {
+      if (logger.isLoggable(Level.FINE)) {
+        logger.fine(
+          'Ollama request: POST ${LogSanitizer.sanitizeEndpoint(endpoint)}',
+        );
+        logger.fine('Ollama request payload: ${jsonEncode(data)}');
+      }
+
+      final response = await dio.post(
+        endpoint,
+        data: data,
+        cancelToken: bindDioCancellation(cancelToken),
+      );
+
+      if (logger.isLoggable(Level.FINE)) {
+        logger.fine('Ollama HTTP status: ${response.statusCode}');
+      }
+
+      if (response.statusCode != 200) {
+        logger.severe('Ollama API returned status ${response.statusCode}');
+        throw DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          message: 'Ollama API returned status ${response.statusCode}',
+        );
+      }
+
+      return _parseJsonResponse(response.data);
+    } on DioException catch (e) {
+      logger.severe('Ollama HTTP request failed: ${e.message}');
+      throw await DioErrorHandler.handleDioError(e, 'Ollama');
+    } catch (e) {
+      if (e is LLMError) {
+        rethrow;
+      }
+      logger.severe('Unexpected error in Ollama postJson: $e');
+      throw GenericError('Unexpected error: $e');
+    }
   }
 
   /// Make a GET request and return JSON response
@@ -70,10 +106,16 @@ class OllamaClient {
         );
       }
 
-      return response.data as Map<String, dynamic>;
+      return _parseJsonResponse(response.data);
     } on DioException catch (e) {
       logger.severe('HTTP request failed: ${e.message}');
-      rethrow;
+      throw await DioErrorHandler.handleDioError(e, 'Ollama');
+    } catch (e) {
+      if (e is LLMError) {
+        rethrow;
+      }
+      logger.severe('Unexpected error in Ollama getJson: $e');
+      throw GenericError('Unexpected error: $e');
     }
   }
 
@@ -133,7 +175,34 @@ class OllamaClient {
       }
     } on DioException catch (e) {
       logger.severe('Stream request failed: ${e.message}');
-      rethrow;
+      throw await DioErrorHandler.handleDioError(e, 'Ollama');
+    } catch (e) {
+      if (e is LLMError) {
+        rethrow;
+      }
+      logger.severe('Unexpected error in Ollama postStreamRaw: $e');
+      throw GenericError('Unexpected error: $e');
+    }
+  }
+
+  Map<String, dynamic> _parseJsonResponse(dynamic responseData) {
+    try {
+      return JsonObjectResponseDecoder.decode(
+        responseData,
+        sourceName: 'Ollama',
+      );
+    } on TransportResponseFormatException catch (e) {
+      logger.severe(e.message);
+      throw ResponseFormatError(
+        e.message,
+        e.responseBody?.toString() ?? '',
+      );
+    } catch (e) {
+      if (e is LLMError) {
+        rethrow;
+      }
+      logger.severe('Unexpected error parsing Ollama response: $e');
+      throw GenericError('Failed to parse Ollama API response: $e');
     }
   }
 }

@@ -171,6 +171,14 @@ types.
 So it is not only transport logic. It still belongs to the root compatibility
 layer until error ownership is narrowed further.
 
+For the community-provider migration path, however, this is now a weaker
+blocker than before:
+
+- Ollama no longer routes through root `HttpResponseHandler`
+- ElevenLabs never depended on it directly
+- the remaining community-provider coupling is now more about root error types
+  and legacy capability/message/audio surfaces than this helper itself
+
 ## Recommended Next Step
 
 The next step should not reopen the already-landed transport-helper work.
@@ -180,9 +188,10 @@ It should narrow the remaining compatibility ownership:
 1. decide whether the remaining community-provider builder/factory adaptation
    should stay as a compatibility-only shell or be replaced by provider-owned
    modern constructors
-2. decide whether `HttpResponseHandler` stays compatibility-owned because of
-   `LLMError`, or whether provider packages should eventually own more of their
-   response/error mapping directly
+2. decide whether root Dio-based error mapping (`HttpResponseHandler` and
+   `DioErrorHandler`) should stay compatibility-owned because of `LLMError`, or
+   whether provider packages should eventually own more of their response/error
+   mapping directly
 
 ## Status
 
@@ -207,5 +216,8 @@ Current state:
   extensions directly; explicit compatibility adapters now own that shaping
 - root `DioClientFactory` no longer probes `originalConfig` dynamically and now
   resolves only explicit override interfaces
+- Ollama no longer depends on root `HttpResponseHandler` and now uses
+  transport-owned JSON/logging primitives directly
 - remaining root-local blockers are now more clearly narrowed to compatibility
-  builder/factory adaptation plus the remaining root-owned `LLMError` mapping
+  builder/factory adaptation, root error ownership, and the remaining
+  capability/message/audio compatibility surfaces
