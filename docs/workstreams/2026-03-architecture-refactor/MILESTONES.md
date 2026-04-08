@@ -233,6 +233,15 @@ Current status:
   ownership, while the public `lib/providers/...` entry files have been
   reduced to thin compatibility exports and the root provider shells import the
   compatibility modules directly
+- the latest event-gap review now also makes the next structural priority more
+  explicit: community-provider migration is no longer blocked by missing shared
+  text-stream events, but by the still-thin shared speech/transcription result
+  layer for warnings, response metadata, and typed transcript structure
+- that next shared boundary is now also designed explicitly: the intended
+  follow-up is a narrow shared non-text result enrichment in `llm_dart_core`
+  for warnings, response metadata, and typed transcription segments/language/
+  duration, while provider-specific audio/admin extras still remain
+  provider-owned
 
 ## M5 - Flutter Chat Layer
 

@@ -177,7 +177,9 @@
 - [x] Add the first package-owned ElevenLabs `SpeechModel` / `TranscriptionModel` slice in `llm_dart_community`
 - [ ] Migrate Ollama
 - [ ] Migrate ElevenLabs
-- [ ] Audit whether any remaining community-provider event or metadata gaps still block moving more provider logic out of the root compatibility shells
+- [x] Audit whether any remaining community-provider event or metadata gaps still block moving more provider logic out of the root compatibility shells
+- [x] Design richer shared speech/transcription result surfaces so common segments, language, duration, warnings, and response metadata no longer depend only on provider-specific metadata maps
+- [ ] Implement the shared non-text result enrichment in `llm_dart_core` and migrate ElevenLabs modern models to populate the new shared fields before treating community-provider audio migration as structurally mature
 - [ ] Decide whether file-based ElevenLabs transcription should remain legacy-only or gain a provider-owned modern helper outside the shared `TranscriptionModel`
 - [ ] Decide which remaining ElevenLabs voice/realtime/admin capabilities should stay provider-owned outside the shared audio model surfaces
 - [ ] Evaluate whether community providers should later split into dedicated packages

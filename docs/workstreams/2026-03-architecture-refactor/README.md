@@ -268,6 +268,14 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Status note for relocating remaining Ollama and ElevenLabs residual
     implementation modules under explicit root compatibility ownership while
     reducing the public provider files to thin exports.
+- [109-community-provider-event-and-nontext-result-gap.md](109-community-provider-event-and-nontext-result-gap.md)
+  - Gap review that concludes community-provider migration is no longer blocked
+    by missing shared text events, but by the still-thin shared non-text result
+    layer around speech/transcription metadata and transcript structure.
+- [110-shared-nontext-result-surface.md](110-shared-nontext-result-surface.md)
+  - Proposed shared-core result boundary for speech and transcription that adds
+    warnings, response metadata, and typed transcript structure without copying
+    the full response-wrapper complexity of `repo-ref/ai`.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
