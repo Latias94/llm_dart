@@ -215,6 +215,10 @@ Current status:
   chat, Ollama embeddings, ElevenLabs speech, and ElevenLabs direct-audio
   transcription, so the package-owned modern surface is documented through
   executable examples instead of README prose alone
+- the remaining structural blocker inventory is now also clearer and written
+  down explicitly: the next decoupling targets are the root compatibility
+  interfaces, bridge helpers, legacy config/factory adapters, and residual
+  provider-shaped root modules rather than more public-entry ambiguity
 
 ## M5 - Flutter Chat Layer
 

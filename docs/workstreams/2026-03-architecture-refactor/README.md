@@ -253,6 +253,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Frozen public-entry guidance that teaches `llm_dart_community` as the
     modern shared-capability home for Ollama and ElevenLabs while keeping root
     provider shells explicitly compatibility-first.
+- [105-community-provider-decoupling-blocker-inventory.md](105-community-provider-decoupling-blocker-inventory.md)
+  - Current blocker inventory for what still keeps more Ollama and ElevenLabs
+    implementation weight attached to the root compatibility layer even after
+    the first modern community surfaces landed.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
@@ -378,6 +382,11 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - `llm_dart_community` now exists as a real workspace migration target, but
   root-local provider code still continues to carry too much
   compatibility-era community-provider weight
+- the remaining community-provider blocker inventory is now also explicit:
+  root compatibility interfaces, bridge helpers, legacy config/factory
+  adaptation, and residual provider-shaped modules still keep more
+  implementation weight in the root package than the long-term architecture
+  wants
 - the next remaining shared-helper blocker for community-provider migration is
   no longer cancellation, provider-facing Dio setup, provider defaults, the
   shared UTF-8 decoder, provider-config-owned legacy adaptation, dynamic root
