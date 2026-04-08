@@ -29,6 +29,25 @@ Current shared-capability ownership:
 - ElevenLabs text-to-speech
 - ElevenLabs direct-audio transcription
 
+## Runnable Examples
+
+This package now also includes minimal runnable examples for each current modern
+surface:
+
+- `example/ollama_chat.dart`
+- `example/ollama_embeddings.dart`
+- `example/elevenlabs_speech.dart`
+- `example/elevenlabs_transcription.dart`
+
+Run them from this package directory:
+
+```bash
+dart run example/ollama_chat.dart
+dart run example/ollama_embeddings.dart
+dart run example/elevenlabs_speech.dart
+dart run example/elevenlabs_transcription.dart
+```
+
 ## What Stays Outside This Package
 
 This package does not try to flatten every community-provider API into the

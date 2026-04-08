@@ -11,8 +11,12 @@ For new code, prefer:
 
 Current boundary:
 
-- stable today: OpenAI, OpenRouter, DeepSeek, Groq, xAI, Anthropic, Google
-- compatibility-oriented today: Ollama and ElevenLabs
+- stable today in the root package: OpenAI, OpenRouter, DeepSeek, Groq, xAI,
+  Anthropic, Google
+- stable today in the workspace community package: Ollama shared chat and
+  embeddings, plus ElevenLabs shared speech and direct-audio transcription
+- compatibility-oriented in this directory: the broader Ollama and ElevenLabs
+  provider shells that still cover provider-specific residual surfaces
 
 ## Examples
 
@@ -34,12 +38,15 @@ Stable embedding, image, and speech model facades with typed Google provider
 options. Native streaming TTS examples are still compatibility oriented.
 
 ### [ollama/](ollama/)
-Compatibility-oriented local runtime examples. A stable local-model facade has
-not been frozen yet.
+Compatibility-oriented local runtime examples. Modern shared-capability Ollama
+chat and embedding surfaces now live in `packages/llm_dart_community`, while
+this directory covers broader local tuning and residual compatibility flows.
 
 ### [elevenlabs/](elevenlabs/)
-Compatibility-oriented audio examples. A dedicated stable ElevenLabs speech
-facade has not been frozen yet.
+Compatibility-oriented audio examples. Modern shared-capability ElevenLabs
+speech and direct-audio transcription surfaces now live in
+`packages/llm_dart_community`, while this directory covers broader voice/audio
+residual flows.
 
 ### [xai/](xai/)
 Stable xAI chat facade with typed live-search options.
@@ -211,3 +218,4 @@ print(result.text);
 - [Advanced Features](../03_advanced_features/) - Shared higher-level workflows
 - [Use Cases](../05_use_cases/) - Complete apps and Flutter integration
 - [Getting Started](../01_getting_started/) - Stable setup and configuration
+- [Community Provider Workspace Guide](../../packages/llm_dart_community/README.md) - Modern Ollama and ElevenLabs package-owned surfaces

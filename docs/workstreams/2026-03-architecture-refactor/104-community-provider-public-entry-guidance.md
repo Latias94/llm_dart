@@ -41,10 +41,12 @@ The public-entry alignment now covers:
 
 - root `README.md`
 - `example/README.md`
+- `example/04_providers/README.md`
 - `example/04_providers/ollama/README.md`
 - `example/04_providers/elevenlabs/README.md`
 - compatibility-oriented provider example source-file headers
 - a new `packages/llm_dart_community/README.md`
+- package-level runnable examples under `packages/llm_dart_community/example/`
 
 ## Why This Matters
 
@@ -65,6 +67,8 @@ This public-entry guidance is now frozen:
 
 - `llm_dart_community` is the documented modern shared-capability entry path for
   current community providers
+- `llm_dart_community` also has package-level runnable examples now, so the
+  public entry story no longer depends on README text alone
 - root Ollama and ElevenLabs surfaces are documented as compatibility shells
 - provider example directories are documented as compatibility or
   provider-specific residual surfaces rather than missing-modern-surface

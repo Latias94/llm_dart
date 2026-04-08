@@ -305,6 +305,7 @@
 - [x] Shrink `llm_dart.dart` to the modern stable surface and move remaining compatibility expectations behind `legacy.dart`
 - [x] Freeze the default-root versus explicit-`ai.dart` alias boundary and align public docs with that import guidance
 - [x] Align public README and provider example guidance with `llm_dart_community` as the modern Ollama/ElevenLabs shared-capability entrypoint
+- [x] Add runnable `llm_dart_community` package examples for the current Ollama and ElevenLabs modern shared-capability surfaces
 
 ## Dependency Cleanup
 

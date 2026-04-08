@@ -211,6 +211,10 @@ Current status:
   shared-capability usage through the community package, while keeping the
   root/provider example directories explicitly positioned as
   compatibility-oriented residual surfaces
+- `llm_dart_community` now also has package-level runnable examples for Ollama
+  chat, Ollama embeddings, ElevenLabs speech, and ElevenLabs direct-audio
+  transcription, so the package-owned modern surface is documented through
+  executable examples instead of README prose alone
 
 ## M5 - Flutter Chat Layer
 
