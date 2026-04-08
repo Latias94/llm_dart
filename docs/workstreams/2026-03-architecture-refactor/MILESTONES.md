@@ -153,15 +153,19 @@ Acceptance criteria:
 Current status:
 
 - `llm_dart_community` now owns its first package-owned modern community
-  surfaces through `Ollama.embeddingModel(...)` and `Ollama.chatModel(...)`
+  surfaces through `Ollama.embeddingModel(...)`, `Ollama.chatModel(...)`,
+  `ElevenLabs.speechModel(...)`, and
+  `ElevenLabs.transcriptionModel(...)`
 - those first slices establish the namespace, typed settings, transport-only
-  dependency direction, stream/generate request/response ownership, and
+  dependency direction, stream/generate/audio request ownership, and
   dedicated package test pattern
 - the next higher-value community step is no longer "make community real at
-  all", but "re-audit Ollama modern fidelity and then land ElevenLabs modern
-  audio surfaces"
-- ElevenLabs modern migration remains open after that as the first audio-focused
-  community surface
+  all", but "re-audit Ollama modern fidelity and keep slimming the remaining
+  compatibility-era root shells"
+- ElevenLabs modern migration is now no longer hypothetical; the remaining
+  work is to keep provider-shaped audio APIs such as voice catalogs, cloning,
+  and realtime flows provider-owned instead of forcing them into shared audio
+  models
 
 ## M5 - Flutter Chat Layer
 

@@ -1,0 +1,49 @@
+import 'package:llm_dart_transport/llm_dart_transport.dart';
+
+import 'elevenlabs_options.dart';
+import 'elevenlabs_speech_model.dart';
+import 'elevenlabs_transcription_model.dart';
+
+/// Package-owned ElevenLabs namespace for modern community provider surfaces.
+final class ElevenLabs {
+  static const String defaultBaseUrl = elevenLabsDefaultBaseUrl;
+
+  final String apiKey;
+  final String baseUrl;
+  final TransportClient transport;
+
+  ElevenLabs({
+    required this.apiKey,
+    TransportClient? transport,
+    String? baseUrl,
+  })  : baseUrl = baseUrl ?? defaultBaseUrl,
+        transport = transport ?? DioTransportClient();
+
+  ElevenLabsSpeechModel speechModel(
+    String modelId, {
+    ElevenLabsSpeechModelSettings settings =
+        const ElevenLabsSpeechModelSettings(),
+  }) {
+    return ElevenLabsSpeechModel(
+      apiKey: apiKey,
+      modelId: modelId,
+      transport: transport,
+      baseUrl: baseUrl,
+      settings: settings,
+    );
+  }
+
+  ElevenLabsTranscriptionModel transcriptionModel(
+    String modelId, {
+    ElevenLabsTranscriptionModelSettings settings =
+        const ElevenLabsTranscriptionModelSettings(),
+  }) {
+    return ElevenLabsTranscriptionModel(
+      apiKey: apiKey,
+      modelId: modelId,
+      transport: transport,
+      baseUrl: baseUrl,
+      settings: settings,
+    );
+  }
+}

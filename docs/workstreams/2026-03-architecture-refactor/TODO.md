@@ -153,7 +153,7 @@
 - [x] Move Ollama and ElevenLabs legacy `fromLLMConfig` / `originalConfig` shaping out of provider config types and into explicit compatibility adapters
 - [x] Remove Ollama's direct dependency on root `HttpResponseHandler` by using transport-owned JSON decode/logging primitives plus provider-local error mapping
 - [x] Move Ollama and ElevenLabs builder DSL implementations out of provider directories and into the root compatibility layer, leaving thin compatibility exports behind
-- [ ] Make `llm_dart_community` a real migration target instead of an empty landing-zone package
+- [x] Make `llm_dart_community` a real migration target instead of an empty landing-zone package
 - [ ] Decouple Ollama and ElevenLabs from root-local compatibility imports before moving real implementation weight into `llm_dart_community`
 - [ ] Freeze whether the remaining root builder/factory adaptation path should survive as a compatibility shell or be replaced by provider-owned modern config constructors
 - [ ] Decide whether `HttpResponseHandler` should stay root compatibility-owned or be split into provider-owned parsing plus shared transport failure handling
@@ -166,9 +166,10 @@
 - [x] Add the first package-owned Ollama `EmbeddingModel` slice in `llm_dart_community`
 - [x] Expand the package-owned Ollama modern slice with `LanguageModel`
 - [ ] Re-audit Ollama modern prompt replay, multimodal input, and tool-calling fidelity against the shared `LanguageModel` contract
-- [ ] Add the first package-owned ElevenLabs `SpeechModel` / `TranscriptionModel` slice in `llm_dart_community`
+- [x] Add the first package-owned ElevenLabs `SpeechModel` / `TranscriptionModel` slice in `llm_dart_community`
 - [ ] Migrate Ollama
 - [ ] Migrate ElevenLabs
+- [ ] Decide which remaining ElevenLabs voice/realtime/admin capabilities should stay provider-owned outside the shared audio model surfaces
 - [ ] Evaluate whether community providers should later split into dedicated packages
 
 ## Flutter

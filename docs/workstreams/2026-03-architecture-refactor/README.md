@@ -335,14 +335,16 @@ This workstream is not about a file-moving refactor. It is about defining stable
   transport-owned JSON/logging primitives with provider-local error mapping
 - `llm_dart_community` now also owns its first real package-owned modern
   surfaces through `Ollama.embeddingModel(...)` and
-  `Ollama.chatModel(...)`, so the package is no longer just an empty barrel
-  and now already carries the first real modern local-model entrypoint
+  `Ollama.chatModel(...)`, and now also through
+  `ElevenLabs.speechModel(...)` and `ElevenLabs.transcriptionModel(...)`, so
+  the package is no longer just an empty barrel and now already carries both
+  local-model and audio-focused modern entrypoints
 - Ollama and ElevenLabs builder DSL implementations now also live under the
   root compatibility layer, with provider-path builder files reduced to thin
   compatibility exports
-- `llm_dart_community` now exists as a workspace package, but it still exposes
-  only an empty barrel while root-local provider code continues to carry
-  community-provider weight
+- `llm_dart_community` now exists as a real workspace migration target, but
+  root-local provider code still continues to carry too much
+  compatibility-era community-provider weight
 - the next remaining shared-helper blocker for community-provider migration is
   no longer cancellation, provider-facing Dio setup, provider defaults, the
   shared UTF-8 decoder, provider-config-owned legacy adaptation, dynamic root

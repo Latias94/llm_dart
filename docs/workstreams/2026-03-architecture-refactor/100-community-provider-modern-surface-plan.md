@@ -27,6 +27,9 @@ One initial modern toe-hold has now also landed:
   surface backed by `EmbeddingModel`
 - `llm_dart_community` now also exposes a package-owned `Ollama.chatModel(...)`
   surface backed by `LanguageModel`
+- `llm_dart_community` now also exposes package-owned
+  `ElevenLabs.speechModel(...)` and `ElevenLabs.transcriptionModel(...)`
+  surfaces backed by `SpeechModel` and `TranscriptionModel`
 
 What remains is more fundamental:
 
@@ -40,7 +43,8 @@ What remains is more fundamental:
   message/capability surfaces
 
 This means the next blocker is no longer transport helper ownership.
-It is API ownership.
+It is how much real API ownership can move into the community package without
+dragging legacy compatibility surfaces with it.
 
 ## What We Should Not Do
 
@@ -88,7 +92,8 @@ and other compatibility-era types should stay.
 
 ### 3. Package-Owned Modern Community Surface
 
-This is the missing piece that should make `llm_dart_community` a real package.
+This is the piece that has now started to make `llm_dart_community` a real
+package.
 
 Recommended first targets:
 
@@ -160,9 +165,9 @@ Cons:
 Use a hybrid sequence:
 
 1. Freeze the legacy-shell split now.
-2. Use the landed package-owned Ollama embedding/chat slices as the pattern
-   baseline.
-3. Expand the Ollama modern slice with local-chat value next:
+2. Use the landed package-owned Ollama embedding/chat slices and ElevenLabs
+   speech/transcription slices as the pattern baseline.
+3. Re-audit the Ollama modern slice with local-chat value next:
    - keep the existing shared `LanguageModel`
    - keep the existing `EmbeddingModel`
    - broaden prompt/stream/tool replay coverage only where the shared contract
@@ -170,11 +175,13 @@ Use a hybrid sequence:
    - keep provider-owned typed Ollama settings and invocation options
    - do not reintroduce legacy builder/factory behavior in the package-owned
      layer
-4. Move ElevenLabs next as the first package-owned audio-focused community
-   slice:
-   - shared `SpeechModel`
-   - shared `TranscriptionModel`
-   - provider-owned voice/settings helpers
+4. Keep ElevenLabs on the same package-owned path after that:
+   - keep the shared `SpeechModel`
+   - keep the shared `TranscriptionModel`
+   - add provider-owned voice/settings helpers only where the shared contracts
+     stay honest
+   - keep voice catalogs, cloning, realtime audio, and other provider-shaped
+     APIs out of the shared audio model layer
 
 This sequence gives higher product leverage without pretending that the legacy
 root provider wrappers are the right long-term abstraction.
@@ -191,13 +198,13 @@ The important outcome is:
 - local chat applications do not need the broad root compatibility builder
   surface just to use Ollama
 
-That makes the modern Ollama slice the better next structural payoff even
-though ElevenLabs audio may still be the easier provider to modernize.
+That still makes the modern Ollama slice the better next structural payoff even
+after the first ElevenLabs audio surfaces have landed.
 
 ## Acceptance Criteria For The Next Real Milestone
 
-We should consider `llm_dart_community` to have become a real package only when
-all of the following are true:
+We should consider `llm_dart_community` to have crossed the initial "real
+package" threshold only when all of the following are true:
 
 - it owns at least one package-owned public modern model surface
 - that surface depends only on lower-layer packages
