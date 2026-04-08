@@ -163,7 +163,8 @@
 ## Community Providers
 
 - [ ] Freeze the split between root legacy community-provider shells and package-owned modern community model APIs
-- [ ] Add the first package-owned Ollama `LanguageModel` / `EmbeddingModel` slice in `llm_dart_community`
+- [x] Add the first package-owned Ollama `EmbeddingModel` slice in `llm_dart_community`
+- [ ] Expand the package-owned Ollama modern slice with `LanguageModel`
 - [ ] Add the first package-owned ElevenLabs `SpeechModel` / `TranscriptionModel` slice in `llm_dart_community`
 - [ ] Migrate Ollama
 - [ ] Migrate ElevenLabs

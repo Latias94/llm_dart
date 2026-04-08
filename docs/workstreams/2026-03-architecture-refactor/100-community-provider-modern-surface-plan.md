@@ -21,6 +21,11 @@ The recent cleanup rounds already removed several false blockers:
 - legacy `LLMConfig` adaptation now lives in explicit compatibility adapters
 - Ollama no longer depends on root `HttpResponseHandler`
 
+One initial modern toe-hold has now also landed:
+
+- `llm_dart_community` now exposes a package-owned `Ollama.embeddingModel(...)`
+  surface backed by `EmbeddingModel`
+
 What remains is more fundamental:
 
 - Ollama legacy modules still implement root `ChatCapability`,
@@ -153,10 +158,10 @@ Cons:
 Use a hybrid sequence:
 
 1. Freeze the legacy-shell split now.
-2. Start the first package-owned modern Ollama slice for local chat value.
-3. Keep the first Ollama modern slice narrow:
+2. Use the landed package-owned Ollama embedding slice as the pattern baseline.
+3. Expand the Ollama modern slice with local-chat value next:
    - shared `LanguageModel`
-   - shared `EmbeddingModel`
+   - keep the existing `EmbeddingModel`
    - provider-owned typed Ollama settings
    - no legacy builder/factory behavior in the package-owned layer
 4. Move ElevenLabs next as the first package-owned audio-focused community

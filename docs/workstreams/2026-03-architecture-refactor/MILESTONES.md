@@ -150,6 +150,17 @@ Acceptance criteria:
 - long-tail providers no longer duplicate full OpenAI implementations
 - provider duplication drops visibly
 
+Current status:
+
+- `llm_dart_community` now owns its first package-owned modern community
+  surface through `Ollama.embeddingModel(...)`
+- that first slice establishes the namespace, typed settings, transport-only
+  dependency direction, and dedicated package test pattern
+- the next higher-value community step is still the package-owned Ollama
+  `LanguageModel` slice for local chat usage
+- ElevenLabs modern migration remains open after that as the first audio-focused
+  community surface
+
 ## M5 - Flutter Chat Layer
 
 Goals:

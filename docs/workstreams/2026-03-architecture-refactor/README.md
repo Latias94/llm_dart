@@ -333,6 +333,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   probes `originalConfig` dynamically
 - Ollama no longer depends on root `HttpResponseHandler` and now uses
   transport-owned JSON/logging primitives with provider-local error mapping
+- `llm_dart_community` now also owns its first real package-owned modern
+  surface through `Ollama.embeddingModel(...)`, so the package is no longer
+  just an empty barrel even though the higher-value chat slice still remains
+  open
 - Ollama and ElevenLabs builder DSL implementations now also live under the
   root compatibility layer, with provider-path builder files reduced to thin
   compatibility exports
