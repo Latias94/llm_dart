@@ -1,14 +1,12 @@
 import 'package:dio/dio.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
-import '../core/config.dart';
-import '../src/config/legacy_config_extensions.dart';
-
 export 'package:llm_dart_transport/llm_dart_transport.dart'
     show
         BaseProviderDioStrategy,
         DioClientOverrides,
         DioEnhancer,
+        HasDioClientOverrides,
         HeaderEnhancer,
         InterceptorEnhancer,
         ProviderDioStrategy;
@@ -31,65 +29,16 @@ class DioClientFactory {
     ProviderDioStrategy strategy,
     dynamic config,
   ) {
+    if (config is HasDioClientOverrides) {
+      final overrides = config.dioOverrides;
+      if (overrides != null) {
+        return overrides;
+      }
+    }
+
     if (config is DioClientOverrides) {
       return config;
     }
-
-    final originalConfig = config.originalConfig as LLMConfig?;
-    if (originalConfig == null) {
-      return null;
-    }
-
-    return _LegacyConfigDioClientOverrides(
-      originalConfig,
-      fallbackTimeout: strategy.getTimeout(config),
-    );
+    return null;
   }
-}
-
-final class _LegacyConfigDioClientOverrides implements DioClientOverrides {
-  final LLMConfig _config;
-  final Duration? _fallbackTimeout;
-
-  const _LegacyConfigDioClientOverrides(
-    this._config, {
-    Duration? fallbackTimeout,
-  }) : _fallbackTimeout = fallbackTimeout;
-
-  @override
-  bool get bypassSslVerification => _config.legacyBypassSslVerification;
-
-  @override
-  String? get certificatePath => _config.legacySslCertificatePath;
-
-  @override
-  Duration? get connectionTimeout => _config.legacyConnectionTimeout;
-
-  @override
-  Dio? get customDio {
-    final customTransport = _config.legacyTransportClient;
-    if (customTransport case DioTransportClient(:final dio)) {
-      return dio;
-    }
-
-    return _config.legacyCustomDio;
-  }
-
-  @override
-  Map<String, String> get customHeaders => _config.legacyCustomHeaders;
-
-  @override
-  bool get enableHttpLogging => _config.legacyEnableHttpLogging;
-
-  @override
-  String? get proxyUrl => _config.legacyHttpProxy;
-
-  @override
-  Duration? get receiveTimeout => _config.legacyReceiveTimeout;
-
-  @override
-  Duration? get sendTimeout => _config.legacySendTimeout;
-
-  @override
-  Duration? get timeout => _config.timeout ?? _fallbackTimeout;
 }

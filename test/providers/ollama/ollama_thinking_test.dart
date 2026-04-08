@@ -73,7 +73,7 @@ void main() {
       expect(provider, isA<OllamaProvider>());
     });
 
-    test('OllamaConfig.fromLLMConfig should handle reasoning extension', () {
+    test('legacy Ollama config adapter should handle reasoning extension', () {
       final llmConfig = LLMConfig(
         apiKey: 'test',
         baseUrl: 'http://localhost:11434',
@@ -81,7 +81,7 @@ void main() {
         extensions: {'reasoning': true},
       );
 
-      final ollamaConfig = OllamaConfig.fromLLMConfig(llmConfig);
+      final ollamaConfig = createLegacyOllamaConfig(llmConfig);
 
       expect(ollamaConfig.reasoning, isTrue);
     });

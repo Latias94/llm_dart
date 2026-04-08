@@ -170,6 +170,10 @@ direction:
   than before even though it still owns legacy `LLMError` mapping
 - Ollama and ElevenLabs configs now also own provider-side `dioOverrides`
   data directly instead of mixing in root `LegacyDioClientOverrides`
+- Ollama and ElevenLabs config types no longer read legacy `LLMConfig`,
+  `getExtension(...)`, or `originalConfig` directly; that shaping now lives in
+  explicit compatibility adapters under
+  `lib/src/compatibility/providers/community_provider_config_adapters.dart`
 - Ollama and ElevenLabs builder DSL implementations now also live under the
   root compatibility layer, while the old provider-path files are only thin
   compatibility exports
@@ -225,3 +229,6 @@ The correct next step is:
 - keep current compatibility-era Ollama and ElevenLabs behavior rooted in
   `legacy.dart` until their provider code is actually decoupled from the root
   compatibility layer
+- treat legacy config shaping as compatibility-only infrastructure: provider
+  config types should own provider fields plus transport-owned override values,
+  while any `LLMConfig` adaptation remains outside those config types

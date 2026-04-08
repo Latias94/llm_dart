@@ -98,6 +98,26 @@ That means:
 - root `HttpResponseHandler` is now a narrower compatibility wrapper around
   transport-owned parsing plus root-owned `LLMError` mapping
 
+### 7. Community-provider config overrides now flow through explicit
+compatibility adapters instead of implicit root probing
+
+The root compatibility layer now also owns explicit adapter helpers for the
+remaining community providers:
+
+- `createLegacyOllamaConfig(...)`
+- `createLegacyElevenLabsConfig(...)`
+- `createLegacyDioClientOverrides(...)`
+
+That means:
+
+- Ollama and ElevenLabs config types no longer import `LLMConfig` or read
+  legacy extension keys directly
+- provider-owned config types now carry only provider fields plus
+  transport-owned `dioOverrides`
+- root `DioClientFactory` now only consumes explicit override interfaces
+  (`HasDioClientOverrides` or `DioClientOverrides`) instead of probing
+  `originalConfig` dynamically
+
 ## Why This Helper Belonged In Transport
 
 `bindDioCancellation(...)` only does one thing:
@@ -134,16 +154,14 @@ clear false dependencies from the path:
 
 ## What Still Cannot Move Yet
 
-### `DioClientFactory`
+### Root compatibility config adapters
 
-`lib/utils/dio_client_factory.dart` is now only a compatibility wrapper, but
-the root compatibility layer still owns legacy override shaping through:
+The remaining root compatibility layer still owns the legacy `LLMConfig` to
+provider-config shaping for Ollama and ElevenLabs through explicit adapter
+functions.
 
-- `LLMConfig`
-- legacy config accessors such as custom transport and raw Dio overrides
-
-That means provider clients no longer need this file directly, but the old
-root compatibility surface still does.
+That is a much narrower blocker than before, but it is still root-owned
+compatibility logic rather than transport infrastructure.
 
 ### `HttpResponseHandler`
 
@@ -159,9 +177,9 @@ The next step should not reopen the already-landed transport-helper work.
 
 It should narrow the remaining compatibility ownership:
 
-1. decide whether the new root `legacy_dio_client_overrides` shaping should
-   remain a compatibility-only mapper or be replaced by provider-owned modern
-   config/override surfaces
+1. decide whether the remaining community-provider builder/factory adaptation
+   should stay as a compatibility-only shell or be replaced by provider-owned
+   modern constructors
 2. decide whether `HttpResponseHandler` stays compatibility-owned because of
    `LLMError`, or whether provider packages should eventually own more of their
    response/error mapping directly
@@ -185,6 +203,9 @@ Current state:
   importing root `provider_defaults.dart`
 - Ollama and ElevenLabs configs now also own their provider-side Dio override
   data instead of mixing in root `LegacyDioClientOverrides`
+- Ollama and ElevenLabs config types no longer read legacy `LLMConfig`
+  extensions directly; explicit compatibility adapters now own that shaping
+- root `DioClientFactory` no longer probes `originalConfig` dynamically and now
+  resolves only explicit override interfaces
 - remaining root-local blockers are now more clearly narrowed to compatibility
-  config shaping around legacy extension reads/builder adaptation and the
-  remaining root-owned `LLMError` mapping
+  builder/factory adaptation plus the remaining root-owned `LLMError` mapping

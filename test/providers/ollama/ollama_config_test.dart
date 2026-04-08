@@ -262,7 +262,7 @@ void main() {
     });
 
     group('LLMConfig Integration', () {
-      test('should create from LLMConfig', () {
+      test('should create from legacy LLMConfig adapter', () {
         final llmConfig = LLMConfig(
           apiKey: 'test-key',
           baseUrl: 'http://localhost:11434',
@@ -285,7 +285,7 @@ void main() {
           },
         );
 
-        final ollamaConfig = OllamaConfig.fromLLMConfig(llmConfig);
+        final ollamaConfig = createLegacyOllamaConfig(llmConfig);
 
         expect(ollamaConfig.apiKey, equals('test-key'));
         expect(ollamaConfig.baseUrl, equals('http://localhost:11434'));
@@ -306,17 +306,25 @@ void main() {
         expect(ollamaConfig.raw, isFalse);
       });
 
-      test('should access extensions from original config', () {
+      test('should project legacy Dio overrides when legacy HTTP settings exist',
+          () {
         final llmConfig = LLMConfig(
           baseUrl: 'http://localhost:11434',
           model: 'llama3.2:3b',
-          extensions: {'customParam': 'customValue'},
+          extensions: {
+            'customHeaders': {'X-Test': 'value'},
+            'connectionTimeout': Duration(seconds: 12),
+          },
         );
 
-        final ollamaConfig = OllamaConfig.fromLLMConfig(llmConfig);
+        final ollamaConfig = createLegacyOllamaConfig(llmConfig);
 
-        expect(ollamaConfig.getExtension<String>('customParam'),
-            equals('customValue'));
+        expect(ollamaConfig.dioOverrides, isNotNull);
+        expect(ollamaConfig.dioOverrides?.customHeaders, {'X-Test': 'value'});
+        expect(
+          ollamaConfig.dioOverrides?.connectionTimeout,
+          const Duration(seconds: 12),
+        );
       });
     });
   });

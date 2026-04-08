@@ -183,7 +183,7 @@ void main() {
     });
 
     group('LLMConfig Integration', () {
-      test('should create from LLMConfig', () {
+      test('should create from legacy LLMConfig adapter', () {
         final llmConfig = LLMConfig(
           apiKey: 'test-key',
           baseUrl: 'https://api.elevenlabs.io/v1/',
@@ -198,7 +198,7 @@ void main() {
           },
         );
 
-        final elevenLabsConfig = ElevenLabsConfig.fromLLMConfig(llmConfig);
+        final elevenLabsConfig = createLegacyElevenLabsConfig(llmConfig);
 
         expect(elevenLabsConfig.apiKey, equals('test-key'));
         expect(
@@ -212,18 +212,23 @@ void main() {
         expect(elevenLabsConfig.useSpeakerBoost, isTrue);
       });
 
-      test('should access extensions from original config', () {
+      test('should project legacy Dio overrides when legacy HTTP settings exist',
+          () {
         final llmConfig = LLMConfig(
           apiKey: 'test-key',
           baseUrl: 'https://api.elevenlabs.io/v1/',
           model: 'eleven_multilingual_v2',
-          extensions: {'customParam': 'customValue'},
+          extensions: {
+            'customHeaders': {'X-Test': 'value'},
+            'enableHttpLogging': true,
+          },
         );
 
-        final elevenLabsConfig = ElevenLabsConfig.fromLLMConfig(llmConfig);
+        final elevenLabsConfig = createLegacyElevenLabsConfig(llmConfig);
 
-        expect(elevenLabsConfig.getExtension<String>('customParam'),
-            equals('customValue'));
+        expect(elevenLabsConfig.dioOverrides, isNotNull);
+        expect(elevenLabsConfig.dioOverrides?.customHeaders, {'X-Test': 'value'});
+        expect(elevenLabsConfig.dioOverrides?.enableHttpLogging, isTrue);
       });
     });
   });

@@ -1,5 +1,6 @@
 import '../../core/capability.dart';
 import '../../core/config.dart';
+import '../../src/compatibility/providers/community_provider_config_adapters.dart';
 import '../../src/provider_defaults.dart';
 import '../ollama/ollama.dart';
 import 'base_factory.dart';
@@ -41,6 +42,6 @@ class OllamaProviderFactory extends LocalProviderFactory<ChatCapability> {
 
   /// Transform unified config to Ollama-specific config
   OllamaConfig _transformConfig(LLMConfig config) {
-    return OllamaConfig.fromLLMConfig(config);
+    return createLegacyOllamaConfig(config);
   }
 }

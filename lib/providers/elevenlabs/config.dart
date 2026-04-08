@@ -1,28 +1,24 @@
 import 'package:llm_dart_transport/llm_dart_transport.dart'
-    show DioClientOverrides, DioTransportClient, ImmutableDioClientOverrides;
+    show DioClientOverrides, HasDioClientOverrides;
 
-import '../../core/config.dart';
-import '../../src/config/legacy_config_extensions.dart';
 import 'defaults.dart';
 
 /// ElevenLabs provider configuration
 ///
 /// This class contains all configuration options for the ElevenLabs providers.
 /// ElevenLabs specializes in text-to-speech and speech-to-text capabilities.
-class ElevenLabsConfig {
+class ElevenLabsConfig implements HasDioClientOverrides {
   final String apiKey;
   final String baseUrl;
   final String? voiceId;
   final String? model;
   final Duration? timeout;
+  @override
   final DioClientOverrides? dioOverrides;
   final double? stability;
   final double? similarityBoost;
   final double? style;
   final bool? useSpeakerBoost;
-
-  /// Reference to original LLMConfig for accessing extensions
-  final LLMConfig? _originalConfig;
 
   const ElevenLabsConfig({
     required this.apiKey,
@@ -35,34 +31,7 @@ class ElevenLabsConfig {
     this.similarityBoost,
     this.style,
     this.useSpeakerBoost,
-    LLMConfig? originalConfig,
-  }) : _originalConfig = originalConfig;
-
-  /// Create ElevenLabsConfig from unified LLMConfig
-  factory ElevenLabsConfig.fromLLMConfig(LLMConfig config) {
-    return ElevenLabsConfig(
-      apiKey: config.apiKey!,
-      baseUrl: config.baseUrl,
-      model: config.model,
-      timeout: config.timeout,
-      dioOverrides: _legacyDioOverridesFromConfig(config),
-      // ElevenLabs-specific extensions
-      voiceId: config.getExtension<String>(LegacyExtensionKeys.voiceId),
-      stability: config.getExtension<double>(LegacyExtensionKeys.stability),
-      similarityBoost:
-          config.getExtension<double>(LegacyExtensionKeys.similarityBoost),
-      style: config.getExtension<double>(LegacyExtensionKeys.style),
-      useSpeakerBoost:
-          config.getExtension<bool>(LegacyExtensionKeys.useSpeakerBoost),
-      originalConfig: config,
-    );
-  }
-
-  /// Get extension value from original config
-  T? getExtension<T>(String key) => _originalConfig?.getExtension<T>(key);
-
-  /// Get the original LLMConfig for HTTP configuration
-  LLMConfig? get originalConfig => _originalConfig;
+  });
 
   /// Check if this configuration supports text-to-speech
   bool get supportsTextToSpeech => true;
@@ -120,39 +89,5 @@ class ElevenLabsConfig {
         similarityBoost: similarityBoost ?? this.similarityBoost,
         style: style ?? this.style,
         useSpeakerBoost: useSpeakerBoost ?? this.useSpeakerBoost,
-        originalConfig: _originalConfig,
       );
-}
-
-DioClientOverrides? _legacyDioOverridesFromConfig(LLMConfig config) {
-  final customTransport = config.legacyTransportClient;
-  final customDio = switch (customTransport) {
-    DioTransportClient(:final dio) => dio,
-    _ => config.legacyCustomDio,
-  };
-
-  if (customDio == null &&
-      config.legacyCustomHeaders.isEmpty &&
-      !config.legacyEnableHttpLogging &&
-      config.legacyHttpProxy == null &&
-      !config.legacyBypassSslVerification &&
-      config.legacySslCertificatePath == null &&
-      config.legacyConnectionTimeout == null &&
-      config.legacyReceiveTimeout == null &&
-      config.legacySendTimeout == null) {
-    return null;
-  }
-
-  return ImmutableDioClientOverrides(
-    customDio: customDio,
-    customHeaders: config.legacyCustomHeaders,
-    enableHttpLogging: config.legacyEnableHttpLogging,
-    proxyUrl: config.legacyHttpProxy,
-    bypassSslVerification: config.legacyBypassSslVerification,
-    certificatePath: config.legacySslCertificatePath,
-    connectionTimeout: config.legacyConnectionTimeout,
-    receiveTimeout: config.legacyReceiveTimeout,
-    sendTimeout: config.legacySendTimeout,
-    timeout: config.timeout,
-  );
 }

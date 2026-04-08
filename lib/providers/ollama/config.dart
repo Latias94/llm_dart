@@ -1,16 +1,14 @@
 import 'package:llm_dart_transport/llm_dart_transport.dart'
-    show DioClientOverrides, DioTransportClient, ImmutableDioClientOverrides;
+    show DioClientOverrides, HasDioClientOverrides;
 
 import '../../models/tool_models.dart';
-import '../../core/config.dart';
-import '../../src/config/legacy_config_extensions.dart';
 import 'defaults.dart';
 
 /// Ollama provider configuration
 ///
 /// This class contains all configuration options for the Ollama providers.
 /// It's extracted from the main provider to improve modularity and reusability.
-class OllamaConfig {
+class OllamaConfig implements HasDioClientOverrides {
   final String baseUrl;
   final String? apiKey;
   final String model;
@@ -18,6 +16,7 @@ class OllamaConfig {
   final double? temperature;
   final String? systemPrompt;
   final Duration? timeout;
+  @override
   final DioClientOverrides? dioOverrides;
 
   final double? topP;
@@ -34,9 +33,6 @@ class OllamaConfig {
   final String? keepAlive; // How long to keep model in memory
   final bool? raw; // Raw mode (no templating)
   final bool? reasoning; // Enable thinking for reasoning models
-
-  /// Reference to original LLMConfig for accessing extensions
-  final LLMConfig? _originalConfig;
 
   const OllamaConfig({
     this.baseUrl = OllamaDefaults.baseUrl,
@@ -60,43 +56,7 @@ class OllamaConfig {
     this.keepAlive,
     this.raw,
     this.reasoning,
-    LLMConfig? originalConfig,
-  }) : _originalConfig = originalConfig;
-
-  /// Create OllamaConfig from unified LLMConfig
-  factory OllamaConfig.fromLLMConfig(LLMConfig config) {
-    return OllamaConfig(
-      baseUrl: config.baseUrl,
-      apiKey: config.apiKey,
-      model: config.model,
-      maxTokens: config.maxTokens,
-      temperature: config.temperature,
-      systemPrompt: config.systemPrompt,
-      timeout: config.timeout,
-      dioOverrides: _legacyDioOverridesFromConfig(config),
-
-      topP: config.topP,
-      topK: config.topK,
-      tools: config.tools,
-      // Ollama-specific extensions
-      jsonSchema: config.legacyJsonSchema,
-      numCtx: config.getExtension<int>(LegacyExtensionKeys.numCtx),
-      numGpu: config.getExtension<int>(LegacyExtensionKeys.numGpu),
-      numThread: config.getExtension<int>(LegacyExtensionKeys.numThread),
-      numa: config.getExtension<bool>(LegacyExtensionKeys.numa),
-      numBatch: config.getExtension<int>(LegacyExtensionKeys.numBatch),
-      keepAlive: config.getExtension<String>(LegacyExtensionKeys.keepAlive),
-      raw: config.getExtension<bool>(LegacyExtensionKeys.raw),
-      reasoning: config.getExtension<bool>(LegacyExtensionKeys.reasoning),
-      originalConfig: config,
-    );
-  }
-
-  /// Get extension value from original config
-  T? getExtension<T>(String key) => _originalConfig?.getExtension<T>(key);
-
-  /// Get the original LLMConfig for HTTP configuration
-  LLMConfig? get originalConfig => _originalConfig;
+  });
 
   /// Check if this model supports reasoning/thinking
   bool get supportsReasoning {
@@ -208,39 +168,5 @@ class OllamaConfig {
         keepAlive: keepAlive ?? this.keepAlive,
         raw: raw ?? this.raw,
         reasoning: reasoning ?? this.reasoning,
-        originalConfig: _originalConfig,
       );
-}
-
-DioClientOverrides? _legacyDioOverridesFromConfig(LLMConfig config) {
-  final customTransport = config.legacyTransportClient;
-  final customDio = switch (customTransport) {
-    DioTransportClient(:final dio) => dio,
-    _ => config.legacyCustomDio,
-  };
-
-  if (customDio == null &&
-      config.legacyCustomHeaders.isEmpty &&
-      !config.legacyEnableHttpLogging &&
-      config.legacyHttpProxy == null &&
-      !config.legacyBypassSslVerification &&
-      config.legacySslCertificatePath == null &&
-      config.legacyConnectionTimeout == null &&
-      config.legacyReceiveTimeout == null &&
-      config.legacySendTimeout == null) {
-    return null;
-  }
-
-  return ImmutableDioClientOverrides(
-    customDio: customDio,
-    customHeaders: config.legacyCustomHeaders,
-    enableHttpLogging: config.legacyEnableHttpLogging,
-    proxyUrl: config.legacyHttpProxy,
-    bypassSslVerification: config.legacyBypassSslVerification,
-    certificatePath: config.legacySslCertificatePath,
-    connectionTimeout: config.legacyConnectionTimeout,
-    receiveTimeout: config.legacyReceiveTimeout,
-    sendTimeout: config.legacySendTimeout,
-    timeout: config.timeout,
-  );
 }

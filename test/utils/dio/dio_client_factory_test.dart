@@ -20,6 +20,8 @@ import 'package:llm_dart/providers/phind/config.dart';
 import 'package:llm_dart/providers/phind/dio_strategy.dart';
 import 'package:llm_dart/providers/elevenlabs/config.dart';
 import 'package:llm_dart/providers/elevenlabs/dio_strategy.dart';
+import 'package:llm_dart/legacy.dart'
+    show createLegacyElevenLabsConfig, createLegacyOllamaConfig;
 import 'package:llm_dart/utils/dio_client_factory.dart';
 
 void main() {
@@ -361,11 +363,7 @@ void main() {
         },
         {
           'strategy': OllamaDioStrategy(),
-          'config': OllamaConfig(
-              apiKey: 'test-key',
-              baseUrl: 'https://api.example.com',
-              model: 'test-model',
-              originalConfig: llmConfig)
+          'config': createLegacyOllamaConfig(llmConfig)
         },
         {
           'strategy': PhindDioStrategy(),
@@ -373,7 +371,7 @@ void main() {
         },
         {
           'strategy': ElevenLabsDioStrategy(),
-          'config': ElevenLabsConfig.fromLLMConfig(llmConfig)
+          'config': createLegacyElevenLabsConfig(llmConfig)
         },
       ];
 
@@ -450,11 +448,7 @@ void main() {
         },
         {
           'strategy': OllamaDioStrategy(),
-          'config': OllamaConfig(
-              apiKey: 'test-key',
-              baseUrl: 'https://api.example.com',
-              model: 'test-model',
-              originalConfig: llmConfig)
+          'config': createLegacyOllamaConfig(llmConfig)
         },
         {
           'strategy': PhindDioStrategy(),
@@ -462,7 +456,7 @@ void main() {
         },
         {
           'strategy': ElevenLabsDioStrategy(),
-          'config': ElevenLabsConfig.fromLLMConfig(llmConfig)
+          'config': createLegacyElevenLabsConfig(llmConfig)
         },
       ];
 
@@ -544,7 +538,7 @@ void main() {
         },
         {
           'strategy': ElevenLabsDioStrategy(),
-          'config': ElevenLabsConfig.fromLLMConfig(llmConfig),
+          'config': createLegacyElevenLabsConfig(llmConfig),
           'expectedHeaders': {'xi-api-key': 'test-key'}
         },
       ];

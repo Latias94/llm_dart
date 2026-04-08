@@ -17,6 +17,12 @@ abstract interface class DioClientOverrides {
   String? get certificatePath;
 }
 
+/// Marker for provider-owned configs that expose transport override data without
+/// implementing the full override interface directly.
+abstract interface class HasDioClientOverrides {
+  DioClientOverrides? get dioOverrides;
+}
+
 /// Strategy interface for provider-specific Dio configuration.
 abstract class ProviderDioStrategy {
   /// Provider name for logging and debugging.

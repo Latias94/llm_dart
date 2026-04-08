@@ -1,5 +1,6 @@
 import '../../core/capability.dart';
 import '../../core/config.dart';
+import '../../src/compatibility/providers/community_provider_config_adapters.dart';
 import '../../src/provider_defaults.dart';
 import '../elevenlabs/elevenlabs.dart';
 import 'base_factory.dart';
@@ -48,18 +49,6 @@ class ElevenLabsProviderFactory extends BaseProviderFactory<ChatCapability> {
 
   /// Transform unified config to ElevenLabs-specific config
   ElevenLabsConfig _transformConfig(LLMConfig config) {
-    return ElevenLabsConfig(
-      apiKey: config.apiKey!,
-      baseUrl: config.baseUrl,
-      model: config.model,
-      timeout: config.timeout,
-      // ElevenLabs-specific extensions using base class method
-      voiceId: getExtension<String>(config, 'voiceId'),
-      stability: getExtension<double>(config, 'stability'),
-      similarityBoost: getExtension<double>(config, 'similarityBoost'),
-      style: getExtension<double>(config, 'style'),
-      useSpeakerBoost: getExtension<bool>(config, 'useSpeakerBoost'),
-      originalConfig: config,
-    );
+    return createLegacyElevenLabsConfig(config);
   }
 }

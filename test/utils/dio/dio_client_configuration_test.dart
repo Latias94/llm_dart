@@ -226,7 +226,7 @@ void main() {
       test(
           'should use unified HTTP configuration when originalConfig is available',
           () {
-        final config = OllamaConfig.fromLLMConfig(baseConfig);
+        final config = createLegacyOllamaConfig(baseConfig);
         final client = OllamaClient(config);
 
         expect(client.dio, isA<Dio>());
