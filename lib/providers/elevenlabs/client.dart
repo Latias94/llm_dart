@@ -30,6 +30,9 @@ class ElevenLabsClient {
   /// Logger instance for debugging
   Logger get logger => _logger;
 
+  /// Shared Dio client for compatibility bridge delegation.
+  Dio get dio => _dio;
+
   /// Make a GET request and return JSON response
   Future<Map<String, dynamic>> getJson(
     String endpoint, {

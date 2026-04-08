@@ -19,6 +19,11 @@ provider behavior.
 
 ## Current Status
 
+Meaningful first thinning steps have now landed for both shared-capability
+community providers.
+
+### Ollama
+
 One meaningful first thinning step has now landed for Ollama:
 
 - the root `OllamaProvider` chat path now delegates replay-safe requests into
@@ -33,6 +38,26 @@ delegating at all.
 
 The next question is how far that delegation should go, and how the same
 thinning pattern should now be applied to ElevenLabs.
+
+### ElevenLabs
+
+A matching first thinning step has now also landed for ElevenLabs:
+
+- the root `ElevenLabsProvider` text-to-speech path now delegates to the
+  package-owned `llm_dart_community` speech model
+- the root `ElevenLabsProvider` speech-to-text path now delegates to the
+  package-owned `llm_dart_community` transcription model for direct audio-byte
+  requests
+- the root shell still keeps conservative fallback for legacy-only or
+  provider-specific paths such as file-based transcription, voice catalogs,
+  realtime audio, model listing, and account helpers
+
+That means the next question is no longer whether root ElevenLabs can start
+delegating shared audio capabilities.
+
+The next question is how much of the remaining provider-shaped audio/admin
+surface should stay as explicit provider-owned legacy shell versus gaining a
+later provider-owned modern helper outside the shared audio contracts.
 
 ## What Still Lives In The Root Shells
 
@@ -54,7 +79,8 @@ The root layer still owns these compatibility-shaped pieces:
 
 - `ElevenLabsProvider` implementing `AudioCapability` plus a placeholder
   `ChatCapability`
-- `ElevenLabsAudio` and the remaining legacy audio request/response models
+- `ElevenLabsAudio` for file-based transcription fallback plus remaining
+  legacy-only audio/admin helpers
 - compatibility-only voice and audio helpers that still assume the old root
   capability surface
 
@@ -125,9 +151,10 @@ pretending the provider is already migrated.
 1. Thin the root Ollama shell so chat and embeddings delegate toward
    `llm_dart_community`, while model listing and any remaining completion-only
    paths are evaluated separately.
-2. Thin the root ElevenLabs shell so shared audio generation/transcription
-   delegate toward `llm_dart_community`, while voice/realtime/admin features
-   remain explicitly provider-owned outside the shared audio contract.
+2. Keep thinning the root ElevenLabs shell now that shared audio
+   generation/transcription already delegate toward `llm_dart_community`,
+   while voice/realtime/admin features remain explicitly provider-owned
+   outside the shared audio contract.
 3. Mark the root community entrypoints more clearly as compatibility-oriented in
    migration docs and deprecation wording.
 4. Only after that, decide whether any remaining Ollama or ElevenLabs features

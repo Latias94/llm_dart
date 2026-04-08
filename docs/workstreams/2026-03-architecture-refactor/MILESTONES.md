@@ -178,10 +178,18 @@ Current status:
   multimodal inputs still require caller-owned byte loading, and tool error
   state still degrades to warning-based plain tool-content replay because
   Ollama has no dedicated replay field for it
+- the root ElevenLabs legacy shell now also delegates shared text-to-speech
+  and direct-audio transcription requests into the package-owned
+  `llm_dart_community` models instead of keeping duplicate primary audio
+  request codecs entirely under root
+- that ElevenLabs delegation still preserves explicit fallback for legacy-only
+  or provider-specific paths such as file-based transcription, voice catalogs,
+  realtime flows, model listing, and account helpers, so the shell is thinner
+  without pretending the whole provider is already migrated
 - ElevenLabs modern migration is now no longer hypothetical; the remaining
-  work is to keep provider-shaped audio APIs such as voice catalogs, cloning,
-  and realtime flows provider-owned instead of forcing them into shared audio
-  models
+  work is to decide which provider-shaped audio/admin APIs such as file-based
+  transcription, voice catalogs, cloning, and realtime flows should remain
+  provider-owned instead of being forced into shared audio models
 
 ## M5 - Flutter Chat Layer
 
