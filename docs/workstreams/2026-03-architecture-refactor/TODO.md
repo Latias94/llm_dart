@@ -163,6 +163,7 @@
 ## Community Providers
 
 - [ ] Freeze the split between root legacy community-provider shells and package-owned modern community model APIs
+- [ ] Thin the root Ollama and ElevenLabs providers into explicit legacy delegation shells above package-owned modern community models
 - [x] Add the first package-owned Ollama `EmbeddingModel` slice in `llm_dart_community`
 - [x] Expand the package-owned Ollama modern slice with `LanguageModel`
 - [ ] Close the remaining Ollama modern fidelity gaps after the first replay re-audit, especially explicit `toolChoice` forcing, non-inline multimodal inputs, and the lack of a native replay-time tool error flag

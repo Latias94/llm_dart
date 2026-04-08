@@ -237,6 +237,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Frozen recommendation for splitting community providers into package-owned
     modern model APIs plus root legacy shells, including the suggested Ollama-
     first then ElevenLabs sequence.
+- [101-community-root-shell-thinning-plan.md](101-community-root-shell-thinning-plan.md)
+  - Execution-focused plan for thinning the remaining root Ollama and
+    ElevenLabs provider shells after the first package-owned community model
+    surfaces landed.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
