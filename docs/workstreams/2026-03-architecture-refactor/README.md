@@ -260,6 +260,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - [106-ollama-shell-compat-helper-extraction.md](106-ollama-shell-compat-helper-extraction.md)
   - Status note for moving Ollama root-shell compatibility glue out of
     `lib/providers/ollama/provider.dart` and into the root compatibility layer.
+- [107-elevenlabs-shell-compat-helper-extraction.md](107-elevenlabs-shell-compat-helper-extraction.md)
+  - Status note for moving ElevenLabs root-shell modern-bridge glue out of
+    `lib/providers/elevenlabs/provider.dart` and into the root compatibility
+    layer.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
@@ -394,6 +398,11 @@ This workstream is not about a file-moving refactor. It is about defining stable
   compatibility config shaping, chat-bridge setup, and embedding delegation
   glue no longer live inline inside `lib/providers/ollama/provider.dart`, but
   have moved into a dedicated root compatibility support module
+- the ElevenLabs root shell is now also slightly thinner in code ownership
+  terms: shared speech/transcription bridge setup, request shaping, and legacy
+  response-mapping glue no longer live inline inside
+  `lib/providers/elevenlabs/provider.dart`, but have moved into a dedicated
+  root compatibility support module
 - the next remaining shared-helper blocker for community-provider migration is
   no longer cancellation, provider-facing Dio setup, provider defaults, the
   shared UTF-8 decoder, provider-config-owned legacy adaptation, dynamic root

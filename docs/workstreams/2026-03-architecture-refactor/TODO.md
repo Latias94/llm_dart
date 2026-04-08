@@ -156,6 +156,7 @@
 - [x] Make `llm_dart_community` a real migration target instead of an empty landing-zone package
 - [ ] Decouple Ollama and ElevenLabs from root-local compatibility imports before moving real implementation weight into `llm_dart_community` (see `101-community-root-shell-thinning-plan.md` and `105-community-provider-decoupling-blocker-inventory.md`)
 - [x] Extract Ollama root-shell compatibility config shaping and bridge setup out of `lib/providers/ollama/provider.dart` into the root compatibility layer
+- [x] Extract ElevenLabs root-shell speech/transcription bridge setup out of `lib/providers/elevenlabs/provider.dart` into the root compatibility layer
 - [ ] Freeze whether the remaining root builder/factory adaptation path should survive as a compatibility shell or be replaced by provider-owned modern config constructors
 - [ ] Decide whether `HttpResponseHandler` should stay root compatibility-owned or be split into provider-owned parsing plus shared transport failure handling
 - [ ] Audit whether provider-focused root entrypoints should stop re-exporting `AI`, `core.dart`, and `transport.dart` once the modern import boundary is fully stable

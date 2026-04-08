@@ -223,6 +223,11 @@ Current status:
   compatibility config shaping, chat-bridge setup, and embedding delegation
   glue no longer live inline in `lib/providers/ollama/provider.dart`, but in a
   dedicated root compatibility support module
+- the ElevenLabs root shell has now also taken the same kind of thinning step:
+  shared speech/transcription bridge setup, request shaping, and legacy
+  response-mapping glue no longer live inline in
+  `lib/providers/elevenlabs/provider.dart`, but in a dedicated root
+  compatibility support module
 
 ## M5 - Flutter Chat Layer
 
