@@ -219,6 +219,10 @@ Current status:
   down explicitly: the next decoupling targets are the root compatibility
   interfaces, bridge helpers, legacy config/factory adapters, and residual
   provider-shaped root modules rather than more public-entry ambiguity
+- the Ollama root shell has now also taken one more real thinning step:
+  compatibility config shaping, chat-bridge setup, and embedding delegation
+  glue no longer live inline in `lib/providers/ollama/provider.dart`, but in a
+  dedicated root compatibility support module
 
 ## M5 - Flutter Chat Layer
 

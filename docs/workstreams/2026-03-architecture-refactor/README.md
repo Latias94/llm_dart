@@ -257,6 +257,9 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Current blocker inventory for what still keeps more Ollama and ElevenLabs
     implementation weight attached to the root compatibility layer even after
     the first modern community surfaces landed.
+- [106-ollama-shell-compat-helper-extraction.md](106-ollama-shell-compat-helper-extraction.md)
+  - Status note for moving Ollama root-shell compatibility glue out of
+    `lib/providers/ollama/provider.dart` and into the root compatibility layer.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
@@ -387,6 +390,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   adaptation, and residual provider-shaped modules still keep more
   implementation weight in the root package than the long-term architecture
   wants
+- the Ollama root shell is now also slightly thinner in code ownership terms:
+  compatibility config shaping, chat-bridge setup, and embedding delegation
+  glue no longer live inline inside `lib/providers/ollama/provider.dart`, but
+  have moved into a dedicated root compatibility support module
 - the next remaining shared-helper blocker for community-provider migration is
   no longer cancellation, provider-facing Dio setup, provider defaults, the
   shared UTF-8 decoder, provider-config-owned legacy adaptation, dynamic root
