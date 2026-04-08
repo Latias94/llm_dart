@@ -190,6 +190,11 @@ Current status:
   work is to decide which provider-shaped audio/admin APIs such as file-based
   transcription, voice catalogs, cloning, and realtime flows should remain
   provider-owned instead of being forced into shared audio models
+- the provider-specific extra-API policy is now also frozen more explicitly:
+  the `repo-ref/ai` direction is used as an ownership rule, not as a command to
+  move every provider HTTP endpoint into the modern package surface, so catalog,
+  realtime, admin, and file-path convenience APIs stay legacy-only or
+  provider-owned unless a concrete typed helper is justified
 
 ## M5 - Flutter Chat Layer
 

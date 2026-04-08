@@ -163,6 +163,7 @@
 ## Community Providers
 
 - [ ] Freeze the split between root legacy community-provider shells and package-owned modern community model APIs
+- [x] Freeze the policy for provider-specific community-provider extras versus shared modern model surfaces
 - [x] Thin the root Ollama shell for chat and embeddings by delegating replay-safe shared-capability paths into `llm_dart_community` while preserving fallback for named-message and duplicate-system-prompt legacy cases
 - [x] Thin the root ElevenLabs shell for text-to-speech and direct-audio transcription by delegating shared-capability paths into `llm_dart_community` while preserving legacy fallback for file input and provider-only audio/admin features
 - [ ] Thin the root Ollama and ElevenLabs providers into explicit legacy delegation shells above package-owned modern community models
