@@ -12,7 +12,6 @@ import '../../../providers/groq/config.dart';
 import '../../../providers/groq/provider.dart';
 import '../../../providers/openai/builtin_tools.dart';
 import '../../../providers/openai/config.dart';
-import '../../../providers/openai/provider.dart';
 import '../../../providers/xai/config.dart';
 import '../../../providers/xai/provider.dart';
 import '../../config/legacy_config_keys.dart';
@@ -21,6 +20,7 @@ import '../chat_route_compatibility.dart';
 import '../compat_transport.dart';
 import '../legacy_chat_adapter.dart';
 import 'compat_provider_support.dart';
+import 'openai/provider_compat.dart';
 
 ChatCapability buildCompatOpenAIProvider(LLMConfig config) {
   final legacyConfig = _toLegacyOpenAIConfig(config);

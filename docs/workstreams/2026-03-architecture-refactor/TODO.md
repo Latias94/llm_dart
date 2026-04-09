@@ -97,7 +97,7 @@
 - [x] Add provider-owned OpenAI custom output helpers for `image_generation_call`, partial-image stream chunks, and `mcp_list_tools` without widening the shared core
 - [x] Add provider-owned OpenAI `code_interpreter` declaration support without widening the shared core
 - [x] Add a provider-owned OpenAI image edit helper without widening the shared image contract
-- [ ] Decide whether OpenAI image variation should remain compatibility-only or gain a later narrow provider-owned helper
+- [x] Decide that OpenAI image variation should remain compatibility-only for now instead of gaining an automatic provider-owned helper
 - [ ] Re-evaluate richer OpenAI Responses hosted-tool or custom item-family replay only if a concrete OpenAI-native use case requires it beyond the current common function-tool and MCP continuation subset
 - [ ] Decide whether OpenAI should keep the remaining advanced hosted-tool families deferred, or add only narrowly-scoped provider-owned helpers if a concrete product need appears
 - [x] Turn OpenRouter into a profile
@@ -161,6 +161,7 @@
 - [ ] Decouple Ollama and ElevenLabs from root-local compatibility imports before moving real implementation weight into `llm_dart_community` (see `101-community-root-shell-thinning-plan.md` and `105-community-provider-decoupling-blocker-inventory.md`)
 - [x] Extract Ollama root-shell compatibility config shaping and bridge setup out of `lib/providers/ollama/provider.dart` into the root compatibility layer
 - [x] Extract ElevenLabs root-shell speech/transcription bridge setup out of `lib/providers/elevenlabs/provider.dart` into the root compatibility layer
+- [x] Relocate the remaining root OpenAI provider shell under `src/compatibility`, leaving the public provider entry file as a compatibility re-export
 - [x] Freeze that the remaining root builder/factory adaptation path survives only as a compatibility shell, while provider-owned modern config constructors remain the long-term API direction
 - [x] Decide that `HttpResponseHandler` and `DioErrorHandler` stay root compatibility-owned for now, while transport keeps lower-level primitives and provider packages keep owning their modern model-path error handling
 - [x] Audit and narrow provider-focused root entrypoints so `openai.dart`, `google.dart`, and `anthropic.dart` stop re-exporting `AI`, `core.dart`, and `transport.dart`

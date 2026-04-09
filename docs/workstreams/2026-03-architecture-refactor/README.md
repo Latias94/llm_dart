@@ -358,6 +358,14 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - [131-openai-provider-owned-image-edit-helper.md](131-openai-provider-owned-image-edit-helper.md)
   - Frozen decision and landed status for adding a provider-owned OpenAI modern
     image edit helper without widening the shared image contract.
+- [132-openai-image-variation-policy.md](132-openai-image-variation-policy.md)
+  - Frozen conclusion that OpenAI image variation should remain
+    compatibility-only for now instead of automatically expanding the modern
+    provider package.
+- [133-openai-provider-shell-relocation.md](133-openai-provider-shell-relocation.md)
+  - Status note for relocating the remaining root OpenAI provider shell under
+    `src/compatibility`, leaving the public provider entry file as a
+    compatibility re-export.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
