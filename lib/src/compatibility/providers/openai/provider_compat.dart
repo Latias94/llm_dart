@@ -620,6 +620,10 @@ $conversationContext
 }
 
 bool _supportsRootOpenAIChatBridge(OpenAIConfig config) {
+  // The root-provider modern bridge is intentionally narrowed to official
+  // OpenAI-hosted requests. Deprecated OpenAI-compatible preset helpers stay on
+  // the compatibility fallback path until or unless the project chooses a
+  // separate provider-owned migration for them.
   final uri = Uri.tryParse(config.baseUrl);
   return uri?.host.toLowerCase() == 'api.openai.com';
 }

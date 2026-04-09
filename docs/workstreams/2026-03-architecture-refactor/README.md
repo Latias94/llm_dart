@@ -391,6 +391,13 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Implementation note for narrowing the official root `OpenAIProvider` chat
     path onto the shared modern OpenAI bridge while keeping residual
     compatibility APIs public.
+- [141-root-openai-compatible-helper-bridge-policy.md](141-root-openai-compatible-helper-bridge-policy.md)
+  - Frozen policy that deprecated root OpenAI-compatible preset helpers remain
+    compatibility aliases on the fallback path instead of gaining new
+    profile-specific modern bridge ownership.
+- [142-root-runtime-dependency-exit-status.md](142-root-runtime-dependency-exit-status.md)
+  - Current dependency-usage and dependency-direction status note explaining why
+    the root package still owns direct `dio` and `logging` runtime deps.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)

@@ -286,6 +286,74 @@ void main() {
       );
     });
 
+    test('keeps non-OpenAI hosts on the compatibility fallback path', () async {
+      RequestOptions? capturedRequest;
+
+      final fallbackDio = Dio();
+      fallbackDio.options.baseUrl = 'https://openrouter.ai/api/v1/';
+      fallbackDio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) {
+            capturedRequest = options;
+            handler.resolve(
+              Response(
+                requestOptions: options,
+                statusCode: 200,
+                data: {
+                  'id': 'chatcmpl_root_openrouter_1',
+                  'model': 'openai/gpt-4o-mini',
+                  'created': 1710000800,
+                  'choices': [
+                    {
+                      'index': 0,
+                      'finish_reason': 'stop',
+                      'message': {
+                        'role': 'assistant',
+                        'content': 'Fallback path used.',
+                      },
+                    },
+                  ],
+                },
+              ),
+            );
+          },
+        ),
+      );
+
+      final originalConfig = LLMConfig(
+        apiKey: 'test-key',
+        baseUrl: 'https://openrouter.ai/api/v1/',
+        model: 'openai/gpt-4o-mini',
+      ).withExtensions({
+        'customDio': fallbackDio,
+        'customTransportClient': FakeTransportClient(
+          onSend: (_) async => throw StateError(
+            'Modern bridge transport should not be used for non-OpenAI hosts.',
+          ),
+          onSendStream: (_) async => throw StateError(
+            'Modern bridge stream transport should not be used for non-OpenAI hosts.',
+          ),
+        ),
+      });
+
+      final provider = OpenAIProvider(
+        OpenAIConfig(
+          apiKey: 'test-key',
+          baseUrl: 'https://openrouter.ai/api/v1/',
+          model: 'openai/gpt-4o-mini',
+          originalConfig: originalConfig,
+        ),
+      );
+
+      final response = await provider.chat([
+        ChatMessage.user('Use the compatibility fallback.'),
+      ]);
+
+      expect(response.text, 'Fallback path used.');
+      expect(capturedRequest, isNotNull);
+      expect(capturedRequest!.uri.toString(), contains('/chat/completions'));
+    });
+
     test(
         'routes streaming chat through the modern bridge even when responses compatibility is disabled',
         () async {

@@ -64,7 +64,9 @@ OpenAIProvider createOpenAIProvider({
 @Deprecated(
   'createOpenRouterProvider() is a legacy preset helper. '
   'Prefer the stable AI.openRouter(...).chatModel(...) API. '
-  'If you still need the old root-package OpenAIProvider surface temporarily, use createOpenAIProvider(...) with explicit OpenRouter baseUrl/model settings.',
+  'If you still need the old root-package OpenAIProvider surface temporarily, '
+  'use createOpenAIProvider(...) with explicit OpenRouter baseUrl/model settings. '
+  'This helper remains a compatibility alias and is not targeted for a profile-specific modern bridge.',
 )
 OpenAIProvider createOpenRouterProvider({
   required String apiKey,
@@ -89,7 +91,9 @@ OpenAIProvider createOpenRouterProvider({
 @Deprecated(
   'createGroqProvider() is a legacy preset helper. '
   'Prefer the stable AI.groq(...).chatModel(...) API. '
-  'If you still need the old root-package OpenAIProvider surface temporarily, use createOpenAIProvider(...) with explicit Groq baseUrl/model settings.',
+  'If you still need the old root-package OpenAIProvider surface temporarily, '
+  'use createOpenAIProvider(...) with explicit Groq baseUrl/model settings. '
+  'This helper remains a compatibility alias and is not targeted for a profile-specific modern bridge.',
 )
 OpenAIProvider createGroqProvider({
   required String apiKey,
@@ -114,7 +118,9 @@ OpenAIProvider createGroqProvider({
 @Deprecated(
   'createDeepSeekProvider() is a legacy preset helper. '
   'Prefer the stable AI.deepSeek(...).chatModel(...) API. '
-  'If you still need the old root-package OpenAIProvider surface temporarily, use createOpenAIProvider(...) with explicit DeepSeek baseUrl/model settings.',
+  'If you still need the old root-package OpenAIProvider surface temporarily, '
+  'use createOpenAIProvider(...) with explicit DeepSeek baseUrl/model settings. '
+  'This helper remains a compatibility alias and is not targeted for a profile-specific modern bridge.',
 )
 OpenAIProvider createDeepSeekProvider({
   required String apiKey,
@@ -139,7 +145,9 @@ OpenAIProvider createDeepSeekProvider({
 @Deprecated(
   'createAzureOpenAIProvider() is a legacy preset helper. '
   'Prefer AI.openai(...).chatModel(...) for migrated OpenAI-compatible text usage, '
-  'or use createOpenAIProvider(...) with explicit Azure endpoint-style baseUrl/model settings when you still need the old root-package OpenAIProvider surface.',
+  'or use createOpenAIProvider(...) with explicit Azure endpoint-style baseUrl/model settings '
+  'when you still need the old root-package OpenAIProvider surface. '
+  'This helper remains a compatibility alias and is not targeted for a dedicated modern Azure bridge.',
 )
 OpenAIProvider createAzureOpenAIProvider({
   required String apiKey,
@@ -166,7 +174,8 @@ OpenAIProvider createAzureOpenAIProvider({
 @Deprecated(
   'createCopilotProvider() is a legacy preset helper. '
   'Prefer AI.openai(...).chatModel(...) with explicit Copilot-compatible baseUrl/model settings, '
-  'or use createOpenAIProvider(...) when you still need the old root-package OpenAIProvider surface.',
+  'or use createOpenAIProvider(...) when you still need the old root-package OpenAIProvider surface. '
+  'This helper remains a compatibility alias and is not targeted for a profile-specific modern bridge.',
 )
 OpenAIProvider createCopilotProvider({
   required String apiKey,
@@ -191,7 +200,8 @@ OpenAIProvider createCopilotProvider({
 @Deprecated(
   'createTogetherProvider() is a legacy preset helper. '
   'Prefer AI.openai(...).chatModel(...) with explicit Together-compatible baseUrl/model settings, '
-  'or use createOpenAIProvider(...) when you still need the old root-package OpenAIProvider surface.',
+  'or use createOpenAIProvider(...) when you still need the old root-package OpenAIProvider surface. '
+  'This helper remains a compatibility alias and is not targeted for a profile-specific modern bridge.',
 )
 OpenAIProvider createTogetherProvider({
   required String apiKey,
