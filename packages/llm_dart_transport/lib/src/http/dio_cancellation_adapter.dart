@@ -20,3 +20,17 @@ CancelToken? bindDioCancellation(TransportCancellation? cancellation) {
   );
   return cancelToken;
 }
+
+/// Returns `true` when [error] is a Dio cancellation exception.
+bool isDioCancellationError(Object error) {
+  return error is DioException && CancelToken.isCancel(error);
+}
+
+/// Extracts the raw Dio cancellation message when available.
+String? getDioCancellationReason(Object error) {
+  if (!isDioCancellationError(error)) {
+    return null;
+  }
+
+  return (error as DioException).message;
+}

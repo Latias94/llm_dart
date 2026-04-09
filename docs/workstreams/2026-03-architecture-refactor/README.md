@@ -398,6 +398,9 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - [142-root-runtime-dependency-exit-status.md](142-root-runtime-dependency-exit-status.md)
   - Current dependency-usage and dependency-direction status note explaining why
     the root package still owns direct `dio` and `logging` runtime deps.
+- [143-root-cancellation-dio-decoupling.md](143-root-cancellation-dio-decoupling.md)
+  - Status note for moving raw Dio cancellation inspection out of the root
+    cancellation helper and into the transport layer.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)

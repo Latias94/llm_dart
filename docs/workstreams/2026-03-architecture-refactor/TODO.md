@@ -330,6 +330,7 @@
 ## Dependency Cleanup
 
 - [x] Remove `dio` from the core public API surface
+- [x] Move raw Dio cancellation inspection out of the root `CancellationHelper`
 - [x] Remove or isolate deprecated `HttpConfig.dioClient(Dio)` from the stable builder surface
 - [x] Move provider-owned default catalogs and OpenAI-compatible profile catalogs out of `core/` implementation files
 - [x] Move Google OpenAI-compatible transformers out of `core/`

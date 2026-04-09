@@ -42,8 +42,9 @@ library;
 export 'package:llm_dart_core/llm_dart_core.dart'
     show TransportCancellation, TransportCancelledException;
 
-import 'package:dio/dio.dart' as dio;
 import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_transport/llm_dart_transport.dart'
+    show getDioCancellationReason, isDioCancellationError;
 import 'llm_error.dart';
 
 @Deprecated('Use TransportCancellation instead.')
@@ -54,7 +55,8 @@ class CancellationHelper {
   /// Check if an error indicates the operation was cancelled
   ///
   /// Returns `true` if the error is a `CancelledError`,
-  /// `TransportCancelledException`, or a raw Dio cancellation exception.
+  /// `TransportCancelledException`, or a raw transport-owned Dio cancellation
+  /// exception.
   ///
   /// Example:
   /// ```dart
@@ -72,9 +74,10 @@ class CancellationHelper {
 
     if (error is TransportCancelledException) return true;
 
-    // Check for Dio's raw cancellation exception
-    // (this should not normally occur as we map it to CancelledError)
-    return error is dio.DioException && dio.CancelToken.isCancel(error);
+    // Check for raw Dio cancellation that still leaks through transport or
+    // compatibility paths. This should be rare, but the compatibility helper
+    // keeps the old detection behavior without importing Dio in the root layer.
+    return isDioCancellationError(error);
   }
 
   /// Extract the cancellation reason/message from an error
@@ -102,10 +105,6 @@ class CancellationHelper {
       return error.reason?.toString();
     }
 
-    if (error is dio.DioException) {
-      return error.message;
-    }
-
-    return null;
+    return getDioCancellationReason(error);
   }
 }
