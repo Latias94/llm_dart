@@ -136,6 +136,11 @@ OpenAIProvider createDeepSeekProvider({
 }
 
 /// Create an OpenAI provider for Azure OpenAI
+@Deprecated(
+  'createAzureOpenAIProvider() is a legacy preset helper. '
+  'Prefer AI.openai(...).chatModel(...) for migrated OpenAI-compatible text usage, '
+  'or use createOpenAIProvider(...) with explicit Azure endpoint-style baseUrl/model settings when you still need the old root-package OpenAIProvider surface.',
+)
 OpenAIProvider createAzureOpenAIProvider({
   required String apiKey,
   required String endpoint,
@@ -158,6 +163,11 @@ OpenAIProvider createAzureOpenAIProvider({
 }
 
 /// Create an OpenAI provider for GitHub Copilot
+@Deprecated(
+  'createCopilotProvider() is a legacy preset helper. '
+  'Prefer AI.openai(...).chatModel(...) with explicit Copilot-compatible baseUrl/model settings, '
+  'or use createOpenAIProvider(...) when you still need the old root-package OpenAIProvider surface.',
+)
 OpenAIProvider createCopilotProvider({
   required String apiKey,
   String model = ProviderDefaults.githubCopilotDefaultModel,
@@ -178,6 +188,11 @@ OpenAIProvider createCopilotProvider({
 }
 
 /// Create an OpenAI provider for Together AI
+@Deprecated(
+  'createTogetherProvider() is a legacy preset helper. '
+  'Prefer AI.openai(...).chatModel(...) with explicit Together-compatible baseUrl/model settings, '
+  'or use createOpenAIProvider(...) when you still need the old root-package OpenAIProvider surface.',
+)
 OpenAIProvider createTogetherProvider({
   required String apiKey,
   String model = ProviderDefaults.togetherAIDefaultModel,

@@ -47,11 +47,18 @@ The following preset helpers should now carry `@Deprecated` markers.
 - `createOpenRouterProvider()`
 - `createGroqProvider()`
 - `createDeepSeekProvider()`
+- `createAzureOpenAIProvider()`
+- `createCopilotProvider()`
+- `createTogetherProvider()`
 
 Reason:
 
 - the stable root facade already exposes `AI.openRouter(...)`, `AI.groq(...)`, and `AI.deepSeek(...)`
-- these old helpers are only compatibility aliases over the old `OpenAIProvider` surface
+- the remaining Azure/Copilot/Together helpers are also only convenience wrappers
+  over the same old `OpenAIProvider` compatibility surface
+- callers that still need that old root surface can use
+  `createOpenAIProvider(...)` with explicit `baseUrl` and `model` instead of
+  preserving more preset aliases
 
 ### Anthropic preset helpers
 

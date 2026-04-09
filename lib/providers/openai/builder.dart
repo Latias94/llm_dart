@@ -7,14 +7,14 @@ import '../../src/config/legacy_provider_options.dart';
 import 'builtin_tools.dart';
 import 'provider.dart';
 
-/// OpenAI-specific LLM builder with provider-specific configuration methods
+/// Compatibility-only OpenAI builder DSL for the legacy root provider surface.
 ///
-/// This builder provides a layered configuration approach where OpenAI-specific
-/// parameters are handled separately from the generic LLMBuilder, keeping the
-/// main builder clean and focused.
+/// This builder remains public because the repository still keeps the old root
+/// `OpenAIProvider` compatibility surface alive, especially for residual APIs
+/// such as raw Responses lifecycle helpers.
 ///
-/// Use this for OpenAI-specific parameters only. For common parameters like
-/// apiKey, model, temperature, etc., continue using the base LLMBuilder methods.
+/// New code should usually prefer the stable `AI.openai(...).chatModel(...)`
+/// path plus typed provider-owned options from `package:llm_dart/openai.dart`.
 class OpenAIBuilder {
   final LLMBuilder _baseBuilder;
 

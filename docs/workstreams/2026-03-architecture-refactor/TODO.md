@@ -98,6 +98,7 @@
 - [x] Add provider-owned OpenAI `code_interpreter` declaration support without widening the shared core
 - [x] Add a provider-owned OpenAI image edit helper without widening the shared image contract
 - [x] Decide that OpenAI image variation should remain compatibility-only for now instead of gaining an automatic provider-owned helper
+- [x] Freeze the remaining root OpenAI public compatibility API policy and deprecate preset helpers that only prefill `baseUrl` or `model`
 - [ ] Re-evaluate richer OpenAI Responses hosted-tool or custom item-family replay only if a concrete OpenAI-native use case requires it beyond the current common function-tool and MCP continuation subset
 - [ ] Decide whether OpenAI should keep the remaining advanced hosted-tool families deferred, or add only narrowly-scoped provider-owned helpers if a concrete product need appears
 - [x] Turn OpenRouter into a profile

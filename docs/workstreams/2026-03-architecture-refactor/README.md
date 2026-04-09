@@ -373,6 +373,9 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - [135-openai-entrypoint-narrowing.md](135-openai-entrypoint-narrowing.md)
   - Status note for narrowing the provider-focused OpenAI barrel so broad
     compatibility exports move to `legacy.dart`.
+- [136-openai-public-compatibility-api-policy.md](136-openai-public-compatibility-api-policy.md)
+  - Frozen policy for which remaining root OpenAI public APIs stay visible as
+    compatibility surfaces and which preset helpers now deprecate.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
