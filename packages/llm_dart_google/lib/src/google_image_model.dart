@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
+import 'google_image_editing.dart';
 import 'google_options.dart';
 import 'google_shared.dart';
 
@@ -40,16 +41,10 @@ final class GoogleImageModel implements ImageModel {
 
   @override
   Future<ImageGenerationResult> generate(ImageGenerationRequest request) async {
-    final providerOptions = request.callOptions.providerOptions;
-    if (providerOptions != null && providerOptions is! GoogleImageOptions) {
-      throw ArgumentError.value(
-        providerOptions,
-        'request.callOptions.providerOptions',
-        'Expected GoogleImageOptions for Google image models.',
-      );
-    }
-
-    final options = providerOptions as GoogleImageOptions?;
+    final options = _resolveProviderOptions(
+      request.callOptions,
+      parameterName: 'request.callOptions.providerOptions',
+    );
     _validateRequest(request, options);
 
     final response = await transport.send(
@@ -76,6 +71,48 @@ final class GoogleImageModel implements ImageModel {
     return isGeminiImageModel
         ? _decodeGeminiResponse(json)
         : _decodeImagenResponse(json);
+  }
+
+  Future<ImageGenerationResult> edit(GoogleImageEditRequest request) async {
+    _validateGeminiEditSupport();
+    final options = _resolveProviderOptions(
+      request.callOptions,
+      parameterName: 'request.callOptions.providerOptions',
+    );
+    _validateEditRequest(request, options);
+
+    final response = await transport.send(
+      TransportRequest(
+        uri: generateContentUri,
+        method: TransportMethod.post,
+        headers: {
+          'x-goog-api-key': apiKey,
+          'content-type': 'application/json',
+          'accept': 'application/json',
+          ...settings.headers,
+          if (request.callOptions.headers case final headers?) ...headers,
+        },
+        body: _buildGeminiEditRequest(request, options: options),
+        timeout: request.callOptions.timeout,
+        cancellation: request.callOptions.cancellation,
+        responseType: TransportResponseType.json,
+      ),
+    );
+
+    return _decodeGeminiResponse(_decodeJsonObject(response.body));
+  }
+
+  Future<ImageGenerationResult> createVariation(
+    GoogleImageVariationRequest request,
+  ) {
+    return edit(
+      GoogleImageEditRequest(
+        prompt: request.prompt,
+        images: request.images,
+        count: request.count,
+        callOptions: request.callOptions,
+      ),
+    );
   }
 
   void _validateRequest(
@@ -121,6 +158,62 @@ final class GoogleImageModel implements ImageModel {
         'request.callOptions.providerOptions.safetySettings',
         'Google safety settings are only supported for Gemini image models. Imagen safety filters are not configurable through this surface.',
       );
+    }
+  }
+
+  void _validateGeminiEditSupport() {
+    if (!isGeminiImageModel) {
+      throw UnsupportedError(
+        'Google image editing currently requires Gemini image models. Imagen models remain generation-only on this provider-owned helper surface.',
+      );
+    }
+  }
+
+  void _validateEditRequest(
+    GoogleImageEditRequest request,
+    GoogleImageOptions? options,
+  ) {
+    if (request.images.isEmpty) {
+      throw ArgumentError.value(
+        request.images,
+        'request.images',
+        'Google image editing requires at least one image input.',
+      );
+    }
+
+    if (request.count != 1) {
+      throw ArgumentError.value(
+        request.count,
+        'request.count',
+        'Gemini image editing currently supports only count=1.',
+      );
+    }
+
+    if (options?.personGeneration != null) {
+      throw ArgumentError.value(
+        options?.personGeneration,
+        'request.callOptions.providerOptions.personGeneration',
+        'GoogleImageOptions.personGeneration is only supported for Imagen image generation, not Gemini image editing.',
+      );
+    }
+
+    for (var index = 0; index < request.images.length; index += 1) {
+      final image = request.images[index];
+      if (!image.mediaType.startsWith('image/')) {
+        throw ArgumentError.value(
+          image.mediaType,
+          'request.images[$index].mediaType',
+          'Google image editing inputs must use an image/* media type.',
+        );
+      }
+
+      if ((image.bytes == null) == (image.uri == null)) {
+        throw ArgumentError.value(
+          image,
+          'request.images[$index]',
+          'Google image editing inputs must provide either bytes or a URI.',
+        );
+      }
     }
   }
 
@@ -176,9 +269,76 @@ final class GoogleImageModel implements ImageModel {
     };
   }
 
+  Map<String, Object?> _buildGeminiEditRequest(
+    GoogleImageEditRequest request, {
+    required GoogleImageOptions? options,
+  }) {
+    final safetySettings = _resolveSafetySettings(options);
+    return {
+      'contents': [
+        {
+          'parts': [
+            {
+              'text': request.prompt,
+            },
+            for (final image in request.images) _encodeEditInput(image),
+          ],
+        },
+      ],
+      'generationConfig': {
+        'responseModalities': [
+          GoogleResponseModality.text.value,
+          GoogleResponseModality.image.value,
+        ],
+        if (options?.aspectRatio case final aspectRatio?)
+          'imageConfig': {
+            'aspectRatio': aspectRatio.value,
+          },
+      },
+      if (safetySettings.isNotEmpty)
+        'safetySettings': [
+          for (final setting in safetySettings) setting.toJson(),
+        ],
+    };
+  }
+
+  Map<String, Object?> _encodeEditInput(GoogleImageEditInput input) {
+    if (input.bytes case final bytes?) {
+      return {
+        'inlineData': {
+          'mimeType': input.mediaType,
+          'data': base64Encode(bytes),
+        },
+      };
+    }
+
+    return {
+      'fileData': {
+        'mimeType': input.mediaType,
+        'fileUri': input.uri.toString(),
+      },
+    };
+  }
+
   List<GoogleSafetySetting> _resolveSafetySettings(
       GoogleImageOptions? options) {
     return options?.safetySettings ?? settings.safetySettings;
+  }
+
+  GoogleImageOptions? _resolveProviderOptions(
+    CallOptions callOptions, {
+    required String parameterName,
+  }) {
+    final providerOptions = callOptions.providerOptions;
+    if (providerOptions != null && providerOptions is! GoogleImageOptions) {
+      throw ArgumentError.value(
+        providerOptions,
+        parameterName,
+        'Expected GoogleImageOptions for Google image models.',
+      );
+    }
+
+    return providerOptions as GoogleImageOptions?;
   }
 
   ImageGenerationResult _decodeImagenResponse(Map<String, Object?> json) {

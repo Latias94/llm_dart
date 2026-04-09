@@ -334,6 +334,9 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - [124-google-residual-api-classification.md](124-google-residual-api-classification.md)
   - Classification of which remaining Google root APIs are compatibility-only
     residuals versus real provider-owned gap candidates.
+- [125-google-provider-owned-image-edit-helper.md](125-google-provider-owned-image-edit-helper.md)
+  - Frozen decision and landed status for adding a provider-owned Google modern
+    image edit / variation helper without widening the shared image contract.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
