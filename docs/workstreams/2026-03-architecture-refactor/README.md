@@ -312,6 +312,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Status note for relocating the remaining root Ollama and ElevenLabs
     provider shell implementations under `src/compatibility`, leaving the
     public provider entry files as compatibility re-exports.
+- [119-compatibility-http-scaffolding-relocation.md](119-compatibility-http-scaffolding-relocation.md)
+  - Status note for relocating the remaining root Dio/logging-based HTTP
+    scaffolding under `src/compatibility/http`, leaving the old utility paths
+    as compatibility re-exports.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
