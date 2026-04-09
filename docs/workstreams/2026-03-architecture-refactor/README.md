@@ -280,6 +280,11 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Status note for the landed first shared non-text result enrichment in
     `llm_dart_core` plus the first ElevenLabs modern-model adoption of the new
     fields.
+- [112-openai-and-google-nontext-result-adoption.md](112-openai-and-google-nontext-result-adoption.md)
+  - Status note for extending the richer shared non-text result contract to the
+    OpenAI speech/transcription models and the Google speech model, while
+    recording that Google still lacks a package-owned modern transcription
+    surface.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)

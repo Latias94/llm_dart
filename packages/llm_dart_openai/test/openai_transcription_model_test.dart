@@ -35,6 +35,9 @@ void main() {
             capturedRequest = request;
             return TransportResponse(
               statusCode: 200,
+              headers: const {
+                'x-request-id': 'req_transcription_1',
+              },
               body: {
                 'text': 'hello world',
                 'language': 'en',
@@ -126,6 +129,20 @@ void main() {
       expect(bodyText, contains('word'));
 
       expect(result.text, 'hello world');
+      expect(result.language, 'en');
+      expect(result.durationSeconds, 1.25);
+      expect(result.warnings, isEmpty);
+      expect(result.segments, hasLength(1));
+      expect(result.segments.first.text, 'hello world');
+      expect(result.segments.first.startSeconds, 0.0);
+      expect(result.segments.first.endSeconds, 1.25);
+      expect(result.responseMetadata, isNotNull);
+      expect(result.responseMetadata!.modelId, 'whisper-1');
+      expect(result.responseMetadata!.timestamp, isA<DateTime>());
+      expect(
+        result.responseMetadata!.headers,
+        containsPair('x-request-id', 'req_transcription_1'),
+      );
       expect(
         result.providerMetadata?.namespace('openai'),
         {
@@ -182,6 +199,12 @@ void main() {
       expect(capturedRequest!.responseType, TransportResponseType.plainText);
       expect(capturedRequest!.headers['accept'], 'text/plain');
       expect(result.text, 'plain transcript');
+      expect(result.segments, isEmpty);
+      expect(result.language, isNull);
+      expect(result.durationSeconds, isNull);
+      expect(result.warnings, isEmpty);
+      expect(result.responseMetadata, isNotNull);
+      expect(result.responseMetadata!.modelId, 'whisper-1');
       expect(
         result.providerMetadata?.namespace('openai'),
         {

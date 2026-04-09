@@ -35,6 +35,7 @@ void main() {
               statusCode: 200,
               headers: {
                 'content-type': 'audio/wav',
+                'x-request-id': 'req_speech_1',
               },
               body: [1, 2, 3, 4],
             );
@@ -103,6 +104,14 @@ void main() {
       );
       expect(result.audioBytes, [1, 2, 3, 4]);
       expect(result.mediaType, 'audio/wav');
+      expect(result.warnings, isEmpty);
+      expect(result.responseMetadata, isNotNull);
+      expect(result.responseMetadata!.modelId, 'gpt-4o-mini-tts');
+      expect(result.responseMetadata!.timestamp, isA<DateTime>());
+      expect(
+        result.responseMetadata!.headers,
+        containsPair('x-request-id', 'req_speech_1'),
+      );
     });
 
     test('speech model rejects incompatible provider options', () async {

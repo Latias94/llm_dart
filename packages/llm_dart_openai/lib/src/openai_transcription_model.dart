@@ -126,10 +126,16 @@ final class OpenAITranscriptionModel implements TranscriptionModel {
       OpenAITranscriptionResponseFormat.verboseJson =>
         _decodeJsonResponse(
           response.body,
+          headers: response.headers,
           responseFormat: responseFormat,
         ),
       _ => TranscriptionResult(
           text: _decodePlainTextBody(response.body),
+          responseMetadata: ModelResponseMetadata(
+            timestamp: DateTime.now().toUtc(),
+            modelId: modelId,
+            headers: response.headers,
+          ),
           providerMetadata: ProviderMetadata.forNamespace(
             'openai',
             {
@@ -142,6 +148,7 @@ final class OpenAITranscriptionModel implements TranscriptionModel {
 
   TranscriptionResult _decodeJsonResponse(
     Object? body, {
+    required Map<String, String> headers,
     required OpenAITranscriptionResponseFormat responseFormat,
   }) {
     final json = _decodeJsonObject(body);
@@ -151,6 +158,8 @@ final class OpenAITranscriptionModel implements TranscriptionModel {
         'Expected OpenAI transcription response to contain non-empty text.',
       );
     }
+
+    final segments = _decodeSegments(json['segments']);
 
     final providerMetadata = ProviderMetadata.forNamespace(
       'openai',
@@ -165,6 +174,14 @@ final class OpenAITranscriptionModel implements TranscriptionModel {
 
     return TranscriptionResult(
       text: text,
+      segments: segments,
+      language: _asString(json['language']),
+      durationSeconds: _asDouble(json['duration']),
+      responseMetadata: ModelResponseMetadata(
+        timestamp: DateTime.now().toUtc(),
+        modelId: modelId,
+        headers: headers,
+      ),
       providerMetadata: providerMetadata,
     );
   }
@@ -200,6 +217,24 @@ final class OpenAITranscriptionModel implements TranscriptionModel {
     );
   }
 
+  List<TranscriptionSegment> _decodeSegments(Object? value) {
+    if (value is! List || value.isEmpty) {
+      return const [];
+    }
+
+    return value
+        .whereType<Map>()
+        .map((item) => Map<String, Object?>.from(item))
+        .map(
+          (item) => TranscriptionSegment(
+            text: _asString(item['text']) ?? '',
+            startSeconds: _asDouble(item['start']) ?? 0,
+            endSeconds: _asDouble(item['end']) ?? 0,
+          ),
+        )
+        .toList(growable: false);
+  }
+
   static OpenAITranscriptionModelSettings _resolveSettings(
     ProviderModelOptions settings,
   ) {
@@ -214,6 +249,10 @@ final class OpenAITranscriptionModel implements TranscriptionModel {
     );
   }
 }
+
+String? _asString(Object? value) => value is String ? value : null;
+
+double? _asDouble(Object? value) => value is num ? value.toDouble() : null;
 
 String _buildFilename(String? mediaType) {
   final normalized = mediaType?.split(';').first.trim().toLowerCase();

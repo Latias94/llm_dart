@@ -92,6 +92,11 @@ final class OpenAISpeechModel implements SpeechModel {
       audioBytes: bytes,
       mediaType: _lookupHeader(response.headers, 'content-type') ??
           _defaultMediaTypeForOutputFormat(options?.outputFormat),
+      responseMetadata: ModelResponseMetadata(
+        timestamp: DateTime.now().toUtc(),
+        modelId: modelId,
+        headers: response.headers,
+      ),
     );
   }
 

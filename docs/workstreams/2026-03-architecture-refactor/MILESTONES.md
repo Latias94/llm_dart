@@ -247,6 +247,10 @@ Current status:
   and transcription result fields, and the package-owned modern ElevenLabs
   models already populate those shared fields while still preserving
   provider-owned extra metadata
+- that same shared non-text result contract is now also adopted beyond
+  ElevenLabs: OpenAI modern speech/transcription and Google modern speech now
+  populate the shared response-metadata layer, while the remaining Google gap
+  is simply that a package-owned modern transcription model does not yet exist
 
 ## M5 - Flutter Chat Layer
 

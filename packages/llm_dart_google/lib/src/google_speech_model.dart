@@ -65,7 +65,10 @@ final class GoogleSpeechModel implements SpeechModel {
       ),
     );
 
-    return _decodeResponse(response.body);
+    return _decodeResponse(
+      response.body,
+      headers: response.headers,
+    );
   }
 
   void _validateRequest(
@@ -154,7 +157,10 @@ final class GoogleSpeechModel implements SpeechModel {
     };
   }
 
-  SpeechGenerationResult _decodeResponse(Object? body) {
+  SpeechGenerationResult _decodeResponse(
+    Object? body, {
+    required Map<String, String> headers,
+  }) {
     final json = _decodeJsonObject(body);
     final candidates = asList(json['candidates']);
     if (candidates.isEmpty) {
@@ -205,6 +211,11 @@ final class GoogleSpeechModel implements SpeechModel {
     return SpeechGenerationResult(
       audioBytes: Uint8List.fromList(audioBytes),
       mediaType: mediaType ?? 'audio/pcm',
+      responseMetadata: ModelResponseMetadata(
+        timestamp: DateTime.now().toUtc(),
+        modelId: modelId,
+        headers: headers,
+      ),
       providerMetadata: googleProviderMetadata(
         {
           'generationApi': 'generateContent',

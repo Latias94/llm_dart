@@ -30,6 +30,9 @@ void main() {
             capturedRequest = request;
             return TransportResponse(
               statusCode: 200,
+              headers: const {
+                'x-request-id': 'google-speech-1',
+              },
               body: {
                 'modelVersion': 'gemini-2.5-flash-preview-tts',
                 'usageMetadata': {
@@ -130,6 +133,14 @@ void main() {
       );
       expect(result.audioBytes, [1, 2, 3, 4]);
       expect(result.mediaType, 'audio/wav');
+      expect(result.warnings, isEmpty);
+      expect(result.responseMetadata, isNotNull);
+      expect(result.responseMetadata!.modelId, 'gemini-2.5-flash-preview-tts');
+      expect(result.responseMetadata!.timestamp, isA<DateTime>());
+      expect(
+        result.responseMetadata!.headers,
+        containsPair('x-request-id', 'google-speech-1'),
+      );
       expect(
         result.providerMetadata?.namespace('google'),
         {
@@ -210,6 +221,8 @@ void main() {
       );
       expect(result.audioBytes, [5, 6]);
       expect(result.mediaType, 'audio/pcm');
+      expect(result.responseMetadata, isNotNull);
+      expect(result.responseMetadata!.modelId, 'gemini-2.5-flash-preview-tts');
     });
 
     test('speech model supports provider-owned multi-speaker options',
