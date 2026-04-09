@@ -331,6 +331,9 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - [123-google-entrypoint-narrowing.md](123-google-entrypoint-narrowing.md)
   - Status note for narrowing the provider-focused Google barrel while moving
     broad compatibility exports to `legacy.dart`.
+- [124-google-residual-api-classification.md](124-google-residual-api-classification.md)
+  - Classification of which remaining Google root APIs are compatibility-only
+    residuals versus real provider-owned gap candidates.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)

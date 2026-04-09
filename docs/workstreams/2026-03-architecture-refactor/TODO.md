@@ -137,8 +137,10 @@
 - [x] Migrate the Gemini image model
 - [x] Migrate the Gemini embedding model
 - [x] Migrate Gemini speech and TTS
+- [ ] Decide whether Google image editing and variation should later gain a provider-owned modern helper instead of remaining on compatibility-only `ImageEditRequest` / `ImageVariationRequest`
 - [ ] Decide whether Google streamed TTS should later return as a provider-owned package surface outside the shared `SpeechModel`
 - [x] Migrate Gemini safety and modality options
+- [ ] Decide whether Google file-upload/cache helpers should remain compatibility-only or gain a provider-owned utility surface
 
 ## Structural Cleanup
 
