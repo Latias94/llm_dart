@@ -52,6 +52,16 @@ export 'models/assistant_models.dart';
 
 export 'providers/openai/openai.dart'
     hide createDeepSeekProvider, createGroqProvider;
+export 'providers/openai/client.dart';
+export 'providers/openai/chat.dart';
+export 'providers/openai/embeddings.dart';
+export 'providers/openai/audio.dart';
+export 'providers/openai/images.dart';
+export 'providers/openai/files.dart';
+export 'providers/openai/models.dart';
+export 'providers/openai/moderation.dart';
+export 'providers/openai/assistants.dart';
+export 'providers/openai/completion.dart';
 export 'providers/anthropic/anthropic.dart';
 export 'providers/anthropic/models.dart';
 export 'providers/google/google.dart';

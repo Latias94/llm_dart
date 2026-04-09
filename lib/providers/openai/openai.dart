@@ -1,27 +1,27 @@
-/// Modular OpenAI Provider
+/// Compatibility-first OpenAI provider barrel.
 ///
-/// This library provides a modular implementation of the OpenAI provider
+/// Keeps the legacy root OpenAI provider constructors, compatibility-facing
+/// config types, the old builder DSL, and the raw OpenAI Responses residual
+/// API surface.
 ///
-/// **Key Benefits:**
-/// - Single Responsibility: Each module handles one capability
-/// - Easier Testing: Modules can be tested independently
-/// - Better Maintainability: Changes isolated to specific modules
-/// - Cleaner Code: Smaller, focused classes
-/// - Reusability: Modules can be reused across providers
+/// New code should usually prefer:
 ///
-/// **Usage:**
+/// - `package:llm_dart/openai.dart` for the modern provider-owned OpenAI
+///   package surface
+/// - `AI.openai(...).chatModel(...)` and the other stable model constructors
+/// - `package:llm_dart/legacy.dart` if broad compatibility exports are needed
+///
+/// **Compatibility Usage:**
 /// ```dart
 /// import 'package:llm_dart/providers/openai/openai.dart';
 ///
-/// final provider = ModularOpenAIProvider(ModularOpenAIConfig(
+/// final provider = createOpenAIProvider(
 ///   apiKey: 'your-api-key',
-///   model: 'gpt-4',
-/// ));
+///   model: 'gpt-4o',
+/// );
 ///
-/// // Use any capability - same external API
+/// // Use the old root OpenAI provider surface when migration code still needs it
 /// final response = await provider.chat(messages);
-/// final embeddings = await provider.embed(['text']);
-/// final audio = await provider.speech('Hello world');
 /// ```
 library;
 
@@ -31,20 +31,12 @@ import 'provider.dart';
 
 // Core exports
 export 'config.dart';
-export 'client.dart';
 export 'provider.dart';
+export 'builder.dart';
 
-// Capability modules
-export 'chat.dart';
-export 'embeddings.dart';
-export 'audio.dart';
-export 'images.dart';
-export 'files.dart';
-export 'models.dart';
-export 'moderation.dart';
-export 'assistants.dart';
-export 'completion.dart';
+// Explicit residual public OpenAI compatibility surfaces
 export 'responses.dart';
+export 'responses_capability.dart';
 export 'builtin_tools.dart';
 
 /// Create an OpenAI provider with default settings

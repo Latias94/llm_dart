@@ -370,6 +370,9 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Status note for relocating the remaining root-hosted OpenAI legacy
     implementation modules under `src/compatibility`, leaving the public
     provider paths as compatibility re-exports.
+- [135-openai-entrypoint-narrowing.md](135-openai-entrypoint-narrowing.md)
+  - Status note for narrowing the provider-focused OpenAI barrel so broad
+    compatibility exports move to `legacy.dart`.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
