@@ -158,7 +158,7 @@
 - [x] Extract Ollama root-shell compatibility config shaping and bridge setup out of `lib/providers/ollama/provider.dart` into the root compatibility layer
 - [x] Extract ElevenLabs root-shell speech/transcription bridge setup out of `lib/providers/elevenlabs/provider.dart` into the root compatibility layer
 - [x] Freeze that the remaining root builder/factory adaptation path survives only as a compatibility shell, while provider-owned modern config constructors remain the long-term API direction
-- [ ] Decide whether `HttpResponseHandler` should stay root compatibility-owned or be split into provider-owned parsing plus shared transport failure handling
+- [x] Decide that `HttpResponseHandler` and `DioErrorHandler` stay root compatibility-owned for now, while transport keeps lower-level primitives and provider packages keep owning their modern model-path error handling
 - [ ] Audit whether provider-focused root entrypoints should stop re-exporting `AI`, `core.dart`, and `transport.dart` once the modern import boundary is fully stable
 - [ ] Remove direct `dio` and `logging` runtime dependencies from the root package after the remaining local compatibility/provider code moves out
 

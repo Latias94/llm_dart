@@ -359,6 +359,10 @@ Current status:
   compatibility shell only; modern construction should continue through
   provider-owned typed constructors and the thin `AI` facade instead of
   rebuilding modern provider setup around root `LLMBuilder` or root factories
+- root `HttpResponseHandler` and `DioErrorHandler` are now also frozen more
+  explicitly as compatibility-owned helpers: transport keeps lower-level
+  cancellation/configuration/logging/JSON primitives, while modern provider
+  packages keep owning their own model-path error behavior
 - the provider-owned search direction is now also frozen more concretely: OpenRouter search remains profile/model shaping, while xAI live search becomes provider-owned invocation options over `search_parameters`
 - the package-owned OpenRouter mainline now also accepts provider-owned online-model settings, and the compatibility bridge now allows the explicit `:online` shape plus the bare `webSearchEnabled` migration input
 - the package-owned xAI chat-completions mainline now also accepts typed `XAIGenerateTextOptions` and projects xAI citations through shared source parts and events

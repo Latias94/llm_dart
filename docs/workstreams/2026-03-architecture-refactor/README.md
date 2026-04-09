@@ -294,6 +294,11 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Frozen conclusion that the remaining root builder/factory adaptation stays
     compatibility-only, while modern provider construction continues through
     provider-owned typed constructors plus the thin `AI` facade.
+- [115-root-error-handler-compatibility-ownership.md](115-root-error-handler-compatibility-ownership.md)
+  - Frozen conclusion that root `HttpResponseHandler` and
+    `DioErrorHandler` stay compatibility-owned, while transport keeps only
+    lower-level primitives and modern provider packages own their own model-path
+    error behavior.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
