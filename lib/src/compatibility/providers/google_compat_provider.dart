@@ -6,11 +6,11 @@ import '../../../core/web_search.dart';
 import '../../../models/chat_models.dart';
 import '../../../models/tool_models.dart';
 import '../../../providers/google/config.dart';
-import '../../../providers/google/provider.dart';
 import '../chat_route_compatibility.dart';
 import '../compat_transport.dart';
 import '../legacy_chat_adapter.dart';
 import 'compat_provider_support.dart';
+import 'google/provider_compat.dart';
 
 ChatCapability buildCompatGoogleProvider(LLMConfig config) {
   final legacyConfig = GoogleConfig.fromLLMConfig(config);

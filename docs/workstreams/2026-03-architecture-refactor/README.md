@@ -320,6 +320,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Inventory of which remaining root provider families still keep the root
     package as a real implementation host, and which family is the cleanest
     next thinning candidate.
+- [121-google-provider-shell-relocation.md](121-google-provider-shell-relocation.md)
+  - Status note for relocating the remaining root Google provider shell under
+    `src/compatibility`, leaving the public provider entry file as a
+    compatibility re-export.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
