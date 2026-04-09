@@ -2,11 +2,11 @@ import '../../../../core/capability.dart';
 import '../../../../models/chat_models.dart';
 import '../../../../models/file_models.dart';
 import '../../../../models/tool_models.dart';
-import '../../../../providers/anthropic/chat.dart';
-import '../../../../providers/anthropic/client.dart';
 import '../../../../providers/anthropic/config.dart';
-import '../../../../providers/anthropic/files.dart';
-import '../../../../providers/anthropic/models.dart';
+import 'chat.dart';
+import 'client.dart';
+import 'files.dart';
+import 'models.dart';
 
 /// Compatibility-first root Anthropic provider shell.
 ///
