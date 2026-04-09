@@ -352,6 +352,9 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Frozen decision and landed status for adding a provider-owned Anthropic
     exact token-count helper without widening the shared text-generation
     contract.
+- [130-openai-residual-api-classification.md](130-openai-residual-api-classification.md)
+  - Classification of which remaining OpenAI root APIs are
+    compatibility-only residuals versus real provider-owned gap candidates.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
