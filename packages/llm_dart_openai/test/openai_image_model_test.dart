@@ -196,6 +196,201 @@ void main() {
         ),
       );
     });
+
+    test('edit sends multipart data and decodes edited image output', () async {
+      TransportRequest? capturedRequest;
+      final cancelToken = TransportCancellation();
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'created': 1710000001,
+                'output_format': 'webp',
+                'data': [
+                  {
+                    'b64_json': base64Encode(utf8.encode('edited-image')),
+                    'revised_prompt': 'A more polished edited cat prompt.',
+                  },
+                ],
+                'usage': {
+                  'input_tokens': 12,
+                },
+              },
+            );
+          },
+        ),
+      ).imageModel(
+        'gpt-image-1',
+        settings: const OpenAIImageModelSettings(
+          organization: 'org_123',
+          project: 'proj_456',
+          headers: {
+            'x-profile': 'image-edit',
+          },
+        ),
+      );
+
+      final result = await model.edit(
+        OpenAIImageEditRequest(
+          prompt: 'Turn this cat into a watercolor postcard.',
+          images: [
+            OpenAIImageEditInput(
+              bytes: utf8.encode('image-bytes'),
+              mediaType: 'image/png',
+            ),
+          ],
+          mask: OpenAIImageEditInput(
+            bytes: utf8.encode('mask-bytes'),
+            mediaType: 'image/png',
+          ),
+          count: 2,
+          size: '1024x1024',
+          inputFidelity: OpenAIImageInputFidelity.high,
+          partialImages: 2,
+          outputCompression: 80,
+          callOptions: CallOptions(
+            timeout: const Duration(seconds: 5),
+            headers: const {
+              'x-request': 'request-header',
+            },
+            cancellation: cancelToken,
+            providerOptions: const OpenAIImageOptions(
+              background: OpenAIImageBackground.transparent,
+              quality: OpenAIImageQuality.high,
+              outputFormat: OpenAIImageOutputFormat.webp,
+              responseFormat: OpenAIImageResponseFormat.base64Json,
+              user: 'user_123',
+            ),
+          ),
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      expect(capturedRequest!.uri.toString(),
+          'https://api.openai.com/v1/images/edits');
+      expect(capturedRequest!.method, TransportMethod.post);
+      expect(capturedRequest!.responseType, TransportResponseType.json);
+      expect(capturedRequest!.timeout, const Duration(seconds: 5));
+      expect(identical(capturedRequest!.cancellation, cancelToken), isTrue);
+      expect(capturedRequest!.headers['authorization'], 'Bearer test-key');
+      expect(capturedRequest!.headers['openai-organization'], 'org_123');
+      expect(capturedRequest!.headers['openai-project'], 'proj_456');
+      expect(capturedRequest!.headers['x-profile'], 'image-edit');
+      expect(capturedRequest!.headers['x-request'], 'request-header');
+      expect(capturedRequest!.headers['accept'], 'application/json');
+      expect(
+        capturedRequest!.headers['content-type'],
+        startsWith('multipart/form-data; boundary='),
+      );
+
+      final bodyText = utf8.decode(capturedRequest!.body! as List<int>);
+      expect(bodyText, contains('name="model"'));
+      expect(bodyText, contains('gpt-image-1'));
+      expect(bodyText, contains('name="prompt"'));
+      expect(bodyText, contains('Turn this cat into a watercolor postcard.'));
+      expect(bodyText, contains('name="image"; filename="image.png"'));
+      expect(bodyText, contains('image-bytes'));
+      expect(bodyText, contains('name="mask"; filename="mask.png"'));
+      expect(bodyText, contains('mask-bytes'));
+      expect(bodyText, contains('name="n"'));
+      expect(bodyText, contains('name="size"'));
+      expect(bodyText, contains('1024x1024'));
+      expect(bodyText, contains('name="background"'));
+      expect(bodyText, contains('transparent'));
+      expect(bodyText, contains('name="input_fidelity"'));
+      expect(bodyText, contains('high'));
+      expect(bodyText, contains('name="partial_images"'));
+      expect(bodyText, contains('name="quality"'));
+      expect(bodyText, contains('name="output_compression"'));
+      expect(bodyText, contains('name="output_format"'));
+      expect(bodyText, contains('webp'));
+      expect(bodyText, contains('name="response_format"'));
+      expect(bodyText, contains('b64_json'));
+      expect(bodyText, contains('name="user"'));
+      expect(bodyText, contains('user_123'));
+
+      expect(result.images, hasLength(1));
+      expect(result.images.single.bytes, utf8.encode('edited-image'));
+      expect(result.images.single.mediaType, 'image/webp');
+      expect(
+        result.providerMetadata?.namespace('openai'),
+        {
+          'created': 1710000001,
+          'outputFormat': 'webp',
+          'responseFormat': 'b64_json',
+          'revisedPrompts': ['A more polished edited cat prompt.'],
+          'usage': {
+            'input_tokens': 12,
+          },
+        },
+      );
+    });
+
+    test('edit rejects generation-only style options', () async {
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: const _FakeTransportClient(),
+      ).imageModel('gpt-image-1');
+
+      await expectLater(
+        () => model.edit(
+          OpenAIImageEditRequest(
+            prompt: 'Edit this image.',
+            images: const [
+              OpenAIImageEditInput(
+                bytes: [1, 2, 3],
+                mediaType: 'image/png',
+              ),
+            ],
+            callOptions: const CallOptions(
+              providerOptions: OpenAIImageOptions(
+                style: OpenAIImageStyle.vivid,
+              ),
+            ),
+          ),
+        ),
+        throwsA(
+          isA<ArgumentError>().having(
+            (error) => error.message,
+            'message',
+            contains('only supported for image generation'),
+          ),
+        ),
+      );
+    });
+
+    test('edit rejects non-image inputs', () async {
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: const _FakeTransportClient(),
+      ).imageModel('gpt-image-1');
+
+      await expectLater(
+        () => model.edit(
+          const OpenAIImageEditRequest(
+            prompt: 'Edit this image.',
+            images: [
+              OpenAIImageEditInput(
+                bytes: [1, 2, 3],
+                mediaType: 'application/pdf',
+              ),
+            ],
+          ),
+        ),
+        throwsA(
+          isA<ArgumentError>().having(
+            (error) => error.message,
+            'message',
+            contains('image/* media type'),
+          ),
+        ),
+      );
+    });
   });
 }
 

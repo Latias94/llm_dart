@@ -96,6 +96,8 @@
 - [x] Add provider-owned OpenAI `image_generation` and `mcp` native-tool declaration surfaces without widening the shared core
 - [x] Add provider-owned OpenAI custom output helpers for `image_generation_call`, partial-image stream chunks, and `mcp_list_tools` without widening the shared core
 - [x] Add provider-owned OpenAI `code_interpreter` declaration support without widening the shared core
+- [x] Add a provider-owned OpenAI image edit helper without widening the shared image contract
+- [ ] Decide whether OpenAI image variation should remain compatibility-only or gain a later narrow provider-owned helper
 - [ ] Re-evaluate richer OpenAI Responses hosted-tool or custom item-family replay only if a concrete OpenAI-native use case requires it beyond the current common function-tool and MCP continuation subset
 - [ ] Decide whether OpenAI should keep the remaining advanced hosted-tool families deferred, or add only narrowly-scoped provider-owned helpers if a concrete product need appears
 - [x] Turn OpenRouter into a profile

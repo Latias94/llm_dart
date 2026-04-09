@@ -355,6 +355,9 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - [130-openai-residual-api-classification.md](130-openai-residual-api-classification.md)
   - Classification of which remaining OpenAI root APIs are
     compatibility-only residuals versus real provider-owned gap candidates.
+- [131-openai-provider-owned-image-edit-helper.md](131-openai-provider-owned-image-edit-helper.md)
+  - Frozen decision and landed status for adding a provider-owned OpenAI modern
+    image edit helper without widening the shared image contract.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
