@@ -337,6 +337,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - [125-google-provider-owned-image-edit-helper.md](125-google-provider-owned-image-edit-helper.md)
   - Frozen decision and landed status for adding a provider-owned Google modern
     image edit / variation helper without widening the shared image contract.
+- [126-anthropic-provider-shell-relocation.md](126-anthropic-provider-shell-relocation.md)
+  - Status note for relocating the remaining root Anthropic provider shell
+    under `src/compatibility`, leaving the public provider entry file as a
+    compatibility re-export.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)

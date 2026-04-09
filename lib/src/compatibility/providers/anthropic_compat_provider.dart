@@ -8,11 +8,11 @@ import '../../../models/chat_models.dart';
 import '../../../models/tool_models.dart';
 import '../../../providers/anthropic/config.dart';
 import '../../../providers/anthropic/mcp_models.dart';
-import '../../../providers/anthropic/provider.dart';
 import '../anthropic_legacy_extensions.dart';
 import '../chat_route_compatibility.dart';
 import '../compat_transport.dart';
 import '../legacy_chat_adapter.dart';
+import 'anthropic/provider_compat.dart';
 import 'compat_provider_support.dart';
 
 ChatCapability buildCompatAnthropicProvider(LLMConfig config) {
