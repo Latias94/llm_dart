@@ -290,6 +290,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
     `TranscriptionModel` surface yet, and that transcript-oriented Google audio
     flows currently belong either to multimodal prompting or a future
     provider-owned audio-understanding helper.
+- [114-root-builder-factory-compatibility-shell.md](114-root-builder-factory-compatibility-shell.md)
+  - Frozen conclusion that the remaining root builder/factory adaptation stays
+    compatibility-only, while modern provider construction continues through
+    provider-owned typed constructors plus the thin `AI` facade.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)

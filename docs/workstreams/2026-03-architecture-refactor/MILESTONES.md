@@ -355,6 +355,10 @@ Current status:
 - the next structural cleanup frontier is now also clearer: `llm_dart_community` is still only a skeleton, the root package still carries too much local compatibility/provider implementation weight, and provider-focused root shells are still wider than their names imply
 - the community-package path is now also frozen more clearly: Ollama and ElevenLabs should not be moved into `llm_dart_community` through a blind file relocation while they still depend on root-local compatibility builders, legacy config shaping, and legacy message/capability types
 - the next structural cleanup step is now also clearer: the remaining blocker is no longer cancellation, provider-facing Dio setup, provider defaults, the shared UTF-8 decoder, shared log/JSON parsing primitives, the root Dio-overrides mixin, provider-config-owned legacy adaptation, or Ollama's direct `HttpResponseHandler` usage, but the remaining compatibility builder/factory shell, root error ownership, and the capability/message/audio compatibility surfaces
+- that remaining builder/factory path is now also frozen more explicitly as a
+  compatibility shell only; modern construction should continue through
+  provider-owned typed constructors and the thin `AI` facade instead of
+  rebuilding modern provider setup around root `LLMBuilder` or root factories
 - the provider-owned search direction is now also frozen more concretely: OpenRouter search remains profile/model shaping, while xAI live search becomes provider-owned invocation options over `search_parameters`
 - the package-owned OpenRouter mainline now also accepts provider-owned online-model settings, and the compatibility bridge now allows the explicit `:online` shape plus the bare `webSearchEnabled` migration input
 - the package-owned xAI chat-completions mainline now also accepts typed `XAIGenerateTextOptions` and projects xAI citations through shared source parts and events
