@@ -20,52 +20,18 @@ import '../chat_route_compatibility.dart';
 import '../compat_transport.dart';
 import '../legacy_chat_adapter.dart';
 import 'compat_provider_support.dart';
+import 'openai/bridge_support.dart';
 import 'openai/provider_compat.dart';
 
 ChatCapability buildCompatOpenAIProvider(LLMConfig config) {
   final legacyConfig = _toLegacyOpenAIConfig(config);
-  final model = modern_openai.OpenAI(
-    apiKey: config.apiKey!,
-    baseUrl: config.baseUrl,
-    transport: createCompatTransport(config),
-  ).chatModel(
-    config.model,
-    settings: const modern_openai.OpenAIChatModelSettings(
-      useResponsesApi: true,
-    ),
-  );
 
   return CompatOpenAIProvider(
     originalConfig: config,
     legacyConfig: legacyConfig,
-    adapter: LegacyChatCapabilityAdapter(
-      model: model,
-      config: config,
-      providerOptions: modern_openai.OpenAIGenerateTextOptions(
-        previousResponseId: getLegacyProviderOption<String>(
-          config,
-          LegacyProviderOptionNamespaces.openai,
-          LegacyExtensionKeys.previousResponseId,
-        ),
-        parallelToolCalls: getLegacyProviderOption<bool>(
-          config,
-          LegacyProviderOptionNamespaces.openai,
-          LegacyExtensionKeys.parallelToolCalls,
-        ),
-        serviceTier: config.serviceTier?.value,
-        verbosity: getLegacyProviderOption<String>(
-          config,
-          LegacyProviderOptionNamespaces.openai,
-          LegacyExtensionKeys.verbosity,
-        ),
-        builtInTools: _mapOpenAIBuiltInTools(
-          getLegacyProviderOption<List<OpenAIBuiltInTool>>(
-            config,
-            LegacyProviderOptionNamespaces.openai,
-            LegacyExtensionKeys.builtInTools,
-          ),
-        ),
-      ),
+    adapter: buildCompatOpenAIChatBridge(
+      legacyConfig: legacyConfig,
+      bridgeConfig: config,
     ),
   );
 }
@@ -616,54 +582,6 @@ OpenAIConfig _toLegacyOpenRouterConfig(LLMConfig config) {
     ),
     originalConfig: config,
   );
-}
-
-List<modern_openai.OpenAIBuiltInTool>? _mapOpenAIBuiltInTools(
-  List<OpenAIBuiltInTool>? tools,
-) {
-  if (tools == null || tools.isEmpty) {
-    return null;
-  }
-
-  final mapped = <modern_openai.OpenAIBuiltInTool>[];
-  for (final tool in tools) {
-    switch (tool) {
-      case OpenAIWebSearchTool():
-        mapped.add(modern_openai.OpenAIBuiltInTools.webSearch());
-      case OpenAIFileSearchTool(
-          :final vectorStoreIds,
-          :final parameters,
-        ):
-        mapped.add(
-          modern_openai.OpenAIBuiltInTools.fileSearch(
-            vectorStoreIds: vectorStoreIds,
-            parameters: parameters == null
-                ? null
-                : compatNormalizeJsonValue(parameters) as Map<String, Object?>,
-          ),
-        );
-      case OpenAIComputerUseTool(
-          :final displayWidth,
-          :final displayHeight,
-          :final environment,
-          :final parameters,
-        ):
-        mapped.add(
-          modern_openai.OpenAIBuiltInTools.computerUse(
-            displayWidth: displayWidth,
-            displayHeight: displayHeight,
-            environment: environment,
-            parameters: parameters == null
-                ? null
-                : compatNormalizeJsonValue(parameters) as Map<String, Object?>,
-          ),
-        );
-      default:
-        break;
-    }
-  }
-
-  return mapped.isEmpty ? null : mapped;
 }
 
 core.ProviderModelOptions _buildCompatOpenRouterModelSettings(

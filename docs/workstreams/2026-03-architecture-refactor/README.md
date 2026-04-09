@@ -387,6 +387,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Structural review of why the public root `OpenAIProvider` still hosts too
     much chat logic even though the compatibility bridge already projects modern
     `llm_dart_openai` text models back into the old API.
+- [140-root-openai-chat-bridge-slice.md](140-root-openai-chat-bridge-slice.md)
+  - Implementation note for narrowing the official root `OpenAIProvider` chat
+    path onto the shared modern OpenAI bridge while keeping residual
+    compatibility APIs public.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)

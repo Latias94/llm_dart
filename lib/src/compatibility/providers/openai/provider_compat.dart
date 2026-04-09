@@ -1,4 +1,5 @@
 import '../../../../core/capability.dart';
+import '../../../../core/config.dart';
 import '../../../../models/chat_models.dart';
 import '../../../../models/audio_models.dart';
 import '../../../../models/tool_models.dart';
@@ -8,6 +9,7 @@ import '../../../../models/moderation_models.dart';
 import '../../../../models/assistant_models.dart';
 import 'client.dart';
 import '../../../../providers/openai/config.dart';
+import '../../legacy_chat_adapter.dart';
 import 'chat.dart';
 import 'config_views.dart';
 import 'embeddings.dart';
@@ -19,6 +21,9 @@ import 'moderation.dart';
 import 'assistants.dart';
 import 'completion.dart';
 import 'responses.dart';
+import '../compat_provider_support.dart';
+import '../../chat_route_compatibility.dart';
+import 'bridge_support.dart';
 
 /// Compatibility-first root OpenAI provider shell.
 ///
@@ -40,6 +45,8 @@ class OpenAIProvider
         ProviderCapabilities {
   final OpenAIClient _client;
   final OpenAIConfig config;
+  final LLMConfig? _chatBridgeConfig;
+  final LegacyChatCapabilityAdapter? _chatBridge;
 
   // Capability modules
   late final OpenAIChat _chat;
@@ -54,7 +61,17 @@ class OpenAIProvider
   late final OpenAIResponses? _responses;
   late final bool _responsesEnabled = config.responsesCompat.enabled;
 
-  OpenAIProvider(this.config) : _client = OpenAIClient(config) {
+  OpenAIProvider(this.config)
+      : _client = OpenAIClient(config),
+        _chatBridgeConfig = _supportsRootOpenAIChatBridge(config)
+            ? buildRootOpenAIChatBridgeConfig(config)
+            : null,
+        _chatBridge = _supportsRootOpenAIChatBridge(config)
+            ? buildCompatOpenAIChatBridge(
+                legacyConfig: config,
+                bridgeConfig: buildRootOpenAIChatBridgeConfig(config),
+              )
+            : null {
     // Initialize capability modules
     _chat = OpenAIChat(_client, config);
     _embeddings = OpenAIEmbeddings(_client, config);
@@ -117,12 +134,7 @@ class OpenAIProvider
     List<ChatMessage> messages, {
     TransportCancellation? cancelToken,
   }) async {
-    // Use Responses API if enabled, otherwise use Chat Completions API
-    if (_responsesEnabled && _responses != null) {
-      return _responses.chat(messages, cancelToken: cancelToken);
-    } else {
-      return _chat.chat(messages, cancelToken: cancelToken);
-    }
+    return chatWithTools(messages, null, cancelToken: cancelToken);
   }
 
   @override
@@ -131,13 +143,28 @@ class OpenAIProvider
     List<Tool>? tools, {
     TransportCancellation? cancelToken,
   }) async {
-    // Use Responses API if enabled, otherwise use Chat Completions API
-    if (_responsesEnabled && _responses != null) {
-      return _responses.chatWithTools(messages, tools,
-          cancelToken: cancelToken);
-    } else {
-      return _chat.chatWithTools(messages, tools, cancelToken: cancelToken);
+    final chatBridge = _chatBridge;
+    final chatBridgeConfig = _chatBridgeConfig;
+    if (chatBridge != null && chatBridgeConfig != null) {
+      return executeCompatChat(
+        originalConfig: chatBridgeConfig,
+        messages: messages,
+        tools: tools,
+        canUseBridge: canUseOpenAIChatBridge,
+        bridge: () => chatBridge.chatWithTools(
+          messages,
+          tools,
+          cancelToken: cancelToken,
+        ),
+        fallback: () => _chatWithToolsFallback(
+          messages,
+          tools,
+          cancelToken: cancelToken,
+        ),
+      );
     }
+
+    return _chatWithToolsFallback(messages, tools, cancelToken: cancelToken);
   }
 
   @override
@@ -146,13 +173,29 @@ class OpenAIProvider
     List<Tool>? tools,
     TransportCancellation? cancelToken,
   }) {
-    // Use Responses API if enabled, otherwise use Chat Completions API
-    if (_responsesEnabled && _responses != null) {
-      return _responses.chatStream(messages,
-          tools: tools, cancelToken: cancelToken);
-    } else {
-      return _chat.chatStream(messages, tools: tools, cancelToken: cancelToken);
+    final chatBridge = _chatBridge;
+    final chatBridgeConfig = _chatBridgeConfig;
+    if (chatBridge != null && chatBridgeConfig != null) {
+      return executeCompatChatStream(
+        originalConfig: chatBridgeConfig,
+        messages: messages,
+        tools: tools,
+        canUseBridge: canUseOpenAIChatBridge,
+        bridge: () => chatBridge.chatStream(
+          messages,
+          tools: tools,
+          cancelToken: cancelToken,
+        ),
+        fallback: () => _chatStreamFallback(
+          messages,
+          tools: tools,
+          cancelToken: cancelToken,
+        ),
+      );
     }
+
+    return _chatStreamFallback(messages,
+        tools: tools, cancelToken: cancelToken);
   }
 
   @override
@@ -173,6 +216,46 @@ class OpenAIProvider
     } else {
       return _chat.summarizeHistory(messages);
     }
+  }
+
+  Future<ChatResponse> _chatWithToolsFallback(
+    List<ChatMessage> messages,
+    List<Tool>? tools, {
+    TransportCancellation? cancelToken,
+  }) {
+    if (_responsesEnabled && _responses != null) {
+      return _responses.chatWithTools(
+        messages,
+        tools,
+        cancelToken: cancelToken,
+      );
+    }
+
+    return _chat.chatWithTools(
+      messages,
+      tools,
+      cancelToken: cancelToken,
+    );
+  }
+
+  Stream<ChatStreamEvent> _chatStreamFallback(
+    List<ChatMessage> messages, {
+    List<Tool>? tools,
+    TransportCancellation? cancelToken,
+  }) {
+    if (_responsesEnabled && _responses != null) {
+      return _responses.chatStream(
+        messages,
+        tools: tools,
+        cancelToken: cancelToken,
+      );
+    }
+
+    return _chat.chatStream(
+      messages,
+      tools: tools,
+      cancelToken: cancelToken,
+    );
   }
 
   // ========== EmbeddingCapability (delegated to embeddings module) ==========
@@ -534,4 +617,9 @@ $conversationContext
         'baseUrl: ${config.baseUrl}'
         ')';
   }
+}
+
+bool _supportsRootOpenAIChatBridge(OpenAIConfig config) {
+  final uri = Uri.tryParse(config.baseUrl);
+  return uri?.host.toLowerCase() == 'api.openai.com';
 }
