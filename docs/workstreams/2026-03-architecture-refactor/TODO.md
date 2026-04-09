@@ -162,6 +162,7 @@
 - [x] Extract Ollama root-shell compatibility config shaping and bridge setup out of `lib/providers/ollama/provider.dart` into the root compatibility layer
 - [x] Extract ElevenLabs root-shell speech/transcription bridge setup out of `lib/providers/elevenlabs/provider.dart` into the root compatibility layer
 - [x] Relocate the remaining root OpenAI provider shell under `src/compatibility`, leaving the public provider entry file as a compatibility re-export
+- [x] Relocate the remaining root-hosted OpenAI legacy implementation modules under `src/compatibility`, leaving the public provider paths as compatibility re-exports
 - [x] Freeze that the remaining root builder/factory adaptation path survives only as a compatibility shell, while provider-owned modern config constructors remain the long-term API direction
 - [x] Decide that `HttpResponseHandler` and `DioErrorHandler` stay root compatibility-owned for now, while transport keeps lower-level primitives and provider packages keep owning their modern model-path error handling
 - [x] Audit and narrow provider-focused root entrypoints so `openai.dart`, `google.dart`, and `anthropic.dart` stop re-exporting `AI`, `core.dart`, and `transport.dart`

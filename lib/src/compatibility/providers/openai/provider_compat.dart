@@ -6,18 +6,18 @@ import '../../../../models/image_models.dart';
 import '../../../../models/file_models.dart';
 import '../../../../models/moderation_models.dart';
 import '../../../../models/assistant_models.dart';
-import '../../../../providers/openai/client.dart';
+import 'client.dart';
 import '../../../../providers/openai/config.dart';
-import '../../../../providers/openai/chat.dart';
-import '../../../../providers/openai/embeddings.dart';
-import '../../../../providers/openai/audio.dart';
-import '../../../../providers/openai/images.dart';
-import '../../../../providers/openai/files.dart';
-import '../../../../providers/openai/models.dart';
-import '../../../../providers/openai/moderation.dart';
-import '../../../../providers/openai/assistants.dart';
-import '../../../../providers/openai/completion.dart';
-import '../../../../providers/openai/responses.dart';
+import 'chat.dart';
+import 'embeddings.dart';
+import 'audio.dart';
+import 'images.dart';
+import 'files.dart';
+import 'models.dart';
+import 'moderation.dart';
+import 'assistants.dart';
+import 'completion.dart';
+import 'responses.dart';
 
 /// Compatibility-first root OpenAI provider shell.
 ///

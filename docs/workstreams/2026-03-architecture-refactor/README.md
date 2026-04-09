@@ -366,6 +366,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Status note for relocating the remaining root OpenAI provider shell under
     `src/compatibility`, leaving the public provider entry file as a
     compatibility re-export.
+- [134-openai-compatibility-module-relocation.md](134-openai-compatibility-module-relocation.md)
+  - Status note for relocating the remaining root-hosted OpenAI legacy
+    implementation modules under `src/compatibility`, leaving the public
+    provider paths as compatibility re-exports.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
