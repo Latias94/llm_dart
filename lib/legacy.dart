@@ -55,6 +55,9 @@ export 'providers/openai/openai.dart'
 export 'providers/anthropic/anthropic.dart';
 export 'providers/anthropic/models.dart';
 export 'providers/google/google.dart';
+export 'providers/google/client.dart';
+export 'providers/google/chat.dart';
+export 'providers/google/embeddings.dart';
 export 'providers/google/tts.dart';
 export 'providers/deepseek/deepseek.dart';
 export 'providers/ollama/ollama.dart';

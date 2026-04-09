@@ -29,13 +29,8 @@ import 'provider.dart';
 
 // Core exports
 export 'config.dart';
-export 'client.dart';
 export 'provider.dart';
 export 'builder.dart';
-
-// Capability modules
-export 'chat.dart';
-export 'embeddings.dart';
 
 /// Create a Google provider with default configuration
 GoogleProvider createGoogleProvider({
