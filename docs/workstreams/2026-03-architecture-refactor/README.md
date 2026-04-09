@@ -379,6 +379,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - [137-openai-config-layering-policy.md](137-openai-config-layering-policy.md)
   - Frozen policy that keeps the public `OpenAIConfig` constructor flat while
     moving compatibility implementation reads behind internal grouped views.
+- [138-openai-responses-content-part-stream-alignment.md](138-openai-responses-content-part-stream-alignment.md)
+  - Status note for aligning the modern OpenAI Responses stream codec with
+    `repo-ref/ai` on `content_part.done`, annotation dedupe, and final text-part
+    metadata projection.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)

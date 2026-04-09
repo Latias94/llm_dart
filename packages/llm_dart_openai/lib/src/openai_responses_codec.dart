@@ -24,6 +24,7 @@ final class OpenAIResponsesStreamState {
   final Set<String> endedTextIds = {};
   final Set<String> startedReasoningIds = {};
   final Set<String> endedReasoningIds = {};
+  final Set<String> emittedAnnotationKeys = {};
   final List<Object?> logprobs = [];
 
   String? responseId;
@@ -452,9 +453,42 @@ final class OpenAIResponsesCodec {
 
     if (chunkType == 'response.output_text.annotation.added') {
       final annotation = _asMap(chunk['annotation']);
-      final source = _decodeSourceAnnotation(annotation);
-      if (source != null) {
-        yield SourceEvent(source);
+      final sourceEvent = _decodeSourceEvent(annotation, state);
+      if (sourceEvent != null) {
+        yield sourceEvent;
+      }
+      return;
+    }
+
+    if (chunkType == 'response.content_part.done') {
+      final part = _asMap(chunk['part']);
+      if (part == null || _asString(part['type']) != 'output_text') {
+        return;
+      }
+
+      _appendLogprobs(
+        state.logprobs,
+        _jsonListOrNull(part['logprobs']),
+      );
+
+      for (final rawAnnotation in _asList(part['annotations'])) {
+        final annotation = _asMap(rawAnnotation);
+        final sourceEvent = _decodeSourceEvent(annotation, state);
+        if (sourceEvent != null) {
+          yield sourceEvent;
+        }
+      }
+
+      final textId = _resolveTextId(chunk, null);
+      if (state.endedTextIds.add(textId)) {
+        yield TextEndEvent(
+          id: textId,
+          providerMetadata: _streamTextPartMetadata(
+            state,
+            chunk: chunk,
+            part: part,
+          ),
+        );
       }
       return;
     }
@@ -1729,6 +1763,63 @@ final class OpenAIResponsesCodec {
       'serviceTier': state.serviceTier,
       'logprobs': _jsonListOrNull(chunk['logprobs']),
     });
+  }
+
+  ProviderMetadata? _streamTextPartMetadata(
+    OpenAIResponsesStreamState state, {
+    required Map<String, Object?> chunk,
+    required Map<String, Object?> part,
+  }) {
+    return _providerMetadata({
+      'responseId': state.responseId,
+      'itemId': _asString(chunk['item_id']),
+      'outputIndex': _asInt(chunk['output_index']),
+      'contentIndex': _asInt(chunk['content_index']),
+      'serviceTier': state.serviceTier,
+      'annotations': _jsonListOrNull(part['annotations']),
+      'logprobs': _jsonListOrNull(part['logprobs']),
+    });
+  }
+
+  SourceEvent? _decodeSourceEvent(
+    Map<String, Object?>? annotation,
+    OpenAIResponsesStreamState state,
+  ) {
+    final annotationKey = _annotationKey(annotation);
+    if (annotationKey == null ||
+        !state.emittedAnnotationKeys.add(annotationKey)) {
+      return null;
+    }
+
+    final source = _decodeSourceAnnotation(annotation);
+    if (source == null) {
+      return null;
+    }
+
+    return SourceEvent(source);
+  }
+
+  String? _annotationKey(Map<String, Object?>? annotation) {
+    if (annotation == null) {
+      return null;
+    }
+
+    final type = _asString(annotation['type']);
+    if (type == null) {
+      return null;
+    }
+
+    return switch (type) {
+      'url_citation' =>
+        'url:${_asString(annotation['url'])}:${_asInt(annotation['start_index'])}:${_asInt(annotation['end_index'])}',
+      'file_citation' =>
+        'file:${_asString(annotation['file_id'])}:${_asString(annotation['filename'])}:${_asInt(annotation['index'])}',
+      'container_file_citation' =>
+        'container:${_asString(annotation['container_id'])}:${_asString(annotation['file_id'])}:${_asString(annotation['filename'])}',
+      'file_path' =>
+        'file_path:${_asString(annotation['file_id'])}:${_asInt(annotation['index'])}',
+      _ => jsonEncode(annotation),
+    };
   }
 
   List<String>? _resolveInclude(

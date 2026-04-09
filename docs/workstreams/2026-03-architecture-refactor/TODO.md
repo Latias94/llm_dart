@@ -100,6 +100,7 @@
 - [x] Decide that OpenAI image variation should remain compatibility-only for now instead of gaining an automatic provider-owned helper
 - [x] Freeze the remaining root OpenAI public compatibility API policy and deprecate preset helpers that only prefill `baseUrl` or `model`
 - [x] Layer OpenAI compatibility config reads behind internal grouped views while keeping the public `OpenAIConfig` constructor flat
+- [x] Align the modern OpenAI Responses stream codec on `content_part.done`, annotation dedupe, and final text-part metadata
 - [ ] Re-evaluate richer OpenAI Responses hosted-tool or custom item-family replay only if a concrete OpenAI-native use case requires it beyond the current common function-tool and MCP continuation subset
 - [ ] Decide whether OpenAI should keep the remaining advanced hosted-tool families deferred, or add only narrowly-scoped provider-owned helpers if a concrete product need appears
 - [x] Turn OpenRouter into a profile

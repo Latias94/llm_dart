@@ -449,5 +449,99 @@ void main() {
         ),
       );
     });
+
+    test(
+        'maps content_part.done annotations without duplicate sources and preserves annotation metadata on text-end',
+        () {
+      const codec = OpenAIResponsesCodec();
+      final state = OpenAIResponsesStreamState();
+      final events = <TextStreamEvent>[];
+
+      for (final chunk in <Map<String, Object?>>[
+        {
+          'type': 'response.output_text.annotation.added',
+          'item_id': 'msg_123',
+          'output_index': 0,
+          'content_index': 0,
+          'annotation_index': 0,
+          'annotation': {
+            'type': 'url_citation',
+            'url': 'https://example.com',
+            'title': 'Example URL',
+            'start_index': 0,
+            'end_index': 10,
+          },
+        },
+        {
+          'type': 'response.output_text.annotation.added',
+          'item_id': 'msg_123',
+          'output_index': 0,
+          'content_index': 0,
+          'annotation_index': 1,
+          'annotation': {
+            'type': 'file_citation',
+            'file_id': 'file-abc123',
+            'filename': 'resource1.json',
+            'index': 123,
+          },
+        },
+        {
+          'type': 'response.content_part.done',
+          'item_id': 'msg_123',
+          'output_index': 0,
+          'content_index': 0,
+          'part': {
+            'type': 'output_text',
+            'text': 'Based on web search and file content.',
+            'annotations': [
+              {
+                'type': 'url_citation',
+                'url': 'https://example.com',
+                'title': 'Example URL',
+                'start_index': 0,
+                'end_index': 10,
+              },
+              {
+                'type': 'file_citation',
+                'file_id': 'file-abc123',
+                'filename': 'resource1.json',
+                'index': 123,
+              },
+            ],
+          },
+        },
+      ]) {
+        events.addAll(codec.decodeStreamChunk(chunk, state));
+      }
+
+      final sources =
+          events.whereType<SourceEvent>().map((event) => event.source).toList();
+      expect(sources, hasLength(2));
+      expect(sources[0].kind, SourceReferenceKind.url);
+      expect(sources[0].sourceId, 'https://example.com');
+      expect(sources[1].kind, SourceReferenceKind.document);
+      expect(sources[1].sourceId, 'file-abc123');
+
+      final textEnd = events.whereType<TextEndEvent>().single;
+      expect(textEnd.id, 'msg_123');
+      expect(
+        textEnd.providerMetadata?.namespace('openai'),
+        containsPair('annotations', [
+          {
+            'type': 'url_citation',
+            'url': 'https://example.com',
+            'title': 'Example URL',
+            'start_index': 0,
+            'end_index': 10,
+          },
+          {
+            'type': 'file_citation',
+            'file_id': 'file-abc123',
+            'filename': 'resource1.json',
+            'index': 123,
+          },
+        ]),
+      );
+    });
   });
 }
