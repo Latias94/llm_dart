@@ -348,6 +348,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - [128-anthropic-residual-api-classification.md](128-anthropic-residual-api-classification.md)
   - Classification of which remaining Anthropic root APIs are
     compatibility-only residuals versus real provider-owned gap candidates.
+- [129-anthropic-provider-owned-token-count-helper.md](129-anthropic-provider-owned-token-count-helper.md)
+  - Frozen decision and landed status for adding a provider-owned Anthropic
+    exact token-count helper without widening the shared text-generation
+    contract.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)

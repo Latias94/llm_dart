@@ -6,6 +6,7 @@ import 'anthropic_messages_codec.dart';
 import 'anthropic_options.dart';
 import 'anthropic_result_codec.dart';
 import 'anthropic_stream_codec.dart';
+import 'anthropic_token_count.dart';
 
 final class AnthropicLanguageModel implements LanguageModel {
   static const AnthropicMessagesCodec _messagesCodec = AnthropicMessagesCodec();
@@ -35,6 +36,9 @@ final class AnthropicLanguageModel implements LanguageModel {
   String get providerId => _providerId;
 
   Uri get messagesUri => resolveAnthropicUri(baseUrl, 'messages');
+
+  Uri get countTokensUri =>
+      resolveAnthropicUri(baseUrl, 'messages/count_tokens');
 
   @override
   Future<GenerateTextResult> generate(GenerateTextRequest request) async {
@@ -122,6 +126,44 @@ final class AnthropicLanguageModel implements LanguageModel {
     }
   }
 
+  Future<AnthropicTokenCountResult> countTokens(
+    AnthropicTokenCountRequest request,
+  ) async {
+    final providerOptions = _resolveProviderOptions(
+      request.callOptions.providerOptions,
+    );
+    final preparedRequest = _messagesCodec.encodeTokenCountRequest(
+      modelId: modelId,
+      prompt: request.prompt,
+      tools: request.tools,
+      toolChoice: request.toolChoice,
+      settings: settings,
+      providerOptions: providerOptions,
+    );
+
+    final response = await transport.send(
+      TransportRequest(
+        uri: countTokensUri,
+        method: TransportMethod.post,
+        headers: _buildRequestHeaders(
+          stream: false,
+          requestBetas: preparedRequest.betaFeatures,
+          extraHeaders: request.callOptions.headers,
+        ),
+        body: preparedRequest.body,
+        timeout: request.callOptions.timeout,
+        cancellation: request.callOptions.cancellation,
+        responseType: TransportResponseType.json,
+      ),
+    );
+
+    final json = decodeAnthropicJsonObject(response.body);
+    return AnthropicTokenCountResult(
+      inputTokens: _requiredInputTokens(json['input_tokens']),
+      warnings: preparedRequest.warnings,
+    );
+  }
+
   AnthropicGenerateTextOptions _resolveProviderOptions(
     ProviderInvocationOptions? options,
   ) {
@@ -156,6 +198,20 @@ final class AnthropicLanguageModel implements LanguageModel {
       ],
       accept: stream ? 'text/event-stream' : 'application/json',
       includeJsonContentType: true,
+    );
+  }
+
+  int _requiredInputTokens(Object? value) {
+    if (value is int) {
+      return value;
+    }
+
+    if (value is num) {
+      return value.toInt();
+    }
+
+    throw StateError(
+      'Expected Anthropic input_tokens to be an int but received ${value.runtimeType}.',
     );
   }
 }

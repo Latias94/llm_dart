@@ -189,6 +189,183 @@ void main() {
       );
     });
 
+    test('countTokens sends a provider-owned token count request', () async {
+      TransportRequest? capturedRequest;
+      final cancellation = TransportCancellation();
+
+      final model = Anthropic(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return const TransportResponse(
+              statusCode: 200,
+              body: {
+                'input_tokens': 77,
+              },
+            );
+          },
+        ),
+      ).chatModel(
+        'claude-sonnet-4-5',
+        settings: const AnthropicChatModelSettings(
+          headers: {
+            'anthropic-beta': 'settings-beta',
+            'x-settings': '1',
+          },
+        ),
+      );
+
+      final result = await model.countTokens(
+        AnthropicTokenCountRequest(
+          prompt: [
+            UserPromptMessage.text('Count this request.'),
+          ],
+          tools: [
+            FunctionToolDefinition(
+              name: 'weather',
+              description: 'Get weather details for a city.',
+              inputSchema: ToolJsonSchema.object(
+                properties: const {
+                  'city': {
+                    'type': 'string',
+                  },
+                },
+                required: const ['city'],
+              ),
+            ),
+          ],
+          toolChoice: const AutoToolChoice(),
+          callOptions: CallOptions(
+            timeout: const Duration(seconds: 6),
+            cancellation: cancellation,
+            headers: const {
+              'anthropic-beta': 'runtime-beta',
+              'x-call': '2',
+            },
+            providerOptions: const AnthropicGenerateTextOptions(
+              extendedThinking: true,
+              thinkingBudgetTokens: 2048,
+              interleavedThinking: true,
+              serviceTier: 'standard_only',
+              metadata: {
+                'session': 'abc',
+              },
+              container: 'container_123',
+              mcpServers: [
+                AnthropicMcpServer.url(
+                  name: 'workspace',
+                  url: 'https://mcp.example.com',
+                ),
+              ],
+              tools: [
+                AnthropicCodeExecutionTool20260120(),
+              ],
+              toolsCacheControl: AnthropicCacheControl.ephemeral(
+                ttl: '1h',
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      expect(
+        capturedRequest!.uri.toString(),
+        'https://api.anthropic.com/v1/messages/count_tokens',
+      );
+      expect(capturedRequest!.method, TransportMethod.post);
+      expect(capturedRequest!.responseType, TransportResponseType.json);
+      expect(capturedRequest!.timeout, const Duration(seconds: 6));
+      expect(identical(capturedRequest!.cancellation, cancellation), isTrue);
+      expect(capturedRequest!.headers['x-api-key'], 'test-key');
+      expect(capturedRequest!.headers['anthropic-version'], '2023-06-01');
+      expect(capturedRequest!.headers['accept'], 'application/json');
+      expect(capturedRequest!.headers['content-type'], 'application/json');
+      expect(capturedRequest!.headers['x-settings'], '1');
+      expect(capturedRequest!.headers['x-call'], '2');
+      expect(
+        capturedRequest!.headers['anthropic-beta']!.split(',').toSet(),
+        {
+          'extended-cache-ttl-2025-04-11',
+          'interleaved-thinking-2025-05-14',
+          'mcp-client-2025-04-04',
+          'runtime-beta',
+          'settings-beta',
+        },
+      );
+
+      final body = capturedRequest!.body as Map<String, Object?>;
+      expect(body['model'], 'claude-sonnet-4-5');
+      expect(body['messages'], [
+        {
+          'role': 'user',
+          'content': [
+            {
+              'type': 'text',
+              'text': 'Count this request.',
+            },
+          ],
+        },
+      ]);
+      expect(body['thinking'], {
+        'type': 'enabled',
+        'budget_tokens': 2048,
+      });
+      expect(body['mcp_servers'], [
+        {
+          'name': 'workspace',
+          'type': 'url',
+          'url': 'https://mcp.example.com',
+        },
+      ]);
+      expect(body['tools'], [
+        {
+          'name': 'weather',
+          'description': 'Get weather details for a city.',
+          'input_schema': {
+            'type': 'object',
+            'properties': {
+              'city': {
+                'type': 'string',
+              },
+            },
+            'required': ['city'],
+          },
+        },
+        {
+          'type': 'code_execution_20260120',
+          'name': 'code_execution',
+          'cache_control': {
+            'type': 'ephemeral',
+            'ttl': '1h',
+          },
+        },
+      ]);
+      expect(body['tool_choice'], {
+        'type': 'auto',
+      });
+      expect(body.containsKey('max_tokens'), isFalse);
+      expect(body.containsKey('stream'), isFalse);
+      expect(body.containsKey('temperature'), isFalse);
+      expect(body.containsKey('top_p'), isFalse);
+      expect(body.containsKey('top_k'), isFalse);
+      expect(body.containsKey('stop_sequences'), isFalse);
+      expect(body.containsKey('service_tier'), isFalse);
+      expect(body.containsKey('metadata'), isFalse);
+      expect(body.containsKey('container'), isFalse);
+
+      expect(result.inputTokens, 77);
+      expect(
+        result.warnings.map((warning) => warning.field),
+        containsAll([
+          'serviceTier',
+          'metadata',
+          'container',
+        ]),
+      );
+    });
+
     test('stream maps SSE responses to unified stream events', () async {
       TransportRequest? capturedRequest;
 

@@ -251,6 +251,84 @@ final class AnthropicMessagesCodec {
     );
   }
 
+  AnthropicMessagesRequest encodeTokenCountRequest({
+    required String modelId,
+    required List<PromptMessage> prompt,
+    required List<FunctionToolDefinition> tools,
+    required ToolChoice? toolChoice,
+    required AnthropicChatModelSettings settings,
+    required AnthropicGenerateTextOptions providerOptions,
+  }) {
+    final baseRequest = encodeRequest(
+      modelId: modelId,
+      prompt: prompt,
+      tools: tools,
+      toolChoice: toolChoice,
+      options: const GenerateTextOptions(),
+      settings: settings,
+      providerOptions: providerOptions,
+      stream: false,
+    );
+
+    final warnings = <ModelWarning>[
+      ...baseRequest.warnings,
+    ];
+
+    if (providerOptions.serviceTier != null) {
+      warnings.add(
+        const ModelWarning(
+          type: ModelWarningType.compatibility,
+          field: 'serviceTier',
+          message:
+              'Anthropic token counting ignores serviceTier. The value has not been sent.',
+        ),
+      );
+    }
+
+    if (providerOptions.metadata != null &&
+        providerOptions.metadata!.isNotEmpty) {
+      warnings.add(
+        const ModelWarning(
+          type: ModelWarningType.compatibility,
+          field: 'metadata',
+          message:
+              'Anthropic token counting ignores metadata. The value has not been sent.',
+        ),
+      );
+    }
+
+    if (providerOptions.container != null) {
+      warnings.add(
+        const ModelWarning(
+          type: ModelWarningType.compatibility,
+          field: 'container',
+          message:
+              'Anthropic token counting ignores container. The value has not been sent.',
+        ),
+      );
+    }
+
+    final body = <String, Object?>{
+      'model': baseRequest.body['model'],
+      'messages': baseRequest.body['messages'],
+      if (baseRequest.body['system'] case final system?) 'system': system,
+      if (baseRequest.body['thinking'] case final thinking?)
+        'thinking': thinking,
+      if (baseRequest.body['mcp_servers'] case final mcpServers?)
+        'mcp_servers': mcpServers,
+      if (baseRequest.body['tools'] case final encodedTools?)
+        'tools': encodedTools,
+      if (baseRequest.body['tool_choice'] case final encodedToolChoice?)
+        'tool_choice': encodedToolChoice,
+    };
+
+    return AnthropicMessagesRequest(
+      body: body,
+      betaFeatures: baseRequest.betaFeatures,
+      warnings: warnings,
+    );
+  }
+
   _AnthropicToolConfiguration _resolveToolConfiguration({
     required List<FunctionToolDefinition> tools,
     required List<AnthropicNativeTool> nativeTools,
