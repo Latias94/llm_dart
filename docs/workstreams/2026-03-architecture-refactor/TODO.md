@@ -159,7 +159,7 @@
 - [x] Extract ElevenLabs root-shell speech/transcription bridge setup out of `lib/providers/elevenlabs/provider.dart` into the root compatibility layer
 - [x] Freeze that the remaining root builder/factory adaptation path survives only as a compatibility shell, while provider-owned modern config constructors remain the long-term API direction
 - [x] Decide that `HttpResponseHandler` and `DioErrorHandler` stay root compatibility-owned for now, while transport keeps lower-level primitives and provider packages keep owning their modern model-path error handling
-- [ ] Audit whether provider-focused root entrypoints should stop re-exporting `AI`, `core.dart`, and `transport.dart` once the modern import boundary is fully stable
+- [x] Audit and narrow provider-focused root entrypoints so `openai.dart`, `google.dart`, and `anthropic.dart` stop re-exporting `AI`, `core.dart`, and `transport.dart`
 - [ ] Remove direct `dio` and `logging` runtime dependencies from the root package after the remaining local compatibility/provider code moves out
 
 ## Community Providers

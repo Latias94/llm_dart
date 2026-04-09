@@ -1,6 +1,8 @@
+/// Focused Anthropic provider entrypoint.
+///
+/// Exports provider-owned Anthropic types only.
+/// Import `ai.dart` for the root `AI` facade and `core.dart` / `transport.dart`
+/// for shared layers.
 library;
 
-export 'core.dart';
-export 'transport.dart';
 export 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
-export 'src/facade/ai.dart' show AI;

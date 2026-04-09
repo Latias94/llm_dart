@@ -29,13 +29,13 @@ void main() {
 
     test('provider sub-entrypoints expose refactored package barrels', () {
       final profile = const openai_entry.OpenAIProfile();
-      final openaiProvider = openai_entry.AI.openai(
+      final openaiProvider = openai_entry.OpenAI(
         apiKey: 'test-key',
-        profile: profile,
+        profile: const openai_entry.OpenAIProfile(),
       );
-      final googleProvider = google_entry.AI.google(apiKey: 'test-key');
+      final googleProvider = google_entry.Google(apiKey: 'test-key');
       final anthropicProvider =
-          anthropic_entry.AI.anthropic(apiKey: 'test-key');
+          anthropic_entry.Anthropic(apiKey: 'test-key');
 
       expect(profile.providerId, 'openai');
       expect(openaiProvider, isA<openai_entry.OpenAI>());

@@ -363,6 +363,11 @@ Current status:
   explicitly as compatibility-owned helpers: transport keeps lower-level
   cancellation/configuration/logging/JSON primitives, while modern provider
   packages keep owning their own model-path error behavior
+- provider-focused root entrypoints are now also frozen more explicitly as
+  genuinely provider-focused surfaces: `openai.dart`, `google.dart`, and
+  `anthropic.dart` should no longer re-export `AI`, `core.dart`, or
+  `transport.dart`, while `chat.dart` remains the intentional convenience
+  exception
 - the provider-owned search direction is now also frozen more concretely: OpenRouter search remains profile/model shaping, while xAI live search becomes provider-owned invocation options over `search_parameters`
 - the package-owned OpenRouter mainline now also accepts provider-owned online-model settings, and the compatibility bridge now allows the explicit `:online` shape plus the bare `webSearchEnabled` migration input
 - the package-owned xAI chat-completions mainline now also accepts typed `XAIGenerateTextOptions` and projects xAI citations through shared source parts and events

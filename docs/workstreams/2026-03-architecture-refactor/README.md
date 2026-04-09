@@ -299,6 +299,11 @@ This workstream is not about a file-moving refactor. It is about defining stable
     `DioErrorHandler` stay compatibility-owned, while transport keeps only
     lower-level primitives and modern provider packages own their own model-path
     error behavior.
+- [116-provider-root-entrypoint-narrowing.md](116-provider-root-entrypoint-narrowing.md)
+  - Frozen conclusion that provider-focused root entrypoints should export
+    provider-owned surfaces only, while `AI`, `core.dart`, and `transport.dart`
+    stay on their own root entrypoints and `chat.dart` remains the explicit
+    convenience exception.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
