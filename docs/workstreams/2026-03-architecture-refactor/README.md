@@ -308,6 +308,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Status note for moving more Ollama and ElevenLabs shell-only orchestration
     into dedicated compatibility support modules so the root provider files act
     more clearly as migration-era adapters.
+- [118-community-provider-shell-relocation.md](118-community-provider-shell-relocation.md)
+  - Status note for relocating the remaining root Ollama and ElevenLabs
+    provider shell implementations under `src/compatibility`, leaving the
+    public provider entry files as compatibility re-exports.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
