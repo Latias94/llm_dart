@@ -345,6 +345,9 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Status note for relocating the remaining root-hosted Anthropic legacy
     implementation modules under `src/compatibility`, leaving the public
     provider paths as compatibility re-exports.
+- [128-anthropic-residual-api-classification.md](128-anthropic-residual-api-classification.md)
+  - Classification of which remaining Anthropic root APIs are
+    compatibility-only residuals versus real provider-owned gap candidates.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
