@@ -383,6 +383,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Status note for aligning the modern OpenAI Responses stream codec with
     `repo-ref/ai` on `content_part.done`, annotation dedupe, and final text-part
     metadata projection.
+- [139-root-openai-chat-hosting-gap.md](139-root-openai-chat-hosting-gap.md)
+  - Structural review of why the public root `OpenAIProvider` still hosts too
+    much chat logic even though the compatibility bridge already projects modern
+    `llm_dart_openai` text models back into the old API.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)

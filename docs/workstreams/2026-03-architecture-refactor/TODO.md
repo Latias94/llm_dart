@@ -101,6 +101,7 @@
 - [x] Freeze the remaining root OpenAI public compatibility API policy and deprecate preset helpers that only prefill `baseUrl` or `model`
 - [x] Layer OpenAI compatibility config reads behind internal grouped views while keeping the public `OpenAIConfig` constructor flat
 - [x] Align the modern OpenAI Responses stream codec on `content_part.done`, annotation dedupe, and final text-part metadata
+- [ ] Decide whether the public root `OpenAIProvider` chat path should narrow to an internal adapter over modern `llm_dart_openai` for the already-audited bridge-safe subset
 - [ ] Re-evaluate richer OpenAI Responses hosted-tool or custom item-family replay only if a concrete OpenAI-native use case requires it beyond the current common function-tool and MCP continuation subset
 - [ ] Decide whether OpenAI should keep the remaining advanced hosted-tool families deferred, or add only narrowly-scoped provider-owned helpers if a concrete product need appears
 - [x] Turn OpenRouter into a profile
