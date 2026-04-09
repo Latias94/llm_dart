@@ -2,12 +2,12 @@ import '../../../../core/capability.dart';
 import '../../../../models/chat_models.dart';
 import '../../../../models/tool_models.dart';
 import '../../../../models/image_models.dart';
-import '../../../../providers/google/client.dart';
 import '../../../../providers/google/config.dart';
-import '../../../../providers/google/chat.dart';
-import '../../../../providers/google/embeddings.dart';
-import '../../../../providers/google/images.dart';
-import '../../../../providers/google/tts.dart';
+import 'client.dart';
+import 'chat.dart';
+import 'embeddings.dart';
+import 'images.dart';
+import 'tts.dart';
 
 /// Compatibility-first root Google provider shell.
 ///

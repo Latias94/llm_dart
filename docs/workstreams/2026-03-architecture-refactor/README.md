@@ -324,6 +324,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Status note for relocating the remaining root Google provider shell under
     `src/compatibility`, leaving the public provider entry file as a
     compatibility re-export.
+- [122-google-compatibility-module-relocation.md](122-google-compatibility-module-relocation.md)
+  - Status note for relocating the remaining root-hosted Google legacy HTTP and
+    capability modules under `src/compatibility`, leaving the old provider
+    paths as compatibility re-exports.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
