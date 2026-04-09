@@ -9,6 +9,7 @@ import '../../../../models/assistant_models.dart';
 import 'client.dart';
 import '../../../../providers/openai/config.dart';
 import 'chat.dart';
+import 'config_views.dart';
 import 'embeddings.dart';
 import 'audio.dart';
 import 'images.dart';
@@ -51,6 +52,7 @@ class OpenAIProvider
   late final OpenAIAssistants _assistants;
   late final OpenAICompletion _completion;
   late final OpenAIResponses? _responses;
+  late final bool _responsesEnabled = config.responsesCompat.enabled;
 
   OpenAIProvider(this.config) : _client = OpenAIClient(config) {
     // Initialize capability modules
@@ -65,7 +67,7 @@ class OpenAIProvider
     _completion = OpenAICompletion(_client, config);
 
     // Initialize Responses API module if enabled
-    if (config.useResponsesAPI) {
+    if (_responsesEnabled) {
       _responses = OpenAIResponses(_client, config);
     } else {
       _responses = null;
@@ -96,7 +98,7 @@ class OpenAIProvider
     };
 
     // Add OpenAI Responses API capability if enabled
-    if (config.useResponsesAPI) {
+    if (_responsesEnabled) {
       capabilities.add(LLMCapability.openaiResponses);
     }
 
@@ -116,7 +118,7 @@ class OpenAIProvider
     TransportCancellation? cancelToken,
   }) async {
     // Use Responses API if enabled, otherwise use Chat Completions API
-    if (config.useResponsesAPI && _responses != null) {
+    if (_responsesEnabled && _responses != null) {
       return _responses.chat(messages, cancelToken: cancelToken);
     } else {
       return _chat.chat(messages, cancelToken: cancelToken);
@@ -130,7 +132,7 @@ class OpenAIProvider
     TransportCancellation? cancelToken,
   }) async {
     // Use Responses API if enabled, otherwise use Chat Completions API
-    if (config.useResponsesAPI && _responses != null) {
+    if (_responsesEnabled && _responses != null) {
       return _responses.chatWithTools(messages, tools,
           cancelToken: cancelToken);
     } else {
@@ -145,7 +147,7 @@ class OpenAIProvider
     TransportCancellation? cancelToken,
   }) {
     // Use Responses API if enabled, otherwise use Chat Completions API
-    if (config.useResponsesAPI && _responses != null) {
+    if (_responsesEnabled && _responses != null) {
       return _responses.chatStream(messages,
           tools: tools, cancelToken: cancelToken);
     } else {
@@ -156,7 +158,7 @@ class OpenAIProvider
   @override
   Future<List<ChatMessage>?> memoryContents() async {
     // Use Responses API if enabled, otherwise use Chat Completions API
-    if (config.useResponsesAPI && _responses != null) {
+    if (_responsesEnabled && _responses != null) {
       return _responses.memoryContents();
     } else {
       return _chat.memoryContents();
@@ -166,7 +168,7 @@ class OpenAIProvider
   @override
   Future<String> summarizeHistory(List<ChatMessage> messages) async {
     // Use Responses API if enabled, otherwise use Chat Completions API
-    if (config.useResponsesAPI && _responses != null) {
+    if (_responsesEnabled && _responses != null) {
       return _responses.summarizeHistory(messages);
     } else {
       return _chat.summarizeHistory(messages);

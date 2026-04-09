@@ -10,6 +10,7 @@ import '../../../config/legacy_provider_options.dart';
 import '../../../../utils/reasoning_utils.dart';
 import 'client.dart';
 import '../../../../providers/openai/config.dart';
+import 'config_views.dart';
 import 'responses_capability.dart';
 
 /// OpenAI Responses API capability implementation
@@ -291,6 +292,8 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
     bool stream,
     bool background,
   ) {
+    final requestConfig = config.requestCompat;
+    final responsesConfig = config.responsesCompat;
     // Convert messages to API format
     final apiMessages = client.buildApiMessages(messages);
 
@@ -298,47 +301,48 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
     final hasSystemMessage = messages.any((m) => m.role == ChatRole.system);
 
     // Only add config system prompt if no explicit system message exists
-    if (!hasSystemMessage && config.systemPrompt != null) {
-      apiMessages.insert(0, {'role': 'system', 'content': config.systemPrompt});
+    if (!hasSystemMessage && requestConfig.systemPrompt != null) {
+      apiMessages
+          .insert(0, {'role': 'system', 'content': requestConfig.systemPrompt});
     }
 
     final body = <String, dynamic>{
-      'model': config.model,
+      'model': requestConfig.model,
       'input': apiMessages,
       'stream': stream,
       'background': background,
     };
 
     // Add previous response ID for chaining
-    if (config.previousResponseId != null) {
-      body['previous_response_id'] = config.previousResponseId;
+    if (responsesConfig.previousResponseId != null) {
+      body['previous_response_id'] = responsesConfig.previousResponseId;
     }
 
     // Add optional parameters using reasoning utils
     body.addAll(
       ReasoningUtils.getMaxTokensParams(
-        model: config.model,
-        maxTokens: config.maxTokens,
+        model: requestConfig.model,
+        maxTokens: requestConfig.maxTokens,
       ),
     );
 
     // Add temperature if not disabled for reasoning models
-    if (config.temperature != null &&
-        !ReasoningUtils.shouldDisableTemperature(config.model)) {
-      body['temperature'] = config.temperature;
+    if (requestConfig.temperature != null &&
+        !ReasoningUtils.shouldDisableTemperature(requestConfig.model)) {
+      body['temperature'] = requestConfig.temperature;
     }
 
     // Add top_p if not disabled for reasoning models
-    if (config.topP != null &&
-        !ReasoningUtils.shouldDisableTopP(config.model)) {
-      body['top_p'] = config.topP;
+    if (requestConfig.topP != null &&
+        !ReasoningUtils.shouldDisableTopP(requestConfig.model)) {
+      body['top_p'] = requestConfig.topP;
     }
-    if (config.topK != null) body['top_k'] = config.topK;
+    if (requestConfig.topK != null) body['top_k'] = requestConfig.topK;
 
     // Add reasoning effort parameters (Responses API format)
-    if (config.reasoningEffort != null) {
+    if (requestConfig.reasoningEffort != null) {
       body['reasoning'] = {
-        'effort': config.reasoningEffort!.value,
+        'effort': requestConfig.reasoningEffort!.value,
       };
     }
 
@@ -346,22 +350,23 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
     final allTools = <Map<String, dynamic>>[];
 
     // Add function tools (convert to Responses API format)
-    final effectiveTools = tools ?? config.tools;
+    final effectiveTools = tools ?? requestConfig.tools;
     if (effectiveTools != null && effectiveTools.isNotEmpty) {
       allTools
           .addAll(effectiveTools.map((t) => _convertToolToResponsesFormat(t)));
     }
 
     // Add built-in tools
-    if (config.builtInTools != null && config.builtInTools!.isNotEmpty) {
-      allTools.addAll(config.builtInTools!.map((t) => t.toJson()));
+    if (responsesConfig.builtInTools != null &&
+        responsesConfig.builtInTools!.isNotEmpty) {
+      allTools.addAll(responsesConfig.builtInTools!.map((t) => t.toJson()));
     }
 
     if (allTools.isNotEmpty) {
       body['tools'] = allTools;
 
       // Add tool choice if configured (only for function tools)
-      final effectiveToolChoice = config.toolChoice;
+      final effectiveToolChoice = requestConfig.toolChoice;
       if (effectiveToolChoice != null &&
           effectiveTools != null &&
           effectiveTools.isNotEmpty) {
@@ -370,8 +375,8 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
     }
 
     // Add structured output if configured
-    if (config.jsonSchema != null) {
-      final schema = config.jsonSchema!;
+    if (requestConfig.jsonSchema != null) {
+      final schema = requestConfig.jsonSchema!;
       final responseFormat = <String, dynamic>{
         'type': 'json_schema',
         'json_schema': schema.toJson(),
@@ -395,21 +400,22 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
     }
 
     // Add common parameters
-    if (config.stopSequences != null && config.stopSequences!.isNotEmpty) {
-      body['stop'] = config.stopSequences;
+    if (requestConfig.stopSequences != null &&
+        requestConfig.stopSequences!.isNotEmpty) {
+      body['stop'] = requestConfig.stopSequences;
     }
 
-    if (config.user != null) {
-      body['user'] = config.user;
+    if (requestConfig.user != null) {
+      body['user'] = requestConfig.user;
     }
 
-    if (config.serviceTier != null) {
-      body['service_tier'] = config.serviceTier!.value;
+    if (requestConfig.serviceTier != null) {
+      body['service_tier'] = requestConfig.serviceTier!.value;
     }
 
     // Determine if this is an OpenAI reasoning model (GPT-5 family, o1/o3/o4, etc.)
     final isOpenAIReasoningModel = client.providerId == 'openai' &&
-        ReasoningUtils.isOpenAIReasoningModel(config.model);
+        ReasoningUtils.isOpenAIReasoningModel(requestConfig.model);
 
     // Add OpenAI-specific extension parameters
     //

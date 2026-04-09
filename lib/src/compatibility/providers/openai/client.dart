@@ -14,6 +14,7 @@ import '../../../../core/llm_error.dart';
 import '../../../../models/chat_models.dart';
 import '../../../../utils/http_response_handler.dart';
 import '../../../../providers/openai/config.dart';
+import 'config_views.dart';
 import 'dio_strategy.dart';
 
 /// Core OpenAI HTTP client shared across all capability modules
@@ -40,6 +41,8 @@ class OpenAIClient {
       config: config,
     );
   }
+
+  bool get _usesResponsesApi => config.responsesCompat.enabled;
 
   /// Get provider ID based on base URL for provider-specific behavior
   String get providerId {
@@ -188,7 +191,7 @@ class OpenAIClient {
 
         // Add text content if present
         if (message.content.isNotEmpty) {
-          if (config.useResponsesAPI) {
+          if (_usesResponsesApi) {
             contentArray.add({
               'type': 'input_text',
               'text': message.content,
@@ -202,7 +205,7 @@ class OpenAIClient {
         }
 
         // Add image content
-        if (config.useResponsesAPI) {
+        if (_usesResponsesApi) {
           contentArray.add({
             'type': 'input_image',
             'image_url': imageDataUrl,
@@ -223,7 +226,7 @@ class OpenAIClient {
 
         // Add text content if present
         if (message.content.isNotEmpty) {
-          if (config.useResponsesAPI) {
+          if (_usesResponsesApi) {
             contentArray.add({
               'type': 'input_text',
               'text': message.content,
@@ -237,7 +240,7 @@ class OpenAIClient {
         }
 
         // Add image content
-        if (config.useResponsesAPI) {
+        if (_usesResponsesApi) {
           contentArray.add({
             'type': 'input_image',
             'image_url': url,
@@ -261,7 +264,7 @@ class OpenAIClient {
 
         // Add text content if present
         if (message.content.isNotEmpty) {
-          if (config.useResponsesAPI) {
+          if (_usesResponsesApi) {
             contentArray.add({
               'type': 'input_text',
               'text': message.content,
@@ -275,7 +278,7 @@ class OpenAIClient {
         }
 
         // Add file content
-        if (config.useResponsesAPI) {
+        if (_usesResponsesApi) {
           // Responses API format: { type: 'input_file', file_data: '<base64>' }
           contentArray.add({
             'type': 'input_file',

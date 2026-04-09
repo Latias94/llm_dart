@@ -376,6 +376,9 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - [136-openai-public-compatibility-api-policy.md](136-openai-public-compatibility-api-policy.md)
   - Frozen policy for which remaining root OpenAI public APIs stay visible as
     compatibility surfaces and which preset helpers now deprecate.
+- [137-openai-config-layering-policy.md](137-openai-config-layering-policy.md)
+  - Frozen policy that keeps the public `OpenAIConfig` constructor flat while
+    moving compatibility implementation reads behind internal grouped views.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
@@ -482,6 +485,11 @@ This workstream is not about a file-moving refactor. It is about defining stable
   shared modern surfaces stay narrow, while provider-specific catalog,
   realtime, admin, and file-path convenience APIs remain provider-owned or
   compatibility-only until a concrete typed helper is justified
+- OpenAI compatibility reads now also have an internal layering policy:
+  the public `OpenAIConfig` constructor stays flat for migration stability,
+  while compatibility chat, Responses, embedding, audio, and message-conversion
+  code read through grouped internal views instead of scattering direct flat
+  field access everywhere
 - Ollama and ElevenLabs builder DSL implementations now also live under the
   root compatibility layer, with provider-path builder files reduced to thin
   compatibility exports

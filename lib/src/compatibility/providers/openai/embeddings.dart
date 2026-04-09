@@ -2,6 +2,7 @@ import '../../../../core/capability.dart';
 import '../../../../core/llm_error.dart';
 import 'client.dart';
 import '../../../../providers/openai/config.dart';
+import 'config_views.dart';
 
 /// OpenAI Embeddings capability implementation
 ///
@@ -17,12 +18,15 @@ class OpenAIEmbeddings implements EmbeddingCapability {
     List<String> input, {
     TransportCancellation? cancelToken,
   }) async {
+    final requestConfig = config.requestCompat;
+    final embeddingConfig = config.embeddingCompat;
+
     final requestBody = {
-      'model': config.model,
+      'model': requestConfig.model,
       'input': input,
-      'encoding_format': config.embeddingEncodingFormat ?? 'float',
-      if (config.embeddingDimensions != null)
-        'dimensions': config.embeddingDimensions,
+      'encoding_format': embeddingConfig.encodingFormat,
+      if (embeddingConfig.dimensions != null)
+        'dimensions': embeddingConfig.dimensions,
     };
 
     final responseData = await client.postJson(
@@ -71,8 +75,10 @@ class OpenAIEmbeddings implements EmbeddingCapability {
 
   /// Get embedding dimensions for a model
   Future<int> getEmbeddingDimensions() async {
+    final requestConfig = config.requestCompat;
+
     final requestBody = {
-      'model': config.model,
+      'model': requestConfig.model,
       'input': 'hi', // Simple test input
     };
 

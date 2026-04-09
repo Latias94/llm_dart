@@ -9,6 +9,7 @@ import '../../../config/legacy_provider_options.dart';
 import '../../../../utils/reasoning_utils.dart';
 import 'client.dart';
 import '../../../../providers/openai/config.dart';
+import 'config_views.dart';
 
 /// OpenAI Chat capability implementation
 ///
@@ -118,18 +119,20 @@ class OpenAIChat implements ChatCapability {
     List<Tool>? tools,
     bool stream,
   ) {
+    final requestConfig = config.requestCompat;
     final apiMessages = client.buildApiMessages(messages);
 
     // Handle system prompt: prefer explicit system messages over config
     final hasSystemMessage = messages.any((m) => m.role == ChatRole.system);
 
     // Only add config system prompt if no explicit system message exists
-    if (!hasSystemMessage && config.systemPrompt != null) {
-      apiMessages.insert(0, {'role': 'system', 'content': config.systemPrompt});
+    if (!hasSystemMessage && requestConfig.systemPrompt != null) {
+      apiMessages
+          .insert(0, {'role': 'system', 'content': requestConfig.systemPrompt});
     }
 
     final body = <String, dynamic>{
-      'model': config.model,
+      'model': requestConfig.model,
       'messages': apiMessages,
       'stream': stream,
     };
@@ -137,54 +140,54 @@ class OpenAIChat implements ChatCapability {
     // Add optional parameters using reasoning utils
     body.addAll(
       ReasoningUtils.getMaxTokensParams(
-        model: config.model,
-        maxTokens: config.maxTokens,
+        model: requestConfig.model,
+        maxTokens: requestConfig.maxTokens,
       ),
     );
 
     // Add temperature if not disabled for reasoning models
-    if (config.temperature != null &&
-        !ReasoningUtils.shouldDisableTemperature(config.model)) {
-      body['temperature'] = config.temperature;
+    if (requestConfig.temperature != null &&
+        !ReasoningUtils.shouldDisableTemperature(requestConfig.model)) {
+      body['temperature'] = requestConfig.temperature;
     }
 
     // Add top_p if not disabled for reasoning models
-    if (config.topP != null &&
-        !ReasoningUtils.shouldDisableTopP(config.model)) {
-      body['top_p'] = config.topP;
+    if (requestConfig.topP != null &&
+        !ReasoningUtils.shouldDisableTopP(requestConfig.model)) {
+      body['top_p'] = requestConfig.topP;
     }
-    if (config.topK != null) body['top_k'] = config.topK;
+    if (requestConfig.topK != null) body['top_k'] = requestConfig.topK;
 
     // Add reasoning effort parameters
     body.addAll(
       ReasoningUtils.getReasoningEffortParams(
         providerId: client.providerId,
-        model: config.model,
-        reasoningEffort: config.reasoningEffort,
-        maxTokens: config.maxTokens,
+        model: requestConfig.model,
+        reasoningEffort: requestConfig.reasoningEffort,
+        maxTokens: requestConfig.maxTokens,
       ),
     );
 
     // Add provider-specific reasoning parameters
     if (client.providerId == 'openrouter' &&
-        config.model.contains('deepseek-r1')) {
+        requestConfig.model.contains('deepseek-r1')) {
       body['include_reasoning'] = true;
     }
 
     // Add tools if provided
-    final effectiveTools = tools ?? config.tools;
+    final effectiveTools = tools ?? requestConfig.tools;
     if (effectiveTools != null && effectiveTools.isNotEmpty) {
       body['tools'] = effectiveTools.map((t) => t.toJson()).toList();
 
-      final effectiveToolChoice = config.toolChoice;
+      final effectiveToolChoice = requestConfig.toolChoice;
       if (effectiveToolChoice != null) {
         body['tool_choice'] = effectiveToolChoice.toJson();
       }
     }
 
     // Add structured output if configured
-    if (config.jsonSchema != null) {
-      final schema = config.jsonSchema!;
+    if (requestConfig.jsonSchema != null) {
+      final schema = requestConfig.jsonSchema!;
       final responseFormat = <String, dynamic>{
         'type': 'json_schema',
         'json_schema': schema.toJson(),
@@ -208,21 +211,22 @@ class OpenAIChat implements ChatCapability {
     }
 
     // Add common parameters
-    if (config.stopSequences != null && config.stopSequences!.isNotEmpty) {
-      body['stop'] = config.stopSequences;
+    if (requestConfig.stopSequences != null &&
+        requestConfig.stopSequences!.isNotEmpty) {
+      body['stop'] = requestConfig.stopSequences;
     }
 
-    if (config.user != null) {
-      body['user'] = config.user;
+    if (requestConfig.user != null) {
+      body['user'] = requestConfig.user;
     }
 
-    if (config.serviceTier != null) {
-      body['service_tier'] = config.serviceTier!.value;
+    if (requestConfig.serviceTier != null) {
+      body['service_tier'] = requestConfig.serviceTier!.value;
     }
 
     // Determine if this is an OpenAI reasoning model (GPT-5 family, o1/o3/o4, etc.)
     final isOpenAIReasoningModel = client.providerId == 'openai' &&
-        ReasoningUtils.isOpenAIReasoningModel(config.model);
+        ReasoningUtils.isOpenAIReasoningModel(requestConfig.model);
 
     // Add OpenAI-specific extension parameters
     //
@@ -346,7 +350,8 @@ class OpenAIChat implements ChatCapability {
         }
 
         // For OpenRouter with deepseek-r1, check if include_reasoning was used
-        if (thinkingContent == null && config.model.contains('deepseek-r1')) {
+        if (thinkingContent == null &&
+            config.requestCompat.model.contains('deepseek-r1')) {
           final reasoning = responseData['reasoning'] as String?;
           if (reasoning != null && reasoning.isNotEmpty) {
             thinkingContent = reasoning;

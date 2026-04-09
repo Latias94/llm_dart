@@ -6,6 +6,7 @@ import '../../../provider_defaults.dart';
 import '../../../../models/audio_models.dart';
 import 'client.dart';
 import '../../../../providers/openai/config.dart';
+import 'config_views.dart';
 
 /// OpenAI Audio capabilities implementation
 ///
@@ -37,10 +38,13 @@ class OpenAIAudio extends BaseAudioCapability {
       throw const InvalidRequestError('Text input cannot be empty');
     }
 
+    final audioConfig = config.audioCompat;
+    final resolvedVoice = request.voice ?? audioConfig.defaultVoice;
+
     final requestBody = <String, dynamic>{
       'model': request.model ?? ProviderDefaults.openaiDefaultTTSModel,
       'input': request.text,
-      'voice': request.voice ?? ProviderDefaults.openaiDefaultVoice,
+      'voice': resolvedVoice,
       if (request.format != null) 'response_format': request.format,
       if (request.speed != null) 'speed': request.speed,
     };
@@ -81,7 +85,7 @@ class OpenAIAudio extends BaseAudioCapability {
     return TTSResponse(
       audioData: audioData,
       contentType: contentType,
-      voice: request.voice,
+      voice: resolvedVoice,
       model: request.model,
       duration: null, // OpenAI doesn't provide duration
       sampleRate: null, // OpenAI doesn't provide sample rate
