@@ -316,6 +316,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Status note for relocating the remaining root Dio/logging-based HTTP
     scaffolding under `src/compatibility/http`, leaving the old utility paths
     as compatibility re-exports.
+- [120-root-provider-client-hosting-inventory.md](120-root-provider-client-hosting-inventory.md)
+  - Inventory of which remaining root provider families still keep the root
+    package as a real implementation host, and which family is the cleanest
+    next thinning candidate.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
