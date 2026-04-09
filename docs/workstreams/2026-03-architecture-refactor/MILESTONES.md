@@ -250,7 +250,9 @@ Current status:
 - that same shared non-text result contract is now also adopted beyond
   ElevenLabs: OpenAI modern speech/transcription and Google modern speech now
   populate the shared response-metadata layer, while the remaining Google gap
-  is simply that a package-owned modern transcription model does not yet exist
+  is no longer “missing transcription parity” but provider-owned streamed TTS
+  maturity plus the still-open question of a future Google-specific
+  audio-understanding helper outside the shared `TranscriptionModel`
 
 ## M5 - Flutter Chat Layer
 

@@ -66,8 +66,10 @@ round.
 
 That absence is important to state explicitly:
 
-- the remaining Google gap is package-surface availability
-- not a refusal to adopt the new shared result contract
+- this round did not skip a migrated Google transcription model by accident
+- the next Google question was whether such a model should exist at all
+- that boundary is now frozen separately in
+  `113-google-transcription-boundary.md`
 
 ## What Did Not Change
 
@@ -92,6 +94,7 @@ The next remaining questions are now narrower:
 
 - whether any additional provider families should populate the same shared
   response metadata immediately
-- whether Google should gain a package-owned modern transcription model at all
 - whether shared non-text no-result error wrappers are worth adding beyond the
   enriched result metadata already available
+- whether Google should later gain a provider-owned audio-understanding helper
+  above multimodal prompting instead of a shared transcription abstraction
