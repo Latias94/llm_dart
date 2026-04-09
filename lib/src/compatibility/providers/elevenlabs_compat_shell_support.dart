@@ -3,9 +3,13 @@ import 'package:llm_dart_core/llm_dart_core.dart' as core;
 import 'package:llm_dart_transport/llm_dart_transport.dart'
     show DioTransportClient;
 
+import '../../../core/capability.dart';
 import '../../../models/audio_models.dart';
 import '../../../providers/elevenlabs/client.dart';
 import '../../../providers/elevenlabs/config.dart';
+import 'compat_provider_support.dart' show isCompatibilityError;
+import 'elevenlabs/elevenlabs_audio_compat.dart';
+import 'elevenlabs/elevenlabs_models_compat.dart';
 
 /// Root-compatibility glue for the ElevenLabs provider shell.
 ///
@@ -14,16 +18,35 @@ import '../../../providers/elevenlabs/config.dart';
 /// orchestration and residual provider-specific fallback paths.
 final class ElevenLabsCompatShellSupport {
   final ElevenLabsConfig config;
+  final ElevenLabsClient client;
+  final ElevenLabsAudio audio;
+  final ElevenLabsModels models;
   final modern_community.ElevenLabs modernProvider;
 
-  ElevenLabsCompatShellSupport({
+  ElevenLabsCompatShellSupport._({
     required this.config,
-    required ElevenLabsClient client,
+    required this.client,
+    required this.audio,
+    required this.models,
   }) : modernProvider = modern_community.ElevenLabs(
           apiKey: config.apiKey,
           baseUrl: config.baseUrl,
           transport: DioTransportClient(dio: client.dio),
         );
+
+  factory ElevenLabsCompatShellSupport({
+    required ElevenLabsConfig config,
+  }) {
+    final client = ElevenLabsClient(config);
+    return ElevenLabsCompatShellSupport._(
+      config: config,
+      client: client,
+      audio: ElevenLabsAudio(client, config),
+      models: ElevenLabsModels(client, config),
+    );
+  }
+
+  Set<AudioFeature> get supportedFeatures => audio.supportedFeatures;
 
   bool canUseSpeechBridge(TTSRequest request) {
     return _isValidSpeechRatio(request.stability) &&
@@ -110,6 +133,37 @@ final class ElevenLabsCompatShellSupport {
     );
   }
 
+  Future<TTSResponse> textToSpeech(
+    TTSRequest request, {
+    TransportCancellation? cancelToken,
+  }) async {
+    if (canUseSpeechBridge(request)) {
+      try {
+        return await bridgeTextToSpeech(
+          request,
+          cancelToken: cancelToken,
+        );
+      } catch (error) {
+        if (!isCompatibilityError(error)) {
+          rethrow;
+        }
+      }
+    }
+
+    return audio.textToSpeech(request, cancelToken: cancelToken);
+  }
+
+  Stream<AudioStreamEvent> textToSpeechStream(
+    TTSRequest request, {
+    TransportCancellation? cancelToken,
+  }) {
+    return audio.textToSpeechStream(request, cancelToken: cancelToken);
+  }
+
+  Future<List<VoiceInfo>> getVoices() {
+    return audio.getVoices();
+  }
+
   Future<STTResponse> bridgeSpeechToText(
     STTRequest request, {
     core.TransportCancellation? cancelToken,
@@ -153,6 +207,55 @@ final class ElevenLabsCompatShellSupport {
       languageProbability: languageProbability,
       additionalFormats: _asStringDynamicMap(metadata?['additionalFormats']),
     );
+  }
+
+  Future<STTResponse> speechToText(
+    STTRequest request, {
+    TransportCancellation? cancelToken,
+  }) async {
+    if (canUseTranscriptionBridge(request)) {
+      try {
+        return await bridgeSpeechToText(
+          request,
+          cancelToken: cancelToken,
+        );
+      } catch (error) {
+        if (!isCompatibilityError(error)) {
+          rethrow;
+        }
+      }
+    }
+
+    return audio.speechToText(request, cancelToken: cancelToken);
+  }
+
+  Future<STTResponse> translateAudio(
+    AudioTranslationRequest request, {
+    TransportCancellation? cancelToken,
+  }) {
+    return audio.translateAudio(request, cancelToken: cancelToken);
+  }
+
+  Future<List<LanguageInfo>> getSupportedLanguages() {
+    return audio.getSupportedLanguages();
+  }
+
+  Future<RealtimeAudioSession> startRealtimeSession(
+    RealtimeAudioConfig config,
+  ) {
+    return audio.startRealtimeSession(config);
+  }
+
+  List<String> getSupportedAudioFormats() {
+    return audio.getSupportedAudioFormats();
+  }
+
+  Future<List<Map<String, dynamic>>> getModels() {
+    return models.getModels();
+  }
+
+  Future<Map<String, dynamic>> getUserInfo() {
+    return models.getUserInfo();
   }
 }
 

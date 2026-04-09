@@ -1,17 +1,7 @@
-import 'package:llm_dart_community/llm_dart_community.dart' as modern_community;
-import 'package:llm_dart_core/llm_dart_core.dart' as core;
-import 'package:llm_dart_transport/llm_dart_transport.dart'
-    show DioTransportClient;
-
 import '../../core/capability.dart';
 import '../../models/chat_models.dart';
 import '../../models/tool_models.dart';
-import '../../src/compatibility/providers/compat_provider_support.dart';
-import '../../src/compatibility/providers/ollama/ollama_chat_compat.dart';
-import '../../src/compatibility/providers/ollama/ollama_completion_compat.dart';
-import '../../src/compatibility/providers/ollama/ollama_models_compat.dart';
 import '../../src/compatibility/providers/ollama_compat_shell_support.dart';
-import 'client.dart';
 import 'config.dart';
 
 /// Compatibility-first root Ollama provider shell.
@@ -28,33 +18,11 @@ class OllamaProvider
         EmbeddingCapability,
         ModelListingCapability,
         ProviderCapabilities {
-  final OllamaClient _client;
   final OllamaConfig config;
+  final OllamaCompatShellSupport _compatShell;
 
-  // Capability modules
-  late final OllamaChat _chat;
-  late final OllamaCompatShellSupport _compatShell;
-  // Legacy-only residual shell for Ollama's provider-shaped /api/generate path.
-  late final OllamaCompletion _completion;
-  // Provider-owned catalog shell; not part of the shared modern model surface.
-  late final OllamaModels _models;
-
-  OllamaProvider(this.config) : _client = OllamaClient(config) {
-    final modernProvider = modern_community.Ollama(
-      apiKey: config.apiKey,
-      baseUrl: config.baseUrl,
-      transport: DioTransportClient(dio: _client.dio),
-    );
-
-    // Initialize capability modules
-    _chat = OllamaChat(_client, config);
-    _compatShell = OllamaCompatShellSupport(
-      modernProvider: modernProvider,
-      config: config,
-    );
-    _completion = OllamaCompletion(_client, config);
-    _models = OllamaModels(_client, config);
-  }
+  OllamaProvider(this.config)
+      : _compatShell = OllamaCompatShellSupport(config: config);
 
   // Chat capability methods
   @override
@@ -71,20 +39,10 @@ class OllamaProvider
     List<Tool>? tools, {
     TransportCancellation? cancelToken,
   }) async {
-    return executeCompatChat(
-      originalConfig: _compatShell.compatConfig,
-      messages: messages,
-      tools: tools,
-      canUseBridge: (config, messages, tools) =>
-          _compatShell.canUseChatBridge(messages),
-      bridge: () =>
-          _compatShell.compatChat
-              .chatWithTools(messages, tools, cancelToken: cancelToken),
-      fallback: () => _chat.chatWithTools(
-        messages,
-        tools,
-        cancelToken: cancelToken,
-      ),
+    return _compatShell.chatWithTools(
+      messages,
+      tools,
+      cancelToken: cancelToken,
     );
   }
 
@@ -94,33 +52,27 @@ class OllamaProvider
     List<Tool>? tools,
     TransportCancellation? cancelToken,
   }) {
-    return executeCompatChatStream(
-      originalConfig: _compatShell.compatConfig,
-      messages: messages,
+    return _compatShell.chatStream(
+      messages,
       tools: tools,
-      canUseBridge: (config, messages, tools) =>
-          _compatShell.canUseChatBridge(messages),
-      bridge: () => _compatShell.compatChat
-          .chatStream(messages, tools: tools, cancelToken: cancelToken),
-      fallback: () =>
-          _chat.chatStream(messages, tools: tools, cancelToken: cancelToken),
+      cancelToken: cancelToken,
     );
   }
 
   @override
   Future<List<ChatMessage>?> memoryContents() async {
-    return _chat.memoryContents();
+    return _compatShell.memoryContents();
   }
 
   @override
   Future<String> summarizeHistory(List<ChatMessage> messages) async {
-    return _chat.summarizeHistory(messages);
+    return _compatShell.summarizeHistory(messages);
   }
 
   // Completion capability methods
   @override
   Future<CompletionResponse> complete(CompletionRequest request) async {
-    return _completion.complete(request);
+    return _compatShell.complete(request);
   }
 
   // Embedding capability methods
@@ -129,23 +81,13 @@ class OllamaProvider
     List<String> input, {
     TransportCancellation? cancelToken,
   }) async {
-    final result = await _compatShell.embeddingModel.embed(
-      core.EmbedRequest(
-        values: input,
-        callOptions: core.CallOptions(
-          timeout: config.timeout,
-          cancellation: cancelToken,
-        ),
-      ),
-    );
-
-    return result.embeddings;
+    return _compatShell.embed(input, cancelToken: cancelToken);
   }
 
   // Model listing capability methods
   @override
   Future<List<AIModel>> models({TransportCancellation? cancelToken}) async {
-    return _models.models(cancelToken: cancelToken);
+    return _compatShell.models(cancelToken: cancelToken);
   }
 
   /// Get provider name

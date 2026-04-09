@@ -3,12 +3,12 @@ import '../../core/llm_error.dart';
 import '../../models/chat_models.dart';
 import '../../models/tool_models.dart';
 import '../../models/audio_models.dart';
-import '../../src/compatibility/providers/compat_provider_support.dart'
-    show isCompatibilityError;
-import '../../src/compatibility/providers/elevenlabs/elevenlabs_audio_compat.dart';
-import '../../src/compatibility/providers/elevenlabs/elevenlabs_models_compat.dart';
+import '../../src/compatibility/providers/elevenlabs/elevenlabs_audio_compat.dart'
+    show ElevenLabsAudio;
+import '../../src/compatibility/providers/elevenlabs/elevenlabs_models_compat.dart'
+    show ElevenLabsModels;
 import '../../src/compatibility/providers/elevenlabs_compat_shell_support.dart';
-import 'client.dart';
+import 'client.dart' show ElevenLabsClient;
 import 'config.dart';
 
 /// Compatibility-first root ElevenLabs provider shell.
@@ -20,21 +20,16 @@ import 'config.dart';
 /// realtime flows, and account/model helpers.
 class ElevenLabsProvider implements ChatCapability, AudioCapability {
   final ElevenLabsConfig config;
-  final ElevenLabsClient client;
-  late final ElevenLabsAudio audio;
-  late final ElevenLabsModels models;
-  late final ElevenLabsCompatShellSupport _compatShell;
+  final ElevenLabsCompatShellSupport _compatShell;
 
-  ElevenLabsProvider(this.config) : client = ElevenLabsClient(config) {
-    audio = ElevenLabsAudio(client, config);
-    models = ElevenLabsModels(client, config);
-    _compatShell = ElevenLabsCompatShellSupport(
-      config: config,
-      client: client,
-    );
-  }
+  ElevenLabsProvider(this.config)
+      : _compatShell = ElevenLabsCompatShellSupport(config: config);
 
   String get providerName => 'ElevenLabs';
+
+  ElevenLabsClient get client => _compatShell.client;
+  ElevenLabsAudio get audio => _compatShell.audio;
+  ElevenLabsModels get models => _compatShell.models;
 
   // ChatCapability implementation (not supported)
   @override
@@ -75,27 +70,14 @@ class ElevenLabsProvider implements ChatCapability, AudioCapability {
   // AudioCapability implementation (delegated to audio module)
 
   @override
-  Set<AudioFeature> get supportedFeatures => audio.supportedFeatures;
+  Set<AudioFeature> get supportedFeatures => _compatShell.supportedFeatures;
 
   @override
   Future<TTSResponse> textToSpeech(
     TTSRequest request, {
     TransportCancellation? cancelToken,
   }) async {
-    if (_compatShell.canUseSpeechBridge(request)) {
-      try {
-        return await _compatShell.bridgeTextToSpeech(
-          request,
-          cancelToken: cancelToken,
-        );
-      } catch (error) {
-        if (!isCompatibilityError(error)) {
-          rethrow;
-        }
-      }
-    }
-
-    return audio.textToSpeech(request, cancelToken: cancelToken);
+    return _compatShell.textToSpeech(request, cancelToken: cancelToken);
   }
 
   @override
@@ -103,12 +85,12 @@ class ElevenLabsProvider implements ChatCapability, AudioCapability {
     TTSRequest request, {
     TransportCancellation? cancelToken,
   }) {
-    return audio.textToSpeechStream(request, cancelToken: cancelToken);
+    return _compatShell.textToSpeechStream(request, cancelToken: cancelToken);
   }
 
   @override
   Future<List<VoiceInfo>> getVoices() async {
-    return audio.getVoices();
+    return _compatShell.getVoices();
   }
 
   @override
@@ -116,20 +98,7 @@ class ElevenLabsProvider implements ChatCapability, AudioCapability {
     STTRequest request, {
     TransportCancellation? cancelToken,
   }) async {
-    if (_compatShell.canUseTranscriptionBridge(request)) {
-      try {
-        return await _compatShell.bridgeSpeechToText(
-          request,
-          cancelToken: cancelToken,
-        );
-      } catch (error) {
-        if (!isCompatibilityError(error)) {
-          rethrow;
-        }
-      }
-    }
-
-    return audio.speechToText(request, cancelToken: cancelToken);
+    return _compatShell.speechToText(request, cancelToken: cancelToken);
   }
 
   @override
@@ -137,23 +106,23 @@ class ElevenLabsProvider implements ChatCapability, AudioCapability {
     AudioTranslationRequest request, {
     TransportCancellation? cancelToken,
   }) async {
-    return audio.translateAudio(request, cancelToken: cancelToken);
+    return _compatShell.translateAudio(request, cancelToken: cancelToken);
   }
 
   @override
   Future<List<LanguageInfo>> getSupportedLanguages() async {
-    return audio.getSupportedLanguages();
+    return _compatShell.getSupportedLanguages();
   }
 
   @override
   Future<RealtimeAudioSession> startRealtimeSession(
       RealtimeAudioConfig config) async {
-    return audio.startRealtimeSession(config);
+    return _compatShell.startRealtimeSession(config);
   }
 
   @override
   List<String> getSupportedAudioFormats() {
-    return audio.getSupportedAudioFormats();
+    return _compatShell.getSupportedAudioFormats();
   }
 
   // AudioCapability convenience methods implementation
@@ -206,12 +175,12 @@ class ElevenLabsProvider implements ChatCapability, AudioCapability {
 
   /// Get available models
   Future<List<Map<String, dynamic>>> getModels() async {
-    return models.getModels();
+    return _compatShell.getModels();
   }
 
   /// Get user subscription info
   Future<Map<String, dynamic>> getUserInfo() async {
-    return models.getUserInfo();
+    return _compatShell.getUserInfo();
   }
 
   /// Create a new provider with updated configuration

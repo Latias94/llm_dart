@@ -304,6 +304,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
     provider-owned surfaces only, while `AI`, `core.dart`, and `transport.dart`
     stay on their own root entrypoints and `chat.dart` remains the explicit
     convenience exception.
+- [117-community-shell-orchestration-extraction.md](117-community-shell-orchestration-extraction.md)
+  - Status note for moving more Ollama and ElevenLabs shell-only orchestration
+    into dedicated compatibility support modules so the root provider files act
+    more clearly as migration-era adapters.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)

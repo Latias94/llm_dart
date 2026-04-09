@@ -1,11 +1,20 @@
 import 'package:llm_dart_community/llm_dart_community.dart' as modern_community;
 import 'package:llm_dart_core/llm_dart_core.dart' as core;
+import 'package:llm_dart_transport/llm_dart_transport.dart'
+    show DioTransportClient;
 
+import '../../../core/capability.dart';
 import '../../../core/config.dart';
 import '../../../models/chat_models.dart';
+import '../../../models/tool_models.dart';
+import '../../../providers/ollama/client.dart';
 import '../../../providers/ollama/config.dart';
 import '../../config/legacy_config_keys.dart';
 import '../legacy_chat_adapter.dart';
+import 'compat_provider_support.dart';
+import 'ollama/ollama_chat_compat.dart';
+import 'ollama/ollama_completion_compat.dart';
+import 'ollama/ollama_models_compat.dart';
 
 /// Root-compatibility glue for the Ollama provider shell.
 ///
@@ -13,23 +22,40 @@ import '../legacy_chat_adapter.dart';
 /// legacy chat adapter out of the provider implementation file so the root
 /// provider can act more clearly as a shell above package-owned modern models.
 final class OllamaCompatShellSupport {
+  final OllamaConfig config;
+  final OllamaClient client;
   final LLMConfig compatConfig;
   final LegacyChatCapabilityAdapter compatChat;
   final core.EmbeddingModel embeddingModel;
+  final OllamaChat chatFallback;
+  final OllamaCompletion completion;
+  final OllamaModels modelListing;
 
-  const OllamaCompatShellSupport._({
+  OllamaCompatShellSupport._({
+    required this.config,
+    required this.client,
     required this.compatConfig,
     required this.compatChat,
     required this.embeddingModel,
+    required this.chatFallback,
+    required this.completion,
+    required this.modelListing,
   });
 
   factory OllamaCompatShellSupport({
-    required modern_community.Ollama modernProvider,
     required OllamaConfig config,
   }) {
+    final client = OllamaClient(config);
+    final modernProvider = modern_community.Ollama(
+      apiKey: config.apiKey,
+      baseUrl: config.baseUrl,
+      transport: DioTransportClient(dio: client.dio),
+    );
     final compatConfig = _toCompatConfig(config);
 
     return OllamaCompatShellSupport._(
+      config: config,
+      client: client,
       compatConfig: compatConfig,
       compatChat: LegacyChatCapabilityAdapter(
         model: modernProvider.chatModel(config.model),
@@ -37,6 +63,9 @@ final class OllamaCompatShellSupport {
         providerOptions: _buildCompatProviderOptions(config),
       ),
       embeddingModel: modernProvider.embeddingModel(config.model),
+      chatFallback: OllamaChat(client, config),
+      completion: OllamaCompletion(client, config),
+      modelListing: OllamaModels(client, config),
     );
   }
 
@@ -53,6 +82,81 @@ final class OllamaCompatShellSupport {
     }
 
     return true;
+  }
+
+  Future<ChatResponse> chatWithTools(
+    List<ChatMessage> messages,
+    List<Tool>? tools, {
+    TransportCancellation? cancelToken,
+  }) async {
+    return executeCompatChat(
+      originalConfig: compatConfig,
+      messages: messages,
+      tools: tools,
+      canUseBridge: (config, messages, tools) => canUseChatBridge(messages),
+      bridge: () =>
+          compatChat.chatWithTools(messages, tools, cancelToken: cancelToken),
+      fallback: () => chatFallback.chatWithTools(
+        messages,
+        tools,
+        cancelToken: cancelToken,
+      ),
+    );
+  }
+
+  Stream<ChatStreamEvent> chatStream(
+    List<ChatMessage> messages, {
+    List<Tool>? tools,
+    TransportCancellation? cancelToken,
+  }) {
+    return executeCompatChatStream(
+      originalConfig: compatConfig,
+      messages: messages,
+      tools: tools,
+      canUseBridge: (config, messages, tools) => canUseChatBridge(messages),
+      bridge: () =>
+          compatChat.chatStream(messages, tools: tools, cancelToken: cancelToken),
+      fallback: () => chatFallback.chatStream(
+        messages,
+        tools: tools,
+        cancelToken: cancelToken,
+      ),
+    );
+  }
+
+  Future<List<ChatMessage>?> memoryContents() {
+    return chatFallback.memoryContents();
+  }
+
+  Future<String> summarizeHistory(List<ChatMessage> messages) {
+    return chatFallback.summarizeHistory(messages);
+  }
+
+  Future<CompletionResponse> complete(CompletionRequest request) {
+    return completion.complete(request);
+  }
+
+  Future<List<List<double>>> embed(
+    List<String> input, {
+    TransportCancellation? cancelToken,
+  }) async {
+    final result = await embeddingModel.embed(
+      core.EmbedRequest(
+        values: input,
+        callOptions: core.CallOptions(
+          timeout: config.timeout,
+          cancellation: cancelToken,
+        ),
+      ),
+    );
+
+    return result.embeddings;
+  }
+
+  Future<List<AIModel>> models({
+    TransportCancellation? cancelToken,
+  }) {
+    return modelListing.models(cancelToken: cancelToken);
   }
 }
 
