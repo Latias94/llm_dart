@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:dio/dio.dart';
+import 'package:llm_dart_transport/dio.dart';
 import 'package:llm_dart/core/config.dart';
 import 'package:llm_dart/utils/http_config_utils.dart';
 import 'dio_proxy_test_stub.dart'

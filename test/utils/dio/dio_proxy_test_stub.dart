@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:dio/dio.dart';
+import 'package:llm_dart_transport/dio.dart';
 
 /// Stub implementation for platform-specific HTTP adapter tests
 class PlatformHttpAdapterTests {

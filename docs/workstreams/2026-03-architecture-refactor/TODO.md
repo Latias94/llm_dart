@@ -173,7 +173,7 @@
 - [x] Decide that `HttpResponseHandler` and `DioErrorHandler` stay root compatibility-owned for now, while transport keeps lower-level primitives and provider packages keep owning their modern model-path error handling
 - [x] Audit and narrow provider-focused root entrypoints so `openai.dart`, `google.dart`, and `anthropic.dart` stop re-exporting `AI`, `core.dart`, and `transport.dart`
 - [x] Remove the direct root `logging` runtime dependency by routing compatibility, provider, test, and example imports through `llm_dart_transport` re-exports
-- [ ] Remove the direct root `dio` runtime dependency after the remaining local compatibility/provider code moves out
+- [x] Remove the direct root `dio` runtime dependency by routing raw Dio imports through explicit `llm_dart_transport` sub-entrypoints instead of the root facade
 
 ## Community Providers
 

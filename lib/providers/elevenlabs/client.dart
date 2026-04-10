@@ -1,5 +1,5 @@
 import 'dart:typed_data';
-import 'package:dio/dio.dart';
+import 'package:llm_dart_transport/dio.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart'
     show
         Logger,

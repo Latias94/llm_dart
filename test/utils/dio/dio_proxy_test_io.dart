@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:test/test.dart';
-import 'package:dio/dio.dart';
-import 'package:dio/io.dart';
+import 'package:llm_dart_transport/dio.dart';
+import 'package:llm_dart_transport/dio_io.dart';
 
 /// IO platform implementation for HTTP adapter tests
 class PlatformHttpAdapterTests {

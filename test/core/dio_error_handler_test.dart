@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
-import 'package:dio/dio.dart';
+import 'package:llm_dart_transport/dio.dart';
 import 'package:test/test.dart';
 import 'package:llm_dart/legacy.dart';
 

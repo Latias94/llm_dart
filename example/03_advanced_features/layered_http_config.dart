@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:dio/dio.dart';
+import 'package:llm_dart_transport/dio.dart';
 import 'package:llm_dart/legacy.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 

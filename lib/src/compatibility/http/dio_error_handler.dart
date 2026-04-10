@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:dio/dio.dart';
+import 'package:llm_dart_transport/dio.dart';
 
 import '../../llm_error_types.dart';
 

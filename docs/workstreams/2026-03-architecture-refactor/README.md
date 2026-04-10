@@ -396,8 +396,8 @@ This workstream is not about a file-moving refactor. It is about defining stable
     compatibility aliases on the fallback path instead of gaining new
     profile-specific modern bridge ownership.
 - [142-root-runtime-dependency-exit-status.md](142-root-runtime-dependency-exit-status.md)
-  - Current dependency-usage and dependency-direction status note for the
-    remaining root `dio` weight after the direct root `logging` dependency exit.
+  - Current dependency-usage and dependency-direction status note after the
+    root package exits direct `dio` and `logging` runtime dependencies.
 - [143-root-cancellation-dio-decoupling.md](143-root-cancellation-dio-decoupling.md)
   - Status note for moving raw Dio cancellation inspection out of the root
     cancellation helper and into the transport layer.
@@ -407,6 +407,9 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - [145-root-logging-transport-reexport.md](145-root-logging-transport-reexport.md)
   - Status note for routing root/provider/example logging imports through
     `llm_dart_transport` and removing the root `logging` runtime dependency.
+- [146-root-dio-transport-subentry.md](146-root-dio-transport-subentry.md)
+  - Status note for routing raw Dio imports through explicit transport-owned
+    sub-entrypoints and removing the root `dio` runtime dependency.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)

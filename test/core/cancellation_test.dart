@@ -1,4 +1,4 @@
-import 'package:dio/dio.dart' as dio;
+import 'package:llm_dart_transport/dio.dart' as dio;
 import 'package:llm_dart/core/cancellation.dart';
 import 'package:llm_dart/core/llm_error.dart';
 import 'package:test/test.dart';

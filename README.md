@@ -92,7 +92,9 @@ dart pub get
 - `package:llm_dart_community/llm_dart_community.dart`
   - workspace-only modern community-provider entrypoint for Ollama chat/embeddings and ElevenLabs speech/transcription shared-capability models
 - `package:llm_dart/transport.dart`
-  - transport and shared logging primitives re-exported from `llm_dart_transport`
+  - transport abstractions and shared logging primitives re-exported from `llm_dart_transport`
+- `package:llm_dart_transport/dio.dart`
+  - explicit raw Dio entrypoint for transport-specific compatibility integration
 - `package:llm_dart_flutter/llm_dart_flutter.dart`
   - Flutter-specific adapters such as `ChatController`
 

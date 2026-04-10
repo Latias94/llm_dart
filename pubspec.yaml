@@ -15,7 +15,6 @@ environment:
   sdk: '>=3.5.0 <4.0.0'
 
 dependencies:
-  dio: ^5.9.0
   llm_dart_anthropic: ^0.1.0-dev.0
   llm_dart_chat: ^0.1.0-dev.0
   llm_dart_community: ^0.1.0-dev.0

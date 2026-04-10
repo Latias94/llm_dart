@@ -1,4 +1,4 @@
-import 'package:dio/dio.dart';
+import 'package:llm_dart_transport/dio.dart';
 import 'package:llm_dart/legacy.dart';
 import 'package:llm_dart/providers/openai/dio_strategy.dart';
 import 'package:llm_dart/src/compatibility/compat_transport.dart';

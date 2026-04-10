@@ -29,7 +29,7 @@ Before this cleanup slice, the main remaining root-level public `dio` surface wa
 Why it still matters:
 
 - it is part of the builder API
-- it requires importing `package:dio/dio.dart`
+- it forced callers to import raw Dio types into root-facing code
 - it keeps the stable facade aware of one transport implementation
 
 This is different from provider implementation code that happens to use `FormData`, `MultipartFile`, or `ResponseBody` internally.
@@ -85,6 +85,10 @@ Keep and promote:
 Recommended user shape:
 
 ```dart
+import 'package:llm_dart/legacy.dart';
+import 'package:llm_dart_transport/dio.dart';
+import 'package:llm_dart_transport/llm_dart_transport.dart';
+
 final dio = Dio();
 
 final provider = await ai()
@@ -98,6 +102,15 @@ final provider = await ai()
     )
     .build();
 ```
+
+If compatibility or transport-specific code still needs raw Dio types, the
+explicit import path should now be:
+
+- `package:llm_dart_transport/dio.dart`
+
+and, for IO-only adapter access:
+
+- `package:llm_dart_transport/dio_io.dart`
 
 ### Compatibility Path
 
@@ -121,7 +134,8 @@ Recommended order:
 
 1. keep `transportClient(TransportClient)` as the only promoted path
 2. stop using `dioClient(Dio)` in new docs and examples
-3. keep any raw-Dio migration help outside the stable builder API
+3. keep any raw-Dio migration help outside the stable builder API and on
+   explicit transport-owned entrypoints
 4. only then close the remaining `dio` public-surface cleanup item
 
 ## 8. Review Rule
