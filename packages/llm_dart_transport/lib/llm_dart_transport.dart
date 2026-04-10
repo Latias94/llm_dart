@@ -1,5 +1,8 @@
 library;
 
+export 'package:logging/logging.dart'
+    show Level, LogRecord, Logger, hierarchicalLoggingEnabled;
+
 export 'src/common/transport_cancellation.dart';
 export 'src/common/transport_diagnostics.dart';
 export 'src/common/transport_model_error.dart';

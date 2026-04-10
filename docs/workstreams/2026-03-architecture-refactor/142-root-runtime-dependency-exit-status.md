@@ -2,22 +2,58 @@
 
 ## Goal
 
-Re-evaluate the current dependency usage and dependency direction after the
-recent compatibility and package-ownership refactors, with special attention to
-why the root `llm_dart` package still directly depends on `dio` and `logging`.
+Track the remaining direct runtime dependencies of the root `llm_dart` package
+after the recent compatibility-shell and workspace-package refactors, and keep
+the exit path honest instead of cosmetic.
 
-## What Was Reviewed
+## Current Status
 
-- `pubspec.yaml`
-- `packages/*/pubspec.yaml`
-- `lib/` import usage for `package:dio/dio.dart`
-- `lib/` import usage for `package:logging/logging.dart`
-- `docs/workstreams/2026-03-architecture-refactor/06-dependencies-and-provider-features.md`
-- `docs/workstreams/2026-03-architecture-refactor/97-dependency-direction-and-export-graph-audit.md`
+As of 2026-04-10:
 
-## Current Workspace Direction
+- the root package still directly depends on `dio`
+- the root package no longer directly depends on `logging`
+- `llm_dart_transport` remains the owner of shared HTTP/SSE/logging primitives
 
-The package graph is still directionally healthy:
+This means the root dependency-exit story is now split:
+
+- `logging` has already exited the root package
+- `dio` still remains because real root-hosted compatibility/provider
+  implementation weight is still present
+
+## What Changed Since The Earlier Review
+
+The root `logging` dependency became removable only after the following became
+true together:
+
+- root registry/bootstrap diagnostics moved off `package:logging` and onto SDK
+  logging
+- raw Dio cancellation inspection moved into `llm_dart_transport`
+- `llm_dart_transport` re-exported the minimal shared logging primitives needed
+  by compatibility and test code
+- root/provider/example imports were switched from `package:logging` to
+  transport-owned exports
+
+This was not a cosmetic dependency deletion.
+
+It was the result of moving ownership to the already-correct lower layer.
+
+## Current Import Reality
+
+Current direct imports under root `lib/`:
+
+- `package:dio/dio.dart`: 30
+- `package:logging/logging.dart`: 0
+
+Current direct imports under root `example/`:
+
+- `package:logging/logging.dart`: 0
+
+The root package is therefore no longer a direct logging owner, but it is still
+far from being free of transport-heavy implementation.
+
+## Dependency Direction Status
+
+The package graph remains directionally healthy:
 
 - `llm_dart_core`
   - no runtime third-party dependencies
@@ -31,48 +67,17 @@ The package graph is still directionally healthy:
 - provider packages
   - depend on `llm_dart_core`
   - depend on `llm_dart_transport`
-- `llm_dart_flutter`
-  - depends on `llm_dart_core`
-  - depends on `llm_dart_chat`
 - root `llm_dart`
-  - depends downward on the workspace packages
+  - depends downward on workspace packages
   - still hosts compatibility and residual legacy implementation code
 
-Most importantly:
+The remaining problem is not dependency direction.
 
-- no provider package depends on the root package
-- the old `core -> transport` cycle is still gone
-- modern provider packages are not pulling compatibility code back upward
+It is root implementation weight.
 
-## Current Root Runtime Dependency Reality
+## Where The Remaining Root Weight Still Lives
 
-The root package still directly depends on:
-
-- `dio`
-- `logging`
-
-That is still a migration artifact, not the intended steady-state design.
-
-### Current import counts
-
-Current direct imports under `lib/`:
-
-- `package:dio/dio.dart`: 31
-- `package:logging/logging.dart`: 16
-
-Current direct imports under `packages/`:
-
-- `package:dio/dio.dart`: 10
-- `package:logging/logging.dart`: 5
-
-This shows the important split clearly:
-
-- the package-owned modern layers are already relatively disciplined
-- the root package is still carrying the transitional weight
-
-## Where The Remaining Root Weight Actually Lives
-
-The remaining direct root `dio` / `logging` imports cluster in four places.
+The remaining direct root `dio` imports still cluster in the same honest places:
 
 ### 1. Root compatibility HTTP infrastructure
 
@@ -82,19 +87,13 @@ Examples:
 - `lib/src/compatibility/http/http_response_handler.dart`
 - `lib/src/compatibility/http/http_config_utils.dart`
 
-These files are honest compatibility-hosting infrastructure. They still justify
-temporary root ownership of transport implementation details.
-
-### 2. Root-hosted OpenAI / Google / Anthropic compatibility clients
+### 2. Root-hosted compatibility clients
 
 Examples:
 
 - `lib/src/compatibility/providers/openai/client.dart`
 - `lib/src/compatibility/providers/google/client.dart`
 - `lib/src/compatibility/providers/anthropic/client.dart`
-
-These are compatibility-era provider implementations, not stable provider-owned
-modern package code.
 
 ### 3. Remaining root-local community and legacy providers
 
@@ -103,75 +102,38 @@ Examples:
 - `lib/providers/ollama/*`
 - `lib/providers/elevenlabs/*`
 - `lib/providers/phind/*`
-- some OpenAI-compatible root-local client helpers
-
-As long as these still live in the root package, root dependency slimming
-cannot be completed honestly.
-
-### 4. Small compatibility helper surfaces
-
-Examples:
-
-- `lib/core/cancellation.dart`
-- `lib/src/config/legacy_dio_client_overrides.dart`
-- `lib/src/config/legacy_config_extensions.dart`
-
-These are comparatively small, but they still confirm that the root package is
-not only a facade yet.
-
-## Dependency Direction Conclusion
-
-The inter-package dependency direction is now mostly stable.
-
-The main remaining issue is not package direction anymore.
-
-It is root implementation weight.
-
-In other words:
-
-- the workspace graph is largely correct
-- the root package is still too heavy because compatibility and residual
-  provider code still lives there
-- direct root `dio` and `logging` removal should happen only after more code
-  leaves the root package
+- root-local OpenAI-compatible compatibility clients
 
 ## Frozen Policy
 
 ### Keep
 
-- `llm_dart_core` free of runtime transport or provider dependencies
-- `llm_dart_transport` as the owner of `dio` and `logging` for modern package
-  paths
-- provider packages depending only on lower shared layers
-- Flutter depending on `llm_dart_chat` instead of concrete providers
+- `llm_dart_transport` as the owner of shared logging primitives
+- root/package/example logging imports routed through
+  `package:llm_dart_transport/llm_dart_transport.dart` or
+  `package:llm_dart/transport.dart`
+- root `dio` removal coupled to real implementation movement, not declaration
+  editing
 
 ### Do not do
 
-- do not remove root `dio` or `logging` cosmetically before the remaining
-  root-hosted implementation weight moves out
-- do not add new runtime third-party dependencies to the root package for newly
-  migrated functionality
-- do not move package-owned modern provider logic back into the root package
-  just because compatibility shells still exist there
+- do not re-add `logging` as a direct root dependency for convenience imports
+- do not introduce new root-local `package:logging/logging.dart` imports
+- do not remove root `dio` before the remaining compatibility/provider clients
+  actually stop hosting transport-heavy code
 
-## Recommended Exit Path
+## Recommended Next Exit Path
 
-The remaining root runtime dependency exit path should stay:
+The honest remaining exit path is now:
 
-1. keep shrinking root-hosted community or compatibility provider code
-2. keep pushing modern provider logic into owning packages
-3. reduce root-local direct `dio` / `logging` hotspots as a consequence of
-   those moves
-4. remove root `dio` and `logging` only when the root package becomes mostly
-   facade plus compatibility shells without local transport-heavy clients
+1. keep `logging` ownership frozen in `llm_dart_transport`
+2. keep slimming root-local compatibility/provider clients that still own `dio`
+3. move more real implementation weight into provider-owned packages
+4. remove direct root `dio` only after the root package becomes mostly facade
+   plus thin compatibility shells
 
-## OpenAI-Specific Implication
+## Related Notes
 
-This also reinforces the OpenAI helper policy:
-
-- do not widen deprecated root OpenAI-compatible helper constructors into new
-  profile-specific modern bridges
-- keep modern profile-aware ownership in `llm_dart_openai` and the `AI` facade
-- keep root OpenAI code focused on compatibility and residual APIs
-
-That keeps dependency ownership and architecture direction aligned.
+- `143-root-cancellation-dio-decoupling.md`
+- `144-root-registry-logging-decoupling.md`
+- `145-root-logging-transport-reexport.md`

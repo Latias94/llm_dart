@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
-import 'package:logging/logging.dart';
 
 import '../../../core/config.dart';
 import '../../config/legacy_config_extensions.dart';

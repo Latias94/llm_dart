@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:logging/logging.dart';
+import 'package:llm_dart_transport/llm_dart_transport.dart' show Level;
 
 import '../../core/capability.dart';
 import '../../core/llm_error.dart';

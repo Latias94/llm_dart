@@ -23,7 +23,6 @@ dependencies:
   llm_dart_google: ^0.1.0-dev.0
   llm_dart_openai: ^0.1.0-dev.0
   llm_dart_transport: ^0.1.0-dev.0
-  logging: ^1.2.0
 
 dev_dependencies:
   test: ^1.27.0

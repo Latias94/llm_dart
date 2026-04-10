@@ -3,13 +3,14 @@ import 'package:dio/dio.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart'
     show
         JsonObjectResponseDecoder,
+        Level,
         LogSanitizer,
+        Logger,
         ProviderDioClientFactory,
         TransportCancellation,
         TransportResponseFormatException,
         Utf8StreamDecoder,
         bindDioCancellation;
-import 'package:logging/logging.dart';
 
 import '../../core/llm_error.dart';
 import 'config.dart';

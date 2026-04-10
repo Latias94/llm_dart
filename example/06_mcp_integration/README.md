@@ -67,7 +67,7 @@ LLM Provider ◄──► llm_dart Tool System ◄──► MCP Client ◄──
 ### Debug Mode
 
 ```dart
-import 'package:logging/logging.dart';
+import 'package:llm_dart/transport.dart' show Level, Logger;
 
 Logger.root.level = Level.ALL;
 Logger.root.onRecord.listen((record) {

@@ -3,8 +3,7 @@ import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart'
-    show LogSanitizer, bindDioCancellation;
-import 'package:logging/logging.dart';
+    show Level, LogSanitizer, Logger, bindDioCancellation;
 
 import '../../../core/capability.dart';
 import '../../../core/config.dart';

@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:llm_dart/legacy.dart';
-import 'package:logging/logging.dart';
+import 'package:llm_dart/transport.dart' show Level, Logger;
 
 /// HTTP Configuration Example
 ///

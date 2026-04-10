@@ -1,10 +1,11 @@
 import 'dart:async';
 
-import 'package:test/test.dart';
 import 'package:dio/dio.dart';
-import 'package:logging/logging.dart';
 import 'package:llm_dart/core/config.dart';
+import 'package:llm_dart_transport/llm_dart_transport.dart'
+    show Level, LogRecord, Logger, hierarchicalLoggingEnabled;
 import 'package:llm_dart/utils/http_config_utils.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('Dio HTTP Logging Tests', () {

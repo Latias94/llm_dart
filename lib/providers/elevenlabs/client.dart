@@ -1,8 +1,11 @@
 import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart'
-    show ProviderDioClientFactory, TransportCancellation, bindDioCancellation;
-import 'package:logging/logging.dart';
+    show
+        Logger,
+        ProviderDioClientFactory,
+        TransportCancellation,
+        bindDioCancellation;
 
 import '../../core/llm_error.dart';
 import 'config.dart';

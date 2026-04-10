@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:logging/logging.dart';
+import 'package:llm_dart_transport/llm_dart_transport.dart' show Logger;
 
 import '../../../../core/capability.dart';
 import '../../../../models/image_models.dart';
