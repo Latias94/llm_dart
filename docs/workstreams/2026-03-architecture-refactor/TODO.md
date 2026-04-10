@@ -174,6 +174,7 @@
 - [x] Audit and narrow provider-focused root entrypoints so `openai.dart`, `google.dart`, and `anthropic.dart` stop re-exporting `AI`, `core.dart`, and `transport.dart`
 - [x] Remove the direct root `logging` runtime dependency by routing compatibility, provider, test, and example imports through `llm_dart_transport` re-exports
 - [x] Remove the direct root `dio` runtime dependency by routing raw Dio imports through explicit `llm_dart_transport` sub-entrypoints instead of the root facade
+- [x] Split legacy `LLMConfig -> DioHttpClientConfig` shaping into the config layer and stop routing compat transport creation through `BaseHttpProvider`
 
 ## Community Providers
 

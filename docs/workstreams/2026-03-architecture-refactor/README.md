@@ -410,6 +410,9 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - [146-root-dio-transport-subentry.md](146-root-dio-transport-subentry.md)
   - Status note for routing raw Dio imports through explicit transport-owned
     sub-entrypoints and removing the root `dio` runtime dependency.
+- [147-compat-http-config-adapter-split.md](147-compat-http-config-adapter-split.md)
+  - Status note for moving legacy HTTP config shaping into the config layer and
+    detaching compat transport creation from `BaseHttpProvider`.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)

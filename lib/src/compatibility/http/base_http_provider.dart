@@ -6,11 +6,9 @@ import 'package:llm_dart_transport/llm_dart_transport.dart'
     show Level, LogSanitizer, Logger, bindDioCancellation;
 
 import '../../../core/capability.dart';
-import '../../../core/config.dart';
 import '../../../core/llm_error.dart';
 import '../../../models/chat_models.dart';
 import '../../../models/tool_models.dart';
-import 'http_config_utils.dart';
 
 /// Base class for HTTP-based LLM providers
 ///
@@ -225,26 +223,5 @@ abstract class BaseHttpProvider implements ChatCapability {
     }
 
     return error;
-  }
-
-  /// Create a configured Dio instance with advanced HTTP settings
-  ///
-  /// This method uses HttpConfigUtils to apply unified HTTP configurations
-  /// including proxy, SSL, custom headers, and logging.
-  ///
-  /// This is the recommended way to create Dio instances for all providers
-  /// to ensure consistent HTTP configuration support.
-  static Dio createConfiguredDio({
-    required String baseUrl,
-    required Map<String, String> headers,
-    required LLMConfig config,
-    Duration? timeout,
-  }) {
-    return HttpConfigUtils.createConfiguredDio(
-      baseUrl: baseUrl,
-      defaultHeaders: headers,
-      config: config,
-      defaultTimeout: timeout,
-    );
   }
 }

@@ -1,8 +1,8 @@
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
-import '../../core/base_http_provider.dart';
 import '../../core/config.dart';
 import '../config/legacy_config_extensions.dart';
+import 'http/http_config_utils.dart';
 
 TransportClient createCompatTransport(LLMConfig config) {
   final customTransport = config.legacyTransportClient;
@@ -15,11 +15,11 @@ TransportClient createCompatTransport(LLMConfig config) {
     return DioTransportClient(dio: customDio);
   }
 
-  final dio = BaseHttpProvider.createConfiguredDio(
+  final dio = HttpConfigUtils.createConfiguredDio(
     baseUrl: config.baseUrl,
-    headers: const {},
+    defaultHeaders: const {},
     config: config,
-    timeout: config.timeout,
+    defaultTimeout: config.timeout,
   );
 
   return DioTransportClient(dio: dio);

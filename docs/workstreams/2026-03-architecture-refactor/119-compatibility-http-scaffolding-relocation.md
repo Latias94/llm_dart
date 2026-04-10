@@ -10,6 +10,10 @@ legacy compatibility layer are now implemented under:
 - `lib/src/compatibility/http/http_config_utils.dart`
 - `lib/src/compatibility/http/http_response_handler.dart`
 
+The legacy HTTP config-shaping step has since been narrowed further into:
+
+- `lib/src/config/legacy_http_client_config_adapter.dart`
+
 The old paths remain as compatibility re-exports:
 
 - `lib/src/base_http_provider.dart`
@@ -28,7 +32,8 @@ they really are:
 
 - `BaseHttpProvider` still served legacy root provider implementations
 - `DioErrorHandler` still mapped Dio failures into root `LLMError` types
-- `HttpConfigUtils` still adapted legacy `LLMConfig` HTTP extensions
+- `HttpConfigUtils` still looked responsible for legacy `LLMConfig` HTTP
+  extension shaping
 - `HttpResponseHandler` still wrapped transport decoding with root error
   mapping
 
@@ -37,6 +42,10 @@ Placing them under `src/compatibility/http/` makes their role explicit.
 ## Architectural Effect
 
 This step does not remove the root `dio` or `logging` dependencies yet.
+
+Later follow-up slices also completed those direct dependency exits, but the
+important architectural point of this note still stands: the remaining HTTP
+scaffolding is compatibility-owned rather than long-term shared-center code.
 
 It does narrow the ownership story:
 
@@ -62,6 +71,13 @@ Those runtime dependencies still remain because:
 - compatibility config extensions still expose Dio-oriented overrides
 - root cancellation helpers still understand raw Dio cancellation exceptions
 - several public compatibility tests still exercise the legacy HTTP wrappers
+
+That follow-up narrowing now also includes:
+
+- `LLMConfig -> DioHttpClientConfig` shaping living in the config layer instead
+  of inside `HttpConfigUtils`
+- compat transport creation no longer routing through
+  `BaseHttpProvider.createConfiguredDio(...)`
 
 ## Next Honest Question
 

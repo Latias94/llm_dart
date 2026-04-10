@@ -2,7 +2,7 @@ import 'package:llm_dart_transport/dio.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import '../../../core/config.dart';
-import '../../config/legacy_config_extensions.dart';
+import '../../config/legacy_http_client_config_adapter.dart';
 
 /// HTTP configuration utilities for unified Dio setup across providers
 ///
@@ -23,7 +23,7 @@ class HttpConfigUtils {
     Duration? defaultTimeout,
   }) {
     return DioHttpClientFactory.createConfiguredDio(
-      config: _toTransportConfig(
+      config: createLegacyHttpClientConfig(
         baseUrl: baseUrl,
         defaultHeaders: defaultHeaders,
         config: config,
@@ -60,33 +60,12 @@ class HttpConfigUtils {
   /// Checks for common configuration issues and logs warnings.
   static void validateHttpConfig(LLMConfig config) {
     DioHttpClientFactory.validateHttpConfig(
-      _toTransportConfig(
+      createLegacyHttpClientConfig(
         baseUrl: config.baseUrl,
         defaultHeaders: const <String, String>{},
         config: config,
       ),
       logger: _logger,
-    );
-  }
-
-  static DioHttpClientConfig _toTransportConfig({
-    required String baseUrl,
-    required Map<String, String> defaultHeaders,
-    required LLMConfig config,
-    Duration? defaultTimeout,
-  }) {
-    return DioHttpClientConfig(
-      baseUrl: baseUrl,
-      defaultHeaders: defaultHeaders,
-      customHeaders: config.legacyCustomHeaders,
-      timeout: config.timeout ?? defaultTimeout,
-      connectionTimeout: config.legacyConnectionTimeout,
-      receiveTimeout: config.legacyReceiveTimeout,
-      sendTimeout: config.legacySendTimeout,
-      enableLogging: config.legacyEnableHttpLogging,
-      proxyUrl: config.legacyHttpProxy,
-      bypassSslVerification: config.legacyBypassSslVerification,
-      certificatePath: config.legacySslCertificatePath,
     );
   }
 }
