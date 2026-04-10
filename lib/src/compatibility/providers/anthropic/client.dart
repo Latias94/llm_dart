@@ -3,13 +3,13 @@ import 'package:llm_dart_transport/llm_dart_transport.dart'
     show
         decodeDioResponseTextStream,
         Logger,
-        ProviderDioClientFactory,
-        bindDioCancellation;
+        ProviderDioClientFactory;
 
 import '../../../../core/cancellation.dart';
 import '../../../../core/llm_error.dart';
 import '../../../../providers/anthropic/config.dart';
 import '../../../../utils/http_response_handler.dart';
+import '../../http/dio_request_executor.dart';
 import 'dio_strategy.dart';
 
 /// Core Anthropic HTTP client shared across all capability modules
@@ -31,12 +31,21 @@ class AnthropicClient {
   final AnthropicConfig config;
   final Logger logger = Logger('AnthropicClient');
   late final Dio dio;
+  late final CompatibilityDioRequestExecutor _requestExecutor;
 
   AnthropicClient(this.config) {
     // Use unified Dio client factory with Anthropic-specific strategy
     dio = ProviderDioClientFactory.create(
       strategy: AnthropicDioStrategy(),
       config: config,
+    );
+    _requestExecutor = CompatibilityDioRequestExecutor(
+      dio: dio,
+      logger: logger,
+      mapDioException: (error) => DioErrorHandler.handleDioError(
+        error,
+        'Anthropic',
+      ),
     );
   }
 
@@ -61,16 +70,13 @@ class AnthropicClient {
     String endpoint, {
     TransportCancellation? cancelToken,
   }) async {
-    try {
-      final response = await dio.get(
-        endpoint,
-        cancelToken: bindDioCancellation(cancelToken),
-      );
-      return response.data as Map<String, dynamic>;
-    } on DioException catch (e) {
-      logger.severe('HTTP GET request failed: ${e.message}');
-      throw await DioErrorHandler.handleDioError(e, 'Anthropic');
-    }
+    final response = await _requestExecutor.request(
+      'GET',
+      endpoint,
+      cancelToken: cancelToken,
+      failureLogMessage: 'HTTP GET request',
+    );
+    return response.data as Map<String, dynamic>;
   }
 
   /// Make a POST request with form data
@@ -79,17 +85,14 @@ class AnthropicClient {
     FormData formData, {
     TransportCancellation? cancelToken,
   }) async {
-    try {
-      final response = await dio.post(
-        endpoint,
-        data: formData,
-        cancelToken: bindDioCancellation(cancelToken),
-      );
-      return response.data as Map<String, dynamic>;
-    } on DioException catch (e) {
-      logger.severe('HTTP form request failed: ${e.message}');
-      throw await DioErrorHandler.handleDioError(e, 'Anthropic');
-    }
+    final response = await _requestExecutor.request(
+      'POST',
+      endpoint,
+      data: formData,
+      cancelToken: cancelToken,
+      failureLogMessage: 'HTTP form request',
+    );
+    return response.data as Map<String, dynamic>;
   }
 
   /// Make a DELETE request
@@ -97,15 +100,12 @@ class AnthropicClient {
     String endpoint, {
     TransportCancellation? cancelToken,
   }) async {
-    try {
-      await dio.delete(
-        endpoint,
-        cancelToken: bindDioCancellation(cancelToken),
-      );
-    } on DioException catch (e) {
-      logger.severe('HTTP DELETE request failed: ${e.message}');
-      throw await DioErrorHandler.handleDioError(e, 'Anthropic');
-    }
+    await _requestExecutor.request(
+      'DELETE',
+      endpoint,
+      cancelToken: cancelToken,
+      failureLogMessage: 'HTTP DELETE request',
+    );
   }
 
   /// Make a GET request and return raw bytes
@@ -113,17 +113,14 @@ class AnthropicClient {
     String endpoint, {
     TransportCancellation? cancelToken,
   }) async {
-    try {
-      final response = await dio.get(
-        endpoint,
-        options: Options(responseType: ResponseType.bytes),
-        cancelToken: bindDioCancellation(cancelToken),
-      );
-      return response.data as List<int>;
-    } on DioException catch (e) {
-      logger.severe('HTTP raw request failed: ${e.message}');
-      throw await DioErrorHandler.handleDioError(e, 'Anthropic');
-    }
+    final response = await _requestExecutor.request(
+      'GET',
+      endpoint,
+      options: Options(responseType: ResponseType.bytes),
+      cancelToken: cancelToken,
+      failureLogMessage: 'HTTP raw request',
+    );
+    return response.data as List<int>;
   }
 
   /// Make a POST request and return raw stream for SSE
@@ -132,24 +129,21 @@ class AnthropicClient {
     Map<String, dynamic> data, {
     TransportCancellation? cancelToken,
   }) async* {
-    try {
-      final response = await dio.post(
-        endpoint,
-        data: data,
-        cancelToken: bindDioCancellation(cancelToken),
-        options: Options(
-          responseType: ResponseType.stream,
-          headers: {'Accept': 'text/event-stream'},
-        ),
-      );
+    final response = await _requestExecutor.request(
+      'POST',
+      endpoint,
+      data: data,
+      cancelToken: cancelToken,
+      options: Options(
+        responseType: ResponseType.stream,
+        headers: {'Accept': 'text/event-stream'},
+      ),
+      failureLogMessage: 'Stream request',
+    );
 
-      yield* decodeDioResponseTextStream(
-        response.data,
-        invalidBodyErrorFactory: Exception.new,
-      );
-    } on DioException catch (e) {
-      logger.severe('Stream request failed: ${e.message}');
-      throw await DioErrorHandler.handleDioError(e, 'Anthropic');
-    }
+    yield* decodeDioResponseTextStream(
+      response.data,
+      invalidBodyErrorFactory: Exception.new,
+    );
   }
 }

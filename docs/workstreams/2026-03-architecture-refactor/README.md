@@ -420,6 +420,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Status note for moving raw Dio error-body text collection into
     `llm_dart_transport` and sharing parsed-error extraction across the root
     compatibility layer.
+- [150-compat-http-request-executor.md](150-compat-http-request-executor.md)
+  - Status note for introducing a thin compatibility-owned Dio request shell
+    that removes repeated dispatch/cancellation/catch boilerplate from root
+    compatibility clients.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)

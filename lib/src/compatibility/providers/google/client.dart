@@ -3,12 +3,12 @@ import 'package:llm_dart_transport/llm_dart_transport.dart'
     show
         decodeDioResponseTextStream,
         Logger,
-        ProviderDioClientFactory,
-        bindDioCancellation;
+        ProviderDioClientFactory;
 
 import '../../../../core/cancellation.dart';
 import '../../../../utils/http_response_handler.dart';
 import '../../../../providers/google/config.dart';
+import '../../http/dio_request_executor.dart';
 import 'dio_strategy.dart';
 
 /// Core Google HTTP client shared across all capability modules
@@ -24,12 +24,18 @@ class GoogleClient {
   final GoogleConfig config;
   final Logger logger = Logger('GoogleClient');
   late final Dio dio;
+  late final CompatibilityDioRequestExecutor _requestExecutor;
 
   GoogleClient(this.config) {
     // Use unified Dio client factory with Google-specific strategy
     dio = ProviderDioClientFactory.create(
       strategy: GoogleDioStrategy(),
       config: config,
+    );
+    _requestExecutor = CompatibilityDioRequestExecutor(
+      dio: dio,
+      logger: logger,
+      mapDioException: (error) async => error,
     );
   }
 
@@ -48,19 +54,15 @@ class GoogleClient {
     Options? options,
     TransportCancellation? cancelToken,
   }) async {
-    try {
-      final fullEndpoint = _getEndpointWithAuth(endpoint);
-      return await dio.post(
-        fullEndpoint,
-        data: data,
-        queryParameters: queryParameters,
-        options: options,
-        cancelToken: bindDioCancellation(cancelToken),
-      );
-    } on DioException catch (e) {
-      logger.severe('HTTP request failed: ${e.message}');
-      rethrow;
-    }
+    return _requestExecutor.request(
+      'POST',
+      _getEndpointWithAuth(endpoint),
+      data: data,
+      queryParameters: queryParameters,
+      options: options,
+      cancelToken: cancelToken,
+      failureLogMessage: 'HTTP request',
+    );
   }
 
   /// Make a POST request and return JSON response
@@ -86,20 +88,15 @@ class GoogleClient {
     Map<String, dynamic>? queryParameters,
     Options? options,
   }) async* {
-    try {
-      final fullEndpoint = _getEndpointWithAuth(endpoint);
-      final response = await dio.post(
-        fullEndpoint,
-        data: data,
-        queryParameters: queryParameters,
-        options: options?.copyWith(responseType: ResponseType.stream) ??
-            Options(responseType: ResponseType.stream),
-      );
-      yield response;
-    } on DioException catch (e) {
-      logger.severe('Stream request failed: ${e.message}');
-      rethrow;
-    }
+    yield await _requestExecutor.request(
+      'POST',
+      _getEndpointWithAuth(endpoint),
+      data: data,
+      queryParameters: queryParameters,
+      options: options?.copyWith(responseType: ResponseType.stream) ??
+          Options(responseType: ResponseType.stream),
+      failureLogMessage: 'Stream request',
+    );
   }
 
   /// Make a POST request and return raw stream for JSON array streaming
@@ -108,25 +105,21 @@ class GoogleClient {
     Map<String, dynamic> data, {
     TransportCancellation? cancelToken,
   }) async* {
-    try {
-      final fullEndpoint = _getEndpointWithAuth(endpoint);
-      final response = await dio.post(
-        fullEndpoint,
-        data: data,
-        cancelToken: bindDioCancellation(cancelToken),
-        options: Options(
-          responseType: ResponseType.stream,
-          headers: {'Accept': 'application/json'},
-        ),
-      );
+    final response = await _requestExecutor.request(
+      'POST',
+      _getEndpointWithAuth(endpoint),
+      data: data,
+      cancelToken: cancelToken,
+      options: Options(
+        responseType: ResponseType.stream,
+        headers: {'Accept': 'application/json'},
+      ),
+      failureLogMessage: 'Stream request',
+    );
 
-      yield* decodeDioResponseTextStream(
-        response.data,
-        invalidBodyErrorFactory: Exception.new,
-      );
-    } on DioException catch (e) {
-      logger.severe('Stream request failed: ${e.message}');
-      rethrow;
-    }
+    yield* decodeDioResponseTextStream(
+      response.data,
+      invalidBodyErrorFactory: Exception.new,
+    );
   }
 }

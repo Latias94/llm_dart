@@ -177,6 +177,7 @@
 - [x] Split legacy `LLMConfig -> DioHttpClientConfig` shaping into the config layer and stop routing compat transport creation through `BaseHttpProvider`
 - [x] Extract repeated Dio streaming-response byte/text decoding into `llm_dart_transport` and switch root compatibility/provider clients to the shared helper
 - [x] Extract raw Dio error-response text collection into `llm_dart_transport` and share parsed-error extraction between root `DioErrorHandler` and the OpenAI compatibility client
+- [x] Introduce a thin compatibility-owned Dio request executor and migrate Anthropic/Google compatibility clients off repeated dispatch/cancellation/catch shells
 
 ## Community Providers
 
