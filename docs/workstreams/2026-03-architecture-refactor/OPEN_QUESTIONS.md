@@ -460,16 +460,16 @@ Resolved in the current breaking round:
 
 Needs confirmation:
 
-- should `ChatSession` later expose a dedicated `onFinish`-style callback or
-  observer surface
+- should the new `readChatUiStream(...)` helper later expose a dedicated
+  callback facade or typed final-summary surface
 - or should final-state and final-message handling continue to rely on the
-  existing `states` stream only
+  current streams plus `result` pattern
 
 Current recommendation:
 
-- keep the current `states`-driven runtime contract for now
-- only revisit a dedicated finish callback if at least two concrete Flutter or
-  backend integration cases show that state-stream diffing is too indirect
+- keep the current result-object contract for now
+- only revisit a dedicated callback facade if at least two concrete Flutter or
+  backend integration cases show that streams plus `result` are too indirect
 
 ## 38. Remote UI Stream Layer Status
 

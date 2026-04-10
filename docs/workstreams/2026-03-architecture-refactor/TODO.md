@@ -60,7 +60,8 @@
 - [ ] Re-evaluate whether the new streamed runner needs a constrained pre-step hook after the layered API is used by at least two concrete shared call paths
 - [ ] Decide whether streamed multi-step orchestration really needs richer step-start/step-finish metadata in the shared core, or whether that detail should stay in a future UI/transport chunk layer
 - [x] Decide that the initial streamed runner keeps its stitched `eventStream` provider-step-only instead of synthesizing local tool-result or other inter-step projection events in the narrow phase
-- [ ] Evaluate a lightweight `llm_dart_chat` UI-stream helper above `ChatUiStreamChunk` for non-session consumers, instead of widening chunk vocabulary or adding more core events
+- [x] Evaluate and implement a lightweight `llm_dart_chat` UI-stream helper above `ChatUiStreamChunk` for non-session consumers, instead of widening chunk vocabulary or adding more core events
+- [ ] Decide whether the new `readChatUiStream(...)` helper later needs a callback facade or a typed final-summary surface beyond streams plus `result`
 - [x] Implement `embed` / `embedMany`
 - [x] Implement `generateImage`
 - [x] Implement `generateSpeech`
