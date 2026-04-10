@@ -424,6 +424,9 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Status note for introducing a thin compatibility-owned Dio request shell
     that removes repeated dispatch/cancellation/catch boilerplate from root
     compatibility clients.
+- [151-remove-dead-base-http-provider.md](151-remove-dead-base-http-provider.md)
+  - Status note for removing the now-unused `BaseHttpProvider` legacy shell
+    from the root compatibility surface.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
