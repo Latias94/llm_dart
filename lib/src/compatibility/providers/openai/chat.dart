@@ -9,6 +9,7 @@ import 'client.dart';
 import '../../../../providers/openai/config.dart';
 import 'config_views.dart';
 import 'request_body_support.dart';
+import 'stream_parsing_support.dart';
 
 /// OpenAI Chat capability implementation
 ///
@@ -19,10 +20,7 @@ class OpenAIChat implements ChatCapability {
   final OpenAIConfig config;
 
   // State tracking for stream processing
-  bool _hasReasoningContent = false;
-  String _lastChunk = '';
-  final StringBuffer _thinkingBuffer = StringBuffer();
-  final Map<int, String> _toolCallIds = {};
+  final OpenAIStreamParsingState _streamState = OpenAIStreamParsingState();
 
   OpenAIChat(this.client, this.config);
 
@@ -227,9 +225,7 @@ class OpenAIChat implements ChatCapability {
       // Use existing stream parsing logic with proper state tracking
       final parsedEvents = _parseStreamEventWithReasoning(
         json,
-        _hasReasoningContent,
-        _lastChunk,
-        _thinkingBuffer,
+        _streamState,
       );
 
       events.addAll(parsedEvents);
@@ -240,18 +236,13 @@ class OpenAIChat implements ChatCapability {
 
   /// Reset stream state (call this when starting a new stream)
   void _resetStreamState() {
-    _hasReasoningContent = false;
-    _lastChunk = '';
-    _thinkingBuffer.clear();
-    _toolCallIds.clear();
+    _streamState.reset();
   }
 
   /// Parse stream events with reasoning support
   List<ChatStreamEvent> _parseStreamEventWithReasoning(
     Map<String, dynamic> json,
-    bool hasReasoningContent,
-    String lastChunk,
-    StringBuffer thinkingBuffer,
+    OpenAIStreamParsingState state,
   ) {
     final events = <ChatStreamEvent>[];
     final choices = json['choices'] as List?;
@@ -262,106 +253,38 @@ class OpenAIChat implements ChatCapability {
     if (delta == null) return events;
 
     // Handle reasoning content using reasoning utils
-    final reasoningContent = ReasoningUtils.extractReasoningContent(delta);
-
-    if (reasoningContent != null && reasoningContent.isNotEmpty) {
-      thinkingBuffer.write(reasoningContent);
-      _hasReasoningContent = true; // Update state
-      events.add(ThinkingDeltaEvent(reasoningContent));
+    if (addOpenAIReasoningDeltaEvents(
+      state: state,
+      events: events,
+      delta: delta,
+    )) {
       return events;
     }
 
     // Handle regular content
     final content = delta['content'] as String?;
     if (content != null && content.isNotEmpty) {
-      // Update last chunk for reasoning detection
-      _lastChunk = content;
-
-      // Check reasoning status using utils
-      final reasoningResult = ReasoningUtils.checkReasoningStatus(
-        delta: delta,
-        hasReasoningContent: _hasReasoningContent,
-        lastChunk: lastChunk,
+      addOpenAITextDeltaEvents(
+        state: state,
+        events: events,
+        content: content,
+        reasoningDelta: delta,
       );
-
-      // Update state based on reasoning detection
-      _hasReasoningContent = reasoningResult.hasReasoningContent;
-
-      // Filter out thinking tags for models that use <think> tags
-      if (ReasoningUtils.containsThinkingTags(content)) {
-        // Extract thinking content and add to buffer
-        final thinkMatch = RegExp(
-          r'<think>(.*?)</think>',
-          dotAll: true,
-        ).firstMatch(content);
-        if (thinkMatch != null) {
-          final thinkingText = thinkMatch.group(1)?.trim();
-          if (thinkingText != null && thinkingText.isNotEmpty) {
-            thinkingBuffer.write(thinkingText);
-            events.add(ThinkingDeltaEvent(thinkingText));
-          }
-        }
-        // Don't emit content that contains thinking tags
-        return events;
-      }
-
-      events.add(TextDeltaEvent(content));
     }
 
     // Handle tool calls
-    final toolCalls = delta['tool_calls'] as List?;
-    if (toolCalls != null && toolCalls.isNotEmpty) {
-      final toolCallMap = toolCalls.first as Map<String, dynamic>;
-      final index = toolCallMap['index'] as int?;
-
-      if (index != null) {
-        // If ID is present, store it
-        if (toolCallMap.containsKey('id')) {
-          final id = toolCallMap['id'] as String;
-          _toolCallIds[index] = id;
-        }
-
-        // If we have an ID for this index (either just stored or from before), emit event
-        if (_toolCallIds.containsKey(index)) {
-          final id = _toolCallIds[index]!;
-
-          // Construct a valid ToolCall delta even if ID is missing in this chunk
-          final functionMap = toolCallMap['function'] as Map<String, dynamic>?;
-          if (functionMap != null) {
-            final name = functionMap['name'] as String? ?? '';
-            final args = functionMap['arguments'] as String? ?? '';
-
-            // Only emit if we have something to update
-            if (name.isNotEmpty || args.isNotEmpty) {
-              final toolCall = ToolCall(
-                id: id,
-                callType: 'function',
-                function: FunctionCall(
-                  name: name,
-                  arguments: args,
-                ),
-              );
-              events.add(ToolCallDeltaEvent(toolCall));
-            }
-          }
-        }
-      } else if (toolCallMap.containsKey('id') &&
-          toolCallMap.containsKey('function')) {
-        // Fallback for non-indexed tool calls (rare in streams but possible)
-        try {
-          events.add(ToolCallDeltaEvent(ToolCall.fromJson(toolCallMap)));
-        } catch (e) {
-          client.logger.warning('Failed to parse tool call: $e');
-        }
-      }
-    }
+    addOpenAIToolCallDeltaEvents(
+      state: state,
+      events: events,
+      toolCalls: delta['tool_calls'] as List?,
+      onWarning: client.logger.warning,
+    );
 
     // Check for finish reason
     final finishReason = choice['finish_reason'] as String?;
     if (finishReason != null) {
       final usage = json['usage'] as Map<String, dynamic>?;
-      final thinkingContent =
-          thinkingBuffer.isNotEmpty ? thinkingBuffer.toString() : null;
+      final thinkingContent = state.thinkingContent;
 
       final response = OpenAIChatResponse({
         'choices': [
@@ -375,7 +298,7 @@ class OpenAIChat implements ChatCapability {
       events.add(CompletionEvent(response));
 
       // Reset state after completion
-      _resetStreamState();
+      state.reset();
     }
 
     return events;

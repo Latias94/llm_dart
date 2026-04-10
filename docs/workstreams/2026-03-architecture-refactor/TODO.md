@@ -185,6 +185,7 @@
 - [x] Move the remaining Phind and ElevenLabs outlier request shells onto the shared compatibility request executor while keeping their provider-local response projections
 - [x] Collapse the remaining repeated OpenAI compatibility request shells behind a provider-local helper without widening the shared compatibility HTTP layer
 - [x] Extract shared OpenAI-family compatibility request-body field encoding so chat-completions and Responses stop duplicating the same common parameter shaping
+- [x] Extract shared OpenAI-family streamed reasoning and tool-call delta parsing state so chat-completions and Responses stop duplicating the same incremental parsing mechanics
 
 ## Community Providers
 

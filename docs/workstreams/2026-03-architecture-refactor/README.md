@@ -449,6 +449,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Status note for extracting the shared OpenAI-family compatibility
     request-body field encoding used by both chat-completions and Responses
     without flattening their API-specific differences.
+- [158-openai-stream-parsing-support.md](158-openai-stream-parsing-support.md)
+  - Status note for extracting the shared OpenAI-family streamed reasoning,
+    tool-call-delta, and thinking-tag parsing state used by both
+    chat-completions and Responses compatibility codecs.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
