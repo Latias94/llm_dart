@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:llm_dart_transport/dio.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart'
     show
+        decodeDioResponseTextStream,
         JsonObjectResponseDecoder,
         Level,
         LogSanitizer,
@@ -9,7 +10,6 @@ import 'package:llm_dart_transport/llm_dart_transport.dart'
         ProviderDioClientFactory,
         TransportCancellation,
         TransportResponseFormatException,
-        Utf8StreamDecoder,
         bindDioCancellation;
 
 import '../../core/llm_error.dart';
@@ -146,34 +146,10 @@ class OllamaClient {
         );
       }
 
-      // Handle ResponseBody properly for streaming
-      final responseBody = response.data;
-      Stream<List<int>> stream;
-
-      if (responseBody is Stream<List<int>>) {
-        stream = responseBody;
-      } else if (responseBody is ResponseBody) {
-        stream = responseBody.stream;
-      } else {
-        throw Exception(
-            'Unexpected response type: ${responseBody.runtimeType}');
-      }
-
-      // Use UTF-8 stream decoder to handle incomplete byte sequences
-      final decoder = Utf8StreamDecoder();
-
-      await for (final chunk in stream) {
-        final decoded = decoder.decode(chunk);
-        if (decoded.isNotEmpty) {
-          yield decoded;
-        }
-      }
-
-      // Flush any remaining bytes
-      final remaining = decoder.flush();
-      if (remaining.isNotEmpty) {
-        yield remaining;
-      }
+      yield* decodeDioResponseTextStream(
+        response.data,
+        invalidBodyErrorFactory: Exception.new,
+      );
     } on DioException catch (e) {
       logger.severe('Stream request failed: ${e.message}');
       throw await DioErrorHandler.handleDioError(e, 'Ollama');

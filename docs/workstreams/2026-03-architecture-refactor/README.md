@@ -413,6 +413,9 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - [147-compat-http-config-adapter-split.md](147-compat-http-config-adapter-split.md)
   - Status note for moving legacy HTTP config shaping into the config layer and
     detaching compat transport creation from `BaseHttpProvider`.
+- [148-dio-response-stream-helper-extraction.md](148-dio-response-stream-helper-extraction.md)
+  - Status note for moving repeated Dio streaming-response byte/text decoding
+    into `llm_dart_transport`.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)

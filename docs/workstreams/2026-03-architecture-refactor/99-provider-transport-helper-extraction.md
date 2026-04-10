@@ -98,6 +98,23 @@ That means:
 - root `HttpResponseHandler` is now a narrower compatibility wrapper around
   transport-owned parsing plus root-owned `LLMError` mapping
 
+### 6.5. Dio streaming-response byte/text decoding now also lives in
+`llm_dart_transport`
+
+The transport package now also owns:
+
+- `extractDioResponseByteStream(...)`
+- `decodeDioResponseTextStream(...)`
+
+That means:
+
+- provider clients no longer need to duplicate the same
+  `ResponseBody`/`Stream<List<int>>` discrimination logic
+- provider clients no longer need to duplicate the same UTF-8 decoder loop for
+  streaming response bodies
+- `DioTransportClient.sendStream(...)` now uses the same transport-owned
+  response-body extraction helper as provider compatibility code
+
 ### 7. Community-provider config overrides now flow through explicit
 compatibility adapters instead of implicit root probing
 
@@ -203,6 +220,7 @@ Current state:
 - configurable Dio setup is transport-owned
 - provider-facing Dio strategy/factory abstractions are transport-owned
 - the shared UTF-8 stream decoder is transport-owned
+- Dio streaming-response byte/text decoding is transport-owned
 - shared log sanitization and JSON-object response decoding are transport-owned
 - immutable provider-facing Dio override data can now also be transport-owned
 - root `HttpConfigUtils` is now a compatibility mapper, not the implementation

@@ -9,6 +9,7 @@ import '../common/transport_diagnostics.dart';
 import '../common/transport_exception.dart';
 import '../common/transport_retry.dart';
 import 'dio_cancellation_adapter.dart';
+import 'dio_response_stream.dart';
 import 'transport_client.dart';
 
 final class DioTransportClient implements TransportClient {
@@ -119,22 +120,15 @@ final class DioTransportClient implements TransportClient {
         }
 
         final responseBody = response.data;
-        final result = switch (responseBody) {
-          ResponseBody() => StreamingTransportResponse(
-              statusCode: response.statusCode ?? 0,
-              headers: headers,
-              stream: responseBody.stream,
-            ),
-          Stream<List<int>>() => StreamingTransportResponse(
-              statusCode: response.statusCode ?? 0,
-              headers: headers,
-              stream: responseBody,
-            ),
-          _ => throw TransportResponseFormatException(
-              'Expected a streaming response body but received ${responseBody.runtimeType}',
-              uri: request.uri,
-            ),
-        };
+        final result = StreamingTransportResponse(
+          statusCode: response.statusCode ?? 0,
+          headers: headers,
+          stream: extractDioResponseByteStream(
+            responseBody,
+            sourceName: 'response body',
+            uri: request.uri,
+          ),
+        );
 
         return _TransportAttemptSuccess(
           value: result,
