@@ -1,10 +1,6 @@
 import 'package:llm_dart_transport/dio.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart'
-    show
-        decodeDioResponseTextStream,
-        Logger,
-        ProviderDioClientFactory,
-        bindDioCancellation;
+    show Logger, ProviderDioClientFactory;
 
 import '../../core/cancellation.dart';
 import '../../utils/http_response_handler.dart';
@@ -57,24 +53,19 @@ class DeepSeekClient {
     Map<String, dynamic> data, {
     TransportCancellation? cancelToken,
   }) async* {
-    try {
-      final response = await dio.post(
-        endpoint,
-        data: data,
-        cancelToken: bindDioCancellation(cancelToken),
-        options: Options(
-          responseType: ResponseType.stream,
-          headers: {'Accept': 'text/event-stream'},
-        ),
-      );
-
-      yield* decodeDioResponseTextStream(
-        response.data,
-        invalidBodyErrorFactory: Exception.new,
-      );
-    } on DioException catch (e) {
-      logger.severe('Stream request failed: ${e.message}');
-      throw await DeepSeekErrorHandler.handleDioError(e);
-    }
+    yield* HttpResponseHandler.postTextStream(
+      dio,
+      endpoint,
+      data,
+      providerName: 'DeepSeek',
+      logger: logger,
+      cancelToken: cancelToken,
+      options: Options(
+        responseType: ResponseType.stream,
+        headers: {'Accept': 'text/event-stream'},
+      ),
+      mapDioException: DeepSeekErrorHandler.handleDioError,
+      invalidBodyErrorFactory: Exception.new,
+    );
   }
 }

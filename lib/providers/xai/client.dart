@@ -1,13 +1,8 @@
 import 'package:llm_dart_transport/dio.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart'
-    show
-        decodeDioResponseTextStream,
-        Logger,
-        ProviderDioClientFactory,
-        bindDioCancellation;
+    show Logger, ProviderDioClientFactory;
 
 import '../../core/cancellation.dart';
-import '../../core/llm_error.dart';
 import '../../utils/http_response_handler.dart';
 import 'config.dart';
 import 'dio_strategy.dart';
@@ -56,29 +51,15 @@ class XAIClient {
     Map<String, dynamic> data, {
     TransportCancellation? cancelToken,
   }) async* {
-    try {
-      final response = await dio.post(
-        endpoint,
-        data: data,
-        cancelToken: bindDioCancellation(cancelToken),
-        options: Options(responseType: ResponseType.stream),
-      );
-
-      if (response.statusCode != 200) {
-        throw DioException(
-          requestOptions: response.requestOptions,
-          response: response,
-          message: 'xAI API returned status ${response.statusCode}',
-        );
-      }
-
-      yield* decodeDioResponseTextStream(
-        response.data,
-        invalidBodyErrorFactory: Exception.new,
-      );
-    } on DioException catch (e) {
-      logger.severe('Stream request failed: ${e.message}');
-      throw await DioErrorHandler.handleDioError(e, 'xAI');
-    }
+    yield* HttpResponseHandler.postTextStream(
+      dio,
+      endpoint,
+      data,
+      providerName: 'xAI',
+      logger: logger,
+      cancelToken: cancelToken,
+      options: Options(responseType: ResponseType.stream),
+      invalidBodyErrorFactory: Exception.new,
+    );
   }
 }

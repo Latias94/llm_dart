@@ -3,11 +3,13 @@ import 'dart:convert';
 import 'package:llm_dart_transport/dio.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart'
     show
+        InvalidDioResponseBodyFactory,
         JsonObjectResponseDecoder,
         Level,
         LogSanitizer,
         Logger,
         TransportResponseFormatException,
+        decodeDioResponseTextStream,
         bindDioCancellation;
 
 import '../../../core/cancellation.dart';
@@ -128,6 +130,60 @@ class HttpResponseHandler {
         rethrow;
       }
       log.severe('Unexpected error in $provider postJson: $e');
+      throw GenericError('Unexpected error: $e');
+    }
+  }
+
+  /// Creates a standardized text-stream POST helper for compatibility clients.
+  static Stream<String> postTextStream(
+    Dio dio,
+    String endpoint,
+    Map<String, dynamic> data, {
+    String? providerName,
+    Logger? logger,
+    Options? options,
+    TransportCancellation? cancelToken,
+    CompatibilityDioErrorMapper? mapDioException,
+    InvalidDioResponseBodyFactory? invalidBodyErrorFactory,
+  }) async* {
+    final provider = providerName ?? 'Unknown';
+    final log = logger ?? _logger;
+
+    try {
+      if (log.isLoggable(Level.FINE)) {
+        log.fine(
+          '$provider stream request: POST ${LogSanitizer.sanitizeEndpoint(endpoint)}',
+        );
+        log.fine('$provider stream request payload: ${jsonEncode(data)}');
+      }
+
+      final response = await dio.post(
+        endpoint,
+        data: data,
+        options: options,
+        cancelToken: bindDioCancellation(cancelToken),
+      );
+
+      await ensureSuccessStatus(
+        response,
+        providerName: provider,
+        logger: log,
+      );
+
+      yield* decodeDioResponseTextStream(
+        response.data,
+        invalidBodyErrorFactory: invalidBodyErrorFactory,
+      );
+    } on DioException catch (e) {
+      log.severe('$provider stream request failed: ${e.message}');
+      final dioErrorMapper = mapDioException;
+      throw await (dioErrorMapper?.call(e) ??
+          DioErrorHandler.handleDioError(e, provider));
+    } catch (e) {
+      if (e is LLMError) {
+        rethrow;
+      }
+      log.severe('Unexpected error in $provider postTextStream: $e');
       throw GenericError('Unexpected error: $e');
     }
   }

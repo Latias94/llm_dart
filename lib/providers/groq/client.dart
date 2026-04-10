@@ -1,13 +1,8 @@
 import 'package:llm_dart_transport/dio.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart'
-    show
-        decodeDioResponseTextStream,
-        Logger,
-        ProviderDioClientFactory,
-        bindDioCancellation;
+    show Logger, ProviderDioClientFactory;
 
 import '../../core/cancellation.dart';
-import '../../core/llm_error.dart';
 import '../../utils/http_response_handler.dart';
 import 'config.dart';
 import 'dio_strategy.dart';
@@ -56,24 +51,18 @@ class GroqClient {
     Map<String, dynamic> data, {
     TransportCancellation? cancelToken,
   }) async* {
-    try {
-      final response = await dio.post(
-        endpoint,
-        data: data,
-        cancelToken: bindDioCancellation(cancelToken),
-        options: Options(
-          responseType: ResponseType.stream,
-          headers: {'Accept': 'text/event-stream'},
-        ),
-      );
-
-      yield* decodeDioResponseTextStream(
-        response.data,
-        invalidBodyErrorFactory: Exception.new,
-      );
-    } on DioException catch (e) {
-      logger.severe('Stream request failed: ${e.message}');
-      throw await DioErrorHandler.handleDioError(e, 'Groq');
-    }
+    yield* HttpResponseHandler.postTextStream(
+      dio,
+      endpoint,
+      data,
+      providerName: 'Groq',
+      logger: logger,
+      cancelToken: cancelToken,
+      options: Options(
+        responseType: ResponseType.stream,
+        headers: {'Accept': 'text/event-stream'},
+      ),
+      invalidBodyErrorFactory: Exception.new,
+    );
   }
 }

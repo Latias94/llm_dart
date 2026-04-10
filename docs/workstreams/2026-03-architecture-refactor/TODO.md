@@ -181,6 +181,7 @@
 - [x] Remove the dead root `BaseHttpProvider` legacy shell after all in-repo provider implementations stop inheriting from it
 - [x] Narrow `HttpResponseHandler` to shared JSON parsing and success-status validation, and remove its dead `getJson(...)` helper
 - [x] Let shared `HttpResponseHandler.postJson(...)` accept provider-specific Dio error mappers so DeepSeek-style compatibility semantics survive the shared helper path
+- [x] Add shared `HttpResponseHandler.postTextStream(...)` mechanics and migrate the repeated DeepSeek/Groq/xAI/Ollama stream-request shells onto it
 
 ## Community Providers
 

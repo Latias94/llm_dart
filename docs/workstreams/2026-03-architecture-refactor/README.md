@@ -434,6 +434,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Status note for allowing shared `postJson(...)` mechanics to preserve
     provider-specific Dio error semantics instead of forcing only the generic
     compatibility mapper.
+- [154-shared-posttextstream-helper.md](154-shared-posttextstream-helper.md)
+  - Status note for introducing a shared streamed-text POST helper and moving
+    another batch of root-hosted provider clients onto the same HTTP streaming
+    mechanics.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
