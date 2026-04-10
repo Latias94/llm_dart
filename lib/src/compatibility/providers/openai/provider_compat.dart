@@ -1,5 +1,4 @@
 import '../../../../core/capability.dart';
-import '../../../../core/config.dart';
 import '../../../../models/chat_models.dart';
 import '../../../../models/audio_models.dart';
 import '../../../../models/tool_models.dart';
@@ -9,9 +8,7 @@ import '../../../../models/moderation_models.dart';
 import '../../../../models/assistant_models.dart';
 import 'client.dart';
 import '../../../../providers/openai/config.dart';
-import '../../legacy_chat_adapter.dart';
 import 'chat.dart';
-import 'config_views.dart';
 import 'embeddings.dart';
 import 'audio.dart';
 import 'images.dart';
@@ -21,9 +18,7 @@ import 'moderation.dart';
 import 'assistants.dart';
 import 'completion.dart';
 import 'responses.dart';
-import '../compat_provider_support.dart';
-import '../../chat_route_compatibility.dart';
-import 'bridge_support.dart';
+import 'provider_chat_facade.dart';
 
 /// Compatibility-first root OpenAI provider shell.
 ///
@@ -45,11 +40,10 @@ class OpenAIProvider
         ProviderCapabilities {
   final OpenAIClient _client;
   final OpenAIConfig config;
-  final LLMConfig? _chatBridgeConfig;
-  final LegacyChatCapabilityAdapter? _chatBridge;
 
   // Capability modules
   late final OpenAIChat _chat;
+  late final OpenAIProviderChatFacade _chatFacade;
   late final OpenAIEmbeddings _embeddings;
   late final OpenAIAudio _audio;
   late final OpenAIImages _images;
@@ -59,19 +53,8 @@ class OpenAIProvider
   late final OpenAIAssistants _assistants;
   late final OpenAICompletion _completion;
   late final OpenAIResponses? _responses;
-  late final bool _responsesEnabled = config.responsesCompat.enabled;
 
-  OpenAIProvider(this.config)
-      : _client = OpenAIClient(config),
-        _chatBridgeConfig = _supportsRootOpenAIChatBridge(config)
-            ? buildRootOpenAIChatBridgeConfig(config)
-            : null,
-        _chatBridge = _supportsRootOpenAIChatBridge(config)
-            ? buildCompatOpenAIChatBridge(
-                legacyConfig: config,
-                bridgeConfig: buildRootOpenAIChatBridgeConfig(config),
-              )
-            : null {
+  OpenAIProvider(this.config) : _client = OpenAIClient(config) {
     // Initialize capability modules
     _chat = OpenAIChat(_client, config);
     _embeddings = OpenAIEmbeddings(_client, config);
@@ -84,11 +67,17 @@ class OpenAIProvider
     _completion = OpenAICompletion(_client, config);
 
     // Initialize Responses API module if enabled
-    if (_responsesEnabled) {
+    if (config.useResponsesAPI) {
       _responses = OpenAIResponses(_client, config);
     } else {
       _responses = null;
     }
+
+    _chatFacade = OpenAIProviderChatFacade(
+      config: config,
+      chat: _chat,
+      responses: _responses,
+    );
   }
 
   String get providerName => 'OpenAI';
@@ -115,7 +104,7 @@ class OpenAIProvider
     };
 
     // Add OpenAI Responses API capability if enabled
-    if (_responsesEnabled) {
+    if (_responses != null) {
       capabilities.add(LLMCapability.openaiResponses);
     }
 
@@ -134,7 +123,10 @@ class OpenAIProvider
     List<ChatMessage> messages, {
     TransportCancellation? cancelToken,
   }) async {
-    return chatWithTools(messages, null, cancelToken: cancelToken);
+    return _chatFacade.chat(
+      messages,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
@@ -143,28 +135,11 @@ class OpenAIProvider
     List<Tool>? tools, {
     TransportCancellation? cancelToken,
   }) async {
-    final chatBridge = _chatBridge;
-    final chatBridgeConfig = _chatBridgeConfig;
-    if (chatBridge != null && chatBridgeConfig != null) {
-      return executeCompatChat(
-        originalConfig: chatBridgeConfig,
-        messages: messages,
-        tools: tools,
-        canUseBridge: canUseOpenAIChatBridge,
-        bridge: () => chatBridge.chatWithTools(
-          messages,
-          tools,
-          cancelToken: cancelToken,
-        ),
-        fallback: () => _chatWithToolsFallback(
-          messages,
-          tools,
-          cancelToken: cancelToken,
-        ),
-      );
-    }
-
-    return _chatWithToolsFallback(messages, tools, cancelToken: cancelToken);
+    return _chatFacade.chatWithTools(
+      messages,
+      tools,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
@@ -173,89 +148,21 @@ class OpenAIProvider
     List<Tool>? tools,
     TransportCancellation? cancelToken,
   }) {
-    final chatBridge = _chatBridge;
-    final chatBridgeConfig = _chatBridgeConfig;
-    if (chatBridge != null && chatBridgeConfig != null) {
-      return executeCompatChatStream(
-        originalConfig: chatBridgeConfig,
-        messages: messages,
-        tools: tools,
-        canUseBridge: canUseOpenAIChatBridge,
-        bridge: () => chatBridge.chatStream(
-          messages,
-          tools: tools,
-          cancelToken: cancelToken,
-        ),
-        fallback: () => _chatStreamFallback(
-          messages,
-          tools: tools,
-          cancelToken: cancelToken,
-        ),
-      );
-    }
-
-    return _chatStreamFallback(messages,
-        tools: tools, cancelToken: cancelToken);
-  }
-
-  @override
-  Future<List<ChatMessage>?> memoryContents() async {
-    // Use Responses API if enabled, otherwise use Chat Completions API
-    if (_responsesEnabled && _responses != null) {
-      return _responses.memoryContents();
-    } else {
-      return _chat.memoryContents();
-    }
-  }
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) async {
-    // Use Responses API if enabled, otherwise use Chat Completions API
-    if (_responsesEnabled && _responses != null) {
-      return _responses.summarizeHistory(messages);
-    } else {
-      return _chat.summarizeHistory(messages);
-    }
-  }
-
-  Future<ChatResponse> _chatWithToolsFallback(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
-    TransportCancellation? cancelToken,
-  }) {
-    if (_responsesEnabled && _responses != null) {
-      return _responses.chatWithTools(
-        messages,
-        tools,
-        cancelToken: cancelToken,
-      );
-    }
-
-    return _chat.chatWithTools(
-      messages,
-      tools,
-      cancelToken: cancelToken,
-    );
-  }
-
-  Stream<ChatStreamEvent> _chatStreamFallback(
-    List<ChatMessage> messages, {
-    List<Tool>? tools,
-    TransportCancellation? cancelToken,
-  }) {
-    if (_responsesEnabled && _responses != null) {
-      return _responses.chatStream(
-        messages,
-        tools: tools,
-        cancelToken: cancelToken,
-      );
-    }
-
-    return _chat.chatStream(
+    return _chatFacade.chatStream(
       messages,
       tools: tools,
       cancelToken: cancelToken,
     );
+  }
+
+  @override
+  Future<List<ChatMessage>?> memoryContents() async {
+    return _chatFacade.memoryContents();
+  }
+
+  @override
+  Future<String> summarizeHistory(List<ChatMessage> messages) async {
+    return _chatFacade.summarizeHistory(messages);
   }
 
   // ========== EmbeddingCapability (delegated to embeddings module) ==========
@@ -617,13 +524,4 @@ $conversationContext
         'baseUrl: ${config.baseUrl}'
         ')';
   }
-}
-
-bool _supportsRootOpenAIChatBridge(OpenAIConfig config) {
-  // The root-provider modern bridge is intentionally narrowed to official
-  // OpenAI-hosted requests. Deprecated OpenAI-compatible preset helpers stay on
-  // the compatibility fallback path until or unless the project chooses a
-  // separate provider-owned migration for them.
-  final uri = Uri.tryParse(config.baseUrl);
-  return uri?.host.toLowerCase() == 'api.openai.com';
 }

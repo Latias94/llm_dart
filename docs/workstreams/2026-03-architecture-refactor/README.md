@@ -453,6 +453,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Status note for extracting the shared OpenAI-family streamed reasoning,
     tool-call-delta, and thinking-tag parsing state used by both
     chat-completions and Responses compatibility codecs.
+- [159-openai-provider-chat-facade.md](159-openai-provider-chat-facade.md)
+  - Status note for moving the remaining root OpenAI chat bridge and fallback
+    routing out of `OpenAIProvider` into a local facade so the public provider
+    shell keeps shrinking toward pure capability composition.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)

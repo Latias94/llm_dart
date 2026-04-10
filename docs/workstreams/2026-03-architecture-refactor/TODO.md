@@ -186,6 +186,7 @@
 - [x] Collapse the remaining repeated OpenAI compatibility request shells behind a provider-local helper without widening the shared compatibility HTTP layer
 - [x] Extract shared OpenAI-family compatibility request-body field encoding so chat-completions and Responses stop duplicating the same common parameter shaping
 - [x] Extract shared OpenAI-family streamed reasoning and tool-call delta parsing state so chat-completions and Responses stop duplicating the same incremental parsing mechanics
+- [x] Move the remaining root OpenAI chat bridge and fallback routing out of `OpenAIProvider` into a local chat facade so the public provider shell keeps shrinking toward composition-only code
 
 ## Community Providers
 
