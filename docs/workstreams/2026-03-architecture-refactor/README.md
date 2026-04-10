@@ -469,6 +469,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Status note for splitting the mixed OpenAI-family compatibility builder
     shell into provider/profile-specific slices while keeping the compatibility
     surface stable.
+- [163-anthropic-compat-shell-and-adapter-split.md](163-anthropic-compat-shell-and-adapter-split.md)
+  - Status note for thinning the Anthropic compatibility shell while keeping
+    the replay-heavy legacy conversion logic together in a provider-local
+    adapter.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
@@ -608,6 +612,9 @@ This workstream is not about a file-moving refactor. It is about defining stable
   split into a thin barrel plus provider/profile-specific slices, so OpenAI,
   OpenRouter, DeepSeek, Groq, and xAI compatibility adjustments no longer
   accumulate in one family-level bus file
+- the Anthropic compatibility path is now also split more honestly into a thin
+  shell plus a provider-local legacy adapter, instead of keeping builder
+  wiring and replay-heavy conversion logic in one file
 - the Ollama root shell is now also slightly thinner in code ownership terms:
   compatibility config shaping, chat-bridge setup, and embedding delegation
   glue no longer live inline inside `lib/providers/ollama/provider.dart`, but
