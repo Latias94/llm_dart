@@ -477,6 +477,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Re-audit of the remaining event, step-lifecycle, and UI-stream gap against
     the current `repo-ref/ai` implementation after the narrow runner and
     `ChatUiStreamChunk` work already landed.
+- [165-streamed-runner-design.md](165-streamed-runner-design.md)
+  - Frozen additive design for a narrow streamed multi-step runner above
+    `streamText(...)`, including the stitched event stream, `stepStream`, and
+    the explicit non-goals versus the broader reference orchestration surface.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
@@ -536,7 +540,7 @@ This workstream is not about a file-moving refactor. It is about defining stable
 ### Remaining Structural Gaps Versus `repo-ref/ai`
 
 - Shared structured output now exists in `llm_dart_core` through `OutputSpec`, `generateOutput(...)`, `streamOutput(...)`, and `streamOutputResult(...)`, and the additive main-call layer now also exists through `generateTextCall(...)` and `streamTextCall(...)`; legacy compatibility `jsonSchema` now also routes through the shared `responseFormat` path, streamed structured output now has dedicated `partialOutputStream`, `elementStream<T>()`, and final `output/result` surfaces above the raw event stream, and the naming direction is now frozen: the additive call layer is the app-facing text API while the original helper names remain the low-level raw layer.
-- The shared runner is intentionally narrow and non-streaming; the reference still has a more mature streamed multi-step orchestration loop.
+- The shared runner stack now also includes `StreamTextRunner` / `streamTextRun(...)`, which stitches single-step provider streams into a narrow multi-step run stream plus `stepStream` and final `result`; the remaining gap versus `repo-ref/ai` is no longer the existence of streamed orchestration itself, but the intentionally deferred breadth such as `prepareStep`, richer stop policies, retry/model switching, and higher-level UI-oriented stream processing.
 - Shared capability helper parity now also exists in `llm_dart_core` through `embed(...)`, `embedMany(...)`, `generateImage(...)`, `generateSpeech(...)`, and `transcribe(...)`; embedding, image, and speech migrations now already exist across the OpenAI-family and Google providers through `OpenAI.embeddingModel(...)`, `OpenAI.imageModel(...)`, `OpenAI.speechModel(...)`, `Google.embeddingModel(...)`, `Google.imageModel(...)`, and `Google.speechModel(...)`, and the OpenAI family now also has package-owned `transcriptionModel(...)` migrations. The remaining Google gap is now provider-owned streamed TTS maturity plus the still-open question of whether a Google-specific audio-understanding helper is worth adding above multimodal prompting, while the legacy multimodal-output projection intentionally remains thin and the shared embedding boundary still does not yet define chunk-splitting policy; Anthropic is now mostly down to optional custom tool-reference helpers and provider-owned selection, not a replay-policy tail or a separate non-text model migration track.
 - OpenAI-family chat migration is closer to the reference now that the chat-completions path accepts user image/audio/PDF file inputs, the Responses-first compatibility route again covers the common user image/file subset, both OpenAI text paths now align on provider-owned reasoning-model compatibility such as `reasoningEffort`, `forceReasoning`, `systemMessageMode`, and `serviceTier` validation, the OpenAI-owned Responses persistence subset now also exists through `store`, `conversation`, `item_reference`, and replay-branch encoding without widening the shared core, the provider-owned native-tool declaration surface now also covers `image_generation`, `mcp`, and `code_interpreter`, and the provider-owned output/helper layer now covers the current high-value custom payloads. The main remaining OpenAI-owned gap is now mostly a restraint decision: keep the remaining execution-heavy hosted-tool families deferred unless a concrete product need appears, while assistant replay remains intentionally conservative on the chat-completions path.
 - OpenAI provider-owned `logprobs` handling is now aligned with `repo-ref/ai` through typed `OpenAIGenerateTextOptions.logprobs`, Responses-side automatic `include/top_logprobs` encoding, and text-part / stream-event provider metadata decode, without widening the shared text-generation contract.
@@ -620,9 +624,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   shell plus a provider-local legacy adapter, instead of keeping builder
   wiring and replay-heavy conversion logic in one file
 - the remaining reference-alignment gap is now also more explicit: the next
-  worthwhile maturity work is a streamed runner above raw model streams, and
-  possibly a lightweight UI-stream helper above `ChatUiStreamChunk`, not more
-  shared core events
+  worthwhile maturity work is no longer raw streamed orchestration itself, but
+  evaluating whether the new streamed runner later needs richer lifecycle
+  metadata or inter-step projection, and possibly a lightweight UI-stream
+  helper above `ChatUiStreamChunk`, not more shared core events
 - the Ollama root shell is now also slightly thinner in code ownership terms:
   compatibility config shaping, chat-bridge setup, and embedding delegation
   glue no longer live inline inside `lib/providers/ollama/provider.dart`, but
