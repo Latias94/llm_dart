@@ -58,6 +58,7 @@
 - [ ] Re-evaluate shared runner expansion only after a replay-safe approval or provider-executed continuation contract is proven across at least two provider families
 - [ ] Re-evaluate whether a constrained pre-step hook or a separate streamed runner is justified after the narrow runner is used by at least two concrete shared call paths
 - [ ] Decide whether streamed multi-step orchestration really needs richer step-start/step-finish metadata in the shared core, or whether that detail should stay in a future UI/transport chunk layer
+- [ ] Evaluate a lightweight `llm_dart_chat` UI-stream helper above `ChatUiStreamChunk` for non-session consumers, instead of widening chunk vocabulary or adding more core events
 - [x] Implement `embed` / `embedMany`
 - [x] Implement `generateImage`
 - [x] Implement `generateSpeech`

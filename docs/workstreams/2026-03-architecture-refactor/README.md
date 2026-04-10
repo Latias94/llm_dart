@@ -473,6 +473,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Status note for thinning the Anthropic compatibility shell while keeping
     the replay-heavy legacy conversion logic together in a provider-local
     adapter.
+- [164-event-and-step-lifecycle-reaudit.md](164-event-and-step-lifecycle-reaudit.md)
+  - Re-audit of the remaining event, step-lifecycle, and UI-stream gap against
+    the current `repo-ref/ai` implementation after the narrow runner and
+    `ChatUiStreamChunk` work already landed.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
@@ -615,6 +619,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - the Anthropic compatibility path is now also split more honestly into a thin
   shell plus a provider-local legacy adapter, instead of keeping builder
   wiring and replay-heavy conversion logic in one file
+- the remaining reference-alignment gap is now also more explicit: the next
+  worthwhile maturity work is a streamed runner above raw model streams, and
+  possibly a lightweight UI-stream helper above `ChatUiStreamChunk`, not more
+  shared core events
 - the Ollama root shell is now also slightly thinner in code ownership terms:
   compatibility config shaping, chat-bridge setup, and embedding delegation
   glue no longer live inline inside `lib/providers/ollama/provider.dart`, but
