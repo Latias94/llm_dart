@@ -457,6 +457,14 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Status note for moving the remaining root OpenAI chat bridge and fallback
     routing out of `OpenAIProvider` into a local facade so the public provider
     shell keeps shrinking toward pure capability composition.
+- [160-legacy-retention-and-removal-policy.md](160-legacy-retention-and-removal-policy.md)
+  - Frozen policy for keeping the legacy compatibility surface as an explicit
+    migration shell while continuing to move real implementation weight into
+    provider-owned packages and shared helpers.
+- [161-provider-shell-remaining-weight-audit.md](161-provider-shell-remaining-weight-audit.md)
+  - Audit of the heaviest remaining compatibility provider-shell files, plus
+    the recommended next decomposition order after the recent OpenAI shell
+    thinning rounds.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
