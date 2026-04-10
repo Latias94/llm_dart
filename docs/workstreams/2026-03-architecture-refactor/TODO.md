@@ -183,6 +183,7 @@
 - [x] Let shared `HttpResponseHandler.postJson(...)` accept provider-specific Dio error mappers so DeepSeek-style compatibility semantics survive the shared helper path
 - [x] Add shared `HttpResponseHandler.postTextStream(...)` mechanics and migrate the repeated DeepSeek/Groq/xAI/Ollama stream-request shells onto it
 - [x] Move the remaining Phind and ElevenLabs outlier request shells onto the shared compatibility request executor while keeping their provider-local response projections
+- [x] Collapse the remaining repeated OpenAI compatibility request shells behind a provider-local helper without widening the shared compatibility HTTP layer
 
 ## Community Providers
 

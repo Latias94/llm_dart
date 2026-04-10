@@ -441,6 +441,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - [155-outlier-client-request-executor-adoption.md](155-outlier-client-request-executor-adoption.md)
   - Status note for moving `PhindClient` and `ElevenLabsClient` onto the shared
     request executor while keeping their provider-local response projections.
+- [156-openai-client-request-helper.md](156-openai-client-request-helper.md)
+  - Status note for collapsing the remaining repeated OpenAI compatibility
+    request shells behind a provider-local helper without widening the shared
+    compatibility HTTP layer.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)

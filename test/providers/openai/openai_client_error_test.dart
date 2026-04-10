@@ -82,5 +82,59 @@ void main() {
       expect(error.message, contains('type: insufficient_quota'));
       expect(error.message, contains('code: insufficient_quota'));
     });
+
+    test('postJson rethrows provider-mapped status errors', () async {
+      final customDio = Dio();
+      customDio.options.baseUrl = 'https://api.openai.com/v1/';
+      customDio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) {
+            handler.resolve(
+              Response(
+                requestOptions: options,
+                statusCode: 401,
+                data: {
+                  'error': {
+                    'message': 'Invalid API key provided',
+                    'type': 'invalid_request_error',
+                    'code': 'invalid_api_key',
+                  },
+                },
+              ),
+            );
+          },
+        ),
+      );
+
+      final llmConfig = LLMConfig(
+        apiKey: 'test-key',
+        baseUrl: 'https://api.openai.com/v1/',
+        model: 'gpt-4o',
+      ).withExtensions({
+        'customDio': customDio,
+      });
+
+      final requestClient = OpenAIClient(
+        OpenAIConfig(
+          apiKey: 'test-key',
+          model: 'gpt-4o',
+          originalConfig: llmConfig,
+        ),
+      );
+
+      try {
+        await requestClient.postJson(
+          'responses',
+          const {
+            'input': 'Hello',
+          },
+        );
+        fail('Expected AuthError');
+      } on AuthError catch (error) {
+        expect(error.message, contains('Invalid API key provided'));
+        expect(error.message, contains('type: invalid_request_error'));
+        expect(error.message, contains('code: invalid_api_key'));
+      }
+    });
   });
 }
