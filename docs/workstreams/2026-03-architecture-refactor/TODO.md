@@ -180,6 +180,7 @@
 - [x] Introduce a thin compatibility-owned Dio request executor and migrate Anthropic/Google compatibility clients off repeated dispatch/cancellation/catch shells
 - [x] Remove the dead root `BaseHttpProvider` legacy shell after all in-repo provider implementations stop inheriting from it
 - [x] Narrow `HttpResponseHandler` to shared JSON parsing and success-status validation, and remove its dead `getJson(...)` helper
+- [x] Let shared `HttpResponseHandler.postJson(...)` accept provider-specific Dio error mappers so DeepSeek-style compatibility semantics survive the shared helper path
 
 ## Community Providers
 

@@ -430,6 +430,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - [152-http-response-status-helper-alignment.md](152-http-response-status-helper-alignment.md)
   - Status note for narrowing `HttpResponseHandler` to shared JSON parsing and
     success-status validation while removing its dead `getJson(...)` helper.
+- [153-provider-specific-postjson-error-mapping.md](153-provider-specific-postjson-error-mapping.md)
+  - Status note for allowing shared `postJson(...)` mechanics to preserve
+    provider-specific Dio error semantics instead of forcing only the generic
+    compatibility mapper.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)

@@ -40,19 +40,15 @@ class DeepSeekClient {
     Map<String, dynamic> data, {
     TransportCancellation? cancelToken,
   }) async {
-    try {
-      return await HttpResponseHandler.postJson(
-        dio,
-        endpoint,
-        data,
-        providerName: 'DeepSeek',
-        logger: logger,
-        cancelToken: cancelToken,
-      );
-    } on DioException catch (e) {
-      logger.severe('HTTP request failed: ${e.message}');
-      throw await DeepSeekErrorHandler.handleDioError(e);
-    }
+    return HttpResponseHandler.postJson(
+      dio,
+      endpoint,
+      data,
+      providerName: 'DeepSeek',
+      logger: logger,
+      cancelToken: cancelToken,
+      mapDioException: DeepSeekErrorHandler.handleDioError,
+    );
   }
 
   /// Make a POST request and return raw stream for SSE

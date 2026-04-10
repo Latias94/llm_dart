@@ -13,6 +13,10 @@ import 'package:llm_dart_transport/llm_dart_transport.dart'
 import '../../../core/cancellation.dart';
 import '../../../core/llm_error.dart';
 
+typedef CompatibilityDioErrorMapper = Future<LLMError> Function(
+  DioException error,
+);
+
 /// Unified HTTP response handler for all providers
 ///
 /// This utility class provides consistent response handling across all
@@ -87,6 +91,7 @@ class HttpResponseHandler {
     Map<String, dynamic>? queryParameters,
     Options? options,
     TransportCancellation? cancelToken,
+    CompatibilityDioErrorMapper? mapDioException,
   }) async {
     final provider = providerName ?? 'Unknown';
     final log = logger ?? _logger;
@@ -115,7 +120,9 @@ class HttpResponseHandler {
       return parseJsonResponse(response.data, providerName: provider);
     } on DioException catch (e) {
       log.severe('$provider HTTP request failed: ${e.message}');
-      throw await DioErrorHandler.handleDioError(e, provider);
+      final dioErrorMapper = mapDioException;
+      throw await (dioErrorMapper?.call(e) ??
+          DioErrorHandler.handleDioError(e, provider));
     } catch (e) {
       if (e is LLMError) {
         rethrow;
