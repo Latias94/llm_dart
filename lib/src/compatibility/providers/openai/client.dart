@@ -374,13 +374,15 @@ class OpenAIClient {
         cancelToken: bindDioCancellation(cancelToken),
       );
 
-      if (logger.isLoggable(Level.FINE)) {
-        logger.fine('OpenAI HTTP status: ${response.statusCode}');
-      }
-
-      if (response.statusCode != 200) {
-        _handleErrorResponse(response, endpoint);
-      }
+      await HttpResponseHandler.ensureSuccessStatus(
+        response,
+        providerName: 'OpenAI',
+        logger: logger,
+        onFailure: (failedResponse) => _handleErrorResponse(
+          failedResponse,
+          endpoint,
+        ),
+      );
 
       // Use unified response parsing while keeping OpenAI's error handling
       return HttpResponseHandler.parseJsonResponse(
@@ -417,13 +419,15 @@ class OpenAIClient {
         cancelToken: bindDioCancellation(cancelToken),
       );
 
-      if (logger.isLoggable(Level.FINE)) {
-        logger.fine('OpenAI HTTP status: ${response.statusCode}');
-      }
-
-      if (response.statusCode != 200) {
-        _handleErrorResponse(response, endpoint);
-      }
+      await HttpResponseHandler.ensureSuccessStatus(
+        response,
+        providerName: 'OpenAI',
+        logger: logger,
+        onFailure: (failedResponse) => _handleErrorResponse(
+          failedResponse,
+          endpoint,
+        ),
+      );
 
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
@@ -451,9 +455,15 @@ class OpenAIClient {
         options: Options(responseType: ResponseType.bytes),
       );
 
-      if (response.statusCode != 200) {
-        _handleErrorResponse(response, endpoint);
-      }
+      await HttpResponseHandler.ensureSuccessStatus(
+        response,
+        providerName: 'OpenAI',
+        logger: logger,
+        onFailure: (failedResponse) => _handleErrorResponse(
+          failedResponse,
+          endpoint,
+        ),
+      );
 
       return response.data as List<int>;
     } on DioException catch (e) {
@@ -484,13 +494,15 @@ class OpenAIClient {
         cancelToken: bindDioCancellation(cancelToken),
       );
 
-      if (logger.isLoggable(Level.FINE)) {
-        logger.fine('OpenAI HTTP status: ${response.statusCode}');
-      }
-
-      if (response.statusCode != 200) {
-        _handleErrorResponse(response, endpoint);
-      }
+      await HttpResponseHandler.ensureSuccessStatus(
+        response,
+        providerName: 'OpenAI',
+        logger: logger,
+        onFailure: (failedResponse) => _handleErrorResponse(
+          failedResponse,
+          endpoint,
+        ),
+      );
 
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
@@ -516,9 +528,15 @@ class OpenAIClient {
         cancelToken: bindDioCancellation(cancelToken),
       );
 
-      if (response.statusCode != 200) {
-        _handleErrorResponse(response, endpoint);
-      }
+      await HttpResponseHandler.ensureSuccessStatus(
+        response,
+        providerName: 'OpenAI',
+        logger: logger,
+        onFailure: (failedResponse) => _handleErrorResponse(
+          failedResponse,
+          endpoint,
+        ),
+      );
 
       return response.data as List<int>;
     } on DioException catch (e) {
@@ -549,13 +567,15 @@ class OpenAIClient {
         cancelToken: bindDioCancellation(cancelToken),
       );
 
-      if (logger.isLoggable(Level.FINE)) {
-        logger.fine('OpenAI HTTP status: ${response.statusCode}');
-      }
-
-      if (response.statusCode != 200) {
-        _handleErrorResponse(response, endpoint);
-      }
+      await HttpResponseHandler.ensureSuccessStatus(
+        response,
+        providerName: 'OpenAI',
+        logger: logger,
+        onFailure: (failedResponse) => _handleErrorResponse(
+          failedResponse,
+          endpoint,
+        ),
+      );
 
       return response.data as Map<String, dynamic>;
     } on DioException catch (e) {
@@ -595,9 +615,15 @@ class OpenAIClient {
         ),
       );
 
-      if (response.statusCode != 200) {
-        _handleErrorResponse(response, endpoint);
-      }
+      await HttpResponseHandler.ensureSuccessStatus(
+        response,
+        providerName: 'OpenAI',
+        logger: logger,
+        onFailure: (failedResponse) => _handleErrorResponse(
+          failedResponse,
+          endpoint,
+        ),
+      );
 
       yield* decodeDioResponseTextStream(
         response.data,

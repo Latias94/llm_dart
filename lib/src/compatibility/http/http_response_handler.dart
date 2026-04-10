@@ -20,6 +20,36 @@ import '../../../core/llm_error.dart';
 class HttpResponseHandler {
   static final Logger _logger = Logger('HttpResponseHandler');
 
+  /// Validates that a compatibility HTTP response uses the expected success status.
+  static Future<void> ensureSuccessStatus(
+    Response response, {
+    required String providerName,
+    Logger? logger,
+    Future<void> Function(Response response)? onFailure,
+  }) async {
+    final log = logger ?? _logger;
+    if (log.isLoggable(Level.FINE)) {
+      log.fine('$providerName HTTP status: ${response.statusCode}');
+    }
+
+    if (response.statusCode == 200) {
+      return;
+    }
+
+    log.severe('$providerName API returned status ${response.statusCode}');
+    final failureHandler = onFailure;
+    if (failureHandler != null) {
+      await failureHandler(response);
+      return;
+    }
+
+    throw DioException(
+      requestOptions: response.requestOptions,
+      response: response,
+      message: '$providerName API returned status ${response.statusCode}',
+    );
+  }
+
   /// Parse HTTP response data to Map\<String, dynamic\>
   static Map<String, dynamic> parseJsonResponse(
     dynamic responseData, {
@@ -76,18 +106,11 @@ class HttpResponseHandler {
         cancelToken: bindDioCancellation(cancelToken),
       );
 
-      if (log.isLoggable(Level.FINE)) {
-        log.fine('$provider HTTP status: ${response.statusCode}');
-      }
-
-      if (response.statusCode != 200) {
-        log.severe('$provider API returned status ${response.statusCode}');
-        throw DioException(
-          requestOptions: response.requestOptions,
-          response: response,
-          message: '$provider API returned status ${response.statusCode}',
-        );
-      }
+      await ensureSuccessStatus(
+        response,
+        providerName: provider,
+        logger: log,
+      );
 
       return parseJsonResponse(response.data, providerName: provider);
     } on DioException catch (e) {
@@ -102,55 +125,4 @@ class HttpResponseHandler {
     }
   }
 
-  /// Create a standardized getJson method for providers
-  static Future<Map<String, dynamic>> getJson(
-    Dio dio,
-    String endpoint, {
-    String? providerName,
-    Logger? logger,
-    Map<String, dynamic>? queryParameters,
-    Options? options,
-    TransportCancellation? cancelToken,
-  }) async {
-    final provider = providerName ?? 'Unknown';
-    final log = logger ?? _logger;
-
-    try {
-      if (log.isLoggable(Level.FINE)) {
-        log.fine(
-            '$provider request: GET ${LogSanitizer.sanitizeEndpoint(endpoint)}');
-      }
-
-      final response = await dio.get(
-        endpoint,
-        queryParameters: queryParameters,
-        options: options,
-        cancelToken: bindDioCancellation(cancelToken),
-      );
-
-      if (log.isLoggable(Level.FINE)) {
-        log.fine('$provider HTTP status: ${response.statusCode}');
-      }
-
-      if (response.statusCode != 200) {
-        log.severe('$provider API returned status ${response.statusCode}');
-        throw DioException(
-          requestOptions: response.requestOptions,
-          response: response,
-          message: '$provider API returned status ${response.statusCode}',
-        );
-      }
-
-      return parseJsonResponse(response.data, providerName: provider);
-    } on DioException catch (e) {
-      log.severe('$provider HTTP GET request failed: ${e.message}');
-      throw await DioErrorHandler.handleDioError(e, provider);
-    } catch (e) {
-      if (e is LLMError) {
-        rethrow;
-      }
-      log.severe('Unexpected error in $provider getJson: $e');
-      throw GenericError('Unexpected error: $e');
-    }
-  }
 }

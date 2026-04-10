@@ -427,6 +427,9 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - [151-remove-dead-base-http-provider.md](151-remove-dead-base-http-provider.md)
   - Status note for removing the now-unused `BaseHttpProvider` legacy shell
     from the root compatibility surface.
+- [152-http-response-status-helper-alignment.md](152-http-response-status-helper-alignment.md)
+  - Status note for narrowing `HttpResponseHandler` to shared JSON parsing and
+    success-status validation while removing its dead `getJson(...)` helper.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)

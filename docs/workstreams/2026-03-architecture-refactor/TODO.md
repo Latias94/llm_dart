@@ -179,6 +179,7 @@
 - [x] Extract raw Dio error-response text collection into `llm_dart_transport` and share parsed-error extraction between root `DioErrorHandler` and the OpenAI compatibility client
 - [x] Introduce a thin compatibility-owned Dio request executor and migrate Anthropic/Google compatibility clients off repeated dispatch/cancellation/catch shells
 - [x] Remove the dead root `BaseHttpProvider` legacy shell after all in-repo provider implementations stop inheriting from it
+- [x] Narrow `HttpResponseHandler` to shared JSON parsing and success-status validation, and remove its dead `getJson(...)` helper
 
 ## Community Providers
 
