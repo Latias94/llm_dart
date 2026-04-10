@@ -465,6 +465,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Audit of the heaviest remaining compatibility provider-shell files, plus
     the recommended next decomposition order after the recent OpenAI shell
     thinning rounds.
+- [162-openai-family-compat-provider-split.md](162-openai-family-compat-provider-split.md)
+  - Status note for splitting the mixed OpenAI-family compatibility builder
+    shell into provider/profile-specific slices while keeping the compatibility
+    surface stable.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
@@ -600,6 +604,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   adaptation, and residual provider-shaped modules still keep more
   implementation weight in the root package than the long-term architecture
   wants
+- the previous mixed `openai_family_compat_provider.dart` shell is now also
+  split into a thin barrel plus provider/profile-specific slices, so OpenAI,
+  OpenRouter, DeepSeek, Groq, and xAI compatibility adjustments no longer
+  accumulate in one family-level bus file
 - the Ollama root shell is now also slightly thinner in code ownership terms:
   compatibility config shaping, chat-bridge setup, and embedding delegation
   glue no longer live inline inside `lib/providers/ollama/provider.dart`, but
