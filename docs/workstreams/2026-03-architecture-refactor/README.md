@@ -438,6 +438,9 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Status note for introducing a shared streamed-text POST helper and moving
     another batch of root-hosted provider clients onto the same HTTP streaming
     mechanics.
+- [155-outlier-client-request-executor-adoption.md](155-outlier-client-request-executor-adoption.md)
+  - Status note for moving `PhindClient` and `ElevenLabsClient` onto the shared
+    request executor while keeping their provider-local response projections.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)

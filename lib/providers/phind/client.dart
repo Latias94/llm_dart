@@ -1,10 +1,15 @@
 import 'dart:convert';
 import 'package:llm_dart_transport/dio.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart'
-    show Level, Logger, ProviderDioClientFactory, bindDioCancellation;
+    show
+        Level,
+        Logger,
+        ProviderDioClientFactory,
+        decodeDioResponseTextStream;
 
 import '../../core/cancellation.dart';
 import '../../core/llm_error.dart';
+import '../../src/compatibility/http/dio_request_executor.dart';
 import 'config.dart';
 import 'dio_strategy.dart';
 
@@ -17,12 +22,21 @@ class PhindClient {
 
   final PhindConfig config;
   late final Dio _dio;
+  late final CompatibilityDioRequestExecutor _requestExecutor;
 
   PhindClient(this.config) {
     // Use unified Dio client factory with Phind-specific strategy
     _dio = ProviderDioClientFactory.create(
       strategy: PhindDioStrategy(),
       config: config,
+    );
+    _requestExecutor = CompatibilityDioRequestExecutor(
+      dio: _dio,
+      logger: _logger,
+      mapDioException: (error) => DioErrorHandler.handleDioError(
+        error,
+        'Phind',
+      ),
     );
   }
 
@@ -35,44 +49,36 @@ class PhindClient {
     Map<String, dynamic> data, {
     TransportCancellation? cancelToken,
   }) async {
-    try {
-      if (_logger.isLoggable(Level.FINE)) {
-        _logger.fine('Phind request payload: ${jsonEncode(data)}');
-      }
-
-      final response = await _dio.post(
-        endpoint,
-        data: data,
-        cancelToken: bindDioCancellation(cancelToken),
-      );
-
-      _logger.info('Phind HTTP status: ${response.statusCode}');
-
-      if (response.statusCode != 200) {
-        throw ProviderError(
-          'Phind API returned status ${response.statusCode}: ${response.data}',
-        );
-      }
-
-      // Phind returns streaming response even for non-streaming requests
-      final responseText = response.data as String;
-      final content = _parsePhindStreamResponse(responseText);
-
-      if (content.isEmpty) {
-        throw const ProviderError('No completion choice returned.');
-      }
-
-      // Return a mock JSON response with the parsed content
-      return {
-        'choices': [
-          {
-            'message': {'content': content}
-          }
-        ]
-      };
-    } on DioException catch (e) {
-      throw await DioErrorHandler.handleDioError(e, 'Phind');
+    if (_logger.isLoggable(Level.FINE)) {
+      _logger.fine('Phind request payload: ${jsonEncode(data)}');
     }
+
+    final response = await _requestExecutor.request(
+      'POST',
+      endpoint,
+      data: data,
+      cancelToken: cancelToken,
+      failureLogMessage: 'HTTP request',
+    );
+
+    _ensureSuccessStatus(response, includeBody: true);
+
+    // Phind returns streaming response even for non-streaming requests
+    final responseText = response.data as String;
+    final content = _parsePhindStreamResponse(responseText);
+
+    if (content.isEmpty) {
+      throw const ProviderError('No completion choice returned.');
+    }
+
+    // Return a mock JSON response with the parsed content
+    return {
+      'choices': [
+        {
+          'message': {'content': content}
+        }
+      ]
+    };
   }
 
   /// Make a POST request and return raw stream
@@ -81,33 +87,40 @@ class PhindClient {
     Map<String, dynamic> data, {
     TransportCancellation? cancelToken,
   }) async* {
-    try {
-      if (_logger.isLoggable(Level.FINE)) {
-        _logger.fine('Phind stream request payload: ${jsonEncode(data)}');
-      }
-
-      final response = await _dio.post(
-        endpoint,
-        data: data,
-        cancelToken: bindDioCancellation(cancelToken),
-        options: Options(responseType: ResponseType.stream),
-      );
-
-      _logger.info('Phind stream HTTP status: ${response.statusCode}');
-
-      if (response.statusCode != 200) {
-        throw ProviderError(
-          'Phind API returned status ${response.statusCode}',
-        );
-      }
-
-      final stream = response.data as ResponseBody;
-      await for (final chunk in stream.stream.map(utf8.decode)) {
-        yield chunk;
-      }
-    } on DioException catch (e) {
-      throw await DioErrorHandler.handleDioError(e, 'Phind');
+    if (_logger.isLoggable(Level.FINE)) {
+      _logger.fine('Phind stream request payload: ${jsonEncode(data)}');
     }
+
+    final response = await _requestExecutor.request(
+      'POST',
+      endpoint,
+      data: data,
+      cancelToken: cancelToken,
+      options: Options(responseType: ResponseType.stream),
+      failureLogMessage: 'Stream request',
+    );
+
+    _ensureSuccessStatus(response);
+
+    yield* decodeDioResponseTextStream(
+      response.data,
+      invalidBodyErrorFactory: Exception.new,
+    );
+  }
+
+  void _ensureSuccessStatus(
+    Response response, {
+    bool includeBody = false,
+  }) {
+    _logger.info('Phind HTTP status: ${response.statusCode}');
+    if (response.statusCode == 200) {
+      return;
+    }
+
+    final suffix = includeBody ? ': ${response.data}' : '';
+    throw ProviderError(
+      'Phind API returned status ${response.statusCode}$suffix',
+    );
   }
 
   /// Parse the complete Phind streaming response into a single string

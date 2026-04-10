@@ -4,10 +4,10 @@ import 'package:llm_dart_transport/llm_dart_transport.dart'
     show
         Logger,
         ProviderDioClientFactory,
-        TransportCancellation,
-        bindDioCancellation;
+        TransportCancellation;
 
 import '../../core/llm_error.dart';
+import '../../src/compatibility/http/dio_request_executor.dart';
 import 'config.dart';
 import 'dio_strategy.dart';
 
@@ -20,6 +20,7 @@ class ElevenLabsClient {
 
   final ElevenLabsConfig config;
   late final Dio _dio;
+  late final CompatibilityDioRequestExecutor _requestExecutor;
 
   ElevenLabsClient(this.config) {
     // Use unified Dio client factory with ElevenLabs-specific strategy
@@ -27,6 +28,14 @@ class ElevenLabsClient {
       strategy: ElevenLabsDioStrategy(),
       config: config,
       overrides: config.dioOverrides,
+    );
+    _requestExecutor = CompatibilityDioRequestExecutor(
+      dio: _dio,
+      logger: _logger,
+      mapDioException: (error) => DioErrorHandler.handleDioError(
+        error,
+        'ElevenLabs',
+      ),
     );
   }
 
@@ -41,22 +50,15 @@ class ElevenLabsClient {
     String endpoint, {
     TransportCancellation? cancelToken,
   }) async {
-    try {
-      final response = await _dio.get(
-        endpoint,
-        cancelToken: bindDioCancellation(cancelToken),
-      );
+    final response = await _requestExecutor.request(
+      'GET',
+      endpoint,
+      cancelToken: cancelToken,
+      failureLogMessage: 'HTTP GET request',
+    );
 
-      if (response.statusCode != 200) {
-        throw ProviderError(
-          'ElevenLabs API returned status ${response.statusCode}: ${response.data}',
-        );
-      }
-
-      return response.data as Map<String, dynamic>;
-    } on DioException catch (e) {
-      throw await DioErrorHandler.handleDioError(e, 'ElevenLabs');
-    }
+    _ensureSuccessStatus(response, includeBody: true);
+    return response.data as Map<String, dynamic>;
   }
 
   /// Make a GET request and return list response
@@ -64,22 +66,15 @@ class ElevenLabsClient {
     String endpoint, {
     TransportCancellation? cancelToken,
   }) async {
-    try {
-      final response = await _dio.get(
-        endpoint,
-        cancelToken: bindDioCancellation(cancelToken),
-      );
+    final response = await _requestExecutor.request(
+      'GET',
+      endpoint,
+      cancelToken: cancelToken,
+      failureLogMessage: 'HTTP GET request',
+    );
 
-      if (response.statusCode != 200) {
-        throw ProviderError(
-          'ElevenLabs API returned status ${response.statusCode}: ${response.data}',
-        );
-      }
-
-      return response.data as List<dynamic>;
-    } on DioException catch (e) {
-      throw await DioErrorHandler.handleDioError(e, 'ElevenLabs');
-    }
+    _ensureSuccessStatus(response, includeBody: true);
+    return response.data as List<dynamic>;
   }
 
   /// Make a POST request and return binary response (for TTS)
@@ -89,25 +84,18 @@ class ElevenLabsClient {
     Map<String, String>? queryParams,
     TransportCancellation? cancelToken,
   }) async {
-    try {
-      final response = await _dio.post(
-        endpoint,
-        data: data,
-        queryParameters: queryParams,
-        cancelToken: bindDioCancellation(cancelToken),
-        options: Options(responseType: ResponseType.bytes),
-      );
+    final response = await _requestExecutor.request(
+      'POST',
+      endpoint,
+      data: data,
+      queryParameters: queryParams,
+      cancelToken: cancelToken,
+      options: Options(responseType: ResponseType.bytes),
+      failureLogMessage: 'HTTP binary request',
+    );
 
-      if (response.statusCode != 200) {
-        throw ProviderError(
-          'ElevenLabs API returned status ${response.statusCode}',
-        );
-      }
-
-      return Uint8List.fromList(response.data as List<int>);
-    } on DioException catch (e) {
-      throw await DioErrorHandler.handleDioError(e, 'ElevenLabs');
-    }
+    _ensureSuccessStatus(response);
+    return Uint8List.fromList(response.data as List<int>);
   }
 
   /// Make a POST request with form data and return JSON response (for STT)
@@ -117,43 +105,33 @@ class ElevenLabsClient {
     Map<String, String>? queryParams,
     TransportCancellation? cancelToken,
   }) async {
+    final response = await _requestExecutor.request(
+      'POST',
+      endpoint,
+      data: formData,
+      cancelToken: cancelToken,
+      queryParameters: queryParams,
+      options: Options(headers: {'xi-api-key': config.apiKey}),
+      failureLogMessage: 'HTTP form request',
+    );
+
+    _ensureSuccessStatus(
+      response,
+      customMessage: 'ElevenLabs STT API returned status ${response.statusCode}',
+    );
+
     try {
-      final response = await _dio.post(
-        endpoint,
-        data: formData,
-        cancelToken: bindDioCancellation(cancelToken),
-        queryParameters: queryParams,
-        options: Options(headers: {'xi-api-key': config.apiKey}),
-      );
-
-      if (response.statusCode != 200) {
-        throw ProviderError(
-          'ElevenLabs STT API returned status ${response.statusCode}',
-        );
-      }
-
       // Handle both JSON and string responses like original implementation
       final responseData = response.data;
       if (responseData is Map<String, dynamic>) {
         return responseData;
       } else if (responseData is String) {
-        // Try to parse as JSON if it's a string
-        try {
-          final Map<String, dynamic> parsed = {};
-          // For simple text responses, wrap in a text field
-          parsed['text'] = responseData;
-          return parsed;
-        } catch (e) {
-          throw ResponseFormatError(
-            'Failed to parse ElevenLabs STT response: $e',
-            responseData,
-          );
-        }
+        final Map<String, dynamic> parsed = {};
+        parsed['text'] = responseData;
+        return parsed;
       } else {
         return responseData as Map<String, dynamic>;
       }
-    } on DioException catch (e) {
-      throw await DioErrorHandler.handleDioError(e, 'ElevenLabs');
     } catch (e) {
       if (e is LLMError) rethrow;
       throw GenericError('Unexpected error: $e');
@@ -163,5 +141,20 @@ class ElevenLabsClient {
   /// Get response headers from last request
   String? getContentType(Response response) {
     return response.headers.value('content-type');
+  }
+
+  void _ensureSuccessStatus(
+    Response response, {
+    bool includeBody = false,
+    String? customMessage,
+  }) {
+    if (response.statusCode == 200) {
+      return;
+    }
+
+    final message = customMessage ??
+        'ElevenLabs API returned status ${response.statusCode}'
+            '${includeBody ? ': ${response.data}' : ''}';
+    throw ProviderError(message);
   }
 }
