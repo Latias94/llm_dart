@@ -5,12 +5,11 @@ import '../../../../core/llm_error.dart';
 import '../../../../models/chat_models.dart';
 import '../../../../models/responses_models.dart';
 import '../../../../models/tool_models.dart';
-import '../../../config/legacy_config_keys.dart';
-import '../../../config/legacy_provider_options.dart';
 import '../../../../utils/reasoning_utils.dart';
 import 'client.dart';
 import '../../../../providers/openai/config.dart';
 import 'config_views.dart';
+import 'request_body_support.dart';
 import 'responses_capability.dart';
 
 /// OpenAI Responses API capability implementation
@@ -294,17 +293,11 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
   ) {
     final requestConfig = config.requestCompat;
     final responsesConfig = config.responsesCompat;
-    // Convert messages to API format
-    final apiMessages = client.buildApiMessages(messages);
-
-    // Handle system prompt: prefer explicit system messages over config
-    final hasSystemMessage = messages.any((m) => m.role == ChatRole.system);
-
-    // Only add config system prompt if no explicit system message exists
-    if (!hasSystemMessage && requestConfig.systemPrompt != null) {
-      apiMessages
-          .insert(0, {'role': 'system', 'content': requestConfig.systemPrompt});
-    }
+    final apiMessages = buildOpenAICompatApiMessages(
+      client: client,
+      requestConfig: requestConfig,
+      messages: messages,
+    );
 
     final body = <String, dynamic>{
       'model': requestConfig.model,
@@ -318,33 +311,19 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
       body['previous_response_id'] = responsesConfig.previousResponseId;
     }
 
-    // Add optional parameters using reasoning utils
-    body.addAll(
-      ReasoningUtils.getMaxTokensParams(
-        model: requestConfig.model,
-        maxTokens: requestConfig.maxTokens,
-      ),
-    );
-
-    // Add temperature if not disabled for reasoning models
-    if (requestConfig.temperature != null &&
-        !ReasoningUtils.shouldDisableTemperature(requestConfig.model)) {
-      body['temperature'] = requestConfig.temperature;
-    }
-
-    // Add top_p if not disabled for reasoning models
-    if (requestConfig.topP != null &&
-        !ReasoningUtils.shouldDisableTopP(requestConfig.model)) {
-      body['top_p'] = requestConfig.topP;
-    }
-    if (requestConfig.topK != null) body['top_k'] = requestConfig.topK;
-
     // Add reasoning effort parameters (Responses API format)
     if (requestConfig.reasoningEffort != null) {
       body['reasoning'] = {
         'effort': requestConfig.reasoningEffort!.value,
       };
     }
+
+    applyOpenAICompatCommonRequestFields(
+      body: body,
+      client: client,
+      config: config,
+      requestConfig: requestConfig,
+    );
 
     // Build tools array combining function tools and built-in tools
     final allTools = <Map<String, dynamic>>[];
@@ -374,120 +353,7 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
       }
     }
 
-    // Add structured output if configured
-    if (requestConfig.jsonSchema != null) {
-      final schema = requestConfig.jsonSchema!;
-      final responseFormat = <String, dynamic>{
-        'type': 'json_schema',
-        'json_schema': schema.toJson(),
-      };
-
-      // Ensure additionalProperties is set to false for OpenAI compliance
-      if (schema.schema != null) {
-        final schemaMap = Map<String, dynamic>.from(schema.schema!);
-        if (!schemaMap.containsKey('additionalProperties')) {
-          schemaMap['additionalProperties'] = false;
-        }
-        responseFormat['json_schema'] = {
-          'name': schema.name,
-          if (schema.description != null) 'description': schema.description,
-          'schema': schemaMap,
-          if (schema.strict != null) 'strict': schema.strict,
-        };
-      }
-
-      body['response_format'] = responseFormat;
-    }
-
-    // Add common parameters
-    if (requestConfig.stopSequences != null &&
-        requestConfig.stopSequences!.isNotEmpty) {
-      body['stop'] = requestConfig.stopSequences;
-    }
-
-    if (requestConfig.user != null) {
-      body['user'] = requestConfig.user;
-    }
-
-    if (requestConfig.serviceTier != null) {
-      body['service_tier'] = requestConfig.serviceTier!.value;
-    }
-
-    // Determine if this is an OpenAI reasoning model (GPT-5 family, o1/o3/o4, etc.)
-    final isOpenAIReasoningModel = client.providerId == 'openai' &&
-        ReasoningUtils.isOpenAIReasoningModel(requestConfig.model);
-
-    // Add OpenAI-specific extension parameters
-    //
-    // For OpenAI reasoning models, some parameters are not supported and
-    // should be omitted to avoid API errors.
-    final frequencyPenalty = _getOpenAIFamilyProviderOption<double>(
-      LegacyExtensionKeys.frequencyPenalty,
-    );
-    if (frequencyPenalty != null && !isOpenAIReasoningModel) {
-      body['frequency_penalty'] = frequencyPenalty;
-    }
-
-    final presencePenalty = _getOpenAIFamilyProviderOption<double>(
-      LegacyExtensionKeys.presencePenalty,
-    );
-    if (presencePenalty != null && !isOpenAIReasoningModel) {
-      body['presence_penalty'] = presencePenalty;
-    }
-
-    final logitBias = _getOpenAIFamilyProviderOption<Map<String, double>>(
-      LegacyExtensionKeys.logitBias,
-    );
-    if (logitBias != null && logitBias.isNotEmpty && !isOpenAIReasoningModel) {
-      body['logit_bias'] = logitBias;
-    }
-
-    final seed = _getOpenAIFamilyProviderOption<int>(LegacyExtensionKeys.seed);
-    if (seed != null) {
-      body['seed'] = seed;
-    }
-
-    final parallelToolCalls = _getOpenAIFamilyProviderOption<bool>(
-      LegacyExtensionKeys.parallelToolCalls,
-    );
-    if (parallelToolCalls != null) {
-      body['parallel_tool_calls'] = parallelToolCalls;
-    }
-
-    final logprobs = _getOpenAIFamilyProviderOption<bool>(
-      LegacyExtensionKeys.logprobs,
-    );
-    if (logprobs != null && !isOpenAIReasoningModel) {
-      body['logprobs'] = logprobs;
-    }
-
-    final topLogprobs = _getOpenAIFamilyProviderOption<int>(
-      LegacyExtensionKeys.topLogprobs,
-    );
-    if (topLogprobs != null && !isOpenAIReasoningModel) {
-      body['top_logprobs'] = topLogprobs;
-    }
-
     return body;
-  }
-
-  T? _getOpenAIFamilyProviderOption<T>(String key) {
-    final originalConfig = config.originalConfig;
-    if (originalConfig == null) {
-      return config.getExtension<T>(key);
-    }
-
-    final namespace = switch (client.providerId) {
-      'openai' => LegacyProviderOptionNamespaces.openai,
-      'openrouter' => LegacyProviderOptionNamespaces.openrouter,
-      _ => null,
-    };
-
-    if (namespace == null) {
-      return originalConfig.getExtension<T>(key);
-    }
-
-    return getLegacyProviderOption<T>(originalConfig, namespace, key);
   }
 
   /// Parse non-streaming response

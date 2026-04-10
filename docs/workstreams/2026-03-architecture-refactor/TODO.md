@@ -184,6 +184,7 @@
 - [x] Add shared `HttpResponseHandler.postTextStream(...)` mechanics and migrate the repeated DeepSeek/Groq/xAI/Ollama stream-request shells onto it
 - [x] Move the remaining Phind and ElevenLabs outlier request shells onto the shared compatibility request executor while keeping their provider-local response projections
 - [x] Collapse the remaining repeated OpenAI compatibility request shells behind a provider-local helper without widening the shared compatibility HTTP layer
+- [x] Extract shared OpenAI-family compatibility request-body field encoding so chat-completions and Responses stop duplicating the same common parameter shaping
 
 ## Community Providers
 

@@ -445,6 +445,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Status note for collapsing the remaining repeated OpenAI compatibility
     request shells behind a provider-local helper without widening the shared
     compatibility HTTP layer.
+- [157-openai-request-body-support.md](157-openai-request-body-support.md)
+  - Status note for extracting the shared OpenAI-family compatibility
+    request-body field encoding used by both chat-completions and Responses
+    without flattening their API-specific differences.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
