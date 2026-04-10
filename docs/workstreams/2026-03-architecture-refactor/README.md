@@ -481,6 +481,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Frozen additive design for a narrow streamed multi-step runner above
     `streamText(...)`, including the stitched event stream, `stepStream`, and
     the explicit non-goals versus the broader reference orchestration surface.
+- [166-streamed-runner-inter-step-projection-policy.md](166-streamed-runner-inter-step-projection-policy.md)
+  - Frozen policy that keeps `StreamTextRunner.eventStream` provider-step-only
+    in the narrow phase instead of synthesizing local tool-result or other
+    inter-step projection events into the stitched raw event stream.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)

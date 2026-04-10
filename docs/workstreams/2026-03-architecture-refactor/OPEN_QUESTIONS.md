@@ -439,19 +439,22 @@ Resolved in the current breaking round:
   layer
 - `54-main-text-api-naming-freeze.md` records the frozen naming decision
 
-## 36. Whether A Shared Streamed Runner Is Worth Adding
+## 36. Shared Streamed Runner Status
 
-Needs confirmation:
+Resolved in the current breaking round:
 
-- should `llm_dart_core` add a streamed multi-step runner above `streamText(...)`
-- or should the current non-streaming runner remain the only shared
-  orchestration layer for now
-
-Current recommendation:
-
-- keep the current non-streaming runner as the baseline shared layer
-- transport maturity is no longer the blocker; only revisit a streamed runner
-  after at least one concrete shared call path proves the need
+- `llm_dart_core` now also provides `StreamTextRunner` /
+  `streamTextRun(...)` as an additive streamed multi-step orchestration layer
+- `streamText(...)` remains the raw single-step helper
+- the streamed runner stays intentionally narrow and mirrors the same shared
+  continuation subset as `GenerateTextRunner`
+- the stitched `eventStream` now stays provider-step-only in the narrow phase
+  instead of synthesizing local tool-result or other inter-step projection
+  events
+- `165-streamed-runner-design.md` documents the additive streamed-runner
+  boundary
+- `166-streamed-runner-inter-step-projection-policy.md` documents the frozen
+  inter-step projection policy
 
 ## 37. Whether `llm_dart_chat` Needs A Dedicated Finish Callback Surface
 
