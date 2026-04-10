@@ -416,6 +416,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - [148-dio-response-stream-helper-extraction.md](148-dio-response-stream-helper-extraction.md)
   - Status note for moving repeated Dio streaming-response byte/text decoding
     into `llm_dart_transport`.
+- [149-error-response-decoding-alignment.md](149-error-response-decoding-alignment.md)
+  - Status note for moving raw Dio error-body text collection into
+    `llm_dart_transport` and sharing parsed-error extraction across the root
+    compatibility layer.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)

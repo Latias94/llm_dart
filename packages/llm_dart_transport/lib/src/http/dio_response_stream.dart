@@ -39,6 +39,25 @@ Stream<String> decodeDioResponseTextStream(
   ).decodeUtf8Stream();
 }
 
+/// Collects a Dio response body into a single UTF-8 string.
+Future<String> collectDioResponseTextBody(
+  Object? responseBody, {
+  String sourceName = 'response body',
+  Uri? uri,
+  InvalidDioResponseBodyFactory? invalidBodyErrorFactory,
+}) async {
+  final buffer = StringBuffer();
+  await for (final chunk in decodeDioResponseTextStream(
+    responseBody,
+    sourceName: sourceName,
+    uri: uri,
+    invalidBodyErrorFactory: invalidBodyErrorFactory,
+  )) {
+    buffer.write(chunk);
+  }
+  return buffer.toString();
+}
+
 Never _invalidResponseBodyError(
   Object? responseBody, {
   required String sourceName,

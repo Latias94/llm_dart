@@ -176,6 +176,7 @@
 - [x] Remove the direct root `dio` runtime dependency by routing raw Dio imports through explicit `llm_dart_transport` sub-entrypoints instead of the root facade
 - [x] Split legacy `LLMConfig -> DioHttpClientConfig` shaping into the config layer and stop routing compat transport creation through `BaseHttpProvider`
 - [x] Extract repeated Dio streaming-response byte/text decoding into `llm_dart_transport` and switch root compatibility/provider clients to the shared helper
+- [x] Extract raw Dio error-response text collection into `llm_dart_transport` and share parsed-error extraction between root `DioErrorHandler` and the OpenAI compatibility client
 
 ## Community Providers
 

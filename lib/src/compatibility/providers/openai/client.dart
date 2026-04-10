@@ -622,14 +622,17 @@ class OpenAIClient {
         final responseData = e.response?.data;
 
         if (statusCode != null) {
-          // Use HttpErrorMapper for consistent error handling
-          final errorMessage =
-              await _extractErrorMessage(responseData) ?? '$statusCode';
-          final responseMap =
-              responseData is Map<String, dynamic> ? responseData : null;
+          final details = await DioErrorHandler.extractErrorResponseDetails(
+            responseData,
+            fallbackMessage: '$statusCode',
+            mapMessageExtractor: _extractErrorMessageFromMap,
+          );
 
           return HttpErrorMapper.mapStatusCode(
-              statusCode, errorMessage, responseMap);
+            statusCode,
+            details.message,
+            details.responseData,
+          );
         } else {
           return ResponseFormatError(
             'HTTP error without status code',
@@ -645,35 +648,6 @@ class OpenAIClient {
       case DioExceptionType.unknown:
         return GenericError('Unknown error: ${e.message}');
     }
-  }
-
-  /// Extract error message from OpenAI API response
-  Future<String?> _extractErrorMessage(dynamic responseData) async {
-    // Handle ResponseBody by reading the stream
-    if (responseData is ResponseBody) {
-      try {
-        final bytes = await responseData.stream.toList();
-        final concatenated = bytes.expand((x) => x).toList();
-        final content = utf8.decode(concatenated);
-
-        // Try to parse as JSON
-        try {
-          final jsonData = jsonDecode(content) as Map<String, dynamic>;
-          return _extractErrorMessageFromMap(jsonData);
-        } catch (_) {
-          // Not JSON, return raw content
-          return content.isNotEmpty ? content : null;
-        }
-      } catch (_) {
-        return null;
-      }
-    }
-
-    if (responseData is Map<String, dynamic>) {
-      return _extractErrorMessageFromMap(responseData);
-    }
-
-    return null;
   }
 
   /// Extract error message from a parsed Map
@@ -706,12 +680,17 @@ class OpenAIClient {
     final errorData = response.data;
 
     if (statusCode != null) {
-      final errorMessage = await _extractErrorMessage(errorData) ??
-          'OpenAI $endpoint API returned error status: $statusCode';
-      final responseMap = errorData is Map<String, dynamic> ? errorData : null;
+      final details = await DioErrorHandler.extractErrorResponseDetails(
+        errorData,
+        fallbackMessage: 'OpenAI $endpoint API returned error status: $statusCode',
+        mapMessageExtractor: _extractErrorMessageFromMap,
+      );
 
       throw HttpErrorMapper.mapStatusCode(
-          statusCode, errorMessage, responseMap);
+        statusCode,
+        details.message,
+        details.responseData,
+      );
     } else {
       throw ResponseFormatError(
         'OpenAI $endpoint API returned unknown error',

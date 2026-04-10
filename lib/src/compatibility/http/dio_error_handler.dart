@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:llm_dart_transport/dio.dart';
+import 'package:llm_dart_transport/llm_dart_transport.dart'
+    show collectDioResponseTextBody;
 
 import '../../llm_error_types.dart';
 
@@ -18,50 +21,12 @@ class DioErrorHandler {
         final statusCode = e.response?.statusCode;
         final data = e.response?.data;
         if (statusCode != null) {
-          String errorMessage = 'Unknown error';
-          Map<String, dynamic>? responseData;
-
-          if (data is Map<String, dynamic>) {
-            responseData = data;
-            final error = data['error'];
-            if (error is Map<String, dynamic>) {
-              errorMessage = error['message']?.toString() ?? data.toString();
-            } else if (error is String) {
-              errorMessage = error;
-            } else {
-              errorMessage = data.toString();
-            }
-          } else if (data is ResponseBody) {
-            try {
-              final bytes = await data.stream.toList();
-              final concatenated = bytes.expand((x) => x).toList();
-              final content = utf8.decode(concatenated);
-
-              try {
-                final jsonData = jsonDecode(content) as Map<String, dynamic>;
-                responseData = jsonData;
-                final error = jsonData['error'];
-                if (error is Map<String, dynamic>) {
-                  errorMessage = error['message']?.toString() ?? content;
-                } else if (error is String) {
-                  errorMessage = error;
-                } else {
-                  errorMessage = content;
-                }
-              } catch (_) {
-                errorMessage = content;
-              }
-            } catch (streamError) {
-              errorMessage = 'Failed to read error response: $streamError';
-            }
-          } else if (data != null) {
-            errorMessage = data.toString();
-          }
+          final details = await extractErrorResponseDetails(data);
 
           return HttpErrorMapper.mapStatusCode(
             statusCode,
-            errorMessage,
-            responseData,
+            details.message,
+            details.responseData,
           );
         } else {
           return ProviderError('$providerName HTTP error: $data');
@@ -75,6 +40,102 @@ class DioErrorHandler {
       case DioExceptionType.unknown:
         return GenericError('$providerName request failed: ${e.message}');
     }
+  }
+
+  /// Extracts a normalized error message and parsed JSON body when available.
+  static Future<({String message, Map<String, dynamic>? responseData})>
+      extractErrorResponseDetails(
+    dynamic data, {
+    String fallbackMessage = 'Unknown error',
+    String? Function(Map<String, dynamic> responseData)? mapMessageExtractor,
+  }) async {
+    if (data is Map<String, dynamic>) {
+      return _buildErrorDetailsFromMap(
+        data,
+        mapMessageExtractor: mapMessageExtractor,
+      );
+    }
+
+    if (data is ResponseBody || data is Stream<List<int>>) {
+      try {
+        final content = await collectDioResponseTextBody(data);
+        if (content.isEmpty) {
+          return (
+            message: fallbackMessage,
+            responseData: null,
+          );
+        }
+
+        final decoded = jsonDecode(content);
+        if (decoded is Map<String, dynamic>) {
+          return _buildErrorDetailsFromMap(
+            decoded,
+            mapMessageExtractor: mapMessageExtractor,
+          );
+        }
+
+        return (
+          message: content,
+          responseData: null,
+        );
+      } catch (streamError) {
+        return (
+          message: 'Failed to read error response: $streamError',
+          responseData: null,
+        );
+      }
+    }
+
+    if (data != null) {
+      return (
+        message: data.toString(),
+        responseData: null,
+      );
+    }
+
+    return (
+      message: fallbackMessage,
+      responseData: null,
+    );
+  }
+
+  static ({String message, Map<String, dynamic>? responseData})
+      _buildErrorDetailsFromMap(
+    Map<String, dynamic> responseData, {
+    String? Function(Map<String, dynamic> responseData)? mapMessageExtractor,
+  }) {
+    final extractedMessage = _extractErrorMessageFromMap(
+      responseData,
+      mapMessageExtractor: mapMessageExtractor,
+    );
+
+    return (
+      message: extractedMessage ?? responseData.toString(),
+      responseData: responseData,
+    );
+  }
+
+  static String? _extractErrorMessageFromMap(
+    Map<String, dynamic> responseData, {
+    String? Function(Map<String, dynamic> responseData)? mapMessageExtractor,
+  }) {
+    final customMessage = mapMessageExtractor?.call(responseData);
+    if (customMessage != null && customMessage.isNotEmpty) {
+      return customMessage;
+    }
+
+    final error = responseData['error'];
+    if (error is Map<String, dynamic>) {
+      return error['message']?.toString() ??
+          responseData['message']?.toString() ??
+          responseData.toString();
+    }
+
+    if (error is String) {
+      return error;
+    }
+
+    return responseData['message']?.toString();
   }
 }
 

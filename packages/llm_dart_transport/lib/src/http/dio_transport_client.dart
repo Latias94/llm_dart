@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:logging/logging.dart';
@@ -378,12 +377,11 @@ final class DioTransportClient implements TransportClient {
   Future<Object?> _readErrorBody(Object? data) async {
     if (data is ResponseBody) {
       try {
-        final chunks = await data.stream.toList();
-        final bytes = chunks.expand((chunk) => chunk).toList();
-        if (bytes.isEmpty) {
+        final content = await collectDioResponseTextBody(data);
+        if (content.isEmpty) {
           return null;
         }
-        return utf8.decode(bytes, allowMalformed: true);
+        return content;
       } catch (error, stackTrace) {
         _logger.fine('Failed to read error response body: $error');
         _logger.finer(stackTrace.toString());
