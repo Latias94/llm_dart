@@ -1,4 +1,4 @@
-import 'package:logging/logging.dart';
+import 'dart:developer' as developer;
 
 import 'capability.dart';
 import 'config.dart';
@@ -38,7 +38,6 @@ abstract class LLMProviderFactory<T extends ChatCapability> {
 class LLMProviderRegistry {
   static final Map<String, LLMProviderFactory> _factories = {};
   static bool _initialized = false;
-  static final Logger _logger = Logger('LLMProviderRegistry');
   static void Function()? _builtinRegistrar;
 
   /// Register a provider factory
@@ -209,8 +208,14 @@ class LLMProviderRegistry {
   static void _registerBuiltinProviders() {
     try {
       _builtinRegistrar?.call();
-    } catch (e) {
-      _logger.warning('Failed to register built-in providers: $e');
+    } catch (error, stackTrace) {
+      developer.log(
+        'Failed to register built-in providers.',
+        name: 'LLMProviderRegistry',
+        level: 900,
+        error: error,
+        stackTrace: stackTrace,
+      );
       // Silently fail if built-in providers are not available.
     }
   }

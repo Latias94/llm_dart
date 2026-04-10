@@ -1,4 +1,4 @@
-import 'package:logging/logging.dart';
+import 'dart:developer' as developer;
 
 import '../../core/capability.dart';
 import '../../core/registry.dart';
@@ -13,7 +13,6 @@ import '../../providers/factories/openai_factory.dart';
 import '../../providers/factories/phind_factory.dart';
 import '../../providers/factories/xai_factory.dart';
 
-final Logger _logger = Logger('RootRegistryBootstrap');
 bool _bootstrapConfigured = false;
 
 /// Ensures the root package built-in provider registrar is configured.
@@ -44,7 +43,11 @@ void _registerIfPresent(
   required String label,
 }) {
   if (factory == null) {
-    _logger.fine('Skipped unavailable $label provider factory.');
+    developer.log(
+      'Skipped unavailable $label provider factory.',
+      name: 'RootRegistryBootstrap',
+      level: 500,
+    );
     return;
   }
 
@@ -54,8 +57,14 @@ void _registerIfPresent(
 LLMProviderFactory<ChatCapability>? _createOpenAIFactory() {
   try {
     return OpenAIProviderFactory();
-  } catch (e) {
-    _logger.warning('Failed to create OpenAI factory: $e');
+  } catch (error, stackTrace) {
+    developer.log(
+      'Failed to create OpenAI factory.',
+      name: 'RootRegistryBootstrap',
+      level: 900,
+      error: error,
+      stackTrace: stackTrace,
+    );
     return null;
   }
 }
@@ -63,8 +72,14 @@ LLMProviderFactory<ChatCapability>? _createOpenAIFactory() {
 LLMProviderFactory<ChatCapability>? _createAnthropicFactory() {
   try {
     return AnthropicProviderFactory();
-  } catch (e) {
-    _logger.warning('Failed to create Anthropic factory: $e');
+  } catch (error, stackTrace) {
+    developer.log(
+      'Failed to create Anthropic factory.',
+      name: 'RootRegistryBootstrap',
+      level: 900,
+      error: error,
+      stackTrace: stackTrace,
+    );
     return null;
   }
 }
@@ -72,8 +87,14 @@ LLMProviderFactory<ChatCapability>? _createAnthropicFactory() {
 LLMProviderFactory? _createDeepSeekFactory() {
   try {
     return DeepSeekProviderFactory();
-  } catch (e) {
-    _logger.warning('Failed to create DeepSeek factory: $e');
+  } catch (error, stackTrace) {
+    developer.log(
+      'Failed to create DeepSeek factory.',
+      name: 'RootRegistryBootstrap',
+      level: 900,
+      error: error,
+      stackTrace: stackTrace,
+    );
     return null;
   }
 }
@@ -81,8 +102,14 @@ LLMProviderFactory? _createDeepSeekFactory() {
 LLMProviderFactory<ChatCapability>? _createOllamaFactory() {
   try {
     return OllamaProviderFactory();
-  } catch (e) {
-    _logger.warning('Failed to create Ollama factory: $e');
+  } catch (error, stackTrace) {
+    developer.log(
+      'Failed to create Ollama factory.',
+      name: 'RootRegistryBootstrap',
+      level: 900,
+      error: error,
+      stackTrace: stackTrace,
+    );
     return null;
   }
 }
@@ -90,8 +117,14 @@ LLMProviderFactory<ChatCapability>? _createOllamaFactory() {
 LLMProviderFactory? _createGoogleFactory() {
   try {
     return GoogleProviderFactory();
-  } catch (e) {
-    _logger.warning('Failed to create Google factory: $e');
+  } catch (error, stackTrace) {
+    developer.log(
+      'Failed to create Google factory.',
+      name: 'RootRegistryBootstrap',
+      level: 900,
+      error: error,
+      stackTrace: stackTrace,
+    );
     return null;
   }
 }
@@ -99,8 +132,14 @@ LLMProviderFactory? _createGoogleFactory() {
 LLMProviderFactory? _createXAIFactory() {
   try {
     return XAIProviderFactory();
-  } catch (e) {
-    _logger.warning('Failed to create xAI factory: $e');
+  } catch (error, stackTrace) {
+    developer.log(
+      'Failed to create xAI factory.',
+      name: 'RootRegistryBootstrap',
+      level: 900,
+      error: error,
+      stackTrace: stackTrace,
+    );
     return null;
   }
 }
@@ -108,8 +147,14 @@ LLMProviderFactory? _createXAIFactory() {
 LLMProviderFactory? _createPhindFactory() {
   try {
     return PhindProviderFactory();
-  } catch (e) {
-    _logger.warning('Failed to create Phind factory: $e');
+  } catch (error, stackTrace) {
+    developer.log(
+      'Failed to create Phind factory.',
+      name: 'RootRegistryBootstrap',
+      level: 900,
+      error: error,
+      stackTrace: stackTrace,
+    );
     return null;
   }
 }
@@ -117,8 +162,14 @@ LLMProviderFactory? _createPhindFactory() {
 LLMProviderFactory? _createGroqFactory() {
   try {
     return GroqProviderFactory();
-  } catch (e) {
-    _logger.warning('Failed to create Groq factory: $e');
+  } catch (error, stackTrace) {
+    developer.log(
+      'Failed to create Groq factory.',
+      name: 'RootRegistryBootstrap',
+      level: 900,
+      error: error,
+      stackTrace: stackTrace,
+    );
     return null;
   }
 }
@@ -126,8 +177,14 @@ LLMProviderFactory? _createGroqFactory() {
 LLMProviderFactory<ChatCapability>? _createElevenLabsFactory() {
   try {
     return ElevenLabsProviderFactory();
-  } catch (e) {
-    _logger.warning('Failed to create ElevenLabs factory: $e');
+  } catch (error, stackTrace) {
+    developer.log(
+      'Failed to create ElevenLabs factory.',
+      name: 'RootRegistryBootstrap',
+      level: 900,
+      error: error,
+      stackTrace: stackTrace,
+    );
     return null;
   }
 }
@@ -135,8 +192,18 @@ LLMProviderFactory<ChatCapability>? _createElevenLabsFactory() {
 void _registerOpenAICompatibleProviders() {
   try {
     OpenAICompatibleProviderRegistrar.registerAll();
-    _logger.fine('Registered OpenAI-compatible providers.');
-  } catch (e) {
-    _logger.warning('Failed to register OpenAI-compatible providers: $e');
+    developer.log(
+      'Registered OpenAI-compatible providers.',
+      name: 'RootRegistryBootstrap',
+      level: 500,
+    );
+  } catch (error, stackTrace) {
+    developer.log(
+      'Failed to register OpenAI-compatible providers.',
+      name: 'RootRegistryBootstrap',
+      level: 900,
+      error: error,
+      stackTrace: stackTrace,
+    );
   }
 }

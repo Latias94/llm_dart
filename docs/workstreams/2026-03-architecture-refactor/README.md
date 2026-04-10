@@ -401,6 +401,9 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - [143-root-cancellation-dio-decoupling.md](143-root-cancellation-dio-decoupling.md)
   - Status note for moving raw Dio cancellation inspection out of the root
     cancellation helper and into the transport layer.
+- [144-root-registry-logging-decoupling.md](144-root-registry-logging-decoupling.md)
+  - Status note for moving root registry/bootstrap diagnostics off
+    `package:logging` and onto SDK logging.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
