@@ -611,6 +611,13 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Closure audit concluding that OpenRouter, xAI, and Phind no longer have
     active migration debt beyond their audited current subsets, and that any
     broader expansion is future provider-owned policy only.
+- [197-anthropic-compat-adapter-closure.md](197-anthropic-compat-adapter-closure.md)
+  - Closure note that keeps the Anthropic compatibility layer on the current
+    thin-shell plus provider-local-adapter split, without more symmetry-driven
+    helper extraction.
+- [198-openai-hosted-tool-future-policy-closure.md](198-openai-hosted-tool-future-policy-closure.md)
+  - Closure note that moves the remaining OpenAI hosted-tool tail out of active
+    migration debt and into future provider-owned policy only.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
@@ -677,6 +684,7 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - public Google native-tool selection is now also explicitly downgraded from active migration work to provider-owned future policy: the Gemini 3 mixed-tool subset and server-side tool circulation contract are implemented enough to prove the provider boundary, but not enough to justify freezing a public forcing API yet
 - the long-tail OpenAI-compatible providers are now also effectively closed at the current scope: OpenRouter keeps the audited online-model subset, xAI keeps the audited live-search subset, and Phind remains facade-only until a stronger provider contract justifies more
 - OpenAI-family migration is now also effectively closed at the current workstream scope: the chat-completions path accepts user image/audio/PDF file inputs, the Responses-first compatibility route again covers the common user image/file subset, both OpenAI text paths now align on provider-owned reasoning-model compatibility such as `reasoningEffort`, `forceReasoning`, `systemMessageMode`, and `serviceTier` validation, the OpenAI-owned Responses persistence subset now also exists through `store`, `conversation`, `item_reference`, and replay-branch encoding without widening the shared core, the provider-owned request-side tool surface now covers `web_search_preview`, `file_search`, `computer_use_preview`, `image_generation`, `mcp`, and `code_interpreter`, and the provider-owned output/helper layer now covers the current high-value custom payloads. The remaining OpenAI-owned gap is now mostly a deliberate future-policy boundary: keep execution-heavy hosted-tool families deferred unless a concrete product need appears, while assistant replay remains intentionally conservative on the chat-completions path.
+- the remaining OpenAI hosted-tool tail is now also explicitly closed as active migration debt: execution-heavy or broader custom replay families remain future provider-owned policy only until a concrete product need appears
 - OpenAI provider-owned `logprobs` handling is now aligned with `repo-ref/ai` through typed `OpenAIGenerateTextOptions.logprobs`, Responses-side automatic `include/top_logprobs` encoding, and text-part / stream-event provider metadata decode, without widening the shared text-generation contract.
 - OpenAI chat-completions request shaping now also aligns better with the reference through provider-owned `systemMessageMode`, including OpenAI reasoning-model defaulting to `developer` without widening the shared prompt model.
 - the lightweight `readChatUiStream(...)` helper is now also frozen on the current result-object direction: persistent snapshots stay on the main stream, step-finish and transient data stay on side streams, and final-state access stays on `result` plus small convenience futures rather than a new callback-heavy or summary-heavy facade
@@ -759,6 +767,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - the Anthropic compatibility path is now also split more honestly into a thin
   shell plus a provider-local legacy adapter, instead of keeping builder
   wiring and replay-heavy conversion logic in one file
+- the Anthropic compatibility adapter is now also explicitly *not* another
+  symmetry target: the current thin-shell plus provider-local-adapter shape is
+  enough unless a new Anthropic-only subdomain grows large enough to justify a
+  more focused split
 - the runner/chat-runtime maturity picture is now also cleaner: raw streamed
   orchestration, the lightweight `llm_dart_chat` middle helper, and the narrow
   shared runner closure rules are all in place, so those areas are no longer

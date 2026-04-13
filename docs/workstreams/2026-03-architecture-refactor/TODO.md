@@ -107,8 +107,8 @@
 - [x] Align the modern OpenAI Responses stream codec on `content_part.done`, annotation dedupe, and final text-part metadata
 - [x] Decide that the public root `OpenAIProvider` chat path should narrow to an internal adapter over modern `llm_dart_openai` for the already-audited bridge-safe subset
 - [x] Decide that deprecated root OpenAI-compatible preset helpers remain fallback-only while migration keeps moving toward provider-owned packages
-- [ ] Future policy: re-evaluate richer OpenAI Responses hosted-tool or custom item-family replay only if a concrete OpenAI-native use case requires it beyond the current common function-tool and MCP continuation subset
-- [ ] Future policy: decide whether OpenAI should keep the remaining advanced hosted-tool families deferred, or add only narrowly-scoped provider-owned helpers if a concrete product need appears
+- [x] Close richer OpenAI Responses hosted-tool or custom item-family replay as active migration debt, and keep any later replay expansion as future provider-owned policy only (see `198-openai-hosted-tool-future-policy-closure.md`)
+- [x] Close the remaining advanced OpenAI hosted-tool families as active migration debt, and keep them deferred unless a concrete product need justifies a narrowly-scoped provider-owned helper (see `198-openai-hosted-tool-future-policy-closure.md`)
 - [x] Turn OpenRouter into a profile
 - [x] Turn DeepSeek OpenAI-compatible into a profile
 - [x] Turn Groq OpenAI-compatible into a profile
@@ -200,7 +200,7 @@
 - [x] Split `openai_family_compat_provider.dart` into provider/profile-specific builder slices so the remaining OpenAI-family compatibility builder stops mixing six providers in one file
 - [x] Re-evaluate whether `anthropic_compat_provider.dart` now deserves the same shell/support split, or whether it should stay provider-local because most of its remaining weight is real replay conversion logic
 - [x] Decide that Anthropic codec-local shared support remains deferred until a future multi-file change proves a narrow result/stream parity slice worth extracting
-- [ ] Revisit the Anthropic compatibility adapter only if a new provider-local subdomain becomes large enough to deserve its own helper file without inventing a generic compatibility framework
+- [x] Close the Anthropic compatibility adapter split as active migration debt: keep the current thin-shell plus provider-local-adapter shape unless a new Anthropic-only subdomain proves it deserves another focused file (see `197-anthropic-compat-adapter-closure.md`)
 
 ## Community Providers
 
