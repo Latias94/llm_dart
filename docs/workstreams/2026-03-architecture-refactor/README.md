@@ -545,6 +545,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - [180-anthropic-codec-support-boundary.md](180-anthropic-codec-support-boundary.md)
   - Frozen boundary note that Anthropic result/stream codec duplication is real
     but still too leaf-level for a worthwhile support-module extraction today.
+- [181-anthropic-tool-selection-guardrail.md](181-anthropic-tool-selection-guardrail.md)
+  - Status note for enforcing that Anthropic shared `SpecificToolChoice` stays
+    limited to declared common function tools instead of silently selecting
+    native or undeclared tools.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
@@ -722,6 +726,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   repeated leaf helpers exist, but a support extraction would still be more
   symmetry than ownership until a concrete multi-file change proves a narrower
   local support slice
+- Anthropic tool-selection policy now also matches the frozen design in code:
+  shared `SpecificToolChoice` stays limited to declared common function tools,
+  while any later native-tool forcing surface remains provider-owned and
+  demand-driven
 - the Ollama root shell is now also slightly thinner in code ownership terms:
   compatibility config shaping, chat-bridge setup, and embedding delegation
   glue no longer live inline inside `lib/providers/ollama/provider.dart`, but

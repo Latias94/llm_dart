@@ -375,5 +375,5 @@
 - [x] Define custom-part `kind` namespace rules
 - [x] Freeze provider-native tool entry placement in provider packages
 - [x] Design provider-owned native-tool forcing or selection APIs without widening shared `ToolChoice`
-- [ ] Implement Anthropic provider-owned tool-selection options only if a real native-tool forcing use case appears beyond the current shared subset
+- [x] Decide that Anthropic shared `SpecificToolChoice` stays limited to declared common function tools, and defer any provider-owned native-tool selection surface until a real use case appears
 - [ ] Expose any public Google native-tool selection or forcing API only after the Gemini 3 mixed-tool wire contract is implemented

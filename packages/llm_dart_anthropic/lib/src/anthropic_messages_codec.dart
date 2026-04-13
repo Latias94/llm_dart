@@ -345,6 +345,10 @@ final class AnthropicMessagesCodec {
     final commonToolNames = {
       for (final tool in tools) tool.name,
     };
+    _validateSpecificToolChoice(
+      toolChoice: toolChoice,
+      commonToolNames: commonToolNames,
+    );
     final deferredToolNameSet = {
       for (final toolName in deferredToolNames)
         if (toolName.trim().isNotEmpty) toolName.trim(),
@@ -431,6 +435,23 @@ final class AnthropicMessagesCodec {
   bool _isToolSearchNativeTool(AnthropicNativeTool tool) {
     return tool.name == 'tool_search_tool_regex' ||
         tool.name == 'tool_search_tool_bm25';
+  }
+
+  void _validateSpecificToolChoice({
+    required ToolChoice? toolChoice,
+    required Set<String> commonToolNames,
+  }) {
+    if (toolChoice case SpecificToolChoice(toolName: final toolName)) {
+      if (commonToolNames.contains(toolName)) {
+        return;
+      }
+
+      throw UnsupportedError(
+        'Anthropic SpecificToolChoice currently only supports declared common '
+        'function tools. Selecting native or undeclared tools requires a '
+        'provider-owned Anthropic tool-selection surface.',
+      );
+    }
   }
 
   void _validateThinkingCompatibleToolChoice({

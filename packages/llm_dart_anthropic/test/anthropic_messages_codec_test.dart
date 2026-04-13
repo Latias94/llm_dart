@@ -332,6 +332,61 @@ void main() {
       );
     });
 
+    test('rejects SpecificToolChoice for Anthropic native or undeclared tools',
+        () {
+      expect(
+        () => codec.encodeRequest(
+          modelId: 'claude-sonnet-4-5',
+          prompt: [
+            UserPromptMessage.text('Use web search directly.'),
+          ],
+          tools: [
+            FunctionToolDefinition(
+              name: 'weather',
+              inputSchema: ToolJsonSchema.object(),
+            ),
+          ],
+          toolChoice: const SpecificToolChoice('web_search'),
+          options: const GenerateTextOptions(),
+          settings: const AnthropicChatModelSettings(),
+          providerOptions: const AnthropicGenerateTextOptions(
+            tools: [
+              AnthropicWebSearchTool20250305(),
+            ],
+          ),
+          stream: false,
+        ),
+        throwsA(
+          isA<UnsupportedError>().having(
+            (error) => error.toString(),
+            'message',
+            contains('provider-owned Anthropic tool-selection surface'),
+          ),
+        ),
+      );
+
+      expect(
+        () => codec.encodeRequest(
+          modelId: 'claude-sonnet-4-5',
+          prompt: [
+            UserPromptMessage.text('Use the missing tool directly.'),
+          ],
+          tools: [
+            FunctionToolDefinition(
+              name: 'weather',
+              inputSchema: ToolJsonSchema.object(),
+            ),
+          ],
+          toolChoice: const SpecificToolChoice('missing_tool'),
+          options: const GenerateTextOptions(),
+          settings: const AnthropicChatModelSettings(),
+          providerOptions: const AnthropicGenerateTextOptions(),
+          stream: false,
+        ),
+        throwsA(isA<UnsupportedError>()),
+      );
+    });
+
     test('rejects system messages after conversation blocks', () {
       expect(
         () => codec.encodeRequest(
