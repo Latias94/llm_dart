@@ -538,6 +538,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Frozen boundary note that Google streamed TTS remains deferred and
     compatibility-only for now, instead of reviving the old event contract as a
     modern provider package API.
+- [179-google-audio-understanding-helper-boundary.md](179-google-audio-understanding-helper-boundary.md)
+  - Frozen boundary note that Google audio understanding stays on multimodal
+    prompting for now, without adding an extra provider-owned helper above the
+    language-model path.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
@@ -708,6 +712,9 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - Google streamed TTS is now also explicitly deferred: the modern package keeps
   non-streaming speech generation, while the old streamed TTS event API remains
   compatibility-only until a separate provider-owned utility shape is justified
+- Google audio understanding is now also explicitly frozen on the multimodal
+  language-model path: no fake transcription model and no extra provider-owned
+  helper are needed until a clearer repeated product contract appears
 - the Ollama root shell is now also slightly thinner in code ownership terms:
   compatibility config shaping, chat-bridge setup, and embedding delegation
   glue no longer live inline inside `lib/providers/ollama/provider.dart`, but

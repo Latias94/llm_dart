@@ -220,7 +220,7 @@
 - [x] Implement the shared non-text result enrichment in `llm_dart_core` and migrate ElevenLabs modern models to populate the new shared fields before treating community-provider audio migration as structurally mature
 - [x] Decide whether OpenAI- and Google-owned speech/transcription models should also populate the new shared response metadata and transcript-structure fields in the same round
 - [x] Decide that Google should continue leaving dedicated transcription outside the current Google modern package surface, and that transcript-oriented audio handling should stay on multimodal prompting for now instead of a misleading shared `TranscriptionModel`
-- [ ] Decide whether Google should later gain a provider-owned audio-understanding helper above multimodal prompting instead of a fake shared transcription model
+- [x] Decide that Google audio understanding stays on multimodal prompting for now, without adding an extra provider-owned helper above the language-model path
 - [ ] Decide whether file-based ElevenLabs transcription should remain legacy-only or gain a provider-owned modern helper outside the shared `TranscriptionModel`
 - [ ] Decide which remaining ElevenLabs voice/realtime/admin capabilities should stay provider-owned outside the shared audio model surfaces
 - [ ] Evaluate whether community providers should later split into dedicated packages
