@@ -500,6 +500,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
     text/reasoning lifecycle state, indexed tool-call delta accumulation,
     invalid JSON tool-input shaping, and `<think>` tag splitting without
     forcing chat-completions and Responses into one generic codec.
+- [170-openai-responses-support-extraction.md](170-openai-responses-support-extraction.md)
+  - Status note for moving Responses-only output decoding, source annotation,
+    and metadata-shaping helpers out of `openai_responses_codec.dart` so the
+    codec keeps converging toward a protocol coordinator instead of a bus file.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)

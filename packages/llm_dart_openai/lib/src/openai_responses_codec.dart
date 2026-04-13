@@ -6,6 +6,7 @@ import 'openai_model_capabilities.dart';
 import 'openai_native_tools.dart';
 import 'openai_options.dart';
 import 'openai_response_format.dart';
+import 'openai_responses_support.dart';
 import 'openai_streaming_support.dart';
 
 final class OpenAIResponsesRequest {
@@ -189,22 +190,22 @@ final class OpenAIResponsesCodec {
     for (final item in _outputItems(response)) {
       final type = _asString(item['type']);
       if (type == 'message') {
-        _collectMessageOutputLogprobs(
+        collectOpenAIResponsesMessageOutputLogprobs(
           item,
           into: collectedLogprobs,
         );
-        content.addAll(_decodeMessageOutput(item));
+        content.addAll(decodeOpenAIResponsesMessageOutput(item));
         continue;
       }
 
       if (type == 'reasoning') {
-        content.addAll(_decodeReasoningOutput(item));
+        content.addAll(decodeOpenAIResponsesReasoningOutput(item));
         continue;
       }
 
       if (type == 'function_call') {
         hasToolCalls = true;
-        final toolCall = _decodeFunctionCallOutput(item);
+        final toolCall = decodeOpenAIResponsesFunctionCallOutput(item);
         if (toolCall != null) {
           content.add(toolCall);
         }
@@ -213,17 +214,17 @@ final class OpenAIResponsesCodec {
 
       if (type == 'mcp_approval_request') {
         hasToolCalls = true;
-        content.addAll(_decodeMcpApprovalRequestOutput(item));
+        content.addAll(decodeOpenAIResponsesMcpApprovalRequestOutput(item));
         continue;
       }
 
       if (type == 'mcp_call') {
         hasToolCalls = true;
-        content.addAll(_decodeMcpCallOutput(item));
+        content.addAll(decodeOpenAIResponsesMcpCallOutput(item));
         continue;
       }
 
-      final customPart = _decodeCustomOutput(item);
+      final customPart = decodeOpenAIResponsesCustomOutput(item);
       if (customPart != null) {
         content.add(customPart);
       }
@@ -241,7 +242,7 @@ final class OpenAIResponsesCodec {
       responseTimestamp: _decodeResponseTimestamp(response),
       responseModelId: _asString(response['model']),
       usage: _decodeUsage(_asMap(response['usage'])),
-      providerMetadata: _responseMetadata(
+      providerMetadata: openAIResponsesResponseMetadata(
         response,
         logprobs: collectedLogprobs,
       ),
@@ -268,7 +269,7 @@ final class OpenAIResponsesCodec {
           responseId: _asString(response['id']),
           timestamp: _decodeResponseTimestamp(response),
           modelId: _asString(response['model']),
-          providerMetadata: _responseMetadata(response),
+          providerMetadata: openAIResponsesResponseMetadata(response),
         );
       }
       return;
@@ -281,8 +282,9 @@ final class OpenAIResponsesCodec {
       }
 
       final itemType = _asString(item['type']);
-      final providerMetadata = _streamItemMetadata(
-        state,
+      final providerMetadata = openAIResponsesStreamItemMetadata(
+        responseId: state.responseId,
+        serviceTier: state.serviceTier,
         chunk: chunk,
         item: item,
       );
@@ -328,8 +330,9 @@ final class OpenAIResponsesCodec {
 
     if (chunkType == 'response.output_text.delta') {
       final textId = _resolveTextId(chunk, null);
-      final providerMetadata = _streamItemMetadata(
-        state,
+      final providerMetadata = openAIResponsesStreamItemMetadata(
+        responseId: state.responseId,
+        serviceTier: state.serviceTier,
         chunk: chunk,
         item: null,
       );
@@ -361,8 +364,9 @@ final class OpenAIResponsesCodec {
       if (state.textParts.markEnded(textId)) {
         yield TextEndEvent(
           id: textId,
-          providerMetadata: _streamItemMetadata(
-            state,
+          providerMetadata: openAIResponsesStreamItemMetadata(
+            responseId: state.responseId,
+            serviceTier: state.serviceTier,
             chunk: chunk,
             item: null,
           ),
@@ -376,8 +380,9 @@ final class OpenAIResponsesCodec {
       if (state.reasoningParts.markStarted(reasoningId)) {
         yield ReasoningStartEvent(
           id: reasoningId,
-          providerMetadata: _streamItemMetadata(
-            state,
+          providerMetadata: openAIResponsesStreamItemMetadata(
+            responseId: state.responseId,
+            serviceTier: state.serviceTier,
             chunk: chunk,
             item: null,
           ),
@@ -393,8 +398,9 @@ final class OpenAIResponsesCodec {
         yield ReasoningDeltaEvent(
           id: reasoningId,
           delta: delta,
-          providerMetadata: _streamItemMetadata(
-            state,
+          providerMetadata: openAIResponsesStreamItemMetadata(
+            responseId: state.responseId,
+            serviceTier: state.serviceTier,
             chunk: chunk,
             item: null,
           ),
@@ -408,8 +414,9 @@ final class OpenAIResponsesCodec {
       if (state.reasoningParts.markEnded(reasoningId)) {
         yield ReasoningEndEvent(
           id: reasoningId,
-          providerMetadata: _streamItemMetadata(
-            state,
+          providerMetadata: openAIResponsesStreamItemMetadata(
+            responseId: state.responseId,
+            serviceTier: state.serviceTier,
             chunk: chunk,
             item: null,
           ),
@@ -426,8 +433,9 @@ final class OpenAIResponsesCodec {
         item: null,
         outputIndex: outputIndex,
       );
-      final providerMetadata = _streamItemMetadata(
-        state,
+      final providerMetadata = openAIResponsesStreamItemMetadata(
+        responseId: state.responseId,
+        serviceTier: state.serviceTier,
         chunk: chunk,
         item: null,
       );
@@ -461,7 +469,10 @@ final class OpenAIResponsesCodec {
 
     if (chunkType == 'response.output_text.annotation.added') {
       final annotation = _asMap(chunk['annotation']);
-      final sourceEvent = _decodeSourceEvent(annotation, state);
+      final sourceEvent = decodeOpenAIResponsesSourceEvent(
+        annotation,
+        emittedAnnotationKeys: state.emittedAnnotationKeys,
+      );
       if (sourceEvent != null) {
         yield sourceEvent;
       }
@@ -481,7 +492,10 @@ final class OpenAIResponsesCodec {
 
       for (final rawAnnotation in _asList(part['annotations'])) {
         final annotation = _asMap(rawAnnotation);
-        final sourceEvent = _decodeSourceEvent(annotation, state);
+        final sourceEvent = decodeOpenAIResponsesSourceEvent(
+          annotation,
+          emittedAnnotationKeys: state.emittedAnnotationKeys,
+        );
         if (sourceEvent != null) {
           yield sourceEvent;
         }
@@ -491,8 +505,9 @@ final class OpenAIResponsesCodec {
       if (state.textParts.markEnded(textId)) {
         yield TextEndEvent(
           id: textId,
-          providerMetadata: _streamTextPartMetadata(
-            state,
+          providerMetadata: openAIResponsesStreamTextPartMetadata(
+            responseId: state.responseId,
+            serviceTier: state.serviceTier,
             chunk: chunk,
             part: part,
           ),
@@ -527,8 +542,9 @@ final class OpenAIResponsesCodec {
       }
 
       final itemType = _asString(item['type']);
-      final providerMetadata = _streamItemMetadata(
-        state,
+      final providerMetadata = openAIResponsesStreamItemMetadata(
+        responseId: state.responseId,
+        serviceTier: state.serviceTier,
         chunk: chunk,
         item: item,
       );
@@ -572,7 +588,7 @@ final class OpenAIResponsesCodec {
           );
         }
 
-        final encodedArguments = _resolveEncodedFunctionCallArguments(
+        final encodedArguments = resolveOpenAIResponsesFunctionCallArguments(
           item,
           fallbackArguments: toolState.arguments.toString(),
         );
@@ -602,7 +618,7 @@ final class OpenAIResponsesCodec {
           );
         }
 
-        final toolCallPart = _decodeFunctionCallOutput(
+        final toolCallPart = decodeOpenAIResponsesFunctionCallOutput(
           item,
           fallbackToolCallId: resolvedToolCallId,
           fallbackArguments: toolState.arguments.toString(),
@@ -627,7 +643,7 @@ final class OpenAIResponsesCodec {
         }
 
         state.hasToolCalls = true;
-        final providerMetadata = _itemMetadata(
+        final providerMetadata = openAIResponsesItemMetadata(
           item,
           extra: {
             'approvalRequestId': approvalId,
@@ -640,7 +656,9 @@ final class OpenAIResponsesCodec {
           toolCall: ToolCallContent(
             toolCallId: approvalId,
             toolName: qualifiedToolName,
-            input: _decodeJsonValue(_asString(item['arguments']) ?? '{}'),
+            input: decodeOpenAIResponsesJsonValue(
+              _asString(item['arguments']) ?? '{}',
+            ),
             providerExecuted: true,
             isDynamic: true,
             title: _asString(item['server_label']),
@@ -664,7 +682,7 @@ final class OpenAIResponsesCodec {
         }
 
         state.hasToolCalls = true;
-        final providerMetadata = _itemMetadata(
+        final providerMetadata = openAIResponsesItemMetadata(
           item,
           extra: {
             'approvalRequestId': _asString(item['approval_request_id']),
@@ -672,8 +690,9 @@ final class OpenAIResponsesCodec {
           },
         );
         final qualifiedToolName = 'mcp.$toolName';
-        final arguments =
-            _decodeJsonValue(_asString(item['arguments']) ?? '{}');
+        final arguments = decodeOpenAIResponsesJsonValue(
+          _asString(item['arguments']) ?? '{}',
+        );
 
         yield ToolCallEvent(
           toolCall: ToolCallContent(
@@ -736,7 +755,7 @@ final class OpenAIResponsesCodec {
           responseId: _asString(response['id']),
           timestamp: _decodeResponseTimestamp(response),
           modelId: _asString(response['model']),
-          providerMetadata: _responseMetadata(response),
+          providerMetadata: openAIResponsesResponseMetadata(response),
         );
       }
 
@@ -762,7 +781,7 @@ final class OpenAIResponsesCodec {
         ),
         rawFinishReason: state.rawFinishReason,
         usage: state.usage,
-        providerMetadata: _responseMetadata(
+        providerMetadata: openAIResponsesResponseMetadata(
           response,
           logprobs: state.logprobs,
         ),
@@ -1388,440 +1407,6 @@ final class OpenAIResponsesCodec {
     return buffer.join('\n\n');
   }
 
-  List<ContentPart> _decodeMessageOutput(Map<String, Object?> item) {
-    final parts = <ContentPart>[];
-    final content = _asList(item['content']);
-
-    for (final rawContentPart in content) {
-      final contentPart = _asMap(rawContentPart);
-      if (contentPart == null) {
-        continue;
-      }
-
-      final contentType = _asString(contentPart['type']);
-      if (contentType == 'output_text') {
-        parts.add(
-          TextContentPart(
-            _asString(contentPart['text']) ?? '',
-            providerMetadata: _itemMetadata(
-              item,
-              extra: {
-                'contentType': contentType,
-                'logprobs': _jsonListOrNull(contentPart['logprobs']),
-              },
-            ),
-          ),
-        );
-
-        for (final annotation in _asList(contentPart['annotations'])) {
-          final source = _decodeSourceAnnotation(_asMap(annotation));
-          if (source != null) {
-            parts.add(SourceContentPart(source));
-          }
-        }
-        continue;
-      }
-
-      if (contentType != null) {
-        parts.add(
-          CustomContentPart(
-            kind: 'openai.message.$contentType',
-            data: contentPart,
-            providerMetadata: _itemMetadata(item),
-          ),
-        );
-      }
-    }
-
-    return parts;
-  }
-
-  List<ContentPart> _decodeReasoningOutput(Map<String, Object?> item) {
-    final parts = <ContentPart>[];
-    final summaries = _asList(item['summary']);
-
-    for (var index = 0; index < summaries.length; index++) {
-      final summary = _asMap(summaries[index]);
-      if (summary == null) {
-        continue;
-      }
-
-      final text = _asString(summary['text']);
-      if (text == null || text.isEmpty) {
-        continue;
-      }
-
-      parts.add(
-        ReasoningContentPart(
-          text,
-          providerMetadata: _itemMetadata(
-            item,
-            extra: {
-              'summaryIndex': index,
-              'reasoningEncryptedContent': item['encrypted_content'],
-              'encryptedContent': item['encrypted_content'],
-            },
-          ),
-        ),
-      );
-    }
-
-    return parts;
-  }
-
-  ToolCallContentPart? _decodeFunctionCallOutput(
-    Map<String, Object?> item, {
-    String? fallbackToolCallId,
-    String? fallbackArguments,
-    String? fallbackToolName,
-    Object? decodedInput,
-  }) {
-    final toolCallId = _asString(item['call_id']) ??
-        fallbackToolCallId ??
-        _asString(item['id']);
-    final toolName = _asString(item['name']) ?? fallbackToolName;
-    if (toolCallId == null || toolName == null) {
-      return null;
-    }
-
-    final encodedArguments = _resolveEncodedFunctionCallArguments(
-      item,
-      fallbackArguments: fallbackArguments,
-    );
-
-    return ToolCallContentPart(
-      ToolCallContent(
-        toolCallId: toolCallId,
-        toolName: toolName,
-        input: decodedInput ?? _decodeJsonValue(encodedArguments),
-        providerExecuted: false,
-        isDynamic: false,
-        title: _asString(item['title']),
-      ),
-      providerMetadata: _itemMetadata(
-        item,
-        extra: {
-          'callId': toolCallId,
-        },
-      ),
-    );
-  }
-
-  List<ContentPart> _decodeMcpApprovalRequestOutput(Map<String, Object?> item) {
-    final approvalId =
-        _asString(item['approval_request_id']) ?? _asString(item['id']);
-    final toolName = _asString(item['name']);
-    if (approvalId == null || toolName == null) {
-      return const [];
-    }
-
-    final providerMetadata = _itemMetadata(
-      item,
-      extra: {
-        'approvalRequestId': approvalId,
-        'serverLabel': _asString(item['server_label']),
-      },
-    );
-    final qualifiedToolName = 'mcp.$toolName';
-
-    return [
-      ToolCallContentPart(
-        ToolCallContent(
-          toolCallId: approvalId,
-          toolName: qualifiedToolName,
-          input: _decodeJsonValue(_asString(item['arguments']) ?? '{}'),
-          providerExecuted: true,
-          isDynamic: true,
-          title: _asString(item['server_label']),
-        ),
-        providerMetadata: providerMetadata,
-      ),
-      ToolApprovalRequestContentPart(
-        ToolApprovalRequestContent(
-          approvalId: approvalId,
-          toolCallId: approvalId,
-        ),
-        providerMetadata: providerMetadata,
-      ),
-    ];
-  }
-
-  List<ContentPart> _decodeMcpCallOutput(Map<String, Object?> item) {
-    final toolCallId =
-        _asString(item['approval_request_id']) ?? _asString(item['id']);
-    final toolName = _asString(item['name']);
-    if (toolCallId == null || toolName == null) {
-      return const [];
-    }
-
-    final providerMetadata = _itemMetadata(
-      item,
-      extra: {
-        'approvalRequestId': _asString(item['approval_request_id']),
-        'serverLabel': _asString(item['server_label']),
-      },
-    );
-    final qualifiedToolName = 'mcp.$toolName';
-    final arguments = _decodeJsonValue(_asString(item['arguments']) ?? '{}');
-
-    return [
-      ToolCallContentPart(
-        ToolCallContent(
-          toolCallId: toolCallId,
-          toolName: qualifiedToolName,
-          input: arguments,
-          providerExecuted: true,
-          isDynamic: true,
-          title: _asString(item['server_label']),
-        ),
-        providerMetadata: providerMetadata,
-      ),
-      ToolResultContentPart(
-        ToolResultContent(
-          toolCallId: toolCallId,
-          toolName: qualifiedToolName,
-          output: {
-            'type': 'mcp_call',
-            'serverLabel': _asString(item['server_label']),
-            'name': toolName,
-            'arguments': arguments,
-            if (item['output'] != null) 'output': item['output'],
-            if (item['error'] != null) 'error': item['error'],
-          },
-          isError: item['error'] != null,
-          isDynamic: true,
-        ),
-        providerMetadata: providerMetadata,
-      ),
-    ];
-  }
-
-  CustomContentPart? _decodeCustomOutput(Map<String, Object?> item) {
-    final type = _asString(item['type']);
-    if (type == null) {
-      return null;
-    }
-
-    return CustomContentPart(
-      kind: 'openai.$type',
-      data: item,
-      providerMetadata: _itemMetadata(
-        item,
-        extra: {
-          if (type == 'compaction')
-            'encryptedContent': item['encrypted_content'],
-        },
-      ),
-    );
-  }
-
-  SourceReference? _decodeSourceAnnotation(Map<String, Object?>? annotation) {
-    if (annotation == null) {
-      return null;
-    }
-
-    final type = _asString(annotation['type']);
-    if (type == 'url_citation') {
-      final url = _asString(annotation['url']);
-      if (url == null) {
-        return null;
-      }
-
-      return SourceReference(
-        kind: SourceReferenceKind.url,
-        sourceId: url,
-        uri: Uri.tryParse(url),
-        title: _asString(annotation['title']),
-        providerMetadata: _providerMetadata({
-          'annotationType': type,
-          'startIndex': _asInt(annotation['start_index']),
-          'endIndex': _asInt(annotation['end_index']),
-        }),
-      );
-    }
-
-    if (type == 'file_citation') {
-      final sourceId =
-          _asString(annotation['file_id']) ?? _asString(annotation['filename']);
-      if (sourceId == null) {
-        return null;
-      }
-
-      return SourceReference(
-        kind: SourceReferenceKind.document,
-        sourceId: sourceId,
-        title: _asString(annotation['filename']),
-        filename: _asString(annotation['filename']),
-        mediaType: 'text/plain',
-        providerMetadata: _providerMetadata({
-          'annotationType': type,
-          'fileId': _asString(annotation['file_id']),
-          'index': _asInt(annotation['index']),
-        }),
-      );
-    }
-
-    if (type == 'container_file_citation') {
-      final sourceId =
-          _asString(annotation['file_id']) ?? _asString(annotation['filename']);
-      if (sourceId == null) {
-        return null;
-      }
-
-      return SourceReference(
-        kind: SourceReferenceKind.document,
-        sourceId: sourceId,
-        title: _asString(annotation['filename']),
-        filename: _asString(annotation['filename']),
-        mediaType: 'text/plain',
-        providerMetadata: _providerMetadata({
-          'annotationType': type,
-          'fileId': _asString(annotation['file_id']),
-          'containerId': _asString(annotation['container_id']),
-        }),
-      );
-    }
-
-    if (type == 'file_path') {
-      final sourceId = _asString(annotation['file_id']);
-      if (sourceId == null) {
-        return null;
-      }
-
-      return SourceReference(
-        kind: SourceReferenceKind.document,
-        sourceId: sourceId,
-        title: sourceId,
-        filename: sourceId,
-        mediaType: 'application/octet-stream',
-        providerMetadata: _providerMetadata({
-          'annotationType': type,
-          'fileId': sourceId,
-          'index': _asInt(annotation['index']),
-        }),
-      );
-    }
-
-    return null;
-  }
-
-  ProviderMetadata? _responseMetadata(
-    Map<String, Object?> response, {
-    List<Object?> logprobs = const [],
-  }) {
-    return _providerMetadata({
-      'status': _asString(response['status']),
-      'serviceTier': _asString(response['service_tier']),
-      if (logprobs.isNotEmpty) 'logprobs': List<Object?>.unmodifiable(logprobs),
-    });
-  }
-
-  void _collectMessageOutputLogprobs(
-    Map<String, Object?> item, {
-    required List<Object?> into,
-  }) {
-    for (final rawContentPart in _asList(item['content'])) {
-      final contentPart = _asMap(rawContentPart);
-      if (contentPart == null ||
-          _asString(contentPart['type']) != 'output_text') {
-        continue;
-      }
-
-      appendOpenAILogprobs(
-        into,
-        _jsonListOrNull(contentPart['logprobs']),
-      );
-    }
-  }
-
-  ProviderMetadata? _itemMetadata(
-    Map<String, Object?> item, {
-    Map<String, Object?> extra = const {},
-  }) {
-    return _providerMetadata({
-      'itemId': _asString(item['id']),
-      'itemType': _asString(item['type']),
-      'status': _asString(item['status']),
-      'phase': _asString(item['phase']),
-      ...extra,
-    });
-  }
-
-  ProviderMetadata? _streamItemMetadata(
-    OpenAIResponsesStreamState state, {
-    required Map<String, Object?> chunk,
-    required Map<String, Object?>? item,
-  }) {
-    return _providerMetadata({
-      'responseId': state.responseId,
-      'itemId': _asString(chunk['item_id']) ?? _asString(item?['id']),
-      'itemType': _asString(item?['type']),
-      'phase': _asString(item?['phase']),
-      'outputIndex': _asInt(chunk['output_index']),
-      'contentIndex': _asInt(chunk['content_index']),
-      'summaryIndex': _asInt(chunk['summary_index']),
-      'serviceTier': state.serviceTier,
-      'logprobs': _jsonListOrNull(chunk['logprobs']),
-    });
-  }
-
-  ProviderMetadata? _streamTextPartMetadata(
-    OpenAIResponsesStreamState state, {
-    required Map<String, Object?> chunk,
-    required Map<String, Object?> part,
-  }) {
-    return _providerMetadata({
-      'responseId': state.responseId,
-      'itemId': _asString(chunk['item_id']),
-      'outputIndex': _asInt(chunk['output_index']),
-      'contentIndex': _asInt(chunk['content_index']),
-      'serviceTier': state.serviceTier,
-      'annotations': _jsonListOrNull(part['annotations']),
-      'logprobs': _jsonListOrNull(part['logprobs']),
-    });
-  }
-
-  SourceEvent? _decodeSourceEvent(
-    Map<String, Object?>? annotation,
-    OpenAIResponsesStreamState state,
-  ) {
-    final annotationKey = _annotationKey(annotation);
-    if (annotationKey == null ||
-        !state.emittedAnnotationKeys.add(annotationKey)) {
-      return null;
-    }
-
-    final source = _decodeSourceAnnotation(annotation);
-    if (source == null) {
-      return null;
-    }
-
-    return SourceEvent(source);
-  }
-
-  String? _annotationKey(Map<String, Object?>? annotation) {
-    if (annotation == null) {
-      return null;
-    }
-
-    final type = _asString(annotation['type']);
-    if (type == null) {
-      return null;
-    }
-
-    return switch (type) {
-      'url_citation' =>
-        'url:${_asString(annotation['url'])}:${_asInt(annotation['start_index'])}:${_asInt(annotation['end_index'])}',
-      'file_citation' =>
-        'file:${_asString(annotation['file_id'])}:${_asString(annotation['filename'])}:${_asInt(annotation['index'])}',
-      'container_file_citation' =>
-        'container:${_asString(annotation['container_id'])}:${_asString(annotation['file_id'])}:${_asString(annotation['filename'])}',
-      'file_path' =>
-        'file_path:${_asString(annotation['file_id'])}:${_asInt(annotation['index'])}',
-      _ => jsonEncode(annotation),
-    };
-  }
-
   List<String>? _resolveInclude(
     OpenAIGenerateTextOptions providerOptions, {
     required bool isReasoningModel,
@@ -2165,26 +1750,6 @@ final class OpenAIResponsesCodec {
     }
 
     return jsonEncode(output);
-  }
-
-  Object? _decodeJsonValue(String value) {
-    return tryDecodeOpenAIJsonValue(value).value;
-  }
-
-  String _resolveEncodedFunctionCallArguments(
-    Map<String, Object?> item, {
-    String? fallbackArguments,
-  }) {
-    final encoded = _asString(item['arguments']);
-    if (encoded != null) {
-      return encoded;
-    }
-
-    if (fallbackArguments != null && fallbackArguments.isNotEmpty) {
-      return fallbackArguments;
-    }
-
-    return '{}';
   }
 
   void _throwIfError(Map<String, Object?> response) {
