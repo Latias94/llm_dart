@@ -11,10 +11,11 @@ export 'src/bootstrap/root_registry_bootstrap.dart'
     show ensureRootRegistryBootstrap;
 export 'src/facade/legacy_builder_helpers.dart';
 export 'src/compatibility/providers/community_provider_config_adapters.dart'
-    show
-        createLegacyDioClientOverrides,
-        createLegacyElevenLabsConfig,
-        createLegacyOllamaConfig;
+    show createLegacyDioClientOverrides;
+export 'src/compatibility/providers/elevenlabs/config_adapter.dart'
+    show createLegacyElevenLabsConfig;
+export 'src/compatibility/providers/ollama/config_adapter.dart'
+    show createLegacyOllamaConfig;
 
 export 'core/capability.dart';
 export 'core/cancellation.dart';

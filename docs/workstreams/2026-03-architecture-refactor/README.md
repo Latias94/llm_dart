@@ -557,6 +557,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Priority audit that narrows the remaining real structure drift versus
     `repo-ref/ai`, and recommends community-provider ownership cleanup as the
     next highest-value refactor slice.
+- [184-community-compatibility-ownership-localization.md](184-community-compatibility-ownership-localization.md)
+  - Status note for localizing Ollama and ElevenLabs compatibility config and
+    shell-support ownership back under provider-owned compatibility paths while
+    keeping only shared Dio override projection in the shared helper.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
@@ -745,6 +749,11 @@ This workstream is not about a file-moving refactor. It is about defining stable
   narrower: community-provider ownership is the biggest unresolved gap, while
   most remaining OpenAI, Google, Anthropic, runner, and chat-runtime items are
   now deliberate defer-or-demand decisions rather than missing architecture
+- the community compatibility layer is now also slightly more honest in code
+  ownership terms: only shared legacy Dio override projection remains in the
+  cross-provider adapter helper, while Ollama- and ElevenLabs-specific config
+  adapters and shell-support modules now live under provider-owned
+  compatibility directories
 - the Ollama root shell is now also slightly thinner in code ownership terms:
   compatibility config shaping, chat-bridge setup, and embedding delegation
   glue no longer live inline inside `lib/providers/ollama/provider.dart`, but

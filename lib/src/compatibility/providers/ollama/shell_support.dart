@@ -3,18 +3,18 @@ import 'package:llm_dart_core/llm_dart_core.dart' as core;
 import 'package:llm_dart_transport/llm_dart_transport.dart'
     show DioTransportClient;
 
-import '../../../core/capability.dart';
-import '../../../core/config.dart';
-import '../../../models/chat_models.dart';
-import '../../../models/tool_models.dart';
-import '../../../providers/ollama/client.dart';
-import '../../../providers/ollama/config.dart';
-import '../../config/legacy_config_keys.dart';
-import '../legacy_chat_adapter.dart';
-import 'compat_provider_support.dart';
-import 'ollama/ollama_chat_compat.dart';
-import 'ollama/ollama_completion_compat.dart';
-import 'ollama/ollama_models_compat.dart';
+import '../../../../core/capability.dart';
+import '../../../../core/config.dart';
+import '../../../../models/chat_models.dart';
+import '../../../../models/tool_models.dart';
+import '../../../../providers/ollama/client.dart';
+import '../../../../providers/ollama/config.dart';
+import '../../../config/legacy_config_keys.dart';
+import '../compat_provider_support.dart';
+import '../../legacy_chat_adapter.dart';
+import 'ollama_chat_compat.dart';
+import 'ollama_completion_compat.dart';
+import 'ollama_models_compat.dart';
 
 /// Root-compatibility glue for the Ollama provider shell.
 ///

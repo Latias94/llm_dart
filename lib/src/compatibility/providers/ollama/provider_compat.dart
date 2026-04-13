@@ -2,7 +2,7 @@ import '../../../../core/capability.dart';
 import '../../../../models/chat_models.dart';
 import '../../../../models/tool_models.dart';
 import '../../../../providers/ollama/config.dart';
-import '../ollama_compat_shell_support.dart';
+import 'shell_support.dart';
 
 /// Compatibility-first root Ollama provider shell.
 ///

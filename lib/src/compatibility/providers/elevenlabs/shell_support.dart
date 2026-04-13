@@ -3,13 +3,13 @@ import 'package:llm_dart_core/llm_dart_core.dart' as core;
 import 'package:llm_dart_transport/llm_dart_transport.dart'
     show DioTransportClient;
 
-import '../../../core/capability.dart';
-import '../../../models/audio_models.dart';
-import '../../../providers/elevenlabs/client.dart';
-import '../../../providers/elevenlabs/config.dart';
-import 'compat_provider_support.dart' show isCompatibilityError;
-import 'elevenlabs/elevenlabs_audio_compat.dart';
-import 'elevenlabs/elevenlabs_models_compat.dart';
+import '../../../../core/capability.dart';
+import '../../../../models/audio_models.dart';
+import '../../../../providers/elevenlabs/client.dart';
+import '../../../../providers/elevenlabs/config.dart';
+import '../compat_provider_support.dart' show isCompatibilityError;
+import 'elevenlabs_audio_compat.dart';
+import 'elevenlabs_models_compat.dart';
 
 /// Root-compatibility glue for the ElevenLabs provider shell.
 ///

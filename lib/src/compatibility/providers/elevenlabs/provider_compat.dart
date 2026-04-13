@@ -7,7 +7,7 @@ import '../../../../providers/elevenlabs/client.dart' show ElevenLabsClient;
 import '../../../../providers/elevenlabs/config.dart';
 import 'elevenlabs_audio_compat.dart' show ElevenLabsAudio;
 import 'elevenlabs_models_compat.dart' show ElevenLabsModels;
-import '../elevenlabs_compat_shell_support.dart';
+import 'shell_support.dart';
 
 /// Compatibility-first root ElevenLabs provider shell.
 ///
