@@ -21,8 +21,9 @@ Current status:
 
 - the earlier architecture workstream is closed
 - the new phase is now explicitly scoped
-- the next documentation pass still needs to propagate that closure story into
-  public guidance
+- the root README now points at the post-closure roadmap
+- the highest-visibility package and example guides now consistently distinguish
+  `llm_dart.dart`, `legacy.dart`, and compatibility-oriented builder material
 
 ## M2 - Provider UI Extension Contract
 
@@ -48,6 +49,11 @@ Current status:
 - Google and OpenAI already expose provider-owned custom-part and message
   mapping helpers
 - Anthropic does not need symmetry-only UI helper expansion yet
+- the runtime-observation boundary is now also re-audited more explicitly:
+  transient data stays on side channels, step-finish stays reader-level, and
+  reconnect stays transport-owned
+- a shared renderer registry is now also explicitly deferred until repeated app
+  integrations show the same composition pain
 
 ## M3 - Dependency Guardrails And Compatibility Containment
 
@@ -69,8 +75,8 @@ Current status:
 - the current package graph is already much healthier than before
 - implementation imports in `packages/` currently do not flow back into
   `package:llm_dart/...`
-- the remaining work is now policy and enforcement, not a broad structural
-  rewrite
+- lightweight enforcement now exists through
+  `tool/check_workspace_dependency_guards.dart`, CI, and `melos analyze`
 
 ## M4 - Selective Provider Expansion
 

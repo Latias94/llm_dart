@@ -117,6 +117,12 @@ This phase should explicitly avoid:
 - [02-dependency-direction-and-compatibility-guardrails.md](02-dependency-direction-and-compatibility-guardrails.md)
   - Verified package dependency direction, runtime dependency policy, and root
     compatibility-shell guardrails.
+- [03-chat-runtime-observation-and-reconnect-policy.md](03-chat-runtime-observation-and-reconnect-policy.md)
+  - Transient data, step-finish observation, final message patching, and
+    transport-owned reconnect boundaries.
+- [04-app-owned-renderer-registry-policy.md](04-app-owned-renderer-registry-policy.md)
+  - Why a shared renderer registry is still deferred and what a future
+    app-owned additive helper would need to look like.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)

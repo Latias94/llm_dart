@@ -14,8 +14,8 @@
 ## Flutter And UI Extensions
 
 - [x] Freeze the provider-owned custom-part / summary / message-mapper contract for Flutter and other UI layers
-- [ ] Decide whether an additive app-owned renderer registry is justified above the shared `ChatMessageMapper`
-- [ ] Re-audit transient `data-*`, step-finish, and reconnect semantics before widening any UI helper surface
+- [x] Decide whether an additive app-owned renderer registry is justified above the shared `ChatMessageMapper`
+- [x] Re-audit transient `data-*`, step-finish, and reconnect semantics before widening any UI helper surface
 
 ## Dependency And Compatibility Guardrails
 
