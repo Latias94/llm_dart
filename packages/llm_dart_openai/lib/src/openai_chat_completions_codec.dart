@@ -294,50 +294,34 @@ final class OpenAIChatCompletionsCodec {
     );
 
     final reasoningDelta = _extractReasoningDelta(delta);
-    if (reasoningDelta != null && reasoningDelta.isNotEmpty) {
-      if (state.reasoningParts.markStarted(_reasoningId)) {
-        yield ReasoningStartEvent(
-          id: _reasoningId,
-          providerMetadata: _providerMetadata({
-            'responseId': state.responseId,
-          }),
-        );
-      }
-
-      yield ReasoningDeltaEvent(
-        id: _reasoningId,
-        delta: reasoningDelta,
-        providerMetadata: _providerMetadata({
-          'responseId': state.responseId,
-        }),
-      );
-    }
+    yield* decodeOpenAIReasoningDeltaEvents(
+      state: state.reasoningParts,
+      id: _reasoningId,
+      delta: reasoningDelta,
+      startMetadata: () => _providerMetadata({
+        'responseId': state.responseId,
+      }),
+      deltaMetadata: () => _providerMetadata({
+        'responseId': state.responseId,
+      }),
+    );
 
     final contentDelta = _extractContentDelta(delta);
-    if (contentDelta != null && contentDelta.isNotEmpty) {
-      appendOpenAILogprobs(
-        state.logprobs,
-        textLogprobs,
-      );
-      if (state.textParts.markStarted(_textId)) {
-        yield TextStartEvent(
-          id: _textId,
-          providerMetadata: _providerMetadata({
-            'responseId': state.responseId,
-            'logprobs': textLogprobs,
-          }),
-        );
-      }
-
-      yield TextDeltaEvent(
-        id: _textId,
-        delta: contentDelta,
-        providerMetadata: _providerMetadata({
-          'responseId': state.responseId,
-          'logprobs': textLogprobs,
-        }),
-      );
-    }
+    yield* decodeOpenAITextDeltaEvents(
+      state: state.textParts,
+      id: _textId,
+      delta: contentDelta,
+      aggregateLogprobs: state.logprobs,
+      deltaLogprobs: textLogprobs,
+      startMetadata: () => _providerMetadata({
+        'responseId': state.responseId,
+        'logprobs': textLogprobs,
+      }),
+      deltaMetadata: () => _providerMetadata({
+        'responseId': state.responseId,
+        'logprobs': textLogprobs,
+      }),
+    );
 
     for (final rawToolCall in _asList(delta['tool_calls'])) {
       final toolCall = _asMap(rawToolCall);
@@ -354,30 +338,29 @@ final class OpenAIChatCompletionsCodec {
         continue;
       }
 
-      if (!toolState.startEmitted) {
-        toolState.startEmitted = true;
-        yield ToolInputStartEvent(
-          toolCallId: toolState.toolCallId!,
-          toolName: toolState.toolName!,
-          providerExecuted: false,
-          isDynamic: false,
-          providerMetadata: _providerMetadata({
-            'responseId': state.responseId,
-            'toolIndex': index,
-          }),
-        );
+      final startEvent = maybeCreateOpenAIToolInputStartEvent(
+        toolState: toolState,
+        fallbackToolCallId: 'tool_$index',
+        metadata: () => _providerMetadata({
+          'responseId': state.responseId,
+          'toolIndex': index,
+        }),
+      );
+      if (startEvent != null) {
+        yield startEvent;
       }
 
-      if (deltaResult.argumentsDelta case final argumentsDelta?
-          when argumentsDelta.isNotEmpty) {
-        yield ToolInputDeltaEvent(
-          toolCallId: toolState.toolCallId!,
-          delta: argumentsDelta,
-          providerMetadata: _providerMetadata({
-            'responseId': state.responseId,
-            'toolIndex': index,
-          }),
-        );
+      final deltaEvent = maybeCreateOpenAIToolInputDeltaEvent(
+        toolState: toolState,
+        fallbackToolCallId: 'tool_$index',
+        delta: deltaResult.argumentsDelta,
+        metadata: () => _providerMetadata({
+          'responseId': state.responseId,
+          'toolIndex': index,
+        }),
+      );
+      if (deltaEvent != null) {
+        yield deltaEvent;
       }
     }
 
@@ -388,25 +371,27 @@ final class OpenAIChatCompletionsCodec {
 
     state.rawFinishReason = rawFinishReason;
 
-    if (state.textParts.hasStarted(_textId) &&
-        state.textParts.markEnded(_textId)) {
-      yield TextEndEvent(
-        id: _textId,
-        providerMetadata: _providerMetadata({
-          'responseId': state.responseId,
-          'logprobs': textLogprobs,
-        }),
-      );
+    final textEndEvent = maybeCreateOpenAITextEndEvent(
+      state: state.textParts,
+      id: _textId,
+      metadata: () => _providerMetadata({
+        'responseId': state.responseId,
+        'logprobs': textLogprobs,
+      }),
+    );
+    if (textEndEvent != null) {
+      yield textEndEvent;
     }
 
-    if (state.reasoningParts.hasStarted(_reasoningId) &&
-        state.reasoningParts.markEnded(_reasoningId)) {
-      yield ReasoningEndEvent(
-        id: _reasoningId,
-        providerMetadata: _providerMetadata({
-          'responseId': state.responseId,
-        }),
-      );
+    final reasoningEndEvent = maybeCreateOpenAIReasoningEndEvent(
+      state: state.reasoningParts,
+      id: _reasoningId,
+      metadata: () => _providerMetadata({
+        'responseId': state.responseId,
+      }),
+    );
+    if (reasoningEndEvent != null) {
+      yield reasoningEndEvent;
     }
 
     yield* _finalizeToolCalls(state);
@@ -1100,61 +1085,46 @@ final class OpenAIChatCompletionsCodec {
   ) sync* {
     for (final entry in state.toolCalls.sortedEntries()) {
       final toolState = entry.value;
-      final toolCallId = toolState.resolveToolCallId('tool_${entry.key}');
-      final toolName = toolState.resolveToolName();
-
-      if (!toolState.startEmitted) {
-        toolState.startEmitted = true;
-        yield ToolInputStartEvent(
-          toolCallId: toolCallId,
-          toolName: toolName,
-          providerExecuted: false,
-          isDynamic: false,
-          providerMetadata: _providerMetadata({
+      ProviderMetadata? metadata() => _providerMetadata({
             'responseId': state.responseId,
             'toolIndex': entry.key,
-          }),
-        );
+          });
+      final startEvent = maybeCreateOpenAIToolInputStartEvent(
+        toolState: toolState,
+        fallbackToolCallId: 'tool_${entry.key}',
+        metadata: metadata,
+      );
+      if (startEvent != null) {
+        yield startEvent;
       }
 
-      final encodedArguments = toolState.encodedArguments();
-      final decodedArguments = tryDecodeOpenAIJsonValue(encodedArguments);
-      if (decodedArguments.error != null) {
-        yield ToolInputErrorEvent(
-          toolCallId: toolCallId,
-          toolName: toolName,
-          input: encodedArguments,
-          errorText: formatInvalidOpenAIToolInputError(
-            toolName,
-            decodedArguments.error!,
-          ),
-          providerExecuted: false,
-          isDynamic: false,
-          providerMetadata: _providerMetadata({
-            'responseId': state.responseId,
-            'toolIndex': entry.key,
-          }),
+      final resolvedInput = resolveOpenAIStreamToolInput(
+        toolState: toolState,
+        fallbackToolCallId: 'tool_${entry.key}',
+      );
+      if (resolvedInput.decodeError != null) {
+        yield createOpenAIToolInputErrorEvent(
+          input: resolvedInput,
+          metadata: metadata,
         );
         continue;
       }
 
-      yield ToolInputEndEvent(
-        toolCallId: toolCallId,
-        providerMetadata: _providerMetadata({
-          'responseId': state.responseId,
-          'toolIndex': entry.key,
-        }),
+      final endEvent = maybeCreateOpenAIToolInputEndEvent(
+        toolState: toolState,
+        fallbackToolCallId: 'tool_${entry.key}',
+        metadata: metadata,
       );
+      if (endEvent != null) {
+        yield endEvent;
+      }
       yield ToolCallEvent(
         toolCall: ToolCallContent(
-          toolCallId: toolCallId,
-          toolName: toolName,
-          input: decodedArguments.value,
+          toolCallId: resolvedInput.toolCallId,
+          toolName: resolvedInput.toolName,
+          input: resolvedInput.decodedInput,
         ),
-        providerMetadata: _providerMetadata({
-          'responseId': state.responseId,
-          'toolIndex': entry.key,
-        }),
+        providerMetadata: metadata(),
       );
     }
     state.toolCalls.clear();

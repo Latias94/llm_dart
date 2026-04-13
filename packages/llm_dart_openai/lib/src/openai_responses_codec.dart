@@ -330,97 +330,97 @@ final class OpenAIResponsesCodec {
 
     if (chunkType == 'response.output_text.delta') {
       final textId = _resolveTextId(chunk, null);
-      final providerMetadata = openAIResponsesStreamItemMetadata(
-        responseId: state.responseId,
-        serviceTier: state.serviceTier,
-        chunk: chunk,
-        item: null,
+      yield* decodeOpenAITextDeltaEvents(
+        state: state.textParts,
+        id: textId,
+        delta: _asString(chunk['delta']),
+        aggregateLogprobs: state.logprobs,
+        deltaLogprobs: _jsonListOrNull(chunk['logprobs']),
+        startMetadata: () => openAIResponsesStreamItemMetadata(
+          responseId: state.responseId,
+          serviceTier: state.serviceTier,
+          chunk: chunk,
+          item: null,
+        ),
+        deltaMetadata: () => openAIResponsesStreamItemMetadata(
+          responseId: state.responseId,
+          serviceTier: state.serviceTier,
+          chunk: chunk,
+          item: null,
+        ),
       );
-
-      if (state.textParts.markStarted(textId)) {
-        yield TextStartEvent(
-          id: textId,
-          providerMetadata: providerMetadata,
-        );
-      }
-
-      final delta = _asString(chunk['delta']);
-      if (delta != null && delta.isNotEmpty) {
-        appendOpenAILogprobs(
-          state.logprobs,
-          _jsonListOrNull(chunk['logprobs']),
-        );
-        yield TextDeltaEvent(
-          id: textId,
-          delta: delta,
-          providerMetadata: providerMetadata,
-        );
-      }
       return;
     }
 
     if (chunkType == 'response.output_text.done') {
       final textId = _resolveTextId(chunk, null);
-      if (state.textParts.markEnded(textId)) {
-        yield TextEndEvent(
-          id: textId,
-          providerMetadata: openAIResponsesStreamItemMetadata(
-            responseId: state.responseId,
-            serviceTier: state.serviceTier,
-            chunk: chunk,
-            item: null,
-          ),
-        );
+      final textEndEvent = maybeCreateOpenAITextEndEvent(
+        state: state.textParts,
+        id: textId,
+        metadata: () => openAIResponsesStreamItemMetadata(
+          responseId: state.responseId,
+          serviceTier: state.serviceTier,
+          chunk: chunk,
+          item: null,
+        ),
+      );
+      if (textEndEvent != null) {
+        yield textEndEvent;
       }
       return;
     }
 
     if (chunkType == 'response.reasoning_summary_part.added') {
-      final reasoningId = _resolveReasoningId(chunk);
-      if (state.reasoningParts.markStarted(reasoningId)) {
-        yield ReasoningStartEvent(
-          id: reasoningId,
-          providerMetadata: openAIResponsesStreamItemMetadata(
-            responseId: state.responseId,
-            serviceTier: state.serviceTier,
-            chunk: chunk,
-            item: null,
-          ),
-        );
+      final reasoningStartEvent = maybeCreateOpenAIReasoningStartEvent(
+        state: state.reasoningParts,
+        id: _resolveReasoningId(chunk),
+        metadata: () => openAIResponsesStreamItemMetadata(
+          responseId: state.responseId,
+          serviceTier: state.serviceTier,
+          chunk: chunk,
+          item: null,
+        ),
+      );
+      if (reasoningStartEvent != null) {
+        yield reasoningStartEvent;
       }
       return;
     }
 
     if (chunkType == 'response.reasoning_summary_text.delta') {
-      final reasoningId = _resolveReasoningId(chunk);
-      final delta = _asString(chunk['delta']);
-      if (delta != null && delta.isNotEmpty) {
-        yield ReasoningDeltaEvent(
-          id: reasoningId,
-          delta: delta,
-          providerMetadata: openAIResponsesStreamItemMetadata(
-            responseId: state.responseId,
-            serviceTier: state.serviceTier,
-            chunk: chunk,
-            item: null,
-          ),
-        );
-      }
+      yield* decodeOpenAIReasoningDeltaEvents(
+        state: state.reasoningParts,
+        id: _resolveReasoningId(chunk),
+        delta: _asString(chunk['delta']),
+        startMetadata: () => openAIResponsesStreamItemMetadata(
+          responseId: state.responseId,
+          serviceTier: state.serviceTier,
+          chunk: chunk,
+          item: null,
+        ),
+        deltaMetadata: () => openAIResponsesStreamItemMetadata(
+          responseId: state.responseId,
+          serviceTier: state.serviceTier,
+          chunk: chunk,
+          item: null,
+        ),
+      );
       return;
     }
 
     if (chunkType == 'response.reasoning_summary_part.done') {
-      final reasoningId = _resolveReasoningId(chunk);
-      if (state.reasoningParts.markEnded(reasoningId)) {
-        yield ReasoningEndEvent(
-          id: reasoningId,
-          providerMetadata: openAIResponsesStreamItemMetadata(
-            responseId: state.responseId,
-            serviceTier: state.serviceTier,
-            chunk: chunk,
-            item: null,
-          ),
-        );
+      final reasoningEndEvent = maybeCreateOpenAIReasoningEndEvent(
+        state: state.reasoningParts,
+        id: _resolveReasoningId(chunk),
+        metadata: () => openAIResponsesStreamItemMetadata(
+          responseId: state.responseId,
+          serviceTier: state.serviceTier,
+          chunk: chunk,
+          item: null,
+        ),
+      );
+      if (reasoningEndEvent != null) {
+        yield reasoningEndEvent;
       }
       return;
     }
@@ -433,36 +433,37 @@ final class OpenAIResponsesCodec {
         item: null,
         outputIndex: outputIndex,
       );
-      final providerMetadata = openAIResponsesStreamItemMetadata(
-        responseId: state.responseId,
-        serviceTier: state.serviceTier,
-        chunk: chunk,
-        item: null,
-      );
       final resolvedToolCallId = toolState.resolveToolCallId(
         outputIndex == null ? 'tool' : 'tool_$outputIndex',
       );
-      final resolvedToolName = toolState.resolveToolName();
+      ProviderMetadata? metadata() => openAIResponsesStreamItemMetadata(
+            responseId: state.responseId,
+            serviceTier: state.serviceTier,
+            chunk: chunk,
+            item: null,
+          );
 
-      if (!toolState.startEmitted) {
-        toolState.startEmitted = true;
-        yield ToolInputStartEvent(
-          toolCallId: resolvedToolCallId,
-          toolName: resolvedToolName,
-          providerExecuted: false,
-          isDynamic: false,
-          providerMetadata: providerMetadata,
-        );
+      final startEvent = maybeCreateOpenAIToolInputStartEvent(
+        toolState: toolState,
+        fallbackToolCallId: resolvedToolCallId,
+        metadata: metadata,
+      );
+      if (startEvent != null) {
+        yield startEvent;
       }
 
       final delta = _asString(chunk['delta']);
       if (delta != null && delta.isNotEmpty) {
         toolState.arguments.write(delta);
-        yield ToolInputDeltaEvent(
-          toolCallId: resolvedToolCallId,
-          delta: delta,
-          providerMetadata: providerMetadata,
-        );
+      }
+      final deltaEvent = maybeCreateOpenAIToolInputDeltaEvent(
+        toolState: toolState,
+        fallbackToolCallId: resolvedToolCallId,
+        delta: delta,
+        metadata: metadata,
+      );
+      if (deltaEvent != null) {
+        yield deltaEvent;
       }
       return;
     }
@@ -502,16 +503,19 @@ final class OpenAIResponsesCodec {
       }
 
       final textId = _resolveTextId(chunk, null);
-      if (state.textParts.markEnded(textId)) {
-        yield TextEndEvent(
-          id: textId,
-          providerMetadata: openAIResponsesStreamTextPartMetadata(
-            responseId: state.responseId,
-            serviceTier: state.serviceTier,
-            chunk: chunk,
-            part: part,
-          ),
-        );
+      final textEndEvent = maybeCreateOpenAITextEndEvent(
+        state: state.textParts,
+        id: textId,
+        metadata: () => openAIResponsesStreamTextPartMetadata(
+          responseId: state.responseId,
+          serviceTier: state.serviceTier,
+          chunk: chunk,
+          part: part,
+        ),
+        allowUnstarted: true,
+      );
+      if (textEndEvent != null) {
+        yield textEndEvent;
       }
       return;
     }
@@ -551,11 +555,14 @@ final class OpenAIResponsesCodec {
 
       if (itemType == 'message') {
         final textId = _resolveTextId(chunk, item);
-        if (state.textParts.markEnded(textId)) {
-          yield TextEndEvent(
-            id: textId,
-            providerMetadata: providerMetadata,
-          );
+        final textEndEvent = maybeCreateOpenAITextEndEvent(
+          state: state.textParts,
+          id: textId,
+          metadata: () => providerMetadata,
+          allowUnstarted: true,
+        );
+        if (textEndEvent != null) {
+          yield textEndEvent;
         }
         return;
       }
@@ -576,46 +583,41 @@ final class OpenAIResponsesCodec {
         );
         final resolvedToolName = toolState.resolveToolName();
 
-        if (!toolState.startEmitted) {
-          toolState.startEmitted = true;
-          yield ToolInputStartEvent(
-            toolCallId: resolvedToolCallId,
-            toolName: resolvedToolName,
-            providerExecuted: false,
-            isDynamic: false,
-            title: _asString(item['title']),
-            providerMetadata: providerMetadata,
-          );
+        final startEvent = maybeCreateOpenAIToolInputStartEvent(
+          toolState: toolState,
+          fallbackToolCallId: resolvedToolCallId,
+          title: _asString(item['title']),
+          metadata: () => providerMetadata,
+        );
+        if (startEvent != null) {
+          yield startEvent;
         }
 
         final encodedArguments = resolveOpenAIResponsesFunctionCallArguments(
           item,
           fallbackArguments: toolState.arguments.toString(),
         );
-        final decodedArguments = tryDecodeOpenAIJsonValue(encodedArguments);
-        if (decodedArguments.error != null) {
-          yield ToolInputErrorEvent(
-            toolCallId: resolvedToolCallId,
-            toolName: resolvedToolName,
-            input: encodedArguments,
-            errorText: formatInvalidOpenAIToolInputError(
-              resolvedToolName,
-              decodedArguments.error!,
-            ),
-            providerExecuted: false,
-            isDynamic: false,
-            title: _asString(item['title']),
-            providerMetadata: providerMetadata,
+        final resolvedInput = resolveOpenAIStreamToolInput(
+          toolState: toolState,
+          fallbackToolCallId: resolvedToolCallId,
+          fallbackToolName: resolvedToolName,
+          encodedArguments: encodedArguments,
+        );
+        if (resolvedInput.decodeError != null) {
+          yield createOpenAIToolInputErrorEvent(
+            input: resolvedInput,
+            metadata: () => providerMetadata,
           );
           return;
         }
 
-        if (!toolState.endEmitted) {
-          toolState.endEmitted = true;
-          yield ToolInputEndEvent(
-            toolCallId: resolvedToolCallId,
-            providerMetadata: providerMetadata,
-          );
+        final endEvent = maybeCreateOpenAIToolInputEndEvent(
+          toolState: toolState,
+          fallbackToolCallId: resolvedToolCallId,
+          metadata: () => providerMetadata,
+        );
+        if (endEvent != null) {
+          yield endEvent;
         }
 
         final toolCallPart = decodeOpenAIResponsesFunctionCallOutput(
@@ -623,7 +625,7 @@ final class OpenAIResponsesCodec {
           fallbackToolCallId: resolvedToolCallId,
           fallbackArguments: toolState.arguments.toString(),
           fallbackToolName: resolvedToolName,
-          decodedInput: decodedArguments.value,
+          decodedInput: resolvedInput.decodedInput,
         );
         if (toolCallPart != null) {
           yield ToolCallEvent(
