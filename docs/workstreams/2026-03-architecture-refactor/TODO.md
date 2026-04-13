@@ -379,4 +379,4 @@
 - [x] Freeze provider-native tool entry placement in provider packages
 - [x] Design provider-owned native-tool forcing or selection APIs without widening shared `ToolChoice`
 - [x] Decide that Anthropic shared `SpecificToolChoice` stays limited to declared common function tools, and defer any provider-owned native-tool selection surface until a real use case appears
-- [ ] Expose any public Google native-tool selection or forcing API only after the Gemini 3 mixed-tool wire contract is implemented
+- [x] Close public Google native-tool selection or forcing as active migration debt after the Gemini 3 mixed-tool subset proved the provider-owned boundary, and leave any later forcing API as future Google-owned policy only (see `195-google-native-tool-selection-closure.md`)
