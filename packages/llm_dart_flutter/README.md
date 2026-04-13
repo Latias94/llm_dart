@@ -64,6 +64,7 @@ leaving room for provider-owned features through:
 Use `DirectChatTransport` when Flutter can call the model directly.
 
 ```dart
+import 'package:llm_dart/openai.dart' as openai;
 import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart_flutter/llm_dart_flutter.dart';
 
@@ -84,9 +85,13 @@ Future<void> main() async {
       return;
     }
 
-    final mapped = const ChatMessageMapper().map(state.messages.last);
+    final shared = const ChatMessageMapper().map(state.messages.last);
+    final provider = const openai.OpenAIMessageMapper().map(
+      state.messages.last,
+    );
     print('status=${state.status}');
-    print('assistantText=${mapped.text}');
+    print('assistantText=${shared.text}');
+    print('openaiMetadata=${provider.hasOpenAIMetadata}');
   });
 
   await controller.sendMessage(
@@ -240,6 +245,9 @@ void renderLatest(ChatController controller) {
 Prefer rendering directly from `message.parts` when the UI already understands
 the richer part model.
 
+Use `ChatMessageMapper` as the shared baseline, then add a provider-owned mapper
+only when the UI needs provider-specific inspection.
+
 Provider-owned custom parts can stay provider-owned all the way to the UI. For
 example, Google server-side tool replay can be rendered through the Google
 package without widening `llm_dart_flutter`:
@@ -259,27 +267,62 @@ void renderGoogleCustomParts(ChatUiMessage message) {
 }
 ```
 
-If the UI also needs Google-specific metadata from common parts such as thought
-signatures, `responsePart`, or Google file IDs, use the provider-owned message
-mapper beside the shared one:
+If the UI also needs OpenAI-specific metadata from common parts such as
+response/item IDs, tool/source details, or logprobs, use the provider-owned
+message mapper beside the shared one:
 
 ```dart
+import 'package:llm_dart/openai.dart' as openai;
 import 'package:llm_dart_flutter/llm_dart_flutter.dart';
-import 'package:llm_dart_google/llm_dart_google.dart';
 
-void renderGoogleMessage(ChatUiMessage message) {
+void renderOpenAIMessage(ChatUiMessage message) {
   final shared = const ChatMessageMapper().map(message);
-  final google = const GoogleMessageMapper().map(message);
+  final provider = const openai.OpenAIMessageMapper().map(message);
 
   print(shared.text);
+  print(provider.hasOpenAIMetadata);
+  print(provider.hasLogprobs);
 
-  for (final detail in google.partDetails) {
+  for (final detail in provider.partDetails) {
     print('${detail.type}: ${detail.label}');
-    print(detail.thoughtSignature);
-    print(detail.responsePart);
+    print(detail.itemId);
+    print(detail.toolCallId);
+    print(detail.sourceId);
   }
 }
 ```
+
+If the UI instead needs Google-specific metadata from common parts such as
+thought signatures, `responsePart`, or Google file IDs, use the Google mapper
+the same way:
+
+```dart
+import 'package:llm_dart/google.dart' as google;
+import 'package:llm_dart_flutter/llm_dart_flutter.dart';
+
+void renderGoogleMessage(ChatUiMessage message) {
+  final shared = const ChatMessageMapper().map(message);
+  final provider = const google.GoogleMessageMapper().map(message);
+
+  print(shared.text);
+  print(provider.hasGoogleMetadata);
+  print(provider.hasThoughtSignatures);
+
+  for (final detail in provider.partDetails) {
+    print('${detail.type}: ${detail.label}');
+    print(detail.thoughtSignature);
+    print(detail.responsePart);
+    print(detail.sourceId);
+    print(detail.chunkType);
+  }
+}
+```
+
+This layered composition is the intended extension model:
+
+- shared mapper for stable cross-provider rendering
+- provider mapper for provider-owned metadata inspection
+- provider custom-part helpers for provider-owned replay payload rendering
 
 ## Tool and Approval Flows
 

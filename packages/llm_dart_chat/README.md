@@ -49,3 +49,31 @@ see:
 If you need Flutter `ValueNotifier` integration, use
 `package:llm_dart_flutter/llm_dart_flutter.dart`, which wraps this package with
 `ChatController` and a controller-aware persistence adapter.
+
+## Message Mapping Layers
+
+`ChatUiMessage` and `ChatUiPart` remain the source of truth. Use
+`ChatMessageMapper` only when a CLI, server-rendered UI, or framework-neutral
+adapter wants stable cross-provider summaries such as:
+
+- `text`
+- `reasoningText`
+- `toolParts`
+- `sources`
+- `fileParts`
+- `warnings`
+- `errors`
+
+If a pure Dart application also needs provider-owned inspection, compose the
+shared mapper with a provider package instead of widening `llm_dart_chat`
+itself:
+
+- `package:llm_dart_openai/llm_dart_openai.dart`
+  - `OpenAIMessageMapper` for response/item/source/tool metadata, custom parts,
+    and logprobs-aware part inspection
+- `package:llm_dart_google/llm_dart_google.dart`
+  - `GoogleMessageMapper` for thought signatures, response-part metadata,
+    source metadata, and Google custom-part inspection
+
+That keeps the runtime/session layer provider-neutral while still allowing rich
+provider-specific rendering where applications need it.

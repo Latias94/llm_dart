@@ -87,6 +87,14 @@ dart pub get
   - explicit equivalent alias of the default modern root surface
 - `package:llm_dart/chat.dart`
   - focused pure Dart chat runtime entrypoint over `llm_dart_chat`
+- `package:llm_dart/openai.dart`
+  - focused OpenAI-family provider entrypoint for provider-owned options,
+    native tools, custom parts, and `OpenAIMessageMapper`
+- `package:llm_dart/google.dart`
+  - focused Google provider entrypoint for provider-owned options, replay
+    helpers, custom parts, and `GoogleMessageMapper`
+- `package:llm_dart/anthropic.dart`
+  - focused Anthropic provider entrypoint for Anthropic-owned types
 - `package:llm_dart/legacy.dart`
   - explicit compatibility shell for `ai()`, `createProvider(...)`, legacy models, and builder-era APIs
 - `package:llm_dart_community/llm_dart_community.dart`
@@ -424,6 +432,51 @@ final restoredController = await adapter.restoreController(
 For widget-friendly rendering, `ChatMessageMapper` projects a `ChatUiMessage`
 into common text, reasoning, tool, source, file, warning, and error summaries
 without inventing another transport or provider layer.
+
+Use `ChatMessageMapper` as the stable rendering baseline. When the UI also
+needs provider-owned inspection, compose it with the focused provider
+entrypoints instead of widening the shared chat layer:
+
+- `package:llm_dart/openai.dart`
+  - `OpenAIMessageMapper` for response/item/source/tool metadata, custom parts,
+    and logprobs-aware part inspection
+- `package:llm_dart/google.dart`
+  - `GoogleMessageMapper` for thought signatures, response-part metadata,
+    source metadata, and Google custom-part inspection
+
+```dart
+import 'package:llm_dart_flutter/llm_dart_flutter.dart';
+import 'package:llm_dart/google.dart' as google;
+import 'package:llm_dart/openai.dart' as openai;
+
+void renderOpenAI(ChatUiMessage message) {
+  final shared = const ChatMessageMapper().map(message);
+  final provider = const openai.OpenAIMessageMapper().map(message);
+
+  print(shared.text);
+  print(provider.hasOpenAIMetadata);
+  print(provider.hasLogprobs);
+
+  for (final detail in provider.partDetails) {
+    print('${detail.type}: ${detail.label}');
+  }
+}
+
+void renderGoogle(ChatUiMessage message) {
+  final shared = const ChatMessageMapper().map(message);
+  final provider = const google.GoogleMessageMapper().map(message);
+
+  print(shared.text);
+  print(provider.hasGoogleMetadata);
+  print(provider.hasThoughtSignatures);
+
+  for (final detail in provider.partDetails) {
+    print('${detail.type}: ${detail.label}');
+    print(detail.sourceId);
+    print(detail.chunkType);
+  }
+}
+```
 
 ## Provider-Specific Options
 

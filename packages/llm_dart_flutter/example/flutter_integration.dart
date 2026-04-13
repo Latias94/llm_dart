@@ -4,6 +4,7 @@ import 'dart:async';
 import 'dart:io';
 
 import '../../../lib/llm_dart.dart' as llm;
+import '../../llm_dart_openai/lib/llm_dart_openai.dart' as openai;
 import 'package:llm_dart_flutter/llm_dart_flutter.dart';
 
 Future<void> main() async {
@@ -46,8 +47,12 @@ void printState(ChatState state) {
   }
 
   final latest = state.messages.last;
-  final mapped = const ChatMessageMapper().map(latest);
+  final shared = const ChatMessageMapper().map(latest);
+  final provider = const openai.OpenAIMessageMapper().map(latest);
   print('latest role=${latest.role} parts=${latest.parts.length}');
-  print('latest text=${mapped.text}');
-  print('latest tools=${mapped.toolParts.length}');
+  print('latest text=${shared.text}');
+  print('latest tools=${shared.toolParts.length}');
+  print('openai metadata=${provider.hasOpenAIMetadata}');
+  print('openai logprobs=${provider.hasLogprobs}');
+  print('openai part details=${provider.partDetails.length}');
 }
