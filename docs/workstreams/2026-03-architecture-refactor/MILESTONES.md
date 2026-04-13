@@ -422,7 +422,11 @@ Current status:
 - the public example surface is now also being pulled into line with that boundary: the core web-search example now demonstrates stable provider-owned search APIs on top of `generateTextCall(...)`, and the high-visibility example READMEs now explicitly distinguish stable `AI` facade usage from transitional compatibility builder material
 - the remaining builder-era example files now also use `package:llm_dart/legacy.dart` explicitly instead of importing the broad `llm_dart.dart` root barrel directly
 - the remaining root-package compatibility cleanup is now mostly semantic tightening and deprecation planning rather than more large-file decomposition
-- provider coverage and renderer helper expansion are now no longer the only next-step theme; the next structural milestone is to add a dedicated UI/session chunk runtime layer above `TextStreamEvent` and split it cleanly from HTTP wire chunks
+- provider coverage and renderer helper expansion are now no longer the only
+  next-step theme; the earlier UI/session chunk-runtime milestone is already
+  closed, and follow-up work now shifts to post-closure public guidance,
+  provider-owned UI extension contracts, dependency guardrails, and selective
+  provider re-triage
 - the next provider-specific implementation step is now also explicit: re-audit broader OpenRouter search mapping and any xAI subsets beyond the audited legacy live-search migration subset
 - incompatible legacy request shapes and bridge-shape conversion failures fall back to the old provider implementation instead of silently dropping provider-specific behavior
 - legacy stream projection is now explicitly frozen as a lossy compatibility surface; richer event semantics remain in `llm_dart_core` and `llm_dart_flutter`

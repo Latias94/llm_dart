@@ -504,12 +504,16 @@ Future<void> main() async {
 
 ## Current Reference Docs
 
+- Post-closure roadmap:
+  [docs/workstreams/2026-04-post-closure-priorities/README.md](E:/codes/flutter/llm_dart/docs/workstreams/2026-04-post-closure-priorities/README.md)
 - Community provider workspace guide:
   [packages/llm_dart_community/README.md](E:/codes/flutter/llm_dart/packages/llm_dart_community/README.md)
 - Migration guide:
   [38-migration-guide.md](E:/codes/flutter/llm_dart/docs/workstreams/2026-03-architecture-refactor/38-migration-guide.md)
 - Architecture workstream index:
   [docs/workstreams/2026-03-architecture-refactor/README.md](E:/codes/flutter/llm_dart/docs/workstreams/2026-03-architecture-refactor/README.md)
+- Provider UI extension contract:
+  [docs/workstreams/2026-04-post-closure-priorities/01-provider-ui-extension-contract.md](E:/codes/flutter/llm_dart/docs/workstreams/2026-04-post-closure-priorities/01-provider-ui-extension-contract.md)
 - Community provider public-entry guidance:
   [104-community-provider-public-entry-guidance.md](E:/codes/flutter/llm_dart/docs/workstreams/2026-03-architecture-refactor/104-community-provider-public-entry-guidance.md)
 - Prompt normalization contract:

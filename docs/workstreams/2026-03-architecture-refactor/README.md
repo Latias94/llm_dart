@@ -1,5 +1,8 @@
 # 2026-03 Architecture Refactor
 
+> Status: closed as of 2026-04-13. Follow-up work now lives in
+> `../2026-04-post-closure-priorities/README.md`.
+
 ## Background
 
 `llm_dart` already supports a broad set of providers, but its core abstractions are becoming too heavy:
