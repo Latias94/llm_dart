@@ -130,6 +130,9 @@ This phase should explicitly avoid:
   - Why the audited OpenRouter online subset and xAI live-search subset are
     enough for this refactor round, and what would justify reopening them
     later.
+- [07-event-surface-revalidation.md](07-event-surface-revalidation.md)
+  - Why the current `repo-ref/ai` event/UI stream split still does not justify
+    widening the shared `TextStreamEvent` model.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)
