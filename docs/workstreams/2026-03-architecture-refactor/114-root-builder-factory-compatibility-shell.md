@@ -158,6 +158,9 @@ The following pieces should survive for the compatibility window:
 As of 2026-04-13, the remaining OpenAI, Google, and Anthropic builder-era DSL
 classes are also now localized under `lib/src/compatibility/builders/`, with
 their historical root provider paths reduced to compatibility re-exports.
+The `LLMBuilder` provider-extension layers now follow that same pattern, so the
+root `builder/` files keep acting as compatibility export shells instead of
+continuing to host provider-specific implementation logic.
 
 But they should survive with one interpretation only:
 
