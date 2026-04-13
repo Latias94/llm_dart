@@ -33,6 +33,8 @@ import 'utils/http_config_utils_test.dart' as http_config_utils_tests;
 import 'utils/timeout_priority_test.dart' as timeout_priority_tests;
 import 'utils/dio/dio_proxy_test.dart' as dio_proxy_tests;
 import 'utils/capability_utils_test.dart' as capability_utils_tests;
+import 'tool/check_workspace_dependency_guards_test.dart'
+    as dependency_guard_tool_tests;
 
 // Integration tests
 import 'integration/thinking_content_extraction_test.dart'
@@ -112,6 +114,7 @@ void main() {
       timeout_priority_tests.main();
       dio_proxy_tests.main();
       capability_utils_tests.main();
+      dependency_guard_tool_tests.main();
     });
 
     group('Integration Tests', () {

@@ -121,6 +121,13 @@ As of 2026-04-13, that first lightweight enforcement step is now implemented
 through `tool/check_workspace_dependency_guards.dart` and wired into CI plus
 the workspace `melos analyze` path.
 
+That guard now checks both:
+
+- package implementation imports that incorrectly reach back into
+  `package:llm_dart/...`
+- workspace `pubspec.yaml` runtime dependencies against the frozen package-level
+  policy
+
 ## Why This Matters
 
 The reference repository shows the value of strong ownership boundaries, but the
