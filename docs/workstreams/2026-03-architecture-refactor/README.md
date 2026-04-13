@@ -509,6 +509,11 @@ This workstream is not about a file-moving refactor. It is about defining stable
     citation projection, and response-metadata helpers out of
     `openai_chat_completions_codec.dart` while leaving chunk sequencing and
     tool-call delta handling in the codec.
+- [172-openai-language-model-support-extraction.md](172-openai-language-model-support-extraction.md)
+  - Status note for moving OpenAI-family request-route planning, provider-
+    options normalization, model-settings resolution, and transport-request
+    header preparation out of `openai_language_model.dart` so the model class
+    stays focused on facade-level transport orchestration.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
