@@ -447,6 +447,226 @@ void main() {
         ),
       );
     });
+
+    test('generate resolves URI-backed image prompt parts through binaryResolver',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = Ollama(
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return const TransportResponse(
+              statusCode: 200,
+              body: {
+                'model': 'llama3.2',
+                'done': true,
+                'message': {
+                  'content': 'Handled image',
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel(
+        'llama3.2',
+        settings: OllamaChatModelSettings(
+          binaryResolver: (uri, {required mediaType, filename}) {
+            expect(uri.toString(), 'https://example.com/cat.png');
+            expect(mediaType, 'image/png');
+            expect(filename, isNull);
+            return utf8.encode('image-bytes');
+          },
+        ),
+      );
+
+      final result = await generateText(
+        model: model,
+        prompt: [
+          UserPromptMessage(
+            parts: [
+              const TextPromptPart('Describe this image'),
+              ImagePromptPart(
+                mediaType: 'image/png',
+                uri: Uri.parse('https://example.com/cat.png'),
+              ),
+            ],
+          ),
+        ],
+      );
+
+      expect(capturedRequest, isNotNull);
+      expect(
+        capturedRequest!.body,
+        {
+          'model': 'llama3.2',
+          'messages': [
+            {
+              'role': 'user',
+              'content': 'Describe this image',
+              'images': [base64Encode(utf8.encode('image-bytes'))],
+            },
+          ],
+          'stream': false,
+        },
+      );
+      expect(result.text, 'Handled image');
+    });
+
+    test('generate decodes data URI image prompt parts without binaryResolver',
+        () async {
+      TransportRequest? capturedRequest;
+      final dataUri = Uri.dataFromBytes(
+        utf8.encode('data-image'),
+        mimeType: 'image/png',
+      );
+
+      final model = Ollama(
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return const TransportResponse(
+              statusCode: 200,
+              body: {
+                'model': 'llama3.2',
+                'done': true,
+                'message': {
+                  'content': 'Handled data uri',
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel('llama3.2');
+
+      final result = await generateText(
+        model: model,
+        prompt: [
+          UserPromptMessage(
+            parts: [
+              ImagePromptPart(
+                mediaType: 'image/png',
+                uri: dataUri,
+              ),
+            ],
+          ),
+        ],
+      );
+
+      expect(capturedRequest, isNotNull);
+      expect(
+        capturedRequest!.body,
+        {
+          'model': 'llama3.2',
+          'messages': [
+            {
+              'role': 'user',
+              'content': '',
+              'images': [base64Encode(utf8.encode('data-image'))],
+            },
+          ],
+          'stream': false,
+        },
+      );
+      expect(result.text, 'Handled data uri');
+    });
+
+    test('call-level binaryResolver overrides model settings', () async {
+      TransportRequest? capturedRequest;
+
+      final model = Ollama(
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return const TransportResponse(
+              statusCode: 200,
+              body: {
+                'model': 'llama3.2',
+                'done': true,
+                'message': {
+                  'content': 'Handled override',
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel(
+        'llama3.2',
+        settings: OllamaChatModelSettings(
+          binaryResolver: (uri, {required mediaType, filename}) {
+            return utf8.encode('model-bytes');
+          },
+        ),
+      );
+
+      final result = await generateText(
+        model: model,
+        prompt: [
+          UserPromptMessage(
+            parts: [
+              ImagePromptPart(
+                mediaType: 'image/png',
+                uri: Uri.parse('https://example.com/call.png'),
+              ),
+            ],
+          ),
+        ],
+        callOptions: CallOptions(
+          providerOptions: OllamaGenerateTextOptions(
+            binaryResolver: (uri, {required mediaType, filename}) {
+              return utf8.encode('call-bytes');
+            },
+          ),
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      expect(
+        capturedRequest!.body,
+        {
+          'model': 'llama3.2',
+          'messages': [
+            {
+              'role': 'user',
+              'content': '',
+              'images': [base64Encode(utf8.encode('call-bytes'))],
+            },
+          ],
+          'stream': false,
+        },
+      );
+      expect(result.text, 'Handled override');
+    });
+
+    test('generate throws a helpful error for unresolved URI-backed images',
+        () async {
+      final model = Ollama(
+        transport: const _FakeTransportClient(),
+      ).chatModel('llama3.2');
+
+      await expectLater(
+        () => generateText(
+          model: model,
+          prompt: [
+            UserPromptMessage(
+              parts: [
+                ImagePromptPart(
+                  mediaType: 'image/png',
+                  uri: Uri.parse('https://example.com/cat.png'),
+                ),
+              ],
+            ),
+          ],
+        ),
+        throwsA(
+          isA<UnsupportedError>().having(
+            (error) => error.message,
+            'message',
+            contains('OllamaBinaryResolver'),
+          ),
+        ),
+      );
+    });
   });
 }
 

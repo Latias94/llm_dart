@@ -561,6 +561,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Status note for localizing Ollama and ElevenLabs compatibility config and
     shell-support ownership back under provider-owned compatibility paths while
     keeping only shared Dio override projection in the shared helper.
+- [185-ollama-uri-backed-multimodal-inputs.md](185-ollama-uri-backed-multimodal-inputs.md)
+  - Status note for adding a provider-owned URI-resolution path for modern
+    Ollama user image inputs through data URIs and `OllamaBinaryResolver`
+    without widening the shared prompt model.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
@@ -754,6 +758,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   cross-provider adapter helper, while Ollama- and ElevenLabs-specific config
   adapters and shell-support modules now live under provider-owned
   compatibility directories
+- the modern Ollama chat path now also closes one more real fidelity gap:
+  URI-backed user image inputs can now flow through data URIs or a provider-
+  owned `OllamaBinaryResolver`, so non-inline multimodal inputs no longer
+  always require caller-owned byte rewriting before request encoding
 - the Ollama root shell is now also slightly thinner in code ownership terms:
   compatibility config shaping, chat-bridge setup, and embedding delegation
   glue no longer live inline inside `lib/providers/ollama/provider.dart`, but

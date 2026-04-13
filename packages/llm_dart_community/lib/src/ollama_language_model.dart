@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
@@ -37,7 +38,7 @@ final class OllamaLanguageModel implements LanguageModel {
 
   @override
   Future<GenerateTextResult> generate(GenerateTextRequest request) async {
-    final preparedRequest = _prepareRequest(request, stream: false);
+    final preparedRequest = await _prepareRequest(request, stream: false);
     final response = await transport.send(
       TransportRequest(
         uri: chatUri,
@@ -61,7 +62,7 @@ final class OllamaLanguageModel implements LanguageModel {
 
   @override
   Stream<TextStreamEvent> stream(GenerateTextRequest request) async* {
-    final preparedRequest = _prepareRequest(request, stream: true);
+    final preparedRequest = await _prepareRequest(request, stream: true);
     yield StartEvent(warnings: preparedRequest.warnings);
 
     try {
@@ -112,10 +113,10 @@ final class OllamaLanguageModel implements LanguageModel {
     }
   }
 
-  _PreparedOllamaRequest _prepareRequest(
+  Future<_PreparedOllamaRequest> _prepareRequest(
     GenerateTextRequest request, {
     required bool stream,
-  }) {
+  }) async {
     if (request.prompt.isEmpty) {
       throw ArgumentError(
           'Ollama requests require at least one prompt message.');
@@ -133,9 +134,16 @@ final class OllamaLanguageModel implements LanguageModel {
       warnings: warnings,
     );
 
+    final binaryResolver = _resolveBinaryResolver(providerOptions);
     final messages = <Map<String, Object?>>[];
     for (final message in request.prompt) {
-      messages.addAll(_encodePromptMessage(message, warnings: warnings));
+      messages.addAll(
+        await _encodePromptMessage(
+          message,
+          warnings: warnings,
+          binaryResolver: binaryResolver,
+        ),
+      );
     }
 
     final options = <String, Object?>{
@@ -252,10 +260,17 @@ final class OllamaLanguageModel implements LanguageModel {
         .toList(growable: false);
   }
 
-  List<Map<String, Object?>> _encodePromptMessage(
+  OllamaBinaryResolver? _resolveBinaryResolver(
+    OllamaGenerateTextOptions? providerOptions,
+  ) {
+    return providerOptions?.binaryResolver ?? settings.binaryResolver;
+  }
+
+  Future<List<Map<String, Object?>>> _encodePromptMessage(
     PromptMessage message, {
     required List<ModelWarning> warnings,
-  }) {
+    required OllamaBinaryResolver? binaryResolver,
+  }) async {
     return switch (message) {
       SystemPromptMessage() => [
           {
@@ -267,16 +282,23 @@ final class OllamaLanguageModel implements LanguageModel {
             ),
           },
         ],
-      UserPromptMessage() => [_encodeUserMessage(message, warnings: warnings)],
+      UserPromptMessage() => [
+          await _encodeUserMessage(
+            message,
+            warnings: warnings,
+            binaryResolver: binaryResolver,
+          ),
+        ],
       AssistantPromptMessage() => [_encodeAssistantMessage(message)],
       ToolPromptMessage() => _encodeToolMessage(message, warnings: warnings),
     };
   }
 
-  Map<String, Object?> _encodeUserMessage(
+  Future<Map<String, Object?>> _encodeUserMessage(
     UserPromptMessage message, {
     required List<ModelWarning> warnings,
-  }) {
+    required OllamaBinaryResolver? binaryResolver,
+  }) async {
     final textParts = <String>[];
     final images = <String>[];
 
@@ -284,18 +306,43 @@ final class OllamaLanguageModel implements LanguageModel {
       switch (part) {
         case TextPromptPart(:final text):
           textParts.add(text);
-        case ImagePromptPart(bytes: final bytes?) when bytes.isNotEmpty:
-          images.add(base64Encode(bytes));
+        case ImagePromptPart(
+            :final mediaType,
+            :final uri,
+            :final bytes,
+          ):
+          images.add(
+            base64Encode(
+              await _resolveBinaryPromptBytes(
+                mediaType: mediaType,
+                uri: uri,
+                bytes: bytes,
+                binaryResolver: binaryResolver,
+                promptPartKind: 'image',
+              ),
+            ),
+          );
         case FilePromptPart(
               mediaType: final mediaType,
-              bytes: final bytes?,
-            )
-            when mediaType.startsWith('image/') && bytes.isNotEmpty:
-          images.add(base64Encode(bytes));
-        case ImagePromptPart():
+              filename: final filename,
+              uri: final uri,
+              bytes: final bytes,
+            ) when mediaType.startsWith('image/'):
+          images.add(
+            base64Encode(
+              await _resolveBinaryPromptBytes(
+                mediaType: mediaType,
+                filename: filename,
+                uri: uri,
+                bytes: bytes,
+                binaryResolver: binaryResolver,
+                promptPartKind: 'image file',
+              ),
+            ),
+          );
         case FilePromptPart():
           throw UnsupportedError(
-            'Ollama currently requires inline image bytes for multimodal prompt parts.',
+            'Ollama only supports image multimodal file prompt parts on the current modern chat path.',
           );
         case ReasoningPromptPart(:final text):
           warnings.add(
@@ -733,4 +780,47 @@ String _stringifyToolOutput(Object? output) {
     String() => output,
     _ => jsonEncode(output),
   };
+}
+
+Future<List<int>> _resolveBinaryPromptBytes({
+  required String mediaType,
+  required Uri? uri,
+  required List<int>? bytes,
+  required OllamaBinaryResolver? binaryResolver,
+  required String promptPartKind,
+  String? filename,
+}) async {
+  if (bytes != null && bytes.isNotEmpty) {
+    return bytes;
+  }
+
+  if (uri == null) {
+    throw UnsupportedError(
+      'Ollama $promptPartKind prompt parts require bytes, a data URI, or a configured OllamaBinaryResolver.',
+    );
+  }
+
+  final uriData = uri.data;
+  if (uriData != null) {
+    final resolved = uriData.contentAsBytes();
+    if (resolved.isNotEmpty) {
+      return resolved;
+    }
+  }
+
+  final resolver = binaryResolver;
+  if (resolver != null) {
+    final resolved = await resolver(
+      uri,
+      mediaType: mediaType,
+      filename: filename,
+    );
+    if (resolved != null && resolved.isNotEmpty) {
+      return resolved;
+    }
+  }
+
+  throw UnsupportedError(
+    'Ollama $promptPartKind prompt parts cannot encode URI $uri without bytes, a data URI, or a configured OllamaBinaryResolver.',
+  );
 }

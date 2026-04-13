@@ -1,13 +1,23 @@
+import 'dart:async';
+
 import 'package:llm_dart_core/llm_dart_core.dart';
 
 const ollamaDefaultBaseUrl = 'http://localhost:11434';
 
+typedef OllamaBinaryResolver = FutureOr<List<int>?> Function(
+  Uri uri, {
+  required String mediaType,
+  String? filename,
+});
+
 /// Provider-owned model settings for package-owned Ollama language models.
 final class OllamaChatModelSettings implements ProviderModelOptions {
   final Map<String, String> headers;
+  final OllamaBinaryResolver? binaryResolver;
 
   const OllamaChatModelSettings({
     this.headers = const {},
+    this.binaryResolver,
   });
 }
 
@@ -30,6 +40,7 @@ final class OllamaGenerateTextOptions implements ProviderInvocationOptions {
   final String? keepAlive;
   final bool? raw;
   final bool? reasoning;
+  final OllamaBinaryResolver? binaryResolver;
 
   const OllamaGenerateTextOptions({
     this.numCtx,
@@ -40,5 +51,6 @@ final class OllamaGenerateTextOptions implements ProviderInvocationOptions {
     this.keepAlive,
     this.raw,
     this.reasoning,
+    this.binaryResolver,
   });
 }

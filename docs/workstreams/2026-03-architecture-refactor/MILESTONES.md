@@ -174,10 +174,13 @@ Current status:
   all", but "re-audit Ollama modern fidelity and keep slimming the remaining
   compatibility-era root shells"
 - the remaining Ollama fidelity gaps are now narrower and explicit: shared
-  `toolChoice` forcing still cannot be mapped truthfully, non-inline
-  multimodal inputs still require caller-owned byte loading, and tool error
-  state still degrades to warning-based plain tool-content replay because
-  Ollama has no dedicated replay field for it
+  `toolChoice` forcing still cannot be mapped truthfully, and tool error state
+  still degrades to warning-based plain tool-content replay because Ollama has
+  no dedicated replay field for it
+- the modern Ollama chat path now also supports URI-backed user image inputs
+  through data URIs and a provider-owned `OllamaBinaryResolver`, which removes
+  the old requirement that apps always rewrite non-inline multimodal inputs
+  into shared prompt bytes before request encoding
 - the root ElevenLabs legacy shell now also delegates shared text-to-speech
   and direct-audio transcription requests into the package-owned
   `llm_dart_community` models instead of keeping duplicate primary audio

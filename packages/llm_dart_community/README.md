@@ -29,6 +29,11 @@ Current shared-capability ownership:
 - ElevenLabs text-to-speech
 - ElevenLabs direct-audio transcription
 
+Modern Ollama chat also supports URI-backed user image inputs through:
+
+- direct `data:` URIs
+- provider-owned `OllamaBinaryResolver` on model settings or invocation options
+
 ## Runnable Examples
 
 This package now also includes minimal runnable examples for each current modern
@@ -92,6 +97,9 @@ final embeddingModel = community.Ollama().embeddingModel(
   'nomic-embed-text',
 );
 ```
+
+For URI-backed Ollama image inputs that are not already `data:` URIs, configure
+`OllamaBinaryResolver` to resolve bytes before request encoding.
 
 ## ElevenLabs Example
 

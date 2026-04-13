@@ -213,7 +213,8 @@
 - [x] Thin the root Ollama and ElevenLabs providers into explicit legacy delegation shells above package-owned modern community models
 - [x] Add the first package-owned Ollama `EmbeddingModel` slice in `llm_dart_community`
 - [x] Expand the package-owned Ollama modern slice with `LanguageModel`
-- [ ] Close the remaining Ollama modern fidelity gaps after the first replay re-audit, especially explicit `toolChoice` forcing, non-inline multimodal inputs, and the lack of a native replay-time tool error flag
+- [x] Add a provider-owned URI-resolution path for modern Ollama user image inputs through data URIs and `OllamaBinaryResolver`, instead of always requiring caller-owned byte rewriting
+- [ ] Close the remaining Ollama modern fidelity gaps after the first replay re-audit, especially explicit `toolChoice` forcing and the lack of a native replay-time tool error flag
 - [x] Add the first package-owned ElevenLabs `SpeechModel` / `TranscriptionModel` slice in `llm_dart_community`
 - [ ] Migrate Ollama
 - [ ] Migrate ElevenLabs
