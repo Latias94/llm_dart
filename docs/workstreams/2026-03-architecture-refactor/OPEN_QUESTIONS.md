@@ -458,6 +458,8 @@ Resolved in the current breaking round:
 - `192-streamed-runner-step-metadata-policy.md` documents the frozen decision
   to keep richer shared step-start and step-finish metadata out of the current
   shared core
+- `193-shared-runner-closure-audit.md` documents the closure decision for the
+  remaining shared-runner expansion and constrained pre-step questions
 
 ## 37. `readChatUiStream(...)` Facade Status
 

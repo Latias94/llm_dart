@@ -595,6 +595,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Frozen policy that keeps streamed-runner step metadata split between the
     existing small runner callbacks, completed step snapshots, and lightweight
     UI/runtime step markers instead of widening the shared core.
+- [193-shared-runner-closure-audit.md](193-shared-runner-closure-audit.md)
+  - Closure audit concluding that the current shared runner is complete at the
+    right scope for this round, and that further continuation or pre-step
+    expansion is future demand-driven policy rather than active migration debt.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
@@ -656,6 +660,7 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - Shared structured output now exists in `llm_dart_core` through `OutputSpec`, `generateOutput(...)`, `streamOutput(...)`, and `streamOutputResult(...)`, and the additive main-call layer now also exists through `generateTextCall(...)` and `streamTextCall(...)`; legacy compatibility `jsonSchema` now also routes through the shared `responseFormat` path, streamed structured output now has dedicated `partialOutputStream`, `elementStream<T>()`, and final `output/result` surfaces above the raw event stream, and the naming direction is now frozen: the additive call layer is the app-facing text API while the original helper names remain the low-level raw layer.
 - The shared runner stack now also includes `StreamTextRunner` / `streamTextRun(...)`, which stitches single-step provider streams into a narrow multi-step run stream plus `stepStream` and final `result`; the remaining gap versus `repo-ref/ai` is no longer the existence of streamed orchestration itself, but the intentionally deferred breadth such as `prepareStep`, richer stop policies, retry/model switching, and higher-level UI-oriented stream processing.
 - streamed multi-step orchestration is now also frozen more tightly on step observability: the shared core keeps the current split between small runner callbacks (`GenerateTextStepStartEvent`), completed step snapshots (`GenerateTextStepResult` / `stepStream`), and lightweight `StepStartEvent` / `StepFinishEvent` markers, instead of widening shared step metadata before real usage pressure appears
+- the shared runner is now also effectively closed at the current workstream scope: common function-tool continuation is the stable shared subset, while approval-safe/provider-executed continuation and any constrained pre-step mutation hook remain future demand-driven policy questions rather than active shared-core refactor debt
 - Shared capability helper parity now also exists in `llm_dart_core` through `embed(...)`, `embedMany(...)`, `generateImage(...)`, `generateSpeech(...)`, and `transcribe(...)`; embedding, image, and speech migrations now already exist across the OpenAI-family and Google providers through `OpenAI.embeddingModel(...)`, `OpenAI.imageModel(...)`, `OpenAI.speechModel(...)`, `Google.embeddingModel(...)`, `Google.imageModel(...)`, and `Google.speechModel(...)`, and the OpenAI family now also has package-owned `transcriptionModel(...)` migrations. The remaining Google gap is now provider-owned streamed TTS maturity plus the still-open question of whether a Google-specific audio-understanding helper is worth adding above multimodal prompting, while the legacy multimodal-output projection intentionally remains thin and the shared embedding boundary still does not yet define chunk-splitting policy; Anthropic is now mostly down to optional custom tool-reference helpers and provider-owned selection, not a replay-policy tail or a separate non-text model migration track.
 - OpenAI-family migration is now also effectively closed at the current workstream scope: the chat-completions path accepts user image/audio/PDF file inputs, the Responses-first compatibility route again covers the common user image/file subset, both OpenAI text paths now align on provider-owned reasoning-model compatibility such as `reasoningEffort`, `forceReasoning`, `systemMessageMode`, and `serviceTier` validation, the OpenAI-owned Responses persistence subset now also exists through `store`, `conversation`, `item_reference`, and replay-branch encoding without widening the shared core, the provider-owned request-side tool surface now covers `web_search_preview`, `file_search`, `computer_use_preview`, `image_generation`, `mcp`, and `code_interpreter`, and the provider-owned output/helper layer now covers the current high-value custom payloads. The remaining OpenAI-owned gap is now mostly a deliberate future-policy boundary: keep execution-heavy hosted-tool families deferred unless a concrete product need appears, while assistant replay remains intentionally conservative on the chat-completions path.
 - OpenAI provider-owned `logprobs` handling is now aligned with `repo-ref/ai` through typed `OpenAIGenerateTextOptions.logprobs`, Responses-side automatic `include/top_logprobs` encoding, and text-part / stream-event provider metadata decode, without widening the shared text-generation contract.
@@ -739,12 +744,11 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - the Anthropic compatibility path is now also split more honestly into a thin
   shell plus a provider-local legacy adapter, instead of keeping builder
   wiring and replay-heavy conversion logic in one file
-- the remaining reference-alignment gap is now also more explicit: raw streamed
-  orchestration and the lightweight `llm_dart_chat` middle helper now both
-  exist, so the next worthwhile maturity work is evaluating whether the new
-  streamed runner later needs richer lifecycle metadata or inter-step
-  projection, and whether the new UI-stream reader later needs only a small
-  callback/final-summary facade, not more shared core events
+- the runner/chat-runtime maturity picture is now also cleaner: raw streamed
+  orchestration, the lightweight `llm_dart_chat` middle helper, and the narrow
+  shared runner closure rules are all in place, so those areas are no longer
+  active architecture blockers and should only reopen on concrete usage
+  pressure
 - the provider-support propagation policy is now also explicit: OpenAI remains a
   reference pattern rather than a symmetry target, Google is the next justified
   selective extraction candidate, and Anthropic should stay simpler until a

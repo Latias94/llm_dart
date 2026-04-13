@@ -56,8 +56,8 @@
 - [x] Decide whether approval-gated continuation and provider-native built-in tool continuation should stay provider/session-owned or ever gain a shared runner path
 - [x] Decide whether the additive `generateTextCall(...)` / `streamTextCall(...)` layer should later fold into `generateText(...)` / `streamText(...)` directly or remain the explicit higher-level result surface
 - [x] Design and implement an additive streamed multi-step runner above raw `streamText(...)` with a stitched run stream, `stepStream`, and final run result
-- [ ] Re-evaluate shared runner expansion only after a replay-safe approval or provider-executed continuation contract is proven across at least two provider families
-- [ ] Re-evaluate whether the new streamed runner needs a constrained pre-step hook after the layered API is used by at least two concrete shared call paths
+- [x] Close shared runner expansion as active migration debt until at least two provider families prove the same replay-safe continuation contract without widening shared events or prompt/UI models (see `193-shared-runner-closure-audit.md`)
+- [x] Close a constrained pre-step hook as active migration debt until at least two concrete shared call paths prove the same hook is needed above the current narrow runner surface (see `193-shared-runner-closure-audit.md`)
 - [x] Freeze streamed multi-step orchestration on the current small shared step-metadata split, and defer any richer step-start/step-finish detail to future UI/runtime or orchestration-specific layers unless real usage pressure appears (see `192-streamed-runner-step-metadata-policy.md`)
 - [x] Decide that the initial streamed runner keeps its stitched `eventStream` provider-step-only instead of synthesizing local tool-result or other inter-step projection events in the narrow phase
 - [x] Evaluate and implement a lightweight `llm_dart_chat` UI-stream helper above `ChatUiStreamChunk` for non-session consumers, instead of widening chunk vocabulary or adding more core events
