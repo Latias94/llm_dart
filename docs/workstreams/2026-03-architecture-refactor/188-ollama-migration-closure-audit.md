@@ -10,9 +10,8 @@ whether the remaining Ollama items are now better classified as:
 - already-frozen provider wire limitations
 
 This matters because keeping a broad migration item open after its real scope is
-already complete creates false architecture debt and distracts from the actual
-remaining blocker: broader community-provider decoupling in the root
-compatibility layer.
+already complete creates false architecture debt and distracts from the smaller
+remaining compatibility and policy items that are tracked separately.
 
 ## What Was Reviewed
 

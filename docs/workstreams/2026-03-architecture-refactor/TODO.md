@@ -169,7 +169,7 @@
 - [x] Remove Ollama's direct dependency on root `HttpResponseHandler` by using transport-owned JSON decode/logging primitives plus provider-local error mapping
 - [x] Move Ollama and ElevenLabs builder DSL implementations out of provider directories and into the root compatibility layer, leaving thin compatibility exports behind
 - [x] Make `llm_dart_community` a real migration target instead of an empty landing-zone package
-- [ ] Decouple Ollama and ElevenLabs from root-local compatibility imports before moving real implementation weight into `llm_dart_community` (see `101-community-root-shell-thinning-plan.md` and `105-community-provider-decoupling-blocker-inventory.md`)
+- [x] Close the old community-provider decoupling umbrella once modern implementation weight already lives in `llm_dart_community`, and treat remaining root-owned pieces as explicit compatibility shells or residual provider-owned APIs instead
 - [x] Extract Ollama root-shell compatibility config shaping and bridge setup out of `lib/providers/ollama/provider.dart` into the root compatibility layer
 - [x] Extract ElevenLabs root-shell speech/transcription bridge setup out of `lib/providers/elevenlabs/provider.dart` into the root compatibility layer
 - [x] Relocate the remaining root OpenAI provider shell under `src/compatibility`, leaving the public provider entry file as a compatibility re-export

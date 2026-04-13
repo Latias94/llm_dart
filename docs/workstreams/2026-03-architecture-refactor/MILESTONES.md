@@ -188,6 +188,11 @@ Current status:
   `llm_dart_community`, remaining tool/replay limitations are already frozen as
   honest provider limits, and residual completion/model-listing ownership is
   already frozen outside the shared modern migration target
+- the old community-provider decoupling umbrella is now also effectively
+  complete at the right scope: real shared-capability implementation weight has
+  already moved into `llm_dart_community`, and the remaining root-owned pieces
+  are now explicitly compatibility-era shells or residual provider-owned APIs
+  rather than active blockers for the modern package boundary
 - the root ElevenLabs legacy shell now also delegates shared text-to-speech
   and direct-audio transcription requests into the package-owned
   `llm_dart_community` models instead of keeping duplicate primary audio

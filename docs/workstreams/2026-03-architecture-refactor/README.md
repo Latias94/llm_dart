@@ -575,8 +575,13 @@ This workstream is not about a file-moving refactor. It is about defining stable
     voice/realtime/admin helpers stay residual provider-owned surfaces for now.
 - [188-ollama-migration-closure-audit.md](188-ollama-migration-closure-audit.md)
   - Closure audit concluding that Ollama shared-capability migration is now
-    complete for the current workstream scope, and that the remaining open work
-    belongs to broader community-provider decoupling instead.
+    complete for the current workstream scope, and that the remaining work no
+    longer belongs to another Ollama-specific migration blocker.
+- [189-community-provider-decoupling-umbrella-closure.md](189-community-provider-decoupling-umbrella-closure.md)
+  - Closure audit concluding that the old community-provider decoupling umbrella
+    is now too broad: modern implementation weight already lives in
+    `llm_dart_community`, while the remaining root-owned pieces are explicit
+    compatibility shells or residual provider-owned APIs.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
@@ -785,9 +790,12 @@ This workstream is not about a file-moving refactor. It is about defining stable
   voice/realtime/admin/model helpers remain residual provider-owned surfaces
 - Ollama shared-capability migration is now also explicitly closed for the
   current workstream scope: modern chat and embeddings are in place, residual
-  completion/model-listing ownership is already frozen, and the remaining open
-  work is the broader root compatibility decoupling item rather than another
-  Ollama-specific migration blocker
+  completion/model-listing ownership is already frozen, and the remaining work
+  no longer belongs to another Ollama-specific migration blocker
+- the old community-provider decoupling umbrella is now also explicitly closed
+  as an over-broad blocker: modern implementation weight already lives in
+  `llm_dart_community`, while the remaining root-owned pieces are now better
+  understood as compatibility-era shells or intentionally residual APIs
 - the Ollama root shell is now also slightly thinner in code ownership terms:
   compatibility config shaping, chat-bridge setup, and embedding delegation
   glue no longer live inline inside `lib/providers/ollama/provider.dart`, but
