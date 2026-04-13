@@ -542,6 +542,9 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Frozen boundary note that Google audio understanding stays on multimodal
     prompting for now, without adding an extra provider-owned helper above the
     language-model path.
+- [180-anthropic-codec-support-boundary.md](180-anthropic-codec-support-boundary.md)
+  - Frozen boundary note that Anthropic result/stream codec duplication is real
+    but still too leaf-level for a worthwhile support-module extraction today.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
@@ -715,6 +718,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - Google audio understanding is now also explicitly frozen on the multimodal
   language-model path: no fake transcription model and no extra provider-owned
   helper are needed until a clearer repeated product contract appears
+- Anthropic codec duplication is now also explicitly classified as deferred:
+  repeated leaf helpers exist, but a support extraction would still be more
+  symmetry than ownership until a concrete multi-file change proves a narrower
+  local support slice
 - the Ollama root shell is now also slightly thinner in code ownership terms:
   compatibility config shaping, chat-bridge setup, and embedding delegation
   glue no longer live inline inside `lib/providers/ollama/provider.dart`, but
