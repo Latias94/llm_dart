@@ -553,6 +553,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Frozen boundary note that Anthropic's current tool-search declarations,
     deferred-loading controls, and replay payloads are enough for now, without
     another custom helper layer.
+- [183-remaining-structure-drift-audit.md](183-remaining-structure-drift-audit.md)
+  - Priority audit that narrows the remaining real structure drift versus
+    `repo-ref/ai`, and recommends community-provider ownership cleanup as the
+    next highest-value refactor slice.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
@@ -737,6 +741,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - Anthropic tool-search is now also explicitly frozen on the current provider-
   owned primitive set: native-tool declarations, deferred-loading controls, and
   replay payloads are enough without another custom helper layer
+- the remaining real structure drift versus `repo-ref/ai` now looks much
+  narrower: community-provider ownership is the biggest unresolved gap, while
+  most remaining OpenAI, Google, Anthropic, runner, and chat-runtime items are
+  now deliberate defer-or-demand decisions rather than missing architecture
 - the Ollama root shell is now also slightly thinner in code ownership terms:
   compatibility config shaping, chat-bridge setup, and embedding delegation
   glue no longer live inline inside `lib/providers/ollama/provider.dart`, but

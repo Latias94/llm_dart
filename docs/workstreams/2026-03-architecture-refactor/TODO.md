@@ -195,6 +195,7 @@
 - [x] Move the remaining root OpenAI chat bridge and fallback routing out of `OpenAIProvider` into a local chat facade so the public provider shell keeps shrinking toward composition-only code
 - [x] Freeze that the legacy compatibility layer stays as an explicit migration shell while real implementation weight keeps moving downward into provider-owned packages and shared helpers
 - [x] Audit the remaining compatibility provider-shell heavy files after the recent OpenAI shell thinning rounds and freeze the next decomposition order
+- [x] Audit the remaining real structure drift versus `repo-ref/ai` after the OpenAI / Google / Anthropic support-boundary rounds, and freeze the next highest-value refactor target
 - [x] Split `openai_family_compat_provider.dart` into provider/profile-specific builder slices so the remaining OpenAI-family compatibility builder stops mixing six providers in one file
 - [x] Re-evaluate whether `anthropic_compat_provider.dart` now deserves the same shell/support split, or whether it should stay provider-local because most of its remaining weight is real replay conversion logic
 - [x] Decide that Anthropic codec-local shared support remains deferred until a future multi-file change proves a narrow result/stream parity slice worth extracting
