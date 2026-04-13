@@ -1,8 +1,8 @@
 import '../core/capability.dart';
 import '../core/llm_error.dart';
-import '../providers/google/builder.dart';
-import '../providers/openai/builder.dart';
 import '../providers/openai/provider.dart';
+import '../src/compatibility/builders/google_builder.dart';
+import '../src/compatibility/builders/openai_builder.dart';
 import 'llm_builder.dart';
 
 /// Provider-specific typed build helpers layered on top of [LLMBuilder].

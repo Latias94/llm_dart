@@ -31,6 +31,7 @@ import 'provider.dart';
 export 'config.dart';
 export 'client.dart';
 export 'provider.dart';
+export 'builder.dart';
 
 // Capability modules
 export 'chat.dart';

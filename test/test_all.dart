@@ -56,6 +56,8 @@ import 'providers/factories/base_factory_test.dart' as factory_tests;
 // Provider-specific tests
 import 'providers/anthropic/anthropic_provider_test.dart'
     as anthropic_provider_tests;
+import 'providers/anthropic/anthropic_entrypoint_test.dart'
+    as anthropic_entrypoint_tests;
 import 'providers/anthropic/anthropic_config_test.dart'
     as anthropic_config_tests;
 import 'providers/anthropic/anthropic_factory_test.dart'
@@ -65,6 +67,8 @@ import 'providers/deepseek/deepseek_provider_test.dart'
 import 'providers/deepseek/deepseek_config_test.dart' as deepseek_config_tests;
 import 'providers/deepseek/deepseek_factory_test.dart'
     as deepseek_factory_tests;
+import 'providers/google/google_entrypoint_test.dart'
+    as google_entrypoint_tests;
 
 // Existing tests
 import 'providers/openai/openai_advanced_test.dart' as openai_advanced_tests;
@@ -147,6 +151,7 @@ void main() {
       openai_responses_functionality_tests.main();
 
       // Anthropic provider tests
+      anthropic_entrypoint_tests.main();
       anthropic_provider_tests.main();
       anthropic_config_tests.main();
       anthropic_factory_tests.main();
@@ -155,6 +160,9 @@ void main() {
       deepseek_provider_tests.main();
       deepseek_config_tests.main();
       deepseek_factory_tests.main();
+
+      // Google provider entrypoint tests
+      google_entrypoint_tests.main();
     });
   });
 }

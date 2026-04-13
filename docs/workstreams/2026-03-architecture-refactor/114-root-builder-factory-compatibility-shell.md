@@ -155,6 +155,10 @@ The following pieces should survive for the compatibility window:
 - compatibility provider subclasses returned by `LLMBuilder.build()`
 - explicit `legacy.dart` exports for migration-era code
 
+As of 2026-04-13, the remaining OpenAI, Google, and Anthropic builder-era DSL
+classes are also now localized under `lib/src/compatibility/builders/`, with
+their historical root provider paths reduced to compatibility re-exports.
+
 But they should survive with one interpretation only:
 
 - compatibility support

@@ -1,8 +1,8 @@
-import '../providers/anthropic/builder.dart';
-import '../providers/google/builder.dart';
-import '../providers/openai/builder.dart';
 import '../providers/openai/compatible/openrouter/builder.dart';
+import '../src/compatibility/builders/anthropic_builder.dart';
 import '../src/compatibility/builders/elevenlabs_builder.dart';
+import '../src/compatibility/builders/google_builder.dart';
+import '../src/compatibility/builders/openai_builder.dart';
 import '../src/compatibility/builders/ollama_builder.dart';
 import 'llm_builder.dart';
 
