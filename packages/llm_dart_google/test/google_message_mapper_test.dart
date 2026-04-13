@@ -28,6 +28,19 @@ void main() {
               },
             }),
           ),
+          SourceUiPart(
+            SourceReference(
+              kind: SourceReferenceKind.url,
+              sourceId: 'https://example.com',
+              uri: Uri.parse('https://example.com'),
+              title: 'Example',
+              providerMetadata: const ProviderMetadata({
+                'google': {
+                  'chunkType': 'web',
+                },
+              }),
+            ),
+          ),
           const FileUiPart(
             GeneratedFile(
               mediaType: 'application/pdf',
@@ -85,7 +98,7 @@ void main() {
 
       expect(mapped.hasGoogleMetadata, isTrue);
       expect(mapped.hasThoughtSignatures, isTrue);
-      expect(mapped.partDetails, hasLength(5));
+      expect(mapped.partDetails, hasLength(6));
       expect(mapped.customParts, hasLength(2));
       expect(mapped.customPartSummaries, hasLength(2));
       expect(mapped.customPartSummaries.first.title, 'Google Search');
@@ -106,11 +119,16 @@ void main() {
       expect(textDetail.type, GoogleUiPartType.text);
       expect(textDetail.responsePart, 'visible_text');
 
-      final fileDetail = mapped.partDetails[2];
+      final sourceDetail = mapped.partDetails[2];
+      expect(sourceDetail.type, GoogleUiPartType.source);
+      expect(sourceDetail.sourceId, 'https://example.com');
+      expect(sourceDetail.chunkType, 'web');
+
+      final fileDetail = mapped.partDetails[3];
       expect(fileDetail.type, GoogleUiPartType.file);
       expect(fileDetail.fileId, 'file_pdf_1');
 
-      final customDetail = mapped.partDetails[3];
+      final customDetail = mapped.partDetails[4];
       expect(customDetail.type, GoogleUiPartType.custom);
       expect(customDetail.serverToolPart, 'toolCall');
       expect(customDetail.toolCallId, 'srvtool_1');

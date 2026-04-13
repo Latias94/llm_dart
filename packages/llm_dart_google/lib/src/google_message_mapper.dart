@@ -7,6 +7,7 @@ import 'google_shared.dart';
 enum GoogleUiPartType {
   text,
   reasoning,
+  source,
   file,
   reasoningFile,
   tool,
@@ -25,6 +26,8 @@ final class GoogleUiPartDetails {
   final String? responsePart;
   final String? serverToolPart;
   final String? fileId;
+  final String? sourceId;
+  final String? chunkType;
   final String? toolCallId;
   final String? toolType;
 
@@ -40,6 +43,8 @@ final class GoogleUiPartDetails {
     required this.responsePart,
     required this.serverToolPart,
     required this.fileId,
+    required this.sourceId,
+    required this.chunkType,
     required this.toolCallId,
     required this.toolType,
   });
@@ -140,6 +145,14 @@ GoogleUiPartDetails? _detailForPart(int index, ChatUiPart part) {
         label: _labelOrFallback(text, fallback: 'Reasoning'),
         providerMetadata: providerMetadata,
       ),
+    SourceUiPart(:final source) => _buildPartDetails(
+        index: index,
+        part: part,
+        type: GoogleUiPartType.source,
+        label: source.title ?? source.filename ?? source.sourceId,
+        providerMetadata: source.providerMetadata,
+        fallbackSourceId: source.sourceId,
+      ),
     FileUiPart(:final file, :final providerMetadata) => _buildPartDetails(
         index: index,
         part: part,
@@ -179,7 +192,7 @@ GoogleUiPartDetails? _detailForPart(int index, ChatUiPart part) {
         label: kind,
         providerMetadata: providerMetadata,
       ),
-    StepBoundaryUiPart() || SourceUiPart() || DataUiPart() => null,
+    StepBoundaryUiPart() || DataUiPart() => null,
   };
 }
 
@@ -190,6 +203,7 @@ GoogleUiPartDetails? _buildPartDetails({
   required String label,
   required ProviderMetadata? providerMetadata,
   String? fallbackToolCallId,
+  String? fallbackSourceId,
 }) {
   final google = providerMetadata?.namespace('google');
   if (google == null) {
@@ -208,6 +222,8 @@ GoogleUiPartDetails? _buildPartDetails({
     responsePart: asString(google['responsePart']),
     serverToolPart: asString(google['serverToolPart']),
     fileId: asString(google['fileId']),
+    sourceId: asString(google['sourceId']) ?? fallbackSourceId,
+    chunkType: asString(google['chunkType']),
     toolCallId: asString(google['toolCallId']) ?? fallbackToolCallId,
     toolType: asString(google['toolType']),
   );

@@ -33,6 +33,12 @@ The current codebase already exposes a useful provider-owned pattern:
   - `GoogleCustomPartSummary`
   - `GoogleMessageMapper`
 
+Both provider-owned message mappers now also expose part-level inspection for
+shared UI parts that carry provider metadata:
+
+- OpenAI exposes `OpenAIUiPartDetails`
+- Google exposes `GoogleUiPartDetails`
+
 This is a healthy shape because it keeps:
 
 - shared message and part models in the shared layer
@@ -96,7 +102,8 @@ A provider package may also expose a provider-specific message mapper when:
 - common shared parts carry meaningful provider metadata
 - the UI frequently needs provider-specific inspection across many part kinds
 
-This is why `GoogleMessageMapper` makes sense today.
+This is why `OpenAIMessageMapper` and `GoogleMessageMapper` both make sense
+today.
 
 ## Event Completeness Implication
 
