@@ -549,6 +549,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Status note for enforcing that Anthropic shared `SpecificToolChoice` stays
     limited to declared common function tools instead of silently selecting
     native or undeclared tools.
+- [182-anthropic-tool-search-helper-boundary.md](182-anthropic-tool-search-helper-boundary.md)
+  - Frozen boundary note that Anthropic's current tool-search declarations,
+    deferred-loading controls, and replay payloads are enough for now, without
+    another custom helper layer.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
@@ -730,6 +734,9 @@ This workstream is not about a file-moving refactor. It is about defining stable
   shared `SpecificToolChoice` stays limited to declared common function tools,
   while any later native-tool forcing surface remains provider-owned and
   demand-driven
+- Anthropic tool-search is now also explicitly frozen on the current provider-
+  owned primitive set: native-tool declarations, deferred-loading controls, and
+  replay payloads are enough without another custom helper layer
 - the Ollama root shell is now also slightly thinner in code ownership terms:
   compatibility config shaping, chat-bridge setup, and embedding delegation
   glue no longer live inline inside `lib/providers/ollama/provider.dart`, but
