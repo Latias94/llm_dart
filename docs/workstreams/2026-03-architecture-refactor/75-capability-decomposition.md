@@ -51,12 +51,22 @@ Implementation moved into:
 - `capability_image.dart`
 - `capability_management.dart`
 
+As of 2026-04-13, the audio family was split one level deeper without changing
+the public legacy import surface:
+
+- `capability_audio.dart` now holds only the shared audio capability contracts
+- `capability_audio_realtime.dart` owns realtime audio config, session, and
+  event contracts
+- `capability_audio_google_tts.dart` owns the Google-native TTS capability
+  contract and its static voice/language catalog
+
 This split makes the old capability surface easier to navigate:
 
 - chat interfaces and stream events stay together
 - generation helpers stay separate from chat
 - audio and realtime types stop competing with image and admin capabilities
 - provider capability declarations stay isolated from request/response APIs
+- Google-native audio capability details stop inflating the shared audio file
 
 ## 4. Important Boundary
 

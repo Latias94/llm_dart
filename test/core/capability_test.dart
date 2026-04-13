@@ -49,6 +49,59 @@ void main() {
       });
     });
 
+    group('RealtimeAudioConfig', () {
+      test('should serialize and deserialize correctly', () {
+        final config = RealtimeAudioConfig(
+          inputFormat: 'pcm16',
+          outputFormat: 'wav',
+          sampleRate: 24000,
+          enableVAD: false,
+          enableEchoCancellation: false,
+          enableNoiseSuppression: true,
+          timeoutSeconds: 30,
+          customParams: {
+            'session': 'demo',
+            'turn_detection': true,
+          },
+        );
+
+        final json = config.toJson();
+        final restored = RealtimeAudioConfig.fromJson(json);
+
+        expect(json['input_format'], equals('pcm16'));
+        expect(json['output_format'], equals('wav'));
+        expect(json['sample_rate'], equals(24000));
+        expect(json['enable_vad'], isFalse);
+        expect(json['enable_echo_cancellation'], isFalse);
+        expect(json['enable_noise_suppression'], isTrue);
+        expect(json['timeout_seconds'], equals(30));
+        expect(json['custom_params'], containsPair('session', 'demo'));
+        expect(json['custom_params'], containsPair('turn_detection', true));
+
+        expect(restored.inputFormat, equals(config.inputFormat));
+        expect(restored.outputFormat, equals(config.outputFormat));
+        expect(restored.sampleRate, equals(config.sampleRate));
+        expect(restored.enableVAD, equals(config.enableVAD));
+        expect(restored.enableEchoCancellation,
+            equals(config.enableEchoCancellation));
+        expect(restored.enableNoiseSuppression,
+            equals(config.enableNoiseSuppression));
+        expect(restored.timeoutSeconds, equals(config.timeoutSeconds));
+        expect(restored.customParams, equals(config.customParams));
+      });
+
+      test('should apply default flags when omitted from json', () {
+        final restored = RealtimeAudioConfig.fromJson({
+          'input_format': 'pcm16',
+        });
+
+        expect(restored.inputFormat, equals('pcm16'));
+        expect(restored.enableVAD, isTrue);
+        expect(restored.enableEchoCancellation, isTrue);
+        expect(restored.enableNoiseSuppression, isTrue);
+      });
+    });
+
     group('ServiceTier Enum', () {
       test('should have correct values', () {
         expect(ServiceTier.auto.value, equals('auto'));

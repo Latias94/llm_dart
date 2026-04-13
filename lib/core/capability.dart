@@ -14,6 +14,8 @@ export '../models/usage_models.dart' show UsageInfo;
 export 'cancellation.dart' show CancellationHelper, TransportCancellation;
 
 part 'capability_audio.dart';
+part 'capability_audio_google_tts.dart';
+part 'capability_audio_realtime.dart';
 part 'capability_chat.dart';
 part 'capability_generation.dart';
 part 'capability_image.dart';
