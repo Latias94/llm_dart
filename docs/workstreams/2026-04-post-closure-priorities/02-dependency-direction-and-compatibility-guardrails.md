@@ -121,12 +121,22 @@ As of 2026-04-13, that first lightweight enforcement step is now implemented
 through `tool/check_workspace_dependency_guards.dart` and wired into CI plus
 the workspace `melos analyze` path.
 
-That guard now checks both:
+That workspace guard now checks both:
 
 - package implementation imports that incorrectly reach back into
   `package:llm_dart/...`
 - workspace `pubspec.yaml` runtime dependencies against the frozen package-level
   policy
+
+As of 2026-04-13, root-compatibility containment is also guarded through
+`tool/check_root_package_boundary_guards.dart`.
+
+That root guard checks:
+
+- the frozen top-level root public entrypoint set under `lib/`
+- the frozen top-level root implementation layout under `lib/src/`
+- that `package:llm_dart_chat/...` stays confined to `lib/chat.dart`
+- that `package:llm_dart_flutter/...` does not flow back into the root package
 
 ## Why This Matters
 

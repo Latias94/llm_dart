@@ -37,6 +37,9 @@ jobs:
       - name: Check workspace dependency guards
         run: dart run tool/check_workspace_dependency_guards.dart
 
+      - name: Check root package boundary guards
+        run: dart run tool/check_root_package_boundary_guards.dart
+
       - name: Analyze project source
         run: dart analyze --fatal-infos
 

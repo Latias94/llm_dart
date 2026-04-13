@@ -12,9 +12,13 @@ scripts:
   guard:imports:
     run: dart run tool/check_workspace_dependency_guards.dart
     description: Ensure package implementation files do not import the root llm_dart package.
+  guard:root:
+    run: dart run tool/check_root_package_boundary_guards.dart
+    description: Ensure the root package keeps the frozen public entrypoint and compatibility-shell boundary.
   analyze:
     run: |
       dart run tool/check_workspace_dependency_guards.dart
+      dart run tool/check_root_package_boundary_guards.dart
       melos exec --ignore=llm_dart_flutter -- "dart analyze ."
       melos exec --scope=llm_dart_flutter -- "flutter analyze --fatal-infos"
     description: Analyze all packages in the workspace.

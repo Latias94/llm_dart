@@ -77,6 +77,8 @@ Current status:
   `package:llm_dart/...`
 - lightweight enforcement now exists through
   `tool/check_workspace_dependency_guards.dart`, CI, and `melos analyze`
+- root-package containment is now also enforced through
+  `tool/check_root_package_boundary_guards.dart`, CI, and `melos analyze`
 
 ## M4 - Selective Provider Expansion
 
