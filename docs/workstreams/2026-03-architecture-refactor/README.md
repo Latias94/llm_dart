@@ -587,6 +587,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
     now complete at the current workstream scope, and that the remaining gaps
     are future provider-owned policy questions rather than architecture
     blockers.
+- [191-read-chat-ui-stream-facade-policy.md](191-read-chat-ui-stream-facade-policy.md)
+  - Frozen policy that keeps `readChatUiStream(...)` on its current
+    stream-plus-result contract, and defers callback or richer final-summary
+    facades until real multi-integration pressure appears.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
@@ -651,6 +655,7 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - OpenAI-family migration is now also effectively closed at the current workstream scope: the chat-completions path accepts user image/audio/PDF file inputs, the Responses-first compatibility route again covers the common user image/file subset, both OpenAI text paths now align on provider-owned reasoning-model compatibility such as `reasoningEffort`, `forceReasoning`, `systemMessageMode`, and `serviceTier` validation, the OpenAI-owned Responses persistence subset now also exists through `store`, `conversation`, `item_reference`, and replay-branch encoding without widening the shared core, the provider-owned request-side tool surface now covers `web_search_preview`, `file_search`, `computer_use_preview`, `image_generation`, `mcp`, and `code_interpreter`, and the provider-owned output/helper layer now covers the current high-value custom payloads. The remaining OpenAI-owned gap is now mostly a deliberate future-policy boundary: keep execution-heavy hosted-tool families deferred unless a concrete product need appears, while assistant replay remains intentionally conservative on the chat-completions path.
 - OpenAI provider-owned `logprobs` handling is now aligned with `repo-ref/ai` through typed `OpenAIGenerateTextOptions.logprobs`, Responses-side automatic `include/top_logprobs` encoding, and text-part / stream-event provider metadata decode, without widening the shared text-generation contract.
 - OpenAI chat-completions request shaping now also aligns better with the reference through provider-owned `systemMessageMode`, including OpenAI reasoning-model defaulting to `developer` without widening the shared prompt model.
+- the lightweight `readChatUiStream(...)` helper is now also frozen on the current result-object direction: persistent snapshots stay on the main stream, step-finish and transient data stay on side streams, and final-state access stays on `result` plus small convenience futures rather than a new callback-heavy or summary-heavy facade
 - The remote chat protocol is thinner than the reference `ui-message-stream` layer, which is acceptable for now but still a conscious structural gap.
 
 ### Current Audit Signals

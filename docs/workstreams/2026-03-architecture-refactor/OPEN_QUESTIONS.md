@@ -456,20 +456,15 @@ Resolved in the current breaking round:
 - `166-streamed-runner-inter-step-projection-policy.md` documents the frozen
   inter-step projection policy
 
-## 37. Whether `llm_dart_chat` Needs A Dedicated Finish Callback Surface
+## 37. `readChatUiStream(...)` Facade Status
 
-Needs confirmation:
+Resolved in the current breaking round:
 
-- should the new `readChatUiStream(...)` helper later expose a dedicated
-  callback facade or typed final-summary surface
-- or should final-state and final-message handling continue to rely on the
-  current streams plus `result` pattern
-
-Current recommendation:
-
-- keep the current result-object contract for now
-- only revisit a dedicated callback facade if at least two concrete Flutter or
-  backend integration cases show that streams plus `result` are too indirect
+- `readChatUiStream(...)` stays on the current stream-plus-`result` contract
+- `stepFinishStream`, `transientDataParts`, `result`, `finishReason`,
+  `isAborted`, and `abortReason` are enough for the current helper layer
+- callback-heavy or richer final-summary facades stay deferred until at least
+  two concrete Flutter or backend integrations show real pressure
 
 ## 38. Remote UI Stream Layer Status
 
