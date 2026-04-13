@@ -2986,6 +2986,72 @@ void main() {
     });
 
     test(
+        'keeps locally added data parts while later transport chunks continue streaming',
+        () async {
+      final controller = StreamController<ChatUiStreamChunk>();
+      final session = DefaultChatSession(
+        transport: _FakeChatTransport(
+          onSendMessages: (request) => const Stream<TextStreamEvent>.empty(),
+          onSendMessageChunks: (request) => controller.stream,
+        ),
+      );
+
+      final sendFuture = session.sendMessage(ChatInput.text('Hi'));
+      await _flushAsyncWork();
+
+      controller.add(const ChatUiEventChunk(TextStartEvent(id: 'text-1')));
+      controller.add(
+        const ChatUiEventChunk(
+          TextDeltaEvent(
+            id: 'text-1',
+            delta: 'Hello',
+          ),
+        ),
+      );
+      await _flushAsyncWork();
+
+      await session.addDataPart(
+        const DataUiPart<Object?>(
+          id: 'progress',
+          key: 'status',
+          data: {
+            'value': 0.5,
+          },
+        ),
+      );
+
+      controller.add(
+        const ChatUiEventChunk(
+          TextDeltaEvent(
+            id: 'text-1',
+            delta: ' world',
+          ),
+        ),
+      );
+      controller.add(const ChatUiEventChunk(TextEndEvent(id: 'text-1')));
+      controller.add(
+        const ChatUiEventChunk(
+          FinishEvent(finishReason: FinishReason.stop),
+        ),
+      );
+      await controller.close();
+      await sendFuture;
+
+      expect(session.state.status, ChatStatus.ready);
+      final assistantMessage = session.state.messages.last;
+      expect(
+        assistantMessage.parts.whereType<TextUiPart>().single.text,
+        'Hello world',
+      );
+      final dataPart =
+          assistantMessage.parts.whereType<DataUiPart<Object?>>().single;
+      expect(dataPart.id, 'progress');
+      expect((dataPart.data as Map<String, Object?>)['value'], 0.5);
+
+      await session.dispose();
+    });
+
+    test(
         'emits transient transport data through the side channel without persisting it',
         () async {
       final session = DefaultChatSession(

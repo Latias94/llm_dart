@@ -32,6 +32,130 @@ final class ChatUiStreamReadResult extends StreamView<ChatUiMessage> {
       );
 }
 
+final class ChatUiStreamReader {
+  final ChatUiStreamAccumulator _accumulator;
+  final ReplayStreamChannel<ChatUiMessage> _messageChannel =
+      ReplayStreamChannel<ChatUiMessage>();
+  final ReplayStreamChannel<ChatUiMessage> _stepFinishChannel =
+      ReplayStreamChannel<ChatUiMessage>();
+  final ReplayStreamChannel<DataUiPart<Object?>> _transientChannel =
+      ReplayStreamChannel<DataUiPart<Object?>>();
+  final Completer<ChatUiMessage> _resultCompleter = Completer<ChatUiMessage>();
+
+  late final ChatUiStreamReadResult readResult = ChatUiStreamReadResult._(
+    stream: _messageChannel.stream,
+    result: _resultCompleter.future,
+    stepFinishStream: _stepFinishChannel.stream,
+    transientDataParts: _transientChannel.stream,
+  );
+
+  bool _isClosed = false;
+
+  ChatUiStreamReader({
+    required String messageId,
+    ChatUiRole role = ChatUiRole.assistant,
+    ChatUiMessage? seedMessage,
+    ChatUiAccumulatorOptions options = const ChatUiAccumulatorOptions(),
+  }) : _accumulator = ChatUiStreamAccumulator(
+          messageId: messageId,
+          role: role,
+          seedMessage: seedMessage,
+          options: options,
+        );
+
+  ChatUiMessage get message => _accumulator.message;
+
+  Stream<ChatUiMessage> get messageStream => readResult.messageStream;
+
+  Stream<ChatUiMessage> get stepFinishStream => readResult.stepFinishStream;
+
+  Stream<DataUiPart<Object?>> get transientDataParts =>
+      readResult.transientDataParts;
+
+  Future<ChatUiMessage> get result => readResult.result;
+
+  ChatUiMessage applyChunk(ChatUiStreamChunk chunk) {
+    _ensureOpen('applyChunk');
+
+    switch (chunk) {
+      case ChatUiTransientDataPartChunk(:final part):
+        _transientChannel.add(
+          DataUiPart<Object?>(
+            id: part.id,
+            key: part.key,
+            data: part.data,
+          ),
+        );
+        return _accumulator.message;
+      case _:
+        final message = _accumulator.apply(chunk);
+        _messageChannel.add(message);
+        if (chunk case ChatUiEventChunk(event: final event)
+            when event is StepFinishEvent) {
+          _stepFinishChannel.add(message);
+        }
+        return message;
+    }
+  }
+
+  ChatUiMessage applyEvent(TextStreamEvent event) {
+    return applyChunk(ChatUiEventChunk(event));
+  }
+
+  ChatUiMessage applyDataPart<T>(DataUiPart<T> part) {
+    return applyChunk(ChatUiDataPartChunk<T>(part));
+  }
+
+  Future<void> consume(Stream<ChatUiStreamChunk> chunks) async {
+    _ensureOpen('consume');
+
+    try {
+      await for (final chunk in chunks) {
+        applyChunk(chunk);
+      }
+      close();
+    } catch (error, stackTrace) {
+      fail(error, stackTrace);
+    }
+  }
+
+  void close() {
+    if (_isClosed) {
+      return;
+    }
+
+    _isClosed = true;
+    if (!_resultCompleter.isCompleted) {
+      _resultCompleter.complete(_accumulator.message);
+    }
+    _messageChannel.close();
+    _stepFinishChannel.close();
+    _transientChannel.close();
+  }
+
+  void fail(Object error, StackTrace stackTrace) {
+    if (_isClosed) {
+      return;
+    }
+
+    _isClosed = true;
+    if (!_resultCompleter.isCompleted) {
+      _resultCompleter.completeError(error, stackTrace);
+    }
+    _messageChannel.addError(error, stackTrace);
+    _stepFinishChannel.addError(error, stackTrace);
+    _transientChannel.addError(error, stackTrace);
+  }
+
+  void _ensureOpen(String operation) {
+    if (_isClosed) {
+      throw StateError(
+        'Cannot call ChatUiStreamReader.$operation after the reader has closed.',
+      );
+    }
+  }
+}
+
 ChatUiStreamReadResult readChatUiStream({
   required Stream<ChatUiStreamChunk> chunks,
   required String messageId,
@@ -39,84 +163,12 @@ ChatUiStreamReadResult readChatUiStream({
   ChatUiMessage? seedMessage,
   ChatUiAccumulatorOptions options = const ChatUiAccumulatorOptions(),
 }) {
-  final messageChannel = ReplayStreamChannel<ChatUiMessage>();
-  final stepFinishChannel = ReplayStreamChannel<ChatUiMessage>();
-  final transientChannel = ReplayStreamChannel<DataUiPart<Object?>>();
-  final resultCompleter = Completer<ChatUiMessage>();
-
-  unawaited(
-    _processChatUiStream(
-      chunks: chunks,
-      messageId: messageId,
-      role: role,
-      seedMessage: seedMessage,
-      options: options,
-      messageChannel: messageChannel,
-      stepFinishChannel: stepFinishChannel,
-      transientChannel: transientChannel,
-      resultCompleter: resultCompleter,
-    ),
-  );
-
-  return ChatUiStreamReadResult._(
-    stream: messageChannel.stream,
-    result: resultCompleter.future,
-    stepFinishStream: stepFinishChannel.stream,
-    transientDataParts: transientChannel.stream,
-  );
-}
-
-Future<void> _processChatUiStream({
-  required Stream<ChatUiStreamChunk> chunks,
-  required String messageId,
-  required ChatUiRole role,
-  required ChatUiMessage? seedMessage,
-  required ChatUiAccumulatorOptions options,
-  required ReplayStreamChannel<ChatUiMessage> messageChannel,
-  required ReplayStreamChannel<ChatUiMessage> stepFinishChannel,
-  required ReplayStreamChannel<DataUiPart<Object?>> transientChannel,
-  required Completer<ChatUiMessage> resultCompleter,
-}) async {
-  final accumulator = ChatUiStreamAccumulator(
+  final reader = ChatUiStreamReader(
     messageId: messageId,
     role: role,
     seedMessage: seedMessage,
     options: options,
   );
-  var latestMessage = accumulator.message;
-
-  try {
-    await for (final chunk in chunks) {
-      switch (chunk) {
-        case ChatUiTransientDataPartChunk(:final part):
-          final transientPart = DataUiPart<Object?>(
-            id: part.id,
-            key: part.key,
-            data: part.data,
-          );
-          transientChannel.add(transientPart);
-        case _:
-          latestMessage = accumulator.apply(chunk);
-          messageChannel.add(latestMessage);
-          if (chunk case ChatUiEventChunk(event: final event)
-              when event is StepFinishEvent) {
-            stepFinishChannel.add(latestMessage);
-          }
-      }
-    }
-
-    if (!resultCompleter.isCompleted) {
-      resultCompleter.complete(latestMessage);
-    }
-    messageChannel.close();
-    stepFinishChannel.close();
-    transientChannel.close();
-  } catch (error, stackTrace) {
-    if (!resultCompleter.isCompleted) {
-      resultCompleter.completeError(error, stackTrace);
-    }
-    messageChannel.addError(error, stackTrace);
-    stepFinishChannel.addError(error, stackTrace);
-    transientChannel.addError(error, stackTrace);
-  }
+  unawaited(reader.consume(chunks));
+  return reader.readResult;
 }

@@ -9,6 +9,7 @@ import 'chat_session.dart';
 import 'chat_session_snapshot.dart';
 import 'chat_state.dart';
 import 'chat_transport.dart';
+import 'chat_ui_stream_reader.dart';
 import 'tool_execution_registry.dart';
 
 typedef MessageIdGenerator = String Function();
@@ -24,7 +25,7 @@ final class DefaultChatSession implements ChatSession {
 
   ChatState _state;
   StreamSubscription<ChatUiStreamChunk>? _activeSubscription;
-  ChatUiStreamAccumulator? _activeAccumulator;
+  ChatUiStreamReader? _activeStreamReader;
   Completer<void>? _activeCompletion;
   int _activePromptAppendStartIndex = 0;
   bool _isDisposed = false;
@@ -237,9 +238,9 @@ final class DefaultChatSession implements ChatSession {
   Future<void> addDataPart<T>(DataUiPart<T> part) async {
     _ensureUsable();
 
-    final accumulator = _activeAccumulator;
-    if (accumulator != null) {
-      _upsertAssistantMessage(accumulator.apply(ChatUiDataPartChunk<T>(part)));
+    final streamReader = _activeStreamReader;
+    if (streamReader != null) {
+      _upsertAssistantMessage(streamReader.applyDataPart(part));
       return;
     }
 
@@ -393,19 +394,15 @@ final class DefaultChatSession implements ChatSession {
       return;
     }
 
-    final accumulator = _activeAccumulator;
-    if (accumulator != null) {
-      final abortedMessage = accumulator.apply(
-        const ChatUiEventChunk(
-          AbortEvent(),
-        ),
+    final streamReader = _activeStreamReader;
+    if (streamReader != null) {
+      final abortedMessage = streamReader.applyEvent(
+        const AbortEvent(),
       );
       _upsertAssistantMessage(abortedMessage);
-      final assistantMessage = accumulator.apply(
-        const ChatUiEventChunk(
-          FinishEvent(
-            finishReason: FinishReason.aborted,
-          ),
+      final assistantMessage = streamReader.applyEvent(
+        const FinishEvent(
+          finishReason: FinishReason.aborted,
         ),
       );
       _upsertAssistantMessage(assistantMessage);
@@ -514,7 +511,7 @@ final class DefaultChatSession implements ChatSession {
     ChatUiMessage? seedAssistantMessage,
     bool syntheticStepStartOnSeed = true,
   }) async {
-    final accumulator = ChatUiStreamAccumulator(
+    final streamReader = ChatUiStreamReader(
       messageId: assistantMessageId,
       seedMessage: seedAssistantMessage,
     );
@@ -522,28 +519,36 @@ final class DefaultChatSession implements ChatSession {
     var completed = false;
     ChatUiMessage? latestAssistantMessage;
 
-    _activeAccumulator = accumulator;
+    _activeStreamReader = streamReader;
     _activeCompletion = completion;
     _activePromptAppendStartIndex = promptAppendStartIndex;
 
     if (seedAssistantMessage != null && syntheticStepStartOnSeed) {
-      latestAssistantMessage = accumulator.apply(
-        const ChatUiEventChunk(
-          StepStartEvent(),
-        ),
+      latestAssistantMessage = streamReader.applyEvent(
+        const StepStartEvent(),
       );
       _upsertAssistantMessage(latestAssistantMessage);
     }
 
     _activeSubscription = stream.listen(
       (chunk) async {
+        final projectedMessage = streamReader.applyChunk(chunk);
         switch (chunk) {
+          case ChatUiTransientDataPartChunk(:final part):
+            _emitTransientDataPart(
+              DataUiPart<Object?>(
+                id: part.id,
+                key: part.key,
+                data: part.data,
+              ),
+            );
           case ChatUiEventChunk(:final event):
-            latestAssistantMessage = accumulator.apply(chunk);
-            _upsertAssistantMessage(latestAssistantMessage!);
+            latestAssistantMessage = projectedMessage;
+            _upsertAssistantMessage(projectedMessage);
 
             if (event is ErrorEvent) {
               completed = true;
+              streamReader.close();
               await _activeSubscription?.cancel();
               _clearActiveTurn();
               _emitState(
@@ -563,22 +568,12 @@ final class DefaultChatSession implements ChatSession {
               // message-finish chunks can still patch the final assistant
               // message before the session transitions out of the active turn.
             }
-          case ChatUiDataPartChunk():
-            latestAssistantMessage = accumulator.apply(chunk);
-            _upsertAssistantMessage(latestAssistantMessage!);
-          case ChatUiTransientDataPartChunk(:final part):
-            _emitTransientDataPart(
-              DataUiPart<Object?>(
-                id: part.id,
-                key: part.key,
-                data: part.data,
-              ),
-            );
-          case ChatUiMessageStartChunk() ||
+          case ChatUiDataPartChunk() ||
+                ChatUiMessageStartChunk() ||
                 ChatUiMessageMetadataChunk() ||
                 ChatUiMessageFinishChunk():
-            latestAssistantMessage = accumulator.apply(chunk);
-            _upsertAssistantMessage(latestAssistantMessage!);
+            latestAssistantMessage = projectedMessage;
+            _upsertAssistantMessage(projectedMessage);
         }
       },
       onError: (error, stackTrace) {
@@ -587,6 +582,7 @@ final class DefaultChatSession implements ChatSession {
         }
 
         completed = true;
+        streamReader.fail(error, stackTrace);
         _clearActiveTurn();
         _emitState(
           _state.copyWith(
@@ -602,6 +598,8 @@ final class DefaultChatSession implements ChatSession {
         if (completed || _activeCompletion != completion) {
           return;
         }
+
+        streamReader.close();
 
         if (latestAssistantMessage != null) {
           _appendAssistantPromptIfPresent(
@@ -672,7 +670,7 @@ final class DefaultChatSession implements ChatSession {
 
   void _clearActiveTurn() {
     _activeSubscription = null;
-    _activeAccumulator = null;
+    _activeStreamReader = null;
     _activeCompletion = null;
     _activePromptAppendStartIndex = 0;
   }

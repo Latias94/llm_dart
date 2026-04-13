@@ -14,6 +14,7 @@ lightweight projection helper.
 
 Add a lightweight reader in `llm_dart_chat`:
 
+- `ChatUiStreamReader`
 - `readChatUiStream(...)`
 - `ChatUiStreamReadResult`
 
@@ -51,8 +52,21 @@ That makes `llm_dart_chat` the right home.
 
 The landed helper is intentionally small:
 
+- `ChatUiStreamReader`
 - `readChatUiStream(...)`
 - `ChatUiStreamReadResult extends StreamView<ChatUiMessage>`
+
+`ChatUiStreamReader` exposes the reusable stateful processor that:
+
+- applies `ChatUiStreamChunk`
+- can consume a chunk stream directly
+- emits projected message snapshots
+- emits `stepFinishStream`
+- emits `transientDataParts`
+- resolves a final `result`
+
+`readChatUiStream(...)` is the convenience wrapper that creates a reader,
+starts consumption, and returns `ChatUiStreamReadResult`.
 
 `ChatUiStreamReadResult` exposes:
 
@@ -87,7 +101,7 @@ without forcing those callbacks into the helper contract itself.
 
 ## What The Helper Does
 
-`readChatUiStream(...)`:
+`ChatUiStreamReader` / `readChatUiStream(...)`:
 
 - consumes `Stream<ChatUiStreamChunk>`
 - projects persistent chunks into `ChatUiMessage` snapshots
@@ -99,6 +113,9 @@ without forcing those callbacks into the helper contract itself.
 The helper also uses replaying output channels so consumers can subscribe to
 the result streams after processing has already started without losing earlier
 emissions.
+
+`DefaultChatSession` now also reuses this same stateful reader instead of
+maintaining a separate handwritten remote-chunk projection loop.
 
 ## What The Helper Does Not Do
 
@@ -136,7 +153,8 @@ direct chunk-stream consumption pleasant for:
 
 `DefaultChatSession` still owns the full chat lifecycle.
 
-The new reader does not overlap with:
+It now reuses `ChatUiStreamReader` for chunk projection, but the reader still
+does not overlap with:
 
 - chat state transitions
 - prompt reconstruction
