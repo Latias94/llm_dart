@@ -17,4 +17,6 @@ dependencies:
 
 dev_dependencies:
   lints: ^6.0.0
+  llm_dart_openai:
+    path: ../llm_dart_openai
   test: ^1.27.0

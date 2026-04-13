@@ -1,11 +1,10 @@
-// ignore_for_file: avoid_print, avoid_relative_lib_imports
+// ignore_for_file: avoid_print
 
 import 'dart:async';
 import 'dart:io';
 
-import '../../../lib/llm_dart.dart' as llm;
-import '../../llm_dart_openai/lib/llm_dart_openai.dart' as openai;
 import 'package:llm_dart_flutter/llm_dart_flutter.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 Future<void> main() async {
   final apiKey = Platform.environment['OPENAI_API_KEY'];
@@ -17,7 +16,7 @@ Future<void> main() async {
   final controller = ChatController(
     session: DefaultChatSession(
       transport: DirectChatTransport(
-        model: llm.AI.openai(apiKey: apiKey).chatModel('gpt-4.1-mini'),
+        model: openai.OpenAI(apiKey: apiKey).chatModel('gpt-4.1-mini'),
       ),
     ),
   );
