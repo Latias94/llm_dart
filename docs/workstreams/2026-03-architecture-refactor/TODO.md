@@ -149,7 +149,7 @@
 - [x] Migrate the Gemini embedding model
 - [x] Migrate Gemini speech and TTS
 - [x] Decide whether Google image editing and variation should later gain a provider-owned modern helper instead of remaining on compatibility-only `ImageEditRequest` / `ImageVariationRequest`
-- [ ] Decide whether Google streamed TTS should later return as a provider-owned package surface outside the shared `SpeechModel`
+- [x] Decide that Google streamed TTS remains deferred and compatibility-only for now, instead of reviving the legacy event contract inside the modern package surface
 - [x] Migrate Gemini safety and modality options
 - [x] Extract `google_language_model_support.dart` for request preparation, shared response-format adaptation, and transport-header/base-URL helpers
 - [x] Evaluate a Google codec-local shared projection support module for grounding, thought signatures, `functionCall.id`, and `code_execution` reuse across result and stream decoding

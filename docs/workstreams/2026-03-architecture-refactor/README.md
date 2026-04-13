@@ -534,6 +534,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Frozen boundary note that Google file upload and cache management stay
     compatibility-only residual APIs for now, while modern Google model paths
     continue to accept file URIs and `cachedContent` references.
+- [178-google-streamed-tts-boundary.md](178-google-streamed-tts-boundary.md)
+  - Frozen boundary note that Google streamed TTS remains deferred and
+    compatibility-only for now, instead of reviving the old event contract as a
+    modern provider package API.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
@@ -701,6 +705,9 @@ This workstream is not about a file-moving refactor. It is about defining stable
   provider package accepts provider-owned file references and `cachedContent`
   handles at request time, but old upload/cache helpers stay compatibility-only
   until a separate provider-owned utility contract is justified
+- Google streamed TTS is now also explicitly deferred: the modern package keeps
+  non-streaming speech generation, while the old streamed TTS event API remains
+  compatibility-only until a separate provider-owned utility shape is justified
 - the Ollama root shell is now also slightly thinner in code ownership terms:
   compatibility config shaping, chat-bridge setup, and embedding delegation
   glue no longer live inline inside `lib/providers/ollama/provider.dart`, but
