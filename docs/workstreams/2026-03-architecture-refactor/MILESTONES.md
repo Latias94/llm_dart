@@ -416,6 +416,10 @@ Current status:
 - `tool_models.dart` is now also decomposed into schema, tool-choice, structured-output, and execution modules while keeping the shared tool model surface unchanged
 - `assistant_models.dart` is now also decomposed into assistant tools/resources, entities, requests, and responses while keeping the assistant-management model surface unchanged
 - `core/config.dart` is now also decomposed into a library shell plus focused config, helper, provider-profile, and transformer modules while keeping the public configuration surface unchanged
+- the legacy map-based `OpenAICompatibleDefaults` catalog now also lives under
+  `src/compatibility/`, while `provider_defaults.dart` keeps the stable import
+  path as a thin shell and the typed `OpenAICompatibleConfigs` path remains the
+  preferred modern direction
 - the flat compatibility `LLMConfig.extensions` path now also has a centralized internal key/accessor layer so builder, factory, transport, and compatibility code stop drifting through repeated raw string literals
 - the OpenAI family now also has a first transitional namespaced `providerOptions` layer inside the legacy root config map, with namespaced writes for OpenAI / OpenRouter-specific builder helpers plus the legacy `ProviderConfig` helper, and namespaced-first, flat-fallback reads across factories, request shaping, and compatibility routing
 - the root shared web-search builder helpers and `createProvider(..., extensions: ...)` are now also explicitly deprecated as compatibility-only migration surfaces, so provider-owned search APIs remain the only stable long-term direction

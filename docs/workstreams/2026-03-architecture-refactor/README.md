@@ -621,6 +621,15 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - [198-openai-hosted-tool-future-policy-closure.md](198-openai-hosted-tool-future-policy-closure.md)
   - Closure note that moves the remaining OpenAI hosted-tool tail out of active
     migration debt and into future provider-owned policy only.
+- [199-openai-language-model-facade-thinning.md](199-openai-language-model-facade-thinning.md)
+  - Status note for thinning `openai_language_model.dart` into a clearer local
+    `planning -> encoding -> transport -> decoding` facade without adding a new
+    shared abstraction tier.
+- [200-provider-defaults-compatibility-shell-thinning.md](200-provider-defaults-compatibility-shell-thinning.md)
+  - Status note for moving the legacy map-based
+    `OpenAICompatibleDefaults` catalog under `src/compatibility/` while keeping
+    the stable `provider_defaults.dart` import path as a thin compatibility
+    shell.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
