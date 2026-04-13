@@ -183,6 +183,11 @@ Current status:
   through data URIs and a provider-owned `OllamaBinaryResolver`, which removes
   the old requirement that apps always rewrite non-inline multimodal inputs
   into shared prompt bytes before request encoding
+- Ollama shared-capability migration is now effectively complete for the
+  current workstream scope: modern chat and embeddings exist in
+  `llm_dart_community`, remaining tool/replay limitations are already frozen as
+  honest provider limits, and residual completion/model-listing ownership is
+  already frozen outside the shared modern migration target
 - the root ElevenLabs legacy shell now also delegates shared text-to-speech
   and direct-audio transcription requests into the package-owned
   `llm_dart_community` models instead of keeping duplicate primary audio

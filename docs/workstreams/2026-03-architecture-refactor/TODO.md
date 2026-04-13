@@ -215,8 +215,8 @@
 - [x] Expand the package-owned Ollama modern slice with `LanguageModel`
 - [x] Add a provider-owned URI-resolution path for modern Ollama user image inputs through data URIs and `OllamaBinaryResolver`, instead of always requiring caller-owned byte rewriting
 - [x] Freeze that modern Ollama keeps warning-based downgrade for stronger shared `toolChoice` forcing and replay-time tool error state until the provider exposes a truthful native chat contract
+- [x] Migrate Ollama
 - [x] Add the first package-owned ElevenLabs `SpeechModel` / `TranscriptionModel` slice in `llm_dart_community`
-- [ ] Migrate Ollama
 - [x] Migrate ElevenLabs
 - [x] Audit whether any remaining community-provider event or metadata gaps still block moving more provider logic out of the root compatibility shells
 - [x] Design richer shared speech/transcription result surfaces so common segments, language, duration, warnings, and response metadata no longer depend only on provider-specific metadata maps

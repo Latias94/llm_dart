@@ -573,6 +573,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Frozen boundary note that ElevenLabs shared-capability migration covers
     speech plus byte-oriented transcription, while file-path convenience and
     voice/realtime/admin helpers stay residual provider-owned surfaces for now.
+- [188-ollama-migration-closure-audit.md](188-ollama-migration-closure-audit.md)
+  - Closure audit concluding that Ollama shared-capability migration is now
+    complete for the current workstream scope, and that the remaining open work
+    belongs to broader community-provider decoupling instead.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
@@ -779,6 +783,11 @@ This workstream is not about a file-moving refactor. It is about defining stable
   scope: speech generation and byte-oriented transcription are the migrated
   shared-capability path, while file-path convenience transcription and
   voice/realtime/admin/model helpers remain residual provider-owned surfaces
+- Ollama shared-capability migration is now also explicitly closed for the
+  current workstream scope: modern chat and embeddings are in place, residual
+  completion/model-listing ownership is already frozen, and the remaining open
+  work is the broader root compatibility decoupling item rather than another
+  Ollama-specific migration blocker
 - the Ollama root shell is now also slightly thinner in code ownership terms:
   compatibility config shaping, chat-bridge setup, and embedding delegation
   glue no longer live inline inside `lib/providers/ollama/provider.dart`, but
