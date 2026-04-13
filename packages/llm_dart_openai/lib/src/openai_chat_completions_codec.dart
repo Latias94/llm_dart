@@ -20,20 +20,8 @@ final class OpenAIChatCompletionsRequest {
         warnings = List.unmodifiable(warnings);
 }
 
-final class OpenAIChatCompletionsStreamState {
-  final List<Object?> logprobs = [];
-  String? responseId;
-  DateTime? responseTimestamp;
-  String? responseModelId;
-  UsageStats? usage;
-  String? rawFinishReason;
-  bool hasResponseMetadata = false;
-  bool hasToolCalls = false;
-  final OpenAIStreamPartState textParts = OpenAIStreamPartState();
-  final OpenAIStreamPartState reasoningParts = OpenAIStreamPartState();
+final class OpenAIChatCompletionsStreamState extends OpenAIStreamState {
   final Set<String> emittedSourceIds = {};
-  final OpenAIIndexedToolCallAccumulator toolCalls =
-      OpenAIIndexedToolCallAccumulator();
 }
 
 final class OpenAIChatCompletionsCodec {
@@ -258,13 +246,20 @@ final class OpenAIChatCompletionsCodec {
     Map<String, Object?> chunk,
     OpenAIChatCompletionsStreamState state,
   ) sync* {
-    if (!state.hasResponseMetadata) {
-      _captureResponseMetadata(chunk, state);
-      final metadataEvent = _buildResponseMetadataEvent(state);
-      if (metadataEvent != null) {
-        state.hasResponseMetadata = true;
-        yield metadataEvent;
-      }
+    captureOpenAIResponseMetadata(
+      state: state,
+      responseId: _asString(chunk['id']),
+      responseModelId: _asString(chunk['model']),
+      responseTimestamp: _decodeResponseTimestamp(chunk),
+    );
+    final metadataEvent = maybeCreateOpenAIResponseMetadataEvent(
+      state: state,
+      metadata: () => _support.providerMetadata({
+        'responseId': state.responseId,
+      }),
+    );
+    if (metadataEvent != null) {
+      yield metadataEvent;
     }
 
     final choice = _firstChoice(chunk);
@@ -282,10 +277,10 @@ final class OpenAIChatCompletionsCodec {
 
     final delta = _asMap(choice['delta']) ?? const <String, Object?>{};
     final textLogprobs = _decodeChatLogprobs(choice['logprobs']);
-    final chunkUsage = _decodeUsage(_asMap(chunk['usage']));
-    if (chunkUsage != null) {
-      state.usage = chunkUsage;
-    }
+    captureOpenAIResponseMetadata(
+      state: state,
+      usage: _decodeUsage(_asMap(chunk['usage'])),
+    );
 
     yield* _support.decodeChunkSources(
       chunk,
@@ -369,7 +364,10 @@ final class OpenAIChatCompletionsCodec {
       return;
     }
 
-    state.rawFinishReason = rawFinishReason;
+    captureOpenAIResponseMetadata(
+      state: state,
+      rawFinishReason: rawFinishReason,
+    );
 
     final textEndEvent = maybeCreateOpenAITextEndEvent(
       state: state.textParts,
@@ -1013,46 +1011,6 @@ final class OpenAIChatCompletionsCodec {
       normalized['additionalProperties'] = false;
     }
     return normalized;
-  }
-
-  void _captureResponseMetadata(
-    Map<String, Object?> chunk,
-    OpenAIChatCompletionsStreamState state,
-  ) {
-    final responseId = _asString(chunk['id']);
-    final responseModelId = _asString(chunk['model']);
-    final created = _asInt(chunk['created']);
-    if (responseId == null && responseModelId == null && created == null) {
-      return;
-    }
-
-    state.responseId = responseId;
-    state.responseModelId = responseModelId;
-    if (created != null) {
-      state.responseTimestamp = DateTime.fromMillisecondsSinceEpoch(
-        created * 1000,
-        isUtc: true,
-      );
-    }
-  }
-
-  ResponseMetadataEvent? _buildResponseMetadataEvent(
-    OpenAIChatCompletionsStreamState state,
-  ) {
-    if (state.responseId == null &&
-        state.responseModelId == null &&
-        state.responseTimestamp == null) {
-      return null;
-    }
-
-    return ResponseMetadataEvent(
-      responseId: state.responseId,
-      timestamp: state.responseTimestamp,
-      modelId: state.responseModelId,
-      providerMetadata: _support.providerMetadata({
-        'responseId': state.responseId,
-      }),
-    );
   }
 
   _ToolCallDeltaResult _consumeToolCallDelta(

@@ -15,6 +15,23 @@ final class OpenAIStreamPartState {
   bool hasEnded(String id) => _endedIds.contains(id);
 }
 
+base class OpenAIStreamState {
+  final OpenAIIndexedToolCallAccumulator toolCalls =
+      OpenAIIndexedToolCallAccumulator();
+  final OpenAIStreamPartState textParts = OpenAIStreamPartState();
+  final OpenAIStreamPartState reasoningParts = OpenAIStreamPartState();
+  final List<Object?> logprobs = [];
+
+  String? responseId;
+  DateTime? responseTimestamp;
+  String? responseModelId;
+  String? serviceTier;
+  String? rawFinishReason;
+  UsageStats? usage;
+  bool hasToolCalls = false;
+  bool hasResponseMetadata = false;
+}
+
 final class OpenAIStreamToolCallState {
   final int index;
   String? toolCallId;
@@ -182,6 +199,62 @@ String formatInvalidOpenAIToolInputError(
   }
 
   return 'Invalid JSON tool arguments for "$toolName": $message';
+}
+
+void captureOpenAIResponseMetadata({
+  required OpenAIStreamState state,
+  String? responseId,
+  DateTime? responseTimestamp,
+  String? responseModelId,
+  String? serviceTier,
+  String? rawFinishReason,
+  UsageStats? usage,
+  bool? hasToolCalls,
+}) {
+  if (responseId != null) {
+    state.responseId = responseId;
+  }
+  if (responseTimestamp != null) {
+    state.responseTimestamp = responseTimestamp;
+  }
+  if (responseModelId != null) {
+    state.responseModelId = responseModelId;
+  }
+  if (serviceTier != null) {
+    state.serviceTier = serviceTier;
+  }
+  if (rawFinishReason != null) {
+    state.rawFinishReason = rawFinishReason;
+  }
+  if (usage != null) {
+    state.usage = usage;
+  }
+  if (hasToolCalls == true) {
+    state.hasToolCalls = true;
+  }
+}
+
+ResponseMetadataEvent? maybeCreateOpenAIResponseMetadataEvent({
+  required OpenAIStreamState state,
+  required ProviderMetadata? Function() metadata,
+}) {
+  if (state.hasResponseMetadata) {
+    return null;
+  }
+
+  if (state.responseId == null &&
+      state.responseModelId == null &&
+      state.responseTimestamp == null) {
+    return null;
+  }
+
+  state.hasResponseMetadata = true;
+  return ResponseMetadataEvent(
+    responseId: state.responseId,
+    timestamp: state.responseTimestamp,
+    modelId: state.responseModelId,
+    providerMetadata: metadata(),
+  );
 }
 
 Iterable<TextStreamEvent> decodeOpenAITextDeltaEvents({

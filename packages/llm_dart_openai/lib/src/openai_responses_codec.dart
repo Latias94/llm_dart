@@ -20,20 +20,8 @@ final class OpenAIResponsesRequest {
         warnings = List.unmodifiable(warnings);
 }
 
-final class OpenAIResponsesStreamState {
-  final OpenAIIndexedToolCallAccumulator toolCalls =
-      OpenAIIndexedToolCallAccumulator();
-  final OpenAIStreamPartState textParts = OpenAIStreamPartState();
-  final OpenAIStreamPartState reasoningParts = OpenAIStreamPartState();
+final class OpenAIResponsesStreamState extends OpenAIStreamState {
   final Set<String> emittedAnnotationKeys = {};
-  final List<Object?> logprobs = [];
-
-  String? responseId;
-  String? serviceTier;
-  String? rawFinishReason;
-  UsageStats? usage;
-  bool hasToolCalls = false;
-  bool hasResponseMetadata = false;
 }
 
 final class OpenAIResponsesCodec {
@@ -262,15 +250,20 @@ final class OpenAIResponsesCodec {
     if (chunkType == 'response.created') {
       final response = _asMap(chunk['response']);
       if (response != null) {
-        state.responseId = _asString(response['id']);
-        state.serviceTier = _asString(response['service_tier']);
-        state.hasResponseMetadata = true;
-        yield ResponseMetadataEvent(
+        captureOpenAIResponseMetadata(
+          state: state,
           responseId: _asString(response['id']),
-          timestamp: _decodeResponseTimestamp(response),
-          modelId: _asString(response['model']),
-          providerMetadata: openAIResponsesResponseMetadata(response),
+          responseTimestamp: _decodeResponseTimestamp(response),
+          responseModelId: _asString(response['model']),
+          serviceTier: _asString(response['service_tier']),
         );
+        final metadataEvent = maybeCreateOpenAIResponseMetadataEvent(
+          state: state,
+          metadata: () => openAIResponsesResponseMetadata(response),
+        );
+        if (metadataEvent != null) {
+          yield metadataEvent;
+        }
       }
       return;
     }
@@ -745,20 +738,22 @@ final class OpenAIResponsesCodec {
         return;
       }
 
-      state.responseId = _asString(response['id']) ?? state.responseId;
-      state.serviceTier =
-          _asString(response['service_tier']) ?? state.serviceTier;
-      state.rawFinishReason = _responseFinishReason(response);
-      state.usage = _decodeUsage(_asMap(response['usage']));
+      captureOpenAIResponseMetadata(
+        state: state,
+        responseId: _asString(response['id']),
+        responseTimestamp: _decodeResponseTimestamp(response),
+        responseModelId: _asString(response['model']),
+        serviceTier: _asString(response['service_tier']),
+        rawFinishReason: _responseFinishReason(response),
+        usage: _decodeUsage(_asMap(response['usage'])),
+      );
 
-      if (!state.hasResponseMetadata) {
-        state.hasResponseMetadata = true;
-        yield ResponseMetadataEvent(
-          responseId: _asString(response['id']),
-          timestamp: _decodeResponseTimestamp(response),
-          modelId: _asString(response['model']),
-          providerMetadata: openAIResponsesResponseMetadata(response),
-        );
+      final metadataEvent = maybeCreateOpenAIResponseMetadataEvent(
+        state: state,
+        metadata: () => openAIResponsesResponseMetadata(response),
+      );
+      if (metadataEvent != null) {
+        yield metadataEvent;
       }
 
       if (chunkType == 'response.failed') {
