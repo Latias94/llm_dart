@@ -78,6 +78,8 @@ import 'providers/openai/responses_functionality_test.dart'
     as openai_responses_functionality_tests;
 import 'chat_route_compatibility_test.dart' as chat_route_compatibility_tests;
 import 'legacy_compatibility_test.dart' as legacy_compatibility_tests;
+import 'provider_ui_mapper_integration_test.dart'
+    as provider_ui_mapper_integration_tests;
 
 void main() {
   group('LLM Dart Library Tests', () {
@@ -123,6 +125,7 @@ void main() {
       chat_route_compatibility_tests.main();
       enhanced_array_tools_tests.main();
       legacy_compatibility_tests.main();
+      provider_ui_mapper_integration_tests.main();
     });
 
     group('Provider Tests', () {
