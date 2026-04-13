@@ -607,6 +607,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Closure note that moves public Google native-tool selection or forcing out
     of active migration debt and into future provider-owned policy after the
     Gemini 3 mixed-tool subset landed.
+- [196-long-tail-openai-compatible-closure-audit.md](196-long-tail-openai-compatible-closure-audit.md)
+  - Closure audit concluding that OpenRouter, xAI, and Phind no longer have
+    active migration debt beyond their audited current subsets, and that any
+    broader expansion is future provider-owned policy only.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
@@ -671,6 +675,7 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - the shared runner is now also effectively closed at the current workstream scope: common function-tool continuation is the stable shared subset, while approval-safe/provider-executed continuation and any constrained pre-step mutation hook remain future demand-driven policy questions rather than active shared-core refactor debt
 - Shared capability helper parity now also exists in `llm_dart_core` through `embed(...)`, `embedMany(...)`, `generateImage(...)`, `generateSpeech(...)`, and `transcribe(...)`; embedding, image, and speech migrations now already exist across the OpenAI-family and Google providers through `OpenAI.embeddingModel(...)`, `OpenAI.imageModel(...)`, `OpenAI.speechModel(...)`, `Google.embeddingModel(...)`, `Google.imageModel(...)`, and `Google.speechModel(...)`, and the OpenAI family now also has package-owned `transcriptionModel(...)` migrations. The remaining Google gap is now provider-owned streamed TTS maturity plus the still-open question of whether a Google-specific audio-understanding helper is worth adding above multimodal prompting, while the legacy multimodal-output projection intentionally remains thin and the shared embedding boundary still does not yet define chunk-splitting policy; Anthropic is now mostly down to optional custom tool-reference helpers and provider-owned selection, not a replay-policy tail or a separate non-text model migration track.
 - public Google native-tool selection is now also explicitly downgraded from active migration work to provider-owned future policy: the Gemini 3 mixed-tool subset and server-side tool circulation contract are implemented enough to prove the provider boundary, but not enough to justify freezing a public forcing API yet
+- the long-tail OpenAI-compatible providers are now also effectively closed at the current scope: OpenRouter keeps the audited online-model subset, xAI keeps the audited live-search subset, and Phind remains facade-only until a stronger provider contract justifies more
 - OpenAI-family migration is now also effectively closed at the current workstream scope: the chat-completions path accepts user image/audio/PDF file inputs, the Responses-first compatibility route again covers the common user image/file subset, both OpenAI text paths now align on provider-owned reasoning-model compatibility such as `reasoningEffort`, `forceReasoning`, `systemMessageMode`, and `serviceTier` validation, the OpenAI-owned Responses persistence subset now also exists through `store`, `conversation`, `item_reference`, and replay-branch encoding without widening the shared core, the provider-owned request-side tool surface now covers `web_search_preview`, `file_search`, `computer_use_preview`, `image_generation`, `mcp`, and `code_interpreter`, and the provider-owned output/helper layer now covers the current high-value custom payloads. The remaining OpenAI-owned gap is now mostly a deliberate future-policy boundary: keep execution-heavy hosted-tool families deferred unless a concrete product need appears, while assistant replay remains intentionally conservative on the chat-completions path.
 - OpenAI provider-owned `logprobs` handling is now aligned with `repo-ref/ai` through typed `OpenAIGenerateTextOptions.logprobs`, Responses-side automatic `include/top_logprobs` encoding, and text-part / stream-event provider metadata decode, without widening the shared text-generation contract.
 - OpenAI chat-completions request shaping now also aligns better with the reference through provider-owned `systemMessageMode`, including OpenAI reasoning-model defaulting to `developer` without widening the shared prompt model.
@@ -770,6 +775,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - Google native-tool selection is now also explicitly *not* that next target:
   the mixed-tool provider boundary is implemented, but public forcing/selection
   remains deferred until a concrete provider-owned policy need appears
+- OpenRouter/xAI/Phind are now also explicitly *not* symmetry targets: the
+  current audited subsets are enough, and any broader expansion now waits for
+  stronger provider-specific contract evidence instead of more family-level
+  bridge broadening
 - Google result and stream decoding now also share a local projection support
   layer, which means the next remaining Google structural work is no longer
   basic codec parity but deciding whether any higher-level replay or UI helper

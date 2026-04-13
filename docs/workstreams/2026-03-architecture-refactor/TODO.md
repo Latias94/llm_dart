@@ -294,12 +294,12 @@
 - [x] Freeze and implement the initial xAI bridge-safe subset on top of the new chat-completions mainline
 - [x] Audit the Phind legacy request and response protocol and freeze the current facade-only fallback policy
 - [x] Freeze the provider-owned search request/options and shared-source/result boundary
-- [ ] Decide whether Phind should ever gain a dedicated migrated provider path or any bridge-safe subset later
+- [x] Close Phind migrated-path expansion as active migration debt: keep Phind facade-only and legacy-fallback until a re-audited provider contract or concrete product need justifies more (see `196-long-tail-openai-compatible-closure-audit.md`)
 - [x] Design provider-owned typed search option surfaces for OpenRouter and xAI without widening shared OpenAI options
 - [x] Implement OpenRouter provider-owned online-model search settings without reviving legacy `searchPrompt` or `maxSearchResults` as stable API
 - [x] Implement xAI provider-owned chat live-search options and exact `search_parameters` encoding in `llm_dart_openai`
 - [x] Expand xAI compatibility routing for the audited legacy live-search migration inputs after the typed option codecs land
-- [ ] Re-audit any broader OpenRouter search mapping and any xAI compatibility expansion beyond the audited live-search subset
+- [x] Close broader OpenRouter/xAI expansion as active migration debt: keep OpenRouter on the audited online-model subset and xAI on the audited live-search subset until stronger provider-specific contract evidence appears (see `196-long-tail-openai-compatible-closure-audit.md`)
 - [x] Expand OpenAI bridge coverage for common tools, built-in tools, and structured output
 - [x] Expand Anthropic bridge coverage for legacy prompt caching and `MessageBuilder` tools blocks
 - [x] Expand Anthropic bridge coverage for lossless legacy raw text `contentBlocks`

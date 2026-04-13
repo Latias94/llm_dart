@@ -397,6 +397,7 @@ Current status:
 - the provider-owned search direction is now also frozen more concretely: OpenRouter search remains profile/model shaping, while xAI live search becomes provider-owned invocation options over `search_parameters`
 - the package-owned OpenRouter mainline now also accepts provider-owned online-model settings, and the compatibility bridge now allows the explicit `:online` shape plus the bare `webSearchEnabled` migration input
 - the package-owned xAI chat-completions mainline now also accepts typed `XAIGenerateTextOptions` and projects xAI citations through shared source parts and events
+- the long-tail OpenAI-compatible family is now also effectively closed at the current scope: OpenRouter stays on its audited online-model subset, xAI stays on its audited live-search subset, and Phind stays facade-only until a stronger provider contract justifies more
 - legacy compatibility `jsonSchema` now routes through shared `GenerateTextOptions.responseFormat` instead of provider-specific compat injection, and shared `JsonResponseFormat` now also carries `strict` for OpenAI-family encoding
 - deprecated compatibility markers now also cover the legacy preset helper families whose stable `AI.*(...).chatModel(...)` replacement already exists
 - the old root-package compatibility removal window is now frozen as “no earlier than `1.0.0`”
