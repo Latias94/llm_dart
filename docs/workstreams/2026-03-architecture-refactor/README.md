@@ -569,6 +569,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Frozen boundary note that modern Ollama should not invent fake explicit
     tool forcing or replay-time tool-error fields beyond the current truthful
     chat wire contract.
+- [187-elevenlabs-residual-surface-boundary.md](187-elevenlabs-residual-surface-boundary.md)
+  - Frozen boundary note that ElevenLabs shared-capability migration covers
+    speech plus byte-oriented transcription, while file-path convenience and
+    voice/realtime/admin helpers stay residual provider-owned surfaces for now.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
@@ -771,6 +775,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   warning-degrades, and replay-time tool error state still warning-degrades,
   instead of inventing fake provider-owned semantics above the current chat
   wire contract
+- ElevenLabs is now also explicitly frozen on a narrower but honest modern
+  scope: speech generation and byte-oriented transcription are the migrated
+  shared-capability path, while file-path convenience transcription and
+  voice/realtime/admin/model helpers remain residual provider-owned surfaces
 - the Ollama root shell is now also slightly thinner in code ownership terms:
   compatibility config shaping, chat-bridge setup, and embedding delegation
   glue no longer live inline inside `lib/providers/ollama/provider.dart`, but

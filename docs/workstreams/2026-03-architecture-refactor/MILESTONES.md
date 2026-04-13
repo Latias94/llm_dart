@@ -191,10 +191,12 @@ Current status:
   or provider-specific paths such as file-based transcription, voice catalogs,
   realtime flows, model listing, and account helpers, so the shell is thinner
   without pretending the whole provider is already migrated
-- ElevenLabs modern migration is now no longer hypothetical; the remaining
-  work is to decide which provider-shaped audio/admin APIs such as file-based
-  transcription, voice catalogs, cloning, and realtime flows should remain
-  provider-owned instead of being forced into shared audio models
+- ElevenLabs shared-capability migration is now effectively complete for the
+  current workstream scope: speech generation and byte-oriented transcription
+  are the modern path, while file-based transcription and
+  voice/realtime/admin/model-account helpers are now explicitly frozen as
+  residual provider-owned or compatibility-only surfaces instead of unfinished
+  shared migration debt
 - the provider-specific extra-API policy is now also frozen more explicitly:
   the `repo-ref/ai` direction is used as an ownership rule, not as a command to
   move every provider HTTP endpoint into the modern package surface, so catalog,

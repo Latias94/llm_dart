@@ -29,6 +29,12 @@ Current shared-capability ownership:
 - ElevenLabs text-to-speech
 - ElevenLabs direct-audio transcription
 
+Current intentional ElevenLabs limits still include:
+
+- file-path transcription convenience stays in the root compatibility layer
+- voice catalogs, realtime flows, and model/account helpers stay residual
+  provider-owned surfaces for now
+
 Modern Ollama chat also supports URI-backed user image inputs through:
 
 - direct `data:` URIs

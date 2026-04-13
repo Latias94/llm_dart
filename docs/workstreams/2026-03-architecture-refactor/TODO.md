@@ -217,15 +217,15 @@
 - [x] Freeze that modern Ollama keeps warning-based downgrade for stronger shared `toolChoice` forcing and replay-time tool error state until the provider exposes a truthful native chat contract
 - [x] Add the first package-owned ElevenLabs `SpeechModel` / `TranscriptionModel` slice in `llm_dart_community`
 - [ ] Migrate Ollama
-- [ ] Migrate ElevenLabs
+- [x] Migrate ElevenLabs
 - [x] Audit whether any remaining community-provider event or metadata gaps still block moving more provider logic out of the root compatibility shells
 - [x] Design richer shared speech/transcription result surfaces so common segments, language, duration, warnings, and response metadata no longer depend only on provider-specific metadata maps
 - [x] Implement the shared non-text result enrichment in `llm_dart_core` and migrate ElevenLabs modern models to populate the new shared fields before treating community-provider audio migration as structurally mature
 - [x] Decide whether OpenAI- and Google-owned speech/transcription models should also populate the new shared response metadata and transcript-structure fields in the same round
 - [x] Decide that Google should continue leaving dedicated transcription outside the current Google modern package surface, and that transcript-oriented audio handling should stay on multimodal prompting for now instead of a misleading shared `TranscriptionModel`
 - [x] Decide that Google audio understanding stays on multimodal prompting for now, without adding an extra provider-owned helper above the language-model path
-- [ ] Decide whether file-based ElevenLabs transcription should remain legacy-only or gain a provider-owned modern helper outside the shared `TranscriptionModel`
-- [ ] Decide which remaining ElevenLabs voice/realtime/admin capabilities should stay provider-owned outside the shared audio model surfaces
+- [x] Decide that file-based ElevenLabs transcription remains legacy-only for now instead of widening the current byte-oriented shared `TranscriptionModel`
+- [x] Decide that remaining ElevenLabs voice/realtime/admin/model-account capabilities stay residual provider-owned surfaces outside the shared audio model layer unless a concrete typed helper is later justified
 - [ ] Evaluate whether community providers should later split into dedicated packages
 
 ## Flutter
