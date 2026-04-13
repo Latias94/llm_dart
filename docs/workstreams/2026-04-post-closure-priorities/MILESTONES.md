@@ -95,7 +95,8 @@ Acceptance criteria:
 
 Current status:
 
-- Google streamed TTS still looks like the clearest provider-specific re-audit
-  candidate
+- Google streamed TTS has now been re-triaged more precisely and remains
+  deferred as a future provider-owned utility cluster rather than active
+  migration debt
 - OpenRouter and xAI broader expansion remain policy questions rather than
   active architecture blockers

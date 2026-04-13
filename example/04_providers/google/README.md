@@ -146,7 +146,9 @@ print(result.audioBytes.length);
   generation until typed edit inputs are frozen.
 - Google native streaming TTS remains compatibility oriented. The stable speech
   surface already covers one-shot generation, but not the full streaming helper
-  workflow in `google_tts_example.dart`.
+  workflow in `google_tts_example.dart`. If this area is revisited later, it
+  should land as a provider-owned additive utility in `llm_dart_google`, not as
+  shared `SpeechModel` widening.
 - Keep Google-specific controls in Google-owned options. Do not widen shared
   `GenerateTextOptions`, `GenerateImage`, or `GenerateSpeech` contracts just to
   fit provider-specific flags.

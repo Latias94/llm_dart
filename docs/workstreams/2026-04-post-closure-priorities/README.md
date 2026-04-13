@@ -123,6 +123,9 @@ This phase should explicitly avoid:
 - [04-app-owned-renderer-registry-policy.md](04-app-owned-renderer-registry-policy.md)
   - Why a shared renderer registry is still deferred and what a future
     app-owned additive helper would need to look like.
+- [05-google-streamed-tts-retriage.md](05-google-streamed-tts-retriage.md)
+  - Why Google streamed TTS remains deferred, and how it should be split into
+    narrower future provider-owned utility candidates if revisited.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)
