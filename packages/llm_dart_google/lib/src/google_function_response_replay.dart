@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 
+import 'google_provider_metadata_support.dart';
 import 'google_shared.dart';
 
 final class GoogleFunctionResponseReplay {
@@ -37,7 +38,7 @@ final class GoogleFunctionResponseReplay {
           ),
           providerMetadata: mergeProviderMetadata(
             providerMetadata,
-            _functionCallIdMetadata(functionCallId),
+            googleFunctionCallIdMetadata(functionCallId),
           ),
         );
 
@@ -140,7 +141,7 @@ final class GoogleFunctionResponseReplay {
       files: files,
       providerMetadata: mergeProviderMetadata(
         providerMetadata,
-        _functionCallIdMetadata(resolvedFunctionCallId),
+        googleFunctionCallIdMetadata(resolvedFunctionCallId),
       ),
     );
   }
@@ -469,16 +470,6 @@ GeneratedFile _parseFunctionResponseFile(
   throw FormatException(
     'Expected $path to contain inlineData or fileData.',
   );
-}
-
-ProviderMetadata? _functionCallIdMetadata(String? functionCallId) {
-  if (functionCallId == null || functionCallId.isEmpty) {
-    return null;
-  }
-
-  return googleProviderMetadata({
-    'functionCallId': functionCallId,
-  });
 }
 
 Map<String, Object?> _normalizeJsonObject(

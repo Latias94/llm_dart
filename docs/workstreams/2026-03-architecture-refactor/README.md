@@ -526,6 +526,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Status note for moving Google result/stream shared projection ownership for
     grounding, thought signatures, `functionCall.id`, finish metadata, and
     `code_execution` pairing into a codec-local support layer.
+- [176-google-higher-layer-projection-boundary.md](176-google-higher-layer-projection-boundary.md)
+  - Frozen boundary note that Google replay and UI helpers should stay above
+    provider-owned custom parts and replay models, reusing only narrow metadata
+    helpers instead of depending directly on codec-local projection support.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
@@ -686,6 +690,9 @@ This workstream is not about a file-moving refactor. It is about defining stable
   layer, which means the next remaining Google structural work is no longer
   basic codec parity but deciding whether any higher-level replay or UI helper
   should depend on that provider-local projection support
+- that higher-level Google boundary is now also frozen: replay and UI helpers
+  stay above provider-owned custom-part/replay abstractions, while only narrow
+  provider-metadata helpers are allowed to cross the codec/UI boundary
 - the Ollama root shell is now also slightly thinner in code ownership terms:
   compatibility config shaping, chat-bridge setup, and embedding delegation
   glue no longer live inline inside `lib/providers/ollama/provider.dart`, but
