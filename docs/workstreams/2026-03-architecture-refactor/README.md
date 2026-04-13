@@ -490,6 +490,11 @@ This workstream is not about a file-moving refactor. It is about defining stable
     `ChatUiStreamChunk`, including `readChatUiStream(...)`,
     `ChatUiStreamReadResult`, and the boundary versus the pure accumulator and
     full `DefaultChatSession`.
+- [168-default-chat-session-support-extraction.md](168-default-chat-session-support-extraction.md)
+  - Status note for moving reusable tool-state and prompt-replay helpers out of
+    `DefaultChatSession` so the session layer keeps converging toward
+    orchestration instead of acting as the hidden implementation hub for all
+    chat-runtime transformations.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
