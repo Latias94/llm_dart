@@ -260,6 +260,62 @@ void main() {
       expect(result.warnings, isEmpty);
     });
 
+    test('chat completions split think tags into reasoning and visible text',
+        () async {
+      final model = OpenAI(
+        apiKey: 'test-key',
+        profile: const DeepSeekProfile(),
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            expect(request.uri.toString(), contains('/chat/completions'));
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'chatcmpl_think_1',
+                'model': 'deepseek-reasoner',
+                'created': 1710000000,
+                'choices': [
+                  {
+                    'index': 0,
+                    'finish_reason': 'stop',
+                    'message': {
+                      'role': 'assistant',
+                      'content': '<think>Plan first.</think>Visible answer.',
+                    },
+                  },
+                ],
+                'usage': {
+                  'prompt_tokens': 4,
+                  'completion_tokens': 2,
+                  'total_tokens': 6,
+                  'completion_tokens_details': {
+                    'reasoning_tokens': 1,
+                  },
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel(
+        'deepseek-reasoner',
+        settings: const OpenAIChatModelSettings(
+          useResponsesApi: false,
+        ),
+      );
+
+      final result = await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage.text('Think first, then answer.'),
+          ],
+        ),
+      );
+
+      expect(result.reasoningText, 'Plan first.');
+      expect(result.text, 'Visible answer.');
+      expect(result.usage?.reasoningTokens, 1);
+    });
+
     test('chat completions keep system messages for OpenAI gpt-5 chat variants',
         () async {
       TransportRequest? capturedRequest;

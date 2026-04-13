@@ -5,6 +5,7 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 import 'openai_model_capabilities.dart';
 import 'openai_options.dart';
 import 'openai_response_format.dart';
+import 'openai_streaming_support.dart';
 import 'resolved_openai_options.dart';
 
 final class OpenAIChatCompletionsRequest {
@@ -26,13 +27,12 @@ final class OpenAIChatCompletionsStreamState {
   UsageStats? usage;
   String? rawFinishReason;
   bool hasResponseMetadata = false;
-  bool startedText = false;
-  bool endedText = false;
-  bool startedReasoning = false;
-  bool endedReasoning = false;
   bool hasToolCalls = false;
+  final OpenAIStreamPartState textParts = OpenAIStreamPartState();
+  final OpenAIStreamPartState reasoningParts = OpenAIStreamPartState();
   final Set<String> emittedSourceIds = {};
-  final Map<int, _OpenAIChatCompletionsToolCallState> _toolCallsByIndex = {};
+  final OpenAIIndexedToolCallAccumulator toolCalls =
+      OpenAIIndexedToolCallAccumulator();
 }
 
 final class OpenAIChatCompletionsCodec {
@@ -289,8 +289,7 @@ final class OpenAIChatCompletionsCodec {
 
     final reasoningDelta = _extractReasoningDelta(delta);
     if (reasoningDelta != null && reasoningDelta.isNotEmpty) {
-      if (!state.startedReasoning) {
-        state.startedReasoning = true;
+      if (state.reasoningParts.markStarted(_reasoningId)) {
         yield ReasoningStartEvent(
           id: _reasoningId,
           providerMetadata: _providerMetadata({
@@ -310,12 +309,11 @@ final class OpenAIChatCompletionsCodec {
 
     final contentDelta = _extractContentDelta(delta);
     if (contentDelta != null && contentDelta.isNotEmpty) {
-      _appendLogprobs(
+      appendOpenAILogprobs(
         state.logprobs,
         textLogprobs,
       );
-      if (!state.startedText) {
-        state.startedText = true;
+      if (state.textParts.markStarted(_textId)) {
         yield TextStartEvent(
           id: _textId,
           providerMetadata: _providerMetadata({
@@ -384,8 +382,8 @@ final class OpenAIChatCompletionsCodec {
 
     state.rawFinishReason = rawFinishReason;
 
-    if (state.startedText && !state.endedText) {
-      state.endedText = true;
+    if (state.textParts.hasStarted(_textId) &&
+        state.textParts.markEnded(_textId)) {
       yield TextEndEvent(
         id: _textId,
         providerMetadata: _providerMetadata({
@@ -395,8 +393,8 @@ final class OpenAIChatCompletionsCodec {
       );
     }
 
-    if (state.startedReasoning && !state.endedReasoning) {
-      state.endedReasoning = true;
+    if (state.reasoningParts.hasStarted(_reasoningId) &&
+        state.reasoningParts.markEnded(_reasoningId)) {
       yield ReasoningEndEvent(
         id: _reasoningId,
         providerMetadata: _providerMetadata({
@@ -1048,7 +1046,7 @@ final class OpenAIChatCompletionsCodec {
           ToolCallContent(
             toolCallId: toolCallId,
             toolName: toolName,
-            input: _tryDecodeJsonValue(encodedArguments).value,
+            input: tryDecodeOpenAIJsonValue(encodedArguments).value,
           ),
           providerMetadata: _providerMetadata({
             'toolCallId': toolCallId,
@@ -1135,7 +1133,7 @@ final class OpenAIChatCompletionsCodec {
 
     final content = message['content'];
     if (content is String) {
-      _splitThinkingAndText(
+      appendOpenAIThinkingAndText(
         content,
         reasoningBuffer: reasoningBuffer,
         textBuffer: textBuffer,
@@ -1159,7 +1157,7 @@ final class OpenAIChatCompletionsCodec {
         }
 
         if (text != null && text.isNotEmpty) {
-          _splitThinkingAndText(
+          appendOpenAIThinkingAndText(
             text,
             reasoningBuffer: reasoningBuffer,
             textBuffer: textBuffer,
@@ -1174,43 +1172,12 @@ final class OpenAIChatCompletionsCodec {
     );
   }
 
-  void _splitThinkingAndText(
-    String value, {
-    required StringBuffer reasoningBuffer,
-    required StringBuffer textBuffer,
-  }) {
-    final thinkingMatches = RegExp(r'<think>(.*?)</think>', dotAll: true)
-        .allMatches(value)
-        .map((match) => match.group(1)?.trim())
-        .whereType<String>()
-        .where((text) => text.isNotEmpty)
-        .toList(growable: false);
-
-    for (final thinking in thinkingMatches) {
-      reasoningBuffer.write(thinking);
-    }
-
-    final filtered =
-        value.replaceAll(RegExp(r'<think>.*?</think>', dotAll: true), '');
-    if (filtered.isNotEmpty) {
-      textBuffer.write(filtered);
-    }
-  }
-
   String? _extractReasoningText(Map<String, Object?> message) {
-    final candidates = [
+    return firstOpenAINonEmptyString([
       _asString(message['reasoning_content']),
       _asString(message['reasoning']),
       _asString(message['thinking']),
-    ];
-
-    for (final candidate in candidates) {
-      if (candidate != null && candidate.isNotEmpty) {
-        return candidate;
-      }
-    }
-
-    return null;
+    ]);
   }
 
   void _captureResponseMetadata(
@@ -1257,28 +1224,19 @@ final class OpenAIChatCompletionsCodec {
     Map<String, Object?> toolCall,
     OpenAIChatCompletionsStreamState state,
   ) {
-    final index = _asInt(toolCall['index']) ?? state._toolCallsByIndex.length;
-    final toolState = state._toolCallsByIndex.putIfAbsent(
-      index,
-      () => _OpenAIChatCompletionsToolCallState(index: index),
-    );
-
-    final toolCallId = _asString(toolCall['id']);
-    if (toolCallId != null && toolCallId.isNotEmpty) {
-      toolState.toolCallId = toolCallId;
-    }
-
+    final index = _asInt(toolCall['index']) ?? state.toolCalls.length;
     final function = _asMap(toolCall['function']) ?? const <String, Object?>{};
-    final toolName = _asString(function['name']);
-    if (toolName != null && toolName.isNotEmpty) {
-      toolState.toolName = toolName;
-    }
-
     final argumentsDelta = _asString(function['arguments']);
     if (argumentsDelta != null && argumentsDelta.isNotEmpty) {
       state.hasToolCalls = true;
-      toolState.arguments.write(argumentsDelta);
     }
+
+    final toolState = state.toolCalls.resolve(
+      index,
+      toolCallId: _asString(toolCall['id']),
+      toolName: _asString(function['name']),
+    );
+    toolState.update(argumentsDelta: argumentsDelta);
 
     return _ToolCallDeltaResult(
       index: index,
@@ -1290,11 +1248,10 @@ final class OpenAIChatCompletionsCodec {
   Iterable<TextStreamEvent> _finalizeToolCalls(
     OpenAIChatCompletionsStreamState state,
   ) sync* {
-    for (final entry in state._toolCallsByIndex.entries.toList()
-      ..sort((left, right) => left.key.compareTo(right.key))) {
+    for (final entry in state.toolCalls.sortedEntries()) {
       final toolState = entry.value;
-      final toolCallId = toolState.toolCallId ?? 'tool_${entry.key}';
-      final toolName = toolState.toolName ?? 'function';
+      final toolCallId = toolState.resolveToolCallId('tool_${entry.key}');
+      final toolName = toolState.resolveToolName();
 
       if (!toolState.startEmitted) {
         toolState.startEmitted = true;
@@ -1310,15 +1267,14 @@ final class OpenAIChatCompletionsCodec {
         );
       }
 
-      final encodedArguments =
-          toolState.arguments.isEmpty ? '{}' : toolState.arguments.toString();
-      final decodedArguments = _tryDecodeJsonValue(encodedArguments);
+      final encodedArguments = toolState.encodedArguments();
+      final decodedArguments = tryDecodeOpenAIJsonValue(encodedArguments);
       if (decodedArguments.error != null) {
         yield ToolInputErrorEvent(
           toolCallId: toolCallId,
           toolName: toolName,
           input: encodedArguments,
-          errorText: _formatInvalidToolInputError(
+          errorText: formatInvalidOpenAIToolInputError(
             toolName,
             decodedArguments.error!,
           ),
@@ -1351,7 +1307,7 @@ final class OpenAIChatCompletionsCodec {
         }),
       );
     }
-    state._toolCallsByIndex.clear();
+    state.toolCalls.clear();
   }
 
   ProviderMetadata? _responseMetadata(
@@ -1375,17 +1331,6 @@ final class OpenAIChatCompletionsCodec {
   List<Object?>? _decodeChatLogprobs(Object? value) {
     final logprobs = _asMap(value);
     return _jsonListOrNull(logprobs?['content']);
-  }
-
-  void _appendLogprobs(
-    List<Object?> into,
-    List<Object?>? logprobs,
-  ) {
-    if (logprobs == null || logprobs.isEmpty) {
-      return;
-    }
-
-    into.addAll(logprobs);
   }
 
   ProviderMetadata? _providerMetadata(Map<String, Object?> values) {
@@ -1442,19 +1387,11 @@ final class OpenAIChatCompletionsCodec {
   }
 
   String? _extractReasoningDelta(Map<String, Object?> delta) {
-    final candidates = [
+    return firstOpenAINonEmptyString([
       _asString(delta['reasoning_content']),
       _asString(delta['reasoning']),
       _asString(delta['thinking']),
-    ];
-
-    for (final candidate in candidates) {
-      if (candidate != null && candidate.isNotEmpty) {
-        return candidate;
-      }
-    }
-
-    return null;
+    ]);
   }
 
   Map<String, Object?>? _firstChoice(Map<String, Object?> response) {
@@ -1491,36 +1428,6 @@ final class OpenAIChatCompletionsCodec {
     }
 
     return jsonEncode(output);
-  }
-
-  _DecodedJsonValue _tryDecodeJsonValue(String value) {
-    try {
-      return _DecodedJsonValue(
-        value: jsonDecode(value),
-      );
-    } on FormatException catch (error) {
-      return _DecodedJsonValue(
-        value: value,
-        error: error,
-      );
-    } catch (error) {
-      return _DecodedJsonValue(
-        value: value,
-        error: FormatException(error.toString()),
-      );
-    }
-  }
-
-  String _formatInvalidToolInputError(
-    String toolName,
-    FormatException error,
-  ) {
-    final message = error.message.trim();
-    if (message.isEmpty) {
-      return 'Invalid JSON tool arguments for "$toolName".';
-    }
-
-    return 'Invalid JSON tool arguments for "$toolName": $message';
   }
 
   void _throwIfError(Map<String, Object?> response) {
@@ -1607,18 +1514,6 @@ final class OpenAIChatCompletionsCodec {
   static const String _reasoningId = 'reasoning_0';
 }
 
-final class _OpenAIChatCompletionsToolCallState {
-  final int index;
-  String? toolCallId;
-  String? toolName;
-  final StringBuffer arguments = StringBuffer();
-  bool startEmitted = false;
-
-  _OpenAIChatCompletionsToolCallState({
-    required this.index,
-  });
-}
-
 final class _DecodedAssistantText {
   final String text;
   final String? reasoning;
@@ -1631,22 +1526,12 @@ final class _DecodedAssistantText {
 
 final class _ToolCallDeltaResult {
   final int index;
-  final _OpenAIChatCompletionsToolCallState? toolState;
+  final OpenAIStreamToolCallState? toolState;
   final String? argumentsDelta;
 
   const _ToolCallDeltaResult({
     required this.index,
     required this.toolState,
     required this.argumentsDelta,
-  });
-}
-
-final class _DecodedJsonValue {
-  final Object? value;
-  final FormatException? error;
-
-  const _DecodedJsonValue({
-    required this.value,
-    this.error,
   });
 }

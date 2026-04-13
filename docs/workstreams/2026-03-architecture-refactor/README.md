@@ -495,6 +495,11 @@ This workstream is not about a file-moving refactor. It is about defining stable
     `DefaultChatSession` so the session layer keeps converging toward
     orchestration instead of acting as the hidden implementation hub for all
     chat-runtime transformations.
+- [169-openai-streaming-support-extraction.md](169-openai-streaming-support-extraction.md)
+  - Status note for extracting shared OpenAI-family stream parsing support for
+    text/reasoning lifecycle state, indexed tool-call delta accumulation,
+    invalid JSON tool-input shaping, and `<think>` tag splitting without
+    forcing chat-completions and Responses into one generic codec.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)

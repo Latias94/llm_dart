@@ -6,6 +6,7 @@ import 'openai_model_capabilities.dart';
 import 'openai_native_tools.dart';
 import 'openai_options.dart';
 import 'openai_response_format.dart';
+import 'openai_streaming_support.dart';
 
 final class OpenAIResponsesRequest {
   final Map<String, Object?> body;
@@ -19,11 +20,10 @@ final class OpenAIResponsesRequest {
 }
 
 final class OpenAIResponsesStreamState {
-  final Map<int, _OpenAIToolCallState> _toolCallsByIndex = {};
-  final Set<String> startedTextIds = {};
-  final Set<String> endedTextIds = {};
-  final Set<String> startedReasoningIds = {};
-  final Set<String> endedReasoningIds = {};
+  final OpenAIIndexedToolCallAccumulator toolCalls =
+      OpenAIIndexedToolCallAccumulator();
+  final OpenAIStreamPartState textParts = OpenAIStreamPartState();
+  final OpenAIStreamPartState reasoningParts = OpenAIStreamPartState();
   final Set<String> emittedAnnotationKeys = {};
   final List<Object?> logprobs = [];
 
@@ -289,7 +289,7 @@ final class OpenAIResponsesCodec {
 
       if (itemType == 'message') {
         final textId = _resolveTextId(chunk, item);
-        if (state.startedTextIds.add(textId)) {
+        if (state.textParts.markStarted(textId)) {
           yield TextStartEvent(
             id: textId,
             providerMetadata: providerMetadata,
@@ -306,11 +306,15 @@ final class OpenAIResponsesCodec {
           item: item,
           outputIndex: outputIndex,
         );
+        final resolvedToolCallId = toolState.resolveToolCallId(
+          outputIndex == null ? 'tool' : 'tool_$outputIndex',
+        );
+        final resolvedToolName = toolState.resolveToolName();
         if (!toolState.startEmitted) {
           toolState.startEmitted = true;
           yield ToolInputStartEvent(
-            toolCallId: toolState.toolCallId,
-            toolName: toolState.toolName,
+            toolCallId: resolvedToolCallId,
+            toolName: resolvedToolName,
             providerExecuted: false,
             isDynamic: false,
             title: _asString(item['title']),
@@ -330,7 +334,7 @@ final class OpenAIResponsesCodec {
         item: null,
       );
 
-      if (state.startedTextIds.add(textId)) {
+      if (state.textParts.markStarted(textId)) {
         yield TextStartEvent(
           id: textId,
           providerMetadata: providerMetadata,
@@ -339,7 +343,7 @@ final class OpenAIResponsesCodec {
 
       final delta = _asString(chunk['delta']);
       if (delta != null && delta.isNotEmpty) {
-        _appendLogprobs(
+        appendOpenAILogprobs(
           state.logprobs,
           _jsonListOrNull(chunk['logprobs']),
         );
@@ -354,7 +358,7 @@ final class OpenAIResponsesCodec {
 
     if (chunkType == 'response.output_text.done') {
       final textId = _resolveTextId(chunk, null);
-      if (state.endedTextIds.add(textId)) {
+      if (state.textParts.markEnded(textId)) {
         yield TextEndEvent(
           id: textId,
           providerMetadata: _streamItemMetadata(
@@ -369,7 +373,7 @@ final class OpenAIResponsesCodec {
 
     if (chunkType == 'response.reasoning_summary_part.added') {
       final reasoningId = _resolveReasoningId(chunk);
-      if (state.startedReasoningIds.add(reasoningId)) {
+      if (state.reasoningParts.markStarted(reasoningId)) {
         yield ReasoningStartEvent(
           id: reasoningId,
           providerMetadata: _streamItemMetadata(
@@ -401,7 +405,7 @@ final class OpenAIResponsesCodec {
 
     if (chunkType == 'response.reasoning_summary_part.done') {
       final reasoningId = _resolveReasoningId(chunk);
-      if (state.endedReasoningIds.add(reasoningId)) {
+      if (state.reasoningParts.markEnded(reasoningId)) {
         yield ReasoningEndEvent(
           id: reasoningId,
           providerMetadata: _streamItemMetadata(
@@ -427,12 +431,16 @@ final class OpenAIResponsesCodec {
         chunk: chunk,
         item: null,
       );
+      final resolvedToolCallId = toolState.resolveToolCallId(
+        outputIndex == null ? 'tool' : 'tool_$outputIndex',
+      );
+      final resolvedToolName = toolState.resolveToolName();
 
       if (!toolState.startEmitted) {
         toolState.startEmitted = true;
         yield ToolInputStartEvent(
-          toolCallId: toolState.toolCallId,
-          toolName: toolState.toolName,
+          toolCallId: resolvedToolCallId,
+          toolName: resolvedToolName,
           providerExecuted: false,
           isDynamic: false,
           providerMetadata: providerMetadata,
@@ -443,7 +451,7 @@ final class OpenAIResponsesCodec {
       if (delta != null && delta.isNotEmpty) {
         toolState.arguments.write(delta);
         yield ToolInputDeltaEvent(
-          toolCallId: toolState.toolCallId,
+          toolCallId: resolvedToolCallId,
           delta: delta,
           providerMetadata: providerMetadata,
         );
@@ -466,7 +474,7 @@ final class OpenAIResponsesCodec {
         return;
       }
 
-      _appendLogprobs(
+      appendOpenAILogprobs(
         state.logprobs,
         _jsonListOrNull(part['logprobs']),
       );
@@ -480,7 +488,7 @@ final class OpenAIResponsesCodec {
       }
 
       final textId = _resolveTextId(chunk, null);
-      if (state.endedTextIds.add(textId)) {
+      if (state.textParts.markEnded(textId)) {
         yield TextEndEvent(
           id: textId,
           providerMetadata: _streamTextPartMetadata(
@@ -527,7 +535,7 @@ final class OpenAIResponsesCodec {
 
       if (itemType == 'message') {
         final textId = _resolveTextId(chunk, item);
-        if (state.endedTextIds.add(textId)) {
+        if (state.textParts.markEnded(textId)) {
           yield TextEndEvent(
             id: textId,
             providerMetadata: providerMetadata,
@@ -538,9 +546,8 @@ final class OpenAIResponsesCodec {
 
       if (itemType == 'function_call') {
         final outputIndex = _asInt(chunk['output_index']);
-        var toolState = outputIndex == null
-            ? null
-            : state._toolCallsByIndex.remove(outputIndex);
+        var toolState =
+            outputIndex == null ? null : state.toolCalls.remove(outputIndex);
 
         toolState ??= _resolveToolCallState(
           state: state,
@@ -548,12 +555,16 @@ final class OpenAIResponsesCodec {
           item: item,
           outputIndex: outputIndex,
         );
+        final resolvedToolCallId = toolState.resolveToolCallId(
+          outputIndex == null ? 'tool' : 'tool_$outputIndex',
+        );
+        final resolvedToolName = toolState.resolveToolName();
 
         if (!toolState.startEmitted) {
           toolState.startEmitted = true;
           yield ToolInputStartEvent(
-            toolCallId: toolState.toolCallId,
-            toolName: toolState.toolName,
+            toolCallId: resolvedToolCallId,
+            toolName: resolvedToolName,
             providerExecuted: false,
             isDynamic: false,
             title: _asString(item['title']),
@@ -565,14 +576,14 @@ final class OpenAIResponsesCodec {
           item,
           fallbackArguments: toolState.arguments.toString(),
         );
-        final decodedArguments = _tryDecodeJsonValue(encodedArguments);
+        final decodedArguments = tryDecodeOpenAIJsonValue(encodedArguments);
         if (decodedArguments.error != null) {
           yield ToolInputErrorEvent(
-            toolCallId: toolState.toolCallId,
-            toolName: toolState.toolName,
+            toolCallId: resolvedToolCallId,
+            toolName: resolvedToolName,
             input: encodedArguments,
-            errorText: _formatInvalidToolInputError(
-              toolState.toolName,
+            errorText: formatInvalidOpenAIToolInputError(
+              resolvedToolName,
               decodedArguments.error!,
             ),
             providerExecuted: false,
@@ -586,16 +597,16 @@ final class OpenAIResponsesCodec {
         if (!toolState.endEmitted) {
           toolState.endEmitted = true;
           yield ToolInputEndEvent(
-            toolCallId: toolState.toolCallId,
+            toolCallId: resolvedToolCallId,
             providerMetadata: providerMetadata,
           );
         }
 
         final toolCallPart = _decodeFunctionCallOutput(
           item,
-          fallbackToolCallId: toolState.toolCallId,
+          fallbackToolCallId: resolvedToolCallId,
           fallbackArguments: toolState.arguments.toString(),
-          fallbackToolName: toolState.toolName,
+          fallbackToolName: resolvedToolName,
           decodedInput: decodedArguments.value,
         );
         if (toolCallPart != null) {
@@ -1716,22 +1727,11 @@ final class OpenAIResponsesCodec {
         continue;
       }
 
-      _appendLogprobs(
+      appendOpenAILogprobs(
         into,
         _jsonListOrNull(contentPart['logprobs']),
       );
     }
-  }
-
-  void _appendLogprobs(
-    List<Object?> into,
-    List<Object?>? logprobs,
-  ) {
-    if (logprobs == null || logprobs.isEmpty) {
-      return;
-    }
-
-    into.addAll(logprobs);
   }
 
   ProviderMetadata? _itemMetadata(
@@ -1946,36 +1946,42 @@ final class OpenAIResponsesCodec {
     return null;
   }
 
-  _OpenAIToolCallState _resolveToolCallState({
+  OpenAIStreamToolCallState _resolveToolCallState({
     required OpenAIResponsesStreamState state,
     required Map<String, Object?> chunk,
     required Map<String, Object?>? item,
     required int? outputIndex,
   }) {
-    _OpenAIToolCallState? toolState;
+    OpenAIStreamToolCallState? toolState;
     if (outputIndex != null) {
-      toolState = state._toolCallsByIndex[outputIndex];
+      toolState = state.toolCalls[outputIndex];
     }
 
     final resolvedToolCallId =
         _asString(item?['call_id']) ?? _asString(chunk['item_id']) ?? 'tool';
     final resolvedToolName = _asString(item?['name']) ?? 'function';
+    final resolvedTitle = _asString(item?['title']);
 
     if (toolState == null) {
-      toolState = _OpenAIToolCallState(
-        toolCallId: resolvedToolCallId,
-        toolName: resolvedToolName,
-      );
-      if (outputIndex != null) {
-        state._toolCallsByIndex[outputIndex] = toolState;
-      }
+      toolState = outputIndex == null
+          ? OpenAIStreamToolCallState(
+              index: -1,
+              toolCallId: resolvedToolCallId,
+              toolName: resolvedToolName,
+              title: resolvedTitle,
+            )
+          : state.toolCalls.resolve(
+              outputIndex,
+              toolCallId: resolvedToolCallId,
+              toolName: resolvedToolName,
+              title: resolvedTitle,
+            );
     } else {
-      if (_asString(item?['call_id']) case final callId?) {
-        toolState.toolCallId = callId;
-      }
-      if (_asString(item?['name']) case final toolName?) {
-        toolState.toolName = toolName;
-      }
+      toolState.update(
+        toolCallId: _asString(item?['call_id']),
+        toolName: _asString(item?['name']),
+        title: resolvedTitle,
+      );
     }
 
     state.hasToolCalls = true;
@@ -2162,25 +2168,7 @@ final class OpenAIResponsesCodec {
   }
 
   Object? _decodeJsonValue(String value) {
-    return _tryDecodeJsonValue(value).value;
-  }
-
-  _DecodedJsonValue _tryDecodeJsonValue(String value) {
-    try {
-      return _DecodedJsonValue(
-        value: jsonDecode(value),
-      );
-    } on FormatException catch (error) {
-      return _DecodedJsonValue(
-        value: value,
-        error: error,
-      );
-    } catch (error) {
-      return _DecodedJsonValue(
-        value: value,
-        error: FormatException(error.toString()),
-      );
-    }
+    return tryDecodeOpenAIJsonValue(value).value;
   }
 
   String _resolveEncodedFunctionCallArguments(
@@ -2197,18 +2185,6 @@ final class OpenAIResponsesCodec {
     }
 
     return '{}';
-  }
-
-  String _formatInvalidToolInputError(
-    String toolName,
-    FormatException error,
-  ) {
-    final message = error.message.trim();
-    if (message.isEmpty) {
-      return 'Invalid JSON tool arguments for "$toolName".';
-    }
-
-    return 'Invalid JSON tool arguments for "$toolName": $message';
   }
 
   void _throwIfError(Map<String, Object?> response) {
@@ -2298,27 +2274,4 @@ final class OpenAIResponsesCodec {
 
     return mediaType;
   }
-}
-
-final class _OpenAIToolCallState {
-  String toolCallId;
-  String toolName;
-  final StringBuffer arguments = StringBuffer();
-  bool startEmitted = false;
-  bool endEmitted = false;
-
-  _OpenAIToolCallState({
-    required this.toolCallId,
-    required this.toolName,
-  });
-}
-
-final class _DecodedJsonValue {
-  final Object? value;
-  final FormatException? error;
-
-  const _DecodedJsonValue({
-    required this.value,
-    this.error,
-  });
 }
