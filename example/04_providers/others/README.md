@@ -73,6 +73,9 @@ for (final model in providers) {
 - For example, OpenRouter online search belongs on
   `OpenRouterChatModelSettings`, and xAI live search belongs on
   `XAIGenerateTextOptions`.
+- Broader OpenRouter search mapping and any xAI expansion beyond the current
+  audited live-search subset remain deferred provider-owned policy work, not
+  shared-contract debt.
 - This is why the architecture keeps profiles under the shared model contract
   instead of adding more global builder flags.
 

@@ -31,6 +31,14 @@ dart run live_search.dart
 - **News Integration**: Latest developments and current events
 - **Search Enhancement**: Automatic web search for current topics
 
+## Boundary Notes
+
+- The stable xAI surface in `llm_dart` is the audited live-search path through
+  `XAIGenerateTextOptions` and `XAILiveSearchOptions`.
+- Broader tool-based search or richer replay-oriented xAI behavior remains
+  deferred provider-owned policy work until a narrower stable contract is
+  justified.
+
 ## Usage Examples
 
 ### Live Search Query

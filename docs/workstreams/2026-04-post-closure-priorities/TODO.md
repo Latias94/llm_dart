@@ -26,4 +26,4 @@
 ## Selective Provider Expansion
 
 - [x] Re-triage Google streamed TTS after the UI/runtime contract settles
-- [ ] Re-triage broader OpenRouter search mapping and any xAI subset beyond the audited live-search path
+- [x] Re-triage broader OpenRouter search mapping and any xAI subset beyond the audited live-search path

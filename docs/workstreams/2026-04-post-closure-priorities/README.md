@@ -126,6 +126,10 @@ This phase should explicitly avoid:
 - [05-google-streamed-tts-retriage.md](05-google-streamed-tts-retriage.md)
   - Why Google streamed TTS remains deferred, and how it should be split into
     narrower future provider-owned utility candidates if revisited.
+- [06-openrouter-and-xai-retriage.md](06-openrouter-and-xai-retriage.md)
+  - Why the audited OpenRouter online subset and xAI live-search subset are
+    enough for this refactor round, and what would justify reopening them
+    later.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)

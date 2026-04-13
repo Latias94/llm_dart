@@ -98,5 +98,10 @@ Current status:
 - Google streamed TTS has now been re-triaged more precisely and remains
   deferred as a future provider-owned utility cluster rather than active
   migration debt
-- OpenRouter and xAI broader expansion remain policy questions rather than
-  active architecture blockers
+- OpenRouter has now been re-confirmed as an audited online-model subset case;
+  broader search mapping remains deferred until a stronger wire contract exists
+- xAI has now been re-confirmed as an audited live-search subset case; any
+  broader tool, replay, or compatibility growth remains deferred until a
+  narrower provider-owned contract is identified
+- the selective-provider-expansion track is now closed for this phase, with
+  deferred items explicitly documented as future provider-owned policy work
