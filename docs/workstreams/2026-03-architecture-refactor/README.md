@@ -518,6 +518,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Audit note freezing that the OpenAI support split is a reference pattern,
     not a required provider template, with Google as the next selective target
     and Anthropic intentionally left simpler for now.
+- [174-google-language-model-support-extraction.md](174-google-language-model-support-extraction.md)
+  - Status note for moving Google request preparation, shared response-format
+    adaptation, JSON response decoding, and header/base-URL helpers out of
+    `google_language_model.dart` so the model class stays transport-facing.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
@@ -670,6 +674,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   reference pattern rather than a symmetry target, Google is the next justified
   selective extraction candidate, and Anthropic should stay simpler until a
   concrete codec change creates real pressure for shared local support
+- Google now also follows that selective propagation policy in code:
+  `google_language_model.dart` has been reduced to a clearer transport facade,
+  while the next meaningful Google target is result/stream shared projection
+  support rather than another facade-only symmetry pass
 - the Ollama root shell is now also slightly thinner in code ownership terms:
   compatibility config shaping, chat-bridge setup, and embedding delegation
   glue no longer live inline inside `lib/providers/ollama/provider.dart`, but
