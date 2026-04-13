@@ -58,7 +58,7 @@
 - [x] Design and implement an additive streamed multi-step runner above raw `streamText(...)` with a stitched run stream, `stepStream`, and final run result
 - [ ] Re-evaluate shared runner expansion only after a replay-safe approval or provider-executed continuation contract is proven across at least two provider families
 - [ ] Re-evaluate whether the new streamed runner needs a constrained pre-step hook after the layered API is used by at least two concrete shared call paths
-- [ ] Decide whether streamed multi-step orchestration really needs richer step-start/step-finish metadata in the shared core, or whether that detail should stay in a future UI/transport chunk layer
+- [x] Freeze streamed multi-step orchestration on the current small shared step-metadata split, and defer any richer step-start/step-finish detail to future UI/runtime or orchestration-specific layers unless real usage pressure appears (see `192-streamed-runner-step-metadata-policy.md`)
 - [x] Decide that the initial streamed runner keeps its stitched `eventStream` provider-step-only instead of synthesizing local tool-result or other inter-step projection events in the narrow phase
 - [x] Evaluate and implement a lightweight `llm_dart_chat` UI-stream helper above `ChatUiStreamChunk` for non-session consumers, instead of widening chunk vocabulary or adding more core events
 - [x] Freeze `readChatUiStream(...)` on the current stream-plus-`result` contract, and defer callback or richer final-summary facades until at least two concrete integrations show real pressure (see `191-read-chat-ui-stream-facade-policy.md`)

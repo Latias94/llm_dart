@@ -97,6 +97,7 @@ Current status:
 - that runner boundary is still intentionally narrow: `generateText` / `streamText` remain single-step helpers, there is no shared `prepareStep`, and provider-native built-in tools, dynamic tools, and approval-gated continuation stay outside the shared runner
 - continuation ownership is now also frozen more clearly: common function-tool loops belong to the shared runner, while approval-gated, provider-executed, dynamic, and chat-interactive continuation remain provider-owned or session-owned
 - the stop-and-mutation boundary is now also frozen: `maxSteps` stays a guardrail, shared `stopWhen` and `prepareStep` stay out, and retry/model-switch policy remains app-owned
+- step observability is now also frozen more clearly: richer shared step-start or step-finish metadata stays out, while the existing split between `GenerateTextStepStartEvent`, completed step snapshots, and lightweight step boundary events remains the current stable contract
 - only a separate streamed runner or a tightly-constrained pre-step hook may be reconsidered later if real shared usage proves the need
 - provider-specific compatibility subset audits, broader endpoint coverage, and the remaining Google provider-owned streamed TTS plus any optional legacy multimodal-output projection decisions remain for the next step, while Anthropic is now mostly down to narrower provider-native replay-policy cleanup
 

@@ -455,6 +455,9 @@ Resolved in the current breaking round:
   boundary
 - `166-streamed-runner-inter-step-projection-policy.md` documents the frozen
   inter-step projection policy
+- `192-streamed-runner-step-metadata-policy.md` documents the frozen decision
+  to keep richer shared step-start and step-finish metadata out of the current
+  shared core
 
 ## 37. `readChatUiStream(...)` Facade Status
 
