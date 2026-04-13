@@ -246,6 +246,12 @@ final class OpenAIChatCompletionsCodec {
     Map<String, Object?> chunk,
     OpenAIChatCompletionsStreamState state,
   ) sync* {
+    final metadata = _ChatCompletionsStreamMetadataAdapter(
+      support: _support,
+      state: state,
+      chunk: chunk,
+      providerMetadataBuilder: _providerMetadata,
+    );
     captureOpenAIResponseMetadata(
       state: state,
       responseId: _asString(chunk['id']),
@@ -254,9 +260,7 @@ final class OpenAIChatCompletionsCodec {
     );
     final metadataEvent = maybeCreateOpenAIResponseMetadataEvent(
       state: state,
-      metadata: () => _support.providerMetadata({
-        'responseId': state.responseId,
-      }),
+      metadata: metadata.response,
     );
     if (metadataEvent != null) {
       yield metadataEvent;
@@ -293,12 +297,8 @@ final class OpenAIChatCompletionsCodec {
       state: state.reasoningParts,
       id: _reasoningId,
       delta: reasoningDelta,
-      startMetadata: () => _providerMetadata({
-        'responseId': state.responseId,
-      }),
-      deltaMetadata: () => _providerMetadata({
-        'responseId': state.responseId,
-      }),
+      startMetadata: metadata.reasoning,
+      deltaMetadata: metadata.reasoning,
     );
 
     final contentDelta = _extractContentDelta(delta);
@@ -308,14 +308,8 @@ final class OpenAIChatCompletionsCodec {
       delta: contentDelta,
       aggregateLogprobs: state.logprobs,
       deltaLogprobs: textLogprobs,
-      startMetadata: () => _providerMetadata({
-        'responseId': state.responseId,
-        'logprobs': textLogprobs,
-      }),
-      deltaMetadata: () => _providerMetadata({
-        'responseId': state.responseId,
-        'logprobs': textLogprobs,
-      }),
+      startMetadata: () => metadata.text(textLogprobs),
+      deltaMetadata: () => metadata.text(textLogprobs),
     );
 
     for (final rawToolCall in _asList(delta['tool_calls'])) {
@@ -336,10 +330,7 @@ final class OpenAIChatCompletionsCodec {
       final startEvent = maybeCreateOpenAIToolInputStartEvent(
         toolState: toolState,
         fallbackToolCallId: 'tool_$index',
-        metadata: () => _providerMetadata({
-          'responseId': state.responseId,
-          'toolIndex': index,
-        }),
+        metadata: () => metadata.tool(index),
       );
       if (startEvent != null) {
         yield startEvent;
@@ -349,10 +340,7 @@ final class OpenAIChatCompletionsCodec {
         toolState: toolState,
         fallbackToolCallId: 'tool_$index',
         delta: deltaResult.argumentsDelta,
-        metadata: () => _providerMetadata({
-          'responseId': state.responseId,
-          'toolIndex': index,
-        }),
+        metadata: () => metadata.tool(index),
       );
       if (deltaEvent != null) {
         yield deltaEvent;
@@ -372,10 +360,7 @@ final class OpenAIChatCompletionsCodec {
     final textEndEvent = maybeCreateOpenAITextEndEvent(
       state: state.textParts,
       id: _textId,
-      metadata: () => _providerMetadata({
-        'responseId': state.responseId,
-        'logprobs': textLogprobs,
-      }),
+      metadata: () => metadata.text(textLogprobs),
     );
     if (textEndEvent != null) {
       yield textEndEvent;
@@ -384,26 +369,19 @@ final class OpenAIChatCompletionsCodec {
     final reasoningEndEvent = maybeCreateOpenAIReasoningEndEvent(
       state: state.reasoningParts,
       id: _reasoningId,
-      metadata: () => _providerMetadata({
-        'responseId': state.responseId,
-      }),
+      metadata: metadata.reasoning,
     );
     if (reasoningEndEvent != null) {
       yield reasoningEndEvent;
     }
 
-    yield* _finalizeToolCalls(state);
+    yield* _finalizeToolCalls(state, metadata);
 
     yield FinishEvent(
       finishReason: _mapFinishReason(rawFinishReason),
       rawFinishReason: rawFinishReason,
       usage: state.usage,
-      providerMetadata: _providerMetadata({
-        'responseId': state.responseId,
-        'systemFingerprint': _asString(chunk['system_fingerprint']),
-        if (state.logprobs.isNotEmpty)
-          'logprobs': List<Object?>.unmodifiable(state.logprobs),
-      }),
+      providerMetadata: metadata.finish(),
     );
   }
 
@@ -1040,17 +1018,14 @@ final class OpenAIChatCompletionsCodec {
 
   Iterable<TextStreamEvent> _finalizeToolCalls(
     OpenAIChatCompletionsStreamState state,
+    _ChatCompletionsStreamMetadataAdapter metadata,
   ) sync* {
     for (final entry in state.toolCalls.sortedEntries()) {
       final toolState = entry.value;
-      ProviderMetadata? metadata() => _providerMetadata({
-            'responseId': state.responseId,
-            'toolIndex': entry.key,
-          });
       final startEvent = maybeCreateOpenAIToolInputStartEvent(
         toolState: toolState,
         fallbackToolCallId: 'tool_${entry.key}',
-        metadata: metadata,
+        metadata: () => metadata.tool(entry.key),
       );
       if (startEvent != null) {
         yield startEvent;
@@ -1063,7 +1038,7 @@ final class OpenAIChatCompletionsCodec {
       if (resolvedInput.decodeError != null) {
         yield createOpenAIToolInputErrorEvent(
           input: resolvedInput,
-          metadata: metadata,
+          metadata: () => metadata.tool(entry.key),
         );
         continue;
       }
@@ -1071,7 +1046,7 @@ final class OpenAIChatCompletionsCodec {
       final endEvent = maybeCreateOpenAIToolInputEndEvent(
         toolState: toolState,
         fallbackToolCallId: 'tool_${entry.key}',
-        metadata: metadata,
+        metadata: () => metadata.tool(entry.key),
       );
       if (endEvent != null) {
         yield endEvent;
@@ -1082,7 +1057,7 @@ final class OpenAIChatCompletionsCodec {
           toolName: resolvedInput.toolName,
           input: resolvedInput.decodedInput,
         ),
-        providerMetadata: metadata(),
+        providerMetadata: metadata.tool(entry.key),
       );
     }
     state.toolCalls.clear();
@@ -1288,4 +1263,46 @@ final class _ToolCallDeltaResult {
     required this.toolState,
     required this.argumentsDelta,
   });
+}
+
+final class _ChatCompletionsStreamMetadataAdapter {
+  final OpenAIChatCompletionsSupport support;
+  final OpenAIChatCompletionsStreamState state;
+  final Map<String, Object?> chunk;
+  final ProviderMetadata? Function(Map<String, Object?> values)
+      providerMetadataBuilder;
+
+  const _ChatCompletionsStreamMetadataAdapter({
+    required this.support,
+    required this.state,
+    required this.chunk,
+    required this.providerMetadataBuilder,
+  });
+
+  ProviderMetadata? response() => support.providerMetadata({
+        'responseId': state.responseId,
+      });
+
+  ProviderMetadata? reasoning() => providerMetadataBuilder({
+        'responseId': state.responseId,
+      });
+
+  ProviderMetadata? text(List<Object?>? logprobs) => providerMetadataBuilder({
+        'responseId': state.responseId,
+        'logprobs': logprobs,
+      });
+
+  ProviderMetadata? tool(int index) => providerMetadataBuilder({
+        'responseId': state.responseId,
+        'toolIndex': index,
+      });
+
+  ProviderMetadata? finish() => providerMetadataBuilder({
+        'responseId': state.responseId,
+        'systemFingerprint': chunk['system_fingerprint'] is String
+            ? chunk['system_fingerprint'] as String
+            : null,
+        if (state.logprobs.isNotEmpty)
+          'logprobs': List<Object?>.unmodifiable(state.logprobs),
+      });
 }

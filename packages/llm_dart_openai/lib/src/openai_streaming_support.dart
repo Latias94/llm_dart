@@ -288,6 +288,21 @@ Iterable<TextStreamEvent> decodeOpenAITextDeltaEvents({
   );
 }
 
+TextStartEvent? maybeCreateOpenAITextStartEvent({
+  required OpenAIStreamPartState state,
+  required String id,
+  required ProviderMetadata? Function() metadata,
+}) {
+  if (!state.markStarted(id)) {
+    return null;
+  }
+
+  return TextStartEvent(
+    id: id,
+    providerMetadata: metadata(),
+  );
+}
+
 TextEndEvent? maybeCreateOpenAITextEndEvent({
   required OpenAIStreamPartState state,
   required String id,
