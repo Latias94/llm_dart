@@ -446,6 +446,10 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
       // Handle completion event
       final response = json['response'] as Map<String, dynamic>?;
       if (response != null) {
+        flushOpenAIPendingContentEvents(
+          state: state,
+          events: events,
+        );
         final thinkingContent = state.thinkingContent;
 
         final completionResponse =
@@ -496,11 +500,20 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
     // Check for finish reason
     final finishReason = json['finish_reason'] as String?;
     if (finishReason != null) {
+      flushOpenAIPendingContentEvents(
+        state: state,
+        events: events,
+      );
       final usage = json['usage'] as Map<String, dynamic>?;
       final thinkingContent = state.thinkingContent;
+      final streamedText = state.textContent ?? '';
+      final streamedToolCalls = state.buildToolCalls();
 
       final response = OpenAIResponsesResponse({
-        'output_text': '',
+        'output_text': streamedText,
+        if (streamedToolCalls.isNotEmpty)
+          'tool_calls':
+              streamedToolCalls.map((toolCall) => toolCall.toJson()).toList(),
         if (usage != null) 'usage': usage,
       }, thinkingContent);
 

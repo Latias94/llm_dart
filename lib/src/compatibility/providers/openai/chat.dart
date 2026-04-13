@@ -283,13 +283,26 @@ class OpenAIChat implements ChatCapability {
     // Check for finish reason
     final finishReason = choice['finish_reason'] as String?;
     if (finishReason != null) {
+      flushOpenAIPendingContentEvents(
+        state: state,
+        events: events,
+      );
       final usage = json['usage'] as Map<String, dynamic>?;
       final thinkingContent = state.thinkingContent;
+      final streamedText = state.textContent ?? '';
+      final streamedToolCalls = state.buildToolCalls();
 
       final response = OpenAIChatResponse({
         'choices': [
           {
-            'message': {'content': '', 'role': 'assistant'},
+            'message': {
+              'content': streamedText,
+              'role': 'assistant',
+              if (streamedToolCalls.isNotEmpty)
+                'tool_calls': streamedToolCalls
+                    .map((toolCall) => toolCall.toJson())
+                    .toList(),
+            },
           },
         ],
         if (usage != null) 'usage': usage,
