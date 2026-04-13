@@ -599,6 +599,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Closure audit concluding that the current shared runner is complete at the
     right scope for this round, and that further continuation or pre-step
     expansion is future demand-driven policy rather than active migration debt.
+- [194-community-package-granularity-policy.md](194-community-package-granularity-policy.md)
+  - Frozen policy that keeps Ollama and ElevenLabs together under
+    `llm_dart_community` for now instead of splitting dedicated packages
+    before the current modern surface actually justifies the extra granularity.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
@@ -666,6 +670,7 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - OpenAI provider-owned `logprobs` handling is now aligned with `repo-ref/ai` through typed `OpenAIGenerateTextOptions.logprobs`, Responses-side automatic `include/top_logprobs` encoding, and text-part / stream-event provider metadata decode, without widening the shared text-generation contract.
 - OpenAI chat-completions request shaping now also aligns better with the reference through provider-owned `systemMessageMode`, including OpenAI reasoning-model defaulting to `developer` without widening the shared prompt model.
 - the lightweight `readChatUiStream(...)` helper is now also frozen on the current result-object direction: persistent snapshots stay on the main stream, step-finish and transient data stay on side streams, and final-state access stays on `result` plus small convenience futures rather than a new callback-heavy or summary-heavy facade
+- `llm_dart_community` is now also frozen at the current package granularity: Ollama and ElevenLabs stay together under one community-provider package until real surface growth or release/lifecycle pressure justifies dedicated packages
 - The remote chat protocol is thinner than the reference `ui-message-stream` layer, which is acceptable for now but still a conscious structural gap.
 
 ### Current Audit Signals
@@ -815,6 +820,9 @@ This workstream is not about a file-moving refactor. It is about defining stable
   as an over-broad blocker: modern implementation weight already lives in
   `llm_dart_community`, while the remaining root-owned pieces are now better
   understood as compatibility-era shells or intentionally residual APIs
+- dedicated community-package splitting is now also explicitly deferred: the
+  current `llm_dart_community` package already captures the right ownership
+  boundary without copying the reference repository's finer package granularity
 - the Ollama root shell is now also slightly thinner in code ownership terms:
   compatibility config shaping, chat-bridge setup, and embedding delegation
   glue no longer live inline inside `lib/providers/ollama/provider.dart`, but

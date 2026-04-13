@@ -196,6 +196,10 @@ Current status:
   already moved into `llm_dart_community`, and the remaining root-owned pieces
   are now explicitly compatibility-era shells or residual provider-owned APIs
   rather than active blockers for the modern package boundary
+- `llm_dart_community` package granularity is now also frozen more explicitly:
+  Ollama and ElevenLabs stay together in the current community package until
+  real provider growth or package-lifecycle pressure justifies dedicated
+  packages
 - the root ElevenLabs legacy shell now also delegates shared text-to-speech
   and direct-audio transcription requests into the package-owned
   `llm_dart_community` models instead of keeping duplicate primary audio

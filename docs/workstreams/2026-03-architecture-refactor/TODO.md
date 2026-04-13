@@ -226,7 +226,7 @@
 - [x] Decide that Google audio understanding stays on multimodal prompting for now, without adding an extra provider-owned helper above the language-model path
 - [x] Decide that file-based ElevenLabs transcription remains legacy-only for now instead of widening the current byte-oriented shared `TranscriptionModel`
 - [x] Decide that remaining ElevenLabs voice/realtime/admin/model-account capabilities stay residual provider-owned surfaces outside the shared audio model layer unless a concrete typed helper is later justified
-- [ ] Evaluate whether community providers should later split into dedicated packages
+- [x] Freeze the current community package granularity: keep Ollama and ElevenLabs together under `llm_dart_community` until real provider growth or release/lifecycle pressure justifies dedicated packages (see `194-community-package-granularity-policy.md`)
 
 ## Flutter
 
