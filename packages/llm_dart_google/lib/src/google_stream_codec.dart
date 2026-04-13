@@ -1,7 +1,6 @@
-import 'dart:convert';
-
 import 'package:llm_dart_core/llm_dart_core.dart';
 
+import 'google_content_projection_support.dart';
 import 'google_server_tool_replay.dart';
 import 'google_shared.dart';
 
@@ -18,16 +17,16 @@ final class GoogleGenerateContentStreamState {
 
   String? currentTextBlockId;
   String? currentReasoningBlockId;
-  String? lastCodeExecutionToolCallId;
 
   int blockCounter = 0;
   int toolCounter = 0;
-  int codeExecutionCounter = 0;
   bool hasClientToolCalls = false;
   bool emittedResponseMetadata = false;
   bool finished = false;
 
   final Set<String> emittedSourceKeys = {};
+  final GoogleCodeExecutionTracker codeExecutionTracker =
+      GoogleCodeExecutionTracker();
 }
 
 final class GoogleGenerateContentStreamCodec {
@@ -71,13 +70,11 @@ final class GoogleGenerateContentStreamCodec {
     state.finishMessage =
         asString(candidate['finishMessage']) ?? state.finishMessage;
 
-    for (final source in extractGroundingSources(
+    for (final event in emitGoogleGroundingSourceEvents(
       asMap(candidate['groundingMetadata']),
+      emittedSourceKeys: state.emittedSourceKeys,
     )) {
-      final key = '${source.kind}:${source.sourceId}';
-      if (state.emittedSourceKeys.add(key)) {
-        yield SourceEvent(source);
-      }
+      yield event;
     }
 
     final content = asMap(candidate['content']);
@@ -88,7 +85,7 @@ final class GoogleGenerateContentStreamCodec {
         continue;
       }
 
-      final metadata = _thoughtSignatureMetadata(
+      final metadata = googleThoughtSignatureMetadata(
         asString(part['thoughtSignature']),
         isThought: part['thought'] == true,
       );
@@ -96,37 +93,37 @@ final class GoogleGenerateContentStreamCodec {
       if (part case {'executableCode': final Object? executableCode}) {
         yield* _closeOpenBlocks(state);
 
-        final toolCallId = 'code-execution-${state.codeExecutionCounter++}';
-        state.lastCodeExecutionToolCallId = toolCallId;
-        final input =
-            normalizeJsonValue(executableCode) ?? const <String, Object?>{};
-        final encodedInput = jsonEncode(input);
+        final projectedToolCall = projectGoogleCodeExecutionToolCall(
+          tracker: state.codeExecutionTracker,
+          executableCode: executableCode,
+          providerMetadata: metadata,
+        );
 
         yield ToolInputStartEvent(
-          toolCallId: toolCallId,
-          toolName: 'code_execution',
-          providerExecuted: true,
-          isDynamic: true,
-          providerMetadata: metadata,
+          toolCallId: projectedToolCall.toolCallId,
+          toolName: projectedToolCall.toolName,
+          providerExecuted: projectedToolCall.providerExecuted,
+          isDynamic: projectedToolCall.isDynamic,
+          providerMetadata: projectedToolCall.providerMetadata,
         );
         yield ToolInputDeltaEvent(
-          toolCallId: toolCallId,
-          delta: encodedInput,
-          providerMetadata: metadata,
+          toolCallId: projectedToolCall.toolCallId,
+          delta: projectedToolCall.encodedInput,
+          providerMetadata: projectedToolCall.providerMetadata,
         );
         yield ToolInputEndEvent(
-          toolCallId: toolCallId,
-          providerMetadata: metadata,
+          toolCallId: projectedToolCall.toolCallId,
+          providerMetadata: projectedToolCall.providerMetadata,
         );
         yield ToolCallEvent(
           toolCall: ToolCallContent(
-            toolCallId: toolCallId,
-            toolName: 'code_execution',
-            input: input,
-            providerExecuted: true,
-            isDynamic: true,
+            toolCallId: projectedToolCall.toolCallId,
+            toolName: projectedToolCall.toolName,
+            input: projectedToolCall.input,
+            providerExecuted: projectedToolCall.providerExecuted,
+            isDynamic: projectedToolCall.isDynamic,
           ),
-          providerMetadata: metadata,
+          providerMetadata: projectedToolCall.providerMetadata,
         );
         continue;
       }
@@ -134,20 +131,21 @@ final class GoogleGenerateContentStreamCodec {
       if (part case {'codeExecutionResult': final Object? executionResult}) {
         yield* _closeOpenBlocks(state);
 
-        final toolCallId = state.lastCodeExecutionToolCallId ??
-            'code-execution-${state.codeExecutionCounter++}';
-        final result = asMap(executionResult);
-        yield ToolResultEvent(
-          toolResult: ToolResultContent(
-            toolCallId: toolCallId,
-            toolName: 'code_execution',
-            output: normalizeJsonValue(executionResult),
-            isError: _isCodeExecutionError(result),
-            isDynamic: true,
-          ),
+        final projectedToolResult = projectGoogleCodeExecutionToolResult(
+          tracker: state.codeExecutionTracker,
+          executionResult: executionResult,
           providerMetadata: metadata,
         );
-        state.lastCodeExecutionToolCallId = null;
+        yield ToolResultEvent(
+          toolResult: ToolResultContent(
+            toolCallId: projectedToolResult.toolCallId,
+            toolName: projectedToolResult.toolName,
+            output: projectedToolResult.output,
+            isError: projectedToolResult.isError,
+            isDynamic: projectedToolResult.isDynamic,
+          ),
+          providerMetadata: projectedToolResult.providerMetadata,
+        );
         continue;
       }
 
@@ -155,43 +153,42 @@ final class GoogleGenerateContentStreamCodec {
         yield* _closeOpenBlocks(state);
 
         final functionCall = asMap(functionCallValue);
-        final toolName = asString(functionCall?['name']);
-        if (toolName == null) {
+        final functionCallId = asString(functionCall?['id']);
+        final projectedToolCall = projectGoogleFunctionToolCall(
+          functionCall: functionCall,
+          fallbackToolCallId: 'tool-${state.toolCounter}',
+          providerMetadata: metadata,
+        );
+        if (projectedToolCall == null) {
           continue;
         }
 
         state.hasClientToolCalls = true;
-        final functionCallId = asString(functionCall?['id']);
-        final toolCallId = functionCallId ?? 'tool-${state.toolCounter++}';
-        final functionCallMetadata = mergeProviderMetadata(
-          metadata,
-          _functionCallIdMetadata(functionCallId),
-        );
-        final input = normalizeJsonValue(functionCall?['args']) ??
-            const <String, Object?>{};
-        final encodedInput = jsonEncode(input);
+        if (functionCallId == null) {
+          state.toolCounter += 1;
+        }
 
         yield ToolInputStartEvent(
-          toolCallId: toolCallId,
-          toolName: toolName,
-          providerMetadata: functionCallMetadata,
+          toolCallId: projectedToolCall.toolCallId,
+          toolName: projectedToolCall.toolName,
+          providerMetadata: projectedToolCall.providerMetadata,
         );
         yield ToolInputDeltaEvent(
-          toolCallId: toolCallId,
-          delta: encodedInput,
-          providerMetadata: functionCallMetadata,
+          toolCallId: projectedToolCall.toolCallId,
+          delta: projectedToolCall.encodedInput,
+          providerMetadata: projectedToolCall.providerMetadata,
         );
         yield ToolInputEndEvent(
-          toolCallId: toolCallId,
-          providerMetadata: functionCallMetadata,
+          toolCallId: projectedToolCall.toolCallId,
+          providerMetadata: projectedToolCall.providerMetadata,
         );
         yield ToolCallEvent(
           toolCall: ToolCallContent(
-            toolCallId: toolCallId,
-            toolName: toolName,
-            input: input,
+            toolCallId: projectedToolCall.toolCallId,
+            toolName: projectedToolCall.toolName,
+            input: projectedToolCall.input,
           ),
-          providerMetadata: functionCallMetadata,
+          providerMetadata: projectedToolCall.providerMetadata,
         );
         continue;
       }
@@ -368,14 +365,14 @@ final class GoogleGenerateContentStreamCodec {
       ),
       rawFinishReason: state.rawFinishReason,
       usage: decodeGoogleUsage(state.usageMetadata),
-      providerMetadata: googleProviderMetadata({
-        'promptFeedback': state.promptFeedback,
-        'groundingMetadata': state.groundingMetadata,
-        'urlContextMetadata': state.urlContextMetadata,
-        'safetyRatings': state.safetyRatings,
-        'usageMetadata': state.usageMetadata,
-        'finishMessage': state.finishMessage,
-      }),
+      providerMetadata: buildGoogleGenerationMetadata(
+        promptFeedback: state.promptFeedback,
+        groundingMetadata: state.groundingMetadata,
+        urlContextMetadata: state.urlContextMetadata,
+        safetyRatings: state.safetyRatings,
+        usageMetadata: state.usageMetadata,
+        finishMessage: state.finishMessage,
+      ),
     );
   }
 
@@ -391,38 +388,5 @@ final class GoogleGenerateContentStreamCodec {
       yield ReasoningEndEvent(id: state.currentReasoningBlockId!);
       state.currentReasoningBlockId = null;
     }
-  }
-
-  ProviderMetadata? _thoughtSignatureMetadata(
-    String? thoughtSignature, {
-    required bool isThought,
-  }) {
-    if (thoughtSignature == null && !isThought) {
-      return null;
-    }
-
-    return googleProviderMetadata({
-      'thoughtSignature': thoughtSignature,
-      if (isThought) 'thought': true,
-    });
-  }
-
-  ProviderMetadata? _functionCallIdMetadata(String? functionCallId) {
-    if (functionCallId == null || functionCallId.isEmpty) {
-      return null;
-    }
-
-    return googleProviderMetadata({
-      'functionCallId': functionCallId,
-    });
-  }
-
-  bool _isCodeExecutionError(Map<String, Object?>? result) {
-    final outcome = asString(result?['outcome'])?.toLowerCase();
-    if (outcome == null) {
-      return false;
-    }
-
-    return outcome.contains('error') || outcome.contains('fail');
   }
 }

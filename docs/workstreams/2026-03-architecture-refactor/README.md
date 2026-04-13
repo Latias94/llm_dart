@@ -522,6 +522,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Status note for moving Google request preparation, shared response-format
     adaptation, JSON response decoding, and header/base-URL helpers out of
     `google_language_model.dart` so the model class stays transport-facing.
+- [175-google-content-projection-support-extraction.md](175-google-content-projection-support-extraction.md)
+  - Status note for moving Google result/stream shared projection ownership for
+    grounding, thought signatures, `functionCall.id`, finish metadata, and
+    `code_execution` pairing into a codec-local support layer.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
@@ -678,6 +682,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   `google_language_model.dart` has been reduced to a clearer transport facade,
   while the next meaningful Google target is result/stream shared projection
   support rather than another facade-only symmetry pass
+- Google result and stream decoding now also share a local projection support
+  layer, which means the next remaining Google structural work is no longer
+  basic codec parity but deciding whether any higher-level replay or UI helper
+  should depend on that provider-local projection support
 - the Ollama root shell is now also slightly thinner in code ownership terms:
   compatibility config shaping, chat-bridge setup, and embedding delegation
   glue no longer live inline inside `lib/providers/ollama/provider.dart`, but

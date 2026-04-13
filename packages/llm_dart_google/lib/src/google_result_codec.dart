@@ -1,5 +1,6 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
 
+import 'google_content_projection_support.dart';
 import 'google_server_tool_replay.dart';
 import 'google_shared.dart';
 
@@ -18,8 +19,7 @@ final class GoogleGenerateContentResultCodec {
     final candidate = candidates.isEmpty ? null : asMap(candidates.first);
     final content = <ContentPart>[];
     var hasClientToolCalls = false;
-    var codeExecutionCounter = 0;
-    String? lastCodeExecutionToolCallId;
+    final codeExecutionTracker = GoogleCodeExecutionTracker();
 
     if (candidate != null) {
       final candidateContent = asMap(candidate['content']);
@@ -31,66 +31,70 @@ final class GoogleGenerateContentResultCodec {
           continue;
         }
 
-        final signatureMetadata = _thoughtSignatureMetadata(
+        final signatureMetadata = googleThoughtSignatureMetadata(
           asString(part['thoughtSignature']),
           isThought: part['thought'] == true,
         );
 
         if (part case {'executableCode': final Object? executableCode}) {
-          final toolCallId = 'code-execution-${codeExecutionCounter++}';
-          lastCodeExecutionToolCallId = toolCallId;
+          final projectedToolCall = projectGoogleCodeExecutionToolCall(
+            tracker: codeExecutionTracker,
+            executableCode: executableCode,
+            providerMetadata: signatureMetadata,
+          );
           content.add(
             ToolCallContentPart(
               ToolCallContent(
-                toolCallId: toolCallId,
-                toolName: 'code_execution',
-                input: normalizeJsonValue(executableCode),
-                providerExecuted: true,
-                isDynamic: true,
+                toolCallId: projectedToolCall.toolCallId,
+                toolName: projectedToolCall.toolName,
+                input: projectedToolCall.input,
+                providerExecuted: projectedToolCall.providerExecuted,
+                isDynamic: projectedToolCall.isDynamic,
               ),
-              providerMetadata: signatureMetadata,
+              providerMetadata: projectedToolCall.providerMetadata,
             ),
           );
           continue;
         }
 
         if (part case {'codeExecutionResult': final Object? executionResult}) {
-          final toolCallId = lastCodeExecutionToolCallId ??
-              'code-execution-${codeExecutionCounter++}';
-          final result = asMap(executionResult);
+          final projectedToolResult = projectGoogleCodeExecutionToolResult(
+            tracker: codeExecutionTracker,
+            executionResult: executionResult,
+            providerMetadata: signatureMetadata,
+          );
           content.add(
             ToolResultContentPart(
               ToolResultContent(
-                toolCallId: toolCallId,
-                toolName: 'code_execution',
-                output: normalizeJsonValue(executionResult),
-                isError: _isCodeExecutionError(result),
-                isDynamic: true,
+                toolCallId: projectedToolResult.toolCallId,
+                toolName: projectedToolResult.toolName,
+                output: projectedToolResult.output,
+                isError: projectedToolResult.isError,
+                isDynamic: projectedToolResult.isDynamic,
               ),
-              providerMetadata: signatureMetadata,
+              providerMetadata: projectedToolResult.providerMetadata,
             ),
           );
-          lastCodeExecutionToolCallId = null;
           continue;
         }
 
         if (part case {'functionCall': final Object? functionCallValue}) {
           final functionCall = asMap(functionCallValue);
-          final toolName = asString(functionCall?['name']);
-          final functionCallId = asString(functionCall?['id']);
-          if (toolName != null) {
+          final projectedToolCall = projectGoogleFunctionToolCall(
+            functionCall: functionCall,
+            fallbackToolCallId: 'tool-$index',
+            providerMetadata: signatureMetadata,
+          );
+          if (projectedToolCall != null) {
             hasClientToolCalls = true;
             content.add(
               ToolCallContentPart(
                 ToolCallContent(
-                  toolCallId: functionCallId ?? 'tool-$index',
-                  toolName: toolName,
-                  input: normalizeJsonValue(functionCall?['args']),
+                  toolCallId: projectedToolCall.toolCallId,
+                  toolName: projectedToolCall.toolName,
+                  input: projectedToolCall.input,
                 ),
-                providerMetadata: mergeProviderMetadata(
-                  signatureMetadata,
-                  _functionCallIdMetadata(functionCallId),
-                ),
+                providerMetadata: projectedToolCall.providerMetadata,
               ),
             );
           }
@@ -124,7 +128,7 @@ final class GoogleGenerateContentResultCodec {
         if (part case {'text': final Object? textValue}) {
           final text = asString(textValue) ?? '';
           if (text.isEmpty) {
-            _attachMetadataToLastContent(content, signatureMetadata);
+            attachGoogleMetadataToLastContent(content, signatureMetadata);
             continue;
           }
 
@@ -175,10 +179,10 @@ final class GoogleGenerateContentResultCodec {
         }
       }
 
-      for (final source in extractGroundingSources(
+      for (final sourcePart in projectGoogleGroundingContentParts(
         asMap(candidate['groundingMetadata']),
       )) {
-        content.add(SourceContentPart(source));
+        content.add(sourcePart);
       }
     }
 
@@ -195,117 +199,15 @@ final class GoogleGenerateContentResultCodec {
       responseId: responseId,
       responseModelId: responseModelId,
       usage: decodeGoogleUsage(usageMetadata),
-      providerMetadata: googleProviderMetadata({
-        'promptFeedback': promptFeedback,
-        'groundingMetadata': asMap(candidate?['groundingMetadata']),
-        'urlContextMetadata': asMap(candidate?['urlContextMetadata']),
-        'safetyRatings': asList(candidate?['safetyRatings']),
-        'usageMetadata': usageMetadata,
-        'finishMessage': asString(candidate?['finishMessage']),
-      }),
+      providerMetadata: buildGoogleGenerationMetadata(
+        promptFeedback: promptFeedback,
+        groundingMetadata: asMap(candidate?['groundingMetadata']),
+        urlContextMetadata: asMap(candidate?['urlContextMetadata']),
+        safetyRatings: asList(candidate?['safetyRatings']),
+        usageMetadata: usageMetadata,
+        finishMessage: asString(candidate?['finishMessage']),
+      ),
       warnings: warnings,
     );
-  }
-
-  ProviderMetadata? _thoughtSignatureMetadata(
-    String? thoughtSignature, {
-    required bool isThought,
-  }) {
-    if (thoughtSignature == null && !isThought) {
-      return null;
-    }
-
-    return googleProviderMetadata({
-      'thoughtSignature': thoughtSignature,
-      if (isThought) 'thought': true,
-    });
-  }
-
-  ProviderMetadata? _functionCallIdMetadata(String? functionCallId) {
-    if (functionCallId == null || functionCallId.isEmpty) {
-      return null;
-    }
-
-    return googleProviderMetadata({
-      'functionCallId': functionCallId,
-    });
-  }
-
-  void _attachMetadataToLastContent(
-    List<ContentPart> content,
-    ProviderMetadata? metadata,
-  ) {
-    if (metadata == null || content.isEmpty) {
-      return;
-    }
-
-    final last = content.removeLast();
-    switch (last) {
-      case TextContentPart(:final text, :final providerMetadata):
-        content.add(
-          TextContentPart(
-            text,
-            providerMetadata: mergeProviderMetadata(providerMetadata, metadata),
-          ),
-        );
-      case ReasoningContentPart(:final text, :final providerMetadata):
-        content.add(
-          ReasoningContentPart(
-            text,
-            providerMetadata: mergeProviderMetadata(providerMetadata, metadata),
-          ),
-        );
-      case ReasoningFileContentPart(:final file, :final providerMetadata):
-        content.add(
-          ReasoningFileContentPart(
-            file,
-            providerMetadata: mergeProviderMetadata(providerMetadata, metadata),
-          ),
-        );
-      case ToolCallContentPart(:final toolCall, :final providerMetadata):
-        content.add(
-          ToolCallContentPart(
-            toolCall,
-            providerMetadata: mergeProviderMetadata(providerMetadata, metadata),
-          ),
-        );
-      case ToolResultContentPart(:final toolResult, :final providerMetadata):
-        content.add(
-          ToolResultContentPart(
-            toolResult,
-            providerMetadata: mergeProviderMetadata(providerMetadata, metadata),
-          ),
-        );
-      case FileContentPart(:final file, :final providerMetadata):
-        content.add(
-          FileContentPart(
-            file,
-            providerMetadata: mergeProviderMetadata(providerMetadata, metadata),
-          ),
-        );
-      case CustomContentPart(
-          :final kind,
-          :final data,
-          :final providerMetadata,
-        ):
-        content.add(
-          CustomContentPart(
-            kind: kind,
-            data: data,
-            providerMetadata: mergeProviderMetadata(providerMetadata, metadata),
-          ),
-        );
-      default:
-        content.add(last);
-    }
-  }
-
-  bool _isCodeExecutionError(Map<String, Object?>? result) {
-    final outcome = asString(result?['outcome'])?.toLowerCase();
-    if (outcome == null) {
-      return false;
-    }
-
-    return outcome.contains('error') || outcome.contains('fail');
   }
 }

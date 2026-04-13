@@ -152,7 +152,7 @@
 - [ ] Decide whether Google streamed TTS should later return as a provider-owned package surface outside the shared `SpeechModel`
 - [x] Migrate Gemini safety and modality options
 - [x] Extract `google_language_model_support.dart` for request preparation, shared response-format adaptation, and transport-header/base-URL helpers
-- [ ] Evaluate a Google codec-local shared projection support module for grounding, thought signatures, `functionCall.id`, and `code_execution` reuse across result and stream decoding
+- [x] Evaluate a Google codec-local shared projection support module for grounding, thought signatures, `functionCall.id`, and `code_execution` reuse across result and stream decoding
 - [ ] Decide whether Google file-upload/cache helpers should remain compatibility-only or gain a provider-owned utility surface
 
 ## Structural Cleanup
