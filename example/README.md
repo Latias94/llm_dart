@@ -2,6 +2,13 @@
 
 Practical examples for the LLM Dart library, organized by learning path and use case.
 
+For modern examples, the default root import is
+`package:llm_dart/llm_dart.dart`.
+
+When an example still relies on the older builder or broad provider shell, it
+should import `package:llm_dart/legacy.dart` explicitly and be read as
+compatibility-oriented material.
+
 ## Quick Start
 
 | I need to... | Go to |
@@ -80,7 +87,7 @@ shared-capability happy path.
 |----------|----------|-----------|
 | OpenAI | GPT, DALL-E, assistants | [openai/](04_providers/openai/) |
 | Anthropic | Claude, thinking | [anthropic/](04_providers/anthropic/) |
-| DeepSeek | Reasoning, cost-effective | [deepseek/](04_providers/deepseek/) |
+| DeepSeek / OpenRouter | OpenAI-compatible profile flows | [others/](04_providers/others/) |
 | Groq | Fast inference | [groq/](04_providers/groq/) |
 | Ollama | Compatibility shell for local runtime tuning and reasoning | [ollama/](04_providers/ollama/) |
 | ElevenLabs | Compatibility shell for voice controls and broader audio flows | [elevenlabs/](04_providers/elevenlabs/) |

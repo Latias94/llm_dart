@@ -10,6 +10,9 @@ For new code, prefer stable profile facades:
 - `AI.groq(...)`
 - `AI.xai(...)`
 
+The default modern root import for those profile facades is
+`package:llm_dart/llm_dart.dart`.
+
 ## Examples
 
 ### [openai_compatible.dart](openai_compatible.dart)
@@ -36,7 +39,7 @@ dart run xai_grok.dart
 
 ```dart
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/ai.dart' as llm;
+import 'package:llm_dart/llm_dart.dart' as llm;
 
 final providers = <core.LanguageModel>[
   llm.AI.groq(apiKey: 'groq-key').chatModel('llama-3.3-70b-versatile'),

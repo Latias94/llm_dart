@@ -7,8 +7,8 @@
 
 ## Public Boundary Alignment
 
-- [ ] Re-audit the root README and package READMEs against the frozen modern-versus-compatibility boundary
-- [ ] Re-audit high-visibility examples and keep builder-era examples explicit on `package:llm_dart/legacy.dart`
+- [x] Re-audit the root README and package READMEs against the frozen modern-versus-compatibility boundary
+- [x] Re-audit high-visibility examples and keep builder-era examples explicit on `package:llm_dart/legacy.dart`
 - [x] Add a short handoff note from the closed `2026-03-architecture-refactor` workstream into this follow-up phase
 
 ## Flutter And UI Extensions
@@ -21,7 +21,7 @@
 
 - [x] Freeze package-level dependency rules for new code
 - [x] Define which remaining root helpers are compatibility-only and should not receive new modern implementation weight
-- [ ] Consider a CI or lint guard that prevents package implementation files from importing `package:llm_dart/...`
+- [x] Consider a CI or lint guard that prevents package implementation files from importing `package:llm_dart/...`
 
 ## Selective Provider Expansion
 

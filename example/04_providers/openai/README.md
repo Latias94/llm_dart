@@ -54,7 +54,7 @@ dart run build_openai_responses_demo.dart
 
 ```dart
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/ai.dart' as llm;
+import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/openai.dart' as openai;
 
 final model = llm.AI.openai(apiKey: 'your-key').chatModel('gpt-5-mini');
@@ -80,7 +80,7 @@ print(result.text);
 
 ```dart
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/ai.dart' as llm;
+import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/openai.dart' as openai;
 
 final imageModel = llm.AI.openai(apiKey: 'your-key').imageModel('dall-e-3');
@@ -105,7 +105,7 @@ print(result.images.first.uri);
 
 ```dart
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/ai.dart' as llm;
+import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/openai.dart' as openai;
 
 final speechModel = llm.AI.openai(apiKey: 'your-key').speechModel('gpt-4o-mini-tts');
@@ -141,7 +141,7 @@ print(transcript.text);
 
 ```dart
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/ai.dart' as llm;
+import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/openai.dart' as openai;
 
 final model = llm.AI.openai(apiKey: 'your-key').chatModel('gpt-5.1');
@@ -167,7 +167,7 @@ print(result.usage?.reasoningTokens);
 
 ```dart
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/ai.dart' as llm;
+import 'package:llm_dart/llm_dart.dart' as llm;
 
 final model = llm.AI.openai(apiKey: 'your-key').chatModel('gpt-4o');
 

@@ -2,8 +2,8 @@
 
 import 'dart:io';
 
-import 'package:llm_dart/ai.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/llm_dart.dart' as llm;
 
 Future<void> main() async {
   final apiKey = Platform.environment['OPENAI_API_KEY'];

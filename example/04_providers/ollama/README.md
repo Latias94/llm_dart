@@ -68,6 +68,8 @@ dart run thinking_example.dart
 ### Compatibility Surface
 
 ```dart
+import 'package:llm_dart/legacy.dart';
+
 final provider = await ai().ollama()
     .baseUrl('http://localhost:11434')
     .model('llama3.2')

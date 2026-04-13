@@ -6,7 +6,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/ai.dart' as llm;
+import 'package:llm_dart/llm_dart.dart' as llm;
 
 /// Batch processing example using the stable model API.
 Future<void> main(List<String> arguments) async {

@@ -117,6 +117,10 @@ The next implementation pass should consider lightweight enforcement:
 - review guidance that new runtime dependencies normally enter through
   `llm_dart_transport`, not provider packages or the root package
 
+As of 2026-04-13, that first lightweight enforcement step is now implemented
+through `tool/check_workspace_dependency_guards.dart` and wired into CI plus
+the workspace `melos analyze` path.
+
 ## Why This Matters
 
 The reference repository shows the value of strong ownership boundaries, but the

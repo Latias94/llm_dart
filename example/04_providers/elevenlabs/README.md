@@ -59,6 +59,8 @@ dart run audio_capabilities.dart
 ### Compatibility Surface
 
 ```dart
+import 'package:llm_dart/legacy.dart';
+
 final audioProvider = await ai().elevenlabs().apiKey('your-key')
     .voiceId('JBFqnCBsd6RMkjVDRZzb')
     .stability(0.7)

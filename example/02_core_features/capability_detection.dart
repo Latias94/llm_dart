@@ -3,8 +3,8 @@
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/ai.dart' as ai;
 import 'package:llm_dart/legacy.dart' as legacy;
+import 'package:llm_dart/llm_dart.dart' as ai;
 
 /// Capability detection through provider declarations.
 ///

@@ -93,7 +93,7 @@ dart run performance_optimization.dart
 
 ### Reasoning with DeepSeek R1
 ```dart
-import 'package:llm_dart/ai.dart' as llm;
+import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
 
 final model =
@@ -114,6 +114,8 @@ print('Answer: ${result.text}');
 
 ### Multi-modal Processing
 ```dart
+import 'package:llm_dart/legacy.dart';
+
 // Process image with text
 final provider = await ai().openai().apiKey('your-key').build();
 
@@ -150,6 +152,8 @@ for (final result in results) {
 
 ### HTTP Configuration (Layered Approach)
 ```dart
+import 'package:llm_dart/legacy.dart';
+
 // Clean, organized HTTP configuration
 final provider = await ai()
     .openai()
@@ -164,6 +168,8 @@ final provider = await ai()
 
 ### Custom Dio Client (Advanced HTTP Control)
 ```dart
+import 'package:llm_dart/legacy.dart';
+
 // Create custom Dio with advanced features
 final customDio = Dio();
 customDio.options.connectTimeout = Duration(seconds: 30);
@@ -189,6 +195,8 @@ final provider = await ai()
 
 ### Timeout Configuration (Priority Hierarchy)
 ```dart
+import 'package:llm_dart/legacy.dart';
+
 // Global timeout with HTTP-specific overrides
 final provider = await ai()
     .openai()

@@ -4,7 +4,7 @@ import 'dart:io';
 
 import 'package:llm_dart/anthropic.dart' as anthropic;
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/ai.dart' as llm;
+import 'package:llm_dart/llm_dart.dart' as llm;
 
 /// 🟣 Anthropic Extended Thinking - Access Claude's Reasoning Process
 ///

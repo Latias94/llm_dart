@@ -135,7 +135,7 @@ The snippets below are ordered intentionally:
 ### Stable Basic Chat
 
 ```dart
-import 'package:llm_dart/ai.dart' as llm;
+import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
 
 final model = llm.AI.openai(apiKey: 'your-key').chatModel('gpt-4.1-mini');
@@ -153,7 +153,7 @@ print(result.text);
 ### Stable Embeddings for Search
 
 ```dart
-import 'package:llm_dart/ai.dart' as llm;
+import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
 
 final model = llm.AI.openai(

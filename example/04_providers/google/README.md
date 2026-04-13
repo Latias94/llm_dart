@@ -41,7 +41,7 @@ dart run google_tts_example.dart
 ```dart
 import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/google.dart' as google;
-import 'package:llm_dart/ai.dart' as llm;
+import 'package:llm_dart/llm_dart.dart' as llm;
 
 final model = llm.AI.google(apiKey: 'your-google-api-key')
     .embeddingModel('text-embedding-004');
@@ -69,7 +69,7 @@ print(result.embeddings.first.length);
 ```dart
 import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/google.dart' as google;
-import 'package:llm_dart/ai.dart' as llm;
+import 'package:llm_dart/llm_dart.dart' as llm;
 
 final model = llm.AI.google(apiKey: 'your-google-api-key')
     .imageModel('gemini-2.5-flash-image');
@@ -92,7 +92,7 @@ print(result.images.first.bytes?.length);
 ```dart
 import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/google.dart' as google;
-import 'package:llm_dart/ai.dart' as llm;
+import 'package:llm_dart/llm_dart.dart' as llm;
 
 final model = llm.AI.google(apiKey: 'your-google-api-key')
     .speechModel('gemini-2.5-flash-preview-tts');
