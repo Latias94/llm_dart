@@ -229,5 +229,24 @@ void main() {
       expect(stringRepresentation, isNot(contains('Thinking:')));
       expect(stringRepresentation, equals('Just regular content.'));
     });
+
+    test('GoogleFile remains available on the legacy Google chat export path',
+        () {
+      final file = GoogleFile.fromJson({
+        'name': 'files/123',
+        'displayName': 'demo.pdf',
+        'mimeType': 'application/pdf',
+        'sizeBytes': '42',
+        'state': 'ACTIVE',
+        'uri': 'https://example.com/file',
+      });
+
+      expect(file.name, equals('files/123'));
+      expect(file.displayName, equals('demo.pdf'));
+      expect(file.mimeType, equals('application/pdf'));
+      expect(file.sizeBytes, equals(42));
+      expect(file.isActive, isTrue);
+      expect(file.uri, equals('https://example.com/file'));
+    });
   });
 }

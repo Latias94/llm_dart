@@ -630,6 +630,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
     `OpenAICompatibleDefaults` catalog under `src/compatibility/` while keeping
     the stable `provider_defaults.dart` import path as a thin compatibility
     shell.
+- [201-google-compat-chat-facade-thinning.md](201-google-compat-chat-facade-thinning.md)
+  - Status note for splitting the Google compatibility chat host into a thin
+    facade plus request-builder, stream-parser, file-support, and response
+    helpers while keeping the public legacy import path stable.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)

@@ -420,6 +420,11 @@ Current status:
   `src/compatibility/`, while `provider_defaults.dart` keeps the stable import
   path as a thin shell and the typed `OpenAICompatibleConfigs` path remains the
   preferred modern direction
+- the root Google compatibility chat host is now also thinner in ownership
+  terms: request shaping, streamed delta parsing, file upload/cache support,
+  and response wrapping no longer live in one compatibility file, while the
+  stable public legacy import path still exposes `GoogleChat`,
+  `GoogleChatResponse`, and `GoogleFile`
 - the flat compatibility `LLMConfig.extensions` path now also has a centralized internal key/accessor layer so builder, factory, transport, and compatibility code stop drifting through repeated raw string literals
 - the OpenAI family now also has a first transitional namespaced `providerOptions` layer inside the legacy root config map, with namespaced writes for OpenAI / OpenRouter-specific builder helpers plus the legacy `ProviderConfig` helper, and namespaced-first, flat-fallback reads across factories, request shaping, and compatibility routing
 - the root shared web-search builder helpers and `createProvider(..., extensions: ...)` are now also explicitly deprecated as compatibility-only migration surfaces, so provider-owned search APIs remain the only stable long-term direction
