@@ -514,6 +514,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
     options normalization, model-settings resolution, and transport-request
     header preparation out of `openai_language_model.dart` so the model class
     stays focused on facade-level transport orchestration.
+- [173-cross-provider-support-propagation-audit.md](173-cross-provider-support-propagation-audit.md)
+  - Audit note freezing that the OpenAI support split is a reference pattern,
+    not a required provider template, with Google as the next selective target
+    and Anthropic intentionally left simpler for now.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
@@ -662,6 +666,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   streamed runner later needs richer lifecycle metadata or inter-step
   projection, and whether the new UI-stream reader later needs only a small
   callback/final-summary facade, not more shared core events
+- the provider-support propagation policy is now also explicit: OpenAI remains a
+  reference pattern rather than a symmetry target, Google is the next justified
+  selective extraction candidate, and Anthropic should stay simpler until a
+  concrete codec change creates real pressure for shared local support
 - the Ollama root shell is now also slightly thinner in code ownership terms:
   compatibility config shaping, chat-bridge setup, and embedding delegation
   glue no longer live inline inside `lib/providers/ollama/provider.dart`, but

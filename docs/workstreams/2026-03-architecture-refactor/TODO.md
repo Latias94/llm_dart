@@ -151,6 +151,8 @@
 - [x] Decide whether Google image editing and variation should later gain a provider-owned modern helper instead of remaining on compatibility-only `ImageEditRequest` / `ImageVariationRequest`
 - [ ] Decide whether Google streamed TTS should later return as a provider-owned package surface outside the shared `SpeechModel`
 - [x] Migrate Gemini safety and modality options
+- [ ] Extract `google_language_model_support.dart` for request preparation, shared response-format adaptation, and transport-header/base-URL helpers
+- [ ] Evaluate a Google codec-local shared projection support module for grounding, thought signatures, `functionCall.id`, and `code_execution` reuse across result and stream decoding
 - [ ] Decide whether Google file-upload/cache helpers should remain compatibility-only or gain a provider-owned utility surface
 
 ## Structural Cleanup
@@ -195,6 +197,7 @@
 - [x] Audit the remaining compatibility provider-shell heavy files after the recent OpenAI shell thinning rounds and freeze the next decomposition order
 - [x] Split `openai_family_compat_provider.dart` into provider/profile-specific builder slices so the remaining OpenAI-family compatibility builder stops mixing six providers in one file
 - [x] Re-evaluate whether `anthropic_compat_provider.dart` now deserves the same shell/support split, or whether it should stay provider-local because most of its remaining weight is real replay conversion logic
+- [ ] Revisit Anthropic codec-local shared support only when a future multi-file change needs result/stream parity improvements for usage, container, citation, or provider-metadata decoding
 - [ ] Revisit the Anthropic compatibility adapter only if a new provider-local subdomain becomes large enough to deserve its own helper file without inventing a generic compatibility framework
 
 ## Community Providers
