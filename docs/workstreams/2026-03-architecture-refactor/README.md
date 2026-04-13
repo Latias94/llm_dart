@@ -565,6 +565,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Status note for adding a provider-owned URI-resolution path for modern
     Ollama user image inputs through data URIs and `OllamaBinaryResolver`
     without widening the shared prompt model.
+- [186-ollama-tool-choice-and-tool-error-boundary.md](186-ollama-tool-choice-and-tool-error-boundary.md)
+  - Frozen boundary note that modern Ollama should not invent fake explicit
+    tool forcing or replay-time tool-error fields beyond the current truthful
+    chat wire contract.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
@@ -762,6 +766,11 @@ This workstream is not about a file-moving refactor. It is about defining stable
   URI-backed user image inputs can now flow through data URIs or a provider-
   owned `OllamaBinaryResolver`, so non-inline multimodal inputs no longer
   always require caller-owned byte rewriting before request encoding
+- the remaining modern Ollama tool gaps are now also explicitly frozen as
+  honest provider limits: stronger shared `toolChoice` forcing still
+  warning-degrades, and replay-time tool error state still warning-degrades,
+  instead of inventing fake provider-owned semantics above the current chat
+  wire contract
 - the Ollama root shell is now also slightly thinner in code ownership terms:
   compatibility config shaping, chat-bridge setup, and embedding delegation
   glue no longer live inline inside `lib/providers/ollama/provider.dart`, but

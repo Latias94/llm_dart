@@ -34,6 +34,12 @@ Modern Ollama chat also supports URI-backed user image inputs through:
 - direct `data:` URIs
 - provider-owned `OllamaBinaryResolver` on model settings or invocation options
 
+Current intentional Ollama limits still include:
+
+- stronger shared `ToolChoice` forcing degrades to provider-side automatic
+  tool selection with warnings
+- replay-time tool error state degrades to plain tool content with warnings
+
 ## Runnable Examples
 
 This package now also includes minimal runnable examples for each current modern

@@ -173,10 +173,12 @@ Current status:
 - the next higher-value community step is no longer "make community real at
   all", but "re-audit Ollama modern fidelity and keep slimming the remaining
   compatibility-era root shells"
-- the remaining Ollama fidelity gaps are now narrower and explicit: shared
-  `toolChoice` forcing still cannot be mapped truthfully, and tool error state
-  still degrades to warning-based plain tool-content replay because Ollama has
-  no dedicated replay field for it
+- the remaining Ollama fidelity gaps are now also explicitly closed as honest
+  limitations rather than fake abstraction work: shared `toolChoice` forcing
+  still warning-degrades because the current chat wire contract has no truthful
+  stronger forcing field, and replay-time tool error state still
+  warning-degrades to plain tool-content replay because Ollama has no dedicated
+  native replay field for it
 - the modern Ollama chat path now also supports URI-backed user image inputs
   through data URIs and a provider-owned `OllamaBinaryResolver`, which removes
   the old requirement that apps always rewrite non-inline multimodal inputs
