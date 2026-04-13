@@ -84,7 +84,7 @@
 
 - [x] Design the OpenAI-family profile structure
 - [x] Expose OpenAI-family convenience constructors on the root `AI` facade
-- [ ] Complete OpenAI chat migration (see `58-openai-chat-migration-status.md`, `60-openai-assistant-replay-alignment.md`, and `61-openai-responses-persistence-policy.md` for the narrowed remaining replay and provider-owned persistence-policy gaps)
+- [x] Close the broad OpenAI migration umbrella at the current workstream scope once the remaining gaps are only future provider-owned policy items (see `190-openai-migration-closure-audit.md`)
 - [x] Add the initial OpenAI-family chat-completions mainline
 - [x] Migrate OpenAI responses
 - [x] Preserve OpenAI replay-critical item metadata, reasoning state, and compaction replay
@@ -107,8 +107,8 @@
 - [x] Align the modern OpenAI Responses stream codec on `content_part.done`, annotation dedupe, and final text-part metadata
 - [x] Decide that the public root `OpenAIProvider` chat path should narrow to an internal adapter over modern `llm_dart_openai` for the already-audited bridge-safe subset
 - [x] Decide that deprecated root OpenAI-compatible preset helpers remain fallback-only while migration keeps moving toward provider-owned packages
-- [ ] Re-evaluate richer OpenAI Responses hosted-tool or custom item-family replay only if a concrete OpenAI-native use case requires it beyond the current common function-tool and MCP continuation subset
-- [ ] Decide whether OpenAI should keep the remaining advanced hosted-tool families deferred, or add only narrowly-scoped provider-owned helpers if a concrete product need appears
+- [ ] Future policy: re-evaluate richer OpenAI Responses hosted-tool or custom item-family replay only if a concrete OpenAI-native use case requires it beyond the current common function-tool and MCP continuation subset
+- [ ] Future policy: decide whether OpenAI should keep the remaining advanced hosted-tool families deferred, or add only narrowly-scoped provider-owned helpers if a concrete product need appears
 - [x] Turn OpenRouter into a profile
 - [x] Turn DeepSeek OpenAI-compatible into a profile
 - [x] Turn Groq OpenAI-compatible into a profile
