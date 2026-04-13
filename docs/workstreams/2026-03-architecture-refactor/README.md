@@ -504,6 +504,11 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Status note for moving Responses-only output decoding, source annotation,
     and metadata-shaping helpers out of `openai_responses_codec.dart` so the
     codec keeps converging toward a protocol coordinator instead of a bus file.
+- [171-openai-chat-completions-support-extraction.md](171-openai-chat-completions-support-extraction.md)
+  - Status note for moving chat-completions-specific assistant decoding,
+    citation projection, and response-metadata helpers out of
+    `openai_chat_completions_codec.dart` while leaving chunk sequencing and
+    tool-call delta handling in the codec.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)

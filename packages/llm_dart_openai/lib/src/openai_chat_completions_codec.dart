@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
 
+import 'openai_chat_completions_support.dart';
 import 'openai_model_capabilities.dart';
 import 'openai_options.dart';
 import 'openai_response_format.dart';
@@ -41,6 +42,10 @@ final class OpenAIChatCompletionsCodec {
   const OpenAIChatCompletionsCodec({
     this.providerNamespace = 'openai',
   });
+
+  OpenAIChatCompletionsSupport get _support => OpenAIChatCompletionsSupport(
+        providerNamespace: providerNamespace,
+      );
 
   OpenAIChatCompletionsRequest encodeRequest({
     required String modelId,
@@ -202,7 +207,7 @@ final class OpenAIChatCompletionsCodec {
     final content = <ContentPart>[];
     final textLogprobs = _decodeChatLogprobs(choice?['logprobs']);
 
-    final decodedText = _decodeAssistantText(message);
+    final decodedText = _support.decodeAssistantText(message);
     if (decodedText.reasoning case final reasoning? when reasoning.isNotEmpty) {
       content.add(
         ReasoningContentPart(
@@ -226,11 +231,11 @@ final class OpenAIChatCompletionsCodec {
       );
     }
 
-    final toolCalls = _decodeToolCalls(
+    final toolCalls = _support.decodeToolCalls(
       _asList(message['tool_calls']),
     );
     content.addAll(toolCalls);
-    content.addAll(_decodeTopLevelSources(response));
+    content.addAll(_support.decodeTopLevelSources(response));
 
     return GenerateTextResult(
       content: content,
@@ -240,7 +245,7 @@ final class OpenAIChatCompletionsCodec {
       responseTimestamp: _decodeResponseTimestamp(response),
       responseModelId: _asString(response['model']),
       usage: _decodeUsage(_asMap(response['usage'])),
-      providerMetadata: _responseMetadata(
+      providerMetadata: _support.responseMetadata(
         response,
         choice,
         logprobs: textLogprobs,
@@ -282,9 +287,10 @@ final class OpenAIChatCompletionsCodec {
       state.usage = chunkUsage;
     }
 
-    yield* _decodeChunkSources(
+    yield* _support.decodeChunkSources(
       chunk,
-      state,
+      responseId: state.responseId,
+      emittedSourceIds: state.emittedSourceIds,
     );
 
     final reasoningDelta = _extractReasoningDelta(delta);
@@ -1024,162 +1030,6 @@ final class OpenAIChatCompletionsCodec {
     return normalized;
   }
 
-  List<ToolCallContentPart> _decodeToolCalls(List<Object?> rawToolCalls) {
-    final result = <ToolCallContentPart>[];
-
-    for (final rawToolCall in rawToolCalls) {
-      final toolCall = _asMap(rawToolCall);
-      if (toolCall == null) {
-        continue;
-      }
-
-      final toolCallId = _asString(toolCall['id']);
-      final function = _asMap(toolCall['function']);
-      final toolName = _asString(function?['name']);
-      if (toolCallId == null || toolName == null) {
-        continue;
-      }
-
-      final encodedArguments = _asString(function?['arguments']) ?? '{}';
-      result.add(
-        ToolCallContentPart(
-          ToolCallContent(
-            toolCallId: toolCallId,
-            toolName: toolName,
-            input: tryDecodeOpenAIJsonValue(encodedArguments).value,
-          ),
-          providerMetadata: _providerMetadata({
-            'toolCallId': toolCallId,
-          }),
-        ),
-      );
-    }
-
-    return result;
-  }
-
-  List<SourceContentPart> _decodeTopLevelSources(
-      Map<String, Object?> response) {
-    final citations = _asList(response['citations']);
-    if (citations.isEmpty) {
-      return const [];
-    }
-
-    final sources = <SourceContentPart>[];
-    for (var index = 0; index < citations.length; index++) {
-      final rawCitation = citations[index];
-      final url = _asString(rawCitation);
-      if (url == null || url.isEmpty) {
-        continue;
-      }
-
-      sources.add(
-        SourceContentPart(
-          SourceReference(
-            kind: SourceReferenceKind.url,
-            sourceId: url,
-            uri: Uri.tryParse(url),
-            title: url,
-            providerMetadata: _providerMetadata({
-              'citationIndex': index,
-            }),
-          ),
-        ),
-      );
-    }
-
-    return sources;
-  }
-
-  Iterable<SourceEvent> _decodeChunkSources(
-    Map<String, Object?> chunk,
-    OpenAIChatCompletionsStreamState state,
-  ) sync* {
-    final citations = _asList(chunk['citations']);
-    if (citations.isEmpty) {
-      return;
-    }
-
-    for (var index = 0; index < citations.length; index++) {
-      final rawCitation = citations[index];
-      final url = _asString(rawCitation);
-      if (url == null || url.isEmpty || !state.emittedSourceIds.add(url)) {
-        continue;
-      }
-
-      yield SourceEvent(
-        SourceReference(
-          kind: SourceReferenceKind.url,
-          sourceId: url,
-          uri: Uri.tryParse(url),
-          title: url,
-          providerMetadata: _providerMetadata({
-            'responseId': state.responseId,
-            'citationIndex': index,
-          }),
-        ),
-      );
-    }
-  }
-
-  _DecodedAssistantText _decodeAssistantText(Map<String, Object?> message) {
-    final reasoningBuffer = StringBuffer();
-    final textBuffer = StringBuffer();
-
-    final explicitReasoning = _extractReasoningText(message);
-    if (explicitReasoning != null && explicitReasoning.isNotEmpty) {
-      reasoningBuffer.write(explicitReasoning);
-    }
-
-    final content = message['content'];
-    if (content is String) {
-      appendOpenAIThinkingAndText(
-        content,
-        reasoningBuffer: reasoningBuffer,
-        textBuffer: textBuffer,
-      );
-    } else if (content is List) {
-      for (final rawPart in content) {
-        final part = _asMap(rawPart);
-        if (part == null) {
-          continue;
-        }
-
-        final type = _asString(part['type']);
-        final text = _asString(part['text']) ??
-            _asString(part['content']) ??
-            _asString(part['output_text']);
-        if (type == 'reasoning' || type == 'reasoning_content') {
-          if (text != null && text.isNotEmpty) {
-            reasoningBuffer.write(text);
-          }
-          continue;
-        }
-
-        if (text != null && text.isNotEmpty) {
-          appendOpenAIThinkingAndText(
-            text,
-            reasoningBuffer: reasoningBuffer,
-            textBuffer: textBuffer,
-          );
-        }
-      }
-    }
-
-    return _DecodedAssistantText(
-      text: textBuffer.toString(),
-      reasoning: reasoningBuffer.isEmpty ? null : reasoningBuffer.toString(),
-    );
-  }
-
-  String? _extractReasoningText(Map<String, Object?> message) {
-    return firstOpenAINonEmptyString([
-      _asString(message['reasoning_content']),
-      _asString(message['reasoning']),
-      _asString(message['thinking']),
-    ]);
-  }
-
   void _captureResponseMetadata(
     Map<String, Object?> chunk,
     OpenAIChatCompletionsStreamState state,
@@ -1214,7 +1064,7 @@ final class OpenAIChatCompletionsCodec {
       responseId: state.responseId,
       timestamp: state.responseTimestamp,
       modelId: state.responseModelId,
-      providerMetadata: _providerMetadata({
+      providerMetadata: _support.providerMetadata({
         'responseId': state.responseId,
       }),
     );
@@ -1308,20 +1158,6 @@ final class OpenAIChatCompletionsCodec {
       );
     }
     state.toolCalls.clear();
-  }
-
-  ProviderMetadata? _responseMetadata(
-    Map<String, Object?> response,
-    Map<String, Object?>? choice, {
-    List<Object?>? logprobs,
-  }) {
-    return _providerMetadata({
-      'serviceTier': _asString(response['service_tier']),
-      'systemFingerprint': _asString(response['system_fingerprint']),
-      'finishReason': _asString(choice?['finish_reason']),
-      if (logprobs != null && logprobs.isNotEmpty)
-        'logprobs': List<Object?>.unmodifiable(logprobs),
-    });
   }
 
   int _encodeChatTopLogProbs(OpenAILogProbs logprobs) {
@@ -1512,16 +1348,6 @@ final class OpenAIChatCompletionsCodec {
 
   static const String _textId = 'text_0';
   static const String _reasoningId = 'reasoning_0';
-}
-
-final class _DecodedAssistantText {
-  final String text;
-  final String? reasoning;
-
-  const _DecodedAssistantText({
-    required this.text,
-    this.reasoning,
-  });
 }
 
 final class _ToolCallDeltaResult {
