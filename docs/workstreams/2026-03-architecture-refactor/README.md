@@ -530,6 +530,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Frozen boundary note that Google replay and UI helpers should stay above
     provider-owned custom parts and replay models, reusing only narrow metadata
     helpers instead of depending directly on codec-local projection support.
+- [177-google-file-and-cache-boundary.md](177-google-file-and-cache-boundary.md)
+  - Frozen boundary note that Google file upload and cache management stay
+    compatibility-only residual APIs for now, while modern Google model paths
+    continue to accept file URIs and `cachedContent` references.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
@@ -693,6 +697,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - that higher-level Google boundary is now also frozen: replay and UI helpers
   stay above provider-owned custom-part/replay abstractions, while only narrow
   provider-metadata helpers are allowed to cross the codec/UI boundary
+- the remaining Google file/cache boundary is now also explicit: the modern
+  provider package accepts provider-owned file references and `cachedContent`
+  handles at request time, but old upload/cache helpers stay compatibility-only
+  until a separate provider-owned utility contract is justified
 - the Ollama root shell is now also slightly thinner in code ownership terms:
   compatibility config shaping, chat-bridge setup, and embedding delegation
   glue no longer live inline inside `lib/providers/ollama/provider.dart`, but

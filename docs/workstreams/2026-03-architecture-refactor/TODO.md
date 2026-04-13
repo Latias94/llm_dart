@@ -153,7 +153,7 @@
 - [x] Migrate Gemini safety and modality options
 - [x] Extract `google_language_model_support.dart` for request preparation, shared response-format adaptation, and transport-header/base-URL helpers
 - [x] Evaluate a Google codec-local shared projection support module for grounding, thought signatures, `functionCall.id`, and `code_execution` reuse across result and stream decoding
-- [ ] Decide whether Google file-upload/cache helpers should remain compatibility-only or gain a provider-owned utility surface
+- [x] Decide that Google file-upload and cache-management helpers remain compatibility-only for now, while modern `llm_dart_google` keeps file URI inputs and `cachedContent` as provider-owned request references
 
 ## Structural Cleanup
 
