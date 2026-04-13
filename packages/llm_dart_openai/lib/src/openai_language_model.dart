@@ -53,71 +53,23 @@ final class OpenAILanguageModel implements LanguageModel {
       profile: profile,
       settings: settings,
     );
-    if (call.usesResponsesApi) {
-      final preparedRequest = _codec.encodeRequest(
-        modelId: call.requestModelId,
-        prompt: request.prompt,
-        tools: request.tools,
-        toolChoice: request.toolChoice,
-        options: request.options,
-        providerOptions: call.providerOptions.common,
-        stream: false,
-      );
-
-      final response = await transport.send(
-        TransportRequest(
-          uri: responsesUri,
-          method: TransportMethod.post,
-          headers: buildOpenAIRequestHeaders(
-            profile: profile,
-            apiKey: apiKey,
-            settings: settings,
-            stream: false,
-            extraHeaders: request.callOptions.headers,
-          ),
-          body: preparedRequest.body,
-          timeout: request.callOptions.timeout,
-          cancellation: request.callOptions.cancellation,
-          responseType: TransportResponseType.json,
-        ),
-      );
-
-      return _codec.decodeGenerateResponse(
-        decodeOpenAIJsonObject(response.body),
-        warnings: preparedRequest.warnings,
-      );
-    }
-
-    final preparedRequest = _chatCompletionsCodec.encodeRequest(
-      modelId: call.requestModelId,
-      prompt: request.prompt,
-      tools: request.tools,
-      toolChoice: request.toolChoice,
-      options: request.options,
-      providerOptions: call.providerOptions,
+    final preparedRequest = _encodeRequest(
+      call: call,
+      request: request,
       stream: false,
     );
-
     final response = await transport.send(
-      TransportRequest(
-        uri: chatCompletionsUri,
-        method: TransportMethod.post,
-        headers: buildOpenAIRequestHeaders(
-          profile: profile,
-          apiKey: apiKey,
-          settings: settings,
-          stream: false,
-          extraHeaders: request.callOptions.headers,
-        ),
+      _buildTransportRequest(
+        route: call.route,
+        request: request,
+        stream: false,
         body: preparedRequest.body,
-        timeout: request.callOptions.timeout,
-        cancellation: request.callOptions.cancellation,
-        responseType: TransportResponseType.json,
       ),
     );
 
-    return _chatCompletionsCodec.decodeGenerateResponse(
-      decodeOpenAIJsonObject(response.body),
+    return _decodeGenerateResponse(
+      call: call,
+      body: response.body,
       warnings: preparedRequest.warnings,
     );
   }
@@ -130,6 +82,38 @@ final class OpenAILanguageModel implements LanguageModel {
       profile: profile,
       settings: settings,
     );
+    final preparedRequest = _encodeRequest(
+      call: call,
+      request: request,
+      stream: true,
+    );
+
+    yield StartEvent(warnings: preparedRequest.warnings);
+
+    try {
+      final response = await transport.sendStream(
+        _buildTransportRequest(
+          route: call.route,
+          request: request,
+          stream: true,
+          body: preparedRequest.body,
+        ),
+      );
+
+      yield* _decodeStreamEvents(
+        route: call.route,
+        stream: response.stream,
+      );
+    } catch (error) {
+      yield ErrorEvent(transportErrorToModelError(error));
+    }
+  }
+
+  _PreparedOpenAILanguageModelRequest _encodeRequest({
+    required ResolvedOpenAILanguageModelCall call,
+    required GenerateTextRequest request,
+    required bool stream,
+  }) {
     if (call.usesResponsesApi) {
       final preparedRequest = _codec.encodeRequest(
         modelId: call.requestModelId,
@@ -138,45 +122,12 @@ final class OpenAILanguageModel implements LanguageModel {
         toolChoice: request.toolChoice,
         options: request.options,
         providerOptions: call.providerOptions.common,
-        stream: true,
+        stream: stream,
       );
-
-      yield StartEvent(warnings: preparedRequest.warnings);
-
-      try {
-        final response = await transport.sendStream(
-          TransportRequest(
-            uri: responsesUri,
-            method: TransportMethod.post,
-            headers: buildOpenAIRequestHeaders(
-              profile: profile,
-              apiKey: apiKey,
-              settings: settings,
-              stream: true,
-              extraHeaders: request.callOptions.headers,
-            ),
-            body: preparedRequest.body,
-            timeout: request.callOptions.timeout,
-            cancellation: request.callOptions.cancellation,
-          ),
-        );
-
-        final streamState = OpenAIResponsesStreamState();
-        await for (final chunk in _streamChunkParser.parse(response.stream)) {
-          final events = _codec.decodeStreamChunk(
-            chunk,
-            streamState,
-          );
-
-          for (final event in events) {
-            yield event;
-          }
-        }
-      } catch (error) {
-        yield ErrorEvent(transportErrorToModelError(error));
-      }
-
-      return;
+      return _PreparedOpenAILanguageModelRequest(
+        body: preparedRequest.body,
+        warnings: preparedRequest.warnings,
+      );
     }
 
     final preparedRequest = _chatCompletionsCodec.encodeRequest(
@@ -186,42 +137,93 @@ final class OpenAILanguageModel implements LanguageModel {
       toolChoice: request.toolChoice,
       options: request.options,
       providerOptions: call.providerOptions,
-      stream: true,
+      stream: stream,
     );
+    return _PreparedOpenAILanguageModelRequest(
+      body: preparedRequest.body,
+      warnings: preparedRequest.warnings,
+    );
+  }
 
-    yield StartEvent(warnings: preparedRequest.warnings);
+  TransportRequest _buildTransportRequest({
+    required OpenAIRequestRoute route,
+    required GenerateTextRequest request,
+    required bool stream,
+    required Object? body,
+  }) {
+    return TransportRequest(
+      uri: _routeUri(route),
+      method: TransportMethod.post,
+      headers: buildOpenAIRequestHeaders(
+        profile: profile,
+        apiKey: apiKey,
+        settings: settings,
+        stream: stream,
+        extraHeaders: request.callOptions.headers,
+      ),
+      body: body,
+      timeout: request.callOptions.timeout,
+      cancellation: request.callOptions.cancellation,
+      responseType: TransportResponseType.json,
+    );
+  }
 
-    try {
-      final response = await transport.sendStream(
-        TransportRequest(
-          uri: chatCompletionsUri,
-          method: TransportMethod.post,
-          headers: buildOpenAIRequestHeaders(
-            profile: profile,
-            apiKey: apiKey,
-            settings: settings,
-            stream: true,
-            extraHeaders: request.callOptions.headers,
-          ),
-          body: preparedRequest.body,
-          timeout: request.callOptions.timeout,
-          cancellation: request.callOptions.cancellation,
-        ),
+  Uri _routeUri(OpenAIRequestRoute route) => switch (route) {
+        OpenAIRequestRoute.responses => responsesUri,
+        OpenAIRequestRoute.chatCompletions => chatCompletionsUri,
+      };
+
+  GenerateTextResult _decodeGenerateResponse({
+    required ResolvedOpenAILanguageModelCall call,
+    required Object? body,
+    required List<ModelWarning> warnings,
+  }) {
+    final json = decodeOpenAIJsonObject(body);
+    if (call.usesResponsesApi) {
+      return _codec.decodeGenerateResponse(
+        json,
+        warnings: warnings,
       );
+    }
 
-      final streamState = OpenAIChatCompletionsStreamState();
-      await for (final chunk in _streamChunkParser.parse(response.stream)) {
-        final events = _chatCompletionsCodec.decodeStreamChunk(
-          chunk,
-          streamState,
-        );
+    return _chatCompletionsCodec.decodeGenerateResponse(
+      json,
+      warnings: warnings,
+    );
+  }
 
-        for (final event in events) {
+  Stream<TextStreamEvent> _decodeStreamEvents({
+    required OpenAIRequestRoute route,
+    required Stream<List<int>> stream,
+  }) async* {
+    if (route == OpenAIRequestRoute.responses) {
+      final streamState = OpenAIResponsesStreamState();
+      await for (final chunk in _streamChunkParser.parse(stream)) {
+        for (final event in _codec.decodeStreamChunk(chunk, streamState)) {
           yield event;
         }
       }
-    } catch (error) {
-      yield ErrorEvent(transportErrorToModelError(error));
+      return;
+    }
+
+    final streamState = OpenAIChatCompletionsStreamState();
+    await for (final chunk in _streamChunkParser.parse(stream)) {
+      for (final event in _chatCompletionsCodec.decodeStreamChunk(
+        chunk,
+        streamState,
+      )) {
+        yield event;
+      }
     }
   }
+}
+
+final class _PreparedOpenAILanguageModelRequest {
+  final Object? body;
+  final List<ModelWarning> warnings;
+
+  const _PreparedOpenAILanguageModelRequest({
+    required this.body,
+    required this.warnings,
+  });
 }
