@@ -174,6 +174,10 @@ This phase should explicitly avoid:
   - Anthropic chat stream support extraction that separates SSE framing,
     stream event semantics, tool-use aggregation, and error mapping from the
     parser facade.
+- [21-google-chat-message-codec-extraction.md](21-google-chat-message-codec-extraction.md)
+  - Google chat message codec extraction that separates message, tool, and
+    tool-choice payload encoding from request-body and generation-config
+    shaping.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)

@@ -49,6 +49,8 @@
   conversation helpers out of the public compatibility facade
 - [x] Extract Anthropic chat stream SSE framing, event semantics, tool-use
   aggregation, and error mapping out of the parser facade
+- [x] Extract Google chat message, tool, and tool-choice payload encoding out
+  of the request-body builder
 
 ## Selective Provider Expansion
 

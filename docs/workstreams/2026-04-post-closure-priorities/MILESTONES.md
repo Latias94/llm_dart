@@ -132,6 +132,10 @@ Current status:
   stream error mapping in `anthropic_chat_stream_support.dart`, leaving
   `anthropic_chat_stream_parser.dart` focused on raw chunk decoding and facade
   delegation
+- the Google compatibility chat request builder now also keeps message, tool,
+  and tool-choice payload encoding in `google_chat_message_codec.dart`, leaving
+  `google_chat_request_builder.dart` focused on request-body composition and
+  generation-config policy
 
 ## M4 - Selective Provider Expansion
 
