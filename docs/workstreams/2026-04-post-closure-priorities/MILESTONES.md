@@ -106,6 +106,10 @@ Current status:
   shaping, and tool JSON parsing in a dedicated
   `openai_assistant_support.dart`, leaving `assistants.dart` focused on API
   orchestration
+- the root Anthropic compatibility adapter now also keeps request planning,
+  cache-policy merging, provider-options validation, and role-aware prompt
+  conversion in a dedicated `anthropic_compat_support.dart`, leaving
+  `anthropic_compat_adapter.dart` focused on bridge delegation
 
 ## M4 - Selective Provider Expansion
 

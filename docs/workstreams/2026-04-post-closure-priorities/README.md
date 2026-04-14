@@ -154,6 +154,9 @@ This phase should explicitly avoid:
 - [14-openai-assistants-support-extraction.md](14-openai-assistants-support-extraction.md)
   - OpenAI assistants support extraction that separates API orchestration from
     local assistant utility shaping and parsing.
+- [15-anthropic-compat-adapter-thinning.md](15-anthropic-compat-adapter-thinning.md)
+  - Anthropic compatibility adapter thinning that separates request planning
+    and role-aware prompt conversion from the bridge adapter shell.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)

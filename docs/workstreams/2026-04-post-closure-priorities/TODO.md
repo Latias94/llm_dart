@@ -37,6 +37,8 @@
   from fallback orchestration
 - [x] Extract OpenAI assistants query shaping, local utility helpers, and
   import/export parsing out of the compatibility capability shell
+- [x] Thin the Anthropic compatibility adapter by separating request planning
+  and role-aware prompt conversion from the bridge adapter shell
 
 ## Selective Provider Expansion
 
