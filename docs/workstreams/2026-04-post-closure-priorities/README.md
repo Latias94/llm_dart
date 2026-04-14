@@ -160,6 +160,9 @@ This phase should explicitly avoid:
 - [16-openai-moderation-support-extraction.md](16-openai-moderation-support-extraction.md)
   - OpenAI moderation support extraction that separates moderation endpoint
     orchestration from local analysis and reporting helpers.
+- [17-openai-provider-shell-support-thinning.md](17-openai-provider-shell-support-thinning.md)
+  - OpenAI provider shell support thinning that moves capability policy and
+    audio convenience helpers out of the root compatibility shell.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)

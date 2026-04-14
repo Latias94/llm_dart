@@ -4,6 +4,34 @@ import 'package:test/test.dart';
 
 void main() {
   group('OpenAI provider support extraction', () {
+    test('supportedCapabilities keeps Responses flag provider-local', () {
+      final withoutResponses = OpenAIProvider(
+        OpenAIConfig(
+          apiKey: 'test-key',
+          model: 'gpt-4o',
+          useResponsesAPI: false,
+        ),
+      );
+      final withResponses = OpenAIProvider(
+        OpenAIConfig(
+          apiKey: 'test-key',
+          model: 'gpt-4o',
+          useResponsesAPI: true,
+        ),
+      );
+
+      expect(
+        withoutResponses.supportedCapabilities
+            .contains(LLMCapability.openaiResponses),
+        isFalse,
+      );
+      expect(
+        withResponses.supportedCapabilities
+            .contains(LLMCapability.openaiResponses),
+        isTrue,
+      );
+    });
+
     test('checkModel preserves lightweight validation request', () async {
       Map<String, dynamic>? capturedBody;
 
@@ -45,6 +73,38 @@ void main() {
       expect(capturedBody!['model'], equals('gpt-4o'));
       expect(capturedBody!['stream'], isFalse);
       expect(capturedBody!['max_tokens'], equals(1));
+    });
+
+    test('speech convenience helper keeps audio bytes routing', () async {
+      String? capturedPath;
+      Map<String, dynamic>? capturedBody;
+
+      final customDio = Dio();
+      customDio.options.baseUrl = 'https://api.openai.com/v1/';
+      customDio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) {
+            capturedPath = options.path;
+            capturedBody = Map<String, dynamic>.from(
+              options.data as Map<String, dynamic>,
+            );
+            handler.resolve(
+              Response(
+                requestOptions: options,
+                statusCode: 200,
+                data: const <int>[7, 8, 9],
+              ),
+            );
+          },
+        ),
+      );
+
+      final provider = _buildProvider(customDio);
+      final bytes = await provider.speech('Hello helper');
+
+      expect(capturedPath, equals('audio/speech'));
+      expect(capturedBody!['input'], equals('Hello helper'));
+      expect(bytes, equals([7, 8, 9]));
     });
 
     test('generateSuggestions returns parsed questions from helper prompt',

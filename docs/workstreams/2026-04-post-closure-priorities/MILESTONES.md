@@ -114,6 +114,10 @@ Current status:
   shaping, analysis/report helpers, and batch statistics logic in a dedicated
   `openai_moderation_support.dart`, leaving `moderation.dart` focused on
   endpoint orchestration
+- the root OpenAI compatibility provider shell now also keeps capability-set
+  policy and audio convenience helpers in `openai_provider_support.dart`,
+  leaving `provider_compat.dart` more focused on capability wiring and
+  delegation
 
 ## M4 - Selective Provider Expansion
 

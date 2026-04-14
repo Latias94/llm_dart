@@ -1,5 +1,8 @@
+import '../../../../core/capability.dart';
+import '../../../../models/audio_models.dart';
 import '../../../../models/chat_models.dart';
 import '../../../../providers/openai/config.dart';
+import 'audio.dart';
 import 'chat.dart';
 import 'client.dart';
 import 'embeddings.dart';
@@ -11,16 +14,93 @@ class OpenAIProviderSupport {
   final OpenAIClient client;
   final OpenAIChat chat;
   final OpenAIEmbeddings embeddings;
+  final OpenAIAudio audio;
+  final bool hasResponsesApi;
 
   OpenAIProviderSupport({
     required this.config,
     required this.client,
     required this.chat,
     required this.embeddings,
+    required this.audio,
+    required this.hasResponsesApi,
   });
+
+  Set<LLMCapability> get supportedCapabilities {
+    final capabilities = {
+      LLMCapability.chat,
+      LLMCapability.streaming,
+      LLMCapability.embedding,
+      LLMCapability.textToSpeech,
+      LLMCapability.speechToText,
+      LLMCapability.toolCalling,
+      LLMCapability.reasoning,
+      LLMCapability.vision,
+      LLMCapability.imageGeneration,
+      LLMCapability.fileManagement,
+      LLMCapability.moderation,
+      LLMCapability.assistants,
+      LLMCapability.completion,
+      LLMCapability.modelListing,
+    };
+
+    if (hasResponsesApi) {
+      capabilities.add(LLMCapability.openaiResponses);
+    }
+
+    return capabilities;
+  }
+
+  bool supports(LLMCapability capability) {
+    return supportedCapabilities.contains(capability);
+  }
 
   Future<int> getEmbeddingDimensions() {
     return embeddings.getEmbeddingDimensions();
+  }
+
+  Future<List<int>> speech(
+    String text, {
+    TransportCancellation? cancelToken,
+  }) async {
+    final response = await audio.textToSpeech(
+      TTSRequest(text: text),
+      cancelToken: cancelToken,
+    );
+    return response.audioData;
+  }
+
+  Stream<List<int>> speechStream(String text) async* {
+    await for (final event
+        in audio.textToSpeechStream(TTSRequest(text: text))) {
+      if (event is AudioDataEvent) {
+        yield event.data;
+      }
+    }
+  }
+
+  Future<String> transcribe(List<int> audioData) async {
+    final response = await audio.speechToText(STTRequest.fromAudio(audioData));
+    return response.text;
+  }
+
+  Future<String> transcribeFile(String filePath) async {
+    final response = await audio.speechToText(STTRequest.fromFile(filePath));
+    return response.text;
+  }
+
+  Future<String> translate(List<int> audioData) async {
+    final response = await audio.translateAudio(
+      AudioTranslationRequest.fromAudio(audioData),
+    );
+    return response.text;
+  }
+
+  Future<String> translateFile(String filePath) async {
+    final response = await audio.translateAudio(
+      AudioTranslationRequest.fromFile(filePath),
+    );
+    return response.text;
   }
 
   Future<({bool valid, String? error})> checkModel() async {
@@ -91,8 +171,7 @@ $conversationContext
         .map((line) => line.trim())
         .where((line) => line.isNotEmpty && line.contains('?'))
         .map(
-          (line) =>
-              line.replaceAll(RegExp(r'^[\d\-\.\)\(•\*\s]*'), '').trim(),
+          (line) => line.replaceAll(RegExp(r'^[\d\-\.\)\(•\*\s]*'), '').trim(),
         )
         .where((question) => question.isNotEmpty)
         .take(5)

@@ -41,6 +41,8 @@
   and role-aware prompt conversion from the bridge adapter shell
 - [x] Extract OpenAI moderation request shaping and local analysis/reporting
   helpers out of the compatibility capability shell
+- [x] Thin the OpenAI compatibility root provider shell by moving capability
+  policy and audio convenience helpers into provider-local support
 
 ## Selective Provider Expansion
 

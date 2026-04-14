@@ -85,6 +85,8 @@ class OpenAIProvider
       client: _client,
       chat: _chat,
       embeddings: _embeddings,
+      audio: _audio,
+      hasResponsesApi: _responses != null,
     );
   }
 
@@ -93,35 +95,12 @@ class OpenAIProvider
   // ========== ProviderCapabilities ==========
 
   @override
-  Set<LLMCapability> get supportedCapabilities {
-    final capabilities = {
-      LLMCapability.chat,
-      LLMCapability.streaming,
-      LLMCapability.embedding,
-      LLMCapability.textToSpeech,
-      LLMCapability.speechToText,
-      LLMCapability.toolCalling,
-      LLMCapability.reasoning,
-      LLMCapability.vision,
-      LLMCapability.imageGeneration,
-      LLMCapability.fileManagement,
-      LLMCapability.moderation,
-      LLMCapability.assistants,
-      LLMCapability.completion,
-      LLMCapability.modelListing,
-    };
-
-    // Add OpenAI Responses API capability if enabled
-    if (_responses != null) {
-      capabilities.add(LLMCapability.openaiResponses);
-    }
-
-    return capabilities;
-  }
+  Set<LLMCapability> get supportedCapabilities =>
+      _support.supportedCapabilities;
 
   @override
   bool supports(LLMCapability capability) {
-    return supportedCapabilities.contains(capability);
+    return _support.supports(capability);
   }
 
   // ========== ChatCapability (delegated to chat module) ==========
@@ -247,46 +226,35 @@ class OpenAIProvider
     String text, {
     TransportCancellation? cancelToken,
   }) async {
-    final response = await textToSpeech(
-      TTSRequest(text: text),
+    return _support.speech(
+      text,
       cancelToken: cancelToken,
     );
-    return response.audioData;
   }
 
   @override
-  Stream<List<int>> speechStream(String text) async* {
-    await for (final event in textToSpeechStream(TTSRequest(text: text))) {
-      if (event is AudioDataEvent) {
-        yield event.data;
-      }
-    }
+  Stream<List<int>> speechStream(String text) {
+    return _support.speechStream(text);
   }
 
   @override
   Future<String> transcribe(List<int> audio) async {
-    final response = await speechToText(STTRequest.fromAudio(audio));
-    return response.text;
+    return _support.transcribe(audio);
   }
 
   @override
   Future<String> transcribeFile(String filePath) async {
-    final response = await speechToText(STTRequest.fromFile(filePath));
-    return response.text;
+    return _support.transcribeFile(filePath);
   }
 
   @override
   Future<String> translate(List<int> audio) async {
-    final response =
-        await translateAudio(AudioTranslationRequest.fromAudio(audio));
-    return response.text;
+    return _support.translate(audio);
   }
 
   @override
   Future<String> translateFile(String filePath) async {
-    final response =
-        await translateAudio(AudioTranslationRequest.fromFile(filePath));
-    return response.text;
+    return _support.translateFile(filePath);
   }
 
   // ========== ImageGenerationCapability (delegated to images module) ==========
