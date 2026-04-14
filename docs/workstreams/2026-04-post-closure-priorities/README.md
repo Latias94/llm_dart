@@ -139,6 +139,9 @@ This phase should explicitly avoid:
 - [09-google-image-compat-support-extraction.md](09-google-image-compat-support-extraction.md)
   - Google image compatibility support extraction that separates request and
     response shaping from the root compatibility image shell.
+- [10-elevenlabs-audio-compat-support-extraction.md](10-elevenlabs-audio-compat-support-extraction.md)
+  - ElevenLabs audio compatibility support extraction that localizes request
+    shaping, response normalization, and STT fallback details.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)

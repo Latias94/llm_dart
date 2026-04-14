@@ -86,6 +86,10 @@ Current status:
   request/response shaping extracted into `google_image_support.dart`, keeping
   the public compatibility API stable while separating shell dispatch from
   codec logic
+- the root ElevenLabs audio compatibility module now also keeps request
+  shaping, voice mapping, and speech-to-text normalization in a dedicated
+  `elevenlabs_audio_support.dart`, leaving the capability file focused on
+  fallback routing and client dispatch
 
 ## M4 - Selective Provider Expansion
 

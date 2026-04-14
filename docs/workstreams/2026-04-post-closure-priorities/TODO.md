@@ -26,6 +26,8 @@
   opening another symmetry-driven helper split
 - [x] Extract Google image compatibility request and response shaping out of
   the root image shell without changing public compatibility behavior
+- [x] Extract ElevenLabs audio compatibility request and response shaping out
+  of the root audio shell without changing bridge or fallback behavior
 
 ## Selective Provider Expansion
 
