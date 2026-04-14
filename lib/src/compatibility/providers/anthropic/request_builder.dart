@@ -53,6 +53,39 @@ class AnthropicRequestBuilder {
     return body;
   }
 
+  /// Build request body for Anthropic token counting API.
+  Map<String, dynamic> buildTokenCountRequestBody(
+    List<ChatMessage> messages,
+    List<Tool>? tools,
+  ) {
+    final processedData = _processMessages(messages);
+    final processedTools = _processTools(messages, tools);
+
+    final body = <String, dynamic>{
+      'model': config.model,
+      'messages': processedData.anthropicMessages,
+    };
+
+    _addSystemContent(body, processedData);
+
+    if (processedTools.tools.isNotEmpty) {
+      body['tools'] =
+          processedTools.tools.map((tool) => convertTool(tool)).toList();
+    }
+
+    if (config.reasoning) {
+      final thinkingConfig = <String, dynamic>{
+        'type': 'enabled',
+      };
+      if (config.thinkingBudgetTokens != null) {
+        thinkingConfig['budget_tokens'] = config.thinkingBudgetTokens;
+      }
+      body['thinking'] = thinkingConfig;
+    }
+
+    return body;
+  }
+
   /// Process all messages and extract system/anthropic content
   ProcessedMessages _processMessages(List<ChatMessage> messages) {
     final anthropicMessages = <Map<String, dynamic>>[];

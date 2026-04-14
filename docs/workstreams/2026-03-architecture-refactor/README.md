@@ -634,6 +634,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Status note for splitting the Google compatibility chat host into a thin
     facade plus request-builder, stream-parser, file-support, and response
     helpers while keeping the public legacy import path stable.
+- [202-anthropic-compat-chat-facade-thinning.md](202-anthropic-compat-chat-facade-thinning.md)
+  - Status note for splitting the Anthropic compatibility chat host into a
+    thin facade plus response and stream-parser helpers, while moving
+    token-count request shaping fully into `request_builder.dart`.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)

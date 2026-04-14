@@ -425,6 +425,11 @@ Current status:
   and response wrapping no longer live in one compatibility file, while the
   stable public legacy import path still exposes `GoogleChat`,
   `GoogleChatResponse`, and `GoogleFile`
+- the root Anthropic compatibility chat host is now also thinner in ownership
+  terms: streamed SSE parsing and tool-call accumulation state no longer live
+  in the facade file, `AnthropicChatResponse` now lives in its own helper, and
+  token-count request shaping now stays with the rest of Anthropic request
+  construction inside `request_builder.dart`
 - the flat compatibility `LLMConfig.extensions` path now also has a centralized internal key/accessor layer so builder, factory, transport, and compatibility code stop drifting through repeated raw string literals
 - the OpenAI family now also has a first transitional namespaced `providerOptions` layer inside the legacy root config map, with namespaced writes for OpenAI / OpenRouter-specific builder helpers plus the legacy `ProviderConfig` helper, and namespaced-first, flat-fallback reads across factories, request shaping, and compatibility routing
 - the root shared web-search builder helpers and `createProvider(..., extensions: ...)` are now also explicitly deprecated as compatibility-only migration surfaces, so provider-owned search APIs remain the only stable long-term direction

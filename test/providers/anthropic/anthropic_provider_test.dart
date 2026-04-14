@@ -132,6 +132,38 @@ void main() {
       test('should have countTokens method', () {
         expect(provider.countTokens, isA<Function>());
       });
+
+      test('AnthropicChatResponse remains available on the legacy export path',
+          () {
+        final response = AnthropicChatResponse({
+          'content': [
+            {
+              'type': 'thinking',
+              'thinking': 'Plan carefully.',
+            },
+            {
+              'type': 'text',
+              'text': 'Final answer.',
+            },
+            {
+              'type': 'tool_use',
+              'id': 'tool_1',
+              'name': 'weather',
+              'input': {'city': 'Hong Kong'},
+            },
+          ],
+          'usage': {
+            'input_tokens': 12,
+            'output_tokens': 8,
+          },
+        });
+
+        expect(response.thinking, equals('Plan carefully.'));
+        expect(response.text, equals('Final answer.'));
+        expect(response.toolCalls, hasLength(1));
+        expect(response.toolCalls!.single.function.name, equals('weather'));
+        expect(response.usage?.totalTokens, equals(20));
+      });
     });
 
     group('File Management Methods', () {
