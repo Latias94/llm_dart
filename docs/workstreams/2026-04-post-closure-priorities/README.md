@@ -170,6 +170,10 @@ This phase should explicitly avoid:
 - [19-openai-responses-support-extraction.md](19-openai-responses-support-extraction.md)
   - OpenAI Responses support extraction that separates non-streaming lifecycle
     and stateful-conversation orchestration from the public facade.
+- [20-anthropic-chat-stream-support-extraction.md](20-anthropic-chat-stream-support-extraction.md)
+  - Anthropic chat stream support extraction that separates SSE framing,
+    stream event semantics, tool-use aggregation, and error mapping from the
+    parser facade.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)

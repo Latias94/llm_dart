@@ -47,6 +47,8 @@
   batch, and token helpers out of the compatibility capability shell
 - [x] Extract OpenAI Responses non-streaming lifecycle and stateful
   conversation helpers out of the public compatibility facade
+- [x] Extract Anthropic chat stream SSE framing, event semantics, tool-use
+  aggregation, and error mapping out of the parser facade
 
 ## Selective Provider Expansion
 

@@ -127,6 +127,11 @@ Current status:
   continue/fork orchestration, and summary helpers in
   `openai_responses_support.dart`, leaving `responses.dart` focused on the
   public facade and streaming path
+- the Anthropic compatibility chat stream parser now also keeps SSE framing,
+  event semantics, incremental tool-use aggregation, thinking deltas, and
+  stream error mapping in `anthropic_chat_stream_support.dart`, leaving
+  `anthropic_chat_stream_parser.dart` focused on raw chunk decoding and facade
+  delegation
 
 ## M4 - Selective Provider Expansion
 
