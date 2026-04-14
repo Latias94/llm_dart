@@ -82,6 +82,10 @@ Current status:
 - the remaining Anthropic compatibility `request_builder.dart` has now also
   been re-audited and intentionally kept as one provider-local request codec,
   with no symmetry-only helper split kept as active debt
+- the root Google image compatibility module has now had provider-local
+  request/response shaping extracted into `google_image_support.dart`, keeping
+  the public compatibility API stable while separating shell dispatch from
+  codec logic
 
 ## M4 - Selective Provider Expansion
 

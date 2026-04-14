@@ -136,6 +136,9 @@ This phase should explicitly avoid:
 - [08-anthropic-request-builder-boundary-audit.md](08-anthropic-request-builder-boundary-audit.md)
   - Why the remaining Anthropic compatibility request builder stays one
     provider-local codec for now instead of being split again for symmetry.
+- [09-google-image-compat-support-extraction.md](09-google-image-compat-support-extraction.md)
+  - Google image compatibility support extraction that separates request and
+    response shaping from the root compatibility image shell.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)

@@ -24,6 +24,8 @@
 - [x] Consider a CI or lint guard that prevents package implementation files from importing `package:llm_dart/...`
 - [x] Re-audit the remaining Anthropic compatibility request builder before
   opening another symmetry-driven helper split
+- [x] Extract Google image compatibility request and response shaping out of
+  the root image shell without changing public compatibility behavior
 
 ## Selective Provider Expansion
 
