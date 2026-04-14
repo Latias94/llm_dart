@@ -93,6 +93,10 @@ Current status:
 - the root Ollama fallback chat path has now also been split into facade,
   request builder, stream parser, and response wrapper files, keeping the
   bridge-versus-fallback shell clearer without changing compatibility behavior
+- the root OpenAI image compatibility module now also keeps generation/edit/
+  variation request shaping and response parsing in a dedicated
+  `openai_image_support.dart`, leaving the capability file focused on endpoint
+  orchestration
 
 ## M4 - Selective Provider Expansion
 

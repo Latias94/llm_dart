@@ -145,6 +145,9 @@ This phase should explicitly avoid:
 - [11-ollama-chat-compat-thinning.md](11-ollama-chat-compat-thinning.md)
   - Ollama chat compatibility thinning that splits request shaping, stream
     parsing, and response wrapping out of the fallback chat shell.
+- [12-openai-image-compat-support-extraction.md](12-openai-image-compat-support-extraction.md)
+  - OpenAI image compatibility support extraction that localizes generation,
+    edit, variation, and response parsing logic.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)

@@ -30,6 +30,8 @@
   of the root audio shell without changing bridge or fallback behavior
 - [x] Thin the Ollama fallback chat module by separating facade, request
   shaping, streamed parsing, and response wrapping
+- [x] Extract OpenAI image compatibility request and response shaping out of
+  the root image capability shell without changing public behavior
 
 ## Selective Provider Expansion
 
