@@ -182,6 +182,9 @@ This phase should explicitly avoid:
   - Anthropic prompt-cache models extraction that separates message-builder
     cache helpers from the model-listing capability while preserving the
     legacy models export path.
+- [23-anthropic-file-models-extraction.md](23-anthropic-file-models-extraction.md)
+  - Anthropic file models extraction that separates Files API data models from
+    the capability module while preserving the legacy files export path.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)

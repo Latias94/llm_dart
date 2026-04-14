@@ -140,6 +140,10 @@ Current status:
   helpers in `anthropic_prompt_cache_models.dart`, leaving `models.dart`
   focused on the model-listing capability while preserving the legacy models
   export path
+- the Anthropic compatibility Files API module now also keeps Anthropic-specific
+  file data models in `anthropic_file_models.dart`, leaving `files.dart`
+  focused on endpoint orchestration and local file convenience helpers while
+  preserving the legacy files export path
 
 ## M4 - Selective Provider Expansion
 

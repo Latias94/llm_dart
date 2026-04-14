@@ -53,6 +53,8 @@
   of the request-body builder
 - [x] Extract Anthropic prompt-cache message helpers out of the model-listing
   capability module while preserving the legacy models export path
+- [x] Extract Anthropic Files API data models out of the Files capability
+  module while preserving the legacy files export path
 
 ## Selective Provider Expansion
 
