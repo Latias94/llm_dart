@@ -8,10 +8,12 @@ import '../../../../models/tool_models.dart';
 import '../../../../utils/reasoning_utils.dart';
 import 'client.dart';
 import '../../../../providers/openai/config.dart';
-import 'config_views.dart';
-import 'request_body_support.dart';
-import 'stream_parsing_support.dart';
+import 'openai_responses_response.dart';
 import 'responses_capability.dart';
+import 'responses_request_builder.dart';
+import 'responses_stream_parser.dart';
+
+export 'openai_responses_response.dart' show OpenAIResponsesResponse;
 
 /// OpenAI Responses API capability implementation
 ///
@@ -21,16 +23,16 @@ import 'responses_capability.dart';
 class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
   final OpenAIClient client;
   final OpenAIConfig config;
+  late final OpenAIResponsesRequestBuilder _requestBuilder;
+  late final OpenAIResponsesStreamParser _streamParser;
 
-  // State tracking for stream processing
-  //
-  // This shared state now owns reasoning accumulation, the previous text chunk,
-  // and stable tool-call ids for incremental streamed tool calls.
-  final OpenAIStreamParsingState _streamState = OpenAIStreamParsingState();
-
-  OpenAIResponses(this.client, this.config);
-
-  String get responsesEndpoint => 'responses';
+  OpenAIResponses(this.client, this.config) {
+    _requestBuilder = OpenAIResponsesRequestBuilder(
+      client: client,
+      config: config,
+    );
+    _streamParser = OpenAIResponsesStreamParser(client);
+  }
 
   @override
   Future<ChatResponse> chatWithTools(
@@ -38,9 +40,14 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
     List<Tool>? tools, {
     TransportCancellation? cancelToken,
   }) async {
-    final requestBody = _buildRequestBody(messages, tools, false, false);
+    final requestBody = _requestBuilder.buildRequestBody(
+      messages,
+      tools,
+      stream: false,
+      background: false,
+    );
     final responseData = await client.postJson(
-      responsesEndpoint,
+      _requestBuilder.responsesEndpoint,
       requestBody,
       cancelToken: cancelToken,
     );
@@ -56,8 +63,14 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
     List<ChatMessage> messages,
     List<Tool>? tools,
   ) async {
-    final requestBody = _buildRequestBody(messages, tools, false, true);
-    final responseData = await client.postJson(responsesEndpoint, requestBody);
+    final requestBody = _requestBuilder.buildRequestBody(
+      messages,
+      tools,
+      stream: false,
+      background: true,
+    );
+    final responseData =
+        await client.postJson(_requestBuilder.responsesEndpoint, requestBody);
     return _parseResponse(responseData);
   }
 
@@ -68,23 +81,25 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
     TransportCancellation? cancelToken,
   }) async* {
     final effectiveTools = tools ?? config.tools;
-    final requestBody =
-        _buildRequestBody(messages, effectiveTools, true, false);
+    final requestBody = _requestBuilder.buildRequestBody(
+      messages,
+      effectiveTools,
+      stream: true,
+      background: false,
+    );
 
-    // Reset stream state
-    _resetStreamState();
+    _streamParser.reset();
 
     try {
-      // Create SSE stream
       final stream = client.postStreamRaw(
-        responsesEndpoint,
+        _requestBuilder.responsesEndpoint,
         requestBody,
         cancelToken: cancelToken,
       );
 
       await for (final chunk in stream) {
         try {
-          final events = _parseStreamEvents(chunk);
+          final events = _streamParser.parseChunk(chunk);
           for (final event in events) {
             yield event;
           }
@@ -142,29 +157,12 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
     int? startingAfter,
     bool stream = false,
   }) async {
-    var endpoint = '$responsesEndpoint/$responseId';
-
-    // Build query parameters
-    final queryParams = <String, String>{};
-    if (include != null && include.isNotEmpty) {
-      queryParams['include'] = include.join(',');
-    }
-    if (startingAfter != null) {
-      queryParams['starting_after'] = startingAfter.toString();
-    }
-    if (stream) {
-      queryParams['stream'] = stream.toString();
-    }
-
-    // Append query parameters to endpoint
-    if (queryParams.isNotEmpty) {
-      final queryString = queryParams.entries
-          .map((e) =>
-              '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
-          .join('&');
-      endpoint = '$endpoint?$queryString';
-    }
-
+    final endpoint = _requestBuilder.buildGetResponseEndpoint(
+      responseId,
+      include: include,
+      startingAfter: startingAfter,
+      stream: stream,
+    );
     final responseData = await client.get(endpoint);
     return _parseResponse(responseData);
   }
@@ -176,7 +174,7 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
   @override
   Future<bool> deleteResponse(String responseId) async {
     try {
-      final endpoint = '$responsesEndpoint/$responseId';
+      final endpoint = _requestBuilder.buildDeleteResponseEndpoint(responseId);
       final responseData = await client.delete(endpoint);
       return responseData['deleted'] == true;
     } on LLMError {
@@ -197,7 +195,7 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
   /// Returns the cancelled response object.
   @override
   Future<ChatResponse> cancelResponse(String responseId) async {
-    final endpoint = '$responsesEndpoint/$responseId/cancel';
+    final endpoint = _requestBuilder.buildCancelResponseEndpoint(responseId);
     final responseData = await client.postJson(endpoint, {});
     return _parseResponse(responseData);
   }
@@ -215,27 +213,14 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
     int limit = 20,
     String order = 'desc',
   }) async {
-    var endpoint = '$responsesEndpoint/$responseId/input_items';
-
-    // Build query parameters
-    final queryParams = <String, String>{
-      'limit': limit.toString(),
-      'order': order,
-    };
-
-    if (after != null) queryParams['after'] = after;
-    if (before != null) queryParams['before'] = before;
-    if (include != null && include.isNotEmpty) {
-      queryParams['include'] = include.join(',');
-    }
-
-    // Append query parameters to endpoint
-    final queryString = queryParams.entries
-        .map((e) =>
-            '${Uri.encodeComponent(e.key)}=${Uri.encodeComponent(e.value)}')
-        .join('&');
-    endpoint = '$endpoint?$queryString';
-
+    final endpoint = _requestBuilder.buildListInputItemsEndpoint(
+      responseId,
+      after: after,
+      before: before,
+      include: include,
+      limit: limit,
+      order: order,
+    );
     final responseData = await client.get(endpoint);
     return ResponseInputItemsList.fromJson(responseData);
   }
@@ -253,14 +238,16 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
     List<Tool>? tools,
     bool background = false,
   }) async {
-    // Create a new config with the previous response ID
-    final updatedConfig =
-        config.copyWith(previousResponseId: previousResponseId);
-    final tempResponses = OpenAIResponses(client, updatedConfig);
-
-    final requestBody =
-        tempResponses._buildRequestBody(newMessages, tools, false, background);
-    final responseData = await client.postJson(responsesEndpoint, requestBody);
+    final requestBuilder =
+        _requestBuilder.forPreviousResponseId(previousResponseId);
+    final requestBody = requestBuilder.buildRequestBody(
+      newMessages,
+      tools,
+      stream: false,
+      background: background,
+    );
+    final responseData =
+        await client.postJson(requestBuilder.responsesEndpoint, requestBody);
     return _parseResponse(responseData);
   }
 
@@ -280,375 +267,8 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
         tools: tools, background: background);
   }
 
-  /// Build request body for Responses API
-  Map<String, dynamic> _buildRequestBody(
-    List<ChatMessage> messages,
-    List<Tool>? tools,
-    bool stream,
-    bool background,
-  ) {
-    final requestConfig = config.requestCompat;
-    final responsesConfig = config.responsesCompat;
-    final apiMessages = buildOpenAICompatApiMessages(
-      client: client,
-      requestConfig: requestConfig,
-      messages: messages,
-    );
-
-    final body = <String, dynamic>{
-      'model': requestConfig.model,
-      'input': apiMessages,
-      'stream': stream,
-      'background': background,
-    };
-
-    // Add previous response ID for chaining
-    if (responsesConfig.previousResponseId != null) {
-      body['previous_response_id'] = responsesConfig.previousResponseId;
-    }
-
-    // Add reasoning effort parameters (Responses API format)
-    if (requestConfig.reasoningEffort != null) {
-      body['reasoning'] = {
-        'effort': requestConfig.reasoningEffort!.value,
-      };
-    }
-
-    applyOpenAICompatCommonRequestFields(
-      body: body,
-      client: client,
-      config: config,
-      requestConfig: requestConfig,
-    );
-
-    // Build tools array combining function tools and built-in tools
-    final allTools = <Map<String, dynamic>>[];
-
-    // Add function tools (convert to Responses API format)
-    final effectiveTools = tools ?? requestConfig.tools;
-    if (effectiveTools != null && effectiveTools.isNotEmpty) {
-      allTools
-          .addAll(effectiveTools.map((t) => _convertToolToResponsesFormat(t)));
-    }
-
-    // Add built-in tools
-    if (responsesConfig.builtInTools != null &&
-        responsesConfig.builtInTools!.isNotEmpty) {
-      allTools.addAll(responsesConfig.builtInTools!.map((t) => t.toJson()));
-    }
-
-    if (allTools.isNotEmpty) {
-      body['tools'] = allTools;
-
-      // Add tool choice if configured (only for function tools)
-      final effectiveToolChoice = requestConfig.toolChoice;
-      if (effectiveToolChoice != null &&
-          effectiveTools != null &&
-          effectiveTools.isNotEmpty) {
-        body['tool_choice'] = effectiveToolChoice.toJson();
-      }
-    }
-
-    return body;
-  }
-
   /// Parse non-streaming response
   ChatResponse _parseResponse(Map<String, dynamic> responseData) {
-    // Extract thinking/reasoning content from Responses API format
-    String? thinkingContent;
-
-    // Parse the output array from Responses API
-    final output = responseData['output'] as List?;
-    if (output != null) {
-      // Look for reasoning items in the output array
-      for (final item in output) {
-        if (item is Map<String, dynamic> && item['type'] == 'reasoning') {
-          // Extract reasoning summary if available
-          final summary = item['summary'] as List?;
-          if (summary != null && summary.isNotEmpty) {
-            final summaryItem = summary.first as Map<String, dynamic>?;
-            thinkingContent = summaryItem?['text'] as String?;
-          }
-          break;
-        }
-      }
-    }
-
-    // Fallback: Check for reasoning content in other fields
-    if (thinkingContent == null) {
-      // Check if reasoning is an object with summary field
-      final reasoning = responseData['reasoning'];
-      if (reasoning is Map<String, dynamic>) {
-        thinkingContent = reasoning['summary'] as String?;
-      } else if (reasoning is String) {
-        thinkingContent = reasoning;
-      }
-
-      // Fallback to other possible fields
-      thinkingContent ??= responseData['thinking'] as String? ??
-          responseData['reasoning_content'] as String?;
-    }
-
-    return OpenAIResponsesResponse(responseData, thinkingContent);
-  }
-
-  /// Parse streaming events
-  List<ChatStreamEvent> _parseStreamEvents(String chunk) {
-    final events = <ChatStreamEvent>[];
-
-    // Parse SSE chunk - now returns a list of JSON objects
-    final jsonList = client.parseSSEChunk(chunk);
-    if (jsonList.isEmpty) return events;
-
-    // Process each JSON object in the chunk
-    for (final json in jsonList) {
-      // Use existing stream parsing logic with proper state tracking
-      final parsedEvents = _parseStreamEventWithReasoning(
-        json,
-        _streamState,
-      );
-
-      events.addAll(parsedEvents);
-    }
-
-    return events;
-  }
-
-  /// Reset stream state (call this when starting a new stream)
-  void _resetStreamState() {
-    _streamState.reset();
-  }
-
-  /// Parse stream events with reasoning support
-  List<ChatStreamEvent> _parseStreamEventWithReasoning(
-    Map<String, dynamic> json,
-    OpenAIStreamParsingState state,
-  ) {
-    final events = <ChatStreamEvent>[];
-
-    // Handle Responses API streaming events
-    final eventType = json['type'] as String?;
-
-    if (eventType == 'response.output_text.delta') {
-      // Handle text delta events from Responses API
-      final delta = json['delta'] as String?;
-      if (delta != null && delta.isNotEmpty) {
-        addOpenAITextDeltaEvents(
-          state: state,
-          events: events,
-          content: delta,
-        );
-        return events;
-      }
-    }
-
-    if (eventType == 'response.completed') {
-      // Handle completion event
-      final response = json['response'] as Map<String, dynamic>?;
-      if (response != null) {
-        flushOpenAIPendingContentEvents(
-          state: state,
-          events: events,
-        );
-        final thinkingContent = state.thinkingContent;
-
-        final completionResponse =
-            OpenAIResponsesResponse(response, thinkingContent);
-        events.add(CompletionEvent(completionResponse));
-
-        // Reset state after completion
-        state.reset();
-        return events;
-      }
-    }
-
-    // Handle reasoning content using reasoning utils (fallback)
-    if (addOpenAIReasoningDeltaEvents(
-      state: state,
-      events: events,
-      delta: json,
-    )) {
-      return events;
-    }
-
-    // Legacy format: Handle regular content from output_text_delta
-    final content = json['output_text_delta'] as String?;
-    if (content != null && content.isNotEmpty) {
-      addOpenAITextDeltaEvents(
-        state: state,
-        events: events,
-        content: content,
-        reasoningDelta: {'content': content},
-      );
-    }
-
-    // Handle tool calls (if supported in Responses API).
-    //
-    // The Responses API can stream tool_calls incrementally. The first chunk
-    // typically includes index + id + function.name + initial arguments,
-    // while subsequent chunks often only provide index + function.arguments.
-    //
-    // We mirror the chat implementation and cache ids by index so that each
-    // ToolCallDeltaEvent has a stable id for callers to aggregate arguments.
-    addOpenAIToolCallDeltaEvents(
-      state: state,
-      events: events,
-      toolCalls: json['tool_calls'] as List?,
-      onWarning: client.logger.warning,
-    );
-
-    // Check for finish reason
-    final finishReason = json['finish_reason'] as String?;
-    if (finishReason != null) {
-      flushOpenAIPendingContentEvents(
-        state: state,
-        events: events,
-      );
-      final usage = json['usage'] as Map<String, dynamic>?;
-      final thinkingContent = state.thinkingContent;
-      final streamedText = state.textContent ?? '';
-      final streamedToolCalls = state.buildToolCalls();
-
-      final response = OpenAIResponsesResponse({
-        'output_text': streamedText,
-        if (streamedToolCalls.isNotEmpty)
-          'tool_calls':
-              streamedToolCalls.map((toolCall) => toolCall.toJson()).toList(),
-        if (usage != null) 'usage': usage,
-      }, thinkingContent);
-
-      events.add(CompletionEvent(response));
-
-      // Reset state after completion
-      state.reset();
-    }
-
-    return events;
-  }
-
-  /// Convert Tool to Responses API format
-  ///
-  /// Responses API expects a flattened format instead of nested function object
-  Map<String, dynamic> _convertToolToResponsesFormat(Tool tool) {
-    return {
-      'type': 'function',
-      'name': tool.function.name,
-      'description': tool.function.description,
-      'parameters': tool.function.parameters.toJson(),
-    };
-  }
-}
-
-/// OpenAI Responses API response implementation
-class OpenAIResponsesResponse implements ChatResponse {
-  final Map<String, dynamic> _rawResponse;
-  final String? _thinkingContent;
-
-  OpenAIResponsesResponse(this._rawResponse, [this._thinkingContent]);
-
-  @override
-  String? get text {
-    // First try the Responses API format
-    final output = _rawResponse['output'] as List?;
-    if (output != null) {
-      // Look for message items in the output array
-      for (final item in output) {
-        if (item is Map<String, dynamic> && item['type'] == 'message') {
-          final content = item['content'] as List?;
-          if (content != null) {
-            // Find text content in the content array
-            for (final contentItem in content) {
-              if (contentItem is Map<String, dynamic> &&
-                  contentItem['type'] == 'output_text') {
-                return contentItem['text'] as String?;
-              }
-            }
-          }
-        }
-      }
-    }
-
-    // Fallback to legacy format
-    return _rawResponse['output_text'] as String?;
-  }
-
-  @override
-  List<ToolCall>? get toolCalls {
-    // First try the Responses API format
-    final output = _rawResponse['output'] as List?;
-    if (output != null) {
-      final toolCalls = <ToolCall>[];
-
-      // Look for function_call items in the output array
-      for (final item in output) {
-        if (item is Map<String, dynamic> && item['type'] == 'function_call') {
-          try {
-            // Convert Responses API function call format to ToolCall
-            final toolCall = ToolCall(
-              id: item['call_id'] as String? ?? item['id'] as String? ?? '',
-              callType: 'function',
-              function: FunctionCall(
-                name: item['name'] as String? ?? '',
-                arguments: item['arguments'] as String? ?? '{}',
-              ),
-            );
-            toolCalls.add(toolCall);
-          } catch (e) {
-            // Skip malformed tool calls silently
-            // Logging should be handled at a higher level
-          }
-        }
-      }
-
-      if (toolCalls.isNotEmpty) return toolCalls;
-    }
-
-    // Fallback to legacy format
-    final toolCalls = _rawResponse['tool_calls'] as List?;
-    if (toolCalls == null) return null;
-
-    return toolCalls
-        .map((tc) => ToolCall.fromJson(tc as Map<String, dynamic>))
-        .toList();
-  }
-
-  @override
-  UsageInfo? get usage {
-    final rawUsage = _rawResponse['usage'];
-    if (rawUsage == null) return null;
-
-    // Safely convert Map<dynamic, dynamic> to Map<String, dynamic>
-    final Map<String, dynamic> usageData;
-    if (rawUsage is Map<String, dynamic>) {
-      usageData = rawUsage;
-    } else if (rawUsage is Map) {
-      usageData = Map<String, dynamic>.from(rawUsage);
-    } else {
-      return null;
-    }
-
-    return UsageInfo.fromJson(usageData);
-  }
-
-  @override
-  String? get thinking => _thinkingContent;
-
-  /// Get the response ID for chaining responses
-  String? get responseId => _rawResponse['id'] as String?;
-
-  @override
-  String toString() {
-    final textContent = text;
-    final calls = toolCalls;
-
-    if (textContent != null && calls != null) {
-      return '${calls.map((c) => c.toString()).join('\n')}\n$textContent';
-    } else if (textContent != null) {
-      return textContent;
-    } else if (calls != null) {
-      return calls.map((c) => c.toString()).join('\n');
-    } else {
-      return '';
-    }
+    return OpenAIResponsesResponse.fromResponseData(responseData);
   }
 }

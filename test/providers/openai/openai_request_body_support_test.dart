@@ -164,6 +164,45 @@ void main() {
         isFalse,
       );
     });
+
+    test('OpenAIResponsesResponse remains available on the legacy export path',
+        () {
+      final response = openai_responses.OpenAIResponsesResponse(
+        {
+          'id': 'resp_legacy_1',
+          'output': [
+            {
+              'type': 'message',
+              'content': [
+                {
+                  'type': 'output_text',
+                  'text': 'Done.',
+                },
+              ],
+            },
+            {
+              'type': 'function_call',
+              'call_id': 'call_1',
+              'name': 'weather',
+              'arguments': '{"city":"Hong Kong"}',
+            },
+          ],
+          'usage': {
+            'prompt_tokens': 1,
+            'completion_tokens': 2,
+            'total_tokens': 3,
+          },
+        },
+        'Need search',
+      );
+
+      expect(response.responseId, equals('resp_legacy_1'));
+      expect(response.text, equals('Done.'));
+      expect(response.thinking, equals('Need search'));
+      expect(response.toolCalls, hasLength(1));
+      expect(response.toolCalls!.single.id, equals('call_1'));
+      expect(response.usage?.totalTokens, equals(3));
+    });
   });
 }
 
