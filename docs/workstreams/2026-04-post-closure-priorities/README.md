@@ -189,6 +189,10 @@ This phase should explicitly avoid:
   - Closeout review that classifies the remaining large compatibility files
     and recommends switching from size-driven slicing to feature-driven
     refactors.
+- [25-openai-compat-stream-facade-alignment.md](25-openai-compat-stream-facade-alignment.md)
+  - OpenAI compatibility stream-facade alignment that extracts duplicated
+    stream orchestration out of `chat.dart` and `responses.dart` while keeping
+    request builders and parsers separate.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)

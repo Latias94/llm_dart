@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import '../../../../core/capability.dart';
 import '../../../../core/llm_error.dart';
 import '../../../../models/chat_models.dart';
@@ -10,6 +8,7 @@ import 'chat_request_builder.dart';
 import 'chat_stream_parser.dart';
 import 'openai_chat_response.dart';
 import '../../../../providers/openai/config.dart';
+import 'stream_facade_support.dart';
 
 export 'openai_chat_response.dart' show OpenAIChatResponse;
 
@@ -66,36 +65,14 @@ class OpenAIChat implements ChatCapability {
       stream: true,
     );
 
-    _streamParser.reset();
-
-    try {
-      final stream = client.postStreamRaw(
-        _requestBuilder.chatEndpoint,
-        requestBody,
-        cancelToken: cancelToken,
-      );
-
-      await for (final chunk in stream) {
-        try {
-          final events = _streamParser.parseChunk(chunk);
-          for (final event in events) {
-            yield event;
-          }
-        } catch (e) {
-          // Log parsing errors but continue processing
-          client.logger.warning('Failed to parse stream chunk: $e');
-          // Optionally yield an error event instead of throwing
-          // yield ErrorEvent(GenericError('Stream parsing error: $e'));
-        }
-      }
-    } catch (e) {
-      // Handle stream creation or connection errors
-      if (e is LLMError) {
-        rethrow;
-      } else {
-        throw GenericError('Stream error: $e');
-      }
-    }
+    yield* runOpenAICompatibilityStream(
+      client: client,
+      endpoint: _requestBuilder.chatEndpoint,
+      requestBody: requestBody,
+      resetParser: _streamParser.reset,
+      parseChunk: _streamParser.parseChunk,
+      cancelToken: cancelToken,
+    );
   }
 
   @override

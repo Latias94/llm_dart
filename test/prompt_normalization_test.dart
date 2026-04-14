@@ -252,7 +252,7 @@ void main() {
     });
 
     test(
-        'multimodal user prompts stay provider-owned instead of universally normalized',
+        'multimodal user prompts are normalized according to each provider codec',
         () {
       const anthropic = AnthropicMessagesCodec();
       const google = GoogleGenerateContentCodec();
@@ -352,23 +352,37 @@ void main() {
         ],
       );
 
+      final openaiResponsesRequest = openaiResponses.encodeRequest(
+        modelId: 'gpt-4.1-mini',
+        prompt: prompt,
+        tools: const [],
+        toolChoice: null,
+        options: const GenerateTextOptions(),
+        providerOptions: const OpenAIGenerateTextOptions(),
+        stream: false,
+      );
+
       expect(
-        () => openaiResponses.encodeRequest(
-          modelId: 'gpt-4.1-mini',
-          prompt: prompt,
-          tools: const [],
-          toolChoice: null,
-          options: const GenerateTextOptions(),
-          providerOptions: const OpenAIGenerateTextOptions(),
-          stream: false,
-        ),
-        throwsA(
-          isA<UnsupportedError>().having(
-            (error) => error.toString(),
-            'message',
-            contains('User prompt part ImagePromptPart'),
-          ),
-        ),
+        openaiResponsesRequest.body['input'],
+        [
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'input_text',
+                'text': 'Inspect the attachment.',
+              },
+              {
+                'type': 'input_image',
+                'image_url': 'data:image/png;base64,AQID',
+              },
+              {
+                'type': 'input_file',
+                'file_url': 'https://example.com/spec.pdf',
+              },
+            ],
+          },
+        ],
       );
 
       expect(
@@ -385,14 +399,14 @@ void main() {
           isA<UnsupportedError>().having(
             (error) => error.toString(),
             'message',
-            contains('generic file prompt parts'),
+            contains('PDF file prompt parts do not support URIs'),
           ),
         ),
       );
     });
 
     test(
-        'provider-executed and approval flows stay outside the common replay subset',
+        'provider replay keeps provider-executed calls filtered and approval items provider-specific',
         () {
       const anthropic = AnthropicMessagesCodec();
       const google = GoogleGenerateContentCodec();
@@ -570,6 +584,10 @@ void main() {
             ],
           },
           {
+            'type': 'item_reference',
+            'id': 'approval_1',
+          },
+          {
             'type': 'mcp_approval_response',
             'approval_request_id': 'approval_1',
             'approve': true,
@@ -715,7 +733,10 @@ void main() {
         stream: false,
       );
 
-      expect(openaiResponsesRequest.warnings, isEmpty);
+      expect(
+        openaiResponsesRequest.warnings.map((warning) => warning.field),
+        ['prompt.assistant.reasoning'],
+      );
       expect(
         openaiResponsesRequest.body['input'],
         [

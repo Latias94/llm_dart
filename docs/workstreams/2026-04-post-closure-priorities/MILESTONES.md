@@ -148,6 +148,9 @@ Current status:
   closeout review as intentionally frozen, cohesive state machines, or low-value
   future candidates; this workstream should now switch from size-driven slicing
   to feature-driven refactors
+- the root OpenAI compatibility stream facades can now also share one narrow
+  streaming-orchestration helper, keeping request builders, parsers, and
+  public facades separated without reopening the event-model boundary
 
 ## M4 - Selective Provider Expansion
 

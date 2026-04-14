@@ -57,6 +57,9 @@
   module while preserving the legacy files export path
 - [x] Close out the architecture-foundation pass and classify remaining large
   compatibility files as frozen, cohesive, or low-value future candidates
+- [x] Extract duplicated OpenAI compatibility stream orchestration out of
+  `chat.dart` and `responses.dart` without widening the event model or
+  splitting parser-local state for symmetry alone
 
 ## Selective Provider Expansion
 
