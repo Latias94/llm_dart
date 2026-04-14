@@ -70,7 +70,7 @@ class AnthropicRequestBuilder {
 
     if (processedTools.tools.isNotEmpty) {
       body['tools'] =
-          processedTools.tools.map((tool) => convertTool(tool)).toList();
+          processedTools.tools.map((tool) => _convertTool(tool)).toList();
     }
 
     if (config.reasoning) {
@@ -91,14 +91,11 @@ class AnthropicRequestBuilder {
     final anthropicMessages = <Map<String, dynamic>>[];
     final systemContentBlocks = <Map<String, dynamic>>[];
     final systemMessages = <String>[];
-    Map<String, dynamic>? systemCacheControl;
-
     for (final message in messages) {
       if (message.role == ChatRole.system) {
         final result = _processSystemMessage(message);
         systemContentBlocks.addAll(result.contentBlocks);
         systemMessages.addAll(result.plainMessages);
-        systemCacheControl ??= result.cacheControl;
       } else {
         anthropicMessages.add(_convertMessage(message));
       }
@@ -108,7 +105,6 @@ class AnthropicRequestBuilder {
       anthropicMessages: anthropicMessages,
       systemContentBlocks: systemContentBlocks,
       systemMessages: systemMessages,
-      systemCacheControl: systemCacheControl,
     );
   }
 
@@ -282,7 +278,7 @@ class AnthropicRequestBuilder {
   void _addTools(Map<String, dynamic> body, ProcessedTools processedTools) {
     if (processedTools.tools.isNotEmpty) {
       final convertedTools =
-          processedTools.tools.map((t) => convertTool(t)).toList();
+          processedTools.tools.map((t) => _convertTool(t)).toList();
 
       // Apply cache control to last tool
       if (processedTools.cacheControl != null && convertedTools.isNotEmpty) {
@@ -501,7 +497,7 @@ class AnthropicRequestBuilder {
   }
 
   /// Convert a Tool to Anthropic API format
-  Map<String, dynamic> convertTool(Tool tool) {
+  Map<String, dynamic> _convertTool(Tool tool) {
     try {
       // Special handling for web_search tool
       // According to https://docs.claude.com/en/docs/agents-and-tools/tool-use/web-search-tool
@@ -641,13 +637,11 @@ class ProcessedMessages {
   final List<Map<String, dynamic>> anthropicMessages;
   final List<Map<String, dynamic>> systemContentBlocks;
   final List<String> systemMessages;
-  final Map<String, dynamic>? systemCacheControl;
 
   ProcessedMessages({
     required this.anthropicMessages,
     required this.systemContentBlocks,
     required this.systemMessages,
-    this.systemCacheControl,
   });
 }
 

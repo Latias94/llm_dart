@@ -133,6 +133,9 @@ This phase should explicitly avoid:
 - [07-event-surface-revalidation.md](07-event-surface-revalidation.md)
   - Why the current `repo-ref/ai` event/UI stream split still does not justify
     widening the shared `TextStreamEvent` model.
+- [08-anthropic-request-builder-boundary-audit.md](08-anthropic-request-builder-boundary-audit.md)
+  - Why the remaining Anthropic compatibility request builder stays one
+    provider-local codec for now instead of being split again for symmetry.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)

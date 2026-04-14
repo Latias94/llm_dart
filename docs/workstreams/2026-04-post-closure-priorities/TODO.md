@@ -22,6 +22,8 @@
 - [x] Freeze package-level dependency rules for new code
 - [x] Define which remaining root helpers are compatibility-only and should not receive new modern implementation weight
 - [x] Consider a CI or lint guard that prevents package implementation files from importing `package:llm_dart/...`
+- [x] Re-audit the remaining Anthropic compatibility request builder before
+  opening another symmetry-driven helper split
 
 ## Selective Provider Expansion
 

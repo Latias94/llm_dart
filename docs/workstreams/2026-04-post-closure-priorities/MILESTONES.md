@@ -79,6 +79,9 @@ Current status:
   `tool/check_workspace_dependency_guards.dart`, CI, and `melos analyze`
 - root-package containment is now also enforced through
   `tool/check_root_package_boundary_guards.dart`, CI, and `melos analyze`
+- the remaining Anthropic compatibility `request_builder.dart` has now also
+  been re-audited and intentionally kept as one provider-local request codec,
+  with no symmetry-only helper split kept as active debt
 
 ## M4 - Selective Provider Expansion
 
