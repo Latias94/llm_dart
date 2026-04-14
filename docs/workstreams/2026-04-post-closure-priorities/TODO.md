@@ -32,6 +32,9 @@
   shaping, streamed parsing, and response wrapping
 - [x] Extract OpenAI image compatibility request and response shaping out of
   the root image capability shell without changing public behavior
+- [x] Thin the ElevenLabs compatibility shell by separating bridge
+  eligibility, bridge codec translation, and bridge response normalization
+  from fallback orchestration
 
 ## Selective Provider Expansion
 

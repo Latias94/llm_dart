@@ -148,6 +148,9 @@ This phase should explicitly avoid:
 - [12-openai-image-compat-support-extraction.md](12-openai-image-compat-support-extraction.md)
   - OpenAI image compatibility support extraction that localizes generation,
     edit, variation, and response parsing logic.
+- [13-elevenlabs-shell-bridge-thinning.md](13-elevenlabs-shell-bridge-thinning.md)
+  - ElevenLabs shell bridge thinning that separates bridge eligibility, codec
+    translation, and response normalization from fallback orchestration.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)
