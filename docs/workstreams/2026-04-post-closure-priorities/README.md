@@ -163,6 +163,10 @@ This phase should explicitly avoid:
 - [17-openai-provider-shell-support-thinning.md](17-openai-provider-shell-support-thinning.md)
   - OpenAI provider shell support thinning that moves capability policy and
     audio convenience helpers out of the root compatibility shell.
+- [18-openai-completion-support-extraction.md](18-openai-completion-support-extraction.md)
+  - OpenAI completion support extraction that separates completion endpoint
+    orchestration from request parsing, presets, retry, batch, and token
+    helpers.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)

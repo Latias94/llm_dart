@@ -43,6 +43,8 @@
   helpers out of the compatibility capability shell
 - [x] Thin the OpenAI compatibility root provider shell by moving capability
   policy and audio convenience helpers into provider-local support
+- [x] Extract OpenAI completion request shaping, parsing, presets, retry,
+  batch, and token helpers out of the compatibility capability shell
 
 ## Selective Provider Expansion
 

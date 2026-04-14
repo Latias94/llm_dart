@@ -118,6 +118,10 @@ Current status:
   policy and audio convenience helpers in `openai_provider_support.dart`,
   leaving `provider_compat.dart` more focused on capability wiring and
   delegation
+- the root OpenAI completion compatibility module now also keeps request
+  shaping, response parsing, stream delta extraction, presets, retry helpers,
+  batch helpers, and token heuristics in `openai_completion_support.dart`,
+  leaving `completion.dart` focused on endpoint orchestration
 
 ## M4 - Selective Provider Expansion
 
