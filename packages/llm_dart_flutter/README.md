@@ -147,6 +147,12 @@ The transport currently serializes `GenerateTextOptions`, but does not serialize
 Backend-specific transport behavior should be configured on the transport or on
 the backend itself.
 
+Use `metadata` plus `prepareSendMessagesRequest` /
+`prepareReconnectRequest` when the client needs to send app-owned JSON hints to
+the backend. If the caller must own typed provider invocation options directly,
+prefer `DirectChatTransport` instead of widening the generic HTTP transport
+envelope.
+
 If your backend is also Dart, prefer building the SSE response in
 `package:llm_dart_transport` rather than `llm_dart_flutter`:
 

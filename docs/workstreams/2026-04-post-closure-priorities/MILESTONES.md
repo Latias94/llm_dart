@@ -28,6 +28,10 @@ Current status:
   `ChatMessageMapper` belongs to the shared core layer, while richer
   provider-aware UI mapping stays provider-owned through `mapComposed(...)`
   helpers
+- the backend transport story is now also revalidated more explicitly:
+  `HttpChatTransport` stays generic and app-owned, while typed provider
+  invocation options remain direct-transport or backend-owned concerns
+
 
 ## M2 - Provider UI Extension Contract
 

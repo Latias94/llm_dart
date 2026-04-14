@@ -204,6 +204,10 @@ This phase should explicitly avoid:
   - Residual `example/` README audit that keeps mapper ownership, Flutter
     runtime guidance, and intentional compatibility directories aligned with
     the post-closure boundary story.
+- [29-http-chat-transport-provider-options-boundary.md](29-http-chat-transport-provider-options-boundary.md)
+  - Revalidation of the generic HTTP chat transport boundary against
+    `repo-ref/ai`, keeping provider-specific invocation settings backend-owned
+    instead of serializing raw provider options through the transport envelope.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)

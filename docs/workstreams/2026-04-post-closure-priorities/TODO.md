@@ -69,6 +69,9 @@
 - [x] Re-audit residual `example/` README guidance so mapper ownership,
   Flutter chat runtime guidance, and intentional compatibility directories
   remain aligned
+- [x] Re-validate the `HttpChatTransport` request boundary so backend chat
+  flows keep provider-specific invocation settings backend-owned instead of
+  serializing raw `ProviderInvocationOptions`
 
 ## Selective Provider Expansion
 
