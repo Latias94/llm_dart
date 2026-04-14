@@ -185,6 +185,10 @@ This phase should explicitly avoid:
 - [23-anthropic-file-models-extraction.md](23-anthropic-file-models-extraction.md)
   - Anthropic file models extraction that separates Files API data models from
     the capability module while preserving the legacy files export path.
+- [24-architecture-foundation-closeout-review.md](24-architecture-foundation-closeout-review.md)
+  - Closeout review that classifies the remaining large compatibility files
+    and recommends switching from size-driven slicing to feature-driven
+    refactors.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)

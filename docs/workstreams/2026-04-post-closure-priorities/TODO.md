@@ -55,6 +55,8 @@
   capability module while preserving the legacy models export path
 - [x] Extract Anthropic Files API data models out of the Files capability
   module while preserving the legacy files export path
+- [x] Close out the architecture-foundation pass and classify remaining large
+  compatibility files as frozen, cohesive, or low-value future candidates
 
 ## Selective Provider Expansion
 

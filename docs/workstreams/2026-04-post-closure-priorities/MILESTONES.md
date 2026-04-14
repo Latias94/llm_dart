@@ -144,6 +144,10 @@ Current status:
   file data models in `anthropic_file_models.dart`, leaving `files.dart`
   focused on endpoint orchestration and local file convenience helpers while
   preserving the legacy files export path
+- the remaining large compatibility files have now been reclassified in the
+  closeout review as intentionally frozen, cohesive state machines, or low-value
+  future candidates; this workstream should now switch from size-driven slicing
+  to feature-driven refactors
 
 ## M4 - Selective Provider Expansion
 
