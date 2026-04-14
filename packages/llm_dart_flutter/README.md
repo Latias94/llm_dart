@@ -30,8 +30,10 @@ The reusable runtime itself lives in `llm_dart_chat` and owns:
 - `HttpChatTransport`
 - `ChatSession`
 - `DefaultChatSession`
-- `ChatMessageMapper`
 - snapshot and session persistence codecs
+
+The shared `ChatMessageMapper` now lives in `llm_dart_core` and is re-exported
+through both `llm_dart_chat` and `llm_dart_flutter`.
 
 What stays outside both packages:
 
@@ -45,9 +47,10 @@ What stays outside both packages:
 The recommended architecture is:
 
 1. `llm_dart` selects and configures a provider model.
-2. `llm_dart_core` defines prompt, stream, result, and UI message semantics.
+2. `llm_dart_core` defines prompt, stream, result, UI message semantics, and
+   the shared `ChatMessageMapper`.
 3. `llm_dart_chat` owns provider-agnostic session state, transport adaptation,
-   persistence boundaries, and message-mapping helpers.
+   persistence boundaries, and chat runtime orchestration.
 4. `llm_dart_flutter` adds widget-friendly control surfaces such as
    `ChatController`.
 
@@ -85,10 +88,10 @@ Future<void> main() async {
       return;
     }
 
-    final shared = const ChatMessageMapper().map(state.messages.last);
-    final provider = const openai.OpenAIMessageMapper().map(
-      state.messages.last,
-    );
+    final mapped =
+        const openai.OpenAIMessageMapper().mapComposed(state.messages.last);
+    final shared = mapped.shared;
+    final provider = mapped.provider;
     print('status=${state.status}');
     print('assistantText=${shared.text}');
     print('openaiMetadata=${provider.hasOpenAIMetadata}');
@@ -269,15 +272,16 @@ void renderGoogleCustomParts(ChatUiMessage message) {
 
 If the UI also needs OpenAI-specific metadata from common parts such as
 response/item IDs, tool/source details, or logprobs, use the provider-owned
-message mapper beside the shared one:
+composed mapper helper:
 
 ```dart
 import 'package:llm_dart/openai.dart' as openai;
 import 'package:llm_dart_flutter/llm_dart_flutter.dart';
 
 void renderOpenAIMessage(ChatUiMessage message) {
-  final shared = const ChatMessageMapper().map(message);
-  final provider = const openai.OpenAIMessageMapper().map(message);
+  final mapped = const openai.OpenAIMessageMapper().mapComposed(message);
+  final shared = mapped.shared;
+  final provider = mapped.provider;
 
   print(shared.text);
   print(provider.hasOpenAIMetadata);
@@ -301,8 +305,9 @@ import 'package:llm_dart/google.dart' as google;
 import 'package:llm_dart_flutter/llm_dart_flutter.dart';
 
 void renderGoogleMessage(ChatUiMessage message) {
-  final shared = const ChatMessageMapper().map(message);
-  final provider = const google.GoogleMessageMapper().map(message);
+  final mapped = const google.GoogleMessageMapper().mapComposed(message);
+  final shared = mapped.shared;
+  final provider = mapped.provider;
 
   print(shared.text);
   print(provider.hasGoogleMetadata);
@@ -322,6 +327,7 @@ This layered composition is the intended extension model:
 
 - shared mapper for stable cross-provider rendering
 - provider mapper for provider-owned metadata inspection
+- composed provider helper when the UI needs both layers together
 - provider custom-part helpers for provider-owned replay payload rendering
 
 ## Tool and Approval Flows

@@ -45,11 +45,11 @@ shared-capability entrypoint.
 - `llm_dart`
   - modern default root facade over the stable migrated model API
 - `llm_dart_core`
-  - prompt, result, stream, and UI message models
+  - prompt, result, stream, UI message models, and the shared `ChatMessageMapper`
 - `llm_dart_transport`
   - HTTP, SSE, and shared logging primitives
 - `llm_dart_chat`
-  - pure Dart chat session, transport, snapshot, and message-mapping runtime
+  - pure Dart chat session, transport, snapshot, and compatibility re-exports over the chat runtime layer
 - `llm_dart_openai`
   - OpenAI-family providers
 - `llm_dart_anthropic`
@@ -362,6 +362,10 @@ This entrypoint re-exports `DefaultChatSession`, `DirectChatTransport`,
 `HttpChatTransport`, `ChatRequestOptions`, `ChatMessageMapper`, and the stable
 `AI` facade without pulling Flutter adapters into the root package surface.
 
+`ChatMessageMapper` now lives in `package:llm_dart/core.dart` as part of the
+shared UI model layer, and remains available from `package:llm_dart/chat.dart`
+for chat-runtime-oriented imports.
+
 Runnable pure Dart runtime example:
 [chat_runtime.dart](E:/codes/flutter/llm_dart/packages/llm_dart_chat/example/chat_runtime.dart)
 
@@ -435,7 +439,17 @@ without inventing another transport or provider layer.
 
 Use `ChatMessageMapper` as the stable rendering baseline. When the UI also
 needs provider-owned inspection, compose it with the focused provider
-entrypoints instead of widening the shared chat layer:
+entrypoints instead of widening the shared chat layer.
+
+The default recommendation is now:
+
+- import `ChatMessageMapper` from `package:llm_dart/core.dart` or any package
+  that re-exports it
+- use `OpenAIMessageMapper.mapComposed(...)` or
+  `GoogleMessageMapper.mapComposed(...)` when the UI needs both the shared
+  baseline and provider-owned metadata in one call
+
+Focused provider mapper helpers:
 
 - `package:llm_dart/openai.dart`
   - `OpenAIMessageMapper` for response/item/source/tool metadata, custom parts,
@@ -450,8 +464,9 @@ import 'package:llm_dart/google.dart' as google;
 import 'package:llm_dart/openai.dart' as openai;
 
 void renderOpenAI(ChatUiMessage message) {
-  final shared = const ChatMessageMapper().map(message);
-  final provider = const openai.OpenAIMessageMapper().map(message);
+  final mapped = const openai.OpenAIMessageMapper().mapComposed(message);
+  final shared = mapped.shared;
+  final provider = mapped.provider;
 
   print(shared.text);
   print(provider.hasOpenAIMetadata);
@@ -463,8 +478,9 @@ void renderOpenAI(ChatUiMessage message) {
 }
 
 void renderGoogle(ChatUiMessage message) {
-  final shared = const ChatMessageMapper().map(message);
-  final provider = const google.GoogleMessageMapper().map(message);
+  final mapped = const google.GoogleMessageMapper().mapComposed(message);
+  final shared = mapped.shared;
+  final provider = mapped.provider;
 
   print(shared.text);
   print(provider.hasGoogleMetadata);

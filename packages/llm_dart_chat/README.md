@@ -10,7 +10,7 @@ This package owns the reusable chat runtime:
 - `DirectChatTransport`
 - `HttpChatTransport`
 - snapshot and persistence codecs
-- common chat message mapping helpers
+- compatibility re-exports for chat-runtime-oriented imports
 
 The persistence helper in this package is intentionally session-oriented:
 
@@ -64,16 +64,20 @@ adapter wants stable cross-provider summaries such as:
 - `warnings`
 - `errors`
 
+`ChatMessageMapper` now lives in `llm_dart_core` as part of the shared UI
+model layer and is re-exported here for chat-runtime users that prefer to stay
+on a single package import path.
+
 If a pure Dart application also needs provider-owned inspection, compose the
 shared mapper with a provider package instead of widening `llm_dart_chat`
 itself:
 
 - `package:llm_dart_openai/llm_dart_openai.dart`
   - `OpenAIMessageMapper` for response/item/source/tool metadata, custom parts,
-    and logprobs-aware part inspection
+    logprobs-aware part inspection, and `mapComposed(...)`
 - `package:llm_dart_google/llm_dart_google.dart`
   - `GoogleMessageMapper` for thought signatures, response-part metadata,
-    source metadata, and Google custom-part inspection
+    source metadata, Google custom-part inspection, and `mapComposed(...)`
 
 That keeps the runtime/session layer provider-neutral while still allowing rich
 provider-specific rendering where applications need it.
