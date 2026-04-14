@@ -10,6 +10,10 @@ For new code, prefer:
 - `AI.openai(...).speechModel(...)`
 - `AI.openai(...).transcriptionModel(...)`
 - shared helpers from `package:llm_dart/core.dart`
+- `ChatMessageMapper` from `package:llm_dart/core.dart` for stable shared chat
+  summaries
+- `OpenAIMessageMapper().mapComposed(...)` when chat UIs also need OpenAI
+  metadata or custom-part inspection
 - typed OpenAI-owned options from `package:llm_dart/openai.dart`
 
 ## Example Status
@@ -187,6 +191,22 @@ final result = await core.generateTextCall(
 );
 
 print(result.text);
+```
+
+### Provider-Aware UI Mapping
+
+```dart
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/openai.dart' as openai;
+
+void inspectOpenAIMessage(core.ChatUiMessage message) {
+  final mapped = const openai.OpenAIMessageMapper().mapComposed(message);
+
+  print(mapped.shared.text);
+  print(mapped.provider.hasOpenAIMetadata);
+  print(mapped.provider.hasLogprobs);
+  print(mapped.provider.partDetails.length);
+}
 ```
 
 ## Capability Notes

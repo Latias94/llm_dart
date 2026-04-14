@@ -8,6 +8,10 @@ For new code, prefer:
 - the default modern root import `package:llm_dart/llm_dart.dart`
 - the stable `AI.*(...)` facade to create provider-owned models
 - shared app-facing helpers from `package:llm_dart/core.dart`
+- the shared `ChatMessageMapper` from `package:llm_dart/core.dart` for stable
+  UI summaries
+- provider-owned `mapComposed(...)` helpers when the UI needs both shared and
+  provider-specific projections in one pass
 - provider-owned typed settings and options from provider packages
 
 Current boundary:
@@ -207,6 +211,10 @@ print(result.text);
 - Provider-specific features should remain provider owned. Do not move
   live-search, built-in tools, or extended-thinking controls into shared
   `GenerateTextOptions`.
+- Provider-aware chat UI mapping should also remain layered: shared summaries
+  stay on `ChatMessageMapper`, while provider metadata and custom-part
+  inspection stay in provider packages through `mapComposed(...)` or provider
+  custom-part helpers.
 - If a provider README still shows `ai().*.build()` or `buildAudio()`, treat it
   as a compatibility example unless the README explicitly marks it as stable.
 - Flutter apps should prefer stable `LanguageModel`, `ImageModel`,

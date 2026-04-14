@@ -9,6 +9,13 @@ When an example still relies on the older builder or broad provider shell, it
 should import `package:llm_dart/legacy.dart` explicitly and be read as
 compatibility-oriented material.
 
+For shared chat UI projection, keep `ChatMessageMapper` on
+`package:llm_dart/core.dart`. When the UI also needs provider-owned metadata or
+custom-part inspection, prefer provider-owned composed helpers such as
+`OpenAIMessageMapper().mapComposed(...)` and
+`GoogleMessageMapper().mapComposed(...)` instead of stitching two mapper passes
+manually.
+
 ## Quick Start
 
 | I need to... | Go to |

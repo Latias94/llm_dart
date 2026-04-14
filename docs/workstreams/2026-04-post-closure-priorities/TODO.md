@@ -66,6 +66,9 @@
 - [x] Align root and package README guidance with the new `llm_dart_core`
   ownership of `ChatMessageMapper` and the provider-owned `mapComposed(...)`
   helpers
+- [x] Re-audit residual `example/` README guidance so mapper ownership,
+  Flutter chat runtime guidance, and intentional compatibility directories
+  remain aligned
 
 ## Selective Provider Expansion
 

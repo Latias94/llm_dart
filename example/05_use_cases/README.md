@@ -9,6 +9,11 @@ through `AI.*(...).chatModel(...)`, or `ChatSession` abstractions from
 `llm_dart_chat`, adding `llm_dart_flutter` only when you need a widget-facing
 `ChatController`, instead of centering new code on the legacy root builder.
 
+Keep shared chat UI projection in `package:llm_dart/core.dart`. When a Flutter
+screen also needs provider-specific metadata, keep that extra inspection in the
+provider package through `mapComposed(...)` rather than widening the shared UI
+layer.
+
 ## Examples
 
 ### [chatbot.dart](chatbot.dart)
@@ -131,22 +136,31 @@ Future<Map<String, Object?>> handleChat(String message) async {
 
 ### Flutter Integration
 ```dart
-class ChatScreen extends StatefulWidget {
-  @override
-  _ChatScreenState createState() => _ChatScreenState();
-}
+import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/openai.dart' as openai;
+import 'package:llm_dart_flutter/llm_dart_flutter.dart';
 
-class _ChatScreenState extends State<ChatScreen> {
-  late final ChatProvider _chatProvider;
+final controller = ChatController(
+  session: DefaultChatSession(
+    transport: DirectChatTransport(
+      model: llm.AI.openai(
+        apiKey: 'your-key',
+      ).chatModel('gpt-4.1-mini'),
+    ),
+  ),
+);
 
-  @override
-  void initState() {
-    super.initState();
-    _chatProvider = ChatProvider();
+controller.addListener(() {
+  final state = controller.state;
+  if (state.messages.isEmpty) {
+    return;
   }
 
-  // Flutter UI with state management
-}
+  final mapped =
+      const openai.OpenAIMessageMapper().mapComposed(state.messages.last);
+  print(mapped.shared.text);
+  print(mapped.provider.hasOpenAIMetadata);
+});
 ```
 
 ### Batch Processing

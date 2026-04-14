@@ -200,6 +200,10 @@ This phase should explicitly avoid:
   - Public entrypoint and package-guide alignment that updates mapper
     ownership and recommends provider-owned `mapComposed(...)` helpers in
     user-facing examples.
+- [28-example-entrypoint-residual-drift-audit.md](28-example-entrypoint-residual-drift-audit.md)
+  - Residual `example/` README audit that keeps mapper ownership, Flutter
+    runtime guidance, and intentional compatibility directories aligned with
+    the post-closure boundary story.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)

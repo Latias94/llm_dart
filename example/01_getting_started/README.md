@@ -14,6 +14,10 @@ Some examples in this directory still use `package:llm_dart/legacy.dart` for
 compatibility-oriented error types while the migration is in progress. Prefer
 `quick_start.dart` when you want the current recommended shape.
 
+When you later add chat UI rendering, keep the shared message projection in
+`package:llm_dart/core.dart`; the chat runtime packages own session/controller
+abstractions, not the conceptual ownership of `ChatMessageMapper`.
+
 ## Examples
 
 ### [quick_start.dart](quick_start.dart)

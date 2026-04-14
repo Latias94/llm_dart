@@ -24,6 +24,10 @@ Current status:
 - the root README now points at the post-closure roadmap
 - the highest-visibility package and example guides now consistently distinguish
   `llm_dart.dart`, `legacy.dart`, and compatibility-oriented builder material
+- the layered `example/` README hierarchy now also repeats that
+  `ChatMessageMapper` belongs to the shared core layer, while richer
+  provider-aware UI mapping stays provider-owned through `mapComposed(...)`
+  helpers
 
 ## M2 - Provider UI Extension Contract
 

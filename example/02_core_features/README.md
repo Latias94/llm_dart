@@ -104,6 +104,28 @@ helpers:
 - `generateSpeech(...)`
 - `transcribe(...)`
 
+### UI Projection Boundary
+
+- Keep `ChatMessageMapper` in the shared `package:llm_dart/core.dart` layer for
+  stable cross-provider summaries.
+- Keep provider-owned metadata inspection in provider packages.
+- When the UI needs both layers together, prefer provider-owned composed
+  helpers such as `OpenAIMessageMapper().mapComposed(...)` and
+  `GoogleMessageMapper().mapComposed(...)`.
+
+```dart
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/openai.dart' as openai;
+
+void inspectMessage(core.ChatUiMessage message) {
+  final mapped = const openai.OpenAIMessageMapper().mapComposed(message);
+
+  print(mapped.shared.text);
+  print(mapped.provider.partDetails.length);
+  print(mapped.provider.hasOpenAIMetadata);
+}
+```
+
 ### Capability Metadata vs Stable App Code
 
 - **Stable app path**: Create models through `AI.*(...)` and keep application
