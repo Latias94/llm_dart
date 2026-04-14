@@ -646,6 +646,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Status note for splitting the OpenAI Responses compatibility host into a
     thin facade plus request-builder, stream-parser, and response-wrapper
     helpers while keeping the stable public import path unchanged.
+- [205-openai-chat-facade-thinning.md](205-openai-chat-facade-thinning.md)
+  - Status note for splitting the OpenAI chat-completions compatibility host
+    into a thin facade plus request-builder, stream-parser, and response-wrapper
+    helpers while keeping the stable public import path unchanged.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)

@@ -442,6 +442,12 @@ Current status:
   reconstruction now live in `responses_stream_parser.dart`, and the legacy
   response wrapper now lives in `openai_responses_response.dart` while the
   public `responses.dart` path still exposes `OpenAIResponsesResponse`
+- the root OpenAI chat-completions compatibility host is now also thinner in
+  ownership terms: chat-specific request shaping now lives in
+  `chat_request_builder.dart`, streamed delta parsing and completion
+  reconstruction now live in `chat_stream_parser.dart`, and the legacy
+  response wrapper now lives in `openai_chat_response.dart` while the public
+  `chat.dart` path still exposes `OpenAIChatResponse`
 - the flat compatibility `LLMConfig.extensions` path now also has a centralized internal key/accessor layer so builder, factory, transport, and compatibility code stop drifting through repeated raw string literals
 - the OpenAI family now also has a first transitional namespaced `providerOptions` layer inside the legacy root config map, with namespaced writes for OpenAI / OpenRouter-specific builder helpers plus the legacy `ProviderConfig` helper, and namespaced-first, flat-fallback reads across factories, request shaping, and compatibility routing
 - the root shared web-search builder helpers and `createProvider(..., extensions: ...)` are now also explicitly deprecated as compatibility-only migration surfaces, so provider-owned search APIs remain the only stable long-term direction

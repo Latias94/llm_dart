@@ -203,6 +203,100 @@ void main() {
       expect(response.toolCalls!.single.id, equals('call_1'));
       expect(response.usage?.totalTokens, equals(3));
     });
+
+    test('OpenAIChatResponse remains available on the legacy export path', () {
+      final response = openai_chat.OpenAIChatResponse(
+        {
+          'choices': [
+            {
+              'message': {
+                'content': 'Done.',
+                'tool_calls': [
+                  {
+                    'id': 'call_chat_1',
+                    'type': 'function',
+                    'function': {
+                      'name': 'weather',
+                      'arguments': '{"city":"Hong Kong"}',
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+          'usage': {
+            'prompt_tokens': 1,
+            'completion_tokens': 2,
+            'total_tokens': 3,
+          },
+        },
+        'Need plan',
+      );
+
+      expect(response.text, equals('Done.'));
+      expect(response.thinking, equals('Need plan'));
+      expect(response.toolCalls, hasLength(1));
+      expect(response.toolCalls!.single.id, equals('call_chat_1'));
+      expect(response.usage?.totalTokens, equals(3));
+    });
+
+    test(
+        'OpenAIChat preserves OpenRouter deepseek include_reasoning after helper extraction',
+        () async {
+      Map<String, dynamic>? capturedBody;
+      final dio = Dio();
+      dio.options.baseUrl = 'https://openrouter.ai/api/v1/';
+      dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) {
+            capturedBody = Map<String, dynamic>.from(
+              options.data as Map<String, dynamic>,
+            );
+            handler.resolve(
+              Response(
+                requestOptions: options,
+                statusCode: 200,
+                data: {
+                  'id': 'chatcmpl_openrouter_1',
+                  'choices': [
+                    {
+                      'index': 0,
+                      'finish_reason': 'stop',
+                      'message': {
+                        'role': 'assistant',
+                        'content': 'Done.',
+                      },
+                    },
+                  ],
+                },
+              ),
+            );
+          },
+        ),
+      );
+
+      final originalConfig = LLMConfig(
+        apiKey: 'test-key',
+        baseUrl: 'https://openrouter.ai/api/v1/',
+        model: 'deepseek-r1',
+      ).withExtensions({
+        LegacyExtensionKeys.customDio: dio,
+      });
+
+      final config = openai_config.OpenAIConfig(
+        apiKey: 'test-key',
+        baseUrl: 'https://openrouter.ai/api/v1/',
+        model: 'deepseek-r1',
+        originalConfig: originalConfig,
+      );
+      final client = openai_client.OpenAIClient(config);
+      final chat = openai_chat.OpenAIChat(client, config);
+
+      await chat.chatWithTools([ChatMessage.user('Hello')], null);
+
+      expect(capturedBody, isNotNull);
+      expect(capturedBody!['include_reasoning'], isTrue);
+    });
   });
 }
 
