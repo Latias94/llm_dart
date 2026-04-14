@@ -430,6 +430,12 @@ Current status:
   in the facade file, `AnthropicChatResponse` now lives in its own helper, and
   token-count request shaping now stays with the rest of Anthropic request
   construction inside `request_builder.dart`
+- the root OpenAI compatibility client host is now also thinner in ownership
+  terms: message encoding and tool-result replay expansion now live in
+  `client_message_support.dart`, stateful SSE boundary reconstruction now
+  lives in `client_sse_support.dart`, and provider-specific HTTP error
+  adaptation now lives in `client_error_support.dart`, while `OpenAIClient`
+  keeps the stable public helper facade for existing callers and tests
 - the flat compatibility `LLMConfig.extensions` path now also has a centralized internal key/accessor layer so builder, factory, transport, and compatibility code stop drifting through repeated raw string literals
 - the OpenAI family now also has a first transitional namespaced `providerOptions` layer inside the legacy root config map, with namespaced writes for OpenAI / OpenRouter-specific builder helpers plus the legacy `ProviderConfig` helper, and namespaced-first, flat-fallback reads across factories, request shaping, and compatibility routing
 - the root shared web-search builder helpers and `createProvider(..., extensions: ...)` are now also explicitly deprecated as compatibility-only migration surfaces, so provider-owned search APIs remain the only stable long-term direction

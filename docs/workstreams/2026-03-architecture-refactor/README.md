@@ -638,6 +638,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Status note for splitting the Anthropic compatibility chat host into a
     thin facade plus response and stream-parser helpers, while moving
     token-count request shaping fully into `request_builder.dart`.
+- [203-openai-compat-client-thinning.md](203-openai-compat-client-thinning.md)
+  - Status note for splitting the OpenAI compatibility client host into a thin
+    facade plus message, SSE, and error helpers while keeping the stable
+    `OpenAIClient` helper API unchanged.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)

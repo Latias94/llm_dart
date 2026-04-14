@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:llm_dart_transport/dio.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart'
     show
@@ -13,8 +11,11 @@ import 'package:llm_dart_transport/llm_dart_transport.dart'
 import '../../../../core/cancellation.dart' show TransportCancellation;
 import '../../../../core/llm_error.dart';
 import '../../../../models/chat_models.dart';
-import '../../../../utils/http_response_handler.dart';
 import '../../../../providers/openai/config.dart';
+import '../../../../utils/http_response_handler.dart';
+import 'client_error_support.dart';
+import 'client_message_support.dart';
+import 'client_sse_support.dart';
 import 'config_views.dart';
 import 'dio_strategy.dart';
 
@@ -31,9 +32,9 @@ class OpenAIClient {
   final OpenAIConfig config;
   final Logger logger = Logger('OpenAIClient');
   late final Dio dio;
-
-  // Buffer for incomplete SSE chunks
-  final StringBuffer _sseBuffer = StringBuffer();
+  late final OpenAISseChunkParser _sseChunkParser;
+  late final OpenAIClientMessageCodec _messageCodec;
+  late final OpenAIClientErrorAdapter _errorAdapter;
 
   OpenAIClient(this.config) {
     // Use unified Dio client factory with OpenAI-specific strategy
@@ -41,9 +42,12 @@ class OpenAIClient {
       strategy: OpenAIDioStrategy(),
       config: config,
     );
+    _sseChunkParser = OpenAISseChunkParser(logger);
+    _messageCodec = OpenAIClientMessageCodec(
+      usesResponsesApi: config.responsesCompat.enabled,
+    );
+    _errorAdapter = OpenAIClientErrorAdapter(logger);
   }
-
-  bool get _usesResponsesApi => config.responsesCompat.enabled;
 
   /// Get provider ID based on base URL for provider-specific behavior
   String get providerId {
@@ -68,250 +72,18 @@ class OpenAIClient {
     }
   }
 
-  /// Parse a Server-Sent Events (SSE) chunk from OpenAI's streaming API
-  ///
-  /// This method handles incomplete SSE chunks that can be split across network boundaries.
-  /// It maintains an internal buffer to reconstruct complete SSE events.
-  ///
-  /// Returns:
-  /// - `List<Map<String, dynamic>>` - List of parsed JSON objects from the chunk
-  /// - Empty list if no valid data found or chunk should be skipped
-  ///
-  /// Throws:
-  /// - `ResponseFormatError` - If critical parsing errors occur
   List<Map<String, dynamic>> parseSSEChunk(String chunk) {
-    final results = <Map<String, dynamic>>[];
-
-    // Add new chunk to buffer efficiently
-    _sseBuffer.write(chunk);
-
-    // Convert to string only when we need to process
-    final bufferContent = _sseBuffer.toString();
-
-    // Find complete lines (ending with \n)
-    final lastNewlineIndex = bufferContent.lastIndexOf('\n');
-
-    if (lastNewlineIndex == -1) {
-      // No complete lines yet, keep buffering
-      return results;
-    }
-
-    // Extract complete lines for processing
-    final completeContent = bufferContent.substring(0, lastNewlineIndex + 1);
-    final remainingContent = bufferContent.substring(lastNewlineIndex + 1);
-
-    // Update buffer with remaining incomplete content
-    _sseBuffer.clear();
-    if (remainingContent.isNotEmpty) {
-      _sseBuffer.write(remainingContent);
-    }
-
-    // Process complete lines
-    final lines = completeContent.split('\n');
-    for (final line in lines) {
-      final trimmedLine = line.trim();
-
-      if (trimmedLine.isEmpty) continue;
-
-      if (trimmedLine.startsWith('data: ')) {
-        final data = trimmedLine.substring(6).trim();
-
-        // Handle completion signal
-        if (data == '[DONE]') {
-          // Clear buffer and return empty list to signal completion
-          _sseBuffer.clear();
-          return [];
-        }
-
-        // Skip empty data
-        if (data.isEmpty) {
-          continue;
-        }
-
-        try {
-          final json = jsonDecode(data);
-          if (json is! Map<String, dynamic>) {
-            logger.warning('SSE chunk is not a JSON object: $data');
-            continue;
-          }
-
-          // Check for error in the SSE data
-          if (json.containsKey('error')) {
-            final error = json['error'] as Map<String, dynamic>?;
-            if (error != null) {
-              final message = error['message'] as String? ?? 'Unknown error';
-              final type = error['type'] as String?;
-              final code = error['code']?.toString();
-
-              throw ResponseFormatError(
-                'SSE stream error: $message${type != null ? ' (type: $type)' : ''}${code != null ? ' (code: $code)' : ''}',
-                data,
-              );
-            }
-          }
-
-          results.add(json);
-        } catch (e) {
-          if (e is LLMError) rethrow;
-
-          // Log and skip malformed JSON chunks, but don't fail the entire stream
-          logger.warning('Failed to parse SSE chunk JSON: $e, data: $data');
-          continue;
-        }
-      }
-    }
-
-    return results;
+    return _sseChunkParser.parse(chunk);
   }
 
   /// Reset SSE buffer (call when starting a new stream)
   void resetSSEBuffer() {
-    _sseBuffer.clear();
+    _sseChunkParser.reset();
   }
 
   /// Convert ChatMessage to OpenAI API format
   Map<String, dynamic> convertMessage(ChatMessage message) {
-    final result = <String, dynamic>{'role': message.role.name};
-
-    // Add name field if present (useful for system messages)
-    if (message.name != null) {
-      result['name'] = message.name;
-    }
-
-    switch (message.messageType) {
-      case TextMessage():
-        result['content'] = message.content;
-        break;
-      case ImageMessage(mime: final mime, data: final data):
-        // Handle base64 encoded images
-        final base64Data = base64Encode(data);
-        final imageDataUrl = 'data:${mime.mimeType};base64,$base64Data';
-
-        // Build content array with optional text + image
-        final contentArray = <Map<String, dynamic>>[];
-
-        // Add text content if present
-        if (message.content.isNotEmpty) {
-          if (_usesResponsesApi) {
-            contentArray.add({
-              'type': 'input_text',
-              'text': message.content,
-            });
-          } else {
-            contentArray.add({
-              'type': 'text',
-              'text': message.content,
-            });
-          }
-        }
-
-        // Add image content
-        if (_usesResponsesApi) {
-          contentArray.add({
-            'type': 'input_image',
-            'image_url': imageDataUrl,
-          });
-        } else {
-          contentArray.add({
-            'type': 'image_url',
-            'image_url': {'url': imageDataUrl},
-          });
-        }
-
-        result['content'] = contentArray;
-        break;
-
-      case ImageUrlMessage(url: final url):
-        // Build content array with optional text + image
-        final contentArray = <Map<String, dynamic>>[];
-
-        // Add text content if present
-        if (message.content.isNotEmpty) {
-          if (_usesResponsesApi) {
-            contentArray.add({
-              'type': 'input_text',
-              'text': message.content,
-            });
-          } else {
-            contentArray.add({
-              'type': 'text',
-              'text': message.content,
-            });
-          }
-        }
-
-        // Add image content
-        if (_usesResponsesApi) {
-          contentArray.add({
-            'type': 'input_image',
-            'image_url': url,
-          });
-        } else {
-          contentArray.add({
-            'type': 'image_url',
-            'image_url': {'url': url},
-          });
-        }
-
-        result['content'] = contentArray;
-        break;
-
-      case FileMessage(data: final data):
-        // Handle file messages (documents, audio, video, etc.)
-        final base64Data = base64Encode(data);
-
-        // Build content array with optional text + file
-        final contentArray = <Map<String, dynamic>>[];
-
-        // Add text content if present
-        if (message.content.isNotEmpty) {
-          if (_usesResponsesApi) {
-            contentArray.add({
-              'type': 'input_text',
-              'text': message.content,
-            });
-          } else {
-            contentArray.add({
-              'type': 'text',
-              'text': message.content,
-            });
-          }
-        }
-
-        // Add file content
-        if (_usesResponsesApi) {
-          // Responses API format: { type: 'input_file', file_data: '<base64>' }
-          contentArray.add({
-            'type': 'input_file',
-            'file_data': base64Data,
-          });
-        } else {
-          // Chat Completions API format: { type: 'file', file: { file_data: '<base64>' } }
-          contentArray.add({
-            'type': 'file',
-            'file': {
-              'file_data': base64Data,
-            },
-          });
-        }
-
-        result['content'] = contentArray;
-        break;
-
-      case ToolUseMessage(toolCalls: final toolCalls):
-        result['tool_calls'] = toolCalls.map((tc) => tc.toJson()).toList();
-        break;
-      case ToolResultMessage(results: final results):
-        // Tool results are normally handled in buildApiMessages where we
-        // expand them into individual tool role messages, but we keep a sane
-        // default here for completeness.
-        result['content'] =
-            message.content.isNotEmpty ? message.content : 'Tool result';
-        result['tool_call_id'] = results.isNotEmpty ? results.first.id : null;
-        break;
-    }
-
-    return result;
+    return _messageCodec.convertMessage(message);
   }
 
   /// Build API messages array from ChatMessage list
@@ -319,35 +91,7 @@ class OpenAIClient {
   /// Note: System prompt should be added by the calling module if needed,
   /// not here to avoid duplication.
   List<Map<String, dynamic>> buildApiMessages(List<ChatMessage> messages) {
-    final apiMessages = <Map<String, dynamic>>[];
-
-    // Convert messages to OpenAI format
-    for (final message in messages) {
-      if (message.messageType is ToolResultMessage) {
-        // Expand tool results into separate `tool` role messages.
-        //
-        // OpenAI expects the tool message content to be the tool OUTPUT,
-        // not the original function arguments, so we prefer the
-        // ChatMessage.content here and only fall back to arguments if the
-        // content is empty.
-        final toolResults = (message.messageType as ToolResultMessage).results;
-        for (final result in toolResults) {
-          apiMessages.add({
-            'role': 'tool',
-            'tool_call_id': result.id,
-            'content': message.content.isNotEmpty
-                ? message.content
-                : (result.function.arguments.isNotEmpty
-                    ? result.function.arguments
-                    : 'Tool result'),
-          });
-        }
-      } else {
-        apiMessages.add(convertMessage(message));
-      }
-    }
-
-    return apiMessages;
+    return _messageCodec.buildApiMessages(messages);
   }
 
   /// Make a POST request with JSON body
@@ -535,104 +279,11 @@ class OpenAIClient {
   }
 
   Future<void> _ensureSuccessStatus(Response response, String endpoint) {
-    return HttpResponseHandler.ensureSuccessStatus(
-      response,
-      providerName: 'OpenAI',
-      logger: logger,
-      onFailure: (failedResponse) => _handleErrorResponse(
-        failedResponse,
-        endpoint,
-      ),
-    );
+    return _errorAdapter.ensureSuccessStatus(response, endpoint);
   }
 
   /// Handle Dio errors and convert them to appropriate LLM errors
   Future<LLMError> handleDioError(DioException e) async {
-    switch (e.type) {
-      case DioExceptionType.connectionTimeout:
-      case DioExceptionType.sendTimeout:
-      case DioExceptionType.receiveTimeout:
-        return TimeoutError('Request timeout: ${e.message}');
-      case DioExceptionType.badResponse:
-        final statusCode = e.response?.statusCode;
-        final responseData = e.response?.data;
-
-        if (statusCode != null) {
-          final details = await DioErrorHandler.extractErrorResponseDetails(
-            responseData,
-            fallbackMessage: '$statusCode',
-            mapMessageExtractor: _extractErrorMessageFromMap,
-          );
-
-          return HttpErrorMapper.mapStatusCode(
-            statusCode,
-            details.message,
-            details.responseData,
-          );
-        } else {
-          return ResponseFormatError(
-            'HTTP error without status code',
-            responseData?.toString() ?? '',
-          );
-        }
-      case DioExceptionType.cancel:
-        return CancelledError(e.message ?? 'Request cancelled');
-      case DioExceptionType.connectionError:
-        return const GenericError('Connection error');
-      case DioExceptionType.badCertificate:
-        return const GenericError('SSL certificate error');
-      case DioExceptionType.unknown:
-        return GenericError('Unknown error: ${e.message}');
-    }
-  }
-
-  /// Extract error message from a parsed Map
-  String? _extractErrorMessageFromMap(Map<String, dynamic> responseData) {
-    // OpenAI error format: {"error": {"message": "...", "type": "...", "code": "..."}}
-    final error = responseData['error'] as Map<String, dynamic>?;
-    if (error != null) {
-      final message = error['message'] as String?;
-      final type = error['type'] as String?;
-      final code = error['code']?.toString();
-
-      if (message != null) {
-        final parts = <String>[message];
-        if (type != null) parts.add('type: $type');
-        if (code != null) parts.add('code: $code');
-        return parts.join(', ');
-      }
-    }
-
-    // Fallback: look for direct message field
-    final directMessage = responseData['message'] as String?;
-    if (directMessage != null) return directMessage;
-
-    return null;
-  }
-
-  /// Handle error responses with specific error types
-  Future<void> _handleErrorResponse(Response response, String endpoint) async {
-    final statusCode = response.statusCode;
-    final errorData = response.data;
-
-    if (statusCode != null) {
-      final details = await DioErrorHandler.extractErrorResponseDetails(
-        errorData,
-        fallbackMessage:
-            'OpenAI $endpoint API returned error status: $statusCode',
-        mapMessageExtractor: _extractErrorMessageFromMap,
-      );
-
-      throw HttpErrorMapper.mapStatusCode(
-        statusCode,
-        details.message,
-        details.responseData,
-      );
-    } else {
-      throw ResponseFormatError(
-        'OpenAI $endpoint API returned unknown error',
-        errorData?.toString() ?? '',
-      );
-    }
+    return _errorAdapter.handleDioError(e);
   }
 }

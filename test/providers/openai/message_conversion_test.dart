@@ -398,5 +398,39 @@ void main() {
         expect(result['tool_calls'][0]['id'], equals('call_123'));
       });
     });
+
+    group('API Message Expansion', () {
+      test('should expand tool result messages into tool role messages', () {
+        final toolCall = ToolCall(
+          id: 'call_456',
+          callType: 'function',
+          function: FunctionCall(
+            name: 'get_weather',
+            arguments: '{"city":"Hong Kong"}',
+          ),
+        );
+
+        final messages = [
+          ChatMessage.user('What is the weather?'),
+          ChatMessage.toolResult(
+            results: [toolCall],
+            content: 'Weather result payload',
+          ),
+        ];
+
+        final apiMessages = client.buildApiMessages(messages);
+
+        expect(apiMessages, hasLength(2));
+        expect(apiMessages[0], {
+          'role': 'user',
+          'content': 'What is the weather?',
+        });
+        expect(apiMessages[1], {
+          'role': 'tool',
+          'tool_call_id': 'call_456',
+          'content': 'Weather result payload',
+        });
+      });
+    });
   });
 }
