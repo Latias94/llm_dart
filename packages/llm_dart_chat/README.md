@@ -45,10 +45,56 @@ For a framework-neutral session example that uses:
 see:
 
 - `example/chat_runtime.dart`
+- `example/http_backend_hint_mapping.dart`
+  - shows how a client can send app-owned metadata through
+    `HttpChatTransport` while a backend maps those hints into provider-specific
+    invocation options
 
 If you need Flutter `ValueNotifier` integration, use
 `package:llm_dart_flutter/llm_dart_flutter.dart`, which wraps this package with
 `ChatController` and a controller-aware persistence adapter.
+
+## HTTP Backend Hint Mapping
+
+`HttpChatTransport` deliberately stays provider-neutral. It serializes shared
+prompt state, shared `GenerateTextOptions`, stream protocol selection, and
+app-owned metadata. It does not serialize raw `ProviderInvocationOptions`.
+
+Use `metadata` and `prepareSendMessagesRequest` when a client needs to pass
+backend-owned routing hints:
+
+```dart
+final session = DefaultChatSession(
+  transport: HttpChatTransport(
+    endpoint: Uri.parse('https://backend.example/chat'),
+    transport: transportClient,
+    prepareSendMessagesRequest: (context) {
+      return HttpChatTransportPreparedSendMessagesRequest(
+        payload: HttpChatTransportRequestPayload(
+          chatId: context.payload.chatId,
+          prompt: context.payload.prompt,
+          generateOptions: context.payload.generateOptions,
+          streamProtocol: context.payload.streamProtocol,
+          metadata: {
+            ...context.payload.metadata,
+            'providerProfile': 'openai-web-search',
+          },
+        ),
+      );
+    },
+  ),
+);
+```
+
+The backend should decode `HttpChatTransportRequestPayload`, map app-owned
+metadata such as `providerProfile` into typed provider options, and return SSE
+frames encoded with `HttpChatTransportServerAdapter`.
+
+Run the self-contained in-process demo with:
+
+```bash
+dart run packages/llm_dart_chat/example/http_backend_hint_mapping.dart
+```
 
 ## Message Mapping Layers
 

@@ -208,6 +208,10 @@ This phase should explicitly avoid:
   - Revalidation of the generic HTTP chat transport boundary against
     `repo-ref/ai`, keeping provider-specific invocation settings backend-owned
     instead of serializing raw provider options through the transport envelope.
+- [30-http-backend-hint-mapping-example.md](30-http-backend-hint-mapping-example.md)
+  - Runnable pure-Dart HTTP chat transport example that sends app-owned
+    metadata to a backend, maps it into provider-specific execution hints, and
+    streams UI chunks back through the transport server adapter.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)

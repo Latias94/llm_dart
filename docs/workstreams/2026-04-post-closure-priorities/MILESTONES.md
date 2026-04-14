@@ -31,6 +31,9 @@ Current status:
 - the backend transport story is now also revalidated more explicitly:
   `HttpChatTransport` stays generic and app-owned, while typed provider
   invocation options remain direct-transport or backend-owned concerns
+- a runnable pure-Dart backend-hint example now shows how app metadata can be
+  mapped into backend-owned provider execution plans while streaming UI chunks
+  back through `HttpChatTransportServerAdapter`
 
 
 ## M2 - Provider UI Extension Contract

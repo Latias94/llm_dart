@@ -28,6 +28,10 @@ HTTP API service with authentication, rate limiting, and monitoring.
 ### [packages/llm_dart_chat/example/chat_runtime.dart](../../packages/llm_dart_chat/example/chat_runtime.dart)
 Framework-neutral chat session patterns now live with the dedicated `llm_dart_chat` package.
 
+### [packages/llm_dart_chat/example/http_backend_hint_mapping.dart](../../packages/llm_dart_chat/example/http_backend_hint_mapping.dart)
+HTTP chat transport pattern for sending app-owned metadata to a backend that
+maps those hints into provider-specific invocation options.
+
 ### [packages/llm_dart_flutter/example/flutter_integration.dart](../../packages/llm_dart_flutter/example/flutter_integration.dart)
 Flutter app integration patterns now live with the dedicated `llm_dart_flutter` package.
 
@@ -50,6 +54,7 @@ dart run chatbot.dart
 dart run cli_tool.dart --help
 dart run web_service.dart
 dart run ../../packages/llm_dart_chat/example/chat_runtime.dart
+dart run ../../packages/llm_dart_chat/example/http_backend_hint_mapping.dart
 dart run ../../packages/llm_dart_flutter/example/flutter_integration.dart
 dart run batch_processor.dart --help
 dart run multimodal_app.dart --demo

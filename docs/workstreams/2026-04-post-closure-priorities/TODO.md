@@ -72,6 +72,8 @@
 - [x] Re-validate the `HttpChatTransport` request boundary so backend chat
   flows keep provider-specific invocation settings backend-owned instead of
   serializing raw `ProviderInvocationOptions`
+- [x] Add a runnable backend-hint mapping example for `HttpChatTransport` so
+  Flutter/chat apps have a copyable metadata-to-provider-options pattern
 
 ## Selective Provider Expansion
 

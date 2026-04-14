@@ -153,6 +153,10 @@ the backend. If the caller must own typed provider invocation options directly,
 prefer `DirectChatTransport` instead of widening the generic HTTP transport
 envelope.
 
+For a runnable pure-Dart backend-hint example that uses the same runtime layer
+Flutter builds on, see
+`../llm_dart_chat/example/http_backend_hint_mapping.dart`.
+
 If your backend is also Dart, prefer building the SSE response in
 `package:llm_dart_transport` rather than `llm_dart_flutter`:
 

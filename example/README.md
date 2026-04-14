@@ -31,6 +31,7 @@ manually.
 | **Process large datasets** | [batch_processor.dart](05_use_cases/batch_processor.dart) |
 | **Build multimodal apps** | [multimodal_app.dart](05_use_cases/multimodal_app.dart) |
 | **Use the pure chat runtime** | [packages/llm_dart_chat/example/chat_runtime.dart](../packages/llm_dart_chat/example/chat_runtime.dart) |
+| **Send backend chat hints** | [packages/llm_dart_chat/example/http_backend_hint_mapping.dart](../packages/llm_dart_chat/example/http_backend_hint_mapping.dart) |
 | **Connect external tools** | [mcp_concept_demo.dart](06_mcp_integration/mcp_concept_demo.dart) |
 
 ## Directory Structure
@@ -108,6 +109,7 @@ shared-capability happy path.
 - [cli_tool.dart](05_use_cases/cli_tool.dart) - Command-line AI assistant
 - [web_service.dart](05_use_cases/web_service.dart) - HTTP API with authentication
 - [packages/llm_dart_chat/example/chat_runtime.dart](../packages/llm_dart_chat/example/chat_runtime.dart) - Framework-neutral session runtime patterns
+- [packages/llm_dart_chat/example/http_backend_hint_mapping.dart](../packages/llm_dart_chat/example/http_backend_hint_mapping.dart) - HTTP chat transport metadata-to-backend-options pattern
 - [packages/llm_dart_flutter/example/flutter_integration.dart](../packages/llm_dart_flutter/example/flutter_integration.dart) - Flutter app patterns
 - [batch_processor.dart](05_use_cases/batch_processor.dart) - Large-scale data processing
 - [multimodal_app.dart](05_use_cases/multimodal_app.dart) - Text, image, and audio processing
@@ -143,6 +145,7 @@ dart run 01_getting_started/quick_start.dart
 dart run 02_core_features/chat_basics.dart
 dart run 05_use_cases/chatbot.dart
 dart run ../packages/llm_dart_chat/example/chat_runtime.dart
+dart run ../packages/llm_dart_chat/example/http_backend_hint_mapping.dart
 dart run 05_use_cases/batch_processor.dart --help
 dart run 05_use_cases/multimodal_app.dart --demo
 ```
