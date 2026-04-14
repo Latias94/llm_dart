@@ -196,6 +196,10 @@ This phase should explicitly avoid:
 - [26-provider-owned-composed-message-mapper.md](26-provider-owned-composed-message-mapper.md)
   - Provider-owned composed message-mapper helper that returns shared and
     provider-specific UI projections together without widening shared models.
+- [27-public-entrypoint-mapper-guidance-alignment.md](27-public-entrypoint-mapper-guidance-alignment.md)
+  - Public entrypoint and package-guide alignment that updates mapper
+    ownership and recommends provider-owned `mapComposed(...)` helpers in
+    user-facing examples.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)

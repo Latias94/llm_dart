@@ -63,6 +63,9 @@
 - [x] Add provider-owned composed message-mapper helpers for OpenAI and
   Google so Flutter/UI code can fetch shared and provider-specific projections
   in one call without introducing a shared registry
+- [x] Align root and package README guidance with the new `llm_dart_core`
+  ownership of `ChatMessageMapper` and the provider-owned `mapComposed(...)`
+  helpers
 
 ## Selective Provider Expansion
 

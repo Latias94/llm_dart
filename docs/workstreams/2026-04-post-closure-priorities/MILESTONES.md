@@ -154,6 +154,10 @@ Current status:
 - OpenAI and Google provider packages can now also return a composed shared +
   provider-specific message mapping result, reducing Flutter/UI integration
   boilerplate without widening the shared mapper layer
+- the root, chat, and Flutter package guides now also describe
+  `ChatMessageMapper` as a shared core-layer helper and recommend
+  provider-owned `mapComposed(...)` helpers as the default provider-aware UI
+  path
 
 ## M4 - Selective Provider Expansion
 
