@@ -110,6 +110,10 @@ Current status:
   cache-policy merging, provider-options validation, and role-aware prompt
   conversion in a dedicated `anthropic_compat_support.dart`, leaving
   `anthropic_compat_adapter.dart` focused on bridge delegation
+- the root OpenAI moderation compatibility module now also keeps request
+  shaping, analysis/report helpers, and batch statistics logic in a dedicated
+  `openai_moderation_support.dart`, leaving `moderation.dart` focused on
+  endpoint orchestration
 
 ## M4 - Selective Provider Expansion
 

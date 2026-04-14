@@ -157,6 +157,9 @@ This phase should explicitly avoid:
 - [15-anthropic-compat-adapter-thinning.md](15-anthropic-compat-adapter-thinning.md)
   - Anthropic compatibility adapter thinning that separates request planning
     and role-aware prompt conversion from the bridge adapter shell.
+- [16-openai-moderation-support-extraction.md](16-openai-moderation-support-extraction.md)
+  - OpenAI moderation support extraction that separates moderation endpoint
+    orchestration from local analysis and reporting helpers.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)

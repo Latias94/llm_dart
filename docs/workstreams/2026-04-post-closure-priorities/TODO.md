@@ -39,6 +39,8 @@
   import/export parsing out of the compatibility capability shell
 - [x] Thin the Anthropic compatibility adapter by separating request planning
   and role-aware prompt conversion from the bridge adapter shell
+- [x] Extract OpenAI moderation request shaping and local analysis/reporting
+  helpers out of the compatibility capability shell
 
 ## Selective Provider Expansion
 
