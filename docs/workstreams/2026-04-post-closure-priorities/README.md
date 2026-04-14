@@ -142,6 +142,9 @@ This phase should explicitly avoid:
 - [10-elevenlabs-audio-compat-support-extraction.md](10-elevenlabs-audio-compat-support-extraction.md)
   - ElevenLabs audio compatibility support extraction that localizes request
     shaping, response normalization, and STT fallback details.
+- [11-ollama-chat-compat-thinning.md](11-ollama-chat-compat-thinning.md)
+  - Ollama chat compatibility thinning that splits request shaping, stream
+    parsing, and response wrapping out of the fallback chat shell.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)

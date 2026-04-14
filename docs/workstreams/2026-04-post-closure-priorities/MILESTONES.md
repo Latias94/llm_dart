@@ -90,6 +90,9 @@ Current status:
   shaping, voice mapping, and speech-to-text normalization in a dedicated
   `elevenlabs_audio_support.dart`, leaving the capability file focused on
   fallback routing and client dispatch
+- the root Ollama fallback chat path has now also been split into facade,
+  request builder, stream parser, and response wrapper files, keeping the
+  bridge-versus-fallback shell clearer without changing compatibility behavior
 
 ## M4 - Selective Provider Expansion
 

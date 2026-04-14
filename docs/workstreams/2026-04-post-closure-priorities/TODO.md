@@ -28,6 +28,8 @@
   the root image shell without changing public compatibility behavior
 - [x] Extract ElevenLabs audio compatibility request and response shaping out
   of the root audio shell without changing bridge or fallback behavior
+- [x] Thin the Ollama fallback chat module by separating facade, request
+  shaping, streamed parsing, and response wrapping
 
 ## Selective Provider Expansion
 
