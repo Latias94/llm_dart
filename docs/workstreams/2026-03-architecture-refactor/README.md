@@ -654,6 +654,10 @@ This workstream is not about a file-moving refactor. It is about defining stable
   - Status note for splitting the OpenAI audio compatibility host into a thin
     facade plus request/response support and static catalog helpers while
     keeping the stable public import path unchanged.
+- [207-openai-provider-shell-support-extraction.md](207-openai-provider-shell-support-extraction.md)
+  - Status note for extracting the remaining OpenAI provider-shell helper logic
+    out of `provider_compat.dart` while keeping `OpenAIProvider` as the stable
+    compatibility shell entrypoint.
 - [DECISIONS.md](DECISIONS.md)
   - Architecture decisions that are currently frozen.
 - [TODO.md](TODO.md)
