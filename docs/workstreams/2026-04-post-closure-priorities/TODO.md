@@ -45,6 +45,8 @@
   policy and audio convenience helpers into provider-local support
 - [x] Extract OpenAI completion request shaping, parsing, presets, retry,
   batch, and token helpers out of the compatibility capability shell
+- [x] Extract OpenAI Responses non-streaming lifecycle and stateful
+  conversation helpers out of the public compatibility facade
 
 ## Selective Provider Expansion
 

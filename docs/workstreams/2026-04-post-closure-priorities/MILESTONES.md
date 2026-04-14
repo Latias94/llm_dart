@@ -122,6 +122,11 @@ Current status:
   shaping, response parsing, stream delta extraction, presets, retry helpers,
   batch helpers, and token heuristics in `openai_completion_support.dart`,
   leaving `completion.dart` focused on endpoint orchestration
+- the root OpenAI Responses compatibility facade now also keeps non-streaming
+  lifecycle operations, delete error wrapping, input-item listing,
+  continue/fork orchestration, and summary helpers in
+  `openai_responses_support.dart`, leaving `responses.dart` focused on the
+  public facade and streaming path
 
 ## M4 - Selective Provider Expansion
 

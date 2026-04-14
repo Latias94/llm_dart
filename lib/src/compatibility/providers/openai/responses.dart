@@ -5,10 +5,9 @@ import '../../../../core/llm_error.dart';
 import '../../../../models/chat_models.dart';
 import '../../../../models/responses_models.dart';
 import '../../../../models/tool_models.dart';
-import '../../../../utils/reasoning_utils.dart';
 import 'client.dart';
 import '../../../../providers/openai/config.dart';
-import 'openai_responses_response.dart';
+import 'openai_responses_support.dart';
 import 'responses_capability.dart';
 import 'responses_request_builder.dart';
 import 'responses_stream_parser.dart';
@@ -25,6 +24,7 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
   final OpenAIConfig config;
   late final OpenAIResponsesRequestBuilder _requestBuilder;
   late final OpenAIResponsesStreamParser _streamParser;
+  late final OpenAIResponsesSupport _support;
 
   OpenAIResponses(this.client, this.config) {
     _requestBuilder = OpenAIResponsesRequestBuilder(
@@ -32,6 +32,10 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
       config: config,
     );
     _streamParser = OpenAIResponsesStreamParser(client);
+    _support = OpenAIResponsesSupport(
+      client: client,
+      requestBuilder: _requestBuilder,
+    );
   }
 
   @override
@@ -40,18 +44,12 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
     List<Tool>? tools, {
     TransportCancellation? cancelToken,
   }) async {
-    final requestBody = _requestBuilder.buildRequestBody(
+    return _support.createResponse(
       messages,
       tools,
-      stream: false,
       background: false,
-    );
-    final responseData = await client.postJson(
-      _requestBuilder.responsesEndpoint,
-      requestBody,
       cancelToken: cancelToken,
     );
-    return _parseResponse(responseData);
   }
 
   /// Create a response with background processing
@@ -63,15 +61,11 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
     List<ChatMessage> messages,
     List<Tool>? tools,
   ) async {
-    final requestBody = _requestBuilder.buildRequestBody(
+    return _support.createResponse(
       messages,
       tools,
-      stream: false,
       background: true,
     );
-    final responseData =
-        await client.postJson(_requestBuilder.responsesEndpoint, requestBody);
-    return _parseResponse(responseData);
   }
 
   @override
@@ -131,17 +125,11 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
 
   @override
   Future<String> summarizeHistory(List<ChatMessage> messages) async {
-    final prompt =
-        'Summarize in 2-3 sentences:\n${messages.map((m) => '${m.role.name}: ${m.content}').join('\n')}';
-    final request = [ChatMessage.user(prompt)];
+    final request = [
+      ChatMessage.user(_support.buildSummaryPrompt(messages)),
+    ];
     final response = await chat(request);
-    final text = response.text;
-    if (text == null) {
-      throw const GenericError('no text in summary response');
-    }
-
-    // Filter out thinking content for reasoning models
-    return ReasoningUtils.filterThinkingContent(text);
+    return _support.extractSummaryText(response);
   }
 
   // ========== Responses API CRUD Operations ==========
@@ -157,14 +145,12 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
     int? startingAfter,
     bool stream = false,
   }) async {
-    final endpoint = _requestBuilder.buildGetResponseEndpoint(
+    return _support.getResponse(
       responseId,
       include: include,
       startingAfter: startingAfter,
       stream: stream,
     );
-    final responseData = await client.get(endpoint);
-    return _parseResponse(responseData);
   }
 
   /// Delete a model response by ID
@@ -173,20 +159,7 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
   /// Returns true if deletion was successful.
   @override
   Future<bool> deleteResponse(String responseId) async {
-    try {
-      final endpoint = _requestBuilder.buildDeleteResponseEndpoint(responseId);
-      final responseData = await client.delete(endpoint);
-      return responseData['deleted'] == true;
-    } on LLMError {
-      rethrow;
-    } catch (e) {
-      client.logger.warning('Failed to delete response $responseId: $e');
-      throw OpenAIResponsesError(
-        'Failed to delete response: $e',
-        responseId: responseId,
-        errorType: 'deletion_failed',
-      );
-    }
+    return _support.deleteResponse(responseId);
   }
 
   /// Cancel a background response by ID
@@ -195,9 +168,7 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
   /// Returns the cancelled response object.
   @override
   Future<ChatResponse> cancelResponse(String responseId) async {
-    final endpoint = _requestBuilder.buildCancelResponseEndpoint(responseId);
-    final responseData = await client.postJson(endpoint, {});
-    return _parseResponse(responseData);
+    return _support.cancelResponse(responseId);
   }
 
   /// List input items for a response
@@ -213,7 +184,7 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
     int limit = 20,
     String order = 'desc',
   }) async {
-    final endpoint = _requestBuilder.buildListInputItemsEndpoint(
+    return _support.listInputItems(
       responseId,
       after: after,
       before: before,
@@ -221,8 +192,6 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
       limit: limit,
       order: order,
     );
-    final responseData = await client.get(endpoint);
-    return ResponseInputItemsList.fromJson(responseData);
   }
 
   // ========== Conversation State Management ==========
@@ -238,17 +207,12 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
     List<Tool>? tools,
     bool background = false,
   }) async {
-    final requestBuilder =
-        _requestBuilder.forPreviousResponseId(previousResponseId);
-    final requestBody = requestBuilder.buildRequestBody(
+    return _support.continueConversation(
+      previousResponseId,
       newMessages,
-      tools,
-      stream: false,
+      tools: tools,
       background: background,
     );
-    final responseData =
-        await client.postJson(requestBuilder.responsesEndpoint, requestBody);
-    return _parseResponse(responseData);
   }
 
   /// Fork a conversation from a specific response
@@ -262,13 +226,11 @@ class OpenAIResponses implements ChatCapability, OpenAIResponsesCapability {
     List<Tool>? tools,
     bool background = false,
   }) async {
-    // Fork is the same as continue for OpenAI Responses API
-    return continueConversation(fromResponseId, newMessages,
-        tools: tools, background: background);
-  }
-
-  /// Parse non-streaming response
-  ChatResponse _parseResponse(Map<String, dynamic> responseData) {
-    return OpenAIResponsesResponse.fromResponseData(responseData);
+    return _support.forkConversation(
+      fromResponseId,
+      newMessages,
+      tools: tools,
+      background: background,
+    );
   }
 }

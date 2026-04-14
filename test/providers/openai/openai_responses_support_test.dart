@@ -157,6 +157,78 @@ void main() {
       expect(capturedBody!['previous_response_id'], equals('resp_prev_123'));
       expect(response.text, equals('Continued.'));
     });
+
+    test('chatWithToolsBackground preserves background flag after extraction',
+        () async {
+      Map<String, dynamic>? capturedBody;
+      final dio = Dio();
+      dio.options.baseUrl = 'https://api.openai.com/v1/';
+      dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) {
+            capturedBody = Map<String, dynamic>.from(
+              options.data as Map<String, dynamic>,
+            );
+            handler.resolve(
+              Response(
+                requestOptions: options,
+                statusCode: 200,
+                data: {
+                  'id': 'resp_bg_1',
+                  'output': [
+                    {
+                      'type': 'message',
+                      'content': [
+                        {
+                          'type': 'output_text',
+                          'text': 'Queued.',
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ),
+            );
+          },
+        ),
+      );
+
+      final config = _buildResponsesConfig(dio);
+      final client = openai_client.OpenAIClient(config);
+      final responses = openai_responses.OpenAIResponses(client, config);
+
+      final response = await responses.chatWithToolsBackground(
+        [ChatMessage.user('Queue this')],
+        null,
+      );
+
+      expect(capturedBody, isNotNull);
+      expect(capturedBody!['background'], isTrue);
+      expect(capturedBody!['stream'], isFalse);
+      expect(response.text, equals('Queued.'));
+    });
+
+    test('deleteResponse wraps non-LLM failures after extraction', () async {
+      final config = openai_config.OpenAIConfig(
+        apiKey: 'test-key',
+        baseUrl: 'https://api.openai.com/v1/',
+        model: 'gpt-4.1-mini',
+        useResponsesAPI: true,
+      );
+      final client = _FailingDeleteResponsesClient(config);
+      final responses = openai_responses.OpenAIResponses(client, config);
+
+      expect(
+        () => responses.deleteResponse('resp_bad_delete'),
+        throwsA(
+          isA<OpenAIResponsesError>().having(
+            (error) => error.responseId,
+            'responseId',
+            'resp_bad_delete',
+          ),
+        ),
+      );
+    });
   });
 }
 
@@ -176,4 +248,16 @@ openai_config.OpenAIConfig _buildResponsesConfig(Dio dio) {
     useResponsesAPI: true,
     originalConfig: originalConfig,
   );
+}
+
+final class _FailingDeleteResponsesClient extends openai_client.OpenAIClient {
+  _FailingDeleteResponsesClient(super.config);
+
+  @override
+  Future<Map<String, dynamic>> delete(
+    String endpoint, {
+    cancelToken,
+  }) async {
+    throw StateError('boom');
+  }
 }

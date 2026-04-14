@@ -167,6 +167,9 @@ This phase should explicitly avoid:
   - OpenAI completion support extraction that separates completion endpoint
     orchestration from request parsing, presets, retry, batch, and token
     helpers.
+- [19-openai-responses-support-extraction.md](19-openai-responses-support-extraction.md)
+  - OpenAI Responses support extraction that separates non-streaming lifecycle
+    and stateful-conversation orchestration from the public facade.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)
