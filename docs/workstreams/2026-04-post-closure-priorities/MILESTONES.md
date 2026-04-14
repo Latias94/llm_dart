@@ -136,6 +136,10 @@ Current status:
   and tool-choice payload encoding in `google_chat_message_codec.dart`, leaving
   `google_chat_request_builder.dart` focused on request-body composition and
   generation-config policy
+- the Anthropic compatibility models module now also keeps prompt-cache message
+  helpers in `anthropic_prompt_cache_models.dart`, leaving `models.dart`
+  focused on the model-listing capability while preserving the legacy models
+  export path
 
 ## M4 - Selective Provider Expansion
 

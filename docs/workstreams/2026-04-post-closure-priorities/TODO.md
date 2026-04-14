@@ -51,6 +51,8 @@
   aggregation, and error mapping out of the parser facade
 - [x] Extract Google chat message, tool, and tool-choice payload encoding out
   of the request-body builder
+- [x] Extract Anthropic prompt-cache message helpers out of the model-listing
+  capability module while preserving the legacy models export path
 
 ## Selective Provider Expansion
 

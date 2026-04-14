@@ -178,6 +178,10 @@ This phase should explicitly avoid:
   - Google chat message codec extraction that separates message, tool, and
     tool-choice payload encoding from request-body and generation-config
     shaping.
+- [22-anthropic-prompt-cache-models-extraction.md](22-anthropic-prompt-cache-models-extraction.md)
+  - Anthropic prompt-cache models extraction that separates message-builder
+    cache helpers from the model-listing capability while preserving the
+    legacy models export path.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)
