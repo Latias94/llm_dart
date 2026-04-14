@@ -101,6 +101,11 @@ Current status:
   variation request shaping and response parsing in a dedicated
   `openai_image_support.dart`, leaving the capability file focused on endpoint
   orchestration
+- the root OpenAI assistants compatibility module now also keeps query
+  shaping, clone/import request construction, assistant filtering, export
+  shaping, and tool JSON parsing in a dedicated
+  `openai_assistant_support.dart`, leaving `assistants.dart` focused on API
+  orchestration
 
 ## M4 - Selective Provider Expansion
 

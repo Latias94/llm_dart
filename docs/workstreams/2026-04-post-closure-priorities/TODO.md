@@ -35,6 +35,8 @@
 - [x] Thin the ElevenLabs compatibility shell by separating bridge
   eligibility, bridge codec translation, and bridge response normalization
   from fallback orchestration
+- [x] Extract OpenAI assistants query shaping, local utility helpers, and
+  import/export parsing out of the compatibility capability shell
 
 ## Selective Provider Expansion
 

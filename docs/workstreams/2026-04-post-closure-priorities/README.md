@@ -151,6 +151,9 @@ This phase should explicitly avoid:
 - [13-elevenlabs-shell-bridge-thinning.md](13-elevenlabs-shell-bridge-thinning.md)
   - ElevenLabs shell bridge thinning that separates bridge eligibility, codec
     translation, and response normalization from fallback orchestration.
+- [14-openai-assistants-support-extraction.md](14-openai-assistants-support-extraction.md)
+  - OpenAI assistants support extraction that separates API orchestration from
+    local assistant utility shaping and parsing.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)
