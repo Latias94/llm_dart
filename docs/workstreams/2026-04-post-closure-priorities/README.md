@@ -193,6 +193,9 @@ This phase should explicitly avoid:
   - OpenAI compatibility stream-facade alignment that extracts duplicated
     stream orchestration out of `chat.dart` and `responses.dart` while keeping
     request builders and parsers separate.
+- [26-provider-owned-composed-message-mapper.md](26-provider-owned-composed-message-mapper.md)
+  - Provider-owned composed message-mapper helper that returns shared and
+    provider-specific UI projections together without widening shared models.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)

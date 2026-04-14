@@ -172,5 +172,43 @@ void main() {
         'Partial Image',
       );
     });
+
+    test('can compose shared and provider-specific mappings in one call', () {
+      final message = ChatUiMessage(
+        id: 'msg_3',
+        role: ChatUiRole.assistant,
+        parts: const [
+          TextUiPart(
+            text: 'Hello',
+            providerMetadata: ProviderMetadata({
+              'openai': {
+                'responseId': 'resp_2',
+                'itemId': 'msg_2',
+              },
+            }),
+          ),
+          CustomUiPart(
+            kind: OpenAIMcpListToolsCustomPart.customKind,
+            data: {
+              'id': 'mcp_tools_2',
+              'server_label': 'workspace',
+              'tools': [
+                {'name': 'open_browser'},
+              ],
+            },
+          ),
+        ],
+      );
+
+      final composed = const OpenAIMessageMapper().mapComposed(message);
+
+      expect(composed.shared.text, 'Hello');
+      expect(composed.shared.customParts, hasLength(1));
+      expect(composed.provider.partDetails.single.itemId, 'msg_2');
+      expect(
+        composed.provider.customPartSummaries.single.subtitle,
+        'Available Tools',
+      );
+    });
   });
 }

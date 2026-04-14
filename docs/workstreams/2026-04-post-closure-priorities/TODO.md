@@ -60,6 +60,9 @@
 - [x] Extract duplicated OpenAI compatibility stream orchestration out of
   `chat.dart` and `responses.dart` without widening the event model or
   splitting parser-local state for symmetry alone
+- [x] Add provider-owned composed message-mapper helpers for OpenAI and
+  Google so Flutter/UI code can fetch shared and provider-specific projections
+  in one call without introducing a shared registry
 
 ## Selective Provider Expansion
 

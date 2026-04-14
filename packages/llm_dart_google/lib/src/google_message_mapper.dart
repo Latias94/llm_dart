@@ -81,6 +81,16 @@ final class GoogleMappedMessage {
       partDetails.any((detail) => detail.hasThoughtSignature);
 }
 
+final class GoogleComposedMappedMessage {
+  final ChatMappedMessage shared;
+  final GoogleMappedMessage provider;
+
+  const GoogleComposedMappedMessage({
+    required this.shared,
+    required this.provider,
+  });
+}
+
 /// Provider-owned companion mapper for Google-specific UI metadata.
 ///
 /// This is intentionally separate from `llm_dart_flutter`'s shared
@@ -88,7 +98,11 @@ final class GoogleMappedMessage {
 /// fields, while this mapper extracts Google-owned replay payloads and
 /// Google-specific provider metadata for richer Flutter render paths.
 final class GoogleMessageMapper {
-  const GoogleMessageMapper();
+  final ChatMessageMapper sharedMapper;
+
+  const GoogleMessageMapper({
+    this.sharedMapper = const ChatMessageMapper(),
+  });
 
   GoogleMappedMessage map(ChatUiMessage message) {
     final partDetails = <GoogleUiPartDetails>[];
@@ -126,6 +140,19 @@ final class GoogleMessageMapper {
 
   List<GoogleMappedMessage> mapMessages(Iterable<ChatUiMessage> messages) {
     return messages.map(map).toList(growable: false);
+  }
+
+  GoogleComposedMappedMessage mapComposed(ChatUiMessage message) {
+    return GoogleComposedMappedMessage(
+      shared: sharedMapper.map(message),
+      provider: map(message),
+    );
+  }
+
+  List<GoogleComposedMappedMessage> mapMessagesComposed(
+    Iterable<ChatUiMessage> messages,
+  ) {
+    return messages.map(mapComposed).toList(growable: false);
   }
 }
 

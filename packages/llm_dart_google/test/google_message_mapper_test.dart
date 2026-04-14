@@ -200,5 +200,42 @@ void main() {
         'Function Response',
       );
     });
+
+    test('can compose shared and provider-specific mappings in one call', () {
+      final message = ChatUiMessage(
+        id: 'msg-3',
+        role: ChatUiRole.assistant,
+        parts: [
+          const TextUiPart(
+            text: 'Visible answer.',
+            providerMetadata: ProviderMetadata({
+              'google': {
+                'responsePart': 'visible_text',
+              },
+            }),
+          ),
+          GoogleToolCallReplay.fromToolCall({
+            'id': 'srvtool_2',
+            'toolType': 'google_search',
+            'query': 'Flutter',
+          }).toCustomUiPart(),
+        ],
+      );
+
+      final composed = const GoogleMessageMapper().mapComposed(message);
+
+      expect(composed.shared.text, 'Visible answer.');
+      expect(composed.shared.customParts, hasLength(1));
+      expect(
+        composed.provider.partDetails
+            .firstWhere((detail) => detail.type == GoogleUiPartType.text)
+            .responsePart,
+        'visible_text',
+      );
+      expect(
+        composed.provider.customPartSummaries.single.subtitle,
+        'Server Tool Call',
+      );
+    });
   });
 }

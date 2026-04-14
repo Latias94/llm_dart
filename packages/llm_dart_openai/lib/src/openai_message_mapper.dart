@@ -91,8 +91,22 @@ final class OpenAIMappedMessage {
   bool get hasLogprobs => partDetails.any((detail) => detail.hasLogprobs);
 }
 
+final class OpenAIComposedMappedMessage {
+  final ChatMappedMessage shared;
+  final OpenAIMappedMessage provider;
+
+  const OpenAIComposedMappedMessage({
+    required this.shared,
+    required this.provider,
+  });
+}
+
 final class OpenAIMessageMapper {
-  const OpenAIMessageMapper();
+  final ChatMessageMapper sharedMapper;
+
+  const OpenAIMessageMapper({
+    this.sharedMapper = const ChatMessageMapper(),
+  });
 
   OpenAIMappedMessage map(ChatUiMessage message) {
     final partDetails = <OpenAIUiPartDetails>[];
@@ -132,6 +146,19 @@ final class OpenAIMessageMapper {
 
   List<OpenAIMappedMessage> mapMessages(Iterable<ChatUiMessage> messages) {
     return messages.map(map).toList(growable: false);
+  }
+
+  OpenAIComposedMappedMessage mapComposed(ChatUiMessage message) {
+    return OpenAIComposedMappedMessage(
+      shared: sharedMapper.map(message),
+      provider: map(message),
+    );
+  }
+
+  List<OpenAIComposedMappedMessage> mapMessagesComposed(
+    Iterable<ChatUiMessage> messages,
+  ) {
+    return messages.map(mapComposed).toList(growable: false);
   }
 }
 

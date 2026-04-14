@@ -151,6 +151,9 @@ Current status:
 - the root OpenAI compatibility stream facades can now also share one narrow
   streaming-orchestration helper, keeping request builders, parsers, and
   public facades separated without reopening the event-model boundary
+- OpenAI and Google provider packages can now also return a composed shared +
+  provider-specific message mapping result, reducing Flutter/UI integration
+  boilerplate without widening the shared mapper layer
 
 ## M4 - Selective Provider Expansion
 
