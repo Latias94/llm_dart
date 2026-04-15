@@ -132,13 +132,39 @@ internal “many concerns meet here” point inside `llm_dart_core`.
 If the next core refactor continues, `chat_ui_accumulator.dart` should be
 treated as the primary internal seam.
 
-The likely future split is **by projection responsibility**, not by public API:
+The right split is **by projection responsibility**, not by public API:
 
 - text / reasoning lanes
 - tool lifecycle projection
-- message metadata projection and seed hydration
+- output projection for source, file, reasoning-file, and custom parts
+- message metadata projection
+- seed/index hydration
 
 The shared `TextStreamEvent` surface should stay unchanged.
+
+### Update After Follow-On Refactors
+
+The first internal cuts are now complete:
+
+- tool lifecycle projection is split into dedicated support
+- text / reasoning lane projection is split into dedicated support
+- metadata projection is split into dedicated support
+- output projection is split into dedicated support
+- seed/index hydration is split into dedicated support
+
+That means the file is still the public facade and routing point, but it no
+longer mixes the full set of projection implementations inline.
+
+The remaining logic inside the main file is now much narrower:
+
+- the public constructor and message snapshot facade
+- event routing in `apply(...)`
+- data-part upsert behavior
+- small shared append / lookup / metadata helpers
+
+So `chat_ui_accumulator.dart` is no longer the same class of hotspot it was at
+the start of this review. If more work is needed later, the next likely cut is
+isolating data-part upsert behavior rather than reopening event-surface design.
 
 ## 5. `openai_responses_request_encoder.dart` Is Large, But Mostly Cohesive
 
@@ -173,11 +199,9 @@ If another refactor slice starts immediately after this review, the best order
 is:
 
 1. keep OpenAI text-path work frozen unless a bug appears
-2. review whether `chat_ui_accumulator.dart` can gain internal support helpers
-   without changing public APIs
-3. extract a small shared internal shell for repeated OpenAI non-text model
+2. extract a small shared internal shell for repeated OpenAI non-text model
    infrastructure only if it removes real duplication
-4. split `openai_image_model.dart` before touching embedding or speech if
+3. split `openai_image_model.dart` before touching embedding or speech if
    non-text model refactoring becomes necessary
 
 ## What Should Stay Deferred
@@ -193,7 +217,8 @@ The following moves still look premature:
 
 The remaining architecture pressure is now more selective:
 
-- **next core hotspot:** `chat_ui_accumulator.dart`
+- **next smaller core seam if needed:** `ChatUiAccumulator` data-part upsert
+  behavior
 - **next OpenAI non-text hotspot:** `openai_image_model.dart`
 - **next support extraction candidate:** shared internal OpenAI non-text model
   shell helpers

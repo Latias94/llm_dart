@@ -6,7 +6,9 @@ import '../common/provider_metadata.dart';
 import '../stream/text_stream_event.dart';
 import 'chat_ui_message.dart';
 
+part 'chat_ui_accumulator_hydration_support.dart';
 part 'chat_ui_accumulator_metadata_support.dart';
+part 'chat_ui_accumulator_output_support.dart';
 part 'chat_ui_accumulator_text_support.dart';
 part 'chat_ui_accumulator_tool_support.dart';
 
@@ -86,12 +88,7 @@ final class ChatUiAccumulator {
       case ReasoningEndEvent():
         _applyReasoningEndEvent(event);
       case ReasoningFileEvent():
-        _appendPart(
-          ReasoningFileUiPart(
-            event.file,
-            providerMetadata: event.providerMetadata,
-          ),
-        );
+        _applyReasoningFileEvent(event);
       case ToolInputStartEvent():
         _applyToolInputStartEvent(event);
       case ToolInputDeltaEvent():
@@ -109,14 +106,9 @@ final class ChatUiAccumulator {
       case ToolOutputDeniedEvent():
         _applyToolOutputDeniedEvent(event);
       case SourceEvent():
-        _appendPart(SourceUiPart(event.source));
+        _applySourceEvent(event);
       case FileEvent():
-        _appendPart(
-          FileUiPart(
-            event.file,
-            providerMetadata: event.providerMetadata,
-          ),
-        );
+        _applyFileEvent(event);
       case StepStartEvent():
         _applyStepStartEvent(event);
       case StepFinishEvent():
@@ -126,13 +118,7 @@ final class ChatUiAccumulator {
       case FinishEvent():
         _applyFinishEvent(event);
       case CustomEvent():
-        _appendPart(
-          CustomUiPart(
-            kind: event.kind,
-            data: event.data,
-            providerMetadata: event.providerMetadata,
-          ),
-        );
+        _applyCustomEvent(event);
       case RawChunkEvent():
         _applyRawChunkEvent(event);
       case ErrorEvent():
@@ -163,31 +149,6 @@ final class ChatUiAccumulator {
   Stream<ChatUiMessage> project(Stream<TextStreamEvent> events) async* {
     await for (final event in events) {
       yield apply(event);
-    }
-  }
-
-  void _hydrateIndexes() {
-    _nextStepIndex = _parts.whereType<StepBoundaryUiPart>().length;
-
-    for (var index = 0; index < _parts.length; index++) {
-      final part = _parts[index];
-      if (part is ToolUiPart) {
-        _toolPartIndexes[part.toolCallId] = index;
-        if (part.state == ToolUiPartState.inputStreaming) {
-          _partialToolInputs[part.toolCallId] = _PartialToolInput(
-            toolName: part.toolName,
-            providerExecuted: part.providerExecuted,
-            isDynamic: part.isDynamic,
-            title: part.title,
-            initialText: part.inputText ?? _stringifyValue(part.input) ?? '',
-          );
-        }
-        continue;
-      }
-
-      if (part case DataUiPart(:final id?, :final key)) {
-        _dataPartIndexes[_dataPartIdentity(key, id)] = index;
-      }
     }
   }
 
