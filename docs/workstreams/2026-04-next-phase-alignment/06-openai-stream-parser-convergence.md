@@ -33,6 +33,16 @@ Both OpenAI Chat Completions and OpenAI Responses now use the same helper for:
 - marking the stream as containing tool calls
 - preserving the per-index accumulator as the owner of incremental tool input
 
+The stream-decoding layer is also now physically separated from the main codec
+entry files:
+
+- `openai_chat_completions_codec.dart` keeps request encoding, result decoding,
+  and common helper ownership, while stream decoding lives in
+  `openai_chat_completions_stream_decoder.dart`
+- `openai_responses_codec.dart` keeps request encoding, result decoding, and
+  common helper ownership, while stream decoding lives in
+  `openai_responses_stream_decoder.dart`
+
 ## Boundary Decision
 
 This is deliberately not a public event-model expansion.
@@ -62,4 +72,3 @@ The convergence pass is covered by:
 - `dart analyze .` in `packages/llm_dart_openai`
 - `dart test test/openai_chat_completions_stream_codec_test.dart test/openai_responses_stream_codec_test.dart`
 - `dart test` in `packages/llm_dart_openai`
-
