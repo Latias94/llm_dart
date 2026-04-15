@@ -74,6 +74,9 @@ Current status:
 - Flutter now also has a widget-level tool/approval demo that exercises the
   existing `awaitingApproval` and `awaitingTool` states in a real UI without
   requiring new shared events or a shared widget layer
+- Flutter now also validates paused-state restore at the widget/controller
+  level, confirming that snapshot persistence is sufficient for continuing
+  `awaitingApproval` and `awaitingTool` interactions after controller rebuild
 
 ## M3 - Dependency Guardrails And Compatibility Containment
 

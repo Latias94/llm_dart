@@ -5,6 +5,16 @@ const String demoProviderToolCallId = 'tool-browser-1';
 const String demoProviderApprovalId = 'approval-browser-1';
 const String demoLocalToolCallId = 'tool-weather-1';
 
+ChatController createToolApprovalDemoController({
+  ChatSessionSnapshot? snapshot,
+}) {
+  return ChatController(
+    session: createToolApprovalDemoSession(
+      snapshot: snapshot,
+    ),
+  );
+}
+
 DefaultChatSession createToolApprovalDemoSession({
   ChatSessionSnapshot? snapshot,
 }) {
@@ -50,6 +60,28 @@ Map<String, Object?> buildDemoLocalToolOutput(ToolUiPart part) {
     'temperatureC': 24,
     'condition': 'clear',
   };
+}
+
+final class DemoMemoryChatPersistenceStore implements ChatPersistenceStore {
+  final Map<String, Object?> _snapshots = <String, Object?>{};
+
+  @override
+  Future<void> deleteSnapshot(String chatId) async {
+    _snapshots.remove(chatId);
+  }
+
+  @override
+  Future<Object?> readSnapshot(String chatId) async {
+    return _snapshots[chatId];
+  }
+
+  @override
+  Future<void> writeSnapshot(
+    String chatId,
+    Object? snapshotEnvelope,
+  ) async {
+    _snapshots[chatId] = snapshotEnvelope;
+  }
 }
 
 final class _ToolApprovalDemoLanguageModel implements LanguageModel {

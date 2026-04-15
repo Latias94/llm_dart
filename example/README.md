@@ -116,7 +116,7 @@ shared-capability happy path.
 - [packages/llm_dart_flutter/example/flutter_integration.dart](../packages/llm_dart_flutter/example/flutter_integration.dart) - Flutter app patterns
 - [packages/llm_dart_flutter/example/flutter_http_backend_integration.dart](../packages/llm_dart_flutter/example/flutter_http_backend_integration.dart) - Flutter `ChatController` + backend-owned provider routing pattern
 - [packages/llm_dart_flutter/example/flutter_material_chat_demo.dart](../packages/llm_dart_flutter/example/flutter_material_chat_demo.dart) - Minimal Flutter Material chat screen using backend-owned provider routing
-- [packages/llm_dart_flutter/example/flutter_tool_approval_demo.dart](../packages/llm_dart_flutter/example/flutter_tool_approval_demo.dart) - Flutter Material chat screen for manual provider approval and local tool execution
+- [packages/llm_dart_flutter/example/flutter_tool_approval_demo.dart](../packages/llm_dart_flutter/example/flutter_tool_approval_demo.dart) - Flutter Material chat screen for manual provider approval, local tool execution, and paused-state snapshot restore
 - [batch_processor.dart](05_use_cases/batch_processor.dart) - Large-scale data processing
 - [multimodal_app.dart](05_use_cases/multimodal_app.dart) - Text, image, and audio processing
 

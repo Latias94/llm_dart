@@ -47,7 +47,7 @@ reference.
 ### [packages/llm_dart_flutter/example/flutter_tool_approval_demo.dart](../../packages/llm_dart_flutter/example/flutter_tool_approval_demo.dart)
 Minimal `MaterialApp` chat screen that demonstrates the manual UI flow for
 provider approval plus local tool execution using the existing chat session
-surface.
+surface, including paused-state snapshot save and restore.
 
 ### [batch_processor.dart](batch_processor.dart)
 Large-scale data processing with concurrent workers, rate limiting, and progress tracking.

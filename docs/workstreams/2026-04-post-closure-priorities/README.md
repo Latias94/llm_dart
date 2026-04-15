@@ -223,6 +223,10 @@ This phase should explicitly avoid:
   - Widget-level Flutter tool/approval demo that validates the current
     `awaitingApproval` and `awaitingTool` control surface without widening the
     shared event model.
+- [34-flutter-paused-tool-state-restore.md](34-flutter-paused-tool-state-restore.md)
+  - Flutter paused-state persistence extension that validates controller
+    restore from `awaitingApproval` and `awaitingTool` using the existing
+    snapshot and session surface.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)

@@ -40,18 +40,28 @@ class _ToolApprovalMaterialChatPageState
   static const _messageFieldKey = Key('tool-approval-message-field');
   static const _sendButtonKey = Key('tool-approval-send-button');
   static const _statusKey = Key('tool-approval-status');
+  static const _saveButtonKey = Key('tool-approval-save-button');
+  static const _restoreButtonKey = Key('tool-approval-restore-button');
+  static const _savedChatIdKey = Key('tool-approval-saved-chat-id');
+  static const _restoreCountKey = Key('tool-approval-restore-count');
 
-  late final ChatController _controller;
+  late final DemoMemoryChatPersistenceStore _store;
+  late final ChatPersistenceAdapter _persistence;
+  late ChatController _controller;
   final TextEditingController _textController = TextEditingController(
     text: 'Please publish the release update and confirm today\'s weather.',
   );
+  String? _savedChatId;
+  int _restoreCount = 0;
 
   @override
   void initState() {
     super.initState();
-    _controller = ChatController(
-      session: createToolApprovalDemoSession(),
+    _store = DemoMemoryChatPersistenceStore();
+    _persistence = ChatPersistenceAdapter(
+      store: _store,
     );
+    _controller = createToolApprovalDemoController();
   }
 
   @override
@@ -103,6 +113,49 @@ class _ToolApprovalMaterialChatPageState
     );
   }
 
+  Future<void> _saveSnapshot() async {
+    await _persistence.saveController(_controller);
+
+    if (!mounted) {
+      return;
+    }
+
+    setState(() {
+      _savedChatId = _controller.state.chatId;
+    });
+  }
+
+  Future<void> _restoreSnapshot() async {
+    final savedChatId = _savedChatId;
+    if (savedChatId == null) {
+      return;
+    }
+
+    final restored = await _persistence.restoreController<ChatController>(
+      savedChatId,
+      createController: (snapshot) => createToolApprovalDemoController(
+        snapshot: snapshot,
+      ),
+    );
+    if (restored == null) {
+      return;
+    }
+
+    final previous = _controller;
+
+    if (!mounted) {
+      await restored.close();
+      return;
+    }
+
+    setState(() {
+      _controller = restored;
+      _restoreCount += 1;
+    });
+
+    await previous.close();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -116,19 +169,53 @@ class _ToolApprovalMaterialChatPageState
             valueListenable: _controller,
             builder: (context, state, _) {
               final canSend = state.status == ChatStatus.ready;
+              final canSave = state.messages.isNotEmpty &&
+                  state.status != ChatStatus.submitting &&
+                  state.status != ChatStatus.streaming;
+              final canRestore = _savedChatId != null;
 
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     'This demo exercises the UI loop from '
-                    '`awaitingApproval` to `awaitingTool` and back to `ready`.',
+                    '`awaitingApproval` to `awaitingTool` and back to `ready`, '
+                    'and also lets the UI save and restore paused tool state.',
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 12),
                   Chip(
                     key: _statusKey,
                     label: Text('status: ${state.status.name}'),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      OutlinedButton(
+                        key: _saveButtonKey,
+                        onPressed:
+                            canSave ? () => unawaited(_saveSnapshot()) : null,
+                        child: const Text('Save snapshot'),
+                      ),
+                      OutlinedButton(
+                        key: _restoreButtonKey,
+                        onPressed: canRestore
+                            ? () => unawaited(_restoreSnapshot())
+                            : null,
+                        child: const Text('Restore snapshot'),
+                      ),
+                      if (_savedChatId != null)
+                        Chip(
+                          key: _savedChatIdKey,
+                          label: Text('savedChatId: $_savedChatId'),
+                        ),
+                      Chip(
+                        key: _restoreCountKey,
+                        label: Text('restoreCount: $_restoreCount'),
+                      ),
+                    ],
                   ),
                   if (state.error != null) ...[
                     const SizedBox(height: 8),

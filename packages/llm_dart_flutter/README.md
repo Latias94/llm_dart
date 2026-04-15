@@ -244,6 +244,10 @@ Future<void> saveAndRestore(
 }
 ```
 
+For a widget-level example that saves and restores paused tool state in
+`awaitingApproval` and `awaitingTool`, see
+`example/flutter_tool_approval_demo.dart`.
+
 ## Message Mapping Example
 
 `ChatUiMessage` already contains the full structured message. Use
@@ -377,7 +381,8 @@ models stable tool and approval state transitions that a Flutter UI needs to
 render.
 
 For a widget-level example that walks the UI through
-`awaitingApproval -> awaitingTool -> ready`, see
+`awaitingApproval -> awaitingTool -> ready`, and also demonstrates paused-state
+snapshot restore, see
 `example/flutter_tool_approval_demo.dart`.
 
 ## Optional Local Tool Callback

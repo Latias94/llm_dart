@@ -81,6 +81,9 @@
 - [x] Add a widget-level Flutter tool/approval demo that exercises
   `awaitingApproval` and `awaitingTool` without adding shared widgets or new
   shared events
+- [x] Extend the Flutter tool/approval demo with paused-state snapshot save and
+  restore so `awaitingApproval` and `awaitingTool` continuation is validated at
+  the controller/widget level
 
 ## Selective Provider Expansion
 
