@@ -84,6 +84,8 @@
 - [x] Extend the Flutter tool/approval demo with paused-state snapshot save and
   restore so `awaitingApproval` and `awaitingTool` continuation is validated at
   the controller/widget level
+- [x] Add a Flutter `HttpChatTransport` reconnect demo and regression test that
+  validate error-state UI plus `resume()` recovery through transport replay
 
 ## Selective Provider Expansion
 

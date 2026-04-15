@@ -173,6 +173,9 @@ Run it from the package root with:
 flutter run example/flutter_material_chat_demo.dart
 ```
 
+For a widget-level reconnect recovery example that uses `HttpChatTransport`
+plus `resume()`, see `example/flutter_http_reconnect_demo.dart`.
+
 If your backend is also Dart, prefer building the SSE response in
 `package:llm_dart_transport` rather than `llm_dart_flutter`:
 
@@ -379,6 +382,10 @@ This layered composition is the intended extension model:
 Provider-executed tool behavior remains provider-owned. The session layer only
 models stable tool and approval state transitions that a Flutter UI needs to
 render.
+
+For a widget-level example that demonstrates HTTP stream failure, error-state
+rendering, and reconnect recovery through `resume()`, see
+`example/flutter_http_reconnect_demo.dart`.
 
 For a widget-level example that walks the UI through
 `awaitingApproval -> awaitingTool -> ready`, and also demonstrates paused-state

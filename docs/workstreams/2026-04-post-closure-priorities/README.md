@@ -227,6 +227,9 @@ This phase should explicitly avoid:
   - Flutter paused-state persistence extension that validates controller
     restore from `awaitingApproval` and `awaitingTool` using the existing
     snapshot and session surface.
+- [35-flutter-http-reconnect-demo.md](35-flutter-http-reconnect-demo.md)
+  - Flutter `HttpChatTransport` reconnect demo that validates error-state UI,
+    `resume()`, and transport-owned replay without widening shared events.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)

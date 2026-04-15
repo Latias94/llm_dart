@@ -44,6 +44,10 @@ Minimal `MaterialApp` chat screen that uses `ChatController` plus backend-owned
 provider routing so Flutter applications have a widget-level integration
 reference.
 
+### [packages/llm_dart_flutter/example/flutter_http_reconnect_demo.dart](../../packages/llm_dart_flutter/example/flutter_http_reconnect_demo.dart)
+Minimal `MaterialApp` chat screen that demonstrates `HttpChatTransport`
+disconnect recovery and `resume()`-driven UI rebuilding.
+
 ### [packages/llm_dart_flutter/example/flutter_tool_approval_demo.dart](../../packages/llm_dart_flutter/example/flutter_tool_approval_demo.dart)
 Minimal `MaterialApp` chat screen that demonstrates the manual UI flow for
 provider approval plus local tool execution using the existing chat session

@@ -77,6 +77,9 @@ Current status:
 - Flutter now also validates paused-state restore at the widget/controller
   level, confirming that snapshot persistence is sufficient for continuing
   `awaitingApproval` and `awaitingTool` interactions after controller rebuild
+- Flutter now also has a widget-level `HttpChatTransport` reconnect demo that
+  validates `resume()` against real error-state UI and transport-owned
+  current-turn replay rather than any new shared reconnect event surface
 
 ## M3 - Dependency Guardrails And Compatibility Containment
 
