@@ -78,3 +78,11 @@ Acceptance criteria:
 
 - package-level documentation is improved where needed
 - the next root-slimming steps are documented without speculative breakage
+
+Current status:
+
+- the current root role is now re-audited after the latest package moves
+- focused provider root shells are now explicitly recognized as narrow and
+  honest again
+- the root package is now classified as clear enough for the current stage: a
+  modern convenience facade plus an explicit compatibility host

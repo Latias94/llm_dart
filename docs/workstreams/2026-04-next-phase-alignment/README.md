@@ -90,6 +90,9 @@ This phase should explicitly avoid:
 - [03-llm-dart-core-boundary-map.md](03-llm-dart-core-boundary-map.md)
   - Frozen internal sublayer map for `llm_dart_core`, plus future split
     triggers and package-ownership rules.
+- [04-root-package-role-reaudit.md](04-root-package-role-reaudit.md)
+  - Re-audit of the current root `llm_dart` role after the latest package
+    moves and root export cleanup.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)

@@ -24,6 +24,6 @@
 
 ## Root And Package Ownership
 
-- [ ] Re-audit the root package role after the latest community/package moves
+- [x] Re-audit the root package role after the latest community/package moves
 - [x] Improve package-level documentation where the ownership story is still
   thin or implicit
