@@ -87,6 +87,9 @@ This phase should explicitly avoid:
 - [02-streamed-runner-maturity-audit.md](02-streamed-runner-maturity-audit.md)
   - Current-phase audit of whether the shared streamed runner now needs
     `prepareStep`, richer stop policy, or broader orchestration ownership.
+- [03-llm-dart-core-boundary-map.md](03-llm-dart-core-boundary-map.md)
+  - Frozen internal sublayer map for `llm_dart_core`, plus future split
+    triggers and package-ownership rules.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)

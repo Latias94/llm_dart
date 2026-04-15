@@ -58,6 +58,14 @@ Acceptance criteria:
 - export ownership is classified
 - future split triggers are explicit
 
+Current status:
+
+- the internal `llm_dart_core` sublayers are now documented as foundation,
+  model/capability, runner, stream/UI, and serialization ownership groups
+- future split triggers are now explicit instead of implied by file count alone
+- package-level README guidance now exists for `llm_dart_core`,
+  `llm_dart_transport`, and `llm_dart_community`
+
 ## M4 - Root And Package Ownership Clarity
 
 Goals:

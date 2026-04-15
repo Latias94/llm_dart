@@ -16,14 +16,14 @@
 
 ## `llm_dart_core` Internal Boundary Hardening
 
-- [ ] Write a frozen internal sublayer map for `llm_dart_core`
-- [ ] Classify current `llm_dart_core` exports into specification, runtime,
+- [x] Write a frozen internal sublayer map for `llm_dart_core`
+- [x] Classify current `llm_dart_core` exports into specification, runtime,
   UI, and serialization ownership groups
-- [ ] Define the trigger conditions for any future published package split out
+- [x] Define the trigger conditions for any future published package split out
   of `llm_dart_core`
 
 ## Root And Package Ownership
 
 - [ ] Re-audit the root package role after the latest community/package moves
-- [ ] Improve package-level documentation where the ownership story is still
+- [x] Improve package-level documentation where the ownership story is still
   thin or implicit

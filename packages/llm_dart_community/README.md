@@ -1,13 +1,16 @@
 # llm_dart_community
 
-Workspace package for modern community-provider shared-capability surfaces.
+Modern shared-capability entrypoints for the current community-provider set in
+`llm_dart`.
 
-This package currently owns the package-owned modern model namespaces for:
+## What This Package Owns
 
-- `Ollama(...).chatModel(...)`
-- `Ollama(...).embeddingModel(...)`
-- `ElevenLabs(...).speechModel(...)`
-- `ElevenLabs(...).transcriptionModel(...)`
+This package currently owns the modern shared-capability surfaces for:
+
+- Ollama chat and embeddings
+- ElevenLabs speech and transcription
+
+These providers remain grouped intentionally in one workspace package.
 
 It depends only on:
 
@@ -17,38 +20,48 @@ It depends only on:
 That keeps the modern community-provider path independent from the root
 compatibility layer.
 
+## Why They Stay Together
+
+The repository does not currently need the same package granularity as
+`repo-ref/ai`.
+
+Keeping these providers together is the deliberate current tradeoff:
+
+- smaller maintenance surface
+- clearer migration path out of the root compatibility host
+- enough isolation to keep modern provider code out of root `llm_dart`
+
+This package should only be split further if real release, ownership, or
+surface-growth pressure appears.
+
 ## Current Scope
 
 Use this package when application code only needs a shared-capability model
 surface with provider-owned typed settings.
 
-Current shared-capability ownership:
+Current intentional limits still include:
 
-- Ollama chat generation
-- Ollama embeddings
-- ElevenLabs text-to-speech
-- ElevenLabs direct-audio transcription
+- Ollama `/api/generate` completion and model listing stay outside the shared
+  modern surface
+- stronger shared `ToolChoice` forcing for Ollama still degrades to
+  provider-side automatic tool selection with warnings
+- ElevenLabs voice catalogs, realtime flows, cloning, and admin-style APIs stay
+  outside the shared modern surface
+- ElevenLabs file-path convenience beyond the byte-oriented
+  `TranscriptionModel` stays outside this package
 
-Current intentional ElevenLabs limits still include:
+## When To Use This Package
 
-- file-path transcription convenience stays in the root compatibility layer
-- voice catalogs, realtime flows, and model/account helpers stay residual
-  provider-owned surfaces for now
+Use `llm_dart_community` when you want the modern shared-capability APIs for:
 
-Modern Ollama chat also supports URI-backed user image inputs through:
-
-- direct `data:` URIs
-- provider-owned `OllamaBinaryResolver` on model settings or invocation options
-
-Current intentional Ollama limits still include:
-
-- stronger shared `ToolChoice` forcing degrades to provider-side automatic
-  tool selection with warnings
-- replay-time tool error state degrades to plain tool content with warnings
+- `Ollama(...).chatModel(...)`
+- `Ollama(...).embeddingModel(...)`
+- `ElevenLabs(...).speechModel(...)`
+- `ElevenLabs(...).transcriptionModel(...)`
 
 ## Runnable Examples
 
-This package now also includes minimal runnable examples for each current modern
+This package includes minimal runnable examples for each current modern
 surface:
 
 - `example/ollama_chat.dart`
@@ -65,95 +78,8 @@ dart run example/elevenlabs_speech.dart
 dart run example/elevenlabs_transcription.dart
 ```
 
-## What Stays Outside This Package
-
-This package does not try to flatten every community-provider API into the
-shared modern surface.
-
-The following remain provider-owned or compatibility-only for now:
-
-- root `ai()` builder flows
-- root Ollama and ElevenLabs broad compatibility shells
-- Ollama `/api/generate` completion
-- Ollama model listing
-- ElevenLabs voice catalogs, cloning, realtime, and admin-style APIs
-- ElevenLabs file-path convenience flows beyond the shared byte-oriented
-  `TranscriptionModel`
-
-## Ollama Example
-
-```dart
-import 'package:llm_dart_community/llm_dart_community.dart' as community;
-import 'package:llm_dart_core/llm_dart_core.dart' as core;
-
-Future<void> main() async {
-  final model = community.Ollama(
-    baseUrl: 'http://localhost:11434',
-  ).chatModel('llama3.2');
-
-  final result = await core.generateTextCall(
-    model: model,
-    prompt: [
-      core.UserPromptMessage.text('Explain when local models are useful.'),
-    ],
-  );
-
-  print(result.text);
-}
-```
-
-Embeddings use the same package-owned namespace:
-
-```dart
-final embeddingModel = community.Ollama().embeddingModel(
-  'nomic-embed-text',
-);
-```
-
-For URI-backed Ollama image inputs that are not already `data:` URIs, configure
-`OllamaBinaryResolver` to resolve bytes before request encoding.
-
-## ElevenLabs Example
-
-```dart
-import 'package:llm_dart_community/llm_dart_community.dart' as community;
-import 'package:llm_dart_core/llm_dart_core.dart' as core;
-
-Future<void> main() async {
-  final speechModel = community.ElevenLabs(
-    apiKey: 'your-elevenlabs-key',
-  ).speechModel('eleven_multilingual_v2');
-
-  final speech = await core.generateSpeech(
-    model: speechModel,
-    text: 'Speak clearly and naturally.',
-  );
-
-  print(speech.audioBytes.length);
-}
-```
-
-Direct-audio transcription uses the same package-owned namespace:
-
-```dart
-final transcriptionModel = community.ElevenLabs(
-  apiKey: 'your-elevenlabs-key',
-).transcriptionModel('scribe_v1');
-```
-
 ## Relationship To The Root Package
 
-`package:llm_dart/legacy.dart` still exposes broader compatibility shells for
-Ollama and ElevenLabs.
-
-Prefer that root compatibility layer only when you truly need broader
-provider-specific behavior that does not belong in the shared-capability model
-surface yet.
-
-## Related Docs
-
-- Root package overview: `../../README.md`
-- Migration guide:
-  `../../docs/workstreams/2026-03-architecture-refactor/38-migration-guide.md`
-- Community provider public-entry guidance:
-  `../../docs/workstreams/2026-03-architecture-refactor/104-community-provider-public-entry-guidance.md`
+If you need broader legacy or compatibility-era provider APIs, use the root
+compatibility entrypoints instead of treating this package as a drop-in
+replacement for the old root shells.
