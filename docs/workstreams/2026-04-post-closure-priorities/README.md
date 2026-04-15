@@ -212,6 +212,9 @@ This phase should explicitly avoid:
   - Runnable pure-Dart HTTP chat transport example that sends app-owned
     metadata to a backend, maps it into provider-specific execution hints, and
     streams UI chunks back through the transport server adapter.
+- [31-flutter-http-backend-integration-example.md](31-flutter-http-backend-integration-example.md)
+  - Flutter `ChatController` example and regression test that apply the same
+    backend-hint mapping pattern through `HttpChatTransport`.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)

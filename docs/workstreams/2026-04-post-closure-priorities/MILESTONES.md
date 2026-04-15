@@ -34,6 +34,9 @@ Current status:
 - a runnable pure-Dart backend-hint example now shows how app metadata can be
   mapped into backend-owned provider execution plans while streaming UI chunks
   back through `HttpChatTransportServerAdapter`
+- Flutter now also has a controller-level example and regression test for the
+  same backend-hint mapping pattern, without introducing provider-specific
+  transport behavior into `llm_dart_flutter`
 
 
 ## M2 - Provider UI Extension Contract

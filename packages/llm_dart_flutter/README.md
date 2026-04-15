@@ -132,9 +132,14 @@ Future<void> main() async {
     options: const ChatRequestOptions(),
   );
 
-  await controller.close();
+await controller.close();
 }
 ```
+
+For a fuller controller-level example that keeps provider-specific invocation
+settings backend-owned, see:
+
+- `example/flutter_http_backend_integration.dart`
 
 `HttpChatTransport` expects:
 
@@ -156,6 +161,9 @@ envelope.
 For a runnable pure-Dart backend-hint example that uses the same runtime layer
 Flutter builds on, see
 `../llm_dart_chat/example/http_backend_hint_mapping.dart`.
+
+For the Flutter-controller variant of the same pattern, see
+`example/flutter_http_backend_integration.dart`.
 
 If your backend is also Dart, prefer building the SSE response in
 `package:llm_dart_transport` rather than `llm_dart_flutter`:

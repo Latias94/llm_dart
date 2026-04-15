@@ -74,6 +74,8 @@
   serializing raw `ProviderInvocationOptions`
 - [x] Add a runnable backend-hint mapping example for `HttpChatTransport` so
   Flutter/chat apps have a copyable metadata-to-provider-options pattern
+- [x] Add a Flutter-controller example and regression test for backend-owned
+  provider routing through `HttpChatTransport`
 
 ## Selective Provider Expansion
 

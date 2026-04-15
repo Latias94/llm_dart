@@ -35,6 +35,10 @@ maps those hints into provider-specific invocation options.
 ### [packages/llm_dart_flutter/example/flutter_integration.dart](../../packages/llm_dart_flutter/example/flutter_integration.dart)
 Flutter app integration patterns now live with the dedicated `llm_dart_flutter` package.
 
+### [packages/llm_dart_flutter/example/flutter_http_backend_integration.dart](../../packages/llm_dart_flutter/example/flutter_http_backend_integration.dart)
+Flutter `ChatController` example that keeps provider-specific routing and
+invocation shaping on the backend while still using `HttpChatTransport`.
+
 ### [batch_processor.dart](batch_processor.dart)
 Large-scale data processing with concurrent workers, rate limiting, and progress tracking.
 

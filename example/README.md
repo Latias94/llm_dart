@@ -32,6 +32,7 @@ manually.
 | **Build multimodal apps** | [multimodal_app.dart](05_use_cases/multimodal_app.dart) |
 | **Use the pure chat runtime** | [packages/llm_dart_chat/example/chat_runtime.dart](../packages/llm_dart_chat/example/chat_runtime.dart) |
 | **Send backend chat hints** | [packages/llm_dart_chat/example/http_backend_hint_mapping.dart](../packages/llm_dart_chat/example/http_backend_hint_mapping.dart) |
+| **Use Flutter + backend hints** | [packages/llm_dart_flutter/example/flutter_http_backend_integration.dart](../packages/llm_dart_flutter/example/flutter_http_backend_integration.dart) |
 | **Connect external tools** | [mcp_concept_demo.dart](06_mcp_integration/mcp_concept_demo.dart) |
 
 ## Directory Structure
@@ -111,6 +112,7 @@ shared-capability happy path.
 - [packages/llm_dart_chat/example/chat_runtime.dart](../packages/llm_dart_chat/example/chat_runtime.dart) - Framework-neutral session runtime patterns
 - [packages/llm_dart_chat/example/http_backend_hint_mapping.dart](../packages/llm_dart_chat/example/http_backend_hint_mapping.dart) - HTTP chat transport metadata-to-backend-options pattern
 - [packages/llm_dart_flutter/example/flutter_integration.dart](../packages/llm_dart_flutter/example/flutter_integration.dart) - Flutter app patterns
+- [packages/llm_dart_flutter/example/flutter_http_backend_integration.dart](../packages/llm_dart_flutter/example/flutter_http_backend_integration.dart) - Flutter `ChatController` + backend-owned provider routing pattern
 - [batch_processor.dart](05_use_cases/batch_processor.dart) - Large-scale data processing
 - [multimodal_app.dart](05_use_cases/multimodal_app.dart) - Text, image, and audio processing
 
