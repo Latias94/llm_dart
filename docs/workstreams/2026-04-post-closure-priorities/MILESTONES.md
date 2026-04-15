@@ -71,6 +71,9 @@ Current status:
   reconnect stays transport-owned
 - a shared renderer registry is now also explicitly deferred until repeated app
   integrations show the same composition pain
+- Flutter now also has a widget-level tool/approval demo that exercises the
+  existing `awaitingApproval` and `awaitingTool` states in a real UI without
+  requiring new shared events or a shared widget layer
 
 ## M3 - Dependency Guardrails And Compatibility Containment
 

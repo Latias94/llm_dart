@@ -219,6 +219,10 @@ This phase should explicitly avoid:
   - Minimal widget-level Flutter Material chat demo that validates the current
     session, event, and backend-hint boundaries without adding a widget layer
     to `llm_dart_flutter`.
+- [33-flutter-tool-approval-demo.md](33-flutter-tool-approval-demo.md)
+  - Widget-level Flutter tool/approval demo that validates the current
+    `awaitingApproval` and `awaitingTool` control surface without widening the
+    shared event model.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)

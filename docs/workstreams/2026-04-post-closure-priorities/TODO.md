@@ -78,6 +78,9 @@
   provider routing through `HttpChatTransport`
 - [x] Add a widget-level Flutter Material demo that exercises backend-owned
   provider routing without introducing shared chat widgets
+- [x] Add a widget-level Flutter tool/approval demo that exercises
+  `awaitingApproval` and `awaitingTool` without adding shared widgets or new
+  shared events
 
 ## Selective Provider Expansion
 

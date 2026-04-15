@@ -44,6 +44,11 @@ Minimal `MaterialApp` chat screen that uses `ChatController` plus backend-owned
 provider routing so Flutter applications have a widget-level integration
 reference.
 
+### [packages/llm_dart_flutter/example/flutter_tool_approval_demo.dart](../../packages/llm_dart_flutter/example/flutter_tool_approval_demo.dart)
+Minimal `MaterialApp` chat screen that demonstrates the manual UI flow for
+provider approval plus local tool execution using the existing chat session
+surface.
+
 ### [batch_processor.dart](batch_processor.dart)
 Large-scale data processing with concurrent workers, rate limiting, and progress tracking.
 

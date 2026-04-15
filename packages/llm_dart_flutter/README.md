@@ -376,6 +376,10 @@ Provider-executed tool behavior remains provider-owned. The session layer only
 models stable tool and approval state transitions that a Flutter UI needs to
 render.
 
+For a widget-level example that walks the UI through
+`awaitingApproval -> awaitingTool -> ready`, see
+`example/flutter_tool_approval_demo.dart`.
+
 ## Optional Local Tool Callback
 
 `DefaultChatSession` can also auto-run local client-side tools through
