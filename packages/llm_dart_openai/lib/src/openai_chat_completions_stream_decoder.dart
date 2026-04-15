@@ -9,7 +9,6 @@ Iterable<TextStreamEvent> _decodeOpenAIChatCompletionsStreamChunk(
     support: codec._support,
     state: state,
     chunk: chunk,
-    providerMetadataBuilder: codec._providerMetadata,
   );
   captureOpenAIResponseMetadata(
     state: state,
@@ -157,35 +156,32 @@ final class _ChatCompletionsStreamMetadataAdapter {
   final OpenAIChatCompletionsSupport support;
   final OpenAIChatCompletionsStreamState state;
   final Map<String, Object?> chunk;
-  final ProviderMetadata? Function(Map<String, Object?> values)
-      providerMetadataBuilder;
 
   const _ChatCompletionsStreamMetadataAdapter({
     required this.support,
     required this.state,
     required this.chunk,
-    required this.providerMetadataBuilder,
   });
 
   ProviderMetadata? response() => support.providerMetadata({
         'responseId': state.responseId,
       });
 
-  ProviderMetadata? reasoning() => providerMetadataBuilder({
+  ProviderMetadata? reasoning() => support.providerMetadata({
         'responseId': state.responseId,
       });
 
-  ProviderMetadata? text(List<Object?>? logprobs) => providerMetadataBuilder({
+  ProviderMetadata? text(List<Object?>? logprobs) => support.providerMetadata({
         'responseId': state.responseId,
         'logprobs': logprobs,
       });
 
-  ProviderMetadata? tool(int index) => providerMetadataBuilder({
+  ProviderMetadata? tool(int index) => support.providerMetadata({
         'responseId': state.responseId,
         'toolIndex': index,
       });
 
-  ProviderMetadata? finish() => providerMetadataBuilder({
+  ProviderMetadata? finish() => support.providerMetadata({
         'responseId': state.responseId,
         'systemFingerprint': chunk['system_fingerprint'] is String
             ? chunk['system_fingerprint'] as String

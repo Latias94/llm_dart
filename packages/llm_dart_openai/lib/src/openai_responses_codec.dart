@@ -68,7 +68,7 @@ final class OpenAIResponsesCodec {
     final metadata = _ResponsesStreamMetadataAdapter(
       state: state,
       chunk: chunk,
-      customMetadataBuilder: _providerMetadata,
+      customMetadataBuilder: openAIResponsesProviderMetadata,
     );
 
     switch (chunkType) {
@@ -138,23 +138,6 @@ final class OpenAIResponsesCodec {
         yield* _handleErrorChunk(chunk);
         return;
     }
-  }
-
-  ProviderMetadata? _providerMetadata(Map<String, Object?> values) {
-    final openaiValues = <String, Object?>{};
-    for (final entry in values.entries) {
-      if (entry.value != null) {
-        openaiValues[entry.key] = entry.value;
-      }
-    }
-
-    if (openaiValues.isEmpty) {
-      return null;
-    }
-
-    return ProviderMetadata({
-      'openai': openaiValues,
-    });
   }
 
   Map<String, Object?>? _asMap(Object? value) {

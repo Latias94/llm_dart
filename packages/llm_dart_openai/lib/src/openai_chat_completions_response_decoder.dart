@@ -19,7 +19,7 @@ extension _OpenAIChatCompletionsCodecResponseDecoder
       content.add(
         ReasoningContentPart(
           reasoning,
-          providerMetadata: _providerMetadata({
+          providerMetadata: _support.providerMetadata({
             'finishReason': rawFinishReason,
           }),
         ),
@@ -30,7 +30,7 @@ extension _OpenAIChatCompletionsCodecResponseDecoder
       content.add(
         TextContentPart(
           decodedText.text,
-          providerMetadata: _providerMetadata({
+          providerMetadata: _support.providerMetadata({
             'finishReason': rawFinishReason,
             'logprobs': textLogprobs,
           }),
@@ -64,23 +64,6 @@ extension _OpenAIChatCompletionsCodecResponseDecoder
   List<Object?>? _decodeChatLogprobs(Object? value) {
     final logprobs = _asMap(value);
     return _jsonListOrNull(logprobs?['content']);
-  }
-
-  ProviderMetadata? _providerMetadata(Map<String, Object?> values) {
-    final scopedValues = <String, Object?>{};
-    for (final entry in values.entries) {
-      if (entry.value != null) {
-        scopedValues[entry.key] = entry.value;
-      }
-    }
-
-    if (scopedValues.isEmpty) {
-      return null;
-    }
-
-    return ProviderMetadata({
-      providerNamespace: scopedValues,
-    });
   }
 
   UsageStats? _decodeUsage(Map<String, Object?>? usage) {
