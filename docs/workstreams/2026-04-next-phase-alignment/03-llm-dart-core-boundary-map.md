@@ -16,7 +16,7 @@ already exports several different concern clusters:
 - `common/` - 10 files
 - `model/` - 20 files
 - `serialization/` - 6 files
-- `ui/` - 6 files
+- `ui/` - 8 files
 - `prompt/`, `stream/`, `tool/`, and `content/` - smaller but foundational
   layers
 
@@ -120,6 +120,8 @@ Representative files:
 - `src/ui/chat_ui_stream_chunk.dart`
 - `src/ui/chat_message_mapper.dart`
 - `src/ui/chat_ui_accumulator.dart`
+- `src/ui/chat_ui_accumulator_metadata_support.dart`
+- `src/ui/chat_ui_accumulator_text_support.dart`
 - `src/ui/chat_ui_accumulator_tool_support.dart`
 - `src/ui/chat_ui_stream_accumulator.dart`
 

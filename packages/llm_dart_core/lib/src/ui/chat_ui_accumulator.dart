@@ -6,6 +6,8 @@ import '../common/provider_metadata.dart';
 import '../stream/text_stream_event.dart';
 import 'chat_ui_message.dart';
 
+part 'chat_ui_accumulator_metadata_support.dart';
+part 'chat_ui_accumulator_text_support.dart';
 part 'chat_ui_accumulator_tool_support.dart';
 
 final class ChatUiAccumulatorOptions {
@@ -68,109 +70,21 @@ final class ChatUiAccumulator {
   ChatUiMessage apply(TextStreamEvent event) {
     switch (event) {
       case StartEvent():
-        _metadata[ChatUiMetadataKeys.warnings] =
-            List.unmodifiable(event.warnings);
+        _applyStartEvent(event);
       case ResponseMetadataEvent():
-        _setMetadataIfNotNull(ChatUiMetadataKeys.responseId, event.responseId);
-        _setMetadataIfNotNull(
-          ChatUiMetadataKeys.responseTimestamp,
-          event.timestamp,
-        );
-        _setMetadataIfNotNull(ChatUiMetadataKeys.modelId, event.modelId);
-        if (event.providerMetadata != null) {
-          _metadata[ChatUiMetadataKeys.responseProviderMetadata] =
-              ProviderMetadata.mergeNullable(
-            _metadata[ChatUiMetadataKeys.responseProviderMetadata]
-                as ProviderMetadata?,
-            event.providerMetadata,
-          );
-        }
+        _applyResponseMetadataEvent(event);
       case TextStartEvent():
-        _activeTextPartIndexes[event.id] = _appendPart(
-          TextUiPart(
-            text: '',
-            isStreaming: true,
-            providerMetadata: event.providerMetadata,
-          ),
-        );
+        _applyTextStartEvent(event);
       case TextDeltaEvent():
-        final index = _requireActivePartIndex(
-          _activeTextPartIndexes,
-          event.id,
-          eventName: 'text-delta',
-          startEventName: 'text-start',
-          partName: 'text part',
-        );
-        final current = _parts[index] as TextUiPart;
-        _parts[index] = TextUiPart(
-          text: current.text + event.delta,
-          isStreaming: true,
-          providerMetadata: ProviderMetadata.mergeNullable(
-            current.providerMetadata,
-            event.providerMetadata,
-          ),
-        );
+        _applyTextDeltaEvent(event);
       case TextEndEvent():
-        final index = _requireActivePartIndex(
-          _activeTextPartIndexes,
-          event.id,
-          eventName: 'text-end',
-          startEventName: 'text-start',
-          partName: 'text part',
-        );
-        final current = _parts[index] as TextUiPart;
-        _parts[index] = TextUiPart(
-          text: current.text,
-          isStreaming: false,
-          providerMetadata: ProviderMetadata.mergeNullable(
-            current.providerMetadata,
-            event.providerMetadata,
-          ),
-        );
-        _activeTextPartIndexes.remove(event.id);
+        _applyTextEndEvent(event);
       case ReasoningStartEvent():
-        _activeReasoningPartIndexes[event.id] = _appendPart(
-          ReasoningUiPart(
-            text: '',
-            isStreaming: true,
-            providerMetadata: event.providerMetadata,
-          ),
-        );
+        _applyReasoningStartEvent(event);
       case ReasoningDeltaEvent():
-        final index = _requireActivePartIndex(
-          _activeReasoningPartIndexes,
-          event.id,
-          eventName: 'reasoning-delta',
-          startEventName: 'reasoning-start',
-          partName: 'reasoning part',
-        );
-        final current = _parts[index] as ReasoningUiPart;
-        _parts[index] = ReasoningUiPart(
-          text: current.text + event.delta,
-          isStreaming: true,
-          providerMetadata: ProviderMetadata.mergeNullable(
-            current.providerMetadata,
-            event.providerMetadata,
-          ),
-        );
+        _applyReasoningDeltaEvent(event);
       case ReasoningEndEvent():
-        final index = _requireActivePartIndex(
-          _activeReasoningPartIndexes,
-          event.id,
-          eventName: 'reasoning-end',
-          startEventName: 'reasoning-start',
-          partName: 'reasoning part',
-        );
-        final current = _parts[index] as ReasoningUiPart;
-        _parts[index] = ReasoningUiPart(
-          text: current.text,
-          isStreaming: false,
-          providerMetadata: ProviderMetadata.mergeNullable(
-            current.providerMetadata,
-            event.providerMetadata,
-          ),
-        );
-        _activeReasoningPartIndexes.remove(event.id);
+        _applyReasoningEndEvent(event);
       case ReasoningFileEvent():
         _appendPart(
           ReasoningFileUiPart(
@@ -204,42 +118,13 @@ final class ChatUiAccumulator {
           ),
         );
       case StepStartEvent():
-        final stepId = event.stepId ?? 'step-$_nextStepIndex';
-        _nextStepIndex += 1;
-        _appendPart(StepBoundaryUiPart(stepId));
+        _applyStepStartEvent(event);
       case StepFinishEvent():
-        _activeTextPartIndexes.clear();
-        _activeReasoningPartIndexes.clear();
-        _partialToolInputs.clear();
+        _applyStepFinishEvent();
       case AbortEvent(:final reason):
-        _metadata[ChatUiMetadataKeys.isAborted] = true;
-        if (reason != null) {
-          _metadata[ChatUiMetadataKeys.abortReason] = reason;
-        }
+        _applyAbortEvent(reason);
       case FinishEvent():
-        _metadata[ChatUiMetadataKeys.finishReason] = event.finishReason;
-        _setMetadataIfNotNull(
-          ChatUiMetadataKeys.rawFinishReason,
-          event.rawFinishReason,
-        );
-        if (event.finishReason == FinishReason.aborted) {
-          _metadata[ChatUiMetadataKeys.isAborted] = true;
-          _setMetadataIfNotNull(
-            ChatUiMetadataKeys.abortReason,
-            event.rawFinishReason,
-          );
-        }
-        if (event.usage != null) {
-          _metadata[ChatUiMetadataKeys.usage] = event.usage;
-        }
-        if (event.providerMetadata != null) {
-          _metadata[ChatUiMetadataKeys.finishProviderMetadata] =
-              ProviderMetadata.mergeNullable(
-            _metadata[ChatUiMetadataKeys.finishProviderMetadata]
-                as ProviderMetadata?,
-            event.providerMetadata,
-          );
-        }
+        _applyFinishEvent(event);
       case CustomEvent():
         _appendPart(
           CustomUiPart(
@@ -249,19 +134,9 @@ final class ChatUiAccumulator {
           ),
         );
       case RawChunkEvent():
-        if (options.includeRawChunksInMetadata) {
-          final current =
-              _metadata[ChatUiMetadataKeys.rawChunks] as List<Object?>? ??
-                  const <Object?>[];
-          _metadata[ChatUiMetadataKeys.rawChunks] =
-              List<Object?>.unmodifiable([...current, event.raw]);
-        }
+        _applyRawChunkEvent(event);
       case ErrorEvent():
-        final current =
-            _metadata[ChatUiMetadataKeys.errors] as List<ModelError>? ??
-                const <ModelError>[];
-        _metadata[ChatUiMetadataKeys.errors] =
-            List<ModelError>.unmodifiable([...current, event.error]);
+        _applyErrorEvent(event);
     }
 
     return message;

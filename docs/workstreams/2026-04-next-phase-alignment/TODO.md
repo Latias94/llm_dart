@@ -29,6 +29,8 @@
   cleanup and identify the next likely seam
 - [x] Split `ChatUiAccumulator` tool lifecycle projection into internal support
   without changing the shared event surface
+- [x] Split `ChatUiAccumulator` text/reasoning lanes and metadata projection
+  into internal support without changing the shared event surface
 - [x] Adopt focused core entrypoints in `llm_dart_transport`
 - [x] Adopt focused core entrypoints in `llm_dart_chat`
 
