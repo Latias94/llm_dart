@@ -15,7 +15,7 @@ already exports several different concern clusters:
 
 - `common/` - 10 files
 - `model/` - 20 files
-- `serialization/` - 5 files
+- `serialization/` - 6 files
 - `ui/` - 5 files
 - `prompt/`, `stream/`, `tool/`, and `content/` - smaller but foundational
   layers
@@ -132,6 +132,8 @@ This layer owns wire-safe codecs for the shared contracts:
 - prompt JSON codecs
 - chat UI JSON codecs
 - text stream event JSON codecs
+- shared JSON codec support for metadata, usage, files, sources, warnings, and
+  errors
 - serialization protocol markers
 
 Representative files:
@@ -139,6 +141,7 @@ Representative files:
 - `src/serialization/prompt_json_codec.dart`
 - `src/serialization/chat_ui_json_codec.dart`
 - `src/serialization/text_stream_event_json_codec.dart`
+- `src/serialization/serialization_json_support.dart`
 - `src/serialization/serialization_protocol.dart`
 
 ## Ownership Rules For Other Packages

@@ -23,6 +23,8 @@
   of `llm_dart_core`
 - [x] Add non-breaking focused `llm_dart_core` entrypoints for foundation,
   model, UI, and serialization ownership groups
+- [x] Extract shared serialization JSON support for repeated metadata, usage,
+  file, source, warning, and error codecs
 - [x] Adopt focused core entrypoints in `llm_dart_transport`
 - [x] Adopt focused core entrypoints in `llm_dart_chat`
 

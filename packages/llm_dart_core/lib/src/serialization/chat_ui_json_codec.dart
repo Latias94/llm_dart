@@ -1,13 +1,11 @@
-import 'dart:convert';
-
 import '../common/model_error.dart';
 import '../common/model_warning.dart';
 import '../common/provider_metadata.dart';
 import '../common/usage_stats.dart';
-import '../content/content_part.dart';
 import '../model/language_model.dart';
 import '../ui/chat_ui_message.dart';
 import 'json_codec_common.dart';
+import 'serialization_json_support.dart';
 import 'serialization_protocol.dart';
 
 final class ChatUiJsonCodec {
@@ -91,7 +89,8 @@ final class ChatUiJsonCodec {
           'text': text,
           'isStreaming': isStreaming,
           if (providerMetadata != null)
-            'providerMetadata': _encodeProviderMetadata(providerMetadata),
+            'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
+                providerMetadata),
         },
       ReasoningUiPart(
         :final text,
@@ -103,7 +102,8 @@ final class ChatUiJsonCodec {
           'text': text,
           'isStreaming': isStreaming,
           if (providerMetadata != null)
-            'providerMetadata': _encodeProviderMetadata(providerMetadata),
+            'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
+                providerMetadata),
         },
       ToolUiPart(
         :final toolCallId,
@@ -137,14 +137,16 @@ final class ChatUiJsonCodec {
           if (approval != null) 'approval': _encodeApprovalState(approval),
           if (callProviderMetadata != null)
             'callProviderMetadata':
-                _encodeProviderMetadata(callProviderMetadata),
+                SerializationJsonSupport.encodeProviderMetadata(
+                    callProviderMetadata),
           if (resultProviderMetadata != null)
             'resultProviderMetadata':
-                _encodeProviderMetadata(resultProviderMetadata),
+                SerializationJsonSupport.encodeProviderMetadata(
+                    resultProviderMetadata),
         },
       SourceUiPart(:final source) => {
           'type': 'source',
-          'source': _encodeSourceReference(source),
+          'source': SerializationJsonSupport.encodeSourceReference(source),
         },
       FileUiPart(
         :final file,
@@ -152,9 +154,10 @@ final class ChatUiJsonCodec {
       ) =>
         {
           'type': 'file',
-          'file': _encodeGeneratedFile(file),
+          'file': SerializationJsonSupport.encodeGeneratedFile(file),
           if (providerMetadata != null)
-            'providerMetadata': _encodeProviderMetadata(providerMetadata),
+            'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
+                providerMetadata),
         },
       ReasoningFileUiPart(
         :final file,
@@ -162,9 +165,10 @@ final class ChatUiJsonCodec {
       ) =>
         {
           'type': 'reasoning-file',
-          'file': _encodeGeneratedFile(file),
+          'file': SerializationJsonSupport.encodeGeneratedFile(file),
           if (providerMetadata != null)
-            'providerMetadata': _encodeProviderMetadata(providerMetadata),
+            'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
+                providerMetadata),
         },
       CustomUiPart(
         :final kind,
@@ -176,7 +180,8 @@ final class ChatUiJsonCodec {
           'kind': kind,
           'data': ensureJsonValue(data, path: r'$.custom.data'),
           if (providerMetadata != null)
-            'providerMetadata': _encodeProviderMetadata(providerMetadata),
+            'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
+                providerMetadata),
         },
       StepBoundaryUiPart(:final stepId) => {
           'type': 'step-boundary',
@@ -204,7 +209,7 @@ final class ChatUiJsonCodec {
           isStreaming: asNullableJsonBool(map['isStreaming'],
                   path: '$path.isStreaming') ??
               false,
-          providerMetadata: _decodeProviderMetadata(
+          providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
@@ -214,7 +219,7 @@ final class ChatUiJsonCodec {
           isStreaming: asNullableJsonBool(map['isStreaming'],
                   path: '$path.isStreaming') ??
               false,
-          providerMetadata: _decodeProviderMetadata(
+          providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
@@ -245,28 +250,32 @@ final class ChatUiJsonCodec {
           title: asNullableJsonString(map['title'], path: '$path.title'),
           approval:
               _decodeApprovalState(map['approval'], path: '$path.approval'),
-          callProviderMetadata: _decodeProviderMetadata(
+          callProviderMetadata: SerializationJsonSupport.decodeProviderMetadata(
             map['callProviderMetadata'],
             path: '$path.callProviderMetadata',
           ),
-          resultProviderMetadata: _decodeProviderMetadata(
+          resultProviderMetadata:
+              SerializationJsonSupport.decodeProviderMetadata(
             map['resultProviderMetadata'],
             path: '$path.resultProviderMetadata',
           ),
         ),
       'source' => SourceUiPart(
-          _decodeSourceReference(map['source'], path: '$path.source'),
+          SerializationJsonSupport.decodeSourceReference(map['source'],
+              path: '$path.source'),
         ),
       'file' => FileUiPart(
-          _decodeGeneratedFile(map['file'], path: '$path.file'),
-          providerMetadata: _decodeProviderMetadata(
+          SerializationJsonSupport.decodeGeneratedFile(map['file'],
+              path: '$path.file'),
+          providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
         ),
       'reasoning-file' => ReasoningFileUiPart(
-          _decodeGeneratedFile(map['file'], path: '$path.file'),
-          providerMetadata: _decodeProviderMetadata(
+          SerializationJsonSupport.decodeGeneratedFile(map['file'],
+              path: '$path.file'),
+          providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
@@ -274,7 +283,7 @@ final class ChatUiJsonCodec {
       'custom' => CustomUiPart(
           kind: asJsonString(map['kind'], path: '$path.kind'),
           data: map['data'],
-          providerMetadata: _decodeProviderMetadata(
+          providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
@@ -333,14 +342,16 @@ final class ChatUiJsonCodec {
       ChatUiMetadataKeys.finishProviderMetadata =>
         value == null
             ? null
-            : _encodeProviderMetadata(value as ProviderMetadata),
+            : SerializationJsonSupport.encodeProviderMetadata(
+                value as ProviderMetadata),
       ChatUiMetadataKeys.errors => _encodeModelErrors(
           value,
           path: r'$.metadata.errors',
         ),
       ChatUiMetadataKeys.finishReason => (value as FinishReason?)?.name,
-      ChatUiMetadataKeys.usage =>
-        value == null ? null : _encodeUsageStats(value as UsageStats),
+      ChatUiMetadataKeys.usage => value == null
+          ? null
+          : SerializationJsonSupport.encodeUsageStats(value as UsageStats),
       _ => ensureJsonValue(value, path: r'$.metadata'),
     };
   }
@@ -365,7 +376,7 @@ final class ChatUiJsonCodec {
         );
       }
 
-      return _encodeModelWarning(warning);
+      return SerializationJsonSupport.encodeModelWarning(warning);
     }).toList(growable: false);
   }
 
@@ -382,7 +393,8 @@ final class ChatUiJsonCodec {
     }
 
     return value
-        .map((entry) => _encodeModelError(ModelError.fromUnknown(entry)))
+        .map((entry) => SerializationJsonSupport.encodeModelError(
+            ModelError.fromUnknown(entry)))
         .toList(growable: false);
   }
 
@@ -396,7 +408,7 @@ final class ChatUiJsonCodec {
           .asMap()
           .entries
           .map(
-            (entry) => _decodeModelWarning(
+            (entry) => SerializationJsonSupport.decodeModelWarning(
               entry.value,
               path: '$path[${entry.key}]',
             ),
@@ -406,12 +418,12 @@ final class ChatUiJsonCodec {
         value == null ? null : DateTime.parse(asJsonString(value, path: path)),
       ChatUiMetadataKeys.responseProviderMetadata ||
       ChatUiMetadataKeys.finishProviderMetadata =>
-        _decodeProviderMetadata(value, path: path),
+        SerializationJsonSupport.decodeProviderMetadata(value, path: path),
       ChatUiMetadataKeys.errors => asJsonList(value, path: path)
           .asMap()
           .entries
           .map(
-            (entry) => _decodeModelError(
+            (entry) => SerializationJsonSupport.decodeModelError(
               entry.value,
               path: '$path[${entry.key}]',
             ),
@@ -420,24 +432,10 @@ final class ChatUiJsonCodec {
       ChatUiMetadataKeys.finishReason => value == null
           ? null
           : FinishReason.values.byName(asJsonString(value, path: path)),
-      ChatUiMetadataKeys.usage => _decodeUsageStats(value, path: path),
+      ChatUiMetadataKeys.usage =>
+        SerializationJsonSupport.decodeUsageStats(value, path: path),
       _ => value,
     };
-  }
-
-  JsonMap _encodeProviderMetadata(ProviderMetadata metadata) {
-    return metadata.toJsonMap();
-  }
-
-  ProviderMetadata? _decodeProviderMetadata(
-    Object? value, {
-    required String path,
-  }) {
-    if (value == null) {
-      return null;
-    }
-
-    return ProviderMetadata(asJsonMap(value, path: path));
   }
 
   JsonMap _encodeApprovalState(ToolApprovalUiState state) {
@@ -462,188 +460,5 @@ final class ChatUiJsonCodec {
       approved: asNullableJsonBool(map['approved'], path: '$path.approved'),
       reason: asNullableJsonString(map['reason'], path: '$path.reason'),
     );
-  }
-
-  JsonMap _encodeSourceReference(SourceReference source) {
-    return {
-      'kind': _encodeSourceReferenceKind(source.kind),
-      'sourceId': source.sourceId,
-      if (source.uri != null) 'uri': source.uri.toString(),
-      if (source.title != null) 'title': source.title,
-      if (source.filename != null) 'filename': source.filename,
-      if (source.mediaType != null) 'mediaType': source.mediaType,
-      if (source.providerMetadata != null)
-        'providerMetadata': _encodeProviderMetadata(source.providerMetadata!),
-    };
-  }
-
-  SourceReference _decodeSourceReference(
-    Object? value, {
-    required String path,
-  }) {
-    final map = asJsonMap(value, path: path);
-    return SourceReference(
-      kind: _decodeSourceReferenceKind(
-        map['kind'],
-        path: '$path.kind',
-        uri: map['uri'],
-      ),
-      sourceId: asJsonString(map['sourceId'], path: '$path.sourceId'),
-      uri: _decodeUri(map['uri'], path: '$path.uri'),
-      title: asNullableJsonString(map['title'], path: '$path.title'),
-      filename: asNullableJsonString(map['filename'], path: '$path.filename'),
-      mediaType:
-          asNullableJsonString(map['mediaType'], path: '$path.mediaType'),
-      providerMetadata: _decodeProviderMetadata(
-        map['providerMetadata'],
-        path: '$path.providerMetadata',
-      ),
-    );
-  }
-
-  String _encodeSourceReferenceKind(SourceReferenceKind kind) {
-    switch (kind) {
-      case SourceReferenceKind.url:
-        return 'url';
-      case SourceReferenceKind.document:
-        return 'document';
-      case SourceReferenceKind.other:
-        return 'other';
-    }
-  }
-
-  SourceReferenceKind _decodeSourceReferenceKind(
-    Object? value, {
-    required String path,
-    required Object? uri,
-  }) {
-    final kind = asNullableJsonString(value, path: path);
-    return switch (kind) {
-      'url' => SourceReferenceKind.url,
-      'document' => SourceReferenceKind.document,
-      'other' => SourceReferenceKind.other,
-      null =>
-        uri == null ? SourceReferenceKind.document : SourceReferenceKind.url,
-      _ => throw FormatException('Invalid source kind at $path: $kind'),
-    };
-  }
-
-  JsonMap _encodeGeneratedFile(GeneratedFile file) {
-    return {
-      'mediaType': file.mediaType,
-      if (file.filename != null) 'filename': file.filename,
-      if (file.uri != null) 'uri': file.uri.toString(),
-      if (file.bytes != null) 'bytes': _encodeBytes(file.bytes!),
-    };
-  }
-
-  GeneratedFile _decodeGeneratedFile(
-    Object? value, {
-    required String path,
-  }) {
-    final map = asJsonMap(value, path: path);
-    return GeneratedFile(
-      mediaType: asJsonString(map['mediaType'], path: '$path.mediaType'),
-      filename: asNullableJsonString(map['filename'], path: '$path.filename'),
-      uri: _decodeUri(map['uri'], path: '$path.uri'),
-      bytes: _decodeBytes(map['bytes'], path: '$path.bytes'),
-    );
-  }
-
-  JsonMap _encodeUsageStats(UsageStats stats) {
-    return {
-      'inputTokens': stats.inputTokens,
-      'outputTokens': stats.outputTokens,
-      'totalTokens': stats.totalTokens,
-      'reasoningTokens': stats.reasoningTokens,
-    };
-  }
-
-  UsageStats? _decodeUsageStats(
-    Object? value, {
-    required String path,
-  }) {
-    if (value == null) {
-      return null;
-    }
-
-    final map = asJsonMap(value, path: path);
-    return UsageStats(
-      inputTokens:
-          asNullableJsonInt(map['inputTokens'], path: '$path.inputTokens'),
-      outputTokens:
-          asNullableJsonInt(map['outputTokens'], path: '$path.outputTokens'),
-      totalTokens:
-          asNullableJsonInt(map['totalTokens'], path: '$path.totalTokens'),
-      reasoningTokens: asNullableJsonInt(
-        map['reasoningTokens'],
-        path: '$path.reasoningTokens',
-      ),
-    );
-  }
-
-  JsonMap _encodeModelWarning(ModelWarning warning) {
-    return {
-      'type': warning.type.name,
-      'message': warning.message,
-      if (warning.field != null) 'field': warning.field,
-    };
-  }
-
-  JsonMap _encodeModelError(ModelError error) {
-    return error.toJsonMap();
-  }
-
-  ModelWarning _decodeModelWarning(
-    Object? value, {
-    required String path,
-  }) {
-    final map = asJsonMap(value, path: path);
-    return ModelWarning(
-      type: ModelWarningType.values.byName(
-        asJsonString(map['type'], path: '$path.type'),
-      ),
-      message: asJsonString(map['message'], path: '$path.message'),
-      field: asNullableJsonString(map['field'], path: '$path.field'),
-    );
-  }
-
-  ModelError _decodeModelError(
-    Object? value, {
-    required String path,
-  }) {
-    return ModelError.fromJson(value, path: path);
-  }
-
-  JsonMap _encodeBytes(List<int> bytes) {
-    return {
-      'encoding': 'base64',
-      'data': base64Encode(bytes),
-    };
-  }
-
-  List<int>? _decodeBytes(
-    Object? value, {
-    required String path,
-  }) {
-    if (value == null) {
-      return null;
-    }
-
-    final map = asJsonMap(value, path: path);
-    final encoding = asJsonString(map['encoding'], path: '$path.encoding');
-    if (encoding != 'base64') {
-      throw FormatException('Unsupported byte encoding "$encoding" at $path.');
-    }
-
-    return base64Decode(asJsonString(map['data'], path: '$path.data'));
-  }
-
-  Uri? _decodeUri(
-    Object? value, {
-    required String path,
-  }) {
-    final stringValue = asNullableJsonString(value, path: path);
-    return stringValue == null ? null : Uri.parse(stringValue);
   }
 }

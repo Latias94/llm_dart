@@ -1,13 +1,8 @@
-import 'dart:convert';
-
-import '../common/model_error.dart';
-import '../common/model_warning.dart';
-import '../common/provider_metadata.dart';
-import '../common/usage_stats.dart';
 import '../content/content_part.dart';
 import '../model/language_model.dart';
 import '../stream/text_stream_event.dart';
 import 'json_codec_common.dart';
+import 'serialization_json_support.dart';
 import 'serialization_protocol.dart';
 
 final class TextStreamEventJsonCodec {
@@ -51,7 +46,9 @@ final class TextStreamEventJsonCodec {
     return switch (event) {
       StartEvent(:final warnings) => {
           'type': 'start',
-          'warnings': warnings.map(_encodeModelWarning).toList(growable: false),
+          'warnings': warnings
+              .map(SerializationJsonSupport.encodeModelWarning)
+              .toList(growable: false),
         },
       ResponseMetadataEvent(
         :final responseId,
@@ -65,7 +62,8 @@ final class TextStreamEventJsonCodec {
           if (timestamp != null) 'timestamp': timestamp.toIso8601String(),
           if (modelId != null) 'modelId': modelId,
           if (providerMetadata != null)
-            'providerMetadata': _encodeProviderMetadata(providerMetadata),
+            'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
+                providerMetadata),
         },
       TextStartEvent(
         :final id,
@@ -75,7 +73,8 @@ final class TextStreamEventJsonCodec {
           'type': 'text-start',
           'id': id,
           if (providerMetadata != null)
-            'providerMetadata': _encodeProviderMetadata(providerMetadata),
+            'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
+                providerMetadata),
         },
       TextDeltaEvent(
         :final id,
@@ -87,7 +86,8 @@ final class TextStreamEventJsonCodec {
           'id': id,
           'delta': delta,
           if (providerMetadata != null)
-            'providerMetadata': _encodeProviderMetadata(providerMetadata),
+            'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
+                providerMetadata),
         },
       TextEndEvent(
         :final id,
@@ -97,7 +97,8 @@ final class TextStreamEventJsonCodec {
           'type': 'text-end',
           'id': id,
           if (providerMetadata != null)
-            'providerMetadata': _encodeProviderMetadata(providerMetadata),
+            'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
+                providerMetadata),
         },
       ReasoningStartEvent(
         :final id,
@@ -107,7 +108,8 @@ final class TextStreamEventJsonCodec {
           'type': 'reasoning-start',
           'id': id,
           if (providerMetadata != null)
-            'providerMetadata': _encodeProviderMetadata(providerMetadata),
+            'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
+                providerMetadata),
         },
       ReasoningDeltaEvent(
         :final id,
@@ -119,7 +121,8 @@ final class TextStreamEventJsonCodec {
           'id': id,
           'delta': delta,
           if (providerMetadata != null)
-            'providerMetadata': _encodeProviderMetadata(providerMetadata),
+            'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
+                providerMetadata),
         },
       ReasoningEndEvent(
         :final id,
@@ -129,7 +132,8 @@ final class TextStreamEventJsonCodec {
           'type': 'reasoning-end',
           'id': id,
           if (providerMetadata != null)
-            'providerMetadata': _encodeProviderMetadata(providerMetadata),
+            'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
+                providerMetadata),
         },
       ReasoningFileEvent(
         :final file,
@@ -137,9 +141,10 @@ final class TextStreamEventJsonCodec {
       ) =>
         {
           'type': 'reasoning-file',
-          'file': _encodeGeneratedFile(file),
+          'file': SerializationJsonSupport.encodeGeneratedFile(file),
           if (providerMetadata != null)
-            'providerMetadata': _encodeProviderMetadata(providerMetadata),
+            'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
+                providerMetadata),
         },
       ToolInputStartEvent(
         :final toolCallId,
@@ -157,7 +162,8 @@ final class TextStreamEventJsonCodec {
           'isDynamic': isDynamic,
           if (title != null) 'title': title,
           if (providerMetadata != null)
-            'providerMetadata': _encodeProviderMetadata(providerMetadata),
+            'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
+                providerMetadata),
         },
       ToolInputDeltaEvent(
         :final toolCallId,
@@ -169,7 +175,8 @@ final class TextStreamEventJsonCodec {
           'toolCallId': toolCallId,
           'delta': delta,
           if (providerMetadata != null)
-            'providerMetadata': _encodeProviderMetadata(providerMetadata),
+            'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
+                providerMetadata),
         },
       ToolInputEndEvent(
         :final toolCallId,
@@ -179,7 +186,8 @@ final class TextStreamEventJsonCodec {
           'type': 'tool-input-end',
           'toolCallId': toolCallId,
           if (providerMetadata != null)
-            'providerMetadata': _encodeProviderMetadata(providerMetadata),
+            'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
+                providerMetadata),
         },
       ToolInputErrorEvent(
         :final toolCallId,
@@ -201,7 +209,8 @@ final class TextStreamEventJsonCodec {
           'isDynamic': isDynamic,
           if (title != null) 'title': title,
           if (providerMetadata != null)
-            'providerMetadata': _encodeProviderMetadata(providerMetadata),
+            'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
+                providerMetadata),
         },
       ToolCallEvent(
         :final toolCall,
@@ -211,7 +220,8 @@ final class TextStreamEventJsonCodec {
           'type': 'tool-call',
           'toolCall': _encodeToolCallContent(toolCall),
           if (providerMetadata != null)
-            'providerMetadata': _encodeProviderMetadata(providerMetadata),
+            'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
+                providerMetadata),
         },
       ToolResultEvent(
         :final toolResult,
@@ -221,7 +231,8 @@ final class TextStreamEventJsonCodec {
           'type': 'tool-result',
           'toolResult': _encodeToolResultContent(toolResult),
           if (providerMetadata != null)
-            'providerMetadata': _encodeProviderMetadata(providerMetadata),
+            'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
+                providerMetadata),
         },
       ToolApprovalRequestEvent(
         :final approvalId,
@@ -233,7 +244,8 @@ final class TextStreamEventJsonCodec {
           'approvalId': approvalId,
           'toolCallId': toolCallId,
           if (providerMetadata != null)
-            'providerMetadata': _encodeProviderMetadata(providerMetadata),
+            'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
+                providerMetadata),
         },
       ToolOutputDeniedEvent(
         :final toolCallId,
@@ -243,11 +255,12 @@ final class TextStreamEventJsonCodec {
           'type': 'tool-output-denied',
           'toolCallId': toolCallId,
           if (providerMetadata != null)
-            'providerMetadata': _encodeProviderMetadata(providerMetadata),
+            'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
+                providerMetadata),
         },
       SourceEvent(:final source) => {
           'type': 'source',
-          'source': _encodeSourceReference(source),
+          'source': SerializationJsonSupport.encodeSourceReference(source),
         },
       FileEvent(
         :final file,
@@ -255,9 +268,10 @@ final class TextStreamEventJsonCodec {
       ) =>
         {
           'type': 'file',
-          'file': _encodeGeneratedFile(file),
+          'file': SerializationJsonSupport.encodeGeneratedFile(file),
           if (providerMetadata != null)
-            'providerMetadata': _encodeProviderMetadata(providerMetadata),
+            'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
+                providerMetadata),
         },
       StepStartEvent(:final stepId) => {
           'type': 'step-start',
@@ -277,9 +291,11 @@ final class TextStreamEventJsonCodec {
           'type': 'finish',
           'finishReason': finishReason.name,
           if (rawFinishReason != null) 'rawFinishReason': rawFinishReason,
-          if (usage != null) 'usage': _encodeUsageStats(usage),
+          if (usage != null)
+            'usage': SerializationJsonSupport.encodeUsageStats(usage),
           if (providerMetadata != null)
-            'providerMetadata': _encodeProviderMetadata(providerMetadata),
+            'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
+                providerMetadata),
         },
       AbortEvent(:final reason) => {
           'type': 'abort',
@@ -295,7 +311,8 @@ final class TextStreamEventJsonCodec {
           'kind': kind,
           'data': ensureJsonValue(data, path: r'$.custom.data'),
           if (providerMetadata != null)
-            'providerMetadata': _encodeProviderMetadata(providerMetadata),
+            'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
+                providerMetadata),
         },
       RawChunkEvent(:final raw) => {
           'type': 'raw-chunk',
@@ -303,7 +320,7 @@ final class TextStreamEventJsonCodec {
         },
       ErrorEvent(:final error) => {
           'type': 'error',
-          'error': _encodeModelError(error),
+          'error': SerializationJsonSupport.encodeModelError(error),
         },
     };
   }
@@ -321,7 +338,7 @@ final class TextStreamEventJsonCodec {
               .asMap()
               .entries
               .map(
-                (entry) => _decodeModelWarning(
+                (entry) => SerializationJsonSupport.decodeModelWarning(
                   entry.value,
                   path: '$path.warnings[${entry.key}]',
                 ),
@@ -333,14 +350,14 @@ final class TextStreamEventJsonCodec {
               asNullableJsonString(map['responseId'], path: '$path.responseId'),
           timestamp: _decodeDateTime(map['timestamp'], path: '$path.timestamp'),
           modelId: asNullableJsonString(map['modelId'], path: '$path.modelId'),
-          providerMetadata: _decodeProviderMetadata(
+          providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
         ),
       'text-start' => TextStartEvent(
           id: asJsonString(map['id'], path: '$path.id'),
-          providerMetadata: _decodeProviderMetadata(
+          providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
@@ -348,21 +365,21 @@ final class TextStreamEventJsonCodec {
       'text-delta' => TextDeltaEvent(
           id: asJsonString(map['id'], path: '$path.id'),
           delta: asJsonString(map['delta'], path: '$path.delta'),
-          providerMetadata: _decodeProviderMetadata(
+          providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
         ),
       'text-end' => TextEndEvent(
           id: asJsonString(map['id'], path: '$path.id'),
-          providerMetadata: _decodeProviderMetadata(
+          providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
         ),
       'reasoning-start' => ReasoningStartEvent(
           id: asJsonString(map['id'], path: '$path.id'),
-          providerMetadata: _decodeProviderMetadata(
+          providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
@@ -370,21 +387,22 @@ final class TextStreamEventJsonCodec {
       'reasoning-delta' => ReasoningDeltaEvent(
           id: asJsonString(map['id'], path: '$path.id'),
           delta: asJsonString(map['delta'], path: '$path.delta'),
-          providerMetadata: _decodeProviderMetadata(
+          providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
         ),
       'reasoning-end' => ReasoningEndEvent(
           id: asJsonString(map['id'], path: '$path.id'),
-          providerMetadata: _decodeProviderMetadata(
+          providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
         ),
       'reasoning-file' => ReasoningFileEvent(
-          _decodeGeneratedFile(map['file'], path: '$path.file'),
-          providerMetadata: _decodeProviderMetadata(
+          SerializationJsonSupport.decodeGeneratedFile(map['file'],
+              path: '$path.file'),
+          providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
@@ -403,7 +421,7 @@ final class TextStreamEventJsonCodec {
               ) ??
               false,
           title: asNullableJsonString(map['title'], path: '$path.title'),
-          providerMetadata: _decodeProviderMetadata(
+          providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
@@ -411,14 +429,14 @@ final class TextStreamEventJsonCodec {
       'tool-input-delta' => ToolInputDeltaEvent(
           toolCallId: asJsonString(map['toolCallId'], path: '$path.toolCallId'),
           delta: asJsonString(map['delta'], path: '$path.delta'),
-          providerMetadata: _decodeProviderMetadata(
+          providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
         ),
       'tool-input-end' => ToolInputEndEvent(
           toolCallId: asJsonString(map['toolCallId'], path: '$path.toolCallId'),
-          providerMetadata: _decodeProviderMetadata(
+          providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
@@ -439,7 +457,7 @@ final class TextStreamEventJsonCodec {
               ) ??
               false,
           title: asNullableJsonString(map['title'], path: '$path.title'),
-          providerMetadata: _decodeProviderMetadata(
+          providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
@@ -449,7 +467,7 @@ final class TextStreamEventJsonCodec {
             map['toolCall'],
             path: '$path.toolCall',
           ),
-          providerMetadata: _decodeProviderMetadata(
+          providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
@@ -459,7 +477,7 @@ final class TextStreamEventJsonCodec {
             map['toolResult'],
             path: '$path.toolResult',
           ),
-          providerMetadata: _decodeProviderMetadata(
+          providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
@@ -467,24 +485,26 @@ final class TextStreamEventJsonCodec {
       'tool-approval-request' => ToolApprovalRequestEvent(
           approvalId: asJsonString(map['approvalId'], path: '$path.approvalId'),
           toolCallId: asJsonString(map['toolCallId'], path: '$path.toolCallId'),
-          providerMetadata: _decodeProviderMetadata(
+          providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
         ),
       'tool-output-denied' => ToolOutputDeniedEvent(
           toolCallId: asJsonString(map['toolCallId'], path: '$path.toolCallId'),
-          providerMetadata: _decodeProviderMetadata(
+          providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
         ),
       'source' => SourceEvent(
-          _decodeSourceReference(map['source'], path: '$path.source'),
+          SerializationJsonSupport.decodeSourceReference(map['source'],
+              path: '$path.source'),
         ),
       'file' => FileEvent(
-          _decodeGeneratedFile(map['file'], path: '$path.file'),
-          providerMetadata: _decodeProviderMetadata(
+          SerializationJsonSupport.decodeGeneratedFile(map['file'],
+              path: '$path.file'),
+          providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
@@ -503,8 +523,9 @@ final class TextStreamEventJsonCodec {
             map['rawFinishReason'],
             path: '$path.rawFinishReason',
           ),
-          usage: _decodeUsageStats(map['usage'], path: '$path.usage'),
-          providerMetadata: _decodeProviderMetadata(
+          usage: SerializationJsonSupport.decodeUsageStats(map['usage'],
+              path: '$path.usage'),
+          providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
@@ -515,14 +536,14 @@ final class TextStreamEventJsonCodec {
       'custom' => CustomEvent(
           kind: asJsonString(map['kind'], path: '$path.kind'),
           data: map['data'],
-          providerMetadata: _decodeProviderMetadata(
+          providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
         ),
       'raw-chunk' => RawChunkEvent(map['raw']),
       'error' => ErrorEvent(
-          _decodeModelError(
+          SerializationJsonSupport.decodeModelError(
             _requireValue(map['error'], path: '$path.error'),
             path: '$path.error',
           ),
@@ -531,172 +552,6 @@ final class TextStreamEventJsonCodec {
           'Unsupported text stream event type "$type" at $path.',
         ),
     };
-  }
-
-  JsonMap _encodeProviderMetadata(ProviderMetadata metadata) {
-    return metadata.toJsonMap();
-  }
-
-  JsonMap _encodeModelError(ModelError error) {
-    return error.toJsonMap();
-  }
-
-  ProviderMetadata? _decodeProviderMetadata(
-    Object? value, {
-    required String path,
-  }) {
-    if (value == null) {
-      return null;
-    }
-
-    return ProviderMetadata(asJsonMap(value, path: path));
-  }
-
-  JsonMap _encodeUsageStats(UsageStats stats) {
-    return {
-      'inputTokens': stats.inputTokens,
-      'outputTokens': stats.outputTokens,
-      'totalTokens': stats.totalTokens,
-      'reasoningTokens': stats.reasoningTokens,
-    };
-  }
-
-  UsageStats? _decodeUsageStats(
-    Object? value, {
-    required String path,
-  }) {
-    if (value == null) {
-      return null;
-    }
-
-    final map = asJsonMap(value, path: path);
-    return UsageStats(
-      inputTokens:
-          asNullableJsonInt(map['inputTokens'], path: '$path.inputTokens'),
-      outputTokens:
-          asNullableJsonInt(map['outputTokens'], path: '$path.outputTokens'),
-      totalTokens:
-          asNullableJsonInt(map['totalTokens'], path: '$path.totalTokens'),
-      reasoningTokens: asNullableJsonInt(
-        map['reasoningTokens'],
-        path: '$path.reasoningTokens',
-      ),
-    );
-  }
-
-  JsonMap _encodeModelWarning(ModelWarning warning) {
-    return {
-      'type': warning.type.name,
-      'message': warning.message,
-      if (warning.field != null) 'field': warning.field,
-    };
-  }
-
-  ModelWarning _decodeModelWarning(
-    Object? value, {
-    required String path,
-  }) {
-    final map = asJsonMap(value, path: path);
-    return ModelWarning(
-      type: ModelWarningType.values.byName(
-        asJsonString(map['type'], path: '$path.type'),
-      ),
-      message: asJsonString(map['message'], path: '$path.message'),
-      field: asNullableJsonString(map['field'], path: '$path.field'),
-    );
-  }
-
-  ModelError _decodeModelError(
-    Object? value, {
-    required String path,
-  }) {
-    return ModelError.fromJson(value, path: path);
-  }
-
-  JsonMap _encodeSourceReference(SourceReference source) {
-    return {
-      'kind': _encodeSourceReferenceKind(source.kind),
-      'sourceId': source.sourceId,
-      if (source.uri != null) 'uri': source.uri.toString(),
-      if (source.title != null) 'title': source.title,
-      if (source.filename != null) 'filename': source.filename,
-      if (source.mediaType != null) 'mediaType': source.mediaType,
-      if (source.providerMetadata != null)
-        'providerMetadata': _encodeProviderMetadata(source.providerMetadata!),
-    };
-  }
-
-  SourceReference _decodeSourceReference(
-    Object? value, {
-    required String path,
-  }) {
-    final map = asJsonMap(value, path: path);
-    return SourceReference(
-      kind: _decodeSourceReferenceKind(
-        map['kind'],
-        path: '$path.kind',
-        uri: map['uri'],
-      ),
-      sourceId: asJsonString(map['sourceId'], path: '$path.sourceId'),
-      uri: _decodeUri(map['uri'], path: '$path.uri'),
-      title: asNullableJsonString(map['title'], path: '$path.title'),
-      filename: asNullableJsonString(map['filename'], path: '$path.filename'),
-      mediaType:
-          asNullableJsonString(map['mediaType'], path: '$path.mediaType'),
-      providerMetadata: _decodeProviderMetadata(
-        map['providerMetadata'],
-        path: '$path.providerMetadata',
-      ),
-    );
-  }
-
-  String _encodeSourceReferenceKind(SourceReferenceKind kind) {
-    switch (kind) {
-      case SourceReferenceKind.url:
-        return 'url';
-      case SourceReferenceKind.document:
-        return 'document';
-      case SourceReferenceKind.other:
-        return 'other';
-    }
-  }
-
-  SourceReferenceKind _decodeSourceReferenceKind(
-    Object? value, {
-    required String path,
-    required Object? uri,
-  }) {
-    final kind = asNullableJsonString(value, path: path);
-    return switch (kind) {
-      'url' => SourceReferenceKind.url,
-      'document' => SourceReferenceKind.document,
-      'other' => SourceReferenceKind.other,
-      null =>
-        uri == null ? SourceReferenceKind.document : SourceReferenceKind.url,
-      _ => throw FormatException('Invalid source kind at $path: $kind'),
-    };
-  }
-
-  JsonMap _encodeGeneratedFile(GeneratedFile file) {
-    return {
-      'mediaType': file.mediaType,
-      if (file.filename != null) 'filename': file.filename,
-      if (file.uri != null) 'uri': file.uri.toString(),
-      if (file.bytes != null) 'bytes': _encodeBytes(file.bytes!),
-    };
-  }
-
-  GeneratedFile _decodeGeneratedFile(
-    Object? value, {
-    required String path,
-  }) {
-    final map = asJsonMap(value, path: path);
-    return GeneratedFile(
-      mediaType: asJsonString(map['mediaType'], path: '$path.mediaType'),
-      filename: asNullableJsonString(map['filename'], path: '$path.filename'),
-      uri: _decodeUri(map['uri'], path: '$path.uri'),
-      bytes: _decodeBytes(map['bytes'], path: '$path.bytes'),
-    );
   }
 
   JsonMap _encodeToolCallContent(ToolCallContent toolCall) {
@@ -765,44 +620,12 @@ final class TextStreamEventJsonCodec {
     );
   }
 
-  JsonMap _encodeBytes(List<int> bytes) {
-    return {
-      'encoding': 'base64',
-      'data': base64Encode(bytes),
-    };
-  }
-
-  List<int>? _decodeBytes(
-    Object? value, {
-    required String path,
-  }) {
-    if (value == null) {
-      return null;
-    }
-
-    final map = asJsonMap(value, path: path);
-    final encoding = asJsonString(map['encoding'], path: '$path.encoding');
-    if (encoding != 'base64') {
-      throw FormatException('Unsupported byte encoding "$encoding" at $path.');
-    }
-
-    return base64Decode(asJsonString(map['data'], path: '$path.data'));
-  }
-
   DateTime? _decodeDateTime(
     Object? value, {
     required String path,
   }) {
     final stringValue = asNullableJsonString(value, path: path);
     return stringValue == null ? null : DateTime.parse(stringValue);
-  }
-
-  Uri? _decodeUri(
-    Object? value, {
-    required String path,
-  }) {
-    final stringValue = asNullableJsonString(value, path: path);
-    return stringValue == null ? null : Uri.parse(stringValue);
   }
 
   Object _requireValue(
