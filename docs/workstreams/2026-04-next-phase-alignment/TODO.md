@@ -7,11 +7,11 @@
 
 ## Streamed Runner Maturity
 
-- [ ] Audit the current `StreamTextRunner` surface against real app needs and
+- [x] Audit the current `StreamTextRunner` surface against real app needs and
   freeze which missing behaviors are truly shared
-- [ ] Decide whether a `prepareStep`-style hook belongs in shared core or
+- [x] Decide whether a `prepareStep`-style hook belongs in shared core or
   should remain app/provider-owned
-- [ ] Decide whether retry, model fallback, or richer stop policy belong in
+- [x] Decide whether retry, model fallback, or richer stop policy belong in
   the shared runner or should stay explicitly deferred
 
 ## `llm_dart_core` Internal Boundary Hardening

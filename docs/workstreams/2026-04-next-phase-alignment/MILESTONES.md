@@ -41,8 +41,9 @@ Current status:
 
 - `StreamTextRunner` already provides narrow multi-step stitched streaming plus
   `stepStream` and final `result`
-- the remaining decision is no longer whether shared streamed orchestration
-  should exist, but how far the next truthful shared subset should go
+- the current-phase audit now also confirms that the next truthful shared
+  subset still stops at the current boundary: no shared `prepareStep`, no
+  shared retry/model fallback, and no richer shared stop policy yet
 
 ## M3 - `llm_dart_core` Internal Boundary Hardening
 

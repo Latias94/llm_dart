@@ -84,6 +84,9 @@ This phase should explicitly avoid:
 - [01-repo-ref-gap-rebaseline.md](01-repo-ref-gap-rebaseline.md)
   - Fresh comparison between the current repository and the useful remaining
     structural signals from `repo-ref/ai`.
+- [02-streamed-runner-maturity-audit.md](02-streamed-runner-maturity-audit.md)
+  - Current-phase audit of whether the shared streamed runner now needs
+    `prepareStep`, richer stop policy, or broader orchestration ownership.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)
