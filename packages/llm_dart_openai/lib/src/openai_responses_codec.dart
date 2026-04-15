@@ -354,15 +354,19 @@ final class OpenAIResponsesCodec {
 
     if (itemType == 'function_call') {
       final outputIndex = _asInt(chunk['output_index']);
-      final toolState = _resolveToolCallState(
+      final fallbackToolCallId =
+          _asString(item['call_id']) ?? _asString(chunk['item_id']) ?? 'tool';
+      final toolState = resolveOpenAIStreamToolCallState(
         state: state,
-        chunk: chunk,
-        item: item,
-        outputIndex: outputIndex,
+        index: outputIndex,
+        fallbackToolCallId: fallbackToolCallId,
+        toolCallId: _asString(item['call_id']),
+        toolName: _asString(item['name']),
+        title: _asString(item['title']),
+        createEphemeralWhenIndexMissing: true,
       );
-      final resolvedToolCallId = toolState.resolveToolCallId(
-        outputIndex == null ? 'tool' : 'tool_$outputIndex',
-      );
+      final resolvedToolCallId =
+          toolState.resolveToolCallId(fallbackToolCallId);
       final startEvent = maybeCreateOpenAIToolInputStartEvent(
         toolState: toolState,
         fallbackToolCallId: resolvedToolCallId,
@@ -458,15 +462,16 @@ final class OpenAIResponsesCodec {
     _ResponsesStreamMetadataAdapter metadata,
   ) sync* {
     final outputIndex = _asInt(chunk['output_index']);
-    final toolState = _resolveToolCallState(
+    final fallbackToolCallId = _asString(chunk['item_id']) ?? 'tool';
+    final deltaResult = consumeOpenAIToolCallDelta(
       state: state,
-      chunk: chunk,
-      item: null,
-      outputIndex: outputIndex,
+      index: outputIndex,
+      fallbackToolCallId: fallbackToolCallId,
+      argumentsDelta: _asString(chunk['delta']),
+      createEphemeralWhenIndexMissing: true,
     );
-    final resolvedToolCallId = toolState.resolveToolCallId(
-      outputIndex == null ? 'tool' : 'tool_$outputIndex',
-    );
+    final toolState = deltaResult.toolState;
+    final resolvedToolCallId = toolState.resolveToolCallId(fallbackToolCallId);
     ProviderMetadata? itemMetadata() => metadata.item();
 
     final startEvent = maybeCreateOpenAIToolInputStartEvent(
@@ -478,14 +483,10 @@ final class OpenAIResponsesCodec {
       yield startEvent;
     }
 
-    final delta = _asString(chunk['delta']);
-    if (delta != null && delta.isNotEmpty) {
-      toolState.arguments.write(delta);
-    }
     final deltaEvent = maybeCreateOpenAIToolInputDeltaEvent(
       toolState: toolState,
       fallbackToolCallId: resolvedToolCallId,
-      delta: delta,
+      delta: deltaResult.argumentsDelta,
       metadata: itemMetadata,
     );
     if (deltaEvent != null) {
@@ -598,16 +599,30 @@ final class OpenAIResponsesCodec {
       final outputIndex = _asInt(chunk['output_index']);
       var toolState =
           outputIndex == null ? null : state.toolCalls.remove(outputIndex);
+      final fallbackToolCallId =
+          _asString(item['call_id']) ?? _asString(chunk['item_id']) ?? 'tool';
 
-      toolState ??= _resolveToolCallState(
-        state: state,
-        chunk: chunk,
-        item: item,
-        outputIndex: outputIndex,
-      );
-      final resolvedToolCallId = toolState.resolveToolCallId(
-        outputIndex == null ? 'tool' : 'tool_$outputIndex',
-      );
+      if (toolState != null) {
+        toolState.update(
+          toolCallId: _asString(item['call_id']),
+          toolName: _asString(item['name']),
+          title: _asString(item['title']),
+        );
+        state.hasToolCalls = true;
+      } else {
+        toolState = resolveOpenAIStreamToolCallState(
+          state: state,
+          index: null,
+          fallbackToolCallId: fallbackToolCallId,
+          toolCallId: _asString(item['call_id']),
+          toolName: _asString(item['name']),
+          title: _asString(item['title']),
+          createEphemeralWhenIndexMissing: true,
+        );
+      }
+
+      final resolvedToolCallId =
+          toolState.resolveToolCallId(fallbackToolCallId);
       final resolvedToolName = toolState.resolveToolName();
 
       final startEvent = maybeCreateOpenAIToolInputStartEvent(
@@ -1562,48 +1577,6 @@ final class OpenAIResponsesCodec {
     }
 
     return null;
-  }
-
-  OpenAIStreamToolCallState _resolveToolCallState({
-    required OpenAIResponsesStreamState state,
-    required Map<String, Object?> chunk,
-    required Map<String, Object?>? item,
-    required int? outputIndex,
-  }) {
-    OpenAIStreamToolCallState? toolState;
-    if (outputIndex != null) {
-      toolState = state.toolCalls[outputIndex];
-    }
-
-    final resolvedToolCallId =
-        _asString(item?['call_id']) ?? _asString(chunk['item_id']) ?? 'tool';
-    final resolvedToolName = _asString(item?['name']) ?? 'function';
-    final resolvedTitle = _asString(item?['title']);
-
-    if (toolState == null) {
-      toolState = outputIndex == null
-          ? OpenAIStreamToolCallState(
-              index: -1,
-              toolCallId: resolvedToolCallId,
-              toolName: resolvedToolName,
-              title: resolvedTitle,
-            )
-          : state.toolCalls.resolve(
-              outputIndex,
-              toolCallId: resolvedToolCallId,
-              toolName: resolvedToolName,
-              title: resolvedTitle,
-            );
-    } else {
-      toolState.update(
-        toolCallId: _asString(item?['call_id']),
-        toolName: _asString(item?['name']),
-        title: resolvedTitle,
-      );
-    }
-
-    state.hasToolCalls = true;
-    return toolState;
   }
 
   FinishReason _mapFinishReason({

@@ -31,3 +31,10 @@
 - [x] Re-audit the root package role after the latest community/package moves
 - [x] Improve package-level documentation where the ownership story is still
   thin or implicit
+
+## OpenAI Family Stream Parser
+
+- [x] Move shared indexed tool-call delta state out of the Chat Completions and
+  Responses codec paths
+- [x] Document why OpenAI stream parser convergence is internal provider
+  infrastructure rather than a shared event-surface expansion

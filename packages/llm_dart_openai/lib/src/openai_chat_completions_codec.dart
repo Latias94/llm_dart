@@ -318,12 +318,21 @@ final class OpenAIChatCompletionsCodec {
         continue;
       }
 
-      final deltaResult = _consumeToolCallDelta(toolCall, state);
-      final index = deltaResult.index;
+      final rawIndex = _asInt(toolCall['index']);
+      final index = rawIndex ?? state.toolCalls.length;
+      final function =
+          _asMap(toolCall['function']) ?? const <String, Object?>{};
+      final deltaResult = consumeOpenAIToolCallDelta(
+        state: state,
+        index: rawIndex,
+        fallbackIndex: index,
+        fallbackToolCallId: 'tool_$index',
+        toolCallId: _asString(toolCall['id']),
+        toolName: _asString(function['name']),
+        argumentsDelta: _asString(function['arguments']),
+      );
       final toolState = deltaResult.toolState;
-      if (toolState == null ||
-          toolState.toolCallId == null ||
-          toolState.toolName == null) {
+      if (toolState.toolCallId == null || toolState.toolName == null) {
         continue;
       }
 
@@ -991,31 +1000,6 @@ final class OpenAIChatCompletionsCodec {
     return normalized;
   }
 
-  _ToolCallDeltaResult _consumeToolCallDelta(
-    Map<String, Object?> toolCall,
-    OpenAIChatCompletionsStreamState state,
-  ) {
-    final index = _asInt(toolCall['index']) ?? state.toolCalls.length;
-    final function = _asMap(toolCall['function']) ?? const <String, Object?>{};
-    final argumentsDelta = _asString(function['arguments']);
-    if (argumentsDelta != null && argumentsDelta.isNotEmpty) {
-      state.hasToolCalls = true;
-    }
-
-    final toolState = state.toolCalls.resolve(
-      index,
-      toolCallId: _asString(toolCall['id']),
-      toolName: _asString(function['name']),
-    );
-    toolState.update(argumentsDelta: argumentsDelta);
-
-    return _ToolCallDeltaResult(
-      index: index,
-      toolState: toolState,
-      argumentsDelta: argumentsDelta,
-    );
-  }
-
   Iterable<TextStreamEvent> _finalizeToolCalls(
     OpenAIChatCompletionsStreamState state,
     _ChatCompletionsStreamMetadataAdapter metadata,
@@ -1251,18 +1235,6 @@ final class OpenAIChatCompletionsCodec {
 
   static const String _textId = 'text_0';
   static const String _reasoningId = 'reasoning_0';
-}
-
-final class _ToolCallDeltaResult {
-  final int index;
-  final OpenAIStreamToolCallState? toolState;
-  final String? argumentsDelta;
-
-  const _ToolCallDeltaResult({
-    required this.index,
-    required this.toolState,
-    required this.argumentsDelta,
-  });
 }
 
 final class _ChatCompletionsStreamMetadataAdapter {

@@ -96,6 +96,9 @@ This phase should explicitly avoid:
 - [05-core-focused-entrypoints.md](05-core-focused-entrypoints.md)
   - Non-breaking `llm_dart_core` focused-entrypoint spike for foundation,
     model, UI, and serialization ownership groups.
+- [06-openai-stream-parser-convergence.md](06-openai-stream-parser-convergence.md)
+  - OpenAI-family stream parser convergence around shared incremental
+    tool-call state.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)
