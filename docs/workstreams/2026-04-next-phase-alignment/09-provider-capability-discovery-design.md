@@ -537,6 +537,14 @@ Add examples that show:
 - provider-native option panels
 - graceful fallback when a model lacks a shared feature
 
+Status:
+
+- landed as `example/02_core_features/capability_profile_ui_gating.dart`
+- landed as
+  `packages/llm_dart_flutter/example/flutter_capability_gated_controls.dart`
+- the Flutter demo keeps shared affordance gating on capability profiles while
+  leaving provider-native badges and panels provider-aware
+
 ## Non-Goals
 
 Do not:

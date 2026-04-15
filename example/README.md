@@ -24,6 +24,7 @@ manually.
 | **Build a chatbot** | [chatbot.dart](05_use_cases/chatbot.dart) |
 | **Compare providers** | [provider_comparison.dart](01_getting_started/provider_comparison.dart) |
 | **Use streaming** | [streaming_chat.dart](02_core_features/streaming_chat.dart) |
+| **Gate app UI by capability profiles** | [capability_profile_ui_gating.dart](02_core_features/capability_profile_ui_gating.dart) |
 | **Cancel requests** | [cancellation_demo.dart](02_core_features/cancellation_demo.dart) |
 | **Call functions** | [tool_calling.dart](02_core_features/tool_calling.dart) |
 | **Handle audio** | [audio_processing.dart](02_core_features/audio_processing.dart) |
@@ -34,6 +35,7 @@ manually.
 | **Send backend chat hints** | [packages/llm_dart_chat/example/http_backend_hint_mapping.dart](../packages/llm_dart_chat/example/http_backend_hint_mapping.dart) |
 | **Use Flutter + backend hints** | [packages/llm_dart_flutter/example/flutter_http_backend_integration.dart](../packages/llm_dart_flutter/example/flutter_http_backend_integration.dart) |
 | **Run a Flutter Material chat demo** | [packages/llm_dart_flutter/example/flutter_material_chat_demo.dart](../packages/llm_dart_flutter/example/flutter_material_chat_demo.dart) |
+| **Gate Flutter controls by model capabilities** | [packages/llm_dart_flutter/example/flutter_capability_gated_controls.dart](../packages/llm_dart_flutter/example/flutter_capability_gated_controls.dart) |
 | **Recover HTTP chat after disconnect** | [packages/llm_dart_flutter/example/flutter_http_reconnect_demo.dart](../packages/llm_dart_flutter/example/flutter_http_reconnect_demo.dart) |
 | **Handle tool approvals in Flutter** | [packages/llm_dart_flutter/example/flutter_tool_approval_demo.dart](../packages/llm_dart_flutter/example/flutter_tool_approval_demo.dart) |
 | **Connect external tools** | [mcp_concept_demo.dart](06_mcp_integration/mcp_concept_demo.dart) |
@@ -54,6 +56,7 @@ manually.
 - [capability_factory_methods.dart](02_core_features/capability_factory_methods.dart) - Type-safe provider initialization
 - [chat_basics.dart](02_core_features/chat_basics.dart) - Basic chat
 - [streaming_chat.dart](02_core_features/streaming_chat.dart) - Real-time streaming
+- [capability_profile_ui_gating.dart](02_core_features/capability_profile_ui_gating.dart) - Model-centric UI affordance and fallback gating
 - [cancellation_demo.dart](02_core_features/cancellation_demo.dart) - Request cancellation
 - [tool_calling.dart](02_core_features/tool_calling.dart) - Function calling
 - [embeddings_stable.dart](02_core_features/embeddings_stable.dart) - Stable shared embedding helpers
@@ -117,6 +120,7 @@ shared-capability happy path.
 - [packages/llm_dart_flutter/example/flutter_integration.dart](../packages/llm_dart_flutter/example/flutter_integration.dart) - Flutter app patterns
 - [packages/llm_dart_flutter/example/flutter_http_backend_integration.dart](../packages/llm_dart_flutter/example/flutter_http_backend_integration.dart) - Flutter `ChatController` + backend-owned provider routing pattern
 - [packages/llm_dart_flutter/example/flutter_material_chat_demo.dart](../packages/llm_dart_flutter/example/flutter_material_chat_demo.dart) - Minimal Flutter Material chat screen using backend-owned provider routing
+- [packages/llm_dart_flutter/example/flutter_capability_gated_controls.dart](../packages/llm_dart_flutter/example/flutter_capability_gated_controls.dart) - Flutter Material control gating from shared capability profiles plus provider-native badges
 - [packages/llm_dart_flutter/example/flutter_http_reconnect_demo.dart](../packages/llm_dart_flutter/example/flutter_http_reconnect_demo.dart) - Flutter Material chat screen for `HttpChatTransport` error recovery through `resume()`
 - [packages/llm_dart_flutter/example/flutter_tool_approval_demo.dart](../packages/llm_dart_flutter/example/flutter_tool_approval_demo.dart) - Flutter Material chat screen for manual provider approval, local tool execution, and paused-state snapshot restore
 - [batch_processor.dart](05_use_cases/batch_processor.dart) - Large-scale data processing
@@ -151,10 +155,12 @@ Run examples:
 ```bash
 dart run 01_getting_started/quick_start.dart
 dart run 02_core_features/chat_basics.dart
+dart run 02_core_features/capability_profile_ui_gating.dart
 dart run 05_use_cases/chatbot.dart
 dart run ../packages/llm_dart_chat/example/chat_runtime.dart
 dart run ../packages/llm_dart_chat/example/http_backend_hint_mapping.dart
 flutter run ../packages/llm_dart_flutter/example/flutter_material_chat_demo.dart
+flutter run ../packages/llm_dart_flutter/example/flutter_capability_gated_controls.dart
 dart run 05_use_cases/batch_processor.dart --help
 dart run 05_use_cases/multimodal_app.dart --demo
 ```

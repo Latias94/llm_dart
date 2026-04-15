@@ -12,6 +12,10 @@ provider-owned typed options for OpenAI, Anthropic, xAI, and OpenRouter.
 Registry-level capability inspection for provider selection and architecture
 planning, with a stable `AI.*(...).chatModel(...)` execution appendix.
 
+### [capability_profile_ui_gating.dart](capability_profile_ui_gating.dart)
+Modern model-centric capability profile inspection for shared UI affordances,
+provider-native panels, and graceful fallback suggestions.
+
 ### [capability_factory_methods.dart](capability_factory_methods.dart)
 Compatibility-oriented specialized `build*()` helpers for capability families
 that still live on the older root builder surface.
@@ -72,6 +76,7 @@ export GOOGLE_API_KEY="your-google-key"
 # Run core feature examples
 dart run web_search.dart
 dart run capability_detection.dart
+dart run capability_profile_ui_gating.dart
 dart run capability_factory_methods.dart
 dart run assistants.dart
 dart run embeddings.dart
@@ -130,6 +135,9 @@ void inspectMessage(core.ChatUiMessage message) {
 
 - **Stable app path**: Create models through `AI.*(...)` and keep application
   code on the shared call layer.
+- **Modern model-centric discovery**: Use `CapabilityDescribedModel` and
+  `ModelCapabilityProfile` when a concrete model should gate app or Flutter UI
+  affordances.
 - **Capability metadata**: Use `LLMProviderRegistry` and `ProviderInfo` to
   shortlist providers and document boundaries before you bind models.
 - **Boundary APIs**: Some families, such as assistants, raw response

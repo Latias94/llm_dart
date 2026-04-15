@@ -101,4 +101,4 @@
 - [x] Add provider-owned describers, starting with OpenAI
 - [x] Add optional model marker interfaces for provider models that can expose
   capability profiles directly
-- [ ] Add Flutter/app examples for capability-gated UI affordances
+- [x] Add Flutter/app examples for capability-gated UI affordances

@@ -159,3 +159,6 @@ Current status:
   `llm_dart_openai`, where modern OpenAI models expose `capabilityProfile`
   through the optional marker interface without widening shared model
   contracts
+- capability-gated examples now exist both as a pure Dart app-facing example
+  and as a Flutter Material control demo, showing shared affordance gating,
+  provider-native badges, and fallback recommendations

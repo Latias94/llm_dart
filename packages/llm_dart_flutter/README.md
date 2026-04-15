@@ -392,6 +392,35 @@ For a widget-level example that walks the UI through
 snapshot restore, see
 `example/flutter_tool_approval_demo.dart`.
 
+## Capability-Gated UI Example
+
+Use capability profiles to gate shared controls such as attachments,
+structured-output toggles, reasoning inspectors, and source panels.
+
+```dart
+import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart';
+
+final profile = describeOpenAIChatModel('gpt-5.4');
+
+final canAttachImages = profile.supports(
+  ModelCapabilityFeatureIds.languageImageInput,
+);
+final canShowReasoning = profile.supports(
+  ModelCapabilityFeatureIds.languageReasoningOutput,
+);
+final route = profile.providerFeature('openai', 'api.route')?.detail;
+```
+
+This is the intended layering:
+
+- use shared feature IDs for uniform Flutter affordances
+- use provider feature descriptors for provider-aware panels and badges
+- keep capability checks descriptive, not as hard runtime guarantees
+
+For a runnable Material demo, see
+`example/flutter_capability_gated_controls.dart`.
+
 ## Optional Local Tool Callback
 
 `DefaultChatSession` can also auto-run local client-side tools through
