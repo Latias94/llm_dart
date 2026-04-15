@@ -37,6 +37,9 @@ Current status:
 - Flutter now also has a controller-level example and regression test for the
   same backend-hint mapping pattern, without introducing provider-specific
   transport behavior into `llm_dart_flutter`
+- Flutter now also has a minimal widget-level Material chat demo that confirms
+  the current session, message, and backend-hint surfaces are enough for app
+  integration without adding a shared widget layer
 
 
 ## M2 - Provider UI Extension Contract

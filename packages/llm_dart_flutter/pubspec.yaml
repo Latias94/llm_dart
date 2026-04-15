@@ -16,9 +16,10 @@ dependencies:
     path: ../llm_dart_core
 
 dev_dependencies:
+  flutter_test:
+    sdk: flutter
   lints: ^6.0.0
   llm_dart_openai:
     path: ../llm_dart_openai
   llm_dart_transport:
     path: ../llm_dart_transport
-  test: ^1.27.0

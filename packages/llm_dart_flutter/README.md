@@ -165,6 +165,14 @@ Flutter builds on, see
 For the Flutter-controller variant of the same pattern, see
 `example/flutter_http_backend_integration.dart`.
 
+For a minimal widget-level `MaterialApp` that uses the same backend-owned
+routing pattern, see `example/flutter_material_chat_demo.dart`.
+Run it from the package root with:
+
+```bash
+flutter run example/flutter_material_chat_demo.dart
+```
+
 If your backend is also Dart, prefer building the SSE response in
 `package:llm_dart_transport` rather than `llm_dart_flutter`:
 

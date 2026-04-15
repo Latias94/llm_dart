@@ -76,6 +76,8 @@
   Flutter/chat apps have a copyable metadata-to-provider-options pattern
 - [x] Add a Flutter-controller example and regression test for backend-owned
   provider routing through `HttpChatTransport`
+- [x] Add a widget-level Flutter Material demo that exercises backend-owned
+  provider routing without introducing shared chat widgets
 
 ## Selective Provider Expansion
 

@@ -215,6 +215,10 @@ This phase should explicitly avoid:
 - [31-flutter-http-backend-integration-example.md](31-flutter-http-backend-integration-example.md)
   - Flutter `ChatController` example and regression test that apply the same
     backend-hint mapping pattern through `HttpChatTransport`.
+- [32-flutter-material-chat-demo.md](32-flutter-material-chat-demo.md)
+  - Minimal widget-level Flutter Material chat demo that validates the current
+    session, event, and backend-hint boundaries without adding a widget layer
+    to `llm_dart_flutter`.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)

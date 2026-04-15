@@ -39,6 +39,11 @@ Flutter app integration patterns now live with the dedicated `llm_dart_flutter` 
 Flutter `ChatController` example that keeps provider-specific routing and
 invocation shaping on the backend while still using `HttpChatTransport`.
 
+### [packages/llm_dart_flutter/example/flutter_material_chat_demo.dart](../../packages/llm_dart_flutter/example/flutter_material_chat_demo.dart)
+Minimal `MaterialApp` chat screen that uses `ChatController` plus backend-owned
+provider routing so Flutter applications have a widget-level integration
+reference.
+
 ### [batch_processor.dart](batch_processor.dart)
 Large-scale data processing with concurrent workers, rate limiting, and progress tracking.
 
@@ -60,6 +65,7 @@ dart run web_service.dart
 dart run ../../packages/llm_dart_chat/example/chat_runtime.dart
 dart run ../../packages/llm_dart_chat/example/http_backend_hint_mapping.dart
 dart run ../../packages/llm_dart_flutter/example/flutter_integration.dart
+flutter run ../../packages/llm_dart_flutter/example/flutter_material_chat_demo.dart
 dart run batch_processor.dart --help
 dart run multimodal_app.dart --demo
 ```

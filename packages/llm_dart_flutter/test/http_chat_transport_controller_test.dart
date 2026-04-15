@@ -1,7 +1,7 @@
+import 'package:flutter_test/flutter_test.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_flutter/llm_dart_flutter.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
-import 'package:test/test.dart';
 
 void main() {
   group('ChatController HttpChatTransport', () {

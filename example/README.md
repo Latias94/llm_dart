@@ -33,6 +33,7 @@ manually.
 | **Use the pure chat runtime** | [packages/llm_dart_chat/example/chat_runtime.dart](../packages/llm_dart_chat/example/chat_runtime.dart) |
 | **Send backend chat hints** | [packages/llm_dart_chat/example/http_backend_hint_mapping.dart](../packages/llm_dart_chat/example/http_backend_hint_mapping.dart) |
 | **Use Flutter + backend hints** | [packages/llm_dart_flutter/example/flutter_http_backend_integration.dart](../packages/llm_dart_flutter/example/flutter_http_backend_integration.dart) |
+| **Run a Flutter Material chat demo** | [packages/llm_dart_flutter/example/flutter_material_chat_demo.dart](../packages/llm_dart_flutter/example/flutter_material_chat_demo.dart) |
 | **Connect external tools** | [mcp_concept_demo.dart](06_mcp_integration/mcp_concept_demo.dart) |
 
 ## Directory Structure
@@ -113,6 +114,7 @@ shared-capability happy path.
 - [packages/llm_dart_chat/example/http_backend_hint_mapping.dart](../packages/llm_dart_chat/example/http_backend_hint_mapping.dart) - HTTP chat transport metadata-to-backend-options pattern
 - [packages/llm_dart_flutter/example/flutter_integration.dart](../packages/llm_dart_flutter/example/flutter_integration.dart) - Flutter app patterns
 - [packages/llm_dart_flutter/example/flutter_http_backend_integration.dart](../packages/llm_dart_flutter/example/flutter_http_backend_integration.dart) - Flutter `ChatController` + backend-owned provider routing pattern
+- [packages/llm_dart_flutter/example/flutter_material_chat_demo.dart](../packages/llm_dart_flutter/example/flutter_material_chat_demo.dart) - Minimal Flutter Material chat screen using backend-owned provider routing
 - [batch_processor.dart](05_use_cases/batch_processor.dart) - Large-scale data processing
 - [multimodal_app.dart](05_use_cases/multimodal_app.dart) - Text, image, and audio processing
 
@@ -148,6 +150,7 @@ dart run 02_core_features/chat_basics.dart
 dart run 05_use_cases/chatbot.dart
 dart run ../packages/llm_dart_chat/example/chat_runtime.dart
 dart run ../packages/llm_dart_chat/example/http_backend_hint_mapping.dart
+flutter run ../packages/llm_dart_flutter/example/flutter_material_chat_demo.dart
 dart run 05_use_cases/batch_processor.dart --help
 dart run 05_use_cases/multimodal_app.dart --demo
 ```
