@@ -79,6 +79,22 @@ but the split should stay modest:
 This still does **not** justify a new package or a `provider-utils` style
 published boundary.
 
+### Update After Follow-On Refactor
+
+That modest split is now complete:
+
+- request building is separated from the facade
+- response decoding is separated from the facade
+- shared validation, response-format, and media helpers are separated into a
+  small internal support layer
+
+So the file now follows the same architectural direction as the text-path work
+at a much smaller scale: a thin capability facade over internal request,
+response, and support responsibilities.
+
+Just as importantly, this stopped **before** introducing a fake codec stack or
+a new published package boundary.
+
 ## 3. Embedding, Speech, And Transcription Should Stay Simpler For Now
 
 `openai_embedding_model.dart`, `openai_speech_model.dart`, and
@@ -201,8 +217,8 @@ is:
 1. keep OpenAI text-path work frozen unless a bug appears
 2. extract a small shared internal shell for repeated OpenAI non-text model
    infrastructure only if it removes real duplication
-3. split `openai_image_model.dart` before touching embedding or speech if
-   non-text model refactoring becomes necessary
+3. keep embedding, speech, and transcription simpler until repeated
+   infrastructure pressure is concrete across at least two files
 
 ## What Should Stay Deferred
 
@@ -219,8 +235,8 @@ The remaining architecture pressure is now more selective:
 
 - **next smaller core seam if needed:** `ChatUiAccumulator` data-part upsert
   behavior
-- **next OpenAI non-text hotspot:** `openai_image_model.dart`
-- **next support extraction candidate:** shared internal OpenAI non-text model
+- **next OpenAI support extraction candidate:** shared internal non-text model
   shell helpers
+- **next large-but-cohesive file to watch:** `openai_responses_request_encoder.dart`
 
 Everything else should remain frozen until real implementation pressure appears.

@@ -58,3 +58,5 @@
 - [x] Split OpenAI Responses stream decoding out of the main codec file
 - [x] Review whether remaining OpenAI non-text models justify further internal
   splitting or only small shared support extraction
+- [x] Split `openai_image_model.dart` into internal request, response, and
+  shared support layers without introducing a new package boundary
