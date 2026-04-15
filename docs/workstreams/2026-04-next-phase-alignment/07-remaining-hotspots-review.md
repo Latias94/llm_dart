@@ -184,6 +184,7 @@ The first internal cuts are now complete:
 - metadata projection is split into dedicated support
 - output projection is split into dedicated support
 - seed/index hydration is split into dedicated support
+- data-part upsert behavior is split into dedicated support
 
 That means the file is still the public facade and routing point, but it no
 longer mixes the full set of projection implementations inline.
@@ -192,12 +193,10 @@ The remaining logic inside the main file is now much narrower:
 
 - the public constructor and message snapshot facade
 - event routing in `apply(...)`
-- data-part upsert behavior
 - small shared append / lookup / metadata helpers
 
 So `chat_ui_accumulator.dart` is no longer the same class of hotspot it was at
-the start of this review. If more work is needed later, the next likely cut is
-isolating data-part upsert behavior rather than reopening event-surface design.
+the start of this review.
 
 ## 5. `openai_responses_request_encoder.dart` Is Large, But Mostly Cohesive
 
@@ -250,8 +249,7 @@ The following moves still look premature:
 
 The remaining architecture pressure is now more selective:
 
-- **next smaller core seam if needed:** `ChatUiAccumulator` data-part upsert
-  behavior
+- **next core file to watch if coupling grows again:** `chat_ui_accumulator.dart`
 - **next OpenAI support extraction candidate if duplication reappears:**
   additional non-text response or media helpers
 - **next large-but-cohesive file to watch:** `openai_responses_request_encoder.dart`

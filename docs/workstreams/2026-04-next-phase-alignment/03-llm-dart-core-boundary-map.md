@@ -120,6 +120,7 @@ Representative files:
 - `src/ui/chat_ui_stream_chunk.dart`
 - `src/ui/chat_message_mapper.dart`
 - `src/ui/chat_ui_accumulator.dart`
+- `src/ui/chat_ui_accumulator_data_support.dart`
 - `src/ui/chat_ui_accumulator_hydration_support.dart`
 - `src/ui/chat_ui_accumulator_metadata_support.dart`
 - `src/ui/chat_ui_accumulator_output_support.dart`

@@ -6,6 +6,7 @@ import '../common/provider_metadata.dart';
 import '../stream/text_stream_event.dart';
 import 'chat_ui_message.dart';
 
+part 'chat_ui_accumulator_data_support.dart';
 part 'chat_ui_accumulator_hydration_support.dart';
 part 'chat_ui_accumulator_metadata_support.dart';
 part 'chat_ui_accumulator_output_support.dart';
@@ -129,21 +130,7 @@ final class ChatUiAccumulator {
   }
 
   ChatUiMessage applyDataPart<T>(DataUiPart<T> part) {
-    final dataPartId = part.id;
-    if (dataPartId == null) {
-      _appendPart(part);
-      return message;
-    }
-
-    final identity = _dataPartIdentity(part.key, dataPartId);
-    final index = _dataPartIndexes[identity];
-    if (index == null) {
-      _dataPartIndexes[identity] = _appendPart(part);
-    } else {
-      _parts[index] = part;
-    }
-
-    return message;
+    return _applyDataPart(part);
   }
 
   Stream<ChatUiMessage> project(Stream<TextStreamEvent> events) async* {
@@ -181,8 +168,6 @@ final class ChatUiAccumulator {
     }
   }
 }
-
-String _dataPartIdentity(String key, String id) => '$key\u0000$id';
 
 Stream<ChatUiMessage> projectChatUiMessageStream(
   Stream<TextStreamEvent> events, {

@@ -12,7 +12,7 @@ extension _ChatUiAccumulatorHydrationSupport on ChatUiAccumulator {
       }
 
       if (part case DataUiPart(:final id?, :final key)) {
-        _dataPartIndexes[_dataPartIdentity(key, id)] = index;
+        _hydrateDataPartIndex(key, id, index);
       }
     }
   }

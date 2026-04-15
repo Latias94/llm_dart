@@ -35,6 +35,8 @@
   without changing the shared event surface
 - [x] Split `ChatUiAccumulator` seed/index hydration into internal support
   without changing the shared event surface
+- [x] Split `ChatUiAccumulator` data-part upsert behavior into internal support
+  without changing the shared event surface
 - [x] Adopt focused core entrypoints in `llm_dart_transport`
 - [x] Adopt focused core entrypoints in `llm_dart_chat`
 

@@ -70,8 +70,8 @@ Current status:
 - package-level README guidance now exists for `llm_dart_core`,
   `llm_dart_transport`, and `llm_dart_community`
 - `ChatUiAccumulator` is now internally split across tool, text/reasoning,
-  metadata, output, and hydration support while keeping the same public API and
-  shared event surface
+  metadata, output, hydration, and data-part support while keeping the same
+  public API and shared event surface
 
 ## M4 - Root And Package Ownership Clarity
 
