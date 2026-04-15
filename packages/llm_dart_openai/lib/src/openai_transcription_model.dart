@@ -1,10 +1,9 @@
-import 'dart:convert';
-
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'openai_family_profile.dart';
 import 'openai_multipart_body.dart';
+import 'openai_non_text_model_support.dart';
 import 'openai_options.dart';
 
 final class OpenAITranscriptionModel implements TranscriptionModel {
@@ -24,7 +23,12 @@ final class OpenAITranscriptionModel implements TranscriptionModel {
     required this.profile,
     String? baseUrl,
     ProviderModelOptions settings = const OpenAITranscriptionModelSettings(),
-  })  : settings = _resolveSettings(settings),
+  })  : settings = resolveOpenAIModelSettings(
+          settings,
+          parameterName: 'settings',
+          expectedTypeName:
+              'OpenAITranscriptionModelSettings for OpenAI-family transcription models',
+        ),
         baseUrl = baseUrl ?? profile.defaultBaseUrl;
 
   @override
@@ -32,29 +36,22 @@ final class OpenAITranscriptionModel implements TranscriptionModel {
 
   Uri get transcriptionUri => Uri.parse('$baseUrl/audio/transcriptions');
 
-  Map<String, String> get defaultHeaders => profile.buildHeaders(
+  Map<String, String> get defaultHeaders => buildOpenAIFamilyDefaultHeaders(
+        profile: profile,
         apiKey: apiKey,
-        extraHeaders: {
-          if (settings.organization case final organization?)
-            'openai-organization': organization,
-          if (settings.project case final project?) 'openai-project': project,
-          ...settings.headers,
-        },
+        organization: settings.organization,
+        project: settings.project,
+        headers: settings.headers,
       );
 
   @override
   Future<TranscriptionResult> transcribe(TranscriptionRequest request) async {
-    final providerOptions = request.callOptions.providerOptions;
-    if (providerOptions != null &&
-        providerOptions is! OpenAITranscriptionOptions) {
-      throw ArgumentError.value(
-        providerOptions,
-        'request.callOptions.providerOptions',
-        'Expected OpenAITranscriptionOptions for OpenAI-family transcription models.',
-      );
-    }
-
-    final options = providerOptions as OpenAITranscriptionOptions?;
+    final options = resolveOpenAIProviderOptions<OpenAITranscriptionOptions>(
+      request.callOptions,
+      parameterName: 'request.callOptions.providerOptions',
+      expectedTypeName:
+          'OpenAITranscriptionOptions for OpenAI-family transcription models',
+    );
     final responseFormat =
         options?.responseFormat ?? OpenAITranscriptionResponseFormat.json;
     if (options != null &&
@@ -151,7 +148,10 @@ final class OpenAITranscriptionModel implements TranscriptionModel {
     required Map<String, String> headers,
     required OpenAITranscriptionResponseFormat responseFormat,
   }) {
-    final json = _decodeJsonObject(body);
+    final json = decodeOpenAIJsonObject(
+      body,
+      responseName: 'transcription',
+    );
     final text = json['text'];
     if (text is! String || text.isEmpty) {
       throw StateError(
@@ -175,35 +175,14 @@ final class OpenAITranscriptionModel implements TranscriptionModel {
     return TranscriptionResult(
       text: text,
       segments: segments,
-      language: _asString(json['language']),
-      durationSeconds: _asDouble(json['duration']),
+      language: openAIStringOrNull(json['language']),
+      durationSeconds: openAIDoubleOrNull(json['duration']),
       responseMetadata: ModelResponseMetadata(
         timestamp: DateTime.now().toUtc(),
         modelId: modelId,
         headers: headers,
       ),
       providerMetadata: providerMetadata,
-    );
-  }
-
-  Map<String, Object?> _decodeJsonObject(Object? body) {
-    if (body is Map<String, Object?>) {
-      return body;
-    }
-
-    if (body is Map) {
-      return Map<String, Object?>.from(body);
-    }
-
-    if (body is String) {
-      final decoded = jsonDecode(body);
-      if (decoded is Map) {
-        return Map<String, Object?>.from(decoded);
-      }
-    }
-
-    throw StateError(
-      'Expected an OpenAI transcription JSON object but received ${body.runtimeType}.',
     );
   }
 
@@ -227,32 +206,14 @@ final class OpenAITranscriptionModel implements TranscriptionModel {
         .map((item) => Map<String, Object?>.from(item))
         .map(
           (item) => TranscriptionSegment(
-            text: _asString(item['text']) ?? '',
-            startSeconds: _asDouble(item['start']) ?? 0,
-            endSeconds: _asDouble(item['end']) ?? 0,
+            text: openAIStringOrNull(item['text']) ?? '',
+            startSeconds: openAIDoubleOrNull(item['start']) ?? 0,
+            endSeconds: openAIDoubleOrNull(item['end']) ?? 0,
           ),
         )
         .toList(growable: false);
   }
-
-  static OpenAITranscriptionModelSettings _resolveSettings(
-    ProviderModelOptions settings,
-  ) {
-    if (settings is OpenAITranscriptionModelSettings) {
-      return settings;
-    }
-
-    throw ArgumentError.value(
-      settings,
-      'settings',
-      'Expected OpenAITranscriptionModelSettings for OpenAI-family transcription models.',
-    );
-  }
 }
-
-String? _asString(Object? value) => value is String ? value : null;
-
-double? _asDouble(Object? value) => value is num ? value.toDouble() : null;
 
 String _buildFilename(String? mediaType) {
   final normalized = mediaType?.split(';').first.trim().toLowerCase();

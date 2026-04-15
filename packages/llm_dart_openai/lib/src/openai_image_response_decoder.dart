@@ -5,7 +5,10 @@ extension _OpenAIImageResponseDecoder on OpenAIImageModel {
     Object? body, {
     required OpenAIImageResponseFormat? requestedResponseFormat,
   }) {
-    final json = _decodeOpenAIImageJsonObject(body);
+    final json = decodeOpenAIJsonObject(
+      body,
+      responseName: 'image generation',
+    );
     final data = json['data'];
     if (data is! List) {
       throw StateError(
@@ -13,7 +16,7 @@ extension _OpenAIImageResponseDecoder on OpenAIImageModel {
       );
     }
 
-    final outputFormat = _asString(json['output_format']);
+    final outputFormat = openAIStringOrNull(json['output_format']);
     final revisedPrompts = <String>[];
     final images = <GeneratedImage>[];
 
@@ -26,13 +29,13 @@ extension _OpenAIImageResponseDecoder on OpenAIImageModel {
       }
 
       final map = Map<String, Object?>.from(item);
-      final revisedPrompt = _asString(map['revised_prompt']);
+      final revisedPrompt = openAIStringOrNull(map['revised_prompt']);
       if (revisedPrompt != null && revisedPrompt.isNotEmpty) {
         revisedPrompts.add(revisedPrompt);
       }
 
-      final b64Json = _asString(map['b64_json']);
-      final url = _asString(map['url']);
+      final b64Json = openAIStringOrNull(map['b64_json']);
+      final url = openAIStringOrNull(map['url']);
       if (b64Json == null && url == null) {
         throw StateError(
           'Expected OpenAI image item $index to contain either b64_json or url.',
@@ -72,25 +75,4 @@ extension _OpenAIImageResponseDecoder on OpenAIImageModel {
       ),
     );
   }
-}
-
-Map<String, Object?> _decodeOpenAIImageJsonObject(Object? body) {
-  if (body is Map<String, Object?>) {
-    return body;
-  }
-
-  if (body is Map) {
-    return Map<String, Object?>.from(body);
-  }
-
-  if (body is String) {
-    final decoded = jsonDecode(body);
-    if (decoded is Map) {
-      return Map<String, Object?>.from(decoded);
-    }
-  }
-
-  throw StateError(
-    'Expected an OpenAI image generation JSON object but received ${body.runtimeType}.',
-  );
 }

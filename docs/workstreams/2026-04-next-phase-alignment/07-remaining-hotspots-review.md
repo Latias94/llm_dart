@@ -123,6 +123,23 @@ as:
 It should **not** become a generic new package or a cross-provider runtime
 layer.
 
+### Update After Follow-On Refactor
+
+That shared internal shell support is now extracted at a deliberately small
+scope:
+
+- repeated OpenAI-family default header assembly
+- typed model-settings validation
+- typed provider-options validation
+- shared JSON-object decoding helpers for non-text response paths
+
+This means embedding, speech, image, and transcription can now stay as
+capability-owned files while reusing the same low-level shell helpers.
+
+The repository still intentionally does **not** have a published
+`provider-utils` style package. The support remains private implementation
+infrastructure inside `llm_dart_openai`.
+
 ## 4. The Next Real Core Hotspot Is `chat_ui_accumulator.dart`, Not `StreamTextRunner`
 
 `StreamTextRunner` is still intentionally narrow, but it is no longer the main
@@ -235,8 +252,8 @@ The remaining architecture pressure is now more selective:
 
 - **next smaller core seam if needed:** `ChatUiAccumulator` data-part upsert
   behavior
-- **next OpenAI support extraction candidate:** shared internal non-text model
-  shell helpers
+- **next OpenAI support extraction candidate if duplication reappears:**
+  additional non-text response or media helpers
 - **next large-but-cohesive file to watch:** `openai_responses_request_encoder.dart`
 
 Everything else should remain frozen until real implementation pressure appears.

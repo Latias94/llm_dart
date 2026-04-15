@@ -6,6 +6,7 @@ import 'package:llm_dart_transport/llm_dart_transport.dart';
 import 'openai_family_profile.dart';
 import 'openai_image_editing.dart';
 import 'openai_multipart_body.dart';
+import 'openai_non_text_model_support.dart';
 import 'openai_options.dart';
 
 part 'openai_image_request_builder.dart';
@@ -29,7 +30,12 @@ final class OpenAIImageModel implements ImageModel {
     required this.profile,
     String? baseUrl,
     ProviderModelOptions settings = const OpenAIImageModelSettings(),
-  })  : settings = _resolveOpenAIImageModelSettings(settings),
+  })  : settings = resolveOpenAIModelSettings(
+          settings,
+          parameterName: 'settings',
+          expectedTypeName:
+              'OpenAIImageModelSettings for OpenAI-family image models',
+        ),
         baseUrl = baseUrl ?? profile.defaultBaseUrl;
 
   @override
@@ -38,14 +44,12 @@ final class OpenAIImageModel implements ImageModel {
   Uri get imageGenerationUri => Uri.parse('$baseUrl/images/generations');
   Uri get imageEditUri => Uri.parse('$baseUrl/images/edits');
 
-  Map<String, String> get defaultHeaders => profile.buildHeaders(
+  Map<String, String> get defaultHeaders => buildOpenAIFamilyDefaultHeaders(
+        profile: profile,
         apiKey: apiKey,
-        extraHeaders: {
-          if (settings.organization case final organization?)
-            'openai-organization': organization,
-          if (settings.project case final project?) 'openai-project': project,
-          ...settings.headers,
-        },
+        organization: settings.organization,
+        project: settings.project,
+        headers: settings.headers,
       );
 
   @override

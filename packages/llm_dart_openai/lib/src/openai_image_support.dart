@@ -1,34 +1,15 @@
 part of 'openai_image_model.dart';
 
-OpenAIImageModelSettings _resolveOpenAIImageModelSettings(
-  ProviderModelOptions settings,
-) {
-  if (settings is OpenAIImageModelSettings) {
-    return settings;
-  }
-
-  throw ArgumentError.value(
-    settings,
-    'settings',
-    'Expected OpenAIImageModelSettings for OpenAI-family image models.',
-  );
-}
-
 extension _OpenAIImageSupport on OpenAIImageModel {
   OpenAIImageOptions? _resolveProviderOptions(
     CallOptions callOptions, {
     required String parameterName,
   }) {
-    final providerOptions = callOptions.providerOptions;
-    if (providerOptions != null && providerOptions is! OpenAIImageOptions) {
-      throw ArgumentError.value(
-        providerOptions,
-        parameterName,
-        'Expected OpenAIImageOptions for OpenAI-family image models.',
-      );
-    }
-
-    return providerOptions as OpenAIImageOptions?;
+    return resolveOpenAIProviderOptions<OpenAIImageOptions>(
+      callOptions,
+      parameterName: parameterName,
+      expectedTypeName: 'OpenAIImageOptions for OpenAI-family image models',
+    );
   }
 
   void _validateEditRequest(
@@ -135,10 +116,6 @@ bool _hasDefaultResponseFormat(String modelId) {
   ];
 
   return defaultResponseFormatPrefixes.any(modelId.startsWith);
-}
-
-String? _asString(Object? value) {
-  return value is String ? value : null;
 }
 
 String _mediaTypeForOutputFormat(String? outputFormat) {

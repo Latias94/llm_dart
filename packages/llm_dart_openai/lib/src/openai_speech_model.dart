@@ -4,6 +4,7 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'openai_family_profile.dart';
+import 'openai_non_text_model_support.dart';
 import 'openai_options.dart';
 
 final class OpenAISpeechModel implements SpeechModel {
@@ -23,7 +24,12 @@ final class OpenAISpeechModel implements SpeechModel {
     required this.profile,
     String? baseUrl,
     ProviderModelOptions settings = const OpenAISpeechModelSettings(),
-  })  : settings = _resolveSettings(settings),
+  })  : settings = resolveOpenAIModelSettings(
+          settings,
+          parameterName: 'settings',
+          expectedTypeName:
+              'OpenAISpeechModelSettings for OpenAI-family speech models',
+        ),
         baseUrl = baseUrl ?? profile.defaultBaseUrl;
 
   @override
@@ -31,30 +37,23 @@ final class OpenAISpeechModel implements SpeechModel {
 
   Uri get speechUri => Uri.parse('$baseUrl/audio/speech');
 
-  Map<String, String> get defaultHeaders => profile.buildHeaders(
+  Map<String, String> get defaultHeaders => buildOpenAIFamilyDefaultHeaders(
+        profile: profile,
         apiKey: apiKey,
-        extraHeaders: {
-          if (settings.organization case final organization?)
-            'openai-organization': organization,
-          if (settings.project case final project?) 'openai-project': project,
-          ...settings.headers,
-        },
+        organization: settings.organization,
+        project: settings.project,
+        headers: settings.headers,
       );
 
   @override
   Future<SpeechGenerationResult> generateSpeech(
     SpeechGenerationRequest request,
   ) async {
-    final providerOptions = request.callOptions.providerOptions;
-    if (providerOptions != null && providerOptions is! OpenAISpeechOptions) {
-      throw ArgumentError.value(
-        providerOptions,
-        'request.callOptions.providerOptions',
-        'Expected OpenAISpeechOptions for OpenAI-family speech models.',
-      );
-    }
-
-    final options = providerOptions as OpenAISpeechOptions?;
+    final options = resolveOpenAIProviderOptions<OpenAISpeechOptions>(
+      request.callOptions,
+      parameterName: 'request.callOptions.providerOptions',
+      expectedTypeName: 'OpenAISpeechOptions for OpenAI-family speech models',
+    );
     final response = await transport.send(
       TransportRequest(
         uri: speechUri,
@@ -97,20 +96,6 @@ final class OpenAISpeechModel implements SpeechModel {
         modelId: modelId,
         headers: response.headers,
       ),
-    );
-  }
-
-  static OpenAISpeechModelSettings _resolveSettings(
-    ProviderModelOptions settings,
-  ) {
-    if (settings is OpenAISpeechModelSettings) {
-      return settings;
-    }
-
-    throw ArgumentError.value(
-      settings,
-      'settings',
-      'Expected OpenAISpeechModelSettings for OpenAI-family speech models.',
     );
   }
 }

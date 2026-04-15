@@ -1,9 +1,8 @@
-import 'dart:convert';
-
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'openai_family_profile.dart';
+import 'openai_non_text_model_support.dart';
 import 'openai_options.dart';
 
 final class OpenAIEmbeddingModel implements EmbeddingModel {
@@ -23,7 +22,12 @@ final class OpenAIEmbeddingModel implements EmbeddingModel {
     required this.profile,
     String? baseUrl,
     ProviderModelOptions settings = const OpenAIEmbeddingModelSettings(),
-  })  : settings = _resolveSettings(settings),
+  })  : settings = resolveOpenAIModelSettings(
+          settings,
+          parameterName: 'settings',
+          expectedTypeName:
+              'OpenAIEmbeddingModelSettings for OpenAI-family embedding models',
+        ),
         baseUrl = baseUrl ?? profile.defaultBaseUrl;
 
   @override
@@ -31,28 +35,21 @@ final class OpenAIEmbeddingModel implements EmbeddingModel {
 
   Uri get embeddingsUri => Uri.parse('$baseUrl/embeddings');
 
-  Map<String, String> get defaultHeaders => profile.buildHeaders(
+  Map<String, String> get defaultHeaders => buildOpenAIFamilyDefaultHeaders(
+        profile: profile,
         apiKey: apiKey,
-        extraHeaders: {
-          if (settings.organization case final organization?)
-            'openai-organization': organization,
-          if (settings.project case final project?) 'openai-project': project,
-          ...settings.headers,
-        },
+        organization: settings.organization,
+        project: settings.project,
+        headers: settings.headers,
       );
 
   @override
   Future<EmbedResult> embed(EmbedRequest request) async {
-    final providerOptions = request.callOptions.providerOptions;
-    if (providerOptions != null && providerOptions is! OpenAIEmbedOptions) {
-      throw ArgumentError.value(
-        providerOptions,
-        'request.callOptions.providerOptions',
-        'Expected OpenAIEmbedOptions for OpenAI-family embedding models.',
-      );
-    }
-
-    final options = providerOptions as OpenAIEmbedOptions?;
+    final options = resolveOpenAIProviderOptions<OpenAIEmbedOptions>(
+      request.callOptions,
+      parameterName: 'request.callOptions.providerOptions',
+      expectedTypeName: 'OpenAIEmbedOptions for OpenAI-family embedding models',
+    );
     final response = await transport.send(
       TransportRequest(
         uri: embeddingsUri,
@@ -80,7 +77,10 @@ final class OpenAIEmbeddingModel implements EmbeddingModel {
   }
 
   EmbedResult _decodeResponse(Object? body) {
-    final json = _decodeJsonObject(body);
+    final json = decodeOpenAIJsonObject(
+      body,
+      responseName: 'embeddings response',
+    );
     final data = json['data'];
     if (data is! List) {
       throw StateError(
@@ -107,7 +107,7 @@ final class OpenAIEmbeddingModel implements EmbeddingModel {
 
       indexedEmbeddings.add(
         (
-          index: _asInt(map['index']) ?? index,
+          index: openAIIntOrNull(map['index']) ?? index,
           embedding: List<double>.unmodifiable(
             embedding.map((value) {
               if (value is! num) {
@@ -132,27 +132,6 @@ final class OpenAIEmbeddingModel implements EmbeddingModel {
     );
   }
 
-  Map<String, Object?> _decodeJsonObject(Object? body) {
-    if (body is Map<String, Object?>) {
-      return body;
-    }
-
-    if (body is Map) {
-      return Map<String, Object?>.from(body);
-    }
-
-    if (body is String) {
-      final decoded = jsonDecode(body);
-      if (decoded is Map) {
-        return Map<String, Object?>.from(decoded);
-      }
-    }
-
-    throw StateError(
-      'Expected an OpenAI JSON object response but received ${body.runtimeType}.',
-    );
-  }
-
   UsageStats? _decodeUsage(Object? usage) {
     if (usage is! Map) {
       return null;
@@ -160,30 +139,8 @@ final class OpenAIEmbeddingModel implements EmbeddingModel {
 
     final map = Map<String, Object?>.from(usage);
     return UsageStats(
-      inputTokens: _asInt(map['prompt_tokens']),
-      totalTokens: _asInt(map['total_tokens']),
+      inputTokens: openAIIntOrNull(map['prompt_tokens']),
+      totalTokens: openAIIntOrNull(map['total_tokens']),
     );
-  }
-
-  static OpenAIEmbeddingModelSettings _resolveSettings(
-    ProviderModelOptions settings,
-  ) {
-    if (settings is OpenAIEmbeddingModelSettings) {
-      return settings;
-    }
-
-    throw ArgumentError.value(
-      settings,
-      'settings',
-      'Expected OpenAIEmbeddingModelSettings for OpenAI-family embedding models.',
-    );
-  }
-
-  int? _asInt(Object? value) {
-    return switch (value) {
-      int() => value,
-      num() => value.toInt(),
-      _ => null,
-    };
   }
 }

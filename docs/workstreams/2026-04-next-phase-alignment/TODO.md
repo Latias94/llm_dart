@@ -60,3 +60,5 @@
   splitting or only small shared support extraction
 - [x] Split `openai_image_model.dart` into internal request, response, and
   shared support layers without introducing a new package boundary
+- [x] Extract a small shared internal shell for repeated OpenAI non-text model
+  settings, headers, provider-option validation, and JSON decoding support
