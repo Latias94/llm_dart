@@ -165,3 +165,6 @@ Current status:
 - capability-gated examples now exist both as a pure Dart app-facing example
   and as a Flutter Material control demo, showing shared affordance gating,
   provider-native badges, and fallback recommendations
+- the workstream is now effectively closed at the active implementation level:
+  the remaining unchecked items are explicit deferred-policy triggers rather
+  than unfinished architectural slices

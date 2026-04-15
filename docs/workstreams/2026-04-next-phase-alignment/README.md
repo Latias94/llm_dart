@@ -116,6 +116,9 @@ This phase should explicitly avoid:
 - [09-provider-capability-discovery-design.md](09-provider-capability-discovery-design.md)
   - Model-centric capability discovery and provider-native feature surfacing
     design for the next additive implementation phase.
+- [10-phase-closure-status.md](10-phase-closure-status.md)
+  - Final closure note for this workstream: what is done, what stays
+    deliberately deferred, and which rules now remain frozen by default.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)

@@ -1,5 +1,9 @@
 # TODO
 
+All non-deferred implementation items in this workstream are now complete.
+The unchecked items below are intentional reopen conditions, not active
+architecture debt.
+
 ## Workstream Setup
 
 - [x] Create the next-phase alignment workstream scaffold
