@@ -54,6 +54,29 @@ should be read as these internal groups:
   `ChatUiStreamChunk`, and `ChatMessageMapper`
 - **Serialization layer** - prompt/UI/event codecs and protocol markers
 
+## Focused Entrypoints
+
+The broad existing barrel remains:
+
+- `package:llm_dart_core/llm_dart_core.dart`
+
+For narrower imports, use:
+
+- `package:llm_dart_core/foundation.dart`
+  - warnings, errors, usage, metadata, options, cancellation, JSON schema,
+    prompt/content parts, and tool definitions
+- `package:llm_dart_core/model.dart`
+  - self-contained model specifications, capability helpers, runners, and raw
+    stream events
+- `package:llm_dart_core/ui.dart`
+  - shared UI message, chunk, mapper, and accumulator contracts
+- `package:llm_dart_core/serialization.dart`
+  - prompt, UI, and stream-event JSON codecs plus related serialized data
+    contracts
+
+These entrypoints are additive and non-breaking. They clarify ownership without
+splitting the package.
+
 ## When To Use This Package Directly
 
 Use `llm_dart_core` directly when you are building:

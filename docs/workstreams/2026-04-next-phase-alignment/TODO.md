@@ -21,6 +21,8 @@
   UI, and serialization ownership groups
 - [x] Define the trigger conditions for any future published package split out
   of `llm_dart_core`
+- [x] Add non-breaking focused `llm_dart_core` entrypoints for foundation,
+  model, UI, and serialization ownership groups
 
 ## Root And Package Ownership
 

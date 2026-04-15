@@ -93,6 +93,9 @@ This phase should explicitly avoid:
 - [04-root-package-role-reaudit.md](04-root-package-role-reaudit.md)
   - Re-audit of the current root `llm_dart` role after the latest package
     moves and root export cleanup.
+- [05-core-focused-entrypoints.md](05-core-focused-entrypoints.md)
+  - Non-breaking `llm_dart_core` focused-entrypoint spike for foundation,
+    model, UI, and serialization ownership groups.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)
