@@ -4,10 +4,11 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'google_image_editing.dart';
+import 'google_model_describer.dart';
 import 'google_options.dart';
 import 'google_shared.dart';
 
-final class GoogleImageModel implements ImageModel {
+final class GoogleImageModel implements ImageModel, CapabilityDescribedModel {
   final String apiKey;
   final String baseUrl;
   final TransportClient transport;
@@ -27,6 +28,14 @@ final class GoogleImageModel implements ImageModel {
 
   @override
   String get providerId => 'google';
+
+  @override
+  ModelCapabilityProfile get capabilityProfile {
+    return describeGoogleImageModel(
+      modelId,
+      settings: settings,
+    );
+  }
 
   bool get isGeminiImageModel => _isGeminiImageModel(modelId);
 

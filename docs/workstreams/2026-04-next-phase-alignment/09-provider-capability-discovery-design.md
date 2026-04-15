@@ -511,8 +511,11 @@ Status:
   transcription models
 - reuses existing OpenAI-family route and model-capability helpers instead of
   inventing a second capability table
-- still keeps model classes themselves optional for later direct
-  `CapabilityDescribedModel` adoption
+- the same additive pattern now also exists in `llm_dart_google` for chat,
+  embedding, image, and speech models, and in `llm_dart_anthropic` for chat
+  models
+- the capability-discovery direction is now validated across multiple provider
+  families rather than remaining an OpenAI-only proof point
 
 ### Slice 4: Implement Optional Marker Interfaces
 
@@ -528,6 +531,10 @@ Status:
   `capabilityProfile` directly
 - model instances reuse the provider-owned describers instead of maintaining a
   second source of truth
+- the same optional marker adoption now also exists in `llm_dart_google` for
+  `GoogleLanguageModel`, `GoogleEmbeddingModel`, `GoogleImageModel`, and
+  `GoogleSpeechModel`
+- `AnthropicLanguageModel` now also exposes `capabilityProfile` directly
 
 ### Slice 5: Add Flutter/App Examples
 

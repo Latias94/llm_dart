@@ -3,11 +3,13 @@ import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'google_generate_content_codec.dart';
 import 'google_language_model_support.dart';
+import 'google_model_describer.dart';
 import 'google_options.dart';
 import 'google_result_codec.dart';
 import 'google_stream_codec.dart';
 
-final class GoogleLanguageModel implements LanguageModel {
+final class GoogleLanguageModel
+    implements LanguageModel, CapabilityDescribedModel {
   static const GoogleGenerateContentCodec _requestCodec =
       GoogleGenerateContentCodec();
   static const GoogleGenerateContentResultCodec _resultCodec =
@@ -34,6 +36,14 @@ final class GoogleLanguageModel implements LanguageModel {
 
   @override
   String get providerId => 'google';
+
+  @override
+  ModelCapabilityProfile get capabilityProfile {
+    return describeGoogleChatModel(
+      modelId,
+      settings: settings,
+    );
+  }
 
   Uri get generateContentUri => Uri.parse(
       '${normalizeGoogleBaseUrl(baseUrl)}/models/$modelId:generateContent');

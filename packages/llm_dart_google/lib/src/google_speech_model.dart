@@ -4,10 +4,11 @@ import 'dart:typed_data';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
+import 'google_model_describer.dart';
 import 'google_options.dart';
 import 'google_shared.dart';
 
-final class GoogleSpeechModel implements SpeechModel {
+final class GoogleSpeechModel implements SpeechModel, CapabilityDescribedModel {
   final String apiKey;
   final String baseUrl;
   final TransportClient transport;
@@ -27,6 +28,14 @@ final class GoogleSpeechModel implements SpeechModel {
 
   @override
   String get providerId => 'google';
+
+  @override
+  ModelCapabilityProfile get capabilityProfile {
+    return describeGoogleSpeechModel(
+      modelId,
+      settings: settings,
+    );
+  }
 
   Uri get generateContentUri =>
       Uri.parse('${_normalizedBaseUrl()}/models/$modelId:generateContent');

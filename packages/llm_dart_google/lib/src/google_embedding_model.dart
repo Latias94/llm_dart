@@ -3,9 +3,11 @@ import 'dart:convert';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
+import 'google_model_describer.dart';
 import 'google_options.dart';
 
-final class GoogleEmbeddingModel implements EmbeddingModel {
+final class GoogleEmbeddingModel
+    implements EmbeddingModel, CapabilityDescribedModel {
   final String apiKey;
   final String baseUrl;
   final TransportClient transport;
@@ -25,6 +27,11 @@ final class GoogleEmbeddingModel implements EmbeddingModel {
 
   @override
   String get providerId => 'google';
+
+  @override
+  ModelCapabilityProfile get capabilityProfile {
+    return describeGoogleEmbeddingModel(modelId);
+  }
 
   Uri get embedContentUri =>
       Uri.parse('${_normalizedBaseUrl()}/models/$modelId:embedContent');

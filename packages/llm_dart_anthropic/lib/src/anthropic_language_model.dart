@@ -3,12 +3,14 @@ import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'anthropic_api.dart';
 import 'anthropic_messages_codec.dart';
+import 'anthropic_model_describer.dart';
 import 'anthropic_options.dart';
 import 'anthropic_result_codec.dart';
 import 'anthropic_stream_codec.dart';
 import 'anthropic_token_count.dart';
 
-final class AnthropicLanguageModel implements LanguageModel {
+final class AnthropicLanguageModel
+    implements LanguageModel, CapabilityDescribedModel {
   static const AnthropicMessagesCodec _messagesCodec = AnthropicMessagesCodec();
   static const AnthropicMessagesResultCodec _resultCodec =
       AnthropicMessagesResultCodec();
@@ -34,6 +36,14 @@ final class AnthropicLanguageModel implements LanguageModel {
 
   @override
   String get providerId => _providerId;
+
+  @override
+  ModelCapabilityProfile get capabilityProfile {
+    return describeAnthropicChatModel(
+      modelId,
+      settings: settings,
+    );
+  }
 
   Uri get messagesUri => resolveAnthropicUri(baseUrl, 'messages');
 

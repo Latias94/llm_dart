@@ -155,10 +155,13 @@ Current status:
 - the first provider-owned describers now exist in `llm_dart_openai`, reusing
   the existing OpenAI-family route and capability helpers for concrete model
   profiles
-- the first direct model-instance adoption now also exists in
-  `llm_dart_openai`, where modern OpenAI models expose `capabilityProfile`
-  through the optional marker interface without widening shared model
-  contracts
+- provider-owned describers now also exist in `llm_dart_google` and
+  `llm_dart_anthropic`, so the model-centric capability layer is now proven
+  across OpenAI, Google, and Anthropic rather than only one provider family
+- direct model-instance adoption now exists across `llm_dart_openai`,
+  `llm_dart_google`, and `llm_dart_anthropic`, where modern provider models
+  expose `capabilityProfile` through the optional marker interface without
+  widening shared model contracts
 - capability-gated examples now exist both as a pure Dart app-facing example
   and as a Flutter Material control demo, showing shared affordance gating,
   provider-native badges, and fallback recommendations
