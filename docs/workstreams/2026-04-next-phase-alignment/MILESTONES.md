@@ -150,3 +150,5 @@ Current status:
 - the next implementation route is additive: core descriptor types first,
   provider-owned describers next, optional marker interfaces after that, and
   Flutter examples last
+- the additive core descriptor types and optional marker interface now exist in
+  `llm_dart_core` without changing any existing model interface contract

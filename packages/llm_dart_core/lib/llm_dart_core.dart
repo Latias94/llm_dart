@@ -28,6 +28,7 @@ export 'src/model/generate_text_step_start_event.dart';
 export 'src/model/generate_speech.dart';
 export 'src/model/image_model.dart';
 export 'src/model/language_model.dart';
+export 'src/model/model_capability_profile.dart';
 export 'src/model/model_response_metadata.dart';
 export 'src/model/output_spec.dart';
 export 'src/model/response_format.dart';

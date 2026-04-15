@@ -97,7 +97,7 @@
   feature descriptors, warnings, metadata, and custom parts
 - [x] Freeze that legacy `LLMCapability` remains a compatibility adapter rather
   than the modern source of truth
-- [ ] Add additive core descriptor types for model capability profiles
+- [x] Add additive core descriptor types for model capability profiles
 - [ ] Add provider-owned describers, starting with OpenAI
 - [ ] Add optional model marker interfaces for provider models that can expose
   capability profiles directly

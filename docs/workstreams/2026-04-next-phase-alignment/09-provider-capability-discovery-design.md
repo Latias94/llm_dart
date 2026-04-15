@@ -483,6 +483,14 @@ Export it from:
 
 Do not make existing model interfaces implement anything yet.
 
+Status:
+
+- landed as an additive core surface
+- exported from both `llm_dart_core.dart` and the focused `model.dart`
+  entrypoint
+- covered by dedicated core tests
+- still does not require existing model interfaces to implement a new member
+
 ### Slice 3: Add Provider Describers
 
 Add provider-owned helpers:
