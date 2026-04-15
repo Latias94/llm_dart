@@ -49,12 +49,20 @@ The remaining worthwhile work is now more likely to be:
 - internal boundary hardening inside `llm_dart_core`
 - clearer package ownership documentation
 - continued root compatibility slimming
+- explicit freeze decisions for the remaining honest hotspots
 
 It is less likely to be:
 
 - more package splitting for its own sake
 - copying `@ai-sdk/provider` and `@ai-sdk/provider-utils` literally
 - widening shared stream/UI contracts just to match `repo-ref/ai`
+
+At this point, the phase is also close to structural closure.
+
+That means the last job is not “keep splitting until everything is small”.
+
+The last job is “record what is now good enough and what should reopen only
+with product evidence”.
 
 ## Scope
 
@@ -102,6 +110,9 @@ This phase should explicitly avoid:
 - [07-remaining-hotspots-review.md](07-remaining-hotspots-review.md)
   - Review of the next truthful internal hotspots after the text-path and
     serialization cleanup work.
+- [08-freeze-review-and-next-route.md](08-freeze-review-and-next-route.md)
+  - Freeze review for the remaining honest hotspots, plus reopen triggers and
+    the recommended route after this phase.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)

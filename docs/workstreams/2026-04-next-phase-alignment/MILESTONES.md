@@ -93,3 +93,32 @@ Current status:
   honest again
 - the root package is now classified as clear enough for the current stage: a
   modern convenience facade plus an explicit compatibility host
+
+## M5 - Freeze Review And Next Route
+
+Goals:
+
+- close the current phase with explicit freeze decisions instead of leaving
+  “maybe refactor later” ambiguity
+- distinguish honest large files from real mixed-boundary hotspots
+- state the next route as product evidence rather than structural symmetry
+
+Acceptance criteria:
+
+- the remaining honest hotspots are named explicitly
+- reopen triggers are written down
+- deferred work is deliberate instead of implied
+- the next route after this phase is clear
+
+Current status:
+
+- the remaining large files are now classified as either honest boundaries or
+  already-addressed seams rather than automatic split targets
+- the main frozen areas are now explicit: shared runner scope, shared event
+  surface, OpenAI text request-path structure, package-count symmetry, and
+  legacy removal
+- reopen triggers are now written down so future refactors can be justified by
+  product evidence, repeated bugs, or repeated duplication
+- this phase now ends with a clearer architectural rule: keep the shared
+  interface small and honest, keep provider-native value provider-owned, and
+  avoid symmetry-driven package or API expansion

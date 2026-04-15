@@ -68,3 +68,23 @@
   shared support layers without introducing a new package boundary
 - [x] Extract a small shared internal shell for repeated OpenAI non-text model
   settings, headers, provider-option validation, and JSON decoding support
+
+## Freeze Review And Next Route
+
+- [x] Review which remaining large files are still honest boundaries rather than
+  mixed architecture hotspots
+- [x] Freeze which current seams should stay unchanged unless repeated product
+  pressure appears
+- [x] Record reopen triggers so future refactors stay evidence-driven rather
+  than symmetry-driven
+- [x] State the next route for the repository after this architecture-heavy
+  phase
+
+## Explicitly Deferred
+
+- [ ] Reopen shared runner scope only when repeated cross-provider product
+  pressure exists
+- [ ] Reopen package splitting only when internal support extraction stops being
+  sufficient
+- [ ] Remove legacy compatibility surfaces only with a deliberate deprecation
+  plan
