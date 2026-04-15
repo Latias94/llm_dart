@@ -52,8 +52,13 @@ The request-encoding layer owns outbound provider payload shaping:
   - owns Chat Completions request shaping, prompt replay encoding, model
     compatibility shaping, and tool/body encoding helpers
 - `openai_responses_request_encoder.dart`
-  - owns Responses request shaping, replay-item encoding, reasoning/service
-    tier compatibility shaping, and tool/body encoding helpers
+  - now owns the top-level Responses request body assembly only
+- `openai_responses_prompt_encoder.dart`
+  - owns Responses prompt, replay-item, user-part, assistant-part, and tool
+    replay encoding
+- `openai_responses_request_support.dart`
+  - owns Responses compatibility shaping, include/logprobs shaping, tool/body
+    encoding helpers, and response-format encoding
 
 The response-decoding layer owns non-streaming provider payload normalization:
 

@@ -10,6 +10,8 @@ import 'openai_responses_support.dart';
 import 'openai_streaming_support.dart';
 
 part 'openai_responses_request_encoder.dart';
+part 'openai_responses_prompt_encoder.dart';
+part 'openai_responses_request_support.dart';
 part 'openai_responses_response_decoder.dart';
 part 'openai_responses_stream_decoder.dart';
 

@@ -198,12 +198,12 @@ The remaining logic inside the main file is now much narrower:
 So `chat_ui_accumulator.dart` is no longer the same class of hotspot it was at
 the start of this review.
 
-## 5. `openai_responses_request_encoder.dart` Is Large, But Mostly Cohesive
+## 5. `openai_responses_request_encoder.dart` Was Large, But Stayed Within One Boundary
 
-`openai_responses_request_encoder.dart` remains very large, but its size is not
-the same as architectural confusion.
+`openai_responses_request_encoder.dart` was large without necessarily being
+architecturally confused.
 
-Most of its weight is still within one ownership boundary:
+Most of its weight still sat within one ownership boundary:
 
 - prompt replay encoding
 - user-part encoding
@@ -214,16 +214,23 @@ Most of its weight is still within one ownership boundary:
 
 ### Decision
 
-This file should only be split when it materially improves readability inside
-the same request-encoding boundary.
+That meant it was only worth splitting if readability improved **inside the
+same request-encoding boundary**.
 
-The best future cut is by outbound concern, for example:
+### Update After Follow-On Refactor
 
-- compatibility shaping
-- prompt/replay encoding
-- tools and response-format encoding
+That split is now complete without creating a fake extra layer:
 
-It should **not** be split just because it is large.
+- `openai_responses_request_encoder.dart`
+  - keeps top-level request assembly
+- `openai_responses_prompt_encoder.dart`
+  - owns prompt and replay encoding
+- `openai_responses_request_support.dart`
+  - owns compatibility shaping, include/logprobs, tools, and response-format
+    support
+
+So the request path is now thinner and easier to navigate while still clearly
+remaining one internal request boundary.
 
 ## Recommended Order
 
@@ -252,6 +259,6 @@ The remaining architecture pressure is now more selective:
 - **next core file to watch if coupling grows again:** `chat_ui_accumulator.dart`
 - **next OpenAI support extraction candidate if duplication reappears:**
   additional non-text response or media helpers
-- **next large-but-cohesive file to watch:** `openai_responses_request_encoder.dart`
+- **next large-but-cohesive file to watch:** `openai_chat_completions_request_encoder.dart`
 
 Everything else should remain frozen until real implementation pressure appears.
