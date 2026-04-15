@@ -10,6 +10,8 @@ import 'openai_streaming_support.dart';
 import 'resolved_openai_options.dart';
 
 part 'openai_chat_completions_request_encoder.dart';
+part 'openai_chat_completions_prompt_encoder.dart';
+part 'openai_chat_completions_request_support.dart';
 part 'openai_chat_completions_response_decoder.dart';
 part 'openai_chat_completions_stream_decoder.dart';
 

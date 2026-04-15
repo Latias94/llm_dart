@@ -232,6 +232,44 @@ That split is now complete without creating a fake extra layer:
 So the request path is now thinner and easier to navigate while still clearly
 remaining one internal request boundary.
 
+## 6. `openai_chat_completions_request_encoder.dart` Followed The Same Pattern
+
+`openai_chat_completions_request_encoder.dart` also grew large while still
+remaining conceptually inside one request-encoding boundary.
+
+Its weight mostly sat in:
+
+- unsupported-option guard rails
+- prompt and replay encoding
+- multimodal user-part encoding
+- compatibility shaping for reasoning and service tier behavior
+- tool and response-format encoding
+
+### Decision
+
+That meant the right refactor was the same kind of **within-boundary**
+splitting used for Responses, not a new abstraction layer.
+
+### Update After Follow-On Refactor
+
+That split is now complete:
+
+- `openai_chat_completions_request_encoder.dart`
+  - keeps top-level request assembly
+- `openai_chat_completions_prompt_encoder.dart`
+  - owns prompt, replay, and multimodal user-part encoding
+- `openai_chat_completions_request_support.dart`
+  - owns compatibility shaping, unsupported-option guards, tools, and
+    response-format support
+
+So both OpenAI text request paths now follow the same structural shape:
+
+- thin top-level request assembly
+- prompt/replay encoding
+- request support helpers
+
+without pretending they need more public or package-level granularity.
+
 ## Recommended Order
 
 If another refactor slice starts immediately after this review, the best order
@@ -259,6 +297,6 @@ The remaining architecture pressure is now more selective:
 - **next core file to watch if coupling grows again:** `chat_ui_accumulator.dart`
 - **next OpenAI support extraction candidate if duplication reappears:**
   additional non-text response or media helpers
-- **next large-but-cohesive file to watch:** `openai_chat_completions_request_encoder.dart`
+- **next OpenAI area to freeze unless bugs appear:** text request encoding paths
 
 Everything else should remain frozen until real implementation pressure appears.

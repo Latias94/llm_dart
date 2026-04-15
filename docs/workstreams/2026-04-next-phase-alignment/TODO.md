@@ -58,6 +58,8 @@
 - [x] Split OpenAI Responses response decoding out of the main codec file
 - [x] Split OpenAI Chat Completions stream decoding out of the main codec file
 - [x] Split OpenAI Responses stream decoding out of the main codec file
+- [x] Split OpenAI Chat Completions request encoding by outbound concern while
+  keeping the same internal request boundary
 - [x] Split OpenAI Responses request encoding by outbound concern while keeping
   the same internal request boundary
 - [x] Review whether remaining OpenAI non-text models justify further internal
