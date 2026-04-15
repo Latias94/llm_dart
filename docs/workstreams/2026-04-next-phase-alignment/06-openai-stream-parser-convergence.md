@@ -6,9 +6,10 @@ Keep the OpenAI-family provider implementation aligned with the mature
 provider-adapter shape from `repo-ref/ai` without copying its package
 granularity.
 
-The practical target is a clear three-layer split inside `llm_dart_openai`:
+The practical target is a clear four-layer split inside `llm_dart_openai`:
 
 - request encoding
+- response/result decoding
 - stream-event parsing
 - language-model facade and profile routing
 
@@ -33,18 +34,19 @@ Both OpenAI Chat Completions and OpenAI Responses now use the same helper for:
 - marking the stream as containing tool calls
 - preserving the per-index accumulator as the owner of incremental tool input
 
-The stream-decoding layer is also now physically separated from the main codec
-entry files:
+The OpenAI-family codec files now act as thin facades around physically
+separated request, response, and stream parser layers:
 
-- `openai_chat_completions_codec.dart` keeps request encoding, result decoding,
-  and common helper ownership, while stream decoding lives in
-  `openai_chat_completions_stream_decoder.dart`
-- `openai_responses_codec.dart` keeps request encoding, result decoding, and
-  common helper ownership, while stream decoding lives in
-  `openai_responses_stream_decoder.dart`
+- `openai_chat_completions_codec.dart`
+  - routes request encoding to `openai_chat_completions_request_encoder.dart`
+  - routes result decoding to `openai_chat_completions_response_decoder.dart`
+  - routes stream decoding to `openai_chat_completions_stream_decoder.dart`
+- `openai_responses_codec.dart`
+  - routes request encoding to `openai_responses_request_encoder.dart`
+  - routes result decoding to `openai_responses_response_decoder.dart`
+  - routes stream decoding to `openai_responses_stream_decoder.dart`
 
-The request-encoding layer is now also physically separated from the main codec
-entry files:
+The request-encoding layer owns outbound provider payload shaping:
 
 - `openai_chat_completions_request_encoder.dart`
   - owns Chat Completions request shaping, prompt replay encoding, model
@@ -52,6 +54,18 @@ entry files:
 - `openai_responses_request_encoder.dart`
   - owns Responses request shaping, replay-item encoding, reasoning/service
     tier compatibility shaping, and tool/body encoding helpers
+
+The response-decoding layer owns non-streaming provider payload normalization:
+
+- `openai_chat_completions_response_decoder.dart`
+  - owns Chat Completions result content, logprobs, usage, finish reason, and
+    error decoding
+- `openai_responses_response_decoder.dart`
+  - owns Responses result output item traversal, logprobs collection, usage,
+    finish reason, and error decoding
+
+The stream-decoding layer owns incremental event parsing and remains free to
+reuse response-decoder helpers for terminal usage and finish reason mapping.
 
 ## Boundary Decision
 
@@ -68,6 +82,8 @@ to adopt OpenAI lifecycle vocabulary.
 
 The next useful OpenAI-family seams are:
 
+- factor any repeated metadata-shaping helpers only when a second provider
+  family needs the same behavior
 - keep Chat Completions and Responses metadata adapters private until repeated
   downstream needs appear
 - avoid widening common OpenAI-family options for provider-specific behavior
@@ -77,6 +93,7 @@ The next useful OpenAI-family seams are:
 
 The convergence pass is covered by:
 
-- `dart analyze .` in `packages/llm_dart_openai`
-- `dart test test/openai_chat_completions_stream_codec_test.dart test/openai_responses_stream_codec_test.dart`
-- `dart test` in `packages/llm_dart_openai`
+- `dart analyze packages/llm_dart_openai`
+- `dart test packages/llm_dart_openai`
+- `dart run tool/check_workspace_dependency_guards.dart`
+- `dart run tool/check_root_package_boundary_guards.dart`

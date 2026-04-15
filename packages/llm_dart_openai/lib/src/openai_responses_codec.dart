@@ -10,6 +10,7 @@ import 'openai_responses_support.dart';
 import 'openai_streaming_support.dart';
 
 part 'openai_responses_request_encoder.dart';
+part 'openai_responses_response_decoder.dart';
 part 'openai_responses_stream_decoder.dart';
 
 final class OpenAIResponsesRequest {
@@ -53,75 +54,8 @@ final class OpenAIResponsesCodec {
   GenerateTextResult decodeGenerateResponse(
     Map<String, Object?> response, {
     List<ModelWarning> warnings = const [],
-  }) {
-    _throwIfError(response);
-
-    final content = <ContentPart>[];
-    final collectedLogprobs = <Object?>[];
-    var hasToolCalls = false;
-
-    for (final item in _outputItems(response)) {
-      final type = _asString(item['type']);
-      if (type == 'message') {
-        collectOpenAIResponsesMessageOutputLogprobs(
-          item,
-          into: collectedLogprobs,
-        );
-        content.addAll(decodeOpenAIResponsesMessageOutput(item));
-        continue;
-      }
-
-      if (type == 'reasoning') {
-        content.addAll(decodeOpenAIResponsesReasoningOutput(item));
-        continue;
-      }
-
-      if (type == 'function_call') {
-        hasToolCalls = true;
-        final toolCall = decodeOpenAIResponsesFunctionCallOutput(item);
-        if (toolCall != null) {
-          content.add(toolCall);
-        }
-        continue;
-      }
-
-      if (type == 'mcp_approval_request') {
-        hasToolCalls = true;
-        content.addAll(decodeOpenAIResponsesMcpApprovalRequestOutput(item));
-        continue;
-      }
-
-      if (type == 'mcp_call') {
-        hasToolCalls = true;
-        content.addAll(decodeOpenAIResponsesMcpCallOutput(item));
-        continue;
-      }
-
-      final customPart = decodeOpenAIResponsesCustomOutput(item);
-      if (customPart != null) {
-        content.add(customPart);
-      }
-    }
-
-    return GenerateTextResult(
-      content: content,
-      finishReason: _mapFinishReason(
-        rawReason: _responseFinishReason(response),
-        hasToolCalls: hasToolCalls,
-        status: _asString(response['status']),
-      ),
-      rawFinishReason: _responseFinishReason(response),
-      responseId: _asString(response['id']),
-      responseTimestamp: _decodeResponseTimestamp(response),
-      responseModelId: _asString(response['model']),
-      usage: _decodeUsage(_asMap(response['usage'])),
-      providerMetadata: openAIResponsesResponseMetadata(
-        response,
-        logprobs: collectedLogprobs,
-      ),
-      warnings: warnings,
-    );
-  }
+  }) =>
+      _decodeGenerateResponse(response, warnings: warnings);
 
   Iterable<TextStreamEvent> decodeStreamChunk(
     Map<String, Object?> chunk,
@@ -206,20 +140,21 @@ final class OpenAIResponsesCodec {
     }
   }
 
-  void _throwIfError(Map<String, Object?> response) {
-    final error = _asMap(response['error']);
-    if (error == null) {
-      return;
+  ProviderMetadata? _providerMetadata(Map<String, Object?> values) {
+    final openaiValues = <String, Object?>{};
+    for (final entry in values.entries) {
+      if (entry.value != null) {
+        openaiValues[entry.key] = entry.value;
+      }
     }
 
-    final message = _asString(error['message']) ?? 'OpenAI response error';
-    final type = _asString(error['type']);
-    final code = error['code'];
-    throw StateError(
-      'OpenAI response error: $message'
-      '${type == null ? '' : ' (type: $type)'}'
-      '${code == null ? '' : ' (code: $code)'}',
-    );
+    if (openaiValues.isEmpty) {
+      return null;
+    }
+
+    return ProviderMetadata({
+      'openai': openaiValues,
+    });
   }
 
   Map<String, Object?>? _asMap(Object? value) {

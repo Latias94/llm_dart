@@ -10,6 +10,7 @@ import 'openai_streaming_support.dart';
 import 'resolved_openai_options.dart';
 
 part 'openai_chat_completions_request_encoder.dart';
+part 'openai_chat_completions_response_decoder.dart';
 part 'openai_chat_completions_stream_decoder.dart';
 
 final class OpenAIChatCompletionsRequest {
@@ -61,60 +62,8 @@ final class OpenAIChatCompletionsCodec {
   GenerateTextResult decodeGenerateResponse(
     Map<String, Object?> response, {
     List<ModelWarning> warnings = const [],
-  }) {
-    _throwIfError(response);
-
-    final choice = _firstChoice(response);
-    final message = _asMap(choice?['message']) ?? const <String, Object?>{};
-    final content = <ContentPart>[];
-    final textLogprobs = _decodeChatLogprobs(choice?['logprobs']);
-
-    final decodedText = _support.decodeAssistantText(message);
-    if (decodedText.reasoning case final reasoning? when reasoning.isNotEmpty) {
-      content.add(
-        ReasoningContentPart(
-          reasoning,
-          providerMetadata: _providerMetadata({
-            'finishReason': _asString(choice?['finish_reason']),
-          }),
-        ),
-      );
-    }
-
-    if (decodedText.text.isNotEmpty) {
-      content.add(
-        TextContentPart(
-          decodedText.text,
-          providerMetadata: _providerMetadata({
-            'finishReason': _asString(choice?['finish_reason']),
-            'logprobs': textLogprobs,
-          }),
-        ),
-      );
-    }
-
-    final toolCalls = _support.decodeToolCalls(
-      _asList(message['tool_calls']),
-    );
-    content.addAll(toolCalls);
-    content.addAll(_support.decodeTopLevelSources(response));
-
-    return GenerateTextResult(
-      content: content,
-      finishReason: _mapFinishReason(_asString(choice?['finish_reason'])),
-      rawFinishReason: _asString(choice?['finish_reason']),
-      responseId: _asString(response['id']),
-      responseTimestamp: _decodeResponseTimestamp(response),
-      responseModelId: _asString(response['model']),
-      usage: _decodeUsage(_asMap(response['usage'])),
-      providerMetadata: _support.responseMetadata(
-        response,
-        choice,
-        logprobs: textLogprobs,
-      ),
-      warnings: warnings,
-    );
-  }
+  }) =>
+      _decodeGenerateResponse(response, warnings: warnings);
 
   Iterable<TextStreamEvent> decodeStreamChunk(
     Map<String, Object?> chunk,
@@ -174,60 +123,6 @@ final class OpenAIChatCompletionsCodec {
     return logprobs.topLogProbs ?? 0;
   }
 
-  List<Object?>? _decodeChatLogprobs(Object? value) {
-    final logprobs = _asMap(value);
-    return _jsonListOrNull(logprobs?['content']);
-  }
-
-  ProviderMetadata? _providerMetadata(Map<String, Object?> values) {
-    final scopedValues = <String, Object?>{};
-    for (final entry in values.entries) {
-      if (entry.value != null) {
-        scopedValues[entry.key] = entry.value;
-      }
-    }
-
-    if (scopedValues.isEmpty) {
-      return null;
-    }
-
-    return ProviderMetadata({
-      providerNamespace: scopedValues,
-    });
-  }
-
-  UsageStats? _decodeUsage(Map<String, Object?>? usage) {
-    if (usage == null) {
-      return null;
-    }
-
-    final inputTokens = _asInt(usage['prompt_tokens']);
-    final outputTokens = _asInt(usage['completion_tokens']);
-    final totalTokens = _asInt(usage['total_tokens']) ??
-        ((inputTokens != null && outputTokens != null)
-            ? inputTokens + outputTokens
-            : null);
-    final completionDetails = _asMap(usage['completion_tokens_details']);
-
-    return UsageStats(
-      inputTokens: inputTokens,
-      outputTokens: outputTokens,
-      totalTokens: totalTokens,
-      reasoningTokens: _asInt(completionDetails?['reasoning_tokens']),
-    );
-  }
-
-  FinishReason _mapFinishReason(String? rawReason) {
-    return switch (rawReason) {
-      null || 'stop' => FinishReason.stop,
-      'length' => FinishReason.maxTokens,
-      'tool_calls' => FinishReason.toolCalls,
-      'content_filter' => FinishReason.contentFilter,
-      'cancelled' => FinishReason.aborted,
-      _ => FinishReason.other,
-    };
-  }
-
   String? _extractContentDelta(Map<String, Object?> delta) {
     return _asString(delta['content']);
   }
@@ -238,15 +133,6 @@ final class OpenAIChatCompletionsCodec {
       _asString(delta['reasoning']),
       _asString(delta['thinking']),
     ]);
-  }
-
-  Map<String, Object?>? _firstChoice(Map<String, Object?> response) {
-    final choices = _asList(response['choices']);
-    if (choices.isEmpty) {
-      return null;
-    }
-
-    return _asMap(choices.first);
   }
 
   String _encodeJsonString(Object? value) {
@@ -274,22 +160,6 @@ final class OpenAIChatCompletionsCodec {
     }
 
     return jsonEncode(output);
-  }
-
-  void _throwIfError(Map<String, Object?> response) {
-    final error = _asMap(response['error']);
-    if (error == null) {
-      return;
-    }
-
-    final message = _asString(error['message']) ?? 'OpenAI response error';
-    final type = _asString(error['type']);
-    final code = error['code'];
-    throw StateError(
-      'OpenAI chat-completions error: $message'
-      '${type == null ? '' : ' (type: $type)'}'
-      '${code == null ? '' : ' (code: $code)'}',
-    );
   }
 
   Map<String, Object?>? _asMap(Object? value) {

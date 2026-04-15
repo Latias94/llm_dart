@@ -838,23 +838,6 @@ extension _OpenAIResponsesCodecRequestEncoder on OpenAIResponsesCodec {
     };
   }
 
-  ProviderMetadata? _providerMetadata(Map<String, Object?> values) {
-    final openaiValues = <String, Object?>{};
-    for (final entry in values.entries) {
-      if (entry.value != null) {
-        openaiValues[entry.key] = entry.value;
-      }
-    }
-
-    if (openaiValues.isEmpty) {
-      return null;
-    }
-
-    return ProviderMetadata({
-      'openai': openaiValues,
-    });
-  }
-
   Map<String, Object?>? _providerMetadataValues(
     ProviderMetadata? metadata, {
     required String namespace,
@@ -869,87 +852,6 @@ extension _OpenAIResponsesCodecRequestEncoder on OpenAIResponsesCodec {
     }
 
     return null;
-  }
-
-  FinishReason _mapFinishReason({
-    required String? rawReason,
-    required bool hasToolCalls,
-    required String? status,
-  }) {
-    if (status == 'failed') {
-      return FinishReason.error;
-    }
-
-    if (rawReason == null) {
-      return hasToolCalls ? FinishReason.toolCalls : FinishReason.stop;
-    }
-
-    if (rawReason == 'max_output_tokens') {
-      return FinishReason.maxTokens;
-    }
-
-    if (rawReason == 'content_filter') {
-      return FinishReason.contentFilter;
-    }
-
-    if (rawReason == 'cancelled') {
-      return FinishReason.aborted;
-    }
-
-    return hasToolCalls ? FinishReason.toolCalls : FinishReason.other;
-  }
-
-  UsageStats? _decodeUsage(Map<String, Object?>? usage) {
-    if (usage == null) {
-      return null;
-    }
-
-    final inputTokens = _asInt(usage['input_tokens']);
-    final outputTokens = _asInt(usage['output_tokens']);
-    final totalTokens = _asInt(usage['total_tokens']) ??
-        ((inputTokens != null && outputTokens != null)
-            ? inputTokens + outputTokens
-            : null);
-    final outputDetails = _asMap(usage['output_tokens_details']);
-
-    return UsageStats(
-      inputTokens: inputTokens,
-      outputTokens: outputTokens,
-      totalTokens: totalTokens,
-      reasoningTokens: _asInt(outputDetails?['reasoning_tokens']),
-    );
-  }
-
-  List<Map<String, Object?>> _outputItems(Map<String, Object?> response) {
-    final output = _asList(response['output']);
-    final items = <Map<String, Object?>>[];
-
-    for (final rawItem in output) {
-      final item = _asMap(rawItem);
-      if (item != null) {
-        items.add(item);
-      }
-    }
-
-    return items;
-  }
-
-  String? _responseFinishReason(Map<String, Object?> response) {
-    final incompleteDetails = _asMap(response['incomplete_details']);
-    return _asString(incompleteDetails?['reason']);
-  }
-
-  String _resolveTextId(
-    Map<String, Object?> chunk,
-    Map<String, Object?>? item,
-  ) {
-    return _asString(chunk['item_id']) ??
-        _asString(item?['id']) ??
-        'text-${_asInt(chunk['output_index']) ?? 0}';
-  }
-
-  String _resolveReasoningId(Map<String, Object?> chunk) {
-    return '${_asString(chunk['item_id']) ?? 'reasoning'}:${_asInt(chunk['summary_index']) ?? 0}';
   }
 
   String _encodeJsonString(Object? value) {
@@ -1049,5 +951,4 @@ extension _OpenAIResponsesCodecRequestEncoder on OpenAIResponsesCodec {
 
     return jsonEncode(output);
   }
-
 }

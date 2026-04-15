@@ -547,6 +547,19 @@ extension _OpenAIResponsesCodecStreamDecoder on OpenAIResponsesCodec {
       ),
     );
   }
+
+  String _resolveTextId(
+    Map<String, Object?> chunk,
+    Map<String, Object?>? item,
+  ) {
+    return _asString(chunk['item_id']) ??
+        _asString(item?['id']) ??
+        'text-${_asInt(chunk['output_index']) ?? 0}';
+  }
+
+  String _resolveReasoningId(Map<String, Object?> chunk) {
+    return '${_asString(chunk['item_id']) ?? 'reasoning'}:${_asInt(chunk['summary_index']) ?? 0}';
+  }
 }
 
 final class _ResponsesStreamMetadataAdapter {
