@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_core/ui.dart';
 
 import 'replay_stream_channel.dart';
 

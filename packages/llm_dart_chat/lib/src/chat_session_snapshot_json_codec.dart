@@ -1,4 +1,4 @@
-import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_core/serialization.dart';
 
 import 'chat_session_snapshot.dart';
 import 'chat_state.dart';

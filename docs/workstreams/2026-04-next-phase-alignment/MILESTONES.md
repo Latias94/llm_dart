@@ -65,6 +65,8 @@ Current status:
 - future split triggers are now explicit instead of implied by file count alone
 - `llm_dart_core` now also exposes additive focused entrypoints for foundation,
   model, UI, and serialization imports without splitting the package
+- the focused entrypoints are now proven by real adopters in both
+  `llm_dart_transport` and `llm_dart_chat`, not only by isolated compile tests
 - package-level README guidance now exists for `llm_dart_core`,
   `llm_dart_transport`, and `llm_dart_community`
 

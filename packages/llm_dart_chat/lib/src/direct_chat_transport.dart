@@ -1,4 +1,5 @@
-import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_core/model.dart';
+import 'package:llm_dart_core/ui.dart';
 
 import 'chat_transport.dart';
 

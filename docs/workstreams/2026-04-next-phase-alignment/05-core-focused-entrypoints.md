@@ -62,16 +62,23 @@ The new focused entrypoints are covered by:
 The test imports all focused entrypoints as aliases and verifies representative
 types from each one compile and behave as expected.
 
-The spike is also now validated against one real downstream consumer:
+The spike is also now validated against real downstream consumers:
 
 - `llm_dart_transport`
   - foundation-only imports for transport cancellation and transport-to-model
     error mapping
   - serialization-only import for the HTTP chat transport protocol codec layer
   - UI-focused import for the server adapter layer
+- `llm_dart_chat`
+  - foundation-only import for prompt-only input helpers
+  - model-focused import for request option shapes and direct model transport
+  - UI-focused imports for session runtime, replay logic, tool handling, and
+    stream readers
+  - serialization-focused import for snapshot persistence codecs
 
 That confirms the focused entrypoints are not only documentation convenience;
-they are already useful as real package-boundary imports.
+they already work as real package-boundary imports across both transport and
+chat runtime layers.
 
 ## Bottom Line
 

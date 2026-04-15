@@ -1,4 +1,4 @@
-import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_core/serialization.dart';
 import 'package:llm_dart_chat/llm_dart_chat.dart';
 import 'package:test/test.dart';
 

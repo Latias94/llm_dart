@@ -1,5 +1,5 @@
 import 'package:llm_dart_chat/llm_dart_chat.dart';
-import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_core/ui.dart';
 import 'package:test/test.dart';
 
 void main() {

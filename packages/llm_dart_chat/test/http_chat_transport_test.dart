@@ -1,7 +1,8 @@
 import 'dart:convert';
 
-import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_chat/llm_dart_chat.dart';
+import 'package:llm_dart_core/model.dart';
+import 'package:llm_dart_core/ui.dart';
 import 'package:llm_dart_test/llm_dart_test.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 import 'package:test/test.dart';
@@ -847,7 +848,8 @@ void main() {
           )
           .toList();
 
-      expect(firstAttemptChunks[0], isA<ChatUiTransientDataPartChunk<Object?>>());
+      expect(
+          firstAttemptChunks[0], isA<ChatUiTransientDataPartChunk<Object?>>());
       expect(firstAttemptChunks[1], isA<ChatUiEventChunk>());
 
       final resumedChunks = await transport.reconnect('chat-1')!.toList();

@@ -1,7 +1,8 @@
 // ignore_for_file: avoid_print
 
 import 'package:llm_dart_chat/llm_dart_chat.dart';
-import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_core/model.dart';
+import 'package:llm_dart_core/ui.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 Future<void> main() async {

@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_core/ui.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'chat_transport.dart';
