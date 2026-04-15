@@ -113,6 +113,9 @@ This phase should explicitly avoid:
 - [08-freeze-review-and-next-route.md](08-freeze-review-and-next-route.md)
   - Freeze review for the remaining honest hotspots, plus reopen triggers and
     the recommended route after this phase.
+- [09-provider-capability-discovery-design.md](09-provider-capability-discovery-design.md)
+  - Model-centric capability discovery and provider-native feature surfacing
+    design for the next additive implementation phase.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)

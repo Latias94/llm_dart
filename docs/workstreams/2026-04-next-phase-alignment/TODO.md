@@ -88,3 +88,17 @@
   sufficient
 - [ ] Remove legacy compatibility surfaces only with a deliberate deprecation
   plan
+
+## Provider Capability Discovery
+
+- [x] Document why modern capability discovery should be model-centric rather
+  than provider-level or root-compatibility-driven
+- [x] Document the relationship between shared feature flags, provider-native
+  feature descriptors, warnings, metadata, and custom parts
+- [x] Freeze that legacy `LLMCapability` remains a compatibility adapter rather
+  than the modern source of truth
+- [ ] Add additive core descriptor types for model capability profiles
+- [ ] Add provider-owned describers, starting with OpenAI
+- [ ] Add optional model marker interfaces for provider models that can expose
+  capability profiles directly
+- [ ] Add Flutter/app examples for capability-gated UI affordances

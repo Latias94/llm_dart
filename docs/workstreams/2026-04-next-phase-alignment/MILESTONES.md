@@ -122,3 +122,31 @@ Current status:
 - this phase now ends with a clearer architectural rule: keep the shared
   interface small and honest, keep provider-native value provider-owned, and
   avoid symmetry-driven package or API expansion
+
+## M6 - Provider Capability Discovery Direction
+
+Goals:
+
+- define the modern capability discovery direction after the structural
+  refactor phase
+- keep app-facing capability checks model-centric rather than provider-level
+- preserve provider-native feature visibility without widening shared core
+- keep the root legacy capability registry as compatibility infrastructure
+
+Acceptance criteria:
+
+- the modern capability discovery unit is defined
+- provider-native surfacing channels are documented
+- legacy `LLMCapability` placement is explicit
+- the first additive implementation slices are ordered
+
+Current status:
+
+- the design now defines capability discovery as a model-centric,
+  additive, descriptive layer
+- shared feature flags are separated from provider-owned feature descriptors
+- provider-native settings, invocation options, metadata, custom parts, and
+  native APIs remain the approved surfacing channels
+- the next implementation route is additive: core descriptor types first,
+  provider-owned describers next, optional marker interfaces after that, and
+  Flutter examples last
