@@ -1,0 +1,71 @@
+# Milestones
+
+## M1 - Gap Rebaseline
+
+Goals:
+
+- restate the current architecture using present-day code rather than older
+  migration assumptions
+- freeze which remaining differences versus `repo-ref/ai` are still real
+
+Acceptance criteria:
+
+- the current package graph is written down accurately
+- deliberate differences are explicitly named
+- the next priorities are feature-driven rather than symmetry-driven
+
+Current status:
+
+- the package graph is now re-baselined after the post-closure priority phase
+- the next meaningful gap is now identified as streamed runner maturity rather
+  than provider package or event-surface expansion
+- `llm_dart_core` concentration is now explicitly tracked as an internal
+  boundary-hardening topic, not an automatic package-splitting mandate
+
+## M2 - Streamed Runner Productization Decision
+
+Goals:
+
+- decide which higher-level streamed orchestration features belong in shared
+  core
+- keep provider-specific continuation and approval semantics out of the shared
+  runner unless a real cross-provider subset appears
+
+Acceptance criteria:
+
+- the next shared streamed-runner subset is frozen
+- deferred features are named explicitly rather than left ambiguous
+- any implementation work has a documented boundary before code changes begin
+
+Current status:
+
+- `StreamTextRunner` already provides narrow multi-step stitched streaming plus
+  `stepStream` and final `result`
+- the remaining decision is no longer whether shared streamed orchestration
+  should exist, but how far the next truthful shared subset should go
+
+## M3 - `llm_dart_core` Internal Boundary Hardening
+
+Goals:
+
+- keep `llm_dart_core` from becoming the new internal monolith
+- clarify internal ownership without premature package fragmentation
+
+Acceptance criteria:
+
+- internal sublayers are documented
+- export ownership is classified
+- future split triggers are explicit
+
+## M4 - Root And Package Ownership Clarity
+
+Goals:
+
+- keep the root package understandable as both modern facade and compatibility
+  host
+- make leaf package ownership easier to follow
+
+Acceptance criteria:
+
+- package-level documentation is improved where needed
+- the next root-slimming steps are documented without speculative breakage

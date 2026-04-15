@@ -17,6 +17,13 @@ The follow-up work is therefore narrower. The goal is no longer to keep
 re-opening architecture. The goal is to turn the frozen boundaries into a
 smaller, implementation-ready roadmap.
 
+This workstream is now complete. The active follow-up phase continues in:
+
+- [`../2026-04-next-phase-alignment/README.md`](../2026-04-next-phase-alignment/README.md)
+  - re-baselines the remaining worthwhile gaps versus `repo-ref/ai` after this
+    roadmap closed, and prioritizes feature-driven work over more
+    symmetry-driven slicing
+
 ## Starting Point
 
 As of 2026-04-13, the repository already has a much healthier baseline:
