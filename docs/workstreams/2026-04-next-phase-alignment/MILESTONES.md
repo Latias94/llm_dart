@@ -152,3 +152,6 @@ Current status:
   Flutter examples last
 - the additive core descriptor types and optional marker interface now exist in
   `llm_dart_core` without changing any existing model interface contract
+- the first provider-owned describers now exist in `llm_dart_openai`, reusing
+  the existing OpenAI-family route and capability helpers for concrete model
+  profiles

@@ -504,6 +504,16 @@ Add provider-owned helpers:
 OpenAI should land first because it already has
 `OpenAIModelCapabilities`.
 
+Status:
+
+- landed first in `llm_dart_openai`
+- includes provider-owned describers for chat, embedding, image, speech, and
+  transcription models
+- reuses existing OpenAI-family route and model-capability helpers instead of
+  inventing a second capability table
+- still keeps model classes themselves optional for later direct
+  `CapabilityDescribedModel` adoption
+
 ### Slice 4: Implement Optional Marker Interfaces
 
 Have modern provider model classes implement `CapabilityDescribedModel`.

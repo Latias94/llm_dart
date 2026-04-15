@@ -98,7 +98,7 @@
 - [x] Freeze that legacy `LLMCapability` remains a compatibility adapter rather
   than the modern source of truth
 - [x] Add additive core descriptor types for model capability profiles
-- [ ] Add provider-owned describers, starting with OpenAI
+- [x] Add provider-owned describers, starting with OpenAI
 - [ ] Add optional model marker interfaces for provider models that can expose
   capability profiles directly
 - [ ] Add Flutter/app examples for capability-gated UI affordances
