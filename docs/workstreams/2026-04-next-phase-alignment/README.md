@@ -99,6 +99,9 @@ This phase should explicitly avoid:
 - [06-openai-stream-parser-convergence.md](06-openai-stream-parser-convergence.md)
   - OpenAI-family stream parser convergence around shared incremental
     tool-call state.
+- [07-remaining-hotspots-review.md](07-remaining-hotspots-review.md)
+  - Review of the next truthful internal hotspots after the text-path and
+    serialization cleanup work.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)

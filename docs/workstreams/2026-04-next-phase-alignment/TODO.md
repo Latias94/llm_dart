@@ -25,6 +25,8 @@
   model, UI, and serialization ownership groups
 - [x] Extract shared serialization JSON support for repeated metadata, usage,
   file, source, warning, and error codecs
+- [x] Review the next internal `llm_dart_core` hotspot after serialization
+  cleanup and identify the next likely seam
 - [x] Adopt focused core entrypoints in `llm_dart_transport`
 - [x] Adopt focused core entrypoints in `llm_dart_chat`
 
@@ -46,3 +48,5 @@
 - [x] Split OpenAI Responses response decoding out of the main codec file
 - [x] Split OpenAI Chat Completions stream decoding out of the main codec file
 - [x] Split OpenAI Responses stream decoding out of the main codec file
+- [x] Review whether remaining OpenAI non-text models justify further internal
+  splitting or only small shared support extraction
