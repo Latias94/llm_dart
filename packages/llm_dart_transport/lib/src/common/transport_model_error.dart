@@ -1,4 +1,4 @@
-import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_core/foundation.dart';
 
 import 'transport_exception.dart';
 

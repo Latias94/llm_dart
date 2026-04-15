@@ -6,7 +6,7 @@ library;
 
 export 'foundation.dart';
 
-export 'src/model/language_model.dart' show FinishReason;
+export 'src/model/language_model.dart' show FinishReason, GenerateTextOptions;
 export 'src/serialization/chat_ui_json_codec.dart';
 export 'src/serialization/prompt_json_codec.dart';
 export 'src/serialization/serialization_protocol.dart';

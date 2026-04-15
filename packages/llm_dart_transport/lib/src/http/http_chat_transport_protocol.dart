@@ -1,4 +1,4 @@
-import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_core/serialization.dart';
 
 typedef _JsonMap = Map<String, Object?>;
 typedef _JsonList = List<Object?>;
@@ -215,7 +215,8 @@ sealed class HttpChatTransportChunk {
   const HttpChatTransportChunk();
 }
 
-final class HttpChatTransportTransportStartChunk extends HttpChatTransportChunk {
+final class HttpChatTransportTransportStartChunk
+    extends HttpChatTransportChunk {
   final String? requestId;
   final String? resumeToken;
 
@@ -473,7 +474,8 @@ final class HttpChatTransportChunkJsonCodec {
           ),
         ),
       'message-start' => HttpChatTransportMessageStartChunk(
-          messageId: _asJsonString(data['messageId'], path: r'$.data.messageId'),
+          messageId:
+              _asJsonString(data['messageId'], path: r'$.data.messageId'),
           metadata: data['metadata'] == null
               ? const {}
               : _asJsonMap(data['metadata'], path: r'$.data.metadata'),

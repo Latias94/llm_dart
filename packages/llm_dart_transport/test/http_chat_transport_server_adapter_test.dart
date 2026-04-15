@@ -1,4 +1,5 @@
-import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_core/model.dart' show FinishReason;
+import 'package:llm_dart_core/ui.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 import 'package:test/test.dart';
 
@@ -53,14 +54,17 @@ void main() {
       expect(messageStart.metadata['serverOwned'], isTrue);
 
       expect(chunks[2], isA<HttpChatTransportEventChunk>());
-      expect((chunks[2] as HttpChatTransportEventChunk).event, isA<TextStartEvent>());
+      expect((chunks[2] as HttpChatTransportEventChunk).event,
+          isA<TextStartEvent>());
       expect(
         ((chunks[3] as HttpChatTransportEventChunk).event as TextDeltaEvent)
             .delta,
         'Hello',
       );
-      expect((chunks[4] as HttpChatTransportEventChunk).event, isA<TextEndEvent>());
-      expect((chunks[5] as HttpChatTransportEventChunk).event, isA<FinishEvent>());
+      expect((chunks[4] as HttpChatTransportEventChunk).event,
+          isA<TextEndEvent>());
+      expect(
+          (chunks[5] as HttpChatTransportEventChunk).event, isA<FinishEvent>());
 
       final messageFinish = chunks[6] as HttpChatTransportMessageFinishChunk;
       expect(messageFinish.metadata['persisted'], isTrue);
@@ -126,13 +130,15 @@ void main() {
         0.5,
       );
 
-      expect((chunks[2] as HttpChatTransportEventChunk).event, isA<TextStartEvent>());
+      expect((chunks[2] as HttpChatTransportEventChunk).event,
+          isA<TextStartEvent>());
       expect(
         ((chunks[3] as HttpChatTransportEventChunk).event as TextDeltaEvent)
             .delta,
         'Hello',
       );
-      expect((chunks[4] as HttpChatTransportEventChunk).event, isA<FinishEvent>());
+      expect(
+          (chunks[4] as HttpChatTransportEventChunk).event, isA<FinishEvent>());
       expect(chunks[5], isA<HttpChatTransportFinishChunk>());
     });
 
@@ -157,7 +163,8 @@ void main() {
 
       final metadataChunk = chunks[0] as HttpChatTransportMessageMetadataChunk;
       expect(metadataChunk.metadata['phase'], 'streaming');
-      expect((chunks[1] as HttpChatTransportEventChunk).event, isA<TextStartEvent>());
+      expect((chunks[1] as HttpChatTransportEventChunk).event,
+          isA<TextStartEvent>());
       expect(chunks[2], isA<HttpChatTransportFinishChunk>());
     });
 
