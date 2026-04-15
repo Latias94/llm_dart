@@ -520,6 +520,15 @@ Have modern provider model classes implement `CapabilityDescribedModel`.
 
 This can be additive and non-breaking.
 
+Status:
+
+- landed first in `llm_dart_openai`
+- `OpenAILanguageModel`, `OpenAIEmbeddingModel`, `OpenAIImageModel`,
+  `OpenAISpeechModel`, and `OpenAITranscriptionModel` now expose
+  `capabilityProfile` directly
+- model instances reuse the provider-owned describers instead of maintaining a
+  second source of truth
+
 ### Slice 5: Add Flutter/App Examples
 
 Add examples that show:

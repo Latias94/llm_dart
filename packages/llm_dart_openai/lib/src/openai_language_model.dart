@@ -2,13 +2,16 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'openai_chat_completions_codec.dart';
+import 'openai_model_describer.dart';
 import 'openai_family_profile.dart';
 import 'openai_language_model_support.dart';
 import 'openai_options.dart';
+import 'openrouter_options.dart';
 import 'resolved_openai_chat_settings.dart';
 import 'openai_responses_codec.dart';
 
-final class OpenAILanguageModel implements LanguageModel {
+final class OpenAILanguageModel
+    implements LanguageModel, CapabilityDescribedModel {
   static const OpenAIResponsesCodec _codec = OpenAIResponsesCodec();
   static const SseJsonChunkParser _streamChunkParser = SseJsonChunkParser();
   final String apiKey;
@@ -36,6 +39,22 @@ final class OpenAILanguageModel implements LanguageModel {
 
   @override
   String get providerId => profile.providerId;
+
+  @override
+  ModelCapabilityProfile get capabilityProfile {
+    final modelSettings = settings.openRouterSearch == null
+        ? settings.common
+        : OpenRouterChatModelSettings(
+            common: settings.common,
+            search: settings.openRouterSearch,
+          );
+
+    return describeOpenAIChatModel(
+      modelId,
+      profile: profile,
+      settings: modelSettings,
+    );
+  }
 
   Uri get responsesUri => Uri.parse('$baseUrl/responses');
   Uri get chatCompletionsUri => Uri.parse('$baseUrl/chat/completions');

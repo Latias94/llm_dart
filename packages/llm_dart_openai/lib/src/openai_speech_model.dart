@@ -4,10 +4,11 @@ import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'openai_family_profile.dart';
+import 'openai_model_describer.dart';
 import 'openai_non_text_model_support.dart';
 import 'openai_options.dart';
 
-final class OpenAISpeechModel implements SpeechModel {
+final class OpenAISpeechModel implements SpeechModel, CapabilityDescribedModel {
   final String apiKey;
   final String baseUrl;
   final OpenAIFamilyProfile profile;
@@ -34,6 +35,14 @@ final class OpenAISpeechModel implements SpeechModel {
 
   @override
   String get providerId => profile.providerId;
+
+  @override
+  ModelCapabilityProfile get capabilityProfile {
+    return describeOpenAISpeechModel(
+      modelId,
+      profile: profile,
+    );
+  }
 
   Uri get speechUri => Uri.parse('$baseUrl/audio/speech');
 

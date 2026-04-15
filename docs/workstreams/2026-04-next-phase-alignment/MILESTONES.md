@@ -155,3 +155,7 @@ Current status:
 - the first provider-owned describers now exist in `llm_dart_openai`, reusing
   the existing OpenAI-family route and capability helpers for concrete model
   profiles
+- the first direct model-instance adoption now also exists in
+  `llm_dart_openai`, where modern OpenAI models expose `capabilityProfile`
+  through the optional marker interface without widening shared model
+  contracts

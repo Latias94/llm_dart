@@ -5,6 +5,7 @@ import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'openai_family_profile.dart';
 import 'openai_image_editing.dart';
+import 'openai_model_describer.dart';
 import 'openai_multipart_body.dart';
 import 'openai_non_text_model_support.dart';
 import 'openai_options.dart';
@@ -13,7 +14,7 @@ part 'openai_image_request_builder.dart';
 part 'openai_image_response_decoder.dart';
 part 'openai_image_support.dart';
 
-final class OpenAIImageModel implements ImageModel {
+final class OpenAIImageModel implements ImageModel, CapabilityDescribedModel {
   final String apiKey;
   final String baseUrl;
   final OpenAIFamilyProfile profile;
@@ -40,6 +41,14 @@ final class OpenAIImageModel implements ImageModel {
 
   @override
   String get providerId => profile.providerId;
+
+  @override
+  ModelCapabilityProfile get capabilityProfile {
+    return describeOpenAIImageModel(
+      modelId,
+      profile: profile,
+    );
+  }
 
   Uri get imageGenerationUri => Uri.parse('$baseUrl/images/generations');
   Uri get imageEditUri => Uri.parse('$baseUrl/images/edits');
