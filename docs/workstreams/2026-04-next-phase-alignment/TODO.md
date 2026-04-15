@@ -38,5 +38,7 @@
   Responses codec paths
 - [x] Document why OpenAI stream parser convergence is internal provider
   infrastructure rather than a shared event-surface expansion
+- [x] Split OpenAI Chat Completions request encoding out of the main codec file
+- [x] Split OpenAI Responses request encoding out of the main codec file
 - [x] Split OpenAI Chat Completions stream decoding out of the main codec file
 - [x] Split OpenAI Responses stream decoding out of the main codec file

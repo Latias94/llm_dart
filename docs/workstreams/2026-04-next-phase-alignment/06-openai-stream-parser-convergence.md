@@ -43,6 +43,16 @@ entry files:
   common helper ownership, while stream decoding lives in
   `openai_responses_stream_decoder.dart`
 
+The request-encoding layer is now also physically separated from the main codec
+entry files:
+
+- `openai_chat_completions_request_encoder.dart`
+  - owns Chat Completions request shaping, prompt replay encoding, model
+    compatibility shaping, and tool/body encoding helpers
+- `openai_responses_request_encoder.dart`
+  - owns Responses request shaping, replay-item encoding, reasoning/service
+    tier compatibility shaping, and tool/body encoding helpers
+
 ## Boundary Decision
 
 This is deliberately not a public event-model expansion.
@@ -58,8 +68,6 @@ to adopt OpenAI lifecycle vocabulary.
 
 The next useful OpenAI-family seams are:
 
-- split request encoders from stream decoders once file size or test friction
-  justifies it
 - keep Chat Completions and Responses metadata adapters private until repeated
   downstream needs appear
 - avoid widening common OpenAI-family options for provider-specific behavior
