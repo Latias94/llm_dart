@@ -79,7 +79,7 @@ manually.
 *Specialized capabilities*
 
 - [reasoning_models.dart](03_advanced_features/reasoning_models.dart) - AI thinking processes
-- [multi_modal.dart](03_advanced_features/multi_modal.dart) - Mixed multimodal example; prefer stable prompt parts and shared media helpers in new code
+- [multi_modal.dart](03_advanced_features/multi_modal.dart) - Stable multimodal prompts plus shared image, audio, and file helpers
 - [batch_processing.dart](03_advanced_features/batch_processing.dart) - Stable app-owned batch orchestration with concurrency, retry, and progress tracking
 - [realtime_audio.dart](03_advanced_features/realtime_audio.dart) - Compatibility-oriented realtime audio capability appendix
 - [semantic_search.dart](03_advanced_features/semantic_search.dart) - Stable semantic retrieval engine built on shared embedding models

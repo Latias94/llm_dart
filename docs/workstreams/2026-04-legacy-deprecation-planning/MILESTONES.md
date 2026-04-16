@@ -112,7 +112,9 @@ Current status:
   `capability_factory_methods.dart` and `provider_specific_builders.dart`
 - the first `example/03_advanced_features` stable-first slice is now complete
   for batch processing, semantic search, and performance optimization
-- the repository-wide baseline is now down to `17` legacy imports and `23`
+- `example/03_advanced_features/multi_modal.dart` is now also aligned to
+  stable prompt parts plus shared image/audio/file helpers
+- the repository-wide baseline is now down to `16` legacy imports and `22`
   direct `ai()` users across `example`, `lib`, and `packages`
 - `example/03_advanced_features/README.md` now leads with stable snippets and
   treats HTTP wiring as an explicit compatibility boundary

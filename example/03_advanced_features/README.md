@@ -19,8 +19,8 @@ already use the stable facade explicitly.
 AI reasoning with visible thinking processes using DeepSeek R1.
 
 ### [multi_modal.dart](multi_modal.dart)
-Mixed multimodal example while migration continues; new app code should prefer
-stable prompt parts and shared image/audio/file helpers.
+Stable multimodal prompts plus shared image, audio, and file helpers for
+composed media workflows.
 
 ### [custom_providers.dart](custom_providers.dart)
 Compatibility-oriented custom provider/capability example for testing and

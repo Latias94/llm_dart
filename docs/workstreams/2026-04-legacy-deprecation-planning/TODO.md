@@ -31,6 +31,8 @@
 - [x] Rewrite the first stable-first slice in `example/03_advanced_features`
   (`batch_processing.dart`, `semantic_search.dart`,
   `performance_optimization.dart`)
+- [x] Rewrite `example/03_advanced_features/multi_modal.dart` onto stable
+  prompt parts and shared media helpers
 - [x] Reframe `example/03_advanced_features/README.md` so stable snippets lead
   and HTTP wiring stays an explicit compatibility boundary
 - [ ] Rewrite the highest-traffic example slices so modern APIs become the
