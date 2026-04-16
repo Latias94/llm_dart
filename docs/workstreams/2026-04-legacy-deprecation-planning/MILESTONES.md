@@ -121,6 +121,9 @@ Current status:
   separate from the current provider implementation boundary
 - `example/03_advanced_features` is now effectively reduced to the three HTTP
   configuration appendix files on `legacy.dart`
+- the ElevenLabs and Ollama provider READMEs now lead with community-package
+  modern surfaces and use provider-specific entrypoints for compatibility
+  boundaries instead of direct `legacy.dart` snippets
 - the repository-wide baseline is now down to `14` legacy imports and `21`
   direct `ai()` users across `example`, `lib`, and `packages`
 - `example/03_advanced_features/README.md` now leads with stable snippets and

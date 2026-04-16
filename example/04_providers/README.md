@@ -215,8 +215,10 @@ print(result.text);
   stay on `ChatMessageMapper`, while provider metadata and custom-part
   inspection stay in provider packages through `mapComposed(...)` or provider
   custom-part helpers.
-- If a provider README still shows `ai().*.build()` or `buildAudio()`, treat it
-  as a compatibility example unless the README explicitly marks it as stable.
+- If a provider README shows a provider-specific compatibility entrypoint such
+  as `createOllamaProvider(...)`, `createElevenLabsProvider(...)`, or an older
+  builder shell, treat it as compatibility material unless the README
+  explicitly marks it as stable.
 - Flutter apps should prefer stable `LanguageModel`, `ImageModel`,
   `SpeechModel`, and `TranscriptionModel` entrypoints because they compose
   cleanly with `ChatSession`, streamed events, and UI state management.

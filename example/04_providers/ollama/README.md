@@ -19,7 +19,7 @@ for chat or embeddings:
 
 ```dart
 import 'package:llm_dart_community/llm_dart_community.dart' as community;
-import 'package:llm_dart_core/llm_dart_core.dart' as core;
+import 'package:llm_dart/core.dart' as core;
 
 final model = community.Ollama(
   baseUrl: 'http://localhost:11434',
@@ -30,6 +30,22 @@ final result = await core.generateTextCall(
   prompt: [
     core.UserPromptMessage.text('Summarize why local models are useful.'),
   ],
+);
+```
+
+For embeddings:
+
+```dart
+import 'package:llm_dart_community/llm_dart_community.dart' as community;
+import 'package:llm_dart/core.dart' as core;
+
+final embeddingModel = community.Ollama(
+  baseUrl: 'http://localhost:11434',
+).embeddingModel('nomic-embed-text');
+
+final batch = await core.embedMany(
+  model: embeddingModel,
+  values: const ['local models', 'edge deployment', 'embedding search'],
 );
 ```
 
@@ -52,6 +68,11 @@ runtime controls.
 ### [thinking_example.dart](thinking_example.dart)
 Compatibility-oriented reasoning and local thinking example.
 
+### Modern Shared Examples
+
+- [Community Ollama Chat Example](../../../packages/llm_dart_community/example/ollama_chat.dart)
+- [Community Ollama Embeddings Example](../../../packages/llm_dart_community/example/ollama_embeddings.dart)
+
 ## Setup
 
 ```bash
@@ -65,22 +86,32 @@ dart run thinking_example.dart
 
 ## Compatibility Boundary
 
-### Compatibility Surface
+### Provider-Specific Compatibility Surface
 
 ```dart
-import 'package:llm_dart/legacy.dart';
+import 'package:llm_dart/providers/ollama/ollama.dart' as ollama_compat;
 
-final provider = await ai().ollama()
-    .baseUrl('http://localhost:11434')
-    .model('llama3.2')
-    .numGpu(1)
-    .numThread(8)
-    .build();
+final provider = ollama_compat.createOllamaProvider(
+  baseUrl: 'http://localhost:11434',
+  model: 'llama3.2',
+  numGpu: 1,
+  numThread: 8,
+  keepAlive: '10m',
+);
+
+final models = await provider.models();
 ```
 
 This still works, but it should be read as a transitional shell above the
 package-owned modern Ollama models rather than the target architecture for
 shared-capability app code.
+
+The important distinction is:
+
+- use `Ollama(...).chatModel(...)` and `embeddingModel(...)` for stable
+  app-facing code
+- use `providers/ollama/ollama.dart` only when you need local runtime tuning,
+  `/api/generate`, model listing, or broader compatibility surfaces
 
 ## What Is Not Being Forced Into The Shared Surface
 

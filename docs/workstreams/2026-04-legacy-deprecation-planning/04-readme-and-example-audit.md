@@ -155,13 +155,19 @@ read architecture notes.
 
 ### 2. Example README Files Still Showing Legacy Code
 
-The main remaining direct legacy README hotspots are now especially in:
+The previously highest-value provider README hotspots were:
 
 - `example/04_providers/elevenlabs/README.md`
 - `example/04_providers/ollama/README.md`
 
-These are exactly the places where users look for task-specific setup, so they
-carry more migration weight than a generic architecture explanation.
+Those are now resolved at the direct-snippet level:
+
+- both READMEs now lead with the modern `llm_dart_community` path
+- both compatibility snippets now use provider-specific entrypoints instead of
+  teaching `legacy.dart` plus `ai().*.build()` directly
+
+This matters because task-oriented provider READMEs carry more migration weight
+than a generic architecture explanation.
 
 ### 3. Mixed Examples That Are Acceptable For Now
 
@@ -180,10 +186,11 @@ They should instead be:
 
 The best remaining migration order is:
 
-1. `example/04_providers` README hotspots
-2. classify the remaining `example/03_advanced_features`
+1. classify the remaining `example/03_advanced_features`
    HTTP/configuration files as keep-frozen appendix material or rewrite them
    into a clearer transport recipe
+2. audit whether any narrower provider README snippets still teach builder-era
+   flows indirectly
 3. `example/06_mcp_integration`
 
 Rationale:
@@ -192,7 +199,9 @@ Rationale:
   compatibility appendix files
 - `03_advanced_features` app-facing examples are now modernized, leaving only
   transport/configuration appendix material in that directory
-- provider README snippets strongly influence copy-paste usage
+- the largest known provider README hotspots have now been reduced to
+  provider-entrypoint compatibility disclosures instead of direct
+  `legacy.dart` teaching
 - MCP examples are narrower and lower-volume
 
 ## Immediate Implication

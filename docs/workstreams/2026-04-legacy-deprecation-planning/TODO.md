@@ -41,6 +41,9 @@
   and HTTP wiring stays an explicit compatibility boundary
 - [x] Reduce `example/03_advanced_features` legacy residue to the three HTTP
   configuration appendix files
+- [x] Rewrite the ElevenLabs and Ollama provider READMEs so modern community
+  surfaces lead and compatibility snippets no longer teach `legacy.dart`
+  directly
 - [ ] Rewrite the highest-traffic example slices so modern APIs become the
   default copy-paste path
 - [ ] Write short task-oriented migration recipes for the most common builder
