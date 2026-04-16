@@ -28,6 +28,10 @@ Current status:
 - the transport-neutral `TextStreamEvent -> ChatUiStreamChunk` projection now
   also lives in `llm_dart_core`, keeping the middle-layer mapping aligned with
   the shared UI ownership model instead of only the HTTP server adapter
+- `readChatUiStream(...)` now also exposes a narrow additive `stepEvents`
+  stream for `StepStartEvent` and `StepFinishEvent` boundaries, improving
+  direct reader ergonomics without reopening callback-heavy facades or growing
+  `ChatSession`
 - the remaining meaningful differences are now classified as higher-layer
   reader, validation, or transport-diagnostic questions rather than missing
   shared event families

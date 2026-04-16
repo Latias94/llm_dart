@@ -7,6 +7,7 @@ This package owns the reusable chat runtime:
 - `ChatSession`
 - `ChatTransport`
 - `DefaultChatSession`
+- `ChatUiStreamReader`
 - `DirectChatTransport`
 - `HttpChatTransport`
 - snapshot and persistence codecs
@@ -32,6 +33,22 @@ That makes it suitable for:
 - server-side Dart backends
 - framework-neutral chat orchestration
 - Flutter adapters that want to build on the same runtime layer
+
+## Direct Chunk Stream Reading
+
+If you already have a `Stream<ChatUiStreamChunk>` and do not want the full
+`DefaultChatSession`, use:
+
+- `ChatUiStreamReader`
+- `readChatUiStream(...)`
+
+The reader keeps the same stream-first contract:
+
+- projected persistent message snapshots on the main stream
+- `stepEvents` for `StepStartEvent` and `StepFinishEvent` boundaries
+- `stepFinishStream` for the existing finish-only convenience path
+- `transientDataParts` for runtime-only `data-*` signals
+- `result` plus finish-state convenience futures for final inspection
 
 ## Runnable Example
 

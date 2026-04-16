@@ -4,14 +4,45 @@ import 'package:llm_dart_core/ui.dart';
 
 import 'replay_stream_channel.dart';
 
+enum ChatUiStepObservationPhase {
+  start,
+  finish,
+}
+
+/// Reader-level step-boundary observation snapshot.
+///
+/// This stays below `ChatSession` and above raw `ChatUiStreamChunk` so direct
+/// chunk-stream consumers can observe both step starts and finishes without
+/// introducing a callback-heavy facade.
+final class ChatUiStepObservation {
+  final ChatUiStepObservationPhase phase;
+  final String? stepId;
+  final ChatUiMessage message;
+
+  const ChatUiStepObservation({
+    required this.phase,
+    required this.stepId,
+    required this.message,
+  });
+
+  bool get isStart => phase == ChatUiStepObservationPhase.start;
+
+  bool get isFinish => phase == ChatUiStepObservationPhase.finish;
+}
+
 final class ChatUiStreamReadResult extends StreamView<ChatUiMessage> {
   final Future<ChatUiMessage> result;
+
+  /// Unified reader-level stream for both step-start and step-finish
+  /// boundaries.
+  final Stream<ChatUiStepObservation> stepEvents;
   final Stream<ChatUiMessage> stepFinishStream;
   final Stream<DataUiPart<Object?>> transientDataParts;
 
   ChatUiStreamReadResult._({
     required Stream<ChatUiMessage> stream,
     required this.result,
+    required this.stepEvents,
     required this.stepFinishStream,
     required this.transientDataParts,
   }) : super(stream);
@@ -36,6 +67,8 @@ final class ChatUiStreamReader {
   final ChatUiStreamAccumulator _accumulator;
   final ReplayStreamChannel<ChatUiMessage> _messageChannel =
       ReplayStreamChannel<ChatUiMessage>();
+  final ReplayStreamChannel<ChatUiStepObservation> _stepEventChannel =
+      ReplayStreamChannel<ChatUiStepObservation>();
   final ReplayStreamChannel<ChatUiMessage> _stepFinishChannel =
       ReplayStreamChannel<ChatUiMessage>();
   final ReplayStreamChannel<DataUiPart<Object?>> _transientChannel =
@@ -45,6 +78,7 @@ final class ChatUiStreamReader {
   late final ChatUiStreamReadResult readResult = ChatUiStreamReadResult._(
     stream: _messageChannel.stream,
     result: _resultCompleter.future,
+    stepEvents: _stepEventChannel.stream,
     stepFinishStream: _stepFinishChannel.stream,
     transientDataParts: _transientChannel.stream,
   );
@@ -66,6 +100,8 @@ final class ChatUiStreamReader {
   ChatUiMessage get message => _accumulator.message;
 
   Stream<ChatUiMessage> get messageStream => readResult.messageStream;
+
+  Stream<ChatUiStepObservation> get stepEvents => readResult.stepEvents;
 
   Stream<ChatUiMessage> get stepFinishStream => readResult.stepFinishStream;
 
@@ -90,9 +126,27 @@ final class ChatUiStreamReader {
       case _:
         final message = _accumulator.apply(chunk);
         _messageChannel.add(message);
-        if (chunk case ChatUiEventChunk(event: final event)
-            when event is StepFinishEvent) {
-          _stepFinishChannel.add(message);
+        if (chunk case ChatUiEventChunk(event: final event)) {
+          switch (event) {
+            case StepStartEvent():
+              _stepEventChannel.add(
+                ChatUiStepObservation(
+                  phase: ChatUiStepObservationPhase.start,
+                  stepId: event.stepId,
+                  message: message,
+                ),
+              );
+            case StepFinishEvent():
+              final observation = ChatUiStepObservation(
+                phase: ChatUiStepObservationPhase.finish,
+                stepId: event.stepId,
+                message: message,
+              );
+              _stepEventChannel.add(observation);
+              _stepFinishChannel.add(message);
+            case _:
+              break;
+          }
         }
         return message;
     }
@@ -129,6 +183,7 @@ final class ChatUiStreamReader {
       _resultCompleter.complete(_accumulator.message);
     }
     _messageChannel.close();
+    _stepEventChannel.close();
     _stepFinishChannel.close();
     _transientChannel.close();
   }
@@ -143,6 +198,7 @@ final class ChatUiStreamReader {
       _resultCompleter.completeError(error, stackTrace);
     }
     _messageChannel.addError(error, stackTrace);
+    _stepEventChannel.addError(error, stackTrace);
     _stepFinishChannel.addError(error, stackTrace);
     _transientChannel.addError(error, stackTrace);
   }

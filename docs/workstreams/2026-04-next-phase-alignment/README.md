@@ -124,6 +124,10 @@ This phase should explicitly avoid:
     `ChatUiMessage` layering against the current `repo-ref/ai` stream and UI
     chunk structure, confirming that any remaining worthwhile work is above the
     shared event core.
+- [12-reader-step-observation-helper.md](12-reader-step-observation-helper.md)
+  - Additive reader-level step-boundary observation stream that improves
+    `readChatUiStream(...)` ergonomics without widening shared events or
+    growing session/controller lifecycle APIs.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)

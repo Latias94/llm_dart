@@ -11,6 +11,9 @@ architecture debt.
 - [x] Re-audit the current event, UI chunk, and accumulated message layering
   against the current `repo-ref/ai` stream architecture after the transport
   and chat runtime refactors landed
+- [x] Add a reader-level step-boundary observation helper for
+  `readChatUiStream(...)` without reopening callback facades or widening
+  `ChatSession`
 
 ## Streamed Runner Maturity
 

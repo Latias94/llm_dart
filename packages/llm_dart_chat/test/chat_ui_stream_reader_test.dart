@@ -104,6 +104,65 @@ void main() {
           finalMessage.parts.whereType<TextUiPart>().single.text, 'First step');
     });
 
+    test('emits step observations for both start and finish boundaries',
+        () async {
+      final result = readChatUiStream(
+        messageId: 'assistant-1',
+        chunks: Stream<ChatUiStreamChunk>.fromIterable([
+          const ChatUiEventChunk(
+            StepStartEvent(stepId: 'step-1'),
+          ),
+          const ChatUiEventChunk(
+            TextStartEvent(id: 'text-1'),
+          ),
+          const ChatUiEventChunk(
+            TextDeltaEvent(
+              id: 'text-1',
+              delta: 'First step',
+            ),
+          ),
+          const ChatUiEventChunk(
+            TextEndEvent(id: 'text-1'),
+          ),
+          const ChatUiEventChunk(
+            StepFinishEvent(stepId: 'step-1'),
+          ),
+          const ChatUiEventChunk(
+            FinishEvent(
+              finishReason: FinishReason.stop,
+            ),
+          ),
+        ]),
+      );
+
+      final stepEvents = await result.stepEvents.toList();
+      final finalMessage = await result.result;
+
+      expect(stepEvents, hasLength(2));
+      expect(stepEvents[0].phase, ChatUiStepObservationPhase.start);
+      expect(stepEvents[0].stepId, 'step-1');
+      expect(
+        stepEvents[0]
+            .message
+            .parts
+            .whereType<StepBoundaryUiPart>()
+            .single
+            .stepId,
+        'step-1',
+      );
+
+      expect(stepEvents[1].phase, ChatUiStepObservationPhase.finish);
+      expect(stepEvents[1].stepId, 'step-1');
+      expect(
+        stepEvents[1].message.parts.whereType<TextUiPart>().single.text,
+        'First step',
+      );
+      expect(
+        finalMessage.parts.whereType<TextUiPart>().single.text,
+        'First step',
+      );
+    });
+
     test('emits transient data parts without mutating persistent message state',
         () async {
       final result = readChatUiStream(
