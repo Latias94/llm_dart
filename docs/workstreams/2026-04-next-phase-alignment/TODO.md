@@ -14,6 +14,9 @@ architecture debt.
 - [x] Add a reader-level step-boundary observation helper for
   `readChatUiStream(...)` without reopening callback facades or widening
   `ChatSession`
+- [x] Add reader-level metadata and data-part validation hooks for
+  `readChatUiStream(...)` without widening shared events or pushing validation
+  policy into `ChatSession`
 
 ## Streamed Runner Maturity
 

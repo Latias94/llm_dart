@@ -128,6 +128,10 @@ This phase should explicitly avoid:
   - Additive reader-level step-boundary observation stream that improves
     `readChatUiStream(...)` ergonomics without widening shared events or
     growing session/controller lifecycle APIs.
+- [13-reader-validation-hooks.md](13-reader-validation-hooks.md)
+  - Additive reader-level metadata and data-part validation hooks that improve
+    direct chunk-stream processing without widening shared events or growing
+    `ChatSession`.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)

@@ -32,6 +32,10 @@ Current status:
   stream for `StepStartEvent` and `StepFinishEvent` boundaries, improving
   direct reader ergonomics without reopening callback-heavy facades or growing
   `ChatSession`
+- `readChatUiStream(...)` now also supports additive metadata and data-part
+  validation hooks at the reader layer, covering one of the remaining honest
+  gaps versus `repo-ref/ai` without widening shared events or growing
+  session/controller lifecycle APIs
 - the remaining meaningful differences are now classified as higher-layer
   reader, validation, or transport-diagnostic questions rather than missing
   shared event families

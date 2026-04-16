@@ -50,6 +50,15 @@ The reader keeps the same stream-first contract:
 - `transientDataParts` for runtime-only `data-*` signals
 - `result` plus finish-state convenience futures for final inspection
 
+It also supports optional validation hooks for direct chunk-stream consumers:
+
+- `messageMetadataValidator`
+  - validates merged message metadata before start/patch/finish metadata chunks
+    are applied
+- `dataPartValidator`
+  - validates both persistent and transient `DataUiPart`s before projection or
+    side-channel delivery
+
 ## Runnable Example
 
 For a framework-neutral session example that uses:

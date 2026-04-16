@@ -9,6 +9,50 @@ enum ChatUiStepObservationPhase {
   finish,
 }
 
+enum ChatUiMessageMetadataValidationPhase {
+  start,
+  patch,
+  finish,
+}
+
+final class ChatUiMessageMetadataValidationContext {
+  final ChatUiMessageMetadataValidationPhase phase;
+  final String messageId;
+  final Map<String, Object?> currentMetadata;
+  final Map<String, Object?> patch;
+  final Map<String, Object?> nextMetadata;
+
+  ChatUiMessageMetadataValidationContext({
+    required this.phase,
+    required this.messageId,
+    required Map<String, Object?> currentMetadata,
+    required Map<String, Object?> patch,
+    required Map<String, Object?> nextMetadata,
+  })  : currentMetadata = Map.unmodifiable(currentMetadata),
+        patch = Map.unmodifiable(patch),
+        nextMetadata = Map.unmodifiable(nextMetadata);
+}
+
+typedef ChatUiMessageMetadataValidator = void Function(
+  ChatUiMessageMetadataValidationContext context,
+);
+
+final class ChatUiDataPartValidationContext {
+  final ChatUiMessage message;
+  final DataUiPart<Object?> part;
+  final bool isTransient;
+
+  const ChatUiDataPartValidationContext({
+    required this.message,
+    required this.part,
+    required this.isTransient,
+  });
+}
+
+typedef ChatUiDataPartValidator = void Function(
+  ChatUiDataPartValidationContext context,
+);
+
 /// Reader-level step-boundary observation snapshot.
 ///
 /// This stays below `ChatSession` and above raw `ChatUiStreamChunk` so direct
@@ -65,6 +109,8 @@ final class ChatUiStreamReadResult extends StreamView<ChatUiMessage> {
 
 final class ChatUiStreamReader {
   final ChatUiStreamAccumulator _accumulator;
+  final ChatUiMessageMetadataValidator? _messageMetadataValidator;
+  final ChatUiDataPartValidator? _dataPartValidator;
   final ReplayStreamChannel<ChatUiMessage> _messageChannel =
       ReplayStreamChannel<ChatUiMessage>();
   final ReplayStreamChannel<ChatUiStepObservation> _stepEventChannel =
@@ -90,7 +136,11 @@ final class ChatUiStreamReader {
     ChatUiRole role = ChatUiRole.assistant,
     ChatUiMessage? seedMessage,
     ChatUiAccumulatorOptions options = const ChatUiAccumulatorOptions(),
-  }) : _accumulator = ChatUiStreamAccumulator(
+    ChatUiMessageMetadataValidator? messageMetadataValidator,
+    ChatUiDataPartValidator? dataPartValidator,
+  })  : _messageMetadataValidator = messageMetadataValidator,
+        _dataPartValidator = dataPartValidator,
+        _accumulator = ChatUiStreamAccumulator(
           messageId: messageId,
           role: role,
           seedMessage: seedMessage,
@@ -115,6 +165,14 @@ final class ChatUiStreamReader {
 
     switch (chunk) {
       case ChatUiTransientDataPartChunk(:final part):
+        _validateDataPart(
+          DataUiPart<Object?>(
+            id: part.id,
+            key: part.key,
+            data: part.data,
+          ),
+          isTransient: true,
+        );
         _transientChannel.add(
           DataUiPart<Object?>(
             id: part.id,
@@ -122,6 +180,40 @@ final class ChatUiStreamReader {
             data: part.data,
           ),
         );
+        return _accumulator.message;
+      case ChatUiMessageStartChunk(:final messageId, :final metadata):
+        _validateMessageMetadataPatch(
+          phase: ChatUiMessageMetadataValidationPhase.start,
+          messageId: messageId ?? _accumulator.message.id,
+          patch: metadata,
+        );
+      case ChatUiMessageMetadataChunk(:final metadata):
+        _validateMessageMetadataPatch(
+          phase: ChatUiMessageMetadataValidationPhase.patch,
+          messageId: _accumulator.message.id,
+          patch: metadata,
+        );
+      case ChatUiDataPartChunk(:final part):
+        _validateDataPart(
+          DataUiPart<Object?>(
+            id: part.id,
+            key: part.key,
+            data: part.data,
+          ),
+          isTransient: false,
+        );
+      case ChatUiMessageFinishChunk(:final metadata):
+        _validateMessageMetadataPatch(
+          phase: ChatUiMessageMetadataValidationPhase.finish,
+          messageId: _accumulator.message.id,
+          patch: metadata,
+        );
+      case _:
+        break;
+    }
+
+    switch (chunk) {
+      case ChatUiTransientDataPartChunk():
         return _accumulator.message;
       case _:
         final message = _accumulator.apply(chunk);
@@ -210,6 +302,51 @@ final class ChatUiStreamReader {
       );
     }
   }
+
+  void _validateMessageMetadataPatch({
+    required ChatUiMessageMetadataValidationPhase phase,
+    required String messageId,
+    required Map<String, Object?> patch,
+  }) {
+    final validator = _messageMetadataValidator;
+    if (validator == null || patch.isEmpty) {
+      return;
+    }
+
+    final currentMetadata = _accumulator.message.metadata;
+    final nextMetadata = <String, Object?>{
+      ...currentMetadata,
+      ...patch,
+    };
+
+    validator(
+      ChatUiMessageMetadataValidationContext(
+        phase: phase,
+        messageId: messageId,
+        currentMetadata: currentMetadata,
+        patch: patch,
+        nextMetadata: nextMetadata,
+      ),
+    );
+  }
+
+  void _validateDataPart(
+    DataUiPart<Object?> part, {
+    required bool isTransient,
+  }) {
+    final validator = _dataPartValidator;
+    if (validator == null) {
+      return;
+    }
+
+    validator(
+      ChatUiDataPartValidationContext(
+        message: _accumulator.message,
+        part: part,
+        isTransient: isTransient,
+      ),
+    );
+  }
 }
 
 ChatUiStreamReadResult readChatUiStream({
@@ -218,12 +355,16 @@ ChatUiStreamReadResult readChatUiStream({
   ChatUiRole role = ChatUiRole.assistant,
   ChatUiMessage? seedMessage,
   ChatUiAccumulatorOptions options = const ChatUiAccumulatorOptions(),
+  ChatUiMessageMetadataValidator? messageMetadataValidator,
+  ChatUiDataPartValidator? dataPartValidator,
 }) {
   final reader = ChatUiStreamReader(
     messageId: messageId,
     role: role,
     seedMessage: seedMessage,
     options: options,
+    messageMetadataValidator: messageMetadataValidator,
+    dataPartValidator: dataPartValidator,
   );
   unawaited(reader.consume(chunks));
   return reader.readResult;
