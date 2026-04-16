@@ -23,15 +23,15 @@ It is example migration.
 ## Counts
 
 Current repository-wide audit baseline after the latest
-`example/03_advanced_features` multimodal rewrite:
+`example/03_advanced_features` custom-model and realtime cleanup:
 
-- `16` files still import `package:llm_dart/legacy.dart`
-- `22` files still contain direct `ai()` usage
+- `14` files still import `package:llm_dart/legacy.dart`
+- `21` files still contain direct `ai()` usage
 
 Legacy imports inside `example/` are concentrated in:
 
 - `example/02_core_features` - `2` files
-- `example/03_advanced_features` - `5` files
+- `example/03_advanced_features` - `3` files
 - `example/04_providers` - `6` files
 - `example/06_mcp_integration` - `3` files
 - `example/01_getting_started` - `0` files
@@ -76,9 +76,11 @@ The first stable-first rewrite slice is also now complete in
 - `semantic_search.dart`
 - `performance_optimization.dart`
 - `multi_modal.dart`
+- `custom_providers.dart`
 
 Those files now keep batch orchestration, retrieval indexing, caching,
-streaming, and context trimming in app-owned code built on:
+streaming, custom model composition, and context trimming in app-owned code
+built on:
 
 - `LanguageModel`
 - `EmbeddingModel`
@@ -87,13 +89,20 @@ streaming, and context trimming in app-owned code built on:
 - `embed(...)`
 - `embedMany(...)`
 
-The remaining legacy-heavy `example/03_advanced_features` files are now:
+`realtime_audio.dart` is now also reframed as an honest provider-owned
+boundary:
+
+- no broad `legacy.dart` barrel
+- no fake cross-provider realtime abstraction
+- explicit ElevenLabs compatibility provider entrypoint
+- app-owned local session/event orchestration shown separately from provider
+  implementation status
+
+The remaining legacy-heavy `example/03_advanced_features` files are now just:
 
 - `http_configuration.dart`
 - `layered_http_config.dart`
 - `timeout_configuration.dart`
-- `realtime_audio.dart`
-- `custom_providers.dart`
 
 ## Healthy Legacy Disclosure
 
@@ -171,21 +180,18 @@ They should instead be:
 
 The best remaining migration order is:
 
-1. finish the remaining app-facing residue in `example/03_advanced_features`
-   (`realtime_audio.dart`, `custom_providers.dart`)
-2. `example/04_providers` README hotspots
-3. classify the remaining `example/03_advanced_features`
+1. `example/04_providers` README hotspots
+2. classify the remaining `example/03_advanced_features`
    HTTP/configuration files as keep-frozen appendix material or rewrite them
    into a clearer transport recipe
-4. `example/06_mcp_integration`
+3. `example/06_mcp_integration`
 
 Rationale:
 
 - `02_core_features` is now mostly modern-first outside the two explicit
   compatibility appendix files
-- `03_advanced_features` is now partially modernized, so the next value is in
-  finishing the remaining app-facing residue before treating transport-wiring
-  examples as a separate appendix decision
+- `03_advanced_features` app-facing examples are now modernized, leaving only
+  transport/configuration appendix material in that directory
 - provider README snippets strongly influence copy-paste usage
 - MCP examples are narrower and lower-volume
 

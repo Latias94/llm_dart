@@ -1,616 +1,388 @@
 import 'dart:async';
-import 'dart:math';
-import 'package:llm_dart/legacy.dart';
+import 'dart:io';
+import 'dart:math' as math;
 
-/// Real-time audio processing examples using AudioCapability
+import 'package:llm_dart/core/capability.dart' as compat;
+import 'package:llm_dart/providers/elevenlabs/elevenlabs.dart'
+    as elevenlabs_compat;
+import 'package:llm_dart_community/llm_dart_community.dart' as community;
+
+/// Provider-owned realtime audio appendix.
 ///
-/// This example demonstrates:
-/// - Real-time audio streaming
-/// - Voice activity detection
-/// - Continuous conversation flows
-/// - Audio preprocessing and enhancement
-/// - Low-latency audio processing
-/// - Multi-modal audio interactions
-/// - Session management and reconnection
+/// This example intentionally does not pretend realtime audio already has a
+/// shared modern facade. The current boundary is:
+///
+/// - shared speech/transcription models live in `llm_dart_community`
+/// - realtime sessions remain provider-owned compatibility surface
+///
+/// The example therefore demonstrates:
+/// - how to inspect the ElevenLabs compatibility audio surface honestly
+/// - how to configure realtime session intent with `RealtimeAudioConfig`
+/// - how app-owned event/session orchestration can already be structured
+///   without faking a cross-provider realtime abstraction
 Future<void> main() async {
-  print('🎤 Real-time Audio Processing Examples\n');
+  print('Realtime audio compatibility appendix\n');
 
-  // Initialize audio provider
-  final audioProvider = await initializeAudioProvider();
-  if (audioProvider == null) {
-    print('❌ No audio provider available for real-time processing');
+  final apiKey = Platform.environment['ELEVENLABS_API_KEY'];
+  if (apiKey == null || apiKey.isEmpty) {
+    print('Set ELEVENLABS_API_KEY to inspect the provider-owned realtime surface.');
     return;
   }
 
-  // Check real-time capabilities
-  if (!audioProvider.supportedFeatures
-      .contains(AudioFeature.realtimeProcessing)) {
-    print('⚠️  Provider does not support real-time audio processing');
+  await _demonstrateSharedAudioBoundary(apiKey);
+
+  final provider = elevenlabs_compat.createElevenLabsProvider(
+    apiKey: apiKey,
+    voiceId: 'JBFqnCBsd6RMkjVDRZzb',
+    model: 'eleven_multilingual_v2',
+  );
+
+  _printProviderFeatureBoundary(provider);
+
+  final config = compat.RealtimeAudioConfig(
+    inputFormat: 'pcm16',
+    outputFormat: 'pcm16',
+    sampleRate: 16000,
+    enableVAD: true,
+    enableEchoCancellation: true,
+    enableNoiseSuppression: true,
+    timeoutSeconds: 30,
+    customParams: const {
+      'conversation_mode': true,
+      'response_delay_ms': 500,
+    },
+  );
+
+  _printRealtimeConfig(config);
+  await _demonstrateProviderSessionBoundary(
+    provider: provider,
+    config: config,
+  );
+  await _demonstrateLocalSessionOrchestration(config);
+
+  print('Completed realtime audio appendix.');
+  print('Keep realtime as a provider-owned boundary until a true shared');
+  print('cross-provider session contract exists.');
+}
+
+Future<void> _demonstrateSharedAudioBoundary(String apiKey) async {
+  print('Shared audio boundary:');
+
+  final speechModel = community.ElevenLabs(
+    apiKey: apiKey,
+  ).speechModel('eleven_multilingual_v2');
+  final transcriptionModel = community.ElevenLabs(
+    apiKey: apiKey,
+  ).transcriptionModel('scribe_v1');
+
+  print(
+    '  Shared speech model: ${speechModel.providerId}/${speechModel.modelId}',
+  );
+  print(
+    '  Shared transcription model: '
+    '${transcriptionModel.providerId}/${transcriptionModel.modelId}',
+  );
+  print(
+    '  These shared models are the stable path for normal TTS/STT app code.',
+  );
+  print(
+    '  Realtime sessions are still provider-owned and do not yet have a',
+  );
+  print('  shared modern contract.\n');
+}
+
+void _printProviderFeatureBoundary(compat.AudioCapability provider) {
+  print('ElevenLabs provider-owned feature surface:');
+
+  for (final feature in compat.AudioFeature.values) {
+    final supported = provider.supportedFeatures.contains(feature);
+    print('  ${supported ? 'YES' : 'NO '} ${feature.name}');
+  }
+
+  print('  Formats: ${provider.getSupportedAudioFormats().join(', ')}');
+  print('');
+}
+
+void _printRealtimeConfig(compat.RealtimeAudioConfig config) {
+  print('Realtime session intent config:');
+  print('  ${config.toJson()}');
+  print('');
+}
+
+Future<void> _demonstrateProviderSessionBoundary({
+  required compat.AudioCapability provider,
+  required compat.RealtimeAudioConfig config,
+}) async {
+  print('Provider boundary: realtime session startup');
+
+  if (!provider.supportedFeatures.contains(compat.AudioFeature.realtimeProcessing)) {
+    print('  Provider does not advertise realtime processing on this surface.');
+    print('');
     return;
   }
 
-  print('🚀 Starting Real-time Audio Examples...\n');
-
-  // Demonstrate different real-time scenarios
-  await demonstrateBasicRealtimeSession(audioProvider);
-  await demonstrateVoiceActivityDetection(audioProvider);
-  await demonstrateContinuousConversation(audioProvider);
-  await demonstrateAudioPreprocessing(audioProvider);
-  await demonstrateMultiModalInteraction(audioProvider);
-  await demonstrateSessionManagement(audioProvider);
-
-  print('✅ Real-time audio examples completed!');
-  print('💡 Real-time audio best practices:');
-  print('   • Use appropriate buffer sizes for your latency requirements');
-  print('   • Implement proper voice activity detection');
-  print('   • Handle network interruptions gracefully');
-  print('   • Optimize for your target platform\'s audio capabilities');
-}
-
-/// Initialize audio provider for real-time processing
-Future<AudioCapability?> initializeAudioProvider() async {
-  // Try providers that support real-time audio
-  final providers = [
-    (
-      'OpenAI',
-      () async {
-        return await ai().openai().apiKey('your-openai-key').buildAudio();
-      }
-    ),
-    (
-      'ElevenLabs',
-      () async {
-        return await ai()
-            .elevenlabs()
-            .apiKey('your-elevenlabs-key')
-            .buildAudio();
-      }
-    ),
-  ];
-
-  for (final (name, factory) in providers) {
-    try {
-      final provider = await factory();
-      print('✅ Using $name for real-time audio');
-      return provider;
-    } catch (e) {
-      print('⚠️  $name not available: $e');
-    }
+  try {
+    final session = await provider.startRealtimeSession(config);
+    print('  Session unexpectedly started: ${session.sessionId}');
+    await session.close();
+  } on UnsupportedError catch (error) {
+    print('  Compatibility shell reached the provider boundary.');
+    print('  Current implementation status: $error');
+    print(
+      '  This is exactly why realtime is still documented as provider-owned',
+    );
+    print('  appendix material instead of stable shared API.\n');
+  } catch (error) {
+    print('  Session startup failed: $error\n');
   }
-
-  return null;
 }
 
-/// Demonstrate basic real-time audio session
-Future<void> demonstrateBasicRealtimeSession(AudioCapability provider) async {
-  print('🎙️ Basic Real-time Session:');
+Future<void> _demonstrateLocalSessionOrchestration(
+  compat.RealtimeAudioConfig config,
+) async {
+  print('App-owned session orchestration pattern:');
+
+  final session = _SimulatedRealtimeAudioSession(config: config);
+  final subscription = session.events.listen(_handleRealtimeEvent);
+  final manager = _RealtimeSessionManager(session);
+  final simulator = _AudioChunkSimulator();
 
   try {
-    // Configure real-time session
-    final config = RealtimeAudioConfig(
-      inputFormat: 'pcm16',
-      outputFormat: 'pcm16',
-      sampleRate: 16000,
-      enableVAD: true,
-      enableEchoCancellation: true,
-      enableNoiseSuppression: true,
-    );
+    await manager.start();
 
-    print('   🔄 Starting real-time session...');
-    final session = await provider.startRealtimeSession(config);
-
-    print('   ✅ Session started: ${session.sessionId}');
-    print('   🎤 Session is active: ${session.isActive}');
-
-    // Simulate audio input
-    final audioSimulator = AudioSimulator();
-
-    // Listen for events
-    final eventSubscription = session.events.listen((event) {
-      _handleRealtimeEvent(event);
-    });
-
-    // Send simulated audio data
-    print('   📡 Sending audio data...');
-    for (int i = 0; i < 5; i++) {
-      final audioChunk = audioSimulator.generateAudioChunk(1024);
-      session.sendAudio(audioChunk);
-      await Future.delayed(Duration(milliseconds: 100));
+    for (final chunk in [
+      simulator.generateSpeechChunk(),
+      simulator.generateSpeechChunk(),
+      simulator.generateSilenceChunk(),
+    ]) {
+      session.sendAudio(chunk);
+      await Future<void>.delayed(const Duration(milliseconds: 180));
     }
 
-    // Wait for processing
-    await Future.delayed(Duration(seconds: 2));
-
-    // Clean up
-    await eventSubscription.cancel();
-    await session.close();
-    print('   🔚 Session closed');
-  } catch (e) {
-    print('   ❌ Real-time session failed: $e');
+    await manager.simulateNetworkRecovery();
+    session.sendAudio(simulator.generateSpeechChunk());
+    await Future<void>.delayed(const Duration(milliseconds: 250));
+  } finally {
+    await subscription.cancel();
+    await manager.shutdown();
   }
 
   print('');
 }
 
-/// Demonstrate voice activity detection
-Future<void> demonstrateVoiceActivityDetection(AudioCapability provider) async {
-  print('🗣️ Voice Activity Detection:');
-
-  try {
-    final config = RealtimeAudioConfig(
-      enableVAD: true,
-      customParams: {
-        'vad_sensitivity': 0.7,
-        'vad_timeout': 1000, // ms
-        'speech_threshold': 0.5,
-      },
-    );
-
-    final session = await provider.startRealtimeSession(config);
-    final vadProcessor = VoiceActivityDetector();
-
-    print('   🔄 Monitoring voice activity...');
-
-    // Simulate different audio scenarios
-    final scenarios = [
-      {'type': 'silence', 'duration': 1000},
-      {'type': 'speech', 'duration': 2000},
-      {'type': 'noise', 'duration': 500},
-      {'type': 'speech', 'duration': 1500},
-      {'type': 'silence', 'duration': 1000},
-    ];
-
-    final eventSubscription = session.events.listen((event) {
-      if (event is RealtimeTranscriptionEvent) {
-        print(
-            '   📝 Transcription: "${event.text}" (confidence: ${event.confidence})');
-      }
-    });
-
-    for (final scenario in scenarios) {
-      final type = scenario['type'] as String;
-      final duration = scenario['duration'] as int;
-
-      print('   🎵 Simulating $type for ${duration}ms...');
-
-      final audioData = vadProcessor.generateScenarioAudio(type, duration);
-      session.sendAudio(audioData);
-
-      await Future.delayed(Duration(milliseconds: duration));
-    }
-
-    await Future.delayed(Duration(seconds: 1));
-    await eventSubscription.cancel();
-    await session.close();
-  } catch (e) {
-    print('   ❌ Voice activity detection failed: $e');
-  }
-
-  print('');
-}
-
-/// Demonstrate continuous conversation flow
-Future<void> demonstrateContinuousConversation(AudioCapability provider) async {
-  print('💬 Continuous Conversation:');
-
-  try {
-    final config = RealtimeAudioConfig(
-      enableVAD: true,
-      enableEchoCancellation: true,
-      customParams: {
-        'conversation_mode': true,
-        'auto_response': true,
-        'response_delay': 500,
-      },
-    );
-
-    final session = await provider.startRealtimeSession(config);
-    final conversationManager = ConversationManager();
-
-    print('   🔄 Starting continuous conversation...');
-
-    // Track conversation state
-    var turnCount = 0;
-    final maxTurns = 3;
-
-    final eventSubscription = session.events.listen((event) async {
-      if (event is RealtimeTranscriptionEvent && event.isFinal) {
-        turnCount++;
-        print('   👤 User (Turn $turnCount): "${event.text}"');
-
-        // Generate response
-        final response = await conversationManager.generateResponse(event.text);
-        print('   🤖 AI (Turn $turnCount): "$response"');
-
-        // Convert response to audio and send back
-        if (turnCount < maxTurns) {
-          final responseAudio = await conversationManager.textToAudio(response);
-          // In real implementation, you would send this back to the user
-          print(
-              '   🔊 Audio response generated (${responseAudio.length} bytes)');
-        }
-      }
-    });
-
-    // Simulate user speech inputs
-    final userInputs = [
-      'Hello, how are you today?',
-      'Can you help me with a programming question?',
-      'Thank you for your help!',
-    ];
-
-    for (final input in userInputs) {
-      // Simulate speech-to-text by directly triggering transcription event
-      print('      👤 User input: "$input"');
-      await Future.delayed(Duration(milliseconds: 500));
-      // Note: In real implementation, this would come from actual audio processing
-    }
-
-    await Future.delayed(Duration(seconds: 3));
-    await eventSubscription.cancel();
-    await session.close();
-  } catch (e) {
-    print('   ❌ Continuous conversation failed: $e');
-  }
-
-  print('');
-}
-
-/// Demonstrate audio preprocessing and enhancement
-Future<void> demonstrateAudioPreprocessing(AudioCapability provider) async {
-  print('🔧 Audio Preprocessing:');
-
-  try {
-    final config = RealtimeAudioConfig(
-      enableNoiseSuppression: true,
-      enableEchoCancellation: true,
-      customParams: {
-        'noise_gate_threshold': -40, // dB
-        'compressor_ratio': 3.0,
-        'eq_enabled': true,
-        'auto_gain_control': true,
-      },
-    );
-
-    final session = await provider.startRealtimeSession(config);
-    final preprocessor = AudioPreprocessor();
-
-    print('   🔄 Processing audio with enhancements...');
-
-    // Simulate different audio quality scenarios
-    final audioScenarios = [
-      {'name': 'Clean audio', 'noise_level': 0.1},
-      {'name': 'Noisy environment', 'noise_level': 0.5},
-      {'name': 'Echo-prone room', 'echo_level': 0.3},
-      {'name': 'Low volume speech', 'volume_level': 0.3},
-    ];
-
-    for (final scenario in audioScenarios) {
-      final name = scenario['name'] as String;
-      print('   🎵 Testing: $name');
-
-      // Generate test audio with specific characteristics
-      final rawAudio = preprocessor.generateTestAudio(scenario);
-
-      // Apply preprocessing
-      final processedAudio = preprocessor.enhanceAudio(rawAudio);
-
-      // Send processed audio
-      session.sendAudio(processedAudio);
-
+void _handleRealtimeEvent(compat.RealtimeAudioEvent event) {
+  switch (event) {
+    case compat.RealtimeSessionStatusEvent(
+        :final status,
+        :final details,
+      ):
+      print('  [status] $status ${details ?? const {}}');
+    case compat.RealtimeTranscriptionEvent(
+        :final text,
+        :final isFinal,
+        :final confidence,
+      ):
+      final kind = isFinal ? 'final' : 'partial';
       print(
-          '      📊 Enhancement applied: ${processedAudio.length} bytes processed');
-      await Future.delayed(Duration(milliseconds: 500));
-    }
-
-    await session.close();
-  } catch (e) {
-    print('   ❌ Audio preprocessing failed: $e');
-  }
-
-  print('');
-}
-
-/// Demonstrate multi-modal audio interaction
-Future<void> demonstrateMultiModalInteraction(AudioCapability provider) async {
-  print('🎭 Multi-modal Interaction:');
-
-  try {
-    final config = RealtimeAudioConfig(
-      customParams: {
-        'multimodal_mode': true,
-        'visual_context': true,
-        'gesture_recognition': true,
-      },
-    );
-
-    final session = await provider.startRealtimeSession(config);
-    final multiModalProcessor = MultiModalProcessor();
-
-    print('   🔄 Starting multi-modal session...');
-
-    // Simulate multi-modal inputs
-    final interactions = [
-      {
-        'type': 'audio_only',
-        'content': 'What do you see in this image?',
-        'context': null,
-      },
-      {
-        'type': 'audio_with_visual',
-        'content': 'Describe what\'s happening here',
-        'context': {'image_description': 'A sunset over mountains'},
-      },
-      {
-        'type': 'audio_with_gesture',
-        'content': 'Move this object over there',
-        'context': {'gesture': 'pointing_right'},
-      },
-    ];
-
-    for (final interaction in interactions) {
-      final type = interaction['type'] as String;
-      final content = interaction['content'] as String;
-      final context = interaction['context'] as Map<String, dynamic>?;
-
-      print('   🎯 Processing $type interaction...');
-      print('      📝 Audio: "$content"');
-
-      if (context != null) {
-        print('      🖼️  Context: $context');
-      }
-
-      // Process multi-modal input
-      final response = await multiModalProcessor.processInteraction(
-        audioContent: content,
-        visualContext: context?['image_description'],
-        gestureContext: context?['gesture'],
+        '  [transcription/$kind] $text '
+        '(confidence=${confidence?.toStringAsFixed(2) ?? 'n/a'})',
       );
+    case compat.RealtimeAudioResponseEvent(
+        :final audioData,
+        :final isFinal,
+      ):
+      print(
+        '  [audio-response] ${audioData.length} bytes '
+        'final=$isFinal',
+      );
+    case compat.RealtimeErrorEvent(:final message, :final code):
+      print('  [error] ${code ?? 'unknown'}: $message');
+  }
+}
 
-      print('      🤖 Response: "$response"');
-      await Future.delayed(Duration(milliseconds: 800));
+final class _AudioChunkSimulator {
+  List<int> generateSpeechChunk() {
+    return List<int>.generate(
+      512,
+      (index) => (128 + 70 * math.sin(index * 0.12)).round().clamp(0, 255),
+    );
+  }
+
+  List<int> generateSilenceChunk() {
+    return List<int>.filled(512, 128);
+  }
+}
+
+final class _SimulatedRealtimeAudioSession extends compat.RealtimeAudioSession {
+  final compat.RealtimeAudioConfig config;
+  final StreamController<compat.RealtimeAudioEvent> _events =
+      StreamController<compat.RealtimeAudioEvent>.broadcast();
+  final String _sessionId =
+      'sim-${DateTime.now().millisecondsSinceEpoch.toRadixString(36)}';
+
+  bool _isActive = false;
+  int _chunkCount = 0;
+
+  _SimulatedRealtimeAudioSession({
+    required this.config,
+  });
+
+  @override
+  Stream<compat.RealtimeAudioEvent> get events => _events.stream;
+
+  @override
+  bool get isActive => _isActive;
+
+  @override
+  String get sessionId => _sessionId;
+
+  Future<void> start() async {
+    _isActive = true;
+    _events.add(
+      compat.RealtimeSessionStatusEvent(
+        timestamp: DateTime.now(),
+        status: 'started',
+        details: config.toJson(),
+      ),
+    );
+  }
+
+  @override
+  void sendAudio(List<int> audioData) {
+    if (!_isActive) {
+      _events.add(
+        compat.RealtimeErrorEvent(
+          timestamp: DateTime.now(),
+          message: 'Attempted to send audio to an inactive session.',
+          code: 'inactive-session',
+        ),
+      );
+      return;
     }
 
-    await session.close();
-  } catch (e) {
-    print('   ❌ Multi-modal interaction failed: $e');
-  }
-
-  print('');
-}
-
-/// Demonstrate session management and reconnection
-Future<void> demonstrateSessionManagement(AudioCapability provider) async {
-  print('🔄 Session Management:');
-
-  try {
-    final sessionManager = RealtimeSessionManager(provider);
-
-    print('   🔄 Testing session lifecycle...');
-
-    // Start session
-    await sessionManager.startSession();
-    print('   ✅ Session started');
-
-    // Simulate session usage
-    await sessionManager.sendTestAudio();
-    print('   📡 Test audio sent');
-
-    // Simulate network interruption
-    print('   📡 Simulating network interruption...');
-    await sessionManager.simulateNetworkIssue();
-
-    // Test reconnection
-    print('   🔄 Attempting reconnection...');
-    await sessionManager.reconnect();
-    print('   ✅ Session reconnected');
-
-    // Test graceful shutdown
-    print('   🔚 Graceful shutdown...');
-    await sessionManager.shutdown();
-    print('   ✅ Session management completed');
-  } catch (e) {
-    print('   ❌ Session management failed: $e');
-  }
-
-  print('');
-}
-
-/// Handle real-time audio events
-void _handleRealtimeEvent(RealtimeAudioEvent event) {
-  switch (event.runtimeType) {
-    case RealtimeTranscriptionEvent _:
-      final transcription = event as RealtimeTranscriptionEvent;
-      final status = transcription.isFinal ? 'FINAL' : 'PARTIAL';
-      print('      📝 [$status] "${transcription.text}"');
-      break;
-
-    case RealtimeAudioResponseEvent _:
-      final audioResponse = event as RealtimeAudioResponseEvent;
-      print('      🔊 Audio response: ${audioResponse.audioData.length} bytes');
-      break;
-
-    case RealtimeSessionStatusEvent _:
-      final status = event as RealtimeSessionStatusEvent;
-      print('      📊 Status: ${status.status}');
-      break;
-
-    case RealtimeErrorEvent _:
-      final error = event as RealtimeErrorEvent;
-      print('      ❌ Error: ${error.message}');
-      break;
-  }
-}
-
-// Helper classes for real-time audio processing
-
-/// Audio simulator for testing
-class AudioSimulator {
-  /// Generate simulated audio chunk
-  List<int> generateAudioChunk(int size) {
-    // Generate simple sine wave or noise for testing
-    return List.generate(size, (index) => (index % 256));
-  }
-}
-
-/// Voice activity detector
-class VoiceActivityDetector {
-  /// Generate audio data for different scenarios
-  List<int> generateScenarioAudio(String type, int durationMs) {
-    final sampleRate = 16000;
-    final samples = (sampleRate * durationMs / 1000).round();
-
-    switch (type) {
-      case 'silence':
-        return List.filled(samples, 0);
-      case 'speech':
-        // Generate speech-like pattern
-        return List.generate(samples,
-            (i) => (128 + 100 * sin(i * 0.01) * sin(i * 0.001)).round());
-      case 'noise':
-        // Generate noise pattern
-        return List.generate(
-            samples, (i) => (128 + (Random().nextDouble() - 0.5) * 50).round());
-      default:
-        return List.filled(samples, 0);
-    }
-  }
-}
-
-/// Conversation manager for continuous flow
-class ConversationManager {
-  final List<String> _conversationHistory = [];
-
-  /// Generate response based on input
-  Future<String> generateResponse(String input) async {
-    _conversationHistory.add('User: $input');
-
-    // Simulate AI response generation
-    await Future.delayed(Duration(milliseconds: 300));
-
-    final responses = [
-      'I\'m doing well, thank you for asking!',
-      'Of course! I\'d be happy to help with programming.',
-      'You\'re welcome! Feel free to ask anytime.',
-    ];
-
-    final response =
-        responses[_conversationHistory.length ~/ 2 % responses.length];
-    _conversationHistory.add('AI: $response');
-
-    return response;
-  }
-
-  /// Convert text to audio (simulated)
-  Future<List<int>> textToAudio(String text) async {
-    await Future.delayed(Duration(milliseconds: 200));
-    // Simulate TTS conversion
-    return List.generate(text.length * 100, (i) => i % 256);
-  }
-}
-
-/// Audio preprocessor for enhancement
-class AudioPreprocessor {
-  /// Generate test audio with specific characteristics
-  List<int> generateTestAudio(Map<String, dynamic> scenario) {
-    final baseAudio =
-        List.generate(1024, (i) => 128 + (sin(i * 0.1) * 50).round());
-
-    // Apply scenario-specific modifications
-    if (scenario.containsKey('noise_level')) {
-      final noiseLevel = scenario['noise_level'] as double;
-      for (int i = 0; i < baseAudio.length; i++) {
-        baseAudio[i] +=
-            ((Random().nextDouble() - 0.5) * noiseLevel * 100).round();
-      }
-    }
-
-    return baseAudio;
-  }
-
-  /// Enhance audio quality
-  List<int> enhanceAudio(List<int> rawAudio) {
-    // Simulate audio enhancement processing
-    return rawAudio.map((sample) {
-      // Simple noise reduction and normalization
-      var enhanced = sample;
-      enhanced = (enhanced * 0.9).round(); // Slight volume reduction
-      enhanced = enhanced.clamp(0, 255); // Ensure valid range
-      return enhanced;
-    }).toList();
-  }
-}
-
-/// Multi-modal processor
-class MultiModalProcessor {
-  /// Process multi-modal interaction
-  Future<String> processInteraction({
-    required String audioContent,
-    String? visualContext,
-    String? gestureContext,
-  }) async {
-    await Future.delayed(Duration(milliseconds: 400));
-
-    var response = 'I heard: "$audioContent"';
-
-    if (visualContext != null) {
-      response += ' and I can see: $visualContext';
-    }
-
-    if (gestureContext != null) {
-      response += ' with gesture: $gestureContext';
-    }
-
-    return response;
-  }
-}
-
-/// Session manager for handling connections
-class RealtimeSessionManager {
-  final AudioCapability _provider;
-  RealtimeAudioSession? _session;
-  bool _isConnected = false;
-
-  RealtimeSessionManager(this._provider);
-
-  /// Start new session
-  Future<void> startSession() async {
-    final config = RealtimeAudioConfig(
-      enableVAD: true,
-      timeoutSeconds: 30,
+    _chunkCount++;
+    final energy = _estimateEnergy(audioData);
+    _events.add(
+      compat.RealtimeSessionStatusEvent(
+        timestamp: DateTime.now(),
+        status: 'audio-received',
+        details: {
+          'chunk': _chunkCount,
+          'energy': energy.toStringAsFixed(3),
+        },
+      ),
     );
 
-    _session = await _provider.startRealtimeSession(config);
-    _isConnected = true;
-  }
+    if (energy < 0.02) {
+      _events.add(
+        compat.RealtimeSessionStatusEvent(
+          timestamp: DateTime.now(),
+          status: 'vad-silence',
+          details: {
+            'chunk': _chunkCount,
+          },
+        ),
+      );
+      return;
+    }
 
-  /// Send test audio
-  Future<void> sendTestAudio() async {
-    if (_session != null && _isConnected) {
-      final testAudio = List.generate(512, (i) => i % 256);
-      _session!.sendAudio(testAudio);
+    _events.add(
+      compat.RealtimeTranscriptionEvent(
+        timestamp: DateTime.now(),
+        text: 'detected speech chunk $_chunkCount',
+        isFinal: false,
+        confidence: 0.74,
+      ),
+    );
+
+    if (_chunkCount.isEven) {
+      _events.add(
+        compat.RealtimeTranscriptionEvent(
+          timestamp: DateTime.now(),
+          text: 'final user utterance after chunk $_chunkCount',
+          isFinal: true,
+          confidence: 0.91,
+        ),
+      );
+      _events.add(
+        compat.RealtimeAudioResponseEvent(
+          timestamp: DateTime.now(),
+          audioData: List<int>.filled(256, 42),
+          isFinal: true,
+        ),
+      );
     }
   }
 
-  /// Simulate network issue
-  Future<void> simulateNetworkIssue() async {
-    _isConnected = false;
-    await Future.delayed(Duration(milliseconds: 500));
+  @override
+  Future<void> close() async {
+    if (!_isActive) {
+      return;
+    }
+
+    _isActive = false;
+    _events.add(
+      compat.RealtimeSessionStatusEvent(
+        timestamp: DateTime.now(),
+        status: 'closed',
+      ),
+    );
+    await _events.close();
   }
 
-  /// Reconnect session
+  Future<void> markDisconnected() async {
+    if (!_isActive) {
+      return;
+    }
+
+    _isActive = false;
+    _events.add(
+      compat.RealtimeSessionStatusEvent(
+        timestamp: DateTime.now(),
+        status: 'disconnected',
+      ),
+    );
+  }
+
   Future<void> reconnect() async {
-    if (!_isConnected) {
-      await startSession();
+    if (_events.isClosed) {
+      return;
     }
+
+    _isActive = true;
+    _events.add(
+      compat.RealtimeSessionStatusEvent(
+        timestamp: DateTime.now(),
+        status: 'reconnected',
+      ),
+    );
   }
 
-  /// Shutdown session
-  Future<void> shutdown() async {
-    if (_session != null) {
-      await _session!.close();
-      _session = null;
-      _isConnected = false;
+  double _estimateEnergy(List<int> audioData) {
+    if (audioData.isEmpty) {
+      return 0.0;
     }
+
+    var total = 0.0;
+    for (final value in audioData) {
+      total += (value - 128).abs() / 128;
+    }
+    return total / audioData.length;
   }
+}
+
+final class _RealtimeSessionManager {
+  final _SimulatedRealtimeAudioSession _session;
+
+  _RealtimeSessionManager(this._session);
+
+  Future<void> start() => _session.start();
+
+  Future<void> simulateNetworkRecovery() async {
+    await _session.markDisconnected();
+    await Future<void>.delayed(const Duration(milliseconds: 120));
+    await _session.reconnect();
+  }
+
+  Future<void> shutdown() => _session.close();
 }

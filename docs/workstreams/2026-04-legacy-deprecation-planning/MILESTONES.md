@@ -114,7 +114,14 @@ Current status:
   for batch processing, semantic search, and performance optimization
 - `example/03_advanced_features/multi_modal.dart` is now also aligned to
   stable prompt parts plus shared image/audio/file helpers
-- the repository-wide baseline is now down to `16` legacy imports and `22`
+- `example/03_advanced_features/custom_providers.dart` now teaches stable
+  `LanguageModel` composition instead of the old `ChatCapability` contract
+- `example/03_advanced_features/realtime_audio.dart` now uses an explicit
+  ElevenLabs provider-owned entrypoint and keeps realtime session orchestration
+  separate from the current provider implementation boundary
+- `example/03_advanced_features` is now effectively reduced to the three HTTP
+  configuration appendix files on `legacy.dart`
+- the repository-wide baseline is now down to `14` legacy imports and `21`
   direct `ai()` users across `example`, `lib`, and `packages`
 - `example/03_advanced_features/README.md` now leads with stable snippets and
   treats HTTP wiring as an explicit compatibility boundary

@@ -33,8 +33,14 @@
   `performance_optimization.dart`)
 - [x] Rewrite `example/03_advanced_features/multi_modal.dart` onto stable
   prompt parts and shared media helpers
+- [x] Rewrite `example/03_advanced_features/custom_providers.dart` onto the
+  stable `LanguageModel` contract instead of `ChatCapability`
+- [x] Reframe `example/03_advanced_features/realtime_audio.dart` as explicit
+  ElevenLabs provider-owned appendix material without the broad legacy barrel
 - [x] Reframe `example/03_advanced_features/README.md` so stable snippets lead
   and HTTP wiring stays an explicit compatibility boundary
+- [x] Reduce `example/03_advanced_features` legacy residue to the three HTTP
+  configuration appendix files
 - [ ] Rewrite the highest-traffic example slices so modern APIs become the
   default copy-paste path
 - [ ] Write short task-oriented migration recipes for the most common builder

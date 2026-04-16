@@ -23,8 +23,8 @@ Stable multimodal prompts plus shared image, audio, and file helpers for
 composed media workflows.
 
 ### [custom_providers.dart](custom_providers.dart)
-Compatibility-oriented custom provider/capability example for testing and
-specialized integrations.
+Stable custom `LanguageModel` implementations and wrapper composition for
+testing, logging, caching, and proprietary backends.
 
 ### [performance_optimization.dart](performance_optimization.dart)
 Stable app-owned caching, batching, streaming, and memory patterns around
@@ -38,7 +38,8 @@ tracking.
 Stable semantic retrieval engine built on shared embedding models.
 
 ### [realtime_audio.dart](realtime_audio.dart)
-Compatibility-oriented real-time audio capability appendix.
+Provider-owned ElevenLabs realtime appendix plus app-owned session/event
+orchestration patterns.
 
 ### [http_configuration.dart](http_configuration.dart)
 Compatibility-oriented HTTP builder appendix for proxy, SSL, and custom

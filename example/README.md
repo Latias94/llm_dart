@@ -81,9 +81,9 @@ manually.
 - [reasoning_models.dart](03_advanced_features/reasoning_models.dart) - AI thinking processes
 - [multi_modal.dart](03_advanced_features/multi_modal.dart) - Stable multimodal prompts plus shared image, audio, and file helpers
 - [batch_processing.dart](03_advanced_features/batch_processing.dart) - Stable app-owned batch orchestration with concurrency, retry, and progress tracking
-- [realtime_audio.dart](03_advanced_features/realtime_audio.dart) - Compatibility-oriented realtime audio capability appendix
+- [realtime_audio.dart](03_advanced_features/realtime_audio.dart) - Provider-owned ElevenLabs realtime appendix plus app-owned session/event orchestration
 - [semantic_search.dart](03_advanced_features/semantic_search.dart) - Stable semantic retrieval engine built on shared embedding models
-- [custom_providers.dart](03_advanced_features/custom_providers.dart) - Compatibility-oriented custom provider/capability appendix for testing and specialized integrations
+- [custom_providers.dart](03_advanced_features/custom_providers.dart) - Stable custom `LanguageModel` implementations and wrapper composition
 - [performance_optimization.dart](03_advanced_features/performance_optimization.dart) - Stable app-owned caching, streaming, batching, and memory patterns
 - [http_configuration.dart](03_advanced_features/http_configuration.dart) - Compatibility-oriented HTTP builder appendix for proxy, SSL, and custom headers
 - [layered_http_config.dart](03_advanced_features/layered_http_config.dart) - Compatibility-oriented layered HTTP appendix with custom transport wiring

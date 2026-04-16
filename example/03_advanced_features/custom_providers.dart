@@ -1,571 +1,526 @@
 // ignore_for_file: avoid_print
+
+import 'dart:async';
 import 'dart:io';
-import 'dart:math';
-import 'package:llm_dart/legacy.dart';
 
-/// 🔧 Custom Providers - Build Your Own AI Providers
+import 'package:llm_dart/core.dart' as core;
+
+/// Custom language-model examples built on the stable `LanguageModel` contract.
 ///
-/// This example demonstrates how to create custom AI providers:
-/// - Implementing the ChatCapability interface
-/// - Adding custom functionality and behavior
-/// - Integration with existing LLM Dart patterns
-/// - Testing and validation strategies
-///
-/// Use cases for custom providers:
-/// - Mock providers for testing
-/// - Local model integration
-/// - Custom API wrappers
-/// - Specialized AI services
-void main() async {
-  print('🔧 Custom Providers - Build Your Own AI Providers\n');
+/// This example demonstrates:
+/// - implementing `LanguageModel` directly instead of the old `ChatCapability`
+/// - composing wrappers for logging and caching
+/// - simulating proprietary backends behind the shared text-call contract
+/// - keeping app/runtime code on `generateTextCall(...)` and `streamTextCall(...)`
+Future<void> main() async {
+  print('Stable custom language-model examples\n');
 
-  // Demonstrate different custom provider scenarios
-  await demonstrateMockProvider();
-  await demonstrateLoggingProvider();
-  await demonstrateCachingProvider();
-  await demonstrateCustomAPIProvider();
-  await demonstrateProviderChaining();
+  await _demonstrateMockModel();
+  await _demonstrateLoggingWrapper();
+  await _demonstrateCachingWrapper();
+  await _demonstrateCustomApiModel();
+  await _demonstrateModelChaining();
 
-  print('\n✅ Custom providers completed!');
+  print('Completed stable custom model examples.');
+  print('Implement shared model contracts for app/runtime integration.');
+  print('Keep provider-owned transport details behind the model boundary.');
 }
 
-/// Demonstrate a mock provider for testing
-Future<void> demonstrateMockProvider() async {
-  print('🎭 Mock Provider for Testing:\n');
+Future<void> _demonstrateMockModel() async {
+  print('Mock model for testing:');
+
+  final model = MockLanguageModel();
 
   try {
-    // Create mock provider
-    final mockProvider = MockChatProvider();
+    final result = await core.generateTextCall(
+      model: model,
+      prompt: [
+        core.UserPromptMessage.text('Hello, how are you?'),
+      ],
+    );
 
-    // Test basic chat
-    final response =
-        await mockProvider.chat([ChatMessage.user('Hello, how are you?')]);
+    print('  User: Hello, how are you?');
+    print('  Mock model: ${result.text}');
 
-    print('   User: Hello, how are you?');
-    print('   🤖 Mock AI: ${response.text}');
+    print('  Streaming test:');
+    final stream = core.streamTextCall(
+      model: model,
+      prompt: [
+        core.UserPromptMessage.text('Count to five'),
+      ],
+    );
 
-    // Test streaming
-    print('\n   Streaming test:');
-    print('   🤖 Mock AI: ');
-
-    await for (final event
-        in mockProvider.chatStream([ChatMessage.user('Count to 5')])) {
+    stdout.write('  Stream: ');
+    await for (final event in stream) {
       switch (event) {
-        case TextDeltaEvent(delta: final delta):
+        case core.TextDeltaEvent(:final delta):
           stdout.write(delta);
-          break;
-        case CompletionEvent():
-          print('\n');
-          break;
-        case ErrorEvent(error: final error):
-          print('Error: $error');
-          break;
-        case ThinkingDeltaEvent():
-        case ToolCallDeltaEvent():
+        case core.FinishEvent():
+          stdout.writeln();
+        default:
           break;
       }
     }
-
-    print('   💡 Mock Provider Benefits:');
-    print('      • Predictable responses for testing');
-    print('      • No API costs during development');
-    print('      • Fast execution for unit tests');
-    print('      • Controllable behavior and errors');
-    print('   ✅ Mock provider demonstration successful\n');
-  } catch (e) {
-    print('   ❌ Mock provider failed: $e\n');
+  } catch (error) {
+    print('  Failed: $error');
   }
+
+  print('');
 }
 
-/// Demonstrate a logging provider wrapper
-Future<void> demonstrateLoggingProvider() async {
-  print('📝 Logging Provider Wrapper:\n');
+Future<void> _demonstrateLoggingWrapper() async {
+  print('Logging wrapper:');
+
+  final model = LoggingLanguageModel(
+    MockLanguageModel(),
+    logSink: stdout.writeln,
+  );
 
   try {
-    // Create base provider (mock for demo)
-    final baseProvider = MockChatProvider();
-
-    // Wrap with logging
-    final loggingProvider = LoggingChatProvider(baseProvider);
-
-    // Test with logging
-    final response = await loggingProvider
-        .chat([ChatMessage.user('What is artificial intelligence?')]);
-
-    print('   User: What is artificial intelligence?');
-    print('   🤖 AI: ${response.text}');
-
-    print('\n   💡 Logging Provider Features:');
-    print('      • Automatic request/response logging');
-    print('      • Performance metrics collection');
-    print('      • Error tracking and debugging');
-    print('      • Transparent wrapper pattern');
-    print('   ✅ Logging provider demonstration successful\n');
-  } catch (e) {
-    print('   ❌ Logging provider failed: $e\n');
-  }
-}
-
-/// Demonstrate a caching provider
-Future<void> demonstrateCachingProvider() async {
-  print('💾 Caching Provider:\n');
-
-  try {
-    // Create base provider
-    final baseProvider = MockChatProvider();
-
-    // Wrap with caching
-    final cachingProvider = CachingChatProvider(baseProvider);
-
-    final question = 'What is the capital of France?';
-
-    // First call - cache miss
-    print('   First call (cache miss):');
-    final stopwatch1 = Stopwatch()..start();
-    final response1 = await cachingProvider.chat([ChatMessage.user(question)]);
-    stopwatch1.stop();
-    print('   🤖 AI: ${response1.text}');
-    print('   ⏱️  Time: ${stopwatch1.elapsedMilliseconds}ms');
-
-    // Second call - cache hit
-    print('\n   Second call (cache hit):');
-    final stopwatch2 = Stopwatch()..start();
-    final response2 = await cachingProvider.chat([ChatMessage.user(question)]);
-    stopwatch2.stop();
-    print('   🤖 AI: ${response2.text}');
-    print('   ⏱️  Time: ${stopwatch2.elapsedMilliseconds}ms');
-
-    print('\n   💡 Caching Provider Benefits:');
-    print('      • Faster responses for repeated queries');
-    print('      • Reduced API costs');
-    print('      • Better user experience');
-    print('      • Configurable cache policies');
-    print('   ✅ Caching provider demonstration successful\n');
-  } catch (e) {
-    print('   ❌ Caching provider failed: $e\n');
-  }
-}
-
-/// Demonstrate custom API provider
-Future<void> demonstrateCustomAPIProvider() async {
-  print('🌐 Custom API Provider:\n');
-
-  try {
-    // Create custom API provider
-    final customProvider = CustomAPIProvider(
-      baseUrl: 'https://api.example.com',
-      apiKey: 'custom-api-key',
-      model: 'custom-model-v1',
+    final result = await core.generateTextCall(
+      model: model,
+      prompt: [
+        core.UserPromptMessage.text('What is artificial intelligence?'),
+      ],
+      options: const core.GenerateTextOptions(
+        maxOutputTokens: 120,
+      ),
     );
 
-    // Test custom provider
-    final response = await customProvider
-        .chat([ChatMessage.user('Hello from custom provider!')]);
-
-    print('   User: Hello from custom provider!');
-    print('   🤖 Custom AI: ${response.text}');
-
-    print('\n   💡 Custom API Provider Features:');
-    print('      • Integration with proprietary APIs');
-    print('      • Custom authentication methods');
-    print('      • Specialized model configurations');
-    print('      • Domain-specific optimizations');
-    print('   ✅ Custom API provider demonstration successful\n');
-  } catch (e) {
-    print('   ❌ Custom API provider failed: $e\n');
+    print('  Final answer: ${result.text}');
+  } catch (error) {
+    print('  Failed: $error');
   }
+
+  print('');
 }
 
-/// Demonstrate provider chaining
-Future<void> demonstrateProviderChaining() async {
-  print('🔗 Provider Chaining:\n');
+Future<void> _demonstrateCachingWrapper() async {
+  print('Caching wrapper:');
+
+  final model = CachingLanguageModel(
+    MockLanguageModel(),
+    logSink: stdout.writeln,
+  );
+  const prompt = 'What is the capital of France?';
 
   try {
-    // Create base provider
-    final baseProvider = MockChatProvider();
+    final first = await _runTextCall(
+      model: model,
+      prompt: prompt,
+    );
+    print('  First call: ${first.text} (${first.duration.inMilliseconds}ms)');
 
-    // Chain multiple wrappers
-    final chainedProvider =
-        LoggingChatProvider(CachingChatProvider(baseProvider));
+    final second = await _runTextCall(
+      model: model,
+      prompt: prompt,
+    );
+    print('  Second call: ${second.text} (${second.duration.inMilliseconds}ms)');
 
-    // Test chained provider
-    final response = await chainedProvider
-        .chat([ChatMessage.user('Test chained providers')]);
+    final stream = core.streamTextCall(
+      model: model,
+      prompt: [
+        core.UserPromptMessage.text(prompt),
+      ],
+    );
 
-    print('   User: Test chained providers');
-    print('   🤖 Chained AI: ${response.text}');
-
-    print('\n   💡 Provider Chaining Benefits:');
-    print('      • Composable functionality');
-    print('      • Separation of concerns');
-    print('      • Reusable components');
-    print('      • Flexible architecture');
-    print('   ✅ Provider chaining demonstration successful\n');
-  } catch (e) {
-    print('   ❌ Provider chaining failed: $e\n');
+    stdout.write('  Cached stream: ');
+    await for (final event in stream) {
+      switch (event) {
+        case core.TextDeltaEvent(:final delta):
+          stdout.write(delta);
+        case core.FinishEvent():
+          stdout.writeln();
+        default:
+          break;
+      }
+    }
+  } catch (error) {
+    print('  Failed: $error');
   }
+
+  print('');
 }
 
-/// Mock chat provider for testing
-class MockChatProvider implements ChatCapability {
-  final Random _random = Random();
+Future<void> _demonstrateCustomApiModel() async {
+  print('Custom API model:');
+
+  final model = CustomApiLanguageModel(
+    baseUrl: 'https://api.example.com',
+    apiKey: 'custom-api-key',
+    modelId: 'custom-model-v1',
+  );
+
+  try {
+    final result = await core.generateTextCall(
+      model: model,
+      prompt: [
+        core.UserPromptMessage.text('Hello from a proprietary backend!'),
+      ],
+      options: const core.GenerateTextOptions(
+        temperature: 0.2,
+        maxOutputTokens: 100,
+      ),
+    );
+
+    print('  Response: ${result.text}');
+    print('  Reported model id: ${result.responseModelId ?? model.modelId}');
+  } catch (error) {
+    print('  Failed: $error');
+  }
+
+  print('');
+}
+
+Future<void> _demonstrateModelChaining() async {
+  print('Model chaining:');
+
+  final chainedModel = LoggingLanguageModel(
+    CachingLanguageModel(
+      CustomApiLanguageModel(
+        baseUrl: 'https://api.example.com',
+        apiKey: 'custom-api-key',
+        modelId: 'custom-model-v2',
+      ),
+      logSink: stdout.writeln,
+    ),
+    logSink: stdout.writeln,
+  );
+
+  try {
+    final first = await _runTextCall(
+      model: chainedModel,
+      prompt: 'Summarize why composable wrappers matter.',
+    );
+    print('  First chained response: ${first.text}');
+
+    final second = await _runTextCall(
+      model: chainedModel,
+      prompt: 'Summarize why composable wrappers matter.',
+    );
+    print('  Second chained response: ${second.text}');
+  } catch (error) {
+    print('  Failed: $error');
+  }
+
+  print('');
+}
+
+Future<_RunResult> _runTextCall({
+  required core.LanguageModel model,
+  required String prompt,
+  core.GenerateTextOptions options = const core.GenerateTextOptions(),
+}) async {
+  final stopwatch = Stopwatch()..start();
+  final result = await core.generateTextCall(
+    model: model,
+    prompt: [
+      core.UserPromptMessage.text(prompt),
+    ],
+    options: options,
+  );
+  stopwatch.stop();
+
+  return _RunResult(
+    text: result.text,
+    duration: stopwatch.elapsed,
+  );
+}
+
+final class MockLanguageModel implements core.LanguageModel {
+  @override
+  String get providerId => 'mock';
 
   @override
-  Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
-    TransportCancellation? cancelToken,
-  }) async {
-    // Simulate API delay
-    await Future.delayed(Duration(milliseconds: 100 + _random.nextInt(200)));
+  String get modelId => 'mock-chat-model';
 
-    final userMessage = messages.lastWhere(
-      (m) => m.role == ChatRole.user,
-      orElse: () => ChatMessage.user(''),
-    );
+  @override
+  Future<core.GenerateTextResult> generate(
+    core.GenerateTextRequest request,
+  ) async {
+    await Future<void>.delayed(const Duration(milliseconds: 120));
+    final text = _responseForPrompt(_promptText(request.prompt));
 
-    // Generate mock response based on user input
-    final response = _generateMockResponse(userMessage.content.toString());
-
-    return MockChatResponse(
-      text: response,
-      usage: MockUsage(
-        promptTokens: 10 + _random.nextInt(20),
-        completionTokens: 20 + _random.nextInt(30),
+    return core.GenerateTextResult(
+      content: [
+        core.TextContentPart(text),
+      ],
+      finishReason: core.FinishReason.stop,
+      responseModelId: modelId,
+      usage: core.UsageStats(
+        inputTokens: 24,
+        outputTokens: text.length ~/ 4,
+        totalTokens: 24 + text.length ~/ 4,
       ),
     );
   }
 
   @override
-  Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
-    List<Tool>? tools,
-    TransportCancellation? cancelToken,
-  }) async* {
-    final userMessage = messages.lastWhere(
-      (m) => m.role == ChatRole.user,
-      orElse: () => ChatMessage.user(''),
-    );
+  Stream<core.TextStreamEvent> stream(
+    core.GenerateTextRequest request,
+  ) async* {
+    final text = _responseForPrompt(_promptText(request.prompt));
+    yield core.StartEvent();
+    yield const core.TextStartEvent(id: 'text-1');
 
-    final response = _generateMockResponse(userMessage.content.toString());
-    final words = response.split(' ');
-
-    // Stream words with delays
-    for (final word in words) {
-      await Future.delayed(Duration(milliseconds: 50 + _random.nextInt(100)));
-      yield TextDeltaEvent('$word ');
+    for (final token in text.split(' ')) {
+      await Future<void>.delayed(const Duration(milliseconds: 35));
+      yield core.TextDeltaEvent(
+        id: 'text-1',
+        delta: '$token ',
+      );
     }
 
-    yield CompletionEvent(MockChatResponse(
-      text: response,
-      usage: MockUsage(
-        promptTokens: 10 + _random.nextInt(20),
-        completionTokens: words.length,
+    yield const core.TextEndEvent(id: 'text-1');
+    yield core.FinishEvent(
+      finishReason: core.FinishReason.stop,
+      usage: core.UsageStats(
+        inputTokens: 24,
+        outputTokens: text.length ~/ 4,
+        totalTokens: 24 + text.length ~/ 4,
       ),
-    ));
-  }
-
-  @override
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
-    TransportCancellation? cancelToken,
-  }) async {
-    return chat(messages, cancelToken: cancelToken); // Simple implementation
-  }
-
-  @override
-  Future<List<ChatMessage>?> memoryContents() async => null;
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) async {
-    return 'Mock summary of ${messages.length} messages';
-  }
-
-  String _generateMockResponse(String input) {
-    final responses = [
-      'This is a mock response to: $input',
-      'Mock AI here! You said: $input',
-      'Simulated response for testing purposes.',
-      'Hello! This is a predictable mock response.',
-      'Mock provider responding to your message.',
-    ];
-    return responses[_random.nextInt(responses.length)];
+    );
   }
 }
 
-/// Logging wrapper provider
-class LoggingChatProvider implements ChatCapability {
-  final ChatCapability _baseProvider;
+final class LoggingLanguageModel implements core.LanguageModel {
+  final core.LanguageModel _baseModel;
+  final void Function(String message) _logSink;
 
-  LoggingChatProvider(this._baseProvider);
+  LoggingLanguageModel(
+    this._baseModel, {
+    required void Function(String message) logSink,
+  }) : _logSink = logSink;
 
   @override
-  Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
-    TransportCancellation? cancelToken,
-  }) async {
-    final stopwatch = Stopwatch()..start();
+  String get providerId => _baseModel.providerId;
 
-    print('   📝 [LOG] Starting chat request with ${messages.length} messages');
+  @override
+  String get modelId => _baseModel.modelId;
+
+  @override
+  Future<core.GenerateTextResult> generate(
+    core.GenerateTextRequest request,
+  ) async {
+    final stopwatch = Stopwatch()..start();
+    _logSink(
+      '  [log] generate start '
+      'provider=$providerId model=$modelId prompt="${_promptText(request.prompt)}"',
+    );
 
     try {
-      final response =
-          await _baseProvider.chat(messages, cancelToken: cancelToken);
+      final result = await _baseModel.generate(request);
       stopwatch.stop();
-
-      print('   📝 [LOG] Chat completed in ${stopwatch.elapsedMilliseconds}ms');
-      if (response.usage != null) {
-        print('   📝 [LOG] Token usage: ${response.usage!.totalTokens}');
-      }
-
-      return response;
-    } catch (e) {
+      _logSink(
+        '  [log] generate done ${stopwatch.elapsedMilliseconds}ms '
+        'tokens=${result.usage?.totalTokens ?? 'unknown'}',
+      );
+      return result;
+    } catch (error) {
       stopwatch.stop();
-      print(
-          '   📝 [LOG] Chat failed after ${stopwatch.elapsedMilliseconds}ms: $e');
+      _logSink(
+        '  [log] generate failed ${stopwatch.elapsedMilliseconds}ms error=$error',
+      );
       rethrow;
     }
   }
 
   @override
-  Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
-    List<Tool>? tools,
-    TransportCancellation? cancelToken,
-  }) async* {
-    print('   📝 [LOG] Starting streaming chat request');
+  Stream<core.TextStreamEvent> stream(
+    core.GenerateTextRequest request,
+  ) async* {
+    _logSink('  [log] stream start provider=$providerId model=$modelId');
 
-    await for (final event in _baseProvider.chatStream(messages,
-        tools: tools, cancelToken: cancelToken)) {
+    await for (final event in _baseModel.stream(request)) {
       switch (event) {
-        case TextDeltaEvent():
-          print('   📝 [LOG] Text delta received');
-          break;
-        case CompletionEvent():
-          print('   📝 [LOG] Stream completed');
-          break;
-        case ErrorEvent():
-          print('   📝 [LOG] Stream error occurred');
-          break;
-        case ThinkingDeltaEvent():
-        case ToolCallDeltaEvent():
+        case core.TextDeltaEvent():
+          _logSink('  [log] stream text delta');
+        case core.FinishEvent(:final usage):
+          _logSink(
+            '  [log] stream finish tokens=${usage?.totalTokens ?? 'unknown'}',
+          );
+        default:
           break;
       }
       yield event;
     }
   }
-
-  @override
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
-    TransportCancellation? cancelToken,
-  }) async {
-    print('   📝 [LOG] Chat with ${tools?.length ?? 0} tools');
-    return _baseProvider.chatWithTools(messages, tools,
-        cancelToken: cancelToken);
-  }
-
-  @override
-  Future<List<ChatMessage>?> memoryContents() async {
-    print('   📝 [LOG] Getting memory contents');
-    return _baseProvider.memoryContents();
-  }
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) async {
-    print('   📝 [LOG] Summarizing ${messages.length} messages');
-    return _baseProvider.summarizeHistory(messages);
-  }
 }
 
-/// Caching wrapper provider
-class CachingChatProvider implements ChatCapability {
-  final ChatCapability _baseProvider;
-  final Map<String, ChatResponse> _cache = {};
+final class CachingLanguageModel implements core.LanguageModel {
+  final core.LanguageModel _baseModel;
+  final void Function(String message)? _logSink;
+  final Map<String, core.GenerateTextResult> _cache =
+      <String, core.GenerateTextResult>{};
 
-  CachingChatProvider(this._baseProvider);
+  CachingLanguageModel(
+    this._baseModel, {
+    void Function(String message)? logSink,
+  }) : _logSink = logSink;
 
   @override
-  Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
-    TransportCancellation? cancelToken,
-  }) async {
-    final cacheKey = _generateCacheKey(messages);
+  String get providerId => _baseModel.providerId;
 
-    if (_cache.containsKey(cacheKey)) {
-      print('   💾 [CACHE] Cache hit for request');
-      return _cache[cacheKey]!;
+  @override
+  String get modelId => _baseModel.modelId;
+
+  @override
+  Future<core.GenerateTextResult> generate(
+    core.GenerateTextRequest request,
+  ) async {
+    final cacheKey = _cacheKey(request);
+    final cached = _cache[cacheKey];
+    if (cached != null) {
+      _logSink?.call('  [cache] hit for "$cacheKey"');
+      return cached;
     }
 
-    print('   💾 [CACHE] Cache miss, calling base provider');
-    final response =
-        await _baseProvider.chat(messages, cancelToken: cancelToken);
-    _cache[cacheKey] = response;
-
-    return response;
+    _logSink?.call('  [cache] miss for "$cacheKey"');
+    final result = await _baseModel.generate(request);
+    _cache[cacheKey] = result;
+    return result;
   }
 
   @override
-  Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
-    List<Tool>? tools,
-    TransportCancellation? cancelToken,
-  }) {
-    // For simplicity, streaming bypasses cache
-    return _baseProvider.chatStream(messages,
-        tools: tools, cancelToken: cancelToken);
+  Stream<core.TextStreamEvent> stream(
+    core.GenerateTextRequest request,
+  ) async* {
+    final cacheKey = _cacheKey(request);
+    final cached = _cache[cacheKey];
+    if (cached != null) {
+      _logSink?.call('  [cache] stream replay for "$cacheKey"');
+      yield core.StartEvent();
+      yield const core.TextStartEvent(id: 'cached-text');
+      yield core.TextDeltaEvent(
+        id: 'cached-text',
+        delta: cached.text,
+      );
+      yield const core.TextEndEvent(id: 'cached-text');
+      yield core.FinishEvent(
+        finishReason: cached.finishReason,
+        rawFinishReason: cached.rawFinishReason,
+        usage: cached.usage,
+        providerMetadata: cached.providerMetadata,
+      );
+      return;
+    }
+
+    yield* _baseModel.stream(request);
   }
 
-  @override
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
-    TransportCancellation? cancelToken,
-  }) {
-    // Tools bypass cache for safety
-    return _baseProvider.chatWithTools(messages, tools,
-        cancelToken: cancelToken);
-  }
-
-  @override
-  Future<List<ChatMessage>?> memoryContents() async {
-    return _baseProvider.memoryContents();
-  }
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) async {
-    return _baseProvider.summarizeHistory(messages);
-  }
-
-  String _generateCacheKey(List<ChatMessage> messages) {
-    return messages.map((m) => '${m.role}:${m.content}').join('|');
+  String _cacheKey(core.GenerateTextRequest request) {
+    return [
+      for (final message in request.prompt) '${message.role.name}:${_messageText(message)}',
+      'max=${request.options.maxOutputTokens}',
+      'temp=${request.options.temperature}',
+    ].join('|');
   }
 }
 
-/// Custom API provider example
-class CustomAPIProvider implements ChatCapability {
+final class CustomApiLanguageModel implements core.LanguageModel {
   final String baseUrl;
   final String apiKey;
-  final String model;
+  @override
+  final String modelId;
 
-  CustomAPIProvider({
+  CustomApiLanguageModel({
     required this.baseUrl,
     required this.apiKey,
-    required this.model,
+    required this.modelId,
   });
 
   @override
-  Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
-    TransportCancellation? cancelToken,
-  }) async {
-    // Simulate custom API call
-    await Future.delayed(Duration(milliseconds: 300));
+  String get providerId => 'custom-api';
 
-    return MockChatResponse(
-      text: 'Response from custom API at $baseUrl using model $model',
-      usage: MockUsage(promptTokens: 15, completionTokens: 25),
+  @override
+  Future<core.GenerateTextResult> generate(
+    core.GenerateTextRequest request,
+  ) async {
+    await Future<void>.delayed(const Duration(milliseconds: 220));
+    final prompt = _promptText(request.prompt);
+    final text =
+        'Custom backend at $baseUrl handled "$prompt" with model $modelId.';
+
+    return core.GenerateTextResult(
+      content: [
+        core.TextContentPart(text),
+      ],
+      finishReason: core.FinishReason.stop,
+      responseModelId: modelId,
+      usage: core.UsageStats(
+        inputTokens: 36,
+        outputTokens: text.length ~/ 4,
+        totalTokens: 36 + text.length ~/ 4,
+      ),
     );
   }
 
   @override
-  Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
-    List<Tool>? tools,
-    TransportCancellation? cancelToken,
-  }) async* {
-    final response = await chat(messages, cancelToken: cancelToken);
-    yield TextDeltaEvent(response.text ?? '');
-    yield CompletionEvent(response);
-  }
-
-  @override
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
-    TransportCancellation? cancelToken,
-  }) {
-    return chat(messages, cancelToken: cancelToken);
-  }
-
-  @override
-  Future<List<ChatMessage>?> memoryContents() async => null;
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) async {
-    return 'Custom API summary of ${messages.length} messages';
+  Stream<core.TextStreamEvent> stream(
+    core.GenerateTextRequest request,
+  ) async* {
+    final result = await generate(request);
+    yield core.StartEvent();
+    yield const core.TextStartEvent(id: 'custom-text');
+    yield core.TextDeltaEvent(
+      id: 'custom-text',
+      delta: result.text,
+    );
+    yield const core.TextEndEvent(id: 'custom-text');
+    yield core.FinishEvent(
+      finishReason: result.finishReason,
+      usage: result.usage,
+    );
   }
 }
 
-/// Mock implementations for testing
-class MockChatResponse implements ChatResponse {
-  @override
-  final String? text;
+String _promptText(List<core.PromptMessage> prompt) {
+  return prompt.map(_messageText).join('\n');
+}
 
-  @override
-  final UsageInfo? usage;
+String _messageText(core.PromptMessage message) {
+  return message.parts.map((part) {
+    return switch (part) {
+      core.TextPromptPart(:final text) => text,
+      core.ImagePromptPart(:final uri, :final mediaType) =>
+        '[image ${uri ?? mediaType}]',
+      core.FilePromptPart(:final filename, :final mediaType) =>
+        '[file ${filename ?? mediaType}]',
+      core.ReasoningPromptPart(:final text) => '[reasoning $text]',
+      core.ReasoningFilePromptPart(:final filename, :final mediaType) =>
+        '[reasoning-file ${filename ?? mediaType}]',
+      core.ToolCallPromptPart(:final toolName) => '[tool-call $toolName]',
+      core.ToolResultPromptPart(:final toolName) => '[tool-result $toolName]',
+      core.ToolApprovalRequestPromptPart(:final toolCallId) =>
+        '[approval-request $toolCallId]',
+      core.ToolApprovalResponsePromptPart(:final toolCallId, :final approved) =>
+        '[approval-response $toolCallId:$approved]',
+      core.CustomPromptPart(:final kind) => '[custom $kind]',
+    };
+  }).join(' ');
+}
 
-  @override
-  final String? thinking;
+String _responseForPrompt(String prompt) {
+  final normalized = prompt.toLowerCase();
+  if (normalized.contains('count to five')) {
+    return 'One two three four five.';
+  }
+  if (normalized.contains('artificial intelligence')) {
+    return 'Artificial intelligence is software that performs tasks normally associated with human reasoning and pattern recognition.';
+  }
+  if (normalized.contains('capital of france')) {
+    return 'Paris is the capital of France.';
+  }
 
-  @override
-  final List<ToolCall>? toolCalls;
+  return 'Mock model response for: $prompt';
+}
 
-  MockChatResponse({
+final class _RunResult {
+  final String text;
+  final Duration duration;
+
+  const _RunResult({
     required this.text,
-    this.usage,
-    this.thinking,
-    this.toolCalls,
+    required this.duration,
   });
 }
-
-class MockUsage extends UsageInfo {
-  MockUsage({
-    required int promptTokens,
-    required int completionTokens,
-  }) : super(
-          promptTokens: promptTokens,
-          completionTokens: completionTokens,
-          totalTokens: promptTokens + completionTokens,
-        );
-}
-
-/// 🎯 Key Custom Provider Concepts Summary:
-///
-/// Provider Interface:
-/// - ChatCapability: Core interface to implement
-/// - chat(): Single request/response
-/// - chatStream(): Streaming responses
-/// - chatWithTools(): Tool-enabled chat
-///
-/// Implementation Patterns:
-/// - Mock providers: Testing and development
-/// - Wrapper providers: Add functionality to existing providers
-/// - Custom API providers: Integrate proprietary services
-/// - Chained providers: Compose multiple behaviors
-///
-/// Common Use Cases:
-/// - Testing and mocking
-/// - Logging and monitoring
-/// - Caching and optimization
-/// - Custom API integration
-/// - Rate limiting and throttling
-///
-/// Best Practices:
-/// 1. Implement all required interface methods
-/// 2. Handle errors gracefully
-/// 3. Maintain consistent behavior
-/// 4. Document custom functionality
-/// 5. Test thoroughly with edge cases
-///
-/// Advanced Patterns:
-/// - Provider factories for configuration
-/// - Async initialization and cleanup
-/// - Health checks and monitoring
-/// - Fallback and retry logic
-///
-/// Next Steps:
-/// - performance_optimization.dart: Production optimization
-/// - ../02_core_features/error_handling.dart: Robust error handling
-/// - ../06_integration/: Production integration patterns
