@@ -26,17 +26,19 @@ For new code, prefer:
 - [audio_capabilities.dart](audio_capabilities.dart)
 - [gpt5_features.dart](gpt5_features.dart)
 
-### Transitional or Compatibility-Oriented Source Files
+### Provider-Owned Boundary Appendix Files
 
 - [responses_api.dart](responses_api.dart)
 - [build_openai_responses_demo.dart](build_openai_responses_demo.dart)
 
 These two files are intentionally boundary-oriented. They now explain when
 stable `chatModel(...)` usage is sufficient and when raw OpenAI response
-lifecycle APIs still require the provider-specific compatibility surface.
+lifecycle APIs still require the provider-specific compatibility surface in
+`package:llm_dart/providers/openai/openai.dart`.
 
-The stable model surfaces already exist even where some provider-specific
-example files still document older builder flows.
+They are no longer meant to teach the broad `legacy.dart` barrel as the
+default path. The old `buildOpenAIResponses()` helper is now framed as frozen
+migration ergonomics, not as the main architecture.
 
 ## Setup
 
@@ -225,8 +227,9 @@ void inspectOpenAIMessage(core.ChatUiMessage message) {
 ### Still Compatibility-Oriented
 
 - `buildAssistant()` and the legacy assistants surface
-- direct `buildOpenAIResponses()` convenience examples
+- the frozen `buildOpenAIResponses()` convenience helper
 - raw response lifecycle helpers that expose provider-specific response objects
+  and response IDs
 
 Those compatibility paths still work, but they should not be treated as the
 target architecture for new Flutter or app-facing integrations.

@@ -1,6 +1,17 @@
 # MCP Integration Examples
 
-MCP (Model Context Protocol) integration examples for llm_dart. MCP enables LLMs to interact with external tools through standardized protocols.
+MCP (Model Context Protocol) examples for `llm_dart`.
+
+This standalone example package now follows a stable-first integration shape:
+
+1. create a model with `AI.openai(...).chatModel(...)`
+2. discover MCP tools through `mcp_dart`
+3. convert them into shared `FunctionToolDefinition`s
+4. let `core.runTextGeneration(...)` or `core.streamTextRun(...)` handle the
+   tool continuation loop
+
+MCP-specific schema conversion and result normalization now live in a dedicated
+bridge instead of being reimplemented inside every example.
 
 ## Quick Start
 
@@ -11,60 +22,84 @@ cd example/06_mcp_integration
 # Install dependencies
 dart pub get
 
-# Start with core concepts
+# Start with the concept walkthrough
 dart run mcp_concept_demo.dart
 
-# Test stdio integration
-dart run stdio_examples/server.dart  # Terminal 1
-dart run stdio_examples/llm_client.dart  # Terminal 2
+# stdio MCP
+dart run stdio_examples/client.dart
+dart run stdio_examples/llm_client.dart
 
-# Test HTTP integration
-dart run http_examples/server.dart  # Terminal 1
-dart run http_examples/llm_client.dart  # Terminal 2
+# HTTP MCP
+dart run http_examples/server.dart
+dart run http_examples/client.dart
+dart run http_examples/llm_client.dart
+dart run http_examples/simple_stream_client.dart
 ```
 
 ## Examples
 
 | File | Description | API Key Required |
 |------|-------------|------------------|
-| `mcp_concept_demo.dart` | Core MCP concepts | ❌ |
-| `stdio_examples/server.dart` | stdio MCP server | ❌ |
-| `stdio_examples/llm_client.dart` | LLM + stdio MCP | ⚠️ Optional |
-| `http_examples/server.dart` | HTTP MCP server | ❌ |
-| `http_examples/llm_client.dart` | LLM + HTTP MCP | ⚠️ Optional |
-| `test_all_examples.dart` | Automated tests | ❌ |
+| `mcp_concept_demo.dart` | Concept walkthrough and architecture notes | ❌ |
+| `shared/mcp_tool_bridge.dart` | Shared bridge from MCP tools/results to `llm_dart/core.dart` | ❌ |
+| `stdio_examples/client.dart` | Direct stdio MCP client without an LLM | ❌ |
+| `stdio_examples/llm_client.dart` | Stable `runTextGeneration(...)` + MCP stdio tools | ✅ |
+| `http_examples/client.dart` | Direct HTTP MCP client without an LLM | ❌ |
+| `http_examples/llm_client.dart` | Stable `runTextGeneration(...)` + HTTP MCP tools | ✅ |
+| `http_examples/simple_stream_client.dart` | Stable `streamTextRun(...)` with MCP tool events | ✅ |
 
-## API Key Setup (Optional)
+## Stable Integration Shape
 
-```bash
-# For real LLM integration (optional - examples work without API keys)
-export OPENAI_API_KEY="your-key-here"
-export ANTHROPIC_API_KEY="sk-ant-your-key-here"
-```
-
-## Architecture
-
-```
-LLM Provider ◄──► llm_dart Tool System ◄──► MCP Client ◄──► MCP Server
-(OpenAI, etc)                                (mcp_dart)      (Tools/Data)
+```text
+AI facade / LanguageModel
+        │
+        ▼
+llm_dart core runners
+runTextGeneration / streamTextRun
+        │
+        ▼
+shared/mcp_tool_bridge.dart
+schema bridge + function tool executor
+        │
+        ▼
+mcp_dart client / transport
+        │
+        ▼
+MCP server tools
 ```
 
 ## Key Files
 
-- `shared/mcp_tool_bridge.dart` - Converts MCP tools to llm_dart format
-- `stdio_examples/` - stdio transport examples
-- `http_examples/` - HTTP transport examples
+- `shared/mcp_tool_bridge.dart`
+  - converts `mcp_dart` tool definitions to shared tool schemas
+  - parses model-emitted tool input into MCP call arguments
+  - normalizes `CallToolResult` into shared tool outputs
+- `stdio_examples/llm_client.dart`
+  - shows non-streaming tool continuation on `core.runTextGeneration(...)`
+- `http_examples/llm_client.dart`
+  - keeps HTTP session handling and SSE notifications transport-owned
+- `http_examples/simple_stream_client.dart`
+  - shows the shared streaming event model:
+    `TextDeltaEvent`, `ToolInputStartEvent`, `ToolCallEvent`, `FinishEvent`
+
+## API Key Setup
+
+```bash
+export OPENAI_API_KEY="your-key-here"
+```
+
+The direct MCP client examples do not need an API key.
 
 ## Troubleshooting
 
-### Common Issues
-
 - **Package not found**: Run `dart pub get` inside `example/06_mcp_integration`
-- **API key errors**: Examples work without API keys (test mode)
-- **Connection failed**: Check if MCP server is running
-- **No tool calls**: Try more explicit requests like "Use the calculate tool to compute 15 * 23"
+- **LLM request failed**: Set a valid `OPENAI_API_KEY`
+- **Connection failed**: Check whether the MCP server is already running
+- **No tool call happened**: Use prompts that explicitly require tool usage
+- **Streaming output looks incomplete**: Check the tool-call event log before
+  assuming the model failed
 
-### Debug Mode
+## Debug Mode
 
 ```dart
 import 'package:llm_dart/transport.dart' show Level, Logger;
@@ -74,14 +109,6 @@ Logger.root.onRecord.listen((record) {
   print('${record.level.name}: ${record.time}: ${record.message}');
 });
 ```
-
-## Use Cases
-
-- **File Operations**: Read, write, search files through MCP filesystem servers
-- **Database Access**: Query databases through MCP database servers
-- **API Integration**: Call external APIs through MCP API servers
-- **System Tools**: Execute system commands through MCP system servers
-- **Custom Tools**: Create domain-specific tools with MCP servers
 
 ## Resources
 

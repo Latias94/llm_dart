@@ -126,14 +126,62 @@ Current status:
 - `example/04_providers/ollama/advanced_features.dart` and
   `thinking_example.dart` now also use the modern `llm_dart_community`
   surface plus `OllamaGenerateTextOptions` instead of the legacy builder shell
+- `example/04_providers/others/openai_compatible.dart` now also uses stable
+  OpenAI-family profile facades, shared `generateTextCall(...)`, and explicit
+  provider-owned extension points instead of `legacy.dart` plus builder-era
+  preset helpers
+- `example/04_providers/openai/responses_api.dart` and
+  `build_openai_responses_demo.dart` now also keep stable generation on
+  `AI.openai(...).chatModel(...)` and narrow raw response lifecycle examples to
+  the provider-owned OpenAI compatibility surface instead of the broad
+  `legacy.dart` barrel
+- `example/04_providers/anthropic/file_handling.dart` now also avoids the
+  broad `legacy.dart` barrel and uses focused Anthropic/chat/file imports while
+  keeping provider-owned file lifecycle flows explicit
+- `example/04_providers/google/google_tts_example.dart` now also avoids
+  `legacy.dart` and `ai()` and teaches stable one-shot speech through
+  `AI.google(...).speechModel(...)` while keeping streamed PCM output and voice
+  discovery on the compatibility appendix
+- `example/04_providers/elevenlabs/audio_capabilities.dart` now also avoids
+  `legacy.dart` and `ai()` and teaches shared `llm_dart_community`
+  speech/transcription models for stable app-facing media flows while keeping
+  provider-owned voice catalogs, convenience helpers, streaming, and realtime
+  boundary behavior explicit
 - the ElevenLabs and Ollama provider READMEs now lead with community-package
   modern surfaces and use provider-specific entrypoints for compatibility
   boundaries instead of direct `legacy.dart` snippets
-- the scoped code baseline across `example`, `lib`, and `packages` is now
-  `13` Dart files with `legacy.dart` imports and `13` Dart files with direct
-  `ai()` usage
+- `example/04_providers/others/README.md` now also documents stable profile
+  facades plus explicit custom-compatible endpoint wiring instead of a broad
+  transitional OpenAI-compatible bucket
+- `example/04_providers/openai/README.md` now also frames
+  `buildOpenAIResponses()` as frozen migration ergonomics rather than as the
+  target architecture
+- the Google and ElevenLabs provider READMEs now also document stable-first
+  example boundaries plus explicit provider-owned appendices
+- `example/06_mcp_integration` now also uses a dedicated MCP bridge plus the
+  shared `runTextGeneration(...)` / `streamTextRun(...)` runners instead of
+  the legacy builder shell and hand-written tool replay loops
+- `example/01_getting_started/basic_configuration.dart` and
+  `example/02_core_features/capability_detection.dart` now also avoid the
+  broad `legacy.dart` barrel through focused public imports
+- the meaningful example baseline is now `2` files with actual
+  `legacy.dart` imports and `2` files with direct `ai()` usage
+- the first task-oriented migration recipe set is now written down in
+  `05-task-oriented-migration-recipes.md`, covering text generation,
+  streaming tool runs, embeddings, image generation, audio, model listing,
+  raw OpenAI responses, and provider-specific option migration
+- the family-by-family migration note for already-deprecated preset helper
+  aliases is now written down in
+  `06-deprecated-preset-helper-aliases.md`
+- the provider-owned replacement note for deprecated builder web-search
+  helpers is now written down in
+  `07-builder-web-search-replacements.md`
 - `example/03_advanced_features/README.md` now leads with stable snippets and
   now teaches stable transport recipes instead of the old builder HTTP shell
-- the next honest implementation slice is now clear: keep rewriting the
-  highest-traffic example paths before expanding deprecation annotations
-  further
+- the first-deprecation-wave documentation blockers are now materially smaller:
+  preset helper aliases and builder web-search helpers both have explicit
+  migration notes
+- the next honest implementation slice is now clear: make explicit policy
+  decisions for `ai()` and `createProvider(...)`, then draft the deliberate
+  breaking-window candidate list instead of expanding deprecation annotations
+  blindly

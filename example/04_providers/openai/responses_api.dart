@@ -3,16 +3,19 @@
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/legacy.dart' as llm;
+import 'package:llm_dart/core/capability.dart' as compat_core;
+import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/models/chat_models.dart' as compat_chat;
 import 'package:llm_dart/openai.dart' as openai;
+import 'package:llm_dart/providers/openai/openai.dart' as openai_compat;
 
-/// OpenAI Responses examples with a stable-first split:
+/// OpenAI Responses examples with a stable-first split.
 ///
 /// 1. Most app-facing usage should stay on `AI.openai(...).chatModel(...)`
 ///    plus shared `core.generateTextCall(...)` / `core.streamTextCall(...)`.
 /// 2. Only raw response lifecycle APIs such as `getResponse()` and
-///    `continueConversation()` should fall back to the OpenAI-specific
-///    provider surface.
+///    `continueConversation()` should fall back to the narrower OpenAI
+///    provider-owned compatibility surface.
 Future<void> main() async {
   print('=== OpenAI Responses API Examples ===\n');
 
@@ -168,7 +171,9 @@ Future<void> stableReasoningExample(String apiKey) async {
     );
 
     print('Response: ${result.text}');
-    print('Reasoning text: ${_truncate(result.reasoningText ?? '<not exposed>')}');
+    print(
+      'Reasoning text: ${_truncate(result.reasoningText ?? '<not exposed>')}',
+    );
     _printUsage(result);
     print('');
   } catch (error) {
@@ -233,24 +238,24 @@ Future<void> providerLifecycleBoundaryExample(String apiKey) async {
     print('ℹ️  This section is OpenAI-specific and intentionally not part of');
     print('    the shared stable model contract.');
 
-    final provider = await llm.ai()
-        .openai((openaiBuilder) => openaiBuilder.webSearchTool())
-        .apiKey(apiKey)
-        .model('gpt-4o')
-        .buildOpenAIResponses();
+    final provider = _createResponsesProvider(
+      apiKey,
+      model: 'gpt-4o',
+      builtInTools: const [
+        openai_compat.OpenAIWebSearchTool(),
+      ],
+    );
 
     final responses = provider.responses!;
     final response1 = await responses.chat([
-      llm.ChatMessage.user(
+      compat_chat.ChatMessage.user(
         'My name is Alice. Tell me about quantum computing.',
       ),
     ]);
 
     print('First response: ${_truncate(response1.text ?? '<no text>')}');
 
-    final responseId = response1 is llm.OpenAIResponsesResponse
-        ? response1.responseId
-        : null;
+    final responseId = _responseIdOf(response1);
     if (responseId == null) {
       print('No response ID returned; lifecycle demo skipped.\n');
       return;
@@ -261,7 +266,7 @@ Future<void> providerLifecycleBoundaryExample(String apiKey) async {
     final continued = await responses.continueConversation(
       responseId,
       [
-        llm.ChatMessage.user(
+        compat_chat.ChatMessage.user(
           'Remember my name and explain it in simpler terms.',
         ),
       ],
@@ -283,24 +288,28 @@ Future<void> providerBackgroundBoundaryExample(String apiKey) async {
   print('--- Boundary Example 7: Background Processing ---');
 
   try {
-    print('ℹ️  Background response jobs are also OpenAI-specific lifecycle APIs.');
+    print(
+        'ℹ️  Background response jobs are also OpenAI-specific lifecycle APIs.');
 
-    final provider = await llm.ai()
-        .openai((openaiBuilder) => openaiBuilder.webSearchTool())
-        .apiKey(apiKey)
-        .model('gpt-4o')
-        .buildOpenAIResponses();
+    final provider = _createResponsesProvider(
+      apiKey,
+      model: 'gpt-4o',
+      builtInTools: const [
+        openai_compat.OpenAIWebSearchTool(),
+      ],
+    );
 
     final responses = provider.responses!;
-    final background = await responses.chatWithToolsBackground([
-      llm.ChatMessage.user(
-        'Write a detailed analysis of renewable energy trends.',
-      ),
-    ], null);
+    final background = await responses.chatWithToolsBackground(
+      [
+        compat_chat.ChatMessage.user(
+          'Write a detailed analysis of renewable energy trends.',
+        ),
+      ],
+      null,
+    );
 
-    final responseId = background is llm.OpenAIResponsesResponse
-        ? background.responseId
-        : null;
+    final responseId = _responseIdOf(background);
     print('Background response ID: ${responseId ?? 'unknown'}');
 
     if (responseId == null) {
@@ -334,15 +343,40 @@ core.LanguageModel _responsesModel(
   String modelId, {
   List<openai.OpenAIBuiltInTool> builtInTools = const [],
 }) {
-  return llm.AI.openai(
-    apiKey: apiKey,
-  ).chatModel(
-    modelId,
-    settings: openai.OpenAIChatModelSettings(
-      useResponsesApi: true,
+  return llm.AI
+      .openai(
+        apiKey: apiKey,
+      )
+      .chatModel(
+        modelId,
+        settings: openai.OpenAIChatModelSettings(
+          useResponsesApi: true,
+          builtInTools: builtInTools,
+        ),
+      );
+}
+
+openai_compat.OpenAIProvider _createResponsesProvider(
+  String apiKey, {
+  required String model,
+  List<openai_compat.OpenAIBuiltInTool> builtInTools = const [],
+}) {
+  return openai_compat.OpenAIProvider(
+    openai_compat.OpenAIConfig(
+      apiKey: apiKey,
+      model: model,
+      useResponsesAPI: true,
       builtInTools: builtInTools,
     ),
   );
+}
+
+String? _responseIdOf(compat_core.ChatResponse response) {
+  if (response is openai_compat.OpenAIResponsesResponse) {
+    return response.responseId;
+  }
+
+  return null;
 }
 
 void _printUsage(core.GenerateTextCallResult<dynamic> result) {

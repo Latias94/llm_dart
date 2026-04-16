@@ -3,7 +3,7 @@
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/legacy.dart' as legacy;
+import 'package:llm_dart/core/llm_error.dart' as compat_error;
 import 'package:llm_dart/llm_dart.dart' as llm;
 
 /// Basic configuration examples using the stable model API.
@@ -163,7 +163,7 @@ Future<void> testInvalidApiKey() async {
       ],
     );
     print('Invalid API Key: unexpected success');
-  } on legacy.AuthError catch (error) {
+  } on compat_error.AuthError catch (error) {
     print('Invalid API Key: caught AuthError -> ${error.message}');
   } catch (error) {
     print('Invalid API Key: unexpected error -> $error');
@@ -181,7 +181,7 @@ Future<void> testInvalidModel(String apiKey) async {
       ],
     );
     print('Invalid Model: unexpected success');
-  } on legacy.InvalidRequestError catch (error) {
+  } on compat_error.InvalidRequestError catch (error) {
     print('Invalid Model: caught InvalidRequestError -> ${error.message}');
   } catch (error) {
     print('Invalid Model: unexpected error -> $error');
@@ -201,7 +201,7 @@ Future<void> testNetworkTimeout(String apiKey) async {
       ),
     );
     print('Network Timeout: unexpected success');
-  } on legacy.TimeoutError catch (error) {
+  } on compat_error.TimeoutError catch (error) {
     print('Network Timeout: caught TimeoutError -> ${error.message}');
   } catch (error) {
     print('Network Timeout: unexpected error -> $error');

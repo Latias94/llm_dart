@@ -1,12 +1,17 @@
 // ignore_for_file: avoid_print
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:llm_dart/legacy.dart';
 
-/// 🟣 Anthropic File Handling - File Management and Document Processing
+import 'package:llm_dart/models/chat_models.dart';
+import 'package:llm_dart/models/file_models.dart';
+import 'package:llm_dart/providers/anthropic/anthropic.dart'
+    as anthropic_compat;
+
+/// 🟣 Anthropic File Handling - Provider-Owned File Lifecycle and Analysis
 ///
 /// This example demonstrates:
-/// - File upload and management using Anthropic Files API
+/// - Provider-owned upload, list, download, and delete flows through the
+///   Anthropic compatibility provider
 /// - Document processing and analysis with Claude
 /// - File listing, retrieval, and deletion
 /// - Multi-file analysis capabilities
@@ -39,7 +44,7 @@ Future<void> demonstrateFileManagement(String apiKey) async {
   print('📁 File Management API:\n');
 
   try {
-    final provider = createAnthropicProvider(
+    final provider = anthropic_compat.createAnthropicProvider(
       apiKey: apiKey,
       model: 'claude-sonnet-4-20250514',
     );
@@ -144,7 +149,7 @@ Future<void> demonstrateTextFileProcessing(String apiKey) async {
   print('📄 Text File Processing:\n');
 
   try {
-    final provider = createAnthropicProvider(
+    final provider = anthropic_compat.createAnthropicProvider(
       apiKey: apiKey,
       model: 'claude-sonnet-4-20250514',
       temperature: 0.3,
@@ -222,7 +227,7 @@ Future<void> demonstrateImageAnalysis(String apiKey) async {
   print('🖼️  Image Analysis:\n');
 
   try {
-    final provider = createAnthropicProvider(
+    final provider = anthropic_compat.createAnthropicProvider(
       apiKey: apiKey,
       model: 'claude-sonnet-4-20250514',
       temperature: 0.4,
@@ -281,7 +286,7 @@ Future<void> demonstratePDFProcessing(String apiKey) async {
   print('📋 PDF Processing:\n');
 
   try {
-    final provider = createAnthropicProvider(
+    final provider = anthropic_compat.createAnthropicProvider(
       apiKey: apiKey,
       model: 'claude-sonnet-4-20250514',
       temperature: 0.3,
@@ -359,7 +364,7 @@ Future<void> demonstrateMultiFileAnalysis(String apiKey) async {
   print('📚 Multi-File Analysis:\n');
 
   try {
-    final provider = createAnthropicProvider(
+    final provider = anthropic_compat.createAnthropicProvider(
       apiKey: apiKey,
       model: 'claude-sonnet-4-20250514',
       temperature: 0.3,
@@ -456,7 +461,7 @@ Future<void> demonstrateDocumentComparison(String apiKey) async {
   print('🔍 Document Comparison:\n');
 
   try {
-    final provider = createAnthropicProvider(
+    final provider = anthropic_compat.createAnthropicProvider(
       apiKey: apiKey,
       model: 'claude-sonnet-4-20250514',
       temperature: 0.2, // Lower for analytical comparison
@@ -557,7 +562,8 @@ Please provide:
 /// - Cross-document pattern recognition
 ///
 /// Best Practices:
-/// - Use createAnthropicProvider() for full file management access
+/// - Use createAnthropicProvider() for provider-owned remote file lifecycle
+///   access
 /// - Use appropriate MIME types for files
 /// - Provide context with file uploads
 /// - Use lower temperature for analytical tasks

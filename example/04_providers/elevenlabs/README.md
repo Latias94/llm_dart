@@ -6,9 +6,9 @@ ElevenLabs now has modern shared-capability surfaces in this workspace through
 - `ElevenLabs(...).speechModel(...)`
 - `ElevenLabs(...).transcriptionModel(...)`
 
-This directory intentionally stays compatibility-oriented because it focuses on
-voice and audio features that are broader than the shared modern speech and
-transcription surfaces.
+This directory now uses a stable-first posture for normal speech and
+transcription flows, while still keeping the broader voice/audio appendix
+explicitly provider owned.
 
 ## When To Use Which Path
 
@@ -50,7 +50,7 @@ final result = await core.transcribe(
 
 ### Use This Directory's Examples
 
-Use the compatibility shell in this directory when you need broader
+Use the compatibility shell in this directory only when you need broader
 provider-specific behavior such as:
 
 - voice ID defaults and richer voice controls
@@ -61,8 +61,8 @@ provider-specific behavior such as:
 ## Examples
 
 ### [audio_capabilities.dart](audio_capabilities.dart)
-Compatibility-oriented voice synthesis, richer voice controls, and broader
-audio-shell example.
+Stable shared speech/transcription plus provider-owned voice catalog,
+streaming, convenience, and realtime-boundary appendix.
 
 ### Modern Shared Examples
 

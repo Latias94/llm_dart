@@ -1,162 +1,127 @@
-# HTTP MCP Examples - Real Implementation
+# HTTP MCP Examples
 
-This directory contains **real** MCP integration examples using HTTP transport with streaming capabilities. These examples use the actual MCP protocol implementation from `mcp_dart` library, not simulated versions.
+This directory contains the HTTP transport examples for MCP integration.
 
-## Files in this directory
+The important boundary is now explicit:
 
-- **`server.dart`** - **Real** MCP server using `StreamableHTTPServerTransport`
-- **`client.dart`** - **Real** MCP client using `StreamableHttpClientTransport` for direct tool testing
-- **`llm_client.dart`** - **Real** LLM integration showing how AI agents can use MCP tools via HTTP
-- **`simple_stream_client.dart`** - **Simple** streaming example focusing on basic streaming + tools
+- HTTP transport and session lifecycle stay in `mcp_dart`
+- MCP tool schema/result adaptation lives in `../shared/mcp_tool_bridge.dart`
+- model orchestration lives on the stable `llm_dart/core.dart` runners
 
-## What is HTTP Transport?
+## Files
 
-HTTP transport uses standard HTTP requests and Server-Sent Events (SSE) for communication:
-- **POST /mcp** - Client sends JSON-RPC messages to server
-- **GET /mcp** - Client establishes SSE connection for notifications
-- **DELETE /mcp** - Client terminates session
-
-## Key Features - Real MCP Implementation
-
-### Core Capabilities
-
-1. **Real MCP Protocol** - Uses actual `mcp_dart` library implementation
-2. **Session Management** - Each client connection gets a unique session ID
-3. **Event Storage** - Supports message replay and reconnection recovery
-4. **Streaming Notifications** - Real-time push notifications via SSE
-5. **RESTful API** - Standard HTTP endpoint design
-6. **Concurrent Support** - Handle multiple clients simultaneously
-7. **Streaming Integration** - Real-time LLM responses with tool execution
+- `server.dart`
+  - real MCP server using `StreamableHTTPServerTransport`
+- `client.dart`
+  - direct HTTP MCP client for transport-level validation
+- `llm_client.dart`
+  - stable `core.runTextGeneration(...)` example with HTTP MCP tools
+- `simple_stream_client.dart`
+  - stable `core.streamTextRun(...)` example showing tool-input and tool-call
+    events
 
 ## Quick Start
 
-### 1. Start the HTTP MCP Server
+### 1. Start the HTTP MCP server
 
 ```bash
 cd example/06_mcp_integration
 dart run http_examples/server.dart
 ```
 
-The server will start at `http://localhost:3000/mcp`.
+The server listens on `http://localhost:3000/mcp`.
 
-### 2. Test with REST Client
-
-In another terminal:
+### 2. Validate transport directly
 
 ```bash
 dart run http_examples/client.dart
 ```
 
-This will connect to the server via HTTP and test all available tools.
-
-### 3. Test LLM Integration
+### 3. Run the non-streaming LLM example
 
 ```bash
-# Set your API key first
 export OPENAI_API_KEY="your-key-here"
-
-# Run the LLM integration example
 dart run http_examples/llm_client.dart
 ```
 
-### 4. Test Streaming LLM Integration
+### 4. Run the streaming LLM example
 
 ```bash
-# Set your API key first
 export OPENAI_API_KEY="your-key-here"
-
 dart run http_examples/simple_stream_client.dart
 ```
 
-## Available Tools
-
-The HTTP server provides these tools:
-
-1. **calculate** - Perform mathematical calculations
-2. **random_number** - Generate random numbers within specified range
-3. **current_time** - Get current date and time in various formats
-4. **file_info** - Get information about files or directories
-5. **system_info** - Get system information
-6. **uuid_generate** - Generate UUID
-7. **greet** - Simple greeting tool (HTTP-specific)
-8. **multi-greet** - Multiple greetings with notifications (streaming demo)
-
-## Real MCP Architecture
+## Stable Runtime Shape
 
 ```text
-┌─────────────────────┐    Real HTTP/SSE    ┌─────────────────────┐
-│   Real MCP Client   │◄──────────────────►│   Real MCP Server   │
-│ StreamableHttpClient│                    │StreamableHTTPServer │
-│   Transport         │                    │   Transport         │
-└─────────────────────┘                    └─────────────────────┘
-         │                                            │
-         ▼                                            ▼
-┌─────────────────────┐                    ┌─────────────────────┐
-│   llm_dart Tools    │                    │   Real MCP Tools    │
-│   Integration       │                    │  (shared/common)    │
-└─────────────────────┘                    └─────────────────────┘
-         │
-         ▼
-┌─────────────────────┐
-│   OpenAI/LLM        │
-│   Provider          │
-└─────────────────────┘
+OpenAI chat model
+        │
+        ▼
+runTextGeneration / streamTextRun
+        │
+        ▼
+MCP bridge
+        │
+        ▼
+StreamableHttpClientTransport
+        │
+        ▼
+HTTP MCP server
 ```
+
+## HTTP-Specific Capabilities
+
+- session IDs stay transport-owned
+- SSE notifications stay transport-owned
+- tool discovery and execution still happen through MCP protocol calls
+- the LLM example no longer hand-builds assistant/tool replay messages
+
+## Available Tools
+
+The HTTP server exposes:
+
+1. `calculate`
+2. `random_number`
+3. `current_time`
+4. `file_info`
+5. `system_info`
+6. `uuid_generate`
+7. `greet`
+8. `multi-greet`
+
+`simple_stream_client.dart` intentionally narrows the exposed tool set to
+`current_time` so the streaming event flow stays easy to read.
 
 ## API Endpoints
 
-### POST /mcp
-- **Purpose**: Send MCP messages
-- **Headers**:
-  - `Content-Type: application/json`
-  - `mcp-session-id: <session-id>` (after initialization)
-- **Body**: JSON-RPC 2.0 message
+### `POST /mcp`
 
-### GET /mcp
-- **Purpose**: Establish SSE connection for notifications
-- **Headers**:
-  - `mcp-session-id: <session-id>`
-  - `Last-Event-ID: <event-id>` (optional, for resumption)
+- send JSON-RPC requests
+- use `mcp-session-id` after initialization
 
-### DELETE /mcp
-- **Purpose**: Terminate session
-- **Headers**:
-  - `mcp-session-id: <session-id>`
+### `GET /mcp`
 
-## Use Cases
+- open the SSE notification channel
+- optionally pass `Last-Event-ID` for replay
 
-HTTP transport is ideal for:
-- **Web applications** - Direct browser integration
-- **Microservices** - RESTful service architecture
-- **Cloud deployment** - Scalable server infrastructure
-- **Real-time applications** - SSE streaming notifications
-- **Multi-client scenarios** - Concurrent user support
-- **Streaming AI chat** - Real-time LLM responses with tool execution
-- **Interactive AI assistants** - Progressive tool chain execution
+### `DELETE /mcp`
+
+- terminate the current session
 
 ## Troubleshooting
 
 ### Port already in use
-If port 3000 is occupied, modify the port in server.dart:
-```dart
-final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 3001);
-```
 
-### Session lost
-Check server logs for session initialization messages:
-```
-Session initialized with ID: abc123-def456-ghi789
-```
+Change the bind port in `server.dart` if `3000` is occupied.
 
-### Connection issues
-Ensure:
-1. Server is running
-2. Firewall allows port access
-3. Client uses correct URL
-4. Session headers are properly set
+### Session issues
 
-### Streaming not working
-- Verify SSE connection is established
-- Check for proper event handling
-- Monitor network tab in browser dev tools
-- Ensure session ID is consistent across requests
+Check the server output for the generated session ID and make sure the client
+reuses it consistently across requests.
+
+### Streaming issues
+
+- confirm the SSE channel is connected
+- watch the `ToolInputStartEvent` and `ToolCallEvent` logs
+- verify the MCP server is still alive while the model is waiting for tool
+  results

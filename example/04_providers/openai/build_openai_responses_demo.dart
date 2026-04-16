@@ -3,51 +3,55 @@
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/legacy.dart' as llm;
+import 'package:llm_dart/core/capability.dart' as compat_core;
+import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/models/chat_models.dart' as compat_chat;
 import 'package:llm_dart/openai.dart' as openai;
+import 'package:llm_dart/providers/openai/openai.dart' as openai_compat;
 
-/// Compatibility-boundary demo for `buildOpenAIResponses()`.
+/// Migration-boundary demo for the old `buildOpenAIResponses()` helper.
 ///
-/// New app-facing code should usually prefer:
-/// - `AI.openai(...).chatModel(...)`
-/// - shared `core.generateTextCall(...)` / `core.streamTextCall(...)`
+/// This file keeps the old name so users searching for that helper land on the
+/// right migration guidance:
+/// - new app-facing code should stay on `AI.openai(...).chatModel(...)`
+/// - raw response lifecycle APIs belong to the narrower OpenAI provider-owned
+///   compatibility surface
 ///
-/// Use `buildOpenAIResponses()` only when you explicitly need raw OpenAI
-/// response lifecycle APIs such as:
-/// - `responses.getResponse(...)`
-/// - `responses.continueConversation(...)`
-/// - `responses.deleteResponse(...)`
+/// If migration code still uses `buildOpenAIResponses()`, treat it as a frozen
+/// convenience alias for the direct provider configuration shown below.
 Future<void> main() async {
-  print('🚀 buildOpenAIResponses() Boundary Demo\n');
+  print('OpenAI Responses Boundary Demo\n');
 
   final apiKey = Platform.environment['OPENAI_API_KEY'];
   if (apiKey == null || apiKey.isEmpty) {
-    print('❌ Please set OPENAI_API_KEY environment variable');
+    print('Please set OPENAI_API_KEY environment variable');
     return;
   }
 
   await demonstrateStableFirstAlternative(apiKey);
-  await demonstrateLifecycleBoundary(apiKey);
+  await demonstrateDirectCompatibilityEquivalent(apiKey);
   await demonstrateGuardrails(apiKey);
 
-  print('✅ buildOpenAIResponses() boundary demo completed!');
+  print('OpenAI Responses boundary demo completed!');
 }
 
 Future<void> demonstrateStableFirstAlternative(String apiKey) async {
   print('--- Stable-First Alternative ---');
 
   try {
-    final model = llm.AI.openai(
-      apiKey: apiKey,
-    ).chatModel(
-      'gpt-4o',
-      settings: const openai.OpenAIChatModelSettings(
-        useResponsesApi: true,
-        builtInTools: [
-          openai.OpenAIWebSearchTool(),
-        ],
-      ),
-    );
+    final model = llm.AI
+        .openai(
+          apiKey: apiKey,
+        )
+        .chatModel(
+          'gpt-4o',
+          settings: const openai.OpenAIChatModelSettings(
+            useResponsesApi: true,
+            builtInTools: [
+              openai.OpenAIWebSearchTool(),
+            ],
+          ),
+        );
 
     final result = await core.generateTextCall(
       model: model,
@@ -63,45 +67,50 @@ Future<void> demonstrateStableFirstAlternative(String apiKey) async {
 
     print('Stable response: ${result.text}');
     print('Stable response ID: ${result.responseId ?? 'unknown'}');
-    print('ℹ️  If this is enough, do not drop to buildOpenAIResponses().');
+    print('If this is enough, do not drop to the raw compatibility provider.');
     print('');
   } catch (error) {
     print('Error in stable-first example: $error\n');
   }
 }
 
-Future<void> demonstrateLifecycleBoundary(String apiKey) async {
-  print('--- OpenAI Lifecycle Boundary ---');
+Future<void> demonstrateDirectCompatibilityEquivalent(String apiKey) async {
+  print('--- Direct Compatibility Equivalent ---');
 
   try {
-    final provider = await llm.ai()
-        .openai((openaiBuilder) => openaiBuilder.webSearchTool())
-        .apiKey(apiKey)
-        .model('gpt-4o')
-        .buildOpenAIResponses();
+    final provider = _createResponsesProvider(
+      apiKey,
+      model: 'gpt-4o',
+      builtInTools: const [
+        openai_compat.OpenAIWebSearchTool(),
+      ],
+    );
 
     print(
+      'This is the provider-owned equivalent of the old builder convenience helper.',
+    );
+    print(
       'Provider supports openaiResponses: '
-      '${provider.supports(llm.LLMCapability.openaiResponses)}',
+      '${provider.supports(compat_core.LLMCapability.openaiResponses)}',
     );
 
     final responses = provider.responses!;
     final response = await responses.chat([
-      llm.ChatMessage.user('Summarize the benefits of renewable energy.'),
+      compat_chat.ChatMessage.user(
+        'Summarize the benefits of renewable energy.',
+      ),
     ]);
 
     print('Lifecycle response: ${_truncate(response.text ?? '<no text>')}');
 
-    final responseId = response is llm.OpenAIResponsesResponse
-        ? response.responseId
-        : null;
+    final responseId = _responseIdOf(response);
     if (responseId != null) {
       final fetched = await responses.getResponse(responseId);
       print('Fetched by ID: ${_truncate(fetched.text ?? '<no text>')}');
     }
 
     print(
-      'ℹ️  This path is for provider-specific response lifecycle management, '
+      'This path is for provider-specific response lifecycle management, '
       'not normal Flutter chat flows.',
     );
     print('');
@@ -114,41 +123,62 @@ Future<void> demonstrateGuardrails(String apiKey) async {
   print('--- Guardrails ---');
 
   try {
-    final standardProvider = await llm.ai()
-        .openai()
-        .apiKey(apiKey)
-        .model('gpt-4o-mini')
-        .build();
-    final responsesProvider = await llm.ai()
-        .openai()
-        .apiKey(apiKey)
-        .model('gpt-4o')
-        .buildOpenAIResponses();
+    final standardProvider = openai_compat.createOpenAIProvider(
+      apiKey: apiKey,
+      model: 'gpt-4o-mini',
+    );
+    final responsesProvider = _createResponsesProvider(
+      apiKey,
+      model: 'gpt-4o',
+    );
 
-    final standardHasResponses = standardProvider is llm.ProviderCapabilities &&
-        (standardProvider as llm.ProviderCapabilities)
-            .supports(llm.LLMCapability.openaiResponses);
-    final boundaryHasResponses =
-        responsesProvider.supports(llm.LLMCapability.openaiResponses);
-
-    print('Standard build exposes openaiResponses: $standardHasResponses');
-    print('buildOpenAIResponses exposes openaiResponses: $boundaryHasResponses');
+    print(
+      'Standard OpenAIProvider exposes openaiResponses: '
+      '${standardProvider.supports(compat_core.LLMCapability.openaiResponses)}',
+    );
+    print(
+      'Responses-enabled OpenAIProvider exposes openaiResponses: '
+      '${responsesProvider.supports(compat_core.LLMCapability.openaiResponses)}',
+    );
+    print(
+        'Standard provider.responses == null: ${standardProvider.responses == null}');
+    print(
+      'Responses-enabled provider.responses != null: '
+      '${responsesProvider.responses != null}',
+    );
   } catch (error) {
     print('Capability comparison failed: $error');
   }
 
-  try {
-    await llm.ai()
-        .anthropic()
-        .apiKey('dummy-key')
-        .model('claude-3-sonnet-20240229')
-        .buildOpenAIResponses();
-    print('❌ Non-OpenAI provider should not support buildOpenAIResponses().');
-  } catch (error) {
-    print('Correctly rejected non-OpenAI provider: ${_truncate(error.toString())}');
+  print(
+    'Guardrail: the stable `LanguageModel` path intentionally does not expose '
+    'raw response lifecycle CRUD. Use it only when you need normal app-facing '
+    'generation and streaming.',
+  );
+  print('');
+}
+
+openai_compat.OpenAIProvider _createResponsesProvider(
+  String apiKey, {
+  required String model,
+  List<openai_compat.OpenAIBuiltInTool> builtInTools = const [],
+}) {
+  return openai_compat.OpenAIProvider(
+    openai_compat.OpenAIConfig(
+      apiKey: apiKey,
+      model: model,
+      useResponsesAPI: true,
+      builtInTools: builtInTools,
+    ),
+  );
+}
+
+String? _responseIdOf(compat_core.ChatResponse response) {
+  if (response is openai_compat.OpenAIResponsesResponse) {
+    return response.responseId;
   }
 
-  print('');
+  return null;
 }
 
 String _truncate(String text, {int maxLength = 120}) {

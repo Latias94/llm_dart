@@ -16,13 +16,14 @@ For new code, prefer those stable model factories plus shared helpers from
 - [embeddings.dart](embeddings.dart)
 - [image_generation.dart](image_generation.dart)
 
-### Compatibility-Oriented
+### Stable-First With Compatibility Appendix
 
 - [google_tts_example.dart](google_tts_example.dart)
 
-The compatibility TTS example still matters because it covers Google-specific
-streaming and raw PCM handling that are not yet fully frozen on the stable
-surface.
+`google_tts_example.dart` now uses the stable `speechModel(...)` path for
+single-speaker, multi-speaker, and prompt-shaped one-shot speech generation.
+It keeps only streamed PCM output and voice discovery on the older
+compatibility appendix.
 
 ## Setup
 
@@ -133,7 +134,8 @@ print(result.audioBytes.length);
 
 ### Speech
 
-- Stable `speechModel(...)` covers one-shot audio generation.
+- Stable `speechModel(...)` covers one-shot audio generation, including
+  provider-owned multi-speaker routing through `GoogleSpeechOptions`.
 - Provider-specific multi-speaker and sampling controls stay on
   `GoogleSpeechOptions`.
 - The native TTS compatibility surface still exists for streamed audio and

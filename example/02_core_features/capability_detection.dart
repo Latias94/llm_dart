@@ -2,8 +2,10 @@
 
 import 'dart:io';
 
+import 'package:llm_dart/builder/llm_builder.dart' as compat_builder;
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/legacy.dart' as legacy;
+import 'package:llm_dart/core/capability.dart' as compat_core;
+import 'package:llm_dart/core/registry.dart' as compat_registry;
 import 'package:llm_dart/llm_dart.dart' as ai;
 
 /// Capability detection through provider declarations.
@@ -34,7 +36,7 @@ import 'package:llm_dart/llm_dart.dart' as ai;
 Future<void> main() async {
   print('Capability Detection and Provider Selection\n');
 
-  legacy.ensureRootRegistryBootstrap();
+  _ensureProviderDeclarationsRegistered();
   final providers = loadExampleProviderInfo();
 
   if (providers.isEmpty) {
@@ -51,7 +53,7 @@ Future<void> main() async {
       'Capability detection remains advisory; stable calls remain model-first.');
 }
 
-List<legacy.ProviderInfo> loadExampleProviderInfo() {
+List<compat_registry.ProviderInfo> loadExampleProviderInfo() {
   const providerOrder = [
     'openai',
     'anthropic',
@@ -66,7 +68,7 @@ List<legacy.ProviderInfo> loadExampleProviderInfo() {
   ];
 
   final allProviders = {
-    for (final provider in legacy.LLMProviderRegistry.getAllProviderInfo())
+    for (final provider in compat_registry.LLMProviderRegistry.getAllProviderInfo())
       provider.id: provider,
   };
 
@@ -76,7 +78,7 @@ List<legacy.ProviderInfo> loadExampleProviderInfo() {
   ];
 }
 
-void printProviderOverview(List<legacy.ProviderInfo> providers) {
+void printProviderOverview(List<compat_registry.ProviderInfo> providers) {
   print('--- Provider Declarations ---');
 
   final byCoverage = [...providers]..sort(
@@ -100,49 +102,49 @@ void printProviderOverview(List<legacy.ProviderInfo> providers) {
   print('');
 }
 
-void printScenarioRecommendations(List<legacy.ProviderInfo> providers) {
+void printScenarioRecommendations(List<compat_registry.ProviderInfo> providers) {
   print('--- Scenario Recommendations ---');
 
   const scenarios = [
     _CapabilityScenario(
       label: 'Flutter chat baseline',
       required: {
-        legacy.LLMCapability.chat,
-        legacy.LLMCapability.streaming,
-        legacy.LLMCapability.toolCalling,
+        compat_core.LLMCapability.chat,
+        compat_core.LLMCapability.streaming,
+        compat_core.LLMCapability.toolCalling,
       },
     ),
     _CapabilityScenario(
       label: 'Vision-enabled chat',
       required: {
-        legacy.LLMCapability.chat,
-        legacy.LLMCapability.vision,
+        compat_core.LLMCapability.chat,
+        compat_core.LLMCapability.vision,
       },
     ),
     _CapabilityScenario(
       label: 'Reasoning-heavy workflows',
       required: {
-        legacy.LLMCapability.chat,
-        legacy.LLMCapability.reasoning,
+        compat_core.LLMCapability.chat,
+        compat_core.LLMCapability.reasoning,
       },
     ),
     _CapabilityScenario(
       label: 'Semantic search / RAG indexing',
       required: {
-        legacy.LLMCapability.embedding,
+        compat_core.LLMCapability.embedding,
       },
     ),
     _CapabilityScenario(
       label: 'Speech input and output',
       required: {
-        legacy.LLMCapability.textToSpeech,
-        legacy.LLMCapability.speechToText,
+        compat_core.LLMCapability.textToSpeech,
+        compat_core.LLMCapability.speechToText,
       },
     ),
     _CapabilityScenario(
       label: 'Image generation',
       required: {
-        legacy.LLMCapability.imageGeneration,
+        compat_core.LLMCapability.imageGeneration,
       },
     ),
   ];
@@ -162,12 +164,12 @@ void printScenarioRecommendations(List<legacy.ProviderInfo> providers) {
   print('');
 }
 
-void printBoundaryGuidance(List<legacy.ProviderInfo> providers) {
+void printBoundaryGuidance(List<compat_registry.ProviderInfo> providers) {
   print('--- Boundary Guidance ---');
 
   final rawResponsesProviders = _providersSupportingAll(
     providers,
-    const {legacy.LLMCapability.openaiResponses},
+    const {compat_core.LLMCapability.openaiResponses},
   );
 
   print(
@@ -199,14 +201,14 @@ void printBoundaryGuidance(List<legacy.ProviderInfo> providers) {
 }
 
 Future<void> demonstrateStableExecution(
-    List<legacy.ProviderInfo> providers) async {
+    List<compat_registry.ProviderInfo> providers) async {
   print('--- Stable Execution After Selection ---');
 
   final candidates = _providersSupportingAll(
     providers,
     const {
-      legacy.LLMCapability.chat,
-      legacy.LLMCapability.streaming,
+      compat_core.LLMCapability.chat,
+      compat_core.LLMCapability.streaming,
     },
   );
 
@@ -248,9 +250,9 @@ Future<void> demonstrateStableExecution(
   print('');
 }
 
-List<legacy.ProviderInfo> _providersSupportingAll(
-  List<legacy.ProviderInfo> providers,
-  Set<legacy.LLMCapability> required,
+List<compat_registry.ProviderInfo> _providersSupportingAll(
+  List<compat_registry.ProviderInfo> providers,
+  Set<compat_core.LLMCapability> required,
 ) {
   return providers
       .where((provider) => required.every(provider.supports))
@@ -258,7 +260,7 @@ List<legacy.ProviderInfo> _providersSupportingAll(
 }
 
 _SelectedModel? _selectStableModelFromEnvironment(
-  List<legacy.ProviderInfo> candidates,
+  List<compat_registry.ProviderInfo> candidates,
 ) {
   for (final provider in candidates) {
     final selected = _stableModelForProvider(provider.id);
@@ -375,29 +377,29 @@ String _providerLabel(String providerId) {
   }
 }
 
-String _capabilityLabel(legacy.LLMCapability capability) {
+String _capabilityLabel(compat_core.LLMCapability capability) {
   switch (capability) {
-    case legacy.LLMCapability.chat:
+    case compat_core.LLMCapability.chat:
       return 'chat';
-    case legacy.LLMCapability.streaming:
+    case compat_core.LLMCapability.streaming:
       return 'streaming';
-    case legacy.LLMCapability.toolCalling:
+    case compat_core.LLMCapability.toolCalling:
       return 'tool calling';
-    case legacy.LLMCapability.vision:
+    case compat_core.LLMCapability.vision:
       return 'vision';
-    case legacy.LLMCapability.reasoning:
+    case compat_core.LLMCapability.reasoning:
       return 'reasoning';
-    case legacy.LLMCapability.embedding:
+    case compat_core.LLMCapability.embedding:
       return 'embeddings';
-    case legacy.LLMCapability.textToSpeech:
+    case compat_core.LLMCapability.textToSpeech:
       return 'text to speech';
-    case legacy.LLMCapability.speechToText:
+    case compat_core.LLMCapability.speechToText:
       return 'speech to text';
-    case legacy.LLMCapability.imageGeneration:
+    case compat_core.LLMCapability.imageGeneration:
       return 'image generation';
-    case legacy.LLMCapability.modelListing:
+    case compat_core.LLMCapability.modelListing:
       return 'model listing';
-    case legacy.LLMCapability.openaiResponses:
+    case compat_core.LLMCapability.openaiResponses:
       return 'openai responses';
     default:
       return capability.name;
@@ -414,27 +416,31 @@ String _truncate(String text, {int maxLength = 220}) {
 }
 
 const _highSignalCapabilities = [
-  legacy.LLMCapability.chat,
-  legacy.LLMCapability.streaming,
-  legacy.LLMCapability.toolCalling,
-  legacy.LLMCapability.vision,
-  legacy.LLMCapability.reasoning,
-  legacy.LLMCapability.embedding,
-  legacy.LLMCapability.imageGeneration,
-  legacy.LLMCapability.textToSpeech,
-  legacy.LLMCapability.speechToText,
-  legacy.LLMCapability.modelListing,
-  legacy.LLMCapability.openaiResponses,
+  compat_core.LLMCapability.chat,
+  compat_core.LLMCapability.streaming,
+  compat_core.LLMCapability.toolCalling,
+  compat_core.LLMCapability.vision,
+  compat_core.LLMCapability.reasoning,
+  compat_core.LLMCapability.embedding,
+  compat_core.LLMCapability.imageGeneration,
+  compat_core.LLMCapability.textToSpeech,
+  compat_core.LLMCapability.speechToText,
+  compat_core.LLMCapability.modelListing,
+  compat_core.LLMCapability.openaiResponses,
 ];
 
 final class _CapabilityScenario {
   final String label;
-  final Set<legacy.LLMCapability> required;
+  final Set<compat_core.LLMCapability> required;
 
   const _CapabilityScenario({
     required this.label,
     required this.required,
   });
+}
+
+void _ensureProviderDeclarationsRegistered() {
+  compat_builder.LLMBuilder();
 }
 
 final class _SelectedModel {

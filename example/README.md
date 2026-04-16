@@ -106,12 +106,11 @@ shared-capability happy path.
 |----------|----------|-----------|
 | OpenAI | GPT, DALL-E, assistants | [openai/](04_providers/openai/) |
 | Anthropic | Claude, thinking | [anthropic/](04_providers/anthropic/) |
-| DeepSeek / OpenRouter | OpenAI-compatible profile flows | [others/](04_providers/others/) |
+| DeepSeek / OpenRouter / custom OpenAI-family | Stable profile flows plus explicit compatible endpoint wiring | [others/](04_providers/others/) |
 | Groq | Fast inference | [groq/](04_providers/groq/) |
 | Ollama | Modern community-surface local runtime tuning with provider-owned options | [ollama/](04_providers/ollama/) |
-| ElevenLabs | Compatibility shell for voice controls and broader audio flows | [elevenlabs/](04_providers/elevenlabs/) |
+| ElevenLabs | Stable shared speech/transcription plus provider-owned voice and realtime appendices | [elevenlabs/](04_providers/elevenlabs/) |
 | xAI | Live search, Grok | [xai/](04_providers/xai/) |
-| Others | OpenAI-compatible | [others/](04_providers/others/) |
 
 ### Use Cases
 *Complete applications*

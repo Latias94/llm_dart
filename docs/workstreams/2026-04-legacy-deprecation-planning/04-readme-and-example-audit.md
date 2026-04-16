@@ -22,28 +22,30 @@ It is example migration.
 
 ## Counts
 
-Current scoped audit baseline across code under `example`, `lib`, and
-`packages` after the `example/03_advanced_features` transport rewrite and the
-Ollama provider-example modernization:
+Current example migration baseline after the
+`example/03_advanced_features` transport rewrite, the Ollama provider-example
+modernization, the stable rewrite of
+`example/04_providers/others/openai_compatible.dart`, and the OpenAI Responses
+appendix narrowing, plus the final provider-example cleanup pass for
+Anthropic file handling, Google TTS, ElevenLabs audio, and the MCP bridge
+rewrite for stdio and HTTP examples:
 
-- `13` Dart files still import `package:llm_dart/legacy.dart`
-- `13` Dart files still contain direct `ai()` usage
+- `2` example Dart files still import `package:llm_dart/legacy.dart`
+- `2` example Dart files still contain direct `ai()` usage
 
 Legacy imports inside `example/` are now concentrated in:
 
-- `example/01_getting_started` - `1` file
-- `example/02_core_features` - `3` files
+- `example/01_getting_started` - `0` files
+- `example/02_core_features` - `2` files
 - `example/03_advanced_features` - `0` files
-- `example/04_providers` - `6` files
-- `example/06_mcp_integration` - `3` files
+- `example/04_providers` - `0` files
 
 Direct `ai()` usage inside `example/` is now concentrated in:
 
 - `example/01_getting_started` - `0` files
 - `example/02_core_features` - `2` files
 - `example/03_advanced_features` - `0` files
-- `example/04_providers` - `5` files
-- `example/06_mcp_integration` - `3` files
+- `example/04_providers` - `0` files
 
 `example/02_core_features` is now effectively reduced to two explicit
 compatibility appendix files:
@@ -132,6 +134,81 @@ Another meaningful reduction is now complete in `example/04_providers/ollama`:
 - the directory README now explains Ollama local runtime tuning as a modern
   community-surface pattern rather than as default compatibility material
 
+Another meaningful reduction is now also complete in
+`example/04_providers/others`:
+
+- `openai_compatible.dart` no longer teaches `legacy.dart`, `ai()`, or
+  builder-era preset helpers
+- the example now separates stable OpenAI-family profile facades from
+  provider-owned extension points such as DeepSeek reasoning, xAI live search,
+  and OpenRouter online-model routing
+- the example now shows explicit custom OpenAI-family endpoint wiring through a
+  local `OpenAIProfile` instead of pretending that every compatible endpoint
+  deserves a new shared global facade
+- the directory README now documents that custom-compatible endpoints should
+  stay explicit until they have an audited stable boundary
+
+Another meaningful reduction is now also complete in
+`example/04_providers/openai`:
+
+- `responses_api.dart` and `build_openai_responses_demo.dart` no longer depend
+  on the broad `legacy.dart` barrel
+- both files now keep stable app-facing generation on
+  `AI.openai(...).chatModel(...)`
+- the raw response lifecycle appendix now drops to the narrower
+  `package:llm_dart/providers/openai/openai.dart` compatibility surface instead
+  of teaching `ai().openai()...buildOpenAIResponses()` as the default entry
+  path
+- the OpenAI provider README now frames `buildOpenAIResponses()` as frozen
+  migration ergonomics rather than as target architecture
+
+Another meaningful provider-example reduction is now also complete across the
+last remaining `example/04_providers` hotspots:
+
+- `anthropic/file_handling.dart` no longer depends on the broad `legacy.dart`
+  barrel and now uses focused Anthropic/chat/file imports while still keeping
+  the provider-owned file lifecycle boundary explicit
+- `google/google_tts_example.dart` no longer depends on `legacy.dart` or
+  `ai()` and now uses stable `AI.google(...).speechModel(...)` for one-shot
+  speech while keeping streamed PCM output and voice discovery on the
+  compatibility appendix
+- `elevenlabs/audio_capabilities.dart` no longer depends on `legacy.dart` or
+  `ai()` and now uses the shared `llm_dart_community` speech/transcription
+  models for stable app-facing media flows while keeping voice catalogs,
+  convenience helpers, streaming, and realtime flags on the provider-owned
+  compatibility surface
+- the Google and ElevenLabs provider READMEs now also explain these hybrid
+  boundaries directly instead of presenting the examples as fully
+  compatibility-oriented by default
+
+Another meaningful reduction is now also complete in
+`example/06_mcp_integration`:
+
+- `stdio_examples/llm_client.dart`, `http_examples/llm_client.dart`, and
+  `http_examples/simple_stream_client.dart` no longer depend on
+  `legacy.dart` or `ai()`
+- `shared/mcp_tool_bridge.dart` now owns MCP schema conversion, tool-input
+  decoding, and `CallToolResult` normalization instead of repeating that logic
+  inside each sample
+- the non-streaming MCP examples now use `AI.openai(...).chatModel(...)` plus
+  `core.runTextGeneration(...)`
+- the streaming MCP example now uses `core.streamTextRun(...)` and the shared
+  text/tool event model instead of hand-written `ToolCallAggregator`
+  orchestration
+- the MCP README set now documents the stable layering explicitly:
+  AI facade -> core runner -> MCP bridge -> transport/client
+
+Another narrow cleanup is now also complete in the last non-appendix
+residue outside those frozen compatibility examples:
+
+- `example/01_getting_started/basic_configuration.dart` no longer depends on
+  the broad `legacy.dart` barrel just to catch error types and now uses the
+  focused public `core/llm_error.dart` import instead
+- `example/02_core_features/capability_detection.dart` no longer depends on
+  the broad `legacy.dart` barrel and now uses focused compatibility imports
+  for capability declarations and registry metadata while still keeping actual
+  execution on the stable `AI.*(...).chatModel(...)` facade
+
 ## Healthy Legacy Disclosure
 
 The following documentation posture is already good enough and should mostly be
@@ -195,6 +272,9 @@ Those are now resolved at the direct-snippet level:
   teaching `legacy.dart` plus `ai().*.build()` directly
 - `example/03_advanced_features/README.md` now also teaches stable transport
   recipes instead of the old builder HTTP shell
+- `example/04_providers/others/README.md` now also leads with stable profile
+  facades plus explicit custom-compatible endpoint wiring instead of treating
+  OpenAI-compatible as a generic transitional bucket
 
 This matters because task-oriented provider READMEs carry more migration weight
 than a generic architecture explanation.
@@ -216,25 +296,33 @@ They should instead be:
 
 The best remaining migration order is now:
 
-1. rewrite the remaining legacy-heavy provider example files in
-   `example/04_providers`
-2. rewrite `example/06_mcp_integration`
-3. decide whether the low-volume `example/01_getting_started` and
+1. decide whether the low-volume `example/01_getting_started` and
    `example/02_core_features` compatibility residue should stay as explicit
    appendix material or be narrowed further
+2. write short task-oriented migration recipes for the frozen builder jobs
+   that still appear in those appendix examples
 
 Rationale:
 
 - `02_core_features` is now mostly modern-first outside the two explicit
   compatibility appendix files
+- `01_getting_started` no longer has any broad `legacy.dart` import residue
 - `03_advanced_features` is now fully modern-first, including the transport
   configuration examples
 - the Ollama provider examples no longer need the broad legacy builder shell
   for runtime tuning or reasoning demonstrations
+- the mixed OpenAI-family example in `example/04_providers/others` is now
+  stable-first and no longer hides provider boundaries behind builder presets
+- the OpenAI Responses appendix files now also avoid the broad compatibility
+  barrel and teach a narrower provider-owned compatibility boundary instead
+- the remaining `example/04_providers` Anthropic, Google, and ElevenLabs
+  hotspots now also avoid `legacy.dart` and `ai()` while still documenting
+  honest provider-owned appendix boundaries
 - the largest known provider README hotspots have now been reduced to
   provider-entrypoint compatibility disclosures instead of direct
   `legacy.dart` teaching
-- MCP examples are narrower and lower-volume
+- `06_mcp_integration` is now also stable-first and no longer teaches the
+  legacy builder shell
 
 ## Immediate Implication
 
@@ -244,7 +332,7 @@ The next honest implementation slice is no longer the advanced example layer.
 
 It is now:
 
-- provider example migration in `example/04_providers`
-- MCP example migration in `example/06_mcp_integration`
-- deciding how much explicit compatibility residue should remain in the
-  lower-volume appendix files
+- deciding how much explicit compatibility residue should remain in the two
+  frozen appendix files under `example/02_core_features`
+- writing short migration recipes for the remaining frozen builder jobs before
+  any wider deprecation wave

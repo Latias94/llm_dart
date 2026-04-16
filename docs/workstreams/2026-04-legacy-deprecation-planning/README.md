@@ -88,7 +88,40 @@ This phase should explicitly avoid:
 - [04-readme-and-example-audit.md](04-readme-and-example-audit.md)
   - Audit of the current root docs, package docs, and example hotspots that
     still teach the legacy path.
+- [05-task-oriented-migration-recipes.md](05-task-oriented-migration-recipes.md)
+  - Short migration recipes for the main old-builder jobs, with explicit
+    stable versus provider-owned boundary guidance.
+- [06-deprecated-preset-helper-aliases.md](06-deprecated-preset-helper-aliases.md)
+  - Provider-family migration notes for the already-deprecated preset helper
+    aliases that should disappear before broader compatibility trunks.
+- [07-builder-web-search-replacements.md](07-builder-web-search-replacements.md)
+  - Honest provider-owned replacement paths for the deprecated builder-era
+    web-search helpers.
 - [TODO.md](TODO.md)
   - Open work items for this planning phase.
 - [MILESTONES.md](MILESTONES.md)
   - Milestones and acceptance criteria for this planning phase.
+
+## Current Status
+
+The workstream has now moved beyond general policy and inventory.
+
+What is now written down:
+
+- the remaining legacy surface inventory
+- the deprecation/removal policy
+- the ordered migration sequence
+- the first removal-readiness matrix
+- the README/example audit
+- task-oriented migration recipes for common builder jobs
+- family-by-family notes for already-deprecated preset helper aliases
+- provider-owned replacements for deprecated builder web-search helpers
+
+What remains open before a wider deprecation wave:
+
+- decide whether `ai()` is now ready for soft deprecation or should remain a
+  frozen compatibility host
+- decide whether `createProvider(..., extensions: ...)` should stay as a raw
+  escape hatch or move deeper into soft-deprecation guidance
+- draft the actual breaking-window removal candidate list and release-note
+  templates

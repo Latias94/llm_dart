@@ -1,27 +1,27 @@
 // ignore_for_file: avoid_print
-import 'dart:convert';
 import 'dart:io';
-import 'package:llm_dart/legacy.dart';
-import 'package:mcp_dart/mcp_dart.dart' hide Tool;
 
-/// Simple HTTP Streaming LLM Integration - Streaming Tool Use Demo
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:mcp_dart/mcp_dart.dart';
+
+import '../shared/mcp_tool_bridge.dart';
+
+/// Simple HTTP streaming LLM integration - streaming tool use demo.
 ///
-/// This example demonstrates streaming conversation with tool use functionality.
-/// It shows the complete flow: user request → LLM tool call → tool execution → LLM response.
-/// Features a simple "get current time" tool to demonstrate the streaming tool use process.
-///
-/// Before running:
-/// 1. Start the server: dart run http_examples/server.dart
-/// 2. Set API key: export OPENAI_API_KEY="your-key-here"
-/// 3. Run this: dart run example/06_mcp_integration/http_examples/simple_stream_client.dart
+/// This example focuses on the shared streaming event model:
+/// - stream the model response
+/// - observe tool input deltas and resolved tool calls
+/// - execute MCP tools through the shared executor bridge
+/// - continue automatically into the final answer
 void main() async {
   print('🌊 Simple HTTP Streaming Tool Use Demo\n');
 
-  // Get API key
   final apiKey = Platform.environment['OPENAI_API_KEY'] ?? 'sk-TESTKEY';
   if (apiKey == 'sk-TESTKEY') {
     print(
-        '⚠️  Warning: Using test API key. Set OPENAI_API_KEY for real usage.\n');
+      '⚠️  Warning: Using test API key. Set OPENAI_API_KEY for real usage.\n',
+    );
   }
 
   await demonstrateStreamingToolUse(apiKey);
@@ -30,188 +30,251 @@ void main() async {
   exit(0);
 }
 
-/// Demonstrate streaming tool use with HTTP MCP tools
 Future<void> demonstrateStreamingToolUse(String apiKey) async {
   print('🌊 Streaming Tool Use with HTTP MCP Tools:\n');
 
-  Client? mcpClient;
   StreamableHttpClientTransport? transport;
 
   try {
-    // Create streaming LLM provider
-    final provider = await ai()
-        .openai()
-        .apiKey(apiKey)
-        .model('gpt-4o-mini')
-        .temperature(0.7)
-        .build();
-
+    final model = _createOpenAIModel(apiKey);
     print('   🤖 Creating LLM provider: OpenAI GPT-4o-mini');
 
-    // Create MCP client for HTTP server
     final mcpConnection = await _createHttpMcpClient();
-    mcpClient = mcpConnection.client;
+    final mcpClient = mcpConnection.client;
     transport = mcpConnection.transport;
 
-    // Get MCP tools and convert to llm_dart tools
-    final mcpTools = await _getMcpToolsAsLlmDartTools(mcpClient);
+    final allTools = await discoverMcpFunctionTools(mcpClient);
+    final tools = allTools
+        .where((tool) => tool.name == 'current_time')
+        .toList(growable: false);
 
-    print('   🔧 Available HTTP MCP Tools:');
-    for (final tool in mcpTools) {
-      print('      • ${tool.function.name}: ${tool.function.description}');
+    if (tools.isEmpty) {
+      throw StateError(
+        'The current_time tool was not discovered from the HTTP MCP server.',
+      );
     }
 
-    // Streaming conversation requesting current time
-    final messages = [
-      ChatMessage.system(
-          'You are a helpful assistant. When users ask for time-related information, use the available tools to get accurate current time.'),
-      ChatMessage.user('Hi! Can you please tell me what time it is right now?'),
+    print('   🔧 Exposed HTTP MCP Tool for this demo:');
+    for (final tool in tools) {
+      print('      • ${tool.name}: ${tool.description}');
+    }
+
+    final prompt = <core.PromptMessage>[
+      core.SystemPromptMessage.text(
+        'You are a helpful assistant. When users ask for time-related '
+        'information, use the available tools to get the accurate current time.',
+      ),
+      core.UserPromptMessage.text(
+        'Hi! Can you please tell me what time it is right now?',
+      ),
     ];
 
     print('\n   💬 User Message:');
-    print('      "${messages.last.content}"');
+    print('      "${_lastUserText(prompt)}"');
     print('\n   🤖 LLM Processing...');
 
-    // Process the streaming response with detailed logging
-    await _processStreamingToolUse(provider, messages, mcpTools, mcpClient);
+    final stream = core.streamTextRun(
+      model: model,
+      prompt: prompt,
+      tools: tools,
+      toolChoice: const core.RequiredToolChoice(),
+      options: const core.GenerateTextOptions(
+        temperature: 0.7,
+      ),
+      functionToolExecutor: createMcpFunctionToolExecutor(
+        mcpClient,
+        onExecutionStart: (request, arguments) {
+          print(
+            '   🛠️  Executing MCP tool: ${request.toolCall.toolName} '
+            '(${request.toolCall.toolCallId})',
+          );
+          _printIndentedValue(
+            'Arguments',
+            arguments,
+            baseIndent: '      ',
+          );
+        },
+        onExecutionFinish: (request, arguments, result, executionResult) {
+          _printIndentedValue(
+            'Result',
+            executionResult.output,
+            baseIndent: '      ',
+          );
+          if (result.isError == true || executionResult.isError) {
+            print(
+              '      ⚠️ MCP tool ${request.toolCall.toolName} completed with an error state.',
+            );
+          } else {
+            print('      ✅ MCP tool ${request.toolCall.toolName} completed.');
+          }
+        },
+        onExecutionError: (request, arguments, error) {
+          print(
+            '      ❌ MCP tool ${request.toolCall.toolName} execution error: $error',
+          );
+        },
+      ),
+      onStepFinish: (step) {
+        print(
+          '   📋 Step ${step.stepNumber + 1} finished with ${step.finishReason.name}.',
+        );
+      },
+    );
 
+    await _consumeStreamingEvents(stream);
+
+    final runResult = await stream.result;
+    print('\n   📝 Final Response: ${runResult.text}');
     print('\n   ✅ Streaming tool use demonstration successful\n');
   } catch (e) {
     print('   ❌ Streaming tool use failed: $e\n');
   } finally {
-    // Clean up
     if (transport != null) {
-      try {
-        await transport.close();
-        print('   🔌 HTTP MCP connection closed');
-      } catch (e) {
-        print('   ⚠️ Error closing transport: $e');
-      }
+      await _closeHttpTransport(transport);
+      print('   🔌 HTTP MCP connection closed');
     }
   }
 }
 
-/// Process streaming response with detailed tool use logging
-Future<void> _processStreamingToolUse(
-  ChatCapability provider,
-  List<ChatMessage> messages,
-  List<Tool> tools,
-  Client mcpClient,
-) async {
-  var conversation = List<ChatMessage>.from(messages);
-  var toolCallsCollected = <ToolCall>[];
-  var hasToolCalls = false;
-  var initialResponseText = '';
-  final toolCallAggregator = ToolCallAggregator();
+Future<void> _consumeStreamingEvents(core.StreamTextRunResult stream) async {
+  var activeText = false;
+  var activeReasoning = false;
+  final toolNamesByCallId = <String, String>{};
 
-  print('   📡 Starting streaming request to LLM...');
-
-  // First stream - get initial response and tool calls
-  await for (final event in provider.chatStream(conversation, tools: tools)) {
+  await for (final event in stream) {
     switch (event) {
-      case TextDeltaEvent(delta: final delta):
-        initialResponseText += delta;
-        // Don't print yet, wait to see if there are tool calls
-        break;
+      case core.TextStartEvent():
+        _flushActiveStreams(
+          activeText: activeText,
+          activeReasoning: activeReasoning,
+        );
+        activeText = true;
+        activeReasoning = false;
+        print('   🤖 Assistant Stream:');
+        stdout.write('      ');
 
-      case ToolCallDeltaEvent(toolCall: final toolCall):
-        if (!hasToolCalls) {
-          // If we have initial text, print it first
-          if (initialResponseText.isNotEmpty) {
-            print('   🤖 LLM Initial Response: $initialResponseText');
-          }
-          print('\n   🔧 LLM requested tool calls:');
-          hasToolCalls = true;
+      case core.TextDeltaEvent(delta: final delta):
+        stdout.write(delta.replaceAll('\n', '\n      '));
+
+      case core.TextEndEvent():
+        if (activeText) {
+          print('');
         }
-        print('      📞 Function: ${toolCall.function.name}');
-        print('      📋 Arguments: ${toolCall.function.arguments}');
-        print('      🆔 Call ID: ${toolCall.id}');
-        toolCallsCollected.add(toolCall);
-        toolCallAggregator.addDelta(toolCall);
-        break;
+        activeText = false;
 
-      case CompletionEvent():
-        if (hasToolCalls) {
-          print('\n   🛠️  Executing MCP tools via HTTP...');
+      case core.ReasoningStartEvent():
+        _flushActiveStreams(
+          activeText: activeText,
+          activeReasoning: activeReasoning,
+        );
+        activeText = false;
+        activeReasoning = true;
+        print('   🧠 Reasoning Stream:');
+        stdout.write('      ');
 
-          // Execute tools with detailed logging
-          final toolResults = <ToolCall>[];
-          final aggregatedToolCalls = toolCallAggregator.completedCalls;
-          final callsToUse = aggregatedToolCalls.isNotEmpty
-              ? aggregatedToolCalls
-              : toolCallsCollected;
+      case core.ReasoningDeltaEvent(delta: final delta):
+        stdout.write(delta.replaceAll('\n', '\n      '));
 
-          for (int i = 0; i < callsToUse.length; i++) {
-            final toolCall = callsToUse[i];
-            print('      Step ${i + 1}: Executing ${toolCall.function.name}');
-
-            final result = await _executeMcpTool(
-              mcpClient,
-              toolCall.function.name,
-              toolCall.function.arguments,
-            );
-
-            toolResults.add(ToolCall(
-              id: toolCall.id,
-              callType: 'function',
-              function: FunctionCall(
-                name: toolCall.function.name,
-                arguments: result,
-              ),
-            ));
-          }
-
-          // Add tool results to conversation
-          conversation.addAll([
-            ChatMessage.toolUse(toolCalls: callsToUse),
-            ChatMessage.toolResult(results: toolResults),
-          ]);
-
-          print(
-              '\n   🔄 Sending tool results back to LLM for final response...');
-          print('   🤖 LLM Final Response:');
-          stdout.write('      '); // Initial indentation for streaming text
-
-          // Second stream - get final response with streaming output
-          await for (final finalEvent in provider.chatStream(conversation)) {
-            switch (finalEvent) {
-              case TextDeltaEvent(delta: final delta):
-                // Replace newlines with indented newlines to maintain formatting
-                final indentedDelta = delta.replaceAll('\n', '\n      ');
-                stdout.write(indentedDelta);
-                break;
-              case CompletionEvent():
-                print(''); // New line after streaming
-                break;
-              case ErrorEvent(error: final error):
-                print('\n   ❌ Final response error: $error');
-                break;
-              case ToolCallDeltaEvent():
-              case ThinkingDeltaEvent():
-                // Handle other events if needed
-                break;
-            }
-          }
-        } else {
-          // No tool calls, just print the response
-          if (initialResponseText.isNotEmpty) {
-            print('   🤖 LLM Response: $initialResponseText');
-          }
+      case core.ReasoningEndEvent():
+        if (activeReasoning) {
+          print('');
         }
+        activeReasoning = false;
+
+      case core.ToolInputStartEvent(
+          toolCallId: final toolCallId,
+          toolName: final toolName,
+        ):
+        _flushActiveStreams(
+          activeText: activeText,
+          activeReasoning: activeReasoning,
+        );
+        activeText = false;
+        activeReasoning = false;
+        toolNamesByCallId[toolCallId] = toolName;
+        print('   🔧 Tool Input Stream: $toolName ($toolCallId)');
+
+      case core.ToolInputDeltaEvent():
         break;
 
-      case ErrorEvent(error: final error):
-        print('\n   ❌ Streaming error: $error');
-        break;
+      case core.ToolInputEndEvent(toolCallId: final toolCallId):
+        final toolName = toolNamesByCallId[toolCallId];
+        if (toolName != null) {
+          print('   ✅ Tool Input Ready: $toolName ($toolCallId)');
+        }
 
-      case ThinkingDeltaEvent(delta: final delta):
-        print('   🧠 Thinking: $delta');
+      case core.ToolInputErrorEvent(
+          toolCallId: final toolCallId,
+          toolName: final toolName,
+          errorText: final errorText,
+          input: final input,
+        ):
+        print('   ❌ Tool Input Error: $toolName ($toolCallId)');
+        print('      Reason: $errorText');
+        _printIndentedValue(
+          'Input',
+          input,
+          baseIndent: '      ',
+        );
+
+      case core.ToolCallEvent(toolCall: final toolCall):
+        print('   📞 Tool Call Ready: ${toolCall.toolName}');
+        print('      🆔 Call ID: ${toolCall.toolCallId}');
+        _printIndentedValue(
+          'Input',
+          toolCall.input,
+          baseIndent: '      ',
+        );
+
+      case core.FinishEvent(finishReason: final finishReason):
+        _flushActiveStreams(
+          activeText: activeText,
+          activeReasoning: activeReasoning,
+        );
+        activeText = false;
+        activeReasoning = false;
+        print('   ✅ Stream finished with ${finishReason.name}.');
+
+      case core.ErrorEvent(error: final error):
+        _flushActiveStreams(
+          activeText: activeText,
+          activeReasoning: activeReasoning,
+        );
+        activeText = false;
+        activeReasoning = false;
+        print('   ❌ Streaming error: ${error.message}');
+
+      case core.StartEvent():
+      case core.ResponseMetadataEvent():
+      case core.ReasoningFileEvent():
+      case core.ToolResultEvent():
+      case core.ToolApprovalRequestEvent():
+      case core.ToolOutputDeniedEvent():
+      case core.SourceEvent():
+      case core.FileEvent():
+      case core.StepStartEvent():
+      case core.StepFinishEvent():
+      case core.AbortEvent():
+      case core.CustomEvent():
+      case core.RawChunkEvent():
         break;
     }
   }
 }
 
-/// Connection result for MCP client
+void _flushActiveStreams({
+  required bool activeText,
+  required bool activeReasoning,
+}) {
+  if (activeText || activeReasoning) {
+    print('');
+  }
+}
+
+core.LanguageModel _createOpenAIModel(String apiKey) {
+  return llm.AI.openai(apiKey: apiKey).chatModel('gpt-4o-mini');
+}
+
 class McpConnection {
   final Client client;
   final StreamableHttpClientTransport transport;
@@ -219,130 +282,69 @@ class McpConnection {
   McpConnection(this.client, this.transport);
 }
 
-/// Create an HTTP MCP client connection
 Future<McpConnection> _createHttpMcpClient() async {
   print('   🌐 Creating HTTP MCP client connection...');
 
   final client = Client(
-    Implementation(name: "simple-stream-client", version: "1.0.0"),
+    const Implementation(name: 'simple-stream-client', version: '1.0.0'),
   );
 
-  // Set up error handler
   client.onerror = (error) {
     print('   ❌ MCP Client error: $error');
   };
 
-  // Create HTTP transport
   final transport = StreamableHttpClientTransport(
     Uri.parse('http://localhost:3000/mcp'),
     opts: StreamableHttpClientTransportOptions(),
   );
 
-  // Connect the client to the transport
   await client.connect(transport);
   print('   ✅ HTTP MCP client connected with session: ${transport.sessionId}');
 
   return McpConnection(client, transport);
 }
 
-/// Get MCP tools and convert them to llm_dart tools
-Future<List<Tool>> _getMcpToolsAsLlmDartTools(Client mcpClient) async {
+Future<void> _closeHttpTransport(StreamableHttpClientTransport transport) async {
   try {
-    final toolsResult = await mcpClient.listTools();
-    final llmDartTools = <Tool>[];
-
-    for (final mcpTool in toolsResult.tools) {
-      // Convert MCP tool schema to ParametersSchema
-      final parametersSchema =
-          _convertMcpSchemaToParametersSchema(mcpTool.inputSchema.toJson());
-
-      // Convert MCP tool to llm_dart tool
-      final llmDartTool = Tool.function(
-        name: mcpTool.name,
-        description: mcpTool.description ?? 'MCP tool: ${mcpTool.name}',
-        parameters: parametersSchema,
-      );
-      llmDartTools.add(llmDartTool);
-    }
-
-    return llmDartTools;
-  } catch (error) {
-    print('   ❌ Error getting MCP tools: $error');
-    return [];
+    await transport.close();
+  } catch (e) {
+    print('   ⚠️ Error closing transport: $e');
   }
 }
 
-/// Convert MCP input schema to llm_dart ParametersSchema
-ParametersSchema _convertMcpSchemaToParametersSchema(
-    Map<String, dynamic>? mcpSchema) {
-  if (mcpSchema == null || mcpSchema.isEmpty) {
-    return ParametersSchema(
-      schemaType: 'object',
-      properties: {},
-      required: [],
-    );
-  }
-
-  final properties = <String, ParameterProperty>{};
-  final mcpProperties = mcpSchema['properties'] as Map<String, dynamic>? ?? {};
-
-  for (final entry in mcpProperties.entries) {
-    final propName = entry.key;
-    final propDef = entry.value as Map<String, dynamic>;
-
-    properties[propName] = ParameterProperty(
-      propertyType: propDef['type'] as String? ?? 'string',
-      description: propDef['description'] as String? ?? '',
-    );
-  }
-
-  return ParametersSchema(
-    schemaType: mcpSchema['type'] as String? ?? 'object',
-    properties: properties,
-    required: (mcpSchema['required'] as List<dynamic>?)?.cast<String>() ?? [],
-  );
-}
-
-/// Execute an MCP tool and return the result as a string
-Future<String> _executeMcpTool(
-  Client mcpClient,
-  String toolName,
-  String argumentsJson,
-) async {
-  try {
-    // Parse arguments from JSON string
-    Map<String, dynamic> arguments = {};
-    if (argumentsJson.isNotEmpty &&
-        argumentsJson != '{}' &&
-        argumentsJson.trim().isNotEmpty) {
-      try {
-        arguments = jsonDecode(argumentsJson) as Map<String, dynamic>;
-      } catch (e) {
-        print('         ⚠️ Error parsing JSON arguments: $e');
-        print('         📋 Raw arguments: "$argumentsJson"');
-      }
+String _lastUserText(List<core.PromptMessage> prompt) {
+  for (var index = prompt.length - 1; index >= 0; index--) {
+    final message = prompt[index];
+    if (message is! core.UserPromptMessage) {
+      continue;
     }
 
-    print('         📡 Executing MCP tool: $toolName');
-    print('         📋 Arguments: $arguments');
+    final text = message.parts.whereType<core.TextPromptPart>().map((part) {
+      return part.text;
+    }).join('\n');
+    if (text.trim().isNotEmpty) {
+      return text;
+    }
+  }
 
-    final result = await mcpClient.callTool(
-      CallToolRequestParams(
-        name: toolName,
-        arguments: arguments,
-      ),
-    );
+  return '';
+}
 
-    // Convert result to string
-    final resultText = result.content
-        .whereType<TextContent>()
-        .map((item) => item.text)
-        .join('\n');
+void _printIndentedValue(
+  String label,
+  Object? value, {
+  String baseIndent = '      ',
+}) {
+  final formatted = formatMcpValue(value);
+  final lines = formatted.split('\n');
+  if (lines.length == 1) {
+    print('$baseIndent$label: ${lines.first}');
+    return;
+  }
 
-    print('         ✅ MCP tool result: $resultText');
-    return resultText;
-  } catch (error) {
-    print('         ❌ Error executing MCP tool $toolName: $error');
-    return 'Error: $error';
+  print('$baseIndent$label:');
+  final childIndent = '$baseIndent   ';
+  for (final line in lines) {
+    print('$childIndent$line');
   }
 }

@@ -51,16 +51,24 @@
 - [x] Rewrite the Ollama provider runtime examples
   (`advanced_features.dart`, `thinking_example.dart`) onto the
   `llm_dart_community` surface with provider-owned runtime options
-- [ ] Rewrite the highest-traffic example slices so modern APIs become the
-  default copy-paste path
-- [ ] Write short task-oriented migration recipes for the most common builder
+- [x] Rewrite the remaining highest-traffic example slices so modern APIs
+  become the default copy-paste path
+  (`google/google_tts_example.dart`,
+  `anthropic/file_handling.dart`,
+  `elevenlabs/audio_capabilities.dart`)
+- [x] Rewrite `example/06_mcp_integration` onto shared core tool runners and
+  a dedicated MCP bridge instead of legacy chat/tool orchestration
+- [x] Narrow the final non-appendix example residue
+  (`basic_configuration.dart`, `capability_detection.dart`) off the broad
+  `legacy.dart` barrel
+- [x] Write short task-oriented migration recipes for the most common builder
   jobs before considering wider builder deprecation
 
 ## First Deprecation Wave Preparation
 
-- [ ] Confirm the full list of already-deprecated preset helper aliases and
+- [x] Confirm the full list of already-deprecated preset helper aliases and
   group them into one migration note per provider family
-- [ ] Confirm the modern replacements for deprecated builder web-search helpers
+- [x] Confirm the modern replacements for deprecated builder web-search helpers
 - [ ] Decide whether `ai()` should become soft-deprecated only after the
   migration recipes land
 - [ ] Decide whether `createProvider(...)` should remain as a frozen generic

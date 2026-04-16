@@ -28,20 +28,22 @@ Current boundary:
 
 ### [openai/](openai/)
 Mixed status. The package already has stable chat, image, speech, and
-transcription models, but several example files are still compatibility
-oriented.
+transcription models, and the Responses appendix is now narrowed to the
+provider-owned OpenAI compatibility surface. Residual assistants and some
+other lifecycle examples still remain compatibility oriented.
 
 ### [anthropic/](anthropic/)
 Mixed status. Stable chat plus typed extended-thinking and MCP options already
-exist, while some file-management examples still document older compatibility
-surfaces.
+exist, while some file-management examples still document provider-owned file
+lifecycle compatibility surfaces.
 
 ### [groq/](groq/)
 Stable OpenAI-family chat facade with Groq profile and low-latency streaming.
 
 ### [google/](google/)
 Stable embedding, image, and speech model facades with typed Google provider
-options. Native streaming TTS examples are still compatibility oriented.
+options. The Google TTS example is now stable-first for one-shot speech and
+keeps only streaming and discovery as provider-owned appendix material.
 
 ### [ollama/](ollama/)
 Modern community-surface local runtime examples with provider-owned Ollama
@@ -49,17 +51,17 @@ options. Residual compatibility flows such as model listing still remain
 provider owned.
 
 ### [elevenlabs/](elevenlabs/)
-Compatibility-oriented audio examples. Modern shared-capability ElevenLabs
-speech and direct-audio transcription surfaces now live in
-`packages/llm_dart_community`, while this directory covers broader voice/audio
-residual flows.
+Stable shared-capability speech/transcription examples plus explicit
+provider-owned voice/audio appendix material. Modern shared ElevenLabs surfaces
+live in `packages/llm_dart_community`, while this directory still covers voice
+catalogs, streaming helpers, and realtime boundary residue.
 
 ### [xai/](xai/)
 Stable xAI chat facade with typed live-search options.
 
 ### [others/](others/)
-Stable OpenAI-family profile examples such as OpenRouter and DeepSeek fallback
-composition.
+Stable OpenAI-family profile examples plus explicit custom-compatible endpoint
+wiring when a provider does not yet justify its own root facade.
 
 ## Setup
 
