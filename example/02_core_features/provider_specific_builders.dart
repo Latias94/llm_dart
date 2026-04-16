@@ -50,7 +50,7 @@ Future<void> demoOpenAIBuilder(String? apiKey) async {
 
   try {
     // OpenAI with provider-specific parameters
-    final provider = await ai()
+    final provider = await LLMBuilder()
         .openai((openai) => openai
             .frequencyPenalty(0.5)
             .presencePenalty(0.3)
@@ -89,7 +89,7 @@ Future<void> demoAnthropicBuilder(String? apiKey) async {
 
   try {
     // Anthropic with metadata and container configuration
-    final provider = await ai()
+    final provider = await LLMBuilder()
         .anthropic((anthropic) => anthropic.metadata({
               'user_id': 'demo_user_123',
               'session_id': 'session_456',
@@ -123,7 +123,7 @@ Future<void> demoOllamaBuilder(String baseUrl) async {
 
   try {
     // Ollama with performance optimization
-    final provider = await ai()
+    final provider = await LLMBuilder()
         .ollama((ollama) => ollama
             .numCtx(4096)
             .numGpu(-1) // Use all GPU layers
@@ -161,7 +161,7 @@ Future<void> demoElevenLabsBuilder(String? apiKey) async {
 
   try {
     // ElevenLabs with voice customization
-    final audioProvider = await ai()
+    final audioProvider = await LLMBuilder()
         .elevenlabs((elevenlabs) => elevenlabs
             .voiceId('JBFqnCBsd6RMkjVDRZzb')
             .stability(0.75)
@@ -198,7 +198,7 @@ Future<void> demoOpenRouterBuilder(String? apiKey) async {
 
   try {
     // OpenRouter with audited online-search intent
-    final provider = await ai()
+    final provider = await LLMBuilder()
         .openRouter((openrouter) => openrouter.onlineSearch())
         .apiKey(apiKey)
         .model('anthropic/claude-3.5-sonnet')
@@ -225,14 +225,18 @@ Future<void> demoMixedConfigurations() async {
 
   // Show that providers work without callback configuration (backward compatible)
   print('   ✅ Backward compatibility - no callbacks:');
-  final simpleBuilder =
-      ai().openai().anthropic().ollama().elevenlabs().openRouter();
+  final simpleBuilder = LLMBuilder()
+      .openai()
+      .anthropic()
+      .ollama()
+      .elevenlabs()
+      .openRouter();
   print('      Builder created successfully without provider-specific config');
   print('      Builder type: ${simpleBuilder.runtimeType}');
 
   // Show mixed configuration with both generic and provider-specific parameters
   print('   ✅ Mixed configuration:');
-  final mixedBuilder = ai()
+  final mixedBuilder = LLMBuilder()
       .openai((openai) => openai.seed(42).parallelToolCalls(false))
       .apiKey('test-key')
       .model('gpt-4')

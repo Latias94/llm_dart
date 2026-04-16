@@ -37,7 +37,7 @@ class OpenRouterBuilder {
   ///
   /// Example:
   /// ```dart
-  /// final provider = await ai()
+  /// final provider = await LLMBuilder()
   ///     .openRouter((openrouter) => openrouter
   ///         .webSearch(
   ///           maxResults: 5,
@@ -74,7 +74,7 @@ class OpenRouterBuilder {
   ///
   /// Example:
   /// ```dart
-  /// final provider = await ai()
+  /// final provider = await LLMBuilder()
   ///     .openRouter((openrouter) => openrouter
   ///         .searchPrompt('Focus on recent academic papers and research'))
   ///     .apiKey(apiKey)
@@ -97,7 +97,7 @@ class OpenRouterBuilder {
   /// Example:
   /// ```dart
   /// // With online shortcut enabled (default)
-  /// final provider = await ai()
+  /// final provider = await LLMBuilder()
   ///     .openRouter((openrouter) => openrouter
   ///         .useOnlineShortcut(true))
   ///     .apiKey(apiKey)

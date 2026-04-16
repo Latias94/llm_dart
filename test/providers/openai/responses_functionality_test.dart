@@ -16,7 +16,7 @@ void main() {
       late OpenAIResponses responses;
 
       setUp(() async {
-        provider = await ai()
+        provider = await LLMBuilder()
             .openai((openai) => openai.useResponsesAPI().webSearchTool())
             .apiKey('test-key')
             .model('gpt-4o')
@@ -85,7 +85,7 @@ void main() {
       late OpenAIResponses responses;
 
       setUp(() async {
-        provider = await ai()
+        provider = await LLMBuilder()
             .openai((openai) => openai.useResponsesAPI())
             .apiKey('test-key')
             .model('gpt-4o')
@@ -157,7 +157,7 @@ void main() {
       late OpenAIResponses responses;
 
       setUp(() async {
-        provider = await ai()
+        provider = await LLMBuilder()
             .openai((openai) => openai.useResponsesAPI().webSearchTool())
             .apiKey('test-key')
             .model('gpt-4o')
@@ -298,7 +298,7 @@ void main() {
       late OpenAIResponses responses;
 
       setUp(() async {
-        provider = await ai()
+        provider = await LLMBuilder()
             .openai((openai) => openai.useResponsesAPI())
             .apiKey('test-key')
             .model('gpt-4o')
@@ -371,7 +371,7 @@ void main() {
       late OpenAIResponses responses;
 
       setUp(() async {
-        provider = await ai()
+        provider = await LLMBuilder()
             .openai((openai) => openai.useResponsesAPI().webSearchTool())
             .apiKey('test-key')
             .model('gpt-4o')

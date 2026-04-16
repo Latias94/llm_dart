@@ -13,7 +13,8 @@ The current state is mixed, but the direction is clear:
 - the top-level `README.md` is already modern-first
 - workspace package READMEs under `packages/` are already modern-first
 - the main remaining migration drag is in `example/` and some example-level
-  READMEs that still teach `legacy.dart` and `ai().*.build()`
+  appendix files that still teach `legacy.dart` and explicit compatibility
+  builder flows
 
 That means the next highest-value deprecation-preparation work is not another
 policy note.
@@ -31,7 +32,7 @@ Anthropic file handling, Google TTS, ElevenLabs audio, and the MCP bridge
 rewrite for stdio and HTTP examples:
 
 - `2` example Dart files still import `package:llm_dart/legacy.dart`
-- `2` example Dart files still contain direct `ai()` usage
+- `0` example Dart files still contain direct `ai()` usage
 
 Legacy imports inside `example/` are now concentrated in:
 
@@ -40,10 +41,12 @@ Legacy imports inside `example/` are now concentrated in:
 - `example/03_advanced_features` - `0` files
 - `example/04_providers` - `0` files
 
-Direct `ai()` usage inside `example/` is now concentrated in:
+Direct executable `ai()` usage inside `example/` has now been removed.
+
+The two remaining appendix files now use `LLMBuilder()` directly instead:
 
 - `example/01_getting_started` - `0` files
-- `example/02_core_features` - `2` files
+- `example/02_core_features` - `0` files
 - `example/03_advanced_features` - `0` files
 - `example/04_providers` - `0` files
 
@@ -245,7 +248,7 @@ These READMEs are not currently the main source of legacy drift.
 
 The largest hotspot is the example tree itself.
 
-Many example files still import:
+Many older example slices used to import:
 
 - `package:llm_dart/legacy.dart`
 - `ai()`
@@ -254,6 +257,14 @@ Many example files still import:
 - `buildImageGeneration()`
 - `buildEmbedding()`
 - `buildModelListing()`
+
+That is no longer the broad current state.
+
+The remaining explicit appendix residue is much narrower:
+
+- `legacy.dart`
+- `LLMBuilder()`
+- typed compatibility `build*()` helpers
 
 This is a real product problem because users often copy examples before they
 read architecture notes.
@@ -269,7 +280,7 @@ Those are now resolved at the direct-snippet level:
 
 - both READMEs now lead with the modern `llm_dart_community` path
 - both compatibility snippets now use provider-specific entrypoints instead of
-  teaching `legacy.dart` plus `ai().*.build()` directly
+  teaching `legacy.dart` plus broad compatibility builder flows directly
 - `example/03_advanced_features/README.md` now also teaches stable transport
   recipes instead of the old builder HTTP shell
 - `example/04_providers/others/README.md` now also leads with stable profile
@@ -333,6 +344,7 @@ The next honest implementation slice is no longer the advanced example layer.
 It is now:
 
 - deciding how much explicit compatibility residue should remain in the two
-  frozen appendix files under `example/02_core_features`
+  frozen appendix files under `example/02_core_features`, now that they use
+  `LLMBuilder()` instead of the deprecated `ai()` alias
 - writing short migration recipes for the remaining frozen builder jobs before
   any wider deprecation wave

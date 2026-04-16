@@ -6,7 +6,7 @@ void main() {
   group('OpenAI Responses API Stateful Features', () {
     test('should have responses getter when useResponsesAPI is enabled',
         () async {
-      final provider = await ai()
+      final provider = await LLMBuilder()
           .openai((openai) => openai.useResponsesAPI())
           .apiKey('test-key')
           .model('gpt-4o')
@@ -19,15 +19,18 @@ void main() {
 
     test('should not have responses getter when useResponsesAPI is disabled',
         () async {
-      final provider =
-          await ai().openai().apiKey('test-key').model('gpt-4o').build();
+      final provider = await LLMBuilder()
+          .openai()
+          .apiKey('test-key')
+          .model('gpt-4o')
+          .build();
 
       final openaiProvider = provider as OpenAIProvider;
       expect(openaiProvider.responses, isNull);
     });
 
     test('should implement OpenAIResponsesCapability interface', () async {
-      final provider = await ai()
+      final provider = await LLMBuilder()
           .openai((openai) => openai.useResponsesAPI())
           .apiKey('test-key')
           .model('gpt-4o')
@@ -42,7 +45,7 @@ void main() {
 
     test('should have all required OpenAIResponsesCapability methods',
         () async {
-      final provider = await ai()
+      final provider = await LLMBuilder()
           .openai((openai) => openai.useResponsesAPI())
           .apiKey('test-key')
           .model('gpt-4o')
@@ -63,7 +66,7 @@ void main() {
     });
 
     test('should support basic OpenAIResponsesCapability methods', () async {
-      final provider = await ai()
+      final provider = await LLMBuilder()
           .openai((openai) => openai.useResponsesAPI())
           .apiKey('test-key')
           .model('gpt-4o')

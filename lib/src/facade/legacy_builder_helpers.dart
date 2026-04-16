@@ -4,6 +4,10 @@ import '../../core/capability.dart';
 /// Create a new LLM builder instance.
 ///
 /// This is the compatibility entry point for builder-era provider creation.
+@Deprecated(
+  'ai() is a legacy builder alias. Prefer the stable AI facade for new code, '
+  'or LLMBuilder() when you still need the compatibility builder surface.',
+)
 LLMBuilder ai() => LLMBuilder();
 
 /// Create a provider with the given configuration.

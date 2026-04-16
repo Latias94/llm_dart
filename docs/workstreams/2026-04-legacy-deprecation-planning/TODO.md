@@ -69,16 +69,16 @@
 - [x] Confirm the full list of already-deprecated preset helper aliases and
   group them into one migration note per provider family
 - [x] Confirm the modern replacements for deprecated builder web-search helpers
-- [ ] Decide whether `ai()` should become soft-deprecated only after the
+- [x] Decide whether `ai()` should become soft-deprecated only after the
   migration recipes land
-- [ ] Decide whether `createProvider(...)` should remain as a frozen generic
+- [x] Decide whether `createProvider(...)` should remain as a frozen generic
   compatibility helper or move deeper into soft-deprecation
 
 ## Breaking-Window Preparation
 
-- [ ] Draft the future breaking-window removal candidate list
-- [ ] Prepare changelog and migration-note templates for removals
-- [ ] Define which compatibility tests must remain until each removal lands
+- [x] Draft the future breaking-window removal candidate list
+- [x] Prepare changelog and migration-note templates for removals
+- [x] Define which compatibility tests must remain until each removal lands
 
 ## Explicitly Deferred
 

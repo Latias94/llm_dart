@@ -56,10 +56,10 @@ main old-builder jobs:
 
 After that, the repository can make an honest decision:
 
-- if the recipes are good enough, deprecate `ai()` first and then review
-  whether `LLMBuilder` should also become soft-deprecated
-- if the recipes are still incomplete, keep the builder trunk frozen as the
-  compatibility rail and continue shrinking only leaf aliases around it
+- soft-deprecate `ai()` as the leaf alias if the recipes are good enough
+- keep `LLMBuilder` frozen until a much stronger migration story exists
+- keep shrinking leaves around the builder trunk before weakening the trunk
+  itself
 
 ## Phase D - Execute A Deliberate Breaking Window
 

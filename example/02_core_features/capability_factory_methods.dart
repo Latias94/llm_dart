@@ -86,7 +86,8 @@ Future<void> demonstrateCastVsCompatibilityBuild() async {
 
   print('   Raw compatibility approach (runtime type casting):');
   print('   ```dart');
-  print('   final provider = await ai().openai().apiKey(apiKey).build();');
+  print(
+      '   final provider = await LLMBuilder().openai().apiKey(apiKey).build();');
   print('   if (provider is! AudioCapability) {');
   print('     throw Exception("Not supported");');
   print('   }');
@@ -99,7 +100,7 @@ Future<void> demonstrateCastVsCompatibilityBuild() async {
   print('   Typed compatibility approach:');
   print('   ```dart');
   print(
-      '   final audioProvider = await ai().openai().apiKey(apiKey).buildAudio();');
+      '   final audioProvider = await LLMBuilder().openai().apiKey(apiKey).buildAudio();');
   print('   final voices = await audioProvider.getVoices(); // Direct usage!');
   print('   ```');
   print('');
@@ -126,7 +127,8 @@ Future<void> demonstrateTypedCompatibilityBuilding() async {
     try {
       // Audio capability
       print('      Building audio capability...');
-      final audioProvider = await ai().openai().apiKey(openaiKey).buildAudio();
+      final audioProvider =
+          await LLMBuilder().openai().apiKey(openaiKey).buildAudio();
 
       print('         Audio provider built successfully');
       print('         Type: ${audioProvider.runtimeType}');
@@ -137,7 +139,7 @@ Future<void> demonstrateTypedCompatibilityBuilding() async {
 
       // Image generation capability
       print('      Building image generation capability...');
-      final imageProvider = await ai()
+      final imageProvider = await LLMBuilder()
           .openai()
           .apiKey(openaiKey)
           .model('dall-e-3')
@@ -152,7 +154,7 @@ Future<void> demonstrateTypedCompatibilityBuilding() async {
 
       // Embedding capability
       print('      Building embedding capability...');
-      final embeddingProvider = await ai()
+      final embeddingProvider = await LLMBuilder()
           .openai()
           .apiKey(openaiKey)
           .model('text-embedding-3-small')
@@ -168,7 +170,7 @@ Future<void> demonstrateTypedCompatibilityBuilding() async {
       // Model listing capability
       print('      Building model listing capability...');
       final modelProvider =
-          await ai().openai().apiKey(openaiKey).buildModelListing();
+          await LLMBuilder().openai().apiKey(openaiKey).buildModelListing();
 
       print('         Model listing provider built successfully');
       print('         Type: ${modelProvider.runtimeType}');
@@ -188,7 +190,7 @@ Future<void> demonstrateTypedCompatibilityBuilding() async {
     try {
       // Audio capability (ElevenLabs specializes in audio)
       print('      Building audio capability...');
-      final audioProvider = await ai()
+      final audioProvider = await LLMBuilder()
           .elevenlabs(
               (elevenlabs) => elevenlabs.voiceId('JBFqnCBsd6RMkjVDRZzb'))
           .apiKey(elevenlabsKey)
@@ -229,7 +231,10 @@ Future<void> demonstrateErrorHandling() async {
     // Try to build image generation with ElevenLabs (should fail)
     try {
       print('      Attempting to build image generation...');
-      await ai().elevenlabs().apiKey(elevenlabsKey).buildImageGeneration();
+      await LLMBuilder()
+          .elevenlabs()
+          .apiKey(elevenlabsKey)
+          .buildImageGeneration();
 
       print('         This should not succeed.');
     } catch (e) {
@@ -240,7 +245,7 @@ Future<void> demonstrateErrorHandling() async {
     // Try to build embedding with ElevenLabs (should fail)
     try {
       print('      Attempting to build embedding...');
-      await ai().elevenlabs().apiKey(elevenlabsKey).buildEmbedding();
+      await LLMBuilder().elevenlabs().apiKey(elevenlabsKey).buildEmbedding();
 
       print('         This should not succeed.');
     } catch (e) {
@@ -267,7 +272,8 @@ Future<void> demonstratePracticalUsage() async {
     // Example 1: Audio processing pipeline
     print('      Audio processing pipeline:');
     try {
-      final audioProvider = await ai().openai().apiKey(openaiKey).buildAudio();
+      final audioProvider =
+          await LLMBuilder().openai().apiKey(openaiKey).buildAudio();
 
       // Direct usage without type casting
       final ttsResponse = await audioProvider.textToSpeech(TTSRequest(
@@ -284,7 +290,7 @@ Future<void> demonstratePracticalUsage() async {
     // Example 2: Embedding similarity search
     print('      Embedding similarity search:');
     try {
-      final embeddingProvider = await ai()
+      final embeddingProvider = await LLMBuilder()
           .openai()
           .apiKey(openaiKey)
           .model('text-embedding-3-small')
@@ -307,7 +313,7 @@ Future<void> demonstratePracticalUsage() async {
     print('      Model discovery:');
     try {
       final modelProvider =
-          await ai().openai().apiKey(openaiKey).buildModelListing();
+          await LLMBuilder().openai().apiKey(openaiKey).buildModelListing();
 
       // Direct usage without type casting
       final models = await modelProvider.models();

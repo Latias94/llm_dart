@@ -77,7 +77,7 @@ class HttpConfig {
   ///
   /// Example:
   /// ```dart
-  /// final provider = await ai()
+  /// final provider = await LLMBuilder()
   ///     .openai()
   ///     .apiKey('your-api-key')
   ///     .model('gpt-4.1')

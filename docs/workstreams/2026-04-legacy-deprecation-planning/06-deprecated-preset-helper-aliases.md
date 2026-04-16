@@ -19,7 +19,6 @@ They all do some version of:
 That makes them much easier to remove than:
 
 - `legacy.dart`
-- `ai()`
 - `LLMBuilder`
 - root provider constructors such as `createGoogleProvider(...)`
 

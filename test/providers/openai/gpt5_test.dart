@@ -21,7 +21,8 @@ void main() {
     });
 
     test('should support verbosity in OpenAI builder', () {
-      final builder = ai().openai((openai) => openai.verbosity(Verbosity.high));
+      final builder =
+          LLMBuilder().openai((openai) => openai.verbosity(Verbosity.high));
 
       // Verify the builder accepts the verbosity method
       expect(builder, isNotNull);
@@ -31,7 +32,7 @@ void main() {
       final models = ['gpt-5', 'gpt-5.1', 'gpt-5-mini', 'gpt-5-nano'];
 
       for (final model in models) {
-        final builder = ai().model(model);
+        final builder = LLMBuilder().model(model);
         expect(builder, isNotNull);
       }
     });

@@ -46,7 +46,7 @@ void main() {
     });
 
     test('should build provider with Responses API using builder', () async {
-      final provider = await ai()
+      final provider = await LLMBuilder()
           .openai((openai) => openai
               .useResponsesAPI()
               .webSearchTool()
@@ -123,7 +123,7 @@ void main() {
 
     group('Builder Methods', () {
       test('should accumulate multiple built-in tools', () async {
-        final provider = await ai()
+        final provider = await LLMBuilder()
             .openai((openai) => openai
                     .useResponsesAPI()
                     .webSearchTool()
@@ -146,7 +146,7 @@ void main() {
       });
 
       test('should set previous response ID correctly', () async {
-        final provider = await ai()
+        final provider = await LLMBuilder()
             .openai((openai) =>
                 openai.useResponsesAPI().previousResponseId('resp_123'))
             .apiKey('test-key')

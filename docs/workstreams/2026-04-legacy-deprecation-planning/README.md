@@ -97,6 +97,21 @@ This phase should explicitly avoid:
 - [07-builder-web-search-replacements.md](07-builder-web-search-replacements.md)
   - Honest provider-owned replacement paths for the deprecated builder-era
     web-search helpers.
+- [08-ai-helper-posture.md](08-ai-helper-posture.md)
+  - Decision note for soft-deprecating `ai()` while keeping `LLMBuilder()`
+    frozen as the real compatibility builder trunk.
+- [09-create-provider-posture.md](09-create-provider-posture.md)
+  - Decision note for keeping `createProvider(...)` frozen while treating
+    `extensions` as the actual deprecated escape hatch.
+- [10-breaking-window-removal-candidates.md](10-breaking-window-removal-candidates.md)
+  - Proposed contents of the first conservative breaking window: what should
+    be removed first, what should explicitly stay, and what belongs to later
+    review.
+- [11-removal-release-note-templates.md](11-removal-release-note-templates.md)
+  - Reusable changelog and migration-note templates for leaf removals.
+- [12-compatibility-test-retention.md](12-compatibility-test-retention.md)
+  - Test-retention rules for legacy leaf removals so guardrails do not vanish
+    with the APIs they protect.
 - [TODO.md](TODO.md)
   - Open work items for this planning phase.
 - [MILESTONES.md](MILESTONES.md)
@@ -116,12 +131,13 @@ What is now written down:
 - task-oriented migration recipes for common builder jobs
 - family-by-family notes for already-deprecated preset helper aliases
 - provider-owned replacements for deprecated builder web-search helpers
+- an explicit soft-deprecation posture for `ai()`
+- an explicit frozen-versus-escape-hatch posture for `createProvider(...)`
+- a proposed first breaking-window removal set
+- reusable release-note and migration-note templates
+- explicit compatibility test-retention rules for removals
 
 What remains open before a wider deprecation wave:
 
-- decide whether `ai()` is now ready for soft deprecation or should remain a
-  frozen compatibility host
-- decide whether `createProvider(..., extensions: ...)` should stay as a raw
-  escape hatch or move deeper into soft-deprecation guidance
-- draft the actual breaking-window removal candidate list and release-note
-  templates
+- execute or further defer the proposed wave-1 removal set in a deliberate
+  breaking release

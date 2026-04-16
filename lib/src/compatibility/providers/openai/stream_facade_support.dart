@@ -2,7 +2,6 @@ import 'dart:async';
 
 import '../../../../core/capability.dart';
 import '../../../../core/llm_error.dart';
-import '../../../../models/chat_models.dart';
 import 'client.dart';
 
 /// Runs the repeated OpenAI compatibility streaming facade loop while keeping

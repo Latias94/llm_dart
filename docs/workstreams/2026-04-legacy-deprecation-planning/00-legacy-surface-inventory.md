@@ -36,6 +36,7 @@ treated as the first removal candidates in the next deliberate breaking window:
 
 | Surface group | Examples | Replacement direction | Current decision |
 | --- | --- | --- | --- |
+| Legacy builder alias | `ai()` | Stable `AI.<provider>(...)` for new code, or explicit `LLMBuilder()` for compatibility builder code | Soft-deprecated now |
 | Preset helper aliases | `createGoogleChatProvider`, `createOpenRouterProvider`, `createOllamaVisionProvider`, `createGroqFastProvider` | Modern `AI.<provider>(...).<model/api>(...)` or explicit root base constructor | Soft-deprecated now |
 | Builder web-search helpers | `LLMBuilder.enableWebSearch`, `webSearch`, `quickWebSearch`, `newsSearch`, `searchLocation`, `advancedWebSearch` | Typed provider options or provider-native model settings | Soft-deprecated now |
 | Deprecated compatibility escape hatches | `createProvider(..., extensions: ...)`, root cancellation alias guidance | Typed provider options or transport-owned types | Soft-deprecated now |
@@ -54,9 +55,9 @@ recommendation, but they are not yet ready for broad deprecation:
 
 | Surface group | Examples | Why not deprecate yet? | Current decision |
 | --- | --- | --- | --- |
-| Builder trunk | `ai()`, `LLMBuilder` | Still the broadest migration rail for old fluent root usage; modern task recipes are not yet complete enough to replace it cleanly | Freeze |
+| Builder trunk | `LLMBuilder` | Still the broadest migration rail for old fluent root usage even after the `ai()` alias deprecates | Freeze |
 | Builder config shells | `HttpConfig`, `AudioConfig`, `ImageConfig`, `ProviderConfig` | Still coupled to the builder migration rail; deprecating them before the builder decision would create half-migrations | Freeze |
-| Root generic factory paths | `createProvider`, `providers/factories/*`, root registry helpers | Still used to resolve builder-era provider selection and compatibility routing | Freeze |
+| Root generic factory paths | `createProvider(...)`, `providers/factories/*`, root registry helpers | Still used to resolve builder-era provider selection and compatibility routing | Freeze |
 | Provider root constructors with broad parameter coverage | `createGoogleProvider`, `createOpenAIProvider`, similar non-preset constructors | Still the simplest bridge for old root users who are not ready to adopt package-owned model APIs directly | Freeze |
 
 Rationale:

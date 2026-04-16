@@ -72,7 +72,7 @@ void main() {
     group('Configuration Validation', () {
       test('should handle invalid API key gracefully', () async {
         expect(() async {
-          await ai()
+          await LLMBuilder()
               .openai((openai) => openai.useResponsesAPI())
               .apiKey('') // Empty API key
               .model('gpt-4o')
@@ -82,7 +82,7 @@ void main() {
 
       test('should handle missing model gracefully', () async {
         expect(() async {
-          await ai()
+          await LLMBuilder()
               .openai((openai) => openai.useResponsesAPI())
               .apiKey('test-key')
               .model('') // Empty model
@@ -261,7 +261,7 @@ void main() {
     // ========== Builder Edge Cases ==========
     group('Builder Edge Cases', () {
       test('should handle multiple calls to same builder method', () async {
-        final provider = await ai()
+        final provider = await LLMBuilder()
             .openai((openai) => openai
                 .useResponsesAPI()
                 .useResponsesAPI(false) // Override
@@ -275,7 +275,7 @@ void main() {
       });
 
       test('should handle duplicate tool additions', () async {
-        final provider = await ai()
+        final provider = await LLMBuilder()
             .openai((openai) => openai
                 .useResponsesAPI()
                 .webSearchTool()
@@ -292,7 +292,7 @@ void main() {
       });
 
       test('should handle previousResponseId override', () async {
-        final provider = await ai()
+        final provider = await LLMBuilder()
             .openai((openai) => openai
                 .useResponsesAPI()
                 .previousResponseId('resp_first')
@@ -308,7 +308,7 @@ void main() {
       test('should handle buildOpenAIResponses with non-OpenAI provider',
           () async {
         expect(() async {
-          await ai()
+          await LLMBuilder()
               .anthropic()
               .apiKey('test-key')
               .model('claude-3-sonnet-20240229')
@@ -322,7 +322,7 @@ void main() {
       test('should handle capability detection with mixed configurations',
           () async {
         // Provider with Responses API but no tools
-        final provider1 = await ai()
+        final provider1 = await LLMBuilder()
             .openai((openai) => openai.useResponsesAPI())
             .apiKey('test-key')
             .model('gpt-4o')
@@ -334,8 +334,11 @@ void main() {
             isTrue);
 
         // Provider with tools but no explicit Responses API
-        final provider2 =
-            await ai().openai().apiKey('test-key').model('gpt-4o').build();
+        final provider2 = await LLMBuilder()
+            .openai()
+            .apiKey('test-key')
+            .model('gpt-4o')
+            .build();
 
         expect(
             (provider2 as ProviderCapabilities)
@@ -344,7 +347,7 @@ void main() {
       });
 
       test('should handle responses getter consistency', () async {
-        final provider = await ai()
+        final provider = await LLMBuilder()
             .openai((openai) => openai.useResponsesAPI())
             .apiKey('test-key')
             .model('gpt-4o')

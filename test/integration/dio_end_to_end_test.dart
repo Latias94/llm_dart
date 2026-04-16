@@ -6,7 +6,7 @@ void main() {
     group('Provider Builder HTTP Configuration', () {
       test('should create Anthropic provider with HTTP configuration',
           () async {
-        final provider = await ai()
+        final provider = await LLMBuilder()
             .anthropic()
             .apiKey('test-api-key')
             .model('claude-sonnet-4-20250514')
@@ -28,7 +28,7 @@ void main() {
       });
 
       test('should create OpenAI provider with HTTP configuration', () async {
-        final provider = await ai()
+        final provider = await LLMBuilder()
             .openai()
             .apiKey('test-api-key')
             .model('gpt-4')
@@ -49,7 +49,7 @@ void main() {
       });
 
       test('should create DeepSeek provider with HTTP configuration', () async {
-        final provider = await ai()
+        final provider = await LLMBuilder()
             .deepseek()
             .apiKey('test-api-key')
             .model('deepseek-chat')
@@ -70,7 +70,7 @@ void main() {
       });
 
       test('should create Groq provider with HTTP configuration', () async {
-        final provider = await ai()
+        final provider = await LLMBuilder()
             .groq()
             .apiKey('test-api-key')
             .model('llama-3.3-70b-versatile')
@@ -90,7 +90,7 @@ void main() {
       });
 
       test('should create xAI provider with HTTP configuration', () async {
-        final provider = await ai()
+        final provider = await LLMBuilder()
             .xai()
             .apiKey('test-api-key')
             .model('grok-3')
@@ -110,7 +110,7 @@ void main() {
       });
 
       test('should create Google provider with HTTP configuration', () async {
-        final provider = await ai()
+        final provider = await LLMBuilder()
             .google()
             .apiKey('test-api-key')
             .model('gemini-1.5-flash')
@@ -132,7 +132,7 @@ void main() {
 
     group('Complex HTTP Configuration Scenarios', () {
       test('should handle comprehensive HTTP configuration', () async {
-        final provider = await ai()
+        final provider = await LLMBuilder()
             .anthropic()
             .apiKey('test-api-key')
             .model('claude-sonnet-4-20250514')
@@ -161,7 +161,7 @@ void main() {
       });
 
       test('should work without HTTP configuration', () async {
-        final provider = await ai()
+        final provider = await LLMBuilder()
             .anthropic()
             .apiKey('test-api-key')
             .model('claude-sonnet-4-20250514')
@@ -184,16 +184,20 @@ void main() {
         // Test multiple providers can be configured correctly
         final providers = <dynamic>[];
 
-        providers.add(await ai()
+        providers.add(await LLMBuilder()
             .anthropic()
             .apiKey('test-key')
             .model('claude-sonnet-4-20250514')
             .build());
 
         providers
-            .add(await ai().openai().apiKey('test-key').model('gpt-4').build());
+            .add(await LLMBuilder()
+                .openai()
+                .apiKey('test-key')
+                .model('gpt-4')
+                .build());
 
-        providers.add(await ai()
+        providers.add(await LLMBuilder()
             .deepseek()
             .apiKey('test-key')
             .model('deepseek-chat')

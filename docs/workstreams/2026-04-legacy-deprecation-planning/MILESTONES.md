@@ -165,7 +165,7 @@ Current status:
   `example/02_core_features/capability_detection.dart` now also avoid the
   broad `legacy.dart` barrel through focused public imports
 - the meaningful example baseline is now `2` files with actual
-  `legacy.dart` imports and `2` files with direct `ai()` usage
+  `legacy.dart` imports and `0` files with direct executable `ai()` usage
 - the first task-oriented migration recipe set is now written down in
   `05-task-oriented-migration-recipes.md`, covering text generation,
   streaming tool runs, embeddings, image generation, audio, model listing,
@@ -176,12 +176,26 @@ Current status:
 - the provider-owned replacement note for deprecated builder web-search
   helpers is now written down in
   `07-builder-web-search-replacements.md`
+- the `ai()` posture is now explicitly decided in
+  `08-ai-helper-posture.md`: soft-deprecate the alias, keep `LLMBuilder()`
+  frozen as the actual compatibility builder trunk
+- the `createProvider(...)` posture is now explicitly decided in
+  `09-create-provider-posture.md`: keep the function frozen, keep
+  `extensions` on the deprecation path
+- the first conservative breaking-window proposal is now written down in
+  `10-breaking-window-removal-candidates.md`
+- the removal release-note and migration-note templates are now written down
+  in `11-removal-release-note-templates.md`
+- the compatibility test-retention plan for removals is now written down in
+  `12-compatibility-test-retention.md`
 - `example/03_advanced_features/README.md` now leads with stable snippets and
   now teaches stable transport recipes instead of the old builder HTTP shell
 - the first-deprecation-wave documentation blockers are now materially smaller:
-  preset helper aliases and builder web-search helpers both have explicit
-  migration notes
-- the next honest implementation slice is now clear: make explicit policy
-  decisions for `ai()` and `createProvider(...)`, then draft the deliberate
-  breaking-window candidate list instead of expanding deprecation annotations
-  blindly
+  preset helper aliases, builder web-search helpers, `ai()`, and
+  `createProvider(...)` all now have explicit posture notes
+- the example appendix residue is now narrower still: the two explicit
+  compatibility appendix files use `LLMBuilder()` directly and `example/`
+  no longer has executable `ai()` usage
+- the next honest implementation slice is now clear: either execute the
+  conservative wave-1 leaf removals in a breaking branch or deliberately defer
+  them, but do not reopen the trunk-level architecture debate

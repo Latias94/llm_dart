@@ -29,8 +29,12 @@ community providers now lives in:
   `ElevenLabs(...).speechModel(...)`, and
   `ElevenLabs(...).transcriptionModel(...)`
 
-The legacy `ai()` builder still exists through `package:llm_dart/legacy.dart`,
-but it is now compatibility-oriented rather than the recommended main API.
+The legacy compatibility builder still exists through
+`package:llm_dart/legacy.dart`.
+
+`LLMBuilder()` remains the explicit compatibility builder surface.
+The old `ai()` helper is now a deprecated migration alias rather than the
+recommended main API.
 
 For modern code, prefer `package:llm_dart/llm_dart.dart` as the default import.
 `package:llm_dart/ai.dart` remains the explicit equivalent alias when you want a
@@ -96,7 +100,8 @@ dart pub get
 - `package:llm_dart/anthropic.dart`
   - focused Anthropic provider entrypoint for Anthropic-owned types
 - `package:llm_dart/legacy.dart`
-  - explicit compatibility shell for `ai()`, `createProvider(...)`, legacy models, and builder-era APIs
+  - explicit compatibility shell for `LLMBuilder()`, `ai()`,
+    `createProvider(...)`, legacy models, and builder-era APIs
 - `package:llm_dart_community/llm_dart_community.dart`
   - workspace-only modern community-provider entrypoint for Ollama chat/embeddings and ElevenLabs speech/transcription shared-capability models
 - `package:llm_dart/transport.dart`
@@ -566,7 +571,8 @@ Future<void> main() async {
   raw access.
 - Keep provider-native features in typed provider options, provider metadata, or custom parts.
 - Keep UI/session concerns above `TextStreamEvent`.
-- Treat `ai()` and old root provider surfaces as compatibility APIs, not the target architecture.
+- Treat `LLMBuilder()`, `ai()`, and old root provider surfaces as
+  compatibility APIs, not the target architecture.
 - Treat the root Ollama and ElevenLabs surfaces as compatibility-first shells
   when the modern shared-capability path already exists in
   `llm_dart_community`.
@@ -594,7 +600,7 @@ Future<void> main() async {
 
 The repository still keeps compatibility APIs through `package:llm_dart/legacy.dart`, including:
 
-- the old `ai()` builder
+- `LLMBuilder()` and the deprecated `ai()` alias
 - old root provider constructors
 - compatibility adapters for legacy chat/config surfaces
 

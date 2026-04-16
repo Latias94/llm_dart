@@ -4,7 +4,7 @@ import 'package:llm_dart/legacy.dart';
 void main() {
   group('xAI Live Search Tests', () {
     test('should enable live search with enableWebSearch()', () async {
-      final builder = ai().xai().apiKey('test-key').model('grok-3');
+      final builder = LLMBuilder().xai().apiKey('test-key').model('grok-3');
       // ignore: deprecated_member_use_from_same_package
       final provider = await builder.enableWebSearch().build();
 
@@ -21,7 +21,7 @@ void main() {
     });
 
     test('should configure news search correctly', () async {
-      final builder = ai().xai().apiKey('test-key').model('grok-3');
+      final builder = LLMBuilder().xai().apiKey('test-key').model('grok-3');
       // ignore: deprecated_member_use_from_same_package
       final searchBuilder = builder.newsSearch(
         maxResults: 5,
@@ -41,7 +41,7 @@ void main() {
     });
 
     test('should configure web search with custom parameters', () async {
-      final builder = ai().xai().apiKey('test-key').model('grok-3');
+      final builder = LLMBuilder().xai().apiKey('test-key').model('grok-3');
       // ignore: deprecated_member_use_from_same_package
       final searchBuilder = builder.webSearch(
         maxResults: 10,
