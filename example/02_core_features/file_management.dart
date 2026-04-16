@@ -1,419 +1,226 @@
+// ignore_for_file: avoid_print
+
 import 'dart:io';
-import 'dart:typed_data';
-import 'package:llm_dart/legacy.dart';
 
-/// Comprehensive file management examples using the unified FileManagementCapability interface
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/models/file_models.dart';
+import 'package:llm_dart/providers/anthropic/anthropic.dart'
+    as anthropic_compat;
+import 'package:llm_dart/providers/openai/openai.dart' as openai_compat;
+
+/// File handling has two distinct layers in the current architecture:
+/// - stable prompt-time local file parts for shared chat flows
+/// - provider-owned remote file lifecycle APIs for persistent workspace storage
 ///
-/// This example demonstrates:
-/// - File upload and download operations
-/// - File listing and metadata retrieval
-/// - File deletion and cleanup
-/// - Different file types and purposes
-/// - Provider capability detection
-/// - Error handling for file operations
+/// This example shows both paths and keeps the provider-owned lifecycle calls
+/// explicit instead of presenting them as a stable shared facade.
 Future<void> main() async {
-  print('📁 File Management Examples\n');
+  print('File Management Boundary Example\n');
 
-  // Example with providers that support file management
-  final providers = [
-    ('OpenAI', () => ai().openai().apiKey('your-openai-key')),
-    ('Anthropic', () => ai().anthropic().apiKey('your-anthropic-key')),
-  ];
-
-  for (final (name, builderFactory) in providers) {
-    print('📂 Testing $name File Management:');
-
-    try {
-      final provider = await builderFactory().buildFileManagement();
-      await demonstrateFileFeatures(provider, name);
-    } catch (e) {
-      print('   ❌ Failed to initialize $name: $e\n');
-    }
+  final openAIApiKey = Platform.environment['OPENAI_API_KEY'];
+  if (openAIApiKey != null && openAIApiKey.isNotEmpty) {
+    await demonstrateStablePromptFilePath(openAIApiKey);
+    await demonstrateOpenAIFileLifecycle(openAIApiKey);
+  } else {
+    print('Skipping OpenAI sections because OPENAI_API_KEY is not set.\n');
   }
 
-  print('✅ File management examples completed!');
-  print('💡 For provider-specific features, see:');
-  print('   • example/04_providers/openai/file_management.dart');
-  print('   • example/04_providers/anthropic/file_management.dart');
+  final anthropicApiKey = Platform.environment['ANTHROPIC_API_KEY'];
+  if (anthropicApiKey != null && anthropicApiKey.isNotEmpty) {
+    await demonstrateAnthropicFileLifecycle(anthropicApiKey);
+  } else {
+    print(
+      'Skipping Anthropic file lifecycle because ANTHROPIC_API_KEY is not set.\n',
+    );
+  }
+
+  explainBoundary();
+
+  print('\nFile management example completed.');
 }
 
-/// Helper function to parse purpose string to FilePurpose enum
-FilePurpose _parsePurpose(String purpose) {
-  return FilePurpose.fromString(purpose);
-}
+Future<void> demonstrateStablePromptFilePath(String apiKey) async {
+  print('=== Stable Local File Prompt Path ===\n');
 
-/// Demonstrate various file management features with a provider
-Future<void> demonstrateFileFeatures(
-    FileManagementCapability provider, String providerName) async {
-  final uploadedFiles = <FileObject>[];
+  final sampleFile = await _writeSampleTextFile(
+    'stable_file_prompt_example.txt',
+    '''
+Release Notes Draft
+
+- Streaming retry UI has been simplified.
+- Tool replay now keeps explicit tool call IDs.
+- Legacy builder examples are being migrated to stable-first guides.
+''',
+  );
 
   try {
-    // File upload examples
-    final files = await demonstrateFileUploads(provider, providerName);
-    uploadedFiles.addAll(files);
+    final fileBytes = await sampleFile.readAsBytes();
+    final model = llm.AI.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
 
-    // File listing
-    await demonstrateFileListing(provider, providerName);
+    final result = await core.generateTextCall(
+      model: model,
+      prompt: [
+        core.UserPromptMessage(
+          parts: [
+            const core.TextPromptPart(
+              'Summarize this release note file into three short bullets.',
+            ),
+            core.FilePromptPart(
+              mediaType: 'text/plain',
+              filename: 'stable_file_prompt_example.txt',
+              bytes: fileBytes,
+            ),
+          ],
+        ),
+      ],
+      options: const core.GenerateTextOptions(
+        temperature: 0.2,
+        maxOutputTokens: 200,
+      ),
+    );
 
-    // File metadata retrieval
-    if (uploadedFiles.isNotEmpty) {
-      await demonstrateFileRetrieval(
-          provider, providerName, uploadedFiles.first);
-    }
-
-    // File content download
-    if (uploadedFiles.isNotEmpty) {
-      await demonstrateFileDownload(
-          provider, providerName, uploadedFiles.first);
-    }
-
-    // File search and filtering
-    await demonstrateFileSearch(provider, providerName);
+    print(result.text);
+    print('');
   } finally {
-    // Cleanup uploaded files
-    await demonstrateFileCleanup(provider, providerName, uploadedFiles);
+    await _deleteIfExists(sampleFile);
+  }
+}
+
+Future<void> demonstrateOpenAIFileLifecycle(String apiKey) async {
+  print('=== OpenAI Compatibility File Lifecycle ===\n');
+
+  final sampleFile = await _writeSampleTextFile(
+    'openai_file_lifecycle_example.txt',
+    '''
+Provider-owned files are useful when an application needs remote persistence,
+assistant resources, or provider-managed retrieval workflows.
+''',
+  );
+
+  final provider = openai_compat.createOpenAIProvider(
+    apiKey: apiKey,
+    model: 'gpt-4o',
+  );
+
+  FileObject? uploadedFile;
+
+  try {
+    uploadedFile = await provider.uploadFile(
+      FileUploadRequest(
+        file: await sampleFile.readAsBytes(),
+        filename: sampleFile.uri.pathSegments.last,
+        purpose: FilePurpose.assistants,
+      ),
+    );
+
+    print('Uploaded file: ${uploadedFile.id}');
+    print('Purpose: ${uploadedFile.purpose?.value ?? '<none>'}');
+    print('Size: ${uploadedFile.sizeBytes} bytes');
+
+    final listed = await provider.listFiles(
+      const FileListQuery(
+        limit: 5,
+        purpose: FilePurpose.assistants,
+      ),
+    );
+    print('Recent assistant files returned: ${listed.data.length}');
+
+    final retrieved = await provider.retrieveFile(uploadedFile.id);
+    print('Retrieved filename: ${retrieved.filename}');
+
+    final content = await provider.getFileContent(uploadedFile.id);
+    print('Downloaded bytes: ${content.length}');
+  } finally {
+    if (uploadedFile != null) {
+      final deleted = await provider.deleteFile(uploadedFile.id);
+      print('Deleted temporary OpenAI file: ${deleted.deleted}');
+    }
+    await _deleteIfExists(sampleFile);
   }
 
   print('');
 }
 
-/// Demonstrate file upload operations
-Future<List<FileObject>> demonstrateFileUploads(
-    FileManagementCapability provider, String providerName) async {
-  print('   📤 File Uploads:');
+Future<void> demonstrateAnthropicFileLifecycle(String apiKey) async {
+  print('=== Anthropic Compatibility File Lifecycle ===\n');
 
-  final uploadedFiles = <FileObject>[];
+  final sampleFile = await _writeSampleTextFile(
+    'anthropic_file_lifecycle_example.txt',
+    '''
+Anthropic file handling is provider-owned and currently beta-oriented.
+Keep the integration boundary explicit in application code.
+''',
+  );
 
-  try {
-    // Create sample files for testing
-    await createSampleFiles();
+  final provider = anthropic_compat.createAnthropicProvider(
+    apiKey: apiKey,
+    model: 'claude-sonnet-4-20250514',
+  );
 
-    // Upload different types of files
-    final fileUploads = [
-      {
-        'path': 'sample_document.txt',
-        'purpose': 'assistants',
-        'description': 'Sample text document for assistant training',
-      },
-      {
-        'path': 'sample_data.jsonl',
-        'purpose': 'fine-tune',
-        'description': 'Training data for fine-tuning',
-      },
-      {
-        'path': 'sample_image.txt', // Simulated image as text for demo
-        'purpose': 'vision',
-        'description': 'Sample image for vision tasks',
-      },
-    ];
-
-    for (final upload in fileUploads) {
-      try {
-        print('      🔄 Uploading ${upload['path']}...');
-
-        // Read file content as bytes
-        final fileBytes = await File(upload['path']!).readAsBytes();
-
-        final request = FileUploadRequest(
-          file: Uint8List.fromList(fileBytes),
-          purpose: _parsePurpose(upload['purpose']!),
-          filename: upload['path']!,
-        );
-
-        final fileObject = await provider.uploadFile(request);
-        uploadedFiles.add(fileObject);
-
-        print('         ✅ Uploaded: ${fileObject.id}');
-        print('         📊 Size: ${fileObject.sizeBytes} bytes');
-        print('         🎯 Purpose: ${fileObject.purpose}');
-        print('         📅 Created: ${fileObject.createdAt}');
-      } catch (e) {
-        print('         ❌ Upload failed: $e');
-      }
-    }
-
-    print('      📈 Total uploaded: ${uploadedFiles.length} files');
-  } catch (e) {
-    print('      ❌ File upload demonstration failed: $e');
-  }
-
-  return uploadedFiles;
-}
-
-/// Demonstrate file listing operations
-Future<void> demonstrateFileListing(
-    FileManagementCapability provider, String providerName) async {
-  print('   📋 File Listing:');
+  FileObject? uploadedFile;
 
   try {
-    // List all files
-    print('      🔄 Listing all files...');
-    final allFiles = await provider.listFiles();
-
-    print('      📊 Total files: ${allFiles.data.length}');
-
-    if (allFiles.data.isNotEmpty) {
-      print('      📁 Recent files:');
-      for (final file in allFiles.data.take(5)) {
-        final sizeKB = (file.sizeBytes / 1024).toStringAsFixed(1);
-        print('         • ${file.filename} (${file.id}) - ${sizeKB}KB');
-      }
-    }
-
-    // List files with filtering
-    print('      🔍 Filtering by purpose...');
-    final assistantFiles = await provider.listFiles(
-      FileListQuery(purpose: FilePurpose.assistants, limit: 10),
+    uploadedFile = await provider.uploadFile(
+      FileUploadRequest(
+        file: await sampleFile.readAsBytes(),
+        filename: sampleFile.uri.pathSegments.last,
+      ),
     );
 
-    print('      🤖 Assistant files: ${assistantFiles.data.length}');
+    print('Uploaded file: ${uploadedFile.id}');
+    print('MIME type: ${uploadedFile.mimeType ?? '<none>'}');
+    print('Downloadable: ${uploadedFile.downloadable}');
 
-    // Pagination example
-    if (allFiles.hasMore == true) {
-      print('      📄 Demonstrating pagination...');
-      final nextPage = await provider.listFiles(
-        FileListQuery(after: allFiles.lastId, limit: 5),
-      );
-      print('         📋 Next page: ${nextPage.data.length} files');
+    final listed = await provider.listFiles(
+      const FileListQuery(limit: 5),
+    );
+    print('Recent Anthropic files returned: ${listed.data.length}');
+
+    final retrieved = await provider.retrieveFile(uploadedFile.id);
+    print('Retrieved filename: ${retrieved.filename}');
+
+    final content = await provider.getFileContent(uploadedFile.id);
+    print('Downloaded bytes: ${content.length}');
+  } finally {
+    if (uploadedFile != null) {
+      final deleted = await provider.deleteFile(uploadedFile.id);
+      print('Deleted temporary Anthropic file: ${deleted.deleted}');
     }
-  } catch (e) {
-    print('      ❌ File listing failed: $e');
+    await _deleteIfExists(sampleFile);
   }
+
+  print('');
 }
 
-/// Demonstrate file metadata retrieval
-Future<void> demonstrateFileRetrieval(FileManagementCapability provider,
-    String providerName, FileObject file) async {
-  print('   🔍 File Metadata Retrieval:');
-
-  try {
-    print('      🔄 Retrieving metadata for ${file.id}...');
-
-    final retrievedFile = await provider.retrieveFile(file.id);
-
-    print('      ✅ File Details:');
-    print('         📄 Name: ${retrievedFile.filename}');
-    print('         🆔 ID: ${retrievedFile.id}');
-    print('         📊 Size: ${retrievedFile.sizeBytes} bytes');
-    print('         🎯 Purpose: ${retrievedFile.purpose}');
-    print('         📅 Created: ${retrievedFile.createdAt}');
-    print('         🏷️  Status: ${retrievedFile.status}');
-
-    if (retrievedFile.statusDetails != null) {
-      print('         📝 Status Details: ${retrievedFile.statusDetails}');
-    }
-  } catch (e) {
-    print('      ❌ File retrieval failed: $e');
-  }
+void explainBoundary() {
+  print('=== Boundary Notes ===\n');
+  print(
+    '• Stable app code should usually keep local files in app storage and pass '
+    'them through `FilePromptPart` only when a model call needs them.',
+  );
+  print(
+    '• Remote file lifecycle APIs are provider-owned because persistence, '
+    'purpose fields, indexing, and later retrieval semantics differ by provider.',
+  );
+  print(
+    '• OpenAI and Anthropic file flows may share method names in compatibility '
+    'layers, but they are not a stable cross-provider contract.',
+  );
+  print(
+    '• Isolate provider-side file persistence behind provider-specific adapters '
+    'in production applications.',
+  );
 }
 
-/// Demonstrate file content download
-Future<void> demonstrateFileDownload(FileManagementCapability provider,
-    String providerName, FileObject file) async {
-  print('   📥 File Content Download:');
-
-  try {
-    print('      🔄 Downloading content for ${file.filename}...');
-
-    final content = await provider.getFileContent(file.id);
-
-    print('      ✅ Downloaded: ${content.length} bytes');
-
-    // Save downloaded content
-    final downloadPath = 'downloaded_${file.filename}';
-    await File(downloadPath).writeAsBytes(content);
-    print('      💾 Saved to: $downloadPath');
-
-    // Display content preview (if text)
-    if (file.filename.endsWith('.txt') || file.filename.endsWith('.jsonl')) {
-      final textContent = String.fromCharCodes(content);
-      final preview = textContent.length > 100
-          ? '${textContent.substring(0, 100)}...'
-          : textContent;
-      print('      👀 Preview: $preview');
-    }
-  } catch (e) {
-    print('      ❌ File download failed: $e');
-  }
+Future<File> _writeSampleTextFile(String filename, String content) async {
+  final file = File(filename);
+  await file.writeAsString(content.trim());
+  return file;
 }
 
-/// Demonstrate file search and filtering
-Future<void> demonstrateFileSearch(
-    FileManagementCapability provider, String providerName) async {
-  print('   🔎 File Search & Filtering:');
-
-  try {
-    // Search by different criteria
-    final searchCriteria = [
-      {'purpose': 'assistants', 'description': 'Assistant files'},
-      {'purpose': 'fine-tune', 'description': 'Fine-tuning files'},
-      {'purpose': 'vision', 'description': 'Vision files'},
-    ];
-
-    for (final criteria in searchCriteria) {
-      final purpose = criteria['purpose']!;
-      final description = criteria['description']!;
-
-      print('      🔍 Searching $description...');
-
-      final results = await provider.listFiles(
-        FileListQuery(purpose: _parsePurpose(purpose), limit: 20),
-      );
-
-      print('         📊 Found: ${results.data.length} files');
-
-      if (results.data.isNotEmpty) {
-        // Calculate total size
-        final totalBytes =
-            results.data.fold<int>(0, (sum, file) => sum + file.sizeBytes);
-        final totalMB = (totalBytes / (1024 * 1024)).toStringAsFixed(2);
-        print('         📦 Total size: ${totalMB}MB');
-
-        // Show newest file
-        final newest = results.data.first;
-        print('         🆕 Newest: ${newest.filename} (${newest.createdAt})');
-      }
-    }
-  } catch (e) {
-    print('      ❌ File search failed: $e');
-  }
-}
-
-/// Demonstrate file cleanup operations
-Future<void> demonstrateFileCleanup(FileManagementCapability provider,
-    String providerName, List<FileObject> files) async {
-  print('   🗑️  File Cleanup:');
-
-  if (files.isEmpty) {
-    print('      ℹ️  No files to clean up');
-    return;
-  }
-
-  try {
-    print('      🔄 Cleaning up ${files.length} uploaded files...');
-
-    int deletedCount = 0;
-    for (final file in files) {
-      try {
-        final result = await provider.deleteFile(file.id);
-        if (result.deleted) {
-          deletedCount++;
-          print('         ✅ Deleted: ${file.filename}');
-        } else {
-          print('         ❌ Failed to delete: ${file.filename}');
-        }
-      } catch (e) {
-        print('         ❌ Delete error for ${file.filename}: $e');
-      }
-    }
-
-    print(
-        '      📊 Cleanup summary: $deletedCount/${files.length} files deleted');
-  } catch (e) {
-    print('      ❌ File cleanup failed: $e');
-  }
-}
-
-/// Create sample files for testing
-Future<void> createSampleFiles() async {
-  // Create sample text document
-  await File('sample_document.txt').writeAsString('''
-This is a sample document for testing file upload functionality.
-
-It contains multiple paragraphs and demonstrates how text files
-can be uploaded to AI providers for various purposes such as:
-
-1. Assistant training data
-2. Knowledge base content
-3. Document analysis
-4. Content generation
-
-The file management system should handle this content properly
-and maintain file integrity during upload and download operations.
-''');
-
-  // Create sample JSONL file for fine-tuning
-  await File('sample_data.jsonl').writeAsString('''
-{"prompt": "What is machine learning?", "completion": "Machine learning is a subset of AI that enables computers to learn from data."}
-{"prompt": "Explain neural networks", "completion": "Neural networks are computing systems inspired by biological neural networks."}
-{"prompt": "What is deep learning?", "completion": "Deep learning uses neural networks with multiple layers to model complex patterns."}
-''');
-
-  // Create sample "image" file (as text for demo)
-  await File('sample_image.txt').writeAsString('''
-[This would be binary image data in a real scenario]
-Image metadata:
-- Format: PNG
-- Dimensions: 1024x768
-- Color depth: 24-bit
-- Purpose: Vision model training
-''');
-}
-
-/// Utility class for file management operations
-class FileManagementUtils {
-  /// Get human-readable file size
-  static String formatFileSize(int bytes) {
-    if (bytes < 1024) return '${bytes}B';
-    if (bytes < 1024 * 1024) return '${(bytes / 1024).toStringAsFixed(1)}KB';
-    if (bytes < 1024 * 1024 * 1024) {
-      return '${(bytes / (1024 * 1024)).toStringAsFixed(1)}MB';
-    }
-    return '${(bytes / (1024 * 1024 * 1024)).toStringAsFixed(1)}GB';
-  }
-
-  /// Validate file for upload
-  static bool isValidForUpload(String filePath, String purpose) {
-    final file = File(filePath);
-    if (!file.existsSync()) return false;
-
-    final size = file.lengthSync();
-    const maxSize = 100 * 1024 * 1024; // 100MB limit
-
-    return size <= maxSize;
-  }
-
-  /// Get recommended purpose based on file extension
-  static String getRecommendedPurpose(String filename) {
-    final extension = filename.split('.').last.toLowerCase();
-
-    switch (extension) {
-      case 'txt':
-      case 'md':
-      case 'pdf':
-        return 'assistants';
-      case 'jsonl':
-        return 'fine-tune';
-      case 'png':
-      case 'jpg':
-      case 'jpeg':
-        return 'vision';
-      default:
-        return 'assistants';
-    }
-  }
-
-  /// Clean up temporary files
-  static Future<void> cleanupTempFiles() async {
-    final tempFiles = [
-      'sample_document.txt',
-      'sample_data.jsonl',
-      'sample_image.txt',
-    ];
-
-    for (final filename in tempFiles) {
-      final file = File(filename);
-      if (await file.exists()) {
-        await file.delete();
-      }
-    }
-
-    // Clean up downloaded files
-    final currentDir = Directory.current;
-    await for (final entity in currentDir.list()) {
-      if (entity is File && entity.path.contains('downloaded_')) {
-        await entity.delete();
-      }
-    }
+Future<void> _deleteIfExists(File file) async {
+  if (await file.exists()) {
+    await file.delete();
   }
 }

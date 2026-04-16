@@ -1,120 +1,174 @@
-import 'dart:io';
-import 'package:llm_dart/legacy.dart';
+// ignore_for_file: avoid_print
 
-/// Image generation examples using ImageGenerationCapability interface
+import 'dart:io';
+
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/google.dart' as google;
+import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/openai.dart' as openai;
+
+/// Stable image generation example across OpenAI and Google image models.
 ///
 /// This example demonstrates:
-/// - Basic image generation from text prompts
-/// - Different image sizes and formats
-/// - Provider capability detection
+/// - shared `generateImage(...)` helpers
+/// - model selection through stable provider/model factories
+/// - provider-native image options carried via `CallOptions.providerOptions`
 Future<void> main() async {
-  print('🎨 Image Generation Examples\n');
+  print('Stable image generation examples\n');
 
-  final apiKey = Platform.environment['OPENAI_API_KEY'];
-  if (apiKey == null) {
-    print('❌ Please set OPENAI_API_KEY environment variable');
+  final imageModels = _collectImageModels();
+  if (imageModels.isEmpty) {
+    print('No image models are configured.');
+    print('Set OPENAI_API_KEY and/or GOOGLE_API_KEY.');
     return;
   }
 
-  try {
-    final provider = await ai().openai().apiKey(apiKey).buildImageGeneration();
-
-    await demonstrateBasicGeneration(provider, 'OpenAI DALL-E');
-    await demonstrateAdvancedGeneration(provider, 'OpenAI DALL-E');
-  } catch (e) {
-    print('❌ Failed to initialize image generation: $e');
+  for (final entry in imageModels) {
+    await _demonstrateImageGeneration(entry);
   }
 
-  print('✅ Image generation examples completed!');
+  print('Completed stable image generation examples.');
+  print('For provider-specific image boundaries, see:');
+  print('  - example/04_providers/openai/image_generation.dart');
+  print('  - example/04_providers/google/image_generation.dart');
 }
 
-/// Demonstrate basic image generation
-Future<void> demonstrateBasicGeneration(
-    ImageGenerationCapability provider, String providerName) async {
-  print('🎨 Basic Image Generation ($providerName):\n');
+List<_ImageDemoEntry> _collectImageModels() {
+  final entries = <_ImageDemoEntry>[];
+
+  final openAIKey = Platform.environment['OPENAI_API_KEY'];
+  if (openAIKey != null && openAIKey.isNotEmpty) {
+    entries.add(
+      _ImageDemoEntry(
+        label: 'OpenAI DALL-E 3',
+        model: llm.AI
+            .openai(
+              apiKey: openAIKey,
+            )
+            .imageModel('dall-e-3'),
+        prompt:
+            'A serene mountain landscape at sunset with a crystal clear lake reflection, photorealistic style',
+        count: 1,
+        size: '1024x1024',
+        callOptions: const core.CallOptions(
+          providerOptions: openai.OpenAIImageOptions(
+            quality: openai.OpenAIImageQuality.hd,
+            style: openai.OpenAIImageStyle.vivid,
+            responseFormat: openai.OpenAIImageResponseFormat.url,
+          ),
+        ),
+      ),
+    );
+  }
+
+  final googleKey = Platform.environment['GOOGLE_API_KEY'];
+  if (googleKey != null && googleKey.isNotEmpty) {
+    entries.add(
+      _ImageDemoEntry(
+        label: 'Google Gemini Image',
+        model: llm.AI
+            .google(
+              apiKey: googleKey,
+            )
+            .imageModel('gemini-2.5-flash-image'),
+        prompt:
+            'A futuristic robot assistant helping in a modern kitchen, detailed digital art, warm lighting',
+        count: 1,
+        callOptions: const core.CallOptions(
+          providerOptions: google.GoogleImageOptions(
+            aspectRatio: google.GoogleImageAspectRatio.landscape16x9,
+          ),
+        ),
+      ),
+    );
+  }
+
+  return entries;
+}
+
+Future<void> _demonstrateImageGeneration(_ImageDemoEntry entry) async {
+  print(entry.label);
+  print('  Model: ${entry.model.providerId}/${entry.model.modelId}');
+  print('  Prompt: ${entry.prompt}');
 
   try {
-    final request = ImageGenerationRequest(
-      prompt: 'A serene mountain landscape at sunset with a crystal clear lake',
-      size: '1024x1024',
-      count: 1,
+    final result = await core.generateImage(
+      model: entry.model,
+      prompt: entry.prompt,
+      count: entry.count,
+      size: entry.size,
+      callOptions: entry.callOptions,
     );
 
-    final response = await provider.generateImages(request);
-
-    print('   ✅ Generated ${response.images.length} image(s)');
-
-    for (int i = 0; i < response.images.length; i++) {
-      final image = response.images[i];
-      print('   🖼️  Image ${i + 1}:');
-
-      if (image.url != null) {
-        print('      🔗 URL: ${image.url}');
-      }
-
-      if (image.revisedPrompt != null) {
-        print('      📝 Revised prompt: ${image.revisedPrompt}');
-      }
+    print('  Generated ${result.images.length} image(s)');
+    for (var index = 0; index < result.images.length; index++) {
+      final image = result.images[index];
+      final description = await _describeImage(
+        label: entry.label,
+        providerId: entry.model.providerId,
+        image: image,
+        index: index,
+      );
+      print('    ${index + 1}. $description');
     }
-  } catch (e) {
-    print('   ❌ Basic generation failed: $e');
+
+    final metadata = result.providerMetadata?.namespace(entry.model.providerId);
+    if (metadata != null && metadata.isNotEmpty) {
+      print('  Provider metadata keys: ${metadata.keys.join(', ')}');
+    }
+  } catch (error) {
+    print('  Failed: $error');
+  } finally {
+    print('');
   }
-  print('');
 }
 
-/// Demonstrate advanced image generation with detailed parameters
-Future<void> demonstrateAdvancedGeneration(
-    ImageGenerationCapability provider, String providerName) async {
-  print('🚀 Advanced Image Generation ($providerName):\n');
-
-  try {
-    final request = ImageGenerationRequest(
-      prompt:
-          'A futuristic cyberpunk cityscape with neon lights, flying cars, and towering skyscrapers, highly detailed, digital art style',
-      size: '1024x1024',
-      count: 2,
-      quality: 'hd',
-      style: 'vivid',
-      responseFormat: 'url',
-    );
-
-    final response = await provider.generateImages(request);
-
-    print('   ✅ Generated ${response.images.length} images');
-
-    for (int i = 0; i < response.images.length; i++) {
-      final image = response.images[i];
-      print('   🖼️  Image ${i + 1}:');
-
-      if (image.url != null) {
-        print('      🔗 URL: ${image.url}');
-      }
-
-      if (image.revisedPrompt != null) {
-        print('      📝 Revised prompt: ${image.revisedPrompt}');
-      }
-    }
-
-    // Display usage information if available
-    if (response.usage != null) {
-      print('   📊 Usage: ${response.usage}');
-    }
-  } catch (e) {
-    print('   ❌ Advanced generation failed: $e');
+Future<String> _describeImage({
+  required String label,
+  required String providerId,
+  required core.GeneratedImage image,
+  required int index,
+}) async {
+  if (image.uri != null) {
+    return image.uri.toString();
   }
-  print('');
+
+  if (image.bytes != null) {
+    final extension = _fileExtensionForMediaType(image.mediaType);
+    final safeLabel =
+        label.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '_').trim();
+    final outputPath = '${safeLabel}_${index + 1}.$extension';
+    await File(outputPath).writeAsBytes(image.bytes!);
+
+    return '$outputPath (${image.bytes!.length} bytes, ${image.mediaType ?? providerId})';
+  }
+
+  return 'empty image payload';
 }
 
-/// Utility function to generate filename based on prompt
-String generateFilename(String prompt, String provider) {
-  final cleanPrompt = prompt
-      .toLowerCase()
-      .replaceAll(RegExp(r'[^a-z0-9\s]'), '')
-      .replaceAll(RegExp(r'\s+'), '_')
-      .substring(0, prompt.length > 30 ? 30 : prompt.length);
+String _fileExtensionForMediaType(String? mediaType) {
+  return switch (mediaType) {
+    'image/jpeg' => 'jpg',
+    'image/webp' => 'webp',
+    'image/gif' => 'gif',
+    _ => 'png',
+  };
+}
 
-  final cleanProvider = provider.toLowerCase().replaceAll(' ', '_');
-  final timestamp = DateTime.now().millisecondsSinceEpoch;
+final class _ImageDemoEntry {
+  final String label;
+  final core.ImageModel model;
+  final String prompt;
+  final int count;
+  final String? size;
+  final core.CallOptions callOptions;
 
-  return '${cleanPrompt}_${cleanProvider}_$timestamp.png';
+  const _ImageDemoEntry({
+    required this.label,
+    required this.model,
+    required this.prompt,
+    this.count = 1,
+    this.size,
+    this.callOptions = const core.CallOptions(),
+  });
 }

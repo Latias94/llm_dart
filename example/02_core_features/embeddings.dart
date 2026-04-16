@@ -1,114 +1,139 @@
-import 'dart:math';
-import 'package:llm_dart/legacy.dart';
+// ignore_for_file: avoid_print
 
-/// Comprehensive embeddings examples using the unified EmbeddingCapability interface
+import 'dart:io';
+import 'dart:math' as math;
+
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart_community/llm_dart_community.dart' as community;
+
+/// Stable shared embeddings example across multiple provider families.
 ///
 /// This example demonstrates:
-/// - Basic text embedding generation
-/// - Batch embedding processing
-/// - Similarity calculations
-/// - Semantic search implementation
-/// - Provider capability detection
-/// - Error handling for embedding operations
+/// - shared `embed(...)` and `embedMany(...)` helpers
+/// - model creation through stable provider/model factories
+/// - semantic similarity and search without the legacy builder surface
 Future<void> main() async {
-  print('🔢 Vector Embeddings Examples\n');
+  print('Stable embeddings examples\n');
 
-  // Example with multiple providers that support embeddings
-  final providers = [
-    (
-      'OpenAI',
-      () => ai()
-          .openai()
-          .apiKey('your-openai-key')
-          .model('text-embedding-3-small')
-    ),
-    (
-      'Google',
-      () => ai().google().apiKey('your-google-key').model('text-embedding-004')
-    ),
-    ('Ollama', () => ai().ollama().model('nomic-embed-text')),
-  ];
-
-  for (final (name, builderFactory) in providers) {
-    print('📊 Testing $name Embeddings:');
-
-    try {
-      final provider = await builderFactory().buildEmbedding();
-      await demonstrateEmbeddingFeatures(provider, name);
-    } catch (e) {
-      print('   ❌ Failed to initialize $name: $e\n');
-    }
+  final models = _collectEmbeddingModels();
+  if (models.isEmpty) {
+    print('No embedding models are configured.');
+    print('Set OPENAI_API_KEY, GOOGLE_API_KEY, or run a local Ollama server.');
+    return;
   }
 
-  print('✅ Embeddings examples completed!');
-  print('💡 For provider-specific optimizations, see:');
-  print('   • example/04_providers/openai/embeddings.dart');
-  print('   • example/04_providers/google/embeddings.dart');
+  for (final entry in models) {
+    print('Testing ${entry.label}:');
+    await demonstrateEmbeddingFeatures(entry.model);
+  }
+
+  print('Completed stable embeddings examples.');
+  print('For provider-specific tuning, see:');
+  print('  - example/04_providers/openai/embeddings.dart');
+  print('  - example/04_providers/google/embeddings.dart');
 }
 
-/// Demonstrate various embedding features with a provider
-Future<void> demonstrateEmbeddingFeatures(
-    EmbeddingCapability provider, String providerName) async {
-  // Basic embedding generation
-  await demonstrateBasicEmbeddings(provider, providerName);
+List<_EmbeddingDemoEntry> _collectEmbeddingModels() {
+  final entries = <_EmbeddingDemoEntry>[];
 
-  // Batch processing
-  await demonstrateBatchEmbeddings(provider, providerName);
+  final openAIKey = Platform.environment['OPENAI_API_KEY'];
+  if (openAIKey != null && openAIKey.isNotEmpty) {
+    entries.add(
+      _EmbeddingDemoEntry(
+        label: 'OpenAI text-embedding-3-small',
+        model: llm.AI
+            .openai(
+              apiKey: openAIKey,
+            )
+            .embeddingModel('text-embedding-3-small'),
+      ),
+    );
+  }
 
-  // Similarity calculations
-  await demonstrateSimilarityCalculations(provider, providerName);
+  final googleKey = Platform.environment['GOOGLE_API_KEY'];
+  if (googleKey != null && googleKey.isNotEmpty) {
+    entries.add(
+      _EmbeddingDemoEntry(
+        label: 'Google text-embedding-004',
+        model: llm.AI
+            .google(
+              apiKey: googleKey,
+            )
+            .embeddingModel('text-embedding-004'),
+      ),
+    );
+  }
 
-  // Semantic search
-  await demonstrateSemanticSearch(provider, providerName);
+  final ollamaBaseUrl = Platform.environment['OLLAMA_BASE_URL'] ??
+      community.Ollama.defaultBaseUrl;
+  entries.add(
+    _EmbeddingDemoEntry(
+      label: 'Ollama nomic-embed-text',
+      model: community.Ollama(
+        baseUrl: ollamaBaseUrl,
+      ).embeddingModel(
+        Platform.environment['OLLAMA_EMBEDDING_MODEL'] ?? 'nomic-embed-text',
+      ),
+    ),
+  );
 
-  // Document clustering
-  await demonstrateDocumentClustering(provider, providerName);
+  return entries;
+}
+
+Future<void> demonstrateEmbeddingFeatures(core.EmbeddingModel model) async {
+  print('  Model: ${model.providerId}/${model.modelId}');
+
+  await demonstrateBasicEmbeddings(model);
+  await demonstrateBatchEmbeddings(model);
+  await demonstrateSimilarityCalculations(model);
+  await demonstrateSemanticSearch(model);
+  await demonstrateDocumentClustering(model);
 
   print('');
 }
 
-/// Demonstrate basic embedding generation
-Future<void> demonstrateBasicEmbeddings(
-    EmbeddingCapability provider, String providerName) async {
-  print('   🔤 Basic Embeddings:');
+Future<void> demonstrateBasicEmbeddings(core.EmbeddingModel model) async {
+  print('  Basic embeddings:');
 
   try {
-    // Single text embedding
-    final singleText = ['Hello, world! This is a test sentence for embedding.'];
-    final singleEmbedding = await provider.embed(singleText);
+    final single = await core.embed(
+      model: model,
+      value: 'Hello, world! This is a test sentence for embedding.',
+    );
 
-    print('      ✅ Single embedding: ${singleEmbedding[0].length} dimensions');
+    print('    Single embedding: ${single.embedding.length} dimensions');
     print(
-        '      📊 Sample values: ${singleEmbedding[0].take(5).map((v) => v.toStringAsFixed(4)).join(', ')}...');
+      '    Sample values: ${single.embedding.take(5).map((value) => value.toStringAsFixed(4)).join(', ')}...',
+    );
 
-    // Multiple texts
-    final multipleTexts = [
-      'The quick brown fox jumps over the lazy dog.',
-      'Machine learning is a subset of artificial intelligence.',
-      'The weather is beautiful today.',
-    ];
-
-    final multipleEmbeddings = await provider.embed(multipleTexts);
+    final multiple = await core.embedMany(
+      model: model,
+      values: const [
+        'The quick brown fox jumps over the lazy dog.',
+        'Machine learning is a subset of artificial intelligence.',
+        'The weather is beautiful today.',
+      ],
+    );
 
     print(
-        '      ✅ Multiple embeddings: ${multipleEmbeddings.length} texts processed');
-    for (int i = 0; i < multipleEmbeddings.length; i++) {
+      '    Multiple embeddings: ${multiple.embeddings.length} texts processed',
+    );
+    for (var index = 0; index < multiple.embeddings.length; index++) {
       print(
-          '         Text ${i + 1}: ${multipleEmbeddings[i].length} dimensions');
+        '      Text ${index + 1}: ${multiple.embeddings[index].length} dimensions',
+      );
     }
-  } catch (e) {
-    print('      ❌ Basic embeddings failed: $e');
+  } catch (error) {
+    print('    Failed: $error');
   }
 }
 
-/// Demonstrate batch embedding processing
-Future<void> demonstrateBatchEmbeddings(
-    EmbeddingCapability provider, String providerName) async {
-  print('   📦 Batch Processing:');
+Future<void> demonstrateBatchEmbeddings(core.EmbeddingModel model) async {
+  print('  Batch processing:');
 
   try {
-    // Large batch of texts
-    final batchTexts = [
+    final batchTexts = const [
       'Artificial intelligence is transforming industries.',
       'Machine learning algorithms learn from data.',
       'Deep learning uses neural networks.',
@@ -121,93 +146,74 @@ Future<void> demonstrateBatchEmbeddings(
       'Blockchain ensures data integrity.',
     ];
 
-    print('      🔄 Processing ${batchTexts.length} texts in batch...');
     final startTime = DateTime.now();
-
-    final batchEmbeddings = await provider.embed(batchTexts);
-
+    final batch = await core.embedMany(
+      model: model,
+      values: batchTexts,
+    );
     final duration = DateTime.now().difference(startTime);
-    print('      ✅ Batch completed in ${duration.inMilliseconds}ms');
-    print(
-        '      📊 Average: ${(duration.inMilliseconds / batchTexts.length).toStringAsFixed(1)}ms per text');
-    print('      🔢 Dimensions: ${batchEmbeddings.first.length}');
 
-    // Calculate batch statistics
-    final allValues = batchEmbeddings.expand((e) => e).toList();
+    print('    Completed in ${duration.inMilliseconds}ms');
+    print(
+      '    Average: ${(duration.inMilliseconds / batch.embeddings.length).toStringAsFixed(1)}ms per text',
+    );
+    print('    Dimensions: ${batch.embeddings.first.length}');
+
+    final allValues = batch.embeddings.expand((entry) => entry).toList();
     final mean = allValues.reduce((a, b) => a + b) / allValues.length;
-    final variance =
-        allValues.map((v) => pow(v - mean, 2)).reduce((a, b) => a + b) /
-            allValues.length;
+    final variance = allValues
+            .map((value) => math.pow(value - mean, 2).toDouble())
+            .reduce((a, b) => a + b) /
+        allValues.length;
 
     print(
-        '      📈 Statistics: mean=${mean.toStringAsFixed(4)}, std=${sqrt(variance).toStringAsFixed(4)}');
-  } catch (e) {
-    print('      ❌ Batch processing failed: $e');
+      '    Statistics: mean=${mean.toStringAsFixed(4)}, std=${math.sqrt(variance).toStringAsFixed(4)}',
+    );
+  } catch (error) {
+    print('    Failed: $error');
   }
 }
 
-/// Demonstrate similarity calculations
 Future<void> demonstrateSimilarityCalculations(
-    EmbeddingCapability provider, String providerName) async {
-  print('   🎯 Similarity Calculations:');
+    core.EmbeddingModel model) async {
+  print('  Similarity calculations:');
 
   try {
-    // Test texts with varying similarity
-    final testTexts = [
-      'I love programming in Dart.', // Reference
-      'Dart programming is enjoyable.', // Similar
-      'Python is a great language.', // Somewhat similar
-      'The weather is sunny today.', // Different
+    final testTexts = const [
+      'I love programming in Dart.',
+      'Dart programming is enjoyable.',
+      'Python is a great language.',
+      'The weather is sunny today.',
     ];
 
-    final embeddings = await provider.embed(testTexts);
-    final referenceEmbedding = embeddings[0];
+    final batch = await core.embedMany(
+      model: model,
+      values: testTexts,
+    );
+    final referenceEmbedding = batch.embeddings.first;
 
-    print('      📝 Reference: "${testTexts[0]}"');
-    print('      🔍 Similarities:');
-
-    for (int i = 1; i < testTexts.length; i++) {
-      final similarity =
-          EmbeddingUtils.cosineSimilarity(referenceEmbedding, embeddings[i]);
+    print('    Reference: "${testTexts.first}"');
+    for (var index = 1; index < batch.embeddings.length; index++) {
+      final similarity = EmbeddingUtils.cosineSimilarity(
+        referenceEmbedding,
+        batch.embeddings[index],
+      );
       final similarityPercent = (similarity * 100).toStringAsFixed(1);
 
       print(
-          '         ${_getSimilarityIcon(similarity)} "${testTexts[i]}" - $similarityPercent%');
+        '    ${_similarityLabel(similarity)} "${testTexts[index]}" - $similarityPercent%',
+      );
     }
-
-    // Find most similar pair
-    double maxSimilarity = -1;
-    int bestI = 0, bestJ = 0;
-
-    for (int i = 0; i < embeddings.length; i++) {
-      for (int j = i + 1; j < embeddings.length; j++) {
-        final similarity =
-            EmbeddingUtils.cosineSimilarity(embeddings[i], embeddings[j]);
-        if (similarity > maxSimilarity) {
-          maxSimilarity = similarity;
-          bestI = i;
-          bestJ = j;
-        }
-      }
-    }
-
-    print(
-        '      🏆 Most similar pair (${(maxSimilarity * 100).toStringAsFixed(1)}%):');
-    print('         "${testTexts[bestI]}"');
-    print('         "${testTexts[bestJ]}"');
-  } catch (e) {
-    print('      ❌ Similarity calculations failed: $e');
+  } catch (error) {
+    print('    Failed: $error');
   }
 }
 
-/// Demonstrate semantic search
-Future<void> demonstrateSemanticSearch(
-    EmbeddingCapability provider, String providerName) async {
-  print('   🔍 Semantic Search:');
+Future<void> demonstrateSemanticSearch(core.EmbeddingModel model) async {
+  print('  Semantic search:');
 
   try {
-    // Document corpus
-    final documents = [
+    final documents = const [
       'Machine learning algorithms can learn patterns from data without explicit programming.',
       'Deep learning is a subset of machine learning that uses neural networks with multiple layers.',
       'Natural language processing enables computers to understand and generate human language.',
@@ -220,143 +226,157 @@ Future<void> demonstrateSemanticSearch(
       'Cooking pasta requires boiling water and adding salt for flavor.',
     ];
 
-    // Create document embeddings
-    print('      🔄 Creating document index...');
-    final documentEmbeddings = await provider.embed(documents);
+    final documentEmbeddings = await core.embedMany(
+      model: model,
+      values: documents,
+    );
 
-    // Search queries
-    final queries = [
+    final queries = const [
       'neural networks and deep learning',
       'understanding human language',
       'cooking food',
     ];
 
     for (final query in queries) {
-      print('      🔎 Query: "$query"');
+      final queryResult = await core.embed(
+        model: model,
+        value: query,
+      );
 
-      final queryEmbedding = await provider.embed([query]);
       final results = SemanticSearchEngine.search(
-        queryEmbedding[0],
-        documentEmbeddings,
+        queryResult.embedding,
+        documentEmbeddings.embeddings,
         documents,
         topK: 3,
       );
 
-      print('         📋 Top results:');
-      for (int i = 0; i < results.length; i++) {
-        final result = results[i];
+      print('    Query: "$query"');
+      for (var index = 0; index < results.length; index++) {
+        final result = results[index];
         final score = (result.score * 100).toStringAsFixed(1);
         print(
-            '         ${i + 1}. [$score%] ${result.text.substring(0, 60)}...');
+          '      ${index + 1}. [$score%] ${result.text.substring(0, 60)}...',
+        );
       }
-      print('');
     }
-  } catch (e) {
-    print('      ❌ Semantic search failed: $e');
+  } catch (error) {
+    print('    Failed: $error');
   }
 }
 
-/// Demonstrate document clustering
-Future<void> demonstrateDocumentClustering(
-    EmbeddingCapability provider, String providerName) async {
-  print('   🗂️  Document Clustering:');
+Future<void> demonstrateDocumentClustering(core.EmbeddingModel model) async {
+  print('  Document clustering:');
 
   try {
-    // Documents from different topics
-    final documents = [
-      // Technology cluster
+    final documents = const [
       'Artificial intelligence is revolutionizing technology.',
       'Machine learning algorithms improve with more data.',
       'Software development requires careful planning.',
-
-      // Food cluster
       'Italian cuisine features pasta and pizza.',
       'French cooking emphasizes technique and flavor.',
       'Asian food includes rice and noodles.',
-
-      // Sports cluster
       'Football is popular in many countries.',
       'Basketball requires teamwork and skill.',
       'Tennis is an individual sport.',
     ];
 
-    final embeddings = await provider.embed(documents);
+    final embeddings = await core.embedMany(
+      model: model,
+      values: documents,
+    );
 
-    // Simple clustering using similarity threshold
     final clusters = DocumentClusterer.clusterBySimilarity(
-      embeddings,
+      embeddings.embeddings,
       documents,
       threshold: 0.3,
     );
 
-    print('      📊 Found ${clusters.length} clusters:');
-    for (int i = 0; i < clusters.length; i++) {
-      final cluster = clusters[i];
-      print('         Cluster ${i + 1} (${cluster.length} documents):');
-      for (final doc in cluster) {
-        print('           • ${doc.substring(0, 40)}...');
+    print('    Found ${clusters.length} clusters:');
+    for (var index = 0; index < clusters.length; index++) {
+      final cluster = clusters[index];
+      print('      Cluster ${index + 1} (${cluster.length} documents):');
+      for (final document in cluster) {
+        print('        - ${document.substring(0, 40)}...');
       }
     }
-  } catch (e) {
-    print('      ❌ Document clustering failed: $e');
+  } catch (error) {
+    print('    Failed: $error');
   }
 }
 
-/// Get similarity icon based on score
-String _getSimilarityIcon(double similarity) {
-  if (similarity > 0.8) return '🟢';
-  if (similarity > 0.6) return '🟡';
-  if (similarity > 0.4) return '🟠';
-  return '🔴';
+String _similarityLabel(double similarity) {
+  if (similarity > 0.8) {
+    return 'very similar';
+  }
+  if (similarity > 0.6) {
+    return 'similar';
+  }
+  if (similarity > 0.4) {
+    return 'partially related';
+  }
+
+  return 'different';
 }
 
-/// Utility class for embedding operations
+final class _EmbeddingDemoEntry {
+  final String label;
+  final core.EmbeddingModel model;
+
+  const _EmbeddingDemoEntry({
+    required this.label,
+    required this.model,
+  });
+}
+
 class EmbeddingUtils {
-  /// Calculate cosine similarity between two vectors
   static double cosineSimilarity(List<double> a, List<double> b) {
     if (a.length != b.length) {
       throw ArgumentError('Vectors must have the same length');
     }
 
-    double dotProduct = 0.0;
-    double normA = 0.0;
-    double normB = 0.0;
+    var dotProduct = 0.0;
+    var normA = 0.0;
+    var normB = 0.0;
 
-    for (int i = 0; i < a.length; i++) {
-      dotProduct += a[i] * b[i];
-      normA += a[i] * a[i];
-      normB += b[i] * b[i];
+    for (var index = 0; index < a.length; index++) {
+      dotProduct += a[index] * b[index];
+      normA += a[index] * a[index];
+      normB += b[index] * b[index];
     }
 
-    if (normA == 0.0 || normB == 0.0) return 0.0;
+    if (normA == 0.0 || normB == 0.0) {
+      return 0.0;
+    }
 
-    return dotProduct / (sqrt(normA) * sqrt(normB));
+    return dotProduct / (math.sqrt(normA) * math.sqrt(normB));
   }
 
-  /// Calculate Euclidean distance between two vectors
   static double euclideanDistance(List<double> a, List<double> b) {
     if (a.length != b.length) {
       throw ArgumentError('Vectors must have the same length');
     }
 
-    double sum = 0.0;
-    for (int i = 0; i < a.length; i++) {
-      final diff = a[i] - b[i];
+    var sum = 0.0;
+    for (var index = 0; index < a.length; index++) {
+      final diff = a[index] - b[index];
       sum += diff * diff;
     }
 
-    return sqrt(sum);
+    return math.sqrt(sum);
   }
 
-  /// Normalize a vector to unit length
   static List<double> normalize(List<double> vector) {
-    final norm = sqrt(vector.map((v) => v * v).reduce((a, b) => a + b));
-    if (norm == 0.0) return vector;
-    return vector.map((v) => v / norm).toList();
+    final norm = math.sqrt(
+      vector.map((value) => value * value).reduce((a, b) => a + b),
+    );
+    if (norm == 0.0) {
+      return vector;
+    }
+
+    return vector.map((value) => value / norm).toList();
   }
 }
 
-/// Search result for semantic search
 class SearchResult {
   final String text;
   final double score;
@@ -365,46 +385,49 @@ class SearchResult {
   SearchResult(this.text, this.score, this.index);
 }
 
-/// Simple semantic search engine
 class SemanticSearchEngine {
-  /// Search for similar documents
-  static List<SearchResult> search(List<double> queryEmbedding,
-      List<List<double>> documentEmbeddings, List<String> documents,
-      {int topK = 5}) {
+  static List<SearchResult> search(
+    List<double> queryEmbedding,
+    List<List<double>> documentEmbeddings,
+    List<String> documents, {
+    int topK = 5,
+  }) {
     final results = <SearchResult>[];
 
-    for (int i = 0; i < documentEmbeddings.length; i++) {
+    for (var index = 0; index < documentEmbeddings.length; index++) {
       final similarity = EmbeddingUtils.cosineSimilarity(
         queryEmbedding,
-        documentEmbeddings[i],
+        documentEmbeddings[index],
       );
-      results.add(SearchResult(documents[i], similarity, i));
+      results.add(SearchResult(documents[index], similarity, index));
     }
 
-    // Sort by similarity (descending)
     results.sort((a, b) => b.score.compareTo(a.score));
-
     return results.take(topK).toList();
   }
 }
 
-/// Simple document clustering
 class DocumentClusterer {
-  /// Cluster documents by similarity threshold
   static List<List<String>> clusterBySimilarity(
-      List<List<double>> embeddings, List<String> documents,
-      {double threshold = 0.5}) {
+    List<List<double>> embeddings,
+    List<String> documents, {
+    double threshold = 0.5,
+  }) {
     final clusters = <List<String>>[];
     final assigned = List<bool>.filled(documents.length, false);
 
-    for (int i = 0; i < documents.length; i++) {
-      if (assigned[i]) continue;
+    for (var i = 0; i < documents.length; i++) {
+      if (assigned[i]) {
+        continue;
+      }
 
       final cluster = [documents[i]];
       assigned[i] = true;
 
-      for (int j = i + 1; j < documents.length; j++) {
-        if (assigned[j]) continue;
+      for (var j = i + 1; j < documents.length; j++) {
+        if (assigned[j]) {
+          continue;
+        }
 
         final similarity = EmbeddingUtils.cosineSimilarity(
           embeddings[i],

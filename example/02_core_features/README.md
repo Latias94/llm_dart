@@ -20,18 +20,25 @@ provider-native panels, and graceful fallback suggestions.
 Compatibility-oriented specialized `build*()` helpers for capability families
 that still live on the older root builder surface.
 
+### [provider_specific_builders.dart](provider_specific_builders.dart)
+Compatibility-oriented provider callback builders that still demonstrate the
+older root builder shell for provider-specific tuning.
+
 ### [assistants.dart](assistants.dart)
-Provider-owned assistant lifecycle management and tool integration.
+Stable assistant-like chat guidance first, followed by the explicit OpenAI
+compatibility boundary for persisted assistant lifecycle APIs.
 
 ### [embeddings.dart](embeddings.dart)
-Legacy/provider-oriented embeddings example kept during migration.
+Stable multi-provider embeddings example using shared `embed(...)` and
+`embedMany(...)` helpers across OpenAI, Google, and Ollama models.
 
 ### [embeddings_stable.dart](embeddings_stable.dart)
 Stable shared `embed(...)` and `embedMany(...)` helpers with
 `AI.openai(...).embeddingModel(...)`.
 
 ### [file_management.dart](file_management.dart)
-Provider-owned file upload, download, and management workflows.
+Stable local `FilePromptPart` usage first, followed by explicit provider-owned
+remote file lifecycle examples for OpenAI and Anthropic.
 
 ### [chat_basics.dart](chat_basics.dart)
 Stable foundational chat patterns with prompt messages, conversation history,
@@ -51,19 +58,34 @@ Stable shared tool-calling flow with `FunctionToolDefinition` and
 tool-call replay parts.
 
 ### [enhanced_tool_calling.dart](enhanced_tool_calling.dart)
-Advanced tool calling with validation, error handling, and richer schemas.
+Stable advanced tool calling with local validation, nested schemas, tool-call
+replay, structured final answers, and provider-owned OpenAI tool controls.
 
 ### [structured_output.dart](structured_output.dart)
 Shared `OutputSpec` examples for object, array, choice, and text result flows.
 
 ### [audio_processing.dart](audio_processing.dart)
-Speech capability examples for text-to-speech and speech-to-text workflows.
+Stable speech and transcription example using shared `generateSpeech(...)` and
+`transcribe(...)` helpers across OpenAI and ElevenLabs models.
 
 ### [image_generation.dart](image_generation.dart)
-AI-powered image creation and editing workflows.
+Stable multi-provider image generation example using shared `generateImage(...)`
+plus provider-native image options for OpenAI and Google.
+
+### [content_moderation.dart](content_moderation.dart)
+Provider-owned moderation signals translated into app-owned policy decisions.
+
+### [model_listing.dart](model_listing.dart)
+Stable concrete-model capability inspection first, then provider-owned remote
+catalog listing as an explicit boundary.
+
+### [message_builder_cache.dart](message_builder_cache.dart)
+Anthropic-specific prompt-caching appendix using `MessageBuilder` with narrow
+typed imports instead of the broad compatibility barrel.
 
 ### [error_handling.dart](error_handling.dart)
-Production-ready error management patterns.
+Stable `ModelError` normalization plus retry, fallback, and circuit-breaker
+patterns around shared text-call closures.
 
 ## Setup
 
@@ -234,6 +256,7 @@ final fileObject = await provider.uploadFile(FileUploadRequest(
 Anthropic prompt caching is provider-specific. See the Anthropic provider
 examples and README for the current typed guidance and migration notes:
 
+- [Message Builder Cache Appendix](message_builder_cache.dart)
 - [Anthropic Provider README](../04_providers/anthropic/README.md)
 
 ## Best Practices

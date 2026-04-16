@@ -53,26 +53,27 @@ manually.
 ### Core Features
 *Essential functionality*
 
-- [capability_factory_methods.dart](02_core_features/capability_factory_methods.dart) - Type-safe provider initialization
+- [capability_factory_methods.dart](02_core_features/capability_factory_methods.dart) - Compatibility-oriented typed `build*()` helpers on the legacy root builder surface
 - [chat_basics.dart](02_core_features/chat_basics.dart) - Basic chat
 - [streaming_chat.dart](02_core_features/streaming_chat.dart) - Real-time streaming
 - [capability_profile_ui_gating.dart](02_core_features/capability_profile_ui_gating.dart) - Model-centric UI affordance and fallback gating
 - [cancellation_demo.dart](02_core_features/cancellation_demo.dart) - Request cancellation
 - [tool_calling.dart](02_core_features/tool_calling.dart) - Function calling
 - [embeddings_stable.dart](02_core_features/embeddings_stable.dart) - Stable shared embedding helpers
-- [enhanced_tool_calling.dart](02_core_features/enhanced_tool_calling.dart) - Advanced tool usage
+- [enhanced_tool_calling.dart](02_core_features/enhanced_tool_calling.dart) - Stable advanced tool replay and provider-owned controls
 - [structured_output.dart](02_core_features/structured_output.dart) - Shared structured output
-- [assistants.dart](02_core_features/assistants.dart) - AI assistants
-- [embeddings.dart](02_core_features/embeddings.dart) - Text embeddings
-- [embeddings_stable.dart](02_core_features/embeddings_stable.dart) - Stable `embed(...)` and `embedMany(...)`
-- [audio_processing.dart](02_core_features/audio_processing.dart) - Speech/TTS
-- [image_generation.dart](02_core_features/image_generation.dart) - Image generation
-- [file_management.dart](02_core_features/file_management.dart) - File operations
+- [provider_specific_builders.dart](02_core_features/provider_specific_builders.dart) - Compatibility-oriented provider callback builders on the legacy root shell
+- [assistants.dart](02_core_features/assistants.dart) - Stable assistant-like chat plus the explicit OpenAI compatibility boundary
+- [embeddings.dart](02_core_features/embeddings.dart) - Stable multi-provider embeddings
+- [audio_processing.dart](02_core_features/audio_processing.dart) - Stable speech and transcription helpers
+- [image_generation.dart](02_core_features/image_generation.dart) - Stable multi-provider image generation
+- [file_management.dart](02_core_features/file_management.dart) - Stable local file prompts plus provider-owned remote file lifecycle boundaries
 - [web_search.dart](02_core_features/web_search.dart) - Web search integration
-- [content_moderation.dart](02_core_features/content_moderation.dart) - Content filtering
-- [model_listing.dart](02_core_features/model_listing.dart) - Available models
+- [content_moderation.dart](02_core_features/content_moderation.dart) - Provider-owned moderation signals mapped into app policy
+- [model_listing.dart](02_core_features/model_listing.dart) - Stable capability profiles plus provider-owned remote catalog discovery
+- [message_builder_cache.dart](02_core_features/message_builder_cache.dart) - Anthropic-specific prompt caching appendix with narrow typed imports
 - [capability_detection.dart](02_core_features/capability_detection.dart) - Feature detection
-- [error_handling.dart](02_core_features/error_handling.dart) - Error handling
+- [error_handling.dart](02_core_features/error_handling.dart) - Stable `ModelError` normalization and resilience patterns
 
 ### Advanced Features
 *Specialized capabilities*

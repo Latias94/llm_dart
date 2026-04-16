@@ -1,631 +1,551 @@
 // ignore_for_file: avoid_print
-import 'dart:io';
+
 import 'dart:async';
-import 'package:llm_dart/legacy.dart';
+import 'dart:io';
 
-/// 🛡️ Error Handling - Production-Ready Error Management
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/transport.dart' as transport;
+
+/// Stable-first error handling examples centered on `ModelError`.
 ///
-/// This example demonstrates comprehensive error handling strategies:
-/// - Different error types and their handling
-/// - Retry mechanisms and backoff strategies
-/// - Graceful degradation and fallbacks
-/// - Monitoring and logging best practices
-/// - Capability factory method error handling
-///
-/// Before running, set your API key:
-/// export OPENAI_API_KEY="your-key"
-/// export GROQ_API_KEY="your-key"
-void main() async {
-  print('🛡️ Error Handling - Production-Ready Error Management\n');
+/// This example demonstrates:
+/// - local validation failures before any network call
+/// - structured-output decoding failures normalized as validation errors
+/// - transport/auth/network/timeout normalization
+/// - retry, fallback, and circuit-breaker patterns around shared call closures
+Future<void> main() async {
+  print('Error Handling\n');
 
-  // Get API key
-  final apiKey = Platform.environment['OPENAI_API_KEY'] ?? 'sk-TESTKEY';
+  await demonstrateLocalValidationError();
+  await demonstrateStructuredOutputValidationError();
+  await demonstrateAuthenticationFailure();
+  await demonstrateNetworkFailure();
+  await demonstrateTimeoutFailure();
+  await demonstrateRetryPattern();
+  await demonstrateFallbackPattern();
+  await demonstrateCircuitBreakerPattern();
 
-  // Create AI provider
-  final provider = await ai()
-      .openai()
-      .apiKey(apiKey)
-      .model('gpt-4o-mini')
-      .temperature(0.7)
-      .maxTokens(500)
-      .build();
-
-  // Demonstrate different error handling scenarios
-  await demonstrateErrorTypes();
-  await demonstrateRetryStrategies(provider);
-  await demonstrateGracefulDegradation(provider);
-  await demonstrateCircuitBreaker(provider);
-  await demonstrateMonitoringAndLogging(provider);
-
-  print('\n✅ Error handling completed!');
+  print('Error handling completed.');
 }
 
-/// Demonstrate different error types
-Future<void> demonstrateErrorTypes() async {
-  print('🔍 Error Types and Classification:\n');
-
-  // Test different error scenarios
-  final errorTests = [
-    () => testAuthenticationError(),
-    () => testRateLimitError(),
-    () => testInvalidRequestError(),
-    () => testNetworkError(),
-    () => testTimeoutError(),
-    () => testUnsupportedCapabilityError(),
-  ];
-
-  for (final test in errorTests) {
-    try {
-      await test();
-    } catch (e) {
-      // Errors are handled within each test function
-    }
-  }
-
-  print('   ✅ Error types demonstration completed\n');
-}
-
-/// Test authentication error
-Future<void> testAuthenticationError() async {
-  print('   🔐 Testing Authentication Error:');
+Future<void> demonstrateLocalValidationError() async {
+  print('=== Local Validation Error ===\n');
 
   try {
-    final invalidAi = await ai()
-        .openai()
-        .apiKey('invalid-key-12345')
-        .model('gpt-4o-mini')
-        .build();
-
-    await invalidAi.chat([ChatMessage.user('Hello')]);
-    print('      ❌ Expected authentication error but got success');
-  } on AuthError catch (e) {
-    print('      ✅ Caught AuthError: ${e.message}');
-    print('      💡 Action: Check API key validity and permissions');
-  } catch (e) {
-    print('      ⚠️  Unexpected error type: ${e.runtimeType}');
+    await core.generateTextCall(
+      model: const _StaticTextLanguageModel('unused'),
+      prompt: [
+        core.UserPromptMessage.text('Hello'),
+      ],
+      tools: [
+        _weatherTool(),
+      ],
+      toolChoice: const core.SpecificToolChoice('missing_tool'),
+    );
+    print('Unexpected success.\n');
+  } catch (error) {
+    _printNormalizedError(
+      label: 'Undeclared SpecificToolChoice',
+      error: error,
+    );
   }
 }
 
-/// Test rate limit error
-Future<void> testRateLimitError() async {
-  print('   ⏱️  Testing Rate Limit (simulated):');
+Future<void> demonstrateStructuredOutputValidationError() async {
+  print('=== Structured Output Validation Error ===\n');
 
-  // Note: This is simulated since we can't easily trigger real rate limits
-  try {
-    throw RateLimitError('Rate limit exceeded: 60 requests per minute');
-  } on RateLimitError catch (e) {
-    print('      ✅ Caught RateLimitError: ${e.message}');
-    print('      💡 Action: Implement exponential backoff and retry');
-  }
-}
-
-/// Test invalid request error
-Future<void> testInvalidRequestError() async {
-  print('   📝 Testing Invalid Request Error:');
-
-  try {
-    final provider = await ai()
-        .openai()
-        .apiKey(Platform.environment['OPENAI_API_KEY'] ?? 'sk-TESTKEY')
-        .model('invalid-model-name-xyz')
-        .build();
-
-    await provider.chat([ChatMessage.user('Hello')]);
-    print('      ❌ Expected invalid request error but got success');
-  } on InvalidRequestError catch (e) {
-    print('      ✅ Caught InvalidRequestError: ${e.message}');
-    print('      💡 Action: Validate request parameters before sending');
-  } on ModelNotAvailableError catch (e) {
-    print('      ✅ Caught ModelNotAvailableError: ${e.message}');
-    print('      💡 Action: Use a valid model name');
-  } on ServerError catch (e) {
-    print('      ✅ Caught ServerError (model not found): ${e.message}');
-    print('      💡 Action: Verify model availability');
-  } catch (e) {
-    print('      ⚠️  Unexpected error type: ${e.runtimeType}');
-    print('      📝 Error details: $e');
-  }
-}
-
-/// Test network error
-Future<void> testNetworkError() async {
-  print('   🌐 Testing Network Error:');
-
-  try {
-    final provider = await ai()
-        .openai()
-        .apiKey('sk-test')
-        .baseUrl('https://invalid-domain-12345.com/v1/')
-        .model('gpt-4o-mini')
-        .build();
-
-    await provider.chat([ChatMessage.user('Hello')]);
-    print('      ❌ Expected network error but got success');
-  } on HttpError catch (e) {
-    print('      ✅ Caught HttpError: ${e.message}');
-    print('      💡 Action: Check network connectivity and endpoint URL');
-  } on GenericError catch (e) {
-    print('      ✅ Caught GenericError (connection failed): ${e.message}');
-    print('      💡 Action: Verify network connectivity and endpoint URL');
-  } catch (e) {
-    print('      ⚠️  Network-related error: ${e.runtimeType}');
-    print('      📝 Error details: $e');
-  }
-}
-
-/// Test timeout error
-Future<void> testTimeoutError() async {
-  print('   ⏰ Testing Timeout Error:');
-
-  try {
-    final provider = await ai()
-        .openai()
-        .apiKey(Platform.environment['OPENAI_API_KEY'] ?? 'sk-TESTKEY')
-        .model('gpt-4o-mini')
-        .timeout(Duration(milliseconds: 1)) // Very short timeout
-        .build();
-
-    await provider.chat([ChatMessage.user('Hello')]);
-    print('      ❌ Expected timeout error but got success');
-  } on TimeoutError catch (e) {
-    print('      ✅ Caught TimeoutError: ${e.message}');
-    print('      💡 Action: Increase timeout or implement retry logic');
-  } catch (e) {
-    print('      ⚠️  Timeout-related error: ${e.runtimeType}');
-  }
-}
-
-/// Test unsupported capability error (new capability factory methods)
-Future<void> testUnsupportedCapabilityError() async {
-  print('   🚫 Testing Unsupported Capability Error:');
-
-  try {
-    // Try to build audio capability with a provider that doesn't support it
-    // Note: Using a fake API key to avoid actual API calls
-    await ai()
-        .groq() // Groq doesn't support audio capabilities
-        .apiKey('fake-key-for-testing')
-        .buildAudio(); // This should throw UnsupportedCapabilityError
-
-    print('      ❌ Expected UnsupportedCapabilityError but got success');
-  } on UnsupportedCapabilityError catch (e) {
-    print('      ✅ Caught UnsupportedCapabilityError: ${e.message}');
-    print(
-        '      💡 Action: Use a provider that supports the required capability');
-    print('      📋 Error details: $e');
-  } catch (e) {
-    print('      ⚠️  Unexpected error type: ${e.runtimeType}');
-    print('      📝 Error details: $e');
-  }
-
-  // Test another unsupported capability
-  try {
-    // Try to build image generation with a provider that doesn't support it
-    await ai()
-        .groq() // Groq doesn't support image generation
-        .apiKey('fake-key-for-testing')
-        .buildImageGeneration(); // This should throw UnsupportedCapabilityError
-
-    print('      ❌ Expected UnsupportedCapabilityError for image generation');
-  } on UnsupportedCapabilityError catch (e) {
-    print('      ✅ Image generation capability correctly rejected');
-    print('      📝 Provider limitation: ${e.message}');
-  } catch (e) {
-    print('      ⚠️  Unexpected error for image generation: ${e.runtimeType}');
-  }
-
-  print('      💡 Capability factory methods provide compile-time type safety');
-  print(
-      '      🎯 Use buildAudio(), buildImageGeneration(), etc. for type-safe building');
-}
-
-/// Demonstrate retry strategies
-Future<void> demonstrateRetryStrategies(ChatCapability ai) async {
-  print('🔄 Retry Strategies:\n');
-
-  // Test exponential backoff
-  await testExponentialBackoff(ai);
-
-  // Test linear backoff
-  await testLinearBackoff(ai);
-
-  // Test immediate retry
-  await testImmediateRetry(ai);
-
-  print('   ✅ Retry strategies demonstration completed\n');
-}
-
-/// Test exponential backoff retry
-Future<void> testExponentialBackoff(ChatCapability ai) async {
-  print('   📈 Exponential Backoff Retry:');
-
-  final retryHandler = RetryHandler(
-    maxRetries: 3,
-    strategy: RetryStrategy.exponentialBackoff,
-    baseDelay: Duration(milliseconds: 100),
+  final model = const _StaticTextLanguageModel(
+    '{"summary":42,"actions":["retry from cache"]}',
   );
 
   try {
-    final result = await retryHandler.execute(() async {
-      // Simulate intermittent failure
-      if (DateTime.now().millisecond % 3 != 0) {
-        throw Exception('Simulated intermittent failure');
-      }
-      return await ai.chat([ChatMessage.user('Hello')]);
-    });
-
-    final text = result.text ?? '';
-    final preview = text.length > 50 ? text.substring(0, 50) : text;
-    print('      ✅ Success after retries: $preview...');
-  } catch (e) {
-    print('      ❌ Failed after all retries: $e');
+    await core.generateTextCall<IncidentPlan>(
+      model: model,
+      prompt: [
+        core.UserPromptMessage.text('Return a remediation plan as JSON.'),
+      ],
+      outputSpec: core.ObjectOutputSpec<IncidentPlan>(
+        schema: core.JsonSchema.object(
+          properties: const {
+            'summary': {'type': 'string'},
+            'actions': {
+              'type': 'array',
+              'items': {'type': 'string'},
+              'minItems': 1,
+            },
+          },
+          required: const ['summary', 'actions'],
+          additionalProperties: false,
+        ),
+        decode: IncidentPlan.fromJson,
+      ),
+    );
+    print('Unexpected success.\n');
+  } catch (error) {
+    _printNormalizedError(
+      label: 'Structured output decode failure',
+      error: error,
+    );
   }
 }
 
-/// Test linear backoff retry
-Future<void> testLinearBackoff(ChatCapability ai) async {
-  print('   📊 Linear Backoff Retry:');
+Future<void> demonstrateAuthenticationFailure() async {
+  print('=== Authentication Failure ===\n');
 
-  final retryHandler = RetryHandler(
-    maxRetries: 2,
-    strategy: RetryStrategy.linearBackoff,
-    baseDelay: Duration(milliseconds: 200),
+  try {
+    final model = llm.AI.openai(apiKey: 'invalid-key').chatModel('gpt-4.1-mini');
+    await core.generateTextCall(
+      model: model,
+      prompt: [
+        core.UserPromptMessage.text('Hello'),
+      ],
+      callOptions: const core.CallOptions(
+        timeout: Duration(seconds: 20),
+      ),
+    );
+    print('Unexpected success.\n');
+  } catch (error) {
+    _printNormalizedError(
+      label: 'Invalid API key request',
+      error: error,
+    );
+  }
+}
+
+Future<void> demonstrateNetworkFailure() async {
+  print('=== Network Failure ===\n');
+
+  try {
+    final model = llm.AI
+        .openai(
+          apiKey: 'not-used',
+          baseUrl: 'https://unreachable-host.invalid/v1',
+        )
+        .chatModel('gpt-4.1-mini');
+
+    await core.generateTextCall(
+      model: model,
+      prompt: [
+        core.UserPromptMessage.text('Hello'),
+      ],
+      callOptions: const core.CallOptions(
+        timeout: Duration(seconds: 3),
+      ),
+    );
+    print('Unexpected success.\n');
+  } catch (error) {
+    _printNormalizedError(
+      label: 'Invalid baseUrl request',
+      error: error,
+    );
+  }
+}
+
+Future<void> demonstrateTimeoutFailure() async {
+  print('=== Timeout Failure ===\n');
+
+  final apiKey = Platform.environment['OPENAI_API_KEY'];
+  if (apiKey == null || apiKey.isEmpty) {
+    print('Skipping timeout example because OPENAI_API_KEY is not set.\n');
+    return;
+  }
+
+  try {
+    final model = llm.AI.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
+
+    await core.generateTextCall(
+      model: model,
+      prompt: [
+        core.UserPromptMessage.text('Say hello in one short sentence.'),
+      ],
+      callOptions: const core.CallOptions(
+        timeout: Duration(milliseconds: 1),
+      ),
+    );
+    print('Unexpected success.\n');
+  } catch (error) {
+    _printNormalizedError(
+      label: 'Short timeout request',
+      error: error,
+    );
+  }
+}
+
+Future<void> demonstrateRetryPattern() async {
+  print('=== Retry Pattern ===\n');
+
+  final model = _FlakyLanguageModel(
+    successText: 'Primary region recovered after retry.',
+    failuresBeforeSuccess: 2,
+    failureFactory: () => const transport.TransportTimeoutException(
+      'Simulated upstream timeout',
+    ),
   );
 
-  try {
-    final result = await retryHandler.execute(() async {
-      return await ai.chat([ChatMessage.user('What is 2+2?')]);
-    });
-
-    print('      ✅ Success: ${result.text}');
-  } catch (e) {
-    print('      ❌ Failed: $e');
-  }
-}
-
-/// Test immediate retry
-Future<void> testImmediateRetry(ChatCapability ai) async {
-  print('   ⚡ Immediate Retry:');
-
-  final retryHandler = RetryHandler(
-    maxRetries: 1,
-    strategy: RetryStrategy.immediate,
+  final retryExecutor = _RetryExecutor<core.GenerateTextCallResult<dynamic>>(
+    maxAttempts: 3,
+    baseDelay: const Duration(milliseconds: 80),
   );
 
-  try {
-    final result = await retryHandler.execute(() async {
-      return await ai.chat([ChatMessage.user('Hello again!')]);
-    });
+  final result = await retryExecutor.execute(
+    () => core.generateTextCall(
+      model: model,
+      prompt: [
+        core.UserPromptMessage.text('Summarize the current status.'),
+      ],
+    ),
+  );
 
-    final text = result.text ?? '';
-    final preview = text.length > 30 ? text.substring(0, 30) : text;
-    print('      ✅ Success: $preview...');
-  } catch (e) {
-    print('      ❌ Failed: $e');
-  }
+  print('Final text: ${result.text}\n');
 }
 
-/// Demonstrate graceful degradation
-Future<void> demonstrateGracefulDegradation(ChatCapability ai) async {
-  print('🎭 Graceful Degradation:\n');
+Future<void> demonstrateFallbackPattern() async {
+  print('=== Fallback Pattern ===\n');
 
-  final fallbackHandler = FallbackHandler([
-    () => ai.chat([ChatMessage.user('What is the weather like?')]),
-    () => _fallbackToSimpleResponse(),
-    () => _fallbackToStaticResponse(),
-  ]);
+  final primaryModel = _FlakyLanguageModel(
+    successText: 'unused',
+    failuresBeforeSuccess: 100,
+    failureFactory: () => const transport.TransportNetworkException(
+      'Primary region is unavailable',
+    ),
+  );
+  final fallbackModel = const _StaticTextLanguageModel(
+    'Fallback answer from a cached or secondary path.',
+  );
 
-  try {
-    final result = await fallbackHandler.execute();
-    print('   ✅ Fallback result: ${result.text}');
-  } catch (e) {
-    print('   ❌ All fallbacks failed: $e');
-  }
+  final fallbackExecutor = _FallbackExecutor<core.GenerateTextCallResult<dynamic>>();
 
-  print('   ✅ Graceful degradation demonstration completed\n');
+  final outcome = await fallbackExecutor.execute(
+    [
+      () => core.generateTextCall(
+            model: primaryModel,
+            prompt: [
+              core.UserPromptMessage.text('Generate the release summary.'),
+            ],
+          ),
+      () => core.generateTextCall(
+            model: fallbackModel,
+            prompt: [
+              core.UserPromptMessage.text('Generate the release summary.'),
+            ],
+          ),
+    ],
+  );
+
+  print('Resolved by fallback step: ${outcome.stepIndex + 1}');
+  print('Final text: ${outcome.value.text}\n');
 }
 
-/// Demonstrate circuit breaker pattern
-Future<void> demonstrateCircuitBreaker(ChatCapability ai) async {
-  print('⚡ Circuit Breaker Pattern:\n');
+Future<void> demonstrateCircuitBreakerPattern() async {
+  print('=== Circuit Breaker Pattern ===\n');
 
-  final circuitBreaker = CircuitBreaker(
+  final model = _FlakyLanguageModel(
+    successText: 'Service recovered after the breaker half-open probe.',
+    failuresBeforeSuccess: 2,
+    failureFactory: () => const transport.TransportTimeoutException(
+      'Primary model endpoint timed out',
+    ),
+  );
+
+  final breaker = _CircuitBreaker(
     failureThreshold: 2,
-    timeout: Duration(seconds: 5),
+    resetTimeout: const Duration(milliseconds: 120),
   );
 
-  // Simulate multiple calls
-  for (int i = 1; i <= 5; i++) {
-    try {
-      final result = await circuitBreaker.execute(() async {
-        // Simulate failures for first few calls
-        if (i <= 2) {
-          throw Exception('Simulated service failure');
-        }
-        return await ai.chat([ChatMessage.user('Hello $i')]);
-      });
+  for (var callIndex = 1; callIndex <= 4; callIndex += 1) {
+    if (callIndex == 4) {
+      await Future<void>.delayed(const Duration(milliseconds: 160));
+    }
 
-      final text = result.text ?? '';
-      final preview = text.length > 30 ? text.substring(0, 30) : text;
-      print('   Call $i: ✅ $preview...');
-    } catch (e) {
-      print('   Call $i: ❌ ${e.toString()}');
+    try {
+      final result = await breaker.execute(
+        () => core.generateTextCall(
+          model: model,
+          prompt: [
+            core.UserPromptMessage.text('Ping the service.'),
+          ],
+        ),
+      );
+      print('Call $callIndex: success -> ${result.text}');
+    } catch (error) {
+      final normalized = _normalizeError(error);
+      print(
+        'Call $callIndex: ${normalized.code ?? normalized.kind.name} '
+        '-> ${normalized.message}',
+      );
     }
   }
 
-  print('   ✅ Circuit breaker demonstration completed\n');
+  print('');
 }
 
-/// Demonstrate monitoring and logging
-Future<void> demonstrateMonitoringAndLogging(ChatCapability ai) async {
-  print('📊 Monitoring and Logging:\n');
+core.FunctionToolDefinition _weatherTool() {
+  return core.FunctionToolDefinition(
+    name: 'weather',
+    description: 'Get weather for a city.',
+    inputSchema: core.ToolJsonSchema.object(
+      properties: const {
+        'city': {'type': 'string'},
+      },
+      required: const ['city'],
+      additionalProperties: false,
+    ),
+  );
+}
 
-  final monitor = AIServiceMonitor();
-
-  try {
-    // Monitor a successful call
-    await monitor.trackCall('chat_request', () async {
-      return await ai.chat([ChatMessage.user('Successful request')]);
-    });
-  } catch (e) {
-    print('   ⚠️  Monitoring error during successful call: $e');
+core.ModelError _normalizeError(Object error) {
+  if (error is core.ModelError) {
+    return error;
   }
 
-  try {
-    // Monitor a failed call
-    await monitor.trackCall('failed_request', () async {
-      throw Exception('Simulated failure');
-    });
-  } catch (e) {
-    print('   ⚠️  Expected monitoring error during failed call: $e');
+  if (error is transport.TransportException) {
+    return transport.transportErrorToModelError(error);
   }
 
-  // Display metrics
-  monitor.displayMetrics();
-
-  print('   ✅ Monitoring and logging demonstration completed\n');
+  return core.ModelError.fromUnknown(error);
 }
 
-/// Fallback response functions
-Future<ChatResponse> _fallbackToSimpleResponse() async {
-  await Future.delayed(Duration(milliseconds: 100));
-  return SimpleChatResponse(
-      'I apologize, but I\'m experiencing technical difficulties. Please try again later.');
+void _printNormalizedError({
+  required String label,
+  required Object error,
+}) {
+  final normalized = _normalizeError(error);
+
+  print(label);
+  print('  kind: ${normalized.kind.name}');
+  print('  message: ${normalized.message}');
+  print('  code: ${normalized.code ?? '<none>'}');
+  print('  statusCode: ${normalized.statusCode?.toString() ?? '<none>'}');
+  print('  retryable: ${normalized.isRetryable?.toString() ?? '<unknown>'}');
+  print('  originalType: ${normalized.originalType ?? '<none>'}\n');
 }
 
-Future<ChatResponse> _fallbackToStaticResponse() async {
-  return SimpleChatResponse(
-      'Service temporarily unavailable. Please contact support if the issue persists.');
+final class IncidentPlan {
+  final String summary;
+  final List<String> actions;
+
+  const IncidentPlan({
+    required this.summary,
+    required this.actions,
+  });
+
+  factory IncidentPlan.fromJson(Map<String, Object?> json) {
+    final actions = json['actions'] as List;
+    return IncidentPlan(
+      summary: json['summary']! as String,
+      actions: List<String>.unmodifiable(
+        actions.map((value) => value as String),
+      ),
+    );
+  }
 }
 
-/// Retry strategy enumeration
-enum RetryStrategy {
-  immediate,
-  linearBackoff,
-  exponentialBackoff,
+final class _StaticTextLanguageModel implements core.LanguageModel {
+  final String text;
+
+  const _StaticTextLanguageModel(this.text);
+
+  @override
+  String get providerId => 'example';
+
+  @override
+  String get modelId => 'static-text';
+
+  @override
+  Future<core.GenerateTextResult> generate(core.GenerateTextRequest request) {
+    return Future.value(
+      core.GenerateTextResult(
+        content: [
+          core.TextContentPart(text),
+        ],
+        finishReason: core.FinishReason.stop,
+      ),
+    );
+  }
+
+  @override
+  Stream<core.TextStreamEvent> stream(core.GenerateTextRequest request) {
+    return const Stream.empty();
+  }
 }
 
-/// Retry handler implementation
-class RetryHandler {
-  final int maxRetries;
-  final RetryStrategy strategy;
+final class _FlakyLanguageModel implements core.LanguageModel {
+  final String successText;
+  final int failuresBeforeSuccess;
+  final Object Function() failureFactory;
+
+  int _attempts = 0;
+
+  _FlakyLanguageModel({
+    required this.successText,
+    required this.failuresBeforeSuccess,
+    required this.failureFactory,
+  });
+
+  @override
+  String get providerId => 'example';
+
+  @override
+  String get modelId => 'flaky-model';
+
+  @override
+  Future<core.GenerateTextResult> generate(core.GenerateTextRequest request) {
+    _attempts += 1;
+    if (_attempts <= failuresBeforeSuccess) {
+      throw failureFactory();
+    }
+
+    return Future.value(
+      core.GenerateTextResult(
+        content: [
+          core.TextContentPart(successText),
+        ],
+        finishReason: core.FinishReason.stop,
+      ),
+    );
+  }
+
+  @override
+  Stream<core.TextStreamEvent> stream(core.GenerateTextRequest request) {
+    return const Stream.empty();
+  }
+}
+
+final class _RetryExecutor<T> {
+  final int maxAttempts;
   final Duration baseDelay;
 
-  RetryHandler({
-    required this.maxRetries,
-    required this.strategy,
-    this.baseDelay = const Duration(milliseconds: 1000),
+  const _RetryExecutor({
+    required this.maxAttempts,
+    this.baseDelay = const Duration(milliseconds: 100),
   });
 
-  Future<T> execute<T>(Future<T> Function() operation) async {
-    int attempt = 0;
+  Future<T> execute(Future<T> Function() operation) async {
+    if (maxAttempts < 1) {
+      throw ArgumentError.value(
+        maxAttempts,
+        'maxAttempts',
+        'Retry executor requires at least one attempt.',
+      );
+    }
 
-    while (attempt < maxRetries) {
+    for (var attempt = 1; attempt <= maxAttempts; attempt += 1) {
       try {
         return await operation();
-      } catch (e) {
-        attempt++;
+      } catch (error) {
+        final normalized = _normalizeError(error);
+        final shouldRetry =
+            attempt < maxAttempts && (normalized.isRetryable ?? false);
 
-        if (attempt >= maxRetries) {
-          rethrow;
-        }
-
-        final delay = _calculateDelay(attempt);
         print(
-            '      Attempt $attempt failed, retrying in ${delay.inMilliseconds}ms...');
-        await Future.delayed(delay);
-      }
-    }
+          'Attempt $attempt failed: '
+          '${normalized.code ?? normalized.kind.name} -> ${normalized.message}',
+        );
 
-    // Final attempt
-    return await operation();
-  }
-
-  Duration _calculateDelay(int attempt) {
-    switch (strategy) {
-      case RetryStrategy.immediate:
-        return Duration.zero;
-      case RetryStrategy.linearBackoff:
-        return Duration(milliseconds: baseDelay.inMilliseconds * attempt);
-      case RetryStrategy.exponentialBackoff:
-        return Duration(
-            milliseconds: baseDelay.inMilliseconds * (1 << (attempt - 1)));
-    }
-  }
-}
-
-/// Fallback handler implementation
-class FallbackHandler {
-  final List<Future<ChatResponse> Function()> fallbacks;
-
-  FallbackHandler(this.fallbacks);
-
-  Future<ChatResponse> execute() async {
-    for (int i = 0; i < fallbacks.length; i++) {
-      try {
-        print('   Trying fallback ${i + 1}...');
-        return await fallbacks[i]();
-      } catch (e) {
-        print('   Fallback ${i + 1} failed: $e');
-        if (i == fallbacks.length - 1) {
+        if (!shouldRetry) {
           rethrow;
         }
+
+        final delay =
+            Duration(milliseconds: baseDelay.inMilliseconds * attempt);
+        print('Retrying in ${delay.inMilliseconds}ms...');
+        await Future<void>.delayed(delay);
       }
     }
 
-    throw Exception('All fallbacks failed');
+    throw StateError('Retry executor exited unexpectedly.');
   }
 }
 
-/// Circuit breaker implementation
-class CircuitBreaker {
+final class _FallbackOutcome<T> {
+  final int stepIndex;
+  final T value;
+
+  const _FallbackOutcome({
+    required this.stepIndex,
+    required this.value,
+  });
+}
+
+final class _FallbackExecutor<T> {
+  Future<_FallbackOutcome<T>> execute(
+    List<Future<T> Function()> operations,
+  ) async {
+    if (operations.isEmpty) {
+      throw ArgumentError.value(
+        operations,
+        'operations',
+        'Fallback executor requires at least one operation.',
+      );
+    }
+
+    Object? lastError;
+    StackTrace? lastStackTrace;
+
+    for (var index = 0; index < operations.length; index += 1) {
+      try {
+        final value = await operations[index]();
+        return _FallbackOutcome(
+          stepIndex: index,
+          value: value,
+        );
+      } catch (error, stackTrace) {
+        final normalized = _normalizeError(error);
+        print(
+          'Fallback step ${index + 1} failed: '
+          '${normalized.code ?? normalized.kind.name} -> ${normalized.message}',
+        );
+        lastError = error;
+        lastStackTrace = stackTrace;
+      }
+    }
+
+    Error.throwWithStackTrace(
+      lastError ?? StateError('All fallback operations failed.'),
+      lastStackTrace ?? StackTrace.current,
+    );
+  }
+}
+
+final class _CircuitBreaker {
   final int failureThreshold;
-  final Duration timeout;
+  final Duration resetTimeout;
 
   int _failureCount = 0;
-  DateTime? _lastFailureTime;
-  bool _isOpen = false;
+  DateTime? _openedAt;
 
-  CircuitBreaker({
+  _CircuitBreaker({
     required this.failureThreshold,
-    required this.timeout,
+    required this.resetTimeout,
   });
 
   Future<T> execute<T>(Future<T> Function() operation) async {
-    if (_isOpen) {
-      if (_lastFailureTime != null &&
-          DateTime.now().difference(_lastFailureTime!) > timeout) {
-        _isOpen = false;
-        _failureCount = 0;
-        print('   🔄 Circuit breaker reset');
-      } else {
-        throw Exception('Circuit breaker is OPEN');
+    if (_openedAt case final openedAt?) {
+      final elapsed = DateTime.now().difference(openedAt);
+      if (elapsed < resetTimeout) {
+        throw core.ModelError(
+          kind: core.ModelErrorKind.transport,
+          message: 'Circuit breaker is open. Skip the call and use fallback UI.',
+          code: 'circuit-open',
+          isRetryable: false,
+        );
       }
-    }
 
-    try {
-      final result = await operation();
+      _openedAt = null;
       _failureCount = 0;
-      return result;
-    } catch (e) {
-      _failureCount++;
-      _lastFailureTime = DateTime.now();
-
-      if (_failureCount >= failureThreshold) {
-        _isOpen = true;
-        print('   ⚡ Circuit breaker OPENED after $_failureCount failures');
-      }
-
-      rethrow;
     }
-  }
-}
-
-/// AI service monitor for metrics collection
-class AIServiceMonitor {
-  final Map<String, int> _callCounts = {};
-  final Map<String, int> _errorCounts = {};
-  final Map<String, List<int>> _responseTimes = {};
-
-  Future<T> trackCall<T>(
-      String operationName, Future<T> Function() operation) async {
-    final stopwatch = Stopwatch()..start();
 
     try {
-      final result = await operation();
-      stopwatch.stop();
-
-      _recordSuccess(operationName, stopwatch.elapsedMilliseconds);
-      return result;
-    } catch (e) {
-      stopwatch.stop();
-      _recordError(operationName);
+      final value = await operation();
+      _failureCount = 0;
+      return value;
+    } catch (error) {
+      _failureCount += 1;
+      if (_failureCount >= failureThreshold) {
+        _openedAt = DateTime.now();
+      }
       rethrow;
     }
   }
-
-  void _recordSuccess(String operation, int responseTime) {
-    _callCounts[operation] = (_callCounts[operation] ?? 0) + 1;
-    _responseTimes[operation] = (_responseTimes[operation] ?? [])
-      ..add(responseTime);
-  }
-
-  void _recordError(String operation) {
-    _errorCounts[operation] = (_errorCounts[operation] ?? 0) + 1;
-  }
-
-  void displayMetrics() {
-    print('   📈 Service Metrics:');
-
-    for (final operation in _callCounts.keys) {
-      final calls = _callCounts[operation] ?? 0;
-      final errors = _errorCounts[operation] ?? 0;
-      final times = _responseTimes[operation] ?? [];
-      final avgTime =
-          times.isNotEmpty ? times.reduce((a, b) => a + b) / times.length : 0;
-
-      print('      $operation:');
-      print('        • Total calls: $calls');
-      print('        • Errors: $errors');
-      print(
-          '        • Success rate: ${((calls - errors) / calls * 100).toStringAsFixed(1)}%');
-      print('        • Avg response time: ${avgTime.toStringAsFixed(1)}ms');
-    }
-  }
 }
-
-/// Simple chat response implementation
-class SimpleChatResponse implements ChatResponse {
-  final String _text;
-
-  SimpleChatResponse(this._text);
-
-  @override
-  String? get text => _text;
-
-  @override
-  UsageInfo? get usage => null;
-
-  @override
-  String? get thinking => null;
-
-  @override
-  List<ToolCall>? get toolCalls => null;
-}
-
-/// 🎯 Key Error Handling Concepts Summary:
-///
-/// Error Types:
-/// - AuthError: Invalid API keys or permissions
-/// - RateLimitError: Too many requests
-/// - InvalidRequestError: Malformed requests
-/// - HttpError: Network connectivity issues
-/// - TimeoutError: Request timeouts
-///
-/// Retry Strategies:
-/// - Immediate: Retry without delay
-/// - Linear Backoff: Increasing delay linearly
-/// - Exponential Backoff: Exponentially increasing delay
-///
-/// Resilience Patterns:
-/// - Circuit Breaker: Prevent cascading failures
-/// - Fallback: Alternative responses when primary fails
-/// - Graceful Degradation: Reduced functionality instead of failure
-///
-/// Monitoring:
-/// - Success/failure rates
-/// - Response times
-/// - Error categorization
-/// - Performance metrics
-///
-/// Best Practices:
-/// 1. Classify errors appropriately
-/// 2. Implement appropriate retry strategies
-/// 3. Use circuit breakers for external dependencies
-/// 4. Provide meaningful fallbacks
-/// 5. Monitor and log all operations
-///
-/// Next Steps:
-/// - ../03_advanced_features/: Advanced AI capabilities
-/// - ../04_providers/: Provider-specific features
-/// - ../06_integration/: Production integration patterns

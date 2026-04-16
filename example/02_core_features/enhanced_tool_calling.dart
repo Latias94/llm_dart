@@ -1,419 +1,457 @@
 // ignore_for_file: avoid_print
-import 'dart:io';
+
 import 'dart:convert';
-import 'package:llm_dart/legacy.dart';
+import 'dart:io';
 
-/// 🔧 Enhanced Tool Calling - Advanced Tool Features
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/openai.dart' as openai;
+
+/// Stable-first advanced tool calling examples.
 ///
-/// This example demonstrates the enhanced tool calling capabilities:
-/// - Tool validation and error handling
-/// - Tool choice strategies
-/// - Structured outputs with tools
-/// - Parallel tool execution
-/// - Provider-specific tool features
-/// - Complex nested object structures in tool parameters
-///
-/// Before running, set your API key:
-/// export OPENAI_API_KEY="your-key"
-void main() async {
-  print('🔧 Enhanced Tool Calling - Advanced Tool Features\n');
+/// This example demonstrates:
+/// - local tool-choice validation before any network request
+/// - nested JSON-schema tool inputs
+/// - tool-call replay using shared prompt parts
+/// - structured final answers with `ObjectOutputSpec`
+/// - provider-owned OpenAI tool controls through typed provider options
+Future<void> main() async {
+  print('Enhanced Tool Calling\n');
 
-  // Get API key
-  final apiKey = Platform.environment['OPENAI_API_KEY'] ?? 'sk-TESTKEY';
+  await demonstrateLocalToolChoiceValidation();
 
-  // Create AI provider with enhanced capabilities
-  final provider = await ai()
-      .openai()
-      .apiKey(apiKey)
-      .model('gpt-4o')
-      .temperature(0.1)
-      .maxTokens(1000)
-      .build();
+  final apiKey = Platform.environment['OPENAI_API_KEY'];
+  if (apiKey == null || apiKey.isEmpty) {
+    print('Set OPENAI_API_KEY to run the remote tool examples.');
+    return;
+  }
 
-  // Demonstrate enhanced tool calling features
-  await demonstrateToolValidation(provider);
-  await demonstrateToolChoiceStrategies(provider);
-  await demonstrateNestedObjectStructures(provider);
-  await demonstrateStructuredOutputWithTools(provider);
-  await demonstrateProviderSpecificFeatures();
+  final model = llm.AI.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
 
-  print('\n✅ Enhanced tool calling completed!');
+  await demonstrateNestedToolReplay(model);
+  await demonstrateProviderOwnedToolControls(model);
+
+  print('Enhanced tool calling completed.');
 }
 
-/// Demonstrate tool validation and error handling
-Future<void> demonstrateToolValidation(ChatCapability provider) async {
-  print('🔍 Tool Validation and Error Handling:\n');
+Future<void> demonstrateLocalToolChoiceValidation() async {
+  print('=== Local Tool Choice Validation ===\n');
 
   try {
-    // Define a calculator tool with strict validation
-    final calculatorTool = Tool.function(
-      name: 'calculate',
-      description: 'Perform mathematical calculations with validation',
-      parameters: ParametersSchema(
-        schemaType: 'object',
-        properties: {
-          'expression': ParameterProperty(
-            propertyType: 'string',
-            description: 'Mathematical expression (e.g., "2 + 3 * 4")',
-          ),
-          'precision': ParameterProperty(
-            propertyType: 'integer',
-            description: 'Number of decimal places for result',
-          ),
-          'operation_type': ParameterProperty(
-            propertyType: 'string',
-            description: 'Type of mathematical operation',
-            enumList: ['arithmetic', 'algebraic', 'trigonometric'],
-          ),
-        },
-        required: ['expression'],
-      ),
+    await core.generateTextCall(
+      model: const _UnusedLanguageModel(),
+      prompt: [
+        core.UserPromptMessage.text('Plan a calm evening in Kyoto.'),
+      ],
+      tools: [
+        _tripResearchTool(),
+      ],
+      toolChoice: const core.SpecificToolChoice('missing_tool'),
     );
-
-    final messages = [
-      ChatMessage.user('Calculate 15.7 * 8.3 with 2 decimal places precision')
-    ];
-
-    print('   User: Calculate 15.7 * 8.3 with 2 decimal places precision');
-    print('   Available tools: calculate (with validation)');
-
-    final response = await provider.chatWithTools(messages, [calculatorTool]);
-
-    if (response.toolCalls != null && response.toolCalls!.isNotEmpty) {
-      print('   🔧 Tool calls made:');
-
-      for (final toolCall in response.toolCalls!) {
-        print('      • Function: ${toolCall.function.name}');
-        print('      • Arguments: ${toolCall.function.arguments}');
-
-        // Validate tool call
-        try {
-          final isValid =
-              ToolValidator.validateToolCall(toolCall, calculatorTool);
-          print('      • Validation: ${isValid ? '✅ Valid' : '❌ Invalid'}');
-
-          // Simulate tool execution
-          final args =
-              jsonDecode(toolCall.function.arguments) as Map<String, dynamic>;
-          final expression = args['expression'] as String;
-          final precision = args['precision'] as int? ?? 2;
-
-          // Simple calculation simulation
-          final result = _simulateCalculation(expression, precision);
-          print('      • Result: $result');
-        } catch (e) {
-          if (e is ToolValidationError) {
-            print('      • Validation Error: ${e.message}');
-          } else {
-            print('      • Execution Error: $e');
-          }
-        }
-      }
-    }
-
-    print('   ✅ Tool validation completed\n');
-  } catch (e) {
-    print('   ❌ Tool validation failed: $e\n');
+    print('Unexpected success.\n');
+  } on ArgumentError catch (error) {
+    final normalized = core.ModelError.fromUnknown(error);
+    print('Original error: ${error.message}');
+    print('Normalized kind: ${normalized.kind.name}');
+    print('Normalized message: ${normalized.message}\n');
   }
 }
 
-/// Demonstrate different tool choice strategies
-Future<void> demonstrateToolChoiceStrategies(ChatCapability provider) async {
-  print('🎯 Tool Choice Strategies:\n');
+Future<void> demonstrateNestedToolReplay(core.LanguageModel model) async {
+  print('=== Nested Schema Tool Replay ===\n');
 
-  final tools = [
-    Tool.function(
-      name: 'get_weather',
-      description: 'Get current weather information',
-      parameters: ParametersSchema(
-        schemaType: 'object',
-        properties: {
-          'location': ParameterProperty(
-            propertyType: 'string',
-            description: 'City and country',
-          ),
-        },
-        required: ['location'],
-      ),
+  const question = '''
+Plan a relaxed Kyoto evening for two travelers.
+Use the build_itinerary_context tool before answering.
+Keep the plan walkable and below 180 USD.
+''';
+
+  final firstTurn = await core.generateTextCall(
+    model: model,
+    prompt: [
+      core.UserPromptMessage.text(question),
+    ],
+    tools: [
+      _tripResearchTool(),
+    ],
+    toolChoice: const core.SpecificToolChoice('build_itinerary_context'),
+    options: const core.GenerateTextOptions(
+      temperature: 0.2,
+      maxOutputTokens: 500,
     ),
-    Tool.function(
-      name: 'get_time',
-      description: 'Get current time in timezone',
-      parameters: ParametersSchema(
-        schemaType: 'object',
-        properties: {
-          'timezone': ParameterProperty(
-            propertyType: 'string',
-            description: 'Timezone identifier',
-          ),
-        },
-        required: ['timezone'],
-      ),
-    ),
-  ];
-
-  // Test different tool choice strategies
-  final strategies = [
-    ('Auto', const AutoToolChoice()),
-    ('Required', const AnyToolChoice()),
-    ('Specific', const SpecificToolChoice('get_weather')),
-    ('None', const NoneToolChoice()),
-  ];
-
-  for (final (strategyName, toolChoice) in strategies) {
-    print('   Testing $strategyName tool choice:');
-
-    try {
-      // Validate tool choice
-      ToolValidator.validateToolChoice(toolChoice, tools);
-      print('      • Tool choice validation: ✅ Valid');
-
-      // Note: This would require EnhancedChatCapability implementation
-      print('      • Strategy: $strategyName');
-      print('      • Behavior: ${_describeToolChoiceBehavior(toolChoice)}');
-    } catch (e) {
-      print('      • Tool choice validation: ❌ $e');
-    }
-
-    print('');
-  }
-
-  print('   ✅ Tool choice strategies completed\n');
-}
-
-/// Demonstrate structured outputs with tools
-Future<void> demonstrateStructuredOutputWithTools(
-    ChatCapability provider) async {
-  print('📊 Structured Output with Tools:\n');
-
-  try {
-    // Define structured output format
-    final structuredFormat = StructuredOutputFormat(
-      name: 'analysis_result',
-      description: 'Structured analysis result with tool usage',
-      schema: {
-        'type': 'object',
-        'properties': {
-          'summary': {'type': 'string', 'description': 'Brief summary'},
-          'tools_used': {
-            'type': 'array',
-            'items': {'type': 'string'},
-            'description': 'List of tools used'
-          },
-          'confidence': {
-            'type': 'number',
-            'description': 'Confidence score 0-1'
-          },
-          'recommendations': {
-            'type': 'array',
-            'items': {'type': 'string'},
-            'description': 'List of recommendations'
-          },
-        },
-        'required': ['summary', 'tools_used', 'confidence'],
-      },
-      strict: true,
-    );
-
-    // Validate structured output format
-    try {
-      ToolValidator.validateStructuredOutput(structuredFormat);
-      print('   📋 Structured output validation: ✅ Valid');
-      print('   📋 Schema: ${structuredFormat.name}');
-      print(
-          '   📋 OpenAI format: ${structuredFormat.toOpenAIResponseFormat()}');
-    } catch (e) {
-      print('   📋 Structured output validation: ❌ $e');
-    }
-
-    print('   ✅ Structured output with tools completed\n');
-  } catch (e) {
-    print('   ❌ Structured output failed: $e\n');
-  }
-}
-
-/// Demonstrate provider-specific tool features
-Future<void> demonstrateProviderSpecificFeatures() async {
-  print('🌐 Provider-Specific Tool Features:\n');
-
-  // Test tool choice format conversion
-  final toolChoice = const SpecificToolChoice('my_function');
-
-  print('   Tool Choice Format Conversion:');
-  print('      • OpenAI format: ${toolChoice.toOpenAIJson()}');
-  print('      • Anthropic format: ${toolChoice.toAnthropicJson()}');
-  print('      • xAI format: ${toolChoice.toXAIJson()}');
-
-  // Test parallel tool configuration
-  final parallelConfig = const ParallelToolConfig(
-    maxParallel: 3,
-    toolTimeout: Duration(seconds: 30),
-    continueOnError: true,
   );
 
-  print('\n   Parallel Tool Configuration:');
-  print('      • Max parallel: ${parallelConfig.maxParallel}');
-  print('      • Timeout: ${parallelConfig.toolTimeout?.inSeconds}s');
-  print('      • Continue on error: ${parallelConfig.continueOnError}');
-  print('      • JSON: ${parallelConfig.toJson()}');
+  final toolCalls = firstTurn.content
+      .whereType<core.ToolCallContentPart>()
+      .map((part) => part.toolCall)
+      .toList(growable: false);
 
-  print('\n   ✅ Provider-specific features completed\n');
-}
-
-/// Simulate calculation for demonstration
-String _simulateCalculation(String expression, int precision) {
-  // This is a simple simulation - in real use, you'd implement proper calculation
-  try {
-    // For demo purposes, just return a formatted result
-    final result = 130.31; // Simulated result of 15.7 * 8.3
-    return result.toStringAsFixed(precision);
-  } catch (e) {
-    return 'Error: Invalid expression';
+  if (toolCalls.isEmpty) {
+    print('Model did not produce a tool call.');
+    print('Text: ${firstTurn.text}\n');
+    return;
   }
-}
 
-/// Demonstrate complex nested object structures in tool parameters
-Future<void> demonstrateNestedObjectStructures(ChatCapability provider) async {
-  print('🏗️  Complex Nested Object Structures:\n');
+  print('Requested tool calls: ${toolCalls.length}');
+  for (final toolCall in toolCalls) {
+    print('Tool: ${toolCall.toolName}');
+    print('Input:\n${_formatJson(toolCall.input)}\n');
+  }
 
-  try {
-    // Define a tool for processing orders with complex item structures
-    final processOrdersTool = Tool.function(
-      name: 'process_orders',
-      description: 'Process customer orders with complex item structures',
-      parameters: ParametersSchema(
-        schemaType: 'object',
-        properties: {
-          'orders': ParameterProperty(
-            propertyType: 'array',
-            description: 'Array of customer orders',
-            items: ParameterProperty(
-              propertyType: 'object',
-              description: 'Individual order object',
-              properties: {
-                'order_id': ParameterProperty(
-                  propertyType: 'string',
-                  description: 'Unique order identifier',
-                ),
-                'customer_name': ParameterProperty(
-                  propertyType: 'string',
-                  description: 'Customer full name',
-                ),
-                'items': ParameterProperty(
-                  propertyType: 'array',
-                  description: 'Array of items in the order',
-                  items: ParameterProperty(
-                    propertyType: 'object',
-                    description: 'Individual item object',
-                    properties: {
-                      'product_name': ParameterProperty(
-                        propertyType: 'string',
-                        description: 'Name of the product',
-                      ),
-                      'quantity': ParameterProperty(
-                        propertyType: 'integer',
-                        description: 'Number of items ordered',
-                      ),
-                      'price': ParameterProperty(
-                        propertyType: 'number',
-                        description: 'Price per item in dollars',
-                      ),
-                      'category': ParameterProperty(
-                        propertyType: 'string',
-                        description: 'Product category',
-                        enumList: ['electronics', 'clothing', 'books', 'home'],
-                      ),
-                    },
-                    required: ['product_name', 'quantity', 'price'],
-                  ),
-                ),
-                'total_amount': ParameterProperty(
-                  propertyType: 'number',
-                  description: 'Total order amount in dollars',
-                ),
-              },
-              required: ['order_id', 'customer_name', 'items'],
-            ),
-          ),
-        },
-        required: ['orders'],
+  final finalTurn = await core.generateTextCall<ItinerarySummary>(
+    model: model,
+    prompt: [
+      core.SystemPromptMessage.text(
+        'Return JSON only. Build the final answer strictly from the provided '
+        'tool results.',
       ),
-    );
+      core.UserPromptMessage.text(question),
+      _assistantReplayMessage(
+        text: firstTurn.text,
+        toolCalls: toolCalls,
+      ),
+      for (final toolCall in toolCalls)
+        core.ToolPromptMessage(
+          toolName: toolCall.toolName,
+          parts: [
+            core.ToolResultPromptPart(
+              toolCallId: toolCall.toolCallId,
+              toolName: toolCall.toolName,
+              output: _mockTripResearchOutput(toolCall),
+            ),
+          ],
+        ),
+    ],
+    outputSpec: core.ObjectOutputSpec<ItinerarySummary>(
+      schema: core.JsonSchema.object(
+        properties: const {
+          'headline': {'type': 'string'},
+          'summary': {'type': 'string'},
+          'stops': {
+            'type': 'array',
+            'items': {'type': 'string'},
+            'minItems': 2,
+          },
+          'estimated_budget': {'type': 'number'},
+          'provider_notes': {
+            'type': 'array',
+            'items': {'type': 'string'},
+          },
+        },
+        required: const [
+          'headline',
+          'summary',
+          'stops',
+          'estimated_budget',
+          'provider_notes',
+        ],
+        additionalProperties: false,
+      ),
+      decode: ItinerarySummary.fromJson,
+    ),
+    options: const core.GenerateTextOptions(
+      temperature: 0.2,
+      maxOutputTokens: 700,
+    ),
+  );
 
-    final messages = [
-      ChatMessage.user(
-        'Process order ORD001 for Alice Johnson: 2x Laptop at \$999 each (electronics), 1x T-shirt at \$25 (clothing). Total: \$2023. Use the process_orders tool.',
-      )
-    ];
-
-    print('   User: Process order ORD001 for Alice Johnson...');
-    print(
-        '   Available tools: process_orders (with nested arrays and objects)');
-
-    final response =
-        await provider.chatWithTools(messages, [processOrdersTool]);
-
-    if (response.toolCalls != null && response.toolCalls!.isNotEmpty) {
-      print('   🔧 AI tool calls:');
-
-      for (final toolCall in response.toolCalls!) {
-        print('      • Function: ${toolCall.function.name}');
-        print('      • Arguments: ${toolCall.function.arguments}');
-
-        try {
-          final isValid =
-              ToolValidator.validateToolCall(toolCall, processOrdersTool);
-          print('      • Validation: ${isValid ? '✅ Valid' : '❌ Invalid'}');
-
-          final result = await _processOrders(toolCall);
-          print('      • Result: $result');
-        } catch (e) {
-          print('      • Validation Error: $e');
-        }
-      }
-
-      print('   ✅ Complex nested structures completed\n');
-    } else {
-      print('   ℹ️  AI chose not to use tools: ${response.text}\n');
-    }
-  } catch (e) {
-    print('   ❌ Error: $e\n');
-  }
+  print('Structured headline: ${finalTurn.output.headline}');
+  print('Structured summary: ${finalTurn.output.summary}');
+  print('Stops: ${finalTurn.output.stops.join(' -> ')}');
+  print('Estimated budget: ${finalTurn.output.estimatedBudgetUsd.toStringAsFixed(2)} USD');
+  print('Provider notes: ${finalTurn.output.providerNotes.join(' | ')}');
+  print('');
 }
 
-/// Mock function to process orders
-Future<String> _processOrders(ToolCall toolCall) async {
-  try {
-    final args =
-        jsonDecode(toolCall.function.arguments) as Map<String, dynamic>;
-    final orders = args['orders'] as List;
+Future<void> demonstrateProviderOwnedToolControls(
+  core.LanguageModel model,
+) async {
+  print('=== Provider-Owned OpenAI Tool Controls ===\n');
 
-    double totalRevenue = 0;
-    int totalItems = 0;
+  const question = '''
+Build a rainy Osaka evening plan.
+Use both get_weather and shortlist_venues if helpful before you answer.
+''';
 
-    for (final order in orders) {
-      final o = order as Map<String, dynamic>;
-      final items = o['items'] as List;
+  final firstTurn = await core.generateTextCall(
+    model: model,
+    prompt: [
+      core.UserPromptMessage.text(question),
+    ],
+    tools: [
+      _weatherTool(),
+      _venueTool(),
+    ],
+    toolChoice: const core.RequiredToolChoice(),
+    options: const core.GenerateTextOptions(
+      temperature: 0.2,
+      maxOutputTokens: 500,
+    ),
+    callOptions: const core.CallOptions(
+      providerOptions: openai.OpenAIGenerateTextOptions(
+        parallelToolCalls: true,
+        maxToolCalls: 2,
+        metadata: {
+          'example': 'enhanced_tool_calling',
+          'mode': 'provider_owned_controls',
+        },
+      ),
+    ),
+  );
 
-      for (final item in items) {
-        final i = item as Map<String, dynamic>;
-        totalItems += i['quantity'] as int;
-        totalRevenue += (i['quantity'] as int) * (i['price'] as num);
-      }
-    }
+  final toolCalls = firstTurn.content
+      .whereType<core.ToolCallContentPart>()
+      .map((part) => part.toolCall)
+      .toList(growable: false);
 
-    return 'Processed ${orders.length} orders, $totalItems items, \$${totalRevenue.toStringAsFixed(2)} revenue';
-  } catch (e) {
-    return 'Error processing orders: $e';
+  print('Tool calls requested: ${toolCalls.length}');
+  for (final toolCall in toolCalls) {
+    print('- ${toolCall.toolName}: ${_compactJson(toolCall.input)}');
   }
+
+  print('');
+  print('OpenAI-specific note:');
+  print(
+    '  `parallelToolCalls` and `maxToolCalls` stay inside '
+    '`package:llm_dart/openai.dart` typed options.',
+  );
+  print(
+    '  The shared tool abstraction remains provider-agnostic, while request'
+    ' controls that only OpenAI understands remain provider-owned.\n',
+  );
 }
 
-/// Describe tool choice behavior
-String _describeToolChoiceBehavior(ToolChoice toolChoice) {
-  return switch (toolChoice) {
-    AutoToolChoice() => 'Model decides whether to use tools',
-    AnyToolChoice() => 'Model must use at least one tool',
-    SpecificToolChoice(toolName: final name) => 'Model must use tool: $name',
-    NoneToolChoice() => 'Model cannot use any tools',
+core.FunctionToolDefinition _tripResearchTool() {
+  return core.FunctionToolDefinition(
+    name: 'build_itinerary_context',
+    description: 'Collect planning context for a city itinerary.',
+    inputSchema: core.ToolJsonSchema.object(
+      properties: const {
+        'destination': {
+          'type': 'object',
+          'properties': {
+            'city': {'type': 'string'},
+            'country': {'type': 'string'},
+          },
+          'required': ['city', 'country'],
+          'additionalProperties': false,
+        },
+        'travelers': {
+          'type': 'array',
+          'minItems': 1,
+          'items': {
+            'type': 'object',
+            'properties': {
+              'label': {'type': 'string'},
+              'preferences': {
+                'type': 'array',
+                'items': {'type': 'string'},
+              },
+            },
+            'required': ['label'],
+            'additionalProperties': false,
+          },
+        },
+        'constraints': {
+          'type': 'object',
+          'properties': {
+            'maxBudget': {'type': 'number'},
+            'walkingTolerance': {
+              'type': 'string',
+              'enum': ['low', 'medium', 'high'],
+            },
+            'mustAvoid': {
+              'type': 'array',
+              'items': {'type': 'string'},
+            },
+          },
+          'required': ['maxBudget'],
+          'additionalProperties': false,
+        },
+        'goal': {'type': 'string'},
+      },
+      required: const [
+        'destination',
+        'travelers',
+        'constraints',
+        'goal',
+      ],
+      additionalProperties: false,
+    ),
+  );
+}
+
+core.FunctionToolDefinition _weatherTool() {
+  return core.FunctionToolDefinition(
+    name: 'get_weather',
+    description: 'Get current weather conditions for a city.',
+    inputSchema: core.ToolJsonSchema.object(
+      properties: const {
+        'city': {'type': 'string'},
+        'unit': {
+          'type': 'string',
+          'enum': ['celsius', 'fahrenheit'],
+        },
+      },
+      required: const ['city'],
+      additionalProperties: false,
+    ),
+  );
+}
+
+core.FunctionToolDefinition _venueTool() {
+  return core.FunctionToolDefinition(
+    name: 'shortlist_venues',
+    description: 'Find indoor venues for a city plan.',
+    inputSchema: core.ToolJsonSchema.object(
+      properties: const {
+        'city': {'type': 'string'},
+        'mood': {'type': 'string'},
+        'budget': {'type': 'number'},
+      },
+      required: const ['city', 'mood'],
+      additionalProperties: false,
+    ),
+  );
+}
+
+core.AssistantPromptMessage _assistantReplayMessage({
+  required String text,
+  required List<core.ToolCallContent> toolCalls,
+}) {
+  return core.AssistantPromptMessage(
+    parts: [
+      if (text.trim().isNotEmpty) core.TextPromptPart(text),
+      for (final toolCall in toolCalls)
+        core.ToolCallPromptPart(
+          toolCallId: toolCall.toolCallId,
+          toolName: toolCall.toolName,
+          input: toolCall.input,
+          providerExecuted: toolCall.providerExecuted,
+          isDynamic: toolCall.isDynamic,
+          title: toolCall.title,
+        ),
+    ],
+  );
+}
+
+Map<String, Object?> _mockTripResearchOutput(core.ToolCallContent toolCall) {
+  final input = _asJsonMap(toolCall.input);
+  final destination = _asJsonMap(input['destination']);
+  final constraints = _asJsonMap(input['constraints']);
+  final travelers = switch (input['travelers']) {
+    final List values => values.length,
+    _ => 0,
   };
+
+  return {
+    'city': destination['city'] ?? 'Kyoto',
+    'country': destination['country'] ?? 'Japan',
+    'traveler_count': travelers,
+    'weather_window': 'Light rain after 20:00, comfortable before then.',
+    'recommended_areas': ['Gion', 'Pontocho', 'Kawaramachi'],
+    'budget_ceiling': constraints['maxBudget'] ?? 180,
+    'notes': [
+      'Prefer indoor dining after 20:00.',
+      'Keep walking segments under 15 minutes.',
+      'Reserve tea-house seating in advance.',
+    ],
+  };
+}
+
+Map<String, Object?> _asJsonMap(Object? value) {
+  if (value is! Map) {
+    return const {};
+  }
+
+  return value.map((key, nestedValue) {
+    return MapEntry(key.toString(), nestedValue);
+  });
+}
+
+String _formatJson(Object? value) {
+  if (value == null) {
+    return 'null';
+  }
+
+  if (value is Map || value is List) {
+    return const JsonEncoder.withIndent('  ').convert(value);
+  }
+
+  return value.toString();
+}
+
+String _compactJson(Object? value) {
+  if (value == null) {
+    return 'null';
+  }
+
+  if (value is Map || value is List) {
+    return jsonEncode(value);
+  }
+
+  return value.toString();
+}
+
+final class ItinerarySummary {
+  final String headline;
+  final String summary;
+  final List<String> stops;
+  final double estimatedBudgetUsd;
+  final List<String> providerNotes;
+
+  const ItinerarySummary({
+    required this.headline,
+    required this.summary,
+    required this.stops,
+    required this.estimatedBudgetUsd,
+    required this.providerNotes,
+  });
+
+  factory ItinerarySummary.fromJson(Map<String, Object?> json) {
+    final stops = json['stops'];
+    final providerNotes = json['provider_notes'];
+    final estimatedBudget = json['estimated_budget'];
+
+    return ItinerarySummary(
+      headline: json['headline']! as String,
+      summary: json['summary']! as String,
+      stops: switch (stops) {
+        final List values => List<String>.unmodifiable(
+            values.map((value) => value as String),
+          ),
+        _ => const [],
+      },
+      estimatedBudgetUsd: switch (estimatedBudget) {
+        final num value => value.toDouble(),
+        _ => 0,
+      },
+      providerNotes: switch (providerNotes) {
+        final List values => List<String>.unmodifiable(
+            values.map((value) => value as String),
+          ),
+        _ => const [],
+      },
+    );
+  }
+}
+
+final class _UnusedLanguageModel implements core.LanguageModel {
+  const _UnusedLanguageModel();
+
+  @override
+  String get providerId => 'example';
+
+  @override
+  String get modelId => 'unused';
+
+  @override
+  Future<core.GenerateTextResult> generate(core.GenerateTextRequest request) {
+    throw StateError('This model should never be called.');
+  }
+
+  @override
+  Stream<core.TextStreamEvent> stream(core.GenerateTextRequest request) {
+    return const Stream.empty();
+  }
 }

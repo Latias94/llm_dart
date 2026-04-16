@@ -1,4 +1,6 @@
-import 'package:llm_dart/legacy.dart';
+import 'package:llm_dart/models/chat_models.dart';
+import 'package:llm_dart/models/tool_models.dart';
+import 'package:llm_dart/providers/anthropic/models.dart';
 
 /// Example demonstrating MessageBuilder with Anthropic caching
 ///

@@ -1,103 +1,176 @@
-import 'dart:io';
-import 'package:llm_dart/legacy.dart';
+// ignore_for_file: avoid_print
 
-/// Content moderation examples using ModerationCapability interface
+import 'dart:io';
+
+import 'package:llm_dart/models/moderation_models.dart';
+import 'package:llm_dart/providers/openai/openai.dart' as openai_compat;
+
+/// Moderation remains a provider-owned compatibility surface.
 ///
-/// This example demonstrates:
-/// - Basic content moderation
-/// - Batch processing
-/// - Category analysis
+/// The stable architectural lesson is not "all providers share one moderation
+/// contract". It is:
+/// - keep provider moderation calls behind a provider boundary
+/// - translate provider category signals into app-owned policy decisions
 Future<void> main() async {
-  print('🛡️ Content Moderation Examples\n');
+  print('Content Moderation Boundary Example\n');
 
   final apiKey = Platform.environment['OPENAI_API_KEY'];
-  if (apiKey == null) {
-    print('❌ Please set OPENAI_API_KEY environment variable');
+  if (apiKey == null || apiKey.isEmpty) {
+    print('Set OPENAI_API_KEY to run this example.');
     return;
   }
 
-  try {
-    final provider = await ai().openai().apiKey(apiKey).buildModeration();
+  final provider = openai_compat.createOpenAIProvider(
+    apiKey: apiKey,
+    model: 'gpt-4o',
+  );
 
-    await demonstrateBasicModeration(provider, 'OpenAI');
-    await demonstrateBatchModeration(provider, 'OpenAI');
-  } catch (e) {
-    print('❌ Failed to initialize moderation: $e');
-  }
+  await demonstrateSingleInputPolicy(provider);
+  await demonstrateBatchReviewQueue(provider);
+  explainBoundary();
 
-  print('✅ Content moderation examples completed!');
+  print('\nContent moderation example completed.');
 }
 
-/// Demonstrate basic content moderation
-Future<void> demonstrateBasicModeration(
-    ModerationCapability provider, String providerName) async {
-  print('🔍 Basic Content Moderation ($providerName):\n');
+Future<void> demonstrateSingleInputPolicy(
+  openai_compat.OpenAIProvider provider,
+) async {
+  print('=== Provider Signal -> App Policy ===\n');
 
-  final testContents = [
-    'Hello, how are you today?', // Safe content
-    'This is a normal conversation.', // Safe content
-    'Thank you for your help!', // Safe content
+  const samples = [
+    'Welcome to our Flutter community. Please be respectful and constructive.',
+    'Explain how to de-escalate an angry customer without insulting them.',
+    'I am frustrated with this crash report and need help debugging it.',
   ];
 
-  for (int i = 0; i < testContents.length; i++) {
-    final content = testContents[i];
-    print('   📝 Testing: "$content"');
+  for (final sample in samples) {
+    final response = await provider.moderate(
+      const ModerationRequest(
+        input: <String>[],
+      ).copyWithInput(sample),
+    );
+    final result = response.results.first;
+    final decision = AppModerationDecision.fromResult(result);
 
-    try {
-      final request = ModerationRequest(input: content);
-      final result = await provider.moderate(request);
-
-      final firstResult = result.results.first;
-      final status = firstResult.flagged ? '🚨 FLAGGED' : '✅ SAFE';
-      print('         $status (ID: ${result.id})');
-
-      if (firstResult.flagged) {
-        print('         ⚠️  Content flagged for review');
-      }
-    } catch (e) {
-      print('         ❌ Moderation failed: $e');
-    }
+    print('Input: $sample');
+    print('Decision: ${decision.action}');
+    print('Reason: ${decision.reason}');
+    print('Top signals: ${_topSignals(result).join(', ')}');
     print('');
   }
 }
 
-/// Demonstrate batch moderation processing
-Future<void> demonstrateBatchModeration(
-    ModerationCapability provider, String providerName) async {
-  print('📦 Batch Moderation ($providerName):\n');
+Future<void> demonstrateBatchReviewQueue(
+  openai_compat.OpenAIProvider provider,
+) async {
+  print('=== Batch Review Queue ===\n');
 
-  final batchContent = [
-    'Welcome to our platform!',
-    'Please follow our community guidelines.',
-    'Thank you for your contribution.',
-    'This is educational content about safety.',
-    'Let\'s have a respectful discussion.',
+  const samples = [
+    'Please keep bug reports factual and reproducible.',
+    'Summarize the incident without blaming the customer.',
+    'Write a calm response to an upset user asking for a refund.',
+    'Explain the platform safety rules in one paragraph.',
   ];
 
-  print('   🔄 Processing ${batchContent.length} items in batch...');
-  final startTime = DateTime.now();
+  final response = await provider.moderate(
+    const ModerationRequest(
+      input: samples,
+    ),
+  );
 
-  final results = <ModerationResponse>[];
-  for (final content in batchContent) {
-    try {
-      final request = ModerationRequest(input: content);
-      final result = await provider.moderate(request);
-      results.add(result);
-    } catch (e) {
-      print('   ❌ Failed to moderate: "$content" - $e');
-    }
+  final decisions = <AppModerationDecision>[];
+  for (final result in response.results) {
+    decisions.add(AppModerationDecision.fromResult(result));
   }
 
-  final duration = DateTime.now().difference(startTime);
-  print('   ✅ Batch completed in ${duration.inMilliseconds}ms');
+  final allowCount =
+      decisions.where((decision) => decision.action == 'allow').length;
+  final reviewCount =
+      decisions.where((decision) => decision.action == 'review').length;
+  final blockCount =
+      decisions.where((decision) => decision.action == 'block').length;
 
-  // Analyze batch results
-  final flaggedCount = results.where((r) => r.results.first.flagged).length;
-  final safeCount = results.length - flaggedCount;
+  print('Inputs: ${samples.length}');
+  print('Allow: $allowCount');
+  print('Review: $reviewCount');
+  print('Block: $blockCount');
+  print('');
+}
 
-  print('   📊 Batch Results:');
-  print('      ✅ Safe: $safeCount');
-  print('      🚨 Flagged: $flaggedCount');
+void explainBoundary() {
+  print('=== Boundary Notes ===\n');
   print(
-      '      📈 Safety rate: ${(safeCount / results.length * 100).toStringAsFixed(1)}%');
+    '• Moderation taxonomy, score meanings, and endpoint semantics are '
+    'provider-owned and should not be treated as a stable cross-provider model.',
+  );
+  print(
+    '• Application code should normalize raw provider output into its own '
+    '`allow` / `review` / `block` policy.',
+  );
+  print(
+    '• Keep UI labels, escalation rules, and audit logging in your app layer, '
+    'not inside provider response parsing.',
+  );
+}
+
+List<String> _topSignals(ModerationResult result) {
+  final scores = <String, double>{
+    'hate': result.categoryScores.hate,
+    'harassment': result.categoryScores.harassment,
+    'self-harm': result.categoryScores.selfHarm,
+    'sexual': result.categoryScores.sexual,
+    'violence': result.categoryScores.violence,
+  }.entries.toList()
+    ..sort((left, right) => right.value.compareTo(left.value));
+
+  return scores
+      .take(2)
+      .map((entry) => '${entry.key}=${entry.value.toStringAsFixed(3)}')
+      .toList(growable: false);
+}
+
+final class AppModerationDecision {
+  final String action;
+  final String reason;
+
+  const AppModerationDecision({
+    required this.action,
+    required this.reason,
+  });
+
+  factory AppModerationDecision.fromResult(ModerationResult result) {
+    if (result.categories.sexualMinors ||
+        result.categories.selfHarmInstructions ||
+        result.categories.hateThreatening ||
+        result.categories.violenceGraphic) {
+      return const AppModerationDecision(
+        action: 'block',
+        reason: 'Critical provider category triggered.',
+      );
+    }
+
+    if (result.flagged ||
+        result.categoryScores.harassment > 0.15 ||
+        result.categoryScores.violence > 0.15 ||
+        result.categoryScores.selfHarm > 0.10) {
+      return const AppModerationDecision(
+        action: 'review',
+        reason: 'Provider signal exceeded the app review threshold.',
+      );
+    }
+
+    return const AppModerationDecision(
+      action: 'allow',
+      reason: 'No app review threshold was crossed.',
+    );
+  }
+}
+
+extension on ModerationRequest {
+  ModerationRequest copyWithInput(Object input) {
+    return ModerationRequest(
+      input: input,
+      model: model,
+    );
+  }
 }
