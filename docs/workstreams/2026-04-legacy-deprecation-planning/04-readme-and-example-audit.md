@@ -22,19 +22,27 @@ It is example migration.
 
 ## Counts
 
-Current repository-wide audit baseline after the latest
-`example/03_advanced_features` custom-model and realtime cleanup:
+Current scoped audit baseline across code under `example`, `lib`, and
+`packages` after the `example/03_advanced_features` transport rewrite:
 
-- `14` files still import `package:llm_dart/legacy.dart`
-- `21` files still contain direct `ai()` usage
+- `15` Dart files still import `package:llm_dart/legacy.dart`
+- `15` Dart files still contain direct `ai()` usage
 
-Legacy imports inside `example/` are concentrated in:
+Legacy imports inside `example/` are now concentrated in:
 
-- `example/02_core_features` - `2` files
-- `example/03_advanced_features` - `3` files
-- `example/04_providers` - `6` files
+- `example/01_getting_started` - `1` file
+- `example/02_core_features` - `3` files
+- `example/03_advanced_features` - `0` files
+- `example/04_providers` - `8` files
 - `example/06_mcp_integration` - `3` files
+
+Direct `ai()` usage inside `example/` is now concentrated in:
+
 - `example/01_getting_started` - `0` files
+- `example/02_core_features` - `2` files
+- `example/03_advanced_features` - `0` files
+- `example/04_providers` - `7` files
+- `example/06_mcp_integration` - `3` files
 
 `example/02_core_features` is now effectively reduced to two explicit
 compatibility appendix files:
@@ -98,11 +106,21 @@ boundary:
 - app-owned local session/event orchestration shown separately from provider
   implementation status
 
-The remaining legacy-heavy `example/03_advanced_features` files are now just:
+The remaining `example/03_advanced_features` transport files are now also
+modernized:
 
 - `http_configuration.dart`
 - `layered_http_config.dart`
 - `timeout_configuration.dart`
+
+Those files no longer depend on `legacy.dart` or `ai()`. They now teach the
+real stable transport boundary:
+
+- `AI.*(..., transport: ...)`
+- `DioHttpClientConfig`
+- `DioHttpClientFactory`
+- `DioTransportClient`
+- `CallOptions.timeout`
 
 ## Healthy Legacy Disclosure
 
@@ -165,6 +183,8 @@ Those are now resolved at the direct-snippet level:
 - both READMEs now lead with the modern `llm_dart_community` path
 - both compatibility snippets now use provider-specific entrypoints instead of
   teaching `legacy.dart` plus `ai().*.build()` directly
+- `example/03_advanced_features/README.md` now also teaches stable transport
+  recipes instead of the old builder HTTP shell
 
 This matters because task-oriented provider READMEs carry more migration weight
 than a generic architecture explanation.
@@ -184,21 +204,21 @@ They should instead be:
 
 ## Recommended Rewrite Order
 
-The best remaining migration order is:
+The best remaining migration order is now:
 
-1. classify the remaining `example/03_advanced_features`
-   HTTP/configuration files as keep-frozen appendix material or rewrite them
-   into a clearer transport recipe
-2. audit whether any narrower provider README snippets still teach builder-era
-   flows indirectly
-3. `example/06_mcp_integration`
+1. rewrite the remaining legacy-heavy provider example files in
+   `example/04_providers`
+2. rewrite `example/06_mcp_integration`
+3. decide whether the low-volume `example/01_getting_started` and
+   `example/02_core_features` compatibility residue should stay as explicit
+   appendix material or be narrowed further
 
 Rationale:
 
 - `02_core_features` is now mostly modern-first outside the two explicit
   compatibility appendix files
-- `03_advanced_features` app-facing examples are now modernized, leaving only
-  transport/configuration appendix material in that directory
+- `03_advanced_features` is now fully modern-first, including the transport
+  configuration examples
 - the largest known provider README hotspots have now been reduced to
   provider-entrypoint compatibility disclosures instead of direct
   `legacy.dart` teaching
@@ -208,16 +228,11 @@ Rationale:
 
 The repository is not blocked on more architecture work.
 
-It is blocked on converting the highest-traffic teaching surface from:
+The next honest implementation slice is no longer the advanced example layer.
 
-- legacy builder demonstrations
+It is now:
 
-to:
-
-- modern model constructors
-- shared helper functions
-- explicit compatibility appendices only where truly needed
-
-That means the next honest implementation slice is no longer another
-`02_core_features` rewrite. It is the remaining advanced/provider example
-layer.
+- provider example migration in `example/04_providers`
+- MCP example migration in `example/06_mcp_integration`
+- deciding how much explicit compatibility residue should remain in the
+  lower-volume appendix files

@@ -38,9 +38,13 @@
 - [x] Reframe `example/03_advanced_features/realtime_audio.dart` as explicit
   ElevenLabs provider-owned appendix material without the broad legacy barrel
 - [x] Reframe `example/03_advanced_features/README.md` so stable snippets lead
-  and HTTP wiring stays an explicit compatibility boundary
+  and transport wiring has an explicit documented home
 - [x] Reduce `example/03_advanced_features` legacy residue to the three HTTP
   configuration appendix files
+- [x] Rewrite the remaining `example/03_advanced_features` HTTP
+  configuration files (`http_configuration.dart`,
+  `layered_http_config.dart`, `timeout_configuration.dart`) onto the stable
+  transport recipe
 - [x] Rewrite the ElevenLabs and Ollama provider READMEs so modern community
   surfaces lead and compatibility snippets no longer teach `legacy.dart`
   directly

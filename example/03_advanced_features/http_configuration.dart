@@ -1,295 +1,348 @@
+// ignore_for_file: avoid_print
+
 import 'dart:io';
-import 'package:llm_dart/legacy.dart';
-import 'package:llm_dart/transport.dart' show Level, Logger;
 
-/// HTTP Configuration Example
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/transport.dart' as transport;
+
+const _openAIBaseUrl = 'https://api.openai.com/v1';
+const _modelId = 'gpt-4.1-mini';
+
+/// Stable transport configuration examples.
 ///
-/// This example demonstrates how to configure HTTP settings for LLM providers,
-/// including proxy configuration, custom headers, SSL settings, and logging.
+/// This example keeps provider selection on the stable `AI.openai(...)`
+/// surface and moves HTTP concerns into the transport layer:
 ///
-/// Note: Advanced HTTP features (proxy, SSL bypass, custom certificates) are only
-/// available on IO platforms (Desktop/Mobile/Server). On Web platforms, these
-/// features are managed by the browser.
+/// - `DioHttpClientConfig` for typed transport settings
+/// - `DioHttpClientFactory` for reusable configured Dio instances
+/// - `DioTransportClient` for injection into provider facades
 ///
-/// Before running, set your OpenAI API key:
-/// export OPENAI_API_KEY="your-openai-key"
+/// IO-only features such as proxy and custom certificate handling remain
+/// transport-owned and platform-dependent.
 Future<void> main() async {
-  // Configure logging to see HTTP request/response logs
-  Logger.root.level = Level.ALL;
-  Logger.root.onRecord.listen((record) {
-    print('${record.level.name}: ${record.time}: ${record.message}');
-  });
+  _configureLogging();
 
-  print('🌐 HTTP Configuration Demo\n');
+  print('HTTP Configuration Demo\n');
 
-  // Get OpenAI API key from environment
-  final openaiApiKey = Platform.environment['OPENAI_API_KEY'];
-
-  if (openaiApiKey == null) {
-    print('❌ Please set your OpenAI API key:');
-    print('   export OPENAI_API_KEY="your-openai-key"');
+  final apiKey = Platform.environment['OPENAI_API_KEY'];
+  if (apiKey == null || apiKey.isEmpty) {
+    print('Set OPENAI_API_KEY to run this example.');
+    print('Optional transport env vars:');
+    print('  HTTP_PROXY_URL=http://proxy.company.com:8080');
+    print('  ALLOW_INSECURE_SSL=true');
+    print('  CUSTOM_CA_CERT_PATH=/path/to/certificate.pem');
     return;
   }
 
-  print('📋 Using OpenAI provider for all demonstrations\n');
+  await demonstrateBasicTransportConfig(apiKey);
+  await demonstrateProxyConfiguration(apiKey);
+  await demonstrateSslConfiguration(apiKey);
+  await demonstrateCustomHeaders(apiKey);
+  await demonstrateTimeoutBaseline(apiKey);
+  await demonstrateLoggingConfiguration(apiKey);
+  await demonstrateComprehensiveConfiguration(apiKey);
 
-  // Run all demonstrations with OpenAI
-  await demonstrateBasicHttpConfig(openaiApiKey);
-  await demonstrateProxyConfiguration(openaiApiKey);
-  await demonstrateSSLConfiguration(openaiApiKey);
-  await demonstrateCustomHeaders(openaiApiKey);
-  await demonstrateTimeoutConfiguration(openaiApiKey);
-  await demonstrateLoggingConfiguration(openaiApiKey);
-  await demonstrateComprehensiveConfig(openaiApiKey);
-
-  // await demonstrateConfigValidation();
-
-  print('✅ HTTP configuration demonstration completed!');
+  print('HTTP configuration demo completed.');
 }
 
-/// Demonstrate basic HTTP configuration
-Future<void> demonstrateBasicHttpConfig(String apiKey) async {
-  print('🔧 Basic HTTP Configuration:\n');
+Future<void> demonstrateBasicTransportConfig(String apiKey) async {
+  print('=== Basic Transport Configuration ===\n');
+
+  final config = const transport.DioHttpClientConfig(
+    baseUrl: _openAIBaseUrl,
+    defaultHeaders: <String, String>{},
+    timeout: Duration(seconds: 30),
+  );
 
   try {
-    // Create provider with basic HTTP settings
-    final provider = await ai()
-        .openai()
-        .apiKey(apiKey)
-        .model('gpt-4o-mini')
-        .timeout(Duration(seconds: 30))
-        .build();
+    final result = await _runPrompt(
+      model: _openAIModel(
+        apiKey,
+        transportClient: _transportFromConfig(
+          config,
+          loggerName: 'http_configuration.basic',
+        ),
+      ),
+      prompt: 'Hello from a transport-configured OpenAI model.',
+    );
 
-    final response = await provider.chat([
-      ChatMessage.user('Hello! This is a test with basic HTTP configuration.'),
-    ]);
-
-    print('   ✅ Basic HTTP configuration successful');
-    print('   📝 Response: ${response.text}\n');
-  } catch (e) {
-    print('   ❌ Basic HTTP configuration failed: $e\n');
+    print('Configured a 30s transport baseline timeout.');
+    print('Response: ${result.text}\n');
+  } catch (error) {
+    print('Basic transport configuration failed: $error\n');
   }
 }
 
-/// Demonstrate proxy configuration
 Future<void> demonstrateProxyConfiguration(String apiKey) async {
-  print('🔄 Proxy Configuration:\n');
-  print('   ℹ️  Note: Proxy configuration is only supported on IO platforms');
-  print('   📝 On Web platforms, proxy settings are managed by the browser\n');
+  print('=== Proxy Configuration ===\n');
+  print(
+    'Proxy support is transport-owned and only meaningful on IO platforms.',
+  );
+
+  final proxyUrl = Platform.environment['HTTP_PROXY_URL'];
+  if (proxyUrl == null || proxyUrl.isEmpty) {
+    print('Set HTTP_PROXY_URL to execute a live proxy request.');
+    print('The example still shows the typed transport recipe.\n');
+    return;
+  }
+
+  final config = transport.DioHttpClientConfig(
+    baseUrl: _openAIBaseUrl,
+    defaultHeaders: const <String, String>{},
+    timeout: const Duration(seconds: 45),
+    proxyUrl: proxyUrl,
+  );
+
+  transport.DioHttpClientFactory.validateHttpConfig(
+    config,
+    logger: transport.Logger('http_configuration.proxy.validation'),
+  );
 
   try {
-    // Note: This example shows the API usage. In practice, you would
-    // need a real proxy server for this to work.
-    await ai()
-        .openai()
-        .apiKey(apiKey)
-        .model('gpt-4o-mini')
-        .http((http) => http.proxy('http://proxy.company.com:8080'))
-        .build();
+    final result = await _runPrompt(
+      model: _openAIModel(
+        apiKey,
+        transportClient: _transportFromConfig(
+          config,
+          loggerName: 'http_configuration.proxy',
+        ),
+      ),
+      prompt: 'Respond with one short sentence through the configured proxy.',
+    );
 
-    print('   ✅ Proxy configuration set successfully');
-    print('   📝 Note: Proxy will be used for all HTTP requests\n');
-  } catch (e) {
+    print('Proxy request succeeded with HTTP_PROXY_URL=$proxyUrl');
+    print('Response: ${result.text}\n');
+  } catch (error) {
+    print('Proxy request failed: $error\n');
+  }
+}
+
+Future<void> demonstrateSslConfiguration(String apiKey) async {
+  print('=== SSL Configuration ===\n');
+  print(
+    'SSL bypass and custom certificates are transport-owned IO details.',
+  );
+
+  final allowInsecureSsl =
+      Platform.environment['ALLOW_INSECURE_SSL']?.toLowerCase() == 'true';
+  final certificatePath = Platform.environment['CUSTOM_CA_CERT_PATH'];
+
+  if (!allowInsecureSsl &&
+      (certificatePath == null || certificatePath.isEmpty)) {
+    print('Set ALLOW_INSECURE_SSL=true or CUSTOM_CA_CERT_PATH to run this demo.');
+    print('No live SSL override was requested.\n');
+    return;
+  }
+
+  final config = transport.DioHttpClientConfig(
+    baseUrl: _openAIBaseUrl,
+    defaultHeaders: const <String, String>{},
+    timeout: const Duration(seconds: 45),
+    bypassSslVerification: allowInsecureSsl,
+    certificatePath: certificatePath,
+  );
+
+  transport.DioHttpClientFactory.validateHttpConfig(
+    config,
+    logger: transport.Logger('http_configuration.ssl.validation'),
+  );
+
+  try {
+    final result = await _runPrompt(
+      model: _openAIModel(
+        apiKey,
+        transportClient: _transportFromConfig(
+          config,
+          loggerName: 'http_configuration.ssl',
+        ),
+      ),
+      prompt: 'Confirm that the SSL transport override path is active.',
+    );
+
     print(
-        '   ⚠️  Proxy configuration example (may fail without real proxy): $e\n');
+      'SSL override request succeeded '
+      '(bypass=$allowInsecureSsl, certificatePath=${certificatePath ?? 'none'}).',
+    );
+    print('Response: ${result.text}\n');
+  } catch (error) {
+    print('SSL override request failed: $error\n');
   }
 }
 
-/// Demonstrate custom headers configuration
-Future<void> demonstrateCustomHeaders(String openaiApiKey) async {
-  print('📋 Custom Headers Configuration (OpenAI):\n');
+Future<void> demonstrateCustomHeaders(String apiKey) async {
+  print('=== Custom Headers ===\n');
+
+  final config = const transport.DioHttpClientConfig(
+    baseUrl: _openAIBaseUrl,
+    defaultHeaders: <String, String>{},
+    customHeaders: <String, String>{
+      'X-Request-ID': 'advanced-http-demo-123',
+      'X-Client-Version': '1.0.0',
+      'User-Agent': 'llm_dart-http-demo/1.0',
+    },
+    timeout: Duration(seconds: 30),
+  );
 
   try {
-    final provider = await ai()
-        .openai()
-        .apiKey(openaiApiKey)
-        .model('gpt-4o-mini')
-        .http((http) => http.headers({
-              'X-Request-ID': 'demo-request-123',
-              'X-Client-Version': '1.0.0',
-              'User-Agent': 'LLMDart-Demo/1.0',
-            }).header('X-Additional-Header', 'additional-value'))
-        .build();
+    final result = await _runPrompt(
+      model: _openAIModel(
+        apiKey,
+        transportClient: _transportFromConfig(
+          config,
+          loggerName: 'http_configuration.headers',
+        ),
+      ),
+      prompt: 'A request with custom transport headers is reaching the model.',
+    );
 
-    final response = await provider.chat([
-      ChatMessage.user('Hello! This request includes custom headers.'),
-    ]);
-
-    print('   ✅ Custom headers configuration successful');
-    print('   📝 Response: ${response.text}\n');
-  } catch (e) {
-    print('   ❌ Custom headers configuration failed: $e\n');
+    print('Custom transport headers applied successfully.');
+    print('Response: ${result.text}\n');
+  } catch (error) {
+    print('Custom headers configuration failed: $error\n');
   }
 }
 
-/// Demonstrate SSL configuration
-Future<void> demonstrateSSLConfiguration(String openaiApiKey) async {
-  print('🔒 SSL Configuration:\n');
-  print('   ℹ️  Note: SSL configuration is only supported on IO platforms');
-  print('   📝 On Web platforms, SSL/TLS is managed by the browser\n');
+Future<void> demonstrateTimeoutBaseline(String apiKey) async {
+  print('=== Transport Timeout Baseline ===\n');
+
+  final config = const transport.DioHttpClientConfig(
+    baseUrl: _openAIBaseUrl,
+    defaultHeaders: <String, String>{},
+    timeout: Duration(minutes: 2),
+    connectionTimeout: Duration(seconds: 15),
+    receiveTimeout: Duration(minutes: 3),
+  );
 
   try {
-    // Example with SSL verification bypass (for development only)
-    await ai()
-        .openai()
-        .apiKey(openaiApiKey)
-        .model('gpt-4o-mini')
-        .http((http) =>
-            http.bypassSSLVerification(true)) // ⚠️ Only for development!
-        .build();
+    final result = await _runPrompt(
+      model: _openAIModel(
+        apiKey,
+        transportClient: _transportFromConfig(
+          config,
+          loggerName: 'http_configuration.timeout',
+        ),
+      ),
+      prompt: 'Describe transport timeout layering in one sentence.',
+    );
 
-    print('   ⚠️  SSL verification bypass enabled (development only)');
-    print('   📝 Note: This should only be used for local development\n');
-  } catch (e) {
-    print('   ⚠️  SSL verification bypass example: $e\n');
-  }
-
-  try {
-    // Example with custom SSL certificate
-    await ai()
-        .openai()
-        .apiKey(openaiApiKey)
-        .model('gpt-4o-mini')
-        .http((http) => http.sslCertificate('/path/to/custom/certificate.pem'))
-        .build();
-
-    print('   ✅ Custom SSL certificate configuration set');
-    print('   📝 Note: Certificate path configured for secure connections\n');
-  } catch (e) {
-    print('   ⚠️  Custom SSL certificate example: $e\n');
+    print('Configured connection=15s, receive=3m, send=2m.');
+    print('Priority: specific transport timeout > transport timeout > defaults.');
+    print('Response: ${result.text}\n');
+  } catch (error) {
+    print('Transport timeout baseline failed: $error\n');
   }
 }
 
-/// Demonstrate timeout configuration with priority hierarchy
-Future<void> demonstrateTimeoutConfiguration(String openaiApiKey) async {
-  print('⏱️  Timeout Configuration (OpenAI - Priority Hierarchy):\n');
+Future<void> demonstrateLoggingConfiguration(String apiKey) async {
+  print('=== Transport Logging ===\n');
+
+  final config = const transport.DioHttpClientConfig(
+    baseUrl: _openAIBaseUrl,
+    defaultHeaders: <String, String>{},
+    timeout: Duration(seconds: 30),
+    enableLogging: true,
+  );
 
   try {
-    // Example 1: Global timeout only
-    print('   📝 Example 1: Global timeout only');
-    final provider1 = await ai()
-        .openai()
-        .apiKey(openaiApiKey)
-        .model('gpt-4o-mini')
-        .timeout(Duration(minutes: 1)) // Global timeout for all operations
-        .build();
+    final result = await _runPrompt(
+      model: _openAIModel(
+        apiKey,
+        transportClient: _transportFromConfig(
+          config,
+          loggerName: 'http_configuration.logging',
+        ),
+      ),
+      prompt: 'Generate a short line so transport logging has activity to show.',
+    );
 
-    final response1 = await provider1.chat([
-      ChatMessage.user('Hello! This uses global timeout.'),
-    ]);
-    print('   ✅ Global timeout: connection=1m, receive=1m, send=1m');
-    print('   📝 Response: ${response1.text}\n');
-
-    // Example 2: Mixed configuration (global + HTTP overrides)
-    print('   📝 Example 2: Mixed configuration (global + HTTP overrides)');
-    final provider2 = await ai()
-        .openai()
-        .apiKey(openaiApiKey)
-        .model('gpt-4o-mini')
-        .timeout(Duration(minutes: 2)) // Global default: 2 minutes
-        .http((http) => http
-            .connectionTimeout(
-                Duration(seconds: 15)) // Override connection: 15s
-            .receiveTimeout(Duration(minutes: 3))) // Override receive: 3m
-        // sendTimeout will use global timeout (2 minutes)
-        .build();
-
-    final response2 = await provider2.chat([
-      ChatMessage.user('Hello! This uses mixed timeout configuration.'),
-    ]);
-    print('   ✅ Mixed timeouts: connection=15s, receive=3m, send=2m');
-    print('   📝 Priority: HTTP-specific > Global > Provider defaults');
-    print('   📝 Response: ${response2.text}\n');
-  } catch (e) {
-    print('   ❌ Timeout configuration failed: $e\n');
+    print('Transport logging was enabled for this request.');
+    print('Response: ${result.text}\n');
+  } catch (error) {
+    print('Transport logging failed: $error\n');
   }
 }
 
-/// Demonstrate logging configuration
-Future<void> demonstrateLoggingConfiguration(String openaiApiKey) async {
-  print('📊 HTTP Logging Configuration (OpenAI):\n');
+Future<void> demonstrateComprehensiveConfiguration(String apiKey) async {
+  print('=== Comprehensive Transport Configuration ===\n');
+
+  final config = const transport.DioHttpClientConfig(
+    baseUrl: _openAIBaseUrl,
+    defaultHeaders: <String, String>{},
+    customHeaders: <String, String>{
+      'X-Request-ID': 'comprehensive-http-demo-456',
+      'X-Environment': 'development',
+    },
+    timeout: Duration(minutes: 1),
+    connectionTimeout: Duration(seconds: 20),
+    receiveTimeout: Duration(minutes: 2),
+    enableLogging: true,
+  );
 
   try {
-    final provider = await ai()
-        .openai()
-        .apiKey(openaiApiKey)
-        .model('gpt-4o-mini')
-        .http((http) => http.enableLogging(true))
-        .build();
+    final result = await _runPrompt(
+      model: _openAIModel(
+        apiKey,
+        transportClient: _transportFromConfig(
+          config,
+          loggerName: 'http_configuration.comprehensive',
+        ),
+      ),
+      prompt:
+          'Summarize why transport configuration belongs below provider selection.',
+      callOptions: const core.CallOptions(
+        headers: <String, String>{
+          'X-Per-Call-Header': 'call-scope',
+        },
+      ),
+    );
 
-    print('   ✅ HTTP logging enabled');
-    print('   📝 All HTTP requests and responses will be logged');
-    print('   📝 Making a test request...\n');
-
-    final response = await provider.chat([
-      ChatMessage.user('Hello! This request will be logged.'),
-    ]);
-
-    print('   ✅ Request completed with logging');
-    print('   📝 Response: ${response.text}\n');
-  } catch (e) {
-    print('   ❌ Logging configuration failed: $e\n');
+    print('Combined transport defaults with a per-call header override.');
+    print('Response: ${result.text}\n');
+  } catch (error) {
+    print('Comprehensive transport configuration failed: $error\n');
   }
 }
 
-/// Demonstrate comprehensive HTTP configuration
-Future<void> demonstrateComprehensiveConfig(String openaiApiKey) async {
-  print('🎯 Comprehensive HTTP Configuration (OpenAI):\n');
-
-  try {
-    final provider = await ai()
-        .openai()
-        .apiKey(openaiApiKey)
-        .model('gpt-4o-mini')
-        // HTTP configuration using the new layered approach
-        .http((http) => http
-            .headers({
-              'X-Request-ID': 'comprehensive-demo-456',
-              'X-Client-Name': 'LLMDart-Comprehensive-Demo',
-            })
-            .connectionTimeout(Duration(seconds: 20))
-            .receiveTimeout(Duration(minutes: 3))
-            .enableLogging(true))
-        // Provider-specific configuration
-        .temperature(0.7)
-        .maxTokens(1000)
-        .build();
-
-    final response = await provider.chat([
-      ChatMessage.user(
-          'Hello! This request uses comprehensive HTTP configuration.'),
-    ]);
-
-    print('   ✅ Comprehensive configuration successful');
-    print('   📝 All HTTP settings applied successfully');
-    print('   📝 Response: ${response.text}\n');
-  } catch (e) {
-    print('   ❌ Comprehensive configuration failed: $e\n');
-  }
+void _configureLogging() {
+  transport.Logger.root.level = transport.Level.ALL;
+  transport.Logger.root.onRecord.listen((record) {
+    print('${record.level.name}: ${record.time}: ${record.loggerName}: '
+        '${record.message}');
+  });
 }
 
-/// Demonstrate configuration validation
-Future<void> demonstrateConfigValidation() async {
-  print('✅ Configuration Validation:\n');
+core.LanguageModel _openAIModel(
+  String apiKey, {
+  required transport.TransportClient transportClient,
+}) {
+  return llm.AI.openai(
+    apiKey: apiKey,
+    transport: transportClient,
+  ).chatModel(_modelId);
+}
 
-  try {
-    // This would typically be called internally, but shown here for demonstration
-    final config = LLMConfig(
-      baseUrl: 'https://api.openai.com/v1/',
-      model: 'gpt-4o-mini',
-      apiKey: 'test-key',
-      timeout: Duration(seconds: 60),
-    ).withExtensions({
-      'httpProxy': 'invalid-proxy-url', // This will trigger a warning
-      'bypassSSLVerification': true, // This will trigger a security warning
-      'connectionTimeout':
-          Duration(seconds: 30), // Different from global timeout
-    });
+transport.TransportClient _transportFromConfig(
+  transport.DioHttpClientConfig config, {
+  required String loggerName,
+}) {
+  final dio = transport.DioHttpClientFactory.createConfiguredDio(
+    config: config,
+    logger: transport.Logger(loggerName),
+  );
+  return transport.DioTransportClient(dio: dio);
+}
 
-    HttpConfigUtils.validateHttpConfig(config);
-    print('   ✅ Configuration validation completed');
-    print('   📝 Check logs for any warnings about configuration issues\n');
-  } catch (e) {
-    print('   ❌ Configuration validation failed: $e\n');
-  }
+Future<core.GenerateTextCallResult<void>> _runPrompt({
+  required core.LanguageModel model,
+  required String prompt,
+  core.CallOptions callOptions = const core.CallOptions(),
+}) {
+  return core.generateTextCall<void>(
+    model: model,
+    prompt: [
+      core.UserPromptMessage.text(prompt),
+    ],
+    callOptions: callOptions,
+  );
 }

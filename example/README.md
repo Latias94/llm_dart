@@ -85,9 +85,9 @@ manually.
 - [semantic_search.dart](03_advanced_features/semantic_search.dart) - Stable semantic retrieval engine built on shared embedding models
 - [custom_providers.dart](03_advanced_features/custom_providers.dart) - Stable custom `LanguageModel` implementations and wrapper composition
 - [performance_optimization.dart](03_advanced_features/performance_optimization.dart) - Stable app-owned caching, streaming, batching, and memory patterns
-- [http_configuration.dart](03_advanced_features/http_configuration.dart) - Compatibility-oriented HTTP builder appendix for proxy, SSL, and custom headers
-- [layered_http_config.dart](03_advanced_features/layered_http_config.dart) - Compatibility-oriented layered HTTP appendix with custom transport wiring
-- [timeout_configuration.dart](03_advanced_features/timeout_configuration.dart) - Compatibility-oriented timeout hierarchy appendix on the older builder shell
+- [http_configuration.dart](03_advanced_features/http_configuration.dart) - Stable transport recipes for proxy, SSL, custom headers, and logging
+- [layered_http_config.dart](03_advanced_features/layered_http_config.dart) - Stable layered transport presets plus custom Dio injection patterns
+- [timeout_configuration.dart](03_advanced_features/timeout_configuration.dart) - Stable timeout layering with transport defaults and per-call overrides
 
 ### Provider Examples
 *Provider-specific features*

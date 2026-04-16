@@ -1,367 +1,382 @@
+// ignore_for_file: avoid_print
+
 import 'dart:io';
-import 'package:llm_dart_transport/dio.dart';
-import 'package:llm_dart/legacy.dart';
-import 'package:llm_dart_transport/llm_dart_transport.dart';
 
-/// Layered HTTP Configuration Example
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/transport.dart' as transport;
+import 'package:llm_dart_transport/dio.dart' as dio;
+
+const _openAIBaseUrl = 'https://api.openai.com/v1';
+const _anthropicBaseUrl = 'https://api.anthropic.com/v1';
+const _deepSeekBaseUrl = 'https://api.deepseek.com/v1';
+
+/// Layered transport configuration examples on the stable model facade.
 ///
-/// This example demonstrates the new layered approach to HTTP configuration,
-/// which provides a cleaner and more organized way to configure HTTP settings.
+/// The architecture boundary is:
 ///
-/// Note: Advanced HTTP features (proxy, SSL bypass, custom certificates) are only
-/// available on IO platforms (Desktop/Mobile/Server). On Web platforms, these
-/// features are managed by the browser.
-///
-/// Before running, set API keys for the providers you want to test:
-/// export OPENAI_API_KEY="your-openai-key"
-/// export ANTHROPIC_API_KEY="your-anthropic-key"
-/// export DEEPSEEK_API_KEY="your-deepseek-key"
+/// - provider choice and model selection on `AI.*(...).chatModel(...)`
+/// - HTTP wiring on `TransportClient`
+/// - reusable transport presets on `DioHttpClientConfig`
+/// - advanced custom transport control through an injected Dio instance
 Future<void> main() async {
-  print('🏗️  Layered HTTP Configuration Demo\n');
+  print('Layered HTTP Configuration Demo\n');
 
-  // Get API keys from environment
   final apiKeys = {
     'openai': Platform.environment['OPENAI_API_KEY'],
     'anthropic': Platform.environment['ANTHROPIC_API_KEY'],
     'deepseek': Platform.environment['DEEPSEEK_API_KEY'],
   };
 
-  // Check if we have at least one API key
-  final availableKeys = apiKeys.entries.where((e) => e.value != null).toList();
+  final availableKeys = apiKeys.entries.where((entry) {
+    final value = entry.value;
+    return value != null && value.isNotEmpty;
+  }).toList();
+
   if (availableKeys.isEmpty) {
-    print('❌ Please set at least one API key:');
-    print('   OPENAI_API_KEY, ANTHROPIC_API_KEY, or DEEPSEEK_API_KEY');
+    print('Set at least one API key:');
+    print('  OPENAI_API_KEY');
+    print('  ANTHROPIC_API_KEY');
+    print('  DEEPSEEK_API_KEY');
     return;
   }
 
-  print('📋 Available providers:');
+  print('Available providers:');
   for (final entry in availableKeys) {
-    print('   ✅ ${entry.key.toUpperCase()}');
+    print('  ${entry.key}');
   }
   print('');
 
-  // Run demonstrations with available keys
-  if (apiKeys['openai'] != null) {
-    await demonstrateBasicLayeredConfig(apiKeys['openai']!);
+  if (apiKeys['openai'] case final openAIKey?) {
+    await demonstrateBasicLayeredConfig(openAIKey);
   }
 
-  if (apiKeys['anthropic'] != null) {
-    await demonstrateAdvancedLayeredConfig(apiKeys['anthropic']!);
-    await demonstrateCustomDioClient(apiKeys['anthropic']!);
+  if (apiKeys['anthropic'] case final anthropicKey?) {
+    await demonstrateAdvancedLayeredConfig(anthropicKey);
+    await demonstrateCustomDioClient(anthropicKey);
   }
 
-  if (apiKeys['deepseek'] != null) {
-    await demonstrateTimeoutPriorityInLayeredConfig(apiKeys['deepseek']!);
+  if (apiKeys['deepseek'] case final deepSeekKey?) {
+    await demonstrateTimeoutPriorityInLayeredConfig(deepSeekKey);
   }
 
-  await demonstrateConfigReusability();
+  demonstrateConfigReusability();
 
-  print('✅ Layered HTTP configuration demonstration completed!');
+  print('Layered HTTP configuration demo completed.');
 }
 
-/// Demonstrate basic layered HTTP configuration
-Future<void> demonstrateBasicLayeredConfig(String openaiApiKey) async {
-  print('🔧 Basic Layered HTTP Configuration (OpenAI):\n');
+Future<void> demonstrateBasicLayeredConfig(String apiKey) async {
+  print('=== Basic Layered Transport Configuration ===\n');
+
+  final config = const transport.DioHttpClientConfig(
+    baseUrl: _openAIBaseUrl,
+    defaultHeaders: <String, String>{},
+    customHeaders: <String, String>{
+      'X-Request-ID': 'layered-demo-001',
+    },
+    connectionTimeout: Duration(seconds: 30),
+    enableLogging: true,
+  );
 
   try {
-    // Clean, organized HTTP configuration
-    final provider = await ai()
-        .openai()
-        .apiKey(openaiApiKey)
-        .model('gpt-4o-mini')
-        .http((http) => http
-            .headers({'X-Request-ID': 'layered-demo-001'})
-            .connectionTimeout(Duration(seconds: 30))
-            .enableLogging(true))
-        .build();
+    final result = await _runPrompt(
+      model: llm.AI.openai(
+        apiKey: apiKey,
+        transport: _transportFromConfig(
+          config,
+          loggerName: 'layered_http.openai',
+        ),
+      ).chatModel('gpt-4.1-mini'),
+      prompt: 'Explain why transport settings belong below provider selection.',
+    );
 
-    final response = await provider.chat([
-      ChatMessage.user('Hello! This uses the new layered HTTP configuration.'),
-    ]);
-
-    print('   ✅ Layered HTTP configuration successful');
-    print('   📝 Response: ${response.text}\n');
-  } catch (e) {
-    print('   ❌ Layered HTTP configuration failed: $e\n');
-  }
-}
-
-/// Demonstrate advanced layered HTTP configuration
-Future<void> demonstrateAdvancedLayeredConfig(String anthropicApiKey) async {
-  print('🚀 Advanced Layered HTTP Configuration (Anthropic):\n');
-
-  try {
-    // Complex HTTP configuration with multiple settings
-    final provider = await ai()
-        .anthropic()
-        .apiKey(anthropicApiKey)
-        .model('claude-3-5-haiku-20241022')
-        .http((http) => http
-                // Headers configuration
-                .headers({
-                  'X-Request-ID': 'advanced-layered-demo-002',
-                  'X-Client-Version': '2.0.0',
-                  'X-Environment': 'production',
-                })
-                .header('X-Additional-Header', 'dynamic-value')
-                // Timeout configuration
-                .connectionTimeout(Duration(seconds: 20))
-                .receiveTimeout(Duration(minutes: 5))
-                .sendTimeout(Duration(seconds: 45))
-                // Debugging
-                .enableLogging(true)
-            // SSL configuration (example - IO platforms only)
-            // .bypassSSLVerification(false)
-            // .sslCertificate('/path/to/cert.pem')
-            // Proxy configuration (example - IO platforms only)
-            // .proxy('http://corporate-proxy:8080')
-            )
-        .build();
-
-    final response = await provider.chat([
-      ChatMessage.user(
-          'Hello! This uses advanced layered HTTP configuration with multiple settings.'),
-    ]);
-
-    print('   ✅ Advanced layered configuration successful');
-    print('   📝 All HTTP settings applied cleanly');
-    print('   📝 Response: ${response.text}\n');
-  } catch (e) {
-    print('   ❌ Advanced layered configuration failed: $e\n');
+    print('Applied reusable typed transport settings to OpenAI.');
+    print('Response: ${result.text}\n');
+  } catch (error) {
+    print('Basic layered configuration failed: $error\n');
   }
 }
 
-/// Demonstrate a custom transport client backed by Dio
-Future<void> demonstrateCustomDioClient(String anthropicApiKey) async {
-  print('🔧 Custom Transport Client for Advanced HTTP Control (Anthropic):\n');
+Future<void> demonstrateAdvancedLayeredConfig(String apiKey) async {
+  print('=== Advanced Layered Transport Configuration ===\n');
+
+  final config = const transport.DioHttpClientConfig(
+    baseUrl: _anthropicBaseUrl,
+    defaultHeaders: <String, String>{},
+    customHeaders: <String, String>{
+      'X-Request-ID': 'advanced-layered-demo-002',
+      'X-Client-Version': '2.0.0',
+      'X-Environment': 'production',
+      'X-Additional-Header': 'dynamic-value',
+    },
+    connectionTimeout: Duration(seconds: 20),
+    receiveTimeout: Duration(minutes: 5),
+    sendTimeout: Duration(seconds: 45),
+    enableLogging: true,
+  );
 
   try {
-    // Create custom Dio with advanced configuration
-    final customDio = Dio();
+    final result = await _runPrompt(
+      model: llm.AI.anthropic(
+        apiKey: apiKey,
+        transport: _transportFromConfig(
+          config,
+          loggerName: 'layered_http.anthropic',
+        ),
+      ).chatModel('claude-3-5-haiku-20241022'),
+      prompt:
+          'Describe a production-grade transport profile in one compact paragraph.',
+    );
 
-    // Configure custom timeouts
-    customDio.options.connectTimeout = Duration(seconds: 20);
-    customDio.options.receiveTimeout = Duration(minutes: 3);
-    customDio.options.sendTimeout = Duration(seconds: 30);
+    print('Applied advanced headers and timeout shaping to Anthropic.');
+    print('Response: ${result.text}\n');
+  } catch (error) {
+    print('Advanced layered configuration failed: $error\n');
+  }
+}
 
-    // Add custom headers
+Future<void> demonstrateCustomDioClient(String apiKey) async {
+  print('=== Custom Dio Client ===\n');
+
+  try {
+    final customDio = dio.Dio();
+
+    customDio.options.connectTimeout = const Duration(seconds: 20);
+    customDio.options.receiveTimeout = const Duration(minutes: 3);
+    customDio.options.sendTimeout = const Duration(seconds: 30);
     customDio.options.headers.addAll({
-      'X-Custom-Client': 'LLMDart-Advanced',
+      'X-Custom-Client': 'llm_dart-advanced',
       'X-Client-Version': '2.0.0',
       'X-Request-Source': 'custom-dio-demo',
     });
 
-    // Add monitoring interceptor
-    customDio.interceptors.add(InterceptorsWrapper(
-      onRequest: (options, handler) {
-        final requestId = 'req-${DateTime.now().millisecondsSinceEpoch}';
-        options.headers['X-Request-ID'] = requestId;
-        print('   🚀 Starting request: $requestId to ${options.uri.host}');
-        options.extra['start_time'] = DateTime.now();
-        handler.next(options);
-      },
-      onResponse: (response, handler) {
-        final startTime =
-            response.requestOptions.extra['start_time'] as DateTime?;
-        if (startTime != null) {
-          final duration = DateTime.now().difference(startTime);
-          print('   ✅ Request completed in ${duration.inMilliseconds}ms');
-        }
-        handler.next(response);
-      },
-      onError: (error, handler) {
-        final startTime = error.requestOptions.extra['start_time'] as DateTime?;
-        if (startTime != null) {
-          final duration = DateTime.now().difference(startTime);
-          print('   ❌ Request failed after ${duration.inMilliseconds}ms');
-        }
-        handler.next(error);
-      },
-    ));
+    customDio.interceptors.add(
+      dio.InterceptorsWrapper(
+        onRequest: (options, handler) {
+          final requestId = 'req-${DateTime.now().millisecondsSinceEpoch}';
+          options.headers['X-Request-ID'] = requestId;
+          print('Starting request: $requestId to ${options.uri.host}');
+          options.extra['startTime'] = DateTime.now();
+          handler.next(options);
+        },
+        onResponse: (response, handler) {
+          final startTime = response.requestOptions.extra['startTime']
+              as DateTime?;
+          if (startTime != null) {
+            final duration = DateTime.now().difference(startTime);
+            print('Completed in ${duration.inMilliseconds}ms');
+          }
+          handler.next(response);
+        },
+        onError: (error, handler) {
+          final startTime =
+              error.requestOptions.extra['startTime'] as DateTime?;
+          if (startTime != null) {
+            final duration = DateTime.now().difference(startTime);
+            print('Failed after ${duration.inMilliseconds}ms');
+          }
+          handler.next(error);
+        },
+      ),
+    );
 
-    // Add retry interceptor for production resilience
-    customDio.interceptors.add(InterceptorsWrapper(
-      onError: (error, handler) async {
-        if (error.response?.statusCode == 429) {
-          print('   ⏳ Rate limited, implementing backoff strategy...');
-          await Future.delayed(Duration(seconds: 1));
-          // In production, you might want to retry the request here
-        }
-        handler.next(error);
-      },
-    ));
+    customDio.interceptors.add(
+      dio.InterceptorsWrapper(
+        onError: (error, handler) async {
+          if (error.response?.statusCode == 429) {
+            print('Rate limited, applying demo backoff...');
+            await Future<void>.delayed(const Duration(seconds: 1));
+          }
+          handler.next(error);
+        },
+      ),
+    );
 
-    // Wrap the custom Dio instance in the stable transport client surface.
-    final transportClient = DioTransportClient(dio: customDio);
+    final model = llm.AI.anthropic(
+      apiKey: apiKey,
+      transport: transport.DioTransportClient(dio: customDio),
+    ).chatModel('claude-3-5-haiku-20241022');
 
-    // Use the custom transport client with the provider
-    final provider = await ai()
-        .anthropic()
-        .apiKey(anthropicApiKey)
-        .model('claude-3-5-haiku-20241022')
-        .http((http) => http
-            .transportClient(
-                transportClient) // 🎯 Custom transport takes highest priority
-            .enableLogging(
-                true) // This will be ignored since the custom transport is used
-            .connectionTimeout(Duration(seconds: 60))) // This will be ignored
-        .build();
+    final result = await _runPrompt(
+      model: model,
+      prompt:
+          'Summarize the advantages of injecting a custom transport client.',
+    );
 
-    print('   📝 Priority: Custom transport > HTTP config > Provider defaults');
-    print('   📝 Making request with custom transport client...\n');
-
-    final response = await provider.chat([
-      ChatMessage.user(
-          'Hello! This request uses a custom Dio client with advanced monitoring and retry logic.'),
-    ]);
-
-    print('   ✅ Custom transport client demonstration successful');
-    print('   📝 Response: ${response.text}\n');
-
-    // Show the benefits
-    print('   🎯 Benefits of a Custom Transport Client:');
-    print('   📝 • Complete HTTP control and customization');
-    print('   📝 • Advanced monitoring and metrics collection');
-    print('   📝 • Custom retry and error handling logic');
-    print('   📝 • Integration with existing HTTP infrastructure');
-    print('   📝 • Perfect for production environments\n');
-  } catch (e) {
-    print('   ❌ Custom transport client demonstration failed: $e\n');
+    print('Custom Dio injection succeeded on the stable Anthropic facade.');
+    print('Response: ${result.text}\n');
+  } catch (error) {
+    print('Custom Dio client demo failed: $error\n');
   }
 }
 
-/// Demonstrate timeout priority in layered configuration
-Future<void> demonstrateTimeoutPriorityInLayeredConfig(
-    String deepseekApiKey) async {
-  print('⏱️  Timeout Priority in Layered Configuration (DeepSeek):\n');
+Future<void> demonstrateTimeoutPriorityInLayeredConfig(String apiKey) async {
+  print('=== Timeout Priority In Layered Transport Configuration ===\n');
+
+  final config = const transport.DioHttpClientConfig(
+    baseUrl: _deepSeekBaseUrl,
+    defaultHeaders: <String, String>{},
+    customHeaders: <String, String>{
+      'X-Timeout-Demo': 'priority-example',
+    },
+    timeout: Duration(minutes: 2),
+    connectionTimeout: Duration(seconds: 15),
+    receiveTimeout: Duration(minutes: 5),
+  );
+
+  final model = llm.AI.deepSeek(
+    apiKey: apiKey,
+    transport: _transportFromConfig(
+      config,
+      loggerName: 'layered_http.deepseek',
+    ),
+  ).chatModel('deepseek-chat');
 
   try {
-    // Example: Global timeout with HTTP-specific overrides
-    final provider = await ai()
-        .deepseek()
-        .apiKey(deepseekApiKey)
-        .model('deepseek-chat')
-        .timeout(Duration(minutes: 2)) // Global timeout: 2 minutes
-        .http((http) => http
-            .headers({'X-Timeout-Demo': 'priority-example'})
-            .connectionTimeout(
-                Duration(seconds: 15)) // Override connection: 15s
-            .receiveTimeout(Duration(minutes: 5)) // Override receive: 5min
-            // sendTimeout will use global timeout (2 minutes)
-            .enableLogging(false))
-        .build();
+    final baselineResult = await _runPrompt(
+      model: model,
+      prompt: 'Describe the baseline transport timeout profile in one line.',
+    );
 
-    final response = await provider.chat([
-      ChatMessage.user('This demonstrates timeout priority in layered config!'),
-    ]);
+    print('Transport baseline: connection=15s, receive=5m, send=2m.');
+    print('Response: ${baselineResult.text}\n');
+  } catch (error) {
+    print('Transport baseline timeout demo failed: $error\n');
+  }
 
-    print('   ✅ Timeout priority demonstration successful');
-    print('   📝 Final timeouts: connection=15s, receive=5min, send=2min');
-    print('   📝 Priority: HTTP-specific > Global > Provider defaults');
-    print('   📝 Response: ${response.text}\n');
-  } catch (e) {
-    print('   ❌ Timeout priority demonstration failed: $e\n');
+  try {
+    final perCallResult = await _runPrompt(
+      model: model,
+      prompt:
+          'Describe how a single request can override send and receive timeout.',
+      callOptions: const core.CallOptions(
+        timeout: Duration(seconds: 45),
+      ),
+    );
+
+    print('Per-call override: send=45s, receive=45s, connection stays 15s.');
+    print('Priority: CallOptions.timeout > transport receive/send > defaults.');
+    print('Response: ${perCallResult.text}\n');
+  } catch (error) {
+    print('Per-call timeout override demo failed: $error\n');
   }
 }
 
-/// Demonstrate HTTP configuration reusability
-Future<void> demonstrateConfigReusability() async {
-  print('♻️  HTTP Configuration Reusability:\n');
+void demonstrateConfigReusability() {
+  print('=== Transport Configuration Reusability ===\n');
 
-  // Create reusable HTTP configuration
-  HttpConfig createProductionHttpConfig() {
-    return HttpConfig()
-        .headers({
-          'X-Environment': 'production',
-          'X-Client-Version': '1.0.0',
-          'X-Request-Source': 'mobile-app',
-        })
-        .connectionTimeout(Duration(seconds: 30))
-        .receiveTimeout(Duration(minutes: 3))
-        .enableLogging(false); // Disable in production
+  transport.DioHttpClientConfig createProductionConfig(String baseUrl) {
+    return transport.DioHttpClientConfig(
+      baseUrl: baseUrl,
+      defaultHeaders: const <String, String>{},
+      customHeaders: const <String, String>{
+        'X-Environment': 'production',
+        'X-Client-Version': '1.0.0',
+        'X-Request-Source': 'mobile-app',
+      },
+      connectionTimeout: const Duration(seconds: 30),
+      receiveTimeout: const Duration(minutes: 3),
+    );
   }
 
-  HttpConfig createDevelopmentHttpConfig() {
-    return HttpConfig()
-        .headers({
-          'X-Environment': 'development',
-          'X-Debug-Mode': 'true',
-        })
-        .connectionTimeout(Duration(seconds: 10))
-        .receiveTimeout(Duration(seconds: 30))
-        .enableLogging(true) // Enable in development
-        .bypassSSLVerification(true); // For local testing (IO platforms only)
+  transport.DioHttpClientConfig createDevelopmentConfig(String baseUrl) {
+    return transport.DioHttpClientConfig(
+      baseUrl: baseUrl,
+      defaultHeaders: const <String, String>{},
+      customHeaders: const <String, String>{
+        'X-Environment': 'development',
+        'X-Debug-Mode': 'true',
+      },
+      connectionTimeout: const Duration(seconds: 10),
+      receiveTimeout: const Duration(seconds: 30),
+      enableLogging: true,
+      bypassSslVerification: true,
+    );
   }
 
-  print('   ✅ HTTP configurations can be created as reusable functions');
-  print('   📝 Production config: secure, optimized timeouts, no logging');
-  print(
-      '   📝 Development config: debug-friendly, logging enabled, relaxed SSL');
-  print('   📝 Usage: .http((http) => createProductionHttpConfig())\n');
-
-  // Demonstrate the configurations
-  final prodConfig = createProductionHttpConfig();
-  final devConfig = createDevelopmentHttpConfig();
-
-  print(
-      '   📊 Production config settings: ${prodConfig.build().keys.join(', ')}');
-  print(
-      '   📊 Development config settings: ${devConfig.build().keys.join(', ')}\n');
-
-  // Demonstrate reusable custom transport factories
-  print('   🔧 Reusable Custom Transport Factory:\n');
-
-  // ignore: unused_element
-  Dio createProductionDio() {
-    final dio = Dio();
-
-    // Production-optimized settings
-    dio.options.connectTimeout = Duration(seconds: 30);
-    dio.options.receiveTimeout = Duration(minutes: 5);
-    dio.options.headers.addAll({
+  dio.Dio createProductionDio() {
+    final client = dio.Dio();
+    client.options.connectTimeout = const Duration(seconds: 30);
+    client.options.receiveTimeout = const Duration(minutes: 5);
+    client.options.headers.addAll({
       'User-Agent': 'LLMDart-Production/1.0',
       'X-Environment': 'production',
     });
-
-    // Add production monitoring
-    dio.interceptors.add(InterceptorsWrapper(
-      onRequest: (options, handler) {
-        // Log for production monitoring
-        print(
-            '   📊 Production request: ${options.method} ${options.uri.host}');
-        handler.next(options);
-      },
-    ));
-
-    return dio;
+    return client;
   }
 
-  // ignore: unused_element
-  Dio createDevelopmentDio() {
-    final dio = Dio();
-
-    // Development-friendly settings
-    dio.options.connectTimeout = Duration(seconds: 10);
-    dio.options.receiveTimeout = Duration(seconds: 30);
-    dio.options.headers.addAll({
+  dio.Dio createDevelopmentDio() {
+    final client = dio.Dio();
+    client.options.connectTimeout = const Duration(seconds: 10);
+    client.options.receiveTimeout = const Duration(seconds: 30);
+    client.options.headers.addAll({
       'User-Agent': 'LLMDart-Development/1.0',
       'X-Environment': 'development',
       'X-Debug': 'true',
     });
-
-    // Add verbose logging for development
-    dio.interceptors.add(LogInterceptor(
-      requestBody: true,
-      responseBody: true,
-      logPrint: (obj) => print('   🔍 Dev HTTP: $obj'),
-    ));
-
-    return dio;
+    client.interceptors.add(
+      dio.LogInterceptor(
+        requestBody: true,
+        responseBody: true,
+        logPrint: (message) => print('DEV HTTP: $message'),
+      ),
+    );
+    return client;
   }
 
-  print('   ✅ Custom transport factories created for different environments');
+  final productionConfig = createProductionConfig(_openAIBaseUrl);
+  final developmentConfig = createDevelopmentConfig(_openAIBaseUrl);
+
+  print('Reusable DioHttpClientConfig factories:');
   print(
-      '   📝 Usage: .http((http) => http.transportClient(DioTransportClient(dio: createProductionDio())))');
+    '  production -> connect=${productionConfig.connectionTimeout}, '
+    'receive=${productionConfig.receiveTimeout}, '
+    'logging=${productionConfig.enableLogging}',
+  );
   print(
-      '   📝 Benefits: Environment-specific optimizations, reusable across projects\n');
+    '  development -> connect=${developmentConfig.connectionTimeout}, '
+    'receive=${developmentConfig.receiveTimeout}, '
+    'logging=${developmentConfig.enableLogging}, '
+    'bypassSsl=${developmentConfig.bypassSslVerification}',
+  );
+  print('');
+
+  final productionDio = createProductionDio();
+  final developmentDio = createDevelopmentDio();
+
+  print('Reusable custom Dio factories:');
+  print(
+    '  production headers -> ${productionDio.options.headers.keys.join(', ')}',
+  );
+  print(
+    '  development headers -> ${developmentDio.options.headers.keys.join(', ')}',
+  );
+  print(
+    'Inject with AI.*(..., transport: DioTransportClient(dio: createProductionDio())).\n',
+  );
+}
+
+transport.TransportClient _transportFromConfig(
+  transport.DioHttpClientConfig config, {
+  required String loggerName,
+}) {
+  final dioClient = transport.DioHttpClientFactory.createConfiguredDio(
+    config: config,
+    logger: transport.Logger(loggerName),
+  );
+  return transport.DioTransportClient(dio: dioClient);
+}
+
+Future<core.GenerateTextCallResult<void>> _runPrompt({
+  required core.LanguageModel model,
+  required String prompt,
+  core.CallOptions callOptions = const core.CallOptions(),
+}) {
+  return core.generateTextCall<void>(
+    model: model,
+    prompt: [
+      core.UserPromptMessage.text(prompt),
+    ],
+    callOptions: callOptions,
+  );
 }

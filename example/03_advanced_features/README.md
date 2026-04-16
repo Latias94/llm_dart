@@ -2,16 +2,17 @@
 
 Sophisticated AI capabilities for production applications with LLM Dart.
 
-This directory currently mixes two surfaces:
+This directory is now modern-first:
 
 - stable model-based examples built on `AI.*(...).chatModel(...)`
-- compatibility-oriented builder/configuration examples that still document
-  legacy HTTP and provider wiring while the migration is ongoing
+- stable transport recipes built on `TransportClient`,
+  `DioHttpClientConfig`, and `CallOptions`
+- explicit provider-owned appendices only where the capability is not honestly
+  cross-provider, such as realtime audio
 
-For new application logic, prefer the stable `AI` facade and the shared helpers
-from `package:llm_dart/core.dart`. Builder-heavy infrastructure examples in this
-directory should be read as compatibility or transitional material unless they
-already use the stable facade explicitly.
+For new application logic, prefer the stable `AI` facade, the shared helpers
+from `package:llm_dart/core.dart`, and transport-owned configuration through
+`package:llm_dart/transport.dart`.
 
 ## Examples
 
@@ -42,14 +43,15 @@ Provider-owned ElevenLabs realtime appendix plus app-owned session/event
 orchestration patterns.
 
 ### [http_configuration.dart](http_configuration.dart)
-Compatibility-oriented HTTP builder appendix for proxy, SSL, and custom
-headers.
+Stable transport configuration recipes for proxy, SSL, custom headers, and
+logging.
 
 ### [layered_http_config.dart](layered_http_config.dart)
-Compatibility-oriented layered HTTP appendix with custom Dio transport wiring.
+Stable layered transport presets plus custom Dio injection patterns.
 
 ### [timeout_configuration.dart](timeout_configuration.dart)
-Compatibility-oriented timeout hierarchy appendix on the older builder shell.
+Stable timeout layering with `DioHttpClientConfig` and per-call
+`CallOptions.timeout`.
 
 ## Setup
 
@@ -178,67 +180,93 @@ for (final result in results) {
 }
 ```
 
-### Compatibility Boundary: HTTP Configuration
-These transport-wiring examples still live on the compatibility builder shell.
+### Stable Transport Recipe: HTTP Configuration
 
 ```dart
-import 'package:llm_dart/legacy.dart';
+import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/transport.dart' as transport;
 
-// Clean, organized HTTP configuration
-final provider = await ai()
-    .openai()
-    .apiKey('your-key')
-    .http((http) => http
-        .proxy('http://proxy.company.com:8080')
-        .headers({'X-Custom-Header': 'value'})
-        .connectionTimeout(Duration(seconds: 30))
-        .enableLogging(true))
-    .build();
+final transportClient = transport.DioTransportClient(
+  dio: transport.DioHttpClientFactory.createConfiguredDio(
+    config: const transport.DioHttpClientConfig(
+      baseUrl: 'https://api.openai.com/v1',
+      defaultHeaders: <String, String>{},
+      customHeaders: <String, String>{
+        'X-Custom-Header': 'value',
+      },
+      connectionTimeout: Duration(seconds: 30),
+      enableLogging: true,
+    ),
+  ),
+);
+
+final model = llm.AI.openai(
+  apiKey: 'your-key',
+  transport: transportClient,
+).chatModel('gpt-4.1-mini');
 ```
 
-### Compatibility Boundary: Custom Dio Client
+### Stable Transport Recipe: Custom Dio Client
 ```dart
-import 'package:llm_dart/legacy.dart';
+import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/transport.dart' as transport;
+import 'package:llm_dart_transport/dio.dart' as dio;
 
 // Create custom Dio with advanced features
-final customDio = Dio();
+final customDio = dio.Dio();
 customDio.options.connectTimeout = Duration(seconds: 30);
 customDio.options.headers['X-Custom-Client'] = 'MyApp/1.0';
 
 // Add monitoring interceptor
-customDio.interceptors.add(InterceptorsWrapper(
+customDio.interceptors.add(dio.InterceptorsWrapper(
   onRequest: (options, handler) {
     print('Request: ${options.method} ${options.uri}');
     handler.next(options);
   },
 ));
 
-// Use custom Dio (highest priority)
-final provider = await ai()
-    .anthropic()
-    .apiKey('your-key')
-    .http((http) => http
-        .dioClient(customDio)  // Takes priority over other HTTP settings
-        .enableLogging(true))  // This will be ignored
-    .build();
+final model = llm.AI.anthropic(
+  apiKey: 'your-key',
+  transport: transport.DioTransportClient(dio: customDio),
+).chatModel('claude-3-5-haiku-20241022');
 ```
 
-### Compatibility Boundary: Timeout Configuration
+### Stable Transport Recipe: Timeout Configuration
 ```dart
-import 'package:llm_dart/legacy.dart';
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/transport.dart' as transport;
 
-// Global timeout with HTTP-specific overrides
-final provider = await ai()
-    .openai()
-    .apiKey('your-key')
-    .timeout(Duration(minutes: 2))     // Global default: 2 minutes
-    .http((http) => http
-        .connectionTimeout(Duration(seconds: 30))  // Override connection: 30s
-        .receiveTimeout(Duration(minutes: 5)))     // Override receive: 5min
-        // sendTimeout will use global timeout (2 minutes)
-    .build();
+final transportClient = transport.DioTransportClient(
+  dio: transport.DioHttpClientFactory.createConfiguredDio(
+    config: const transport.DioHttpClientConfig(
+      baseUrl: 'https://api.openai.com/v1',
+      defaultHeaders: <String, String>{},
+      timeout: Duration(minutes: 2),
+      connectionTimeout: Duration(seconds: 30),
+      receiveTimeout: Duration(minutes: 5),
+    ),
+  ),
+);
 
-// Priority: HTTP-specific > Global > Provider defaults > System defaults
+final model = llm.AI.openai(
+  apiKey: 'your-key',
+  transport: transportClient,
+).chatModel('gpt-4.1-mini');
+
+final result = await core.generateTextCall(
+  model: model,
+  prompt: [
+    core.UserPromptMessage.text('Explain timeout layering briefly.'),
+  ],
+  callOptions: const core.CallOptions(
+    timeout: Duration(seconds: 45),
+  ),
+);
+
+// Priority:
+// CallOptions.timeout > transport receive/send timeouts > transport timeout
+// Connection timeout stays on the transport client.
 ```
 
 ## Best Practices
@@ -264,14 +292,17 @@ final provider = await ai()
 ### Architecture Boundary
 - Keep batch, retrieval, caching, and memory policies in app-owned code built
   on shared models and helpers
-- Treat HTTP wiring and timeout layering as explicit compatibility boundaries
-  until the transport migration recipe is simpler
+- Keep transport wiring in the transport layer with typed config objects or
+  explicit custom transport clients
+- Use `CallOptions` for request-scoped timeout and header overrides instead of
+  smuggling them through provider construction
 - Avoid forcing provider-native transport or realtime features into a fake
   shared abstraction
 
 ### HTTP Configuration
-- Use layered configuration for better organization
-- Use custom Dio client for advanced HTTP control and monitoring
+- Use `DioHttpClientConfig` factories for reusable transport presets
+- Use a custom Dio client only when you need interceptors, monitoring, or
+  specialized infrastructure hooks
 - Disable SSL bypass in production environments
 - Configure appropriate timeouts for your use case
 - Enable logging only in development/debugging
@@ -279,8 +310,9 @@ final provider = await ai()
 - Implement retry logic and error handling in custom interceptors
 
 ### Timeout Configuration
-- Use global timeout for simple scenarios
-- Use HTTP-specific timeouts for fine-grained control
+- Use transport timeout defaults for shared infrastructure policy
+- Use transport-specific timeouts for fine-grained control
+- Use `CallOptions.timeout` when one request needs a different SLA
 - Set longer receive timeouts for complex LLM tasks
 - Set shorter connection timeouts for quick failure detection
 - Consider network conditions (enterprise vs. direct connection)

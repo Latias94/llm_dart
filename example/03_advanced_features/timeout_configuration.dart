@@ -1,197 +1,223 @@
-import 'dart:io';
-import 'package:llm_dart/legacy.dart';
+// ignore_for_file: avoid_print
 
-/// Example demonstrating the timeout configuration hierarchy
+import 'dart:io';
+
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/transport.dart' as transport;
+
+const _openAIBaseUrl = 'https://api.openai.com/v1';
+const _modelId = 'gpt-4.1-mini';
+
+/// Stable timeout layering examples.
 ///
-/// This example shows how different timeout settings interact and override each other.
-void main() async {
+/// The modern timeout story is split across two layers:
+///
+/// - transport defaults and connection/receive/send shaping on
+///   `DioHttpClientConfig`
+/// - per-request timeout overrides on `CallOptions`
+///
+/// This is cleaner than pushing all timeout policy through a provider builder.
+Future<void> main() async {
   final apiKey = Platform.environment['OPENAI_API_KEY'];
-  if (apiKey == null) {
-    print('Please set OPENAI_API_KEY environment variable');
+  if (apiKey == null || apiKey.isEmpty) {
+    print('Set OPENAI_API_KEY to run this example.');
     return;
   }
 
-  print('🕐 Timeout Configuration Examples\n');
+  print('Timeout Configuration Examples\n');
 
-  // Example 1: Global timeout only
-  await example1GlobalTimeoutOnly(apiKey);
-
-  // Example 2: HTTP-specific timeouts only
-  await example2HttpTimeoutsOnly(apiKey);
-
-  // Example 3: Mixed configuration (global + HTTP overrides)
-  await example3MixedConfiguration(apiKey);
-
-  // Example 4: Enterprise scenario
+  await example1TransportTimeoutOnly(apiKey);
+  await example2TransportSpecificTimeoutsOnly(apiKey);
+  await example3TransportPlusPerCallOverride(apiKey);
   await example4EnterpriseScenario(apiKey);
-
-  // Example 5: Development scenario
   await example5DevelopmentScenario(apiKey);
 
-  // Show priority explanation
-  demonstrateTimeoutPriority();
+  explainTimeoutPriority();
 }
 
-/// Example 1: Using only global timeout
-/// All HTTP operations will use the same timeout value
-Future<void> example1GlobalTimeoutOnly(String apiKey) async {
-  print('📝 Example 1: Global Timeout Only');
-  print('   Setting: timeout(Duration(minutes: 2))');
-  print('   Result: connection=2min, receive=2min, send=2min\n');
+Future<void> example1TransportTimeoutOnly(String apiKey) async {
+  print('=== Example 1: Transport Timeout Only ===');
+  print('Setting: DioHttpClientConfig(timeout: 2 minutes)');
+  print('Result: connection=2m, receive=2m, send=2m\n');
+
+  final config = const transport.DioHttpClientConfig(
+    baseUrl: _openAIBaseUrl,
+    defaultHeaders: <String, String>{},
+    timeout: Duration(minutes: 2),
+  );
 
   try {
-    final provider = await ai()
-        .openai()
-        .apiKey(apiKey)
-        .model('gpt-4o-mini')
-        .timeout(Duration(minutes: 2)) // Global timeout for all operations
-        .build();
-
-    final response = await provider
-        .chat([ChatMessage.user('Hello! Please respond briefly.')]);
-
-    print('   ✅ Success: ${response.text}\n');
-  } catch (e) {
-    print('   ❌ Error: $e\n');
+    final result = await _runPrompt(
+      model: _openAIModel(apiKey, config),
+      prompt: 'Respond briefly so the timeout baseline is exercised.',
+    );
+    print('Success: ${result.text}\n');
+  } catch (error) {
+    print('Error: $error\n');
   }
 }
 
-/// Example 2: Using only HTTP-specific timeouts
-/// Each HTTP operation type has its own timeout
-Future<void> example2HttpTimeoutsOnly(String apiKey) async {
-  print('📝 Example 2: HTTP-Specific Timeouts Only');
-  print('   Setting: http config with specific timeouts');
-  print('   Result: connection=30s, receive=5min, send=1min\n');
+Future<void> example2TransportSpecificTimeoutsOnly(String apiKey) async {
+  print('=== Example 2: Transport-Specific Timeouts ===');
+  print('Setting: connection=30s, receive=5m, send=1m');
+  print('Result: fine-grained timeout control at the transport layer\n');
+
+  final config = const transport.DioHttpClientConfig(
+    baseUrl: _openAIBaseUrl,
+    defaultHeaders: <String, String>{},
+    connectionTimeout: Duration(seconds: 30),
+    receiveTimeout: Duration(minutes: 5),
+    sendTimeout: Duration(minutes: 1),
+  );
 
   try {
-    final provider = await ai()
-        .openai()
-        .apiKey(apiKey)
-        .model('gpt-4o-mini')
-        .http((http) => http
-            .connectionTimeout(Duration(seconds: 30)) // Quick connection
-            .receiveTimeout(Duration(minutes: 5)) // Long response wait
-            .sendTimeout(Duration(minutes: 1))) // Medium send time
-        .build();
-
-    final response = await provider
-        .chat([ChatMessage.user('Explain quantum computing in one sentence.')]);
-
-    print('   ✅ Success: ${response.text}\n');
-  } catch (e) {
-    print('   ❌ Error: $e\n');
+    final result = await _runPrompt(
+      model: _openAIModel(apiKey, config),
+      prompt: 'Explain fine-grained timeout tuning in one sentence.',
+    );
+    print('Success: ${result.text}\n');
+  } catch (error) {
+    print('Error: $error\n');
   }
 }
 
-/// Example 3: Mixed configuration (global + HTTP overrides)
-/// Global timeout provides defaults, HTTP config overrides specific types
-Future<void> example3MixedConfiguration(String apiKey) async {
-  print('📝 Example 3: Mixed Configuration');
-  print('   Setting: timeout(2min) + http.receiveTimeout(10min)');
-  print('   Result: connection=2min, receive=10min, send=2min\n');
+Future<void> example3TransportPlusPerCallOverride(String apiKey) async {
+  print('=== Example 3: Transport Baseline + Per-Call Override ===');
+  print('Setting: transport timeout=2m, connection=20s, receive=10m');
+  print('Call override: CallOptions(timeout: 45s)');
+  print('Result: connection=20s, receive=45s, send=45s\n');
+
+  final config = const transport.DioHttpClientConfig(
+    baseUrl: _openAIBaseUrl,
+    defaultHeaders: <String, String>{},
+    timeout: Duration(minutes: 2),
+    connectionTimeout: Duration(seconds: 20),
+    receiveTimeout: Duration(minutes: 10),
+  );
 
   try {
-    final provider = await ai()
-        .openai()
-        .apiKey(apiKey)
-        .model('gpt-4o-mini')
-        .timeout(Duration(minutes: 2)) // Global default: 2 minutes
-        .http((http) => http.receiveTimeout(
-            Duration(minutes: 10))) // Override only receive timeout
-        .build();
-
-    final response = await provider
-        .chat([ChatMessage.user('What are the benefits of renewable energy?')]);
-
-    print('   ✅ Success: ${response.text}\n');
-  } catch (e) {
-    print('   ❌ Error: $e\n');
+    final result = await _runPrompt(
+      model: _openAIModel(apiKey, config),
+      prompt: 'Explain request-scoped timeout override behavior.',
+      callOptions: const core.CallOptions(
+        timeout: Duration(seconds: 45),
+      ),
+    );
+    print('Success: ${result.text}\n');
+  } catch (error) {
+    print('Error: $error\n');
   }
 }
 
-/// Example 4: Enterprise scenario with proxy and custom timeouts
-/// Demonstrates real-world enterprise configuration
 Future<void> example4EnterpriseScenario(String apiKey) async {
-  print('📝 Example 4: Enterprise Scenario');
-  print('   Setting: Corporate proxy + conservative timeouts');
-  print('   Result: All timeouts extended for corporate network\n');
+  print('=== Example 4: Enterprise Scenario ===');
+  print('Setting: conservative timeouts for slower networks');
+
+  final proxyUrl = Platform.environment['HTTP_PROXY_URL'];
+  if (proxyUrl case final value?) {
+    print('Proxy configured through HTTP_PROXY_URL=$value');
+  } else {
+    print('No proxy configured; enterprise example still uses conservative timeouts');
+  }
+  print('');
+
+  final config = transport.DioHttpClientConfig(
+    baseUrl: _openAIBaseUrl,
+    defaultHeaders: const <String, String>{},
+    customHeaders: const <String, String>{
+      'X-Corporate-ID': 'dept-ai-research',
+      'X-Environment': 'production',
+    },
+    timeout: const Duration(minutes: 5),
+    connectionTimeout: const Duration(minutes: 1),
+    receiveTimeout: const Duration(minutes: 8),
+    proxyUrl: proxyUrl,
+  );
 
   try {
-    final provider = await ai()
-        .openai()
-        .apiKey(apiKey)
-        .model('gpt-4o-mini')
-        .timeout(Duration(minutes: 5)) // Conservative global timeout
-        .http((http) => http
-                // .proxy('http://corporate-proxy:8080')  // Uncomment if you have a proxy
-                .connectionTimeout(
-                    Duration(minutes: 1)) // Slow corporate network
-                .receiveTimeout(
-                    Duration(minutes: 8)) // Allow for slow responses
-                .headers({
-              'X-Corporate-ID': 'dept-ai-research',
-              'X-Environment': 'production',
-            }).enableLogging(false)) // Disabled in production
-        .build();
-
-    final response = await provider.chat([
-      ChatMessage.user(
-          'Summarize the latest AI trends for our quarterly report.')
-    ]);
-
-    print('   ✅ Success: ${response.text}\n');
-  } catch (e) {
-    print('   ❌ Error: $e\n');
+    final result = await _runPrompt(
+      model: _openAIModel(apiKey, config),
+      prompt: 'Summarize the latest AI trends for a quarterly report.',
+    );
+    print('Success: ${result.text}\n');
+  } catch (error) {
+    print('Error: $error\n');
   }
 }
 
-/// Example 5: Development scenario with fast timeouts and logging
-/// Optimized for quick feedback during development
 Future<void> example5DevelopmentScenario(String apiKey) async {
-  print('📝 Example 5: Development Scenario');
-  print('   Setting: Fast timeouts + logging enabled');
-  print('   Result: Quick feedback for development\n');
+  print('=== Example 5: Development Scenario ===');
+  print('Setting: fast failures plus transport logging');
+  print('Result: quick feedback during local iteration\n');
+
+  final config = const transport.DioHttpClientConfig(
+    baseUrl: _openAIBaseUrl,
+    defaultHeaders: <String, String>{},
+    customHeaders: <String, String>{
+      'X-Environment': 'development',
+      'X-Debug-Mode': 'true',
+    },
+    timeout: Duration(seconds: 30),
+    connectionTimeout: Duration(seconds: 10),
+    receiveTimeout: Duration(seconds: 45),
+    enableLogging: true,
+  );
 
   try {
-    final provider = await ai()
-        .openai()
-        .apiKey(apiKey)
-        .model('gpt-4o-mini')
-        .timeout(Duration(seconds: 30)) // Fast global timeout
-        .http((http) => http
-                .connectionTimeout(Duration(seconds: 10)) // Quick connection
-                .receiveTimeout(Duration(seconds: 45)) // Fast response
-                .headers({
-              'X-Environment': 'development',
-              'X-Debug-Mode': 'true',
-            }).enableLogging(true)) // Enabled for debugging
-        .build();
-
-    final response = await provider
-        .chat([ChatMessage.user('Test message for development.')]);
-
-    print('   ✅ Success: ${response.text}\n');
-  } catch (e) {
-    print('   ❌ Error: $e\n');
+    final result = await _runPrompt(
+      model: _openAIModel(apiKey, config),
+      prompt: 'Return a short development test response.',
+    );
+    print('Success: ${result.text}\n');
+  } catch (error) {
+    print('Error: $error\n');
   }
 }
 
-/// Utility function to demonstrate timeout priority
-void demonstrateTimeoutPriority() {
-  print('🔄 Timeout Priority Hierarchy:');
-  print('   1. HTTP-specific timeouts (highest priority)');
-  print('      .http((http) => http.connectionTimeout(Duration(seconds: 30)))');
-  print('   2. Global timeout (medium priority)');
-  print('      .timeout(Duration(minutes: 2))');
-  print('   3. Provider defaults (low priority)');
-  print('      Built-in provider-specific defaults');
-  print('   4. System defaults (lowest priority)');
-  print('      Duration(seconds: 60)\n');
+void explainTimeoutPriority() {
+  print('=== Timeout Priority Hierarchy ===');
+  print('1. CallOptions.timeout');
+  print('   Per-request send/receive override on the shared model call.');
+  print('2. DioHttpClientConfig.connectionTimeout / receiveTimeout / sendTimeout');
+  print('   Transport-level fine-grained defaults.');
+  print('3. DioHttpClientConfig.timeout');
+  print('   Transport-level fallback baseline for unspecified channels.');
+  print('4. Transport defaults');
+  print('   Package default when no timeout policy is supplied.\n');
 
-  print('💡 Best Practices:');
-  print('   • Use global timeout for simple scenarios');
-  print('   • Use HTTP-specific timeouts for fine-grained control');
-  print('   • Set longer receive timeouts for complex LLM tasks');
-  print('   • Set shorter connection timeouts for quick failure detection');
-  print('   • Consider network conditions (enterprise vs. direct connection)');
+  print('Best Practices:');
+  print('  - keep connection timeout short for faster failure detection');
+  print('  - allow longer receive timeouts for complex reasoning tasks');
+  print('  - use CallOptions.timeout when a single request needs a different SLA');
+  print('  - keep provider selection and timeout policy on separate layers');
+}
+
+core.LanguageModel _openAIModel(
+  String apiKey,
+  transport.DioHttpClientConfig config,
+) {
+  final dioClient = transport.DioHttpClientFactory.createConfiguredDio(
+    config: config,
+    logger: transport.Logger('timeout_configuration'),
+  );
+
+  return llm.AI.openai(
+    apiKey: apiKey,
+    transport: transport.DioTransportClient(dio: dioClient),
+  ).chatModel(_modelId);
+}
+
+Future<core.GenerateTextCallResult<void>> _runPrompt({
+  required core.LanguageModel model,
+  required String prompt,
+  core.CallOptions callOptions = const core.CallOptions(),
+}) {
+  return core.generateTextCall<void>(
+    model: model,
+    prompt: [
+      core.UserPromptMessage.text(prompt),
+    ],
+    callOptions: callOptions,
+  );
 }
