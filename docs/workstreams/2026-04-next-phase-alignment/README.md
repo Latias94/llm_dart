@@ -118,7 +118,12 @@ This phase should explicitly avoid:
     design for the next additive implementation phase.
 - [10-phase-closure-status.md](10-phase-closure-status.md)
   - Final closure note for this workstream: what is done, what stays
-    deliberately deferred, and which rules now remain frozen by default.
+  deliberately deferred, and which rules now remain frozen by default.
+- [11-repo-ref-event-gap-audit.md](11-repo-ref-event-gap-audit.md)
+  - Re-audit of the current `TextStreamEvent` / `ChatUiStreamChunk` /
+    `ChatUiMessage` layering against the current `repo-ref/ai` stream and UI
+    chunk structure, confirming that any remaining worthwhile work is above the
+    shared event core.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)

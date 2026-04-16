@@ -114,27 +114,14 @@ final class HttpChatTransportServerAdapter {
     Map<String, Object?> messageMetadata = const {},
     Iterable<DataUiPart<Object?>> leadingDataParts = const [],
     Map<String, Object?> finalMessageMetadata = const {},
-  }) async* {
-    if (messageId != null || messageMetadata.isNotEmpty) {
-      yield ChatUiMessageStartChunk(
-        messageId: messageId,
-        metadata: messageMetadata,
-      );
-    }
-
-    for (final part in leadingDataParts) {
-      yield ChatUiDataPartChunk<Object?>(part);
-    }
-
-    await for (final event in eventStream) {
-      yield ChatUiEventChunk(event);
-    }
-
-    if (finalMessageMetadata.isNotEmpty) {
-      yield ChatUiMessageFinishChunk(
-        metadata: finalMessageMetadata,
-      );
-    }
+  }) {
+    return projectTextStreamEventStream(
+      eventStream,
+      messageId: messageId,
+      messageMetadata: messageMetadata,
+      leadingDataParts: leadingDataParts,
+      finalMessageMetadata: finalMessageMetadata,
+    );
   }
 
   Stream<HttpChatTransportChunk> encodeUiChunkStream({

@@ -21,6 +21,16 @@ Current status:
   than provider package or event-surface expansion
 - `llm_dart_core` concentration is now explicitly tracked as an internal
   boundary-hardening topic, not an automatic package-splitting mandate
+- the current event and UI chunk layering is now also re-audited against the
+  latest `repo-ref/ai` structure, confirming that `llm_dart` already has the
+  same three-layer shape through `TextStreamEvent`, `ChatUiStreamChunk`, and
+  accumulated `ChatUiMessage` state
+- the transport-neutral `TextStreamEvent -> ChatUiStreamChunk` projection now
+  also lives in `llm_dart_core`, keeping the middle-layer mapping aligned with
+  the shared UI ownership model instead of only the HTTP server adapter
+- the remaining meaningful differences are now classified as higher-layer
+  reader, validation, or transport-diagnostic questions rather than missing
+  shared event families
 
 ## M2 - Streamed Runner Productization Decision
 

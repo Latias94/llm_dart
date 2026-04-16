@@ -1,4 +1,3 @@
-import 'package:llm_dart_core/model.dart' show FinishReason;
 import 'package:llm_dart_core/ui.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 import 'package:test/test.dart';

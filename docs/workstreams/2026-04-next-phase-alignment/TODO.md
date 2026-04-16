@@ -8,6 +8,9 @@ architecture debt.
 
 - [x] Create the next-phase alignment workstream scaffold
 - [x] Re-baseline the remaining useful gaps versus `repo-ref/ai`
+- [x] Re-audit the current event, UI chunk, and accumulated message layering
+  against the current `repo-ref/ai` stream architecture after the transport
+  and chat runtime refactors landed
 
 ## Streamed Runner Maturity
 
@@ -41,6 +44,9 @@ architecture debt.
   without changing the shared event surface
 - [x] Split `ChatUiAccumulator` data-part upsert behavior into internal support
   without changing the shared event surface
+- [x] Extract the transport-neutral `TextStreamEvent -> ChatUiStreamChunk`
+  projector into `llm_dart_core` so the shared middle layer is not hosted only
+  by the HTTP server adapter
 - [x] Adopt focused core entrypoints in `llm_dart_transport`
 - [x] Adopt focused core entrypoints in `llm_dart_chat`
 
