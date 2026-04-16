@@ -52,18 +52,6 @@ void main() {
       }
     });
 
-    test(
-        'deprecated createOllamaReasoningProvider should still create provider',
-        () {
-      // ignore: deprecated_member_use_from_same_package
-      final provider = createOllamaReasoningProvider(
-        baseUrl: 'http://localhost:11434',
-        model: 'gpt-oss:latest',
-      );
-
-      expect(provider, isA<OllamaProvider>());
-    });
-
     test('createOllamaProvider should accept thinking parameter', () {
       final provider = createOllamaProvider(
         baseUrl: 'http://localhost:11434',

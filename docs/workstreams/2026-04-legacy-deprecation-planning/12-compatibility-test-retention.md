@@ -152,3 +152,19 @@ A removal PR should state:
 
 If a PR cannot answer those three points, it is probably trying to remove too
 much at once.
+
+## Current Branch Status
+
+On `refactor/architecture-foundation`, the wave-1 leaf-removal slice has
+already deleted or narrowed the most directly coupled helper tests:
+
+- the dedicated shared builder web-search test file is removed
+- builder/OpenRouter assertions were narrowed to the retained APIs
+- deprecated preset-helper-specific coverage was reduced where the helpers were
+  removed
+
+At the same time, the trunk guardrails remain:
+
+- `test/legacy_entrypoint_test.dart`
+- broad `LLMBuilder` coverage
+- compatibility factory/config tests for residual legacy config routing

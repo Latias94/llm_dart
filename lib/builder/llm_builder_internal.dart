@@ -30,9 +30,6 @@ extension _LLMBuilderInternals on LLMBuilder {
     return this;
   }
 
-  WebSearchConfig? get _currentWebSearchConfig =>
-      _config.getExtension<WebSearchConfig>('webSearchConfig');
-
   Future<T> _buildCapability<T extends Object>({
     required String unsupportedMessage,
   }) async {

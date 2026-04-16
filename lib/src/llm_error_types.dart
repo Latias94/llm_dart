@@ -199,7 +199,7 @@ class ModelNotAvailableError extends LLMError {
 
 /// Request cancellation error
 ///
-/// This error is thrown when a request is cancelled via CancelToken.
+/// This error is thrown when a request is cancelled via TransportCancellation.
 /// Use [CancellationHelper.isCancelled] to detect cancellation errors.
 class CancelledError extends LLMError {
   const CancelledError([super.message = 'Request cancelled']);

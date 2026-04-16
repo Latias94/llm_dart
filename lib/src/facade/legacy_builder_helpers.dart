@@ -25,11 +25,6 @@ Future<ChatCapability> createProvider({
   bool stream = false,
   double? topP,
   int? topK,
-  @Deprecated(
-    'createProvider.extensions is a legacy raw compatibility escape hatch. '
-    'Prefer typed builder/provider APIs or the stable AI facade instead.',
-  )
-  Map<String, dynamic>? extensions,
 }) async {
   var builder = LLMBuilder().provider(providerId).apiKey(apiKey).model(model);
 
@@ -40,12 +35,6 @@ Future<ChatCapability> createProvider({
   if (timeout != null) builder = builder.timeout(timeout);
   if (topP != null) builder = builder.topP(topP);
   if (topK != null) builder = builder.topK(topK);
-
-  if (extensions != null) {
-    for (final entry in extensions.entries) {
-      builder = builder.extension(entry.key, entry.value);
-    }
-  }
 
   return await builder.build();
 }

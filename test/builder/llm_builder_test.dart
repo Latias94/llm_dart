@@ -315,36 +315,6 @@ void main() {
         expect(builder, isNotNull);
       });
 
-      test(
-          'should store OpenRouter-specific search config in namespaced providerOptions',
-          () {
-        final builder = LLMBuilder().openRouter(
-          (openrouter) {
-            // ignore: deprecated_member_use_from_same_package
-            return openrouter.webSearch(
-              maxResults: 5,
-              searchPrompt: 'Focus on recent developments',
-            );
-          },
-        );
-
-        expect(
-          builder.currentConfig.getExtension<WebSearchConfig>(
-            LegacyExtensionKeys.webSearchConfig,
-          ),
-          isNull,
-        );
-
-        final openRouterOptions = legacyProviderOptionsNamespace(
-          builder.currentConfig,
-          LegacyProviderOptionNamespaces.openrouter,
-        );
-        final config = openRouterOptions[LegacyExtensionKeys.webSearchConfig]
-            as WebSearchConfig;
-        expect(config.maxResults, equals(5));
-        expect(config.searchPrompt, equals('Focus on recent developments'));
-      });
-
       test('should normalize Google reasoning effort into string extension',
           () {
         final builder = LLMBuilder().google(

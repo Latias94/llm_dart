@@ -3,59 +3,6 @@ import 'package:llm_dart/legacy.dart';
 
 void main() {
   group('xAI Live Search Tests', () {
-    test('should enable live search with enableWebSearch()', () async {
-      final builder = LLMBuilder().xai().apiKey('test-key').model('grok-3');
-      // ignore: deprecated_member_use_from_same_package
-      final provider = await builder.enableWebSearch().build();
-
-      expect(provider, isA<XAIProvider>());
-
-      // Access the internal config to verify live search is enabled
-      final xaiProvider = provider as XAIProvider;
-      expect(xaiProvider.config.liveSearch, isTrue);
-      expect(xaiProvider.config.searchParameters, isNotNull);
-      expect(xaiProvider.config.searchParameters!.mode, equals('auto'));
-      expect(xaiProvider.config.searchParameters!.sources, isNotEmpty);
-      expect(xaiProvider.config.searchParameters!.sources!.first.sourceType,
-          equals('web'));
-    });
-
-    test('should configure news search correctly', () async {
-      final builder = LLMBuilder().xai().apiKey('test-key').model('grok-3');
-      // ignore: deprecated_member_use_from_same_package
-      final searchBuilder = builder.newsSearch(
-        maxResults: 5,
-        fromDate: '2024-01-01',
-        toDate: '2024-12-31',
-      );
-      final provider = await searchBuilder.build();
-
-      final xaiProvider = provider as XAIProvider;
-      expect(xaiProvider.config.searchParameters, isNotNull);
-      expect(xaiProvider.config.searchParameters!.maxSearchResults, equals(5));
-      expect(
-          xaiProvider.config.searchParameters!.fromDate, equals('2024-01-01'));
-      expect(xaiProvider.config.searchParameters!.toDate, equals('2024-12-31'));
-      expect(xaiProvider.config.searchParameters!.sources!.first.sourceType,
-          equals('news'));
-    });
-
-    test('should configure web search with custom parameters', () async {
-      final builder = LLMBuilder().xai().apiKey('test-key').model('grok-3');
-      // ignore: deprecated_member_use_from_same_package
-      final searchBuilder = builder.webSearch(
-        maxResults: 10,
-        blockedDomains: ['spam.com', 'ads.com'],
-        mode: 'always',
-      );
-      final provider = await searchBuilder.build();
-
-      final xaiProvider = provider as XAIProvider;
-      expect(xaiProvider.config.searchParameters, isNotNull);
-      expect(xaiProvider.config.searchParameters!.maxSearchResults, equals(10));
-      expect(xaiProvider.config.searchParameters!.mode, equals('always'));
-    });
-
     test('should build correct search parameters JSON', () {
       final searchParams = SearchParameters.webSearch(
         mode: 'auto',

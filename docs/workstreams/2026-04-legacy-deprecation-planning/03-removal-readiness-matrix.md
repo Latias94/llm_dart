@@ -37,3 +37,22 @@ This prevents the repository from confusing three different actions:
 3. actually remove it
 
 Those actions should not happen in the same release by default.
+
+## Current Branch Status
+
+On `refactor/architecture-foundation`, the first conservative leaf-removal
+slice is now already landed in code:
+
+- deprecated preset helper aliases removed
+- deprecated shared builder web-search helpers removed
+- deprecated OpenRouter builder search ergonomics removed
+- `createProvider(..., extensions: ...)` reduced to `createProvider(...)`
+- deprecated `CancelToken` alias removed
+
+The larger compatibility trunks remain intentionally untouched:
+
+- `legacy.dart`
+- `LLMBuilder`
+- `createProvider(...)`
+- root provider constructors
+- `ai()` removal itself

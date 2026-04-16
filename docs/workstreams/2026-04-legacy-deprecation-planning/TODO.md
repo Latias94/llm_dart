@@ -80,6 +80,14 @@
 - [x] Prepare changelog and migration-note templates for removals
 - [x] Define which compatibility tests must remain until each removal lands
 
+## Breaking-Window Execution
+
+- [x] Land the first conservative wave-1 branch slice:
+  preset helper aliases, builder web-search helpers,
+  `createProvider(..., extensions: ...)`, and `CancelToken`
+- [ ] Convert the branch-landed removals into final release notes / changelog
+  text if this branch becomes the actual breaking release vehicle
+
 ## Explicitly Deferred
 
 - [ ] Deprecate `LLMBuilder` before common task-oriented migration recipes exist

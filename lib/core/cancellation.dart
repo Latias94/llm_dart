@@ -47,9 +47,6 @@ import 'package:llm_dart_transport/llm_dart_transport.dart'
     show getDioCancellationReason, isDioCancellationError;
 import 'llm_error.dart';
 
-@Deprecated('Use TransportCancellation instead.')
-typedef CancelToken = TransportCancellation;
-
 /// Helper utilities for working with cancellation
 class CancellationHelper {
   /// Check if an error indicates the operation was cancelled

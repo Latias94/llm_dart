@@ -23,7 +23,16 @@ It should remove only leaves whose replacement path is already:
 
 It should not weaken the main compatibility trunks by accident.
 
-## Proposed Wave 1 Removals
+## Current Branch Status
+
+The wave-1 removal set described in this document is now already landed on
+`refactor/architecture-foundation`.
+
+That means this document is no longer only hypothetical planning material for
+that branch. It is also the rationale record for the removals now present in
+code.
+
+## Wave 1 Removals
 
 ### 1. Deprecated Preset Helper Aliases
 

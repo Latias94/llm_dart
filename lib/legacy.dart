@@ -50,8 +50,7 @@ export 'models/file_models.dart';
 export 'models/moderation_models.dart';
 export 'models/assistant_models.dart';
 
-export 'providers/openai/openai.dart'
-    hide createDeepSeekProvider, createGroqProvider;
+export 'providers/openai/openai.dart';
 export 'providers/openai/client.dart';
 export 'providers/openai/chat.dart';
 export 'providers/openai/embeddings.dart';

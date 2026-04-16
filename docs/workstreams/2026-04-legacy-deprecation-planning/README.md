@@ -137,6 +137,17 @@ What is now written down:
 - reusable release-note and migration-note templates
 - explicit compatibility test-retention rules for removals
 
+What is now also landed on this branch:
+
+- `ai()` is now actually annotated as deprecated
+- first-party executable code no longer uses `ai()`
+- the shared builder web-search helpers are removed
+- the deprecated OpenRouter builder search ergonomics are removed
+- the deprecated preset helper aliases are removed
+- `createProvider(..., extensions: ...)` is now reduced to
+  `createProvider(...)`
+- the deprecated `CancelToken` alias is removed
+
 What remains open before a wider deprecation wave:
 
 - execute or further defer the proposed wave-1 removal set in a deliberate

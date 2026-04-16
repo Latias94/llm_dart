@@ -188,6 +188,10 @@ Current status:
   in `11-removal-release-note-templates.md`
 - the compatibility test-retention plan for removals is now written down in
   `12-compatibility-test-retention.md`
+- the first conservative wave-1 branch slice is now also landed in code:
+  deprecated preset helper aliases removed, shared builder web-search helpers
+  removed, `createProvider(..., extensions: ...)` reduced to
+  `createProvider(...)`, and the deprecated `CancelToken` alias removed
 - `example/03_advanced_features/README.md` now leads with stable snippets and
   now teaches stable transport recipes instead of the old builder HTTP shell
 - the first-deprecation-wave documentation blockers are now materially smaller:

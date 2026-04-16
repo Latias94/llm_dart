@@ -5,7 +5,6 @@ import '../core/capability.dart';
 import '../core/config.dart';
 import '../core/llm_error.dart';
 import '../core/registry.dart';
-import '../core/web_search.dart';
 import '../models/chat_models.dart';
 import '../models/tool_models.dart';
 import '../src/bootstrap/root_registry_bootstrap.dart';
@@ -18,7 +17,6 @@ part 'llm_builder_common_config.dart';
 part 'llm_builder_internal.dart';
 part 'llm_builder_media_config.dart';
 part 'llm_builder_provider_selection.dart';
-part 'llm_builder_web_search.dart';
 
 /// Builder for configuring and instantiating LLM providers
 ///
