@@ -19,31 +19,36 @@ already use the stable facade explicitly.
 AI reasoning with visible thinking processes using DeepSeek R1.
 
 ### [multi_modal.dart](multi_modal.dart)
-Image, audio, and document processing with AI models.
+Mixed multimodal example while migration continues; new app code should prefer
+stable prompt parts and shared image/audio/file helpers.
 
 ### [custom_providers.dart](custom_providers.dart)
-Build custom AI providers with specialized functionality.
+Compatibility-oriented custom provider/capability example for testing and
+specialized integrations.
 
 ### [performance_optimization.dart](performance_optimization.dart)
-Caching, batching, and optimization for production workloads.
+Stable app-owned caching, batching, streaming, and memory patterns around
+shared text calls.
 
 ### [batch_processing.dart](batch_processing.dart)
-Concurrent processing with rate limiting and error handling.
+Stable batch orchestration with concurrency, retry, rate limiting, and progress
+tracking.
 
 ### [semantic_search.dart](semantic_search.dart)
-Embedding-based search engine with hybrid ranking.
+Stable semantic retrieval engine built on shared embedding models.
 
 ### [realtime_audio.dart](realtime_audio.dart)
-Real-time audio streaming and voice activity detection.
+Compatibility-oriented real-time audio capability appendix.
 
 ### [http_configuration.dart](http_configuration.dart)
-Comprehensive HTTP configuration with proxy, SSL, and custom headers.
+Compatibility-oriented HTTP builder appendix for proxy, SSL, and custom
+headers.
 
 ### [layered_http_config.dart](layered_http_config.dart)
-New layered HTTP configuration approach with custom Dio client support for advanced HTTP control.
+Compatibility-oriented layered HTTP appendix with custom Dio transport wiring.
 
 ### [timeout_configuration.dart](timeout_configuration.dart)
-Comprehensive timeout configuration with priority hierarchy and best practices.
+Compatibility-oriented timeout hierarchy appendix on the older builder shell.
 
 ## Setup
 
@@ -56,6 +61,8 @@ export ELEVENLABS_API_KEY="your-elevenlabs-key"
 
 # Run advanced feature examples
 dart run reasoning_models.dart
+dart run batch_processing.dart
+dart run semantic_search.dart
 dart run multi_modal.dart
 dart run custom_providers.dart
 dart run performance_optimization.dart
@@ -114,25 +121,40 @@ print('Answer: ${result.text}');
 
 ### Multi-modal Processing
 ```dart
-import 'package:llm_dart/legacy.dart';
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/llm_dart.dart' as llm;
 
-// Process image with text
-final provider = await ai().openai().apiKey('your-key').build();
+final model = llm.AI.openai(apiKey: 'your-key').chatModel('gpt-4o');
 
-final response = await provider.chat([
-  ChatMessage.user([
-    ChatMessageContent.text('What do you see in this image?'),
-    ChatMessageContent.image('data:image/jpeg;base64,...'),
-  ]),
-]);
+final response = await core.generateTextCall(
+  model: model,
+  prompt: [
+    core.UserPromptMessage(
+      parts: [
+        const core.TextPromptPart('What do you see in this image?'),
+        core.ImagePromptPart(
+          mediaType: 'image/jpeg',
+          uri: Uri.parse('https://example.com/cat.jpg'),
+        ),
+      ],
+    ),
+  ],
+);
 ```
 
 ### Batch Processing
 ```dart
-// Process multiple requests concurrently
-final batchProcessor = BatchProcessor(provider);
-final tasks = List.generate(10, (i) =>
-  BatchTask(id: 'task_$i', prompt: 'Analyze item $i'));
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/llm_dart.dart' as llm;
+
+final batchProcessor = BatchProcessor(
+  model: llm.AI.groq(apiKey: 'your-key').chatModel('llama-3.1-8b-instant'),
+  defaultOptions: const core.GenerateTextOptions(maxOutputTokens: 120),
+);
+final tasks = List.generate(
+  10,
+  (i) => BatchTask(id: 'task_$i', prompt: 'Analyze item $i'),
+);
 
 final results = await batchProcessor.processBatch(tasks);
 print('Completed: ${results.where((r) => r.isSuccess).length}');
@@ -140,8 +162,13 @@ print('Completed: ${results.where((r) => r.isSuccess).length}');
 
 ### Semantic Search
 ```dart
-// Build search engine with embeddings
-final searchEngine = SemanticSearchEngine(embeddingProvider);
+import 'package:llm_dart/llm_dart.dart' as llm;
+
+final embeddingModel = llm.AI.openai(
+  apiKey: 'your-key',
+).embeddingModel('text-embedding-3-small');
+
+final searchEngine = SemanticSearchEngine(embeddingModel);
 await searchEngine.indexDocuments(documents);
 
 final results = await searchEngine.search('machine learning');
@@ -150,7 +177,9 @@ for (final result in results) {
 }
 ```
 
-### HTTP Configuration (Layered Approach)
+### Compatibility Boundary: HTTP Configuration
+These transport-wiring examples still live on the compatibility builder shell.
+
 ```dart
 import 'package:llm_dart/legacy.dart';
 
@@ -166,7 +195,7 @@ final provider = await ai()
     .build();
 ```
 
-### Custom Dio Client (Advanced HTTP Control)
+### Compatibility Boundary: Custom Dio Client
 ```dart
 import 'package:llm_dart/legacy.dart';
 
@@ -193,7 +222,7 @@ final provider = await ai()
     .build();
 ```
 
-### Timeout Configuration (Priority Hierarchy)
+### Compatibility Boundary: Timeout Configuration
 ```dart
 import 'package:llm_dart/legacy.dart';
 
@@ -230,6 +259,14 @@ final provider = await ai()
 - Handle different modalities gracefully
 - Optimize image sizes for faster processing
 - Use appropriate models for each modality
+
+### Architecture Boundary
+- Keep batch, retrieval, caching, and memory policies in app-owned code built
+  on shared models and helpers
+- Treat HTTP wiring and timeout layering as explicit compatibility boundaries
+  until the transport migration recipe is simpler
+- Avoid forcing provider-native transport or realtime features into a fake
+  shared abstraction
 
 ### HTTP Configuration
 - Use layered configuration for better organization

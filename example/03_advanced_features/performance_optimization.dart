@@ -1,451 +1,451 @@
-// ignore_for_file: avoid_print
 import 'dart:io';
-import 'dart:async';
-import 'package:llm_dart/legacy.dart';
 
-/// ⚡ Performance Optimization - Speed and Efficiency
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/llm_dart.dart' as llm;
+
+/// Stable performance optimization patterns for shared language models.
 ///
-/// This example demonstrates various performance optimization techniques:
-/// - Caching strategies for responses
-/// - Request batching and parallelization
-/// - Streaming for better user experience
-/// - Memory management and resource optimization
-///
-/// Before running, set your API key:
-/// export OPENAI_API_KEY="your-key"
-/// export GROQ_API_KEY="your-key"
-void main() async {
-  print('⚡ Performance Optimization - Speed and Efficiency\n');
+/// This example demonstrates:
+/// - response caching in app-owned state
+/// - parallel request orchestration on shared text calls
+/// - streaming-first UX measurements
+/// - context trimming and memory-aware conversation handling
+Future<void> main() async {
+  print('Stable performance optimization examples\n');
 
-  // Get API keys
-  final openaiKey = Platform.environment['OPENAI_API_KEY'] ?? 'sk-TESTKEY';
-  final groqKey = Platform.environment['GROQ_API_KEY'] ?? 'gsk-TESTKEY';
+  final balancedModel = _resolveBalancedModel();
+  final streamingModel = _resolveStreamingModel(balancedModel);
 
-  // Demonstrate different optimization techniques
-  await demonstrateCachingStrategies(openaiKey);
-  await demonstrateParallelProcessing(openaiKey);
-  await demonstrateStreamingOptimization(groqKey);
-  await demonstrateBatchProcessing(openaiKey);
-  await demonstrateMemoryOptimization(openaiKey);
-
-  print('\n✅ Performance optimization completed!');
-  print('📖 Explore ../04_providers/ for provider-specific optimizations');
-}
-
-/// Demonstrate caching strategies
-Future<void> demonstrateCachingStrategies(String apiKey) async {
-  print('💾 Caching Strategies:\n');
-
-  try {
-    // Create provider
-    final provider = await ai()
-        .openai()
-        .apiKey(apiKey)
-        .model('gpt-4o-mini')
-        .temperature(0.3) // Lower temperature for more consistent responses
-        .maxTokens(200)
-        .build();
-
-    // Simple in-memory cache
-    final cache = <String, String>{};
-
-    final questions = [
-      'What is the capital of France?',
-      'What is 2 + 2?',
-      'What is the capital of France?', // Duplicate for cache test
-      'Explain photosynthesis briefly.',
-      'What is 2 + 2?', // Another duplicate
-    ];
-
-    print('   Testing cache performance:');
-
-    for (int i = 0; i < questions.length; i++) {
-      final question = questions[i];
-      final stopwatch = Stopwatch()..start();
-
-      String response;
-      bool fromCache = false;
-
-      if (cache.containsKey(question)) {
-        response = cache[question]!;
-        fromCache = true;
-      } else {
-        final aiResponse = await provider.chat([ChatMessage.user(question)]);
-        response = aiResponse.text ?? 'No response';
-        cache[question] = response;
-      }
-
-      stopwatch.stop();
-
-      print('   ${i + 1}. "$question"');
-      print(
-          '      ${fromCache ? '💾 Cached' : '🌐 API'}: ${stopwatch.elapsedMilliseconds}ms');
-      print(
-          '      Response: ${response.substring(0, response.length > 50 ? 50 : response.length)}...\n');
-    }
-
-    print('   💡 Caching Benefits:');
-    print('      • Dramatically faster responses for repeated queries');
-    print('      • Reduced API costs and rate limit usage');
-    print('      • Better user experience with instant responses');
-    print('      • Offline capability for cached content');
-    print('   ✅ Caching demonstration successful\n');
-  } catch (e) {
-    print('   ❌ Caching demonstration failed: $e\n');
+  if (balancedModel == null && streamingModel == null) {
+    print('No text model is configured.');
+    print('Set OPENAI_API_KEY or GROQ_API_KEY.');
+    return;
   }
+
+  if (balancedModel != null) {
+    print('Balanced model: ${balancedModel.label}');
+    print(
+      'Model id: ${balancedModel.model.providerId}/${balancedModel.model.modelId}\n',
+    );
+
+    await _demonstrateCachingStrategies(balancedModel);
+    await _demonstrateParallelProcessing(balancedModel);
+    await _demonstrateBatchProcessing(balancedModel);
+    await _demonstrateMemoryOptimization(balancedModel);
+  }
+
+  if (streamingModel != null) {
+    print('Streaming model: ${streamingModel.label}');
+    print(
+      'Model id: ${streamingModel.model.providerId}/${streamingModel.model.modelId}\n',
+    );
+
+    await _demonstrateStreamingOptimization(streamingModel);
+  }
+
+  print('Completed stable performance optimization examples.');
+  print('Keep caches, batching, and memory policies in your app/runtime layer.');
 }
 
-/// Demonstrate parallel processing
-Future<void> demonstrateParallelProcessing(String apiKey) async {
-  print('🔄 Parallel Processing:\n');
+_TextModelEntry? _resolveBalancedModel() {
+  final openAIKey = Platform.environment['OPENAI_API_KEY'];
+  if (openAIKey != null && openAIKey.isNotEmpty) {
+    return _TextModelEntry(
+      label: 'OpenAI gpt-4o-mini',
+      model: llm.AI.openai(
+        apiKey: openAIKey,
+      ).chatModel('gpt-4o-mini'),
+      defaultOptions: const core.GenerateTextOptions(
+        temperature: 0.3,
+        maxOutputTokens: 180,
+      ),
+    );
+  }
+
+  final groqKey = Platform.environment['GROQ_API_KEY'];
+  if (groqKey != null && groqKey.isNotEmpty) {
+    return _TextModelEntry(
+      label: 'Groq llama-3.1-8b-instant',
+      model: llm.AI.groq(
+        apiKey: groqKey,
+      ).chatModel('llama-3.1-8b-instant'),
+      defaultOptions: const core.GenerateTextOptions(
+        temperature: 0.3,
+        maxOutputTokens: 180,
+      ),
+    );
+  }
+
+  return null;
+}
+
+_TextModelEntry? _resolveStreamingModel(_TextModelEntry? fallback) {
+  final groqKey = Platform.environment['GROQ_API_KEY'];
+  if (groqKey != null && groqKey.isNotEmpty) {
+    return _TextModelEntry(
+      label: 'Groq llama-3.1-8b-instant',
+      model: llm.AI.groq(
+        apiKey: groqKey,
+      ).chatModel('llama-3.1-8b-instant'),
+      defaultOptions: const core.GenerateTextOptions(
+        temperature: 0.7,
+        maxOutputTokens: 260,
+      ),
+    );
+  }
+
+  return fallback;
+}
+
+Future<void> _demonstrateCachingStrategies(_TextModelEntry entry) async {
+  print('Caching strategies:');
+
+  final cache = <String, _TextAnswer>{};
+  final questions = [
+    'What is the capital of France?',
+    'What is 2 + 2?',
+    'What is the capital of France?',
+    'Explain photosynthesis briefly.',
+    'What is 2 + 2?',
+  ];
 
   try {
-    // Create provider
-    final provider = await ai()
-        .openai()
-        .apiKey(apiKey)
-        .model('gpt-4o-mini')
-        .temperature(0.7)
-        .maxTokens(100)
-        .build();
+    for (var index = 0; index < questions.length; index++) {
+      final question = questions[index];
 
-    final questions = [
-      'What is machine learning?',
-      'Explain blockchain technology.',
-      'What is quantum computing?',
-      'Define artificial intelligence.',
-      'What is cloud computing?',
-    ];
+      final answer = cache[question] ??
+          await _ask(
+            entry,
+            question,
+          );
+      final fromCache = cache.containsKey(question);
+      cache.putIfAbsent(question, () => answer);
 
-    // Sequential processing
-    print('   Sequential Processing:');
+      print('  ${index + 1}. "$question"');
+      print(
+        '    Source: ${fromCache ? 'cache' : 'model'} '
+        '(${answer.duration.inMilliseconds}ms)',
+      );
+      print('    Preview: ${_preview(answer.text, 60)}');
+    }
+
+    print('\n  Cache size: ${cache.length}');
+    print('  Cached responses avoid repeated model calls and rate-limit usage.');
+  } catch (error) {
+    print('  Failed: $error');
+  }
+
+  print('');
+}
+
+Future<void> _demonstrateParallelProcessing(_TextModelEntry entry) async {
+  print('Parallel processing:');
+
+  final questions = [
+    'What is machine learning?',
+    'Explain blockchain technology.',
+    'What is quantum computing?',
+    'Define artificial intelligence.',
+    'What is cloud computing?',
+  ];
+
+  try {
     final sequentialStopwatch = Stopwatch()..start();
-
     for (final question in questions) {
-      await provider.chat([ChatMessage.user(question)]);
-      print('      ✓ ${question.substring(0, 30)}...');
+      await _ask(entry, question);
     }
-
     sequentialStopwatch.stop();
-    print('      Total time: ${sequentialStopwatch.elapsedMilliseconds}ms\n');
 
-    // Parallel processing
-    print('   Parallel Processing:');
     final parallelStopwatch = Stopwatch()..start();
-
-    final futures = questions
-        .map((question) => provider.chat([ChatMessage.user(question)]))
-        .toList();
-
-    await Future.wait(futures);
+    await Future.wait(
+      questions.map((question) => _ask(entry, question)),
+    );
     parallelStopwatch.stop();
-
-    for (int i = 0; i < questions.length; i++) {
-      print('      ✓ ${questions[i].substring(0, 30)}...');
-    }
-
-    print('      Total time: ${parallelStopwatch.elapsedMilliseconds}ms');
 
     final speedup = sequentialStopwatch.elapsedMilliseconds /
         parallelStopwatch.elapsedMilliseconds;
-    print('      🚀 Speedup: ${speedup.toStringAsFixed(1)}x faster\n');
 
-    print('   💡 Parallel Processing Benefits:');
-    print('      • Significant time savings for independent requests');
-    print('      • Better resource utilization');
-    print('      • Improved user experience');
-    print('      • Scalable for large batch operations');
-    print('   ✅ Parallel processing demonstration successful\n');
-  } catch (e) {
-    print('   ❌ Parallel processing demonstration failed: $e\n');
+    print('  Sequential: ${sequentialStopwatch.elapsedMilliseconds}ms');
+    print('  Parallel: ${parallelStopwatch.elapsedMilliseconds}ms');
+    print('  Speedup: ${speedup.toStringAsFixed(1)}x');
+  } catch (error) {
+    print('  Failed: $error');
   }
+
+  print('');
 }
 
-/// Demonstrate streaming optimization
-Future<void> demonstrateStreamingOptimization(String apiKey) async {
-  print('🌊 Streaming Optimization:\n');
+Future<void> _demonstrateStreamingOptimization(_TextModelEntry entry) async {
+  print('Streaming optimization:');
+
+  const prompt = 'Write a short story about a robot learning to paint.';
 
   try {
-    // Create fast provider (Groq for speed)
-    final provider = await ai()
-        .groq()
-        .apiKey(apiKey)
-        .model('llama-3.1-8b-instant')
-        .temperature(0.7)
-        .maxTokens(300)
-        .build();
+    final regular = await _ask(
+      entry,
+      prompt,
+      options: core.GenerateTextOptions(
+        temperature: entry.defaultOptions.temperature,
+        maxOutputTokens: 260,
+      ),
+    );
 
-    final question = 'Write a short story about a robot learning to paint.';
-
-    // Regular response
-    print('   Regular Response:');
-    final regularStopwatch = Stopwatch()..start();
-    final response = await provider.chat([ChatMessage.user(question)]);
-    regularStopwatch.stop();
-
-    print('      Total time: ${regularStopwatch.elapsedMilliseconds}ms');
-    print(
-        '      Time to first content: ${regularStopwatch.elapsedMilliseconds}ms');
-    print('      Response: ${response.text}\n');
-
-    // Streaming response
-    print('   Streaming Response:');
     final streamStopwatch = Stopwatch()..start();
-    var firstChunkTime = 0;
+    var firstChunkAt = -1;
     var chunkCount = 0;
-    final responseBuffer = StringBuffer();
+    final buffer = StringBuffer();
 
-    await for (final event
-        in provider.chatStream([ChatMessage.user(question)])) {
+    final stream = core.streamTextCall(
+      model: entry.model,
+      prompt: [
+        core.UserPromptMessage.text(prompt),
+      ],
+      options: core.GenerateTextOptions(
+        temperature: entry.defaultOptions.temperature,
+        maxOutputTokens: 260,
+      ),
+    );
+
+    await for (final event in stream) {
       switch (event) {
-        case TextDeltaEvent(delta: final delta):
+        case core.TextDeltaEvent(:final delta):
           chunkCount++;
-          responseBuffer.write(delta);
-
-          if (firstChunkTime == 0) {
-            firstChunkTime = streamStopwatch.elapsedMilliseconds;
-            print('      Time to first chunk: ${firstChunkTime}ms');
+          buffer.write(delta);
+          if (firstChunkAt < 0) {
+            firstChunkAt = streamStopwatch.elapsedMilliseconds;
           }
-          break;
-
-        case CompletionEvent():
+        case core.FinishEvent():
           streamStopwatch.stop();
-          break;
-
-        case ErrorEvent(error: final error):
-          print('      Error: $error');
-          return;
-
-        case ThinkingDeltaEvent():
-        case ToolCallDeltaEvent():
+        default:
           break;
       }
     }
 
-    print('      Total time: ${streamStopwatch.elapsedMilliseconds}ms');
-    print('      Chunks received: $chunkCount');
-    print('      Response: ${responseBuffer.toString()}\n');
-
-    final timeToFirstContent = firstChunkTime;
+    final firstChunkDelay =
+        firstChunkAt < 0 ? streamStopwatch.elapsedMilliseconds : firstChunkAt;
     final perceivedSpeedup =
-        regularStopwatch.elapsedMilliseconds / timeToFirstContent;
+        regular.duration.inMilliseconds / firstChunkDelay;
 
-    print('   📊 Streaming Performance:');
-    print(
-        '      • Time to first content: ${timeToFirstContent}ms vs ${regularStopwatch.elapsedMilliseconds}ms');
-    print(
-        '      • Perceived speedup: ${perceivedSpeedup.toStringAsFixed(1)}x faster');
-    print(
-        '      • User sees content ${perceivedSpeedup.toStringAsFixed(1)}x sooner');
-
-    print('\n   💡 Streaming Benefits:');
-    print('      • Dramatically reduced perceived latency');
-    print('      • Better user engagement');
-    print('      • Progressive content display');
-    print('      • Ability to process content as it arrives');
-    print('   ✅ Streaming optimization demonstration successful\n');
-  } catch (e) {
-    print('   ❌ Streaming optimization demonstration failed: $e\n');
+    print('  Regular response time: ${regular.duration.inMilliseconds}ms');
+    print('  Streaming first chunk: ${firstChunkDelay}ms');
+    print('  Streaming total time: ${streamStopwatch.elapsedMilliseconds}ms');
+    print('  Chunks received: $chunkCount');
+    print('  Perceived speedup: ${perceivedSpeedup.toStringAsFixed(1)}x');
+    print('  Preview: ${_preview(buffer.toString(), 80)}');
+  } catch (error) {
+    print('  Failed: $error');
   }
+
+  print('');
 }
 
-/// Demonstrate batch processing
-Future<void> demonstrateBatchProcessing(String apiKey) async {
-  print('📦 Batch Processing:\n');
+Future<void> _demonstrateBatchProcessing(_TextModelEntry entry) async {
+  print('Batch processing:');
+
+  final prompts = List.generate(
+    12,
+    (index) =>
+        'Summarize technology trend #${index + 1} in one sentence for executives.',
+  );
+
+  const batchSize = 4;
+  final results = <_TextAnswer>[];
+  final totalStopwatch = Stopwatch()..start();
 
   try {
-    // Create provider
-    final provider = await ai()
-        .openai()
-        .apiKey(apiKey)
-        .model('gpt-4o-mini')
-        .temperature(0.3)
-        .maxTokens(50)
-        .build();
-
-    // Simulate a large dataset
-    final dataItems = List.generate(
-        20,
-        (i) =>
-            'Summarize this topic in one sentence: Topic ${i + 1} about technology trends.');
-
-    print('   Processing ${dataItems.length} items...');
-
-    // Batch processing with controlled concurrency
-    const batchSize = 5;
-    final results = <String>[];
-    final totalStopwatch = Stopwatch()..start();
-
-    for (int i = 0; i < dataItems.length; i += batchSize) {
-      final batch = dataItems.skip(i).take(batchSize).toList();
-
-      print(
-          '   Processing batch ${(i ~/ batchSize) + 1}/${(dataItems.length / batchSize).ceil()}...');
-
+    for (var offset = 0; offset < prompts.length; offset += batchSize) {
+      final batch = prompts.skip(offset).take(batchSize).toList();
       final batchStopwatch = Stopwatch()..start();
 
-      // Process batch in parallel
-      final batchFutures =
-          batch.map((item) => provider.chat([ChatMessage.user(item)])).toList();
-
-      final batchResponses = await Future.wait(batchFutures);
+      final batchResults = await Future.wait(
+        batch.map((prompt) => _ask(entry, prompt)),
+      );
       batchStopwatch.stop();
 
-      // Collect results
-      for (final response in batchResponses) {
-        results.add(response.text ?? 'No response');
-      }
+      results.addAll(batchResults);
+      print(
+        '  Batch ${(offset ~/ batchSize) + 1}'
+        ' completed in ${batchStopwatch.elapsedMilliseconds}ms',
+      );
 
-      print('      Batch completed in ${batchStopwatch.elapsedMilliseconds}ms');
-
-      // Small delay to respect rate limits
-      await Future.delayed(Duration(milliseconds: 100));
+      await Future.delayed(const Duration(milliseconds: 100));
     }
 
     totalStopwatch.stop();
+    final observedTokens = results
+        .map((result) => result.usage?.totalTokens)
+        .whereType<int>()
+        .fold<int>(0, (sum, value) => sum + value);
 
-    print('\n   📊 Batch Processing Results:');
-    print('      • Total items processed: ${results.length}');
-    print('      • Total time: ${totalStopwatch.elapsedMilliseconds}ms');
+    print('  Total items processed: ${results.length}');
+    print('  Total time: ${totalStopwatch.elapsedMilliseconds}ms');
     print(
-        '      • Average time per item: ${(totalStopwatch.elapsedMilliseconds / results.length).toStringAsFixed(1)}ms');
-    print('      • Batch size: $batchSize items');
-
-    print('\n   💡 Batch Processing Benefits:');
-    print('      • Controlled concurrency prevents rate limiting');
-    print('      • Progress tracking for long operations');
-    print('      • Memory efficient for large datasets');
-    print('      • Fault tolerance with batch-level retries');
-    print('   ✅ Batch processing demonstration successful\n');
-  } catch (e) {
-    print('   ❌ Batch processing demonstration failed: $e\n');
+      '  Average per item: '
+      '${(totalStopwatch.elapsedMilliseconds / results.length).toStringAsFixed(1)}ms',
+    );
+    print(
+      '  Observed tokens: ${observedTokens == 0 ? 'unknown' : observedTokens}',
+    );
+  } catch (error) {
+    print('  Failed: $error');
   }
+
+  print('');
 }
 
-/// Demonstrate memory optimization
-Future<void> demonstrateMemoryOptimization(String apiKey) async {
-  print('🧠 Memory Optimization:\n');
+Future<void> _demonstrateMemoryOptimization(_TextModelEntry entry) async {
+  print('Memory optimization:');
+
+  final conversation = <core.PromptMessage>[];
+  const maxMessages = 10;
 
   try {
-    // Create provider
-    final provider = await ai()
-        .openai()
-        .apiKey(apiKey)
-        .model('gpt-4o-mini')
-        .temperature(0.7)
-        .maxTokens(200)
-        .build();
+    for (var turn = 1; turn <= 15; turn++) {
+      final userMessage = core.UserPromptMessage.text(
+        'Message $turn: tell me about topic $turn.',
+      );
+      final answer = await _askWithHistory(
+        entry,
+        userMessage,
+        conversation,
+      );
 
-    // Simulate conversation with memory management
-    final conversation = <ChatMessage>[];
-    const maxContextLength = 10; // Keep only last 10 messages
+      conversation
+        ..add(userMessage)
+        ..add(core.AssistantPromptMessage.text(answer.text));
 
-    print('   Simulating long conversation with memory management:');
-
-    for (int i = 1; i <= 15; i++) {
-      // Add user message
-      conversation.add(ChatMessage.user('Message $i: Tell me about topic $i'));
-
-      // Get AI response
-      final response = await provider.chat(conversation);
-
-      // Add AI response
-      conversation.add(ChatMessage.assistant(response.text ?? ''));
-
-      // Memory management: keep only recent messages
-      if (conversation.length > maxContextLength) {
-        final messagesToRemove = conversation.length - maxContextLength;
-        conversation.removeRange(0, messagesToRemove);
-        print('      Trimmed $messagesToRemove old messages (turn $i)');
+      if (conversation.length > maxMessages) {
+        final overflow = conversation.length - maxMessages;
+        conversation.removeRange(0, overflow);
+        print('  Trimmed $overflow old message(s) on turn $turn');
       }
 
-      print('      Turn $i: ${conversation.length} messages in context');
+      print('  Turn $turn: ${conversation.length} messages in context');
     }
-
-    print('\n   📊 Memory Management Results:');
-    print('      • Final conversation length: ${conversation.length} messages');
-    print('      • Maximum context maintained: $maxContextLength messages');
-    print('      • Memory usage kept constant despite long conversation');
-
-    // Demonstrate streaming memory efficiency
-    print('\n   Streaming Memory Efficiency:');
-    print('      Processing large response with streaming...');
 
     var totalChars = 0;
+    final stream = core.streamTextCall(
+      model: entry.model,
+      prompt: [
+        core.UserPromptMessage.text(
+          'Write a detailed explanation of quantum computing.',
+        ),
+      ],
+      options: core.GenerateTextOptions(
+        temperature: entry.defaultOptions.temperature,
+        maxOutputTokens: 400,
+      ),
+    );
 
-    await for (final event in provider.chatStream([
-      ChatMessage.user('Write a detailed explanation of quantum computing.')
-    ])) {
+    await for (final event in stream) {
       switch (event) {
-        case TextDeltaEvent(delta: final delta):
+        case core.TextDeltaEvent(:final delta):
           totalChars += delta.length;
-          // In real app, process chunk immediately instead of accumulating
-          print(
-              '      Processed chunk: ${delta.length} chars (total: $totalChars)');
-          break;
-
-        case CompletionEvent():
-          print('      Streaming completed');
-          break;
-
-        case ErrorEvent():
-        case ThinkingDeltaEvent():
-        case ToolCallDeltaEvent():
+        default:
           break;
       }
     }
 
-    print('\n   💡 Memory Optimization Benefits:');
-    print('      • Constant memory usage for long conversations');
-    print('      • Streaming prevents large response accumulation');
-    print('      • Context window management maintains relevance');
-    print('      • Scalable for production applications');
-    print('   ✅ Memory optimization demonstration successful\n');
-  } catch (e) {
-    print('   ❌ Memory optimization demonstration failed: $e\n');
+    print('  Streamed characters without building large prompt state: $totalChars');
+    print('  Context trimming keeps runtime memory bounded in long sessions.');
+  } catch (error) {
+    print('  Failed: $error');
   }
+
+  print('');
 }
 
-/// 🎯 Key Performance Optimization Concepts Summary:
-///
-/// Caching Strategies:
-/// - In-memory caching for repeated queries
-/// - Persistent caching for long-term storage
-/// - Cache invalidation and TTL policies
-/// - Distributed caching for scalability
-///
-/// Parallel Processing:
-/// - Concurrent requests for independent operations
-/// - Controlled concurrency to respect rate limits
-/// - Future.wait() for batch operations
-/// - Load balancing across providers
-///
-/// Streaming Optimization:
-/// - Reduced perceived latency
-/// - Progressive content display
-/// - Real-time processing capabilities
-/// - Memory efficient for large responses
-///
-/// Batch Processing:
-/// - Controlled concurrency
-/// - Progress tracking
-/// - Fault tolerance
-/// - Rate limit management
-///
-/// Memory Management:
-/// - Context window trimming
-/// - Streaming for large responses
-/// - Efficient data structures
-/// - Garbage collection optimization
-///
-/// Best Practices:
-/// 1. Cache frequently requested content
-/// 2. Use parallel processing for independent tasks
-/// 3. Implement streaming for better UX
-/// 4. Manage memory usage in long conversations
-/// 5. Monitor and measure performance metrics
-///
-/// Next Steps:
-/// - ../04_providers/: Provider-specific optimizations
-/// - ../06_integration/: Production integration patterns
-/// - ../02_core_features/error_handling.dart: Robust error handling
+Future<_TextAnswer> _ask(
+  _TextModelEntry entry,
+  String prompt, {
+  core.GenerateTextOptions? options,
+}) async {
+  final stopwatch = Stopwatch()..start();
+  final result = await core.generateTextCall(
+    model: entry.model,
+    prompt: [
+      core.UserPromptMessage.text(prompt),
+    ],
+    options: _mergeOptions(entry.defaultOptions, options),
+  );
+  stopwatch.stop();
+
+  return _TextAnswer(
+    text: result.text,
+    duration: stopwatch.elapsed,
+    usage: result.usage,
+  );
+}
+
+Future<_TextAnswer> _askWithHistory(
+  _TextModelEntry entry,
+  core.UserPromptMessage userMessage,
+  List<core.PromptMessage> history,
+) async {
+  final stopwatch = Stopwatch()..start();
+  final result = await core.generateTextCall(
+    model: entry.model,
+    prompt: [
+      ...history,
+      userMessage,
+    ],
+    options: entry.defaultOptions,
+  );
+  stopwatch.stop();
+
+  return _TextAnswer(
+    text: result.text,
+    duration: stopwatch.elapsed,
+    usage: result.usage,
+  );
+}
+
+core.GenerateTextOptions _mergeOptions(
+  core.GenerateTextOptions base,
+  core.GenerateTextOptions? override,
+) {
+  if (override == null) {
+    return base;
+  }
+
+  return core.GenerateTextOptions(
+    maxOutputTokens: override.maxOutputTokens ?? base.maxOutputTokens,
+    temperature: override.temperature ?? base.temperature,
+    stopSequences: override.stopSequences ?? base.stopSequences,
+    topP: override.topP ?? base.topP,
+    topK: override.topK ?? base.topK,
+    responseFormat: override.responseFormat ?? base.responseFormat,
+  );
+}
+
+String _preview(String value, int maxLength) {
+  if (value.length <= maxLength) {
+    return value;
+  }
+
+  return '${value.substring(0, maxLength)}...';
+}
+
+final class _TextModelEntry {
+  final String label;
+  final core.LanguageModel model;
+  final core.GenerateTextOptions defaultOptions;
+
+  const _TextModelEntry({
+    required this.label,
+    required this.model,
+    required this.defaultOptions,
+  });
+}
+
+final class _TextAnswer {
+  final String text;
+  final Duration duration;
+  final core.UsageStats? usage;
+
+  const _TextAnswer({
+    required this.text,
+    required this.duration,
+    required this.usage,
+  });
+}

@@ -110,6 +110,12 @@ Current status:
 - `example/02_core_features` is now effectively down to two explicit
   compatibility appendix files:
   `capability_factory_methods.dart` and `provider_specific_builders.dart`
+- the first `example/03_advanced_features` stable-first slice is now complete
+  for batch processing, semantic search, and performance optimization
+- the repository-wide baseline is now down to `17` legacy imports and `23`
+  direct `ai()` users across `example`, `lib`, and `packages`
+- `example/03_advanced_features/README.md` now leads with stable snippets and
+  treats HTTP wiring as an explicit compatibility boundary
 - the next honest implementation slice is now clear: keep rewriting the
   highest-traffic example paths before expanding deprecation annotations
   further

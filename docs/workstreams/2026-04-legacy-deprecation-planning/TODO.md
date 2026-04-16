@@ -28,6 +28,11 @@
   `legacy.dart` barrel onto focused typed imports
 - [x] Reduce `example/02_core_features` legacy residue to the two explicit
   builder appendix files
+- [x] Rewrite the first stable-first slice in `example/03_advanced_features`
+  (`batch_processing.dart`, `semantic_search.dart`,
+  `performance_optimization.dart`)
+- [x] Reframe `example/03_advanced_features/README.md` so stable snippets lead
+  and HTTP wiring stays an explicit compatibility boundary
 - [ ] Rewrite the highest-traffic example slices so modern APIs become the
   default copy-paste path
 - [ ] Write short task-oriented migration recipes for the most common builder

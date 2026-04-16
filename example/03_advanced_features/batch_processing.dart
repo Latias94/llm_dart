@@ -1,122 +1,139 @@
 import 'dart:async';
 import 'dart:collection';
-import 'package:llm_dart/legacy.dart';
+import 'dart:io';
 
-/// Advanced batch processing examples for LLM operations
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/llm_dart.dart' as llm;
+
+/// Stable batch processing patterns for shared text-generation models.
 ///
 /// This example demonstrates:
-/// - Concurrent request processing
-/// - Rate limiting and throttling
-/// - Batch optimization strategies
-/// - Error handling and retry logic
-/// - Progress tracking and monitoring
-/// - Memory management for large batches
-/// - Cost optimization techniques
+/// - app-owned batch orchestration on top of `core.generateTextCall(...)`
+/// - concurrency, rate limiting, and retry policies outside provider shells
+/// - progress tracking and rough cost heuristics without the legacy builder API
 Future<void> main() async {
-  print('📦 Batch Processing Examples\n');
+  print('Stable batch processing examples\n');
 
-  // Initialize provider for batch processing
-  final provider = await initializeBatchProvider();
-  if (provider == null) {
-    print('❌ No provider available for batch processing');
+  final entry = _resolveBatchModel();
+  if (entry == null) {
+    print('No batch-processing model is configured.');
+    print('Set GROQ_API_KEY or OPENAI_API_KEY.');
     return;
   }
 
-  // Create batch processor
-  final batchProcessor = BatchProcessor(provider);
+  print('Selected model: ${entry.label}');
+  print('Model id: ${entry.model.providerId}/${entry.model.modelId}\n');
 
-  // Demonstrate different batch processing scenarios
-  await demonstrateBasicBatchProcessing(batchProcessor);
-  await demonstrateConcurrentProcessing(batchProcessor);
-  await demonstrateRateLimitedProcessing(batchProcessor);
-  await demonstrateProgressTracking(batchProcessor);
-  await demonstrateErrorHandlingAndRetry(batchProcessor);
-  await demonstrateCostOptimization(batchProcessor);
+  final processor = BatchProcessor(
+    model: entry.model,
+    defaultOptions: entry.defaultOptions,
+  );
 
-  print('✅ Batch processing examples completed!');
-  print('💡 Best practices:');
-  print('   • Use appropriate batch sizes for your use case');
-  print('   • Implement proper rate limiting');
-  print('   • Handle errors gracefully with retry logic');
-  print('   • Monitor costs and optimize accordingly');
+  await demonstrateBasicBatchProcessing(processor);
+  await demonstrateConcurrentProcessing(processor);
+  await demonstrateRateLimitedProcessing(processor);
+  await demonstrateProgressTracking(processor);
+  await demonstrateErrorHandlingAndRetry(processor);
+  await demonstrateCostOptimization(processor);
+
+  print('Completed stable batch processing examples.');
+  print('Keep batching, retry, and budgeting in app-owned code.');
+  print('Use provider packages only for provider-native controls that cannot');
+  print('be represented by the shared text-call layer.');
 }
 
-/// Initialize provider for batch processing
-Future<ChatCapability?> initializeBatchProvider() async {
-  try {
-    // Use a provider suitable for batch processing
-    return await ai()
-        .openai()
-        .apiKey('your-openai-key')
-        .model('gpt-3.5-turbo')
-        .temperature(0.7)
-        .build();
-  } catch (e) {
-    print('⚠️  Provider initialization failed: $e');
-    return null;
+_BatchModelEntry? _resolveBatchModel() {
+  final groqKey = Platform.environment['GROQ_API_KEY'];
+  if (groqKey != null && groqKey.isNotEmpty) {
+    return _BatchModelEntry(
+      label: 'Groq llama-3.1-8b-instant',
+      model: llm.AI.groq(
+        apiKey: groqKey,
+      ).chatModel('llama-3.1-8b-instant'),
+      defaultOptions: const core.GenerateTextOptions(
+        temperature: 0.4,
+        maxOutputTokens: 160,
+      ),
+    );
   }
+
+  final openAIKey = Platform.environment['OPENAI_API_KEY'];
+  if (openAIKey != null && openAIKey.isNotEmpty) {
+    return _BatchModelEntry(
+      label: 'OpenAI gpt-4o-mini',
+      model: llm.AI.openai(
+        apiKey: openAIKey,
+      ).chatModel('gpt-4o-mini'),
+      defaultOptions: const core.GenerateTextOptions(
+        temperature: 0.4,
+        maxOutputTokens: 160,
+      ),
+    );
+  }
+
+  return null;
 }
 
-/// Demonstrate basic batch processing
 Future<void> demonstrateBasicBatchProcessing(BatchProcessor processor) async {
-  print('📋 Basic Batch Processing:');
+  print('Basic batch processing:');
 
-  // Create sample batch of tasks
   final tasks = List.generate(
-      10,
-      (index) => BatchTask(
-            id: 'task_$index',
-            prompt: 'Summarize the benefits of technology #${index + 1}',
-            metadata: {'category': 'technology', 'index': index},
-          ));
+    10,
+    (index) => BatchTask(
+      id: 'task_$index',
+      prompt: 'Summarize the benefits of technology topic #${index + 1}.',
+      metadata: {
+        'category': 'technology',
+        'index': index,
+        'complexity': 'medium',
+      },
+    ),
+  );
 
-  print('   🔄 Processing ${tasks.length} tasks...');
+  print('  Processing ${tasks.length} tasks...');
 
   try {
     final results = await processor.processBatch(tasks);
+    final successful = results.where((result) => result.isSuccess).toList();
+    final failed = results.length - successful.length;
 
-    print('   ✅ Batch completed:');
-    print('      • Total tasks: ${tasks.length}');
-    print('      • Successful: ${results.where((r) => r.isSuccess).length}');
-    print('      • Failed: ${results.where((r) => !r.isSuccess).length}');
+    print('  Batch completed:');
+    print('    Total tasks: ${tasks.length}');
+    print('    Successful: ${successful.length}');
+    print('    Failed: $failed');
 
-    // Show sample results
-    final successfulResults = results.where((r) => r.isSuccess).take(3);
-    for (final result in successfulResults) {
-      print(
-          '      📝 ${result.task.id}: ${result.response?.substring(0, 50)}...');
+    for (final result in successful.take(3)) {
+      final preview = _preview(result.response ?? '');
+      final usage = result.usage?.totalTokens;
+      final usageText = usage == null ? 'unknown tokens' : '$usage tokens';
+      print('    ${result.task.id}: $preview ($usageText)');
     }
-  } catch (e) {
-    print('   ❌ Batch processing failed: $e');
+  } catch (error) {
+    print('  Failed: $error');
   }
 
   print('');
 }
 
-/// Demonstrate concurrent processing with limits
 Future<void> demonstrateConcurrentProcessing(BatchProcessor processor) async {
-  print('⚡ Concurrent Processing:');
+  print('Concurrent processing:');
 
-  // Create larger batch for concurrency testing
   final tasks = List.generate(
-      20,
-      (index) => BatchTask(
-            id: 'concurrent_$index',
-            prompt: 'Explain concept #${index + 1} in simple terms',
-            metadata: {'type': 'explanation'},
-          ));
+    20,
+    (index) => BatchTask(
+      id: 'concurrent_$index',
+      prompt: 'Explain concept #${index + 1} in simple terms.',
+      metadata: {
+        'type': 'explanation',
+        'complexity': 'medium',
+      },
+    ),
+  );
 
-  print('   🔄 Processing ${tasks.length} tasks with concurrency...');
-
-  final stopwatch = Stopwatch()..start();
+  print('  Comparing concurrency levels...');
 
   try {
-    // Process with different concurrency levels
-    final concurrencyLevels = [1, 3, 5];
-
-    for (final concurrency in concurrencyLevels) {
-      print('      🔧 Testing concurrency level: $concurrency');
-
+    for (final concurrency in const [1, 3, 5]) {
       final config = BatchConfig(
         maxConcurrency: concurrency,
         batchSize: 5,
@@ -125,76 +142,83 @@ Future<void> demonstrateConcurrentProcessing(BatchProcessor processor) async {
 
       final startTime = DateTime.now();
       final results = await processor.processBatchWithConfig(
-          tasks.take(10).toList(), config);
+        tasks.take(10).toList(),
+        config,
+      );
       final duration = DateTime.now().difference(startTime);
-
       final successRate =
-          results.where((r) => r.isSuccess).length / results.length;
-      print('         ⏱️  Duration: ${duration.inMilliseconds}ms');
-      print(
-          '         ✅ Success rate: ${(successRate * 100).toStringAsFixed(1)}%');
+          results.where((result) => result.isSuccess).length / results.length;
+
+      print('    Concurrency $concurrency:');
+      print('      Duration: ${duration.inMilliseconds}ms');
+      print('      Success rate: ${(successRate * 100).toStringAsFixed(1)}%');
     }
-  } catch (e) {
-    print('   ❌ Concurrent processing failed: $e');
+  } catch (error) {
+    print('  Failed: $error');
   }
 
-  stopwatch.stop();
-  print('   📊 Total test time: ${stopwatch.elapsedMilliseconds}ms');
   print('');
 }
 
-/// Demonstrate rate-limited processing
 Future<void> demonstrateRateLimitedProcessing(BatchProcessor processor) async {
-  print('🚦 Rate-Limited Processing:');
+  print('Rate-limited processing:');
 
-  // Create batch that would exceed rate limits
   final tasks = List.generate(
-      15,
-      (index) => BatchTask(
-            id: 'rate_limited_$index',
-            prompt: 'Generate a creative story about item #${index + 1}',
-            metadata: {'type': 'creative'},
-          ));
-
-  print('   🔄 Processing with rate limiting...');
+    15,
+    (index) => BatchTask(
+      id: 'rate_limited_$index',
+      prompt: 'Generate a short story opening about item #${index + 1}.',
+      metadata: {
+        'type': 'creative',
+        'complexity': 'complex',
+      },
+    ),
+  );
 
   try {
     final config = BatchConfig(
       maxConcurrency: 2,
-      rateLimitDelay: Duration(milliseconds: 500), // 500ms between requests
+      rateLimitDelay: const Duration(milliseconds: 500),
       batchSize: 3,
+      requestOptions: const core.GenerateTextOptions(
+        temperature: 0.8,
+        maxOutputTokens: 220,
+      ),
     );
 
     final startTime = DateTime.now();
     final results = await processor.processBatchWithConfig(tasks, config);
     final duration = DateTime.now().difference(startTime);
 
-    print('   ✅ Rate-limited processing completed:');
-    print('      ⏱️  Total time: ${duration.inSeconds}s');
+    print('  Completed with rate limiting:');
+    print('    Total time: ${duration.inSeconds}s');
     print(
-        '      📊 Average time per task: ${duration.inMilliseconds ~/ tasks.length}ms');
+      '    Average per task: ${duration.inMilliseconds ~/ tasks.length}ms',
+    );
     print(
-        '      ✅ Success rate: ${(results.where((r) => r.isSuccess).length / results.length * 100).toStringAsFixed(1)}%');
-  } catch (e) {
-    print('   ❌ Rate-limited processing failed: $e');
+      '    Success rate: ${(results.where((result) => result.isSuccess).length / results.length * 100).toStringAsFixed(1)}%',
+    );
+  } catch (error) {
+    print('  Failed: $error');
   }
 
   print('');
 }
 
-/// Demonstrate progress tracking
 Future<void> demonstrateProgressTracking(BatchProcessor processor) async {
-  print('📈 Progress Tracking:');
+  print('Progress tracking:');
 
   final tasks = List.generate(
-      12,
-      (index) => BatchTask(
-            id: 'progress_$index',
-            prompt: 'Analyze data point #${index + 1}',
-            metadata: {'analysis_type': 'data'},
-          ));
-
-  print('   🔄 Processing with progress tracking...');
+    12,
+    (index) => BatchTask(
+      id: 'progress_$index',
+      prompt: 'Analyze data point #${index + 1} in one paragraph.',
+      metadata: {
+        'analysis_type': 'data',
+        'complexity': 'medium',
+      },
+    ),
+  );
 
   try {
     final config = BatchConfig(
@@ -207,177 +231,179 @@ Future<void> demonstrateProgressTracking(BatchProcessor processor) async {
       tasks,
       config,
       onProgress: (progress) {
-        final percentage = (progress.completedTasks / progress.totalTasks * 100)
-            .toStringAsFixed(1);
-        final eta = progress.estimatedTimeRemaining;
+        final percentage =
+            (progress.completedTasks / progress.totalTasks * 100).toStringAsFixed(1);
         print(
-            '      📊 Progress: $percentage% (${progress.completedTasks}/${progress.totalTasks}) - ETA: ${eta.inSeconds}s');
+          '    Progress: $percentage% '
+          '(${progress.completedTasks}/${progress.totalTasks}) '
+          'ETA ${progress.estimatedTimeRemaining.inSeconds}s',
+        );
       },
       onTaskComplete: (result) {
-        final status = result.isSuccess ? '✅' : '❌';
-        print('         $status ${result.task.id} completed');
+        final status = result.isSuccess ? 'OK' : 'ERR';
+        print('      [$status] ${result.task.id}');
       },
     );
 
-    print('   ✅ Progress tracking completed');
-  } catch (e) {
-    print('   ❌ Progress tracking failed: $e');
+    print('  Progress-tracked batch completed.');
+  } catch (error) {
+    print('  Failed: $error');
   }
 
   print('');
 }
 
-/// Demonstrate error handling and retry logic
 Future<void> demonstrateErrorHandlingAndRetry(BatchProcessor processor) async {
-  print('🔄 Error Handling & Retry Logic:');
+  print('Error handling and retry logic:');
 
-  // Create tasks that might fail (simulated)
   final tasks = [
     BatchTask(id: 'normal_1', prompt: 'Normal task 1'),
     BatchTask(
-        id: 'failing_1',
-        prompt: 'This task will fail',
-        metadata: {'simulate_failure': true}),
+      id: 'failing_1',
+      prompt: 'This task will fail on the first retries.',
+      metadata: const {
+        'simulate_failure': true,
+      },
+    ),
     BatchTask(id: 'normal_2', prompt: 'Normal task 2'),
     BatchTask(
-        id: 'failing_2',
-        prompt: 'This task will also fail',
-        metadata: {'simulate_failure': true}),
+      id: 'failing_2',
+      prompt: 'This task will also fail on the first retries.',
+      metadata: const {
+        'simulate_failure': true,
+      },
+    ),
     BatchTask(id: 'normal_3', prompt: 'Normal task 3'),
   ];
-
-  print('   🔄 Processing with retry logic...');
 
   try {
     final config = BatchConfig(
       maxConcurrency: 2,
       retryAttempts: 3,
-      retryDelay: Duration(milliseconds: 200),
+      retryDelay: const Duration(milliseconds: 200),
       continueOnError: true,
     );
 
     final results = await processor.processBatchWithConfig(tasks, config);
-
-    print('   📊 Error handling results:');
     for (final result in results) {
-      final status = result.isSuccess ? '✅' : '❌';
-      final attempts = result.attemptCount;
-      print('      $status ${result.task.id}: $attempts attempt(s)');
+      final status = result.isSuccess ? 'OK' : 'ERR';
+      print(
+        '    [$status] ${result.task.id}: ${result.attemptCount} attempt(s)',
+      );
 
       if (!result.isSuccess && result.error != null) {
-        print('         Error: ${result.error}');
+        print('      Error: ${result.error}');
       }
     }
 
-    final successCount = results.where((r) => r.isSuccess).length;
+    final successCount = results.where((result) => result.isSuccess).length;
     print(
-        '   📈 Final success rate: ${(successCount / results.length * 100).toStringAsFixed(1)}%');
-  } catch (e) {
-    print('   ❌ Error handling demonstration failed: $e');
+      '  Final success rate: ${(successCount / results.length * 100).toStringAsFixed(1)}%',
+    );
+  } catch (error) {
+    print('  Failed: $error');
   }
 
   print('');
 }
 
-/// Demonstrate cost optimization techniques
 Future<void> demonstrateCostOptimization(BatchProcessor processor) async {
-  print('💰 Cost Optimization:');
+  print('Cost optimization:');
 
-  // Create tasks with different complexity levels
   final tasks = [
     BatchTask(
-        id: 'simple_1',
-        prompt: 'Yes or no?',
-        metadata: {'complexity': 'simple'}),
+      id: 'simple_1',
+      prompt: 'Yes or no?',
+      metadata: const {'complexity': 'simple'},
+    ),
     BatchTask(
-        id: 'simple_2',
-        prompt: 'True or false?',
-        metadata: {'complexity': 'simple'}),
+      id: 'simple_2',
+      prompt: 'True or false?',
+      metadata: const {'complexity': 'simple'},
+    ),
     BatchTask(
-        id: 'medium_1',
-        prompt: 'Explain this concept briefly',
-        metadata: {'complexity': 'medium'}),
+      id: 'medium_1',
+      prompt: 'Explain this concept briefly.',
+      metadata: const {'complexity': 'medium'},
+    ),
     BatchTask(
-        id: 'complex_1',
-        prompt:
-            'Write a detailed analysis of this topic with examples and conclusions',
-        metadata: {'complexity': 'complex'}),
+      id: 'complex_1',
+      prompt: 'Write a detailed analysis with examples and conclusions.',
+      metadata: const {'complexity': 'complex'},
+    ),
   ];
 
-  print('   💡 Optimizing for cost efficiency...');
-
   try {
-    // Group tasks by complexity for optimal processing
     final groupedTasks = processor.groupTasksByComplexity(tasks);
-
-    print('   📊 Task grouping:');
+    print('  Task grouping:');
     for (final entry in groupedTasks.entries) {
-      print('      ${entry.key}: ${entry.value.length} tasks');
+      print('    ${entry.key}: ${entry.value.length} task(s)');
     }
 
-    // Process each group with appropriate settings
     final allResults = <BatchResult>[];
-
     for (final entry in groupedTasks.entries) {
       final complexity = entry.key;
       final groupTasks = entry.value;
-
       final config = processor.getOptimalConfigForComplexity(complexity);
-      print('   🔧 Processing $complexity tasks with optimized config...');
 
-      final results =
-          await processor.processBatchWithConfig(groupTasks, config);
+      print('  Processing $complexity tasks with optimized config...');
+      final results = await processor.processBatchWithConfig(groupTasks, config);
       allResults.addAll(results);
 
-      // Calculate estimated cost
       final estimatedCost = processor.estimateCost(groupTasks, complexity);
-      print('      💰 Estimated cost: \$${estimatedCost.toStringAsFixed(4)}');
+      print('    Estimated cost: \$${estimatedCost.toStringAsFixed(4)}');
     }
 
-    print('   ✅ Cost optimization completed');
-    print('   📊 Total tasks processed: ${allResults.length}');
-    print(
-        '   💰 Total estimated cost: \$${processor.calculateTotalCost(allResults).toStringAsFixed(4)}');
-  } catch (e) {
-    print('   ❌ Cost optimization failed: $e');
+    final actualCost = processor.calculateTotalCost(allResults);
+    final totalTokens = processor.totalObservedTokens(allResults);
+
+    print('  Completed cost optimization demo.');
+    print('    Total tasks processed: ${allResults.length}');
+    print('    Observed tokens: ${totalTokens ?? 'unknown'}');
+    print('    Approximate cost: \$${actualCost.toStringAsFixed(4)}');
+  } catch (error) {
+    print('  Failed: $error');
   }
 
   print('');
 }
 
-/// Batch task definition
 class BatchTask {
   final String id;
   final String prompt;
-  final Map<String, dynamic> metadata;
+  final String? systemPrompt;
+  final Map<String, Object?> metadata;
+  final core.GenerateTextOptions? options;
 
-  BatchTask({
+  const BatchTask({
     required this.id,
     required this.prompt,
+    this.systemPrompt,
     this.metadata = const {},
+    this.options,
   });
 }
 
-/// Batch processing result
 class BatchResult {
   final BatchTask task;
   final String? response;
   final String? error;
   final int attemptCount;
   final Duration processingTime;
+  final core.UsageStats? usage;
 
-  BatchResult({
+  const BatchResult({
     required this.task,
     this.response,
     this.error,
     required this.attemptCount,
     required this.processingTime,
+    this.usage,
   });
 
   bool get isSuccess => response != null && error == null;
 }
 
-/// Batch processing configuration
 class BatchConfig {
   final int maxConcurrency;
   final int batchSize;
@@ -386,19 +412,20 @@ class BatchConfig {
   final Duration? rateLimitDelay;
   final bool continueOnError;
   final bool enableProgressTracking;
+  final core.GenerateTextOptions requestOptions;
 
-  BatchConfig({
+  const BatchConfig({
     this.maxConcurrency = 3,
     this.batchSize = 10,
     this.retryAttempts = 2,
-    this.retryDelay = const Duration(milliseconds: 1000),
+    this.retryDelay = const Duration(seconds: 1),
     this.rateLimitDelay,
     this.continueOnError = true,
     this.enableProgressTracking = false,
+    this.requestOptions = const core.GenerateTextOptions(),
   });
 }
 
-/// Progress tracking information
 class BatchProgress {
   final int totalTasks;
   final int completedTasks;
@@ -406,7 +433,7 @@ class BatchProgress {
   final Duration elapsedTime;
   final Duration estimatedTimeRemaining;
 
-  BatchProgress({
+  const BatchProgress({
     required this.totalTasks,
     required this.completedTasks,
     required this.failedTasks,
@@ -415,18 +442,20 @@ class BatchProgress {
   });
 }
 
-/// Main batch processor class
 class BatchProcessor {
-  final ChatCapability _provider;
+  final core.LanguageModel _model;
+  final core.GenerateTextOptions _defaultOptions;
 
-  BatchProcessor(this._provider);
+  BatchProcessor({
+    required core.LanguageModel model,
+    required core.GenerateTextOptions defaultOptions,
+  })  : _model = model,
+        _defaultOptions = defaultOptions;
 
-  /// Process a batch of tasks with default configuration
-  Future<List<BatchResult>> processBatch(List<BatchTask> tasks) async {
-    return processBatchWithConfig(tasks, BatchConfig());
+  Future<List<BatchResult>> processBatch(List<BatchTask> tasks) {
+    return processBatchWithConfig(tasks, const BatchConfig());
   }
 
-  /// Process a batch with custom configuration
   Future<List<BatchResult>> processBatchWithConfig(
     List<BatchTask> tasks,
     BatchConfig config,
@@ -434,67 +463,70 @@ class BatchProcessor {
     final results = <BatchResult>[];
     final semaphore = Semaphore(config.maxConcurrency);
 
-    // Process tasks in chunks
-    for (int i = 0; i < tasks.length; i += config.batchSize) {
-      final chunk = tasks.skip(i).take(config.batchSize).toList();
-
-      final chunkFutures = chunk.map((task) async {
-        return await semaphore.acquire(() async {
-          return await _processTaskWithRetry(task, config);
+    for (var index = 0; index < tasks.length; index += config.batchSize) {
+      final chunk = tasks.skip(index).take(config.batchSize).toList();
+      final chunkFutures = chunk.map((task) {
+        return semaphore.acquire(() async {
+          return _processTaskWithRetry(task, config);
         });
       });
 
       final chunkResults = await Future.wait(chunkFutures);
       results.addAll(chunkResults);
 
-      // Apply rate limiting between chunks
       if (config.rateLimitDelay != null &&
-          i + config.batchSize < tasks.length) {
+          index + config.batchSize < tasks.length) {
         await Future.delayed(config.rateLimitDelay!);
+      }
+
+      if (!config.continueOnError && chunkResults.any((result) => !result.isSuccess)) {
+        break;
       }
     }
 
     return results;
   }
 
-  /// Process batch with progress tracking
   Future<List<BatchResult>> processBatchWithProgress(
     List<BatchTask> tasks,
     BatchConfig config, {
-    Function(BatchProgress)? onProgress,
-    Function(BatchResult)? onTaskComplete,
+    void Function(BatchProgress progress)? onProgress,
+    void Function(BatchResult result)? onTaskComplete,
   }) async {
     final results = <BatchResult>[];
     final startTime = DateTime.now();
-
     final semaphore = Semaphore(config.maxConcurrency);
     var completedCount = 0;
     var failedCount = 0;
 
     final futures = tasks.map((task) async {
-      return await semaphore.acquire(() async {
+      return semaphore.acquire(() async {
         final result = await _processTaskWithRetry(task, config);
 
         completedCount++;
-        if (!result.isSuccess) failedCount++;
+        if (!result.isSuccess) {
+          failedCount++;
+        }
 
         onTaskComplete?.call(result);
 
-        // Update progress
         if (onProgress != null) {
           final elapsed = DateTime.now().difference(startTime);
-          final avgTimePerTask = elapsed.inMilliseconds / completedCount;
-          final remainingTasks = tasks.length - completedCount;
-          final eta =
-              Duration(milliseconds: (avgTimePerTask * remainingTasks).round());
+          final averageMillis = elapsed.inMilliseconds / completedCount;
+          final remaining = tasks.length - completedCount;
+          final eta = Duration(
+            milliseconds: (averageMillis * remaining).round(),
+          );
 
-          onProgress(BatchProgress(
-            totalTasks: tasks.length,
-            completedTasks: completedCount,
-            failedTasks: failedCount,
-            elapsedTime: elapsed,
-            estimatedTimeRemaining: eta,
-          ));
+          onProgress(
+            BatchProgress(
+              totalTasks: tasks.length,
+              completedTasks: completedCount,
+              failedTasks: failedCount,
+              elapsedTime: elapsed,
+              estimatedTimeRemaining: eta,
+            ),
+          );
         }
 
         return result;
@@ -505,48 +537,60 @@ class BatchProcessor {
     return results;
   }
 
-  /// Process a single task with retry logic
   Future<BatchResult> _processTaskWithRetry(
-      BatchTask task, BatchConfig config) async {
-    final startTime = DateTime.now();
+    BatchTask task,
+    BatchConfig config,
+  ) async {
+    final startedAt = DateTime.now();
 
-    for (int attempt = 1; attempt <= config.retryAttempts + 1; attempt++) {
+    for (var attempt = 1; attempt <= config.retryAttempts + 1; attempt++) {
       try {
-        // Simulate failure for testing
         if (task.metadata['simulate_failure'] == true && attempt <= 2) {
-          throw Exception('Simulated failure for testing');
+          throw StateError('Simulated failure for retry testing.');
         }
 
-        final response = await _provider.chat([ChatMessage.user(task.prompt)]);
-        final processingTime = DateTime.now().difference(startTime);
+        final prompt = <core.PromptMessage>[
+          if (task.systemPrompt case final systemPrompt?)
+            core.SystemPromptMessage.text(systemPrompt),
+          core.UserPromptMessage.text(task.prompt),
+        ];
+
+        final options = _mergeOptions(
+          _mergeOptions(_defaultOptions, config.requestOptions),
+          task.options,
+        );
+
+        final result = await core.generateTextCall(
+          model: _model,
+          prompt: prompt,
+          options: options,
+        );
 
         return BatchResult(
           task: task,
-          response: response.text,
+          response: result.text,
           attemptCount: attempt,
-          processingTime: processingTime,
+          processingTime: DateTime.now().difference(startedAt),
+          usage: result.usage,
         );
-      } catch (e) {
+      } catch (error) {
         if (attempt <= config.retryAttempts) {
           await Future.delayed(config.retryDelay);
           continue;
         }
 
-        final processingTime = DateTime.now().difference(startTime);
         return BatchResult(
           task: task,
-          error: e.toString(),
+          error: error.toString(),
           attemptCount: attempt,
-          processingTime: processingTime,
+          processingTime: DateTime.now().difference(startedAt),
         );
       }
     }
 
-    // This should never be reached
-    throw StateError('Unexpected end of retry loop');
+    throw StateError('Unexpected retry-loop termination.');
   }
 
-  /// Group tasks by complexity for optimization
   Map<String, List<BatchTask>> groupTasksByComplexity(List<BatchTask> tasks) {
     final groups = <String, List<BatchTask>>{};
 
@@ -558,55 +602,83 @@ class BatchProcessor {
     return groups;
   }
 
-  /// Get optimal configuration for complexity level
   BatchConfig getOptimalConfigForComplexity(String complexity) {
-    switch (complexity) {
-      case 'simple':
-        return BatchConfig(
+    return switch (complexity) {
+      'simple' => const BatchConfig(
           maxConcurrency: 5,
           batchSize: 20,
           retryAttempts: 1,
-        );
-      case 'medium':
-        return BatchConfig(
+          requestOptions: core.GenerateTextOptions(
+            temperature: 0.0,
+            maxOutputTokens: 32,
+          ),
+        ),
+      'medium' => const BatchConfig(
           maxConcurrency: 3,
           batchSize: 10,
           retryAttempts: 2,
-        );
-      case 'complex':
-        return BatchConfig(
+          requestOptions: core.GenerateTextOptions(
+            temperature: 0.3,
+            maxOutputTokens: 120,
+          ),
+        ),
+      'complex' => const BatchConfig(
           maxConcurrency: 1,
           batchSize: 5,
           retryAttempts: 3,
           rateLimitDelay: Duration(seconds: 1),
-        );
-      default:
-        return BatchConfig();
-    }
+          requestOptions: core.GenerateTextOptions(
+            temperature: 0.7,
+            maxOutputTokens: 300,
+          ),
+        ),
+      _ => const BatchConfig(),
+    };
   }
 
-  /// Estimate cost for tasks
   double estimateCost(List<BatchTask> tasks, String complexity) {
-    const costPerToken = 0.0001; // Example cost
-
-    final tokensPerTask = {
-      'simple': 50,
-      'medium': 200,
-      'complex': 800,
+    const approximateCostPer1kTokens = 0.0025;
+    final tokensPerTask = switch (complexity) {
+      'simple' => 60,
+      'medium' => 220,
+      'complex' => 700,
+      _ => 220,
     };
 
-    final tokens = tokensPerTask[complexity] ?? 200;
-    return tasks.length * tokens * costPerToken;
+    final totalTokens = tasks.length * tokensPerTask;
+    return totalTokens / 1000 * approximateCostPer1kTokens;
   }
 
-  /// Calculate total cost from results
+  int? totalObservedTokens(List<BatchResult> results) {
+    final tokens = results
+        .map((result) => result.usage?.totalTokens)
+        .whereType<int>()
+        .toList();
+
+    if (tokens.isEmpty) {
+      return null;
+    }
+
+    return tokens.reduce((left, right) => left + right);
+  }
+
   double calculateTotalCost(List<BatchResult> results) {
-    // In a real implementation, you would calculate based on actual token usage
-    return results.length * 0.01; // Example calculation
+    const approximateCostPer1kTokens = 0.0025;
+    final observedTokens = totalObservedTokens(results);
+    if (observedTokens != null) {
+      return observedTokens / 1000 * approximateCostPer1kTokens;
+    }
+
+    var estimatedTokens = 0;
+    for (final result in results) {
+      estimatedTokens += _estimateTokens(result.task.prompt);
+      estimatedTokens += _estimateTokens(result.response ?? '');
+    }
+
+    return estimatedTokens / 1000 * approximateCostPer1kTokens;
   }
 }
 
-/// Semaphore for controlling concurrency
 class Semaphore {
   final int maxCount;
   int _currentCount;
@@ -638,8 +710,56 @@ class Semaphore {
     if (_waitQueue.isNotEmpty) {
       final completer = _waitQueue.removeFirst();
       completer.complete();
-    } else {
-      _currentCount++;
+      return;
     }
+
+    _currentCount++;
   }
+}
+
+core.GenerateTextOptions _mergeOptions(
+  core.GenerateTextOptions base,
+  core.GenerateTextOptions? override,
+) {
+  if (override == null) {
+    return base;
+  }
+
+  return core.GenerateTextOptions(
+    maxOutputTokens: override.maxOutputTokens ?? base.maxOutputTokens,
+    temperature: override.temperature ?? base.temperature,
+    stopSequences: override.stopSequences ?? base.stopSequences,
+    topP: override.topP ?? base.topP,
+    topK: override.topK ?? base.topK,
+    responseFormat: override.responseFormat ?? base.responseFormat,
+  );
+}
+
+int _estimateTokens(String text) {
+  if (text.isEmpty) {
+    return 0;
+  }
+
+  return (text.length / 4).ceil();
+}
+
+String _preview(String value) {
+  const maxLength = 60;
+  if (value.length <= maxLength) {
+    return value;
+  }
+
+  return '${value.substring(0, maxLength)}...';
+}
+
+final class _BatchModelEntry {
+  final String label;
+  final core.LanguageModel model;
+  final core.GenerateTextOptions defaultOptions;
+
+  const _BatchModelEntry({
+    required this.label,
+    required this.model,
+    required this.defaultOptions,
+  });
 }

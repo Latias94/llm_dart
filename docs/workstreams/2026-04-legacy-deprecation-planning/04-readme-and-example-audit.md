@@ -22,16 +22,16 @@ It is example migration.
 
 ## Counts
 
-Current repository-wide audit baseline after the latest
-`example/02_core_features` cleanup pass:
+Current repository-wide audit baseline after the first
+`example/03_advanced_features` stable rewrite pass:
 
-- `20` files still import `package:llm_dart/legacy.dart`
-- `26` files still contain direct `ai()` usage
+- `17` files still import `package:llm_dart/legacy.dart`
+- `23` files still contain direct `ai()` usage
 
 Legacy imports inside `example/` are concentrated in:
 
 - `example/02_core_features` - `2` files
-- `example/03_advanced_features` - `9` files
+- `example/03_advanced_features` - `6` files
 - `example/04_providers` - `6` files
 - `example/06_mcp_integration` - `3` files
 - `example/01_getting_started` - `0` files
@@ -68,6 +68,32 @@ Two additional cleanup results matter for the deprecation plan:
   remote model discovery
 - `message_builder_cache.dart` now uses narrow chat/tool/Anthropic typed
   imports instead of the broad `legacy.dart` barrel
+
+The first stable-first rewrite slice is also now complete in
+`example/03_advanced_features` for:
+
+- `batch_processing.dart`
+- `semantic_search.dart`
+- `performance_optimization.dart`
+
+Those files now keep batch orchestration, retrieval indexing, caching,
+streaming, and context trimming in app-owned code built on:
+
+- `LanguageModel`
+- `EmbeddingModel`
+- `generateTextCall(...)`
+- `streamTextCall(...)`
+- `embed(...)`
+- `embedMany(...)`
+
+The remaining legacy-heavy `example/03_advanced_features` files are now:
+
+- `multi_modal.dart`
+- `http_configuration.dart`
+- `layered_http_config.dart`
+- `timeout_configuration.dart`
+- `realtime_audio.dart`
+- `custom_providers.dart`
 
 ## Healthy Legacy Disclosure
 
@@ -120,9 +146,8 @@ read architecture notes.
 
 ### 2. Example README Files Still Showing Legacy Code
 
-The example docs still contain direct legacy snippets, especially in:
+The main remaining direct legacy README hotspots are now especially in:
 
-- `example/03_advanced_features/README.md`
 - `example/04_providers/elevenlabs/README.md`
 - `example/04_providers/ollama/README.md`
 
@@ -146,16 +171,21 @@ They should instead be:
 
 The best remaining migration order is:
 
-1. `example/03_advanced_features`
+1. finish the remaining app-facing residue in `example/03_advanced_features`
+   (`multi_modal.dart`, `realtime_audio.dart`, `custom_providers.dart`)
 2. `example/04_providers` README hotspots
-3. `example/06_mcp_integration`
+3. classify the remaining `example/03_advanced_features`
+   HTTP/configuration files as keep-frozen appendix material or rewrite them
+   into a clearer transport recipe
+4. `example/06_mcp_integration`
 
 Rationale:
 
 - `02_core_features` is now mostly modern-first outside the two explicit
   compatibility appendix files
-- `03_advanced_features` now becomes the highest-traffic teaching surface that
-  still shapes the default mental model
+- `03_advanced_features` is now partially modernized, so the next value is in
+  finishing the remaining app-facing residue before treating transport-wiring
+  examples as a separate appendix decision
 - provider README snippets strongly influence copy-paste usage
 - MCP examples are narrower and lower-volume
 
@@ -174,4 +204,5 @@ to:
 - explicit compatibility appendices only where truly needed
 
 That means the next honest implementation slice is no longer another
-`02_core_features` rewrite. It is the advanced/provider example layer.
+`02_core_features` rewrite. It is the remaining advanced/provider example
+layer.

@@ -79,12 +79,15 @@ manually.
 *Specialized capabilities*
 
 - [reasoning_models.dart](03_advanced_features/reasoning_models.dart) - AI thinking processes
-- [multi_modal.dart](03_advanced_features/multi_modal.dart) - Images/audio processing
-- [batch_processing.dart](03_advanced_features/batch_processing.dart) - Concurrent processing
-- [realtime_audio.dart](03_advanced_features/realtime_audio.dart) - Real-time audio
-- [semantic_search.dart](03_advanced_features/semantic_search.dart) - Vector search
-- [custom_providers.dart](03_advanced_features/custom_providers.dart) - Custom providers
-- [performance_optimization.dart](03_advanced_features/performance_optimization.dart) - Optimization
+- [multi_modal.dart](03_advanced_features/multi_modal.dart) - Mixed multimodal example; prefer stable prompt parts and shared media helpers in new code
+- [batch_processing.dart](03_advanced_features/batch_processing.dart) - Stable app-owned batch orchestration with concurrency, retry, and progress tracking
+- [realtime_audio.dart](03_advanced_features/realtime_audio.dart) - Compatibility-oriented realtime audio capability appendix
+- [semantic_search.dart](03_advanced_features/semantic_search.dart) - Stable semantic retrieval engine built on shared embedding models
+- [custom_providers.dart](03_advanced_features/custom_providers.dart) - Compatibility-oriented custom provider/capability appendix for testing and specialized integrations
+- [performance_optimization.dart](03_advanced_features/performance_optimization.dart) - Stable app-owned caching, streaming, batching, and memory patterns
+- [http_configuration.dart](03_advanced_features/http_configuration.dart) - Compatibility-oriented HTTP builder appendix for proxy, SSL, and custom headers
+- [layered_http_config.dart](03_advanced_features/layered_http_config.dart) - Compatibility-oriented layered HTTP appendix with custom transport wiring
+- [timeout_configuration.dart](03_advanced_features/timeout_configuration.dart) - Compatibility-oriented timeout hierarchy appendix on the older builder shell
 
 ### Provider Examples
 *Provider-specific features*

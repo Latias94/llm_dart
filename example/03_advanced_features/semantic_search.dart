@@ -1,189 +1,164 @@
-import 'dart:math';
-import 'package:llm_dart/legacy.dart';
+import 'dart:io';
+import 'dart:math' as math;
 
-/// Advanced semantic search implementation using embeddings
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/llm_dart.dart' as llm;
+
+/// Stable semantic search implementation using shared embedding models.
 ///
 /// This example demonstrates:
-/// - Building a semantic search engine
-/// - Document indexing and retrieval
-/// - Similarity-based ranking
-/// - Query expansion and refinement
-/// - Hybrid search (semantic + keyword)
-/// - Performance optimization techniques
+/// - app-owned indexing, filtering, ranking, and analytics structures
+/// - shared `embed(...)` / `embedMany(...)` helpers for query and document vectors
+/// - hybrid ranking and query expansion without legacy capability coupling
 Future<void> main() async {
-  print('🔍 Semantic Search Engine Examples\n');
+  print('Stable semantic search engine examples\n');
 
-  // Initialize embedding provider
-  final embeddingProvider = await initializeEmbeddingProvider();
-  if (embeddingProvider == null) {
-    print('❌ No embedding provider available. Please set API keys.');
+  final entry = _resolveEmbeddingModel();
+  if (entry == null) {
+    print('No embedding model is configured.');
+    print('Set OPENAI_API_KEY or GOOGLE_API_KEY.');
     return;
   }
 
-  print('🚀 Building Semantic Search Engine...\n');
+  print('Using ${entry.label}');
+  print('Model id: ${entry.model.providerId}/${entry.model.modelId}\n');
 
-  // Create and demonstrate search engine
-  final searchEngine = SemanticSearchEngine(embeddingProvider);
-
-  // Load sample documents
+  final searchEngine = SemanticSearchEngine(entry.model);
   await loadSampleDocuments(searchEngine);
-
-  // Demonstrate different search scenarios
   await demonstrateBasicSearch(searchEngine);
   await demonstrateAdvancedSearch(searchEngine);
   await demonstrateHybridSearch(searchEngine);
   await demonstrateQueryExpansion(searchEngine);
   await demonstrateSearchAnalytics(searchEngine);
 
-  print('✅ Semantic search examples completed!');
-  print(
-      '💡 This demonstrates how to build production-ready search with embeddings');
+  print('Completed stable semantic search examples.');
+  print('Keep retrieval indexes, analytics, and filtering in app-owned code.');
 }
 
-/// Initialize embedding provider
-Future<EmbeddingCapability?> initializeEmbeddingProvider() async {
-  // Try different providers in order of preference
-  final providers = [
-    (
-      'OpenAI',
-      () async {
-        final apiKey = 'your-openai-key'; // Replace with actual key
-        return await ai()
-            .openai()
-            .apiKey(apiKey)
-            .model('text-embedding-3-small')
-            .buildEmbedding();
-      }
-    ),
-    (
-      'Google',
-      () async {
-        final apiKey = 'your-google-key'; // Replace with actual key
-        return await ai()
-            .google()
-            .apiKey(apiKey)
-            .model('text-embedding-004')
-            .buildEmbedding();
-      }
-    ),
-  ];
+_EmbeddingModelEntry? _resolveEmbeddingModel() {
+  final openAIKey = Platform.environment['OPENAI_API_KEY'];
+  if (openAIKey != null && openAIKey.isNotEmpty) {
+    return _EmbeddingModelEntry(
+      label: 'OpenAI text-embedding-3-small',
+      model: llm.AI.openai(
+        apiKey: openAIKey,
+      ).embeddingModel('text-embedding-3-small'),
+    );
+  }
 
-  for (final (name, factory) in providers) {
-    try {
-      final provider = await factory();
-      print('✅ Using $name for embeddings');
-      return provider;
-    } catch (e) {
-      print('⚠️  $name not available: $e');
-    }
+  final googleKey = Platform.environment['GOOGLE_API_KEY'];
+  if (googleKey != null && googleKey.isNotEmpty) {
+    return _EmbeddingModelEntry(
+      label: 'Google text-embedding-004',
+      model: llm.AI.google(
+        apiKey: googleKey,
+      ).embeddingModel('text-embedding-004'),
+    );
   }
 
   return null;
 }
 
-/// Load sample documents into the search engine
 Future<void> loadSampleDocuments(SemanticSearchEngine searchEngine) async {
-  print('📚 Loading Sample Documents...');
+  print('Loading sample documents...');
 
   final documents = [
     Document(
       id: '1',
       title: 'Introduction to Machine Learning',
       content:
-          'Machine learning is a subset of artificial intelligence that enables computers to learn and improve from experience without being explicitly programmed. It focuses on developing algorithms that can access data and use it to learn for themselves.',
-      metadata: {
+          'Machine learning is a subset of artificial intelligence that enables computers to learn and improve from experience without being explicitly programmed.',
+      metadata: const {
         'category': 'AI',
         'difficulty': 'beginner',
-        'author': 'Dr. Smith'
+        'author': 'Dr. Smith',
       },
     ),
     Document(
       id: '2',
       title: 'Deep Learning Neural Networks',
       content:
-          'Deep learning is a machine learning technique that teaches computers to do what comes naturally to humans: learn by example. Deep learning is a key technology behind driverless cars, voice control, and image recognition.',
-      metadata: {
+          'Deep learning is a machine learning technique that teaches computers to do what comes naturally to humans: learn by example.',
+      metadata: const {
         'category': 'AI',
         'difficulty': 'advanced',
-        'author': 'Prof. Johnson'
+        'author': 'Prof. Johnson',
       },
     ),
     Document(
       id: '3',
       title: 'Natural Language Processing Fundamentals',
       content:
-          'Natural Language Processing (NLP) is a branch of artificial intelligence that helps computers understand, interpret and manipulate human language. NLP draws from many disciplines, including computer science and computational linguistics.',
-      metadata: {
+          'Natural language processing helps computers understand, interpret, and manipulate human language.',
+      metadata: const {
         'category': 'NLP',
         'difficulty': 'intermediate',
-        'author': 'Dr. Chen'
+        'author': 'Dr. Chen',
       },
     ),
     Document(
       id: '4',
       title: 'Computer Vision Applications',
       content:
-          'Computer vision is a field of artificial intelligence that trains computers to interpret and understand the visual world. Using digital images from cameras and videos and deep learning models, machines can accurately identify and classify objects.',
-      metadata: {
+          'Computer vision trains machines to interpret and understand the visual world using images and videos.',
+      metadata: const {
         'category': 'CV',
         'difficulty': 'intermediate',
-        'author': 'Dr. Williams'
+        'author': 'Dr. Williams',
       },
     ),
     Document(
       id: '5',
       title: 'Quantum Computing Basics',
       content:
-          'Quantum computing is a type of computation that harnesses the collective properties of quantum states, such as superposition, interference, and entanglement, to perform calculations. It represents a fundamental shift from classical computing.',
-      metadata: {
+          'Quantum computing harnesses superposition, interference, and entanglement to perform calculations.',
+      metadata: const {
         'category': 'Quantum',
         'difficulty': 'advanced',
-        'author': 'Prof. Anderson'
+        'author': 'Prof. Anderson',
       },
     ),
     Document(
       id: '6',
       title: 'Data Science Methodology',
       content:
-          'Data science is an interdisciplinary field that uses scientific methods, processes, algorithms and systems to extract knowledge and insights from structured and unstructured data. It combines statistics, data analysis, and machine learning.',
-      metadata: {
+          'Data science combines statistics, programming, and domain knowledge to extract insights from data.',
+      metadata: const {
         'category': 'Data Science',
         'difficulty': 'beginner',
-        'author': 'Dr. Brown'
+        'author': 'Dr. Brown',
       },
     ),
     Document(
       id: '7',
       title: 'Blockchain Technology Overview',
       content:
-          'Blockchain is a distributed ledger technology that maintains a continuously growing list of records, called blocks, which are linked and secured using cryptography. It enables secure, transparent, and decentralized transactions.',
-      metadata: {
+          'Blockchain is a distributed ledger technology that enables secure, transparent, and decentralized transactions.',
+      metadata: const {
         'category': 'Blockchain',
         'difficulty': 'intermediate',
-        'author': 'Mr. Davis'
+        'author': 'Mr. Davis',
       },
     ),
     Document(
       id: '8',
       title: 'Cloud Computing Architecture',
       content:
-          'Cloud computing is the delivery of computing services including servers, storage, databases, networking, software, analytics, and intelligence over the Internet to offer faster innovation, flexible resources, and economies of scale.',
-      metadata: {
+          'Cloud computing delivers computing services over the internet to offer faster innovation and flexible resources.',
+      metadata: const {
         'category': 'Cloud',
         'difficulty': 'intermediate',
-        'author': 'Ms. Wilson'
+        'author': 'Ms. Wilson',
       },
     ),
   ];
 
   await searchEngine.indexDocuments(documents);
-  print('   ✅ Indexed ${documents.length} documents');
-  print('');
+  print('  Indexed ${documents.length} documents\n');
 }
 
-/// Demonstrate basic semantic search
 Future<void> demonstrateBasicSearch(SemanticSearchEngine searchEngine) async {
-  print('🔍 Basic Semantic Search:');
+  print('Basic semantic search:');
 
   final queries = [
     'artificial intelligence and machine learning',
@@ -194,153 +169,151 @@ Future<void> demonstrateBasicSearch(SemanticSearchEngine searchEngine) async {
   ];
 
   for (final query in queries) {
-    print('   🔎 Query: "$query"');
-
+    print('  Query: "$query"');
     final results = await searchEngine.search(query, limit: 3);
 
-    print('      📋 Results:');
-    for (int i = 0; i < results.length; i++) {
-      final result = results[i];
+    for (var index = 0; index < results.length; index++) {
+      final result = results[index];
       final score = (result.score * 100).toStringAsFixed(1);
-      print('         ${i + 1}. [$score%] ${result.document.title}');
-      print('            ${result.document.content.substring(0, 80)}...');
+      print('    ${index + 1}. [$score%] ${result.document.title}');
+      print('       ${_preview(result.document.content, 80)}');
     }
-    print('');
   }
+
+  print('');
 }
 
-/// Demonstrate advanced search with filters
 Future<void> demonstrateAdvancedSearch(
-    SemanticSearchEngine searchEngine) async {
-  print('🎯 Advanced Search with Filters:');
+  SemanticSearchEngine searchEngine,
+) async {
+  print('Advanced search with filters:');
 
-  // Search with category filter
-  print('   📂 Filtering by category "AI":');
+  print('  Filter by category "AI":');
   final aiResults = await searchEngine.search(
     'learning algorithms',
-    filters: {'category': 'AI'},
+    filters: const {'category': 'AI'},
     limit: 3,
   );
-
   for (final result in aiResults) {
     final score = (result.score * 100).toStringAsFixed(1);
     print(
-        '      [$score%] ${result.document.title} (${result.document.metadata['category']})');
+      '    [$score%] ${result.document.title} '
+      '(${result.document.metadata['category']})',
+    );
   }
 
-  // Search with difficulty filter
-  print('\n   📊 Filtering by difficulty "beginner":');
+  print('\n  Filter by difficulty "beginner":');
   final beginnerResults = await searchEngine.search(
     'introduction to technology',
-    filters: {'difficulty': 'beginner'},
+    filters: const {'difficulty': 'beginner'},
     limit: 3,
   );
-
   for (final result in beginnerResults) {
     final score = (result.score * 100).toStringAsFixed(1);
     print(
-        '      [$score%] ${result.document.title} (${result.document.metadata['difficulty']})');
+      '    [$score%] ${result.document.title} '
+      '(${result.document.metadata['difficulty']})',
+    );
   }
 
-  // Search with multiple filters
-  print('\n   🎛️  Multiple filters (AI + intermediate):');
+  print('\n  Multiple filters (AI + intermediate):');
   final multiFilterResults = await searchEngine.search(
     'computer algorithms',
-    filters: {'category': 'AI', 'difficulty': 'intermediate'},
+    filters: const {
+      'category': 'AI',
+      'difficulty': 'intermediate',
+    },
     limit: 3,
   );
-
   for (final result in multiFilterResults) {
     final score = (result.score * 100).toStringAsFixed(1);
     final category = result.document.metadata['category'];
     final difficulty = result.document.metadata['difficulty'];
-    print('      [$score%] ${result.document.title} ($category, $difficulty)');
+    print('    [$score%] ${result.document.title} ($category, $difficulty)');
   }
 
   print('');
 }
 
-/// Demonstrate hybrid search (semantic + keyword)
 Future<void> demonstrateHybridSearch(SemanticSearchEngine searchEngine) async {
-  print('🔀 Hybrid Search (Semantic + Keyword):');
+  print('Hybrid search (semantic + keyword):');
 
-  final query = 'machine learning algorithms';
+  const query = 'machine learning algorithms';
 
-  // Pure semantic search
-  print('   🧠 Semantic search only:');
+  print('  Semantic search only:');
   final semanticResults = await searchEngine.search(query, limit: 3);
   for (final result in semanticResults) {
     final score = (result.score * 100).toStringAsFixed(1);
-    print('      [$score%] ${result.document.title}');
+    print('    [$score%] ${result.document.title}');
   }
 
-  // Hybrid search
-  print('\n   🔀 Hybrid search (semantic + keyword):');
+  print('\n  Hybrid search:');
   final hybridResults = await searchEngine.hybridSearch(query, limit: 3);
   for (final result in hybridResults) {
     final score = (result.score * 100).toStringAsFixed(1);
-    print('      [$score%] ${result.document.title}');
+    print('    [$score%] ${result.document.title}');
   }
 
   print('');
 }
 
-/// Demonstrate query expansion
 Future<void> demonstrateQueryExpansion(
-    SemanticSearchEngine searchEngine) async {
-  print('📈 Query Expansion:');
+  SemanticSearchEngine searchEngine,
+) async {
+  print('Query expansion:');
 
-  final originalQuery = 'AI';
-  print('   🔤 Original query: "$originalQuery"');
+  const originalQuery = 'AI';
+  print('  Original query: "$originalQuery"');
 
-  // Expand query with related terms
   final expandedQuery = await searchEngine.expandQuery(originalQuery);
-  print('   📝 Expanded query: "$expandedQuery"');
+  print('  Expanded query: "$expandedQuery"');
 
-  // Search with expanded query
   final results = await searchEngine.search(expandedQuery, limit: 3);
-  print('   📋 Results with expanded query:');
   for (final result in results) {
     final score = (result.score * 100).toStringAsFixed(1);
-    print('      [$score%] ${result.document.title}');
+    print('    [$score%] ${result.document.title}');
   }
 
   print('');
 }
 
-/// Demonstrate search analytics
 Future<void> demonstrateSearchAnalytics(
-    SemanticSearchEngine searchEngine) async {
-  print('📊 Search Analytics:');
+  SemanticSearchEngine searchEngine,
+) async {
+  print('Search analytics:');
 
   final analytics = searchEngine.getAnalytics();
+  print('  Total searches: ${analytics.totalSearches}');
+  print(
+    '  Average results per search: '
+    '${analytics.averageResultsPerSearch.toStringAsFixed(1)}',
+  );
+  print('  Top categories: ${analytics.topCategories.join(', ')}');
+  print(
+    '  Average search time: ${analytics.averageSearchTime.inMilliseconds}ms',
+  );
+  print('  Query embedding cache size: ${analytics.cachedQueryEmbeddings}');
 
-  print('   📈 Search Statistics:');
-  print('      • Total searches: ${analytics.totalSearches}');
-  print(
-      '      • Average results per search: ${analytics.averageResultsPerSearch.toStringAsFixed(1)}');
-  print(
-      '      • Most common categories: ${analytics.topCategories.join(', ')}');
-  print(
-      '      • Average search time: ${analytics.averageSearchTime.inMilliseconds}ms');
-
-  print('\n   🔥 Popular Queries:');
-  for (int i = 0; i < analytics.popularQueries.length && i < 5; i++) {
-    final query = analytics.popularQueries[i];
-    print('      ${i + 1}. "${query.query}" (${query.count} searches)');
+  if (analytics.popularQueries.isNotEmpty) {
+    print('\n  Popular queries:');
+    for (var index = 0;
+        index < analytics.popularQueries.length && index < 5;
+        index++) {
+      final query = analytics.popularQueries[index];
+      print('    ${index + 1}. "${query.query}" (${query.count} searches)');
+    }
   }
 
   print('');
 }
 
-/// Document class for search engine
 class Document {
   final String id;
   final String title;
   final String content;
   final Map<String, String> metadata;
 
-  Document({
+  const Document({
     required this.id,
     required this.title,
     required this.content,
@@ -350,140 +323,99 @@ class Document {
   String get fullText => '$title $content';
 }
 
-/// Search result class
 class SearchResult {
   final Document document;
   final double score;
-  final Map<String, dynamic> highlights;
+  final Map<String, Object?> highlights;
 
-  SearchResult({
+  const SearchResult({
     required this.document,
     required this.score,
     this.highlights = const {},
   });
 }
 
-/// Query analytics
 class QueryAnalytics {
   final String query;
   final int count;
 
-  QueryAnalytics(this.query, this.count);
+  const QueryAnalytics(this.query, this.count);
 }
 
-/// Search analytics
 class SearchAnalytics {
   final int totalSearches;
   final double averageResultsPerSearch;
   final List<String> topCategories;
   final Duration averageSearchTime;
   final List<QueryAnalytics> popularQueries;
+  final int cachedQueryEmbeddings;
 
-  SearchAnalytics({
+  const SearchAnalytics({
     required this.totalSearches,
     required this.averageResultsPerSearch,
     required this.topCategories,
     required this.averageSearchTime,
     required this.popularQueries,
+    required this.cachedQueryEmbeddings,
   });
 }
 
-/// Semantic search engine implementation
 class SemanticSearchEngine {
-  final EmbeddingCapability _embeddingProvider;
+  final core.EmbeddingModel _embeddingModel;
   final List<Document> _documents = [];
-  final List<List<double>> _embeddings = [];
+  final List<List<double>> _documentEmbeddings = [];
   final Map<String, int> _queryCount = {};
   final List<Duration> _searchTimes = [];
+  final List<int> _resultCounts = [];
+  final Map<String, List<double>> _queryEmbeddingCache = {};
 
-  SemanticSearchEngine(this._embeddingProvider);
+  SemanticSearchEngine(this._embeddingModel);
 
-  /// Index documents for search
   Future<void> indexDocuments(List<Document> documents) async {
-    _documents.clear();
-    _embeddings.clear();
+    _documents
+      ..clear()
+      ..addAll(documents);
+    _documentEmbeddings.clear();
 
-    final texts = documents.map((doc) => doc.fullText).toList();
-    final embeddings = await _embeddingProvider.embed(texts);
+    final values = documents.map((document) => document.fullText).toList();
+    final batch = await core.embedMany(
+      model: _embeddingModel,
+      values: values,
+    );
 
-    _documents.addAll(documents);
-    _embeddings.addAll(embeddings);
+    _documentEmbeddings.addAll(batch.embeddings);
   }
 
-  /// Perform semantic search
   Future<List<SearchResult>> search(
     String query, {
     int limit = 10,
     Map<String, String>? filters,
-  }) async {
-    final startTime = DateTime.now();
-
-    // Track query
-    _queryCount[query] = (_queryCount[query] ?? 0) + 1;
-
-    // Get query embedding
-    final queryEmbedding = await _embeddingProvider.embed([query]);
-
-    // Calculate similarities
-    final results = <SearchResult>[];
-    for (int i = 0; i < _documents.length; i++) {
-      final document = _documents[i];
-
-      // Apply filters
-      if (filters != null && !_matchesFilters(document, filters)) {
-        continue;
-      }
-
-      final similarity = _cosineSimilarity(queryEmbedding[0], _embeddings[i]);
-      results.add(SearchResult(
-        document: document,
-        score: similarity,
-      ));
-    }
-
-    // Sort by similarity and limit results
-    results.sort((a, b) => b.score.compareTo(a.score));
-    final limitedResults = results.take(limit).toList();
-
-    // Track search time
-    final searchTime = DateTime.now().difference(startTime);
-    _searchTimes.add(searchTime);
-
-    return limitedResults;
+  }) {
+    return _searchInternal(
+      query,
+      limit: limit,
+      filters: filters,
+      includeKeywordScore: false,
+      trackAnalytics: true,
+    );
   }
 
-  /// Perform hybrid search (semantic + keyword)
-  Future<List<SearchResult>> hybridSearch(String query,
-      {int limit = 10}) async {
-    // Get semantic results
-    final semanticResults = await search(query, limit: limit * 2);
-
-    // Get keyword scores
-    final keywordScores = _calculateKeywordScores(query);
-
-    // Combine scores (70% semantic, 30% keyword)
-    for (final result in semanticResults) {
-      final keywordScore = keywordScores[result.document.id] ?? 0.0;
-      final combinedScore = (result.score * 0.7) + (keywordScore * 0.3);
-
-      // Update result with combined score
-      final index = semanticResults.indexOf(result);
-      semanticResults[index] = SearchResult(
-        document: result.document,
-        score: combinedScore,
-        highlights: result.highlights,
-      );
-    }
-
-    // Re-sort and limit
-    semanticResults.sort((a, b) => b.score.compareTo(a.score));
-    return semanticResults.take(limit).toList();
+  Future<List<SearchResult>> hybridSearch(
+    String query, {
+    int limit = 10,
+    Map<String, String>? filters,
+  }) {
+    return _searchInternal(
+      query,
+      limit: limit,
+      filters: filters,
+      includeKeywordScore: true,
+      trackAnalytics: true,
+    );
   }
 
-  /// Expand query with related terms
   Future<String> expandQuery(String query) async {
-    // Simple query expansion - in production, you might use a thesaurus or LLM
-    final expansions = {
+    const expansions = {
       'AI': 'artificial intelligence machine learning',
       'ML': 'machine learning algorithms',
       'DL': 'deep learning neural networks',
@@ -494,92 +426,188 @@ class SemanticSearchEngine {
     var expandedQuery = query;
     for (final entry in expansions.entries) {
       if (query.toLowerCase().contains(entry.key.toLowerCase())) {
-        expandedQuery += ' ${entry.value}';
+        expandedQuery = '$expandedQuery ${entry.value}';
       }
     }
 
     return expandedQuery;
   }
 
-  /// Get search analytics
   SearchAnalytics getAnalytics() {
     final totalSearches =
-        _queryCount.values.fold(0, (sum, count) => sum + count);
-    final averageResults = _documents.length.toDouble();
-    final averageTime = _searchTimes.isNotEmpty
-        ? Duration(
+        _queryCount.values.fold<int>(0, (sum, count) => sum + count);
+    final averageResults = _resultCounts.isEmpty
+        ? 0.0
+        : _resultCounts.reduce((left, right) => left + right) /
+            _resultCounts.length;
+    final averageTime = _searchTimes.isEmpty
+        ? Duration.zero
+        : Duration(
             microseconds: _searchTimes
-                    .map((d) => d.inMicroseconds)
-                    .reduce((a, b) => a + b) ~/
-                _searchTimes.length)
-        : Duration.zero;
+                    .map((duration) => duration.inMicroseconds)
+                    .reduce((left, right) => left + right) ~/
+                _searchTimes.length,
+          );
 
-    final topCategories = _documents
-        .map((doc) => doc.metadata['category'] ?? 'Unknown')
-        .toSet()
-        .toList();
+    final categoryCounts = <String, int>{};
+    for (final document in _documents) {
+      final category = document.metadata['category'] ?? 'Unknown';
+      categoryCounts.update(category, (count) => count + 1, ifAbsent: () => 1);
+    }
+
+    final topCategories = categoryCounts.entries.toList()
+      ..sort((left, right) => right.value.compareTo(left.value));
 
     final popularQueries = _queryCount.entries
-        .map((e) => QueryAnalytics(e.key, e.value))
+        .map((entry) => QueryAnalytics(entry.key, entry.value))
         .toList()
-      ..sort((a, b) => b.count.compareTo(a.count));
+      ..sort((left, right) => right.count.compareTo(left.count));
 
     return SearchAnalytics(
       totalSearches: totalSearches,
       averageResultsPerSearch: averageResults,
-      topCategories: topCategories,
+      topCategories: topCategories.map((entry) => entry.key).toList(),
       averageSearchTime: averageTime,
       popularQueries: popularQueries,
+      cachedQueryEmbeddings: _queryEmbeddingCache.length,
     );
   }
 
-  /// Check if document matches filters
+  Future<List<SearchResult>> _searchInternal(
+    String query, {
+    required int limit,
+    required bool includeKeywordScore,
+    required bool trackAnalytics,
+    Map<String, String>? filters,
+  }) async {
+    final startedAt = DateTime.now();
+
+    if (trackAnalytics) {
+      _queryCount.update(query, (count) => count + 1, ifAbsent: () => 1);
+    }
+
+    final queryEmbedding = await _embeddingForQuery(query);
+    final results = <SearchResult>[];
+
+    for (var index = 0; index < _documents.length; index++) {
+      final document = _documents[index];
+      if (filters != null && !_matchesFilters(document, filters)) {
+        continue;
+      }
+
+      final semanticScore = _cosineSimilarity(
+        queryEmbedding,
+        _documentEmbeddings[index],
+      );
+      final keywordScore = includeKeywordScore
+          ? _keywordScore(query, document.fullText)
+          : 0.0;
+      final score = includeKeywordScore
+          ? semanticScore * 0.7 + keywordScore * 0.3
+          : semanticScore;
+
+      results.add(
+        SearchResult(
+          document: document,
+          score: score,
+          highlights: {
+            'semanticScore': semanticScore,
+            if (includeKeywordScore) 'keywordScore': keywordScore,
+          },
+        ),
+      );
+    }
+
+    results.sort((left, right) => right.score.compareTo(left.score));
+    final limited = results.take(limit).toList();
+
+    if (trackAnalytics) {
+      _searchTimes.add(DateTime.now().difference(startedAt));
+      _resultCounts.add(limited.length);
+    }
+
+    return limited;
+  }
+
+  Future<List<double>> _embeddingForQuery(String query) async {
+    final cached = _queryEmbeddingCache[query];
+    if (cached != null) {
+      return cached;
+    }
+
+    final result = await core.embed(
+      model: _embeddingModel,
+      value: query,
+    );
+    _queryEmbeddingCache[query] = result.embedding;
+    return result.embedding;
+  }
+
   bool _matchesFilters(Document document, Map<String, String> filters) {
     for (final entry in filters.entries) {
-      final key = entry.key;
-      final value = entry.value;
-      if (document.metadata[key] != value) {
+      if (document.metadata[entry.key] != entry.value) {
         return false;
       }
     }
     return true;
   }
 
-  /// Calculate cosine similarity
-  double _cosineSimilarity(List<double> a, List<double> b) {
-    double dotProduct = 0.0;
-    double normA = 0.0;
-    double normB = 0.0;
-
-    for (int i = 0; i < a.length; i++) {
-      dotProduct += a[i] * b[i];
-      normA += a[i] * a[i];
-      normB += b[i] * b[i];
+  double _keywordScore(String query, String content) {
+    final terms = query.toLowerCase().split(RegExp(r'\s+'));
+    final normalizedContent = content.toLowerCase();
+    final totalWords = normalizedContent.split(RegExp(r'\s+')).length;
+    if (totalWords == 0) {
+      return 0.0;
     }
 
-    if (normA == 0.0 || normB == 0.0) return 0.0;
-    return dotProduct / (sqrt(normA) * sqrt(normB));
-  }
-
-  /// Calculate keyword-based scores
-  Map<String, double> _calculateKeywordScores(String query) {
-    final queryTerms = query.toLowerCase().split(' ');
-    final scores = <String, double>{};
-
-    for (final document in _documents) {
-      final content = document.fullText.toLowerCase();
-      double score = 0.0;
-
-      for (final term in queryTerms) {
-        final matches = RegExp(r'\b' + RegExp.escape(term) + r'\b')
-            .allMatches(content)
-            .length;
-        score += matches / content.split(' ').length;
+    var score = 0.0;
+    for (final term in terms) {
+      if (term.isEmpty) {
+        continue;
       }
 
-      scores[document.id] = score;
+      final matches = RegExp(r'\b' + RegExp.escape(term) + r'\b')
+          .allMatches(normalizedContent)
+          .length;
+      score += matches / totalWords;
     }
 
-    return scores;
+    return score;
   }
+
+  double _cosineSimilarity(List<double> left, List<double> right) {
+    var dotProduct = 0.0;
+    var normLeft = 0.0;
+    var normRight = 0.0;
+
+    for (var index = 0; index < left.length; index++) {
+      dotProduct += left[index] * right[index];
+      normLeft += left[index] * left[index];
+      normRight += right[index] * right[index];
+    }
+
+    if (normLeft == 0.0 || normRight == 0.0) {
+      return 0.0;
+    }
+
+    return dotProduct / (math.sqrt(normLeft) * math.sqrt(normRight));
+  }
+}
+
+String _preview(String value, int maxLength) {
+  if (value.length <= maxLength) {
+    return value;
+  }
+
+  return '${value.substring(0, maxLength)}...';
+}
+
+final class _EmbeddingModelEntry {
+  final String label;
+  final core.EmbeddingModel model;
+
+  const _EmbeddingModelEntry({
+    required this.label,
+    required this.model,
+  });
 }
