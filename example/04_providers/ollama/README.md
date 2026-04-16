@@ -6,9 +6,16 @@ Ollama now has modern shared-capability surfaces in this workspace through
 - `Ollama(...).chatModel(...)`
 - `Ollama(...).embeddingModel(...)`
 
-This directory intentionally stays compatibility-oriented because it focuses on
-provider-specific local runtime behavior that is broader than the shared modern
-surface.
+This directory now focuses on provider-owned local runtime behavior on top of
+the modern community surface.
+
+That means:
+
+- chat and embedding entrypoints stay on `community.Ollama(...).*Model(...)`
+- Ollama-specific runtime controls stay on
+  `community.OllamaGenerateTextOptions`
+- only truly residual surfaces such as model listing or `/api/generate`
+  remain on the compatibility shell
 
 ## When To Use Which Path
 
@@ -51,22 +58,24 @@ final batch = await core.embedMany(
 
 ### Use This Directory's Examples
 
-Use the compatibility shell in this directory when you need broader local
+Use the examples in this directory when you need Ollama-specific local
 deployment and tuning behavior such as:
 
 - `numGpu`, `numThread`, `numCtx`, `numBatch`, and `numa`
 - `keepAlive` and local model memory tuning
-- reasoning-specific local flags and broader runtime control
-- residual compatibility-only flows such as `/api/generate`
+- reasoning-specific local flags and broader runtime control on the shared
+  chat contract
+- structured output and tool calling combined with local runtime tuning
 
 ## Examples
 
 ### [advanced_features.dart](advanced_features.dart)
-Compatibility-oriented local deployment and tuning example with explicit local
-runtime controls.
+Modern local deployment and tuning example with explicit Ollama runtime
+controls through `OllamaGenerateTextOptions`.
 
 ### [thinking_example.dart](thinking_example.dart)
-Compatibility-oriented reasoning and local thinking example.
+Modern reasoning and local thinking example on the shared streaming/text event
+surface.
 
 ### Modern Shared Examples
 
@@ -110,15 +119,16 @@ The important distinction is:
 
 - use `Ollama(...).chatModel(...)` and `embeddingModel(...)` for stable
   app-facing code
-- use `providers/ollama/ollama.dart` only when you need local runtime tuning,
-  `/api/generate`, model listing, or broader compatibility surfaces
+- use `providers/ollama/ollama.dart` only when you need `/api/generate`,
+  model listing, or broader compatibility surfaces that are still outside the
+  shared community package
 
 ## What Is Not Being Forced Into The Shared Surface
 
 - model listing is still provider-owned or compatibility-only
 - `/api/generate` completion is still compatibility-only
-- broader local runtime and lifecycle controls should stay provider-owned unless
-  a concrete typed modern helper is justified later
+- broader local runtime controls can stay provider-owned even when the chat
+  model itself is stable
 
 ## Next Steps
 

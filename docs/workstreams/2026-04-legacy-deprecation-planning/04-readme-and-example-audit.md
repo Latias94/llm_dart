@@ -23,17 +23,18 @@ It is example migration.
 ## Counts
 
 Current scoped audit baseline across code under `example`, `lib`, and
-`packages` after the `example/03_advanced_features` transport rewrite:
+`packages` after the `example/03_advanced_features` transport rewrite and the
+Ollama provider-example modernization:
 
-- `15` Dart files still import `package:llm_dart/legacy.dart`
-- `15` Dart files still contain direct `ai()` usage
+- `13` Dart files still import `package:llm_dart/legacy.dart`
+- `13` Dart files still contain direct `ai()` usage
 
 Legacy imports inside `example/` are now concentrated in:
 
 - `example/01_getting_started` - `1` file
 - `example/02_core_features` - `3` files
 - `example/03_advanced_features` - `0` files
-- `example/04_providers` - `8` files
+- `example/04_providers` - `6` files
 - `example/06_mcp_integration` - `3` files
 
 Direct `ai()` usage inside `example/` is now concentrated in:
@@ -41,7 +42,7 @@ Direct `ai()` usage inside `example/` is now concentrated in:
 - `example/01_getting_started` - `0` files
 - `example/02_core_features` - `2` files
 - `example/03_advanced_features` - `0` files
-- `example/04_providers` - `7` files
+- `example/04_providers` - `5` files
 - `example/06_mcp_integration` - `3` files
 
 `example/02_core_features` is now effectively reduced to two explicit
@@ -121,6 +122,15 @@ real stable transport boundary:
 - `DioHttpClientFactory`
 - `DioTransportClient`
 - `CallOptions.timeout`
+
+Another meaningful reduction is now complete in `example/04_providers/ollama`:
+
+- `advanced_features.dart` now uses `community.Ollama(...).chatModel(...)`
+  plus `OllamaGenerateTextOptions`
+- `thinking_example.dart` now uses shared text/stream events plus
+  Ollama-owned runtime options instead of the legacy builder shell
+- the directory README now explains Ollama local runtime tuning as a modern
+  community-surface pattern rather than as default compatibility material
 
 ## Healthy Legacy Disclosure
 
@@ -219,6 +229,8 @@ Rationale:
   compatibility appendix files
 - `03_advanced_features` is now fully modern-first, including the transport
   configuration examples
+- the Ollama provider examples no longer need the broad legacy builder shell
+  for runtime tuning or reasoning demonstrations
 - the largest known provider README hotspots have now been reduced to
   provider-entrypoint compatibility disclosures instead of direct
   `legacy.dart` teaching

@@ -20,8 +20,9 @@ Current boundary:
   Anthropic, Google
 - stable today in the workspace community package: Ollama shared chat and
   embeddings, plus ElevenLabs shared speech and direct-audio transcription
-- compatibility-oriented in this directory: the broader Ollama and ElevenLabs
-  provider shells that still cover provider-specific residual surfaces
+- mixed in this directory: broader ElevenLabs compatibility shells, residual
+  OpenAI-family/provider appendices, and modern Ollama local-runtime examples
+  built on the community package plus provider-owned options
 
 ## Examples
 
@@ -43,9 +44,9 @@ Stable embedding, image, and speech model facades with typed Google provider
 options. Native streaming TTS examples are still compatibility oriented.
 
 ### [ollama/](ollama/)
-Compatibility-oriented local runtime examples. Modern shared-capability Ollama
-chat and embedding surfaces now live in `packages/llm_dart_community`, while
-this directory covers broader local tuning and residual compatibility flows.
+Modern community-surface local runtime examples with provider-owned Ollama
+options. Residual compatibility flows such as model listing still remain
+provider owned.
 
 ### [elevenlabs/](elevenlabs/)
 Compatibility-oriented audio examples. Modern shared-capability ElevenLabs

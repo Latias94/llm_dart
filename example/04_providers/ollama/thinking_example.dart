@@ -1,106 +1,84 @@
 // ignore_for_file: avoid_print
+
 import 'dart:io';
-import 'package:llm_dart/legacy.dart';
 
-/// 🦙 Ollama Thinking - Local Reasoning with Open Models
-///
-/// This example intentionally uses the compatibility shell because it focuses
-/// on provider-specific local reasoning controls beyond the current shared-capability
-/// `llm_dart_community` Ollama model surface.
-///
-/// It demonstrates Ollama's thinking capabilities with reasoning models:
-/// - Local inference with thinking models
-/// - Step-by-step reasoning process
-/// - Streaming thinking observations
-/// - Various reasoning model comparisons
-///
-/// Prerequisites:
-/// 1. Install Ollama: https://ollama.ai/
-/// 2. Pull a reasoning model: ollama pull gpt-oss:latest
-/// 3. Start Ollama server: ollama serve
-void main() async {
-  print('🦙 Ollama Thinking - Local Reasoning with Open Models\n');
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart_community/llm_dart_community.dart' as community;
 
-  // Demonstrate various Ollama thinking capabilities
-  await demonstrateBasicThinking();
-  await demonstrateMathematicalReasoning();
-  await demonstrateStreamingThinking();
-  await demonstrateLogicalPuzzle();
-  await demonstrateModelComparison();
+/// Local Ollama reasoning on the modern community package surface.
+///
+/// This example keeps the stable shared chat contract while preserving
+/// Ollama-specific local runtime controls through
+/// `community.OllamaGenerateTextOptions`.
+Future<void> main() async {
+  final baseUrl =
+      Platform.environment['OLLAMA_BASE_URL'] ?? community.Ollama.defaultBaseUrl;
 
-  print('\n✅ Ollama thinking demonstrations completed!');
+  print('Ollama Thinking - Local Reasoning With Open Models\n');
+
+  await demonstrateBasicThinking(baseUrl);
+  await demonstrateMathematicalReasoning(baseUrl);
+  await demonstrateStreamingThinking(baseUrl);
+  await demonstrateLogicalPuzzle(baseUrl);
+  await demonstrateModelComparison(baseUrl);
+
+  print('Ollama thinking demonstrations completed.');
 }
 
-/// Demonstrate basic thinking process with Ollama
-Future<void> demonstrateBasicThinking() async {
-  print('🧠 Basic Thinking Process:\n');
+Future<void> demonstrateBasicThinking(String baseUrl) async {
+  print('=== Basic Thinking Process ===\n');
 
   try {
-    final provider = await ai()
-        .ollama()
-        .baseUrl('http://localhost:11434')
-        .model('gpt-oss:latest')
-        .reasoning(true)
-        .temperature(0.3)
-        .maxTokens(1000)
-        .build();
-
-    final response = await provider.chat([
-      ChatMessage.user('''
+    final result = await _runReasonedCall(
+      baseUrl: baseUrl,
+      modelId: 'gpt-oss:latest',
+      prompt: '''
 I have 3 red balls, 2 blue balls, and 5 green balls in a bag.
-If I randomly pick 3 balls without replacement, what's the probability
+If I randomly pick 3 balls without replacement, what is the probability
 that I get exactly one ball of each color?
-''')
-    ]);
+''',
+      options: const core.GenerateTextOptions(
+        temperature: 0.3,
+        maxOutputTokens: 1000,
+      ),
+      providerOptions: const community.OllamaGenerateTextOptions(
+        reasoning: true,
+        numCtx: 4096,
+        keepAlive: '5m',
+      ),
+    );
 
-    print('   Problem: Probability calculation with colored balls');
-    print('   Model: gpt-oss:latest (local reasoning model)');
+    print('Problem: probability calculation with colored balls');
+    print('Model: gpt-oss:latest');
 
-    // Show the thinking process if available
-    if (response.thinking != null && response.thinking!.isNotEmpty) {
-      print('\n   🧠 Ollama\'s Thinking Process:');
-      print('   ${'-' * 50}');
-      print('   ${response.thinking}');
-      print('   ${'-' * 50}');
+    final reasoning = result.reasoningText;
+    if (reasoning != null && reasoning.isNotEmpty) {
+      print('\nReasoning:');
+      print(_truncate(reasoning, maxLength: 700));
     }
 
-    print('\n   🎯 Final Answer:');
-    print('   ${response.text}');
+    print('\nFinal answer:');
+    print(result.text);
 
-    if (response.usage != null) {
-      print('\n   📊 Usage: ${response.usage!.totalTokens} tokens');
+    if (result.usage case final usage?) {
+      print('\nUsage: ${usage.totalTokens} tokens');
     }
 
-    print('   ✅ Basic thinking demonstration completed\n');
-  } catch (e) {
-    if (e.toString().contains('404') ||
-        e.toString().contains('model') ||
-        e.toString().contains('not found')) {
-      print(
-          '   ❌ Model not available. Try running: ollama pull gpt-oss:latest');
-      print('   📋 Alternative models: qwen2.5:latest, llama3.2:latest');
-    } else {
-      print('   ❌ Basic thinking failed: $e');
-    }
-    print('\n');
+    print('Basic thinking demonstration completed.\n');
+  } catch (error) {
+    _printModelError(error);
+    print('');
   }
 }
 
-/// Demonstrate mathematical reasoning
-Future<void> demonstrateMathematicalReasoning() async {
-  print('🔢 Mathematical Reasoning:\n');
+Future<void> demonstrateMathematicalReasoning(String baseUrl) async {
+  print('=== Mathematical Reasoning ===\n');
 
   try {
-    final provider = await ai()
-        .ollama()
-        .baseUrl('http://localhost:11434')
-        .model('gpt-oss:latest')
-        .reasoning(true)
-        .temperature(0.1) // Lower for precise calculations
-        .maxTokens(1500)
-        .build();
-
-    final mathProblem = '''
+    final result = await _runReasonedCall(
+      baseUrl: baseUrl,
+      modelId: 'gpt-oss:latest',
+      prompt: '''
 A company's revenue follows this pattern:
 - Month 1: \$10,000
 - Month 2: \$12,000
@@ -109,267 +87,236 @@ A company's revenue follows this pattern:
 
 What is the growth pattern, and what will be the revenue in Month 6?
 Show your work step by step.
-''';
+''',
+      options: const core.GenerateTextOptions(
+        temperature: 0.1,
+        maxOutputTokens: 1500,
+      ),
+      providerOptions: const community.OllamaGenerateTextOptions(
+        reasoning: true,
+        numCtx: 6144,
+        keepAlive: '5m',
+      ),
+    );
 
-    final response = await provider.chat([ChatMessage.user(mathProblem)]);
+    print('Problem: revenue pattern analysis and prediction');
 
-    print('   Problem: Revenue pattern analysis and prediction');
-
-    if (response.thinking != null && response.thinking!.isNotEmpty) {
-      print('\n   🧠 Ollama\'s Mathematical Process:');
-      print('   ${'-' * 60}');
-      // Show first part of thinking to avoid too much output
-      final thinking = response.thinking!;
-      if (thinking.length > 500) {
-        print('   ${thinking.substring(0, 500)}...');
-        print(
-            '   [Thinking process continues for ${thinking.length} total characters]');
-      } else {
-        print('   $thinking');
-      }
-      print('   ${'-' * 60}');
+    final reasoning = result.reasoningText;
+    if (reasoning != null && reasoning.isNotEmpty) {
+      print('\nReasoning excerpt:');
+      print(_truncate(reasoning, maxLength: 500));
     }
 
-    print('\n   🎯 Mathematical Analysis:');
-    print('   ${response.text}');
-
-    print('   ✅ Mathematical reasoning demonstration completed\n');
-  } catch (e) {
-    print('   ❌ Mathematical reasoning failed: $e\n');
+    print('\nAnalysis:');
+    print(result.text);
+    print('Mathematical reasoning demonstration completed.\n');
+  } catch (error) {
+    print('Mathematical reasoning failed: $error\n');
   }
 }
 
-/// Demonstrate streaming thinking
-Future<void> demonstrateStreamingThinking() async {
-  print('🌊 Streaming Thinking Process:\n');
+Future<void> demonstrateStreamingThinking(String baseUrl) async {
+  print('=== Streaming Thinking Process ===\n');
 
   try {
-    final provider = await ai()
-        .ollama()
-        .baseUrl('http://localhost:11434')
-        .model('gpt-oss:latest')
-        .reasoning(true)
-        .temperature(0.4)
-        .maxTokens(1200)
-        .build();
+    final model = community.Ollama(
+      baseUrl: baseUrl,
+    ).chatModel('gpt-oss:latest');
 
-    print('   Problem: Logic puzzle with real-time thinking');
-    print('   Watching Ollama think in real-time...\n');
-
-    var thinkingContent = StringBuffer();
-    var responseContent = StringBuffer();
-    var isThinking = true;
-
-    await for (final event in provider.chatStream([
-      ChatMessage.user('''
+    final stream = core.streamTextCall(
+      model: model,
+      prompt: [
+        core.UserPromptMessage.text('''
 Four people need to cross a bridge at night. They have one flashlight.
 The bridge can hold only two people at a time. They must walk together
 when crossing. Person A takes 1 minute, B takes 2 minutes, C takes 5 minutes,
 and D takes 10 minutes. When two people cross together, they walk at the
-slower person's pace. What's the minimum time to get everyone across?
-''')
-    ])) {
+slower person's pace. What is the minimum time to get everyone across?
+'''),
+      ],
+      options: const core.GenerateTextOptions(
+        temperature: 0.4,
+        maxOutputTokens: 1200,
+      ),
+      callOptions: const core.CallOptions(
+        providerOptions: community.OllamaGenerateTextOptions(
+          reasoning: true,
+          numCtx: 6144,
+          keepAlive: '5m',
+        ),
+      ),
+    );
+
+    final reasoningBuffer = StringBuffer();
+    final textBuffer = StringBuffer();
+    var printedAnswerHeader = false;
+
+    await for (final event in stream) {
       switch (event) {
-        case ThinkingDeltaEvent(delta: final delta):
-          thinkingContent.write(delta);
-          // Print thinking in gray color
-          stdout.write('\x1B[90m$delta\x1B[0m');
-          break;
-        case TextDeltaEvent(delta: final delta):
-          if (isThinking) {
-            print('\n\n   🎯 Ollama\'s Final Answer:');
-            print('   ${'-' * 40}');
-            isThinking = false;
-          }
-          responseContent.write(delta);
+        case core.ReasoningDeltaEvent(:final delta):
+          reasoningBuffer.write(delta);
           stdout.write(delta);
-          break;
-        case CompletionEvent(response: final response):
-          print('\n   ${'-' * 40}');
-          print('\n   ✅ Streaming thinking completed!');
-
-          if (response.usage != null) {
-            print('   📊 Usage: ${response.usage!.totalTokens} tokens');
+        case core.TextDeltaEvent(:final delta):
+          if (!printedAnswerHeader) {
+            printedAnswerHeader = true;
+            print('\n\nFinal answer:');
           }
-
-          print('   🧠 Thinking length: ${thinkingContent.length} characters');
-          print('   📝 Response length: ${responseContent.length} characters');
-          break;
-        case ErrorEvent(error: final error):
-          print('\n   ❌ Stream error: $error');
-          break;
-        case ToolCallDeltaEvent():
-          // Handle tool call events if needed
+          textBuffer.write(delta);
+          stdout.write(delta);
+        case core.ToolCallEvent(:final toolCall):
+          print('\n[tool-call ${toolCall.toolName}]');
+        case core.FinishEvent(:final usage):
+          print('\n\nStreaming completed.');
+          print('Reasoning length: ${reasoningBuffer.length} characters');
+          print('Answer length: ${textBuffer.length} characters');
+          if (usage != null) {
+            print('Usage: ${usage.totalTokens} tokens');
+          }
+        case core.ErrorEvent(:final error):
+          print('\nStream error: $error');
+        default:
           break;
       }
     }
 
-    print('   ✅ Streaming thinking demonstration completed\n');
-  } catch (e) {
-    print('   ❌ Streaming thinking failed: $e\n');
+    print('\n');
+  } catch (error) {
+    print('Streaming thinking failed: $error\n');
   }
 }
 
-/// Demonstrate logical puzzle solving
-Future<void> demonstrateLogicalPuzzle() async {
-  print('🧩 Logical Puzzle Solving:\n');
+Future<void> demonstrateLogicalPuzzle(String baseUrl) async {
+  print('=== Logical Puzzle Solving ===\n');
 
   try {
-    final provider = await ai()
-        .ollama()
-        .baseUrl('http://localhost:11434')
-        .model('gpt-oss:latest')
-        .reasoning(true)
-        .temperature(0.3)
-        .maxTokens(1500)
-        .build();
-
-    final logicPuzzle = '''
+    final result = await _runReasonedCall(
+      baseUrl: baseUrl,
+      modelId: 'gpt-oss:latest',
+      prompt: '''
 You have 12 coins, one of which is fake (lighter than the others).
 You have a balance scale and can use it exactly 3 times.
 How do you identify the fake coin? Describe your strategy step by step.
-''';
+''',
+      options: const core.GenerateTextOptions(
+        temperature: 0.3,
+        maxOutputTokens: 1500,
+      ),
+      providerOptions: const community.OllamaGenerateTextOptions(
+        reasoning: true,
+        numCtx: 6144,
+        keepAlive: '5m',
+      ),
+    );
 
-    final response = await provider.chat([ChatMessage.user(logicPuzzle)]);
+    print('Puzzle: classic 12-coin balance-scale problem');
 
-    print('   Puzzle: Classic 12-coin balance scale problem');
-
-    if (response.thinking != null && response.thinking!.isNotEmpty) {
-      print('\n   🧠 Ollama\'s Logic Process:');
-      print('   ${'-' * 50}');
-      // Show key parts of logical thinking
-      final thinking = response.thinking!;
-      final lines = thinking.split('\n');
-      var importantLines = <String>[];
-
-      for (final line in lines) {
-        final lowerLine = line.toLowerCase();
-        if (lowerLine.contains('step') ||
-            lowerLine.contains('weigh') ||
-            lowerLine.contains('divide') ||
-            lowerLine.contains('strategy')) {
-          importantLines.add(line.trim());
-        }
-      }
-
-      if (importantLines.isNotEmpty) {
-        for (final line in importantLines.take(5)) {
-          print('   $line');
-        }
-        if (importantLines.length > 5) {
-          print('   ... [${importantLines.length - 5} more logical steps]');
-        }
-      } else {
-        print('   ${thinking.substring(0, 400)}...');
-      }
-      print('   ${'-' * 50}');
+    final reasoning = result.reasoningText;
+    if (reasoning != null && reasoning.isNotEmpty) {
+      print('\nReasoning excerpt:');
+      print(_truncate(reasoning, maxLength: 450));
     }
 
-    print('\n   🎯 Logical Solution:');
-    print('   ${response.text}');
-
-    print('   ✅ Logical puzzle demonstration completed\n');
-  } catch (e) {
-    print('   ❌ Logical puzzle failed: $e\n');
+    print('\nSolution:');
+    print(result.text);
+    print('Logical puzzle demonstration completed.\n');
+  } catch (error) {
+    print('Logical puzzle failed: $error\n');
   }
 }
 
-/// Demonstrate model comparison
-Future<void> demonstrateModelComparison() async {
-  print('📊 Model Comparison:\n');
+Future<void> demonstrateModelComparison(String baseUrl) async {
+  print('=== Model Comparison ===\n');
 
-  final testProblem = '''
-If you flip a fair coin 10 times and get 8 heads, what's the probability
+  const testProblem = '''
+If you flip a fair coin 10 times and get 8 heads, what is the probability
 of getting heads on the 11th flip? Explain your reasoning.
 ''';
 
-  final models = ['gpt-oss:latest', 'qwen2.5:latest', 'llama3.2:latest'];
+  const models = ['gpt-oss:latest', 'qwen2.5:latest', 'llama3.2:latest'];
 
-  for (final model in models) {
-    print('   Testing model: $model');
+  for (final modelId in models) {
+    print('Testing model: $modelId');
 
     try {
-      final provider = await ai()
-          .ollama()
-          .baseUrl('http://localhost:11434')
-          .model(model)
-          .reasoning(true)
-          .temperature(0.2)
-          .maxTokens(800)
-          .build();
+      final result = await _runReasonedCall(
+        baseUrl: baseUrl,
+        modelId: modelId,
+        prompt: testProblem,
+        options: const core.GenerateTextOptions(
+          temperature: 0.2,
+          maxOutputTokens: 800,
+        ),
+        providerOptions: const community.OllamaGenerateTextOptions(
+          reasoning: true,
+          numCtx: 4096,
+          keepAlive: '3m',
+        ),
+      );
 
-      final response = await provider.chat([ChatMessage.user(testProblem)]);
-
-      if (response.thinking != null && response.thinking!.isNotEmpty) {
-        print('   ✅ Thinking capability: Available');
-        print('   🧠 Thinking length: ${response.thinking!.length} characters');
+      final reasoning = result.reasoningText;
+      if (reasoning != null && reasoning.isNotEmpty) {
+        print('  reasoning: available (${reasoning.length} chars)');
       } else {
-        print('   ⚠️  Thinking capability: Not available');
+        print('  reasoning: not returned');
       }
 
-      print('   📝 Response quality: ${response.text?.length ?? 0} characters');
-
-      if (response.usage != null) {
-        print('   📊 Token usage: ${response.usage!.totalTokens}');
+      print('  answer length: ${result.text.length}');
+      if (result.usage case final usage?) {
+        print('  tokens: ${usage.totalTokens}');
       }
-
-      print('   ${'-' * 30}');
-    } catch (e) {
-      if (e.toString().contains('404') || e.toString().contains('not found')) {
-        print('   ❌ Model not available (not pulled)');
-      } else {
-        print('   ❌ Model test failed: $e');
-      }
-      print('   ${'-' * 30}');
+    } catch (error) {
+      _printModelError(error, prefix: '  ');
     }
+
+    print('');
   }
 
-  print('   💡 Model Recommendations:');
-  print('      • gpt-oss:latest: Best for reasoning tasks');
-  print('      • qwen2.5:latest: Good balance of speed and quality');
-  print('      • llama3.2:latest: Lightweight option');
-
-  print('   ✅ Model comparison demonstration completed\n');
+  print('Recommendations:');
+  print('  - gpt-oss:latest: strong local reasoning baseline');
+  print('  - qwen2.5:latest: balanced speed and quality');
+  print('  - llama3.2:latest: lighter local option');
+  print('');
 }
 
-/// 🎯 Key Ollama Thinking Concepts Summary:
-///
-/// Local Reasoning Benefits:
-/// - Complete privacy and data control
-/// - No API costs or rate limits
-/// - Offline capability
-/// - Custom model fine-tuning possible
-///
-/// Thinking Process Features:
-/// - Step-by-step reasoning observation
-/// - Mathematical calculation verification
-/// - Logical puzzle breakdown
-/// - Real-time thinking via streaming
-///
-/// Best Practices:
-/// - Use lower temperature (0.1-0.3) for analytical tasks
-/// - Allow sufficient token budget for thinking
-/// - Test multiple models for best results
-/// - Stream thinking for real-time insight
-///
-/// Model Selection:
-/// - gpt-oss: Specialized reasoning model
-/// - qwen2.5: Good general-purpose option
-/// - llama3.2: Lightweight alternative
-///
-/// Configuration Tips:
-/// - Ensure Ollama server is running
-/// - Pre-pull models before use
-/// - Monitor system resources for large models
-/// - Use reasoning=true flag for thinking
-///
-/// Limitations:
-/// - Requires local computational resources
-/// - Model availability depends on local pulls
-/// - Thinking quality varies by model
-/// - Slower than cloud-based solutions
-///
-/// Next Steps:
-/// - ../anthropic/extended_thinking.dart: Compare with cloud reasoning
-/// - ../../03_advanced_features/reasoning_models.dart: Cross-provider comparison
-/// - vision_capabilities.dart: Visual reasoning with local models
+Future<core.GenerateTextCallResult<void>> _runReasonedCall({
+  required String baseUrl,
+  required String modelId,
+  required String prompt,
+  required core.GenerateTextOptions options,
+  required community.OllamaGenerateTextOptions providerOptions,
+}) {
+  final model = community.Ollama(
+    baseUrl: baseUrl,
+  ).chatModel(modelId);
+
+  return core.generateTextCall<void>(
+    model: model,
+    prompt: [
+      core.UserPromptMessage.text(prompt),
+    ],
+    options: options,
+    callOptions: core.CallOptions(
+      providerOptions: providerOptions,
+    ),
+  );
+}
+
+void _printModelError(Object error, {String prefix = ''}) {
+  final message = error.toString();
+  if (message.contains('404') ||
+      message.contains('model') ||
+      message.contains('not found')) {
+    print('${prefix}Model not available. Pull it first with `ollama pull ...`.');
+    return;
+  }
+
+  print('${prefix}Thinking request failed: $error');
+}
+
+String _truncate(String text, {required int maxLength}) {
+  if (text.length <= maxLength) {
+    return text;
+  }
+
+  return '${text.substring(0, maxLength)}...';
+}

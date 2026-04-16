@@ -108,7 +108,7 @@ shared-capability happy path.
 | Anthropic | Claude, thinking | [anthropic/](04_providers/anthropic/) |
 | DeepSeek / OpenRouter | OpenAI-compatible profile flows | [others/](04_providers/others/) |
 | Groq | Fast inference | [groq/](04_providers/groq/) |
-| Ollama | Compatibility shell for local runtime tuning and reasoning | [ollama/](04_providers/ollama/) |
+| Ollama | Modern community-surface local runtime tuning with provider-owned options | [ollama/](04_providers/ollama/) |
 | ElevenLabs | Compatibility shell for voice controls and broader audio flows | [elevenlabs/](04_providers/elevenlabs/) |
 | xAI | Live search, Grok | [xai/](04_providers/xai/) |
 | Others | OpenAI-compatible | [others/](04_providers/others/) |

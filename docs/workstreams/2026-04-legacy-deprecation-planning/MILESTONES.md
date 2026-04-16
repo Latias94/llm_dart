@@ -123,11 +123,14 @@ Current status:
   `layered_http_config.dart`, and `timeout_configuration.dart` now also use
   the stable `AI.*(..., transport: ...)` plus transport-package recipe instead
   of the legacy builder HTTP shell
+- `example/04_providers/ollama/advanced_features.dart` and
+  `thinking_example.dart` now also use the modern `llm_dart_community`
+  surface plus `OllamaGenerateTextOptions` instead of the legacy builder shell
 - the ElevenLabs and Ollama provider READMEs now lead with community-package
   modern surfaces and use provider-specific entrypoints for compatibility
   boundaries instead of direct `legacy.dart` snippets
 - the scoped code baseline across `example`, `lib`, and `packages` is now
-  `15` Dart files with `legacy.dart` imports and `15` Dart files with direct
+  `13` Dart files with `legacy.dart` imports and `13` Dart files with direct
   `ai()` usage
 - `example/03_advanced_features/README.md` now leads with stable snippets and
   now teaches stable transport recipes instead of the old builder HTTP shell

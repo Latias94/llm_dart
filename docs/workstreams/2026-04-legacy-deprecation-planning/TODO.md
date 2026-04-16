@@ -48,6 +48,9 @@
 - [x] Rewrite the ElevenLabs and Ollama provider READMEs so modern community
   surfaces lead and compatibility snippets no longer teach `legacy.dart`
   directly
+- [x] Rewrite the Ollama provider runtime examples
+  (`advanced_features.dart`, `thinking_example.dart`) onto the
+  `llm_dart_community` surface with provider-owned runtime options
 - [ ] Rewrite the highest-traffic example slices so modern APIs become the
   default copy-paste path
 - [ ] Write short task-oriented migration recipes for the most common builder
