@@ -87,6 +87,8 @@
   `createProvider(..., extensions: ...)`, and `CancelToken`
 - [x] Convert the branch-landed removals into final release notes / changelog
   text if this branch becomes the actual breaking release vehicle
+- [x] Decide whether the branch-landed wave-1 removals should ship only in an
+  explicit breaking release or remain deferred off non-breaking release lines
 
 ## Explicitly Deferred
 

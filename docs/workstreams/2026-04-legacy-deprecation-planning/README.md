@@ -116,6 +116,10 @@ This phase should explicitly avoid:
   - Concrete changelog and migration-note draft for the already-landed
     wave-1 leaf removals, ready to adapt into `CHANGELOG.md` if this branch
     becomes the breaking-release vehicle.
+- [14-wave-1-execution-decision.md](14-wave-1-execution-decision.md)
+  - Execution decision for the already-landed wave-1 removals: ship only in
+    an explicit breaking release, otherwise keep them deferred off
+    non-breaking release lines.
 - [TODO.md](TODO.md)
   - Open work items for this planning phase.
 - [MILESTONES.md](MILESTONES.md)
@@ -142,6 +146,8 @@ What is now written down:
 - explicit compatibility test-retention rules for removals
 - a concrete wave-1 release-note and changelog draft for the branch-landed
   leaf-removal slice
+- an explicit execution decision for whether that branch-landed wave-1 slice
+  should ship now or stay deferred off non-breaking release lines
 
 What is now also landed on this branch:
 
@@ -156,5 +162,5 @@ What is now also landed on this branch:
 
 What remains open before a wider deprecation wave:
 
-- execute or further defer the proposed wave-1 removal set in a deliberate
-  breaking release
+- choose a real release vehicle and version when maintainers are ready to open
+  the next explicit breaking window
