@@ -12,7 +12,7 @@ It is the closure statement for the current phase.
 
 ## Closure Decision
 
-As of 2026-04-16, the active, non-deferred goals of this workstream are
+As of 2026-04-17, the active, non-deferred goals of this workstream are
 complete.
 
 What remains open in `TODO.md` is intentionally deferred policy, not active
@@ -102,6 +102,26 @@ new capability boundary credible in real use:
 That means the architecture is now validated not only at provider and core
 layers, but also at the app-facing integration layer.
 
+### 6. The Remaining Stream, Reader, And Diagnostics Questions Are Now Frozen
+
+The late-phase follow-up audits also closed the last honest structural
+questions that still looked tempting after the larger refactor work landed:
+
+- the event/UI/message layering was re-audited against the latest
+  `repo-ref/ai` and confirmed to already have the same three-layer shape
+- the transport-neutral `TextStreamEvent -> ChatUiStreamChunk` projector now
+  lives in shared core instead of only the HTTP adapter
+- `readChatUiStream(...)` now has narrow additive step observation and
+  validation hooks without widening shared events or growing session APIs
+- `DefaultChatSession` and `ChatController` diagnostics ownership is now
+  explicitly frozen below another lifecycle facade
+- transport and provider diagnostics ownership is now explicitly frozen, so
+  retry/timeout/reconnect tracing stays transport-owned while shared
+  warnings/finish/response identity stay in shared result/event/message layers
+
+This matters because it closes the last remaining "maybe add another shared
+helper" pressure points without reopening the repository boundary model.
+
 ## What Stays Deliberately Deferred
 
 The remaining unchecked TODO items are deliberate deferrals:
@@ -175,6 +195,19 @@ Another refactor should happen only when at least one of these becomes true:
 5. a deliberate deprecation plan makes old compatibility net-negative
 
 If none of these is true, the boundary should remain closed.
+
+### 5. Keep Diagnostics Layered By Ownership
+
+Diagnostics should now stay split by the layer that actually owns them:
+
+- common call diagnostics in shared result and stream models
+- UI-facing merged metadata in `ChatUiMessage`
+- reader-only observation and validation at the reader layer
+- retry, timeout, request tracing, and reconnect inside transport
+- provider-native detail in `ProviderMetadata` and provider-owned APIs
+
+Do not collapse those into a new shared diagnostics facade unless repeated real
+integrations prove one more cross-provider shape is actually needed.
 
 ## Recommended Next Route
 
