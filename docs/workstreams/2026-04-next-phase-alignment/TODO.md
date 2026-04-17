@@ -17,6 +17,9 @@ architecture debt.
 - [x] Add reader-level metadata and data-part validation hooks for
   `readChatUiStream(...)` without widening shared events or pushing validation
   policy into `ChatSession`
+- [x] Decide whether `DefaultChatSession` or `ChatController` should expose a
+  new diagnostics surface after the reader-level observation and validation
+  work landed
 
 ## Streamed Runner Maturity
 

@@ -132,6 +132,10 @@ This phase should explicitly avoid:
   - Additive reader-level metadata and data-part validation hooks that improve
     direct chunk-stream processing without widening shared events or growing
     `ChatSession`.
+- [14-default-chat-session-diagnostics-seam.md](14-default-chat-session-diagnostics-seam.md)
+  - Freeze note for keeping diagnostics layered across `ChatState`,
+    `transientDataParts`, reader helpers, and transport recovery instead of
+    widening `ChatSession` or `ChatController`.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)

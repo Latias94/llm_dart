@@ -112,6 +112,10 @@ This phase should explicitly avoid:
 - [12-compatibility-test-retention.md](12-compatibility-test-retention.md)
   - Test-retention rules for legacy leaf removals so guardrails do not vanish
     with the APIs they protect.
+- [13-wave-1-release-note-draft.md](13-wave-1-release-note-draft.md)
+  - Concrete changelog and migration-note draft for the already-landed
+    wave-1 leaf removals, ready to adapt into `CHANGELOG.md` if this branch
+    becomes the breaking-release vehicle.
 - [TODO.md](TODO.md)
   - Open work items for this planning phase.
 - [MILESTONES.md](MILESTONES.md)
@@ -136,6 +140,8 @@ What is now written down:
 - a proposed first breaking-window removal set
 - reusable release-note and migration-note templates
 - explicit compatibility test-retention rules for removals
+- a concrete wave-1 release-note and changelog draft for the branch-landed
+  leaf-removal slice
 
 What is now also landed on this branch:
 

@@ -36,6 +36,10 @@ Current status:
   validation hooks at the reader layer, covering one of the remaining honest
   gaps versus `repo-ref/ai` without widening shared events or growing
   session/controller lifecycle APIs
+- `DefaultChatSession` and `ChatController` diagnostics ownership is now also
+  frozen more explicitly: durable state stays in `ChatState`, runtime-only
+  app signals stay in `transientDataParts`, direct stream observation and
+  validation stay in the reader, and reconnect diagnostics stay transport-owned
 - the remaining meaningful differences are now classified as higher-layer
   reader, validation, or transport-diagnostic questions rather than missing
   shared event families
@@ -135,6 +139,9 @@ Current status:
 - the main frozen areas are now explicit: shared runner scope, shared event
   surface, OpenAI text request-path structure, package-count symmetry, and
   legacy removal
+- session/controller diagnostics widening is now also explicitly frozen unless
+  repeated real integrations prove that `ChatState`, `transientDataParts`,
+  reader helpers, and transport-owned recovery are still insufficient
 - reopen triggers are now written down so future refactors can be justified by
   product evidence, repeated bugs, or repeated duplication
 - this phase now ends with a clearer architectural rule: keep the shared

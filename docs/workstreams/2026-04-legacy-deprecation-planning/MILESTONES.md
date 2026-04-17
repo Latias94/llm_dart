@@ -188,6 +188,9 @@ Current status:
   in `11-removal-release-note-templates.md`
 - the compatibility test-retention plan for removals is now written down in
   `12-compatibility-test-retention.md`
+- a concrete copy-ready wave-1 release-note and changelog draft now also
+  exists in `13-wave-1-release-note-draft.md`, so the already-landed leaf
+  removals can be shipped or deferred without inventing migration text later
 - the first conservative wave-1 branch slice is now also landed in code:
   deprecated preset helper aliases removed, shared builder web-search helpers
   removed, `createProvider(..., extensions: ...)` reduced to
