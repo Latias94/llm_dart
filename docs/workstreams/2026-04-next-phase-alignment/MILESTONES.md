@@ -40,6 +40,11 @@ Current status:
   frozen more explicitly: durable state stays in `ChatState`, runtime-only
   app signals stay in `transientDataParts`, direct stream observation and
   validation stay in the reader, and reconnect diagnostics stay transport-owned
+- transport and provider diagnostics ownership is now also re-frozen more
+  explicitly: common warnings/finish/response identity stay in shared
+  result/event/message layers, provider-native detail stays in
+  `ProviderMetadata`, and retry/timeout/reconnect tracing stays
+  transport-owned
 - the remaining meaningful differences are now classified as higher-layer
   reader, validation, or transport-diagnostic questions rather than missing
   shared event families
@@ -142,6 +147,10 @@ Current status:
 - session/controller diagnostics widening is now also explicitly frozen unless
   repeated real integrations prove that `ChatState`, `transientDataParts`,
   reader helpers, and transport-owned recovery are still insufficient
+- shared request/response diagnostics widening is now also explicitly frozen
+  unless repeated real integrations prove that current result fields,
+  `ProviderMetadata`, raw chunks, and transport diagnostics are still
+  insufficient
 - reopen triggers are now written down so future refactors can be justified by
   product evidence, repeated bugs, or repeated duplication
 - this phase now ends with a clearer architectural rule: keep the shared

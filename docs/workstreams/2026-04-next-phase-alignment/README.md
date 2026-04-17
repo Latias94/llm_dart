@@ -136,6 +136,10 @@ This phase should explicitly avoid:
   - Freeze note for keeping diagnostics layered across `ChatState`,
     `transientDataParts`, reader helpers, and transport recovery instead of
     widening `ChatSession` or `ChatController`.
+- [15-transport-and-provider-diagnostics-boundary.md](15-transport-and-provider-diagnostics-boundary.md)
+  - Re-audit of shared result diagnostics, provider metadata, raw chunks, and
+    transport diagnostics versus `repo-ref/ai`, confirming that the current
+    layered ownership is already the honest boundary.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)

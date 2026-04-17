@@ -20,6 +20,9 @@ architecture debt.
 - [x] Decide whether `DefaultChatSession` or `ChatController` should expose a
   new diagnostics surface after the reader-level observation and validation
   work landed
+- [x] Re-audit transport and provider diagnostics ownership against
+  `repo-ref/ai` before adding any new shared request/response or session
+  diagnostics surface
 
 ## Streamed Runner Maturity
 
