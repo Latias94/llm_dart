@@ -1,7 +1,10 @@
 name: llm_dart_core
 description: Core model specifications and shared data structures for llm_dart.
-version: 0.1.0-dev.0
-publish_to: none
+version: 0.11.0-alpha.1
+license: MIT
+homepage: https://github.com/Latias94/llm_dart
+repository: https://github.com/Latias94/llm_dart
+issue_tracker: https://github.com/Latias94/llm_dart/issues
 
 environment:
   sdk: '>=3.5.0 <4.0.0'

@@ -32,7 +32,8 @@ breaking release, these removals should stay deferred off that release line.
 
 The current repository state is:
 
-- root package version is still `0.10.7`
+- the maintenance line remains `0.10.x`
+- this branch is now being prepared as `0.11.0-alpha.1`
 - the branch already contains the wave-1 removal slice
 - migration notes and provider-family replacement guidance already exist
 - first-party docs and examples are already moved off the removed leaf APIs
@@ -88,7 +89,7 @@ still teaching the removed path as the default.
 
 ## Why Wave 1 Should Still Not Slip Into A Non-Breaking Release
 
-### 1. The Published Line Is Still `0.10.7`
+### 1. The Stable Published Line Is Still `0.10.x`
 
 Even though the repository is still pre-`1.0.0`, the workstream already froze
 the rule that removals should happen only in an explicit breaking window.
@@ -133,8 +134,11 @@ Ship wave 1.
 
 Required release actions:
 
-- adapt `13-wave-1-release-note-draft.md` into the real `CHANGELOG.md` entry
-- choose an explicit breaking version number
+- choose the explicit breaking version number and release date
+- if shipping before `1.0.0`, prefer an explicit preview such as
+  `0.11.0-alpha.1` instead of a routine `0.10.x` release
+- keep the real `CHANGELOG.md` entry aligned with the chosen preview/stable
+  version heading and release date
 - call out both removed and intentionally retained compatibility surfaces
 - keep the migration links visible in the release announcement
 

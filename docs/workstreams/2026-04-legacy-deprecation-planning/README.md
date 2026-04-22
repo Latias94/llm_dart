@@ -113,13 +113,17 @@ This phase should explicitly avoid:
   - Test-retention rules for legacy leaf removals so guardrails do not vanish
     with the APIs they protect.
 - [13-wave-1-release-note-draft.md](13-wave-1-release-note-draft.md)
-  - Concrete changelog and migration-note draft for the already-landed
-    wave-1 leaf removals, ready to adapt into `CHANGELOG.md` if this branch
-    becomes the breaking-release vehicle.
+  - Source changelog and migration-note draft for the already-landed
+    wave-1 leaf removals, now recorded in the real `CHANGELOG.md`
+    `0.11.0-alpha.1` entry for the current breaking preview.
 - [14-wave-1-execution-decision.md](14-wave-1-execution-decision.md)
   - Execution decision for the already-landed wave-1 removals: ship only in
     an explicit breaking release, otherwise keep them deferred off
     non-breaking release lines.
+- [15-wave-1-release-vehicle-and-checklist.md](15-wave-1-release-vehicle-and-checklist.md)
+  - Freeze note for the default wave-1 release vehicle and the concrete
+    execution checklist, aligning the first breaking preview with Dart/pub
+    versioning through `0.11.0-alpha.x` instead of forcing an early `1.0.0`.
 - [TODO.md](TODO.md)
   - Open work items for this planning phase.
 - [MILESTONES.md](MILESTONES.md)
@@ -146,8 +150,14 @@ What is now written down:
 - explicit compatibility test-retention rules for removals
 - a concrete wave-1 release-note and changelog draft for the branch-landed
   leaf-removal slice
+- a staged `[Unreleased]` `CHANGELOG.md` entry for that same wave-1 slice, so
+  release text now exists in the real changelog rather than only in planning
+  notes
 - an explicit execution decision for whether that branch-landed wave-1 slice
   should ship now or stay deferred off non-breaking release lines
+- a concrete default release vehicle and execution checklist for that same
+  wave-1 slice, aligning the 2026-04 plan with Dart/pub pre-`1.0.0`
+  versioning instead of leaving version strategy ambiguous
 
 What is now also landed on this branch:
 
@@ -162,5 +172,9 @@ What is now also landed on this branch:
 
 What remains open before a wider deprecation wave:
 
-- choose a real release vehicle and version when maintainers are ready to open
-  the next explicit breaking window
+- decide whether maintainers are ready to actually open the default
+  `0.11.0-alpha.1` breaking-preview vehicle for wave 1
+- carry the same release text forward cleanly if the preview line moves to a
+  later alpha/beta/RC/stable heading
+- choose the non-`dev` publishable versions for the workspace packages that
+  the root package release will depend on

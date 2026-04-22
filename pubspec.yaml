@@ -1,6 +1,6 @@
 name: llm_dart
 description: A modular Dart library for AI provider interactions with unified interface for OpenAI, Anthropic, Google, DeepSeek, Ollama, xAI, Groq, ElevenLabs and more.
-version: 0.10.7
+version: 0.11.0-alpha.1
 license: MIT
 homepage: https://github.com/Latias94/llm_dart
 repository: https://github.com/Latias94/llm_dart
@@ -15,34 +15,16 @@ environment:
   sdk: '>=3.5.0 <4.0.0'
 
 dependencies:
-  llm_dart_anthropic: ^0.1.0-dev.0
-  llm_dart_chat: ^0.1.0-dev.0
-  llm_dart_community: ^0.1.0-dev.0
-  llm_dart_core: ^0.1.0-dev.0
-  llm_dart_google: ^0.1.0-dev.0
-  llm_dart_openai: ^0.1.0-dev.0
-  llm_dart_transport: ^0.1.0-dev.0
+  llm_dart_anthropic: ^0.11.0-alpha.1
+  llm_dart_chat: ^0.11.0-alpha.1
+  llm_dart_community: ^0.11.0-alpha.1
+  llm_dart_core: ^0.11.0-alpha.1
+  llm_dart_google: ^0.11.0-alpha.1
+  llm_dart_openai: ^0.11.0-alpha.1
+  llm_dart_transport: ^0.11.0-alpha.1
 
 dev_dependencies:
   test: ^1.27.0
   llm_dart_test:
     path: packages/llm_dart_test
   lints: ^6.0.0
-
-dependency_overrides:
-  llm_dart_anthropic:
-    path: packages/llm_dart_anthropic
-  llm_dart_chat:
-    path: packages/llm_dart_chat
-  llm_dart_community:
-    path: packages/llm_dart_community
-  llm_dart_core:
-    path: packages/llm_dart_core
-  llm_dart_google:
-    path: packages/llm_dart_google
-  llm_dart_openai:
-    path: packages/llm_dart_openai
-  llm_dart_test:
-    path: packages/llm_dart_test
-  llm_dart_transport:
-    path: packages/llm_dart_transport

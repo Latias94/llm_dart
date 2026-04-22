@@ -90,7 +90,9 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - [33-legacy-factory-entrypoint-deprecations.md](33-legacy-factory-entrypoint-deprecations.md)
   - Frozen deprecation scope for compatibility-only preset factory helpers once the stable `AI` facade replacement already exists.
 - [34-legacy-api-removal-window.md](34-legacy-api-removal-window.md)
-  - Frozen removal window for the old root-package compatibility APIs, with the earliest removal point set no earlier than `1.0.0`.
+  - Frozen removal window for the old root-package compatibility APIs, keeping
+    routine maintenance releases removal-free and deferring actual removals to
+    an explicit breaking prerelease/stable window.
 - [35-bridge-incompatible-provider-result-migration-guidance.md](35-bridge-incompatible-provider-result-migration-guidance.md)
   - Frozen migration wording for provider-native result families that still stay outside the legacy bridge allowlist.
 - [36-provider-stream-coverage-matrix.md](36-provider-stream-coverage-matrix.md)

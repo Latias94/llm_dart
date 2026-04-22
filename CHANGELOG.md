@@ -5,6 +5,57 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0-alpha.1] - 2026-04-22
+
+This branch currently carries a conservative wave-1 removal set that is
+intended only for the next explicit breaking release. It must not be folded
+into a routine `0.10.x` maintenance release.
+
+### Removed
+
+- Removed the previously deprecated preset helper aliases across the
+  OpenAI-family, Google, Anthropic, Groq, DeepSeek, Ollama, xAI, Phind, and
+  ElevenLabs compatibility families. Use `AI.<provider>(...).<model/api>(...)`
+  for modern app-facing code, or the non-deprecated root provider constructor
+  when you still need the compatibility root surface.
+- Removed the deprecated builder web-search helpers and the deprecated
+  OpenRouter builder search ergonomics. Use provider-owned search tools,
+  typed provider options, and provider-owned model settings on
+  `AI.<provider>(...).chatModel(...)` instead.
+- Removed the deprecated `extensions` escape hatch from
+  `createProvider(...)`. The `createProvider(...)` helper itself remains
+  available for compatibility code, but provider-specific behavior should now
+  move to typed provider APIs/options or explicit provider/builder surfaces.
+- Removed the deprecated `CancelToken` alias. Use
+  `TransportCancellation` instead.
+
+### Deprecated
+
+- `ai()` remains deprecated. Use `AI.<provider>(...)` for modern code or
+  `LLMBuilder()` for explicit compatibility builder flows.
+
+### Migration Notes
+
+- Replace preset helper aliases such as `createGoogleChatProvider(...)` with
+  `AI.google(...).chatModel(...)` for modern code, or `createGoogleProvider(...)`
+  when you still need the frozen compatibility provider surface.
+- Replace shared builder web-search helpers with provider-owned search APIs
+  such as `OpenAIGenerateTextOptions`, `AnthropicGenerateTextOptions`,
+  `XAIGenerateTextOptions`, or `OpenRouterChatModelSettings`.
+- Replace `createProvider(..., extensions: ...)` by branching earlier into the
+  known provider API, or by staying on `LLMBuilder()` / `createProvider(...)`
+  without raw extension bags.
+- Replace `CancelToken` with `TransportCancellation`.
+
+### Kept
+
+- `legacy.dart` remains the explicit compatibility import.
+- `LLMBuilder()` remains the compatibility builder trunk.
+- `createProvider(...)` remains the frozen generic compatibility helper.
+- Non-deprecated root provider constructors such as
+  `createOpenAIProvider(...)` and `createGoogleProvider(...)` remain
+  available.
+
 ## [0.10.7] - 2026-03-26
 
 ### Fixed

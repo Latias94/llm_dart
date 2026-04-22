@@ -61,20 +61,21 @@ shared-capability entrypoint.
 - `llm_dart_google`
   - Google provider
 - `llm_dart_community`
-  - workspace package for modern Ollama chat/embeddings and ElevenLabs speech/transcription shared-capability surfaces
+  - alpha-preview package for modern Ollama chat/embeddings and ElevenLabs speech/transcription shared-capability surfaces
 - `llm_dart_flutter`
   - thin Flutter adapter above `llm_dart_chat`
 
-Today, `llm_dart_chat` and `llm_dart_flutter` are still workspace packages
-during the refactor. The stable published package remains `llm_dart`.
-`llm_dart_community` is also currently a workspace package in that same
-refactor path.
+For the `0.11.0-alpha.x` preview line, the focused workspace packages are also
+being prepared as publishable alpha packages. The root `llm_dart` facade
+remains the default entrypoint, while `llm_dart_chat`, `llm_dart_community`,
+and `llm_dart_flutter` are available for narrower adoption when you want the
+split package boundaries directly.
 
 ## Installation
 
 ```yaml
 dependencies:
-  llm_dart: ^0.10.7
+  llm_dart: ^0.11.0-alpha.1
 ```
 
 Then run:
@@ -82,6 +83,10 @@ Then run:
 ```bash
 dart pub get
 ```
+
+If you are developing inside this monorepo, make sure your workspace bootstrap
+flow generates local `pubspec_overrides.yaml` files for workspace package
+linking before you run package resolution or analysis.
 
 ## Focused Entry Points
 
@@ -103,7 +108,9 @@ dart pub get
   - explicit compatibility shell for `LLMBuilder()`, `ai()`,
     `createProvider(...)`, legacy models, and builder-era APIs
 - `package:llm_dart_community/llm_dart_community.dart`
-  - workspace-only modern community-provider entrypoint for Ollama chat/embeddings and ElevenLabs speech/transcription shared-capability models
+  - alpha-preview modern community-provider entrypoint for Ollama
+    chat/embeddings and ElevenLabs speech/transcription shared-capability
+    models
 - `package:llm_dart/transport.dart`
   - transport abstractions and shared logging primitives re-exported from `llm_dart_transport`
 - `package:llm_dart_transport/dio.dart`

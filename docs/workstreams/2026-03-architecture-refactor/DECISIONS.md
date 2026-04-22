@@ -316,12 +316,14 @@ Provider-specific features should be represented through:
 - deprecation should not be applied to old helper surfaces that still have no stable package-owned replacement yet
 - new examples and new docs should stop presenting deprecated preset helpers as recommended API
 
-## D36. Old Root Compatibility APIs Stay Until At Least `1.0.0`
+## D36. Old Root Compatibility APIs Stay Out Of Routine Maintenance Releases
 
 - deprecated compatibility APIs should keep working throughout the `0.x` line
-- the old root-package compatibility surface should not be removed before `1.0.0`
+- the old root-package compatibility surface should not be removed in routine
+  maintenance releases
 - removal should happen only after a migration guide, updated examples, and explicit release-note coverage exist
-- deprecation pressure belongs in `0.x`; hard removal belongs no earlier than the first `1.0.0` breaking release
+- deprecation pressure belongs in `0.x`; hard removal belongs only in an
+  explicit breaking prerelease or later stable breaking release
 
 ## D37. Bridge-Incompatible Provider-Native Result Blocks Need Migration-Oriented Messaging
 

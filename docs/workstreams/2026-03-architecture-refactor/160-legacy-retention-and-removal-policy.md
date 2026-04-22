@@ -124,7 +124,8 @@ This policy works together with `34-legacy-api-removal-window.md`.
 
 The removal timing remains:
 
-- no earlier than `1.0.0`,
+- not in routine maintenance releases,
+- first through an explicit breaking prerelease/stable window,
 - only after modern replacements are real,
 - only after examples and migration docs exist,
 - only after the repository can explain exactly which compatibility APIs are

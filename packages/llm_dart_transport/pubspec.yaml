@@ -1,15 +1,17 @@
 name: llm_dart_transport
 description: Shared transport abstractions for llm_dart providers.
-version: 0.1.0-dev.0
-publish_to: none
+version: 0.11.0-alpha.1
+license: MIT
+homepage: https://github.com/Latias94/llm_dart
+repository: https://github.com/Latias94/llm_dart
+issue_tracker: https://github.com/Latias94/llm_dart/issues
 
 environment:
   sdk: '>=3.5.0 <4.0.0'
 
 dependencies:
   dio: ^5.9.0
-  llm_dart_core:
-    path: ../llm_dart_core
+  llm_dart_core: ^0.11.0-alpha.1
   logging: ^1.2.0
 
 dev_dependencies:

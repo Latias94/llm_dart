@@ -319,3 +319,9 @@ Recommended strategy:
   `llm_dart_flutter` after the API has stabilized
 
 This gives the project the benefit of clean boundaries without immediately multiplying release and maintenance overhead.
+
+Later note:
+
+- the later `0.11.0-alpha.x` preview preparation did in fact move several
+  focused workspace packages toward independent publication because the root
+  package now depends on them as real hosted packages

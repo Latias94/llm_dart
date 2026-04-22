@@ -191,10 +191,17 @@ Current status:
 - a concrete copy-ready wave-1 release-note and changelog draft now also
   exists in `13-wave-1-release-note-draft.md`, so the already-landed leaf
   removals can be shipped or deferred without inventing migration text later
+- that same wave-1 text now also exists in the real `CHANGELOG.md`
+  `0.11.0-alpha.1` entry, so release prep is no longer trapped only in
+  planning docs
 - the execution decision for that branch-landed wave-1 slice is now also
   explicit in `14-wave-1-execution-decision.md`: ship only through a
   deliberate breaking release, otherwise keep the removals deferred off any
   non-breaking release line
+- the default release vehicle for that same wave-1 slice is now also frozen in
+  `15-wave-1-release-vehicle-and-checklist.md`: the first breaking preview now
+  follows Dart/pub versioning more honestly through `0.11.0-alpha.x` instead
+  of drifting into routine `0.10.x` maintenance or forcing an early `1.0.0`
 - the first conservative wave-1 branch slice is now also landed in code:
   deprecated preset helper aliases removed, shared builder web-search helpers
   removed, `createProvider(..., extensions: ...)` reduced to

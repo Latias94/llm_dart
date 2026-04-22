@@ -90,6 +90,15 @@
 - [x] Decide whether the branch-landed wave-1 removals should ship only in an
   explicit breaking release or remain deferred off non-breaking release lines
 
+Current staging status:
+
+- [x] Record the wave-1 branch removals in the real `CHANGELOG.md`
+  `0.11.0-alpha.1` entry so the remaining release work is no longer missing
+  release text
+- [x] Freeze the default wave-1 release vehicle and release checklist so the
+  next decision is whether to ship `0.11.0-alpha.1`, not whether removals can
+  drift into routine `0.10.x` maintenance
+
 ## Explicitly Deferred
 
 - [ ] Deprecate `LLMBuilder` before common task-oriented migration recipes exist

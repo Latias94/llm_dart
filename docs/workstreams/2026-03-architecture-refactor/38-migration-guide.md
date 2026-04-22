@@ -462,9 +462,10 @@ Current frozen policy:
 
 - deprecations may continue during `0.x`
 - examples and docs should move to the stable `AI` facade now
-- actual removal should happen no earlier than `1.0.0`
-- even at `1.0.0`, removal should happen only with migration docs, stable
-  replacements, and explicit release-note coverage
+- actual removal should happen only in an explicit breaking prerelease or
+  later stable breaking release
+- even in that first breaking window, removal should happen only with
+  migration docs, stable replacements, and explicit release-note coverage
 
 So the right strategy today is not “wait until the old APIs disappear”.
 

@@ -402,7 +402,9 @@ Current status:
 - the long-tail OpenAI-compatible family is now also effectively closed at the current scope: OpenRouter stays on its audited online-model subset, xAI stays on its audited live-search subset, and Phind stays facade-only until a stronger provider contract justifies more
 - legacy compatibility `jsonSchema` now routes through shared `GenerateTextOptions.responseFormat` instead of provider-specific compat injection, and shared `JsonResponseFormat` now also carries `strict` for OpenAI-family encoding
 - deprecated compatibility markers now also cover the legacy preset helper families whose stable `AI.*(...).chatModel(...)` replacement already exists
-- the old root-package compatibility removal window is now frozen as “no earlier than `1.0.0`”
+- the old root-package compatibility removal window is now frozen as
+  “not in routine maintenance releases; only in an explicit breaking
+  prerelease/stable window”
 - fallback-only provider-native Anthropic result families now also carry explicit migration guidance instead of generic unsupported wording
 - provider stream coverage regression tests now explicitly cover OpenAI reasoning and failed-response paths, Anthropic malformed tool-input events, and Google source/file/reasoning-file stream paths
 - the old `compat_providers.dart` implementation bus is now decomposed into provider-family compatibility slices plus shared routing helpers, keeping the root entry stable while reducing the remaining root-package coupling hotspot

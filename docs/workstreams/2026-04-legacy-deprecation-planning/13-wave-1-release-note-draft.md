@@ -8,8 +8,12 @@ text.
 
 This document is no longer a template.
 
-It is the draft that can be copied into `CHANGELOG.md` if this branch becomes
-the actual breaking-release vehicle.
+It is the source draft behind the actual `CHANGELOG.md`
+`0.11.0-alpha.1` entry.
+
+The main work left for later preview/stable follow-ups is no longer to invent
+release text from scratch. It is only to adapt this text to the next explicit
+alpha/beta/RC/stable heading when the release vehicle changes.
 
 ## Scope
 

@@ -23,18 +23,22 @@ It means they now share one removal policy.
 
 ## 2. Frozen Removal Window
 
-The old root-package compatibility surface should not be removed before `1.0.0`.
+The old root-package compatibility surface should not be removed in routine
+maintenance releases.
 
 That means:
 
 - deprecations may be added during the `0.x` line
 - migration docs may keep getting stricter during the `0.x` line
 - examples and new docs should move to the `AI` facade during the `0.x` line
-- but the actual removal of deprecated compatibility APIs should wait until the first `1.0.0` breaking release at the earliest
+- but the actual removal of deprecated compatibility APIs should wait until the
+  first deliberate breaking prerelease or stable breaking window at the
+  earliest
 
 ## 3. Preconditions For Removal
 
-Even at `1.0.0`, removal should happen only after the repository has all of the following:
+Even in that first deliberate breaking window, removal should happen only after
+the repository has all of the following:
 
 1. a published migration guide for the old root-package surface
 2. rewritten minimal examples that use the stable primary API
@@ -54,8 +58,9 @@ During the remaining `0.x` line:
 
 In other words:
 
-- `0.x` is for migration pressure
-- `1.0.0` is the earliest removal point
+- routine `0.x` maintenance is for migration pressure
+- actual removal belongs only in an explicit breaking preview or later stable
+  breaking release
 
 ## 5. Why This Window Is Conservative
 
@@ -77,5 +82,17 @@ That would create churn, not clarity.
 The repository now has a frozen compatibility removal policy:
 
 - add deprecations now when a real stable replacement exists
-- keep the deprecated compatibility APIs alive through the `0.x` line
-- remove them no earlier than `1.0.0`, and only with migration documentation in place
+- keep the deprecated compatibility APIs alive through routine `0.x`
+  maintenance releases
+- remove them only in an explicit breaking prerelease/stable window, and only
+  with migration documentation in place
+
+## 7. Later Refinement
+
+This note was later refined by:
+
+- `docs/workstreams/2026-04-legacy-deprecation-planning/15-wave-1-release-vehicle-and-checklist.md`
+
+That later work aligns the first breaking preview with Dart/pub pre-`1.0.0`
+versioning and makes `0.11.0-alpha.x` the default vehicle for the current
+wave-1 leaf removals.
