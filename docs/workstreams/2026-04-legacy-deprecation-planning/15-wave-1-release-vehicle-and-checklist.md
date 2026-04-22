@@ -224,6 +224,13 @@ and dry-run validation in place:
 - the remaining dry-run noise is limited to local `pubspec_overrides.yaml`
   hints during unpublished workspace development
 
+The current repository now also has a concrete validation command for the full
+workspace publish sequence:
+
+```bash
+dart tool/run_workspace_publish_dry_run.dart
+```
+
 If maintainers later want different package-specific version cadences, that can
 still be revisited after the architecture transition settles.
 

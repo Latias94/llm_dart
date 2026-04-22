@@ -1,13 +1,13 @@
 # Monorepo-only workspace content
-packages/
-docs/
-repo-ref/
+/packages/
+/docs/
+/repo-ref/
 
 # Local tooling and maintenance files
-tool/
-melos.yaml
-codecov.yml
+/tool/
+/melos.yaml
+/codecov.yml
 
 # Generated or local-only directories
-build/
-coverage/
+/build/
+/coverage/

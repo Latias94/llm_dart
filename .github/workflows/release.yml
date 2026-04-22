@@ -54,6 +54,9 @@ jobs:
         working-directory: packages/llm_dart_flutter
         run: flutter analyze --fatal-infos
 
+      - name: Dry run workspace publish sequence
+        run: dart tool/run_workspace_publish_dry_run.dart
+
   # Publish using the reusable workflow from dart-lang
   publish:
     name: Publish to pub.dev

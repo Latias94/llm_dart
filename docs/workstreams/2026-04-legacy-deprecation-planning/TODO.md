@@ -101,6 +101,8 @@ Current staging status:
 - [x] Add a concrete workspace bootstrap script for local
   `pubspec_overrides.yaml` generation after switching publishable packages to
   hosted `0.11.0-alpha.1` constraints
+- [x] Add a concrete workspace publish dry-run command that validates the root
+  package and the publishable workspace packages in dependency order
 
 ## Explicitly Deferred
 

@@ -34,6 +34,18 @@ final class WorkspaceBootstrapResult {
   bool get wroteAnyFiles => writes.isNotEmpty;
 }
 
+const List<String> publishableWorkspacePackages = [
+  'llm_dart_core',
+  'llm_dart_transport',
+  'llm_dart_chat',
+  'llm_dart_openai',
+  'llm_dart_google',
+  'llm_dart_anthropic',
+  'llm_dart_community',
+  'llm_dart_flutter',
+  'llm_dart',
+];
+
 Future<WorkspaceBootstrapResult> generateWorkspacePubspecOverrides({
   Directory? repoRoot,
 }) async {

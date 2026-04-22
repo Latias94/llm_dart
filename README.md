@@ -96,6 +96,13 @@ dart tool/bootstrap_workspace_pubspec_overrides.dart
 
 Those generated `pubspec_overrides.yaml` files are intentionally ignored by git.
 
+For release validation across the root package plus the publishable workspace
+packages, run:
+
+```bash
+dart tool/run_workspace_publish_dry_run.dart
+```
+
 ## Focused Entry Points
 
 - `package:llm_dart/llm_dart.dart`
