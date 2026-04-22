@@ -169,6 +169,17 @@ What is now also landed on this branch:
 - `createProvider(..., extensions: ...)` is now reduced to
   `createProvider(...)`
 - the deprecated `CancelToken` alias is removed
+- the root package and the publishable workspace packages now use aligned
+  `0.11.0-alpha.1` versions
+- the root package now uses hosted alpha constraints for its publishable direct
+  workspace dependencies instead of checked-in runtime `path:` dependencies
+- package-level `LICENSE` / `CHANGELOG.md` metadata now exists for the
+  publishable workspace packages
+- root and package `dart pub publish --dry-run` validation is now closed at
+  `0 warnings`, with only local `pubspec_overrides.yaml` hints during workspace
+  development
+- the repository now has a concrete local workspace bootstrap command:
+  `dart tool/bootstrap_workspace_pubspec_overrides.dart`
 
 What remains open before a wider deprecation wave:
 
@@ -176,5 +187,7 @@ What remains open before a wider deprecation wave:
   `0.11.0-alpha.1` breaking-preview vehicle for wave 1
 - carry the same release text forward cleanly if the preview line moves to a
   later alpha/beta/RC/stable heading
-- choose the non-`dev` publishable versions for the workspace packages that
-  the root package release will depend on
+- publish the alpha workspace packages in dependency order before publishing the
+  root `llm_dart` facade
+- decide whether the first multi-package alpha publish sequence should stay
+  manual or gain dedicated release automation

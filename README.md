@@ -88,6 +88,14 @@ If you are developing inside this monorepo, make sure your workspace bootstrap
 flow generates local `pubspec_overrides.yaml` files for workspace package
 linking before you run package resolution or analysis.
 
+The supported bootstrap command is:
+
+```bash
+dart tool/bootstrap_workspace_pubspec_overrides.dart
+```
+
+Those generated `pubspec_overrides.yaml` files are intentionally ignored by git.
+
 ## Focused Entry Points
 
 - `package:llm_dart/llm_dart.dart`

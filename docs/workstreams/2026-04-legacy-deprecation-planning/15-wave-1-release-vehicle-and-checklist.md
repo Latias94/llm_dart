@@ -161,6 +161,12 @@ Current state:
   workspace packages
 - local workspace linking should now come from workspace-generated
   `pubspec_overrides.yaml`, not from checked-in runtime `path:` dependencies
+- the repository now provides the concrete bootstrap command for that local
+  linking flow:
+
+```bash
+dart tool/bootstrap_workspace_pubspec_overrides.dart
+```
 
 That is much closer to a real alpha publication plan, but it still requires the
 packages to be published in a coherent order.
@@ -188,6 +194,35 @@ dependencies with the same preview line for this wave:
 
 This is not mathematically required by SemVer, but it reduces avoidable release
 coordination noise for the first breaking preview.
+
+### Recommended Default Publication Order
+
+The default publish order for the current alpha workspace should be:
+
+1. `llm_dart_core`
+2. `llm_dart_transport`
+3. `llm_dart_chat`
+4. `llm_dart_openai`, `llm_dart_google`, `llm_dart_anthropic`,
+   `llm_dart_community`
+5. `llm_dart_flutter`
+6. root `llm_dart`
+
+This order follows the current dependency direction and keeps the root package
+last, after every publishable direct dependency is resolvable from pub.
+
+### Current Validation Status
+
+The current alpha-preparation branch now also has the minimum publish metadata
+and dry-run validation in place:
+
+- root `.pubignore` excludes workspace-only and reference-only material such as
+  `packages/`, `docs/`, `repo-ref/`, and `tool/`
+- the publishable workspace packages now all have local `LICENSE` and
+  `CHANGELOG.md` files
+- the root package and each publishable workspace package now pass
+  `dart pub publish --dry-run` with `0 warnings`
+- the remaining dry-run noise is limited to local `pubspec_overrides.yaml`
+  hints during unpublished workspace development
 
 If maintainers later want different package-specific version cadences, that can
 still be revisited after the architecture transition settles.

@@ -24,6 +24,9 @@ jobs:
         with:
           channel: stable
 
+      - name: Bootstrap workspace overrides
+        run: dart tool/bootstrap_workspace_pubspec_overrides.dart
+
       - name: Install dependencies
         run: dart pub get
 
@@ -64,6 +67,9 @@ jobs:
         with:
           channel: stable
 
+      - name: Bootstrap workspace overrides
+        run: dart tool/bootstrap_workspace_pubspec_overrides.dart
+
       - name: Install dependencies
         run: dart pub get
 
@@ -89,6 +95,9 @@ jobs:
         uses: dart-lang/setup-dart@v1
         with:
           sdk: stable
+
+      - name: Bootstrap workspace overrides
+        run: dart tool/bootstrap_workspace_pubspec_overrides.dart
 
       - name: Install dependencies
         run: dart pub get
@@ -122,6 +131,9 @@ jobs:
         uses: dart-lang/setup-dart@v1
         with:
           sdk: stable
+
+      - name: Bootstrap workspace overrides
+        run: dart tool/bootstrap_workspace_pubspec_overrides.dart
 
       - name: Install dependencies
         run: dart pub get

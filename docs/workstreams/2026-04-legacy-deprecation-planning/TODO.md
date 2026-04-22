@@ -98,6 +98,9 @@ Current staging status:
 - [x] Freeze the default wave-1 release vehicle and release checklist so the
   next decision is whether to ship `0.11.0-alpha.1`, not whether removals can
   drift into routine `0.10.x` maintenance
+- [x] Add a concrete workspace bootstrap script for local
+  `pubspec_overrides.yaml` generation after switching publishable packages to
+  hosted `0.11.0-alpha.1` constraints
 
 ## Explicitly Deferred
 
