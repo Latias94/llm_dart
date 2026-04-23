@@ -46,7 +46,8 @@ Stable shared `embed(...)` and `embedMany(...)` helpers with
 
 ### [file_management.dart](file_management.dart)
 Stable local `FilePromptPart` usage first, followed by explicit provider-owned
-remote file lifecycle examples for OpenAI and Anthropic.
+remote file lifecycle examples. OpenAI uses the focused modern files client;
+Anthropic upload/list/delete remains an explicit compatibility boundary.
 
 ### [chat_basics.dart](chat_basics.dart)
 Stable foundational chat patterns with prompt messages, conversation history,
@@ -271,16 +272,21 @@ final assistant = await provider.createAssistant(CreateAssistantRequest(
 ));
 ```
 
-### Compatibility Boundary: File Management
+### Provider-Owned Boundary: OpenAI File Management
 
-File upload and file lifecycle APIs also remain provider-owned.
+OpenAI file upload and file lifecycle APIs are provider-owned through the
+focused OpenAI package. This is not a shared cross-provider file abstraction.
 
 ```dart
-final fileBytes = await File('document.pdf').readAsBytes();
-final fileObject = await provider.uploadFile(FileUploadRequest(
-  file: Uint8List.fromList(fileBytes),
-  purpose: FilePurpose.assistants,
+import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/openai.dart' as openai;
+
+final files = llm.AI.openai(apiKey: 'your-key').files();
+final file = await files.uploadFile(openai.OpenAIFileUpload(
+  bytes: await File('document.pdf').readAsBytes(),
+  purpose: openai.OpenAIFilePurposes.assistants,
   filename: 'document.pdf',
+  mediaType: 'application/pdf',
 ));
 ```
 

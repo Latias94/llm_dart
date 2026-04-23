@@ -15,6 +15,7 @@ This package owns the modern OpenAI-family boundary for:
 Use this package when you want:
 
 - direct `OpenAI(...)` model construction outside the broad root facade
+- provider-owned OpenAI-profile file lifecycle through `OpenAI(...).files()`
 - provider-owned OpenAI-profile moderation through `OpenAI(...).moderation()`
 - OpenAI-family profiles such as `OpenAIProfile`, `OpenRouterProfile`,
   `DeepSeekProfile`, `GroqProfile`, `XAIProfile`, and `PhindProfile`
@@ -150,6 +151,33 @@ Future<void> main() async {
 }
 ```
 
+## OpenAI Files Example
+
+`OpenAI(...).files()` is also intentionally OpenAI-profile only. File purpose
+values, hosted storage behavior, and download semantics stay provider-owned.
+
+```dart
+import 'dart:convert';
+
+import 'package:llm_dart_openai/llm_dart_openai.dart';
+
+Future<void> main() async {
+  final files = OpenAI(
+    apiKey: 'your-openai-key',
+  ).files();
+
+  final uploaded = await files.uploadBytes(
+    bytes: utf8.encode('training or assistant resource data'),
+    filename: 'resource.txt',
+    purpose: OpenAIFilePurposes.assistants,
+    mediaType: 'text/plain',
+  );
+
+  final downloaded = await files.downloadFile(uploaded.id);
+  print(downloaded.sizeBytes);
+}
+```
+
 ## UI Mapping And Capability Discovery
 
 - `OpenAIMessageMapper` composes provider-owned metadata with the shared UI
@@ -160,6 +188,8 @@ Future<void> main() async {
   Flutter capability gating.
 - `describeOpenAIImageModel(...)` does the same for OpenAI-family image models,
   including provider-owned edit support metadata.
+- `OpenAIFilesClient` is a narrow OpenAI-profile lifecycle client and does not
+  imply a shared remote file-management contract.
 - `OpenAIModerationClient` is a narrow OpenAI-profile safety client and does
   not imply a shared moderation abstraction or OpenAI-family-wide feature.
 

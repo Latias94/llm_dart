@@ -73,6 +73,8 @@ architecture debt.
   additive and evidence-driven
 - [x] Land OpenAI moderation as a narrow provider-owned helper instead of a
   shared abstraction or broad compatibility dependency
+- [x] Land OpenAI files as a narrow provider-owned helper instead of keeping
+  common hosted-file flows behind the broad compatibility shell
 
 ## OpenAI Family Stream Parser
 

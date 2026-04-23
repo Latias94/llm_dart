@@ -1,6 +1,7 @@
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'openai_family_profile.dart';
+import 'openai_profile_boundary.dart';
 
 final class OpenAIModerationSettings {
   final String? defaultModel;
@@ -288,7 +289,7 @@ final class OpenAIModerationClient {
     this.settings = const OpenAIModerationSettings(),
     String? baseUrl,
   }) : baseUrl = baseUrl ?? profile.defaultBaseUrl {
-    _assertSupportedProfile(profile);
+    requireOpenAIProfile(profile, featureName: 'OpenAI moderation client');
   }
 
   Uri get moderationUri => Uri.parse('$baseUrl/moderations');
@@ -431,18 +432,6 @@ Object _normalizeInput(Object input) {
     input,
     'input',
     'Expected moderation input to be a String or List<String>.',
-  );
-}
-
-void _assertSupportedProfile(OpenAIFamilyProfile profile) {
-  if (profile.providerId == 'openai') {
-    return;
-  }
-
-  throw UnsupportedError(
-    'OpenAI moderation client currently supports only the OpenAI profile. '
-    'Use a focused provider-owned or compatibility surface when another '
-    'OpenAI-family provider exposes moderation separately.',
   );
 }
 

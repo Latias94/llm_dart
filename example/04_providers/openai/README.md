@@ -217,6 +217,7 @@ void inspectOpenAIMessage(core.ChatUiMessage message) {
 
 - provider-owned built-in tools through `OpenAIGenerateTextOptions`
 - model-level defaults through `OpenAIChatModelSettings`
+- provider-owned OpenAI-profile files through `AI.openai(...).files()`
 - provider-owned OpenAI-profile moderation through
   `AI.openai(...).moderation()`
 - image generation through `OpenAIImageOptions`

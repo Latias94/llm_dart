@@ -43,6 +43,7 @@ The best next steps are:
 
 | Surface | Current modern shape | Why it matters | Recommended follow-up |
 | --- | --- | --- | --- |
+| OpenAI files client | `OpenAI(...).files()` and `OpenAIFilesClient` | Moves common hosted-file upload/list/retrieve/download/delete flows out of the broad compatibility shell without inventing shared remote file lifecycle APIs | Treat as landed; keep examples explicit that this is OpenAI-profile only |
 | OpenAI moderation client | `OpenAI(...).moderation()` and `OpenAIModerationClient` | Removes a common app-safety use case from the broad compatibility shell without inventing a shared moderation contract | Treat as landed; keep docs explicit that this is OpenAI-profile only, then make the next helper pick elsewhere |
 | OpenAI image editing | `OpenAIImageModel.edit(OpenAIImageEditRequest)` | Proves the correct additive-provider-helper pattern for non-shared media workflows | Tighten README and provider examples so this is taught as a modern helper instead of old compatibility residue |
 | Google image editing and variation | `GoogleImageModel.edit(...)` and `createVariation(...)` | Shows that edit-specific input contracts can stay provider-owned without widening shared `ImageModel` | Tighten README and examples so the modern helper is visible |
@@ -62,7 +63,6 @@ after the current doc-tightening phase.
 
 | Candidate | Proposed home | Priority | Recommendation | Why it is worth doing |
 | --- | --- | --- | --- | --- |
-| Narrow OpenAI files client | `llm_dart_openai` | High | Add a modern provider-owned file client for upload/get/download/list/delete as a focused package helper | File IDs are relevant to hosted-tool and retrieval-oriented OpenAI flows, but current usage still forces the broad compatibility shell |
 | ElevenLabs voice catalog reader | `llm_dart_community` or a focused ElevenLabs-owned helper near the community surface | High | Add a narrow voice-catalog surface for voice-picker UIs | Voice selection is common app-facing product value and does not need the whole compatibility audio shell |
 | Ollama model catalog helper | `llm_dart_community` | High | Add a local model catalog/list helper as an explicit provider-owned utility | Local model pickers are common for desktop/Flutter local-runtime apps and do not justify broad compatibility imports |
 | Anthropic file lifecycle completion | `llm_dart_anthropic` | Medium | Extend the modern file client with upload/list/delete only if the typed contract can stay narrow and execution-file oriented | Anthropic already has a partial modern file surface; finishing it may reduce compatibility imports for code-execution workflows |

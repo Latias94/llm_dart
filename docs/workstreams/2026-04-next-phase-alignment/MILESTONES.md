@@ -164,6 +164,9 @@ Current status:
   OpenAI-profile `OpenAIModerationClient`, proving that safety product value can
   move out of broad compatibility shells without inventing a shared moderation
   abstraction
+- OpenAI hosted-file lifecycle now also has a focused OpenAI-profile
+  `OpenAIFilesClient`, moving upload/list/retrieve/download/delete out of the
+  broad compatibility shell while keeping remote file management provider-owned
 - reopen triggers are now written down so future refactors can be justified by
   product evidence, repeated bugs, or repeated duplication
 - this phase now ends with a clearer architectural rule: keep the shared

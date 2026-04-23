@@ -68,6 +68,7 @@ but does not belong in the shared cross-provider contract.
 | Provider-aware UI mapping for OpenAI metadata and custom parts | `OpenAIMessageMapper().mapComposed(...)` | `package:llm_dart/openai.dart` or `llm_dart_openai` | Landed | Provider message metadata must not widen `ChatMessageMapper` |
 | Provider-aware UI mapping for Google thought signatures and custom parts | `GoogleMessageMapper().mapComposed(...)` | `package:llm_dart/google.dart` or `llm_dart_google` | Landed | Google-specific UI metadata should remain package-owned |
 | Anthropic file metadata and download access | `AI.anthropic(...).files()` | `package:llm_dart/anthropic.dart` | Landed | This is a truthful provider-native file client without inventing shared file lifecycle semantics |
+| OpenAI remote file lifecycle | `AI.openai(...).files()` or `OpenAI(...).files()` | `package:llm_dart/openai.dart` or `llm_dart_openai` | Landed | Remote persistence, purpose fields, and content download are OpenAI-owned and should not widen shared file contracts |
 | OpenAI moderation endpoint | `AI.openai(...).moderation()` or `OpenAI(...).moderation()` | `package:llm_dart/openai.dart` or `llm_dart_openai` | Landed | Moderation taxonomy and score semantics stay OpenAI-owned while app policy remains application-owned |
 | OpenAI image editing | `OpenAIImageModel.edit(OpenAIImageEditRequest)` | `llm_dart_openai` or `package:llm_dart/openai.dart` | Landed | Edit inputs are provider-native and should not widen the shared image contract |
 | Google image editing and variation | `GoogleImageModel.edit(...)` / `createVariation(...)` | `llm_dart_google` or `package:llm_dart/google.dart` | Landed | This is an additive Google-owned helper above the shared image generation path |
@@ -90,7 +91,6 @@ They are not the default path for new app-facing code.
 | --- | --- | --- |
 | OpenAI assistants lifecycle | `package:llm_dart/providers/openai/openai.dart` | Stored assistants, threads, tool resources, and lifecycle IDs remain OpenAI-specific management APIs |
 | OpenAI raw Responses CRUD or lifecycle objects | focused OpenAI compatibility surface | Response IDs, raw response objects, and CRUD lifecycle are still provider-native appendix behavior |
-| OpenAI remote file lifecycle | focused OpenAI compatibility surface | Remote persistence, purpose fields, and later retrieval semantics are provider-owned and still lack a narrow modern client |
 | Anthropic upload/list/delete file lifecycle | focused Anthropic compatibility surface | The modern Anthropic package currently exposes only metadata and download |
 | Remote model catalogs and model listing | compatibility or provider-owned catalog surfaces | Remote catalogs are not a truthful shared app contract because metadata and filters differ heavily by provider |
 | Google streamed PCM TTS and voice discovery | Google compatibility appendix | One-shot speech is already stable; deeper streaming and discovery remain provider-native appendix behavior |

@@ -3,6 +3,7 @@ import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'openai_embedding_model.dart';
 import 'openai_family_profile.dart';
+import 'openai_files.dart';
 import 'openai_image_model.dart';
 import 'openai_language_model.dart';
 import 'openai_moderation.dart';
@@ -99,6 +100,18 @@ final class OpenAI {
     OpenAIModerationSettings settings = const OpenAIModerationSettings(),
   }) {
     return OpenAIModerationClient(
+      apiKey: apiKey,
+      transport: transport,
+      profile: profile,
+      baseUrl: baseUrl,
+      settings: settings,
+    );
+  }
+
+  OpenAIFilesClient files({
+    OpenAIFilesSettings settings = const OpenAIFilesSettings(),
+  }) {
+    return OpenAIFilesClient(
       apiKey: apiKey,
       transport: transport,
       profile: profile,
