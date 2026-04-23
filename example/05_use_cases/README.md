@@ -14,6 +14,15 @@ screen also needs provider-specific metadata, keep that extra inspection in the
 provider package through `mapComposed(...)` rather than widening the shared UI
 layer.
 
+Recommended route for new application teams:
+
+- start with `chatbot.dart` for plain shared-model injection
+- move to the `llm_dart_chat` runtime examples when you need durable chat
+  session state or transport composition
+- add `llm_dart_flutter` only when the UI actually needs `ChatController`
+- keep provider routing, approval, or lifecycle details behind backend or
+  provider-specific seams
+
 ## Examples
 
 ### [chatbot.dart](chatbot.dart)

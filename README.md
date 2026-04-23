@@ -5,11 +5,15 @@
 [![Dart](https://img.shields.io/badge/Dart-3.5.0+-blue.svg)](https://dart.dev)
 [![CI](https://github.com/Latias94/llm_dart/actions/workflows/ci.yml/badge.svg)](https://github.com/Latias94/llm_dart/actions/workflows/ci.yml)
 
-Modular Dart library for LLM providers with a stable model API, provider-owned typed options, and a Flutter-friendly chat session layer.
+Modular Dart library for LLM providers with a stable model-first API,
+provider-owned typed options, and a Flutter-friendly chat session layer.
 
 ## Status
 
-The repository is currently in a breaking architecture transition.
+The repository is currently on the `0.11.0-alpha.x` preview line.
+
+Breaking changes are still allowed before `1.0.0`, but the model-first surface
+below is the intended direction for new code.
 
 The new primary entry path is:
 
@@ -39,6 +43,18 @@ recommended main API.
 For modern code, prefer `package:llm_dart/llm_dart.dart` as the default import.
 `package:llm_dart/ai.dart` remains the explicit equivalent alias when you want a
 named AI-focused shell.
+
+Recommended entry flow for new code:
+
+- import `package:llm_dart/llm_dart.dart` or `package:llm_dart/ai.dart`
+- create concrete models through `AI.*(...).chatModel(...)`,
+  `embeddingModel(...)`, `imageModel(...)`, `speechModel(...)`, or
+  `transcriptionModel(...)`
+- call shared helpers from `package:llm_dart/core.dart`
+- add provider-owned option types, metadata inspection, or lifecycle APIs only
+  at explicit application boundaries
+- reach for `package:llm_dart/legacy.dart` only when migrating older
+  builder-era code
 
 For Ollama and ElevenLabs specifically, the root compatibility shells should now
 be read as broader provider-specific migration surfaces rather than the primary
@@ -142,6 +158,8 @@ dart tool/run_workspace_publish_dry_run.dart
 ## Quick Start
 
 Use the default modern root entrypoint plus the shared core request model.
+Most applications should stay on this layer until they have a concrete need for
+provider-owned options, remote lifecycle APIs, or compatibility-only flows.
 
 Current text-call layering:
 
@@ -599,6 +617,9 @@ Future<void> main() async {
   raw access.
 - Keep provider-native features in typed provider options, provider metadata, or custom parts.
 - Keep UI/session concerns above `TextStreamEvent`.
+- Prefer approved model IDs, app-owned history, and local attachment state as
+  the default product path before introducing provider-managed assistants,
+  remote files, or catalog discovery.
 - Treat `LLMBuilder()`, `ai()`, and old root provider surfaces as
   compatibility APIs, not the target architecture.
 - Treat the root Ollama and ElevenLabs surfaces as compatibility-first shells
@@ -632,8 +653,8 @@ The repository still keeps compatibility APIs through `package:llm_dart/legacy.d
 - old root provider constructors
 - compatibility adapters for legacy chat/config surfaces
 
-These remain temporarily for migration, but new code should prefer the stable
-model API shown above.
+These remain temporarily for migration inside the alpha preview line, but new
+code should prefer the stable model API shown above.
 
 If you still need the compatibility-era builder and broad legacy surface, prefer
 the explicit import:

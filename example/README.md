@@ -16,13 +16,20 @@ custom-part inspection, prefer provider-owned composed helpers such as
 `GoogleMessageMapper().mapComposed(...)` instead of stitching two mapper passes
 manually.
 
+Recommended default route:
+
+- start in `01_getting_started/` for model-first setup
+- spend most new app work in the stable examples under `02_core_features/`
+- treat provider directories and older builder examples as explicit appendices
+  rather than the default learning path
+
 ## Quick Start
 
 | I need to... | Go to |
 |--------------|-------|
 | **Get started quickly** | [quick_start.dart](01_getting_started/quick_start.dart) |
 | **Build a chatbot** | [chatbot.dart](05_use_cases/chatbot.dart) |
-| **Compare providers** | [provider_comparison.dart](01_getting_started/provider_comparison.dart) |
+| **Compare stable models by provider** | [provider_comparison.dart](01_getting_started/provider_comparison.dart) |
 | **Use streaming** | [streaming_chat.dart](02_core_features/streaming_chat.dart) |
 | **Gate app UI by capability profiles** | [capability_profile_ui_gating.dart](02_core_features/capability_profile_ui_gating.dart) |
 | **Cancel requests** | [cancellation_demo.dart](02_core_features/cancellation_demo.dart) |
@@ -41,6 +48,10 @@ manually.
 | **Connect external tools** | [mcp_concept_demo.dart](06_mcp_integration/mcp_concept_demo.dart) |
 
 ## Directory Structure
+
+Read these directories from top to bottom if you are new to the repository:
+`01_getting_started` and most of `02_core_features` are the default path;
+provider directories are explicit boundary appendices.
 
 ### Getting Started
 *First-time users*
@@ -177,11 +188,11 @@ dart run 05_use_cases/multimodal_app.dart --demo
 
 **Beginner**: Start with `quick_start.dart` → `provider_comparison.dart` → `chat_basics.dart`
 
-**Intermediate**: Focus on `tool_calling.dart` → `structured_output.dart` → `chatbot.dart`
+**Intermediate**: Focus on `tool_calling.dart` → `structured_output.dart` → `error_handling.dart` → `capability_profile_ui_gating.dart`
 
-**Advanced**: Study `batch_processor.dart` → `multimodal_app.dart` → `custom_providers.dart`
+**Advanced**: Study `chat_runtime.dart` → `http_backend_hint_mapping.dart` → `batch_processor.dart` → `custom_providers.dart`
 
-**Production**: Explore `performance_optimization.dart` → provider-specific features → MCP integration
+**Production**: Explore `performance_optimization.dart` → `flutter_material_chat_demo.dart` → `flutter_http_backend_integration.dart` → provider-owned appendices or MCP integration only when product requirements justify them
 
 ## Production Example
 
