@@ -12,6 +12,16 @@ The package is intentionally small:
 - no storage backend
 - no provider-specific API flattening
 
+Recommended adoption order:
+
+- start with `DirectChatTransport` plus a stable `LanguageModel` for trusted
+  local prototypes or internal tools
+- prefer `HttpChatTransport` for production apps when keys, routing, caching,
+  approvals, or compliance rules belong on the backend
+- keep persistence application-owned through `ChatPersistenceAdapter`
+- add provider-specific mappers or custom-part helpers only when the UI truly
+  needs provider-owned inspection
+
 ## What This Package Adds
 
 `llm_dart_flutter` directly owns only the Flutter-facing adapter layer:
@@ -64,6 +74,9 @@ leaving room for provider-owned features through:
 
 ## Direct Model Example
 
+Use this path for trusted-device prototypes or internal tools where the client
+is allowed to own direct model access.
+
 Use `DirectChatTransport` when Flutter can call the model directly.
 
 ```dart
@@ -108,7 +121,8 @@ Future<void> main() async {
 ## Remote Backend Example
 
 Use `HttpChatTransport` when API keys, auditing, caching, tool execution, or
-compliance concerns require a backend.
+compliance concerns require a backend. This is the preferred production shape
+for most mobile or distributed Flutter applications.
 
 ```dart
 import 'package:llm_dart_flutter/llm_dart_flutter.dart';
@@ -132,7 +146,7 @@ Future<void> main() async {
     options: const ChatRequestOptions(),
   );
 
-await controller.close();
+  await controller.close();
 }
 ```
 

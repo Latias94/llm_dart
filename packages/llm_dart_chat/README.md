@@ -34,6 +34,18 @@ That makes it suitable for:
 - framework-neutral chat orchestration
 - Flutter adapters that want to build on the same runtime layer
 
+Recommended adoption order:
+
+- start with `DefaultChatSession` plus `DirectChatTransport` when the app can
+  call a concrete model directly
+- switch to `HttpChatTransport` when routing, keys, audit policy, or tool
+  execution should stay backend-owned
+- use `ChatPersistenceAdapter` when you need durable session snapshots
+- reach for `ChatUiStreamReader` only when you already have a
+  `Stream<ChatUiStreamChunk>` and do not want the full session/runtime layer
+- move up to `llm_dart_flutter` only when the UI needs `ValueNotifier`-style
+  controller wiring
+
 ## Direct Chunk Stream Reading
 
 If you already have a `Stream<ChatUiStreamChunk>` and do not want the full
