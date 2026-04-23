@@ -129,6 +129,11 @@ shared-capability happy path.
 - [batch_processor.dart](05_use_cases/batch_processor.dart) - Large-scale data processing
 - [multimodal_app.dart](05_use_cases/multimodal_app.dart) - Text, image, and audio processing
 
+Capability-profile demos now also include the modern `llm_dart_community`
+surface. Treat current ElevenLabs capability answers as stronger hosted-API
+descriptors, while reading Ollama vision/reasoning affordances as model-family
+inference that still needs real request-path validation.
+
 ### MCP Integration
 *External tool connections*
 

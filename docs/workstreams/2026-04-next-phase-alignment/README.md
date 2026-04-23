@@ -140,6 +140,10 @@ This phase should explicitly avoid:
   - Re-audit of shared result diagnostics, provider metadata, raw chunks, and
     transport diagnostics versus `repo-ref/ai`, confirming that the current
     layered ownership is already the honest boundary.
+- [16-community-provider-capability-confidence-guidance.md](16-community-provider-capability-confidence-guidance.md)
+  - Follow-up guidance for how app and Flutter code should interpret
+    `llm_dart_community` capability profiles, especially the `known` versus
+    `inferred` boundary for Ollama-family hints.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)

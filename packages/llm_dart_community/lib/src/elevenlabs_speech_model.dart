@@ -3,11 +3,13 @@ import 'dart:typed_data';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
+import 'elevenlabs_model_describer.dart';
 import 'elevenlabs_options.dart';
 import 'elevenlabs_shared.dart';
 
 /// Package-owned modern ElevenLabs speech model surface.
-final class ElevenLabsSpeechModel implements SpeechModel {
+final class ElevenLabsSpeechModel
+    implements SpeechModel, CapabilityDescribedModel {
   final String apiKey;
   final String baseUrl;
   final TransportClient transport;
@@ -27,6 +29,14 @@ final class ElevenLabsSpeechModel implements SpeechModel {
 
   @override
   String get providerId => 'elevenlabs';
+
+  @override
+  ModelCapabilityProfile get capabilityProfile {
+    return describeElevenLabsSpeechModel(
+      modelId,
+      settings: settings,
+    );
+  }
 
   Map<String, String> get defaultHeaders => {
         'xi-api-key': apiKey,

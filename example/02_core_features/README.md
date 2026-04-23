@@ -15,6 +15,9 @@ planning, with a stable `AI.*(...).chatModel(...)` execution appendix.
 ### [capability_profile_ui_gating.dart](capability_profile_ui_gating.dart)
 Modern model-centric capability profile inspection for shared UI affordances,
 provider-native panels, and graceful fallback suggestions.
+The example now also includes a community-provider Ollama preset and shows why
+Ollama image-input or reasoning affordances should be treated as inferred
+family hints rather than hard runtime guarantees.
 
 ### [capability_factory_methods.dart](capability_factory_methods.dart)
 Compatibility-oriented specialized `build*()` helpers for capability families
@@ -160,6 +163,9 @@ void inspectMessage(core.ChatUiMessage message) {
 - **Modern model-centric discovery**: Use `CapabilityDescribedModel` and
   `ModelCapabilityProfile` when a concrete model should gate app or Flutter UI
   affordances.
+- **Community confidence rule**: For `llm_dart_community`, use
+  `CapabilityDescriptor.confidence` when the UI should distinguish strong
+  hosted-API descriptors from model-family inference, especially for Ollama.
 - **Capability metadata**: Use `LLMProviderRegistry` and `ProviderInfo` to
   shortlist providers and document boundaries before you bind models.
 - **Boundary APIs**: Some families, such as assistants, raw response

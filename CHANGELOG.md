@@ -11,6 +11,12 @@ This branch currently carries a conservative wave-1 removal set that is
 intended only for the next explicit breaking release. It must not be folded
 into a routine `0.10.x` maintenance release.
 
+### Added
+
+- Added community-package capability describers and direct
+  `capabilityProfile` exposure for modern Ollama and ElevenLabs models, plus
+  updated app/Flutter capability-gated demos to include the community path.
+
 ### Removed
 
 - Removed the previously deprecated preset helper aliases across the

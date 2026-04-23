@@ -4,9 +4,11 @@ import 'dart:convert';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
+import 'ollama_model_describer.dart';
 import 'ollama_options.dart';
 
-final class OllamaLanguageModel implements LanguageModel {
+final class OllamaLanguageModel
+    implements LanguageModel, CapabilityDescribedModel {
   final String? apiKey;
   final String baseUrl;
   final TransportClient transport;
@@ -26,6 +28,14 @@ final class OllamaLanguageModel implements LanguageModel {
 
   @override
   String get providerId => 'ollama';
+
+  @override
+  ModelCapabilityProfile get capabilityProfile {
+    return describeOllamaChatModel(
+      modelId,
+      settings: settings,
+    );
+  }
 
   Uri get chatUri => Uri.parse('$baseUrl/api/chat');
 
@@ -327,7 +337,8 @@ final class OllamaLanguageModel implements LanguageModel {
               filename: final filename,
               uri: final uri,
               bytes: final bytes,
-            ) when mediaType.startsWith('image/'):
+            )
+            when mediaType.startsWith('image/'):
           images.add(
             base64Encode(
               await _resolveBinaryPromptBytes(

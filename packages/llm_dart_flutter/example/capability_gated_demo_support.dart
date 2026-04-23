@@ -1,4 +1,5 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_community/llm_dart_community.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart';
 
 const sourceBackedAnswerFeatureIds = [
@@ -54,6 +55,12 @@ final capabilityGatedDemoPresets = <CapabilityDemoPreset>[
         useResponsesApi: false,
       ),
     ),
+  ),
+  CapabilityDemoPreset(
+    id: 'ollama-llama3.2-vision',
+    label: 'Ollama / llama3.2-vision',
+    description: 'Local multimodal chat with inferred image-input support.',
+    profile: describeOllamaChatModel('llama3.2-vision'),
   ),
 ];
 
@@ -111,6 +118,12 @@ ChatComposerPolicy buildChatComposerPolicy(ModelCapabilityProfile profile) {
   if (profile.providerFeature('deepseek', 'deepseek.thinkTagReasoning') !=
       null) {
     providerBadges.add('DeepSeek think tags');
+  }
+  if (profile.providerFeature('ollama', 'ollama.toolSelection') != null) {
+    providerBadges.add('Ollama auto tool selection');
+  }
+  if (profile.providerFeature('ollama', 'ollama.thinking') != null) {
+    providerBadges.add('Ollama thinking toggle');
   }
 
   return ChatComposerPolicy(

@@ -3,12 +3,14 @@ import 'dart:convert';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
+import 'elevenlabs_model_describer.dart';
 import 'elevenlabs_options.dart';
 import 'elevenlabs_shared.dart';
 import 'simple_multipart_body.dart';
 
 /// Package-owned modern ElevenLabs transcription model surface.
-final class ElevenLabsTranscriptionModel implements TranscriptionModel {
+final class ElevenLabsTranscriptionModel
+    implements TranscriptionModel, CapabilityDescribedModel {
   final String apiKey;
   final String baseUrl;
   final TransportClient transport;
@@ -29,6 +31,11 @@ final class ElevenLabsTranscriptionModel implements TranscriptionModel {
 
   @override
   String get providerId => 'elevenlabs';
+
+  @override
+  ModelCapabilityProfile get capabilityProfile {
+    return describeElevenLabsTranscriptionModel(modelId);
+  }
 
   Map<String, String> get defaultHeaders => {
         'xi-api-key': apiKey,

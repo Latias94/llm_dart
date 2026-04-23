@@ -44,6 +44,12 @@ For Ollama and ElevenLabs specifically, the root compatibility shells should now
 be read as broader provider-specific migration surfaces rather than the primary
 shared-capability entrypoint.
 
+Community-provider capability profiles are now also available through the
+modern `llm_dart_community` package. For app and Flutter gating, treat the
+current ElevenLabs descriptors and the shared Ollama baseline as descriptive
+library-owned signals, but treat family-shaped Ollama hints such as image input
+or reasoning output as potentially `inferred` rather than as hard guarantees.
+
 ## Packages
 
 - `llm_dart`

@@ -192,6 +192,11 @@ Current status:
 - provider-owned describers now also exist in `llm_dart_google` and
   `llm_dart_anthropic`, so the model-centric capability layer is now proven
   across OpenAI, Google, and Anthropic rather than only one provider family
+- selective community-provider capability profile adoption now also exists in
+  `llm_dart_community` for Ollama chat/embeddings and ElevenLabs
+  speech/transcription, with app-facing guidance that keeps Ollama
+  model-family hints explicit as `inferred` rather than overstating them as
+  hard guarantees
 - direct model-instance adoption now exists across `llm_dart_openai`,
   `llm_dart_google`, and `llm_dart_anthropic`, where modern provider models
   expose `capabilityProfile` through the optional marker interface without

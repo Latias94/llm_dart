@@ -2,6 +2,7 @@
 
 import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart_community/llm_dart_community.dart' as community;
 import 'package:llm_dart/openai.dart' as openai;
 
 void main() {
@@ -52,6 +53,12 @@ void main() {
               useResponsesApi: false,
             ),
           ),
+    ),
+    _DemoModel(
+      label: 'Ollama / llama3.2-vision',
+      recommendedUse:
+          'Local multimodal chat where image input is inferred from the model family.',
+      model: community.Ollama().chatModel('llama3.2-vision'),
     ),
   ];
 
@@ -230,6 +237,12 @@ final class _ComposerPolicy {
     if (profile.providerFeature('deepseek', 'deepseek.thinkTagReasoning') !=
         null) {
       providerPanels.add('DeepSeek think-tag reasoning renderer');
+    }
+    if (profile.providerFeature('ollama', 'ollama.toolSelection') != null) {
+      providerPanels.add('Ollama automatic tool-selection badge');
+    }
+    if (profile.providerFeature('ollama', 'ollama.thinking') != null) {
+      providerPanels.add('Ollama thinking-toggle badge');
     }
 
     return _ComposerPolicy(

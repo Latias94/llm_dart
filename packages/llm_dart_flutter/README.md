@@ -418,6 +418,28 @@ This is the intended layering:
 - use provider feature descriptors for provider-aware panels and badges
 - keep capability checks descriptive, not as hard runtime guarantees
 
+For `llm_dart_community`, also look at descriptor confidence before turning a
+community-model answer into strong UI copy. ElevenLabs capability descriptors
+are comparatively strong for the current modern surfaces, while Ollama
+vision/reasoning hints may be `inferred` from the local model family.
+
+```dart
+import 'package:llm_dart_community/llm_dart_community.dart';
+import 'package:llm_dart_core/llm_dart_core.dart';
+
+final profile = describeOllamaChatModel('llama3.2-vision');
+final imageInput = profile.sharedFeature(
+  ModelCapabilityFeatureIds.languageImageInput,
+);
+
+final canAttachImages = imageInput != null;
+final showInferenceBadge =
+    imageInput?.confidence == CapabilityConfidence.inferred;
+```
+
+Use this pattern when the Flutter UI wants to say "likely supported by this
+model family" without pretending the local Ollama install is a hosted contract.
+
 For a runnable Material demo, see
 `example/flutter_capability_gated_controls.dart`.
 

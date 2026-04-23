@@ -20,5 +20,6 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   lints: ^6.0.0
+  llm_dart_community: ^0.11.0-alpha.1
   llm_dart_openai: ^0.11.0-alpha.1
   llm_dart_transport: ^0.11.0-alpha.1

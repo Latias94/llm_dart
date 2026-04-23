@@ -55,5 +55,23 @@ void main() {
         isTrue,
       );
     });
+
+    test('builds an inferred multimodal policy for Ollama vision chat', () {
+      final preset = capabilityGatedDemoPresets.firstWhere(
+        (preset) => preset.id == 'ollama-llama3.2-vision',
+      );
+
+      final policy = buildChatComposerPolicy(preset.profile);
+
+      expect(policy.routeLabel, 'chat');
+      expect(policy.canAttachImages, isTrue);
+      expect(policy.canAttachFiles, isFalse);
+      expect(policy.canUseStructuredOutput, isTrue);
+      expect(policy.canShowReasoningPanel, isFalse);
+      expect(
+        policy.providerBadges,
+        contains('Ollama auto tool selection'),
+      );
+    });
   });
 }

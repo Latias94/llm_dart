@@ -59,6 +59,52 @@ Use `llm_dart_community` when you want the modern shared-capability APIs for:
 - `ElevenLabs(...).speechModel(...)`
 - `ElevenLabs(...).transcriptionModel(...)`
 
+## Capability Profiles
+
+The modern community models also expose model-centric capability discovery:
+
+- `describeOllamaChatModel(...)`
+- `describeOllamaEmbeddingModel(...)`
+- `describeElevenLabsSpeechModel(...)`
+- `describeElevenLabsTranscriptionModel(...)`
+
+The corresponding model instances implement `CapabilityDescribedModel` through
+their `capabilityProfile` getter.
+
+This is useful for app and Flutter UI gating, but community-model answers stay
+descriptive rather than authoritative. In particular, Ollama model capability
+details such as image input or reasoning output may be marked as inferred when
+the local model family is not standardized enough for a stronger guarantee.
+
+### Current Confidence Posture
+
+For the current modern community surfaces, the practical rule is:
+
+- treat ElevenLabs speech and transcription capability answers as the stronger
+  hosted-API baseline for this package
+- treat the shared Ollama baseline as stable only for the currently modeled
+  common subset
+- treat Ollama family-shaped extras such as image input or reasoning output as
+  potentially `inferred`
+
+More concretely:
+
+- Ollama chat
+  - known baseline: streaming, text input, structured output, `api.route=chat`
+  - inferred hints: image input for vision-like model families, reasoning
+    output for thinking-like model families
+- Ollama embeddings
+  - known baseline: batch embeddings, `api.route=embed`
+- ElevenLabs speech
+  - known baseline: output-format support, voice selection,
+    `api.route=text_to_speech`
+- ElevenLabs transcription
+  - known baseline: language hints, timestamps,
+    `api.route=speech_to_text`
+
+If app UX depends on certainty, inspect `CapabilityDescriptor.confidence`
+before treating a community-model feature as hard support.
+
 ## Runnable Examples
 
 This package includes minimal runnable examples for each current modern

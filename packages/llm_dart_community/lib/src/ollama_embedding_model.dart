@@ -3,10 +3,12 @@ import 'dart:convert';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
+import 'ollama_model_describer.dart';
 import 'ollama_options.dart';
 
 /// Package-owned modern Ollama embedding model surface.
-final class OllamaEmbeddingModel implements EmbeddingModel {
+final class OllamaEmbeddingModel
+    implements EmbeddingModel, CapabilityDescribedModel {
   final String? apiKey;
   final String baseUrl;
   final TransportClient transport;
@@ -27,6 +29,11 @@ final class OllamaEmbeddingModel implements EmbeddingModel {
 
   @override
   String get providerId => 'ollama';
+
+  @override
+  ModelCapabilityProfile get capabilityProfile {
+    return describeOllamaEmbeddingModel(modelId);
+  }
 
   Uri get embedUri => Uri.parse('$baseUrl/api/embed');
 
