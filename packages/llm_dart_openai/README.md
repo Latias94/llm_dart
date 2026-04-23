@@ -1,23 +1,146 @@
 # llm_dart_openai
 
-OpenAI-family provider implementations for `llm_dart`.
+Provider-native OpenAI-family models, options, capability descriptors, and UI
+helpers for `llm_dart`.
 
-This package owns the provider-native modern surfaces for:
+This package owns the modern OpenAI-family boundary for:
 
 - OpenAI
 - OpenRouter
 - DeepSeek
 - Groq
 - xAI
-- Phind compatibility facades on the OpenAI-family transport boundary
+- focused Phind compatibility on the same transport family
 
-Use this package when you want provider-owned OpenAI-family settings, native
-tools, custom parts, profiles, and direct model entrypoints outside the broad
-root compatibility shell.
+Use this package when you want:
 
-The root `llm_dart` package re-exports the main focused entrypoint through:
+- direct `OpenAI(...)` model construction outside the broad root facade
+- OpenAI-family profiles such as `OpenAIProfile`, `OpenRouterProfile`,
+  `DeepSeekProfile`, `GroqProfile`, `XAIProfile`, and `PhindProfile`
+- provider-owned settings such as `OpenAIChatModelSettings`,
+  `OpenAIEmbeddingModelSettings`, `OpenAIImageModelSettings`,
+  `OpenAISpeechModelSettings`, and `OpenAITranscriptionModelSettings`
+- provider-owned invocation options such as `OpenAIGenerateTextOptions`,
+  `OpenAIImageOptions`, `OpenAISpeechOptions`, `OpenAITranscriptionOptions`,
+  OpenRouter options, and xAI options
+- provider-native built-in tools, response formats, custom parts, and UI
+  mapping through `OpenAIMessageMapper`
+- model-centric capability discovery through `describeOpenAIChatModel(...)`
 
-- `package:llm_dart/openai.dart`
+If you prefer the convenience root package, the same focused entrypoint is
+re-exported from `package:llm_dart/openai.dart`.
 
-For the full repository-level migration and architecture story, start with the
-root package README.
+## Recommended Layering
+
+1. Create a concrete model with `OpenAI(...).chatModel(...)` or the root
+   `AI.openai(...).chatModel(...)` facade.
+2. Keep application calls on the shared helpers from `llm_dart_core` such as
+   `generateTextCall(...)`, `streamTextCall(...)`, `embed(...)`,
+   `generateImage(...)`, `generateSpeech(...)`, and `transcribe(...)`.
+3. Add OpenAI-family behavior through model settings or
+   `CallOptions.providerOptions`, not by widening the shared request shape.
+4. Use `OpenAIMessageMapper` only when the UI needs OpenAI-specific metadata on
+   top of the shared `ChatMessageMapper`.
+5. Drop to the root compatibility surfaces only when you truly need assistant
+   lifecycle APIs, raw Responses CRUD/lifecycle APIs, or other legacy
+   migration-era flows outside this package's modern boundary.
+
+## Basic Example
+
+```dart
+import 'package:llm_dart_core/llm_dart_core.dart' as core;
+import 'package:llm_dart_openai/llm_dart_openai.dart';
+
+Future<void> main() async {
+  final model = OpenAI(
+    apiKey: 'your-openai-key',
+  ).chatModel('gpt-4.1-mini');
+
+  final result = await core.generateTextCall(
+    model: model,
+    prompt: [
+      core.UserPromptMessage.text(
+        'Summarize the release plan in three short bullets.',
+      ),
+    ],
+  );
+
+  print(result.text);
+}
+```
+
+## Provider-Owned Options Example
+
+```dart
+import 'package:llm_dart_core/llm_dart_core.dart' as core;
+import 'package:llm_dart_openai/llm_dart_openai.dart';
+
+Future<void> main() async {
+  final model = OpenAI(
+    apiKey: 'your-openai-key',
+  ).chatModel(
+    'gpt-5.4',
+    settings: const OpenAIChatModelSettings(
+      useResponsesApi: true,
+      builtInTools: [OpenAIWebSearchTool()],
+    ),
+  );
+
+  final result = await core.generateTextCall(
+    model: model,
+    prompt: [
+      core.UserPromptMessage.text('Find recent Dart release highlights.'),
+    ],
+    callOptions: const core.CallOptions(
+      providerOptions: OpenAIGenerateTextOptions(
+        reasoningEffort: OpenAIReasoningEffort.medium,
+        promptCacheKey: 'release-highlights',
+      ),
+    ),
+  );
+
+  print(result.text);
+}
+```
+
+## OpenAI-Family Profile Example
+
+Use profiles when you want one package boundary to host multiple
+OpenAI-compatible providers with explicit routing defaults:
+
+```dart
+import 'package:llm_dart_openai/llm_dart_openai.dart';
+
+final groqModel = OpenAI(
+  apiKey: 'your-groq-key',
+  profile: const GroqProfile(),
+).chatModel('llama-3.3-70b-versatile');
+```
+
+If you prefer the root convenience facade, `AI.groq(...)`, `AI.deepSeek(...)`,
+`AI.openRouter(...)`, and `AI.xai(...)` are the equivalent stable entrypoints.
+
+## UI Mapping And Capability Discovery
+
+- `OpenAIMessageMapper` composes provider-owned metadata with the shared UI
+  model.
+- `OpenAICustomPart` and `OpenAICustomPartSummary` help render provider-owned
+  replay payloads without widening shared UI types.
+- `describeOpenAIChatModel(...)` returns a `ModelCapabilityProfile` for app or
+  Flutter capability gating.
+
+## Boundary Notes
+
+- Shared model calls are the default path.
+- Provider-owned options extend the shared call contract; they do not replace
+  it.
+- Root compatibility APIs remain the explicit migration and appendix path for
+  assistants, raw Responses lifecycle, and other residual compatibility flows.
+- OpenAI-family profiles let one package host provider-specific request routing
+  without pretending every family member shares the same hosted feature set.
+
+## Related Docs
+
+- Root package overview: `../../README.md`
+- OpenAI provider examples: `../../example/04_providers/openai/README.md`
+- Other OpenAI-family examples: `../../example/04_providers/others/README.md`
