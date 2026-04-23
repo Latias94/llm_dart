@@ -11,7 +11,11 @@ import 'package:llm_dart/providers/openai/openai.dart' as openai_compat;
 
 /// Model discovery now has two different architectural roles:
 /// - stable concrete-model inspection through capability profiles
-/// - provider-owned remote catalog listing through compatibility providers
+/// - provider-owned remote catalog listing through compatibility clients
+///
+/// Most apps should bind an approved model list in config and use capability
+/// profiles for product gating. Remote catalogs are mainly for admin,
+/// diagnostics, or model-browsing workflows.
 Future<void> main() async {
   print('Model Discovery Example\n');
 
@@ -19,14 +23,15 @@ Future<void> main() async {
 
   final openAIApiKey = Platform.environment['OPENAI_API_KEY'];
   if (openAIApiKey != null && openAIApiKey.isNotEmpty) {
-    await demonstrateOpenAICatalog(openAIApiKey);
+    await demonstrateOpenAIRemoteCatalogBoundary(openAIApiKey);
   } else {
-    print('Skipping OpenAI catalog listing because OPENAI_API_KEY is not set.\n');
+    print(
+        'Skipping OpenAI catalog listing because OPENAI_API_KEY is not set.\n');
   }
 
   final anthropicApiKey = Platform.environment['ANTHROPIC_API_KEY'];
   if (anthropicApiKey != null && anthropicApiKey.isNotEmpty) {
-    await demonstrateAnthropicCatalog(anthropicApiKey);
+    await demonstrateAnthropicRemoteCatalogBoundary(anthropicApiKey);
   } else {
     print(
       'Skipping Anthropic catalog listing because ANTHROPIC_API_KEY is not set.\n',
@@ -83,29 +88,29 @@ void demonstrateConcreteModelProfiles() {
   }
 }
 
-Future<void> demonstrateOpenAICatalog(String apiKey) async {
-  print('=== OpenAI Remote Catalog Boundary ===\n');
+Future<void> demonstrateOpenAIRemoteCatalogBoundary(String apiKey) async {
+  print('=== Provider-Owned OpenAI Remote Catalog Boundary ===\n');
 
-  final provider = openai_compat.createOpenAIProvider(
+  final catalogClient = openai_compat.createOpenAIProvider(
     apiKey: apiKey,
     model: 'gpt-4o',
   );
 
-  final models = await provider.models();
+  final models = await catalogClient.models();
   print('Catalog size: ${models.length}');
   _printCatalogSummary(models);
   print('');
 }
 
-Future<void> demonstrateAnthropicCatalog(String apiKey) async {
-  print('=== Anthropic Remote Catalog Boundary ===\n');
+Future<void> demonstrateAnthropicRemoteCatalogBoundary(String apiKey) async {
+  print('=== Provider-Owned Anthropic Remote Catalog Boundary ===\n');
 
-  final provider = anthropic_compat.createAnthropicProvider(
+  final catalogClient = anthropic_compat.createAnthropicProvider(
     apiKey: apiKey,
     model: 'claude-sonnet-4-20250514',
   );
 
-  final models = await provider.models();
+  final models = await catalogClient.models();
   print('Catalog size: ${models.length}');
   _printCatalogSummary(models);
   print('');
@@ -114,12 +119,16 @@ Future<void> demonstrateAnthropicCatalog(String apiKey) async {
 void explainBoundary() {
   print('=== Boundary Notes ===\n');
   print(
+    '• For app startup, prefer a reviewed model allowlist in config or remote '
+    'config rather than fetching the provider catalog on every launch.',
+  );
+  print(
     '• For Flutter and app UI gating, prefer capability profiles from the '
     'concrete models you already selected.',
   );
   print(
     '• Use provider-owned catalog listing only when product requirements '
-    'actually need remote discovery, ops dashboards, or admin tooling.',
+    'actually need remote discovery, admin tooling, or ops dashboards.',
   );
   print(
     '• Remote model catalogs are not stable shared architecture because '

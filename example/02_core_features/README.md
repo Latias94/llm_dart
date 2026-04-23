@@ -2,6 +2,11 @@
 
 Essential functionality for building AI applications with LLM Dart.
 
+This directory is intentionally split into:
+
+- stable shared-model examples for new app code
+- explicit boundary appendices for provider-owned or older compatibility flows
+
 ## Examples
 
 ### [web_search.dart](web_search.dart)
@@ -29,7 +34,7 @@ older root builder shell for provider-specific tuning.
 
 ### [assistants.dart](assistants.dart)
 Stable assistant-like chat guidance first, followed by the explicit OpenAI
-compatibility boundary for persisted assistant lifecycle APIs.
+boundary for persisted assistant lifecycle APIs.
 
 ### [embeddings.dart](embeddings.dart)
 Stable multi-provider embeddings example using shared `embed(...)` and
@@ -76,11 +81,12 @@ Stable multi-provider image generation example using shared `generateImage(...)`
 plus provider-native image options for OpenAI and Google.
 
 ### [content_moderation.dart](content_moderation.dart)
-Provider-owned moderation signals translated into app-owned policy decisions.
+Provider-owned moderation signals translated into app-owned policy decisions
+instead of pretending a shared moderation contract exists.
 
 ### [model_listing.dart](model_listing.dart)
 Stable concrete-model capability inspection first, then provider-owned remote
-catalog listing as an explicit boundary.
+catalog listing for admin, diagnostics, or model-browser workflows.
 
 ### [message_builder_cache.dart](message_builder_cache.dart)
 Anthropic-specific prompt-caching appendix using `MessageBuilder` with narrow
@@ -113,6 +119,26 @@ dart run tool_calling.dart
 dart run enhanced_tool_calling.dart
 ```
 
+## Suggested Reading Order
+
+- Start with [chat_basics.dart](chat_basics.dart),
+  [streaming_chat.dart](streaming_chat.dart),
+  [tool_calling.dart](tool_calling.dart),
+  [structured_output.dart](structured_output.dart), and
+  [error_handling.dart](error_handling.dart) for the stable app path.
+- Add [capability_profile_ui_gating.dart](capability_profile_ui_gating.dart),
+  [embeddings.dart](embeddings.dart),
+  [audio_processing.dart](audio_processing.dart), and
+  [image_generation.dart](image_generation.dart) when product requirements need
+  model-aware UI or multimodal support.
+- Treat [assistants.dart](assistants.dart),
+  [file_management.dart](file_management.dart),
+  [content_moderation.dart](content_moderation.dart),
+  [model_listing.dart](model_listing.dart),
+  [message_builder_cache.dart](message_builder_cache.dart), and the older
+  builder demos as explicit boundary appendices rather than the default entry
+  path for new application code.
+
 ## Key Concepts
 
 This directory intentionally mixes:
@@ -120,7 +146,7 @@ This directory intentionally mixes:
 - stable shared-model examples centered on `AI.*(...).chatModel(...)`,
   `embeddingModel(...)`, `imageModel(...)`, `speechModel(...)`, and
   `transcriptionModel(...)`
-- compatibility/provider examples for capability families that still depend on
+- explicit boundary appendices for capability families that still depend on
   builder-owned or provider-owned APIs during migration
 
 When starting new application code, prefer the stable facade and shared
@@ -268,6 +294,8 @@ examples and README for the current typed guidance and migration notes:
 ## Best Practices
 
 - Start new app-facing code from stable model constructors and shared helpers.
+- For Flutter chat apps, keep conversation history, attachments, retries, and
+  UI state app-owned before introducing provider-managed persistence.
 - Use capability metadata for provider selection and documentation, not as a
   strict runtime guarantee.
 - Treat provider-specific lifecycle surfaces as boundaries until a stable

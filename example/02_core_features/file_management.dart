@@ -15,20 +15,22 @@ import 'package:llm_dart/providers/openai/openai.dart' as openai_compat;
 ///
 /// This example shows both paths and keeps the provider-owned lifecycle calls
 /// explicit instead of presenting them as a stable shared facade.
+/// For Flutter chat attachment UX, the default path should usually stay local
+/// until a provider-specific remote workspace is actually required.
 Future<void> main() async {
   print('File Management Boundary Example\n');
 
   final openAIApiKey = Platform.environment['OPENAI_API_KEY'];
   if (openAIApiKey != null && openAIApiKey.isNotEmpty) {
     await demonstrateStablePromptFilePath(openAIApiKey);
-    await demonstrateOpenAIFileLifecycle(openAIApiKey);
+    await demonstrateOpenAIFileBoundary(openAIApiKey);
   } else {
     print('Skipping OpenAI sections because OPENAI_API_KEY is not set.\n');
   }
 
   final anthropicApiKey = Platform.environment['ANTHROPIC_API_KEY'];
   if (anthropicApiKey != null && anthropicApiKey.isNotEmpty) {
-    await demonstrateAnthropicFileLifecycle(anthropicApiKey);
+    await demonstrateAnthropicFileBoundary(anthropicApiKey);
   } else {
     print(
       'Skipping Anthropic file lifecycle because ANTHROPIC_API_KEY is not set.\n',
@@ -48,9 +50,9 @@ Future<void> demonstrateStablePromptFilePath(String apiKey) async {
     '''
 Release Notes Draft
 
-- Streaming retry UI has been simplified.
+- Local attachments should stay app-owned by default.
 - Tool replay now keeps explicit tool call IDs.
-- Legacy builder examples are being migrated to stable-first guides.
+- Provider remote files should be treated as explicit boundary APIs.
 ''',
   );
 
@@ -87,8 +89,8 @@ Release Notes Draft
   }
 }
 
-Future<void> demonstrateOpenAIFileLifecycle(String apiKey) async {
-  print('=== OpenAI Compatibility File Lifecycle ===\n');
+Future<void> demonstrateOpenAIFileBoundary(String apiKey) async {
+  print('=== Provider-Owned OpenAI File Lifecycle Boundary ===\n');
 
   final sampleFile = await _writeSampleTextFile(
     'openai_file_lifecycle_example.txt',
@@ -98,7 +100,7 @@ assistant resources, or provider-managed retrieval workflows.
 ''',
   );
 
-  final provider = openai_compat.createOpenAIProvider(
+  final fileClient = openai_compat.createOpenAIProvider(
     apiKey: apiKey,
     model: 'gpt-4o',
   );
@@ -106,7 +108,7 @@ assistant resources, or provider-managed retrieval workflows.
   FileObject? uploadedFile;
 
   try {
-    uploadedFile = await provider.uploadFile(
+    uploadedFile = await fileClient.uploadFile(
       FileUploadRequest(
         file: await sampleFile.readAsBytes(),
         filename: sampleFile.uri.pathSegments.last,
@@ -118,7 +120,7 @@ assistant resources, or provider-managed retrieval workflows.
     print('Purpose: ${uploadedFile.purpose?.value ?? '<none>'}');
     print('Size: ${uploadedFile.sizeBytes} bytes');
 
-    final listed = await provider.listFiles(
+    final listed = await fileClient.listFiles(
       const FileListQuery(
         limit: 5,
         purpose: FilePurpose.assistants,
@@ -126,14 +128,14 @@ assistant resources, or provider-managed retrieval workflows.
     );
     print('Recent assistant files returned: ${listed.data.length}');
 
-    final retrieved = await provider.retrieveFile(uploadedFile.id);
+    final retrieved = await fileClient.retrieveFile(uploadedFile.id);
     print('Retrieved filename: ${retrieved.filename}');
 
-    final content = await provider.getFileContent(uploadedFile.id);
+    final content = await fileClient.getFileContent(uploadedFile.id);
     print('Downloaded bytes: ${content.length}');
   } finally {
     if (uploadedFile != null) {
-      final deleted = await provider.deleteFile(uploadedFile.id);
+      final deleted = await fileClient.deleteFile(uploadedFile.id);
       print('Deleted temporary OpenAI file: ${deleted.deleted}');
     }
     await _deleteIfExists(sampleFile);
@@ -142,8 +144,8 @@ assistant resources, or provider-managed retrieval workflows.
   print('');
 }
 
-Future<void> demonstrateAnthropicFileLifecycle(String apiKey) async {
-  print('=== Anthropic Compatibility File Lifecycle ===\n');
+Future<void> demonstrateAnthropicFileBoundary(String apiKey) async {
+  print('=== Provider-Owned Anthropic File Lifecycle Boundary ===\n');
 
   final sampleFile = await _writeSampleTextFile(
     'anthropic_file_lifecycle_example.txt',
@@ -153,7 +155,7 @@ Keep the integration boundary explicit in application code.
 ''',
   );
 
-  final provider = anthropic_compat.createAnthropicProvider(
+  final fileClient = anthropic_compat.createAnthropicProvider(
     apiKey: apiKey,
     model: 'claude-sonnet-4-20250514',
   );
@@ -161,7 +163,7 @@ Keep the integration boundary explicit in application code.
   FileObject? uploadedFile;
 
   try {
-    uploadedFile = await provider.uploadFile(
+    uploadedFile = await fileClient.uploadFile(
       FileUploadRequest(
         file: await sampleFile.readAsBytes(),
         filename: sampleFile.uri.pathSegments.last,
@@ -172,19 +174,19 @@ Keep the integration boundary explicit in application code.
     print('MIME type: ${uploadedFile.mimeType ?? '<none>'}');
     print('Downloadable: ${uploadedFile.downloadable}');
 
-    final listed = await provider.listFiles(
+    final listed = await fileClient.listFiles(
       const FileListQuery(limit: 5),
     );
     print('Recent Anthropic files returned: ${listed.data.length}');
 
-    final retrieved = await provider.retrieveFile(uploadedFile.id);
+    final retrieved = await fileClient.retrieveFile(uploadedFile.id);
     print('Retrieved filename: ${retrieved.filename}');
 
-    final content = await provider.getFileContent(uploadedFile.id);
+    final content = await fileClient.getFileContent(uploadedFile.id);
     print('Downloaded bytes: ${content.length}');
   } finally {
     if (uploadedFile != null) {
-      final deleted = await provider.deleteFile(uploadedFile.id);
+      final deleted = await fileClient.deleteFile(uploadedFile.id);
       print('Deleted temporary Anthropic file: ${deleted.deleted}');
     }
     await _deleteIfExists(sampleFile);
@@ -196,8 +198,14 @@ Keep the integration boundary explicit in application code.
 void explainBoundary() {
   print('=== Boundary Notes ===\n');
   print(
-    '• Stable app code should usually keep local files in app storage and pass '
-    'them through `FilePromptPart` only when a model call needs them.',
+    '• Stable app code should usually keep local files in app or Flutter '
+    'storage and pass them through `FilePromptPart` only when a model call '
+    'needs them.',
+  );
+  print(
+    '• Keep attachment preview, retry, removal, and local caching in your app '
+    'layer; only upload provider-side when product requirements need '
+    'persistent retrieval or workspace storage.',
   );
   print(
     '• Remote file lifecycle APIs are provider-owned because persistence, '

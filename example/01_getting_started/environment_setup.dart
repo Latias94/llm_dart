@@ -189,14 +189,14 @@ Future<void> demonstrateDevelopmentVsProduction() async {
   print('         • Max Retries: ${config.maxRetries}');
   print('         • Debug Mode: ${config.debugMode}');
 
-  // Create provider with environment-specific config
+  // Create model with environment-specific config
   try {
-    final provider = createProviderForEnvironment(environment);
-    if (provider != null) {
-      print('      ✅ Provider configured for $environment');
+    final model = createModelForEnvironment(environment);
+    if (model != null) {
+      print('      ✅ Model configured for $environment');
     }
   } catch (e) {
-    print('      ❌ Failed to configure provider: $e');
+    print('      ❌ Failed to configure model: $e');
   }
 
   print('');
@@ -516,7 +516,7 @@ Future<void> setupOllama() async {
 }
 
 /// Create model for specific environment
-core.LanguageModel? createProviderForEnvironment(String environment) {
+core.LanguageModel? createModelForEnvironment(String environment) {
   final apiKey = Platform.environment['OPENAI_API_KEY'];
   if (apiKey == null) return null;
 

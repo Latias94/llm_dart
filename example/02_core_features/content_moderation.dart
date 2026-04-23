@@ -20,20 +20,20 @@ Future<void> main() async {
     return;
   }
 
-  final provider = openai_compat.createOpenAIProvider(
+  final moderationClient = openai_compat.createOpenAIProvider(
     apiKey: apiKey,
     model: 'gpt-4o',
   );
 
-  await demonstrateSingleInputPolicy(provider);
-  await demonstrateBatchReviewQueue(provider);
+  await demonstrateProviderSignalToAppPolicy(moderationClient);
+  await demonstrateBatchReviewQueue(moderationClient);
   explainBoundary();
 
   print('\nContent moderation example completed.');
 }
 
-Future<void> demonstrateSingleInputPolicy(
-  openai_compat.OpenAIProvider provider,
+Future<void> demonstrateProviderSignalToAppPolicy(
+  openai_compat.OpenAIProvider moderationClient,
 ) async {
   print('=== Provider Signal -> App Policy ===\n');
 
@@ -44,10 +44,10 @@ Future<void> demonstrateSingleInputPolicy(
   ];
 
   for (final sample in samples) {
-    final response = await provider.moderate(
-      const ModerationRequest(
-        input: <String>[],
-      ).copyWithInput(sample),
+    final response = await moderationClient.moderate(
+      ModerationRequest(
+        input: sample,
+      ),
     );
     final result = response.results.first;
     final decision = AppModerationDecision.fromResult(result);
@@ -61,7 +61,7 @@ Future<void> demonstrateSingleInputPolicy(
 }
 
 Future<void> demonstrateBatchReviewQueue(
-  openai_compat.OpenAIProvider provider,
+  openai_compat.OpenAIProvider moderationClient,
 ) async {
   print('=== Batch Review Queue ===\n');
 
@@ -72,7 +72,7 @@ Future<void> demonstrateBatchReviewQueue(
     'Explain the platform safety rules in one paragraph.',
   ];
 
-  final response = await provider.moderate(
+  final response = await moderationClient.moderate(
     const ModerationRequest(
       input: samples,
     ),
@@ -106,6 +106,10 @@ void explainBoundary() {
   print(
     '• Application code should normalize raw provider output into its own '
     '`allow` / `review` / `block` policy.',
+  );
+  print(
+    '• If you support multiple providers, normalize them into one app policy '
+    'schema and keep the raw provider evidence for audit or debugging.',
   );
   print(
     '• Keep UI labels, escalation rules, and audit logging in your app layer, '
@@ -162,15 +166,6 @@ final class AppModerationDecision {
     return const AppModerationDecision(
       action: 'allow',
       reason: 'No app review threshold was crossed.',
-    );
-  }
-}
-
-extension on ModerationRequest {
-  ModerationRequest copyWithInput(Object input) {
-    return ModerationRequest(
-      input: input,
-      model: model,
     );
   }
 }

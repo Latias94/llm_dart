@@ -3,8 +3,8 @@
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/core/llm_error.dart' as compat_error;
 import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/transport.dart' as transport;
 
 /// Basic configuration examples using the stable model API.
 ///
@@ -12,7 +12,7 @@ import 'package:llm_dart/llm_dart.dart' as llm;
 /// - shared generation options such as temperature and output-token limits
 /// - system prompt control through the shared prompt model
 /// - request timeout handling through `CallOptions`
-/// - the same provider error handling while using the new `AI` facade
+/// - stable `ModelError` normalization while using the new `AI` facade
 Future<void> main() async {
   print('Basic Configuration Guide\n');
 
@@ -163,17 +163,17 @@ Future<void> testInvalidApiKey() async {
       ],
     );
     print('Invalid API Key: unexpected success');
-  } on compat_error.AuthError catch (error) {
-    print('Invalid API Key: caught AuthError -> ${error.message}');
   } catch (error) {
-    print('Invalid API Key: unexpected error -> $error');
+    final normalized = _normalizeError(error);
+    print(
+      'Invalid API Key: ${_describeNormalizedError(normalized)}',
+    );
   }
 }
 
 Future<void> testInvalidModel(String apiKey) async {
   try {
-    final model =
-        llm.AI.openai(apiKey: apiKey).chatModel('invalid-model-name');
+    final model = llm.AI.openai(apiKey: apiKey).chatModel('invalid-model-name');
     await core.generateTextCall(
       model: model,
       prompt: [
@@ -181,10 +181,11 @@ Future<void> testInvalidModel(String apiKey) async {
       ],
     );
     print('Invalid Model: unexpected success');
-  } on compat_error.InvalidRequestError catch (error) {
-    print('Invalid Model: caught InvalidRequestError -> ${error.message}');
   } catch (error) {
-    print('Invalid Model: unexpected error -> $error');
+    final normalized = _normalizeError(error);
+    print(
+      'Invalid Model: ${_describeNormalizedError(normalized)}',
+    );
   }
 }
 
@@ -201,10 +202,11 @@ Future<void> testNetworkTimeout(String apiKey) async {
       ),
     );
     print('Network Timeout: unexpected success');
-  } on compat_error.TimeoutError catch (error) {
-    print('Network Timeout: caught TimeoutError -> ${error.message}');
   } catch (error) {
-    print('Network Timeout: unexpected error -> $error');
+    final normalized = _normalizeError(error);
+    print(
+      'Network Timeout: ${_describeNormalizedError(normalized)}',
+    );
   }
 }
 
@@ -253,6 +255,29 @@ Future<void> demonstrateTimeoutSettings(String apiKey) async {
 
 core.LanguageModel _openAIModel(String apiKey) {
   return llm.AI.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
+}
+
+core.ModelError _normalizeError(Object error) {
+  if (error is core.ModelError) {
+    return error;
+  }
+
+  if (error is transport.TransportException) {
+    return transport.transportErrorToModelError(error);
+  }
+
+  return core.ModelError.fromUnknown(error);
+}
+
+String _describeNormalizedError(core.ModelError error) {
+  final parts = <String>[
+    'kind=${error.kind.name}',
+    'message=${error.message}',
+    if (error.code != null) 'code=${error.code}',
+    if (error.statusCode != null) 'status=${error.statusCode}',
+    if (error.isRetryable != null) 'retryable=${error.isRetryable}',
+  ];
+  return parts.join(', ');
 }
 
 String _truncate(String text, {int maxLength = 200}) {

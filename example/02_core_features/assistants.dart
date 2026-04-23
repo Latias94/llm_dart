@@ -7,7 +7,7 @@ import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/models/assistant_models.dart';
 import 'package:llm_dart/providers/openai/openai.dart' as openai_compat;
 
-/// Assistants are still a compatibility boundary.
+/// Assistants remain a provider-owned lifecycle boundary.
 ///
 /// This example shows two different paths:
 /// - the stable shared path for assistant-like app behavior
@@ -26,7 +26,7 @@ Future<void> main() async {
   }
 
   await demonstrateStableAssistantLikePath(apiKey);
-  await demonstrateOpenAIAssistantLifecycle(apiKey);
+  await demonstrateOpenAIAssistantBoundary(apiKey);
   explainBoundary();
 
   print('\nAssistants example completed.');
@@ -57,10 +57,10 @@ Future<void> demonstrateStableAssistantLikePath(String apiKey) async {
   print('');
 }
 
-Future<void> demonstrateOpenAIAssistantLifecycle(String apiKey) async {
-  print('=== OpenAI Compatibility Assistant Lifecycle ===\n');
+Future<void> demonstrateOpenAIAssistantBoundary(String apiKey) async {
+  print('=== Provider-Owned OpenAI Assistant Lifecycle Boundary ===\n');
 
-  final provider = openai_compat.createOpenAIProvider(
+  final assistantClient = openai_compat.createOpenAIProvider(
     apiKey: apiKey,
     model: 'gpt-4o',
   );
@@ -68,7 +68,7 @@ Future<void> demonstrateOpenAIAssistantLifecycle(String apiKey) async {
   Assistant? assistant;
 
   try {
-    assistant = await provider.createAssistant(
+    assistant = await assistantClient.createAssistant(
       const CreateAssistantRequest(
         model: 'gpt-4o',
         name: 'Release Ops Copilot',
@@ -91,7 +91,7 @@ Future<void> demonstrateOpenAIAssistantLifecycle(String apiKey) async {
     print('Model: ${assistant.model}');
     print('Tools: ${_toolList(assistant.tools)}');
 
-    final listResponse = await provider.listAssistants(
+    final listResponse = await assistantClient.listAssistants(
       const ListAssistantsQuery(
         limit: 5,
         order: 'desc',
@@ -99,10 +99,10 @@ Future<void> demonstrateOpenAIAssistantLifecycle(String apiKey) async {
     );
     print('Recent assistants returned: ${listResponse.data.length}');
 
-    final retrieved = await provider.retrieveAssistant(assistant.id);
+    final retrieved = await assistantClient.retrieveAssistant(assistant.id);
     print('Retrieved metadata: ${retrieved.metadata}');
 
-    final updated = await provider.modifyAssistant(
+    final updated = await assistantClient.modifyAssistant(
       assistant.id,
       const ModifyAssistantRequest(
         name: 'Release Ops Copilot (updated)',
@@ -115,7 +115,7 @@ Future<void> demonstrateOpenAIAssistantLifecycle(String apiKey) async {
     print('Updated assistant name: ${updated.name}');
   } finally {
     if (assistant != null) {
-      final deleted = await provider.deleteAssistant(assistant.id);
+      final deleted = await assistantClient.deleteAssistant(assistant.id);
       print('Deleted temporary assistant: ${deleted.deleted}');
     }
   }
@@ -134,12 +134,14 @@ void explainBoundary() {
     'remain provider-owned compatibility APIs.',
   );
   print(
-    '• For most Flutter chat apps, prefer normal chat models, persisted prompt '
-    'history, tool replay, and structured outputs before reaching for assistants.',
+    '• For most Flutter chat apps, prefer normal chat models, app-owned '
+    'conversation history, tool replay, and structured outputs before '
+    'reaching for assistants.',
   );
   print(
-    '• If you really need assistant objects, keep them isolated behind an '
-    'OpenAI-specific application boundary.',
+    '• Only introduce assistant IDs, stored threads, or provider-managed '
+    'workspaces when product requirements truly need them, and keep that '
+    'logic isolated behind an OpenAI-specific application boundary.',
   );
 }
 

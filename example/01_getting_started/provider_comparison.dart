@@ -10,13 +10,13 @@ import 'package:llm_dart/llm_dart.dart' as llm;
 /// This example intentionally focuses on the migrated model path instead of the
 /// legacy root builder surface.
 Future<void> main() async {
-  print('AI Provider Comparison\n');
+  print('Stable Model Comparison Across Providers\n');
 
   const question =
       'Explain artificial intelligence in 3 key points, each point no more than 20 words.';
-  final providers = createProviders();
+  final modelsByProvider = createModelsByProvider();
 
-  if (providers.isEmpty) {
+  if (modelsByProvider.isEmpty) {
     print('Set at least one provider API key to run this example:');
     print('  OPENAI_API_KEY');
     print('  ANTHROPIC_API_KEY');
@@ -27,11 +27,13 @@ Future<void> main() async {
   }
 
   print('Question: $question\n');
-  print('Testing ${providers.length} providers on the stable model API...\n');
+  print(
+    'Testing ${modelsByProvider.length} provider-owned models on the stable API...\n',
+  );
 
   final results = await Future.wait(
-    providers.entries.map(
-      (entry) => testProvider(entry.key, entry.value, question),
+    modelsByProvider.entries.map(
+      (entry) => testProviderModel(entry.key, entry.value, question),
     ),
   );
 
@@ -43,18 +45,18 @@ Future<void> main() async {
   provideRecommendations(byName);
 }
 
-Map<String, core.LanguageModel> createProviders() {
-  final providers = <String, core.LanguageModel>{};
+Map<String, core.LanguageModel> createModelsByProvider() {
+  final modelsByProvider = <String, core.LanguageModel>{};
 
   final openAIKey = Platform.environment['OPENAI_API_KEY'];
   if (openAIKey != null && openAIKey.isNotEmpty) {
-    providers['OpenAI'] =
+    modelsByProvider['OpenAI'] =
         llm.AI.openai(apiKey: openAIKey).chatModel('gpt-4.1-mini');
   }
 
   final anthropicKey = Platform.environment['ANTHROPIC_API_KEY'];
   if (anthropicKey != null && anthropicKey.isNotEmpty) {
-    providers['Anthropic'] = llm.AI
+    modelsByProvider['Anthropic'] = llm.AI
         .anthropic(
           apiKey: anthropicKey,
         )
@@ -63,7 +65,7 @@ Map<String, core.LanguageModel> createProviders() {
 
   final groqKey = Platform.environment['GROQ_API_KEY'];
   if (groqKey != null && groqKey.isNotEmpty) {
-    providers['Groq'] = llm.AI
+    modelsByProvider['Groq'] = llm.AI
         .groq(
           apiKey: groqKey,
         )
@@ -72,7 +74,7 @@ Map<String, core.LanguageModel> createProviders() {
 
   final deepSeekKey = Platform.environment['DEEPSEEK_API_KEY'];
   if (deepSeekKey != null && deepSeekKey.isNotEmpty) {
-    providers['DeepSeek'] = llm.AI
+    modelsByProvider['DeepSeek'] = llm.AI
         .deepSeek(
           apiKey: deepSeekKey,
         )
@@ -81,13 +83,13 @@ Map<String, core.LanguageModel> createProviders() {
 
   final xaiKey = Platform.environment['XAI_API_KEY'];
   if (xaiKey != null && xaiKey.isNotEmpty) {
-    providers['xAI'] = llm.AI.xai(apiKey: xaiKey).chatModel('grok-3');
+    modelsByProvider['xAI'] = llm.AI.xai(apiKey: xaiKey).chatModel('grok-3');
   }
 
-  return providers;
+  return modelsByProvider;
 }
 
-Future<ProviderResult> testProvider(
+Future<ProviderResult> testProviderModel(
   String name,
   core.LanguageModel model,
   String question,

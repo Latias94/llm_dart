@@ -10,9 +10,10 @@ The default modern entry path for new code is
 `package:llm_dart/ai.dart` remains available as an equivalent explicit alias
 when you want a named AI-focused import style.
 
-Some examples in this directory still use `package:llm_dart/legacy.dart` for
-compatibility-oriented error types while the migration is in progress. Prefer
-`quick_start.dart` when you want the current recommended shape.
+This directory stays on the modern model-first path. If you need older
+compatibility builders or broad provider shells, jump to the explicit appendix
+material under `../02_core_features/` or `../04_providers/` instead of
+starting here.
 
 When you later add chat UI rendering, keep the shared message projection in
 `package:llm_dart/core.dart`; the chat runtime packages own session/controller
@@ -24,10 +25,10 @@ abstractions, not the conceptual ownership of `ChatMessageMapper`.
 Basic usage with multiple providers. Start here for your first AI conversation.
 
 ### [provider_comparison.dart](provider_comparison.dart)
-Compare different AI providers to choose the right one for your needs.
+Compare provider-owned stable model facades to choose the right fit.
 
 ### [basic_configuration.dart](basic_configuration.dart)
-Essential configuration options and error handling patterns.
+Essential configuration options and stable `ModelError` handling patterns.
 
 ## Setup
 

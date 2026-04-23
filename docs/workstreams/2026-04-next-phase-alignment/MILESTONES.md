@@ -151,6 +151,9 @@ Current status:
   unless repeated real integrations prove that current result fields,
   `ProviderMetadata`, raw chunks, and transport diagnostics are still
   insufficient
+- public examples are now also being tightened around the same freeze rule:
+  stable shared-model paths first, provider-owned or compatibility boundaries
+  second, without reopening package-count or event-surface debates
 - reopen triggers are now written down so future refactors can be justified by
   product evidence, repeated bugs, or repeated duplication
 - this phase now ends with a clearer architectural rule: keep the shared
