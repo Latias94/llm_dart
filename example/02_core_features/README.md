@@ -82,7 +82,8 @@ plus provider-native image options for OpenAI and Google.
 
 ### [content_moderation.dart](content_moderation.dart)
 Provider-owned moderation signals translated into app-owned policy decisions
-instead of pretending a shared moderation contract exists.
+through the focused OpenAI moderation client instead of pretending a shared
+moderation contract exists.
 
 ### [model_listing.dart](model_listing.dart)
 Stable concrete-model capability inspection first, then provider-owned remote

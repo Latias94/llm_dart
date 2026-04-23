@@ -144,6 +144,14 @@ This phase should explicitly avoid:
   - Follow-up guidance for how app and Flutter code should interpret
     `llm_dart_community` capability profiles, especially the `known` versus
     `inferred` boundary for Ollama-family hints.
+- [17-stable-boundary-migration-matrix.md](17-stable-boundary-migration-matrix.md)
+  - Product-facing matrix for choosing the smallest honest boundary between the
+    stable shared path, provider-owned options/helpers, and compatibility
+    appendices.
+- [18-provider-native-helper-investment-audit.md](18-provider-native-helper-investment-audit.md)
+  - Audit of which residual provider-native capabilities deserve the next
+    additive helper investments and which should stay deferred or
+    compatibility-only.
 - [TODO.md](TODO.md)
   - Open follow-up tasks for this phase.
 - [MILESTONES.md](MILESTONES.md)

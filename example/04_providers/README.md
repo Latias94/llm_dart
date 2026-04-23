@@ -28,9 +28,10 @@ Current boundary:
 
 ### [openai/](openai/)
 Mixed status. The package already has stable chat, image, speech, and
-transcription models, and the Responses appendix is now narrowed to the
-provider-owned OpenAI compatibility surface. Residual assistants and some
-other lifecycle examples still remain compatibility oriented.
+transcription models, plus provider-owned modern image-editing helpers. The
+Responses appendix is now narrowed to the provider-owned OpenAI compatibility
+surface. Residual assistants and some other lifecycle examples still remain
+compatibility oriented.
 
 ### [anthropic/](anthropic/)
 Mixed status. Stable chat plus typed extended-thinking and MCP options already
@@ -42,8 +43,9 @@ Stable OpenAI-family chat facade with Groq profile and low-latency streaming.
 
 ### [google/](google/)
 Stable embedding, image, and speech model facades with typed Google provider
-options. The Google TTS example is now stable-first for one-shot speech and
-keeps only streaming and discovery as provider-owned appendix material.
+options, plus provider-owned image-editing and variation helpers. The Google
+TTS example is now stable-first for one-shot speech and keeps only streaming
+and discovery as provider-owned appendix material.
 
 ### [ollama/](ollama/)
 Modern community-surface local runtime examples with provider-owned Ollama

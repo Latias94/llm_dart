@@ -5,6 +5,7 @@ import 'openai_embedding_model.dart';
 import 'openai_family_profile.dart';
 import 'openai_image_model.dart';
 import 'openai_language_model.dart';
+import 'openai_moderation.dart';
 import 'openai_options.dart';
 import 'openai_speech_model.dart';
 import 'openai_transcription_model.dart';
@@ -87,6 +88,18 @@ final class OpenAI {
     return OpenAITranscriptionModel(
       apiKey: apiKey,
       modelId: modelId,
+      transport: transport,
+      profile: profile,
+      baseUrl: baseUrl,
+      settings: settings,
+    );
+  }
+
+  OpenAIModerationClient moderation({
+    OpenAIModerationSettings settings = const OpenAIModerationSettings(),
+  }) {
+    return OpenAIModerationClient(
+      apiKey: apiKey,
       transport: transport,
       profile: profile,
       baseUrl: baseUrl,

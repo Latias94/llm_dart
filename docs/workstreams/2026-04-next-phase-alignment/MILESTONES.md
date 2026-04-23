@@ -120,6 +120,9 @@ Current status:
   honest again
 - the root package is now classified as clear enough for the current stage: a
   modern convenience facade plus an explicit compatibility host
+- a product-facing migration matrix now exists for routing common app and
+  Flutter tasks between the stable shared path, provider-owned options/helpers,
+  and explicit compatibility appendices
 
 ## M5 - Freeze Review And Next Route
 
@@ -154,6 +157,13 @@ Current status:
 - public examples are now also being tightened around the same freeze rule:
   stable shared-model paths first, provider-owned or compatibility boundaries
   second, without reopening package-count or event-surface debates
+- a provider-native helper investment audit now also exists so future product
+  work can choose additive provider-owned helpers before reopening shared-core
+  or package-boundary debates
+- the first post-audit provider-owned helper is now landed through the
+  OpenAI-profile `OpenAIModerationClient`, proving that safety product value can
+  move out of broad compatibility shells without inventing a shared moderation
+  abstraction
 - reopen triggers are now written down so future refactors can be justified by
   product evidence, repeated bugs, or repeated duplication
 - this phase now ends with a clearer architectural rule: keep the shared

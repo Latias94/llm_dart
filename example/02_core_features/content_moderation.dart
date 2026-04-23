@@ -2,10 +2,10 @@
 
 import 'dart:io';
 
-import 'package:llm_dart/models/moderation_models.dart';
-import 'package:llm_dart/providers/openai/openai.dart' as openai_compat;
+import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/openai.dart' as openai;
 
-/// Moderation remains a provider-owned compatibility surface.
+/// Moderation remains a provider-owned surface.
 ///
 /// The stable architectural lesson is not "all providers share one moderation
 /// contract". It is:
@@ -20,10 +20,11 @@ Future<void> main() async {
     return;
   }
 
-  final moderationClient = openai_compat.createOpenAIProvider(
-    apiKey: apiKey,
-    model: 'gpt-4o',
-  );
+  final moderationClient = llm.AI.openai(apiKey: apiKey).moderation(
+        settings: const openai.OpenAIModerationSettings(
+          defaultModel: 'omni-moderation-latest',
+        ),
+      );
 
   await demonstrateProviderSignalToAppPolicy(moderationClient);
   await demonstrateBatchReviewQueue(moderationClient);
@@ -33,7 +34,7 @@ Future<void> main() async {
 }
 
 Future<void> demonstrateProviderSignalToAppPolicy(
-  openai_compat.OpenAIProvider moderationClient,
+  openai.OpenAIModerationClient moderationClient,
 ) async {
   print('=== Provider Signal -> App Policy ===\n');
 
@@ -44,12 +45,7 @@ Future<void> demonstrateProviderSignalToAppPolicy(
   ];
 
   for (final sample in samples) {
-    final response = await moderationClient.moderate(
-      ModerationRequest(
-        input: sample,
-      ),
-    );
-    final result = response.results.first;
+    final result = await moderationClient.moderateText(sample);
     final decision = AppModerationDecision.fromResult(result);
 
     print('Input: $sample');
@@ -61,7 +57,7 @@ Future<void> demonstrateProviderSignalToAppPolicy(
 }
 
 Future<void> demonstrateBatchReviewQueue(
-  openai_compat.OpenAIProvider moderationClient,
+  openai.OpenAIModerationClient moderationClient,
 ) async {
   print('=== Batch Review Queue ===\n');
 
@@ -72,14 +68,10 @@ Future<void> demonstrateBatchReviewQueue(
     'Explain the platform safety rules in one paragraph.',
   ];
 
-  final response = await moderationClient.moderate(
-    const ModerationRequest(
-      input: samples,
-    ),
-  );
+  final results = await moderationClient.moderateTexts(samples);
 
   final decisions = <AppModerationDecision>[];
-  for (final result in response.results) {
+  for (final result in results) {
     decisions.add(AppModerationDecision.fromResult(result));
   }
 
@@ -117,7 +109,7 @@ void explainBoundary() {
   );
 }
 
-List<String> _topSignals(ModerationResult result) {
+List<String> _topSignals(openai.OpenAIModerationResult result) {
   final scores = <String, double>{
     'hate': result.categoryScores.hate,
     'harassment': result.categoryScores.harassment,
@@ -142,7 +134,9 @@ final class AppModerationDecision {
     required this.reason,
   });
 
-  factory AppModerationDecision.fromResult(ModerationResult result) {
+  factory AppModerationDecision.fromResult(
+    openai.OpenAIModerationResult result,
+  ) {
     if (result.categories.sexualMinors ||
         result.categories.selfHarmInstructions ||
         result.categories.hateThreatening ||

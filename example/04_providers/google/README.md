@@ -131,6 +131,9 @@ print(result.audioBytes.length);
   `GoogleImageOptions`.
 - Gemini image models currently support only `count=1`; Imagen supports larger
   batches.
+- Google image editing and variation now also exist as provider-owned additive
+  helpers on `GoogleImageModel.edit(...)` and `createVariation(...)` rather
+  than as shared image-contract widening.
 
 ### Speech
 
@@ -143,14 +146,15 @@ print(result.audioBytes.length);
 
 ## Boundary Notes
 
-- Image editing and image-variation workflows are still compatibility oriented.
-  The stable `ImageModel` surface is intentionally limited to prompt-based
-  generation until typed edit inputs are frozen.
 - Google native streaming TTS remains compatibility oriented. The stable speech
   surface already covers one-shot generation, but not the full streaming helper
   workflow in `google_tts_example.dart`. If this area is revisited later, it
   should land as a provider-owned additive utility in `llm_dart_google`, not as
   shared `SpeechModel` widening.
+- Google image editing and variation should stay provider-owned even though
+  they already have modern helpers. They are a good example of additive
+  provider package value without widening the shared `generateImage(...)`
+  contract.
 - Keep Google-specific controls in Google-owned options. Do not widen shared
   `GenerateTextOptions`, `GenerateImage`, or `GenerateSpeech` contracts just to
   fit provider-specific flags.

@@ -80,7 +80,7 @@ provider directories are explicit boundary appendices.
 - [image_generation.dart](02_core_features/image_generation.dart) - Stable multi-provider image generation
 - [file_management.dart](02_core_features/file_management.dart) - Stable local file prompts plus provider-owned remote file lifecycle boundaries
 - [web_search.dart](02_core_features/web_search.dart) - Web search integration
-- [content_moderation.dart](02_core_features/content_moderation.dart) - Provider-owned moderation signals mapped into app policy
+- [content_moderation.dart](02_core_features/content_moderation.dart) - Provider-owned moderation signals mapped into app policy through the focused OpenAI moderation client
 - [model_listing.dart](02_core_features/model_listing.dart) - Stable capability profiles plus provider-owned remote catalog discovery
 - [message_builder_cache.dart](02_core_features/message_builder_cache.dart) - Anthropic-specific prompt caching appendix with narrow typed imports
 - [capability_detection.dart](02_core_features/capability_detection.dart) - Feature detection

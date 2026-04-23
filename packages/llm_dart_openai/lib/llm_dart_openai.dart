@@ -9,6 +9,7 @@ export 'src/openai_image_editing.dart';
 export 'src/openai_image_model.dart';
 export 'src/openai_language_model.dart';
 export 'src/openai_message_mapper.dart';
+export 'src/openai_moderation.dart';
 export 'src/openai_model_describer.dart';
 export 'src/openai_speech_model.dart';
 export 'src/openai_native_tools.dart';

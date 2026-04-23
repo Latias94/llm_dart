@@ -15,6 +15,7 @@ This package owns the modern OpenAI-family boundary for:
 Use this package when you want:
 
 - direct `OpenAI(...)` model construction outside the broad root facade
+- provider-owned OpenAI-profile moderation through `OpenAI(...).moderation()`
 - OpenAI-family profiles such as `OpenAIProfile`, `OpenRouterProfile`,
   `DeepSeekProfile`, `GroqProfile`, `XAIProfile`, and `PhindProfile`
 - provider-owned settings such as `OpenAIChatModelSettings`,
@@ -23,6 +24,8 @@ Use this package when you want:
 - provider-owned invocation options such as `OpenAIGenerateTextOptions`,
   `OpenAIImageOptions`, `OpenAISpeechOptions`, `OpenAITranscriptionOptions`,
   OpenRouter options, and xAI options
+- provider-owned image editing through `OpenAIImageModel.edit(...)` and
+  `OpenAIImageEditRequest`
 - provider-native built-in tools, response formats, custom parts, and UI
   mapping through `OpenAIMessageMapper`
 - model-centric capability discovery through `describeOpenAIChatModel(...)`
@@ -120,6 +123,33 @@ final groqModel = OpenAI(
 If you prefer the root convenience facade, `AI.groq(...)`, `AI.deepSeek(...)`,
 `AI.openRouter(...)`, and `AI.xai(...)` are the equivalent stable entrypoints.
 
+## OpenAI Moderation Example
+
+`OpenAI(...).moderation()` is intentionally OpenAI-profile only. Other
+OpenAI-family profiles can share transport compatibility without sharing the
+hosted moderation endpoint contract.
+
+```dart
+import 'package:llm_dart_openai/llm_dart_openai.dart';
+
+Future<void> main() async {
+  final moderation = OpenAI(
+    apiKey: 'your-openai-key',
+  ).moderation(
+    settings: const OpenAIModerationSettings(
+      defaultModel: 'omni-moderation-latest',
+    ),
+  );
+
+  final result = await moderation.moderateText(
+    'Please keep the discussion respectful and constructive.',
+  );
+
+  print(result.flagged);
+  print(result.categoryScores.harassment);
+}
+```
+
 ## UI Mapping And Capability Discovery
 
 - `OpenAIMessageMapper` composes provider-owned metadata with the shared UI
@@ -128,6 +158,10 @@ If you prefer the root convenience facade, `AI.groq(...)`, `AI.deepSeek(...)`,
   replay payloads without widening shared UI types.
 - `describeOpenAIChatModel(...)` returns a `ModelCapabilityProfile` for app or
   Flutter capability gating.
+- `describeOpenAIImageModel(...)` does the same for OpenAI-family image models,
+  including provider-owned edit support metadata.
+- `OpenAIModerationClient` is a narrow OpenAI-profile safety client and does
+  not imply a shared moderation abstraction or OpenAI-family-wide feature.
 
 ## Boundary Notes
 

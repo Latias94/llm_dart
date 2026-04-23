@@ -67,6 +67,12 @@ architecture debt.
 - [x] Re-audit the root package role after the latest community/package moves
 - [x] Improve package-level documentation where the ownership story is still
   thin or implicit
+- [x] Write a product-facing migration matrix for choosing between stable
+  shared, provider-owned, and compatibility appendix boundaries
+- [x] Audit the next provider-native helper candidates so future additions stay
+  additive and evidence-driven
+- [x] Land OpenAI moderation as a narrow provider-owned helper instead of a
+  shared abstraction or broad compatibility dependency
 
 ## OpenAI Family Stream Parser
 
