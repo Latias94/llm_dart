@@ -77,6 +77,8 @@ architecture debt.
   common hosted-file flows behind the broad compatibility shell
 - [x] Land an Ollama local model-catalog helper in `llm_dart_community`
   instead of keeping installed-model discovery behind the compatibility shell
+- [x] Land an ElevenLabs voice-catalog reader in `llm_dart_community` instead
+  of keeping voice-picker UI data behind the broad compatibility audio shell
 
 ## OpenAI Family Stream Parser
 

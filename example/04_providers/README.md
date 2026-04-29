@@ -54,10 +54,10 @@ compatibility flows now mainly cover `/api/generate` and broader legacy shell
 behavior.
 
 ### [elevenlabs/](elevenlabs/)
-Stable shared-capability speech/transcription examples plus explicit
-provider-owned voice/audio appendix material. Modern shared ElevenLabs surfaces
-live in `packages/llm_dart_community`, while this directory still covers voice
-catalogs, streaming helpers, and realtime boundary residue.
+Stable shared-capability speech/transcription examples plus the provider-owned
+voice catalog helper. Modern shared ElevenLabs surfaces live in
+`packages/llm_dart_community`, while this directory still covers streaming
+helpers and realtime boundary residue.
 
 ### [xai/](xai/)
 Stable xAI chat facade with typed live-search options.

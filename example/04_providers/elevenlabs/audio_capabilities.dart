@@ -11,8 +11,8 @@ import 'package:llm_dart_community/llm_dart_community.dart' as community;
 ///
 /// This example keeps the boundary explicit:
 /// - stable app-facing TTS and STT use `llm_dart_community`
-/// - provider-owned voice catalogs, streaming helpers, and realtime flags stay
-///   on the compatibility provider surface
+/// - provider-owned voice catalogs use a focused community helper
+/// - streaming helpers and realtime flags stay on the compatibility provider surface
 
 const _elevenLabsVoiceId = 'JBFqnCBsd6RMkjVDRZzb';
 const _elevenLabsSpeechModelId = 'eleven_multilingual_v2';
@@ -43,6 +43,10 @@ Future<void> main() async {
     apiKey: apiKey,
   ).transcriptionModel(_elevenLabsTranscriptionModelId);
 
+  final voiceCatalog = community.ElevenLabs(
+    apiKey: apiKey,
+  ).voices();
+
   final audioProvider = elevenlabs_compat.createElevenLabsProvider(
     apiKey: apiKey,
     voiceId: _elevenLabsVoiceId,
@@ -63,7 +67,10 @@ Future<void> main() async {
     transcriptionModel: transcriptionModel,
     audioFile: generatedAudio,
   );
-  await testVoiceCatalog(audioProvider);
+  await testVoiceCatalog(
+    voices: voiceCatalog,
+    provider: audioProvider,
+  );
   await testCompatibilityStreaming(audioProvider);
   await testCompatibilityConvenienceTranscription(
     provider: audioProvider,
@@ -87,7 +94,8 @@ void displaySupportedFeatures({
     '   ✅ Stable transcription model: '
     '${transcriptionModel.providerId}/${transcriptionModel.modelId}',
   );
-  print('   ⚠️  Voice catalogs, streamed TTS helpers, and realtime flags remain');
+  print('   ✅ Provider-owned voice catalog: llm_dart_community');
+  print('   ⚠️  Streamed TTS helpers and realtime flags remain');
   print('      provider owned on the compatibility surface');
 
   print('\n📋 Compatibility Feature Flags:');
@@ -189,14 +197,19 @@ Future<void> testSpeechToText({
   print('');
 }
 
-Future<void> testVoiceCatalog(compat_core.AudioCapability provider) async {
+Future<void> testVoiceCatalog({
+  required community.ElevenLabsVoiceCatalogClient voices,
+  required compat_core.AudioCapability provider,
+}) async {
   print('📚 Provider-Owned Voice Catalog');
 
   try {
-    final voices = await provider.getVoices();
-    print('   📢 Available voices: ${voices.length} voices');
-    if (voices.isNotEmpty) {
-      print('   🎭 Sample voices: ${voices.take(3).map((v) => v.name).join(', ')}');
+    final catalog = await voices.listVoices();
+    print('   📢 Available voices: ${catalog.length} voices');
+    if (catalog.isNotEmpty) {
+      print(
+        '   🎭 Sample voices: ${catalog.take(3).map((voice) => voice.name).join(', ')}',
+      );
     }
 
     final languages = await provider.getSupportedLanguages();
@@ -215,7 +228,8 @@ Future<void> testCompatibilityStreaming(
 ) async {
   print('🌊 Provider-Owned Streaming Appendix');
 
-  if (!provider.supportedFeatures.contains(compat_core.AudioFeature.streamingTTS)) {
+  if (!provider.supportedFeatures
+      .contains(compat_core.AudioFeature.streamingTTS)) {
     print('   ⏭️  Streaming TTS not advertised on this provider surface');
     print('');
     return;
@@ -255,7 +269,8 @@ Future<void> testCompatibilityStreaming(
       );
     }
   } on UnsupportedError catch (error) {
-    print('   ⚠️  Compatibility surface exists, but streaming is still pending:');
+    print(
+        '   ⚠️  Compatibility surface exists, but streaming is still pending:');
     print('      $error');
   } catch (error) {
     print('   ❌ Streaming TTS failed: $error');
@@ -286,10 +301,12 @@ Future<void> testCompatibilityConvenienceTranscription({
   print('');
 }
 
-Future<void> inspectRealtimeBoundary(compat_core.AudioCapability provider) async {
+Future<void> inspectRealtimeBoundary(
+    compat_core.AudioCapability provider) async {
   print('📡 Realtime Boundary');
 
-  if (!provider.supportedFeatures.contains(compat_core.AudioFeature.realtimeProcessing)) {
+  if (!provider.supportedFeatures
+      .contains(compat_core.AudioFeature.realtimeProcessing)) {
     print('   ⏭️  Realtime processing not advertised by this provider');
     print('');
     return;

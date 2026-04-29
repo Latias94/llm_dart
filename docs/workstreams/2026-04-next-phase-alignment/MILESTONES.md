@@ -170,6 +170,9 @@ Current status:
 - `llm_dart_community` now also exposes an Ollama local `catalog()` helper,
   proving that installed-model pickers and local diagnostics can move out of
   compatibility shells without being mislabeled as a shared model registry
+- `llm_dart_community` now also exposes an ElevenLabs `voices()` helper, moving
+  voice-picker catalog data into a narrow provider-owned modern surface while
+  keeping realtime, cloning, and admin flows outside the shared media contract
 - reopen triggers are now written down so future refactors can be justified by
   product evidence, repeated bugs, or repeated duplication
 - this phase now ends with a clearer architectural rule: keep the shared

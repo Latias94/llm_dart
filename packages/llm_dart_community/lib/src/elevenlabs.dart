@@ -1,8 +1,10 @@
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'elevenlabs_options.dart';
+import 'elevenlabs_shared.dart';
 import 'elevenlabs_speech_model.dart';
 import 'elevenlabs_transcription_model.dart';
+import 'elevenlabs_voice_catalog.dart';
 
 /// Package-owned ElevenLabs namespace for modern community provider surfaces.
 final class ElevenLabs {
@@ -16,7 +18,7 @@ final class ElevenLabs {
     required this.apiKey,
     TransportClient? transport,
     String? baseUrl,
-  })  : baseUrl = baseUrl ?? defaultBaseUrl,
+  })  : baseUrl = normalizeElevenLabsBaseUrl(baseUrl),
         transport = transport ?? DioTransportClient();
 
   ElevenLabsSpeechModel speechModel(
@@ -41,6 +43,18 @@ final class ElevenLabs {
     return ElevenLabsTranscriptionModel(
       apiKey: apiKey,
       modelId: modelId,
+      transport: transport,
+      baseUrl: baseUrl,
+      settings: settings,
+    );
+  }
+
+  ElevenLabsVoiceCatalogClient voices({
+    ElevenLabsVoiceCatalogSettings settings =
+        const ElevenLabsVoiceCatalogSettings(),
+  }) {
+    return ElevenLabsVoiceCatalogClient(
+      apiKey: apiKey,
       transport: transport,
       baseUrl: baseUrl,
       settings: settings,

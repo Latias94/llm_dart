@@ -45,8 +45,8 @@ Current intentional limits still include:
 - Ollama `/api/generate` completion stays outside the shared modern surface
 - stronger shared `ToolChoice` forcing for Ollama still degrades to
   provider-side automatic tool selection with warnings
-- ElevenLabs voice catalogs, realtime flows, cloning, and admin-style APIs stay
-  outside the shared modern surface
+- ElevenLabs realtime flows, cloning, and admin-style APIs stay outside the
+  shared modern surface
 - ElevenLabs file-path convenience beyond the byte-oriented
   `TranscriptionModel` stays outside this package
 
@@ -59,6 +59,7 @@ Use `llm_dart_community` when you want the modern shared-capability APIs for:
 - `Ollama(...).catalog().listModels()`
 - `ElevenLabs(...).speechModel(...)`
 - `ElevenLabs(...).transcriptionModel(...)`
+- `ElevenLabs(...).voices().listVoices()`
 
 ## Capability Profiles
 
@@ -102,6 +103,8 @@ More concretely:
 - ElevenLabs transcription
   - known baseline: language hints, timestamps,
     `api.route=speech_to_text`
+- ElevenLabs voices
+  - provider-owned catalog: voice IDs, labels, tiers, and preview URLs
 
 If app UX depends on certainty, inspect `CapabilityDescriptor.confidence`
 before treating a community-model feature as hard support.
@@ -116,6 +119,7 @@ surface:
 - `example/ollama_model_catalog.dart`
 - `example/elevenlabs_speech.dart`
 - `example/elevenlabs_transcription.dart`
+- `example/elevenlabs_voice_catalog.dart`
 
 Run them from this package directory:
 
@@ -125,6 +129,7 @@ dart run example/ollama_embeddings.dart
 dart run example/ollama_model_catalog.dart
 dart run example/elevenlabs_speech.dart
 dart run example/elevenlabs_transcription.dart
+dart run example/elevenlabs_voice_catalog.dart
 ```
 
 ## Relationship To The Root Package

@@ -5,6 +5,7 @@ ElevenLabs now has modern shared-capability surfaces in this workspace through
 
 - `ElevenLabs(...).speechModel(...)`
 - `ElevenLabs(...).transcriptionModel(...)`
+- `ElevenLabs(...).voices().listVoices()`
 
 This directory now uses a stable-first posture for normal speech and
 transcription flows, while still keeping the broader voice/audio appendix
@@ -15,7 +16,8 @@ explicitly provider owned.
 ### Prefer The Modern Community Surface
 
 Use `llm_dart_community` when you need shared-capability speech generation or
-direct-audio transcription:
+direct-audio transcription, or when a product UI needs the provider-owned voice
+catalog:
 
 ```dart
 import 'package:llm_dart_community/llm_dart_community.dart' as community;
@@ -48,6 +50,18 @@ final result = await core.transcribe(
 );
 ```
 
+For voice selection UI:
+
+```dart
+import 'package:llm_dart_community/llm_dart_community.dart' as community;
+
+final voices = await community.ElevenLabs(
+  apiKey: 'your-elevenlabs-key',
+).voices().listVoices();
+
+print(voices.map((voice) => voice.name).take(5).toList());
+```
+
 ### Use This Directory's Examples
 
 Use the compatibility shell in this directory only when you need broader
@@ -56,7 +70,7 @@ provider-specific behavior such as:
 - voice ID defaults and richer voice controls
 - compatibility audio-capability helpers
 - file-path convenience flows and broader audio shell behavior
-- realtime, catalog, or admin-style provider-specific APIs
+- realtime or admin-style provider-specific APIs
 
 ## Examples
 
@@ -68,6 +82,7 @@ streaming, convenience, and realtime-boundary appendix.
 
 - [Community ElevenLabs Speech Example](../../../packages/llm_dart_community/example/elevenlabs_speech.dart)
 - [Community ElevenLabs Transcription Example](../../../packages/llm_dart_community/example/elevenlabs_transcription.dart)
+- [Community ElevenLabs Voice Catalog Example](../../../packages/llm_dart_community/example/elevenlabs_voice_catalog.dart)
 
 ## Setup
 
@@ -92,7 +107,7 @@ final audioProvider = elevenlabs_compat.createElevenLabsProvider(
   similarityBoost: 0.9,
 );
 
-final voices = await audioProvider.getVoices();
+// Use this shell only for residual streaming, realtime, or broad audio flows.
 ```
 
 This still works, but it should be treated as a transitional shell above the
@@ -103,13 +118,13 @@ The important distinction is:
 
 - use `ElevenLabs(...).speechModel(...)` and `transcriptionModel(...)` for
   stable app-facing media flows
+- use `ElevenLabs(...).voices().listVoices()` for voice-picker UI
 - use `providers/elevenlabs/elevenlabs.dart` only when you really need
-  provider-owned voice catalogs, realtime/session behavior, or broader audio
-  shell methods
+  realtime/session behavior or broader audio shell methods
 
 ## What Is Not Being Forced Into The Shared Surface
 
-- voice catalogs, cloning, and studio-style controls
+- cloning and studio-style controls
 - realtime or session-oriented audio APIs
 - file-path convenience helpers that go beyond the shared byte-oriented
   `TranscriptionModel`
