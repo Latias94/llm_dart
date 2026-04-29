@@ -37,12 +37,12 @@ surface-growth pressure appears.
 ## Current Scope
 
 Use this package when application code only needs a shared-capability model
-surface with provider-owned typed settings.
+surface with provider-owned typed settings or the current narrow provider-owned
+helper additions.
 
 Current intentional limits still include:
 
-- Ollama `/api/generate` completion and model listing stay outside the shared
-  modern surface
+- Ollama `/api/generate` completion stays outside the shared modern surface
 - stronger shared `ToolChoice` forcing for Ollama still degrades to
   provider-side automatic tool selection with warnings
 - ElevenLabs voice catalogs, realtime flows, cloning, and admin-style APIs stay
@@ -56,6 +56,7 @@ Use `llm_dart_community` when you want the modern shared-capability APIs for:
 
 - `Ollama(...).chatModel(...)`
 - `Ollama(...).embeddingModel(...)`
+- `Ollama(...).catalog().listModels()`
 - `ElevenLabs(...).speechModel(...)`
 - `ElevenLabs(...).transcriptionModel(...)`
 
@@ -112,6 +113,7 @@ surface:
 
 - `example/ollama_chat.dart`
 - `example/ollama_embeddings.dart`
+- `example/ollama_model_catalog.dart`
 - `example/elevenlabs_speech.dart`
 - `example/elevenlabs_transcription.dart`
 
@@ -120,6 +122,7 @@ Run them from this package directory:
 ```bash
 dart run example/ollama_chat.dart
 dart run example/ollama_embeddings.dart
+dart run example/ollama_model_catalog.dart
 dart run example/elevenlabs_speech.dart
 dart run example/elevenlabs_transcription.dart
 ```

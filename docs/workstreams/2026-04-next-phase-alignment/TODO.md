@@ -75,6 +75,8 @@ architecture debt.
   shared abstraction or broad compatibility dependency
 - [x] Land OpenAI files as a narrow provider-owned helper instead of keeping
   common hosted-file flows behind the broad compatibility shell
+- [x] Land an Ollama local model-catalog helper in `llm_dart_community`
+  instead of keeping installed-model discovery behind the compatibility shell
 
 ## OpenAI Family Stream Parser
 

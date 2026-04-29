@@ -1,8 +1,7 @@
-import 'dart:convert';
-
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
+import 'ollama_api.dart';
 import 'ollama_model_describer.dart';
 import 'ollama_options.dart';
 
@@ -23,8 +22,8 @@ final class OllamaEmbeddingModel
     String? apiKey,
     String? baseUrl,
     ProviderModelOptions settings = const OllamaEmbeddingModelSettings(),
-  })  : apiKey = _normalizeApiKey(apiKey),
-        baseUrl = _normalizeBaseUrl(baseUrl),
+  })  : apiKey = normalizeOllamaApiKey(apiKey),
+        baseUrl = normalizeOllamaBaseUrl(baseUrl),
         settings = _resolveSettings(settings);
 
   @override
@@ -35,14 +34,13 @@ final class OllamaEmbeddingModel
     return describeOllamaEmbeddingModel(modelId);
   }
 
-  Uri get embedUri => Uri.parse('$baseUrl/api/embed');
+  Uri get embedUri => resolveOllamaUri(baseUrl, '/api/embed');
 
-  Map<String, String> get defaultHeaders => {
-        'content-type': 'application/json',
-        'accept': 'application/json',
-        if (apiKey case final auth?) 'authorization': 'Bearer $auth',
-        ...settings.headers,
-      };
+  Map<String, String> get defaultHeaders => buildOllamaHeaders(
+        apiKey: apiKey,
+        contentType: 'application/json',
+        headers: settings.headers,
+      );
 
   @override
   Future<EmbedResult> embed(EmbedRequest request) async {
@@ -88,7 +86,10 @@ final class OllamaEmbeddingModel
       ),
     );
 
-    final json = _decodeJsonObject(response.body);
+    final json = decodeOllamaJsonObject(
+      response.body,
+      responseName: 'embedding response',
+    );
     return EmbedResult(
       embeddings: _decodeEmbeddings(json),
       providerMetadata: ProviderMetadata.forNamespace(
@@ -118,43 +119,6 @@ final class OllamaEmbeddingModel
       'Expected OllamaEmbeddingModelSettings for Ollama embedding models.',
     );
   }
-}
-
-String _normalizeBaseUrl(String? baseUrl) {
-  final normalized =
-      (baseUrl == null || baseUrl.isEmpty) ? ollamaDefaultBaseUrl : baseUrl;
-  return normalized.endsWith('/')
-      ? normalized.substring(0, normalized.length - 1)
-      : normalized;
-}
-
-String? _normalizeApiKey(String? apiKey) {
-  if (apiKey == null || apiKey.isEmpty) {
-    return null;
-  }
-
-  return apiKey;
-}
-
-Map<String, Object?> _decodeJsonObject(Object? body) {
-  if (body is Map<String, Object?>) {
-    return body;
-  }
-
-  if (body is Map) {
-    return Map<String, Object?>.from(body);
-  }
-
-  if (body is String) {
-    final decoded = jsonDecode(body);
-    if (decoded is Map) {
-      return Map<String, Object?>.from(decoded);
-    }
-  }
-
-  throw StateError(
-    'Expected an Ollama embedding response JSON object but received ${body.runtimeType}.',
-  );
 }
 
 List<List<double>> _decodeEmbeddings(Map<String, Object?> json) {

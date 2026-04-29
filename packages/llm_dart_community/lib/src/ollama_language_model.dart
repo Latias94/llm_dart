@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
+import 'ollama_api.dart';
 import 'ollama_model_describer.dart';
 import 'ollama_options.dart';
 
@@ -23,8 +24,8 @@ final class OllamaLanguageModel
     String? apiKey,
     String? baseUrl,
     this.settings = const OllamaChatModelSettings(),
-  })  : apiKey = _normalizeApiKey(apiKey),
-        baseUrl = _normalizeBaseUrl(baseUrl);
+  })  : apiKey = normalizeOllamaApiKey(apiKey),
+        baseUrl = normalizeOllamaBaseUrl(baseUrl);
 
   @override
   String get providerId => 'ollama';
@@ -37,14 +38,13 @@ final class OllamaLanguageModel
     );
   }
 
-  Uri get chatUri => Uri.parse('$baseUrl/api/chat');
+  Uri get chatUri => resolveOllamaUri(baseUrl, '/api/chat');
 
-  Map<String, String> get defaultHeaders => {
-        'content-type': 'application/json',
-        'accept': 'application/json',
-        if (apiKey case final auth?) 'authorization': 'Bearer $auth',
-        ...settings.headers,
-      };
+  Map<String, String> get defaultHeaders => buildOllamaHeaders(
+        apiKey: apiKey,
+        contentType: 'application/json',
+        headers: settings.headers,
+      );
 
   @override
   Future<GenerateTextResult> generate(GenerateTextRequest request) async {
@@ -65,7 +65,10 @@ final class OllamaLanguageModel
     );
 
     return _decodeGenerateResponse(
-      _decodeJsonObject(response.body),
+      decodeOllamaJsonObject(
+        response.body,
+        responseName: 'chat response',
+      ),
       warnings: preparedRequest.warnings,
     );
   }
@@ -112,7 +115,10 @@ final class OllamaLanguageModel
       if (pendingLine.isNotEmpty) {
         state.buffer.clear();
         for (final event in _decodeStreamJsonChunk(
-          _decodeJsonObject(pendingLine),
+          decodeOllamaJsonObject(
+            pendingLine,
+            responseName: 'stream chunk',
+          ),
           state,
         )) {
           yield event;
@@ -526,7 +532,13 @@ final class OllamaLanguageModel
     for (final line in lines) {
       final trimmed = line.trim();
       if (trimmed.isEmpty) continue;
-      yield* _decodeStreamJsonChunk(_decodeJsonObject(trimmed), state);
+      yield* _decodeStreamJsonChunk(
+        decodeOllamaJsonObject(
+          trimmed,
+          responseName: 'stream chunk',
+        ),
+        state,
+      );
     }
   }
 
@@ -716,31 +728,6 @@ final class _OllamaStreamState {
   bool textEnded = false;
   bool reasoningStarted = false;
   bool reasoningEnded = false;
-}
-
-String _normalizeBaseUrl(String? baseUrl) {
-  final normalized =
-      (baseUrl == null || baseUrl.isEmpty) ? ollamaDefaultBaseUrl : baseUrl;
-  return normalized.endsWith('/')
-      ? normalized.substring(0, normalized.length - 1)
-      : normalized;
-}
-
-String? _normalizeApiKey(String? apiKey) {
-  if (apiKey == null || apiKey.isEmpty) return null;
-  return apiKey;
-}
-
-Map<String, Object?> _decodeJsonObject(Object? body) {
-  if (body is Map<String, Object?>) return body;
-  if (body is Map) return Map<String, Object?>.from(body);
-  if (body is String) {
-    final decoded = jsonDecode(body);
-    if (decoded is Map) return Map<String, Object?>.from(decoded);
-  }
-  throw StateError(
-    'Expected an Ollama JSON object response but received ${body.runtimeType}.',
-  );
 }
 
 Map<String, Object?>? _asObject(Object? value) {

@@ -2,6 +2,7 @@
 
 import 'dart:io';
 
+import 'package:llm_dart_community/llm_dart_community.dart' as community;
 import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/models/chat_models.dart';
@@ -11,7 +12,7 @@ import 'package:llm_dart/providers/openai/openai.dart' as openai_compat;
 
 /// Model discovery now has two different architectural roles:
 /// - stable concrete-model inspection through capability profiles
-/// - provider-owned remote catalog listing through compatibility clients
+/// - provider-owned catalog listing through focused helpers or compatibility clients
 ///
 /// Most apps should bind an approved model list in config and use capability
 /// profiles for product gating. Remote catalogs are mainly for admin,
@@ -35,6 +36,15 @@ Future<void> main() async {
   } else {
     print(
       'Skipping Anthropic catalog listing because ANTHROPIC_API_KEY is not set.\n',
+    );
+  }
+
+  final ollamaBaseUrl = Platform.environment['OLLAMA_BASE_URL'];
+  if (ollamaBaseUrl != null && ollamaBaseUrl.isNotEmpty) {
+    await demonstrateOllamaLocalCatalogBoundary(ollamaBaseUrl);
+  } else {
+    print(
+      'Skipping Ollama local catalog listing because OLLAMA_BASE_URL is not set.\n',
     );
   }
 
@@ -116,6 +126,26 @@ Future<void> demonstrateAnthropicRemoteCatalogBoundary(String apiKey) async {
   print('');
 }
 
+Future<void> demonstrateOllamaLocalCatalogBoundary(String baseUrl) async {
+  print('=== Provider-Owned Ollama Local Catalog Boundary ===\n');
+
+  final catalog = community.Ollama(baseUrl: baseUrl).catalog();
+  final models = await catalog.listModels();
+  print('Catalog size: ${models.length}');
+
+  if (models.isEmpty) {
+    print('No local models returned.\n');
+    return;
+  }
+
+  for (final model in models.take(5)) {
+    final family = model.details?.family ?? 'unknown-family';
+    print('- ${model.name} (family: $family)');
+  }
+
+  print('');
+}
+
 void explainBoundary() {
   print('=== Boundary Notes ===\n');
   print(
@@ -133,6 +163,10 @@ void explainBoundary() {
   print(
     '• Remote model catalogs are not stable shared architecture because '
     'providers expose different metadata, filtering rules, and listing endpoints.',
+  );
+  print(
+    '• Even a local Ollama installed-model list stays provider-owned because '
+    "it reflects one runtime's storage and tag semantics, not a shared model registry.",
   );
 }
 

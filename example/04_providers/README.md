@@ -49,8 +49,9 @@ and discovery as provider-owned appendix material.
 
 ### [ollama/](ollama/)
 Modern community-surface local runtime examples with provider-owned Ollama
-options. Residual compatibility flows such as model listing still remain
-provider owned.
+options and the provider-owned local model catalog helper. Residual
+compatibility flows now mainly cover `/api/generate` and broader legacy shell
+behavior.
 
 ### [elevenlabs/](elevenlabs/)
 Stable shared-capability speech/transcription examples plus explicit

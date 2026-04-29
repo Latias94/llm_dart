@@ -88,7 +88,9 @@ moderation contract exists.
 
 ### [model_listing.dart](model_listing.dart)
 Stable concrete-model capability inspection first, then provider-owned remote
-catalog listing for admin, diagnostics, or model-browser workflows.
+catalog listing for admin, diagnostics, or model-browser workflows. The
+example now also treats Ollama installed-model discovery as a provider-owned
+local catalog helper rather than a shared model registry.
 
 ### [message_builder_cache.dart](message_builder_cache.dart)
 Anthropic-specific prompt-caching appendix using `MessageBuilder` with narrow

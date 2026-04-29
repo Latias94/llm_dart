@@ -167,6 +167,9 @@ Current status:
 - OpenAI hosted-file lifecycle now also has a focused OpenAI-profile
   `OpenAIFilesClient`, moving upload/list/retrieve/download/delete out of the
   broad compatibility shell while keeping remote file management provider-owned
+- `llm_dart_community` now also exposes an Ollama local `catalog()` helper,
+  proving that installed-model pickers and local diagnostics can move out of
+  compatibility shells without being mislabeled as a shared model registry
 - reopen triggers are now written down so future refactors can be justified by
   product evidence, repeated bugs, or repeated duplication
 - this phase now ends with a clearer architectural rule: keep the shared

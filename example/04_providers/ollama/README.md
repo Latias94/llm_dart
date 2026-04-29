@@ -12,10 +12,12 @@ the modern community surface.
 That means:
 
 - chat and embedding entrypoints stay on `community.Ollama(...).*Model(...)`
+- local model catalog listing now also has a focused provider-owned helper on
+  `community.Ollama(...).catalog().listModels()`
 - Ollama-specific runtime controls stay on
   `community.OllamaGenerateTextOptions`
-- only truly residual surfaces such as model listing or `/api/generate`
-  remain on the compatibility shell
+- only truly residual surfaces such as `/api/generate` remain on the
+  compatibility shell
 
 ## When To Use Which Path
 
@@ -54,6 +56,19 @@ final batch = await core.embedMany(
   model: embeddingModel,
   values: const ['local models', 'edge deployment', 'embedding search'],
 );
+```
+
+For installed local model listing:
+
+```dart
+import 'package:llm_dart_community/llm_dart_community.dart' as community;
+
+final catalog = community.Ollama(
+  baseUrl: 'http://localhost:11434',
+).catalog();
+
+final models = await catalog.listModels();
+print(models.map((model) => model.name).take(5).toList());
 ```
 
 ### Use This Directory's Examples
@@ -108,7 +123,7 @@ final provider = ollama_compat.createOllamaProvider(
   keepAlive: '10m',
 );
 
-final models = await provider.models();
+// Use this shell only for residual `/api/generate` completion flows.
 ```
 
 This still works, but it should be read as a transitional shell above the
@@ -119,13 +134,16 @@ The important distinction is:
 
 - use `Ollama(...).chatModel(...)` and `embeddingModel(...)` for stable
   app-facing code
-- use `providers/ollama/ollama.dart` only when you need `/api/generate`,
-  model listing, or broader compatibility surfaces that are still outside the
-  shared community package
+- use `Ollama(...).catalog().listModels()` for installed-model picker or local
+  diagnostics UI
+- use `providers/ollama/ollama.dart` only when you need `/api/generate` or
+  broader compatibility surfaces that are still outside the shared community
+  package
 
 ## What Is Not Being Forced Into The Shared Surface
 
-- model listing is still provider-owned or compatibility-only
+- installed model listing stays provider-owned rather than becoming a shared
+  cross-provider abstraction
 - `/api/generate` completion is still compatibility-only
 - broader local runtime controls can stay provider-owned even when the chat
   model itself is stable
