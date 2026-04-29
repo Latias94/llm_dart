@@ -23,5 +23,49 @@ The root `llm_dart` package re-exports the main focused entrypoint through:
 
 - `package:llm_dart/google.dart`
 
+## Image Editing
+
+Prompt-based image generation uses the shared `generateImage(...)` helper.
+Gemini image editing and variation are additive provider-owned helpers because
+their file inputs and request shapes are not a shared image-generation
+contract.
+
+```dart
+import 'dart:io';
+
+import 'package:llm_dart_core/llm_dart_core.dart' as core;
+import 'package:llm_dart_google/llm_dart_google.dart';
+
+Future<void> main() async {
+  final model = Google(
+    apiKey: 'your-google-key',
+  ).imageModel('gemini-2.5-flash-image');
+
+  final input = GoogleImageEditInput.bytes(
+    await File('input.png').readAsBytes(),
+    mediaType: 'image/png',
+  );
+
+  final edited = await model.edit(
+    GoogleImageEditRequest(
+      prompt: 'Make this image look like a polished mobile app hero asset.',
+      images: [input],
+      callOptions: const core.CallOptions(
+        providerOptions: GoogleImageOptions(
+          aspectRatio: GoogleImageAspectRatio.landscape16x9,
+        ),
+      ),
+    ),
+  );
+
+  final variation = await model.createVariation(
+    GoogleImageVariationRequest(images: [input]),
+  );
+
+  print(edited.images.first.bytes?.length);
+  print(variation.images.first.bytes?.length);
+}
+```
+
 For the larger repository architecture and migration story, start with the root
 package README.

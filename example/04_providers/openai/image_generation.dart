@@ -7,8 +7,9 @@ import 'package:llm_dart/openai.dart' as openai;
 /// OpenAI Image Generation Example
 ///
 /// This example demonstrates the stable OpenAI image-model surface for prompt
-/// based image generation. Image editing and variations remain compatibility
-/// oriented and are intentionally documented as boundary notes.
+/// based image generation plus the provider-owned image-editing helper.
+/// Image variations remain outside the shared `ImageModel` contract and are
+/// intentionally documented as a separate compatibility/deferred boundary.
 Future<void> main() async {
   final apiKey = Platform.environment['OPENAI_API_KEY'];
   if (apiKey == null) {
@@ -20,8 +21,8 @@ Future<void> main() async {
 
   await testDALLE3Generation(apiKey);
   await testDALLE2Generation(apiKey);
-  await testImageEditingBoundary();
-  await testImageVariationsBoundary();
+  await testImageEditingHelper(apiKey);
+  testImageVariationsBoundary();
   await testAdvancedFeatures();
 
   print('✅ OpenAI image generation demo completed!');
@@ -121,24 +122,69 @@ Future<void> testDALLE2Generation(String apiKey) async {
   }
 }
 
-Future<void> testImageEditingBoundary() async {
-  print('✂️  Image Editing:');
-  print(
-      '   ℹ️  Image editing remains compatibility-oriented in the current API.');
-  print('   ℹ️  The stable `ImageModel` surface currently covers prompt-based');
-  print('      generation, not file-based edit workflows.');
-  print('   ✅ Boundary documented\n');
+Future<void> testImageEditingHelper(String apiKey) async {
+  print('✂️  Image Editing Helper:');
+
+  final inputFile = File('sample_edit_input.png');
+  if (!await inputFile.exists()) {
+    print('   ℹ️  Add sample_edit_input.png next to this example to run an');
+    print('      actual edit request.');
+    print('   ℹ️  Use `OpenAIImageModel.edit(OpenAIImageEditRequest)` for');
+    print('      provider-owned edit workflows instead of widening');
+    print('      `core.generateImage(...)`.');
+    print('   ✅ Boundary documented\n');
+    return;
+  }
+
+  try {
+    final imageModel = llm.AI.openai(apiKey: apiKey).imageModel('gpt-image-1');
+    final result = await imageModel.edit(
+      openai.OpenAIImageEditRequest(
+        prompt: 'Turn this image into a clean product hero shot.',
+        images: [
+          openai.OpenAIImageEditInput(
+            bytes: await inputFile.readAsBytes(),
+            mediaType: 'image/png',
+            filename: 'sample_edit_input.png',
+          ),
+        ],
+        size: '1024x1024',
+        inputFidelity: openai.OpenAIImageInputFidelity.high,
+        callOptions: const core.CallOptions(
+          providerOptions: openai.OpenAIImageOptions(
+            quality: openai.OpenAIImageQuality.high,
+            responseFormat: openai.OpenAIImageResponseFormat.base64Json,
+          ),
+        ),
+      ),
+    );
+
+    print('      ✅ Edited ${result.images.length} image(s):');
+    for (var index = 0; index < result.images.length; index++) {
+      final image = result.images[index];
+      if (image.bytes != null) {
+        final filename = 'openai_edited_${index + 1}.png';
+        await File(filename).writeAsBytes(image.bytes!);
+        print(
+          '         Image ${index + 1}: Saved as $filename (${image.bytes!.length} bytes)',
+        );
+      } else {
+        print('         Image ${index + 1}: ${_describeGeneratedImage(image)}');
+      }
+    }
+
+    print('   ✅ Image editing helper completed\n');
+  } catch (error) {
+    print('   ❌ Image editing failed: $error\n');
+  }
 }
 
-Future<void> testImageVariationsBoundary() async {
+void testImageVariationsBoundary() {
   print('🔄 Image Variations:');
   print(
-      '   ℹ️  Image variations remain compatibility-oriented in the current API.');
-  print(
-      '   ℹ️  The stable `ImageModel` surface intentionally stays narrow until');
-  print(
-      '      edit and variation request shapes are redesigned as provider-owned');
-  print('      typed inputs.');
+      '   ℹ️  OpenAI variations remain outside the modern shared image helper.');
+  print('   ℹ️  Keep them on a provider-owned or compatibility appendix path');
+  print('      unless product pressure justifies a narrow typed helper.');
   print('   ✅ Boundary documented\n');
 }
 
@@ -164,8 +210,8 @@ Future<void> testAdvancedFeatures() async {
   print(
       '      • Use `core.generateImage(...)` as the shared app-facing helper');
   print('      • Keep OpenAI image controls inside `OpenAIImageOptions`');
-  print(
-      '      • Do not force edit/variation flows into the shared image contract');
+  print('      • Use `OpenAIImageModel.edit(...)` for provider-owned edits');
+  print('      • Do not force variation flows into the shared image contract');
 
   print('   ✅ Advanced features overview completed\n');
 }

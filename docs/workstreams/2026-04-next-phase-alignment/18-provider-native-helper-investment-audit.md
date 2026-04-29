@@ -47,16 +47,17 @@ The best next steps are:
 | OpenAI moderation client | `OpenAI(...).moderation()` and `OpenAIModerationClient` | Removes a common app-safety use case from the broad compatibility shell without inventing a shared moderation contract | Treat as landed; keep docs explicit that this is OpenAI-profile only, then make the next helper pick elsewhere |
 | Ollama model catalog helper | `Ollama(...).catalog().listModels()` | Moves common local model-picker and diagnostics UI flows out of the compatibility shell without pretending installed-model tags are a shared registry contract | Treat as landed; keep it explicitly local-runtime and provider-owned |
 | ElevenLabs voice catalog reader | `ElevenLabs(...).voices().listVoices()` | Moves common voice-picker UI flows out of the broad compatibility audio shell without widening shared speech contracts | Treat as landed; keep realtime, cloning, and admin APIs outside the modern shared-capability surface |
-| OpenAI image editing | `OpenAIImageModel.edit(OpenAIImageEditRequest)` | Proves the correct additive-provider-helper pattern for non-shared media workflows | Tighten README and provider examples so this is taught as a modern helper instead of old compatibility residue |
-| Google image editing and variation | `GoogleImageModel.edit(...)` and `createVariation(...)` | Shows that edit-specific input contracts can stay provider-owned without widening shared `ImageModel` | Tighten README and examples so the modern helper is visible |
+| OpenAI image editing | `OpenAIImageModel.edit(OpenAIImageEditRequest)` | Proves the correct additive-provider-helper pattern for non-shared media workflows | Treat as landed and documented; keep OpenAI variations compatibility-only unless product pressure justifies a narrow helper |
+| Google image editing and variation | `GoogleImageModel.edit(...)` and `createVariation(...)` | Shows that edit-specific input contracts can stay provider-owned without widening shared `ImageModel` | Treat as landed and documented; keep edit and variation provider-owned rather than shared image-contract widening |
 | Anthropic file lifecycle | `Anthropic.files()` | Gives Anthropic a narrow, honest modern file client for upload/list/metadata/download/delete without pretending file lifecycle is shared | Treat as landed; do not widen shared file-management contracts |
 | OpenAI and Google provider-aware message mappers | `mapComposed(...)` plus provider part details/custom-part helpers | Important for Flutter and app rendering without widening `ChatMessageMapper` | Keep treating this as the intended UI extension pattern |
 | Community-provider capability profiles | `capabilityProfile`, `describeOllamaChatModel(...)`, `describeElevenLabsSpeechModel(...)` | Necessary for Flutter gating and app affordance selection | Keep confidence guidance explicit, especially for Ollama `inferred` hints |
 
 ### Practical implication
 
-The immediate documentation gap is now more important than another structural
-change for these helpers.
+The immediate documentation gap has been closed for the landed high-value
+helpers. The next step should be evidence-driven helper investment, not another
+structural pass.
 
 ## B. Recommended Next Additive Helper Candidates
 

@@ -9,9 +9,10 @@ import 'package:llm_dart/llm_dart.dart' as llm;
 /// This example demonstrates the stable Google image-model surface:
 /// 1. Gemini image generation through `imageModel(...)`
 /// 2. Imagen generation through `imageModel(...)`
+/// 3. Gemini image editing and variation through provider-owned helpers
 ///
-/// Image editing remains compatibility oriented and is called out explicitly
-/// instead of being forced into the shared `ImageModel` contract.
+/// Image editing and variation intentionally stay provider-owned instead of
+/// being forced into the shared `core.generateImage(...)` helper.
 Future<void> main() async {
   print('🎨 Google Image Generation Examples\n');
 
@@ -28,7 +29,7 @@ Future<void> main() async {
       '⚠️  Note: Imagen 3 requires a paid account and may not be available in all regions.',
     );
     await demonstrateImagenGeneration(apiKey);
-    demonstrateImageEditingBoundary();
+    await demonstrateImageEditingHelpers(apiKey);
   } catch (error) {
     print('❌ Error: $error');
   }
@@ -154,13 +155,81 @@ Future<void> demonstrateImagenGeneration(String apiKey) async {
   }
 }
 
-void demonstrateImageEditingBoundary() {
-  print('\n✂️  Image Editing Boundary');
+Future<void> demonstrateImageEditingHelpers(String apiKey) async {
+  print('\n✂️  Image Editing and Variation Helpers');
   print('=' * 50);
-  print('   ℹ️  Google image editing remains compatibility oriented today.');
-  print('   ℹ️  The stable `ImageModel` contract intentionally covers prompt-');
-  print('      based generation only, not file-based edit requests.');
-  print(
-      '   ℹ️  This avoids baking unfinished edit/variation request shapes into');
-  print('      the shared abstraction too early.');
+
+  final inputFile = File('sample_edit_input.png');
+  if (!await inputFile.exists()) {
+    print(
+        '   ℹ️  Add sample_edit_input.png next to this example to run actual');
+    print('      edit and variation requests.');
+    print('   ℹ️  Use `GoogleImageModel.edit(...)` for image edits and');
+    print('      `createVariation(...)` for variation workflows.');
+    print('   ℹ️  Keep both as provider-owned helpers instead of widening');
+    print('      `core.generateImage(...)`.');
+    return;
+  }
+
+  try {
+    final imageModel = llm.AI
+        .google(
+          apiKey: apiKey,
+        )
+        .imageModel('gemini-2.5-flash-image');
+    final imageBytes = await inputFile.readAsBytes();
+    final input = google.GoogleImageEditInput.bytes(
+      imageBytes,
+      mediaType: 'image/png',
+    );
+
+    final edited = await imageModel.edit(
+      google.GoogleImageEditRequest(
+        prompt: 'Make this image look like a polished mobile app hero asset.',
+        images: [input],
+        callOptions: const core.CallOptions(
+          providerOptions: google.GoogleImageOptions(
+            aspectRatio: google.GoogleImageAspectRatio.landscape16x9,
+          ),
+        ),
+      ),
+    );
+
+    print('      ✅ Edited ${edited.images.length} image(s)');
+    await _saveGeneratedImages('google_edited', edited.images);
+
+    final variation = await imageModel.createVariation(
+      google.GoogleImageVariationRequest(
+        images: [input],
+        callOptions: const core.CallOptions(
+          providerOptions: google.GoogleImageOptions(
+            aspectRatio: google.GoogleImageAspectRatio.landscape16x9,
+          ),
+        ),
+      ),
+    );
+
+    print('      ✅ Created ${variation.images.length} variation(s)');
+    await _saveGeneratedImages('google_variation', variation.images);
+  } catch (error) {
+    print('   ❌ Image editing helper failed: $error');
+  }
+}
+
+Future<void> _saveGeneratedImages(
+  String prefix,
+  List<core.GeneratedImage> images,
+) async {
+  for (var index = 0; index < images.length; index++) {
+    final image = images[index];
+    if (image.bytes != null) {
+      final filename = '${prefix}_${index + 1}.png';
+      await File(filename).writeAsBytes(image.bytes!);
+      print(
+        '         Image ${index + 1}: Saved as $filename (${image.bytes!.length} bytes)',
+      );
+    } else {
+      print('         Image ${index + 1}: Empty image payload');
+    }
+  }
 }

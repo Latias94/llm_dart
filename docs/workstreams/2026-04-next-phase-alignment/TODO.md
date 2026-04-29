@@ -81,6 +81,8 @@ architecture debt.
   of keeping voice-picker UI data behind the broad compatibility audio shell
 - [x] Complete the modern Anthropic files client with upload/list/delete while
   keeping remote file lifecycle provider-owned
+- [x] Tighten OpenAI and Google image-editing documentation/examples so landed
+  provider-owned helpers are not mistaken for compatibility residue
 
 ## OpenAI Family Stream Parser
 

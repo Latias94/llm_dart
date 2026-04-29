@@ -35,8 +35,9 @@ compatibility oriented.
 
 ### [anthropic/](anthropic/)
 Mixed status. Stable chat plus typed extended-thinking and MCP options already
-exist, while some file-management examples still document provider-owned file
-lifecycle compatibility surfaces.
+exist, and the focused Anthropic files client now covers upload, listing,
+metadata, download, and deletion. The older `file_handling.dart` example
+remains a compatibility appendix.
 
 ### [groq/](groq/)
 Stable OpenAI-family chat facade with Groq profile and low-latency streaming.

@@ -107,6 +107,41 @@ final result = await core.generateImage(
 print(result.images.first.uri);
 ```
 
+### Provider-Owned Image Editing
+
+```dart
+import 'dart:io';
+
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/openai.dart' as openai;
+
+final imageModel = llm.AI.openai(apiKey: 'your-key').imageModel('gpt-image-1');
+final inputBytes = await File('input.png').readAsBytes();
+
+final result = await imageModel.edit(
+  openai.OpenAIImageEditRequest(
+    prompt: 'Turn this product photo into a clean hero image.',
+    images: [
+      openai.OpenAIImageEditInput(
+        bytes: inputBytes,
+        mediaType: 'image/png',
+        filename: 'input.png',
+      ),
+    ],
+    inputFidelity: openai.OpenAIImageInputFidelity.high,
+    callOptions: const core.CallOptions(
+      providerOptions: openai.OpenAIImageOptions(
+        quality: openai.OpenAIImageQuality.high,
+        responseFormat: openai.OpenAIImageResponseFormat.base64Json,
+      ),
+    ),
+  ),
+);
+
+print(result.images.first.bytes?.length);
+```
+
 ### Speech Generation and Transcription
 
 ```dart
@@ -235,6 +270,8 @@ void inspectOpenAIMessage(core.ChatUiMessage message) {
 - the frozen `buildOpenAIResponses()` convenience helper
 - raw response lifecycle helpers that expose provider-specific response objects
   and response IDs
+- OpenAI image variation workflows, unless they later justify a narrow modern
+  provider-owned helper
 
 Those compatibility paths still work, but they should not be treated as the
 target architecture for new Flutter or app-facing integrations.

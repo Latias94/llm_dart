@@ -88,6 +88,42 @@ final result = await core.generateImage(
 print(result.images.first.bytes?.length);
 ```
 
+### Provider-Owned Image Editing and Variation
+
+```dart
+import 'dart:io';
+
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/google.dart' as google;
+import 'package:llm_dart/llm_dart.dart' as llm;
+
+final model = llm.AI.google(apiKey: 'your-google-api-key')
+    .imageModel('gemini-2.5-flash-image');
+final input = google.GoogleImageEditInput.bytes(
+  await File('input.png').readAsBytes(),
+  mediaType: 'image/png',
+);
+
+final edited = await model.edit(
+  google.GoogleImageEditRequest(
+    prompt: 'Make this image look like a polished mobile app hero asset.',
+    images: [input],
+    callOptions: const core.CallOptions(
+      providerOptions: google.GoogleImageOptions(
+        aspectRatio: google.GoogleImageAspectRatio.landscape16x9,
+      ),
+    ),
+  ),
+);
+
+final variation = await model.createVariation(
+  google.GoogleImageVariationRequest(images: [input]),
+);
+
+print(edited.images.first.bytes?.length);
+print(variation.images.first.bytes?.length);
+```
+
 ### One-Shot Speech Generation
 
 ```dart

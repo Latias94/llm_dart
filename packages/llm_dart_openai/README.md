@@ -178,6 +178,48 @@ Future<void> main() async {
 }
 ```
 
+## OpenAI Image Editing Example
+
+Prompt-based image generation uses the shared `generateImage(...)` helper.
+File-based editing is a provider-owned helper because input images, masks,
+fidelity, partial images, and output options are OpenAI-specific.
+
+```dart
+import 'dart:io';
+
+import 'package:llm_dart_core/llm_dart_core.dart' as core;
+import 'package:llm_dart_openai/llm_dart_openai.dart';
+
+Future<void> main() async {
+  final imageModel = OpenAI(
+    apiKey: 'your-openai-key',
+  ).imageModel('gpt-image-1');
+
+  final inputBytes = await File('input.png').readAsBytes();
+  final result = await imageModel.edit(
+    OpenAIImageEditRequest(
+      prompt: 'Turn this product photo into a clean hero image.',
+      images: [
+        OpenAIImageEditInput(
+          bytes: inputBytes,
+          mediaType: 'image/png',
+          filename: 'input.png',
+        ),
+      ],
+      inputFidelity: OpenAIImageInputFidelity.high,
+      callOptions: const core.CallOptions(
+        providerOptions: OpenAIImageOptions(
+          quality: OpenAIImageQuality.high,
+          responseFormat: OpenAIImageResponseFormat.base64Json,
+        ),
+      ),
+    ),
+  );
+
+  print(result.images.first.bytes?.length);
+}
+```
+
 ## UI Mapping And Capability Discovery
 
 - `OpenAIMessageMapper` composes provider-owned metadata with the shared UI

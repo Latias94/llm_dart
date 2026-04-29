@@ -78,11 +78,10 @@ but does not belong in the shared cross-provider contract.
 
 ### Important note
 
-Some high-visibility provider READMEs still describe parts of OpenAI or Google
-image editing history conservatively. The codebase already exposes provider-
-owned modern helpers there. Future doc cleanup should teach those helpers more
-directly instead of describing them as if they were still purely compatibility
-era behavior.
+High-visibility provider READMEs and image examples now teach the landed
+OpenAI and Google provider-owned image-editing helpers directly. Keep future
+edits aligned with this boundary: shared `generateImage(...)` remains prompt
+generation, while file-based edit and variation shapes stay provider-owned.
 
 ## D. Explicit Compatibility Appendix Or Residual Boundary
 
