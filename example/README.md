@@ -36,6 +36,7 @@ Recommended default route:
 | **Call functions** | [tool_calling.dart](02_core_features/tool_calling.dart) |
 | **Handle audio** | [audio_processing.dart](02_core_features/audio_processing.dart) |
 | **Generate images** | [image_generation.dart](02_core_features/image_generation.dart) |
+| **Edit provider images** | [openai/image_generation.dart](04_providers/openai/image_generation.dart) or [google/image_generation.dart](04_providers/google/image_generation.dart) |
 | **Process large datasets** | [batch_processor.dart](05_use_cases/batch_processor.dart) |
 | **Build multimodal apps** | [multimodal_app.dart](05_use_cases/multimodal_app.dart) |
 | **Use the pure chat runtime** | [packages/llm_dart_chat/example/chat_runtime.dart](../packages/llm_dart_chat/example/chat_runtime.dart) |
@@ -115,10 +116,11 @@ shared-capability happy path.
 
 | Provider | Features | Directory |
 |----------|----------|-----------|
-| OpenAI | GPT, DALL-E, assistants | [openai/](04_providers/openai/) |
-| Anthropic | Claude, thinking | [anthropic/](04_providers/anthropic/) |
+| OpenAI | Stable chat/image/audio plus files, moderation, and image-editing helpers | [openai/](04_providers/openai/) |
+| Anthropic | Claude chat, extended thinking, MCP, and files | [anthropic/](04_providers/anthropic/) |
 | DeepSeek / OpenRouter / custom OpenAI-family | Stable profile flows plus explicit compatible endpoint wiring | [others/](04_providers/others/) |
 | Groq | Fast inference | [groq/](04_providers/groq/) |
+| Google | Gemini/Imagen images, embeddings, speech, and image editing/variation | [google/](04_providers/google/) |
 | Ollama | Modern community-surface local runtime tuning with provider-owned options | [ollama/](04_providers/ollama/) |
 | ElevenLabs | Stable shared speech/transcription plus provider-owned voice and realtime appendices | [elevenlabs/](04_providers/elevenlabs/) |
 | xAI | Live search, Grok | [xai/](04_providers/xai/) |

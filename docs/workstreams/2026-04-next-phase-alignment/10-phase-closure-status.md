@@ -209,6 +209,27 @@ Diagnostics should now stay split by the layer that actually owns them:
 Do not collapse those into a new shared diagnostics facade unless repeated real
 integrations prove one more cross-provider shape is actually needed.
 
+## Post-Closure Addendum - 2026-04-29
+
+After the original closure note, a small number of provider-owned helpers and
+documentation slices landed because they reduced concrete compatibility-shell
+pressure without widening shared contracts:
+
+- OpenAI moderation moved to a focused OpenAI-profile client.
+- OpenAI hosted file lifecycle moved to a focused OpenAI-profile files client.
+- Anthropic beta file lifecycle now covers upload, list, metadata, download,
+  and delete through `Anthropic.files()`.
+- Ollama installed-model discovery moved to a provider-owned local catalog
+  helper in `llm_dart_community`.
+- ElevenLabs voice-picker data moved to a provider-owned voice catalog helper
+  in `llm_dart_community`.
+- OpenAI and Google image-editing documentation now teaches the landed
+  provider-owned helpers directly.
+
+These updates do not reopen the architecture phase. They reinforce the same
+rule: when provider-native value is real but not a truthful shared contract,
+land it as a narrow provider-owned helper or documentation path.
+
 ## Recommended Next Route
 
 After this closure point, the next route should be conservative.

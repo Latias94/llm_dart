@@ -199,6 +199,25 @@ Future<void> main() async {
 Example file:
 [quick_start.dart](E:/codes/flutter/llm_dart/example/01_getting_started/quick_start.dart)
 
+## Provider-Owned Helper Boundaries
+
+Some useful product features are intentionally not shared abstractions. Use the
+focused provider helper when the semantics are provider-native:
+
+| Product need | Modern path | Why it stays provider-owned |
+| --- | --- | --- |
+| OpenAI hosted files | `AI.openai(...).files()` | Purpose values, hosted storage, and download semantics are OpenAI-specific |
+| Anthropic beta files | `AI.anthropic(...).files()` | File lifecycle, beta headers, and IDs are Anthropic-specific |
+| OpenAI moderation | `AI.openai(...).moderation()` | Category taxonomy and score meanings must map into app-owned policy |
+| OpenAI image editing | `AI.openai(...).imageModel(...).edit(...)` | File inputs, masks, fidelity, and output options are OpenAI-specific |
+| Google image editing/variation | `AI.google(...).imageModel(...).edit(...)` / `createVariation(...)` | Gemini edit inputs and variation prompts are Google-specific |
+| Ollama installed models | `community.Ollama(...).catalog().listModels()` | Local runtime tags are not a shared remote model registry |
+| ElevenLabs voices | `community.ElevenLabs(...).voices().listVoices()` | Voice IDs, preview URLs, labels, and tiers are provider-owned |
+
+The rule is simple: keep the shared helper for the common model operation, and
+use a provider-owned helper for lifecycle, policy, catalog, or edit workflows
+whose request and result semantics differ materially by provider.
+
 ## Structured Output
 
 Shared structured generation now lives above the main text-call layer through

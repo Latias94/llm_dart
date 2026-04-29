@@ -209,8 +209,8 @@ void inspectMessage(core.ChatUiMessage message) {
 - **Structured Output**: Shared `OutputSpec`-driven result shaping
 - **Embeddings**: Vector representations for semantic search and retrieval
 - **Audio**: Text-to-speech and speech-to-text workflows
-- **Images**: Prompt-based generation and editing
-- **Assistants / Files**: Provider-specific lifecycle and storage surfaces
+- **Images**: Shared prompt-based generation plus provider-owned edit helpers
+- **Assistants / Files**: Provider-specific lifecycle and storage helpers
 - **Error Handling**: Production-ready failure patterns and fallbacks
 
 ## Usage Examples
@@ -274,12 +274,14 @@ final assistant = await provider.createAssistant(CreateAssistantRequest(
 ));
 ```
 
-### Provider-Owned Boundary: OpenAI File Management
+### Provider-Owned Boundary: OpenAI And Anthropic File Management
 
-OpenAI file upload and file lifecycle APIs are provider-owned through the
-focused OpenAI package. This is not a shared cross-provider file abstraction.
+Remote file upload and lifecycle APIs are provider-owned through focused
+provider packages. This is not a shared cross-provider file abstraction.
 
 ```dart
+import 'dart:io';
+
 import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/openai.dart' as openai;
 
@@ -290,6 +292,14 @@ final file = await files.uploadFile(openai.OpenAIFileUpload(
   filename: 'document.pdf',
   mediaType: 'application/pdf',
 ));
+
+final anthropicFiles = llm.AI.anthropic(apiKey: 'your-key').files();
+final uploaded = await anthropicFiles.uploadBytes(
+  bytes: await File('notes.txt').readAsBytes(),
+  filename: 'notes.txt',
+  mediaType: 'text/plain',
+);
+final downloaded = await anthropicFiles.downloadFile(uploaded.id);
 ```
 
 ### Provider-Specific Boundary: Anthropic Prompt Caching
