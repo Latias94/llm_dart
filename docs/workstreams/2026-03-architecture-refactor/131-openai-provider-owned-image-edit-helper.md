@@ -78,7 +78,7 @@ pretending that every edit-only control belongs in a shared invocation surface.
 ## Transport And Dependency Direction
 
 This helper intentionally reuses the existing
-`packages/llm_dart_openai/lib/src/openai_multipart_body.dart` utility.
+the shared transport-layer multipart utility in `llm_dart_transport`.
 
 That means:
 

@@ -3,7 +3,6 @@ import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'openai_family_profile.dart';
 import 'openai_model_describer.dart';
-import 'openai_multipart_body.dart';
 import 'openai_non_text_model_support.dart';
 import 'openai_options.dart';
 
@@ -72,39 +71,39 @@ final class OpenAITranscriptionModel
       );
     }
 
-    final multipart = buildOpenAIMultipartBody(
+    final multipart = buildTransportMultipartBody(
       fields: [
-        OpenAIMultipartField.file(
+        TransportMultipartField.file(
           name: 'file',
           filename: _buildFilename(request.mediaType),
           mediaType: request.mediaType ?? 'audio/wav',
           bytes: request.audioBytes,
         ),
-        OpenAIMultipartField.text(
+        TransportMultipartField.text(
           name: 'model',
           value: modelId,
         ),
         if (options?.language case final language?)
-          OpenAIMultipartField.text(
+          TransportMultipartField.text(
             name: 'language',
             value: language,
           ),
         if (options?.prompt case final prompt?)
-          OpenAIMultipartField.text(
+          TransportMultipartField.text(
             name: 'prompt',
             value: prompt,
           ),
         if (options?.temperature case final temperature?)
-          OpenAIMultipartField.text(
+          TransportMultipartField.text(
             name: 'temperature',
             value: temperature.toString(),
           ),
-        OpenAIMultipartField.text(
+        TransportMultipartField.text(
           name: 'response_format',
           value: responseFormat.value,
         ),
         for (final granularity in options?.timestampGranularities ?? const [])
-          OpenAIMultipartField.text(
+          TransportMultipartField.text(
             name: 'timestamp_granularities[]',
             value: granularity.value,
           ),

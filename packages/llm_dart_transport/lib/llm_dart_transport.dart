@@ -22,4 +22,5 @@ export 'src/http/log_sanitizer.dart';
 export 'src/http/sse_decoder.dart';
 export 'src/http/sse_json_chunk_parser.dart';
 export 'src/http/transport_client.dart';
+export 'src/http/transport_multipart_body.dart';
 export 'src/http/utf8_stream_decoder.dart';

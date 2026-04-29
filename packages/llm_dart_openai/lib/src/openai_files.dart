@@ -4,7 +4,6 @@ import 'dart:typed_data';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'openai_family_profile.dart';
-import 'openai_multipart_body.dart';
 import 'openai_non_text_model_support.dart';
 import 'openai_profile_boundary.dart';
 
@@ -242,15 +241,15 @@ final class OpenAIFilesClient {
   }) async {
     _validateUpload(request);
 
-    final multipart = buildOpenAIMultipartBody(
+    final multipart = buildTransportMultipartBody(
       fields: [
-        OpenAIMultipartField.file(
+        TransportMultipartField.file(
           name: 'file',
           filename: request.filename,
           mediaType: request.mediaType,
           bytes: request.bytes,
         ),
-        OpenAIMultipartField.text(
+        TransportMultipartField.text(
           name: 'purpose',
           value: request.purpose,
         ),

@@ -4,7 +4,6 @@ import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'anthropic_api.dart';
 import 'anthropic_code_execution_replay.dart';
-import 'anthropic_multipart_body.dart';
 import 'anthropic_options.dart';
 
 final class AnthropicFileUpload {
@@ -181,9 +180,9 @@ final class AnthropicFiles {
   }) async {
     _validateUpload(request);
 
-    final multipart = buildAnthropicMultipartBody(
+    final multipart = buildTransportMultipartBody(
       fields: [
-        AnthropicMultipartField.file(
+        TransportMultipartField.file(
           name: 'file',
           filename: request.filename,
           mediaType: request.mediaType,

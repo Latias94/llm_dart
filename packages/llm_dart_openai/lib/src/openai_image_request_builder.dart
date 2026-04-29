@@ -41,76 +41,76 @@ extension _OpenAIImageRequestBuilder on OpenAIImageModel {
     OpenAIImageEditRequest request, {
     required OpenAIImageOptions? options,
   }) {
-    final multipart = buildOpenAIMultipartBody(
+    final multipart = buildTransportMultipartBody(
       fields: [
-        OpenAIMultipartField.text(
+        TransportMultipartField.text(
           name: 'model',
           value: modelId,
         ),
-        OpenAIMultipartField.text(
+        TransportMultipartField.text(
           name: 'prompt',
           value: request.prompt,
         ),
         for (final image in request.images)
-          OpenAIMultipartField.file(
+          TransportMultipartField.file(
             name: 'image',
             filename: image.filename ?? _buildImageFilename(image.mediaType),
             mediaType: image.mediaType,
             bytes: image.bytes,
           ),
         if (request.mask case final mask?)
-          OpenAIMultipartField.file(
+          TransportMultipartField.file(
             name: 'mask',
             filename: mask.filename ?? 'mask.png',
             mediaType: mask.mediaType,
             bytes: mask.bytes,
           ),
-        OpenAIMultipartField.text(
+        TransportMultipartField.text(
           name: 'n',
           value: request.count.toString(),
         ),
         if (request.size case final size?)
-          OpenAIMultipartField.text(
+          TransportMultipartField.text(
             name: 'size',
             value: size,
           ),
         if (options?.background case final background?)
-          OpenAIMultipartField.text(
+          TransportMultipartField.text(
             name: 'background',
             value: background.value,
           ),
         if (request.inputFidelity case final inputFidelity?)
-          OpenAIMultipartField.text(
+          TransportMultipartField.text(
             name: 'input_fidelity',
             value: inputFidelity.value,
           ),
         if (request.partialImages case final partialImages?)
-          OpenAIMultipartField.text(
+          TransportMultipartField.text(
             name: 'partial_images',
             value: partialImages.toString(),
           ),
         if (options?.quality case final quality?)
-          OpenAIMultipartField.text(
+          TransportMultipartField.text(
             name: 'quality',
             value: quality.value,
           ),
         if (request.outputCompression case final outputCompression?)
-          OpenAIMultipartField.text(
+          TransportMultipartField.text(
             name: 'output_compression',
             value: outputCompression.toString(),
           ),
         if (options?.outputFormat case final outputFormat?)
-          OpenAIMultipartField.text(
+          TransportMultipartField.text(
             name: 'output_format',
             value: outputFormat.value,
           ),
         if (options?.responseFormat case final responseFormat?)
-          OpenAIMultipartField.text(
+          TransportMultipartField.text(
             name: 'response_format',
             value: responseFormat.value,
           ),
         if (options?.user case final user?)
-          OpenAIMultipartField.text(
+          TransportMultipartField.text(
             name: 'user',
             value: user,
           ),

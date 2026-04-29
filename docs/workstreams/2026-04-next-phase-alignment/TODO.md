@@ -83,6 +83,9 @@ architecture debt.
   keeping remote file lifecycle provider-owned
 - [x] Tighten OpenAI and Google image-editing documentation/examples so landed
   provider-owned helpers are not mistaken for compatibility residue
+- [x] Extract repeated multipart body encoding into `llm_dart_transport` so
+  provider packages share transport utility code without sharing provider
+  lifecycle semantics
 
 ## OpenAI Family Stream Parser
 

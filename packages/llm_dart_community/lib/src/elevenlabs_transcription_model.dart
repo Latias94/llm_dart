@@ -6,7 +6,6 @@ import 'package:llm_dart_transport/llm_dart_transport.dart';
 import 'elevenlabs_model_describer.dart';
 import 'elevenlabs_options.dart';
 import 'elevenlabs_shared.dart';
-import 'simple_multipart_body.dart';
 
 /// Package-owned modern ElevenLabs transcription model surface.
 final class ElevenLabsTranscriptionModel
@@ -57,45 +56,45 @@ final class ElevenLabsTranscriptionModel
     final options = providerOptions as ElevenLabsTranscriptionOptions?;
     _validateTranscriptionOptions(options);
 
-    final multipart = buildSimpleMultipartBody(
+    final multipart = buildTransportMultipartBody(
       fields: [
-        SimpleMultipartField.file(
+        TransportMultipartField.file(
           name: 'file',
           filename: buildAudioFilename(request.mediaType),
           mediaType: request.mediaType ?? 'audio/wav',
           bytes: request.audioBytes,
         ),
-        SimpleMultipartField.text(
+        TransportMultipartField.text(
           name: 'model_id',
           value: modelId,
         ),
         if (options?.languageCode case final languageCode?)
-          SimpleMultipartField.text(
+          TransportMultipartField.text(
             name: 'language_code',
             value: languageCode,
           ),
         if (options?.tagAudioEvents case final tagAudioEvents?)
-          SimpleMultipartField.text(
+          TransportMultipartField.text(
             name: 'tag_audio_events',
             value: '$tagAudioEvents',
           ),
         if (options?.numSpeakers case final numSpeakers?)
-          SimpleMultipartField.text(
+          TransportMultipartField.text(
             name: 'num_speakers',
             value: '$numSpeakers',
           ),
         if (options?.timestampGranularity case final timestampGranularity?)
-          SimpleMultipartField.text(
+          TransportMultipartField.text(
             name: 'timestamps_granularity',
             value: timestampGranularity.name,
           ),
         if (options?.diarize case final diarize?)
-          SimpleMultipartField.text(
+          TransportMultipartField.text(
             name: 'diarize',
             value: '$diarize',
           ),
         if (options?.fileFormat case final fileFormat?)
-          SimpleMultipartField.text(
+          TransportMultipartField.text(
             name: 'file_format',
             value: fileFormat.value,
           ),

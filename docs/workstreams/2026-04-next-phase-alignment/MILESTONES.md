@@ -179,6 +179,9 @@ Current status:
 - OpenAI and Google image-editing examples now teach the landed provider-owned
   helpers directly, while OpenAI variations remain compatibility/deferred
   instead of being forced into shared `ImageModel`
+- repeated multipart body encoding is now owned by `llm_dart_transport`,
+  reducing provider package duplication while preserving provider-owned file,
+  transcription, and image-edit lifecycle semantics
 - reopen triggers are now written down so future refactors can be justified by
   product evidence, repeated bugs, or repeated duplication
 - this phase now ends with a clearer architectural rule: keep the shared

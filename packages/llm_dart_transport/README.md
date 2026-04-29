@@ -14,6 +14,7 @@ chat runtime code, or Flutter adapters:
 - Dio client configuration and factory helpers
 - SSE and UTF-8 decoding utilities
 - JSON object response decoding and log sanitization
+- small HTTP body utilities such as multipart/form-data encoding
 - `HttpChatTransport` protocol payload/chunk codecs and the server adapter
 
 ## Dependencies
@@ -51,6 +52,8 @@ Use:
 Use `llm_dart_transport` when you are:
 
 - implementing a provider client on top of Dio
+- building multipart upload requests for provider-owned file or audio
+  endpoints
 - building an HTTP/SSE transport boundary for server or client apps
 - encoding or decoding `HttpChatTransport` requests and streamed chunks
 - writing transport-level diagnostics or retry helpers

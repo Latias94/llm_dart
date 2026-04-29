@@ -6,7 +6,6 @@ import 'package:llm_dart_transport/llm_dart_transport.dart';
 import 'openai_family_profile.dart';
 import 'openai_image_editing.dart';
 import 'openai_model_describer.dart';
-import 'openai_multipart_body.dart';
 import 'openai_non_text_model_support.dart';
 import 'openai_options.dart';
 
