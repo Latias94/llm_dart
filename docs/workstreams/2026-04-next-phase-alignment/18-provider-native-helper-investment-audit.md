@@ -49,7 +49,7 @@ The best next steps are:
 | ElevenLabs voice catalog reader | `ElevenLabs(...).voices().listVoices()` | Moves common voice-picker UI flows out of the broad compatibility audio shell without widening shared speech contracts | Treat as landed; keep realtime, cloning, and admin APIs outside the modern shared-capability surface |
 | OpenAI image editing | `OpenAIImageModel.edit(OpenAIImageEditRequest)` | Proves the correct additive-provider-helper pattern for non-shared media workflows | Tighten README and provider examples so this is taught as a modern helper instead of old compatibility residue |
 | Google image editing and variation | `GoogleImageModel.edit(...)` and `createVariation(...)` | Shows that edit-specific input contracts can stay provider-owned without widening shared `ImageModel` | Tighten README and examples so the modern helper is visible |
-| Anthropic file metadata/download | `Anthropic.files()` | Gives Anthropic a narrow, honest modern file client without pretending file lifecycle is shared | Keep additive; do not widen shared file-management contracts |
+| Anthropic file lifecycle | `Anthropic.files()` | Gives Anthropic a narrow, honest modern file client for upload/list/metadata/download/delete without pretending file lifecycle is shared | Treat as landed; do not widen shared file-management contracts |
 | OpenAI and Google provider-aware message mappers | `mapComposed(...)` plus provider part details/custom-part helpers | Important for Flutter and app rendering without widening `ChatMessageMapper` | Keep treating this as the intended UI extension pattern |
 | Community-provider capability profiles | `capabilityProfile`, `describeOllamaChatModel(...)`, `describeElevenLabsSpeechModel(...)` | Necessary for Flutter gating and app affordance selection | Keep confidence guidance explicit, especially for Ollama `inferred` hints |
 
@@ -65,7 +65,6 @@ after the current doc-tightening phase.
 
 | Candidate | Proposed home | Priority | Recommendation | Why it is worth doing |
 | --- | --- | --- | --- | --- |
-| Anthropic file lifecycle completion | `llm_dart_anthropic` | Medium | Extend the modern file client with upload/list/delete only if the typed contract can stay narrow and execution-file oriented | Anthropic already has a partial modern file surface; finishing it may reduce compatibility imports for code-execution workflows |
 | Google streamed speech utility | `llm_dart_google` | Medium | If revisited, land it as a Google-owned additive utility rather than shared `SpeechModel` widening | There is real product value for voice apps, but it remains provider-specific and session/stream-shape heavy |
 
 ## C. Explicitly Defer Or Keep As Compatibility Appendix

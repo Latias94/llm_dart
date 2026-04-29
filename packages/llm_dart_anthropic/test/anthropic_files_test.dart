@@ -7,6 +7,139 @@ import 'package:test/test.dart';
 
 void main() {
   group('AnthropicFiles', () {
+    test('uploadFile sends multipart request and parses descriptor', () async {
+      TransportRequest? capturedRequest;
+
+      final files = Anthropic(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return const TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'file_upload',
+                'type': 'file',
+                'filename': 'notes.txt',
+                'mime_type': 'text/plain',
+                'size_bytes': 11,
+                'created_at': '2026-03-29T09:00:00Z',
+                'downloadable': true,
+              },
+            );
+          },
+        ),
+      ).files();
+
+      final descriptor = await files.uploadFile(
+        const AnthropicFileUpload(
+          bytes: [104, 101, 108, 108, 111],
+          filename: 'notes.txt',
+          mediaType: 'text/plain',
+        ),
+        timeout: const Duration(seconds: 5),
+        headers: const {
+          'x-call': '2',
+        },
+      );
+
+      expect(capturedRequest, isNotNull);
+      expect(capturedRequest!.uri.toString(),
+          'https://api.anthropic.com/v1/files');
+      expect(capturedRequest!.method, TransportMethod.post);
+      expect(capturedRequest!.responseType, TransportResponseType.json);
+      expect(capturedRequest!.timeout, const Duration(seconds: 5));
+      expect(capturedRequest!.headers['x-api-key'], 'test-key');
+      expect(capturedRequest!.headers['accept'], 'application/json');
+      expect(capturedRequest!.headers['x-call'], '2');
+      expect(capturedRequest!.headers['content-type'],
+          startsWith('multipart/form-data; boundary='));
+      expect(
+        capturedRequest!.headers['anthropic-beta']!.split(','),
+        ['files-api-2025-04-14'],
+      );
+
+      final body = String.fromCharCodes(capturedRequest!.body! as List<int>);
+      expect(body, contains('name="file"; filename="notes.txt"'));
+      expect(body, contains('Content-Type: text/plain'));
+      expect(body, contains('hello'));
+
+      expect(descriptor.id, 'file_upload');
+      expect(descriptor.filename, 'notes.txt');
+      expect(descriptor.mimeType, 'text/plain');
+    });
+
+    test('listFiles and deleteFile use modern files endpoints', () async {
+      final requests = <TransportRequest>[];
+      var callCount = 0;
+
+      final files = Anthropic(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            requests.add(request);
+            callCount += 1;
+
+            if (callCount == 1) {
+              return const TransportResponse(
+                statusCode: 200,
+                body: {
+                  'data': [
+                    {
+                      'id': 'file_123',
+                      'type': 'file',
+                      'filename': 'report.csv',
+                      'mime_type': 'text/csv',
+                      'size_bytes': 321,
+                      'created_at': '2026-03-29T10:00:00Z',
+                      'downloadable': true,
+                    },
+                  ],
+                  'first_id': 'file_123',
+                  'last_id': 'file_123',
+                  'has_more': false,
+                },
+              );
+            }
+
+            return const TransportResponse(
+              statusCode: 200,
+              body: '',
+            );
+          },
+        ),
+      ).files();
+
+      final listed = await files.listFiles(
+        beforeId: 'file_before',
+        afterId: 'file_after',
+        limit: 20,
+      );
+      final deleted = await files.deleteFile('file_123');
+
+      expect(requests, hasLength(2));
+      expect(requests[0].method, TransportMethod.get);
+      expect(requests[0].uri.path, '/v1/files');
+      expect(requests[0].uri.queryParameters, {
+        'before_id': 'file_before',
+        'after_id': 'file_after',
+        'limit': '20',
+      });
+      expect(requests[0].responseType, TransportResponseType.json);
+      expect(requests[1].method, TransportMethod.delete);
+      expect(
+        requests[1].uri.toString(),
+        'https://api.anthropic.com/v1/files/file_123',
+      );
+      expect(requests[1].responseType, TransportResponseType.plainText);
+
+      expect(listed.data.single.id, 'file_123');
+      expect(listed.firstId, 'file_123');
+      expect(listed.hasMore, isFalse);
+      expect(deleted.id, 'file_123');
+      expect(deleted.deleted, isTrue);
+    });
+
     test('getFile sends files beta headers and parses metadata', () async {
       TransportRequest? capturedRequest;
 

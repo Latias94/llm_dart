@@ -173,6 +173,9 @@ Current status:
 - `llm_dart_community` now also exposes an ElevenLabs `voices()` helper, moving
   voice-picker catalog data into a narrow provider-owned modern surface while
   keeping realtime, cloning, and admin flows outside the shared media contract
+- Anthropic file lifecycle is now complete on the focused package path through
+  `Anthropic.files()`, so upload/list/metadata/download/delete no longer force
+  app code through the root compatibility shell
 - reopen triggers are now written down so future refactors can be justified by
   product evidence, repeated bugs, or repeated duplication
 - this phase now ends with a clearer architectural rule: keep the shared

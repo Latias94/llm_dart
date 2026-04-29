@@ -14,3 +14,18 @@ The root `llm_dart` package re-exports the main focused entrypoint through:
 
 For the larger repository architecture and migration story, start with the root
 package README.
+
+## Files
+
+`Anthropic(...).files()` is the focused provider-owned file lifecycle surface
+for Anthropic beta files:
+
+- `uploadFile(...)` / `uploadBytes(...)`
+- `listFiles(...)`
+- `getFile(...)`
+- `downloadFile(...)`
+- `deleteFile(...)`
+
+This is intentionally not a shared cross-provider file-management abstraction.
+File IDs, beta headers, download behavior, and lifecycle semantics remain
+Anthropic-owned.

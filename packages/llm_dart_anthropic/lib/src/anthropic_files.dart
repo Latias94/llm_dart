@@ -4,7 +4,20 @@ import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'anthropic_api.dart';
 import 'anthropic_code_execution_replay.dart';
+import 'anthropic_multipart_body.dart';
 import 'anthropic_options.dart';
+
+final class AnthropicFileUpload {
+  final List<int> bytes;
+  final String filename;
+  final String mediaType;
+
+  const AnthropicFileUpload({
+    required this.bytes,
+    required this.filename,
+    this.mediaType = 'application/octet-stream',
+  });
+}
 
 final class AnthropicFileDescriptor {
   final String id;
@@ -60,6 +73,66 @@ final class AnthropicFileDescriptor {
   }
 }
 
+final class AnthropicFileListResponse {
+  final List<AnthropicFileDescriptor> data;
+  final bool hasMore;
+  final String? firstId;
+  final String? lastId;
+
+  const AnthropicFileListResponse({
+    required this.data,
+    this.hasMore = false,
+    this.firstId,
+    this.lastId,
+  });
+
+  factory AnthropicFileListResponse.fromJson(Map<String, Object?> json) {
+    return AnthropicFileListResponse(
+      data: _requiredList(json['data'], path: 'file_list.data')
+          .asMap()
+          .entries
+          .map((entry) {
+        return AnthropicFileDescriptor.fromJson(
+          _requiredMap(
+            entry.value,
+            path: 'file_list.data[${entry.key}]',
+          ),
+        );
+      }).toList(growable: false),
+      hasMore:
+          _optionalBool(json['has_more'], path: 'file_list.has_more') ?? false,
+      firstId: _optionalString(json['first_id'], path: 'file_list.first_id'),
+      lastId: _optionalString(json['last_id'], path: 'file_list.last_id'),
+    );
+  }
+
+  Map<String, Object?> toJson() {
+    return {
+      'data': data.map((file) => file.toJson()).toList(growable: false),
+      'has_more': hasMore,
+      if (firstId != null) 'first_id': firstId,
+      if (lastId != null) 'last_id': lastId,
+    };
+  }
+}
+
+final class AnthropicFileDeleteResponse {
+  final String id;
+  final bool deleted;
+
+  const AnthropicFileDeleteResponse({
+    required this.id,
+    required this.deleted,
+  });
+
+  Map<String, Object?> toJson() {
+    return {
+      'id': id,
+      'deleted': deleted,
+    };
+  }
+}
+
 final class AnthropicFileDownload {
   final String fileId;
   final Uint8List bytes;
@@ -91,10 +164,110 @@ final class AnthropicFiles {
     this.settings = const AnthropicFilesSettings(),
   }) : baseUrl = baseUrl ?? anthropicDefaultBaseUrl;
 
+  Uri get filesUri => resolveAnthropicUri(baseUrl, 'files');
+
   Uri fileUri(String fileId) {
     return resolveAnthropicUri(
       baseUrl,
       'files/${_requireNonEmptyFileId(fileId)}',
+    );
+  }
+
+  Future<AnthropicFileDescriptor> uploadFile(
+    AnthropicFileUpload request, {
+    Duration? timeout,
+    TransportCancellation? cancellation,
+    Map<String, String>? headers,
+  }) async {
+    _validateUpload(request);
+
+    final multipart = buildAnthropicMultipartBody(
+      fields: [
+        AnthropicMultipartField.file(
+          name: 'file',
+          filename: request.filename,
+          mediaType: request.mediaType,
+          bytes: request.bytes,
+        ),
+      ],
+    );
+
+    final response = await transport.send(
+      TransportRequest(
+        uri: filesUri,
+        method: TransportMethod.post,
+        headers: _buildHeaders(
+          extraHeaders: {
+            'content-type': multipart.contentType,
+            if (headers != null) ...headers,
+          },
+          accept: 'application/json',
+        ),
+        body: multipart.bytes,
+        timeout: timeout,
+        cancellation: cancellation,
+        responseType: TransportResponseType.json,
+      ),
+    );
+
+    return AnthropicFileDescriptor.fromJson(
+      decodeAnthropicJsonObject(response.body),
+    );
+  }
+
+  Future<AnthropicFileDescriptor> uploadBytes({
+    required List<int> bytes,
+    required String filename,
+    String mediaType = 'application/octet-stream',
+    Duration? timeout,
+    TransportCancellation? cancellation,
+    Map<String, String>? headers,
+  }) {
+    return uploadFile(
+      AnthropicFileUpload(
+        bytes: bytes,
+        filename: filename,
+        mediaType: mediaType,
+      ),
+      timeout: timeout,
+      cancellation: cancellation,
+      headers: headers,
+    );
+  }
+
+  Future<AnthropicFileListResponse> listFiles({
+    String? beforeId,
+    String? afterId,
+    int? limit,
+    Duration? timeout,
+    TransportCancellation? cancellation,
+    Map<String, String>? headers,
+  }) async {
+    final queryParameters = _buildListQueryParameters(
+      beforeId: beforeId,
+      afterId: afterId,
+      limit: limit,
+    );
+    final uri = queryParameters.isEmpty
+        ? filesUri
+        : filesUri.replace(queryParameters: queryParameters);
+
+    final response = await transport.send(
+      TransportRequest(
+        uri: uri,
+        method: TransportMethod.get,
+        headers: _buildHeaders(
+          extraHeaders: headers,
+          accept: 'application/json',
+        ),
+        timeout: timeout,
+        cancellation: cancellation,
+        responseType: TransportResponseType.json,
+      ),
+    );
+
+    return AnthropicFileListResponse.fromJson(
+      decodeAnthropicJsonObject(response.body),
     );
   }
 
@@ -160,6 +333,33 @@ final class AnthropicFiles {
     );
   }
 
+  Future<AnthropicFileDeleteResponse> deleteFile(
+    String fileId, {
+    Duration? timeout,
+    TransportCancellation? cancellation,
+    Map<String, String>? headers,
+  }) async {
+    final normalizedFileId = _requireNonEmptyFileId(fileId);
+    await transport.send(
+      TransportRequest(
+        uri: fileUri(normalizedFileId),
+        method: TransportMethod.delete,
+        headers: _buildHeaders(
+          extraHeaders: headers,
+          accept: 'application/json',
+        ),
+        timeout: timeout,
+        cancellation: cancellation,
+        responseType: TransportResponseType.plainText,
+      ),
+    );
+
+    return AnthropicFileDeleteResponse(
+      id: normalizedFileId,
+      deleted: true,
+    );
+  }
+
   Map<String, String> _buildHeaders({
     Map<String, String>? extraHeaders,
     String? accept,
@@ -174,6 +374,52 @@ final class AnthropicFiles {
         ...settings.betaFeatures,
       ],
       accept: accept,
+    );
+  }
+}
+
+Map<String, String> _buildListQueryParameters({
+  String? beforeId,
+  String? afterId,
+  int? limit,
+}) {
+  if (limit != null && limit < 1) {
+    throw ArgumentError.value(
+      limit,
+      'limit',
+      'Anthropic file list limit must be >= 1.',
+    );
+  }
+
+  return {
+    if (beforeId != null && beforeId.isNotEmpty) 'before_id': beforeId,
+    if (afterId != null && afterId.isNotEmpty) 'after_id': afterId,
+    if (limit != null) 'limit': '$limit',
+  };
+}
+
+void _validateUpload(AnthropicFileUpload request) {
+  if (request.bytes.isEmpty) {
+    throw ArgumentError.value(
+      request.bytes,
+      'request.bytes',
+      'Anthropic file uploads require non-empty bytes.',
+    );
+  }
+
+  if (request.filename.trim().isEmpty) {
+    throw ArgumentError.value(
+      request.filename,
+      'request.filename',
+      'Anthropic file uploads require a non-empty filename.',
+    );
+  }
+
+  if (request.mediaType.trim().isEmpty) {
+    throw ArgumentError.value(
+      request.mediaType,
+      'request.mediaType',
+      'Anthropic file uploads require a non-empty media type.',
     );
   }
 }
@@ -209,12 +455,43 @@ extension AnthropicExecutionFileHandleFilesX on AnthropicExecutionFileHandle {
 }
 
 String _requireNonEmptyFileId(String fileId) {
-  if (fileId.isEmpty) {
+  final normalized = fileId.trim();
+  if (normalized.isEmpty) {
     throw ArgumentError.value(
         fileId, 'fileId', 'Expected a non-empty file ID.');
   }
 
-  return fileId;
+  return normalized;
+}
+
+Map<String, Object?> _requiredMap(
+  Object? value, {
+  required String path,
+}) {
+  if (value is Map<String, Object?>) {
+    return value;
+  }
+
+  if (value is Map) {
+    return Map<String, Object?>.from(value);
+  }
+
+  throw FormatException('Expected a JSON object at $path.');
+}
+
+List<Object?> _requiredList(
+  Object? value, {
+  required String path,
+}) {
+  if (value is List<Object?>) {
+    return value;
+  }
+
+  if (value is List) {
+    return List<Object?>.from(value);
+  }
+
+  throw FormatException('Expected a list at $path.');
 }
 
 Uint8List _decodeBytes(

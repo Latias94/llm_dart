@@ -79,6 +79,8 @@ architecture debt.
   instead of keeping installed-model discovery behind the compatibility shell
 - [x] Land an ElevenLabs voice-catalog reader in `llm_dart_community` instead
   of keeping voice-picker UI data behind the broad compatibility audio shell
+- [x] Complete the modern Anthropic files client with upload/list/delete while
+  keeping remote file lifecycle provider-owned
 
 ## OpenAI Family Stream Parser
 

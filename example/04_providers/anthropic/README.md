@@ -7,7 +7,8 @@ For new code, prefer:
 
 - `AI.anthropic(...).chatModel(...)`
 - `AnthropicGenerateTextOptions` for extended-thinking and MCP controls
-- `AI.anthropic(...).files()` for stable file metadata and download access
+- `AI.anthropic(...).files()` for stable file upload, listing, metadata,
+  download, and deletion
 
 ## Example Status
 
@@ -138,20 +139,30 @@ import 'package:llm_dart/llm_dart.dart' as llm;
 
 final files = llm.AI.anthropic(apiKey: 'your-key').files();
 
-final metadata = await files.getFile('file_123');
-final download = await files.downloadFile('file_123');
+final uploaded = await files.uploadBytes(
+  [72, 101, 108, 108, 111],
+  filename: 'hello.txt',
+  mediaType: 'text/plain',
+);
+final page = await files.listFiles(limit: 20);
+final metadata = await files.getFile(uploaded.id);
+final download = await files.downloadFile(uploaded.id);
+final deleted = await files.deleteFile(uploaded.id);
 
+print(page.data.length);
 print(metadata.filename);
 print(download.sizeBytes);
+print(deleted.deleted);
 ```
 
 ## Boundary Notes
 
 - Extended thinking must stay provider owned. Do not move `extendedThinking` or
   `thinkingBudgetTokens` into shared `GenerateTextOptions`.
-- Anthropic's stable files client currently covers file metadata and download.
-  Older upload, list, and delete flows in `file_handling.dart` are still
-  compatibility oriented.
+- Anthropic's stable files client now covers upload, list, metadata, download,
+  and delete through `AI.anthropic(...).files()`.
+  `file_handling.dart` remains a compatibility appendix; the modern end-to-end
+  files example lives in `example/02_core_features/file_management.dart`.
 - Anthropic streaming tool activity should stay on shared `TextStreamEvent`
   surfaces. Do not introduce Anthropic-only stream contracts for ordinary tool
   tracing.

@@ -2,12 +2,10 @@
 
 import 'dart:io';
 
+import 'package:llm_dart/anthropic.dart' as anthropic;
 import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/llm_dart.dart' as llm;
-import 'package:llm_dart/models/file_models.dart';
 import 'package:llm_dart/openai.dart' as openai;
-import 'package:llm_dart/providers/anthropic/anthropic.dart'
-    as anthropic_compat;
 
 /// File handling has two distinct layers in the current architecture:
 /// - stable prompt-time local file parts for shared chat flows
@@ -151,35 +149,31 @@ Keep the integration boundary explicit in application code.
 ''',
   );
 
-  final fileClient = anthropic_compat.createAnthropicProvider(
-    apiKey: apiKey,
-    model: 'claude-sonnet-4-20250514',
-  );
+  final fileClient = llm.AI.anthropic(apiKey: apiKey).files();
 
-  FileObject? uploadedFile;
+  anthropic.AnthropicFileDescriptor? uploadedFile;
 
   try {
     uploadedFile = await fileClient.uploadFile(
-      FileUploadRequest(
-        file: await sampleFile.readAsBytes(),
+      anthropic.AnthropicFileUpload(
+        bytes: await sampleFile.readAsBytes(),
         filename: sampleFile.uri.pathSegments.last,
+        mediaType: 'text/plain',
       ),
     );
 
     print('Uploaded file: ${uploadedFile.id}');
-    print('MIME type: ${uploadedFile.mimeType ?? '<none>'}');
+    print('MIME type: ${uploadedFile.mimeType}');
     print('Downloadable: ${uploadedFile.downloadable}');
 
-    final listed = await fileClient.listFiles(
-      const FileListQuery(limit: 5),
-    );
+    final listed = await fileClient.listFiles(limit: 5);
     print('Recent Anthropic files returned: ${listed.data.length}');
 
-    final retrieved = await fileClient.retrieveFile(uploadedFile.id);
+    final retrieved = await fileClient.getFile(uploadedFile.id);
     print('Retrieved filename: ${retrieved.filename}');
 
-    final content = await fileClient.getFileContent(uploadedFile.id);
-    print('Downloaded bytes: ${content.length}');
+    final content = await fileClient.downloadFile(uploadedFile.id);
+    print('Downloaded bytes: ${content.sizeBytes}');
   } finally {
     if (uploadedFile != null) {
       final deleted = await fileClient.deleteFile(uploadedFile.id);
@@ -208,8 +202,8 @@ void explainBoundary() {
     'purpose fields, indexing, and later retrieval semantics differ by provider.',
   );
   print(
-    '• OpenAI now has a focused modern files client, while Anthropic upload/list '
-    'flows in this example still use the explicit compatibility boundary.',
+    '• OpenAI and Anthropic both expose focused modern files clients, but '
+    'their file IDs, beta headers, and persistence semantics remain provider-owned.',
   );
   print(
     '• Isolate provider-side file persistence behind provider-specific adapters '

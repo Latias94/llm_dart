@@ -47,7 +47,7 @@ Stable shared `embed(...)` and `embedMany(...)` helpers with
 ### [file_management.dart](file_management.dart)
 Stable local `FilePromptPart` usage first, followed by explicit provider-owned
 remote file lifecycle examples. OpenAI uses the focused modern files client;
-Anthropic upload/list/delete remains an explicit compatibility boundary.
+Anthropic uses its focused modern files client as well.
 
 ### [chat_basics.dart](chat_basics.dart)
 Stable foundational chat patterns with prompt messages, conversation history,
