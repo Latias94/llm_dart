@@ -231,6 +231,16 @@ workspace publish sequence:
 dart tool/run_workspace_publish_dry_run.dart
 ```
 
+Latest local validation on 2026-04-29:
+
+- `dart tool/run_workspace_publish_dry_run.dart` passed for all 9 publishable
+  packages.
+- Every package reported `0 warnings`.
+- The only remaining hints were the expected local `pubspec_overrides.yaml`
+  dependency-override hints used to validate unpublished workspace packages
+  against local path overrides.
+- No real publish command was run.
+
 If maintainers later want different package-specific version cadences, that can
 still be revisited after the architecture transition settles.
 
