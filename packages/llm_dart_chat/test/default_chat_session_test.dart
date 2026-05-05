@@ -681,7 +681,7 @@ void main() {
                       isDynamic: true,
                     ),
                   ),
-                  const ToolResultEvent(
+                  ToolResultEvent(
                     toolResult: ToolResultContent(
                       toolCallId: 'srvtoolu_1',
                       toolName: 'web_search',
@@ -990,7 +990,7 @@ void main() {
                       isDynamic: true,
                     ),
                   ),
-                  const ToolResultEvent(
+                  ToolResultEvent(
                     toolResult: ToolResultContent(
                       toolCallId: 'srvtoolu_3',
                       toolName: 'bash_code_execution',

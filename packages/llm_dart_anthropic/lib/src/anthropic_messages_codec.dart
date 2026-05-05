@@ -26,6 +26,7 @@ final class AnthropicMessagesCodec {
       'interleaved-thinking-2025-05-14';
   static const String _mcpClientBeta = 'mcp-client-2025-04-04';
   static const String _extendedCacheTtlBeta = 'extended-cache-ttl-2025-04-11';
+  static const String _filesApiBeta = 'files-api-2025-04-14';
 
   const AnthropicMessagesCodec();
 
@@ -240,6 +241,10 @@ final class AnthropicMessagesCodec {
 
     if (_containsCacheControl(body)) {
       betaFeatures.add(_extendedCacheTtlBeta);
+    }
+
+    if (_containsAnthropicFileSource(body)) {
+      betaFeatures.add(_filesApiBeta);
     }
 
     final sortedBetas = betaFeatures.toList(growable: false)..sort();
@@ -711,8 +716,7 @@ final class AnthropicMessagesCodec {
           'type': 'image',
           'source': _encodeBinarySource(
             mediaType: _normalizeImageMediaType(part.mediaType),
-            uri: part.uri,
-            bytes: part.bytes,
+            data: part.data,
             path: 'user.image',
           ),
         },
@@ -737,8 +741,7 @@ final class AnthropicMessagesCodec {
           'type': 'document',
           'source': _encodeBinarySource(
             mediaType: part.mediaType,
-            uri: part.uri,
-            bytes: part.bytes,
+            data: part.data,
             path: 'user.document',
           ),
           if (part.filename != null) 'title': part.filename,
@@ -772,7 +775,7 @@ final class AnthropicMessagesCodec {
           'type': 'mcp_tool_result',
           'tool_use_id': part.toolCallId,
           'content': _normalizeJsonValue(
-                part.output,
+                part.toolOutput.value,
                 path: 'toolResult(${part.toolCallId}).output',
               ) ??
               const <String, Object?>{},
@@ -785,7 +788,7 @@ final class AnthropicMessagesCodec {
         'type': 'tool_result',
         'tool_use_id': part.toolCallId,
         'content': _encodeToolOutput(
-          part.output,
+          part.toolOutput,
           path: 'toolResult(${part.toolCallId}).output',
         ),
         if (part.isError) 'is_error': true,
@@ -812,10 +815,20 @@ final class AnthropicMessagesCodec {
 
   Map<String, Object?> _encodeBinarySource({
     required String mediaType,
-    required Uri? uri,
-    required List<int>? bytes,
+    required FileData? data,
     required String path,
   }) {
+    if (data?.providerReference case final reference?) {
+      return {
+        'type': 'file',
+        'file_id': reference.requireProvider(
+          'anthropic',
+          context: 'Anthropic $path',
+        ),
+      };
+    }
+
+    final bytes = data?.bytes;
     if (bytes != null) {
       return {
         'type': 'base64',
@@ -824,6 +837,7 @@ final class AnthropicMessagesCodec {
       };
     }
 
+    final uri = data?.uri;
     if (uri != null && _isHttpUri(uri)) {
       return {
         'type': 'url',
@@ -987,18 +1001,39 @@ final class AnthropicMessagesCodec {
   }
 
   Map<String, Object?> _encodeTextDocumentSource(FilePromptPart part) {
-    if (part.bytes != null) {
+    final data = part.data;
+
+    if (data?.providerReference case final reference?) {
       return {
-        'type': 'text',
-        'media_type': 'text/plain',
-        'data': utf8.decode(part.bytes!),
+        'type': 'file',
+        'file_id': reference.requireProvider(
+          'anthropic',
+          context: 'Anthropic user.document',
+        ),
       };
     }
 
-    if (part.uri != null && _isHttpUri(part.uri!)) {
+    if (data?.text case final text?) {
+      return {
+        'type': 'text',
+        'media_type': 'text/plain',
+        'data': text,
+      };
+    }
+
+    if (data?.bytes case final bytes?) {
+      return {
+        'type': 'text',
+        'media_type': 'text/plain',
+        'data': utf8.decode(bytes),
+      };
+    }
+
+    final uri = data?.uri;
+    if (uri != null && _isHttpUri(uri)) {
       return {
         'type': 'url',
-        'url': part.uri.toString(),
+        'url': uri.toString(),
       };
     }
 
@@ -1146,19 +1181,30 @@ final class AnthropicMessagesCodec {
   }
 
   String _encodeToolOutput(
-    Object? output, {
+    ToolOutput output, {
     required String path,
   }) {
-    if (output == null) {
+    if (output is ExecutionDeniedToolOutput) {
+      return output.reason ?? 'Tool execution denied';
+    }
+
+    if (output is ContentToolOutput) {
+      throw UnsupportedError(
+        'Anthropic tool result replay does not support ContentToolOutput yet.',
+      );
+    }
+
+    final value = output.value;
+    if (value == null) {
       return 'null';
     }
 
-    if (output is String) {
-      return output;
+    if (value is String) {
+      return value;
     }
 
     return jsonEncode(
-      _normalizeJsonValue(output, path: path),
+      _normalizeJsonValue(value, path: path),
     );
   }
 
@@ -1296,6 +1342,27 @@ final class AnthropicMessagesCodec {
 
     if (value is List) {
       return value.any(_containsCacheControl);
+    }
+
+    return false;
+  }
+
+  bool _containsAnthropicFileSource(Object? value) {
+    if (value is Map) {
+      if (value['type'] == 'file' && value.containsKey('file_id')) {
+        return true;
+      }
+
+      for (final nestedValue in value.values) {
+        if (_containsAnthropicFileSource(nestedValue)) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    if (value is List) {
+      return value.any(_containsAnthropicFileSource);
     }
 
     return false;

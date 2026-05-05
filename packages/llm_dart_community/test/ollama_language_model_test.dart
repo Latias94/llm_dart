@@ -69,7 +69,7 @@ void main() {
           SystemPromptMessage.text('You are helpful.'),
           UserPromptMessage.text('What is the weather?'),
           AssistantPromptMessage(
-            parts: const [
+            parts: [
               ReasoningPromptPart('Need weather data'),
               ToolCallPromptPart(
                 toolCallId: 'tool-1',
@@ -82,7 +82,7 @@ void main() {
           ),
           ToolPromptMessage(
             toolName: 'weather',
-            parts: const [
+            parts: [
               ToolResultPromptPart(
                 toolCallId: 'tool-1',
                 toolName: 'weather',
@@ -296,7 +296,7 @@ void main() {
           UserPromptMessage.text('Handle the failed tool result.'),
           ToolPromptMessage(
             toolName: 'weather',
-            parts: const [
+            parts: [
               ToolResultPromptPart(
                 toolCallId: 'tool-1',
                 toolName: 'weather',
@@ -448,7 +448,8 @@ void main() {
       );
     });
 
-    test('generate resolves URI-backed image prompt parts through binaryResolver',
+    test(
+        'generate resolves URI-backed image prompt parts through binaryResolver',
         () async {
       TransportRequest? capturedRequest;
 

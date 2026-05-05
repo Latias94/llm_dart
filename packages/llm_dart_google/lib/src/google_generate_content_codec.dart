@@ -146,8 +146,7 @@ final class GoogleGenerateContentCodec {
       modelId: modelId,
       includeServerSideToolInvocations: includeServerSideToolInvocations,
     );
-    if (promptRequiresServerToolReplay &&
-        !includeServerSideToolInvocations) {
+    if (promptRequiresServerToolReplay && !includeServerSideToolInvocations) {
       throw UnsupportedError(
         'Google server-side tool replay requires includeServerSideToolInvocations=true for Gemini 3 follow-up requests.',
       );
@@ -471,16 +470,14 @@ final class GoogleGenerateContentCodec {
     if (part is ImagePromptPart) {
       return _encodeBinaryPart(
         mediaType: part.mediaType == 'image/*' ? 'image/jpeg' : part.mediaType,
-        uri: part.uri,
-        bytes: part.bytes,
+        data: part.data,
       );
     }
 
     if (part is FilePromptPart) {
       return _encodeBinaryPart(
         mediaType: part.mediaType,
-        uri: part.uri,
-        bytes: part.bytes,
+        data: part.data,
       );
     }
 
@@ -520,8 +517,7 @@ final class GoogleGenerateContentCodec {
     if (part is ReasoningFilePromptPart) {
       return _encodeAssistantInlineDataPart(
         mediaType: part.mediaType,
-        uri: part.uri,
-        bytes: part.bytes,
+        data: part.data,
         metadata: metadata,
         forceThought: true,
       );
@@ -530,8 +526,7 @@ final class GoogleGenerateContentCodec {
     if (part is FilePromptPart) {
       return _encodeAssistantInlineDataPart(
         mediaType: part.mediaType,
-        uri: part.uri,
-        bytes: part.bytes,
+        data: part.data,
         metadata: metadata,
       );
     }
@@ -594,6 +589,12 @@ final class GoogleGenerateContentCodec {
     }
 
     if (part is ToolResultPromptPart) {
+      if (part.toolOutput is ContentToolOutput) {
+        throw UnsupportedError(
+          'Google tool result replay does not support ContentToolOutput yet. Use GoogleFunctionResponseReplay for multimodal function responses.',
+        );
+      }
+
       final functionCallId = _googleFunctionCallId(part.providerMetadata);
       return {
         'functionResponse': {
@@ -602,7 +603,7 @@ final class GoogleGenerateContentCodec {
           'name': part.toolName,
           'response': {
             'name': part.toolName,
-            'content': normalizeJsonValue(part.output) ?? 'null',
+            'content': normalizeJsonValue(part.toolOutput.value) ?? 'null',
           },
         },
       };
@@ -635,9 +636,9 @@ final class GoogleGenerateContentCodec {
 
   Map<String, Object?> _encodeBinaryPart({
     required String mediaType,
-    required Uri? uri,
-    required List<int>? bytes,
+    required FileData? data,
   }) {
+    final bytes = data?.bytes;
     if (bytes != null) {
       return {
         'inlineData': {
@@ -647,11 +648,21 @@ final class GoogleGenerateContentCodec {
       };
     }
 
+    final uri = data?.uri;
     if (uri != null) {
       return {
         'fileData': {
           'mimeType': mediaType,
           'fileUri': uri.toString(),
+        },
+      };
+    }
+
+    if (_googleFileUri(data?.providerReference) case final fileUri?) {
+      return {
+        'fileData': {
+          'mimeType': mediaType,
+          'fileUri': fileUri,
         },
       };
     }
@@ -663,11 +674,11 @@ final class GoogleGenerateContentCodec {
 
   Map<String, Object?> _encodeAssistantInlineDataPart({
     required String mediaType,
-    required Uri? uri,
-    required List<int>? bytes,
+    required FileData? data,
     required _GoogleAssistantPartMetadata metadata,
     bool forceThought = false,
   }) {
+    final bytes = data?.bytes;
     if (bytes == null) {
       throw UnsupportedError(
         'Google assistant file prompt parts require in-memory bytes. Assistant-side file URIs are not supported.',
@@ -681,6 +692,19 @@ final class GoogleGenerateContentCodec {
       },
       ..._encodeThoughtFields(metadata, forceThought: forceThought),
     };
+  }
+
+  String? _googleFileUri(ProviderReference? reference) {
+    if (reference == null) {
+      return null;
+    }
+
+    return reference['google'] ??
+        reference['vertex'] ??
+        reference.requireProvider(
+          'google',
+          context: 'Google file prompt part',
+        );
   }
 
   Map<String, Object?> _encodeThoughtFields(

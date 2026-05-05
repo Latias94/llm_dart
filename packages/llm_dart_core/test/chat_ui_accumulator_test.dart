@@ -211,7 +211,7 @@ void main() {
       expect(toolPart.approval?.approved, isNull);
 
       message = accumulator.apply(
-        const ToolResultEvent(
+        ToolResultEvent(
           toolResult: ToolResultContent(
             toolCallId: 'tool-1',
             toolName: 'weather',
@@ -239,7 +239,7 @@ void main() {
       );
 
       message = accumulator.apply(
-        const ToolResultEvent(
+        ToolResultEvent(
           toolResult: ToolResultContent(
             toolCallId: 'tool-1',
             toolName: 'weather',

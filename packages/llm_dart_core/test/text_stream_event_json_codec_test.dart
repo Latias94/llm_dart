@@ -74,7 +74,7 @@ void main() {
             },
           }),
         ),
-        const ToolResultEvent(
+        ToolResultEvent(
           toolResult: ToolResultContent(
             toolCallId: 'tool-1',
             toolName: 'search',

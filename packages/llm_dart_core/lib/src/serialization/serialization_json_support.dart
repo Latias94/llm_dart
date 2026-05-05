@@ -5,6 +5,7 @@ import '../common/model_warning.dart';
 import '../common/provider_metadata.dart';
 import '../common/usage_stats.dart';
 import '../content/content_part.dart';
+import '../tool/tool_definition.dart';
 import 'json_codec_common.dart';
 
 final class SerializationJsonSupport {
@@ -155,11 +156,13 @@ final class SerializationJsonSupport {
   }
 
   static JsonMap encodeGeneratedFile(GeneratedFile file) {
+    final data = file.data;
     return {
       'mediaType': file.mediaType,
       if (file.filename != null) 'filename': file.filename,
-      if (file.uri != null) 'uri': file.uri.toString(),
-      if (file.bytes != null) 'bytes': encodeBytes(file.bytes!),
+      if (data != null) 'data': encodeFileData(data),
+      if (file.uri != null && data is! FileUrlData) 'uri': file.uri.toString(),
+      if (data == null && file.bytes != null) 'bytes': encodeBytes(file.bytes!),
     };
   }
 
@@ -171,9 +174,164 @@ final class SerializationJsonSupport {
     return GeneratedFile(
       mediaType: asJsonString(map['mediaType'], path: '$path.mediaType'),
       filename: asNullableJsonString(map['filename'], path: '$path.filename'),
+      data: decodeFileData(map['data'], path: '$path.data'),
       uri: decodeUri(map['uri'], path: '$path.uri'),
-      bytes: decodeBytes(map['bytes'], path: '$path.bytes'),
+      bytes: map.containsKey('data')
+          ? null
+          : decodeBytes(map['bytes'], path: '$path.bytes'),
     );
+  }
+
+  static JsonMap encodeFileData(FileData data) {
+    return switch (data) {
+      FileBytesData(:final bytes) => {
+          'type': 'bytes',
+          'bytes': encodeBytes(bytes),
+        },
+      FileUrlData(:final uri) => {
+          'type': 'url',
+          'uri': uri.toString(),
+        },
+      FileTextData(:final text) => {
+          'type': 'text',
+          'text': text,
+        },
+      FileProviderReferenceData(:final providerReference) => {
+          'type': 'provider-reference',
+          'providerReference': providerReference.toJsonMap(),
+        },
+    };
+  }
+
+  static FileData? decodeFileData(
+    Object? value, {
+    required String path,
+  }) {
+    if (value == null) {
+      return null;
+    }
+
+    final map = asJsonMap(value, path: path);
+    final type = asJsonString(map['type'], path: '$path.type');
+
+    return switch (type) {
+      'bytes' => FileBytesData(
+          decodeBytes(map['bytes'], path: '$path.bytes') ??
+              (throw FormatException('Expected bytes at $path.bytes.')),
+        ),
+      'url' => FileUrlData(
+          decodeUri(map['uri'], path: '$path.uri') ??
+              (throw FormatException('Expected URI at $path.uri.')),
+        ),
+      'text' => FileTextData(
+          asJsonString(map['text'], path: '$path.text'),
+        ),
+      'provider-reference' => FileProviderReferenceData(
+          ProviderReference.fromJson(
+            map['providerReference'],
+            path: '$path.providerReference',
+          ),
+        ),
+      _ =>
+        throw FormatException('Unsupported file data type "$type" at $path.'),
+    };
+  }
+
+  static JsonMap encodeToolOutput(ToolOutput output) {
+    return switch (output) {
+      TextToolOutput(:final value) => {
+          'type': 'text',
+          'value': value,
+        },
+      JsonToolOutput(:final value) => {
+          'type': 'json',
+          'value': ensureJsonValue(value, path: r'$.toolOutput.value'),
+        },
+      ErrorTextToolOutput(:final value) => {
+          'type': 'error-text',
+          'value': value,
+        },
+      ErrorJsonToolOutput(:final value) => {
+          'type': 'error-json',
+          'value': ensureJsonValue(value, path: r'$.toolOutput.value'),
+        },
+      ExecutionDeniedToolOutput(:final reason) => {
+          'type': 'execution-denied',
+          if (reason != null) 'reason': reason,
+        },
+      ContentToolOutput(:final parts) => {
+          'type': 'content',
+          'parts': [
+            for (final part in parts) encodeToolOutputContentPart(part),
+          ],
+        },
+    };
+  }
+
+  static ToolOutput decodeToolOutput(
+    Object? value, {
+    required String path,
+  }) {
+    final map = asJsonMap(value, path: path);
+    final type = asJsonString(map['type'], path: '$path.type');
+
+    return switch (type) {
+      'text' => TextToolOutput(asJsonString(map['value'], path: '$path.value')),
+      'json' => JsonToolOutput(map['value']),
+      'error-text' =>
+        ErrorTextToolOutput(asJsonString(map['value'], path: '$path.value')),
+      'error-json' => ErrorJsonToolOutput(map['value']),
+      'execution-denied' => ExecutionDeniedToolOutput(
+          asNullableJsonString(map['reason'], path: '$path.reason'),
+        ),
+      'content' => ContentToolOutput(
+          parts: [
+            for (final entry in asJsonList(map['parts'], path: '$path.parts')
+                .asMap()
+                .entries)
+              decodeToolOutputContentPart(
+                entry.value,
+                path: '$path.parts[${entry.key}]',
+              ),
+          ],
+        ),
+      _ =>
+        throw FormatException('Unsupported tool output type "$type" at $path.'),
+    };
+  }
+
+  static JsonMap encodeToolOutputContentPart(ToolOutputContentPart part) {
+    return switch (part) {
+      TextToolOutputContentPart(:final text) => {
+          'type': 'text',
+          'text': text,
+        },
+      JsonToolOutputContentPart(:final value) => {
+          'type': 'json',
+          'value': ensureJsonValue(
+            value,
+            path: r'$.toolOutput.parts[].value',
+          ),
+        },
+    };
+  }
+
+  static ToolOutputContentPart decodeToolOutputContentPart(
+    Object? value, {
+    required String path,
+  }) {
+    final map = asJsonMap(value, path: path);
+    final type = asJsonString(map['type'], path: '$path.type');
+
+    return switch (type) {
+      'text' => TextToolOutputContentPart(
+          asJsonString(map['text'], path: '$path.text'),
+        ),
+      'json' => JsonToolOutputContentPart(map['value']),
+      _ => throw FormatException(
+          'Unsupported tool output content part type "$type" at $path.',
+        ),
+    };
   }
 
   static JsonMap encodeBytes(List<int> bytes) {

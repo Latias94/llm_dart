@@ -149,19 +149,27 @@ final class OpenAIChatCompletionsCodec {
     return jsonEncode(value);
   }
 
-  String _encodeToolOutput({
-    required Object? output,
-    required bool isError,
-  }) {
-    if (output == null) {
-      return isError ? 'Tool execution failed' : 'null';
+  String _encodeToolOutput(ToolOutput output) {
+    if (output is ExecutionDeniedToolOutput) {
+      return output.reason ?? 'Tool execution denied';
     }
 
-    if (output is String) {
-      return output;
+    if (output is ContentToolOutput) {
+      throw UnsupportedError(
+        'OpenAI-family chat-completions tool result replay does not support ContentToolOutput yet.',
+      );
     }
 
-    return jsonEncode(output);
+    final value = output.value;
+    if (value == null) {
+      return output.isError ? 'Tool execution failed' : 'null';
+    }
+
+    if (value is String) {
+      return value;
+    }
+
+    return jsonEncode(value);
   }
 
   Map<String, Object?>? _asMap(Object? value) {

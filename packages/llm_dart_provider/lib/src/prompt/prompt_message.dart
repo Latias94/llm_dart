@@ -1,4 +1,7 @@
 import '../common/provider_metadata.dart';
+import '../common/provider_reference.dart';
+import '../content/file_data.dart';
+import '../tool/tool_output.dart';
 
 enum PromptRole {
   system,
@@ -27,33 +30,61 @@ final class TextPromptPart extends PromptPart {
 final class FilePromptPart extends PromptPart {
   final String mediaType;
   final String? filename;
-  final Uri? uri;
-  final List<int>? bytes;
+  final Uri? _uri;
+  final List<int>? _bytes;
+  final FileData? _data;
   @override
   final ProviderMetadata? providerMetadata;
 
   const FilePromptPart({
     required this.mediaType,
     this.filename,
-    this.uri,
-    this.bytes,
+    FileData? data,
+    Uri? uri,
+    List<int>? bytes,
     this.providerMetadata,
-  });
+  })  : _data = data,
+        _uri = uri,
+        _bytes = bytes;
+
+  FileData? get data => _data ?? fileDataFromLegacy(uri: _uri, bytes: _bytes);
+
+  Uri? get uri => _uri ?? data?.uri;
+
+  List<int>? get bytes => _bytes ?? data?.bytes;
+
+  String? get text => data?.text;
+
+  ProviderReference? get providerReference => data?.providerReference;
 }
 
 final class ImagePromptPart extends PromptPart {
   final String mediaType;
-  final Uri? uri;
-  final List<int>? bytes;
+  final Uri? _uri;
+  final List<int>? _bytes;
+  final FileData? _data;
   @override
   final ProviderMetadata? providerMetadata;
 
   const ImagePromptPart({
     required this.mediaType,
-    this.uri,
-    this.bytes,
+    FileData? data,
+    Uri? uri,
+    List<int>? bytes,
     this.providerMetadata,
-  });
+  })  : _data = data,
+        _uri = uri,
+        _bytes = bytes;
+
+  FileData? get data => _data ?? fileDataFromLegacy(uri: _uri, bytes: _bytes);
+
+  Uri? get uri => _uri ?? data?.uri;
+
+  List<int>? get bytes => _bytes ?? data?.bytes;
+
+  String? get text => data?.text;
+
+  ProviderReference? get providerReference => data?.providerReference;
 }
 
 final class ReasoningPromptPart extends PromptPart {
@@ -70,18 +101,32 @@ final class ReasoningPromptPart extends PromptPart {
 final class ReasoningFilePromptPart extends PromptPart {
   final String mediaType;
   final String? filename;
-  final Uri? uri;
-  final List<int>? bytes;
+  final Uri? _uri;
+  final List<int>? _bytes;
+  final FileData? _data;
   @override
   final ProviderMetadata? providerMetadata;
 
   const ReasoningFilePromptPart({
     required this.mediaType,
     this.filename,
-    this.uri,
-    this.bytes,
+    FileData? data,
+    Uri? uri,
+    List<int>? bytes,
     this.providerMetadata,
-  });
+  })  : _data = data,
+        _uri = uri,
+        _bytes = bytes;
+
+  FileData? get data => _data ?? fileDataFromLegacy(uri: _uri, bytes: _bytes);
+
+  Uri? get uri => _uri ?? data?.uri;
+
+  List<int>? get bytes => _bytes ?? data?.bytes;
+
+  String? get text => data?.text;
+
+  ProviderReference? get providerReference => data?.providerReference;
 }
 
 final class CustomPromptPart extends PromptPart {
@@ -134,18 +179,29 @@ final class ToolApprovalRequestPromptPart extends PromptPart {
 final class ToolResultPromptPart extends PromptPart {
   final String toolCallId;
   final String toolName;
-  final Object? output;
-  final bool isError;
+  final ToolOutput toolOutput;
   @override
   final ProviderMetadata? providerMetadata;
 
-  const ToolResultPromptPart({
+  ToolResultPromptPart({
     required this.toolCallId,
     required this.toolName,
-    this.output,
-    this.isError = false,
+    Object? output,
+    ToolOutput? toolOutput,
+    bool isError = false,
     this.providerMetadata,
-  });
+  }) : toolOutput = toolOutput ??
+            (isError
+                ? (output is String
+                    ? ErrorTextToolOutput(output)
+                    : ErrorJsonToolOutput(output))
+                : (output is String
+                    ? TextToolOutput(output)
+                    : JsonToolOutput(output)));
+
+  Object? get output => toolOutput.value;
+
+  bool get isError => toolOutput.isError;
 }
 
 final class ToolApprovalResponsePromptPart extends PromptPart {

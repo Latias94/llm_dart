@@ -111,9 +111,8 @@ extension _OpenAIChatCompletionsCodecPromptEncoder
         switch (part) {
           case ToolResultPromptPart(
               :final toolCallId,
-              :final output,
               :final toolName,
-              :final isError,
+              :final toolOutput,
             ):
             if (toolName.startsWith('mcp.')) {
               warnings.add(
@@ -130,10 +129,7 @@ extension _OpenAIChatCompletionsCodecPromptEncoder
             encoded.add({
               'role': 'tool',
               'tool_call_id': toolCallId,
-              'content': _encodeToolOutput(
-                output: output,
-                isError: isError,
-              ),
+              'content': _encodeToolOutput(toolOutput),
             });
           case ToolApprovalResponsePromptPart():
             warnings.add(
@@ -299,11 +295,11 @@ extension _OpenAIChatCompletionsCodecPromptEncoder
     }
 
     if (part.mediaType == 'application/pdf') {
-      final openaiMetadata = _providerMetadataValues(
-        part.providerMetadata,
-        namespace: 'openai',
-      );
-      if (_asString(openaiMetadata?['fileId']) case final fileId?) {
+      if (_openAIFileId(
+        data: part.data,
+        metadata: part.providerMetadata,
+      )
+          case final fileId?) {
         return {
           'type': 'file',
           'file': {

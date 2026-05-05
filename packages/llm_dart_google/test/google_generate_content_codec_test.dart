@@ -41,7 +41,7 @@ void main() {
             ],
           ),
           AssistantPromptMessage(
-            parts: const [
+            parts: [
               ToolCallPromptPart(
                 toolCallId: 'tool_1',
                 toolName: 'weather',
@@ -57,8 +57,8 @@ void main() {
           ),
           ToolPromptMessage(
             toolName: 'weather',
-            parts: const [
-              ToolApprovalResponsePromptPart(
+            parts: [
+              const ToolApprovalResponsePromptPart(
                 approvalId: 'approval_1',
                 toolCallId: 'tool_1',
                 approved: true,
@@ -232,6 +232,50 @@ void main() {
       expect(
         request.warnings.map((warning) => warning.field),
         contains('candidateCount'),
+      );
+    });
+
+    test('encodes Google provider references as fileData URIs', () {
+      final request = codec.encodeRequest(
+        modelId: 'gemini-2.5-flash',
+        prompt: [
+          UserPromptMessage(
+            parts: [
+              FilePromptPart(
+                mediaType: 'application/pdf',
+                data: FileProviderReferenceData(
+                  ProviderReference({
+                    'google':
+                        'https://generativelanguage.googleapis.com/v1beta/files/spec',
+                  }),
+                ),
+              ),
+            ],
+          ),
+        ],
+        tools: const [],
+        toolChoice: null,
+        options: const GenerateTextOptions(),
+        settings: const GoogleChatModelSettings(),
+        providerOptions: const GoogleGenerateTextOptions(),
+      );
+
+      expect(
+        request.body['contents'],
+        [
+          {
+            'role': 'user',
+            'parts': [
+              {
+                'fileData': {
+                  'mimeType': 'application/pdf',
+                  'fileUri':
+                      'https://generativelanguage.googleapis.com/v1beta/files/spec',
+                },
+              },
+            ],
+          },
+        ],
       );
     });
 
@@ -518,7 +562,7 @@ void main() {
         prompt: [
           UserPromptMessage.text('Continue the conversation.'),
           AssistantPromptMessage(
-            parts: const [
+            parts: [
               ReasoningPromptPart(
                 'Thinking...',
                 providerMetadata: ProviderMetadata({
@@ -647,7 +691,7 @@ void main() {
           ),
           ToolPromptMessage(
             toolName: 'weather',
-            parts: const [
+            parts: [
               ToolResultPromptPart(
                 toolCallId: 'call_google_1',
                 toolName: 'weather',

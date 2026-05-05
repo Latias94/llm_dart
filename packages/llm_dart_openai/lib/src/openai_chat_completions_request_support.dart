@@ -254,6 +254,22 @@ extension _OpenAIChatCompletionsCodecRequestSupport
     return null;
   }
 
+  String? _openAIFileId({
+    required FileData? data,
+    required ProviderMetadata? metadata,
+  }) {
+    return data?.providerReference?.requireProvider(
+          providerNamespace,
+          context: '$providerNamespace file prompt part',
+        ) ??
+        _asString(
+          _providerMetadataValues(
+            metadata,
+            namespace: providerNamespace,
+          )?['fileId'],
+        );
+  }
+
   List<Map<String, Object?>> _encodeTools(
     List<FunctionToolDefinition> tools,
   ) {

@@ -115,6 +115,62 @@ void main() {
       );
     });
 
+    test('encodes OpenAI provider references on the Responses path', () {
+      const codec = OpenAIResponsesCodec();
+
+      final request = codec.encodeRequest(
+        modelId: 'gpt-5-mini',
+        prompt: [
+          UserPromptMessage(
+            parts: const [
+              ImagePromptPart(
+                mediaType: 'image/png',
+                data: FileProviderReferenceData(
+                  ProviderReference({'openai': 'file-img-123'}),
+                ),
+                providerMetadata: ProviderMetadata({
+                  'openai': {
+                    'imageDetail': 'low',
+                  },
+                }),
+              ),
+              FilePromptPart(
+                mediaType: 'application/pdf',
+                data: FileProviderReferenceData(
+                  ProviderReference({'openai': 'file-pdf-123'}),
+                ),
+              ),
+            ],
+          ),
+        ],
+        tools: const [],
+        toolChoice: null,
+        options: const GenerateTextOptions(),
+        providerOptions: const OpenAIGenerateTextOptions(),
+        stream: false,
+      );
+
+      expect(
+        request.body['input'],
+        [
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'input_image',
+                'file_id': 'file-img-123',
+                'detail': 'low',
+              },
+              {
+                'type': 'input_file',
+                'file_id': 'file-pdf-123',
+              },
+            ],
+          },
+        ],
+      );
+    });
+
     test('encodes PDF file URIs on the Responses path', () {
       const codec = OpenAIResponsesCodec();
 

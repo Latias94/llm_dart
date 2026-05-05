@@ -1,4 +1,7 @@
 import '../common/provider_metadata.dart';
+import '../common/provider_reference.dart';
+import '../tool/tool_output.dart';
+import 'file_data.dart';
 
 enum SourceReferenceKind { url, document, other }
 
@@ -25,15 +28,29 @@ final class SourceReference {
 final class GeneratedFile {
   final String mediaType;
   final String? filename;
-  final Uri? uri;
-  final List<int>? bytes;
+  final Uri? _uri;
+  final List<int>? _bytes;
+  final FileData? _data;
 
   const GeneratedFile({
     required this.mediaType,
     this.filename,
-    this.uri,
-    this.bytes,
-  });
+    FileData? data,
+    Uri? uri,
+    List<int>? bytes,
+  })  : _data = data,
+        _uri = uri,
+        _bytes = bytes;
+
+  FileData? get data => _data ?? fileDataFromLegacy(uri: _uri, bytes: _bytes);
+
+  Uri? get uri => _uri ?? data?.uri;
+
+  List<int>? get bytes => _bytes ?? data?.bytes;
+
+  String? get text => data?.text;
+
+  ProviderReference? get providerReference => data?.providerReference;
 }
 
 final class ToolCallContent {
@@ -57,19 +74,30 @@ final class ToolCallContent {
 final class ToolResultContent {
   final String toolCallId;
   final String toolName;
-  final Object? output;
-  final bool isError;
+  final ToolOutput toolOutput;
   final bool preliminary;
   final bool isDynamic;
 
-  const ToolResultContent({
+  ToolResultContent({
     required this.toolCallId,
     required this.toolName,
-    this.output,
-    this.isError = false,
+    Object? output,
+    ToolOutput? toolOutput,
+    bool isError = false,
     this.preliminary = false,
     this.isDynamic = false,
-  });
+  }) : toolOutput = toolOutput ??
+            (isError
+                ? (output is String
+                    ? ErrorTextToolOutput(output)
+                    : ErrorJsonToolOutput(output))
+                : (output is String
+                    ? TextToolOutput(output)
+                    : JsonToolOutput(output)));
+
+  Object? get output => toolOutput.value;
+
+  bool get isError => toolOutput.isError;
 }
 
 final class ToolApprovalRequestContent {

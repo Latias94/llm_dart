@@ -37,8 +37,8 @@ void main() {
         ),
         ToolPromptMessage(
           toolName: 'mcp.open_browser',
-          parts: const [
-            ToolApprovalResponsePromptPart(
+          parts: [
+            const ToolApprovalResponsePromptPart(
               approvalId: 'approval-1',
               toolCallId: 'tool-1',
               approved: true,
@@ -157,6 +157,101 @@ void main() {
       expect(
         customPart.providerMetadata!['openai'],
         containsPair('itemId', 'cmp_1'),
+      );
+    });
+
+    test('round-trips structured file data and tool output variants', () {
+      const codec = PromptJsonCodec();
+
+      final encoded = codec.encodeMessages([
+        UserPromptMessage(
+          parts: [
+            const FilePromptPart(
+              mediaType: 'application/pdf',
+              filename: 'openai-upload.pdf',
+              data: FileProviderReferenceData(
+                ProviderReference({'openai': 'file_123'}),
+              ),
+            ),
+            ImagePromptPart(
+              mediaType: 'image/png',
+              data: FileUrlData(Uri.parse('https://example.com/image.png')),
+            ),
+            const FilePromptPart(
+              mediaType: 'text/plain',
+              data: FileTextData('inline text'),
+            ),
+            FilePromptPart(
+              mediaType: 'application/pdf',
+              uri: Uri.parse('https://example.com/report.pdf'),
+              bytes: const [1, 2, 3],
+            ),
+          ],
+        ),
+        ToolPromptMessage(
+          toolName: 'weather',
+          parts: [
+            ToolResultPromptPart(
+              toolCallId: 'call_json',
+              toolName: 'weather',
+              toolOutput: JsonToolOutput({
+                'temperature': 28,
+              }),
+            ),
+            ToolResultPromptPart(
+              toolCallId: 'call_denied',
+              toolName: 'weather',
+              toolOutput: ExecutionDeniedToolOutput('requires approval'),
+            ),
+            ToolResultPromptPart(
+              toolCallId: 'call_content',
+              toolName: 'weather',
+              toolOutput: ContentToolOutput(
+                parts: [
+                  TextToolOutputContentPart('forecast'),
+                  JsonToolOutputContentPart({
+                    'temperature': 28,
+                  }),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ]);
+
+      final decoded = codec.decodeMessages(encoded);
+      final user = decoded[0] as UserPromptMessage;
+      final providerReferencePart = user.parts[0] as FilePromptPart;
+      final urlPart = user.parts[1] as ImagePromptPart;
+      final textPart = user.parts[2] as FilePromptPart;
+      final legacyDualPart = user.parts[3] as FilePromptPart;
+
+      expect(
+        providerReferencePart.providerReference!.requireProvider('openai'),
+        'file_123',
+      );
+      expect(urlPart.uri, Uri.parse('https://example.com/image.png'));
+      expect(textPart.text, 'inline text');
+      expect(legacyDualPart.data, isA<FileBytesData>());
+      expect(legacyDualPart.uri, Uri.parse('https://example.com/report.pdf'));
+      expect(legacyDualPart.bytes, [1, 2, 3]);
+
+      final tool = decoded[1] as ToolPromptMessage;
+      final jsonResult = tool.parts[0] as ToolResultPromptPart;
+      final deniedResult = tool.parts[1] as ToolResultPromptPart;
+      final contentResult = tool.parts[2] as ToolResultPromptPart;
+
+      expect(jsonResult.toolOutput, isA<JsonToolOutput>());
+      expect(jsonResult.output, {
+        'temperature': 28,
+      });
+      expect(deniedResult.toolOutput, isA<ExecutionDeniedToolOutput>());
+      expect(deniedResult.toolOutput.denied, isTrue);
+      expect(deniedResult.output, 'requires approval');
+      expect(contentResult.toolOutput, isA<ContentToolOutput>());
+      expect(
+        (contentResult.toolOutput as ContentToolOutput).parts,
+        hasLength(2),
       );
     });
   });

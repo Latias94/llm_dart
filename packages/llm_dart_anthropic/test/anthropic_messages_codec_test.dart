@@ -27,13 +27,13 @@ void main() {
         prompt: [
           SystemPromptMessage.text('You are helpful.'),
           UserPromptMessage(
-            parts: const [
+            parts: [
               TextPromptPart('Hello'),
             ],
           ),
           ToolPromptMessage(
             toolName: 'weather',
-            parts: const [
+            parts: [
               ToolResultPromptPart(
                 toolCallId: 'toolu_1',
                 toolName: 'weather',
@@ -198,6 +198,51 @@ void main() {
           ],
         },
       );
+    });
+
+    test('encodes Anthropic provider references as file sources', () {
+      final request = codec.encodeRequest(
+        modelId: 'claude-sonnet-4-5',
+        prompt: [
+          UserPromptMessage(
+            parts: const [
+              FilePromptPart(
+                mediaType: 'application/pdf',
+                filename: 'uploaded.pdf',
+                data: FileProviderReferenceData(
+                  ProviderReference({'anthropic': 'file_123'}),
+                ),
+              ),
+            ],
+          ),
+        ],
+        tools: const [],
+        toolChoice: null,
+        options: const GenerateTextOptions(),
+        settings: const AnthropicChatModelSettings(),
+        providerOptions: const AnthropicGenerateTextOptions(),
+        stream: false,
+      );
+
+      expect(
+        request.body['messages'],
+        [
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'document',
+                'source': {
+                  'type': 'file',
+                  'file_id': 'file_123',
+                },
+                'title': 'uploaded.pdf',
+              },
+            ],
+          },
+        ],
+      );
+      expect(request.betaFeatures, contains('files-api-2025-04-14'));
     });
 
     test('adds thinking settings, beta features, and warnings', () {
@@ -430,8 +475,8 @@ void main() {
           ),
           ToolPromptMessage(
             toolName: 'mcp.open_browser',
-            parts: const [
-              ToolApprovalResponsePromptPart(
+            parts: [
+              const ToolApprovalResponsePromptPart(
                 approvalId: 'approval_1',
                 toolCallId: 'mcptoolu_1',
                 approved: true,

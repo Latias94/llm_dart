@@ -20,7 +20,7 @@ void main() {
         SystemPromptMessage.text('You are concise.'),
         UserPromptMessage.text('What is the weather in Hong Kong?'),
         AssistantPromptMessage(
-          parts: const [
+          parts: [
             TextPromptPart('Checking.'),
             ToolCallPromptPart(
               toolCallId: 'tool_1',
@@ -33,7 +33,7 @@ void main() {
         ),
         ToolPromptMessage(
           toolName: 'weather',
-          parts: const [
+          parts: [
             ToolResultPromptPart(
               toolCallId: 'tool_1',
               toolName: 'weather',
@@ -435,8 +435,8 @@ void main() {
         ),
         ToolPromptMessage(
           toolName: 'mcp.open_browser',
-          parts: const [
-            ToolApprovalResponsePromptPart(
+          parts: [
+            const ToolApprovalResponsePromptPart(
               approvalId: 'approval_1',
               toolCallId: 'tool_1',
               approved: true,

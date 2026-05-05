@@ -356,10 +356,7 @@ extension _OpenAIResponsesCodecPromptEncoder on OpenAIResponsesCodec {
       items.add({
         'type': 'function_call_output',
         'call_id': part.toolCallId,
-        'output': _encodeToolOutput(
-          output: part.output,
-          isError: part.isError,
-        ),
+        'output': _encodeToolOutput(part.toolOutput),
       });
     }
 
@@ -383,7 +380,11 @@ extension _OpenAIResponsesCodecPromptEncoder on OpenAIResponsesCodec {
         namespace: 'openai',
       );
       final imageDetail = _asString(openaiMetadata?['imageDetail']);
-      if (_asString(openaiMetadata?['fileId']) case final fileId?) {
+      if (_openAIFileId(
+        data: part.data,
+        metadata: part.providerMetadata,
+      )
+          case final fileId?) {
         return {
           'type': 'input_image',
           'file_id': fileId,
@@ -416,7 +417,11 @@ extension _OpenAIResponsesCodecPromptEncoder on OpenAIResponsesCodec {
       );
       if (part.mediaType.startsWith('image/')) {
         final imageDetail = _asString(openaiMetadata?['imageDetail']);
-        if (_asString(openaiMetadata?['fileId']) case final fileId?) {
+        if (_openAIFileId(
+          data: part.data,
+          metadata: part.providerMetadata,
+        )
+            case final fileId?) {
           return {
             'type': 'input_image',
             'file_id': fileId,
@@ -443,7 +448,11 @@ extension _OpenAIResponsesCodecPromptEncoder on OpenAIResponsesCodec {
       }
 
       if (part.mediaType == 'application/pdf') {
-        if (_asString(openaiMetadata?['fileId']) case final fileId?) {
+        if (_openAIFileId(
+          data: part.data,
+          metadata: part.providerMetadata,
+        )
+            case final fileId?) {
           return {
             'type': 'input_file',
             'file_id': fileId,

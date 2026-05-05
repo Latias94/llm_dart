@@ -43,7 +43,7 @@ void main() {
             ),
           ),
           ToolResultContentPart(
-            const ToolResultContent(
+            ToolResultContent(
               toolCallId: 'tool-1',
               toolName: 'weather',
               output: {

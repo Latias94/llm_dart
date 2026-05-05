@@ -287,18 +287,42 @@ extension _OpenAIResponsesCodecRequestSupport on OpenAIResponsesCodec {
     return normalized;
   }
 
-  String _encodeToolOutput({
-    required Object? output,
-    required bool isError,
+  String _encodeToolOutput(ToolOutput output) {
+    if (output is ExecutionDeniedToolOutput) {
+      return output.reason ?? 'Tool execution denied';
+    }
+
+    if (output is ContentToolOutput) {
+      throw UnsupportedError(
+        'OpenAI Responses tool result replay does not support ContentToolOutput yet.',
+      );
+    }
+
+    final value = output.value;
+    if (value == null) {
+      return output.isError ? 'Tool execution failed' : 'null';
+    }
+
+    if (value is String) {
+      return value;
+    }
+
+    return jsonEncode(value);
+  }
+
+  String? _openAIFileId({
+    required FileData? data,
+    required ProviderMetadata? metadata,
   }) {
-    if (output == null) {
-      return isError ? 'Tool execution failed' : 'null';
-    }
-
-    if (output is String) {
-      return output;
-    }
-
-    return jsonEncode(output);
+    return data?.providerReference?.requireProvider(
+          'openai',
+          context: 'OpenAI file prompt part',
+        ) ??
+        _asString(
+          _providerMetadataValues(
+            metadata,
+            namespace: 'openai',
+          )?['fileId'],
+        );
   }
 }

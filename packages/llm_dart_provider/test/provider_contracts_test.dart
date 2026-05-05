@@ -38,6 +38,118 @@ void main() {
     });
   });
 
+  group('ProviderReference and FileData', () {
+    test('builds provider-native references and validates JSON keys', () {
+      final reference = ProviderReference.forProvider('openai', 'file_123');
+
+      expect(reference['openai'], 'file_123');
+      expect(reference.requireProvider('openai'), 'file_123');
+      expect(reference.toJsonMap(), {
+        'openai': 'file_123',
+      });
+
+      expect(
+        const ProviderReference({'OpenAI': 'file_123'}).toJsonMap,
+        throwsFormatException,
+      );
+    });
+
+    test('throws clear errors for missing provider entries', () {
+      const reference = ProviderReference({'anthropic': 'file_123'});
+
+      expect(
+        () => reference.requireProvider(
+          'openai',
+          context: 'OpenAI file prompt part',
+        ),
+        throwsA(
+          isA<UnsupportedError>()
+              .having(
+                (error) => error.toString(),
+                'message',
+                contains('OpenAI file prompt part'),
+              )
+              .having(
+                (error) => error.toString(),
+                'message',
+                contains('"openai"'),
+              )
+              .having(
+                (error) => error.toString(),
+                'message',
+                contains('anthropic'),
+              ),
+        ),
+      );
+    });
+
+    test('projects legacy file prompts into structured data variants', () {
+      final urlPart = FilePromptPart(
+        mediaType: 'application/pdf',
+        uri: Uri.parse('https://example.test/file.pdf'),
+      );
+      const bytesPart = FilePromptPart(
+        mediaType: 'application/pdf',
+        bytes: [1, 2, 3],
+      );
+      final legacyDualPart = FilePromptPart(
+        mediaType: 'application/pdf',
+        uri: Uri.parse('https://example.test/file.pdf'),
+        bytes: const [1, 2, 3],
+      );
+      const referencePart = FilePromptPart(
+        mediaType: 'application/pdf',
+        data: FileProviderReferenceData(
+          ProviderReference({'openai': 'file_123'}),
+        ),
+      );
+
+      expect(urlPart.data, isA<FileUrlData>());
+      expect(urlPart.uri.toString(), 'https://example.test/file.pdf');
+      expect(bytesPart.data, isA<FileBytesData>());
+      expect(bytesPart.bytes, [1, 2, 3]);
+      expect(legacyDualPart.data, isA<FileBytesData>());
+      expect(
+        legacyDualPart.uri.toString(),
+        'https://example.test/file.pdf',
+      );
+      expect(legacyDualPart.bytes, [1, 2, 3]);
+      expect(referencePart.data, isA<FileProviderReferenceData>());
+      expect(referencePart.providerReference!.requireProvider('openai'),
+          'file_123');
+    });
+  });
+
+  group('ToolOutput', () {
+    test('projects legacy tool result output into structured variants', () {
+      final ok = ToolResultPromptPart(
+        toolCallId: 'call_1',
+        toolName: 'weather',
+        output: 'sunny',
+      );
+      final failed = ToolResultPromptPart(
+        toolCallId: 'call_2',
+        toolName: 'weather',
+        output: 'timeout',
+        isError: true,
+      );
+      final denied = ToolResultPromptPart(
+        toolCallId: 'call_3',
+        toolName: 'weather',
+        toolOutput: ExecutionDeniedToolOutput('requires approval'),
+      );
+
+      expect(ok.toolOutput, isA<TextToolOutput>());
+      expect(ok.output, 'sunny');
+      expect(ok.isError, isFalse);
+      expect(failed.toolOutput, isA<ErrorTextToolOutput>());
+      expect(failed.output, 'timeout');
+      expect(failed.isError, isTrue);
+      expect(denied.toolOutput.denied, isTrue);
+      expect(denied.output, 'requires approval');
+    });
+  });
+
   group('ModelError', () {
     test('normalizes provider payload maps into structured errors', () {
       final error = ModelError.fromUnknown(
@@ -392,9 +504,10 @@ void main() {
         isTrue,
       );
       expect(
-        profile.sharedFeature(
-          ModelCapabilityFeatureIds.languageReasoningOutput,
-        )!
+        profile
+            .sharedFeature(
+              ModelCapabilityFeatureIds.languageReasoningOutput,
+            )!
             .confidence,
         CapabilityConfidence.inferred,
       );

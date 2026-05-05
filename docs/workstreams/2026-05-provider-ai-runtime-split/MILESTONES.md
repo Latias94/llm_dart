@@ -54,11 +54,11 @@ Current status:
 - provider-facing model interfaces and request/result contracts now live in
   `llm_dart_provider`: language, embedding, image, speech, transcription, model
   response metadata, and capability profiles
-- `llm_dart_core` currently re-exports those contracts from their old paths as
-  a compatibility layer while the rest of the provider-facing spec moves over
-- `llm_dart_core` still owns runtime helpers such as `generateText`, `embed`,
-  `generateImage`, `generateSpeech`, `transcribe`, runners, and structured
-  output until `llm_dart_ai` exists
+- `llm_dart_core` re-exports those contracts from their old paths as a
+  compatibility layer
+- runtime helpers such as `generateText`, `embed`, `generateImage`,
+  `generateSpeech`, `transcribe`, runners, and structured output now live in
+  `llm_dart_ai`; `llm_dart_core` keeps old-path compatibility re-exports
 - workspace bootstrap, dependency guards, root boundary guards, focused package
   analysis, and workspace publish dry-run all understand the new provider
   package
@@ -79,12 +79,16 @@ Acceptance criteria:
 
 Current status:
 
-- workspace publish dry-run tooling now stages every package, including the
-  root facade package, so dirty development worktrees do not produce false
-  publish warnings during refactor validation
-- transport cancellation now consumes provider-level cancellation contracts
-  through compatibility aliases, reducing direct conceptual coupling between
-  provider/model APIs and transport naming
+- `llm_dart_ai` exists as a focused runtime package depending only on
+  `llm_dart_provider`
+- one-shot helpers, multi-step runners, stream result accumulation, partial JSON
+  repair, replay stream support, and structured output helpers moved to
+  `llm_dart_ai`
+- `llm_dart_core` keeps compatibility re-exports for the old runtime paths
+- the root `package:llm_dart/ai.dart` entrypoint explicitly exports the new
+  runtime package while preserving the modern facade surface
+- workspace bootstrap, dependency guards, root boundary guards, package
+  analysis, and focused runtime/core tests understand the new AI package
 
 ## M4 - Data Structure Upgrade
 
@@ -106,7 +110,32 @@ Acceptance criteria:
 
 Current status:
 
-- not started
+- first data-structure slice is implemented in `llm_dart_provider`
+- `ProviderReference`, sealed `FileData`, and explicit `ToolOutput` variants
+  are exported from the provider foundation entrypoint
+- prompt/content file parts and tool-result parts retain legacy constructor
+  arguments while exposing structured `data` and `toolOutput` accessors
+- `llm_dart_core` compatibility exports expose the new shared types through the
+  old content, prompt, and tool paths
+- OpenAI Responses and Chat Completions resolve OpenAI provider references for
+  image/PDF file inputs while retaining legacy provider metadata fallback
+- Anthropic Messages resolves Anthropic provider references to file sources and
+  adds the Files API beta header when needed
+- Google GenerateContent and function-response replay resolve Google/Vertex
+  provider references to `fileData.fileUri`
+- core prompt JSON serialization preserves the new file-data and tool-output
+  unions while still reading the legacy JSON shape
+- provider contract tests cover provider references, file data projection, and
+  tool-output projection
+- focused OpenAI, Anthropic, and Google codec tests cover the first provider
+  reference slice
+- `ToolResultContent` and `ToolResultPromptPart` now store only `ToolOutput`;
+  legacy `output` / `isError` inputs are construction-time migration shims, and
+  the old `toolOutputFromLegacy` helper has been removed from the provider
+  surface
+- remaining breaking work: make `FileData` the required storage shape, remove
+  input-side file IDs from provider metadata, and expand provider-reference
+  coverage beyond the first provider slice
 
 ## M5 - Provider Package Migration
 

@@ -23,6 +23,16 @@ void main() {
             filename: 'quote.pdf',
             uri: Uri.parse('https://example.com/quote.pdf'),
           ),
+          const GeneratedFile(
+            mediaType: 'application/pdf',
+            filename: 'uploaded.pdf',
+            data: FileProviderReferenceData(
+              ProviderReference({
+                'google':
+                    'https://generativelanguage.googleapis.com/v1beta/files/uploaded',
+              }),
+            ),
+          ),
         ],
         extraFunctionResponseFields: const {
           'source': 'local-cache',
@@ -40,11 +50,17 @@ void main() {
       expect(parsed.response, {
         'status': 'ok',
       });
-      expect(parsed.files, hasLength(2));
+      expect(parsed.files, hasLength(3));
       expect(parsed.files.first.bytes, [1, 2, 3]);
       expect(
-        parsed.files.last.uri,
+        parsed.files[1].uri,
         Uri.parse('https://example.com/quote.pdf'),
+      );
+      expect(
+        parsed.files.last.uri,
+        Uri.parse(
+          'https://generativelanguage.googleapis.com/v1beta/files/uploaded',
+        ),
       );
       expect(
         parsed.providerMetadata?.values['google'],

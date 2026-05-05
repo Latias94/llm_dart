@@ -343,17 +343,22 @@ Map<String, Object?> _buildFunctionResponse({
 GeneratedFile _normalizeFunctionResponseFile(GeneratedFile file) {
   final hasBytes = file.bytes != null;
   final hasUri = file.uri != null;
-  if (hasBytes == hasUri) {
+  final hasProviderReference = file.providerReference != null;
+  if ([hasBytes, hasUri, hasProviderReference].where((value) => value).length !=
+      1) {
     throw ArgumentError.value(
       file,
       'files',
-      'Google function response files require exactly one of bytes or uri.',
+      'Google function response files require exactly one of bytes, uri, or providerReference.',
     );
   }
 
   return GeneratedFile(
     mediaType: _requireNonEmptyValue(file.mediaType, name: 'files.mediaType'),
     filename: _normalizeOptionalDisplayName(file.filename),
+    data: file.providerReference == null
+        ? null
+        : FileProviderReferenceData(file.providerReference!),
     uri: file.uri,
     bytes: file.bytes == null ? null : List<int>.unmodifiable(file.bytes!),
   );
@@ -380,11 +385,34 @@ Map<String, Object?> _encodeFunctionResponseFile(GeneratedFile file) {
     };
   }
 
+  if (_googleFileUri(file.providerReference) case final fileUri?) {
+    return {
+      'fileData': {
+        'mimeType': file.mediaType,
+        'fileUri': fileUri,
+        if (file.filename != null) 'displayName': file.filename,
+      },
+    };
+  }
+
   throw ArgumentError.value(
     file,
     'file',
-    'Google function response files require bytes or uri.',
+    'Google function response files require bytes, uri, or providerReference.',
   );
+}
+
+String? _googleFileUri(ProviderReference? reference) {
+  if (reference == null) {
+    return null;
+  }
+
+  return reference['google'] ??
+      reference['vertex'] ??
+      reference.requireProvider(
+        'google',
+        context: 'Google function response file',
+      );
 }
 
 List<GeneratedFile> _parseFunctionResponseFiles(

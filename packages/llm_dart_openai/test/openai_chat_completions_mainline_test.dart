@@ -1168,6 +1168,84 @@ void main() {
       );
     });
 
+    test('chat completions encode OpenAI provider reference PDF handles',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'chatcmpl_pdf_provider_ref_1',
+                'model': 'gpt-4.1-mini',
+                'created': 1710000000,
+                'choices': [
+                  {
+                    'index': 0,
+                    'finish_reason': 'stop',
+                    'message': {
+                      'role': 'assistant',
+                      'content': 'Done.',
+                    },
+                  },
+                ],
+                'usage': {
+                  'prompt_tokens': 4,
+                  'completion_tokens': 1,
+                  'total_tokens': 5,
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel(
+        'gpt-4.1-mini',
+        settings: const OpenAIChatModelSettings(
+          useResponsesApi: false,
+        ),
+      );
+
+      await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage(
+              parts: const [
+                FilePromptPart(
+                  mediaType: 'application/pdf',
+                  data: FileProviderReferenceData(
+                    ProviderReference({'openai': 'file-pdf-12345'}),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(
+        requestBody['messages'],
+        [
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'file',
+                'file': {
+                  'file_id': 'file-pdf-12345',
+                },
+              },
+            ],
+          },
+        ],
+      );
+    });
+
     test(
         'chat completions encode OpenAI image detail through provider metadata',
         () async {
@@ -2031,8 +2109,8 @@ void main() {
             ),
             ToolPromptMessage(
               toolName: 'mcp.create_short_url',
-              parts: const [
-                ToolApprovalResponsePromptPart(
+              parts: [
+                const ToolApprovalResponsePromptPart(
                   approvalId: 'approval-1',
                   toolCallId: 'approval-1',
                   approved: true,

@@ -2,9 +2,19 @@ export 'package:llm_dart_provider/llm_dart_provider.dart'
     show
         AutoToolChoice,
         FunctionToolDefinition,
+        ContentToolOutput,
+        ErrorJsonToolOutput,
+        ErrorTextToolOutput,
+        ExecutionDeniedToolOutput,
+        JsonToolOutput,
         NoneToolChoice,
         RequiredToolChoice,
         SpecificToolChoice,
+        TextToolOutput,
         ToolChoice,
         ToolDefinition,
-        ToolJsonSchema;
+        ToolJsonSchema,
+        ToolOutput,
+        ToolOutputContentPart,
+        TextToolOutputContentPart,
+        JsonToolOutputContentPart;

@@ -17,8 +17,8 @@
   preview or starts as package-private helper code
 - [ ] Decide whether UI contracts remain inside the provider/spec package for
   the first breaking preview or move to a dedicated UI package later
-- [ ] Update workspace dependency guard policy for the target graph
-- [ ] Update root boundary guard policy for the target graph
+- [x] Update workspace dependency guard policy for the target graph
+- [x] Update root boundary guard policy for the target graph
 
 ## Provider Spec Split
 
@@ -40,24 +40,31 @@
 
 ## AI Runtime Split
 
-- [ ] Create `packages/llm_dart_ai`
-- [ ] Move generation helpers into `llm_dart_ai`
-- [ ] Move multi-step runners into `llm_dart_ai`
-- [ ] Move structured output helpers into `llm_dart_ai`
-- [ ] Keep provider packages independent from `llm_dart_ai`
+- [x] Create `packages/llm_dart_ai`
+- [x] Move generation helpers into `llm_dart_ai`
+- [x] Move multi-step runners into `llm_dart_ai`
+- [x] Move structured output helpers into `llm_dart_ai`
+- [x] Keep provider packages independent from `llm_dart_ai`
 
 ## Data Structure Upgrade
 
-- [ ] Add `ProviderReference`
-- [ ] Add sealed `FileData`
-- [ ] Replace nullable `uri`/`bytes` prompt file shape with `FileData`
-- [ ] Add explicit `ToolOutput` variants
-- [ ] Migrate OpenAI file prompt encoding to provider references where
+- [x] Add `ProviderReference`
+- [x] Add sealed `FileData`
+- [x] Add `FileData` compatibility accessors on nullable `uri`/`bytes` prompt
+  and generated file shapes
+- [x] Add explicit `ToolOutput` variants
+- [x] Add `ToolOutput` compatibility accessors on old `output`/`isError` tool
+  result shapes
+- [x] Normalize tool-result internals to store only `ToolOutput`
+- [x] Migrate OpenAI file prompt encoding to provider references where
   applicable
-- [ ] Migrate Anthropic file prompt encoding to provider references where
+- [x] Migrate Anthropic file prompt encoding to provider references where
   applicable
-- [ ] Migrate Google file prompt encoding to the new file data shape
-- [ ] Add migration recipes for old file and tool-result shapes
+- [x] Migrate Google file prompt encoding to the new file data shape
+- [x] Add migration recipes for old file and tool-result shapes
+- [x] Add JSON serialization coverage for new file and tool-output unions
+- [ ] Replace nullable `uri`/`bytes` prompt file storage with required
+  `FileData` in the breaking API line
 
 ## Provider Package Migration
 
@@ -88,4 +95,6 @@
 - [x] Run focused provider/core tests after provider-spec migration slices
 - [x] Update publish dry-run tooling for the new provider package and root
   staging validation
+- [x] Run AI runtime package analysis and tests
+- [x] Run compatibility core analysis and tests after AI runtime extraction
 - [ ] Prepare breaking changelog and migration matrix

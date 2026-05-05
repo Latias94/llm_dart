@@ -36,7 +36,7 @@ void main() {
             delta: '{"city":"paris"}',
           ),
           const ToolInputEndEvent(toolCallId: 'tool_1'),
-          const ToolResultEvent(
+          ToolResultEvent(
             toolResult: ToolResultContent(
               toolCallId: 'tool_1',
               toolName: 'lookup',
