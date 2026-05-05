@@ -41,6 +41,16 @@ dev_dependencies:
         content: '''
 name: llm_dart_core
 dependencies:
+  llm_dart_ai: ^0.11.0-alpha.1
+  llm_dart_provider: ^0.11.0-alpha.1
+''',
+      );
+      await _writePackagePubspec(
+        tempDir,
+        packageDirectory: 'packages/llm_dart_ai',
+        content: '''
+name: llm_dart_ai
+dependencies:
   llm_dart_provider: ^0.11.0-alpha.1
 ''',
       );
@@ -77,6 +87,7 @@ dependencies:
 
       expect(result.writes.map((write) => write.packageName), [
         'llm_dart',
+        'llm_dart_ai',
         'llm_dart_chat',
         'llm_dart_core',
         'llm_dart_test',
@@ -97,7 +108,19 @@ dependencies:
         rootOverrides,
         contains('path: packages/llm_dart_provider'),
       );
+      expect(
+        rootOverrides,
+        contains('path: packages/llm_dart_ai'),
+      );
       expect(rootOverrides, isNot(contains('external_dep')));
+
+      final aiOverrides = await File.fromUri(
+        tempDir.uri.resolve('packages/llm_dart_ai/pubspec_overrides.yaml'),
+      ).readAsString();
+      expect(
+        aiOverrides,
+        contains('path: ../llm_dart_provider'),
+      );
 
       final coreOverrides = await File.fromUri(
         tempDir.uri.resolve('packages/llm_dart_core/pubspec_overrides.yaml'),
@@ -105,6 +128,10 @@ dependencies:
       expect(
         coreOverrides,
         contains('path: ../llm_dart_provider'),
+      );
+      expect(
+        coreOverrides,
+        contains('path: ../llm_dart_ai'),
       );
 
       final chatOverrides = await File.fromUri(
@@ -117,6 +144,10 @@ dependencies:
       expect(
         chatOverrides,
         contains('path: ../llm_dart_provider'),
+      );
+      expect(
+        chatOverrides,
+        contains('path: ../llm_dart_ai'),
       );
     });
 

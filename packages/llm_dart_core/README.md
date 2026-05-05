@@ -1,21 +1,20 @@
 # llm_dart_core
 
-Shared model contracts, output/running primitives, stream events, UI message
-models, and serialization codecs for `llm_dart`.
+Compatibility-focused core contracts, stream events, UI message models, and
+serialization codecs for `llm_dart`.
 
-This package is the shared foundation layer for the modern workspace.
+This package is the shared compatibility layer for the modern workspace.
+Provider-facing contracts now live in `llm_dart_provider`, and app-facing
+runtime helpers now live in `llm_dart_ai`. `llm_dart_core` keeps the historical
+entrypoints as compatibility re-exports while still owning UI projection and
+serialization.
 
 ## What This Package Owns
 
-`llm_dart_core` owns five related shared areas:
+`llm_dart_core` owns three related shared areas:
 
-- common contracts such as warnings, errors, usage, provider metadata/options,
-  request cancellation, and JSON schema
-- prompt, content, and tool definitions
-- model specifications and shared capability helpers such as `LanguageModel`,
-  `EmbeddingModel`, `generateText(...)`, `embed(...)`, and `generateImage(...)`
-- shared multi-step runners such as `GenerateTextRunner` and
-  `StreamTextRunner`
+- compatibility re-exports for provider contracts from `llm_dart_provider`
+- compatibility re-exports for AI runtime helpers from `llm_dart_ai`
 - shared stream/UI projection and serialization types such as
   `TextStreamEvent`, `ChatUiMessage`, `ChatUiStreamChunk`, `ChatMessageMapper`,
   and the JSON codecs for prompt/UI/event transport
@@ -29,27 +28,27 @@ This package does not own:
 - Flutter widget/controller adapters
 - provider-specific request codecs, custom parts, or provider-native feature
   policy
+- new provider-facing model contracts
+- new app-facing generation helpers, runners, or structured output primitives
 
 Use the higher packages for those responsibilities:
 
 - `llm_dart_transport`
 - `llm_dart_chat`
 - `llm_dart_flutter`
+- `llm_dart_provider`
+- `llm_dart_ai`
 - provider packages such as `llm_dart_openai`, `llm_dart_google`, and
   `llm_dart_anthropic`
 
 ## Internal Ownership Map
 
-The package is intentionally broader than a pure specification package, but it
-should be read as these internal groups:
+The package should be read as these groups:
 
-- **Foundation contracts** - warnings, errors, usage, metadata, options,
-  cancellation, JSON schema
-- **Model and capability layer** - model interfaces plus one-shot shared
-  helpers such as `generateText(...)`, `embed(...)`, `generateSpeech(...)`,
-  and `transcribe(...)`
-- **Runner layer** - multi-step orchestration through `GenerateTextRunner` and
-  `StreamTextRunner`
+- **Provider compatibility** - old core paths re-export provider contracts
+  owned by `llm_dart_provider`
+- **Runtime compatibility** - old core paths re-export generation helpers,
+  runners, and structured output primitives owned by `llm_dart_ai`
 - **Stream/UI layer** - `TextStreamEvent`, `ChatUiMessage`,
   `ChatUiStreamChunk`, and `ChatMessageMapper`
 - **Serialization layer** - prompt/UI/event codecs and protocol markers
@@ -81,12 +80,14 @@ splitting the package.
 
 Use `llm_dart_core` directly when you are building:
 
-- provider implementations
-- framework-neutral generation utilities
-- shared output/structured-output helpers
 - server or CLI code that wants prompt/result/stream contracts without a chat
   runtime
 - transport or protocol helpers that need the shared JSON/event codecs
+- compatibility code that still imports historical core entrypoints
+
+For new provider implementations, prefer `llm_dart_provider`.
+
+For new framework-neutral generation utilities, prefer `llm_dart_ai`.
 
 If you need chat/session orchestration, prefer `llm_dart_chat`.
 
@@ -94,11 +95,12 @@ If you need Flutter state/controller adapters, prefer `llm_dart_flutter`.
 
 ## Design Rule
 
-`llm_dart_core` is still intentionally one package for now.
+`llm_dart_core` is now intentionally a compatibility package plus UI and
+serialization owner.
 
-It should not be split further unless real package pressure appears, such as:
+New implementation ownership should move to the focused packages:
 
-- external provider ecosystems needing a narrower public spec package
-- repeated coupling between UI/serialization and runner/capability changes
-- a proven need for shared provider-implementation utilities outside the whole
-  core barrel
+- provider-facing contracts -> `llm_dart_provider`
+- framework-neutral runtime helpers -> `llm_dart_ai`
+- chat/session orchestration -> `llm_dart_chat`
+- Flutter adapters -> `llm_dart_flutter`

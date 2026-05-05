@@ -1,5 +1,5 @@
-name: llm_dart_core
-description: Core model specifications and shared data structures for llm_dart.
+name: llm_dart_ai
+description: Framework-neutral AI runtime helpers, text runners, and structured output utilities for llm_dart.
 version: 0.11.0-alpha.1
 license: MIT
 homepage: https://github.com/Latias94/llm_dart
@@ -10,7 +10,6 @@ environment:
   sdk: '>=3.5.0 <4.0.0'
 
 dependencies:
-  llm_dart_ai: ^0.11.0-alpha.1
   llm_dart_provider: ^0.11.0-alpha.1
 
 dev_dependencies:

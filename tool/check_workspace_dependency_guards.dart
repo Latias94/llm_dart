@@ -7,6 +7,7 @@ final RegExp _rootPackageImportPattern = RegExp(
 const Map<String, Set<String>> _allowedRuntimeDependenciesByPackage = {
   'llm_dart': {
     'llm_dart_anthropic',
+    'llm_dart_ai',
     'llm_dart_chat',
     'llm_dart_community',
     'llm_dart_core',
@@ -18,6 +19,9 @@ const Map<String, Set<String>> _allowedRuntimeDependenciesByPackage = {
     'llm_dart_core',
     'llm_dart_transport',
   },
+  'llm_dart_ai': {
+    'llm_dart_provider',
+  },
   'llm_dart_chat': {
     'llm_dart_core',
     'llm_dart_transport',
@@ -27,6 +31,7 @@ const Map<String, Set<String>> _allowedRuntimeDependenciesByPackage = {
     'llm_dart_transport',
   },
   'llm_dart_core': {
+    'llm_dart_ai',
     'llm_dart_provider',
   },
   'llm_dart_flutter': {

@@ -103,6 +103,8 @@ name: llm_dart
 dependencies:
   llm_dart_core:
     path: packages/llm_dart_core
+  llm_dart_ai:
+    path: packages/llm_dart_ai
   llm_dart_openai:
     path: packages/llm_dart_openai
   llm_dart_transport:
@@ -114,6 +116,28 @@ dependencies:
     'packages/llm_dart_core/pubspec.yaml',
     '''
 name: llm_dart_core
+dependencies:
+  llm_dart_ai:
+    path: ../llm_dart_ai
+  llm_dart_provider:
+    path: ../llm_dart_provider
+''',
+  );
+  await _writeFile(
+    repoRoot,
+    'packages/llm_dart_ai/pubspec.yaml',
+    '''
+name: llm_dart_ai
+dependencies:
+  llm_dart_provider:
+    path: ../llm_dart_provider
+''',
+  );
+  await _writeFile(
+    repoRoot,
+    'packages/llm_dart_provider/pubspec.yaml',
+    '''
+name: llm_dart_provider
 ''',
   );
   await _writeFile(

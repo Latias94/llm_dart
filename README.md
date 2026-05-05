@@ -70,8 +70,15 @@ or reasoning output as potentially `inferred` rather than as hard guarantees.
 
 - `llm_dart`
   - modern default root facade over the stable migrated model API
+- `llm_dart_provider`
+  - provider-facing prompt, content, tool, model, response, and stream
+    contracts
+- `llm_dart_ai`
+  - framework-neutral generation helpers, runners, result accumulation, and
+    structured output utilities
 - `llm_dart_core`
-  - prompt, result, stream, UI message models, and the shared `ChatMessageMapper`
+  - compatibility re-exports plus UI message models, serialization codecs, and
+    the shared `ChatMessageMapper`
 - `llm_dart_transport`
   - HTTP, SSE, and shared logging primitives
 - `llm_dart_chat`
@@ -89,9 +96,9 @@ or reasoning output as potentially `inferred` rather than as hard guarantees.
 
 For the `0.11.0-alpha.x` preview line, the focused workspace packages are also
 being prepared as publishable alpha packages. The root `llm_dart` facade
-remains the default entrypoint, while `llm_dart_chat`, `llm_dart_community`,
-and `llm_dart_flutter` are available for narrower adoption when you want the
-split package boundaries directly.
+remains the default entrypoint, while `llm_dart_provider`, `llm_dart_ai`,
+`llm_dart_chat`, `llm_dart_community`, and `llm_dart_flutter` are available for
+narrower adoption when you want the split package boundaries directly.
 
 ## Installation
 

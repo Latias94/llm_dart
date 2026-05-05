@@ -1,5 +1,7 @@
 library;
 
+export 'package:llm_dart_ai/llm_dart_ai.dart';
+
 export 'anthropic.dart';
 export 'core.dart';
 export 'google.dart';
