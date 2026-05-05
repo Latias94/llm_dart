@@ -26,7 +26,9 @@ const Map<String, Set<String>> _allowedRuntimeDependenciesByPackage = {
     'llm_dart_core',
     'llm_dart_transport',
   },
-  'llm_dart_core': {},
+  'llm_dart_core': {
+    'llm_dart_provider',
+  },
   'llm_dart_flutter': {
     'flutter',
     'llm_dart_chat',
@@ -40,6 +42,7 @@ const Map<String, Set<String>> _allowedRuntimeDependenciesByPackage = {
     'llm_dart_core',
     'llm_dart_transport',
   },
+  'llm_dart_provider': {},
   'llm_dart_test': {
     'llm_dart_core',
     'llm_dart_transport',
@@ -47,6 +50,7 @@ const Map<String, Set<String>> _allowedRuntimeDependenciesByPackage = {
   'llm_dart_transport': {
     'dio',
     'llm_dart_core',
+    'llm_dart_provider',
     'logging',
   },
 };

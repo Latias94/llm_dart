@@ -1,5 +1,4 @@
-import '../common/call_options.dart';
-import 'speech_model.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 Future<SpeechGenerationResult> generateSpeech({
   required SpeechModel model,

@@ -1,7 +1,4 @@
-import '../common/call_options.dart';
-import '../common/provider_metadata.dart';
-import '../common/usage_stats.dart';
-import 'embedding_model.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 final class EmbedValueResult {
   final String value;

@@ -16,3 +16,9 @@
     surface, defines deprecation policy and release windows, and sequences the
     migration away from compatibility-era helpers without dropping provider
     value or breaking users by surprise.
+- [2026-05-provider-ai-runtime-split](2026-05-provider-ai-runtime-split/README.md)
+  - Active breaking-refactor workstream that splits provider specifications
+    from AI runtime orchestration, redesigns shared file/tool data boundaries,
+    and moves the root package toward a thin facade while preserving typed
+    provider options, capability profiles, provider-native helpers, and
+    OpenAI-family profiles.

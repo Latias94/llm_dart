@@ -6,7 +6,7 @@ library;
 
 export 'foundation.dart';
 
-export 'src/model/language_model.dart' show FinishReason;
+export 'src/model/finish_reason.dart' show FinishReason;
 export 'src/stream/text_stream_event.dart';
 export 'src/ui/chat_message_mapper.dart';
 export 'src/ui/chat_ui_accumulator.dart';

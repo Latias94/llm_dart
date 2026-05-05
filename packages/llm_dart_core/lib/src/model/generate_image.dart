@@ -1,5 +1,4 @@
-import '../common/call_options.dart';
-import 'image_model.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 Future<ImageGenerationResult> generateImage({
   required ImageModel model,

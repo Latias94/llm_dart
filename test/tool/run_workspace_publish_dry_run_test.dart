@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:test/test.dart';
 
 import '../../tool/run_workspace_publish_dry_run.dart';
@@ -29,6 +31,75 @@ void main() {
         extractPublishDryRunSummary('Publishing package...'),
         isNull,
       );
+    });
+  });
+
+  group('preparePackageDryRunDirectory', () {
+    test('stages root package without workspace-only and local files',
+        () async {
+      final sourceDirectory = await Directory.systemTemp.createTemp(
+        'llm_dart_publish_dry_run_test_source_',
+      );
+      Directory? stagedDirectory;
+
+      try {
+        await File.fromUri(sourceDirectory.uri.resolve('pubspec.yaml'))
+            .writeAsString('name: llm_dart\n');
+        await File.fromUri(sourceDirectory.uri.resolve('README.md'))
+            .writeAsString('# llm_dart\n');
+        await Directory.fromUri(sourceDirectory.uri.resolve('lib/'))
+            .create(recursive: true);
+        await File.fromUri(sourceDirectory.uri.resolve('lib/llm_dart.dart'))
+            .writeAsString('library;\n');
+
+        await Directory.fromUri(sourceDirectory.uri.resolve('.git/'))
+            .create(recursive: true);
+        await File.fromUri(sourceDirectory.uri.resolve('.git/index'))
+            .writeAsString('local git data');
+        await Directory.fromUri(sourceDirectory.uri.resolve('packages/local/'))
+            .create(recursive: true);
+        await File.fromUri(sourceDirectory.uri.resolve('packages/local/file'))
+            .writeAsString('workspace package');
+        await File.fromUri(sourceDirectory.uri.resolve('darthelp.err'))
+            .writeAsString('local error output');
+
+        stagedDirectory = await preparePackageDryRunDirectory(
+          packageName: 'llm_dart',
+          packageDirectory: sourceDirectory,
+        );
+
+        expect(
+          File.fromUri(stagedDirectory.uri.resolve('pubspec.yaml'))
+              .existsSync(),
+          isTrue,
+        );
+        expect(
+          File.fromUri(stagedDirectory.uri.resolve('lib/llm_dart.dart'))
+              .existsSync(),
+          isTrue,
+        );
+        expect(
+          Directory.fromUri(stagedDirectory.uri.resolve('.git/')).existsSync(),
+          isFalse,
+        );
+        expect(
+          Directory.fromUri(stagedDirectory.uri.resolve('packages/'))
+              .existsSync(),
+          isFalse,
+        );
+        expect(
+          File.fromUri(stagedDirectory.uri.resolve('darthelp.err'))
+              .existsSync(),
+          isFalse,
+        );
+      } finally {
+        if (stagedDirectory != null && stagedDirectory.existsSync()) {
+          await stagedDirectory.delete(recursive: true);
+        }
+        if (sourceDirectory.existsSync()) {
+          await sourceDirectory.delete(recursive: true);
+        }
+      }
     });
   });
 }

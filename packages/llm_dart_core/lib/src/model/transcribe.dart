@@ -1,5 +1,4 @@
-import '../common/call_options.dart';
-import 'transcription_model.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 Future<TranscriptionResult> transcribe({
   required TranscriptionModel model,

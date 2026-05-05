@@ -42,6 +42,7 @@ const List<String> publishableWorkspacePackages = [
   'llm_dart_google',
   'llm_dart_anthropic',
   'llm_dart_community',
+  'llm_dart_provider',
   'llm_dart_flutter',
   'llm_dart',
 ];
@@ -57,10 +58,10 @@ Future<WorkspaceBootstrapResult> generateWorkspacePubspecOverrides({
   final writes = <WorkspaceOverrideWrite>[];
 
   for (final package in workspacePackages) {
-    final dependencyNames = package.dependencyNames
-        .where(packagesByName.containsKey)
-        .where((dependencyName) => dependencyName != package.name)
-        .toList()
+    final dependencyNames = _collectWorkspaceDependencyClosure(
+      package: package,
+      packagesByName: packagesByName,
+    ).toList()
       ..sort();
 
     if (dependencyNames.isEmpty) {
@@ -94,6 +95,38 @@ Future<WorkspaceBootstrapResult> generateWorkspacePubspecOverrides({
   return WorkspaceBootstrapResult(
     writes: List.unmodifiable(writes),
   );
+}
+
+Set<String> _collectWorkspaceDependencyClosure({
+  required WorkspacePackageDescriptor package,
+  required Map<String, WorkspacePackageDescriptor> packagesByName,
+}) {
+  final dependencyNames = <String>{};
+  final pending = package.dependencyNames
+      .where(packagesByName.containsKey)
+      .where((dependencyName) => dependencyName != package.name)
+      .toList();
+
+  while (pending.isNotEmpty) {
+    final dependencyName = pending.removeLast();
+    if (!dependencyNames.add(dependencyName)) {
+      continue;
+    }
+
+    final dependency = packagesByName[dependencyName];
+    if (dependency == null) {
+      continue;
+    }
+
+    pending.addAll(
+      dependency.dependencyNames
+          .where(packagesByName.containsKey)
+          .where((nestedName) => nestedName != package.name)
+          .where((nestedName) => !dependencyNames.contains(nestedName)),
+    );
+  }
+
+  return dependencyNames;
 }
 
 Future<List<WorkspacePackageDescriptor>> _discoverWorkspacePackages(

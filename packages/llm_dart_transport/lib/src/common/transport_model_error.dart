@@ -1,4 +1,4 @@
-import 'package:llm_dart_core/foundation.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'transport_exception.dart';
 
@@ -54,7 +54,7 @@ ModelError transportErrorToModelError(Object error) {
         },
         originalType: error.runtimeType.toString(),
       ),
-    TransportCancelledException() => ModelError(
+    ProviderCancelledException() => ModelError(
         kind: ModelErrorKind.transport,
         message: error.message,
         code: 'transport-cancelled',

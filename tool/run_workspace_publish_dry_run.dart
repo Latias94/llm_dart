@@ -39,11 +39,10 @@ Future<void> main() async {
     stdout.writeln('');
     stdout.writeln('==> $packageName');
 
-    final workingDirectory = packageName == 'llm_dart'
-        ? packageDirectory
-        : await _preparePackageDryRunDirectory(
-            packageDirectory: packageDirectory,
-          );
+    final workingDirectory = await preparePackageDryRunDirectory(
+      packageName: packageName,
+      packageDirectory: packageDirectory,
+    );
     try {
       final result = await Process.run(
         'dart',
@@ -93,7 +92,7 @@ Future<void> main() async {
         );
       }
     } finally {
-      if (packageName != 'llm_dart' && workingDirectory.existsSync()) {
+      if (workingDirectory.existsSync()) {
         await workingDirectory.delete(recursive: true);
       }
     }
@@ -131,13 +130,15 @@ PublishDryRunSummary? extractPublishDryRunSummary(String text) {
   );
 }
 
-Future<Directory> _preparePackageDryRunDirectory({
+Future<Directory> preparePackageDryRunDirectory({
+  required String packageName,
   required Directory packageDirectory,
 }) async {
   final tempDirectory = await Directory.systemTemp.createTemp(
     'llm_dart_publish_dry_run_',
   );
   await _copyDirectoryContents(
+    isRootPackage: packageName == 'llm_dart',
     source: packageDirectory,
     destination: tempDirectory,
   );
@@ -162,6 +163,7 @@ Future<Directory> _preparePackageDryRunDirectory({
 }
 
 Future<void> _copyDirectoryContents({
+  required bool isRootPackage,
   required Directory source,
   required Directory destination,
 }) async {
@@ -173,7 +175,11 @@ Future<void> _copyDirectoryContents({
     var relativePath =
         normalizedEntityPath.substring(normalizedSourcePath.length);
     relativePath = relativePath.replaceFirst(RegExp(r'^/+'), '');
-    if (relativePath.isEmpty || _shouldSkipCopiedPath(relativePath)) {
+    if (relativePath.isEmpty ||
+        _shouldSkipCopiedPath(
+          relativePath,
+          isRootPackage: isRootPackage,
+        )) {
       continue;
     }
 
@@ -192,14 +198,48 @@ Future<void> _copyDirectoryContents({
   }
 }
 
-bool _shouldSkipCopiedPath(String relativePath) {
+bool _shouldSkipCopiedPath(
+  String relativePath, {
+  required bool isRootPackage,
+}) {
   final normalizedPath = relativePath.replaceAll('\\', '/');
-  return normalizedPath == 'pubspec_overrides.yaml' ||
-      normalizedPath == 'pubspec.lock' ||
-      normalizedPath == '.dart_tool' ||
-      normalizedPath.startsWith('.dart_tool/') ||
-      normalizedPath == 'build' ||
-      normalizedPath.startsWith('build/');
+  final firstSegment = normalizedPath.split('/').first;
+  if (firstSegment == '.git' ||
+      firstSegment == '.dart_tool' ||
+      firstSegment == 'build' ||
+      normalizedPath == 'pubspec_overrides.yaml' ||
+      normalizedPath == 'pubspec.lock') {
+    return true;
+  }
+
+  if (!isRootPackage) {
+    return false;
+  }
+
+  return !_isRootPackagePublishPath(normalizedPath);
+}
+
+bool _isRootPackagePublishPath(String normalizedPath) {
+  const rootPublishFiles = {
+    '.gitignore',
+    '.pubignore',
+    'analysis_options.yaml',
+    'CHANGELOG.md',
+    'LICENSE',
+    'README.md',
+    'pubspec.yaml',
+  };
+  const rootPublishDirectories = {
+    'example',
+    'lib',
+    'test',
+  };
+
+  if (rootPublishFiles.contains(normalizedPath)) {
+    return true;
+  }
+
+  return rootPublishDirectories.contains(normalizedPath.split('/').first);
 }
 
 Future<String> _rewriteOverridesWithAbsolutePaths({

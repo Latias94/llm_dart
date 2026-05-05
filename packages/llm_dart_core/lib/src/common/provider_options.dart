@@ -1,7 +1,2 @@
-abstract interface class ProviderModelOptions {
-  const ProviderModelOptions();
-}
-
-abstract interface class ProviderInvocationOptions {
-  const ProviderInvocationOptions();
-}
+export 'package:llm_dart_provider/llm_dart_provider.dart'
+    show ProviderInvocationOptions, ProviderModelOptions;

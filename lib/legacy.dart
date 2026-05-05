@@ -28,8 +28,6 @@ export 'core/web_search.dart';
 export 'package:llm_dart_transport/llm_dart_transport.dart'
     show
         StreamingTransportResponse,
-        TransportCancellation,
-        TransportCancelledException,
         TransportClient,
         TransportException,
         TransportHttpException,

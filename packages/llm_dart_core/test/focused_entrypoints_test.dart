@@ -2,6 +2,7 @@ import 'package:llm_dart_core/foundation.dart' as foundation;
 import 'package:llm_dart_core/model.dart' as model;
 import 'package:llm_dart_core/serialization.dart' as serialization;
 import 'package:llm_dart_core/ui.dart' as ui;
+import 'package:llm_dart_provider/llm_dart_provider.dart' as provider;
 import 'package:test/test.dart';
 
 void main() {
@@ -15,10 +16,21 @@ void main() {
         name: 'lookup',
         inputSchema: foundation.ToolJsonSchema.object(),
       );
+      final cancellation = foundation.TransportCancellation();
+      final callOptions = foundation.CallOptions(
+        cancellation: cancellation,
+      );
 
       expect(metadata['test'], {'enabled': true});
       expect(prompt.role, foundation.PromptRole.user);
       expect(tool.name, 'lookup');
+      expect(callOptions.cancellation, same(cancellation));
+      expect(
+        foundation.TransportCancellation.isCancel(
+          const foundation.TransportCancelledException('stop'),
+        ),
+        isTrue,
+      );
     });
 
     test('model exposes self-contained model and runner contracts', () async {
@@ -32,6 +44,37 @@ void main() {
 
       expect(result.text, 'echo: Hello');
       expect(result.finishReason, model.FinishReason.stop);
+
+      final request = model.GenerateTextRequest(
+        prompt: [
+          model.UserPromptMessage.text('Hello'),
+        ],
+      );
+      expect(request, isA<provider.GenerateTextRequest>());
+      expect(
+        model.EmbedRequest(values: const ['Hello']),
+        isA<provider.EmbedRequest>(),
+      );
+      expect(
+        const model.ImageGenerationRequest(prompt: 'Draw this.'),
+        isA<provider.ImageGenerationRequest>(),
+      );
+      expect(
+        const model.SpeechGenerationRequest(text: 'Speak this.'),
+        isA<provider.SpeechGenerationRequest>(),
+      );
+      expect(
+        const model.TranscriptionRequest(audioBytes: [1, 2, 3]),
+        isA<provider.TranscriptionRequest>(),
+      );
+      expect(
+        model.ModelCapabilityProfile(
+          providerId: 'test',
+          modelId: 'model',
+          kind: model.ModelCapabilityKind.language,
+        ),
+        isA<provider.ModelCapabilityProfile>(),
+      );
     });
 
     test('ui exposes message projection contracts', () {
