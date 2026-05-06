@@ -37,7 +37,7 @@ const Map<String, Set<String>> _allowedRuntimeDependenciesByPackage = {
   'llm_dart_flutter': {
     'flutter',
     'llm_dart_chat',
-    'llm_dart_core',
+    'llm_dart_provider',
   },
   'llm_dart_google': {
     'llm_dart_provider',

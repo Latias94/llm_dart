@@ -142,6 +142,20 @@ name: llm_dart_provider
   );
   await _writeFile(
     repoRoot,
+    'packages/llm_dart_flutter/pubspec.yaml',
+    '''
+name: llm_dart_flutter
+dependencies:
+  flutter:
+    sdk: flutter
+  llm_dart_chat:
+    path: ../llm_dart_chat
+  llm_dart_provider:
+    path: ../llm_dart_provider
+''',
+  );
+  await _writeFile(
+    repoRoot,
     'packages/llm_dart_transport/pubspec.yaml',
     '''
 name: llm_dart_transport

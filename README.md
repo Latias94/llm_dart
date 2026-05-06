@@ -332,7 +332,7 @@ Example file:
 
 ## Tool Calling
 
-Tool definitions live in `llm_dart_core`, and providers map them into provider-owned request codecs.
+Tool definitions live in `llm_dart_provider`, and `llm_dart_core` re-exports them while providers map them into provider-owned request codecs.
 
 ```dart
 import 'package:llm_dart/llm_dart.dart' as llm;

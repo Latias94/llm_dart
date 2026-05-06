@@ -1,4 +1,4 @@
-import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:llm_dart_flutter/llm_dart_flutter.dart';
 
 const String demoProviderToolCallId = 'tool-browser-1';

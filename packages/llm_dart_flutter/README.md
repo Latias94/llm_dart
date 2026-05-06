@@ -42,7 +42,7 @@ The reusable runtime itself lives in `llm_dart_chat` and owns:
 - `DefaultChatSession`
 - snapshot and session persistence codecs
 
-The shared `ChatMessageMapper` now lives in `llm_dart_core` and is re-exported
+The shared `ChatMessageMapper` now lives in `llm_dart_provider` and is re-exported
 through both `llm_dart_chat` and `llm_dart_flutter`.
 
 What stays outside both packages:
@@ -57,8 +57,8 @@ What stays outside both packages:
 The recommended architecture is:
 
 1. `llm_dart` selects and configures a provider model.
-2. `llm_dart_core` defines prompt, stream, result, UI message semantics, and
-   the shared `ChatMessageMapper`.
+2. `llm_dart_provider` defines prompt, stream, result, UI message semantics,
+   and the shared `ChatMessageMapper`.
 3. `llm_dart_chat` owns provider-agnostic session state, transport adaptation,
    persistence boundaries, and chat runtime orchestration.
 4. `llm_dart_flutter` adds widget-friendly control surfaces such as
@@ -412,7 +412,7 @@ Use capability profiles to gate shared controls such as attachments,
 structured-output toggles, reasoning inspectors, and source panels.
 
 ```dart
-import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart';
 
 final profile = describeOpenAIChatModel('gpt-5.4');
@@ -439,7 +439,6 @@ vision/reasoning hints may be `inferred` from the local model family.
 
 ```dart
 import 'package:llm_dart_community/llm_dart_community.dart';
-import 'package:llm_dart_core/llm_dart_core.dart';
 
 final profile = describeOllamaChatModel('llama3.2-vision');
 final imageInput = profile.sharedFeature(
@@ -529,7 +528,7 @@ By default:
   into a generic error state
 
 This is a Flutter/session convenience for local tool execution. It is not a
-shared schema validation layer in `llm_dart_core`.
+shared schema validation layer in `llm_dart_provider`.
 
 Use `onToolCall` directly when:
 
@@ -544,7 +543,7 @@ Use `onToolCall` directly when:
   custom parts.
 - Keep the reusable chat runtime in `llm_dart_chat`.
 - Keep storage application-owned.
-- Keep Flutter dependencies out of `llm_dart_core`.
+- Keep Flutter dependencies out of `llm_dart_provider`.
 - Keep Flutter-only adapters in `llm_dart_flutter`.
 - Keep this package framework-neutral beyond Flutter `foundation`.
 

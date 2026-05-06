@@ -24,7 +24,7 @@ Flutter-only controller convenience stays in
 
 It depends only on:
 
-- `llm_dart_core`
+- `llm_dart_provider`
 - `llm_dart_transport`
 
 That makes it suitable for:
@@ -148,7 +148,7 @@ adapter wants stable cross-provider summaries such as:
 - `warnings`
 - `errors`
 
-`ChatMessageMapper` now lives in `llm_dart_core` as part of the shared UI
+`ChatMessageMapper` now lives in `llm_dart_provider` as part of the shared UI
 model layer and is re-exported here for chat-runtime users that prefer to stay
 on a single package import path.
 
