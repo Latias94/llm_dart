@@ -50,6 +50,11 @@ void main() {
           .apiKey('test-key')
           .model('grok-3')
           .build();
+      final phindProvider = await legacy.LLMBuilder()
+          .phind()
+          .apiKey('test-key')
+          .model('Phind-70B')
+          .build();
 
       expect(openaiProvider, isA<CompatOpenAIProvider>());
       expect(openaiProvider, isA<legacy.OpenAIProvider>());
@@ -65,17 +70,7 @@ void main() {
       expect(groqProvider, isA<legacy.GroqProvider>());
       expect(xaiProvider, isA<CompatXAIProvider>());
       expect(xaiProvider, isA<legacy.XAIProvider>());
-    });
-
-    test(
-        'LLMBuilder.build keeps non-migrated Phind provider on legacy implementation',
-        () async {
-      final phindProvider = await legacy.LLMBuilder()
-          .phind()
-          .apiKey('test-key')
-          .model('Phind-70B')
-          .build();
-
+      expect(phindProvider, isA<CompatPhindProvider>());
       expect(phindProvider, isA<legacy.PhindProvider>());
     });
 

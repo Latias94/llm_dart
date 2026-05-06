@@ -654,6 +654,124 @@ void main() {
       expect(serviceTierResult, isFalse);
     });
 
+    test('Phind bridge accepts only the api.phind.com text-only subset', () {
+      final result = canUsePhindChatBridge(
+        legacy.LLMConfig(
+          apiKey: 'test-key',
+          baseUrl: 'https://api.phind.com/v1/',
+          model: 'Phind-70B',
+        ).withExtension('customTransportClient', _FakeTransportClient()),
+        [
+          legacy.ChatMessage.system('You are concise.'),
+          legacy.ChatMessage.user('Explain this code.'),
+          legacy.ChatMessage.assistant('Here is the explanation.'),
+        ],
+        null,
+      );
+
+      expect(result, isTrue);
+    });
+
+    test(
+        'Phind bridge rejects legacy hosts, tools, non-text messages, and ignored legacy-only controls',
+        () {
+      final legacyHostResult = canUsePhindChatBridge(
+        legacy.LLMConfig(
+          apiKey: 'test-key',
+          baseUrl: 'https://https.extension.phind.com/agent/',
+          model: 'Phind-70B',
+        ),
+        [
+          legacy.ChatMessage.user('Hello'),
+        ],
+        null,
+      );
+
+      final toolResult = canUsePhindChatBridge(
+        legacy.LLMConfig(
+          apiKey: 'test-key',
+          baseUrl: 'https://api.phind.com/v1/',
+          model: 'Phind-70B',
+        ),
+        [
+          legacy.ChatMessage.user('Check the weather.'),
+        ],
+        [_weatherTool()],
+      );
+
+      final imageResult = canUsePhindChatBridge(
+        legacy.LLMConfig(
+          apiKey: 'test-key',
+          baseUrl: 'https://api.phind.com/v1/',
+          model: 'Phind-70B',
+        ),
+        [
+          legacy.ChatMessage.image(
+            role: legacy.ChatRole.user,
+            mime: legacy.ImageMime.png,
+            data: const [1, 2, 3],
+          ),
+        ],
+        null,
+      );
+
+      final stopSequenceResult = canUsePhindChatBridge(
+        legacy.LLMConfig(
+          apiKey: 'test-key',
+          baseUrl: 'https://api.phind.com/v1/',
+          model: 'Phind-70B',
+          stopSequences: const ['STOP'],
+        ),
+        [
+          legacy.ChatMessage.user('Hello'),
+        ],
+        null,
+      );
+
+      final userResult = canUsePhindChatBridge(
+        legacy.LLMConfig(
+          apiKey: 'test-key',
+          baseUrl: 'https://api.phind.com/v1/',
+          model: 'Phind-70B',
+          user: 'user-1',
+        ),
+        [
+          legacy.ChatMessage.user('Hello'),
+        ],
+        null,
+      );
+
+      final structuredOutputResult = canUsePhindChatBridge(
+        legacy.LLMConfig(
+          apiKey: 'test-key',
+          baseUrl: 'https://api.phind.com/v1/',
+          model: 'Phind-70B',
+        ).withExtension(
+          'jsonSchema',
+          const legacy.StructuredOutputFormat(
+            name: 'answer',
+            schema: {
+              'type': 'object',
+              'properties': {
+                'value': {'type': 'string'},
+              },
+            },
+          ),
+        ),
+        [
+          legacy.ChatMessage.user('Return JSON.'),
+        ],
+        null,
+      );
+
+      expect(legacyHostResult, isFalse);
+      expect(toolResult, isFalse);
+      expect(imageResult, isFalse);
+      expect(stopSequenceResult, isFalse);
+      expect(userResult, isFalse);
+      expect(structuredOutputResult, isFalse);
+    });
+
     test('Google bridge accepts multimodal chat and mapped web-search options',
         () {
       final config = _baseConfig('gemini-2.5-flash').withExtensions({

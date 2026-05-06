@@ -16,6 +16,7 @@ ChatCapability? tryCreateCompatProvider({
     'openrouter' => buildCompatOpenRouterProvider(config),
     'groq' => buildCompatGroqProvider(config),
     'xai' => buildCompatXAIProvider(config),
+    'phind' => buildCompatPhindProvider(config),
     'google' => buildCompatGoogleProvider(config),
     'anthropic' => buildCompatAnthropicProvider(config),
     _ => null,

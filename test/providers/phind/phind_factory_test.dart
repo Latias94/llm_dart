@@ -1,10 +1,15 @@
+import 'package:llm_dart/src/compatibility/compat_providers.dart';
 import 'package:llm_dart/core/capability.dart';
 import 'package:llm_dart/core/config.dart';
 import 'package:llm_dart/core/llm_error.dart';
 import 'package:llm_dart/core/registry.dart';
+import 'package:llm_dart/models/chat_models.dart';
 import 'package:llm_dart/providers/factories/base_factory.dart';
 import 'package:llm_dart/providers/factories/phind_factory.dart';
 import 'package:llm_dart/providers/phind/phind.dart';
+import 'package:llm_dart_test/llm_dart_test.dart';
+import 'package:llm_dart_transport/dio.dart';
+import 'package:llm_dart_transport/llm_dart_transport.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -57,6 +62,7 @@ void main() {
 
         final provider = factory.create(config);
 
+        expect(provider, isA<CompatPhindProvider>());
         expect(provider, isA<PhindProvider>());
         expect(provider, isA<ChatCapability>());
       });
@@ -76,6 +82,7 @@ void main() {
 
         final provider = factory.create(config);
 
+        expect(provider, isA<CompatPhindProvider>());
         expect(provider, isA<PhindProvider>());
         expect(provider, isA<ChatCapability>());
       });
@@ -176,8 +183,138 @@ void main() {
 
         final provider = factory.create(config);
 
+        expect(provider, isA<CompatPhindProvider>());
         expect(provider, isA<ChatCapability>());
         expect(provider, isA<ProviderCapabilities>());
+      });
+    });
+
+    group('Compat Bridge Routing', () {
+      test('routes api.phind.com text chat through the modern OpenAI bridge',
+          () async {
+        TransportRequest? capturedRequest;
+        final fallbackDio = Dio();
+        fallbackDio.interceptors.add(
+          InterceptorsWrapper(
+            onRequest: (options, handler) {
+              handler.reject(
+                DioException(
+                  requestOptions: options,
+                  error: StateError(
+                    'Legacy Phind fallback should not be used for api.phind.com text chat.',
+                  ),
+                ),
+              );
+            },
+          ),
+        );
+
+        final provider = factory.create(
+          LLMConfig(
+            apiKey: 'test-api-key',
+            baseUrl: 'https://api.phind.com/v1/',
+            model: 'Phind-70B',
+          ).withExtensions({
+            'customDio': fallbackDio,
+            'customTransportClient': FakeTransportClient(
+              onSend: (request) async {
+                capturedRequest = request;
+                return const TransportResponse(
+                  statusCode: 200,
+                  body: {
+                    'id': 'chatcmpl_phind_bridge_1',
+                    'model': 'Phind-70B',
+                    'created': 1710000000,
+                    'choices': [
+                      {
+                        'index': 0,
+                        'finish_reason': 'stop',
+                        'message': {
+                          'role': 'assistant',
+                          'content': 'Modern Phind bridge used.',
+                        },
+                      },
+                    ],
+                  },
+                );
+              },
+            ),
+          }),
+        );
+
+        final response = await provider.chat([
+          ChatMessage.system('You are concise.'),
+          ChatMessage.user('Hello'),
+        ]);
+
+        expect(provider, isA<CompatPhindProvider>());
+        expect(response.text, 'Modern Phind bridge used.');
+        expect(capturedRequest, isNotNull);
+        expect(capturedRequest!.uri.toString(), contains('/chat/completions'));
+
+        final requestBody = capturedRequest!.body as Map<String, Object?>;
+        expect(requestBody['model'], 'Phind-70B');
+        expect(
+          requestBody['messages'],
+          [
+            {
+              'role': 'system',
+              'content': 'You are concise.',
+            },
+            {
+              'role': 'user',
+              'content': 'Hello',
+            },
+          ],
+        );
+      });
+
+      test('keeps non-modern Phind hosts on the legacy fallback path',
+          () async {
+        RequestOptions? capturedRequest;
+        final fallbackDio = Dio();
+        fallbackDio.interceptors.add(
+          InterceptorsWrapper(
+            onRequest: (options, handler) {
+              capturedRequest = options;
+              handler.resolve(
+                Response(
+                  requestOptions: options,
+                  statusCode: 200,
+                  data:
+                      'data: {"choices":[{"delta":{"content":"Legacy fallback used."}}]}\n',
+                ),
+              );
+            },
+          ),
+        );
+
+        final provider = factory.create(
+          LLMConfig(
+            apiKey: 'test-api-key',
+            baseUrl: 'https://https.extension.phind.com/agent/',
+            model: 'Phind-70B',
+          ).withExtensions({
+            'customDio': fallbackDio,
+            'customTransportClient': FakeTransportClient(
+              onSend: (_) async => throw StateError(
+                'Modern Phind bridge transport should not be used for legacy Phind hosts.',
+              ),
+            ),
+          }),
+        );
+
+        final response = await provider.chat([
+          ChatMessage.user('Use legacy fallback.'),
+        ]);
+
+        expect(provider, isA<CompatPhindProvider>());
+        expect(response.text, 'Legacy fallback used.');
+        expect(capturedRequest, isNotNull);
+
+        final requestBody = capturedRequest!.data as Map<String, Object?>;
+        expect(requestBody['requested_model'], 'Phind-70B');
+        expect(requestBody['user_input'], 'Use legacy fallback.');
       });
     });
 
