@@ -1,4 +1,6 @@
-import 'package:llm_dart/legacy.dart';
+import 'package:llm_dart/core/config.dart';
+import 'package:llm_dart/core/llm_error.dart';
+import 'package:llm_dart/models/chat_models.dart';
 import 'package:llm_dart/providers/openai/client.dart' as openai_client;
 import 'package:llm_dart/providers/openai/config.dart' as openai_config;
 import 'package:llm_dart/providers/openai/responses.dart' as openai_responses;

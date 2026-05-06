@@ -1,5 +1,6 @@
 import 'package:test/test.dart';
-import 'package:llm_dart/legacy.dart';
+import 'package:llm_dart/builder/llm_builder.dart';
+import 'package:llm_dart/models/chat_models.dart';
 
 void main() {
   group('GPT-5 Support', () {

@@ -1,5 +1,9 @@
 import 'package:test/test.dart';
-import 'package:llm_dart/legacy.dart';
+import 'package:llm_dart/core/capability.dart';
+import 'package:llm_dart/models/assistant_models.dart';
+import 'package:llm_dart/models/file_models.dart';
+import 'package:llm_dart/models/moderation_models.dart';
+import 'package:llm_dart/providers/openai/openai.dart';
 import 'dart:typed_data';
 
 void main() {

@@ -1,5 +1,7 @@
 import 'package:test/test.dart';
-import 'package:llm_dart/legacy.dart';
+import 'package:llm_dart/models/chat_models.dart';
+import 'package:llm_dart/providers/openai/client.dart';
+import 'package:llm_dart/providers/openai/config.dart';
 import 'dart:typed_data';
 
 void main() {

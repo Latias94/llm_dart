@@ -12,8 +12,10 @@
 library;
 
 import 'package:test/test.dart';
-import 'package:llm_dart/legacy.dart';
+import 'package:llm_dart/builder/llm_builder.dart';
+import 'package:llm_dart/core/capability.dart';
 import 'package:llm_dart/models/responses_models.dart';
+import 'package:llm_dart/providers/openai/openai.dart';
 
 void main() {
   group('OpenAI Responses API Comprehensive Tests', () {
