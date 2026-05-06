@@ -21,6 +21,12 @@ const List<String> _guardedProviderTestFileSuffixes = [
 
 const Set<String> _guardedProviderTestFiles = {
   'test/compat_transport_test.dart',
+  'test/integration/dio_end_to_end_test.dart',
+  'test/integration/http_configuration_integration_test.dart',
+  'test/integration/memorial_on_dispatching_troops_streaming_test.dart',
+  'test/integration/thinking_content_extraction_test.dart',
+  'test/integration/thinking_tags_streaming_test.dart',
+  'test/integration/utf8_streaming_test.dart',
   'test/providers/factories/base_factory_test.dart',
   'test/providers/openai/builtin_tools_test.dart',
   'test/providers/xai/live_search_test.dart',

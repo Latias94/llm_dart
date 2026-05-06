@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:test/test.dart';
-import 'package:llm_dart/legacy.dart';
+import 'package:llm_dart/providers/openai/client.dart';
+import 'package:llm_dart/providers/openai/config.dart';
 
 /// Tests for streaming the complete 《出师表》(Memorial on Dispatching Troops) content
 ///

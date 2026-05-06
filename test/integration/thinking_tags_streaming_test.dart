@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 import 'package:test/test.dart';
-import 'package:llm_dart/legacy.dart';
+import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 /// Tests for thinking tags in streaming scenarios
 ///

@@ -1,5 +1,11 @@
 import 'package:test/test.dart';
-import 'package:llm_dart/legacy.dart';
+import 'package:llm_dart/builder/llm_builder.dart';
+import 'package:llm_dart/providers/anthropic/anthropic.dart';
+import 'package:llm_dart/providers/deepseek/deepseek.dart';
+import 'package:llm_dart/providers/google/google.dart';
+import 'package:llm_dart/providers/groq/groq.dart';
+import 'package:llm_dart/providers/openai/openai.dart';
+import 'package:llm_dart/providers/xai/xai.dart';
 
 void main() {
   group('HTTP Configuration Integration Tests', () {
@@ -190,12 +196,11 @@ void main() {
             .model('claude-sonnet-4-20250514')
             .build());
 
-        providers
-            .add(await LLMBuilder()
-                .openai()
-                .apiKey('test-key')
-                .model('gpt-4')
-                .build());
+        providers.add(await LLMBuilder()
+            .openai()
+            .apiKey('test-key')
+            .model('gpt-4')
+            .build());
 
         providers.add(await LLMBuilder()
             .deepseek()
