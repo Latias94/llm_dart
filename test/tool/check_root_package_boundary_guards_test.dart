@@ -114,6 +114,39 @@ export 'legacy.dart';
       );
     });
 
+    test('reports widened focused provider entrypoints', () async {
+      final repoRoot = await _createTempRootLayout();
+      addTearDown(() async {
+        if (repoRoot.existsSync()) {
+          await repoRoot.delete(recursive: true);
+        }
+      });
+
+      await _writeFile(
+        repoRoot,
+        'lib/openai.dart',
+        '''
+library;
+
+export 'package:llm_dart_openai/llm_dart_openai.dart';
+export 'providers/openai/openai.dart';
+''',
+      );
+
+      final result = await guard.evaluateRootPackageBoundaryGuards(
+        repoRoot: repoRoot,
+      );
+
+      expect(result.passed, isFalse);
+      expect(
+        result.violations,
+        contains(
+          contains(
+              'focused root entrypoint must only export its package-owned surface'),
+        ),
+      );
+    });
+
     test('reports any root import of llm_dart_flutter', () async {
       final repoRoot = await _createTempRootLayout();
       addTearDown(() async {
@@ -220,6 +253,36 @@ Future<Directory> _createTempRootLayout() async {
 library;
 
 export 'ai.dart';
+''',
+  );
+
+  await _writeFile(
+    repoRoot,
+    'lib/anthropic.dart',
+    '''
+library;
+
+export 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
+''',
+  );
+
+  await _writeFile(
+    repoRoot,
+    'lib/google.dart',
+    '''
+library;
+
+export 'package:llm_dart_google/llm_dart_google.dart';
+''',
+  );
+
+  await _writeFile(
+    repoRoot,
+    'lib/openai.dart',
+    '''
+library;
+
+export 'package:llm_dart_openai/llm_dart_openai.dart';
 ''',
   );
 

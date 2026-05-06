@@ -54,6 +54,21 @@ const List<String> _expectedDefaultRootEntrypointDirectives = [
   "export 'ai.dart';",
 ];
 
+const Map<String, List<String>> _expectedFocusedRootEntrypointDirectives = {
+  'lib/anthropic.dart': [
+    'library;',
+    "export 'package:llm_dart_anthropic/llm_dart_anthropic.dart';",
+  ],
+  'lib/google.dart': [
+    'library;',
+    "export 'package:llm_dart_google/llm_dart_google.dart';",
+  ],
+  'lib/openai.dart': [
+    'library;',
+    "export 'package:llm_dart_openai/llm_dart_openai.dart';",
+  ],
+};
+
 final class RootPackageBoundaryGuardResult {
   final List<String> violations;
 
@@ -89,6 +104,10 @@ Future<RootPackageBoundaryGuardResult> evaluateRootPackageBoundaryGuards({
     violations: violations,
   );
   await _collectDefaultRootEntrypointViolations(
+    repoRoot: resolvedRepoRoot,
+    violations: violations,
+  );
+  await _collectFocusedRootEntrypointViolations(
     repoRoot: resolvedRepoRoot,
     violations: violations,
   );
@@ -207,15 +226,7 @@ Future<void> _collectDefaultRootEntrypointViolations({
     return;
   }
 
-  final directives = (await rootEntrypoint.readAsLines())
-      .map((line) => line.trim())
-      .where(
-        (line) =>
-            line.isNotEmpty &&
-            !line.startsWith('///') &&
-            !line.startsWith('//'),
-      )
-      .toList();
+  final directives = await _readPublicDirectives(rootEntrypoint);
 
   if (_listEquals(directives, _expectedDefaultRootEntrypointDirectives)) {
     return;
@@ -226,6 +237,30 @@ Future<void> _collectDefaultRootEntrypointViolations({
     'Found directives: ${directives.join(' ')}. Expected directives: '
     '${_expectedDefaultRootEntrypointDirectives.join(' ')}.',
   );
+}
+
+Future<void> _collectFocusedRootEntrypointViolations({
+  required Directory repoRoot,
+  required List<String> violations,
+}) async {
+  for (final entry in _expectedFocusedRootEntrypointDirectives.entries) {
+    final entrypoint = File.fromUri(repoRoot.uri.resolve(entry.key));
+    if (!entrypoint.existsSync()) {
+      violations.add('${entry.key}: focused root entrypoint is missing.');
+      continue;
+    }
+
+    final directives = await _readPublicDirectives(entrypoint);
+    if (_listEquals(directives, entry.value)) {
+      continue;
+    }
+
+    violations.add(
+      '${entry.key}: focused root entrypoint must only export its '
+      'package-owned surface. Found directives: ${directives.join(' ')}. '
+      'Expected directives: ${entry.value.join(' ')}.',
+    );
+  }
 }
 
 Future<void> _collectImportViolations({
@@ -310,6 +345,18 @@ String _displayPath(Directory repoRoot, File file) {
 
 List<String> _sorted(Set<String> values) {
   return values.toList()..sort();
+}
+
+Future<List<String>> _readPublicDirectives(File file) async {
+  return (await file.readAsLines())
+      .map((line) => line.trim())
+      .where(
+        (line) =>
+            line.isNotEmpty &&
+            !line.startsWith('///') &&
+            !line.startsWith('//'),
+      )
+      .toList();
 }
 
 bool _listEquals(List<String> a, List<String> b) {
