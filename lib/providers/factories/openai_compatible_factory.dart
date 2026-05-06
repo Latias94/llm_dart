@@ -117,7 +117,7 @@ class OpenAICompatibleProviderFactory
 class OpenAICompatibleProviderRegistrar {
   /// Register all pre-configured OpenAI-compatible providers
   static void registerAll() {
-    final factories = OpenAICompatibleProviderFactory.createAllFactories();
+    final factories = _createDefaultOpenAICompatibleFactories();
 
     for (final factory in factories) {
       LLMProviderRegistry.registerOrReplace(factory);
@@ -139,4 +139,26 @@ class OpenAICompatibleProviderRegistrar {
         .map((config) => config.providerId)
         .toList();
   }
+
+  /// Provider IDs registered by the root package by default.
+  ///
+  /// Legacy `*-openai` aliases remain available through [registerProvider],
+  /// but are not part of the default registry surface because the dedicated
+  /// provider IDs now carry their provider-owned options and compat bridges.
+  static List<String> getDefaultProviders() {
+    return _createDefaultOpenAICompatibleFactories()
+        .map((factory) => factory.providerId)
+        .toList();
+  }
+}
+
+List<OpenAICompatibleProviderFactory>
+    _createDefaultOpenAICompatibleFactories() {
+  final openRouter = OpenAICompatibleProviderFactory.createFactory(
+    'openrouter',
+  );
+
+  return [
+    if (openRouter != null) openRouter,
+  ];
 }

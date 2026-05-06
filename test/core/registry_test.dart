@@ -5,6 +5,7 @@ import 'package:llm_dart/core/registry.dart';
 import 'package:llm_dart/models/chat_models.dart';
 import 'package:llm_dart/models/tool_models.dart';
 import 'package:llm_dart/src/bootstrap/root_registry_bootstrap.dart';
+import 'package:llm_dart/providers/factories/openai_compatible_factory.dart';
 import 'package:test/test.dart';
 
 // Mock ChatResponse implementation
@@ -297,6 +298,23 @@ void main() {
         expect(providers, contains('openai'));
         expect(providers, contains('anthropic'));
         expect(providers, contains('google'));
+        expect(providers, contains('openrouter'));
+        expect(providers, isNot(contains('deepseek-openai')));
+        expect(providers, isNot(contains('google-openai')));
+        expect(providers, isNot(contains('xai-openai')));
+        expect(providers, isNot(contains('groq-openai')));
+        expect(providers, isNot(contains('phind-openai')));
+      });
+
+      test('should register legacy OpenAI-compatible aliases explicitly', () {
+        final registered = OpenAICompatibleProviderRegistrar.registerProvider(
+            'deepseek-openai');
+
+        expect(registered, isTrue);
+        expect(
+          LLMProviderRegistry.getRegisteredProviders(),
+          contains('deepseek-openai'),
+        );
       });
     });
   });
