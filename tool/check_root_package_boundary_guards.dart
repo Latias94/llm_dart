@@ -54,6 +54,17 @@ const List<String> _expectedDefaultRootEntrypointDirectives = [
   "export 'ai.dart';",
 ];
 
+const List<String> _expectedModernAggregatorEntrypointDirectives = [
+  'library;',
+  "export 'package:llm_dart_ai/llm_dart_ai.dart';",
+  "export 'anthropic.dart';",
+  "export 'core.dart';",
+  "export 'google.dart';",
+  "export 'openai.dart';",
+  "export 'transport.dart';",
+  "export 'src/facade/ai.dart' show AI;",
+];
+
 const Map<String, List<String>> _expectedFocusedRootEntrypointDirectives = {
   'lib/anthropic.dart': [
     'library;',
@@ -104,6 +115,10 @@ Future<RootPackageBoundaryGuardResult> evaluateRootPackageBoundaryGuards({
     violations: violations,
   );
   await _collectDefaultRootEntrypointViolations(
+    repoRoot: resolvedRepoRoot,
+    violations: violations,
+  );
+  await _collectModernAggregatorEntrypointViolations(
     repoRoot: resolvedRepoRoot,
     violations: violations,
   );
@@ -236,6 +251,29 @@ Future<void> _collectDefaultRootEntrypointViolations({
     'lib/llm_dart.dart: default root entrypoint must only export ai.dart. '
     'Found directives: ${directives.join(' ')}. Expected directives: '
     '${_expectedDefaultRootEntrypointDirectives.join(' ')}.',
+  );
+}
+
+Future<void> _collectModernAggregatorEntrypointViolations({
+  required Directory repoRoot,
+  required List<String> violations,
+}) async {
+  final entrypoint = File.fromUri(repoRoot.uri.resolve('lib/ai.dart'));
+  if (!entrypoint.existsSync()) {
+    violations.add('lib/ai.dart: modern aggregator entrypoint is missing.');
+    return;
+  }
+
+  final directives = await _readPublicDirectives(entrypoint);
+  if (_listEquals(directives, _expectedModernAggregatorEntrypointDirectives)) {
+    return;
+  }
+
+  violations.add(
+    'lib/ai.dart: modern aggregator entrypoint must only compose stable '
+    'root entrypoints and the AI facade. Found directives: '
+    '${directives.join(' ')}. Expected directives: '
+    '${_expectedModernAggregatorEntrypointDirectives.join(' ')}.',
   );
 }
 

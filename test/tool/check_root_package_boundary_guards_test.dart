@@ -114,6 +114,38 @@ export 'legacy.dart';
       );
     });
 
+    test('reports widened modern aggregator entrypoint', () async {
+      final repoRoot = await _createTempRootLayout();
+      addTearDown(() async {
+        if (repoRoot.existsSync()) {
+          await repoRoot.delete(recursive: true);
+        }
+      });
+
+      await _writeFile(
+        repoRoot,
+        'lib/ai.dart',
+        '''
+library;
+
+export 'package:llm_dart_ai/llm_dart_ai.dart';
+export 'builder/llm_builder.dart';
+''',
+      );
+
+      final result = await guard.evaluateRootPackageBoundaryGuards(
+        repoRoot: repoRoot,
+      );
+
+      expect(result.passed, isFalse);
+      expect(
+        result.violations,
+        contains(
+          contains('modern aggregator entrypoint must only compose stable'),
+        ),
+      );
+    });
+
     test('reports widened focused provider entrypoints', () async {
       final repoRoot = await _createTempRootLayout();
       addTearDown(() async {
@@ -253,6 +285,23 @@ Future<Directory> _createTempRootLayout() async {
 library;
 
 export 'ai.dart';
+''',
+  );
+
+  await _writeFile(
+    repoRoot,
+    'lib/ai.dart',
+    '''
+library;
+
+export 'package:llm_dart_ai/llm_dart_ai.dart';
+
+export 'anthropic.dart';
+export 'core.dart';
+export 'google.dart';
+export 'openai.dart';
+export 'transport.dart';
+export 'src/facade/ai.dart' show AI;
 ''',
   );
 
