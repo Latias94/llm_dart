@@ -1,4 +1,4 @@
-import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_core/model.dart';
 
 /// Shared language-model fake for workspace tests.
 final class FakeLanguageModel implements LanguageModel {

@@ -39,10 +39,10 @@
 /// will abort all operations bound to that token.
 library;
 
-export 'package:llm_dart_core/llm_dart_core.dart'
+export 'package:llm_dart_core/foundation.dart'
     show TransportCancellation, TransportCancelledException;
 
-import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_core/foundation.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart'
     show getDioCancellationReason, isDioCancellationError;
 import 'llm_error.dart';

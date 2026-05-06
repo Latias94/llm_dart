@@ -1,4 +1,4 @@
-/// Shared foundation contracts for `llm_dart_core`.
+/// Narrow foundation contracts for `llm_dart_core`.
 ///
 /// This entrypoint exposes the low-level data structures used by providers,
 /// model calls, UI projection, and serialization without importing the higher

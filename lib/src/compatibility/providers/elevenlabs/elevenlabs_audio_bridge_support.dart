@@ -1,5 +1,5 @@
 import 'package:llm_dart_community/llm_dart_community.dart' as modern_community;
-import 'package:llm_dart_core/llm_dart_core.dart' as core;
+import 'package:llm_dart_core/model.dart' as core;
 
 import '../../../../models/audio_models.dart';
 import '../../../../providers/elevenlabs/config.dart';

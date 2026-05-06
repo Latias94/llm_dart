@@ -90,6 +90,17 @@
 - [ ] Remove root dependencies only after implementation ownership moves make
   removal truthful
 
+## `llm_dart_core` Compatibility Shrink
+
+- [x] Reduce `llm_dart_core.dart` to a pure compatibility barrel over the
+  focused entrypoints
+- [x] Move production compatibility consumers and helper-package code to
+  focused `llm_dart_core` entrypoints
+- [ ] Decide whether test-only broad imports should remain as legacy coverage
+  or be narrowed later
+- [ ] Decide whether the published `llm_dart_core` package should remain a
+  compatibility shell only after the breaking line, or eventually disappear
+
 ## Validation
 
 - [x] Run workspace dependency guards for the first provider-spec split slice
@@ -100,4 +111,6 @@
   staging validation
 - [x] Run AI runtime package analysis and tests
 - [x] Run compatibility core analysis and tests after AI runtime extraction
+- [x] Run Flutter adapter analysis and tests after toolchain recovery
+- [x] Run MCP example dependency resolution, analysis, and no-key smoke test
 - [ ] Prepare breaking changelog and migration matrix

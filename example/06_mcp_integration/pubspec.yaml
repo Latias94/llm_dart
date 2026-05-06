@@ -14,13 +14,21 @@ dev_dependencies:
   lints: ^6.0.0
 
 dependency_overrides:
+  llm_dart_ai:
+    path: ../../packages/llm_dart_ai
   llm_dart_anthropic:
     path: ../../packages/llm_dart_anthropic
+  llm_dart_chat:
+    path: ../../packages/llm_dart_chat
+  llm_dart_community:
+    path: ../../packages/llm_dart_community
   llm_dart_core:
     path: ../../packages/llm_dart_core
   llm_dart_google:
     path: ../../packages/llm_dart_google
   llm_dart_openai:
     path: ../../packages/llm_dart_openai
+  llm_dart_provider:
+    path: ../../packages/llm_dart_provider
   llm_dart_transport:
     path: ../../packages/llm_dart_transport

@@ -55,7 +55,8 @@ The package should be read as these groups:
 
 ## Focused Entrypoints
 
-The broad existing barrel remains:
+The broad compatibility barrel remains, but it now composes the focused
+entrypoints:
 
 - `package:llm_dart_core/llm_dart_core.dart`
 
@@ -74,7 +75,7 @@ For narrower imports, use:
     contracts
 
 These entrypoints are additive and non-breaking. They clarify ownership without
-splitting the package.
+splitting the package. The historical barrel stays only as a migration shim.
 
 ## When To Use This Package Directly
 

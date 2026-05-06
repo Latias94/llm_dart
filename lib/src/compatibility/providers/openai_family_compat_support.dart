@@ -1,4 +1,4 @@
-import 'package:llm_dart_core/llm_dart_core.dart' as core;
+import 'package:llm_dart_core/model.dart' as core;
 import 'package:llm_dart_openai/llm_dart_openai.dart' as modern_openai;
 
 import '../../../core/config.dart';
