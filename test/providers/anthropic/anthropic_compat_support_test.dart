@@ -1,4 +1,6 @@
-import 'package:llm_dart/legacy.dart' as legacy;
+import 'package:llm_dart/models/chat_models.dart';
+import 'package:llm_dart/models/tool_models.dart';
+import 'package:llm_dart/providers/anthropic/models.dart';
 import 'package:llm_dart/src/compatibility/providers/anthropic_compat_support.dart';
 import 'package:llm_dart_core/llm_dart_core.dart' as core;
 import 'package:test/test.dart';
@@ -10,16 +12,16 @@ void main() {
     test('buildRequestPlan promotes message tools and merges cache policy', () {
       final requestPlan = support.buildRequestPlan(
         messages: [
-          legacy.MessageBuilder.system()
+          MessageBuilder.system()
               .text('Reusable instructions')
               .tools([
-                legacy.Tool.function(
+                Tool.function(
                   name: 'weather',
                   description: 'Get weather details.',
-                  parameters: const legacy.ParametersSchema(
+                  parameters: const ParametersSchema(
                     schemaType: 'object',
                     properties: {
-                      'city': legacy.ParameterProperty(
+                      'city': ParameterProperty(
                         propertyType: 'string',
                         description: 'City name.',
                       ),
@@ -29,11 +31,10 @@ void main() {
                 ),
               ])
               .anthropicConfig(
-                (anthropic) =>
-                    anthropic.cache(ttl: legacy.AnthropicCacheTtl.oneHour),
+                (anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.oneHour),
               )
               .build(),
-          legacy.ChatMessage.user('Hello'),
+          ChatMessage.user('Hello'),
         ],
         tools: null,
         configTools: null,
@@ -50,7 +51,7 @@ void main() {
         () {
       final prompt = support.convertMessages(
         messages: [
-          legacy.ChatMessage.assistant('Trailing assistant text').withExtension(
+          ChatMessage.assistant('Trailing assistant text').withExtension(
             'anthropic',
             {
               'contentBlocks': [
@@ -65,7 +66,7 @@ void main() {
               ],
             },
           ),
-          legacy.ChatMessage.user('').withExtension(
+          ChatMessage.user('').withExtension(
             'anthropic',
             {
               'contentBlocks': [
