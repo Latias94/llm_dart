@@ -1,5 +1,6 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import 'transport_cancellation.dart';
 import 'transport_exception.dart';
 
 ModelError transportErrorToModelError(Object error) {
@@ -54,9 +55,9 @@ ModelError transportErrorToModelError(Object error) {
         },
         originalType: error.runtimeType.toString(),
       ),
-    ProviderCancelledException() => ModelError(
+    TransportCancelledException(:final reason) => ModelError(
         kind: ModelErrorKind.transport,
-        message: error.message,
+        message: reason?.toString() ?? error.message,
         code: 'transport-cancelled',
         isRetryable: false,
         details: {

@@ -31,6 +31,8 @@ The following slices are already landed on this branch:
 - `packages/llm_dart_core/lib` is now protected by a compatibility-shell guard
   that rejects new concrete implementation ownership outside approved legacy
   aliases
+- `llm_dart_transport` now keeps its public cancellation surface transport-
+  owned instead of re-exporting provider legacy aliases
 - `example/06_mcp_integration` now declares local overrides for the full
   workspace package set it needs
 
@@ -101,6 +103,7 @@ Use this as the starting point for the next explicit breaking release.
 | `packages/llm_dart_test` helper package dependency on `llm_dart_core` | `llm_dart_provider` and `llm_dart_transport` | Landed | Shared test fakes should exercise provider contracts directly. |
 | Duplicate JSON codec helper implementations in core | Provider-owned helpers only in `llm_dart_provider` | Landed | Core no longer maintains its own parallel JSON helper copies. |
 | New implementation declarations in `llm_dart_core/lib` | Owning package plus core re-export | Guarded | `tool/check_core_compatibility_shell_guard.dart` rejects concrete declarations unless they are approved compatibility aliases. |
+| Provider legacy aliases on `llm_dart_transport` public barrel | Transport-owned `TransportCancellation` surface | Guarded | `tool/check_transport_boundary_guards.dart` keeps the transport barrel on transport-owned names. |
 | `packages/llm_dart_core/test` broad imports | Keep for compatibility coverage | Deliberately retained | These tests exercise the shell itself until the shell disappears. |
 | `example/06_mcp_integration` path dependencies | Full local workspace overrides | Landed | The example must resolve all unpublished workspace siblings locally. |
 | OpenAI input file IDs in `ProviderMetadata` | `FileProviderReferenceData` | Breaking migration | Provider metadata remains for output observation/replay details, not input file identity. |

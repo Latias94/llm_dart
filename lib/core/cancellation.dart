@@ -39,16 +39,15 @@
 /// will abort all operations bound to that token.
 library;
 
-export 'package:llm_dart_provider/llm_dart_provider.dart'
-    show ProviderCancellation, ProviderCancelledException;
+export 'package:llm_dart_transport/llm_dart_transport.dart'
+    show TransportCancellation, TransportCancelledException;
 
-import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart'
-    show getDioCancellationReason, isDioCancellationError;
+    show
+        TransportCancelledException,
+        getDioCancellationReason,
+        isDioCancellationError;
 import 'llm_error.dart';
-
-typedef TransportCancellation = ProviderCancellation;
-typedef TransportCancelledException = ProviderCancelledException;
 
 /// Helper utilities for working with cancellation
 class CancellationHelper {

@@ -103,12 +103,15 @@
   compatibility shell only after the breaking line, or eventually disappear
 - [x] Add a guard that rejects new implementation ownership in
   `llm_dart_core/lib`
+- [x] Add a guard that keeps `llm_dart_transport` on transport-owned public
+  names
 
 ## Validation
 
 - [x] Run workspace dependency guards for the first provider-spec split slice
 - [x] Run root boundary guards for the first provider-spec split slice
 - [x] Run core compatibility shell guard after shrinking `llm_dart_core`
+- [x] Run transport boundary guard after shrinking cancellation ownership
 - [x] Run package analysis after provider-spec migration slices
 - [x] Run focused provider/core tests after provider-spec migration slices
 - [x] Update publish dry-run tooling for the new provider package and root

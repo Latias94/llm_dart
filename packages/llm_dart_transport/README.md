@@ -21,13 +21,13 @@ chat runtime code, or Flutter adapters:
 
 This package depends on:
 
-- `llm_dart_core`
+- `llm_dart_provider`
 - `dio`
 - `logging`
 
 That dependency direction is intentional:
 
-- shared contracts stay in `llm_dart_core`
+- shared contracts stay in `llm_dart_provider`
 - transport implementations build on those contracts
 - higher layers such as `llm_dart_chat` depend on transport, not the other way
   around

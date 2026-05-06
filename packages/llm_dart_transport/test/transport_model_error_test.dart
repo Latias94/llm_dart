@@ -4,6 +4,17 @@ import 'package:test/test.dart';
 
 void main() {
   group('transportErrorToModelError', () {
+    test('maps transport cancellation into structured transport error', () {
+      final error = transportErrorToModelError(
+        const TransportCancelledException('cancelled'),
+      );
+
+      expect(error.kind, ModelErrorKind.transport);
+      expect(error.code, 'transport-cancelled');
+      expect(error.isRetryable, isFalse);
+      expect(error.message, 'cancelled');
+    });
+
     test('maps HTTP transport exceptions into structured transport errors', () {
       final error = transportErrorToModelError(
         TransportHttpException(

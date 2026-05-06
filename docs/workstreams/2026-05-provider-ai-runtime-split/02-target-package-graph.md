@@ -160,3 +160,5 @@ When packages are introduced, guard tooling should be updated to enforce:
 - no new implementation ownership inside `llm_dart_core/lib`; the package is
   guarded as a compatibility shell with only public re-exports and approved
   legacy aliases
+- `llm_dart_transport` stays on its own transport-owned public names and does
+  not leak `ProviderCancellation` aliases from the public barrel
