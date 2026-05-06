@@ -1,7 +1,7 @@
 import '../../core/capability.dart';
 import '../../core/config.dart';
+import '../../src/compatibility/providers/openai_family_compat_deepseek.dart';
 import '../../src/provider_defaults.dart';
-import '../deepseek/deepseek.dart';
 import 'base_factory.dart';
 
 /// Factory for creating DeepSeek provider instances
@@ -26,20 +26,15 @@ class DeepSeekProviderFactory extends BaseProviderFactory<ChatCapability> {
 
   @override
   ChatCapability create(LLMConfig config) {
-    return createProviderSafely<DeepSeekConfig>(
+    return createProviderSafely<LLMConfig>(
       config,
-      () => _transformConfig(config),
-      (deepseekConfig) => DeepSeekProvider(deepseekConfig),
+      () => config,
+      buildCompatDeepSeekProvider,
     );
   }
 
   @override
   Map<String, dynamic> getProviderDefaults() {
     return ProviderDefaults.getDefaults('deepseek');
-  }
-
-  /// Transform unified config to DeepSeek-specific config
-  DeepSeekConfig _transformConfig(LLMConfig config) {
-    return DeepSeekConfig.fromLLMConfig(config);
   }
 }

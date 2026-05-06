@@ -3,6 +3,7 @@ import 'package:llm_dart/core/web_search.dart';
 import 'package:llm_dart/providers/factories/openai_compatible_factory.dart';
 import 'package:llm_dart/providers/factories/openai_factory.dart';
 import 'package:llm_dart/providers/openai/openai.dart';
+import 'package:llm_dart/src/compatibility/compat_providers.dart';
 import 'package:llm_dart/src/config/legacy_config_keys.dart';
 import 'package:llm_dart/src/config/legacy_provider_options.dart';
 import 'package:test/test.dart';
@@ -35,6 +36,7 @@ void main() {
 
       final provider = factory.create(config) as OpenAIProvider;
 
+      expect(provider, isA<CompatOpenAIProvider>());
       expect(provider.config.useResponsesAPI, isTrue);
       expect(provider.config.previousResponseId, equals('resp_123'));
       expect(provider.config.builtInTools, hasLength(1));
@@ -53,6 +55,7 @@ void main() {
 
       final provider = factory.create(config) as OpenAIProvider;
 
+      expect(provider, isA<CompatOpenAIProvider>());
       expect(provider.config.useResponsesAPI, isTrue);
       expect(provider.config.previousResponseId, equals('resp_flat'));
     });

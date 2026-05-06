@@ -1,7 +1,7 @@
 import '../../core/capability.dart';
 import '../../core/config.dart';
+import '../../src/compatibility/providers/openai_family_compat_groq.dart';
 import '../../src/provider_defaults.dart';
-import '../groq/groq.dart';
 import 'base_factory.dart';
 
 /// Factory for creating Groq provider instances
@@ -24,20 +24,15 @@ class GroqProviderFactory extends BaseProviderFactory<ChatCapability> {
 
   @override
   ChatCapability create(LLMConfig config) {
-    return createProviderSafely<GroqConfig>(
+    return createProviderSafely<LLMConfig>(
       config,
-      () => _transformConfig(config),
-      (groqConfig) => GroqProvider(groqConfig),
+      () => config,
+      buildCompatGroqProvider,
     );
   }
 
   @override
   Map<String, dynamic> getProviderDefaults() {
     return ProviderDefaults.getDefaults('groq');
-  }
-
-  /// Transform unified config to Groq-specific config
-  GroqConfig _transformConfig(LLMConfig config) {
-    return GroqConfig.fromLLMConfig(config);
   }
 }

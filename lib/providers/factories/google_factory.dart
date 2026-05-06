@@ -1,7 +1,7 @@
 import '../../core/capability.dart';
 import '../../core/config.dart';
+import '../../src/compatibility/providers/google_compat_provider.dart';
 import '../../src/provider_defaults.dart';
-import '../google/google.dart';
 import 'base_factory.dart';
 
 /// Factory for creating Google (Gemini) provider instances
@@ -28,20 +28,15 @@ class GoogleProviderFactory extends BaseProviderFactory<ChatCapability> {
 
   @override
   ChatCapability create(LLMConfig config) {
-    return createProviderSafely<GoogleConfig>(
+    return createProviderSafely<LLMConfig>(
       config,
-      () => _transformConfig(config),
-      (googleConfig) => GoogleProvider(googleConfig),
+      () => config,
+      buildCompatGoogleProvider,
     );
   }
 
   @override
   Map<String, dynamic> getProviderDefaults() {
     return ProviderDefaults.getDefaults('google');
-  }
-
-  /// Transform unified config to Google-specific config
-  GoogleConfig _transformConfig(LLMConfig config) {
-    return GoogleConfig.fromLLMConfig(config);
   }
 }

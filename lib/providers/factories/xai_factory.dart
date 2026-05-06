@@ -1,10 +1,10 @@
 import '../../core/capability.dart';
 import '../../core/config.dart';
+import '../../src/compatibility/providers/openai_family_compat_xai.dart';
 import '../../src/provider_defaults.dart';
-import '../xai/xai.dart';
 import 'base_factory.dart';
 
-/// Factory for creating XAI provider instances using native XAI interface
+/// Factory for creating XAI provider instances through the compatibility shell.
 class XAIProviderFactory extends BaseProviderFactory<ChatCapability> {
   @override
   String get providerId => 'xai';
@@ -29,20 +29,15 @@ class XAIProviderFactory extends BaseProviderFactory<ChatCapability> {
 
   @override
   ChatCapability create(LLMConfig config) {
-    return createProviderSafely<XAIConfig>(
+    return createProviderSafely<LLMConfig>(
       config,
-      () => _transformConfig(config),
-      (xaiConfig) => XAIProvider(xaiConfig),
+      () => config,
+      buildCompatXAIProvider,
     );
   }
 
   @override
   Map<String, dynamic> getProviderDefaults() {
     return ProviderDefaults.getDefaults('xai');
-  }
-
-  /// Transform unified config to XAI-specific config
-  XAIConfig _transformConfig(LLMConfig config) {
-    return XAIConfig.fromLLMConfig(config);
   }
 }

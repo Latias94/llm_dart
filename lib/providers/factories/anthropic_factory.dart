@@ -1,7 +1,7 @@
 import '../../core/capability.dart';
 import '../../core/config.dart';
+import '../../src/compatibility/providers/anthropic_compat_shell.dart';
 import '../../src/provider_defaults.dart';
-import '../anthropic/anthropic.dart';
 import 'base_factory.dart';
 
 /// Factory for creating Anthropic provider instances
@@ -27,10 +27,10 @@ class AnthropicProviderFactory extends BaseProviderFactory<ChatCapability> {
 
   @override
   ChatCapability create(LLMConfig config) {
-    return createProviderSafely<AnthropicConfig>(
+    return createProviderSafely<LLMConfig>(
       config,
-      () => AnthropicConfig.fromLLMConfig(config),
-      (anthropicConfig) => AnthropicProvider(anthropicConfig),
+      () => config,
+      buildCompatAnthropicProvider,
     );
   }
 

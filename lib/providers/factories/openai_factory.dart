@@ -1,11 +1,7 @@
 import '../../core/capability.dart';
 import '../../core/config.dart';
-import '../../core/web_search.dart';
+import '../../src/compatibility/providers/openai_family_compat_openai.dart';
 import '../../src/provider_defaults.dart';
-import '../../models/chat_models.dart';
-import '../../src/config/legacy_config_extensions.dart';
-import '../../src/config/legacy_provider_options.dart';
-import '../openai/openai.dart';
 import 'base_factory.dart';
 
 /// Factory for creating OpenAI provider instances
@@ -37,102 +33,15 @@ class OpenAIProviderFactory
 
   @override
   ChatCapability create(LLMConfig config) {
-    return createProviderSafely<OpenAIConfig>(
+    return createProviderSafely<LLMConfig>(
       config,
-      () => _transformConfig(config),
-      (openaiConfig) => OpenAIProvider(openaiConfig),
+      () => config,
+      buildCompatOpenAIProvider,
     );
   }
 
   @override
   Map<String, dynamic> getProviderDefaults() {
     return ProviderDefaults.getDefaults('openai');
-  }
-
-  /// Transform unified config to OpenAI-specific config
-  OpenAIConfig _transformConfig(LLMConfig config) {
-    // Handle web search configuration
-    String? model = config.model;
-
-    // Check for webSearchEnabled flag
-    final webSearchEnabled = config.legacyWebSearchEnabled;
-    if (webSearchEnabled == true && !_isSearchModel(model)) {
-      // Switch to search-enabled model if not already using one
-      model = _getSearchModel(model);
-    }
-
-    // Check for webSearchConfig
-    final webSearchConfig = getLegacyProviderOption<WebSearchConfig>(
-      config,
-      LegacyProviderOptionNamespaces.openai,
-      LegacyExtensionKeys.webSearchConfig,
-    );
-    if (webSearchConfig != null && !_isSearchModel(model)) {
-      model = _getSearchModel(model);
-    }
-
-    return OpenAIConfig(
-      apiKey: config.apiKey!,
-      baseUrl: config.baseUrl,
-      model: model,
-      maxTokens: config.maxTokens,
-      temperature: config.temperature,
-      systemPrompt: config.systemPrompt,
-      timeout: config.timeout,
-      topP: config.topP,
-      topK: config.topK,
-      tools: config.tools,
-      toolChoice: config.toolChoice,
-      // Common parameters
-      stopSequences: config.stopSequences,
-      user: config.user,
-      serviceTier: config.serviceTier,
-      // OpenAI-specific extensions using helper method
-      reasoningEffort:
-          ReasoningEffort.fromString(config.legacyReasoningEffortValue),
-      jsonSchema: config.legacyJsonSchema,
-      voice: config.legacyVoice,
-      embeddingEncodingFormat: config.legacyEmbeddingEncodingFormat,
-      embeddingDimensions: config.legacyEmbeddingDimensions,
-      // Responses API configuration
-      useResponsesAPI: getLegacyProviderOption<bool>(
-            config,
-            LegacyProviderOptionNamespaces.openai,
-            LegacyExtensionKeys.useResponsesApi,
-          ) ??
-          false,
-      previousResponseId: getLegacyProviderOption<String>(
-        config,
-        LegacyProviderOptionNamespaces.openai,
-        LegacyExtensionKeys.previousResponseId,
-      ),
-      builtInTools: getLegacyProviderOption<List<OpenAIBuiltInTool>>(
-        config,
-        LegacyProviderOptionNamespaces.openai,
-        LegacyExtensionKeys.builtInTools,
-      ),
-      originalConfig: config,
-    );
-  }
-
-  /// Check if the model supports web search
-  bool _isSearchModel(String? model) {
-    if (model == null) return false;
-    return model.contains('search-preview') || model.contains('search');
-  }
-
-  /// Get the search-enabled version of a model
-  String _getSearchModel(String? model) {
-    if (model == null) return 'gpt-4o-search-preview';
-
-    // Map common models to their search variants
-    if (model.startsWith('gpt-4o')) {
-      return 'gpt-4o-search-preview';
-    } else if (model.startsWith('gpt-4o-mini')) {
-      return 'gpt-4o-mini-search-preview';
-    } else {
-      // Default to gpt-4o-search-preview for other models
-      return 'gpt-4o-search-preview';
-    }
   }
 }

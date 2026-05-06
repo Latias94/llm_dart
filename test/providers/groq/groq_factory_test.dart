@@ -6,6 +6,7 @@ import 'package:llm_dart/models/tool_models.dart';
 import 'package:llm_dart/providers/factories/base_factory.dart';
 import 'package:llm_dart/providers/factories/groq_factory.dart';
 import 'package:llm_dart/providers/groq/groq.dart';
+import 'package:llm_dart/src/compatibility/compat_providers.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -59,6 +60,7 @@ void main() {
 
         final provider = factory.create(config);
 
+        expect(provider, isA<CompatGroqProvider>());
         expect(provider, isA<GroqProvider>());
         expect(provider, isA<ChatCapability>());
       });
@@ -74,6 +76,7 @@ void main() {
 
         final provider = factory.create(config);
 
+        expect(provider, isA<CompatGroqProvider>());
         expect(provider, isA<GroqProvider>());
         expect(provider, isA<ChatCapability>());
       });
@@ -95,6 +98,7 @@ void main() {
 
         final provider = factory.create(config);
 
+        expect(provider, isA<CompatGroqProvider>());
         expect(provider, isA<GroqProvider>());
         expect(provider, isA<ChatCapability>());
       });
@@ -207,6 +211,7 @@ void main() {
 
         final provider = factory.create(config);
 
+        expect(provider, isA<CompatGroqProvider>());
         expect(provider, isA<ChatCapability>());
         expect(provider, isA<ProviderCapabilities>());
       });
