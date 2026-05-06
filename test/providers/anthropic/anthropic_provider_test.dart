@@ -1,5 +1,6 @@
+import 'package:llm_dart/core/capability.dart';
+import 'package:llm_dart/providers/anthropic/anthropic.dart';
 import 'package:test/test.dart';
-import 'package:llm_dart/legacy.dart';
 
 void main() {
   group('AnthropicProvider Tests', () {
@@ -133,7 +134,7 @@ void main() {
         expect(provider.countTokens, isA<Function>());
       });
 
-      test('AnthropicChatResponse remains available on the legacy export path',
+      test('AnthropicChatResponse remains available on the provider chat path',
           () {
         final response = AnthropicChatResponse({
           'content': [

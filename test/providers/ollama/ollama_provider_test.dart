@@ -1,5 +1,6 @@
+import 'package:llm_dart/core/capability.dart';
+import 'package:llm_dart/providers/ollama/ollama.dart';
 import 'package:test/test.dart';
-import 'package:llm_dart/legacy.dart';
 
 void main() {
   group('OllamaProvider Tests', () {

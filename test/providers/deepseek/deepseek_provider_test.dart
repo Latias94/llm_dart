@@ -1,5 +1,7 @@
+import 'package:llm_dart/core/capability.dart';
+import 'package:llm_dart/core/config.dart';
+import 'package:llm_dart/providers/deepseek/deepseek.dart';
 import 'package:test/test.dart';
-import 'package:llm_dart/legacy.dart';
 
 void main() {
   group('DeepSeekProvider Tests', () {
