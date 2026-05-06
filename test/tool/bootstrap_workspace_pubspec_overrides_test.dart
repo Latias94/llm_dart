@@ -27,9 +27,10 @@ void main() {
         '''
 name: llm_dart
 dependencies:
-  llm_dart_core: ^0.11.0-alpha.1
+  llm_dart_provider: ^0.11.0-alpha.1
   external_dep: ^1.0.0
 dev_dependencies:
+  llm_dart_core: ^0.11.0-alpha.1
   llm_dart_test:
     path: packages/llm_dart_test
 ''',
@@ -76,8 +77,8 @@ dependencies:
         content: '''
 name: llm_dart_test
 dependencies:
-  llm_dart_core:
-    path: ../llm_dart_core
+  llm_dart_provider:
+    path: ../llm_dart_provider
 ''',
       );
 
