@@ -48,7 +48,12 @@ Cons:
 - root package keeps implementation weight longer
 - root dependencies shrink more slowly
 
-Recommended for the first breaking preview.
+Decision for the first breaking preview:
+
+- keep `legacy.dart` in root as the explicit compatibility bridge
+- keep new stable model/runtime/provider work out of root legacy areas
+- revisit `llm_dart_legacy` only after the modern provider/runtime packages and
+  migration docs are no longer moving quickly
 
 ### Option B - Move Legacy Into `llm_dart_legacy`
 

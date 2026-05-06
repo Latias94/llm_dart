@@ -43,16 +43,24 @@ Use this as the starting point for the next explicit breaking release.
   union. Legacy `uri`/`bytes` JSON is still accepted on decode, but new code
   should construct `FileUrlData`, `FileBytesData`, `FileTextData`, or
   `FileProviderReferenceData` explicitly.
+- OpenAI input-side file IDs now resolve through `FileProviderReferenceData`;
+  `providerMetadata.openai.fileId` is no longer accepted as an input file
+  identity hint.
 - The root `package:llm_dart/core.dart` entrypoint now re-exports the focused
   contracts instead of the old broad `llm_dart_core` barrel.
 - The MCP example package now depends on the full local workspace override set
   it actually uses, so it no longer relies on unpublished sibling packages
   resolving from pub.dev.
+- `llm_dart_provider_utils` is not part of the first public preview; helper
+  extraction stays internal until a stable cross-provider helper contract
+  exists.
 
 ### Kept
 
 - `llm_dart_core.dart` remains available as a compatibility shell during the
   breaking window.
+- `package:llm_dart/legacy.dart` remains in root as the explicit compatibility
+  bridge for older builder and broad provider shell APIs.
 - `packages/llm_dart_core/test` keeps broad imports as compatibility-shell
   coverage for now.
 
@@ -62,6 +70,8 @@ Use this as the starting point for the next explicit breaking release.
   focused entrypoint that matches the contract you need.
 - Prefer `package:llm_dart/core.dart` for modern app code that only needs the
   stable facade.
+- Replace OpenAI input file IDs previously passed through provider metadata
+  with `FileProviderReferenceData(ProviderReference.forProvider('openai', id))`.
 - Keep test-only broad imports only where the compatibility shell itself is
   under test.
 ```
@@ -74,6 +84,9 @@ Use this as the starting point for the next explicit breaking release.
 | Root compatibility consumers that still used the broad barrel | Focused `llm_dart_core` entrypoints | Landed in production code | New code should not reintroduce the broad barrel as a dependency. |
 | `packages/llm_dart_core/test` broad imports | Keep for compatibility coverage | Deliberately retained | These tests exercise the shell itself until the shell disappears. |
 | `example/06_mcp_integration` path dependencies | Full local workspace overrides | Landed | The example must resolve all unpublished workspace siblings locally. |
+| OpenAI input file IDs in `ProviderMetadata` | `FileProviderReferenceData` | Breaking migration | Provider metadata remains for output observation/replay details, not input file identity. |
+| `llm_dart_provider_utils` public package | Deferred | Not in first preview | Keep provider helper extraction internal until repeated cross-provider helper needs are stable. |
+| `package:llm_dart/legacy.dart` | Keep in root for first preview | Compatibility bridge | Move to `llm_dart_legacy` only in a later release if root dependency shrink requires it. |
 
 ## Compatibility Policy
 

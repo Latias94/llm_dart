@@ -106,6 +106,16 @@ Provider codec support in the first slice:
 - prompt and generated-file JSON encodes only the structured `data` shape while
   still reading legacy `uri` and `bytes` payloads
 
+Provider-reference coverage audit:
+
+- active provider packages with hosted input file references are covered:
+  OpenAI, Anthropic, and Google/Vertex
+- `llm_dart_community` currently has no hosted input file reference surface;
+  Ollama image inputs resolve bytes or URI-backed bytes through its
+  `binaryResolver`
+- planned provider package directories without a `pubspec.yaml` or `lib/`
+  are not first-preview coverage targets
+
 ## Provider Reference
 
 Implemented shared provider-reference value:
@@ -268,6 +278,5 @@ ToolResultPromptPart(
 
 ## Remaining Breaking Work
 
-- expand provider-reference coverage beyond OpenAI, Anthropic, and Google
 - decide whether `ContentToolOutput` needs provider-specific multimodal content
   adapters before the breaking release

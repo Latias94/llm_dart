@@ -13,7 +13,7 @@
 ## Architecture Contract
 
 - [x] Decide final package names for provider spec and AI runtime
-- [ ] Decide whether `llm_dart_provider_utils` is public in the first breaking
+- [x] Decide whether `llm_dart_provider_utils` is public in the first breaking
   preview or starts as package-private helper code
 - [x] Decide whether UI contracts remain inside the provider/spec package for
   the first breaking preview or move to a dedicated UI package later
@@ -83,11 +83,11 @@
 - [x] Move `llm_dart_transport` off `llm_dart_core` runtime dependency
 - [x] Move `llm_dart_chat` off `llm_dart_core` runtime dependency
 - [x] Move `llm_dart_flutter` off `llm_dart_core` runtime dependency
-- [ ] Stop adding new implementation ownership to root package legacy areas
-- [ ] Decide whether to keep `legacy.dart` in root or move it to
+- [x] Stop adding new implementation ownership to root package legacy areas
+- [x] Decide whether to keep `legacy.dart` in root or move it to
   `llm_dart_legacy`
-- [ ] Update examples to prefer focused modern entrypoints
-- [ ] Update compatibility examples to import the explicit legacy surface
+- [x] Update examples to prefer focused modern entrypoints
+- [x] Update compatibility examples to import the explicit legacy surface
 - [ ] Remove root dependencies only after implementation ownership moves make
   removal truthful
 
@@ -99,7 +99,7 @@
   focused `llm_dart_core` entrypoints
 - [x] Keep test-only broad imports as legacy coverage for the compatibility
   barrel
-- [ ] Decide whether the published `llm_dart_core` package should remain a
+- [x] Decide whether the published `llm_dart_core` package should remain a
   compatibility shell only after the breaking line, or eventually disappear
 
 ## Validation

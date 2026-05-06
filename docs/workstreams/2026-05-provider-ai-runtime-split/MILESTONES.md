@@ -137,8 +137,9 @@ Current status:
   legacy `output` / `isError` inputs are construction-time migration shims, and
   the old `toolOutputFromLegacy` helper has been removed from the provider
   surface
-- remaining breaking work: expand provider-reference coverage beyond the first
-  provider slice
+- active provider-reference coverage is closed for the first breaking preview:
+  OpenAI, Anthropic, and Google/Vertex have hosted-reference support, while
+  current community providers do not expose a hosted input file reference path
 
 ## M5 - Provider Package Migration
 
@@ -196,6 +197,9 @@ Current status:
   `llm_dart_provider` and no longer depends on `llm_dart_core`
 - root still keeps compatibility dependencies until its implementation
   ownership and examples are migrated deliberately
+- first-preview root policy is now explicit: keep `legacy.dart` in root as the
+  compatibility bridge, keep new implementation ownership out of root legacy
+  areas, and defer `llm_dart_legacy` until a later release if needed
 
 ## M7 - Migration And Release Readiness
 

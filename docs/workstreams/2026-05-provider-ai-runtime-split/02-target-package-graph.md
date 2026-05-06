@@ -6,7 +6,7 @@ The intended direction is:
 
 ```text
 llm_dart_provider
-llm_dart_provider_utils -> llm_dart_provider
+llm_dart_provider_utils -> llm_dart_provider  (deferred past first preview)
 llm_dart_transport      -> llm_dart_provider
 llm_dart_ai             -> llm_dart_provider
 
@@ -69,6 +69,14 @@ Owns reusable provider implementation helpers:
 - request codec helpers that do not own HTTP transport
 
 It must not expose Dio, request retry, SSE transport, or Flutter concepts.
+
+First breaking preview decision:
+
+- do not publish `llm_dart_provider_utils` yet
+- keep reusable helper code package-private or provider-package-local until at
+  least two concrete provider packages need the same stable helper contract
+- keep the future package name reserved in the target graph so the extraction
+  path stays clear
 
 ### `llm_dart_ai`
 

@@ -100,8 +100,11 @@ During migration:
 
 After migration:
 
-- `llm_dart_core` should either disappear as a compatibility shell or shrink to
-  a narrow facade with no unique implementation ownership
+- `llm_dart_core` remains a compatibility shell for the first breaking preview
+- it should have no unique implementation ownership beyond compatibility
+  re-exports and legacy-path coverage tests
+- eventual removal should be a later release decision after root examples,
+  migration docs, and package dependents have moved to focused entrypoints
 
 ## Split Triggers
 
