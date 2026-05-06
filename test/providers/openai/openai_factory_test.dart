@@ -83,6 +83,7 @@ void main() {
 
       final provider = factory.create(config) as OpenAIProvider;
 
+      expect(provider, isA<CompatOpenRouterProvider>());
       expect(provider.config.model, equals('openai/gpt-4o-mini:online'));
     });
   });

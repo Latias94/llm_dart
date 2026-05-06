@@ -2,6 +2,7 @@ import '../../core/capability.dart';
 import '../../core/config.dart';
 import '../../core/registry.dart';
 import '../../core/web_search.dart';
+import '../../src/compatibility/providers/openai_family_compat_openrouter.dart';
 import '../../src/openai_compatible_configs.dart';
 import '../../models/chat_models.dart';
 import '../../src/config/legacy_config_extensions.dart';
@@ -33,6 +34,14 @@ class OpenAICompatibleProviderFactory
 
   @override
   ChatCapability create(LLMConfig config) {
+    if (_isOpenRouter()) {
+      return createProviderSafely<LLMConfig>(
+        config,
+        () => config,
+        buildCompatOpenRouterProvider,
+      );
+    }
+
     return createProviderSafely<OpenAIConfig>(
       config,
       () => _transformConfig(config),
