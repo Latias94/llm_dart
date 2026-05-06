@@ -45,6 +45,15 @@ final RegExp _chatImportPattern = RegExp(
   r'''^\s*(import|export)\s+['"]package:llm_dart_chat/[^'"]+['"]''',
 );
 
+final RegExp _legacyImportPattern = RegExp(
+  r'''^\s*(import|export)\s+['"]package:llm_dart/legacy\.dart['"]''',
+);
+
+const List<String> _expectedDefaultRootEntrypointDirectives = [
+  'library;',
+  "export 'ai.dart';",
+];
+
 final class RootPackageBoundaryGuardResult {
   final List<String> violations;
 
@@ -79,9 +88,17 @@ Future<RootPackageBoundaryGuardResult> evaluateRootPackageBoundaryGuards({
     libDir: libDir,
     violations: violations,
   );
+  await _collectDefaultRootEntrypointViolations(
+    repoRoot: resolvedRepoRoot,
+    violations: violations,
+  );
   await _collectImportViolations(
     repoRoot: resolvedRepoRoot,
     libDir: libDir,
+    violations: violations,
+  );
+  await _collectExampleImportViolations(
+    repoRoot: resolvedRepoRoot,
     violations: violations,
   );
 
@@ -179,6 +196,38 @@ Future<void> _collectLayoutViolations({
   }
 }
 
+Future<void> _collectDefaultRootEntrypointViolations({
+  required Directory repoRoot,
+  required List<String> violations,
+}) async {
+  final rootEntrypoint =
+      File.fromUri(repoRoot.uri.resolve('lib/llm_dart.dart'));
+  if (!rootEntrypoint.existsSync()) {
+    violations.add('lib/llm_dart.dart: default root entrypoint is missing.');
+    return;
+  }
+
+  final directives = (await rootEntrypoint.readAsLines())
+      .map((line) => line.trim())
+      .where(
+        (line) =>
+            line.isNotEmpty &&
+            !line.startsWith('///') &&
+            !line.startsWith('//'),
+      )
+      .toList();
+
+  if (_listEquals(directives, _expectedDefaultRootEntrypointDirectives)) {
+    return;
+  }
+
+  violations.add(
+    'lib/llm_dart.dart: default root entrypoint must only export ai.dart. '
+    'Found directives: ${directives.join(' ')}. Expected directives: '
+    '${_expectedDefaultRootEntrypointDirectives.join(' ')}.',
+  );
+}
+
 Future<void> _collectImportViolations({
   required Directory repoRoot,
   required Directory libDir,
@@ -216,6 +265,40 @@ Future<void> _collectImportViolations({
   }
 }
 
+Future<void> _collectExampleImportViolations({
+  required Directory repoRoot,
+  required List<String> violations,
+}) async {
+  final exampleDir = Directory.fromUri(repoRoot.uri.resolve('example/'));
+  if (!exampleDir.existsSync()) {
+    return;
+  }
+
+  await for (final entity in exampleDir.list(recursive: true)) {
+    if (entity is! File) {
+      continue;
+    }
+
+    final relativePath = _displayPath(repoRoot, entity);
+    if (!relativePath.endsWith('.dart')) {
+      continue;
+    }
+
+    final lines = await entity.readAsLines();
+    for (var index = 0; index < lines.length; index += 1) {
+      if (!_legacyImportPattern.hasMatch(lines[index])) {
+        continue;
+      }
+
+      violations.add(
+        '$relativePath:${index + 1}: examples must use focused stable, '
+        'builder, model, or provider-owned entrypoints instead of '
+        'package:llm_dart/legacy.dart.',
+      );
+    }
+  }
+}
+
 String _displayPath(Directory repoRoot, File file) {
   final repoPath = repoRoot.absolute.path.replaceAll('\\', '/');
   final filePath = file.absolute.path.replaceAll('\\', '/');
@@ -229,13 +312,27 @@ List<String> _sorted(Set<String> values) {
   return values.toList()..sort();
 }
 
+bool _listEquals(List<String> a, List<String> b) {
+  if (a.length != b.length) {
+    return false;
+  }
+
+  for (var index = 0; index < a.length; index += 1) {
+    if (a[index] != b[index]) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 Future<void> main() async {
   final result = await evaluateRootPackageBoundaryGuards();
 
   if (result.passed) {
     stdout.writeln(
       'root boundary guard passed: root entrypoints, lib/src layout, and '
-      'chat/flutter boundary imports match the frozen policy.',
+      'chat/flutter/example boundary imports match the frozen policy.',
     );
     return;
   }

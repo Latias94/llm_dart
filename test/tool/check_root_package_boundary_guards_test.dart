@@ -82,6 +82,38 @@ export 'package:llm_dart_chat/llm_dart_chat.dart';
       );
     });
 
+    test('reports widened default root entrypoint', () async {
+      final repoRoot = await _createTempRootLayout();
+      addTearDown(() async {
+        if (repoRoot.existsSync()) {
+          await repoRoot.delete(recursive: true);
+        }
+      });
+
+      await _writeFile(
+        repoRoot,
+        'lib/llm_dart.dart',
+        '''
+library;
+
+export 'ai.dart';
+export 'legacy.dart';
+''',
+      );
+
+      final result = await guard.evaluateRootPackageBoundaryGuards(
+        repoRoot: repoRoot,
+      );
+
+      expect(result.passed, isFalse);
+      expect(
+        result.violations,
+        contains(
+          contains('default root entrypoint must only export ai.dart'),
+        ),
+      );
+    });
+
     test('reports any root import of llm_dart_flutter', () async {
       final repoRoot = await _createTempRootLayout();
       addTearDown(() async {
@@ -108,6 +140,37 @@ export 'package:llm_dart_flutter/llm_dart_flutter.dart';
         contains(
           contains(
               'root package must not import or export package:llm_dart_flutter/...'),
+        ),
+      );
+    });
+
+    test('reports legacy imports from examples', () async {
+      final repoRoot = await _createTempRootLayout();
+      addTearDown(() async {
+        if (repoRoot.existsSync()) {
+          await repoRoot.delete(recursive: true);
+        }
+      });
+
+      await _writeFile(
+        repoRoot,
+        'example/02_core_features/legacy_builder_demo.dart',
+        '''
+import 'package:llm_dart/legacy.dart';
+
+void main() {}
+''',
+      );
+
+      final result = await guard.evaluateRootPackageBoundaryGuards(
+        repoRoot: repoRoot,
+      );
+
+      expect(result.passed, isFalse);
+      expect(
+        result.violations,
+        contains(
+          contains('examples must use focused stable'),
         ),
       );
     });
@@ -149,6 +212,16 @@ Future<Directory> _createTempRootLayout() async {
   ]) {
     await _writeFile(repoRoot, file, 'library;\n');
   }
+
+  await _writeFile(
+    repoRoot,
+    'lib/llm_dart.dart',
+    '''
+library;
+
+export 'ai.dart';
+''',
+  );
 
   await _writeFile(
     repoRoot,
