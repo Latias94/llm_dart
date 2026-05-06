@@ -6,21 +6,18 @@ The intended direction is:
 
 ```text
 llm_dart_provider
-  ^
-  |
-llm_dart_provider_utils
-  ^
-  |
-provider packages ---------> llm_dart_transport
-  ^                              ^
-  |                              |
-llm_dart_ai ---------------------+
-  ^
-  |
-llm_dart_chat -----> llm_dart_transport
-  ^
-  |
-llm_dart_flutter
+llm_dart_provider_utils -> llm_dart_provider
+llm_dart_transport      -> llm_dart_provider
+llm_dart_ai             -> llm_dart_provider
+
+provider packages       -> llm_dart_provider
+provider packages       -> llm_dart_transport
+
+llm_dart_chat           -> llm_dart_provider
+llm_dart_chat           -> llm_dart_transport
+
+llm_dart_flutter        -> llm_dart_chat
+llm_dart_flutter        -> llm_dart_provider
 
 llm_dart -> facade over provider packages, llm_dart_ai, llm_dart_chat,
             llm_dart_transport, and explicit legacy compatibility
@@ -36,8 +33,8 @@ The graph should preserve these rules:
   provider implementations
 - `llm_dart_chat` depends on shared model/UI contracts and transport, not
   concrete provider packages
-- `llm_dart_flutter` depends on chat/core-style contracts, not concrete
-  providers
+- `llm_dart_flutter` depends on `llm_dart_chat` plus shared
+  `llm_dart_provider` contracts, not `llm_dart_core` or concrete providers
 - root `llm_dart` can depend outward as a facade, but should not own new
   implementation logic
 

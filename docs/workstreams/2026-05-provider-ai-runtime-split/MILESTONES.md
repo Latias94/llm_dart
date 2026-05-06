@@ -192,8 +192,10 @@ Current status:
   longer depends on `llm_dart_core`
 - `llm_dart_chat` now depends on `llm_dart_provider` plus
   `llm_dart_transport` and no longer depends on `llm_dart_core`
-- root and Flutter still keep their compatibility dependencies until their
-  implementation ownership and examples are migrated deliberately
+- `llm_dart_flutter` now depends on `llm_dart_chat` plus
+  `llm_dart_provider` and no longer depends on `llm_dart_core`
+- root still keeps compatibility dependencies until its implementation
+  ownership and examples are migrated deliberately
 
 ## M7 - Migration And Release Readiness
 

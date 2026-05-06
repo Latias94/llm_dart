@@ -81,6 +81,7 @@
 
 - [x] Move `llm_dart_transport` off `llm_dart_core` runtime dependency
 - [x] Move `llm_dart_chat` off `llm_dart_core` runtime dependency
+- [x] Move `llm_dart_flutter` off `llm_dart_core` runtime dependency
 - [ ] Stop adding new implementation ownership to root package legacy areas
 - [ ] Decide whether to keep `legacy.dart` in root or move it to
   `llm_dart_legacy`

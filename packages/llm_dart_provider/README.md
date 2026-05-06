@@ -25,9 +25,15 @@ The current migration slices own provider-facing contracts:
 - `FinishReason`
 - response format contracts
 - text stream event contracts
+- file data and provider reference contracts
+- language, embedding, image, speech, and transcription model interfaces
+- model response metadata and capability profiles
+- shared UI message, UI stream chunk, projection, and mapping contracts
+- prompt, text-stream, and chat-UI serialization codecs
 
-Future slices should move file data, provider reference, model interface, and
-model request/result contracts here.
+Future slices should keep this package focused on stable provider-facing
+contracts and avoid moving runtime orchestration, transport, or Flutter adapter
+logic here.
 
 ## Ownership Rules
 
