@@ -1,5 +1,6 @@
+import 'package:llm_dart/core/config.dart';
+import 'package:llm_dart/providers/anthropic/config.dart';
 import 'package:test/test.dart';
-import 'package:llm_dart/legacy.dart';
 
 void main() {
   group('AnthropicConfig Tests', () {

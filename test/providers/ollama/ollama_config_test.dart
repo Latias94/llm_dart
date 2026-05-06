@@ -1,5 +1,7 @@
+import 'package:llm_dart/core/config.dart';
+import 'package:llm_dart/providers/ollama/config.dart';
+import 'package:llm_dart/src/compatibility/providers/ollama/config_adapter.dart';
 import 'package:test/test.dart';
-import 'package:llm_dart/legacy.dart';
 
 void main() {
   group('OllamaConfig Tests', () {
@@ -306,7 +308,8 @@ void main() {
         expect(ollamaConfig.raw, isFalse);
       });
 
-      test('should project legacy Dio overrides when legacy HTTP settings exist',
+      test(
+          'should project legacy Dio overrides when legacy HTTP settings exist',
           () {
         final llmConfig = LLMConfig(
           baseUrl: 'http://localhost:11434',

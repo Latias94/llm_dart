@@ -1,5 +1,7 @@
+import 'package:llm_dart/core/config.dart';
+import 'package:llm_dart/providers/elevenlabs/config.dart';
+import 'package:llm_dart/src/compatibility/providers/elevenlabs/config_adapter.dart';
 import 'package:test/test.dart';
-import 'package:llm_dart/legacy.dart';
 
 void main() {
   group('ElevenLabsConfig Tests', () {
@@ -212,7 +214,8 @@ void main() {
         expect(elevenLabsConfig.useSpeakerBoost, isTrue);
       });
 
-      test('should project legacy Dio overrides when legacy HTTP settings exist',
+      test(
+          'should project legacy Dio overrides when legacy HTTP settings exist',
           () {
         final llmConfig = LLMConfig(
           apiKey: 'test-key',
@@ -227,7 +230,8 @@ void main() {
         final elevenLabsConfig = createLegacyElevenLabsConfig(llmConfig);
 
         expect(elevenLabsConfig.dioOverrides, isNotNull);
-        expect(elevenLabsConfig.dioOverrides?.customHeaders, {'X-Test': 'value'});
+        expect(
+            elevenLabsConfig.dioOverrides?.customHeaders, {'X-Test': 'value'});
         expect(elevenLabsConfig.dioOverrides?.enableHttpLogging, isTrue);
       });
     });

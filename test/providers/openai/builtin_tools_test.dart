@@ -1,5 +1,5 @@
+import 'package:llm_dart/providers/openai/builtin_tools.dart';
 import 'package:test/test.dart';
-import 'package:llm_dart/legacy.dart';
 
 void main() {
   group('OpenAI Built-in Tools Tests', () {

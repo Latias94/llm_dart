@@ -1,5 +1,7 @@
+import 'package:llm_dart/core/config.dart';
+import 'package:llm_dart/models/tool_models.dart';
+import 'package:llm_dart/providers/phind/config.dart';
 import 'package:test/test.dart';
-import 'package:llm_dart/legacy.dart';
 
 void main() {
   group('PhindConfig Tests', () {
