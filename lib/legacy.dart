@@ -12,6 +12,8 @@ export 'src/bootstrap/root_registry_bootstrap.dart'
 export 'src/facade/legacy_builder_helpers.dart';
 export 'src/compatibility/providers/community_provider_config_adapters.dart'
     show createLegacyDioClientOverrides;
+export 'src/compatibility/providers/openai_family_compat_deepseek_config.dart'
+    show createLegacyDeepSeekConfig;
 export 'src/compatibility/providers/elevenlabs/config_adapter.dart'
     show createLegacyElevenLabsConfig;
 export 'src/compatibility/providers/ollama/config_adapter.dart'

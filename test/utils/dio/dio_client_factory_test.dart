@@ -22,6 +22,8 @@ import 'package:llm_dart/providers/elevenlabs/config.dart';
 import 'package:llm_dart/providers/elevenlabs/dio_strategy.dart';
 import 'package:llm_dart/src/compatibility/providers/elevenlabs/config_adapter.dart'
     show createLegacyElevenLabsConfig;
+import 'package:llm_dart/src/compatibility/providers/openai_family_compat_deepseek_config.dart'
+    show createLegacyDeepSeekConfig;
 import 'package:llm_dart/src/compatibility/providers/ollama/config_adapter.dart'
     show createLegacyOllamaConfig;
 import 'package:llm_dart/utils/dio_client_factory.dart';
@@ -357,11 +359,7 @@ void main() {
         },
         {
           'strategy': DeepSeekDioStrategy(),
-          'config': DeepSeekConfig(
-              apiKey: 'test-key',
-              baseUrl: 'https://api.example.com',
-              model: 'test-model',
-              originalConfig: llmConfig)
+          'config': createLegacyDeepSeekConfig(llmConfig)
         },
         {
           'strategy': OllamaDioStrategy(),
@@ -442,11 +440,7 @@ void main() {
         },
         {
           'strategy': DeepSeekDioStrategy(),
-          'config': DeepSeekConfig(
-              apiKey: 'test-key',
-              baseUrl: 'https://api.example.com',
-              model: 'test-model',
-              originalConfig: llmConfig)
+          'config': createLegacyDeepSeekConfig(llmConfig)
         },
         {
           'strategy': OllamaDioStrategy(),
@@ -526,11 +520,7 @@ void main() {
         },
         {
           'strategy': DeepSeekDioStrategy(),
-          'config': DeepSeekConfig(
-              apiKey: 'test-key',
-              baseUrl: 'https://api.example.com',
-              model: 'test-model',
-              originalConfig: llmConfig),
+          'config': createLegacyDeepSeekConfig(llmConfig),
           'expectedHeaders': {'Authorization': 'Bearer test-key'}
         },
         {

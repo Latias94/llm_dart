@@ -27,6 +27,7 @@ class DeepSeekClient {
     dio = ProviderDioClientFactory.create(
       strategy: DeepSeekDioStrategy(),
       config: config,
+      overrides: config.dioOverrides,
     );
   }
 

@@ -1,6 +1,7 @@
 import 'package:llm_dart/core/capability.dart';
 import 'package:llm_dart/core/config.dart';
 import 'package:llm_dart/providers/deepseek/deepseek.dart';
+import 'package:llm_dart/src/compatibility/providers/openai_family_compat_deepseek_config.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -172,7 +173,7 @@ void main() {
           temperature: 0.7,
         );
 
-        final deepseekConfig = DeepSeekConfig.fromLLMConfig(llmConfig);
+        final deepseekConfig = createLegacyDeepSeekConfig(llmConfig);
         final factoryProvider = DeepSeekProvider(deepseekConfig);
 
         expect(factoryProvider, isA<DeepSeekProvider>());
@@ -194,7 +195,7 @@ void main() {
           },
         );
 
-        final deepseekConfig = DeepSeekConfig.fromLLMConfig(llmConfig);
+        final deepseekConfig = createLegacyDeepSeekConfig(llmConfig);
 
         expect(deepseekConfig.logprobs, isTrue);
         expect(deepseekConfig.topLogprobs, equals(5));

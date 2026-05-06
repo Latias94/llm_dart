@@ -267,19 +267,26 @@ void main() {
         expect(config.presencePenalty, equals(0.3));
       });
 
-      test('should preserve original config reference', () {
+      test('should project legacy HTTP overrides into provider config', () {
         final llmConfig = LLMConfig(
           apiKey: 'test-key',
           baseUrl: 'https://api.deepseek.com/v1/',
           model: 'deepseek-chat',
-          extensions: {'customParam': 'customValue'},
+          extensions: {
+            'customHeaders': {'X-Test': 'value'},
+            'connectionTimeout': const Duration(seconds: 30),
+          },
         );
 
         final provider = factory.create(llmConfig) as DeepSeekProvider;
         final config = provider.config;
 
+        expect(config.dioOverrides, isNotNull);
+        expect(config.dioOverrides!.customHeaders, equals({'X-Test': 'value'}));
         expect(
-            config.getExtension<String>('customParam'), equals('customValue'));
+          config.dioOverrides!.connectionTimeout,
+          equals(const Duration(seconds: 30)),
+        );
       });
     });
 

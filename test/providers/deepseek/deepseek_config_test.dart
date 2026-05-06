@@ -1,6 +1,7 @@
 import 'package:llm_dart/core/config.dart';
 import 'package:llm_dart/models/tool_models.dart';
 import 'package:llm_dart/providers/deepseek/config.dart';
+import 'package:llm_dart/src/compatibility/providers/openai_family_compat_deepseek_config.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -149,7 +150,7 @@ void main() {
           maxTokens: 1500,
         );
 
-        final deepseekConfig = DeepSeekConfig.fromLLMConfig(llmConfig);
+        final deepseekConfig = createLegacyDeepSeekConfig(llmConfig);
 
         expect(deepseekConfig.apiKey, equals('test-key'));
         expect(deepseekConfig.model, equals('deepseek-reasoner'));
@@ -171,7 +172,7 @@ void main() {
           },
         );
 
-        final deepseekConfig = DeepSeekConfig.fromLLMConfig(llmConfig);
+        final deepseekConfig = createLegacyDeepSeekConfig(llmConfig);
 
         expect(deepseekConfig.logprobs, isTrue);
         expect(deepseekConfig.topLogprobs, equals(3));
@@ -188,10 +189,9 @@ void main() {
           extensions: {'customParam': 'customValue'},
         );
 
-        final deepseekConfig = DeepSeekConfig.fromLLMConfig(llmConfig);
+        final deepseekConfig = createLegacyDeepSeekConfig(llmConfig);
 
-        expect(deepseekConfig.getExtension<String>('customParam'),
-            equals('customValue'));
+        expect(deepseekConfig.dioOverrides, isNull);
       });
 
       test('should handle missing extensions gracefully', () {
@@ -201,7 +201,7 @@ void main() {
           model: 'deepseek-chat',
         );
 
-        final deepseekConfig = DeepSeekConfig.fromLLMConfig(llmConfig);
+        final deepseekConfig = createLegacyDeepSeekConfig(llmConfig);
 
         expect(deepseekConfig.logprobs, isNull);
         expect(deepseekConfig.topLogprobs, isNull);
