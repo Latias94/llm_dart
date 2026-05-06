@@ -14,11 +14,15 @@ const List<String> _guardedProviderTestFileSuffixes = [
   '_client_error_test.dart',
   '_provider_test.dart',
   '_tool_calling_test.dart',
+  '_thinking_test.dart',
+  '_tts_test.dart',
+  '_audio_support_test.dart',
 ];
 
 const Set<String> _guardedProviderTestFiles = {
   'test/providers/factories/base_factory_test.dart',
   'test/providers/openai/builtin_tools_test.dart',
+  'test/providers/xai/live_search_test.dart',
 };
 
 final RegExp _legacyImportPattern = RegExp(
