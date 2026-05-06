@@ -5,8 +5,7 @@ import '../../src/provider_defaults.dart';
 import 'base_factory.dart';
 
 /// Factory for creating OpenAI provider instances
-class OpenAIProviderFactory
-    extends OpenAICompatibleBaseFactory<ChatCapability> {
+class OpenAIProviderFactory extends BaseProviderFactory<ChatCapability> {
   @override
   String get providerId => 'openai';
 

@@ -142,31 +142,6 @@ abstract class BaseProviderFactory<T extends ChatCapability>
   }
 }
 
-/// Specialized base factory for OpenAI-compatible providers
-/// This provides additional functionality for providers that use OpenAI's API format
-abstract class OpenAICompatibleBaseFactory<T extends ChatCapability>
-    extends BaseProviderFactory<T> {
-  /// Common OpenAI-compatible configuration transformation
-  Map<String, dynamic> getOpenAICompatibleConfigMap(LLMConfig config) {
-    final baseMap = getBaseConfigMap(config);
-
-    // Add OpenAI-specific extensions
-    baseMap.addAll({
-      'reasoningEffort': getExtension<String>(config, 'reasoningEffort'),
-      'jsonSchema': getExtension(config, 'jsonSchema'),
-      'voice': getExtension<String>(config, 'voice'),
-      'embeddingEncodingFormat':
-          getExtension<String>(config, 'embeddingEncodingFormat'),
-      'embeddingDimensions': getExtension<int>(config, 'embeddingDimensions'),
-    });
-
-    // Remove null values
-    baseMap.removeWhere((key, value) => value == null);
-
-    return baseMap;
-  }
-}
-
 /// Specialized base factory for providers that don't require API keys
 abstract class LocalProviderFactory<T extends ChatCapability>
     extends BaseProviderFactory<T> {
