@@ -1,12 +1,10 @@
 import '../../core/capability.dart';
 import '../../core/config.dart';
 import '../../core/registry.dart';
-import '../../core/web_search.dart';
 import '../../src/compatibility/providers/openai_family_compat_openrouter.dart';
 import '../../src/openai_compatible_configs.dart';
 import '../../models/chat_models.dart';
 import '../../src/config/legacy_config_extensions.dart';
-import '../../src/config/legacy_provider_options.dart';
 import '../openai/openai.dart';
 import 'base_factory.dart';
 
@@ -59,36 +57,10 @@ class OpenAICompatibleProviderFactory
 
   /// Transform unified config to OpenAI-compatible config
   OpenAIConfig _transformConfig(LLMConfig config) {
-    // Handle web search configuration for OpenRouter
-    String? model = config.model;
-
-    // Check for webSearchEnabled flag (for OpenRouter)
-    final webSearchEnabled = config.legacyWebSearchEnabled;
-    if (webSearchEnabled == true &&
-        _isOpenRouter() &&
-        !_hasOnlineSuffix(model)) {
-      // Add :online suffix for OpenRouter web search
-      model = _addOnlineSuffix(model);
-    }
-
-    // Check for webSearchConfig (for OpenRouter)
-    final webSearchConfig = _isOpenRouter()
-        ? getLegacyProviderOption<WebSearchConfig>(
-            config,
-            LegacyProviderOptionNamespaces.openrouter,
-            LegacyExtensionKeys.webSearchConfig,
-          )
-        : config.legacyWebSearchConfig;
-    if (webSearchConfig != null &&
-        _isOpenRouter() &&
-        !_hasOnlineSuffix(model)) {
-      model = _addOnlineSuffix(model);
-    }
-
     return OpenAIConfig(
       apiKey: config.apiKey!,
       baseUrl: config.baseUrl,
-      model: model,
+      model: config.model,
       maxTokens: config.maxTokens,
       temperature: config.temperature,
       systemPrompt: config.systemPrompt,
@@ -109,19 +81,13 @@ class OpenAICompatibleProviderFactory
       embeddingEncodingFormat: config.legacyEmbeddingEncodingFormat,
       embeddingDimensions: config.legacyEmbeddingDimensions,
       // Responses API configuration (most OpenAI-compatible providers don't support this yet)
-      useResponsesAPI: _getOpenAICompatibleProviderOption<bool>(
-            config,
-            LegacyExtensionKeys.useResponsesApi,
-          ) ??
-          false,
-      previousResponseId: _getOpenAICompatibleProviderOption<String>(
-        config,
-        LegacyExtensionKeys.previousResponseId,
-      ),
-      builtInTools: _getOpenAICompatibleProviderOption<List<OpenAIBuiltInTool>>(
-        config,
-        LegacyExtensionKeys.builtInTools,
-      ),
+      useResponsesAPI:
+          config.getExtension<bool>(LegacyExtensionKeys.useResponsesApi) ??
+              false,
+      previousResponseId:
+          config.getExtension<String>(LegacyExtensionKeys.previousResponseId),
+      builtInTools: config.getExtension<List<OpenAIBuiltInTool>>(
+          LegacyExtensionKeys.builtInTools),
       originalConfig: config,
     );
   }
@@ -129,34 +95,6 @@ class OpenAICompatibleProviderFactory
   /// Check if this is an OpenRouter provider
   bool _isOpenRouter() {
     return _config.providerId == 'openrouter';
-  }
-
-  /// Check if model already has :online suffix
-  bool _hasOnlineSuffix(String? model) {
-    if (model == null) return false;
-    return model.endsWith(':online');
-  }
-
-  /// Add :online suffix to model for OpenRouter web search
-  String _addOnlineSuffix(String? model) {
-    if (model == null) return ':online';
-    if (_hasOnlineSuffix(model)) return model;
-    return '$model:online';
-  }
-
-  E? _getOpenAICompatibleProviderOption<E>(
-    LLMConfig config,
-    String key,
-  ) {
-    if (_isOpenRouter()) {
-      return getLegacyProviderOption<E>(
-        config,
-        LegacyProviderOptionNamespaces.openrouter,
-        key,
-      );
-    }
-
-    return config.getExtension<E>(key);
   }
 
   /// Create factory instances for all pre-configured providers

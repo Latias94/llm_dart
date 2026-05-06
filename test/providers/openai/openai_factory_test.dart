@@ -62,6 +62,32 @@ void main() {
   });
 
   group('OpenAICompatibleProviderFactory Tests', () {
+    test('should keep legacy compatible aliases on generic OpenAI provider',
+        () {
+      final factory = OpenAICompatibleProviderFactory.createFactory(
+        'deepseek-openai',
+      )!;
+      final config = LLMConfig(
+        apiKey: 'test-api-key',
+        baseUrl: 'https://api.deepseek.com/v1/',
+        model: 'deepseek-chat',
+        extensions: {
+          LegacyExtensionKeys.useResponsesApi: true,
+          LegacyExtensionKeys.previousResponseId: 'resp_compat',
+          LegacyExtensionKeys.builtInTools: [
+            OpenAIBuiltInTools.webSearch(),
+          ],
+        },
+      );
+
+      final provider = factory.create(config) as OpenAIProvider;
+
+      expect(provider, isNot(isA<CompatDeepSeekProvider>()));
+      expect(provider.config.useResponsesAPI, isTrue);
+      expect(provider.config.previousResponseId, equals('resp_compat'));
+      expect(provider.config.builtInTools, hasLength(1));
+    });
+
     test('should read namespaced OpenRouter search config', () {
       final factory = OpenAICompatibleProviderFactory.createFactory(
         'openrouter',
