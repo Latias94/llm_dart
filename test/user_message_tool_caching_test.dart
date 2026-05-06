@@ -1,5 +1,7 @@
 import 'package:test/test.dart';
-import 'package:llm_dart/legacy.dart';
+import 'package:llm_dart/models/chat_models.dart';
+import 'package:llm_dart/models/tool_models.dart';
+import 'package:llm_dart/providers/anthropic/models.dart';
 
 /// Test suite for user message tool caching functionality
 /// This addresses the issue reported by okandemirofficial

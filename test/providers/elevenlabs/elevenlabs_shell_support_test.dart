@@ -1,4 +1,5 @@
-import 'package:llm_dart/legacy.dart';
+import 'package:llm_dart/models/audio_models.dart';
+import 'package:llm_dart/providers/elevenlabs/config.dart';
 import 'package:llm_dart/src/compatibility/providers/elevenlabs/shell_support.dart';
 import 'package:test/test.dart';
 

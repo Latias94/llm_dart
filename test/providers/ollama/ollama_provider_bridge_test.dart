@@ -1,5 +1,6 @@
 import 'package:llm_dart_transport/dio.dart';
-import 'package:llm_dart/legacy.dart';
+import 'package:llm_dart/models/chat_models.dart';
+import 'package:llm_dart/providers/ollama/ollama.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 import 'package:test/test.dart';
 

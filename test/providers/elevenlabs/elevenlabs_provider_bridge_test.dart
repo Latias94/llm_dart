@@ -2,7 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:llm_dart_transport/dio.dart';
-import 'package:llm_dart/legacy.dart';
+import 'package:llm_dart/models/audio_models.dart';
+import 'package:llm_dart/providers/elevenlabs/elevenlabs.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 import 'package:test/test.dart';
 

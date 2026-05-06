@@ -20,6 +20,7 @@ const List<String> _guardedProviderTestFileSuffixes = [
 ];
 
 const Set<String> _guardedProviderTestFiles = {
+  'test/compat_transport_test.dart',
   'test/providers/factories/base_factory_test.dart',
   'test/providers/openai/builtin_tools_test.dart',
   'test/providers/xai/live_search_test.dart',
@@ -34,7 +35,10 @@ const Set<String> _guardedProviderTestFiles = {
   'test/providers/anthropic/anthropic_tools_api_structure_test.dart',
   'test/providers/anthropic/anthropic_tools_duplication_fix_test.dart',
   'test/providers/anthropic/anthropic_tool_caching_unified_test.dart',
+  'test/providers/elevenlabs/elevenlabs_provider_bridge_test.dart',
+  'test/providers/elevenlabs/elevenlabs_shell_support_test.dart',
   'test/providers/google/google_streaming_endpoint_test.dart',
+  'test/providers/ollama/ollama_provider_bridge_test.dart',
   'test/providers/openai/openai_config_layering_test.dart',
   'test/providers/openai/gpt5_test.dart',
   'test/providers/openai/message_conversion_test.dart',
@@ -50,6 +54,7 @@ const Set<String> _guardedProviderTestFiles = {
   'test/providers/openai/responses_stateful_test.dart',
   'test/providers/openai/responses_test.dart',
   'test/providers/openrouter/openrouter_builder_test.dart',
+  'test/user_message_tool_caching_test.dart',
 };
 
 final RegExp _legacyImportPattern = RegExp(
