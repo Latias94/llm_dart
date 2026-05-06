@@ -1,5 +1,5 @@
+import 'package:llm_dart/core/llm_error.dart';
 import 'package:test/test.dart';
-import 'package:llm_dart/legacy.dart';
 
 void main() {
   group('Error Handling Tests', () {

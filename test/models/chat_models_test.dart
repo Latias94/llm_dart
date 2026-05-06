@@ -1,6 +1,7 @@
-import 'package:test/test.dart';
-import 'package:llm_dart/legacy.dart';
 import 'dart:typed_data';
+
+import 'package:llm_dart/models/chat_models.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('Chat Models Tests', () {

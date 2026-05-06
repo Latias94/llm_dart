@@ -1,6 +1,8 @@
-import 'package:test/test.dart';
-import 'package:llm_dart/legacy.dart';
 import 'dart:typed_data';
+
+import 'package:llm_dart/models/audio_models.dart';
+import 'package:llm_dart/models/usage_models.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('Audio Models Tests', () {

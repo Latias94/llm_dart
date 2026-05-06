@@ -1,5 +1,5 @@
+import 'package:llm_dart/models/image_models.dart';
 import 'package:test/test.dart';
-import 'package:llm_dart/legacy.dart';
 
 void main() {
   group('ImageGenerationRequest', () {
