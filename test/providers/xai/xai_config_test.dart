@@ -1,6 +1,7 @@
 import 'package:llm_dart/core/config.dart';
 import 'package:llm_dart/models/tool_models.dart';
 import 'package:llm_dart/providers/xai/config.dart';
+import 'package:llm_dart/src/compatibility/providers/openai_family_compat_xai_config.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -257,7 +258,7 @@ void main() {
           },
         );
 
-        final xaiConfig = XAIConfig.fromLLMConfig(llmConfig);
+        final xaiConfig = createLegacyXAIConfig(llmConfig);
 
         expect(xaiConfig.apiKey, equals('test-key'));
         expect(xaiConfig.baseUrl, equals('https://api.x.ai/v1/'));
@@ -275,18 +276,26 @@ void main() {
         expect(xaiConfig.liveSearch, isTrue);
       });
 
-      test('should access extensions from original config', () {
+      test('should project legacy HTTP overrides', () {
         final llmConfig = LLMConfig(
           apiKey: 'test-key',
           baseUrl: 'https://api.x.ai/v1/',
           model: 'grok-3',
-          extensions: {'customParam': 'customValue'},
+          extensions: {
+            'customHeaders': {'X-Test': 'value'},
+            'connectionTimeout': const Duration(seconds: 30),
+          },
         );
 
-        final xaiConfig = XAIConfig.fromLLMConfig(llmConfig);
+        final xaiConfig = createLegacyXAIConfig(llmConfig);
 
-        expect(xaiConfig.getExtension<String>('customParam'),
-            equals('customValue'));
+        expect(xaiConfig.dioOverrides, isNotNull);
+        expect(
+            xaiConfig.dioOverrides!.customHeaders, equals({'X-Test': 'value'}));
+        expect(
+          xaiConfig.dioOverrides!.connectionTimeout,
+          equals(const Duration(seconds: 30)),
+        );
       });
 
       test('should enable live search from webSearchEnabled flag', () {
@@ -299,7 +308,7 @@ void main() {
           },
         );
 
-        final xaiConfig = XAIConfig.fromLLMConfig(llmConfig);
+        final xaiConfig = createLegacyXAIConfig(llmConfig);
 
         expect(xaiConfig.liveSearch, isTrue);
         expect(xaiConfig.searchParameters, isNotNull);

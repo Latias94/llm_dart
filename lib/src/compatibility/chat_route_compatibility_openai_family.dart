@@ -280,7 +280,7 @@ bool canUseXAIChatBridge(
     return false;
   }
 
-  final legacyConfig = XAIConfig.fromLLMConfig(config);
+  final legacyConfig = createLegacyXAIConfig(config);
   if (!_canMapCompatXAILiveSearch(legacyConfig)) {
     return false;
   }

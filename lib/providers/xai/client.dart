@@ -26,6 +26,7 @@ class XAIClient {
     dio = ProviderDioClientFactory.create(
       strategy: XAIDioStrategy(),
       config: config,
+      overrides: config.dioOverrides,
     );
   }
 

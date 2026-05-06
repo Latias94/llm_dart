@@ -5,7 +5,7 @@ import 'package:llm_dart/providers/anthropic/config.dart';
 import 'package:llm_dart/providers/openai/client.dart';
 import 'package:llm_dart/providers/openai/config.dart';
 import 'package:llm_dart/providers/xai/client.dart';
-import 'package:llm_dart/providers/xai/config.dart';
+import 'package:llm_dart/src/compatibility/providers/openai_family_compat_xai_config.dart';
 import 'package:llm_dart_transport/dio.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 import 'package:test/test.dart';
@@ -300,7 +300,7 @@ void main() {
         );
         final openaiClient = OpenAIClient(openaiConfig);
 
-        final xaiConfig = XAIConfig.fromLLMConfig(llmConfig);
+        final xaiConfig = createLegacyXAIConfig(llmConfig);
         final xaiClient = XAIClient(xaiConfig);
 
         // All should use the same custom Dio

@@ -1,7 +1,7 @@
+import 'package:llm_dart_transport/llm_dart_transport.dart'
+    show DioClientOverrides, HasDioClientOverrides;
+
 import '../../models/tool_models.dart';
-import '../../core/config.dart';
-import '../../core/web_search.dart';
-import '../../src/config/legacy_dio_client_overrides.dart';
 
 /// Search source configuration for search parameters
 class SearchSource {
@@ -168,15 +168,16 @@ class SearchParameters {
 ///
 /// This class contains all configuration options for the xAI providers.
 /// It's extracted from the main provider to improve modularity and reusability.
-class XAIConfig with LegacyDioClientOverrides {
+class XAIConfig implements HasDioClientOverrides {
   final String apiKey;
   final String baseUrl;
   final String model;
   final int? maxTokens;
   final double? temperature;
   final String? systemPrompt;
-  @override
   final Duration? timeout;
+  @override
+  final DioClientOverrides? dioOverrides;
 
   final double? topP;
   final int? topK;
@@ -197,9 +198,6 @@ class XAIConfig with LegacyDioClientOverrides {
   /// configure basic search parameters if none are provided.
   final bool? liveSearch;
 
-  /// Reference to original LLMConfig for accessing extensions
-  final LLMConfig? _originalConfig;
-
   const XAIConfig({
     required this.apiKey,
     this.baseUrl = 'https://api.x.ai/v1/',
@@ -208,6 +206,7 @@ class XAIConfig with LegacyDioClientOverrides {
     this.temperature,
     this.systemPrompt,
     this.timeout,
+    this.dioOverrides,
     this.topP,
     this.topK,
     this.tools,
@@ -217,84 +216,7 @@ class XAIConfig with LegacyDioClientOverrides {
     this.embeddingDimensions,
     this.searchParameters,
     this.liveSearch,
-    LLMConfig? originalConfig,
-  }) : _originalConfig = originalConfig;
-
-  /// Create XAIConfig from unified LLMConfig
-  factory XAIConfig.fromLLMConfig(LLMConfig config) {
-    // Handle web search configuration
-    SearchParameters? searchParams =
-        config.getExtension<SearchParameters>('searchParameters');
-    bool? liveSearchEnabled = config.getExtension<bool>('liveSearch');
-
-    // Check for webSearchEnabled flag
-    final webSearchEnabled = config.getExtension<bool>('webSearchEnabled');
-    if (webSearchEnabled == true &&
-        searchParams == null &&
-        liveSearchEnabled != true) {
-      // Enable live search with default web search parameters
-      liveSearchEnabled = true;
-      searchParams = SearchParameters.webSearch();
-    }
-
-    // Check for webSearchConfig and convert to SearchParameters
-    final webSearchConfig =
-        config.getExtension<WebSearchConfig>('webSearchConfig');
-    if (webSearchConfig != null && searchParams == null) {
-      searchParams = _convertWebSearchConfigToSearchParameters(webSearchConfig);
-      liveSearchEnabled = true;
-    }
-
-    return XAIConfig(
-      apiKey: config.apiKey!,
-      baseUrl: config.baseUrl,
-      model: config.model,
-      maxTokens: config.maxTokens,
-      temperature: config.temperature,
-      systemPrompt: config.systemPrompt,
-      timeout: config.timeout,
-
-      topP: config.topP,
-      topK: config.topK,
-      tools: config.tools,
-      toolChoice: config.toolChoice,
-      // xAI-specific extensions
-      jsonSchema: config.getExtension<StructuredOutputFormat>('jsonSchema'),
-      embeddingEncodingFormat:
-          config.getExtension<String>('embeddingEncodingFormat'),
-      embeddingDimensions: config.getExtension<int>('embeddingDimensions'),
-      searchParameters: searchParams,
-      liveSearch: liveSearchEnabled,
-      originalConfig: config,
-    );
-  }
-
-  /// Convert WebSearchConfig to xAI SearchParameters
-  static SearchParameters _convertWebSearchConfigToSearchParameters(
-      WebSearchConfig config) {
-    // Determine source type based on search type
-    final sourceType = config.searchType == WebSearchType.news ? 'news' : 'web';
-
-    return SearchParameters(
-      mode: config.mode ?? 'auto',
-      sources: [
-        SearchSource(
-          sourceType: sourceType,
-          excludedWebsites: config.blockedDomains,
-        ),
-      ],
-      maxSearchResults: config.maxResults,
-      fromDate: config.fromDate,
-      toDate: config.toDate,
-    );
-  }
-
-  /// Get extension value from original config
-  T? getExtension<T>(String key) => _originalConfig?.getExtension<T>(key);
-
-  /// Get the original LLMConfig for HTTP configuration
-  @override
-  LLMConfig? get originalConfig => _originalConfig;
+  });
 
   /// Check if this model supports reasoning/thinking
   bool get supportsReasoning {
@@ -348,6 +270,7 @@ class XAIConfig with LegacyDioClientOverrides {
     double? temperature,
     String? systemPrompt,
     Duration? timeout,
+    DioClientOverrides? dioOverrides,
     double? topP,
     int? topK,
     List<Tool>? tools,
@@ -366,6 +289,7 @@ class XAIConfig with LegacyDioClientOverrides {
         temperature: temperature ?? this.temperature,
         systemPrompt: systemPrompt ?? this.systemPrompt,
         timeout: timeout ?? this.timeout,
+        dioOverrides: dioOverrides ?? this.dioOverrides,
         topP: topP ?? this.topP,
         topK: topK ?? this.topK,
         tools: tools ?? this.tools,
