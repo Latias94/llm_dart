@@ -105,6 +105,8 @@
   `llm_dart_core/lib`
 - [x] Add a guard that keeps `llm_dart_transport` on transport-owned public
   names
+- [x] Add a guard that keeps foundational tests off the broad `legacy.dart`
+  barrel
 
 ## Validation
 
@@ -112,6 +114,7 @@
 - [x] Run root boundary guards for the first provider-spec split slice
 - [x] Run core compatibility shell guard after shrinking `llm_dart_core`
 - [x] Run transport boundary guard after shrinking cancellation ownership
+- [x] Run foundational test legacy-import guard after shrinking test imports
 - [x] Run package analysis after provider-spec migration slices
 - [x] Run focused provider/core tests after provider-spec migration slices
 - [x] Update publish dry-run tooling for the new provider package and root

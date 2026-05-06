@@ -233,3 +233,5 @@ Current status:
 - workspace dependency guards, root boundary guards, and the core compatibility
   shell guard now cover the migrated package graph
 - transport boundary guards now cover the transport public barrel as well
+- foundational test legacy-import guards now keep core/model/builder/utils
+  tests on focused entrypoints

@@ -162,3 +162,5 @@ When packages are introduced, guard tooling should be updated to enforce:
   legacy aliases
 - `llm_dart_transport` stays on its own transport-owned public names and does
   not leak `ProviderCancellation` aliases from the public barrel
+- foundational tests under `test/core`, `test/models`, `test/builder`, and
+  `test/utils` stay on focused entrypoints instead of the broad legacy barrel
