@@ -122,6 +122,8 @@ The workstream is complete only when:
   - Shared file, provider reference, provider option, and tool output redesign.
 - [05-root-legacy-exit-plan.md](05-root-legacy-exit-plan.md)
   - Root package and legacy compatibility exit strategy.
+- [06-breaking-changelog-and-migration-matrix.md](06-breaking-changelog-and-migration-matrix.md)
+  - Breaking changelog draft and migration matrix for the current slice.
 - [MILESTONES.md](MILESTONES.md)
   - Milestones and acceptance criteria.
 - [TODO.md](TODO.md)

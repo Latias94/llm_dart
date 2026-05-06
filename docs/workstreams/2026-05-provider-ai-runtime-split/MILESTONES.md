@@ -215,4 +215,5 @@ Acceptance criteria:
 
 Current status:
 
-- not started
+- breaking changelog draft and migration matrix now exist
+- test-only broad imports remain only as compatibility-shell coverage
