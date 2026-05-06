@@ -1,6 +1,12 @@
-import 'package:test/test.dart';
-import 'package:llm_dart/legacy.dart';
+import 'package:llm_dart/core/capability.dart';
+import 'package:llm_dart/core/config.dart';
+import 'package:llm_dart/core/llm_error.dart';
+import 'package:llm_dart/core/registry.dart';
+import 'package:llm_dart/models/tool_models.dart';
+import 'package:llm_dart/providers/factories/base_factory.dart';
 import 'package:llm_dart/providers/factories/xai_factory.dart';
+import 'package:llm_dart/providers/xai/xai.dart';
+import 'package:test/test.dart';
 
 void main() {
   group('XAIProviderFactory Tests', () {
