@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 
 void main() {
   group('check_test_legacy_import_guards', () {
-    test('passes against current foundational test directories', () async {
+    test('passes against current guarded test set', () async {
       final result = await guard.evaluateTestLegacyImportGuards(
         repoRoot: Directory.current,
       );
@@ -48,7 +48,38 @@ void main() {}
       );
     });
 
-    test('allows explicit compatibility tests outside guarded directories',
+    test('reports legacy imports in targeted provider tests', () async {
+      final repoRoot = await _createTempWorkspace();
+      addTearDown(() async {
+        if (repoRoot.existsSync()) {
+          await repoRoot.delete(recursive: true);
+        }
+      });
+
+      await _writeFile(
+        repoRoot,
+        'test/providers/openai/openai_factory_test.dart',
+        '''
+import 'package:llm_dart/legacy.dart';
+
+void main() {}
+''',
+      );
+
+      final result = await guard.evaluateTestLegacyImportGuards(
+        repoRoot: repoRoot,
+      );
+
+      expect(result.passed, isFalse);
+      expect(
+        result.violations,
+        contains(
+          contains('targeted provider tests must import focused entrypoints'),
+        ),
+      );
+    });
+
+    test('allows explicit compatibility tests outside guarded provider shapes',
         () async {
       final repoRoot = await _createTempWorkspace();
       addTearDown(() async {

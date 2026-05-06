@@ -7,6 +7,18 @@ const List<String> _guardedTestDirs = [
   'test/utils',
 ];
 
+const List<String> _guardedProviderTestFileSuffixes = [
+  '_config_test.dart',
+  '_factory_test.dart',
+  '_client_test.dart',
+  '_client_error_test.dart',
+];
+
+const Set<String> _guardedProviderTestFiles = {
+  'test/providers/factories/base_factory_test.dart',
+  'test/providers/openai/builtin_tools_test.dart',
+};
+
 final RegExp _legacyImportPattern = RegExp(
   r'''^\s*import\s+['"]package:llm_dart/legacy\.dart['"]''',
 );
@@ -38,6 +50,22 @@ Future<TestLegacyImportGuardResult> evaluateTestLegacyImportGuards({
       repoRoot: resolvedRepoRoot,
       dir: dir,
       violations: violations,
+      category: 'foundational tests',
+    );
+  }
+
+  final providerDir =
+      Directory.fromUri(resolvedRepoRoot.uri.resolve('test/providers/'));
+  if (providerDir.existsSync()) {
+    await _collectLegacyImportViolations(
+      repoRoot: resolvedRepoRoot,
+      dir: providerDir,
+      violations: violations,
+      category: 'targeted provider tests',
+      includeFile: (file) => _isGuardedProviderTestFile(
+        repoRoot: resolvedRepoRoot,
+        file: file,
+      ),
     );
   }
 
@@ -46,13 +74,20 @@ Future<TestLegacyImportGuardResult> evaluateTestLegacyImportGuards({
   );
 }
 
+typedef _FileFilter = bool Function(File file);
+
 Future<void> _collectLegacyImportViolations({
   required Directory repoRoot,
   required Directory dir,
   required List<String> violations,
+  required String category,
+  _FileFilter? includeFile,
 }) async {
   await for (final entity in dir.list(recursive: true)) {
     if (entity is! File || !entity.path.endsWith('.dart')) {
+      continue;
+    }
+    if (includeFile != null && !includeFile(entity)) {
       continue;
     }
 
@@ -64,13 +99,22 @@ Future<void> _collectLegacyImportViolations({
       }
 
       violations.add(
-        '${_displayPath(repoRoot, entity)}:${index + 1}: foundational tests '
+        '${_displayPath(repoRoot, entity)}:${index + 1}: $category '
         'must import focused entrypoints instead of package:llm_dart/legacy.dart. '
-        'Keep legacy.dart imports limited to explicit compatibility, provider, '
+        'Keep legacy.dart imports limited to explicit compatibility, bridge, '
         'and integration coverage.',
       );
     }
   }
+}
+
+bool _isGuardedProviderTestFile({
+  required Directory repoRoot,
+  required File file,
+}) {
+  final path = _displayPath(repoRoot, file);
+  return _guardedProviderTestFiles.contains(path) ||
+      _guardedProviderTestFileSuffixes.any(path.endsWith);
 }
 
 String _displayPath(Directory repoRoot, File file) {
@@ -87,8 +131,8 @@ Future<void> main() async {
 
   if (result.passed) {
     stdout.writeln(
-      'test legacy import guard passed: foundational test directories use '
-      'focused entrypoints instead of the legacy barrel.',
+      'test legacy import guard passed: guarded foundational and provider '
+      'tests use focused entrypoints instead of the legacy barrel.',
     );
     return;
   }
