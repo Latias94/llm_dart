@@ -1,5 +1,6 @@
+import 'package:llm_dart/models/tool_models.dart';
+import 'package:llm_dart/providers/groq/groq.dart';
 import 'package:test/test.dart';
-import 'package:llm_dart/legacy.dart';
 
 void main() {
   group('Groq Tool Calling Tests', () {

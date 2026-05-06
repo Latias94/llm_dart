@@ -1,5 +1,8 @@
+import 'package:llm_dart/core/capability.dart';
+import 'package:llm_dart/core/config.dart';
+import 'package:llm_dart/models/tool_models.dart';
+import 'package:llm_dart/providers/google/google.dart';
 import 'package:test/test.dart';
-import 'package:llm_dart/legacy.dart';
 
 void main() {
   group('Google Tool Calling Tests', () {
