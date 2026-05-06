@@ -90,6 +90,8 @@ Current status:
 - `llm_dart_core` keeps compatibility re-exports for the old runtime paths
 - the root `package:llm_dart/ai.dart` entrypoint explicitly exports the new
   runtime package while preserving the modern facade surface
+- core no longer owns the duplicate JSON codec helper implementations; those
+  helpers now live only in `llm_dart_provider`
 - workspace bootstrap, dependency guards, root boundary guards, package
   analysis, and focused runtime/core tests understand the new AI package
 
