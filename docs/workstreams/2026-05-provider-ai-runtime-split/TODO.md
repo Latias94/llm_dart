@@ -88,8 +88,8 @@
   `llm_dart_legacy`
 - [x] Update examples to prefer focused modern entrypoints
 - [x] Update compatibility examples to import the explicit legacy surface
-- [ ] Remove root dependencies only after implementation ownership moves make
-  removal truthful
+- [x] Remove root runtime dependency on `llm_dart_core`; keep test/dev
+  compatibility coverage for the core shell
 
 ## `llm_dart_core` Compatibility Shrink
 

@@ -1,5 +1,5 @@
 import 'package:llm_dart_community/llm_dart_community.dart' as modern_community;
-import 'package:llm_dart_core/model.dart' as core;
+import 'package:llm_dart_provider/llm_dart_provider.dart' as core;
 
 import '../../../../models/audio_models.dart';
 import '../../../../providers/elevenlabs/config.dart';
@@ -44,7 +44,7 @@ final class ElevenLabsAudioBridgeSupport {
 
   Future<TTSResponse> bridgeTextToSpeech(
     TTSRequest request, {
-    core.TransportCancellation? cancelToken,
+    core.ProviderCancellation? cancelToken,
   }) async {
     final model = modernProvider.speechModel(
       request.model ?? config.defaultTTSModel,
@@ -105,7 +105,7 @@ final class ElevenLabsAudioBridgeSupport {
 
   Future<STTResponse> bridgeSpeechToText(
     STTRequest request, {
-    core.TransportCancellation? cancelToken,
+    core.ProviderCancellation? cancelToken,
   }) async {
     final model = modernProvider.transcriptionModel(
       request.model ?? config.defaultSTTModel,

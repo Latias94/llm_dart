@@ -1,5 +1,5 @@
 import 'package:llm_dart_community/llm_dart_community.dart' as modern_community;
-import 'package:llm_dart_core/model.dart' as core;
+import 'package:llm_dart_provider/llm_dart_provider.dart' as core;
 import 'package:llm_dart_transport/llm_dart_transport.dart'
     show DioTransportClient;
 

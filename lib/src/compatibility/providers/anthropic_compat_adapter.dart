@@ -1,4 +1,4 @@
-import 'package:llm_dart_core/model.dart' as core;
+import 'package:llm_dart_provider/llm_dart_provider.dart' as core;
 
 import '../../../models/chat_models.dart';
 import '../../../models/tool_models.dart';

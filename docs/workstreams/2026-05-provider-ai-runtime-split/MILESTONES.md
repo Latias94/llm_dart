@@ -195,8 +195,8 @@ Current status:
   `llm_dart_transport` and no longer depends on `llm_dart_core`
 - `llm_dart_flutter` now depends on `llm_dart_chat` plus
   `llm_dart_provider` and no longer depends on `llm_dart_core`
-- root still keeps compatibility dependencies until its implementation
-  ownership and examples are migrated deliberately
+- root no longer has a runtime dependency on `llm_dart_core`; test/dev
+  compatibility coverage still exercises the core shell deliberately
 - first-preview root policy is now explicit: keep `legacy.dart` in root as the
   compatibility bridge, keep new implementation ownership out of root legacy
   areas, and defer `llm_dart_legacy` until a later release if needed

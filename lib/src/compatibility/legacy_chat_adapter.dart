@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:llm_dart_core/model.dart' as core;
+import 'package:llm_dart_provider/llm_dart_provider.dart' as core;
 
 import '../../core/capability.dart';
 import '../../core/config.dart';

@@ -1,5 +1,5 @@
-import 'package:llm_dart_core/model.dart' as core;
 import 'package:llm_dart_openai/llm_dart_openai.dart' as modern_openai;
+import 'package:llm_dart_provider/llm_dart_provider.dart' as core;
 
 import '../../../core/config.dart';
 import '../../../core/web_search.dart';
