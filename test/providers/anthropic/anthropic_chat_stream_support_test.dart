@@ -1,4 +1,6 @@
-import 'package:llm_dart/legacy.dart';
+import 'package:llm_dart/core/capability.dart';
+import 'package:llm_dart/core/llm_error.dart';
+import 'package:llm_dart/models/chat_models.dart';
 import 'package:llm_dart/providers/anthropic/chat.dart' as anthropic_chat;
 import 'package:llm_dart/providers/anthropic/client.dart' as anthropic_client;
 import 'package:llm_dart/providers/anthropic/config.dart' as anthropic_config;

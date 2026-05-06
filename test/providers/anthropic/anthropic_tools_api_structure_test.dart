@@ -1,5 +1,7 @@
+import 'package:llm_dart/models/chat_models.dart';
+import 'package:llm_dart/models/tool_models.dart';
+import 'package:llm_dart/providers/anthropic/models.dart';
 import 'package:test/test.dart';
-import 'package:llm_dart/legacy.dart';
 
 /// Test suite for Anthropic tools caching API structure validation
 /// Tests that tools caching produces correct API request structure

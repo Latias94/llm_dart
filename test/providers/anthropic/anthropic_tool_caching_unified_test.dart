@@ -1,5 +1,7 @@
+import 'package:llm_dart/models/chat_models.dart';
+import 'package:llm_dart/models/tool_models.dart';
+import 'package:llm_dart/providers/anthropic/models.dart';
 import 'package:test/test.dart';
-import 'package:llm_dart/legacy.dart';
 
 /// Test suite for MessageBuilder tool caching functionality
 /// Tests that tools are cached at MessageBuilder level with all other content

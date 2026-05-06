@@ -1,5 +1,7 @@
+import 'package:llm_dart/models/chat_models.dart';
+import 'package:llm_dart/models/tool_models.dart';
+import 'package:llm_dart/providers/anthropic/models.dart';
 import 'package:test/test.dart';
-import 'package:llm_dart/legacy.dart';
 
 /// Test suite for the MessageBuilder tools fix
 /// This tests the specific issue reported in #15 where MessageBuilder.tools()

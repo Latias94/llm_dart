@@ -1,5 +1,7 @@
+import 'package:llm_dart/models/chat_models.dart';
+import 'package:llm_dart/models/tool_models.dart';
+import 'package:llm_dart/providers/anthropic/models.dart';
 import 'package:test/test.dart';
-import 'package:llm_dart/legacy.dart';
 
 /// Test suite to verify that tools are not duplicated in system and tools arrays
 /// This tests the fix for the bug where tools appeared in both places

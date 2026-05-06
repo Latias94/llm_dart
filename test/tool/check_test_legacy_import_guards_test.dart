@@ -79,6 +79,38 @@ void main() {}
       );
     });
 
+    test('reports legacy imports in guarded Anthropic structure tests',
+        () async {
+      final repoRoot = await _createTempWorkspace();
+      addTearDown(() async {
+        if (repoRoot.existsSync()) {
+          await repoRoot.delete(recursive: true);
+        }
+      });
+
+      await _writeFile(
+        repoRoot,
+        'test/providers/anthropic/anthropic_caching_test.dart',
+        '''
+import 'package:llm_dart/legacy.dart';
+
+void main() {}
+''',
+      );
+
+      final result = await guard.evaluateTestLegacyImportGuards(
+        repoRoot: repoRoot,
+      );
+
+      expect(result.passed, isFalse);
+      expect(
+        result.violations,
+        contains(
+          contains('targeted provider tests must import focused entrypoints'),
+        ),
+      );
+    });
+
     test('allows explicit compatibility tests outside guarded provider shapes',
         () async {
       final repoRoot = await _createTempWorkspace();

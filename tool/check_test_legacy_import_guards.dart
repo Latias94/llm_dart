@@ -23,6 +23,17 @@ const Set<String> _guardedProviderTestFiles = {
   'test/providers/factories/base_factory_test.dart',
   'test/providers/openai/builtin_tools_test.dart',
   'test/providers/xai/live_search_test.dart',
+  'test/providers/anthropic/anthropic_api_request_structure_test.dart',
+  'test/providers/anthropic/anthropic_caching_test.dart',
+  'test/providers/anthropic/anthropic_cache_invalidation_test.dart',
+  'test/providers/anthropic/anthropic_cache_position_test.dart',
+  'test/providers/anthropic/anthropic_chat_stream_support_test.dart',
+  'test/providers/anthropic/anthropic_json_request_body_test.dart',
+  'test/providers/anthropic/anthropic_messagebuilder_tools_fix_test.dart',
+  'test/providers/anthropic/anthropic_prompt_caching_comprehensive_test.dart',
+  'test/providers/anthropic/anthropic_tools_api_structure_test.dart',
+  'test/providers/anthropic/anthropic_tools_duplication_fix_test.dart',
+  'test/providers/anthropic/anthropic_tool_caching_unified_test.dart',
 };
 
 final RegExp _legacyImportPattern = RegExp(
