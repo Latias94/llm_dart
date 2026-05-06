@@ -1,11 +1,7 @@
 import 'dart:convert';
 import 'package:llm_dart_transport/dio.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart'
-    show
-        Level,
-        Logger,
-        ProviderDioClientFactory,
-        decodeDioResponseTextStream;
+    show Level, Logger, ProviderDioClientFactory, decodeDioResponseTextStream;
 
 import '../../core/cancellation.dart';
 import '../../core/llm_error.dart';
@@ -29,6 +25,7 @@ class PhindClient {
     _dio = ProviderDioClientFactory.create(
       strategy: PhindDioStrategy(),
       config: config,
+      overrides: config.dioOverrides,
     );
     _requestExecutor = CompatibilityDioRequestExecutor(
       dio: _dio,

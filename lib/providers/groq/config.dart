@@ -1,29 +1,28 @@
+import 'package:llm_dart_transport/llm_dart_transport.dart'
+    show DioClientOverrides, HasDioClientOverrides;
+
 import '../../models/tool_models.dart';
-import '../../core/config.dart';
-import '../../src/config/legacy_dio_client_overrides.dart';
 import '../../src/provider_defaults.dart';
 
 /// Groq provider configuration
 ///
 /// This class contains all configuration options for the Groq providers.
 /// It's extracted from the main provider to improve modularity and reusability.
-class GroqConfig with LegacyDioClientOverrides {
+class GroqConfig implements HasDioClientOverrides {
   final String apiKey;
   final String baseUrl;
   final String model;
   final int? maxTokens;
   final double? temperature;
   final String? systemPrompt;
-  @override
   final Duration? timeout;
+  @override
+  final DioClientOverrides? dioOverrides;
 
   final double? topP;
   final int? topK;
   final List<Tool>? tools;
   final ToolChoice? toolChoice;
-
-  /// Reference to original LLMConfig for accessing extensions
-  final LLMConfig? _originalConfig;
 
   const GroqConfig({
     required this.apiKey,
@@ -33,37 +32,12 @@ class GroqConfig with LegacyDioClientOverrides {
     this.temperature,
     this.systemPrompt,
     this.timeout,
+    this.dioOverrides,
     this.topP,
     this.topK,
     this.tools,
     this.toolChoice,
-    LLMConfig? originalConfig,
-  }) : _originalConfig = originalConfig;
-
-  /// Create GroqConfig from unified LLMConfig
-  factory GroqConfig.fromLLMConfig(LLMConfig config) {
-    return GroqConfig(
-      apiKey: config.apiKey!,
-      baseUrl: config.baseUrl,
-      model: config.model,
-      maxTokens: config.maxTokens,
-      temperature: config.temperature,
-      systemPrompt: config.systemPrompt,
-      timeout: config.timeout,
-      topP: config.topP,
-      topK: config.topK,
-      tools: config.tools,
-      toolChoice: config.toolChoice,
-      originalConfig: config,
-    );
-  }
-
-  /// Get extension value from original config
-  T? getExtension<T>(String key) => _originalConfig?.getExtension<T>(key);
-
-  /// Get the original LLMConfig for HTTP configuration
-  @override
-  LLMConfig? get originalConfig => _originalConfig;
+  });
 
   /// Check if this model supports reasoning/thinking
   bool get supportsReasoning {
@@ -139,6 +113,7 @@ class GroqConfig with LegacyDioClientOverrides {
     double? temperature,
     String? systemPrompt,
     Duration? timeout,
+    DioClientOverrides? dioOverrides,
     double? topP,
     int? topK,
     List<Tool>? tools,
@@ -152,6 +127,7 @@ class GroqConfig with LegacyDioClientOverrides {
         temperature: temperature ?? this.temperature,
         systemPrompt: systemPrompt ?? this.systemPrompt,
         timeout: timeout ?? this.timeout,
+        dioOverrides: dioOverrides ?? this.dioOverrides,
         topP: topP ?? this.topP,
         topK: topK ?? this.topK,
         tools: tools ?? this.tools,

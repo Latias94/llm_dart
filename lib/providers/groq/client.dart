@@ -26,6 +26,7 @@ class GroqClient {
     dio = ProviderDioClientFactory.create(
       strategy: GroqDioStrategy(),
       config: config,
+      overrides: config.dioOverrides,
     );
   }
 

@@ -14,6 +14,7 @@ import 'package:llm_dart/providers/openai/config.dart';
 import 'package:llm_dart/providers/xai/client.dart';
 import 'package:llm_dart/providers/xai/config.dart';
 import 'package:llm_dart/src/compatibility/providers/openai_family_compat_deepseek_config.dart';
+import 'package:llm_dart/src/compatibility/providers/openai_family_compat_groq_config.dart';
 import 'package:llm_dart/src/compatibility/providers/ollama/config_adapter.dart';
 import 'package:test/test.dart';
 import 'package:llm_dart_transport/dio.dart';
@@ -144,7 +145,7 @@ void main() {
       test(
           'should use unified HTTP configuration when originalConfig is available',
           () {
-        final config = GroqConfig.fromLLMConfig(baseConfig);
+        final config = createLegacyGroqConfig(baseConfig);
         final client = GroqClient(config);
 
         expect(client.dio, isA<Dio>());

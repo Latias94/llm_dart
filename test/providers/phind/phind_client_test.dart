@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:llm_dart/core/config.dart';
 import 'package:llm_dart/providers/phind/phind.dart';
+import 'package:llm_dart/src/compatibility/providers/openai_family_compat_phind_config.dart';
 import 'package:llm_dart_transport/dio.dart';
 import 'package:test/test.dart';
 
@@ -25,7 +26,7 @@ void main() {
         ),
       );
 
-      final config = PhindConfig.fromLLMConfig(
+      final config = createLegacyPhindConfig(
         LLMConfig(
           baseUrl: 'https://phind.example/',
           apiKey: 'test-key',
@@ -71,7 +72,7 @@ void main() {
         ),
       );
 
-      final config = PhindConfig.fromLLMConfig(
+      final config = createLegacyPhindConfig(
         LLMConfig(
           baseUrl: 'https://phind.example/',
           apiKey: 'test-key',

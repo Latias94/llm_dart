@@ -14,6 +14,10 @@ export 'src/compatibility/providers/community_provider_config_adapters.dart'
     show createLegacyDioClientOverrides;
 export 'src/compatibility/providers/openai_family_compat_deepseek_config.dart'
     show createLegacyDeepSeekConfig;
+export 'src/compatibility/providers/openai_family_compat_groq_config.dart'
+    show createLegacyGroqConfig;
+export 'src/compatibility/providers/openai_family_compat_phind_config.dart'
+    show createLegacyPhindConfig;
 export 'src/compatibility/providers/elevenlabs/config_adapter.dart'
     show createLegacyElevenLabsConfig;
 export 'src/compatibility/providers/ollama/config_adapter.dart'

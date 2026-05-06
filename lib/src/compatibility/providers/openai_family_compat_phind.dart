@@ -10,9 +10,10 @@ import '../chat_route_compatibility.dart';
 import '../compat_transport.dart';
 import '../legacy_chat_adapter.dart';
 import 'compat_provider_support.dart';
+import 'openai_family_compat_phind_config.dart';
 
 ChatCapability buildCompatPhindProvider(LLMConfig config) {
-  final legacyConfig = PhindConfig.fromLLMConfig(config);
+  final legacyConfig = createLegacyPhindConfig(config);
   final model = modern_openai.OpenAI(
     apiKey: config.apiKey!,
     baseUrl: config.baseUrl,

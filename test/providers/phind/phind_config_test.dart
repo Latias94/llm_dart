@@ -1,6 +1,7 @@
 import 'package:llm_dart/core/config.dart';
 import 'package:llm_dart/models/tool_models.dart';
 import 'package:llm_dart/providers/phind/config.dart';
+import 'package:llm_dart/src/compatibility/providers/openai_family_compat_phind_config.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -158,7 +159,7 @@ void main() {
           toolChoice: AutoToolChoice(),
         );
 
-        final phindConfig = PhindConfig.fromLLMConfig(llmConfig);
+        final phindConfig = createLegacyPhindConfig(llmConfig);
 
         expect(phindConfig.apiKey, equals('test-key'));
         expect(phindConfig.baseUrl,
@@ -174,18 +175,28 @@ void main() {
         expect(phindConfig.toolChoice, isA<ToolChoice>());
       });
 
-      test('should access extensions from original config', () {
+      test('should project legacy HTTP overrides', () {
         final llmConfig = LLMConfig(
           apiKey: 'test-key',
           baseUrl: 'https://https.extension.phind.com/agent/',
           model: 'Phind-70B',
-          extensions: {'customParam': 'customValue'},
+          extensions: {
+            'customHeaders': {'X-Test': 'value'},
+            'connectionTimeout': const Duration(seconds: 30),
+          },
         );
 
-        final phindConfig = PhindConfig.fromLLMConfig(llmConfig);
+        final phindConfig = createLegacyPhindConfig(llmConfig);
 
-        expect(phindConfig.getExtension<String>('customParam'),
-            equals('customValue'));
+        expect(phindConfig.dioOverrides, isNotNull);
+        expect(
+          phindConfig.dioOverrides!.customHeaders,
+          equals({'X-Test': 'value'}),
+        );
+        expect(
+          phindConfig.dioOverrides!.connectionTimeout,
+          equals(const Duration(seconds: 30)),
+        );
       });
     });
 

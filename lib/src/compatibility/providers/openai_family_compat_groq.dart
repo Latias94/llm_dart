@@ -10,9 +10,10 @@ import '../chat_route_compatibility.dart';
 import '../compat_transport.dart';
 import '../legacy_chat_adapter.dart';
 import 'compat_provider_support.dart';
+import 'openai_family_compat_groq_config.dart';
 
 ChatCapability buildCompatGroqProvider(LLMConfig config) {
-  final legacyConfig = GroqConfig.fromLLMConfig(config);
+  final legacyConfig = createLegacyGroqConfig(config);
   final model = modern_openai.OpenAI(
     apiKey: config.apiKey!,
     baseUrl: config.baseUrl,

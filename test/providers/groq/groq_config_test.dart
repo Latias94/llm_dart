@@ -1,6 +1,7 @@
 import 'package:llm_dart/core/config.dart';
 import 'package:llm_dart/models/tool_models.dart';
 import 'package:llm_dart/providers/groq/config.dart';
+import 'package:llm_dart/src/compatibility/providers/openai_family_compat_groq_config.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -218,7 +219,7 @@ void main() {
           toolChoice: AutoToolChoice(),
         );
 
-        final groqConfig = GroqConfig.fromLLMConfig(llmConfig);
+        final groqConfig = createLegacyGroqConfig(llmConfig);
 
         expect(groqConfig.apiKey, equals('test-key'));
         expect(groqConfig.baseUrl, equals('https://api.groq.com/openai/v1/'));
@@ -233,18 +234,26 @@ void main() {
         expect(groqConfig.toolChoice, isA<ToolChoice>());
       });
 
-      test('should access extensions from original config', () {
+      test('should project legacy HTTP overrides', () {
         final llmConfig = LLMConfig(
           apiKey: 'test-key',
           baseUrl: 'https://api.groq.com/openai/v1/',
           model: 'llama-3.3-70b-versatile',
-          extensions: {'customParam': 'customValue'},
+          extensions: {
+            'customHeaders': {'X-Test': 'value'},
+            'connectionTimeout': const Duration(seconds: 30),
+          },
         );
 
-        final groqConfig = GroqConfig.fromLLMConfig(llmConfig);
+        final groqConfig = createLegacyGroqConfig(llmConfig);
 
-        expect(groqConfig.getExtension<String>('customParam'),
-            equals('customValue'));
+        expect(groqConfig.dioOverrides, isNotNull);
+        expect(groqConfig.dioOverrides!.customHeaders,
+            equals({'X-Test': 'value'}));
+        expect(
+          groqConfig.dioOverrides!.connectionTimeout,
+          equals(const Duration(seconds: 30)),
+        );
       });
     });
   });

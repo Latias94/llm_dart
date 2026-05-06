@@ -24,6 +24,10 @@ import 'package:llm_dart/src/compatibility/providers/elevenlabs/config_adapter.d
     show createLegacyElevenLabsConfig;
 import 'package:llm_dart/src/compatibility/providers/openai_family_compat_deepseek_config.dart'
     show createLegacyDeepSeekConfig;
+import 'package:llm_dart/src/compatibility/providers/openai_family_compat_groq_config.dart'
+    show createLegacyGroqConfig;
+import 'package:llm_dart/src/compatibility/providers/openai_family_compat_phind_config.dart'
+    show createLegacyPhindConfig;
 import 'package:llm_dart/src/compatibility/providers/ollama/config_adapter.dart'
     show createLegacyOllamaConfig;
 import 'package:llm_dart/utils/dio_client_factory.dart';
@@ -351,11 +355,7 @@ void main() {
         },
         {
           'strategy': GroqDioStrategy(),
-          'config': GroqConfig(
-              apiKey: 'test-key',
-              baseUrl: 'https://api.example.com',
-              model: 'test-model',
-              originalConfig: llmConfig)
+          'config': createLegacyGroqConfig(llmConfig)
         },
         {
           'strategy': DeepSeekDioStrategy(),
@@ -367,7 +367,7 @@ void main() {
         },
         {
           'strategy': PhindDioStrategy(),
-          'config': PhindConfig.fromLLMConfig(llmConfig)
+          'config': createLegacyPhindConfig(llmConfig)
         },
         {
           'strategy': ElevenLabsDioStrategy(),
@@ -432,11 +432,7 @@ void main() {
         },
         {
           'strategy': GroqDioStrategy(),
-          'config': GroqConfig(
-              apiKey: 'test-key',
-              baseUrl: 'https://api.example.com',
-              model: 'test-model',
-              originalConfig: llmConfig)
+          'config': createLegacyGroqConfig(llmConfig)
         },
         {
           'strategy': DeepSeekDioStrategy(),
@@ -448,7 +444,7 @@ void main() {
         },
         {
           'strategy': PhindDioStrategy(),
-          'config': PhindConfig.fromLLMConfig(llmConfig)
+          'config': createLegacyPhindConfig(llmConfig)
         },
         {
           'strategy': ElevenLabsDioStrategy(),
@@ -511,11 +507,7 @@ void main() {
         },
         {
           'strategy': GroqDioStrategy(),
-          'config': GroqConfig(
-              apiKey: 'test-key',
-              baseUrl: 'https://api.example.com',
-              model: 'test-model',
-              originalConfig: llmConfig),
+          'config': createLegacyGroqConfig(llmConfig),
           'expectedHeaders': {'Authorization': 'Bearer test-key'}
         },
         {
@@ -525,7 +517,7 @@ void main() {
         },
         {
           'strategy': PhindDioStrategy(),
-          'config': PhindConfig.fromLLMConfig(llmConfig),
+          'config': createLegacyPhindConfig(llmConfig),
           'expectedHeaders': {'User-Agent': '', 'Accept': '*/*'}
         },
         {
