@@ -1,5 +1,12 @@
+import 'package:llm_dart/builder/llm_builder.dart';
+import 'package:llm_dart/core/config.dart';
+import 'package:llm_dart/providers/anthropic/client.dart';
+import 'package:llm_dart/providers/anthropic/config.dart';
+import 'package:llm_dart/providers/openai/client.dart';
+import 'package:llm_dart/providers/openai/config.dart';
+import 'package:llm_dart/providers/xai/client.dart';
+import 'package:llm_dart/providers/xai/config.dart';
 import 'package:llm_dart_transport/dio.dart';
-import 'package:llm_dart/legacy.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 import 'package:test/test.dart';
 

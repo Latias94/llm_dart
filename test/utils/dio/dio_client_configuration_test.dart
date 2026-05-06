@@ -1,6 +1,21 @@
+import 'package:llm_dart/core/config.dart';
+import 'package:llm_dart/providers/anthropic/client.dart';
+import 'package:llm_dart/providers/anthropic/config.dart';
+import 'package:llm_dart/providers/deepseek/client.dart';
+import 'package:llm_dart/providers/deepseek/config.dart';
+import 'package:llm_dart/providers/google/client.dart';
+import 'package:llm_dart/providers/google/config.dart';
+import 'package:llm_dart/providers/groq/client.dart';
+import 'package:llm_dart/providers/groq/config.dart';
+import 'package:llm_dart/providers/ollama/client.dart';
+import 'package:llm_dart/providers/ollama/config.dart';
+import 'package:llm_dart/providers/openai/client.dart';
+import 'package:llm_dart/providers/openai/config.dart';
+import 'package:llm_dart/providers/xai/client.dart';
+import 'package:llm_dart/providers/xai/config.dart';
+import 'package:llm_dart/src/compatibility/providers/ollama/config_adapter.dart';
 import 'package:test/test.dart';
 import 'package:llm_dart_transport/dio.dart';
-import 'package:llm_dart/legacy.dart';
 
 void main() {
   group('Provider Client Dio Configuration Tests', () {

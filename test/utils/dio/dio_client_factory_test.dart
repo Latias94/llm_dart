@@ -20,8 +20,10 @@ import 'package:llm_dart/providers/phind/config.dart';
 import 'package:llm_dart/providers/phind/dio_strategy.dart';
 import 'package:llm_dart/providers/elevenlabs/config.dart';
 import 'package:llm_dart/providers/elevenlabs/dio_strategy.dart';
-import 'package:llm_dart/legacy.dart'
-    show createLegacyElevenLabsConfig, createLegacyOllamaConfig;
+import 'package:llm_dart/src/compatibility/providers/elevenlabs/config_adapter.dart'
+    show createLegacyElevenLabsConfig;
+import 'package:llm_dart/src/compatibility/providers/ollama/config_adapter.dart'
+    show createLegacyOllamaConfig;
 import 'package:llm_dart/utils/dio_client_factory.dart';
 
 void main() {
