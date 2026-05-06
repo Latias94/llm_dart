@@ -131,16 +131,6 @@ void main() {
         final builder = LLMBuilder().openRouter();
         expect(builder, isNotNull);
       });
-
-      test('should select GitHub Copilot', () {
-        final builder = LLMBuilder().githubCopilot();
-        expect(builder, isNotNull);
-      });
-
-      test('should select Together AI', () {
-        final builder = LLMBuilder().togetherAI();
-        expect(builder, isNotNull);
-      });
     });
 
     group('Tool Configuration', () {

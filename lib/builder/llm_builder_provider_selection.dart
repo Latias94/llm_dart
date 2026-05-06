@@ -9,7 +9,4 @@ extension LLMBuilderProviderSelection on LLMBuilder {
   LLMBuilder xai() => provider('xai');
   LLMBuilder phind() => provider('phind');
   LLMBuilder groq() => provider('groq');
-
-  LLMBuilder githubCopilot() => provider('github-copilot');
-  LLMBuilder togetherAI() => provider('together-ai');
 }

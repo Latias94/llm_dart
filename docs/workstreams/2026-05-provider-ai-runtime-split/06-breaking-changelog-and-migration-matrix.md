@@ -122,6 +122,7 @@ Use this as the starting point for the next explicit breaking release.
 | `package:llm_dart/legacy.dart` | Keep in root for first preview | Compatibility bridge | Move to `llm_dart_legacy` only in a later release if root dependency shrink requires it. |
 | `LLMBuilder.deepseekOpenAI()` and other `*-openai` builder aliases | Dedicated providers such as `deepseek`, `google`, `xai`, `groq`, `phind` | Removed from default builder surface | Use `provider('deepseek-openai')` only after explicit `OpenAICompatibleProviderRegistrar.registerProvider('deepseek-openai')` when migrating old generic-compatible code. |
 | Default registry entries for `deepseek-openai`, `google-openai`, `xai-openai`, `groq-openai`, `phind-openai` | Dedicated provider entries plus `openrouter` | Removed from default registry surface | The typed factory remains available for explicit registration; default app discovery should not show duplicate lower-fidelity aliases. |
+| `LLMBuilder.githubCopilot()` and `LLMBuilder.togetherAI()` | Explicit provider registration or provider-owned OpenAI-family profile composition | Removed from default builder surface | These methods only selected unregistered provider IDs. For generic compatible endpoints, construct a provider-owned OpenAI-family model/profile explicitly or register a concrete factory. |
 
 ## Compatibility Policy
 
