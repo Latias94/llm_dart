@@ -122,7 +122,7 @@ Current status:
 - `llm_dart_core` compatibility exports expose the new shared types through the
   old content, prompt, and tool paths
 - OpenAI Responses and Chat Completions resolve OpenAI provider references for
-  image/PDF file inputs while retaining legacy provider metadata fallback
+  image/PDF file inputs without falling back to provider metadata file IDs
 - Anthropic Messages resolves Anthropic provider references to file sources and
   adds the Files API beta header when needed
 - Google GenerateContent and function-response replay resolve Google/Vertex
@@ -137,8 +137,8 @@ Current status:
   legacy `output` / `isError` inputs are construction-time migration shims, and
   the old `toolOutputFromLegacy` helper has been removed from the provider
   surface
-- remaining breaking work: remove input-side file IDs from provider metadata
-  and expand provider-reference coverage beyond the first provider slice
+- remaining breaking work: expand provider-reference coverage beyond the first
+  provider slice
 
 ## M5 - Provider Package Migration
 

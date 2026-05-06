@@ -311,18 +311,11 @@ extension _OpenAIResponsesCodecRequestSupport on OpenAIResponsesCodec {
   }
 
   String? _openAIFileId({
-    required FileData? data,
-    required ProviderMetadata? metadata,
+    required FileData data,
   }) {
-    return data?.providerReference?.requireProvider(
-          'openai',
-          context: 'OpenAI file prompt part',
-        ) ??
-        _asString(
-          _providerMetadataValues(
-            metadata,
-            namespace: 'openai',
-          )?['fileId'],
-        );
+    return data.providerReference?.requireProvider(
+      'openai',
+      context: 'OpenAI file prompt part',
+    );
   }
 }

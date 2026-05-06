@@ -58,7 +58,7 @@ void main() {
     });
 
     test(
-        'encodes OpenAI-owned fileId and imageDetail hints on the Responses path',
+        'encodes OpenAI provider references and imageDetail on the Responses path',
         () {
       const codec = OpenAIResponsesCodec();
 
@@ -168,6 +168,43 @@ void main() {
             ],
           },
         ],
+      );
+    });
+
+    test('rejects legacy metadata fileId for input file identity', () {
+      const codec = OpenAIResponsesCodec();
+
+      expect(
+        () => codec.encodeRequest(
+          modelId: 'gpt-5-mini',
+          prompt: [
+            UserPromptMessage(
+              parts: const [
+                FilePromptPart(
+                  mediaType: 'application/pdf',
+                  data: FileTextData('legacy-metadata-only'),
+                  providerMetadata: ProviderMetadata({
+                    'openai': {
+                      'fileId': 'file-pdf-123',
+                    },
+                  }),
+                ),
+              ],
+            ),
+          ],
+          tools: const [],
+          toolChoice: null,
+          options: const GenerateTextOptions(),
+          providerOptions: const OpenAIGenerateTextOptions(),
+          stream: false,
+        ),
+        throwsA(
+          isA<UnsupportedError>().having(
+            (error) => error.message,
+            'message',
+            contains('OpenAI provider reference'),
+          ),
+        ),
       );
     });
 

@@ -255,19 +255,12 @@ extension _OpenAIChatCompletionsCodecRequestSupport
   }
 
   String? _openAIFileId({
-    required FileData? data,
-    required ProviderMetadata? metadata,
+    required FileData data,
   }) {
-    return data?.providerReference?.requireProvider(
-          providerNamespace,
-          context: '$providerNamespace file prompt part',
-        ) ??
-        _asString(
-          _providerMetadataValues(
-            metadata,
-            namespace: providerNamespace,
-          )?['fileId'],
-        );
+    return data.providerReference?.requireProvider(
+      providerNamespace,
+      context: '$providerNamespace file prompt part',
+    );
   }
 
   List<Map<String, Object?>> _encodeTools(

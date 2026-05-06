@@ -1,6 +1,7 @@
 # Data Structure Redesign
 
-Status: tool-output storage convergence slice complete.
+Status: structured file data and provider-reference input identity slice
+complete.
 
 This slice introduces the long-lived shared data vocabulary while keeping the
 old constructor shapes source-compatible:
@@ -17,6 +18,9 @@ old constructor shapes source-compatible:
   provider-reference file path where their APIs expose one.
 - `ToolResultContent` and `ToolResultPromptPart` now store only `ToolOutput`;
   legacy `output` and `isError` inputs are constructor-time migration shims.
+- OpenAI input-side file IDs now resolve only through
+  `FileProviderReferenceData`; `providerMetadata.openai.fileId` is no longer
+  accepted as an input file identity hint.
 
 ## Provider Options And Provider Metadata
 
@@ -42,7 +46,8 @@ Implementation rule for the breaking line:
 - provider-owned file identity belongs in `ProviderReference`
 - output replay details and observed provider IDs may remain in
   `ProviderMetadata`
-- old metadata file-id hints may stay as transitional fallback only
+- provider metadata file-id hints are not an input compatibility path in the
+  breaking API line
 
 ## File Data
 
@@ -82,8 +87,7 @@ Prompt file parts now hold:
 
 - `mediaType`
 - optional `filename`
-- optional `FileData data`
-- legacy `uri` and `bytes` constructor parameters as compatibility shims
+- required `FileData data`
 - optional provider metadata for output/replay compatibility
 
 Provider codec support in the first slice:
@@ -99,8 +103,8 @@ Provider codec support in the first slice:
   `{'vertex': ...}` to `fileData.fileUri`
 - core prompt JSON serialization preserves `FileData` while still decoding the
   legacy `uri` and `bytes` shape
-- during the migration window, prompt and generated-file JSON keeps legacy URI
-  sidecars when old call sites provided both `uri` and `bytes`
+- prompt and generated-file JSON encodes only the structured `data` shape while
+  still reading legacy `uri` and `bytes` payloads
 
 ## Provider Reference
 
@@ -264,11 +268,6 @@ ToolResultPromptPart(
 
 ## Remaining Breaking Work
 
-- make `FileData` required where file prompts semantically require data
-- make file prompt and generated file internals store only `FileData`
-- decide whether legacy dual `uri` + `bytes` file payloads become an explicit
-  file-data variant or are rejected in the breaking API line
-- remove provider-file identity from input-side `ProviderMetadata`
 - expand provider-reference coverage beyond OpenAI, Anthropic, and Google
 - decide whether `ContentToolOutput` needs provider-specific multimodal content
   adapters before the breaking release

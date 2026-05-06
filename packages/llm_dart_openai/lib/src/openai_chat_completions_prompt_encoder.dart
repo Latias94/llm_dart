@@ -297,7 +297,6 @@ extension _OpenAIChatCompletionsCodecPromptEncoder
     if (part.mediaType == 'application/pdf') {
       if (_openAIFileId(
         data: part.data,
-        metadata: part.providerMetadata,
       )
           case final fileId?) {
         return {

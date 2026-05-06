@@ -382,7 +382,6 @@ extension _OpenAIResponsesCodecPromptEncoder on OpenAIResponsesCodec {
       final imageDetail = _asString(openaiMetadata?['imageDetail']);
       if (_openAIFileId(
         data: part.data,
-        metadata: part.providerMetadata,
       )
           case final fileId?) {
         return {
@@ -419,7 +418,6 @@ extension _OpenAIResponsesCodecPromptEncoder on OpenAIResponsesCodec {
         final imageDetail = _asString(openaiMetadata?['imageDetail']);
         if (_openAIFileId(
           data: part.data,
-          metadata: part.providerMetadata,
         )
             case final fileId?) {
           return {
@@ -450,7 +448,6 @@ extension _OpenAIResponsesCodecPromptEncoder on OpenAIResponsesCodec {
       if (part.mediaType == 'application/pdf') {
         if (_openAIFileId(
           data: part.data,
-          metadata: part.providerMetadata,
         )
             case final fileId?) {
           return {
@@ -468,7 +465,7 @@ extension _OpenAIResponsesCodecPromptEncoder on OpenAIResponsesCodec {
 
         if (part.bytes == null) {
           throw UnsupportedError(
-            'User PDF file prompt parts need bytes, a URI, or an OpenAI fileId on the migrated Responses path.',
+            'User PDF file prompt parts need bytes, a URI, or an OpenAI provider reference on the migrated Responses path.',
           );
         }
 

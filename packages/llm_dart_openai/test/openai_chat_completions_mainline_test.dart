@@ -1327,6 +1327,53 @@ void main() {
       );
     });
 
+    test('chat completions reject legacy metadata fileId for PDF identity',
+        () async {
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (_) async => TransportResponse(
+            statusCode: 200,
+            body: const {},
+          ),
+        ),
+      ).chatModel(
+        'gpt-4.1-mini',
+        settings: const OpenAIChatModelSettings(
+          useResponsesApi: false,
+        ),
+      );
+
+      await expectLater(
+        model.generate(
+          GenerateTextRequest(
+            prompt: [
+              UserPromptMessage(
+                parts: const [
+                  FilePromptPart(
+                    mediaType: 'application/pdf',
+                    data: FileTextData('legacy-metadata-only'),
+                    providerMetadata: ProviderMetadata({
+                      'openai': {
+                        'fileId': 'file-pdf-123',
+                      },
+                    }),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        throwsA(
+          isA<UnsupportedError>().having(
+            (error) => error.message,
+            'message',
+            contains('PDF file prompt parts need bytes'),
+          ),
+        ),
+      );
+    });
+
     test('chat completions encode audio file prompt parts', () async {
       TransportRequest? capturedRequest;
 

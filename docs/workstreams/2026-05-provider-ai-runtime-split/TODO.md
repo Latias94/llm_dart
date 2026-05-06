@@ -65,6 +65,7 @@
 - [x] Add JSON serialization coverage for new file and tool-output unions
 - [x] Replace nullable `uri`/`bytes` prompt file storage with required
   `FileData` in the breaking API line
+- [x] Remove input-side provider file identity from `ProviderMetadata`
 
 ## Provider Package Migration
 
