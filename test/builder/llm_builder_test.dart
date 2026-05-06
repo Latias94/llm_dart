@@ -1,5 +1,10 @@
+import 'package:llm_dart/builder/llm_builder.dart';
+import 'package:llm_dart/core/capability.dart';
+import 'package:llm_dart/core/llm_error.dart';
+import 'package:llm_dart/models/chat_models.dart';
+import 'package:llm_dart/models/tool_models.dart';
+import 'package:llm_dart/providers/openai/builtin_tools.dart';
 import 'package:test/test.dart';
-import 'package:llm_dart/legacy.dart';
 import 'package:llm_dart/src/config/legacy_config_keys.dart';
 import 'package:llm_dart/src/config/legacy_provider_options.dart';
 

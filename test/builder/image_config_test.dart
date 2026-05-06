@@ -1,5 +1,5 @@
+import 'package:llm_dart/builder/image_config.dart';
 import 'package:test/test.dart';
-import 'package:llm_dart/legacy.dart';
 
 void main() {
   group('ImageConfig', () {
