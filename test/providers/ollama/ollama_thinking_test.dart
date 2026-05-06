@@ -1,5 +1,8 @@
+import 'package:llm_dart/builder/llm_builder.dart';
+import 'package:llm_dart/core/config.dart';
+import 'package:llm_dart/providers/ollama/ollama.dart';
+import 'package:llm_dart/src/compatibility/providers/ollama/config_adapter.dart';
 import 'package:test/test.dart';
-import 'package:llm_dart/legacy.dart';
 
 void main() {
   group('OllamaThinking', () {

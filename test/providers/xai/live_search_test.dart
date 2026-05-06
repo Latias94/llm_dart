@@ -1,5 +1,5 @@
+import 'package:llm_dart/providers/xai/xai.dart';
 import 'package:test/test.dart';
-import 'package:llm_dart/legacy.dart';
 
 void main() {
   group('xAI Live Search Tests', () {

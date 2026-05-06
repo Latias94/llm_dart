@@ -1,5 +1,6 @@
+import 'package:llm_dart/providers/google/chat.dart';
+import 'package:llm_dart/providers/google/google.dart';
 import 'package:test/test.dart';
-import 'package:llm_dart/legacy.dart';
 
 /// Tests for Google provider thinking functionality
 ///
@@ -230,7 +231,7 @@ void main() {
       expect(stringRepresentation, equals('Just regular content.'));
     });
 
-    test('GoogleFile remains available on the legacy Google chat export path',
+    test('GoogleFile remains available on the provider Google chat export path',
         () {
       final file = GoogleFile.fromJson({
         'name': 'files/123',
