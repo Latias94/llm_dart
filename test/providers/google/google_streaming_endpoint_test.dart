@@ -1,4 +1,10 @@
-import 'package:llm_dart/legacy.dart';
+import 'package:llm_dart/core/cancellation.dart';
+import 'package:llm_dart/core/config.dart';
+import 'package:llm_dart/models/chat_models.dart';
+import 'package:llm_dart/models/tool_models.dart';
+import 'package:llm_dart/providers/google/chat.dart';
+import 'package:llm_dart/providers/google/client.dart';
+import 'package:llm_dart/providers/google/config.dart';
 import 'package:test/test.dart';
 
 class RecordingGoogleClient extends GoogleClient {

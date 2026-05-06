@@ -1,4 +1,4 @@
-import 'package:llm_dart/legacy.dart';
+import 'package:llm_dart/builder/llm_builder.dart';
 import 'package:test/test.dart';
 
 void main() {

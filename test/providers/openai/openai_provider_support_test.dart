@@ -1,4 +1,7 @@
-import 'package:llm_dart/legacy.dart';
+import 'package:llm_dart/core/capability.dart';
+import 'package:llm_dart/core/config.dart';
+import 'package:llm_dart/models/chat_models.dart';
+import 'package:llm_dart/providers/openai/openai.dart';
 import 'package:llm_dart_transport/dio.dart';
 import 'package:test/test.dart';
 

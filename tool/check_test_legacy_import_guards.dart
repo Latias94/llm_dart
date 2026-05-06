@@ -34,6 +34,11 @@ const Set<String> _guardedProviderTestFiles = {
   'test/providers/anthropic/anthropic_tools_api_structure_test.dart',
   'test/providers/anthropic/anthropic_tools_duplication_fix_test.dart',
   'test/providers/anthropic/anthropic_tool_caching_unified_test.dart',
+  'test/providers/google/google_streaming_endpoint_test.dart',
+  'test/providers/openai/openai_config_layering_test.dart',
+  'test/providers/openai/openai_provider_support_test.dart',
+  'test/providers/openai/openai_request_body_support_test.dart',
+  'test/providers/openrouter/openrouter_builder_test.dart',
 };
 
 final RegExp _legacyImportPattern = RegExp(
