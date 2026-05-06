@@ -1,5 +1,7 @@
 import 'dart:io';
-import 'package:llm_dart/legacy.dart';
+
+import 'package:llm_dart/builder/llm_builder.dart';
+import 'package:llm_dart/models/chat_models.dart';
 
 /// Demonstrates the new provider-specific builder pattern
 ///
@@ -225,12 +227,8 @@ Future<void> demoMixedConfigurations() async {
 
   // Show that providers work without callback configuration (backward compatible)
   print('   ✅ Backward compatibility - no callbacks:');
-  final simpleBuilder = LLMBuilder()
-      .openai()
-      .anthropic()
-      .ollama()
-      .elevenlabs()
-      .openRouter();
+  final simpleBuilder =
+      LLMBuilder().openai().anthropic().ollama().elevenlabs().openRouter();
   print('      Builder created successfully without provider-specific config');
   print('      Builder type: ${simpleBuilder.runtimeType}');
 

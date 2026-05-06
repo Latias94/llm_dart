@@ -5,9 +5,11 @@ Practical examples for the LLM Dart library, organized by learning path and use 
 For modern examples, the default root import is
 `package:llm_dart/llm_dart.dart`.
 
-When an example still relies on the older builder or broad provider shell, it
-should import `package:llm_dart/legacy.dart` explicitly and be read as
-compatibility-oriented material.
+When an example still needs the broad compatibility shell, it should import
+`package:llm_dart/legacy.dart` explicitly and be read as
+compatibility-oriented material. Builder-oriented examples should still prefer
+focused imports such as `builder/llm_builder.dart`, model barrels, and
+provider-owned entrypoints when they do not need the whole legacy surface.
 
 For shared chat UI projection, keep `ChatMessageMapper` on
 `package:llm_dart/core.dart`. When the UI also needs provider-owned metadata or
@@ -65,7 +67,7 @@ provider directories are explicit boundary appendices.
 ### Core Features
 *Essential functionality*
 
-- [capability_factory_methods.dart](02_core_features/capability_factory_methods.dart) - Compatibility-oriented typed `build*()` helpers on the legacy root builder surface
+- [capability_factory_methods.dart](02_core_features/capability_factory_methods.dart) - Compatibility-oriented typed `build*()` helpers through focused builder imports
 - [chat_basics.dart](02_core_features/chat_basics.dart) - Basic chat
 - [streaming_chat.dart](02_core_features/streaming_chat.dart) - Real-time streaming
 - [capability_profile_ui_gating.dart](02_core_features/capability_profile_ui_gating.dart) - Model-centric UI affordance and fallback gating
@@ -74,7 +76,7 @@ provider directories are explicit boundary appendices.
 - [embeddings_stable.dart](02_core_features/embeddings_stable.dart) - Stable shared embedding helpers
 - [enhanced_tool_calling.dart](02_core_features/enhanced_tool_calling.dart) - Stable advanced tool replay and provider-owned controls
 - [structured_output.dart](02_core_features/structured_output.dart) - Shared structured output
-- [provider_specific_builders.dart](02_core_features/provider_specific_builders.dart) - Compatibility-oriented provider callback builders on the legacy root shell
+- [provider_specific_builders.dart](02_core_features/provider_specific_builders.dart) - Compatibility-oriented provider callback builders through focused builder imports
 - [assistants.dart](02_core_features/assistants.dart) - Stable assistant-like chat plus the explicit OpenAI compatibility boundary
 - [embeddings.dart](02_core_features/embeddings.dart) - Stable multi-provider embeddings
 - [audio_processing.dart](02_core_features/audio_processing.dart) - Stable speech and transcription helpers

@@ -1,5 +1,7 @@
 import 'dart:io';
-import 'package:llm_dart/legacy.dart';
+
+import 'package:llm_dart/builder/llm_builder.dart';
+import 'package:llm_dart/models/audio_models.dart';
 
 /// Compatibility builder methods for provider capability families.
 ///
