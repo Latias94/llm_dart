@@ -193,6 +193,9 @@ Current status:
   JSON, and chat UI JSON implementations now live in `llm_dart_provider`
 - `llm_dart_core` preserves old UI and serialization paths as compatibility
   re-exports for migrated contracts
+- `llm_dart_core/lib` is now guarded as a compatibility shell: new
+  implementation declarations must move to `llm_dart_provider` or
+  `llm_dart_ai`, while old cancellation names remain approved aliases
 - `llm_dart_transport` now depends on `llm_dart_provider` directly and no
   longer depends on `llm_dart_core`
 - `llm_dart_chat` now depends on `llm_dart_provider` plus
@@ -225,3 +228,5 @@ Current status:
 
 - breaking changelog draft and migration matrix now exist
 - test-only broad imports remain only as compatibility-shell coverage
+- workspace dependency guards, root boundary guards, and the core compatibility
+  shell guard now cover the migrated package graph

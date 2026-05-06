@@ -101,11 +101,14 @@
   barrel
 - [x] Decide whether the published `llm_dart_core` package should remain a
   compatibility shell only after the breaking line, or eventually disappear
+- [x] Add a guard that rejects new implementation ownership in
+  `llm_dart_core/lib`
 
 ## Validation
 
 - [x] Run workspace dependency guards for the first provider-spec split slice
 - [x] Run root boundary guards for the first provider-spec split slice
+- [x] Run core compatibility shell guard after shrinking `llm_dart_core`
 - [x] Run package analysis after provider-spec migration slices
 - [x] Run focused provider/core tests after provider-spec migration slices
 - [x] Update publish dry-run tooling for the new provider package and root

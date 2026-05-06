@@ -28,6 +28,9 @@ The following slices are already landed on this branch:
   `llm_dart_provider` rather than `llm_dart_core`
 - core no longer carries duplicate JSON codec helper implementations; those
   helpers live only in `llm_dart_provider`
+- `packages/llm_dart_core/lib` is now protected by a compatibility-shell guard
+  that rejects new concrete implementation ownership outside approved legacy
+  aliases
 - `example/06_mcp_integration` now declares local overrides for the full
   workspace package set it needs
 
@@ -63,6 +66,9 @@ Use this as the starting point for the next explicit breaking release.
 - `llm_dart_provider_utils` is not part of the first public preview; helper
   extraction stays internal until a stable cross-provider helper contract
   exists.
+- `llm_dart_core` is guarded as a compatibility shell. New shared contracts
+  belong in `llm_dart_provider`, and new runtime helpers belong in
+  `llm_dart_ai`.
 
 ### Kept
 
@@ -94,6 +100,7 @@ Use this as the starting point for the next explicit breaking release.
 | Root runtime dependency on `llm_dart_core` | Direct `llm_dart_provider` and `llm_dart_ai` runtime dependencies | Landed | `llm_dart_core` remains only in dev/test coverage for the compatibility shell. |
 | `packages/llm_dart_test` helper package dependency on `llm_dart_core` | `llm_dart_provider` and `llm_dart_transport` | Landed | Shared test fakes should exercise provider contracts directly. |
 | Duplicate JSON codec helper implementations in core | Provider-owned helpers only in `llm_dart_provider` | Landed | Core no longer maintains its own parallel JSON helper copies. |
+| New implementation declarations in `llm_dart_core/lib` | Owning package plus core re-export | Guarded | `tool/check_core_compatibility_shell_guard.dart` rejects concrete declarations unless they are approved compatibility aliases. |
 | `packages/llm_dart_core/test` broad imports | Keep for compatibility coverage | Deliberately retained | These tests exercise the shell itself until the shell disappears. |
 | `example/06_mcp_integration` path dependencies | Full local workspace overrides | Landed | The example must resolve all unpublished workspace siblings locally. |
 | OpenAI input file IDs in `ProviderMetadata` | `FileProviderReferenceData` | Breaking migration | Provider metadata remains for output observation/replay details, not input file identity. |
@@ -104,6 +111,8 @@ Use this as the starting point for the next explicit breaking release.
 
 - Keep the compatibility barrel for the breaking window only.
 - Do not add new implementation ownership to the broad barrel.
+- Run `dart run tool/check_core_compatibility_shell_guard.dart` when touching
+  `packages/llm_dart_core/lib`.
 - Keep test-only broad imports as legacy coverage until the shell is removed.
 - Prefer focused entrypoints in docs, examples, and new code.
 

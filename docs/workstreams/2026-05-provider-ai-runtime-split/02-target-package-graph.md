@@ -157,3 +157,6 @@ When packages are introduced, guard tooling should be updated to enforce:
 - no `llm_dart_provider` dependency on transport or Flutter
 - no Flutter package dependency on concrete provider packages
 - no root-local provider implementation growth outside explicit legacy areas
+- no new implementation ownership inside `llm_dart_core/lib`; the package is
+  guarded as a compatibility shell with only public re-exports and approved
+  legacy aliases

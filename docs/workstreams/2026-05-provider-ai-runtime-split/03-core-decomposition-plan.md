@@ -105,6 +105,9 @@ After migration:
   re-exports and legacy-path coverage tests
 - eventual removal should be a later release decision after root examples,
   migration docs, and package dependents have moved to focused entrypoints
+- `tool/check_core_compatibility_shell_guard.dart` enforces this posture by
+  rejecting new concrete declarations in `packages/llm_dart_core/lib`; only
+  public re-exports and explicitly approved compatibility aliases are allowed
 
 ## Split Triggers
 
