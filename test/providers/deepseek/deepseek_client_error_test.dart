@@ -1,4 +1,5 @@
-import 'package:llm_dart/legacy.dart';
+import 'package:llm_dart/core/llm_error.dart';
+import 'package:llm_dart/providers/deepseek/deepseek.dart';
 import 'package:llm_dart_transport/dio.dart';
 import 'package:test/test.dart';
 

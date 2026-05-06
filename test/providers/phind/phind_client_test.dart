@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
-import 'package:llm_dart/legacy.dart';
+import 'package:llm_dart/core/config.dart';
+import 'package:llm_dart/providers/phind/phind.dart';
 import 'package:llm_dart_transport/dio.dart';
 import 'package:test/test.dart';
 

@@ -1,7 +1,10 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:llm_dart/legacy.dart';
+import 'package:llm_dart/core/config.dart';
+import 'package:llm_dart/core/llm_error.dart';
+import 'package:llm_dart/providers/openai/client.dart';
+import 'package:llm_dart/providers/openai/openai.dart';
 import 'package:llm_dart_transport/dio.dart';
 import 'package:test/test.dart';
 
