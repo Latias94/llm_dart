@@ -1,2 +1,2 @@
-export 'package:llm_dart_core/ui.dart'
+export 'package:llm_dart_provider/llm_dart_provider.dart'
     show ChatMappedDataPart, ChatMappedMessage, ChatMessageMapper;

@@ -1,4 +1,4 @@
-import 'package:llm_dart_core/serialization.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 typedef _JsonMap = Map<String, Object?>;
 typedef _JsonList = List<Object?>;

@@ -1,4 +1,4 @@
-import 'package:llm_dart_core/foundation.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 import 'package:test/test.dart';
 

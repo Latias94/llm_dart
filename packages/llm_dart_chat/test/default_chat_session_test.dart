@@ -1,8 +1,7 @@
 import 'dart:async';
 
 import 'package:llm_dart_chat/llm_dart_chat.dart';
-import 'package:llm_dart_core/model.dart';
-import 'package:llm_dart_core/ui.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:llm_dart_test/llm_dart_test.dart';
 import 'package:test/test.dart';
 

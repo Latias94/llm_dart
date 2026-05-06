@@ -1,4 +1,4 @@
-import 'package:llm_dart_core/ui.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 List<ChatUiMessage> visibleMessagesFromPrompt(
   List<PromptMessage> prompt,

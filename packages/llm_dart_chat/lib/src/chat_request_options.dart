@@ -1,4 +1,4 @@
-import 'package:llm_dart_core/model.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 final class ChatRequestOptions {
   final GenerateTextOptions generateOptions;

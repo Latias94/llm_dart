@@ -1,1 +1,2 @@
-const llmDartJsonSchemaVersion = '2026-03-1';
+export 'package:llm_dart_provider/llm_dart_provider.dart'
+    show llmDartJsonSchemaVersion;

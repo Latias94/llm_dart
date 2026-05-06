@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:llm_dart_core/ui.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'http_chat_transport_protocol.dart';
 

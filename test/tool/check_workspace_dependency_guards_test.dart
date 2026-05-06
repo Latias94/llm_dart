@@ -147,8 +147,8 @@ name: llm_dart_provider
 name: llm_dart_transport
 dependencies:
   dio: ^5.9.0
-  llm_dart_core:
-    path: ../llm_dart_core
+  llm_dart_provider:
+    path: ../llm_dart_provider
   logging: ^1.2.0
 ''',
   );

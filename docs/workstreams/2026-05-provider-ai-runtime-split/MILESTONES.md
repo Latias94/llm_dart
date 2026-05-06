@@ -184,7 +184,16 @@ Acceptance criteria:
 
 Current status:
 
-- not started
+- shared UI stream chunk, accumulator, projection, prompt JSON, text-stream
+  JSON, and chat UI JSON implementations now live in `llm_dart_provider`
+- `llm_dart_core` preserves old UI and serialization paths as compatibility
+  re-exports for migrated contracts
+- `llm_dart_transport` now depends on `llm_dart_provider` directly and no
+  longer depends on `llm_dart_core`
+- `llm_dart_chat` now depends on `llm_dart_provider` plus
+  `llm_dart_transport` and no longer depends on `llm_dart_core`
+- root and Flutter still keep their compatibility dependencies until their
+  implementation ownership and examples are migrated deliberately
 
 ## M7 - Migration And Release Readiness
 
