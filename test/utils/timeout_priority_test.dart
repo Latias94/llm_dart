@@ -1,5 +1,7 @@
+import 'package:llm_dart/builder/llm_builder.dart';
+import 'package:llm_dart/core/config.dart';
+import 'package:llm_dart/utils/http_config_utils.dart';
 import 'package:test/test.dart';
-import 'package:llm_dart/legacy.dart';
 
 void main() {
   group('Timeout Priority Tests', () {

@@ -1,6 +1,9 @@
-import 'package:test/test.dart';
-import 'package:llm_dart/legacy.dart';
 import 'dart:convert';
+
+import 'package:llm_dart/core/capability.dart';
+import 'package:llm_dart/models/chat_models.dart';
+import 'package:llm_dart/models/tool_models.dart';
+import 'package:test/test.dart';
 
 /// Mock tool execution capability for testing
 class MockToolExecutionCapability extends ToolExecutionCapability {

@@ -1,5 +1,8 @@
+import 'package:llm_dart/core/llm_error.dart';
+import 'package:llm_dart/core/tool_validator.dart';
+import 'package:llm_dart/models/chat_models.dart';
+import 'package:llm_dart/models/tool_models.dart';
 import 'package:test/test.dart';
-import 'package:llm_dart/legacy.dart';
 
 void main() {
   group('Tool Parameter Validation Tests', () {

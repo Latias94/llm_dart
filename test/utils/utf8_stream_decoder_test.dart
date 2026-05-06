@@ -1,6 +1,7 @@
 import 'dart:convert';
+
+import 'package:llm_dart/utils/utf8_stream_decoder.dart';
 import 'package:test/test.dart';
-import 'package:llm_dart/legacy.dart';
 
 void main() {
   group('Utf8StreamDecoder', () {
