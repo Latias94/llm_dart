@@ -163,6 +163,8 @@ Current status:
   `llm_dart_provider` for runtime contracts instead of `llm_dart_core`
 - provider tests and examples that need high-level helpers use
   `llm_dart_ai` as a dev dependency only
+- shared workspace test helpers in `llm_dart_test` now depend on
+  `llm_dart_provider` instead of `llm_dart_core`
 - provider-owned typed options, capability profiles, OpenAI-family profiles,
   and helper clients remain in their owning provider packages
 - workspace dependency guards now reject future concrete-provider runtime

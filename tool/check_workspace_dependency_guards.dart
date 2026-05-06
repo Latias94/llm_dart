@@ -49,7 +49,7 @@ const Map<String, Set<String>> _allowedRuntimeDependenciesByPackage = {
   },
   'llm_dart_provider': {},
   'llm_dart_test': {
-    'llm_dart_core',
+    'llm_dart_provider',
     'llm_dart_transport',
   },
   'llm_dart_transport': {

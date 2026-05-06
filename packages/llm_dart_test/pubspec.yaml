@@ -7,8 +7,8 @@ environment:
   sdk: '>=3.5.0 <4.0.0'
 
 dependencies:
-  llm_dart_core:
-    path: ../llm_dart_core
+  llm_dart_provider:
+    path: ../llm_dart_provider
   llm_dart_transport:
     path: ../llm_dart_transport
 

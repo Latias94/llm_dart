@@ -24,6 +24,8 @@ The following slices are already landed on this branch:
   of the old broad `llm_dart_core` barrel
 - the root package no longer has a runtime dependency on `llm_dart_core`; it
   keeps `llm_dart_core` only as a dev dependency for compatibility-shell tests
+- the shared `llm_dart_test` helper package now depends on
+  `llm_dart_provider` rather than `llm_dart_core`
 - `example/06_mcp_integration` now declares local overrides for the full
   workspace package set it needs
 
@@ -88,6 +90,7 @@ Use this as the starting point for the next explicit breaking release.
 | `package:llm_dart_core/llm_dart_core.dart` | `foundation.dart`, `model.dart`, `serialization.dart`, `ui.dart`, or `package:llm_dart/core.dart` | Compatibility shell | This is the main public import to shrink in the breaking line. |
 | Root compatibility consumers that still used the broad barrel | Focused `llm_dart_core` entrypoints | Landed in production code | New code should not reintroduce the broad barrel as a dependency. |
 | Root runtime dependency on `llm_dart_core` | Direct `llm_dart_provider` and `llm_dart_ai` runtime dependencies | Landed | `llm_dart_core` remains only in dev/test coverage for the compatibility shell. |
+| `packages/llm_dart_test` helper package dependency on `llm_dart_core` | `llm_dart_provider` and `llm_dart_transport` | Landed | Shared test fakes should exercise provider contracts directly. |
 | `packages/llm_dart_core/test` broad imports | Keep for compatibility coverage | Deliberately retained | These tests exercise the shell itself until the shell disappears. |
 | `example/06_mcp_integration` path dependencies | Full local workspace overrides | Landed | The example must resolve all unpublished workspace siblings locally. |
 | OpenAI input file IDs in `ProviderMetadata` | `FileProviderReferenceData` | Breaking migration | Provider metadata remains for output observation/replay details, not input file identity. |
