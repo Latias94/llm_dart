@@ -158,13 +158,10 @@ final class SerializationJsonSupport {
   }
 
   static JsonMap encodeGeneratedFile(GeneratedFile file) {
-    final data = file.data;
     return {
       'mediaType': file.mediaType,
       if (file.filename != null) 'filename': file.filename,
-      if (data != null) 'data': encodeFileData(data),
-      if (file.uri != null && data is! FileUrlData) 'uri': file.uri.toString(),
-      if (data == null && file.bytes != null) 'bytes': encodeBytes(file.bytes!),
+      'data': encodeFileData(file.data),
     };
   }
 
@@ -173,14 +170,24 @@ final class SerializationJsonSupport {
     required String path,
   }) {
     final map = asJsonMap(value, path: path);
+    final data = decodeFileData(map['data'], path: '$path.data') ??
+        fileDataFromLegacy(
+          uri: decodeUri(map['uri'], path: '$path.uri'),
+          bytes: map.containsKey('data')
+              ? null
+              : decodeBytes(map['bytes'], path: '$path.bytes'),
+        );
+
+    if (data == null) {
+      throw FormatException(
+        'Expected file data, uri, or bytes at $path.',
+      );
+    }
+
     return GeneratedFile(
       mediaType: asJsonString(map['mediaType'], path: '$path.mediaType'),
       filename: asNullableJsonString(map['filename'], path: '$path.filename'),
-      data: decodeFileData(map['data'], path: '$path.data'),
-      uri: decodeUri(map['uri'], path: '$path.uri'),
-      bytes: map.containsKey('data')
-          ? null
-          : decodeBytes(map['bytes'], path: '$path.bytes'),
+      data: data,
     );
   }
 

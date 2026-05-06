@@ -45,7 +45,7 @@ void main() {
             GeneratedFile(
               mediaType: 'application/pdf',
               filename: 'report.pdf',
-              bytes: [1, 2, 3],
+              data: FileBytesData.constBytes([1, 2, 3]),
             ),
             providerMetadata: ProviderMetadata({
               'google': {

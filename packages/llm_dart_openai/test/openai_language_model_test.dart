@@ -165,11 +165,11 @@ void main() {
                 TextPromptPart('Describe both inputs.'),
                 ImagePromptPart(
                   mediaType: 'image/png',
-                  bytes: [0, 1, 2, 3],
+                  data: FileBytesData.constBytes([0, 1, 2, 3]),
                 ),
                 FilePromptPart(
                   mediaType: 'application/pdf',
-                  bytes: [1, 2, 3, 4],
+                  data: FileBytesData.constBytes([1, 2, 3, 4]),
                 ),
               ],
             ),
@@ -257,24 +257,26 @@ void main() {
               parts: [
                 const ImagePromptPart(
                   mediaType: 'image/png',
+                  data: FileProviderReferenceData(
+                    ProviderReference({'openai': 'assistant-img-abc123'}),
+                  ),
                   providerMetadata: ProviderMetadata({
                     'openai': {
-                      'fileId': 'assistant-img-abc123',
                       'imageDetail': 'high',
                     },
                   }),
                 ),
                 const FilePromptPart(
                   mediaType: 'application/pdf',
-                  providerMetadata: ProviderMetadata({
-                    'openai': {
-                      'fileId': 'file-pdf-12345',
-                    },
-                  }),
+                  data: FileProviderReferenceData(
+                    ProviderReference({'openai': 'file-pdf-12345'}),
+                  ),
                 ),
                 FilePromptPart(
                   mediaType: 'application/pdf',
-                  uri: Uri.parse('https://example.com/document.pdf'),
+                  data: FileUrlData(
+                    Uri.parse('https://example.com/document.pdf'),
+                  ),
                 ),
               ],
             ),

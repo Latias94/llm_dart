@@ -116,8 +116,9 @@ Current status:
 - first data-structure slice is implemented in `llm_dart_provider`
 - `ProviderReference`, sealed `FileData`, and explicit `ToolOutput` variants
   are exported from the provider foundation entrypoint
-- prompt/content file parts and tool-result parts retain legacy constructor
-  arguments while exposing structured `data` and `toolOutput` accessors
+- prompt/content file parts and generated files now store required structured
+  `FileData`, while tool-result parts still expose structured `toolOutput`
+  accessors
 - `llm_dart_core` compatibility exports expose the new shared types through the
   old content, prompt, and tool paths
 - OpenAI Responses and Chat Completions resolve OpenAI provider references for
@@ -136,9 +137,8 @@ Current status:
   legacy `output` / `isError` inputs are construction-time migration shims, and
   the old `toolOutputFromLegacy` helper has been removed from the provider
   surface
-- remaining breaking work: make `FileData` the required storage shape, remove
-  input-side file IDs from provider metadata, and expand provider-reference
-  coverage beyond the first provider slice
+- remaining breaking work: remove input-side file IDs from provider metadata
+  and expand provider-reference coverage beyond the first provider slice
 
 ## M5 - Provider Package Migration
 

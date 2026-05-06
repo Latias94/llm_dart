@@ -291,8 +291,16 @@ final class AnthropicCompatAdapterSupport {
       ) =>
         core.ImagePromptPart(
           mediaType: mediaType,
-          uri: uri,
-          bytes: bytes,
+          data: bytes != null
+              ? core.FileBytesData(bytes)
+              : core.FileUrlData(
+                  uri ??
+                      (throw ArgumentError.value(
+                        block,
+                        'block',
+                        'Anthropic image blocks require bytes or a URI.',
+                      )),
+                ),
           providerMetadata: metadata,
         ),
       AnthropicLegacyDocumentBlock(
@@ -304,8 +312,16 @@ final class AnthropicCompatAdapterSupport {
         core.FilePromptPart(
           mediaType: mediaType,
           filename: title,
-          uri: uri,
-          bytes: bytes,
+          data: bytes != null
+              ? core.FileBytesData(bytes)
+              : core.FileUrlData(
+                  uri ??
+                      (throw ArgumentError.value(
+                        block,
+                        'block',
+                        'Anthropic document blocks require bytes or a URI.',
+                      )),
+                ),
           providerMetadata: metadata,
         ),
       AnthropicLegacyToolUseBlock() ||

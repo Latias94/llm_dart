@@ -16,12 +16,12 @@ void main() {
           const GeneratedFile(
             mediaType: 'image/png',
             filename: 'chart.png',
-            bytes: [1, 2, 3],
+            data: FileBytesData.constBytes([1, 2, 3]),
           ),
           GeneratedFile(
             mediaType: 'application/pdf',
             filename: 'quote.pdf',
-            uri: Uri.parse('https://example.com/quote.pdf'),
+            data: FileUrlData(Uri.parse('https://example.com/quote.pdf')),
           ),
           const GeneratedFile(
             mediaType: 'application/pdf',

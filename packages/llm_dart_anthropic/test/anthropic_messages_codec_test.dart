@@ -137,17 +137,17 @@ void main() {
               const TextPromptPart('See attachment'),
               const ImagePromptPart(
                 mediaType: 'image/png',
-                bytes: [1, 2, 3],
+                data: FileBytesData.constBytes([1, 2, 3]),
               ),
               FilePromptPart(
                 mediaType: 'text/plain',
                 filename: 'notes.txt',
-                bytes: utf8.encode('hello'),
+                data: FileBytesData(utf8.encode('hello')),
               ),
               FilePromptPart(
                 mediaType: 'application/pdf',
                 filename: 'doc.pdf',
-                uri: Uri.parse('https://example.com/doc.pdf'),
+                data: FileUrlData(Uri.parse('https://example.com/doc.pdf')),
               ),
             ],
           ),
@@ -1310,7 +1310,7 @@ void main() {
             parts: [
               ImagePromptPart(
                 mediaType: 'image/png',
-                uri: Uri.parse('https://example.com/image.png'),
+                data: FileUrlData(Uri.parse('https://example.com/image.png')),
                 providerMetadata: const ProviderMetadata({
                   'anthropic': {
                     'cacheControl': {
@@ -1323,7 +1323,7 @@ void main() {
               FilePromptPart(
                 mediaType: 'text/plain',
                 filename: 'notes.txt',
-                bytes: utf8.encode('cached document'),
+                data: FileBytesData(utf8.encode('cached document')),
                 providerMetadata: const ProviderMetadata({
                   'anthropic': {
                     'cacheControl': {
@@ -1395,11 +1395,11 @@ void main() {
               ReasoningPromptPart('Hidden reasoning'),
               FilePromptPart(
                 mediaType: 'application/pdf',
-                bytes: [1, 2, 3],
+                data: FileBytesData.constBytes([1, 2, 3]),
               ),
               ReasoningFilePromptPart(
                 mediaType: 'image/png',
-                bytes: [1, 2, 3],
+                data: FileBytesData.constBytes([1, 2, 3]),
               ),
               CustomPromptPart(
                 kind: 'openai.compaction',

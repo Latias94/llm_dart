@@ -63,8 +63,7 @@ ChatUiMessage promptMessageToChatUiMessage(
       case FilePromptPart(
           :final mediaType,
           :final filename,
-          :final uri,
-          :final bytes,
+          :final data,
           :final providerMetadata,
         ):
         parts.add(
@@ -72,8 +71,7 @@ ChatUiMessage promptMessageToChatUiMessage(
             GeneratedFile(
               mediaType: mediaType,
               filename: filename,
-              uri: uri,
-              bytes: bytes,
+              data: data,
             ),
             providerMetadata: providerMetadata,
           ),
@@ -81,8 +79,7 @@ ChatUiMessage promptMessageToChatUiMessage(
       case ReasoningFilePromptPart(
           :final mediaType,
           :final filename,
-          :final uri,
-          :final bytes,
+          :final data,
           :final providerMetadata,
         ):
         parts.add(
@@ -90,24 +87,21 @@ ChatUiMessage promptMessageToChatUiMessage(
             GeneratedFile(
               mediaType: mediaType,
               filename: filename,
-              uri: uri,
-              bytes: bytes,
+              data: data,
             ),
             providerMetadata: providerMetadata,
           ),
         );
       case ImagePromptPart(
           :final mediaType,
-          :final uri,
-          :final bytes,
+          :final data,
           :final providerMetadata,
         ):
         parts.add(
           FileUiPart(
             GeneratedFile(
               mediaType: mediaType,
-              uri: uri,
-              bytes: bytes,
+              data: data,
             ),
             providerMetadata: providerMetadata,
           ),
@@ -328,8 +322,7 @@ List<PromptMessage> assistantPromptMessagesFromChatUiMessage(
           FilePromptPart(
             mediaType: file.mediaType,
             filename: file.filename,
-            uri: file.uri,
-            bytes: file.bytes,
+            data: file.data,
             providerMetadata: providerMetadata,
           ),
         );
@@ -341,8 +334,7 @@ List<PromptMessage> assistantPromptMessagesFromChatUiMessage(
           ReasoningFilePromptPart(
             mediaType: file.mediaType,
             filename: file.filename,
-            uri: file.uri,
-            bytes: file.bytes,
+            data: file.data,
             providerMetadata: providerMetadata,
           ),
         );

@@ -83,19 +83,14 @@ void main() {
       );
     });
 
-    test('projects legacy file prompts into structured data variants', () {
+    test('stores file prompts as structured data variants', () {
       final urlPart = FilePromptPart(
         mediaType: 'application/pdf',
-        uri: Uri.parse('https://example.test/file.pdf'),
+        data: FileUrlData(Uri.parse('https://example.test/file.pdf')),
       );
       const bytesPart = FilePromptPart(
         mediaType: 'application/pdf',
-        bytes: [1, 2, 3],
-      );
-      final legacyDualPart = FilePromptPart(
-        mediaType: 'application/pdf',
-        uri: Uri.parse('https://example.test/file.pdf'),
-        bytes: const [1, 2, 3],
+        data: FileBytesData.constBytes([1, 2, 3]),
       );
       const referencePart = FilePromptPart(
         mediaType: 'application/pdf',
@@ -108,12 +103,6 @@ void main() {
       expect(urlPart.uri.toString(), 'https://example.test/file.pdf');
       expect(bytesPart.data, isA<FileBytesData>());
       expect(bytesPart.bytes, [1, 2, 3]);
-      expect(legacyDualPart.data, isA<FileBytesData>());
-      expect(
-        legacyDualPart.uri.toString(),
-        'https://example.test/file.pdf',
-      );
-      expect(legacyDualPart.bytes, [1, 2, 3]);
       expect(referencePart.data, isA<FileProviderReferenceData>());
       expect(referencePart.providerReference!.requireProvider('openai'),
           'file_123');

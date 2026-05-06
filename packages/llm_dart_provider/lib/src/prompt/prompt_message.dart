@@ -30,61 +30,45 @@ final class TextPromptPart extends PromptPart {
 final class FilePromptPart extends PromptPart {
   final String mediaType;
   final String? filename;
-  final Uri? _uri;
-  final List<int>? _bytes;
-  final FileData? _data;
+  final FileData data;
   @override
   final ProviderMetadata? providerMetadata;
 
   const FilePromptPart({
     required this.mediaType,
     this.filename,
-    FileData? data,
-    Uri? uri,
-    List<int>? bytes,
+    required this.data,
     this.providerMetadata,
-  })  : _data = data,
-        _uri = uri,
-        _bytes = bytes;
+  });
 
-  FileData? get data => _data ?? fileDataFromLegacy(uri: _uri, bytes: _bytes);
+  Uri? get uri => data.uri;
 
-  Uri? get uri => _uri ?? data?.uri;
+  List<int>? get bytes => data.bytes;
 
-  List<int>? get bytes => _bytes ?? data?.bytes;
+  String? get text => data.text;
 
-  String? get text => data?.text;
-
-  ProviderReference? get providerReference => data?.providerReference;
+  ProviderReference? get providerReference => data.providerReference;
 }
 
 final class ImagePromptPart extends PromptPart {
   final String mediaType;
-  final Uri? _uri;
-  final List<int>? _bytes;
-  final FileData? _data;
+  final FileData data;
   @override
   final ProviderMetadata? providerMetadata;
 
   const ImagePromptPart({
     required this.mediaType,
-    FileData? data,
-    Uri? uri,
-    List<int>? bytes,
+    required this.data,
     this.providerMetadata,
-  })  : _data = data,
-        _uri = uri,
-        _bytes = bytes;
+  });
 
-  FileData? get data => _data ?? fileDataFromLegacy(uri: _uri, bytes: _bytes);
+  Uri? get uri => data.uri;
 
-  Uri? get uri => _uri ?? data?.uri;
+  List<int>? get bytes => data.bytes;
 
-  List<int>? get bytes => _bytes ?? data?.bytes;
+  String? get text => data.text;
 
-  String? get text => data?.text;
-
-  ProviderReference? get providerReference => data?.providerReference;
+  ProviderReference? get providerReference => data.providerReference;
 }
 
 final class ReasoningPromptPart extends PromptPart {
@@ -101,32 +85,24 @@ final class ReasoningPromptPart extends PromptPart {
 final class ReasoningFilePromptPart extends PromptPart {
   final String mediaType;
   final String? filename;
-  final Uri? _uri;
-  final List<int>? _bytes;
-  final FileData? _data;
+  final FileData data;
   @override
   final ProviderMetadata? providerMetadata;
 
   const ReasoningFilePromptPart({
     required this.mediaType,
     this.filename,
-    FileData? data,
-    Uri? uri,
-    List<int>? bytes,
+    required this.data,
     this.providerMetadata,
-  })  : _data = data,
-        _uri = uri,
-        _bytes = bytes;
+  });
 
-  FileData? get data => _data ?? fileDataFromLegacy(uri: _uri, bytes: _bytes);
+  Uri? get uri => data.uri;
 
-  Uri? get uri => _uri ?? data?.uri;
+  List<int>? get bytes => data.bytes;
 
-  List<int>? get bytes => _bytes ?? data?.bytes;
+  String? get text => data.text;
 
-  String? get text => data?.text;
-
-  ProviderReference? get providerReference => data?.providerReference;
+  ProviderReference? get providerReference => data.providerReference;
 }
 
 final class CustomPromptPart extends PromptPart {

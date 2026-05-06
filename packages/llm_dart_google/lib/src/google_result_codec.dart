@@ -158,7 +158,12 @@ final class GoogleGenerateContentResultCodec {
           if (mediaType != null && data != null) {
             final file = GeneratedFile(
               mediaType: mediaType,
-              bytes: decodeBase64(data),
+              data: FileBytesData(
+                decodeBase64(data) ??
+                    (throw FormatException(
+                      'Expected Google inlineData.data to be base64.',
+                    )),
+              ),
             );
 
             if (part['thought'] == true) {

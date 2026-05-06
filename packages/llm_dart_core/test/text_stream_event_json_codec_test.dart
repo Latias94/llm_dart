@@ -97,7 +97,7 @@ void main() {
           GeneratedFile(
             mediaType: 'text/plain',
             filename: 'note.txt',
-            bytes: [1, 2, 3],
+            data: FileBytesData.constBytes([1, 2, 3]),
           ),
         ),
         const CustomEvent(
@@ -260,7 +260,7 @@ void main() {
             GeneratedFile(
               mediaType: 'image/png',
               filename: 'thought.png',
-              bytes: [1, 2, 3],
+              data: FileBytesData.constBytes([1, 2, 3]),
             ),
             providerMetadata: ProviderMetadata({
               'google': {

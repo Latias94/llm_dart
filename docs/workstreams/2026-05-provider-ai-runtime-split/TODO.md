@@ -63,7 +63,7 @@
 - [x] Migrate Google file prompt encoding to the new file data shape
 - [x] Add migration recipes for old file and tool-result shapes
 - [x] Add JSON serialization coverage for new file and tool-output unions
-- [ ] Replace nullable `uri`/`bytes` prompt file storage with required
+- [x] Replace nullable `uri`/`bytes` prompt file storage with required
   `FileData` in the breaking API line
 
 ## Provider Package Migration

@@ -92,19 +92,13 @@ final class PromptJsonCodec {
         :final mediaType,
         :final filename,
         :final data,
-        :final uri,
-        :final bytes,
         :final providerMetadata,
       ) =>
         {
           'type': 'file',
           'mediaType': mediaType,
           if (filename != null) 'filename': filename,
-          if (data != null)
-            'data': SerializationJsonSupport.encodeFileData(data),
-          if (uri != null && data is! FileUrlData) 'uri': uri.toString(),
-          if (data == null && bytes != null)
-            'bytes': SerializationJsonSupport.encodeBytes(bytes),
+          'data': SerializationJsonSupport.encodeFileData(data),
           if (providerMetadata != null)
             'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
                 providerMetadata),
@@ -112,18 +106,12 @@ final class PromptJsonCodec {
       ImagePromptPart(
         :final mediaType,
         :final data,
-        :final uri,
-        :final bytes,
         :final providerMetadata,
       ) =>
         {
           'type': 'image',
           'mediaType': mediaType,
-          if (data != null)
-            'data': SerializationJsonSupport.encodeFileData(data),
-          if (uri != null && data is! FileUrlData) 'uri': uri.toString(),
-          if (data == null && bytes != null)
-            'bytes': SerializationJsonSupport.encodeBytes(bytes),
+          'data': SerializationJsonSupport.encodeFileData(data),
           if (providerMetadata != null)
             'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
                 providerMetadata),
@@ -143,19 +131,13 @@ final class PromptJsonCodec {
         :final mediaType,
         :final filename,
         :final data,
-        :final uri,
-        :final bytes,
         :final providerMetadata,
       ) =>
         {
           'type': 'reasoning-file',
           'mediaType': mediaType,
           if (filename != null) 'filename': filename,
-          if (data != null)
-            'data': SerializationJsonSupport.encodeFileData(data),
-          if (uri != null && data is! FileUrlData) 'uri': uri.toString(),
-          if (data == null && bytes != null)
-            'bytes': SerializationJsonSupport.encodeBytes(bytes),
+          'data': SerializationJsonSupport.encodeFileData(data),
           if (providerMetadata != null)
             'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
                 providerMetadata),
@@ -261,20 +243,7 @@ final class PromptJsonCodec {
           mediaType: asJsonString(map['mediaType'], path: '$path.mediaType'),
           filename:
               asNullableJsonString(map['filename'], path: '$path.filename'),
-          data: SerializationJsonSupport.decodeFileData(
-            map['data'],
-            path: '$path.data',
-          ),
-          uri: SerializationJsonSupport.decodeUri(
-            map['uri'],
-            path: '$path.uri',
-          ),
-          bytes: map.containsKey('data')
-              ? null
-              : SerializationJsonSupport.decodeBytes(
-                  map['bytes'],
-                  path: '$path.bytes',
-                ),
+          data: _decodeRequiredFileData(map, path: path),
           providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',
@@ -282,20 +251,7 @@ final class PromptJsonCodec {
         ),
       'image' => ImagePromptPart(
           mediaType: asJsonString(map['mediaType'], path: '$path.mediaType'),
-          data: SerializationJsonSupport.decodeFileData(
-            map['data'],
-            path: '$path.data',
-          ),
-          uri: SerializationJsonSupport.decodeUri(
-            map['uri'],
-            path: '$path.uri',
-          ),
-          bytes: map.containsKey('data')
-              ? null
-              : SerializationJsonSupport.decodeBytes(
-                  map['bytes'],
-                  path: '$path.bytes',
-                ),
+          data: _decodeRequiredFileData(map, path: path),
           providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',
@@ -312,20 +268,7 @@ final class PromptJsonCodec {
           mediaType: asJsonString(map['mediaType'], path: '$path.mediaType'),
           filename:
               asNullableJsonString(map['filename'], path: '$path.filename'),
-          data: SerializationJsonSupport.decodeFileData(
-            map['data'],
-            path: '$path.data',
-          ),
-          uri: SerializationJsonSupport.decodeUri(
-            map['uri'],
-            path: '$path.uri',
-          ),
-          bytes: map.containsKey('data')
-              ? null
-              : SerializationJsonSupport.decodeBytes(
-                  map['bytes'],
-                  path: '$path.bytes',
-                ),
+          data: _decodeRequiredFileData(map, path: path),
           providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',
@@ -399,5 +342,28 @@ final class PromptJsonCodec {
       _ =>
         throw FormatException('Unsupported prompt part type "$type" at $path.'),
     };
+  }
+
+  FileData _decodeRequiredFileData(
+    JsonMap map, {
+    required String path,
+  }) {
+    return SerializationJsonSupport.decodeFileData(
+          map['data'],
+          path: '$path.data',
+        ) ??
+        fileDataFromLegacy(
+          uri: SerializationJsonSupport.decodeUri(
+            map['uri'],
+            path: '$path.uri',
+          ),
+          bytes: map.containsKey('data')
+              ? null
+              : SerializationJsonSupport.decodeBytes(
+                  map['bytes'],
+                  path: '$path.bytes',
+                ),
+        ) ??
+        (throw FormatException('Expected file data, uri, or bytes at $path.'));
   }
 }

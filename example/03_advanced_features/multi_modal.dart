@@ -33,16 +33,20 @@ Future<void> main() async {
   await demonstrateMultiModalConversation(openAIKey);
 
   print('Completed stable multimodal examples.');
-  print('Keep provider-native transport or storage details in provider-specific');
-  print('appendices when shared prompt parts and media helpers are not enough.');
+  print(
+      'Keep provider-native transport or storage details in provider-specific');
+  print(
+      'appendices when shared prompt parts and media helpers are not enough.');
 }
 
 Future<void> demonstrateImageAnalysis(String apiKey) async {
   print('Image analysis:');
 
-  final model = llm.AI.openai(
-    apiKey: apiKey,
-  ).chatModel('gpt-4o');
+  final model = llm.AI
+      .openai(
+        apiKey: apiKey,
+      )
+      .chatModel('gpt-4o');
 
   try {
     final result = await core.generateTextCall(
@@ -55,8 +59,10 @@ Future<void> demonstrateImageAnalysis(String apiKey) async {
             ),
             core.ImagePromptPart(
               mediaType: 'image/jpeg',
-              uri: Uri.parse(
-                'https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg',
+              data: core.FileUrlData(
+                Uri.parse(
+                  'https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg',
+                ),
               ),
             ),
           ],
@@ -80,8 +86,10 @@ Future<void> demonstrateImageAnalysis(String apiKey) async {
             ),
             core.ImagePromptPart(
               mediaType: 'image/jpeg',
-              uri: Uri.parse(
-                'https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg',
+              data: core.FileUrlData(
+                Uri.parse(
+                  'https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg',
+                ),
               ),
             ),
           ],
@@ -108,9 +116,11 @@ Future<void> demonstrateImageAnalysis(String apiKey) async {
 Future<void> demonstrateImageGeneration(String apiKey) async {
   print('Image generation:');
 
-  final model = llm.AI.openai(
-    apiKey: apiKey,
-  ).imageModel('dall-e-3');
+  final model = llm.AI
+      .openai(
+        apiKey: apiKey,
+      )
+      .imageModel('dall-e-3');
 
   try {
     final result = await core.generateImage(
@@ -141,12 +151,16 @@ Future<void> demonstrateAudioProcessing(
 ) async {
   print('Audio processing:');
 
-  final speechModel = llm.AI.openai(
-    apiKey: openAIKey,
-  ).speechModel('gpt-4o-mini-tts');
-  final transcriptionModel = llm.AI.openai(
-    apiKey: openAIKey,
-  ).transcriptionModel('whisper-1');
+  final speechModel = llm.AI
+      .openai(
+        apiKey: openAIKey,
+      )
+      .speechModel('gpt-4o-mini-tts');
+  final transcriptionModel = llm.AI
+      .openai(
+        apiKey: openAIKey,
+      )
+      .transcriptionModel('whisper-1');
 
   try {
     final speech = await core.generateSpeech(
@@ -171,7 +185,8 @@ Future<void> demonstrateAudioProcessing(
         model: community.ElevenLabs(
           apiKey: elevenLabsKey,
         ).speechModel('eleven_multilingual_v2'),
-        text: 'This is an ElevenLabs sample generated from the same shared API.',
+        text:
+            'This is an ElevenLabs sample generated from the same shared API.',
       );
       const elevenLabsPath = 'multimodal_elevenlabs_sample.mp3';
       await File(elevenLabsPath).writeAsBytes(elevenLabsSpeech.audioBytes);
@@ -192,12 +207,16 @@ Future<void> demonstrateDocumentProcessing(
 
   final core.LanguageModel model =
       anthropicKey != null && anthropicKey.isNotEmpty
-      ? llm.AI.anthropic(
-          apiKey: anthropicKey,
-        ).chatModel('claude-sonnet-4-5')
-      : llm.AI.openai(
-          apiKey: openAIKey,
-        ).chatModel('gpt-4.1-mini');
+          ? llm.AI
+              .anthropic(
+                apiKey: anthropicKey,
+              )
+              .chatModel('claude-sonnet-4-5')
+          : llm.AI
+              .openai(
+                apiKey: openAIKey,
+              )
+              .chatModel('gpt-4.1-mini');
 
   const documentContent = '''
 QUARTERLY BUSINESS REPORT - Q3 2024
@@ -234,7 +253,7 @@ Recommendations:
             core.FilePromptPart(
               mediaType: 'text/plain',
               filename: 'quarterly_report.txt',
-              bytes: utf8.encode(documentContent),
+              data: core.FileBytesData(utf8.encode(documentContent)),
             ),
           ],
         ),
@@ -256,9 +275,11 @@ Recommendations:
 Future<void> demonstrateMultiModalConversation(String apiKey) async {
   print('Multi-modal conversation:');
 
-  final model = llm.AI.openai(
-    apiKey: apiKey,
-  ).chatModel('gpt-4o');
+  final model = llm.AI
+      .openai(
+        apiKey: apiKey,
+      )
+      .chatModel('gpt-4o');
 
   final conversation = <core.PromptMessage>[
     core.UserPromptMessage.text(
@@ -287,8 +308,10 @@ Future<void> demonstrateMultiModalConversation(String apiKey) async {
             ),
             core.ImagePromptPart(
               mediaType: 'image/jpeg',
-              uri: Uri.parse(
-                'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800',
+              data: core.FileUrlData(
+                Uri.parse(
+                  'https://images.unsplash.com/photo-1416879595882-3373a0480b5b?w=800',
+                ),
               ),
             ),
           ],

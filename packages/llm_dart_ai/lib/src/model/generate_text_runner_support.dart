@@ -191,8 +191,7 @@ final class GenerateTextRunnerSupport {
             FilePromptPart(
               mediaType: file.mediaType,
               filename: file.filename,
-              uri: file.uri,
-              bytes: file.bytes,
+              data: file.data,
               providerMetadata: providerMetadata,
             ),
           );
@@ -204,8 +203,7 @@ final class GenerateTextRunnerSupport {
             ReasoningFilePromptPart(
               mediaType: file.mediaType,
               filename: file.filename,
-              uri: file.uri,
-              bytes: file.bytes,
+              data: file.data,
               providerMetadata: providerMetadata,
             ),
           );

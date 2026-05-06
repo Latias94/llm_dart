@@ -409,7 +409,9 @@ void main() {
             GeneratedFile(
               mediaType: 'text/plain',
               filename: 'answer.txt',
-              uri: Uri.parse('https://example.com/files/answer.txt'),
+              data: FileUrlData(
+                Uri.parse('https://example.com/files/answer.txt'),
+              ),
             ),
             providerMetadata: const ProviderMetadata({
               'openai': {
@@ -421,7 +423,7 @@ void main() {
             GeneratedFile(
               mediaType: 'image/png',
               filename: 'thought.png',
-              bytes: [7, 8, 9],
+              data: FileBytesData.constBytes([7, 8, 9]),
             ),
             providerMetadata: ProviderMetadata({
               'google': {

@@ -13,7 +13,7 @@ void main() {
             TextPromptPart('Show the latest screenshot.'),
             ImagePromptPart(
               mediaType: 'image/png',
-              bytes: [1, 2, 3],
+              data: FileBytesData([1, 2, 3]),
             ),
           ],
         ),
@@ -105,7 +105,7 @@ void main() {
             ReasoningFilePromptPart(
               mediaType: 'image/png',
               filename: 'thought.png',
-              bytes: [1, 2, 3],
+              data: FileBytesData.constBytes([1, 2, 3]),
               providerMetadata: ProviderMetadata({
                 'google': {
                   'thoughtSignature': 'sig_reasoning_file',
@@ -183,8 +183,7 @@ void main() {
             ),
             FilePromptPart(
               mediaType: 'application/pdf',
-              uri: Uri.parse('https://example.com/report.pdf'),
-              bytes: const [1, 2, 3],
+              data: FileBytesData(const [1, 2, 3]),
             ),
           ],
         ),
@@ -224,7 +223,7 @@ void main() {
       final providerReferencePart = user.parts[0] as FilePromptPart;
       final urlPart = user.parts[1] as ImagePromptPart;
       final textPart = user.parts[2] as FilePromptPart;
-      final legacyDualPart = user.parts[3] as FilePromptPart;
+      final bytesPart = user.parts[3] as FilePromptPart;
 
       expect(
         providerReferencePart.providerReference!.requireProvider('openai'),
@@ -232,9 +231,9 @@ void main() {
       );
       expect(urlPart.uri, Uri.parse('https://example.com/image.png'));
       expect(textPart.text, 'inline text');
-      expect(legacyDualPart.data, isA<FileBytesData>());
-      expect(legacyDualPart.uri, Uri.parse('https://example.com/report.pdf'));
-      expect(legacyDualPart.bytes, [1, 2, 3]);
+      expect(bytesPart.data, isA<FileBytesData>());
+      expect(bytesPart.uri, isNull);
+      expect(bytesPart.bytes, [1, 2, 3]);
 
       final tool = decoded[1] as ToolPromptMessage;
       final jsonResult = tool.parts[0] as ToolResultPromptPart;
@@ -253,6 +252,47 @@ void main() {
         (contentResult.toolOutput as ContentToolOutput).parts,
         hasLength(2),
       );
+    });
+
+    test('decodes legacy uri and bytes file JSON into FileData', () {
+      const codec = PromptJsonCodec();
+
+      final decoded = codec.decodeMessages({
+        'schemaVersion': '2026-03-1',
+        'kind': PromptJsonCodec.envelopeKind,
+        'data': {
+          'messages': [
+            {
+              'role': 'user',
+              'parts': [
+                {
+                  'type': 'file',
+                  'mediaType': 'application/pdf',
+                  'filename': 'legacy.pdf',
+                  'bytes': {
+                    'encoding': 'base64',
+                    'data': 'AQID',
+                  },
+                },
+                {
+                  'type': 'image',
+                  'mediaType': 'image/png',
+                  'uri': 'https://example.com/legacy.png',
+                },
+              ],
+            },
+          ],
+        },
+      });
+
+      final user = decoded.single as UserPromptMessage;
+      final bytesPart = user.parts[0] as FilePromptPart;
+      final urlPart = user.parts[1] as ImagePromptPart;
+
+      expect(bytesPart.data, isA<FileBytesData>());
+      expect(bytesPart.bytes, [1, 2, 3]);
+      expect(urlPart.data, isA<FileUrlData>());
+      expect(urlPart.uri, Uri.parse('https://example.com/legacy.png'));
     });
   });
 
@@ -321,14 +361,14 @@ void main() {
               GeneratedFile(
                 mediaType: 'image/png',
                 filename: 'preview.png',
-                bytes: [4, 5, 6],
+                data: FileBytesData.constBytes([4, 5, 6]),
               ),
             ),
             const ReasoningFileUiPart(
               GeneratedFile(
                 mediaType: 'application/pdf',
                 filename: 'thoughts.pdf',
-                bytes: [7, 8, 9],
+                data: FileBytesData.constBytes([7, 8, 9]),
               ),
               providerMetadata: ProviderMetadata({
                 'google': {

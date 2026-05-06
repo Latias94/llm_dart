@@ -265,11 +265,11 @@ void main() {
             const TextPromptPart('Inspect the attachment.'),
             const ImagePromptPart(
               mediaType: 'image/png',
-              bytes: [1, 2, 3],
+              data: FileBytesData.constBytes([1, 2, 3]),
             ),
             FilePromptPart(
               mediaType: 'application/pdf',
-              uri: Uri.parse('https://example.com/spec.pdf'),
+              data: FileUrlData(Uri.parse('https://example.com/spec.pdf')),
             ),
           ],
         ),

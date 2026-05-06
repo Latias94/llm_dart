@@ -444,7 +444,7 @@ void main() {
                     GeneratedFile(
                       mediaType: 'image/png',
                       filename: 'thought.png',
-                      bytes: [1, 2, 3],
+                      data: FileBytesData.constBytes([1, 2, 3]),
                     ),
                     providerMetadata: ProviderMetadata({
                       'google': {
@@ -584,8 +584,7 @@ void main() {
                     GeneratedFile(
                       mediaType: 'application/pdf',
                       filename: 'report.pdf',
-                      uri: Uri.parse('https://example.com/files/report.pdf'),
-                      bytes: [4, 5, 6],
+                      data: FileBytesData([4, 5, 6]),
                     ),
                     providerMetadata: ProviderMetadata({
                       'google': {
@@ -620,8 +619,7 @@ void main() {
       final filePart = assistantMessage.parts.whereType<FileUiPart>().single;
       expect(filePart.file.mediaType, 'application/pdf');
       expect(filePart.file.filename, 'report.pdf');
-      expect(
-          filePart.file.uri, Uri.parse('https://example.com/files/report.pdf'));
+      expect(filePart.file.uri, isNull);
       expect(filePart.file.bytes, [4, 5, 6]);
       expect(
         filePart.providerMetadata!['google'],
@@ -641,8 +639,7 @@ void main() {
       final replayedFilePart = assistantPrompt.parts[0] as FilePromptPart;
       expect(replayedFilePart.mediaType, 'application/pdf');
       expect(replayedFilePart.filename, 'report.pdf');
-      expect(replayedFilePart.uri,
-          Uri.parse('https://example.com/files/report.pdf'));
+      expect(replayedFilePart.uri, isNull);
       expect(replayedFilePart.bytes, [4, 5, 6]);
       expect(
         replayedFilePart.providerMetadata!['google'],
@@ -2293,7 +2290,7 @@ void main() {
               GeneratedFile(
                 mediaType: 'image/png',
                 filename: 'thought.png',
-                bytes: [1, 2, 3],
+                data: FileBytesData.constBytes([1, 2, 3]),
               ),
               providerMetadata: ProviderMetadata({
                 'google': {
@@ -2399,8 +2396,7 @@ void main() {
               GeneratedFile(
                 mediaType: 'application/pdf',
                 filename: 'report.pdf',
-                uri: Uri.parse('https://example.com/files/report.pdf'),
-                bytes: [4, 5, 6],
+                data: FileBytesData([4, 5, 6]),
               ),
               providerMetadata: ProviderMetadata({
                 'google': {
@@ -2472,8 +2468,7 @@ void main() {
       final replayedFilePart = assistantPrompt.parts[0] as FilePromptPart;
       expect(replayedFilePart.mediaType, 'application/pdf');
       expect(replayedFilePart.filename, 'report.pdf');
-      expect(replayedFilePart.uri,
-          Uri.parse('https://example.com/files/report.pdf'));
+      expect(replayedFilePart.uri, isNull);
       expect(replayedFilePart.bytes, [4, 5, 6]);
       expect(
         replayedFilePart.providerMetadata!['google'],

@@ -28,29 +28,21 @@ final class SourceReference {
 final class GeneratedFile {
   final String mediaType;
   final String? filename;
-  final Uri? _uri;
-  final List<int>? _bytes;
-  final FileData? _data;
+  final FileData data;
 
   const GeneratedFile({
     required this.mediaType,
     this.filename,
-    FileData? data,
-    Uri? uri,
-    List<int>? bytes,
-  })  : _data = data,
-        _uri = uri,
-        _bytes = bytes;
+    required this.data,
+  });
 
-  FileData? get data => _data ?? fileDataFromLegacy(uri: _uri, bytes: _bytes);
+  Uri? get uri => data.uri;
 
-  Uri? get uri => _uri ?? data?.uri;
+  List<int>? get bytes => data.bytes;
 
-  List<int>? get bytes => _bytes ?? data?.bytes;
+  String? get text => data.text;
 
-  String? get text => data?.text;
-
-  ProviderReference? get providerReference => data?.providerReference;
+  ProviderReference? get providerReference => data.providerReference;
 }
 
 final class ToolCallContent {

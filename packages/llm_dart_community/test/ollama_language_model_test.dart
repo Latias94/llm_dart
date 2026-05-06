@@ -489,7 +489,7 @@ void main() {
               const TextPromptPart('Describe this image'),
               ImagePromptPart(
                 mediaType: 'image/png',
-                uri: Uri.parse('https://example.com/cat.png'),
+                data: FileUrlData(Uri.parse('https://example.com/cat.png')),
               ),
             ],
           ),
@@ -547,7 +547,7 @@ void main() {
             parts: [
               ImagePromptPart(
                 mediaType: 'image/png',
-                uri: dataUri,
+                data: FileUrlData(dataUri),
               ),
             ],
           ),
@@ -607,7 +607,7 @@ void main() {
             parts: [
               ImagePromptPart(
                 mediaType: 'image/png',
-                uri: Uri.parse('https://example.com/call.png'),
+                data: FileUrlData(Uri.parse('https://example.com/call.png')),
               ),
             ],
           ),
@@ -653,7 +653,7 @@ void main() {
               parts: [
                 ImagePromptPart(
                   mediaType: 'image/png',
-                  uri: Uri.parse('https://example.com/cat.png'),
+                  data: FileUrlData(Uri.parse('https://example.com/cat.png')),
                 ),
               ],
             ),

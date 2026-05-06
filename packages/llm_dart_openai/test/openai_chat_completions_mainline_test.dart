@@ -1054,7 +1054,7 @@ void main() {
                 TextPromptPart('Summarize this document.'),
                 FilePromptPart(
                   mediaType: 'application/pdf',
-                  bytes: [1, 2, 3, 4, 5],
+                  data: FileBytesData.constBytes([1, 2, 3, 4, 5]),
                 ),
               ],
             ),
@@ -1136,11 +1136,9 @@ void main() {
               parts: const [
                 FilePromptPart(
                   mediaType: 'application/pdf',
-                  providerMetadata: ProviderMetadata({
-                    'openai': {
-                      'fileId': 'file-pdf-12345',
-                    },
-                  }),
+                  data: FileProviderReferenceData(
+                    ProviderReference({'openai': 'file-pdf-12345'}),
+                  ),
                 ),
               ],
             ),
@@ -1295,7 +1293,7 @@ void main() {
               parts: const [
                 ImagePromptPart(
                   mediaType: 'image/png',
-                  bytes: [0, 1, 2, 3],
+                  data: FileBytesData.constBytes([0, 1, 2, 3]),
                   providerMetadata: ProviderMetadata({
                     'openai': {
                       'imageDetail': 'low',
@@ -1376,7 +1374,7 @@ void main() {
               parts: const [
                 FilePromptPart(
                   mediaType: 'audio/mpeg',
-                  bytes: [1, 2, 3, 4],
+                  data: FileBytesData.constBytes([1, 2, 3, 4]),
                 ),
               ],
             ),
@@ -1453,7 +1451,7 @@ void main() {
               parts: const [
                 FilePromptPart(
                   mediaType: 'image/png',
-                  bytes: [0, 1, 2, 3],
+                  data: FileBytesData.constBytes([0, 1, 2, 3]),
                 ),
               ],
             ),
@@ -1508,7 +1506,7 @@ void main() {
                 parts: const [
                   FilePromptPart(
                     mediaType: 'text/plain',
-                    bytes: [1, 2, 3],
+                    data: FileBytesData.constBytes([1, 2, 3]),
                   ),
                 ],
               ),
@@ -1734,7 +1732,9 @@ void main() {
                 parts: [
                   FilePromptPart(
                     mediaType: 'application/pdf',
-                    uri: Uri.parse('https://example.com/document.pdf'),
+                    data: FileUrlData(
+                      Uri.parse('https://example.com/document.pdf'),
+                    ),
                   ),
                 ],
               ),
@@ -2225,11 +2225,11 @@ void main() {
                 ),
                 ImagePromptPart(
                   mediaType: 'image/png',
-                  bytes: [0, 1, 2, 3],
+                  data: FileBytesData.constBytes([0, 1, 2, 3]),
                 ),
                 FilePromptPart(
                   mediaType: 'application/pdf',
-                  bytes: [1, 2, 3, 4],
+                  data: FileBytesData.constBytes([1, 2, 3, 4]),
                 ),
               ],
             ),

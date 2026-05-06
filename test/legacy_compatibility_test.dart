@@ -308,7 +308,7 @@ void main() {
             core.FileEvent(
               core.GeneratedFile(
                 mediaType: 'image/png',
-                bytes: const [1, 2, 3],
+                data: const core.FileBytesData.constBytes([1, 2, 3]),
               ),
             ),
             const core.FinishEvent(
@@ -1496,6 +1496,7 @@ void main() {
               core.GeneratedFile(
                 mediaType: 'text/plain',
                 filename: 'result.txt',
+                data: core.FileTextData('result'),
               ),
             ),
             const core.ToolApprovalRequestEvent(

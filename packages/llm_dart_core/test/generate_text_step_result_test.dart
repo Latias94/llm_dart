@@ -19,7 +19,7 @@ void main() {
       final file = GeneratedFile(
         mediaType: 'application/pdf',
         filename: 'report.pdf',
-        uri: Uri.parse('https://example.com/report.pdf'),
+        data: FileUrlData(Uri.parse('https://example.com/report.pdf')),
       );
       final responseTimestamp = DateTime.utc(2026, 3, 30, 12, 0, 0);
 

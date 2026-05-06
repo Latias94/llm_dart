@@ -125,7 +125,7 @@ final class OpenAIImageGenerationCallCustomPart extends OpenAICustomPart {
     return GeneratedFile(
       mediaType: mediaType,
       filename: filename,
-      bytes: bytes,
+      data: FileBytesData(bytes),
     );
   }
 }
@@ -174,7 +174,7 @@ final class OpenAIImageGenerationPartialCustomPart extends OpenAICustomPart {
     return GeneratedFile(
       mediaType: mediaType,
       filename: filename,
-      bytes: bytes,
+      data: FileBytesData(bytes),
     );
   }
 }

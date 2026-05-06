@@ -69,7 +69,7 @@ Release Notes Draft
             core.FilePromptPart(
               mediaType: 'text/plain',
               filename: 'stable_file_prompt_example.txt',
-              bytes: fileBytes,
+              data: core.FileBytesData(fileBytes),
             ),
           ],
         ),

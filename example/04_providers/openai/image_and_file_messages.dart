@@ -41,8 +41,10 @@ Future<void> imageUrlExample(String apiKey) async {
             const core.TextPromptPart('Describe this image in one sentence.'),
             core.ImagePromptPart(
               mediaType: 'image/jpeg',
-              uri: Uri.parse(
-                'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Cat03.jpg/481px-Cat03.jpg',
+              data: core.FileUrlData(
+                Uri.parse(
+                  'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Cat03.jpg/481px-Cat03.jpg',
+                ),
               ),
             ),
           ],
@@ -79,7 +81,7 @@ Future<void> base64ImageExample(String apiKey) async {
             const core.TextPromptPart('Describe this cat in detail.'),
             core.ImagePromptPart(
               mediaType: 'image/jpeg',
-              bytes: imageBytes,
+              data: core.FileBytesData(imageBytes),
             ),
           ],
         ),
@@ -108,8 +110,10 @@ Future<void> mixedContentExample(String apiKey) async {
             ),
             core.ImagePromptPart(
               mediaType: 'image/jpeg',
-              uri: Uri.parse(
-                'https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg',
+              data: core.FileUrlData(
+                Uri.parse(
+                  'https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg',
+                ),
               ),
             ),
           ],
@@ -149,7 +153,7 @@ Future<void> pdfFileMessageExample(String apiKey) async {
             core.FilePromptPart(
               mediaType: 'application/pdf',
               filename: 'sample.pdf',
-              bytes: pdfBytes,
+              data: core.FileBytesData(pdfBytes),
             ),
           ],
         ),
@@ -194,7 +198,7 @@ Key Points:
             core.FilePromptPart(
               mediaType: 'text/plain',
               filename: 'sample.txt',
-              bytes: fileBytes,
+              data: core.FileBytesData(fileBytes),
             ),
           ],
         ),

@@ -43,12 +43,18 @@ void main() {
             GeneratedFile(
               mediaType: 'application/pdf',
               filename: 'guide.pdf',
+              data: FileProviderReferenceData(
+                ProviderReference({'test': 'guide.pdf'}),
+              ),
             ),
           ),
           const ReasoningFileUiPart(
             GeneratedFile(
               mediaType: 'image/png',
               filename: 'thought.png',
+              data: FileProviderReferenceData(
+                ProviderReference({'test': 'thought.png'}),
+              ),
             ),
           ),
           const CustomUiPart(

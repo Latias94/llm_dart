@@ -32,11 +32,11 @@ void main() {
               const TextPromptPart('Inspect the attachment.'),
               const ImagePromptPart(
                 mediaType: 'image/png',
-                bytes: [1, 2, 3],
+                data: FileBytesData.constBytes([1, 2, 3]),
               ),
               FilePromptPart(
                 mediaType: 'application/pdf',
-                uri: Uri.parse('https://example.com/spec.pdf'),
+                data: FileUrlData(Uri.parse('https://example.com/spec.pdf')),
               ),
             ],
           ),
@@ -574,7 +574,7 @@ void main() {
               ReasoningFilePromptPart(
                 mediaType: 'image/png',
                 filename: 'thought.png',
-                bytes: [1, 2, 3],
+                data: FileBytesData([1, 2, 3]),
                 providerMetadata: ProviderMetadata({
                   'google': {
                     'thoughtSignature': 'sig_reasoning_file',
@@ -583,7 +583,7 @@ void main() {
               ),
               FilePromptPart(
                 mediaType: 'image/jpeg',
-                bytes: [4, 5, 6],
+                data: FileBytesData([4, 5, 6]),
                 providerMetadata: ProviderMetadata({
                   'google': {
                     'thought': true,
@@ -770,12 +770,12 @@ void main() {
           const GeneratedFile(
             mediaType: 'image/png',
             filename: 'chart.png',
-            bytes: [1, 2, 3],
+            data: FileBytesData.constBytes([1, 2, 3]),
           ),
           GeneratedFile(
             mediaType: 'application/pdf',
             filename: 'quote.pdf',
-            uri: Uri.parse('https://example.com/quote.pdf'),
+            data: FileUrlData(Uri.parse('https://example.com/quote.pdf')),
           ),
         ],
         extraFunctionResponseFields: const {

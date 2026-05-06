@@ -815,10 +815,10 @@ final class AnthropicMessagesCodec {
 
   Map<String, Object?> _encodeBinarySource({
     required String mediaType,
-    required FileData? data,
+    required FileData data,
     required String path,
   }) {
-    if (data?.providerReference case final reference?) {
+    if (data.providerReference case final reference?) {
       return {
         'type': 'file',
         'file_id': reference.requireProvider(
@@ -828,7 +828,7 @@ final class AnthropicMessagesCodec {
       };
     }
 
-    final bytes = data?.bytes;
+    final bytes = data.bytes;
     if (bytes != null) {
       return {
         'type': 'base64',
@@ -837,7 +837,7 @@ final class AnthropicMessagesCodec {
       };
     }
 
-    final uri = data?.uri;
+    final uri = data.uri;
     if (uri != null && _isHttpUri(uri)) {
       return {
         'type': 'url',
@@ -1003,7 +1003,7 @@ final class AnthropicMessagesCodec {
   Map<String, Object?> _encodeTextDocumentSource(FilePromptPart part) {
     final data = part.data;
 
-    if (data?.providerReference case final reference?) {
+    if (data.providerReference case final reference?) {
       return {
         'type': 'file',
         'file_id': reference.requireProvider(
@@ -1013,7 +1013,7 @@ final class AnthropicMessagesCodec {
       };
     }
 
-    if (data?.text case final text?) {
+    if (data.text case final text?) {
       return {
         'type': 'text',
         'media_type': 'text/plain',
@@ -1021,7 +1021,7 @@ final class AnthropicMessagesCodec {
       };
     }
 
-    if (data?.bytes case final bytes?) {
+    if (data.bytes case final bytes?) {
       return {
         'type': 'text',
         'media_type': 'text/plain',
@@ -1029,7 +1029,7 @@ final class AnthropicMessagesCodec {
       };
     }
 
-    final uri = data?.uri;
+    final uri = data.uri;
     if (uri != null && _isHttpUri(uri)) {
       return {
         'type': 'url',

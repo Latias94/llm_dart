@@ -41,7 +41,7 @@ void main() {
           GeneratedFile(
             mediaType: 'image/png',
             filename: 'chart.png',
-            bytes: [1, 2, 3],
+            data: FileBytesData.constBytes([1, 2, 3]),
           ),
         ],
       );

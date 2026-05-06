@@ -37,7 +37,7 @@ List<core.PromptMessage> _convertLegacyMessage(ChatMessage message) {
           textPart: textPart,
           part: core.ImagePromptPart(
             mediaType: mime.mimeType,
-            bytes: data,
+            data: core.FileBytesData(data),
             providerMetadata: metadata,
           ),
         ),
@@ -49,7 +49,7 @@ List<core.PromptMessage> _convertLegacyMessage(ChatMessage message) {
           textPart: textPart,
           part: core.ImagePromptPart(
             mediaType: 'image/*',
-            uri: Uri.parse(url),
+            data: core.FileUrlData(Uri.parse(url)),
             providerMetadata: metadata,
           ),
         ),
@@ -61,7 +61,7 @@ List<core.PromptMessage> _convertLegacyMessage(ChatMessage message) {
           textPart: textPart,
           part: core.FilePromptPart(
             mediaType: mime.mimeType,
-            bytes: data,
+            data: core.FileBytesData(data),
             providerMetadata: metadata,
           ),
         ),

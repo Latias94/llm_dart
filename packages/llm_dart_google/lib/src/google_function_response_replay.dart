@@ -356,11 +356,9 @@ GeneratedFile _normalizeFunctionResponseFile(GeneratedFile file) {
   return GeneratedFile(
     mediaType: _requireNonEmptyValue(file.mediaType, name: 'files.mediaType'),
     filename: _normalizeOptionalDisplayName(file.filename),
-    data: file.providerReference == null
-        ? null
-        : FileProviderReferenceData(file.providerReference!),
-    uri: file.uri,
-    bytes: file.bytes == null ? null : List<int>.unmodifiable(file.bytes!),
+    data: file.bytes == null
+        ? file.data
+        : FileBytesData(List<int>.unmodifiable(file.bytes!)),
   );
 }
 
@@ -462,11 +460,16 @@ GeneratedFile _parseFunctionResponseFile(
         path: '$path.inlineData.mimeType',
       ),
       filename: displayName,
-      bytes: decodeBase64(
-        _requiredNonEmptyString(
-          inlineData['data'],
-          path: '$path.inlineData.data',
-        ),
+      data: FileBytesData(
+        decodeBase64(
+              _requiredNonEmptyString(
+                inlineData['data'],
+                path: '$path.inlineData.data',
+              ),
+            ) ??
+            (throw FormatException(
+              'Expected $path.inlineData.data to be base64.',
+            )),
       ),
     );
   }
@@ -491,7 +494,7 @@ GeneratedFile _parseFunctionResponseFile(
         path: '$path.fileData.mimeType',
       ),
       filename: displayName,
-      uri: uri,
+      data: FileUrlData(uri),
     );
   }
 

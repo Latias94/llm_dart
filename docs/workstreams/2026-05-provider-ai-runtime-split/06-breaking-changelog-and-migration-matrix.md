@@ -18,6 +18,8 @@ The following slices are already landed on this branch:
 
 - `llm_dart_core.dart` is now a compatibility barrel over focused entrypoints
 - production consumers have moved to focused `llm_dart_core` imports
+- prompt and generated-file shapes now store required `FileData` instead of
+  dual `uri`/`bytes` storage
 - the root `lib/core.dart` entrypoint exports focused sub-entrypoints instead
   of the old broad `llm_dart_core` barrel
 - `example/06_mcp_integration` now declares local overrides for the full
@@ -37,6 +39,10 @@ Use this as the starting point for the next explicit breaking release.
   `package:llm_dart_core/foundation.dart`, `model.dart`, `serialization.dart`,
   or `ui.dart` directly, or use `package:llm_dart/core.dart` for the modern
   facade.
+- Prompt and generated-file shapes now store a single required `FileData`
+  union. Legacy `uri`/`bytes` JSON is still accepted on decode, but new code
+  should construct `FileUrlData`, `FileBytesData`, `FileTextData`, or
+  `FileProviderReferenceData` explicitly.
 - The root `package:llm_dart/core.dart` entrypoint now re-exports the focused
   contracts instead of the old broad `llm_dart_core` barrel.
 - The MCP example package now depends on the full local workspace override set
@@ -86,4 +92,3 @@ The release note should make the following points explicit:
 - provider-owned features still stay provider-owned
 - examples that need unpublished workspace siblings should use local path
   overrides
-
