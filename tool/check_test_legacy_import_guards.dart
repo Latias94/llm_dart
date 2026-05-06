@@ -13,6 +13,7 @@ const List<String> _guardedProviderTestFileSuffixes = [
   '_client_test.dart',
   '_client_error_test.dart',
   '_provider_test.dart',
+  '_tool_calling_test.dart',
 ];
 
 const Set<String> _guardedProviderTestFiles = {
