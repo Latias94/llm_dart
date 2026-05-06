@@ -314,11 +314,11 @@ into a routine `0.10.x` maintenance release.
     - Now processes `webSearchEnabled` flag to automatically add `web_search` tool
     - Converts `webSearchConfig` to Anthropic's `web_search_20250305` tool specification
     - Supports domain filtering, location-based search, and usage limits
-  - **OpenAI Provider**: Enhanced `OpenAIProviderFactory._transformConfig()` with search model switching
+  - **OpenAI Provider**: Enhanced OpenAI provider configuration with search model switching
     - Automatically switches to search-enabled models (e.g., `gpt-4o` → `gpt-4o-search-preview`) when `webSearchEnabled` is true
     - Supports model mapping for both standard and mini variants
     - Handles `webSearchConfig` for context size control
-  - **OpenRouter Provider**: Added web search support in `OpenAICompatibleProviderFactory._transformConfig()`
+  - **OpenRouter Provider**: Added web search support in the OpenRouter compatibility bridge
     - Automatically adds `:online` suffix to models when `webSearchEnabled` is true
     - Supports both simple activation and advanced plugin configuration
   - **Universal Fix**: All providers now properly handle both `enableWebSearch()` method and `webSearchConfig` extensions

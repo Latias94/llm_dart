@@ -37,6 +37,11 @@ The following slices are already landed on this branch:
   compatibility coverage stays explicit
 - `example/06_mcp_integration` now declares local overrides for the full
   workspace package set it needs
+- the old `deepseek-openai`, `google-openai`, `xai-openai`, `groq-openai`,
+  and `phind-openai` OpenAI-compatible aliases are no longer registered by
+  default or exposed as `LLMBuilder` convenience methods; use the dedicated
+  provider IDs or explicitly register the legacy alias when migration code
+  still needs the generic OpenAI-compatible shell
 
 ## Suggested Breaking Changelog Draft
 
@@ -73,6 +78,9 @@ Use this as the starting point for the next explicit breaking release.
 - `llm_dart_core` is guarded as a compatibility shell. New shared contracts
   belong in `llm_dart_provider`, and new runtime helpers belong in
   `llm_dart_ai`.
+- OpenAI-family default entrypoints now prefer dedicated provider IDs plus the
+  audited OpenRouter bridge. Legacy `*-openai` aliases remain available through
+  explicit compatibility registration only.
 
 ### Kept
 
@@ -112,6 +120,8 @@ Use this as the starting point for the next explicit breaking release.
 | OpenAI input file IDs in `ProviderMetadata` | `FileProviderReferenceData` | Breaking migration | Provider metadata remains for output observation/replay details, not input file identity. |
 | `llm_dart_provider_utils` public package | Deferred | Not in first preview | Keep provider helper extraction internal until repeated cross-provider helper needs are stable. |
 | `package:llm_dart/legacy.dart` | Keep in root for first preview | Compatibility bridge | Move to `llm_dart_legacy` only in a later release if root dependency shrink requires it. |
+| `LLMBuilder.deepseekOpenAI()` and other `*-openai` builder aliases | Dedicated providers such as `deepseek`, `google`, `xai`, `groq`, `phind` | Removed from default builder surface | Use `provider('deepseek-openai')` only after explicit `OpenAICompatibleProviderRegistrar.registerProvider('deepseek-openai')` when migrating old generic-compatible code. |
+| Default registry entries for `deepseek-openai`, `google-openai`, `xai-openai`, `groq-openai`, `phind-openai` | Dedicated provider entries plus `openrouter` | Removed from default registry surface | The typed factory remains available for explicit registration; default app discovery should not show duplicate lower-fidelity aliases. |
 
 ## Compatibility Policy
 
