@@ -66,8 +66,8 @@ void main() {}
         '''
 name: llm_dart_openai
 dependencies:
-  llm_dart_core:
-    path: ../llm_dart_core
+  llm_dart_provider:
+    path: ../llm_dart_provider
   llm_dart_transport:
     path: ../llm_dart_transport
   llm_dart_google:
@@ -158,8 +158,8 @@ dependencies:
     '''
 name: llm_dart_openai
 dependencies:
-  llm_dart_core:
-    path: ../llm_dart_core
+  llm_dart_provider:
+    path: ../llm_dart_provider
   llm_dart_transport:
     path: ../llm_dart_transport
 ''',

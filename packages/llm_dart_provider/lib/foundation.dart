@@ -29,3 +29,5 @@ export 'src/prompt/prompt_message.dart';
 export 'src/stream/text_stream_event.dart';
 export 'src/tool/tool_definition.dart';
 export 'src/tool/tool_output.dart';
+export 'src/ui/chat_message_mapper.dart';
+export 'src/ui/chat_ui_message.dart';

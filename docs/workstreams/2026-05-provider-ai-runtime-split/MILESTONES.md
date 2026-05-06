@@ -56,6 +56,9 @@ Current status:
   response metadata, and capability profiles
 - `llm_dart_core` re-exports those contracts from their old paths as a
   compatibility layer
+- shared UI message and message-mapping contracts now live in
+  `llm_dart_provider` for the first breaking preview; old `llm_dart_core` UI
+  paths re-export them as compatibility shims
 - runtime helpers such as `generateText`, `embed`, `generateImage`,
   `generateSpeech`, `transcribe`, runners, and structured output now live in
   `llm_dart_ai`; `llm_dart_core` keeps old-path compatibility re-exports
@@ -155,7 +158,14 @@ Acceptance criteria:
 
 Current status:
 
-- not started
+- OpenAI, Anthropic, Google, and community provider packages now depend on
+  `llm_dart_provider` for runtime contracts instead of `llm_dart_core`
+- provider tests and examples that need high-level helpers use
+  `llm_dart_ai` as a dev dependency only
+- provider-owned typed options, capability profiles, OpenAI-family profiles,
+  and helper clients remain in their owning provider packages
+- workspace dependency guards now reject future concrete-provider runtime
+  dependencies on `llm_dart_core`
 
 ## M6 - Root Slimming And Legacy Boundary
 

@@ -33,7 +33,7 @@ contract.
 ```dart
 import 'dart:io';
 
-import 'package:llm_dart_core/llm_dart_core.dart' as core;
+import 'package:llm_dart_provider/llm_dart_provider.dart' as core;
 import 'package:llm_dart_google/llm_dart_google.dart';
 
 Future<void> main() async {

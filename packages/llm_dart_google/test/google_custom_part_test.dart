@@ -1,4 +1,4 @@
-import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:llm_dart_google/llm_dart_google.dart';
 import 'package:test/test.dart';
 
@@ -130,7 +130,8 @@ void main() {
         isA<GoogleToolCallCustomPart>(),
       );
       expect(
-        GoogleCustomPart.tryParseContentPart(toolResponse.toCustomContentPart()),
+        GoogleCustomPart.tryParseContentPart(
+            toolResponse.toCustomContentPart()),
         isA<GoogleToolResponseCustomPart>(),
       );
       expect(

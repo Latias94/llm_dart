@@ -1,4 +1,4 @@
-import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'google_custom_part.dart';
 import 'google_shared.dart';
@@ -169,7 +169,8 @@ GoogleCustomPartSummary _buildToolCallSummary(
         GoogleCustomPartSummaryField(label: 'Query', value: query),
       if (command != null)
         GoogleCustomPartSummaryField(label: 'Command', value: command),
-      if (code != null) GoogleCustomPartSummaryField(label: 'Code', value: code),
+      if (code != null)
+        GoogleCustomPartSummaryField(label: 'Code', value: code),
       if (thoughtSignature != null)
         GoogleCustomPartSummaryField(
           label: 'Thought Signature',

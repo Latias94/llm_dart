@@ -1,5 +1,5 @@
 import 'package:llm_dart_community/llm_dart_community.dart';
-import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:llm_dart_test/llm_dart_test.dart';
 import 'package:test/test.dart';
 

@@ -69,6 +69,15 @@ Default recommendation:
 - keep UI split triggers explicit instead of doing package fragmentation for
   symmetry
 
+Current decision:
+
+- keep the small shared UI message and message-mapping contracts in
+  `llm_dart_provider` for the first breaking preview
+- keep old `llm_dart_core` UI paths as compatibility re-exports while concrete
+  provider packages migrate away from core
+- revisit a dedicated UI package only if UI projection grows independently from
+  provider-facing stream and content contracts
+
 ### Step 4 - Move Serialization With The Owning Contract
 
 Serialization should follow ownership:

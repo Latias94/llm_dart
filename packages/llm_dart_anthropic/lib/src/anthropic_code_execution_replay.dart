@@ -1,4 +1,4 @@
-import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 enum AnthropicCodeExecutionBlockType {
   codeExecutionToolResult('code_execution_tool_result'),

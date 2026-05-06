@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:llm_dart_google/llm_dart_google.dart';
 import 'package:llm_dart_test/llm_dart_test.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
@@ -127,7 +127,8 @@ void main() {
           prompt: 'Blend these image cues.',
           images: [
             GoogleImageEditInput.uri(
-              Uri.parse('https://generativelanguage.googleapis.com/v1beta/files/example-image'),
+              Uri.parse(
+                  'https://generativelanguage.googleapis.com/v1beta/files/example-image'),
             ),
           ],
         ),
@@ -247,7 +248,8 @@ void main() {
           const GoogleImageEditRequest(
             prompt: 'Edit this image.',
             images: [
-              GoogleImageEditInput.bytes([1, 2, 3], mediaType: 'application/pdf'),
+              GoogleImageEditInput.bytes([1, 2, 3],
+                  mediaType: 'application/pdf'),
             ],
           ),
         ),

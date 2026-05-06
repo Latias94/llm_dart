@@ -52,7 +52,7 @@ re-exported from `package:llm_dart/openai.dart`.
 ## Basic Example
 
 ```dart
-import 'package:llm_dart_core/llm_dart_core.dart' as core;
+import 'package:llm_dart_provider/llm_dart_provider.dart' as core;
 import 'package:llm_dart_openai/llm_dart_openai.dart';
 
 Future<void> main() async {
@@ -76,7 +76,7 @@ Future<void> main() async {
 ## Provider-Owned Options Example
 
 ```dart
-import 'package:llm_dart_core/llm_dart_core.dart' as core;
+import 'package:llm_dart_provider/llm_dart_provider.dart' as core;
 import 'package:llm_dart_openai/llm_dart_openai.dart';
 
 Future<void> main() async {
@@ -187,7 +187,7 @@ fidelity, partial images, and output options are OpenAI-specific.
 ```dart
 import 'dart:io';
 
-import 'package:llm_dart_core/llm_dart_core.dart' as core;
+import 'package:llm_dart_provider/llm_dart_provider.dart' as core;
 import 'package:llm_dart_openai/llm_dart_openai.dart';
 
 Future<void> main() async {

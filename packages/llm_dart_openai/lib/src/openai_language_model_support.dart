@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'openai_family_profile.dart';
 import 'openai_options.dart';

@@ -3,7 +3,7 @@
 import 'dart:io';
 
 import 'package:llm_dart_community/llm_dart_community.dart' as community;
-import 'package:llm_dart_core/llm_dart_core.dart' as core;
+import 'package:llm_dart_ai/llm_dart_ai.dart' as core;
 
 Future<void> main() async {
   final apiKey = Platform.environment['ELEVENLABS_API_KEY'];
@@ -13,10 +13,10 @@ Future<void> main() async {
     return;
   }
 
-  final modelId =
-      Platform.environment['ELEVENLABS_SPEECH_MODEL'] ?? 'eleven_multilingual_v2';
-  final outputPath =
-      Platform.environment['ELEVENLABS_OUTPUT_PATH'] ?? 'elevenlabs_example.mp3';
+  final modelId = Platform.environment['ELEVENLABS_SPEECH_MODEL'] ??
+      'eleven_multilingual_v2';
+  final outputPath = Platform.environment['ELEVENLABS_OUTPUT_PATH'] ??
+      'elevenlabs_example.mp3';
 
   final model = community.ElevenLabs(
     apiKey: apiKey,

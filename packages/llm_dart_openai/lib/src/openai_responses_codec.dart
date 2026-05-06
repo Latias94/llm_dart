@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'openai_model_capabilities.dart';
 import 'openai_native_tools.dart';

@@ -1,4 +1,4 @@
-import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'google_content_projection_support.dart';
 import 'google_provider_metadata_support.dart';

@@ -15,7 +15,7 @@
 - [x] Decide final package names for provider spec and AI runtime
 - [ ] Decide whether `llm_dart_provider_utils` is public in the first breaking
   preview or starts as package-private helper code
-- [ ] Decide whether UI contracts remain inside the provider/spec package for
+- [x] Decide whether UI contracts remain inside the provider/spec package for
   the first breaking preview or move to a dedicated UI package later
 - [x] Update workspace dependency guard policy for the target graph
 - [x] Update root boundary guard policy for the target graph
@@ -36,7 +36,7 @@
   `LanguageModel`
 - [x] Keep compatibility re-exports in `llm_dart_core` for migrated provider
   contracts while migration is in progress
-- [ ] Update provider packages to depend on `llm_dart_provider`
+- [x] Update provider packages to depend on `llm_dart_provider`
 
 ## AI Runtime Split
 
@@ -68,14 +68,14 @@
 
 ## Provider Package Migration
 
-- [ ] Migrate `llm_dart_openai`
-- [ ] Migrate `llm_dart_anthropic`
-- [ ] Migrate `llm_dart_google`
-- [ ] Migrate `llm_dart_community`
-- [ ] Preserve provider-owned typed options
+- [x] Migrate `llm_dart_openai`
+- [x] Migrate `llm_dart_anthropic`
+- [x] Migrate `llm_dart_google`
+- [x] Migrate `llm_dart_community`
+- [x] Preserve provider-owned typed options
 - [x] Preserve model capability profiles
-- [ ] Preserve OpenAI-family profiles
-- [ ] Preserve provider-native helper clients
+- [x] Preserve OpenAI-family profiles
+- [x] Preserve provider-native helper clients
 
 ## Root And Legacy
 

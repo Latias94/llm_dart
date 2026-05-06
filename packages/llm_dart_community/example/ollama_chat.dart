@@ -3,11 +3,11 @@
 import 'dart:io';
 
 import 'package:llm_dart_community/llm_dart_community.dart' as community;
-import 'package:llm_dart_core/llm_dart_core.dart' as core;
+import 'package:llm_dart_ai/llm_dart_ai.dart' as core;
 
 Future<void> main() async {
-  final baseUrl =
-      Platform.environment['OLLAMA_BASE_URL'] ?? community.Ollama.defaultBaseUrl;
+  final baseUrl = Platform.environment['OLLAMA_BASE_URL'] ??
+      community.Ollama.defaultBaseUrl;
   final modelId = Platform.environment['OLLAMA_MODEL'] ?? 'llama3.2';
 
   final model = community.Ollama(

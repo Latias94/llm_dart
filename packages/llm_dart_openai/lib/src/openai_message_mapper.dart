@@ -1,4 +1,4 @@
-import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'openai_custom_part.dart';
 import 'openai_custom_part_summary.dart';

@@ -1,4 +1,4 @@
-import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'openai_options.dart';
 
@@ -82,12 +82,9 @@ final class XAIXSearchSource extends XAISearchSource {
   Map<String, Object?> toJson() {
     return {
       'type': 'x',
-      if (includedHandles.isNotEmpty)
-        'included_x_handles': includedHandles,
-      if (excludedHandles.isNotEmpty)
-        'excluded_x_handles': excludedHandles,
-      if (minFavoriteCount != null)
-        'post_favorite_count': minFavoriteCount,
+      if (includedHandles.isNotEmpty) 'included_x_handles': includedHandles,
+      if (excludedHandles.isNotEmpty) 'excluded_x_handles': excludedHandles,
+      if (minFavoriteCount != null) 'post_favorite_count': minFavoriteCount,
       if (minViewCount != null) 'post_view_count': minViewCount,
     };
   }
@@ -150,9 +147,7 @@ final class XAILiveSearchOptions {
       );
     }
 
-    if (fromDate != null &&
-        toDate != null &&
-        toDate!.isBefore(fromDate!)) {
+    if (fromDate != null && toDate != null && toDate!.isBefore(fromDate!)) {
       throw ArgumentError(
         'XAILiveSearchOptions.toDate must be on or after fromDate.',
       );
