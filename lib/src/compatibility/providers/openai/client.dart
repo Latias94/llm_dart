@@ -19,6 +19,10 @@ import 'client_sse_support.dart';
 import 'config_views.dart';
 import 'dio_strategy.dart';
 
+part 'client_codec_mixin.dart';
+part 'client_http_mixin.dart';
+part 'client_identity_mixin.dart';
+
 /// Core OpenAI HTTP client shared across all capability modules
 ///
 /// This class provides the foundational HTTP functionality that all
@@ -28,12 +32,22 @@ import 'dio_strategy.dart';
 /// - Error handling
 /// - SSE stream parsing
 /// - Provider-specific configurations
-class OpenAIClient {
+class OpenAIClient
+    with
+        _OpenAIClientIdentityMixin,
+        _OpenAIClientCodecMixin,
+        _OpenAIClientHttpMixin {
+  @override
   final OpenAIConfig config;
+  @override
   final Logger logger = Logger('OpenAIClient');
+  @override
   late final Dio dio;
+  @override
   late final OpenAISseChunkParser _sseChunkParser;
+  @override
   late final OpenAIClientMessageCodec _messageCodec;
+  @override
   late final OpenAIClientErrorAdapter _errorAdapter;
 
   OpenAIClient(this.config) {
@@ -48,243 +62,5 @@ class OpenAIClient {
       usesResponsesApi: config.responsesCompat.enabled,
     );
     _errorAdapter = OpenAIClientErrorAdapter(logger);
-  }
-
-  /// Get provider ID based on base URL for provider-specific behavior
-  String get providerId {
-    final baseUrl = config.baseUrl.toLowerCase();
-
-    if (baseUrl.contains('openrouter')) {
-      return 'openrouter';
-    } else if (baseUrl.contains('groq')) {
-      return 'groq';
-    } else if (baseUrl.contains('deepseek')) {
-      return 'deepseek';
-    } else if (baseUrl.contains('azure')) {
-      return 'azure-openai';
-    } else if (baseUrl.contains('copilot') || baseUrl.contains('github')) {
-      return 'copilot';
-    } else if (baseUrl.contains('together')) {
-      return 'together';
-    } else if (baseUrl.contains('openai')) {
-      return 'openai';
-    } else {
-      return 'openai'; // Default fallback for OpenAI-compatible APIs
-    }
-  }
-
-  List<Map<String, dynamic>> parseSSEChunk(String chunk) {
-    return _sseChunkParser.parse(chunk);
-  }
-
-  /// Reset SSE buffer (call when starting a new stream)
-  void resetSSEBuffer() {
-    _sseChunkParser.reset();
-  }
-
-  /// Convert ChatMessage to OpenAI API format
-  Map<String, dynamic> convertMessage(ChatMessage message) {
-    return _messageCodec.convertMessage(message);
-  }
-
-  /// Build API messages array from ChatMessage list
-  ///
-  /// Note: System prompt should be added by the calling module if needed,
-  /// not here to avoid duplication.
-  List<Map<String, dynamic>> buildApiMessages(List<ChatMessage> messages) {
-    return _messageCodec.buildApiMessages(messages);
-  }
-
-  /// Make a POST request with JSON body
-  Future<Map<String, dynamic>> postJson(
-    String endpoint,
-    Map<String, dynamic> body, {
-    TransportCancellation? cancelToken,
-  }) async {
-    return _request(
-      endpoint: endpoint,
-      logLabel: 'POST /$endpoint',
-      cancelToken: cancelToken,
-      send: (boundCancelToken) => dio.post(
-        endpoint,
-        data: body,
-        cancelToken: boundCancelToken,
-      ),
-      decode: (response) => HttpResponseHandler.parseJsonResponse(
-        response.data,
-        providerName: 'OpenAI',
-      ),
-    );
-  }
-
-  /// Make a POST request with form data
-  Future<Map<String, dynamic>> postForm(
-    String endpoint,
-    FormData formData, {
-    TransportCancellation? cancelToken,
-  }) async {
-    return _request(
-      endpoint: endpoint,
-      logLabel: 'POST /$endpoint (form)',
-      cancelToken: cancelToken,
-      send: (boundCancelToken) => dio.post(
-        endpoint,
-        data: formData,
-        cancelToken: boundCancelToken,
-      ),
-      decode: (response) => response.data as Map<String, dynamic>,
-    );
-  }
-
-  /// Make a POST request and return raw bytes
-  Future<List<int>> postRaw(
-    String endpoint,
-    Map<String, dynamic> body, {
-    TransportCancellation? cancelToken,
-  }) async {
-    return _request(
-      endpoint: endpoint,
-      cancelToken: cancelToken,
-      send: (boundCancelToken) => dio.post(
-        endpoint,
-        data: body,
-        cancelToken: boundCancelToken,
-        options: Options(responseType: ResponseType.bytes),
-      ),
-      decode: (response) => response.data as List<int>,
-    );
-  }
-
-  /// Make a GET request
-  Future<Map<String, dynamic>> get(
-    String endpoint, {
-    TransportCancellation? cancelToken,
-  }) async {
-    return _request(
-      endpoint: endpoint,
-      logLabel: 'GET /$endpoint',
-      cancelToken: cancelToken,
-      send: (boundCancelToken) => dio.get(
-        endpoint,
-        cancelToken: boundCancelToken,
-      ),
-      decode: (response) => response.data as Map<String, dynamic>,
-    );
-  }
-
-  /// Make a GET request and return raw bytes
-  Future<List<int>> getRaw(
-    String endpoint, {
-    TransportCancellation? cancelToken,
-  }) async {
-    return _request(
-      endpoint: endpoint,
-      cancelToken: cancelToken,
-      send: (boundCancelToken) => dio.get(
-        endpoint,
-        options: Options(responseType: ResponseType.bytes),
-        cancelToken: boundCancelToken,
-      ),
-      decode: (response) => response.data as List<int>,
-    );
-  }
-
-  /// Make a DELETE request
-  Future<Map<String, dynamic>> delete(
-    String endpoint, {
-    TransportCancellation? cancelToken,
-  }) async {
-    return _request(
-      endpoint: endpoint,
-      logLabel: 'DELETE /$endpoint',
-      cancelToken: cancelToken,
-      send: (boundCancelToken) => dio.delete(
-        endpoint,
-        cancelToken: boundCancelToken,
-      ),
-      decode: (response) => response.data as Map<String, dynamic>,
-    );
-  }
-
-  /// Make a POST request and return SSE stream
-  Stream<String> postStreamRaw(
-    String endpoint,
-    Map<String, dynamic> body, {
-    TransportCancellation? cancelToken,
-  }) async* {
-    yield* await _request(
-      endpoint: endpoint,
-      logLabel: 'POST /$endpoint (stream)',
-      cancelToken: cancelToken,
-      resetSseBuffer: true,
-      send: (boundCancelToken) => dio.post(
-        endpoint,
-        data: body,
-        cancelToken: boundCancelToken,
-        options: Options(
-          responseType: ResponseType.stream,
-          headers: {'Accept': 'text/event-stream'},
-        ),
-      ),
-      decode: (response) => decodeDioResponseTextStream(
-        response.data,
-        invalidBodyErrorFactory: GenericError.new,
-      ),
-    );
-  }
-
-  Future<T> _request<T>({
-    required String endpoint,
-    required Future<Response<dynamic>> Function(CancelToken? cancelToken) send,
-    required T Function(Response<dynamic> response) decode,
-    TransportCancellation? cancelToken,
-    String? logLabel,
-    bool resetSseBuffer = false,
-  }) async {
-    _ensureApiKey();
-    if (resetSseBuffer) {
-      resetSSEBuffer();
-    }
-    _logRequest(logLabel);
-
-    try {
-      final response = await send(bindDioCancellation(cancelToken));
-      await _ensureSuccessStatus(response, endpoint);
-      return decode(response);
-    } on DioException catch (e) {
-      throw await handleDioError(e);
-    } catch (e) {
-      if (e is LLMError) {
-        rethrow;
-      }
-      throw GenericError('Unexpected error: $e');
-    }
-  }
-
-  void _ensureApiKey() {
-    if (config.apiKey.isEmpty) {
-      throw const AuthError('Missing OpenAI API key');
-    }
-  }
-
-  void _logRequest(String? logLabel) {
-    if (logLabel == null || !logger.isLoggable(Level.FINE)) {
-      return;
-    }
-
-    logger.fine('OpenAI request: $logLabel');
-    logger.fine(
-      'OpenAI request headers: '
-      '${LogSanitizer.sanitizeHeaders(dio.options.headers)}',
-    );
-  }
-
-  Future<void> _ensureSuccessStatus(Response response, String endpoint) {
-    return _errorAdapter.ensureSuccessStatus(response, endpoint);
-  }
-
-  /// Handle Dio errors and convert them to appropriate LLM errors
-  Future<LLMError> handleDioError(DioException e) async {
-    return _errorAdapter.handleDioError(e);
   }
 }
