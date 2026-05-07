@@ -6,20 +6,32 @@ import '../../../../models/image_models.dart';
 import '../../../../models/file_models.dart';
 import '../../../../models/moderation_models.dart';
 import '../../../../models/assistant_models.dart';
-import 'client.dart';
 import '../../../../providers/openai/config.dart';
-import 'chat.dart';
-import 'embeddings.dart';
+import 'assistants.dart';
 import 'audio.dart';
-import 'images.dart';
+import 'chat.dart';
+import 'client.dart';
+import 'completion.dart';
+import 'embeddings.dart';
 import 'files.dart';
+import 'images.dart';
 import 'models.dart';
 import 'moderation.dart';
-import 'assistants.dart';
-import 'completion.dart';
 import 'openai_provider_support.dart';
-import 'responses.dart';
 import 'provider_chat_facade.dart';
+import 'responses.dart';
+
+part 'provider_compat_assistants.dart';
+part 'provider_compat_audio.dart';
+part 'provider_compat_chat.dart';
+part 'provider_compat_completion.dart';
+part 'provider_compat_embeddings.dart';
+part 'provider_compat_files.dart';
+part 'provider_compat_helpers.dart';
+part 'provider_compat_images.dart';
+part 'provider_compat_models.dart';
+part 'provider_compat_moderation.dart';
+part 'provider_compat_provider_capabilities.dart';
 
 /// Compatibility-first root OpenAI provider shell.
 ///
@@ -28,6 +40,18 @@ import 'provider_chat_facade.dart';
 /// the migration-era adapter that still hosts residual legacy capability
 /// modules and compatibility-facing helper APIs.
 class OpenAIProvider
+    with
+        OpenAIProviderCapabilitiesMixin,
+        OpenAIProviderChatMixin,
+        OpenAIProviderEmbeddingsMixin,
+        OpenAIProviderAudioMixin,
+        OpenAIProviderImagesMixin,
+        OpenAIProviderFilesMixin,
+        OpenAIProviderModelsMixin,
+        OpenAIProviderModerationMixin,
+        OpenAIProviderAssistantsMixin,
+        OpenAIProviderCompletionMixin,
+        OpenAIProviderHelpersMixin
     implements
         ChatCapability,
         EmbeddingCapability,
@@ -39,25 +63,35 @@ class OpenAIProvider
         AssistantCapability,
         CompletionCapability,
         ProviderCapabilities {
+  @override
   final OpenAIClient _client;
   final OpenAIConfig config;
 
-  // Capability modules
   late final OpenAIChat _chat;
+  @override
   late final OpenAIProviderChatFacade _chatFacade;
+  @override
   late final OpenAIEmbeddings _embeddings;
+  @override
   late final OpenAIAudio _audio;
+  @override
   late final OpenAIImages _images;
+  @override
   late final OpenAIFiles _files;
+  @override
   late final OpenAIModels _models;
+  @override
   late final OpenAIModeration _moderation;
+  @override
   late final OpenAIAssistants _assistants;
+  @override
   late final OpenAICompletion _completion;
+  @override
   late final OpenAIResponses? _responses;
+  @override
   late final OpenAIProviderSupport _support;
 
   OpenAIProvider(this.config) : _client = OpenAIClient(config) {
-    // Initialize capability modules
     _chat = OpenAIChat(_client, config);
     _embeddings = OpenAIEmbeddings(_client, config);
     _audio = OpenAIAudio(_client, config);
@@ -68,12 +102,8 @@ class OpenAIProvider
     _assistants = OpenAIAssistants(_client, config);
     _completion = OpenAICompletion(_client, config);
 
-    // Initialize Responses API module if enabled
-    if (config.useResponsesAPI) {
-      _responses = OpenAIResponses(_client, config);
-    } else {
-      _responses = null;
-    }
+    _responses =
+        config.useResponsesAPI ? OpenAIResponses(_client, config) : null;
 
     _chatFacade = OpenAIProviderChatFacade(
       config: config,
@@ -91,337 +121,6 @@ class OpenAIProvider
   }
 
   String get providerName => 'OpenAI';
-
-  // ========== ProviderCapabilities ==========
-
-  @override
-  Set<LLMCapability> get supportedCapabilities =>
-      _support.supportedCapabilities;
-
-  @override
-  bool supports(LLMCapability capability) {
-    return _support.supports(capability);
-  }
-
-  // ========== ChatCapability (delegated to chat module) ==========
-
-  @override
-  Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
-    TransportCancellation? cancelToken,
-  }) async {
-    return _chatFacade.chat(
-      messages,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
-    TransportCancellation? cancelToken,
-  }) async {
-    return _chatFacade.chatWithTools(
-      messages,
-      tools,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
-  Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
-    List<Tool>? tools,
-    TransportCancellation? cancelToken,
-  }) {
-    return _chatFacade.chatStream(
-      messages,
-      tools: tools,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
-  Future<List<ChatMessage>?> memoryContents() async {
-    return _chatFacade.memoryContents();
-  }
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) async {
-    return _chatFacade.summarizeHistory(messages);
-  }
-
-  // ========== EmbeddingCapability (delegated to embeddings module) ==========
-
-  @override
-  Future<List<List<double>>> embed(
-    List<String> input, {
-    TransportCancellation? cancelToken,
-  }) async {
-    return _embeddings.embed(input, cancelToken: cancelToken);
-  }
-
-  // ========== AudioCapability (delegated to audio module) ==========
-
-  @override
-  Set<AudioFeature> get supportedFeatures => _audio.supportedFeatures;
-
-  @override
-  Future<TTSResponse> textToSpeech(
-    TTSRequest request, {
-    TransportCancellation? cancelToken,
-  }) async {
-    return _audio.textToSpeech(request, cancelToken: cancelToken);
-  }
-
-  @override
-  Stream<AudioStreamEvent> textToSpeechStream(
-    TTSRequest request, {
-    TransportCancellation? cancelToken,
-  }) {
-    return _audio.textToSpeechStream(request, cancelToken: cancelToken);
-  }
-
-  @override
-  Future<List<VoiceInfo>> getVoices() async {
-    return _audio.getVoices();
-  }
-
-  @override
-  Future<STTResponse> speechToText(
-    STTRequest request, {
-    TransportCancellation? cancelToken,
-  }) async {
-    return _audio.speechToText(request, cancelToken: cancelToken);
-  }
-
-  @override
-  Future<STTResponse> translateAudio(
-    AudioTranslationRequest request, {
-    TransportCancellation? cancelToken,
-  }) async {
-    return _audio.translateAudio(request, cancelToken: cancelToken);
-  }
-
-  @override
-  Future<List<LanguageInfo>> getSupportedLanguages() async {
-    return _audio.getSupportedLanguages();
-  }
-
-  @override
-  Future<RealtimeAudioSession> startRealtimeSession(
-      RealtimeAudioConfig config) async {
-    return _audio.startRealtimeSession(config);
-  }
-
-  @override
-  List<String> getSupportedAudioFormats() {
-    return _audio.getSupportedAudioFormats();
-  }
-
-  // AudioCapability convenience methods implementation
-  @override
-  Future<List<int>> speech(
-    String text, {
-    TransportCancellation? cancelToken,
-  }) async {
-    return _support.speech(
-      text,
-      cancelToken: cancelToken,
-    );
-  }
-
-  @override
-  Stream<List<int>> speechStream(String text) {
-    return _support.speechStream(text);
-  }
-
-  @override
-  Future<String> transcribe(List<int> audio) async {
-    return _support.transcribe(audio);
-  }
-
-  @override
-  Future<String> transcribeFile(String filePath) async {
-    return _support.transcribeFile(filePath);
-  }
-
-  @override
-  Future<String> translate(List<int> audio) async {
-    return _support.translate(audio);
-  }
-
-  @override
-  Future<String> translateFile(String filePath) async {
-    return _support.translateFile(filePath);
-  }
-
-  // ========== ImageGenerationCapability (delegated to images module) ==========
-
-  @override
-  Future<ImageGenerationResponse> generateImages(
-      ImageGenerationRequest request) async {
-    return _images.generateImages(request);
-  }
-
-  @override
-  Future<ImageGenerationResponse> editImage(ImageEditRequest request) async {
-    return _images.editImage(request);
-  }
-
-  @override
-  Future<ImageGenerationResponse> createVariation(
-      ImageVariationRequest request) async {
-    return _images.createVariation(request);
-  }
-
-  @override
-  List<String> getSupportedSizes() {
-    return _images.getSupportedSizes();
-  }
-
-  @override
-  List<String> getSupportedFormats() {
-    return _images.getSupportedFormats();
-  }
-
-  @override
-  bool get supportsImageEditing => _images.supportsImageEditing;
-
-  @override
-  bool get supportsImageVariations => _images.supportsImageVariations;
-
-  @override
-  Future<List<String>> generateImage({
-    required String prompt,
-    String? model,
-    String? negativePrompt,
-    String? imageSize,
-    int? batchSize,
-    String? seed,
-    int? numInferenceSteps,
-    double? guidanceScale,
-    bool? promptEnhancement,
-  }) async {
-    return _images.generateImage(
-      prompt: prompt,
-      model: model,
-      negativePrompt: negativePrompt,
-      imageSize: imageSize,
-      batchSize: batchSize,
-      seed: seed,
-      numInferenceSteps: numInferenceSteps,
-      guidanceScale: guidanceScale,
-      promptEnhancement: promptEnhancement,
-    );
-  }
-
-  // ========== FileManagementCapability (delegated to files module) ==========
-
-  @override
-  Future<FileObject> uploadFile(FileUploadRequest request) async {
-    return _files.uploadFile(request);
-  }
-
-  @override
-  Future<FileListResponse> listFiles([FileListQuery? query]) async {
-    return _files.listFiles(query);
-  }
-
-  @override
-  Future<FileObject> retrieveFile(String fileId) async {
-    return _files.retrieveFile(fileId);
-  }
-
-  @override
-  Future<FileDeleteResponse> deleteFile(String fileId) async {
-    return _files.deleteFile(fileId);
-  }
-
-  @override
-  Future<List<int>> getFileContent(String fileId) async {
-    return _files.getFileContent(fileId);
-  }
-
-  // ========== ModelListingCapability (delegated to models module) ==========
-
-  @override
-  Future<List<AIModel>> models({TransportCancellation? cancelToken}) async {
-    return _models.models(cancelToken: cancelToken);
-  }
-
-  // ========== ModerationCapability (delegated to moderation module) ==========
-
-  @override
-  Future<ModerationResponse> moderate(ModerationRequest request) async {
-    return _moderation.moderate(request);
-  }
-
-  // ========== AssistantCapability (delegated to assistants module) ==========
-
-  @override
-  Future<Assistant> createAssistant(CreateAssistantRequest request) async {
-    return _assistants.createAssistant(request);
-  }
-
-  @override
-  Future<ListAssistantsResponse> listAssistants(
-      [ListAssistantsQuery? query]) async {
-    return _assistants.listAssistants(query);
-  }
-
-  @override
-  Future<Assistant> retrieveAssistant(String assistantId) async {
-    return _assistants.retrieveAssistant(assistantId);
-  }
-
-  @override
-  Future<Assistant> modifyAssistant(
-    String assistantId,
-    ModifyAssistantRequest request,
-  ) async {
-    return _assistants.modifyAssistant(assistantId, request);
-  }
-
-  @override
-  Future<DeleteAssistantResponse> deleteAssistant(String assistantId) async {
-    return _assistants.deleteAssistant(assistantId);
-  }
-
-  // ========== CompletionCapability (delegated to completion module) ==========
-
-  @override
-  Future<CompletionResponse> complete(CompletionRequest request) async {
-    return _completion.complete(request);
-  }
-
-  // ========== Additional Helper Methods ==========
-
-  /// Get the underlying client for advanced usage
-  OpenAIClient get client => _client;
-
-  /// Get the Responses API module (only available when useResponsesAPI is enabled)
-  OpenAIResponses? get responses => _responses;
-
-  /// Get embedding dimensions for the configured model
-  Future<int> getEmbeddingDimensions() async {
-    return _support.getEmbeddingDimensions();
-  }
-
-  /// Check if a model is valid and accessible
-  Future<({bool valid, String? error})> checkModel() async {
-    return _support.checkModel();
-  }
-
-  /// Generate suggestions for follow-up questions
-  ///
-  /// This method uses the standard chat API with a specialized prompt to generate
-  /// relevant follow-up questions based on the conversation history.
-  /// This is a common pattern used by many chatbot implementations.
-  Future<List<String>> generateSuggestions(List<ChatMessage> messages) async {
-    return _support.generateSuggestions(messages);
-  }
 
   @override
   String toString() {
