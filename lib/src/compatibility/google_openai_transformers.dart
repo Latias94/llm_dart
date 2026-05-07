@@ -1,4 +1,5 @@
 import '../../core/config.dart';
+import 'openai_compatible_provider_config.dart';
 
 /// Google-specific request body transformer for OpenAI-compatible interface
 ///

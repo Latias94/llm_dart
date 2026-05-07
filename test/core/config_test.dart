@@ -1,5 +1,7 @@
 import 'package:llm_dart/core/capability.dart';
 import 'package:llm_dart/core/config.dart';
+import 'package:llm_dart/legacy.dart'
+    show ModelCapabilityConfig, OpenAICompatibleProviderConfig;
 import 'package:llm_dart/models/chat_models.dart';
 import 'package:llm_dart/models/tool_models.dart';
 import 'package:test/test.dart';

@@ -30,6 +30,13 @@ export 'src/compatibility/providers/elevenlabs/config_adapter.dart'
     show createLegacyElevenLabsConfig;
 export 'src/compatibility/providers/ollama/config_adapter.dart'
     show createLegacyOllamaConfig;
+export 'src/compatibility/openai_compatible_provider_config.dart'
+    show
+        ConfigTransformer,
+        HeadersTransformer,
+        ModelCapabilityConfig,
+        OpenAICompatibleProviderConfig,
+        RequestBodyTransformer;
 
 export 'core/capability.dart';
 export 'core/cancellation.dart';
