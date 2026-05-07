@@ -11,23 +11,6 @@ sealed class ToolChoice {
   const ToolChoice();
 
   Map<String, dynamic> toJson();
-
-  /// Convert to OpenAI format
-  Map<String, dynamic> toOpenAIJson() => toJson();
-
-  /// Convert to Anthropic format
-  String toAnthropicJson() {
-    return switch (this) {
-      AutoToolChoice() => 'auto',
-      AnyToolChoice() => 'any',
-      NoneToolChoice() => 'none',
-      SpecificToolChoice(toolName: final name) =>
-        '{"type": "tool", "name": "$name"}',
-    };
-  }
-
-  /// Convert to xAI format (OpenAI-compatible)
-  Map<String, dynamic> toXAIJson() => toOpenAIJson();
 }
 
 /// Model can use any tool, but it must use at least one.
@@ -45,14 +28,6 @@ class AnyToolChoice extends ToolChoice {
 
   @override
   Map<String, dynamic> toJson() => {'type': 'required'};
-
-  @override
-  String toAnthropicJson() {
-    if (disableParallelToolUse == true) {
-      return '{"type": "any", "disable_parallel_tool_use": true}';
-    }
-    return 'any';
-  }
 }
 
 /// Model can use any tool, and may elect to use none.
@@ -70,14 +45,6 @@ class AutoToolChoice extends ToolChoice {
 
   @override
   Map<String, dynamic> toJson() => {'type': 'auto'};
-
-  @override
-  String toAnthropicJson() {
-    if (disableParallelToolUse == true) {
-      return '{"type": "auto", "disable_parallel_tool_use": true}';
-    }
-    return 'auto';
-  }
 }
 
 /// Model must use the specified tool and only the specified tool.
@@ -101,14 +68,6 @@ class SpecificToolChoice extends ToolChoice {
         'type': 'function',
         'function': {'name': toolName},
       };
-
-  @override
-  String toAnthropicJson() {
-    if (disableParallelToolUse == true) {
-      return '{"type": "tool", "name": "$toolName", "disable_parallel_tool_use": true}';
-    }
-    return '{"type": "tool", "name": "$toolName"}';
-  }
 }
 
 /// Explicitly disables the use of tools.
@@ -123,7 +82,4 @@ class NoneToolChoice extends ToolChoice {
 
   @override
   Map<String, dynamic> toJson() => {'type': 'none'};
-
-  @override
-  String toAnthropicJson() => 'none';
 }

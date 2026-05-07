@@ -2,6 +2,7 @@ part of 'responses_request_builder.dart';
 
 final class _OpenAIResponsesRequestBodySupport {
   static const _toolSupport = _OpenAIResponsesToolSupport();
+  static const _toolChoiceCodec = OpenAIToolChoiceCodec();
 
   const _OpenAIResponsesRequestBodySupport();
 
@@ -67,7 +68,7 @@ final class _OpenAIResponsesRequestBodySupport {
       if (effectiveToolChoice != null &&
           effectiveTools != null &&
           effectiveTools.isNotEmpty) {
-        body['tool_choice'] = effectiveToolChoice.toJson();
+        body['tool_choice'] = _toolChoiceCodec.toJson(effectiveToolChoice);
       }
     }
 

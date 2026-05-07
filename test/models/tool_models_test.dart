@@ -187,11 +187,9 @@ void main() {
         expect(json['type'], equals('auto'));
       });
 
-      test('AutoToolChoice with parallel disable should format for Anthropic',
-          () {
+      test('AutoToolChoice should preserve parallel disable preference', () {
         const choice = AutoToolChoice(disableParallelToolUse: true);
-        final anthropicJson = choice.toAnthropicJson();
-        expect(anthropicJson, contains('disable_parallel_tool_use'));
+        expect(choice.disableParallelToolUse, isTrue);
       });
 
       test('AnyToolChoice should serialize correctly', () {
@@ -213,18 +211,24 @@ void main() {
         expect(json['function']['name'], equals('get_weather'));
       });
 
-      test('ToolChoice should convert to Anthropic format correctly', () {
-        const autoChoice = AutoToolChoice();
-        expect(autoChoice.toAnthropicJson(), equals('auto'));
+      test('ToolChoice should keep provider-neutral state', () {
+        const autoChoice = AutoToolChoice(disableParallelToolUse: true);
+        expect(autoChoice.toJson(), {'type': 'auto'});
+        expect(autoChoice.disableParallelToolUse, isTrue);
 
-        const anyChoice = AnyToolChoice();
-        expect(anyChoice.toAnthropicJson(), equals('any'));
+        const anyChoice = AnyToolChoice(disableParallelToolUse: true);
+        expect(anyChoice.toJson(), {'type': 'required'});
+        expect(anyChoice.disableParallelToolUse, isTrue);
 
         const noneChoice = NoneToolChoice();
-        expect(noneChoice.toAnthropicJson(), equals('none'));
+        expect(noneChoice.toJson(), {'type': 'none'});
 
-        const specificChoice = SpecificToolChoice('get_weather');
-        expect(specificChoice.toAnthropicJson(), contains('get_weather'));
+        const specificChoice = SpecificToolChoice(
+          'get_weather',
+          disableParallelToolUse: true,
+        );
+        expect(specificChoice.toolName, 'get_weather');
+        expect(specificChoice.disableParallelToolUse, isTrue);
       });
     });
 

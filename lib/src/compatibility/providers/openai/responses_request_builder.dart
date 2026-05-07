@@ -3,6 +3,7 @@ import '../../../../models/tool_models.dart';
 import '../../../../providers/openai/config.dart';
 import 'client.dart';
 import 'config_views.dart';
+import 'openai_tool_choice_codec.dart';
 import 'request_body_support.dart';
 
 part 'responses_request_builder_body.dart';

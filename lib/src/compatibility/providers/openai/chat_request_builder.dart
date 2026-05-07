@@ -4,10 +4,13 @@ import '../../../../providers/openai/config.dart';
 import '../../../../utils/reasoning_utils.dart';
 import 'client.dart';
 import 'config_views.dart';
+import 'openai_tool_choice_codec.dart';
 import 'request_body_support.dart';
 
 /// Owns Chat Completions request shaping for the OpenAI compatibility shell.
 class OpenAIChatRequestBuilder {
+  static const _toolChoiceCodec = OpenAIToolChoiceCodec();
+
   final OpenAIClient client;
   final OpenAIConfig config;
 
@@ -65,7 +68,7 @@ class OpenAIChatRequestBuilder {
 
       final effectiveToolChoice = requestConfig.toolChoice;
       if (effectiveToolChoice != null) {
-        body['tool_choice'] = effectiveToolChoice.toJson();
+        body['tool_choice'] = _toolChoiceCodec.toJson(effectiveToolChoice);
       }
     }
 

@@ -113,6 +113,55 @@ void main() {
         },
       ]);
     });
+
+    test('converts unified tool choices to Anthropic format', () {
+      final cases = <(ToolChoice, dynamic)>[
+        (const AutoToolChoice(), 'auto'),
+        (
+          const AutoToolChoice(disableParallelToolUse: true),
+          {'type': 'auto', 'disable_parallel_tool_use': true},
+        ),
+        (const AnyToolChoice(), 'any'),
+        (
+          const AnyToolChoice(disableParallelToolUse: true),
+          {'type': 'any', 'disable_parallel_tool_use': true},
+        ),
+        (const NoneToolChoice(), 'none'),
+        (
+          const SpecificToolChoice('get_weather'),
+          {'type': 'tool', 'name': 'get_weather'},
+        ),
+        (
+          const SpecificToolChoice(
+            'get_weather',
+            disableParallelToolUse: true,
+          ),
+          {
+            'type': 'tool',
+            'name': 'get_weather',
+            'disable_parallel_tool_use': true,
+          },
+        ),
+      ];
+
+      for (final (toolChoice, expected) in cases) {
+        final builder = AnthropicRequestBuilder(
+          AnthropicConfig(
+            apiKey: 'test-key',
+            model: 'claude-3-5-sonnet-latest',
+            toolChoice: toolChoice,
+          ),
+        );
+
+        final body = builder.buildRequestBody(
+          [ChatMessage.user('Use a tool.')],
+          [_weatherTool()],
+          false,
+        );
+
+        expect(body['tool_choice'], expected);
+      }
+    });
   });
 }
 
