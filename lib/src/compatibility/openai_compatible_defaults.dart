@@ -1,5 +1,5 @@
 import '../../core/capability.dart';
-import '../provider_defaults.dart';
+import '../config/provider_defaults.dart';
 
 /// Legacy map-based defaults for OpenAI-compatible providers.
 ///

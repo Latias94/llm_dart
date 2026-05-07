@@ -2,7 +2,7 @@ import '../../../../models/chat_models.dart';
 import '../../../../models/tool_models.dart';
 import '../../../../providers/openai/builtin_tools.dart';
 import '../../../../providers/openai/config.dart';
-import '../../../provider_defaults.dart';
+import '../../../config/provider_defaults.dart';
 
 /// Internal grouped views for compatibility-era OpenAI config reads.
 ///

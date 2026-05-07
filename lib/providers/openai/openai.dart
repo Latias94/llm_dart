@@ -25,7 +25,7 @@
 /// ```
 library;
 
-import '../../src/provider_defaults.dart';
+import '../../src/config/provider_defaults.dart';
 import 'config.dart';
 import 'provider.dart';
 

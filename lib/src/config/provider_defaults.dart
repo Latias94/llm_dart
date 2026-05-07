@@ -1,6 +1,6 @@
-import '../core/capability.dart';
+import '../../core/capability.dart';
 
-export 'compatibility/openai_compatible_defaults.dart'
+export '../compatibility/openai_compatible_defaults.dart'
     show OpenAICompatibleDefaults;
 
 /// Centralized provider default configurations

@@ -28,9 +28,7 @@ const Set<String> _allowedRootSrcTopLevelDirectories = {
   'facade',
 };
 
-const Set<String> _allowedRootSrcTopLevelFiles = {
-  'provider_defaults.dart',
-};
+const Set<String> _allowedRootSrcTopLevelFiles = {};
 
 final RegExp _flutterImportPattern = RegExp(
   r'''^\s*(import|export)\s+['"]package:llm_dart_flutter/[^'"]+['"]''',

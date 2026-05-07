@@ -343,12 +343,6 @@ export 'package:llm_dart_chat/llm_dart_chat.dart';
 ''',
   );
 
-  for (final file in const [
-    'lib/src/provider_defaults.dart',
-  ]) {
-    await _writeFile(repoRoot, file, 'library;\n');
-  }
-
   return repoRoot;
 }
 

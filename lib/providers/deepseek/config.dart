@@ -2,7 +2,7 @@ import 'package:llm_dart_transport/llm_dart_transport.dart'
     show DioClientOverrides, HasDioClientOverrides;
 
 import '../../models/tool_models.dart';
-import '../../src/provider_defaults.dart';
+import '../../src/config/provider_defaults.dart';
 
 /// DeepSeek provider configuration
 ///

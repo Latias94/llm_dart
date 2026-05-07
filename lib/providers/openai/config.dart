@@ -3,7 +3,7 @@ import 'package:llm_dart_transport/llm_dart_transport.dart'
 
 import '../../models/tool_models.dart';
 import '../../models/chat_models.dart';
-import '../../src/provider_defaults.dart';
+import '../../src/config/provider_defaults.dart';
 import 'builtin_tools.dart';
 
 /// Compatibility-first root OpenAI configuration.

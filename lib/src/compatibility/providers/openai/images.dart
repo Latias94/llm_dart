@@ -1,5 +1,5 @@
 import '../../../../core/capability.dart';
-import '../../../provider_defaults.dart';
+import '../../../config/provider_defaults.dart';
 import '../../../../models/image_models.dart';
 import 'client.dart';
 import '../../../../providers/openai/config.dart';

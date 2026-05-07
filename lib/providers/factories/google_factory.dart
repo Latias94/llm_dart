@@ -1,7 +1,7 @@
 import '../../core/capability.dart';
 import '../../core/config.dart';
 import '../../src/compatibility/providers/google_compat_provider.dart';
-import '../../src/provider_defaults.dart';
+import '../../src/config/provider_defaults.dart';
 import 'base_factory.dart';
 
 /// Factory for creating Google (Gemini) provider instances

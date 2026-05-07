@@ -1,7 +1,7 @@
 import 'package:llm_dart_transport/llm_dart_transport.dart'
     show DioClientOverrides, HasDioClientOverrides;
 
-import '../../src/provider_defaults.dart';
+import '../../src/config/provider_defaults.dart';
 import '../../core/web_search.dart';
 import '../../models/chat_models.dart';
 import '../../models/tool_models.dart';

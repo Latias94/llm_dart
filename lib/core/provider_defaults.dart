@@ -1,1 +1,1 @@
-export '../src/provider_defaults.dart';
+export '../src/config/provider_defaults.dart';

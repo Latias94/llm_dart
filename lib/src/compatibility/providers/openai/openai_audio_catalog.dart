@@ -1,5 +1,5 @@
 import '../../../../models/audio_models.dart';
-import '../../../provider_defaults.dart';
+import '../../../config/provider_defaults.dart';
 
 /// Static OpenAI audio capability catalogs that do not belong inside the
 /// request/response orchestration facade.
