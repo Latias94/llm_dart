@@ -1,9 +1,9 @@
 import '../../../../core/capability.dart';
 import '../../../../models/chat_models.dart';
-import '../../../../models/responses_models.dart';
 import '../../../../models/tool_models.dart';
 import 'client.dart';
 import '../../../../providers/openai/config.dart';
+import 'openai_responses_models.dart';
 import 'openai_responses_support.dart';
 import 'responses_capability.dart';
 import 'responses_request_builder.dart';

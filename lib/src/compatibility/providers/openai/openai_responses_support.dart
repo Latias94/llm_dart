@@ -1,11 +1,11 @@
 import '../../../../core/capability.dart';
 import '../../../../core/llm_error.dart';
 import '../../../../models/chat_models.dart';
-import '../../../../models/responses_models.dart';
 import '../../../../models/tool_models.dart';
 import '../../../../utils/reasoning_utils.dart';
 import 'client.dart';
 import 'openai_responses_response.dart';
+import 'openai_responses_models.dart';
 import 'responses_request_builder.dart';
 
 /// Provider-local support for non-streaming OpenAI Responses API operations.

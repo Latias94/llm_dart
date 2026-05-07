@@ -10,8 +10,8 @@ library;
 
 import '../../../../core/capability.dart';
 import '../../../../models/chat_models.dart';
-import '../../../../models/responses_models.dart';
 import '../../../../models/tool_models.dart';
+import 'openai_responses_models.dart';
 
 /// OpenAI-specific capability interface for stateful Responses API
 ///
