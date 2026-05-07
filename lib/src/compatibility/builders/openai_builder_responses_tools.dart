@@ -81,7 +81,7 @@ mixin _OpenAIBuilderResponsesTools {
   }) {
     _setOpenAIProviderOption(
       LegacyExtensionKeys.webSearchConfig,
-      WebSearchConfig.openai(
+      CompatWebSearchPresets.openai(
         contextSize: contextSize,
       ),
     );

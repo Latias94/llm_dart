@@ -268,7 +268,7 @@ void main() {
 
       final webSearchConfigResult = canUseOpenRouterChatBridge(
         _baseConfig('openai/gpt-4o-mini').withExtensions({
-          'webSearchConfig': legacy.WebSearchConfig.openRouter(
+          'webSearchConfig': legacy.CompatWebSearchPresets.openRouter(
             maxResults: 5,
             searchPrompt: 'Focus on recent developments.',
           ),
@@ -292,7 +292,7 @@ void main() {
           legacyProviderOptionsBagKey: {
             LegacyProviderOptionNamespaces.openrouter: {
               LegacyExtensionKeys.webSearchConfig:
-                  legacy.WebSearchConfig.openRouter(
+                  legacy.CompatWebSearchPresets.openRouter(
                 maxResults: 5,
                 searchPrompt: 'Focus on recent developments.',
               ),

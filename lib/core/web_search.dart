@@ -33,16 +33,16 @@ enum WebSearchContextSize {
 
 /// Web search implementation strategy
 enum WebSearchStrategy {
-  /// Use provider's native search (OpenAI, Perplexity)
+  /// Use a provider's native search integration
   native,
 
-  /// Use tool-based search (Anthropic, OpenAI tools)
+  /// Use tool-based search
   tool,
 
-  /// Use plugin-based search (OpenRouter)
+  /// Use plugin-based search
   plugin,
 
-  /// Use parameter-based search (xAI)
+  /// Use parameter-based search
   parameter,
 
   /// Auto-detect best strategy for provider
@@ -125,68 +125,36 @@ class WebSearchLocation {
 /// according to their specific API requirements.
 class WebSearchConfig {
   /// Maximum number of search operations per request
-  ///
-  /// - **Anthropic**: Maps to `max_uses` parameter
-  /// - **xAI**: Not directly supported, but can limit search frequency
   final int? maxUses;
 
   /// Maximum number of search results to return
-  ///
-  /// - **Anthropic**: Controlled by the search engine
-  /// - **xAI**: Maps to `max_search_results` parameter
   final int? maxResults;
 
   /// List of allowed domains (whitelist)
-  ///
-  /// - **Anthropic**: Maps to `allowed_domains` parameter
-  /// - **xAI**: Can be implemented via excluded websites (inverse logic)
   final List<String>? allowedDomains;
 
   /// List of blocked domains (blacklist)
-  ///
-  /// - **Anthropic**: Maps to `blocked_domains` parameter
-  /// - **xAI**: Maps to `excluded_websites` parameter
   final List<String>? blockedDomains;
 
   /// Geographic location for search localization
-  ///
-  /// - **Anthropic**: Maps to `user_location` parameter
-  /// - **xAI**: Not directly supported, but can be included in search context
   final WebSearchLocation? location;
 
   /// Search mode/strategy
-  ///
-  /// - **Anthropic**: Not directly applicable (tool-based)
-  /// - **xAI**: Maps to `mode` parameter ("auto", "always", "never")
   final String? mode;
 
   /// Start date for search results (YYYY-MM-DD format)
-  ///
-  /// - **Anthropic**: Not directly supported
-  /// - **xAI**: Maps to `from_date` parameter
   final String? fromDate;
 
   /// End date for search results (YYYY-MM-DD format)
-  ///
-  /// - **Anthropic**: Not directly supported
-  /// - **xAI**: Maps to `to_date` parameter
   final String? toDate;
 
   /// Type of search (web, news, etc.)
   final WebSearchType? searchType;
 
   /// Search context size for providers that support it
-  ///
-  /// - **OpenAI**: Maps to `web_search_options.search_context_size`
-  /// - **Perplexity**: Maps to search context size parameter
-  /// - **OpenRouter**: Not directly supported
-  /// - **xAI/Anthropic**: Not applicable
   final WebSearchContextSize? contextSize;
 
   /// Custom search prompt for result integration
-  ///
-  /// - **OpenRouter**: Maps to `search_prompt` parameter
-  /// - **Others**: Not directly supported, but can influence system prompts
   final String? searchPrompt;
 
   /// Web search implementation strategy
@@ -240,40 +208,6 @@ class WebSearchConfig {
         searchType: WebSearchType.news,
       );
 
-  /// Create an Anthropic-optimized configuration
-  factory WebSearchConfig.anthropic({
-    int maxUses = 5,
-    List<String>? allowedDomains,
-    List<String>? blockedDomains,
-    WebSearchLocation? location,
-  }) =>
-      WebSearchConfig(
-        maxUses: maxUses,
-        allowedDomains: allowedDomains,
-        blockedDomains: blockedDomains,
-        location: location,
-        searchType: WebSearchType.web,
-      );
-
-  /// Create an xAI-optimized configuration
-  factory WebSearchConfig.xai({
-    int maxResults = 5,
-    List<String>? blockedDomains,
-    String mode = 'auto',
-    String? fromDate,
-    String? toDate,
-    WebSearchType searchType = WebSearchType.web,
-  }) =>
-      WebSearchConfig(
-        maxResults: maxResults,
-        blockedDomains: blockedDomains,
-        mode: mode,
-        fromDate: fromDate,
-        toDate: toDate,
-        searchType: searchType,
-        strategy: WebSearchStrategy.parameter,
-      );
-
   WebSearchConfig copyWith({
     int? maxUses,
     int? maxResults,
@@ -320,42 +254,6 @@ class WebSearchConfig {
         'strategy': strategy.name,
         'enabled': enabled,
       };
-
-  /// Create an OpenAI-optimized configuration
-  factory WebSearchConfig.openai({
-    WebSearchContextSize contextSize = WebSearchContextSize.medium,
-    WebSearchStrategy strategy = WebSearchStrategy.auto,
-  }) =>
-      WebSearchConfig(
-        contextSize: contextSize,
-        strategy: strategy,
-        searchType: WebSearchType.web,
-      );
-
-  /// Create an OpenRouter-optimized configuration
-  factory WebSearchConfig.openRouter({
-    int maxResults = 5,
-    String? searchPrompt,
-    bool useOnlineShortcut = true,
-  }) =>
-      WebSearchConfig(
-        maxResults: maxResults,
-        searchPrompt: searchPrompt,
-        strategy: useOnlineShortcut
-            ? WebSearchStrategy.plugin
-            : WebSearchStrategy.plugin,
-        searchType: WebSearchType.web,
-      );
-
-  /// Create a Perplexity-optimized configuration
-  factory WebSearchConfig.perplexity({
-    WebSearchContextSize contextSize = WebSearchContextSize.medium,
-  }) =>
-      WebSearchConfig(
-        contextSize: contextSize,
-        strategy: WebSearchStrategy.native,
-        searchType: WebSearchType.web,
-      );
 
   @override
   String toString() => 'WebSearchConfig(enabled: $enabled, type: $searchType, '

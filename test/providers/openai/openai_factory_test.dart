@@ -1,11 +1,11 @@
 import 'package:llm_dart/core/config.dart';
-import 'package:llm_dart/core/web_search.dart';
 import 'package:llm_dart/providers/factories/openai_compatible_factory.dart';
 import 'package:llm_dart/providers/factories/openai_factory.dart';
 import 'package:llm_dart/providers/openai/openai.dart';
 import 'package:llm_dart/src/compatibility/compat_providers.dart';
 import 'package:llm_dart/src/compatibility/config/legacy_config_keys.dart';
 import 'package:llm_dart/src/compatibility/config/legacy_provider_options.dart';
+import 'package:llm_dart/src/compatibility/web_search_presets.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -99,7 +99,8 @@ void main() {
         extensions: {
           legacyProviderOptionsBagKey: {
             LegacyProviderOptionNamespaces.openrouter: {
-              LegacyExtensionKeys.webSearchConfig: WebSearchConfig.openRouter(
+              LegacyExtensionKeys.webSearchConfig:
+                  CompatWebSearchPresets.openRouter(
                 maxResults: 5,
               ),
             },
