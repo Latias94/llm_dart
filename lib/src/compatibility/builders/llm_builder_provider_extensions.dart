@@ -64,4 +64,16 @@ extension LLMBuilderProviderExtensions on LLMBuilder {
     }
     return this;
   }
+
+  /// Selects the DeepSeek provider.
+  LLMBuilder deepseek() => provider('deepseek');
+
+  /// Selects the xAI provider.
+  LLMBuilder xai() => provider('xai');
+
+  /// Selects the Phind provider.
+  LLMBuilder phind() => provider('phind');
+
+  /// Selects the Groq provider.
+  LLMBuilder groq() => provider('groq');
 }

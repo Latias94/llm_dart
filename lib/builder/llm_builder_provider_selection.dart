@@ -3,10 +3,4 @@ part of 'llm_builder.dart';
 extension LLMBuilderProviderSelection on LLMBuilder {
   /// Sets the provider to use (new registry-based approach)
   LLMBuilder provider(String providerId) => _setProvider(providerId);
-
-  LLMBuilder deepseek() => provider('deepseek');
-
-  LLMBuilder xai() => provider('xai');
-  LLMBuilder phind() => provider('phind');
-  LLMBuilder groq() => provider('groq');
 }
