@@ -1,7 +1,4 @@
-import 'package:llm_dart/core/capability.dart';
 import 'package:llm_dart/core/config.dart';
-import 'package:llm_dart/legacy.dart'
-    show ModelCapabilityConfig, OpenAICompatibleProviderConfig;
 import 'package:llm_dart/models/chat_models.dart';
 import 'package:llm_dart/models/tool_models.dart';
 import 'package:test/test.dart';
@@ -155,85 +152,6 @@ void main() {
           config.toolChoice,
           isA<SpecificToolChoice>()
               .having((choice) => choice.toolName, 'toolName', 'test_tool'),
-        );
-      });
-    });
-
-    group('ModelCapabilityConfig', () {
-      test('should create with default values', () {
-        final config = ModelCapabilityConfig();
-
-        expect(config.supportsReasoning, isFalse);
-        expect(config.supportsVision, isFalse);
-        expect(config.supportsToolCalling, isTrue); // Default is true
-        expect(config.maxContextLength, isNull);
-        expect(config.disableTemperature, isFalse);
-        expect(config.disableTopP, isFalse);
-      });
-
-      test('should create with custom values', () {
-        final config = ModelCapabilityConfig(
-          supportsReasoning: true,
-          supportsVision: true,
-          supportsToolCalling: true,
-          maxContextLength: 32768,
-          disableTemperature: true,
-          disableTopP: true,
-        );
-
-        expect(config.supportsReasoning, isTrue);
-        expect(config.supportsVision, isTrue);
-        expect(config.supportsToolCalling, isTrue);
-        expect(config.maxContextLength, equals(32768));
-        expect(config.disableTemperature, isTrue);
-        expect(config.disableTopP, isTrue);
-      });
-    });
-
-    group('OpenAICompatibleProviderConfig', () {
-      test('should prefer explicit default capabilities', () {
-        final config = OpenAICompatibleProviderConfig(
-          providerId: 'test-provider',
-          displayName: 'Test Provider',
-          description: 'Test description',
-          defaultBaseUrl: 'https://api.test.com',
-          defaultModel: 'test-model',
-          supportedCapabilities: {
-            LLMCapability.chat,
-            LLMCapability.streaming,
-          },
-          defaultCapabilities: {
-            LLMCapability.chat,
-          },
-        );
-
-        expect(
-          config.effectiveDefaultCapabilities,
-          equals({
-            LLMCapability.chat,
-          }),
-        );
-      });
-
-      test('should fall back to supported capabilities', () {
-        final config = OpenAICompatibleProviderConfig(
-          providerId: 'test-provider',
-          displayName: 'Test Provider',
-          description: 'Test description',
-          defaultBaseUrl: 'https://api.test.com',
-          defaultModel: 'test-model',
-          supportedCapabilities: {
-            LLMCapability.chat,
-            LLMCapability.streaming,
-          },
-        );
-
-        expect(
-          config.effectiveDefaultCapabilities,
-          equals({
-            LLMCapability.chat,
-            LLMCapability.streaming,
-          }),
         );
       });
     });
