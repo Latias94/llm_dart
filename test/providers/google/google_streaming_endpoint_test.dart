@@ -1,5 +1,6 @@
 import 'package:llm_dart/core/cancellation.dart';
 import 'package:llm_dart/core/config.dart';
+import 'package:llm_dart/core/llm_error.dart';
 import 'package:llm_dart/models/chat_models.dart';
 import 'package:llm_dart/models/tool_models.dart';
 import 'package:llm_dart/providers/google/chat.dart';
@@ -140,4 +141,41 @@ void main() {
       );
     });
   });
+
+  group('Google chat errors', () {
+    test('maps API key invalid errors to AuthError', () async {
+      final config = const GoogleConfig(
+        apiKey: 'test-key',
+        model: 'gemini-1.5-flash',
+      );
+
+      final client = _ErrorGoogleClient(config);
+      final chat = GoogleChat(client, config);
+
+      await expectLater(
+        chat.chat([ChatMessage.user('hello')]),
+        throwsA(isA<AuthError>()),
+      );
+    });
+  });
+}
+
+class _ErrorGoogleClient extends GoogleClient {
+  _ErrorGoogleClient(super.config);
+
+  @override
+  Future<Map<String, dynamic>> postJson(
+    String endpoint,
+    Map<String, dynamic> data, {
+    TransportCancellation? cancelToken,
+  }) async {
+    return {
+      'error': {
+        'message': 'Invalid API key',
+        'details': [
+          {'reason': 'API_KEY_INVALID'},
+        ],
+      },
+    };
+  }
 }
