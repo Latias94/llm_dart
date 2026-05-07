@@ -23,23 +23,29 @@ class ConfigUtils {
     return headers;
   }
 
-  /// Build OpenAI-compatible headers
-  static Map<String, String> buildOpenAIHeaders(String apiKey) {
+  /// Build standard Bearer-token authorization headers.
+  static Map<String, String> buildBearerAuthHeaders(
+    String apiKey, {
+    Map<String, String>? additionalHeaders,
+  }) {
     return buildHeaders(
       apiKey: apiKey,
       authHeaderName: 'Authorization',
       authPrefix: 'Bearer',
+      additionalHeaders: additionalHeaders,
     );
   }
 
-  /// Build Anthropic-compatible headers
-  static Map<String, String> buildAnthropicHeaders(String apiKey) {
+  /// Build API-key authorization headers.
+  static Map<String, String> buildApiKeyHeaders({
+    required String apiKey,
+    required String authHeaderName,
+    Map<String, String>? additionalHeaders,
+  }) {
     return buildHeaders(
       apiKey: apiKey,
-      authHeaderName: 'x-api-key',
-      additionalHeaders: {
-        'anthropic-version': '2023-06-01',
-      },
+      authHeaderName: authHeaderName,
+      additionalHeaders: additionalHeaders,
     );
   }
 }

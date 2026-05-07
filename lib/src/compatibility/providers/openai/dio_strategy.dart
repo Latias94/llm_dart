@@ -14,6 +14,6 @@ class OpenAIDioStrategy extends BaseProviderDioStrategy {
   @override
   Map<String, String> buildHeaders(dynamic config) {
     final openaiConfig = config as OpenAIConfig;
-    return ConfigUtils.buildOpenAIHeaders(openaiConfig.apiKey);
+    return ConfigUtils.buildBearerAuthHeaders(openaiConfig.apiKey);
   }
 }

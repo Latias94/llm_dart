@@ -13,6 +13,6 @@ class DeepSeekDioStrategy extends BaseProviderDioStrategy {
   @override
   Map<String, String> buildHeaders(dynamic config) {
     final deepSeekConfig = config as DeepSeekConfig;
-    return ConfigUtils.buildOpenAIHeaders(deepSeekConfig.apiKey);
+    return ConfigUtils.buildBearerAuthHeaders(deepSeekConfig.apiKey);
   }
 }

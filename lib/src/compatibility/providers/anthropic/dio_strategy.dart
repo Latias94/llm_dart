@@ -18,7 +18,13 @@ class AnthropicDioStrategy extends BaseProviderDioStrategy {
   @override
   Map<String, String> buildHeaders(dynamic config) {
     final anthropicConfig = config as AnthropicConfig;
-    return ConfigUtils.buildAnthropicHeaders(anthropicConfig.apiKey);
+    return ConfigUtils.buildApiKeyHeaders(
+      apiKey: anthropicConfig.apiKey,
+      authHeaderName: 'x-api-key',
+      additionalHeaders: const {
+        'anthropic-version': '2023-06-01',
+      },
+    );
   }
 
   @override

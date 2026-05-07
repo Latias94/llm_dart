@@ -1,3 +1,4 @@
+import '../../utils/config_utils.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'config.dart';
@@ -12,14 +13,6 @@ class XAIDioStrategy extends BaseProviderDioStrategy {
   @override
   Map<String, String> buildHeaders(dynamic config) {
     final xaiConfig = config as XAIConfig;
-    return _buildXAIHeaders(xaiConfig.apiKey);
-  }
-
-  /// Build xAI-specific HTTP headers
-  static Map<String, String> _buildXAIHeaders(String apiKey) {
-    return {
-      'Authorization': 'Bearer $apiKey',
-      'Content-Type': 'application/json',
-    };
+    return ConfigUtils.buildBearerAuthHeaders(xaiConfig.apiKey);
   }
 }

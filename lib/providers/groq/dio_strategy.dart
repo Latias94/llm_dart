@@ -13,6 +13,6 @@ class GroqDioStrategy extends BaseProviderDioStrategy {
   @override
   Map<String, String> buildHeaders(dynamic config) {
     final groqConfig = config as GroqConfig;
-    return ConfigUtils.buildOpenAIHeaders(groqConfig.apiKey);
+    return ConfigUtils.buildBearerAuthHeaders(groqConfig.apiKey);
   }
 }
