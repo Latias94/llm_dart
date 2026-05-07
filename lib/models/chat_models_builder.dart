@@ -7,6 +7,38 @@ abstract class ContentBlock {
   Map<String, dynamic> toJson();
 }
 
+/// Context provided to provider extensions during message building.
+class MessageProviderExtensionContext {
+  final String providerId;
+  final List<ContentBlock> allBlocks;
+  final List<ContentBlock> universalBlocks;
+  final List<ContentBlock> providerBlocks;
+
+  const MessageProviderExtensionContext({
+    required this.providerId,
+    required this.allBlocks,
+    required this.universalBlocks,
+    required this.providerBlocks,
+  });
+
+  Iterable<T> universalBlocksOfType<T extends ContentBlock>() {
+    return universalBlocks.whereType<T>();
+  }
+}
+
+/// Provider-owned extension point for projecting universal blocks.
+abstract class MessageProviderExtension {
+  const MessageProviderExtension();
+
+  String get providerId;
+
+  Object get extensionId => runtimeType;
+
+  Iterable<ContentBlock> buildContentBlocks(
+    MessageProviderExtensionContext context,
+  );
+}
+
 /// Universal text block that works with all providers
 class UniversalTextBlock implements ContentBlock {
   final String text;
@@ -50,6 +82,7 @@ class ToolsBlock implements ContentBlock {
 class MessageBuilder {
   final ChatRole _role;
   final List<ContentBlock> _blocks = [];
+  final List<MessageProviderExtension> _providerExtensions = [];
   String? _name;
 
   MessageBuilder._(this._role);
@@ -81,6 +114,16 @@ class MessageBuilder {
     _blocks.add(block);
   }
 
+  // Method for providers to add build-time extension logic
+  void addProviderExtension(MessageProviderExtension extension) {
+    _providerExtensions.removeWhere(
+      (registered) =>
+          registered.providerId == extension.providerId &&
+          registered.extensionId == extension.extensionId,
+    );
+    _providerExtensions.add(extension);
+  }
+
   // Build ChatMessage with extensions
   ChatMessage build() {
     final textBlocks = _blocks.where(
@@ -90,30 +133,34 @@ class MessageBuilder {
 
     final extensions = <String, dynamic>{};
     final providerGroups = <String, List<ContentBlock>>{};
-    final universalTools = <ToolsBlock>[];
+    final universalBlocks = <ContentBlock>[];
 
     for (final block in _blocks) {
       if (block.providerId == 'universal') {
-        if (block is ToolsBlock) {
-          universalTools.add(block);
-        }
+        universalBlocks.add(block);
         continue;
       }
 
       providerGroups.putIfAbsent(block.providerId, () => []).add(block);
     }
 
-    if (providerGroups.containsKey('anthropic') && universalTools.isNotEmpty) {
-      final anthropicBlocks = providerGroups['anthropic']!;
-      final hasCacheMarker = anthropicBlocks.any((block) {
-        final json = block.toJson();
-        return json['cache_control'] != null && json['text'] == '';
-      });
+    for (final extension in _providerExtensions) {
+      final providerBlocks = providerGroups[extension.providerId] ?? const [];
+      final additionalBlocks = extension
+          .buildContentBlocks(
+            MessageProviderExtensionContext(
+              providerId: extension.providerId,
+              allBlocks: List.unmodifiable(_blocks),
+              universalBlocks: List.unmodifiable(universalBlocks),
+              providerBlocks: List.unmodifiable(providerBlocks),
+            ),
+          )
+          .toList(growable: false);
 
-      if (hasCacheMarker) {
-        for (final toolsBlock in universalTools) {
-          anthropicBlocks.add(_AnthropicToolsBlockWrapper(toolsBlock.tools));
-        }
+      if (additionalBlocks.isNotEmpty) {
+        providerGroups
+            .putIfAbsent(extension.providerId, () => [])
+            .addAll(additionalBlocks);
       }
     }
 
@@ -131,23 +178,4 @@ class MessageBuilder {
       extensions: extensions,
     );
   }
-}
-
-/// Internal wrapper to make ToolsBlock appear as anthropic-specific
-class _AnthropicToolsBlockWrapper implements ContentBlock {
-  final List<Tool> tools;
-
-  _AnthropicToolsBlockWrapper(this.tools);
-
-  @override
-  String get displayText => '[${tools.length} tools defined]';
-
-  @override
-  String get providerId => 'anthropic';
-
-  @override
-  Map<String, dynamic> toJson() => {
-        'type': 'tools',
-        'tools': tools.map((tool) => tool.toJson()).toList(),
-      };
 }

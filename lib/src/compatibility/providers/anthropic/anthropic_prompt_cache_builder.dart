@@ -133,7 +133,35 @@ extension AnthropicMessageBuilderExtension on MessageBuilder {
         ),
       );
       addBlock(cacheMarker);
+      addProviderExtension(const _AnthropicCachedToolsExtension());
     }
     return this;
+  }
+}
+
+final class _AnthropicCachedToolsExtension extends MessageProviderExtension {
+  const _AnthropicCachedToolsExtension();
+
+  @override
+  String get providerId => 'anthropic';
+
+  @override
+  Iterable<ContentBlock> buildContentBlocks(
+    MessageProviderExtensionContext context,
+  ) sync* {
+    if (!_hasCacheMarker(context.providerBlocks)) {
+      return;
+    }
+
+    for (final toolsBlock in context.universalBlocksOfType<ToolsBlock>()) {
+      yield AnthropicToolsBlock(toolsBlock.tools);
+    }
+  }
+
+  bool _hasCacheMarker(List<ContentBlock> providerBlocks) {
+    return providerBlocks.any((block) {
+      final json = block.toJson();
+      return json['cache_control'] != null && json['text'] == '';
+    });
   }
 }
