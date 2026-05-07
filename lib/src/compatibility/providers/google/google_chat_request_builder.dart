@@ -6,6 +6,15 @@ import 'google_chat_message_codec.dart';
 
 part 'google_chat_request_config_support.dart';
 part 'google_chat_request_content_support.dart';
+part 'google_chat_request_generation_support.dart';
+part 'google_chat_request_generation_sampling_support.dart';
+part 'google_chat_request_generation_schema_support.dart';
+part 'google_chat_request_generation_thinking_support.dart';
+part 'google_chat_request_generation_image_support.dart';
+part 'google_chat_request_body_support.dart';
+part 'google_chat_request_body_safety_support.dart';
+part 'google_chat_request_body_tool_support.dart';
+part 'google_chat_request_body_web_search_support.dart';
 
 /// Request-shaping support for the Google compatibility chat shell.
 class GoogleChatRequestBuilder {

@@ -31,6 +31,52 @@ void main() {
       ]);
     });
 
+    test('converts supported files inline and rejects oversized files', () {
+      final codec = _buildCodec();
+
+      final fileMessage = ChatMessage.file(
+        role: ChatRole.user,
+        mime: FileMime.pdf,
+        data: [1, 2, 3],
+      );
+
+      final fileResult = codec.convertMessage(fileMessage);
+
+      expect(fileResult['role'], 'user');
+      expect(fileResult['parts'], [
+        {
+          'inlineData': {
+            'mimeType': 'application/pdf',
+            'data': 'AQID',
+          },
+        },
+      ]);
+
+      final limitedConfig = GoogleConfig(
+        apiKey: 'test-key',
+        model: 'gemini-2.0-flash',
+        maxInlineDataSize: 2,
+      );
+      final limitedCodec = GoogleChatMessageCodec(
+        client: GoogleClient(limitedConfig),
+        config: limitedConfig,
+      );
+
+      final oversizedFileResult = limitedCodec.convertMessage(
+        ChatMessage.file(
+          role: ChatRole.user,
+          mime: FileMime.pdf,
+          data: [1, 2, 3],
+        ),
+      );
+
+      expect(oversizedFileResult['parts'], [
+        {
+          'text': '[File too large: 3 bytes. Maximum size: 2 bytes]',
+        },
+      ]);
+    });
+
     test('converts tool-call replay messages through Google function parts',
         () {
       final codec = _buildCodec();
@@ -70,6 +116,28 @@ void main() {
               'content': {'city': 'Hong Kong'},
             },
           },
+        },
+      ]);
+    });
+
+    test('converts malformed tool-call arguments into fallback text parts', () {
+      final codec = _buildCodec();
+      final toolCall = ToolCall(
+        id: 'call_1',
+        callType: 'function',
+        function: FunctionCall(
+          name: 'get_weather',
+          arguments: '{broken-json',
+        ),
+      );
+
+      final result = codec.convertMessage(
+        ChatMessage.toolUse(toolCalls: [toolCall]),
+      );
+
+      expect(result['parts'], [
+        {
+          'text': '[Error: Invalid tool call arguments for get_weather]',
         },
       ]);
     });

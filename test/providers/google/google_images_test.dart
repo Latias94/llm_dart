@@ -191,6 +191,66 @@ void main() {
       );
       expect(response.images.single.data, [7, 8, 9]);
     });
+
+    test('Image editing reuses shared inline-image request shaping', () async {
+      final config = GoogleConfig(
+        apiKey: 'test-key',
+        model: 'gemini-2.0-flash-preview-image-generation',
+      );
+      final client = _FakeGoogleClient(
+        config,
+        response: {
+          'candidates': [
+            {
+              'content': {
+                'parts': [
+                  {
+                    'inlineData': {
+                      'mimeType': 'image/png',
+                      'data': base64Encode([10, 11, 12]),
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      );
+      final images = GoogleImages(client, config);
+
+      final response = await images.editImage(
+        ImageEditRequest(
+          image: ImageInput(data: [9, 8, 7], format: 'png'),
+          prompt: 'Add a moon',
+          count: 1,
+        ),
+      );
+      final lastBody = client.lastBody!;
+      final parts = ((lastBody['contents'] as List).single
+          as Map<String, dynamic>)['parts'];
+
+      expect(
+        client.lastEndpoint,
+        'models/gemini-2.0-flash-preview-image-generation:generateContent',
+      );
+      expect(parts, [
+        {'text': 'Add a moon'},
+        {
+          'inlineData': {
+            'mimeType': 'image/png',
+            'data': base64Encode([9, 8, 7]),
+          },
+        },
+      ]);
+      expect(
+        lastBody['generationConfig'],
+        {
+          'responseModalities': ['TEXT', 'IMAGE'],
+          'candidateCount': 1,
+        },
+      );
+      expect(response.images.single.data, [10, 11, 12]);
+    });
   });
 }
 

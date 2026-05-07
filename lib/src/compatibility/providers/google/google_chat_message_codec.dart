@@ -6,6 +6,10 @@ import '../../../../providers/google/config.dart';
 import 'client.dart';
 
 part 'google_chat_message_content_support.dart';
+part 'google_chat_message_media_support.dart';
+part 'google_chat_tool_choice_support.dart';
+part 'google_chat_tool_message_support.dart';
+part 'google_chat_tool_schema_support.dart';
 part 'google_chat_tool_support.dart';
 
 /// Provider-local codec for Google chat message and tool payloads.

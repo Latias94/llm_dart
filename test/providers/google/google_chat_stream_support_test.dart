@@ -23,6 +23,21 @@ void main() {
       expect(completion.response.usage?.completionTokens, 2);
     });
 
+    test('skips malformed SSE payloads and keeps parsing later frames', () {
+      final support = _buildSupport();
+
+      final events = _collectEvents(support, const [
+        'data: {not-json}\n\n',
+        'data: {"candidates":[{"content":{"parts":[{"text":"Hi"}]},'
+            '"finishReason":"STOP"}],"usageMetadata":{"candidatesTokenCount":1}}\n\n',
+      ]);
+
+      expect(events.whereType<TextDeltaEvent>().map((event) => event.delta), [
+        'Hi',
+      ]);
+      expect(events.whereType<CompletionEvent>(), hasLength(1));
+    });
+
     test('preserves split non-SSE JSON array chunks', () {
       final support = _buildSupport();
 

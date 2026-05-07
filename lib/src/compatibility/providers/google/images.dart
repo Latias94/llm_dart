@@ -9,7 +9,9 @@ import 'client.dart';
 import 'google_image_support.dart';
 
 part 'google_images_generation_support.dart';
+part 'google_images_inline_image_support.dart';
 part 'google_images_mutation_support.dart';
+part 'google_images_mutation_request_support.dart';
 
 /// Google Images capability implementation
 ///

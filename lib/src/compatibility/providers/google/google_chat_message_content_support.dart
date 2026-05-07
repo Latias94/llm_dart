@@ -3,11 +3,15 @@ part of 'google_chat_message_codec.dart';
 final class _GoogleChatMessageContentSupport {
   final GoogleClient client;
   final GoogleConfig config;
+  static const _mediaSupport = _GoogleChatMessageMediaSupport();
+  late final _GoogleChatToolSupport _toolSupport;
 
   _GoogleChatMessageContentSupport({
     required this.client,
     required this.config,
-  });
+  }) {
+    _toolSupport = _GoogleChatToolSupport(client: client);
+  }
 
   Map<String, dynamic> convertMessage(ChatMessage message) {
     final parts = <Map<String, dynamic>>[];
@@ -22,86 +26,25 @@ final class _GoogleChatMessageContentSupport {
         parts.add({'text': message.content});
         break;
       case ImageMessage(mime: final mime, data: final data):
-        final supportedFormats = [
-          'image/jpeg',
-          'image/png',
-          'image/gif',
-          'image/webp',
-        ];
-        if (!supportedFormats.contains(mime.mimeType)) {
-          parts.add({
-            'text':
-                '[Unsupported image format: ${mime.mimeType}. Supported formats: ${supportedFormats.join(', ')}]',
-          });
-        } else {
-          parts.add({
-            'inlineData': {
-              'mimeType': mime.mimeType,
-              'data': base64Encode(data),
-            },
-          });
-        }
+        parts.add(_mediaSupport.convertImage(mime, data));
         break;
       case FileMessage(mime: final mime, data: final data):
-        if (data.length > config.maxInlineDataSize) {
-          parts.add({
-            'text':
-                '[File too large: ${data.length} bytes. Maximum size: ${config.maxInlineDataSize} bytes]',
-          });
-        } else if (mime.isDocument || mime.isAudio || mime.isVideo) {
-          parts.add({
-            'inlineData': {
-              'mimeType': mime.mimeType,
-              'data': base64Encode(data),
-            },
-          });
-        } else {
-          parts.add({
-            'text':
-                '[File type ${mime.description} (${mime.mimeType}) may not be supported by Google AI]',
-          });
-        }
+        parts.add(
+          _mediaSupport.convertFile(
+            mime,
+            data,
+            maxInlineDataSize: config.maxInlineDataSize,
+          ),
+        );
         break;
       case ImageUrlMessage(url: final url):
-        parts.add({
-          'text':
-              '[Image URL not supported by Google. Please upload the image directly: $url]',
-        });
+        parts.add(_mediaSupport.convertImageUrl(url));
         break;
       case ToolUseMessage(toolCalls: final toolCalls):
-        for (final toolCall in toolCalls) {
-          try {
-            final args = jsonDecode(toolCall.function.arguments);
-            parts.add({
-              'functionCall': {
-                'name': toolCall.function.name,
-                'args': args,
-              },
-            });
-          } catch (e) {
-            client.logger.warning(
-              'Failed to parse tool call arguments: '
-              '${toolCall.function.arguments}, error: $e',
-            );
-            parts.add({
-              'text':
-                  '[Error: Invalid tool call arguments for ${toolCall.function.name}]',
-            });
-          }
-        }
+        parts.addAll(_toolSupport.convertToolUse(toolCalls));
         break;
       case ToolResultMessage(results: final results):
-        for (final result in results) {
-          parts.add({
-            'functionResponse': {
-              'name': result.function.name,
-              'response': {
-                'name': result.function.name,
-                'content': jsonDecode(result.function.arguments),
-              },
-            },
-          });
-        }
+        parts.addAll(_toolSupport.convertToolResult(results));
         break;
     }
 
