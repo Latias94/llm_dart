@@ -155,6 +155,34 @@ void main() {
       });
     });
 
+    test('speechToText source url path keeps form-data shaping', () async {
+      final client = _FakeElevenLabsClient(
+        const ElevenLabsConfig(apiKey: 'test-key'),
+      )..formResponse = {
+          'text': 'from source url',
+        };
+      final audio = ElevenLabsAudio(client, client.config);
+
+      final response = await audio.speechToText(
+        STTRequest.fromSourceUrl(
+          'https://storage.example.com/audio.mp3',
+          enableLogging: false,
+        ),
+      );
+
+      expect(client.lastFormEndpoint, 'speech-to-text');
+      expect(client.lastFormQueryParams, {
+        'enable_logging': 'false',
+      });
+      expect(client.lastFormData, isNotNull);
+      expect(
+        Map<String, String>.fromEntries(client.lastFormData!.fields),
+        containsPair('source_url', 'https://storage.example.com/audio.mp3'),
+      );
+      expect(client.lastFormData!.files, isEmpty);
+      expect(response.text, 'from source url');
+    });
+
     test('speechToText file path keeps legacy no-query fallback path',
         () async {
       final tempDir = await Directory.systemTemp.createTemp('llm_dart_');

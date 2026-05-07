@@ -64,9 +64,14 @@ final class _ElevenLabsAudioEndpointSupport {
         request,
         cancelToken: cancelToken,
       );
+    } else if (request.sourceUrl != null) {
+      return _speechToTextFromSourceUrl(
+        request,
+        cancelToken: cancelToken,
+      );
     } else {
       throw const InvalidRequestError(
-        'Either audioData or filePath must be provided',
+        'Either audioData, filePath, or sourceUrl must be provided',
       );
     }
   }
@@ -130,6 +135,40 @@ final class _ElevenLabsAudioEndpointSupport {
       if (e is LLMError) rethrow;
       throw GenericError(
         'Unexpected error during speech-to-text from file: $e',
+      );
+    }
+  }
+
+  Future<STTResponse> _speechToTextFromSourceUrl(
+    STTRequest request, {
+    TransportCancellation? cancelToken,
+  }) async {
+    _ensureApiKey();
+    final effectiveModel = request.model ?? config.defaultSTTModel;
+
+    client.logger.info(
+      'Converting speech URL to text: ${request.sourceUrl}, model: $effectiveModel',
+    );
+
+    try {
+      final formData = await _support.buildSpeechToTextFormDataFromSourceUrl(
+        request.sourceUrl!,
+        request: request,
+        effectiveModel: effectiveModel,
+      );
+
+      final responseData = await client.postFormData(
+        'speech-to-text',
+        formData,
+        queryParams: _support.buildSpeechToTextQueryParams(request),
+        cancelToken: cancelToken,
+      );
+
+      return _parseSpeechToTextResponse(responseData, request);
+    } catch (e) {
+      if (e is LLMError) rethrow;
+      throw GenericError(
+        'Unexpected error during speech-to-text from source url: $e',
       );
     }
   }

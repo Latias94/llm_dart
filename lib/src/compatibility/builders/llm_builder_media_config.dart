@@ -45,5 +45,8 @@ extension LLMBuilderMediaConfig on LLMBuilder {
   LLMBuilder prompt(String prompt) => extension('prompt', prompt);
   LLMBuilder responseFormat(String format) =>
       extension('responseFormat', format);
-  LLMBuilder cloudStorageUrl(String url) => extension('cloudStorageUrl', url);
+  LLMBuilder sourceUrl(String url) => extension('sourceUrl', url);
+
+  @Deprecated('Use sourceUrl instead.')
+  LLMBuilder cloudStorageUrl(String url) => sourceUrl(url);
 }

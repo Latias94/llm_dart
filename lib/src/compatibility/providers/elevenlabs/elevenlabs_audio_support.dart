@@ -72,6 +72,18 @@ final class ElevenLabsAudioSupport {
     );
   }
 
+  Future<FormData> buildSpeechToTextFormDataFromSourceUrl(
+    String sourceUrl, {
+    required STTRequest request,
+    required String effectiveModel,
+  }) async {
+    return _formSupport.buildSpeechToTextFormDataFromSourceUrl(
+      sourceUrl,
+      request: request,
+      effectiveModel: effectiveModel,
+    );
+  }
+
   Map<String, String>? buildSpeechToTextQueryParams(STTRequest request) {
     return _requestSupport.buildSpeechToTextQueryParams(request);
   }

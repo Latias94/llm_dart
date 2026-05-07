@@ -35,18 +35,39 @@ final class _ElevenLabsAudioFormSupport {
     );
   }
 
+  Future<FormData> buildSpeechToTextFormDataFromSourceUrl(
+    String sourceUrl, {
+    required STTRequest request,
+    required String effectiveModel,
+  }) async {
+    return FormData.fromMap(
+      _buildSpeechToTextFieldMap(
+        request: request,
+        effectiveModel: effectiveModel,
+        sourceUrl: sourceUrl,
+      ),
+    );
+  }
+
   Map<String, dynamic> _buildSpeechToTextFieldMap({
     required STTRequest request,
     required String effectiveModel,
-    required MultipartFile file,
+    MultipartFile? file,
+    String? sourceUrl,
   }) {
     final fields = <String, dynamic>{
-      'file': file,
       'model_id': effectiveModel,
       'tag_audio_events': request.tagAudioEvents.toString(),
       'timestamps_granularity': request.timestampGranularity.name,
       'diarize': request.diarize.toString(),
     };
+
+    if (file != null) {
+      fields['file'] = file;
+    }
+    if (sourceUrl != null) {
+      fields['source_url'] = sourceUrl;
+    }
 
     if (request.language != null) {
       fields['language_code'] = request.language;

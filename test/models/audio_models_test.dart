@@ -170,17 +170,29 @@ void main() {
         expect(request.language, equals('en'));
       });
 
-      test('should create from cloud storage URL', () {
+      test('should create from source URL', () {
         const url = 'https://storage.example.com/audio.mp3';
-        final request = STTRequest.fromCloudUrl(
+        final request = STTRequest.fromSourceUrl(
           url,
           model: 'whisper-1',
         );
 
-        expect(request.cloudStorageUrl, equals(url));
+        expect(request.sourceUrl, equals(url));
         expect(request.audioData, isNull);
         expect(request.filePath, isNull);
         expect(request.model, equals('whisper-1'));
+      });
+
+      test('should serialize source URL correctly', () {
+        const url = 'https://storage.example.com/audio.mp3';
+        final request = STTRequest.fromSourceUrl(url);
+
+        final json = request.toJson();
+        expect(json['source_url'], equals(url));
+        expect(json['cloud_storage_url'], equals(url));
+
+        final restored = STTRequest.fromJson(json);
+        expect(restored.sourceUrl, equals(url));
       });
 
       test('should serialize to JSON correctly', () {

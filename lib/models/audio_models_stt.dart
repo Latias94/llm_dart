@@ -8,8 +8,8 @@ class STTRequest {
   /// File path (for file input)
   final String? filePath;
 
-  /// Cloud storage URL (ElevenLabs specific)
-  final String? cloudStorageUrl;
+  /// Source URL for transcription input
+  final String? sourceUrl;
 
   /// Model to use for STT
   final String? model;
@@ -53,10 +53,14 @@ class STTRequest {
   /// Enable logging (ElevenLabs specific)
   final bool enableLogging;
 
+  @Deprecated('Use sourceUrl instead.')
+  String? get cloudStorageUrl => sourceUrl;
+
   const STTRequest({
     this.audioData,
     this.filePath,
-    this.cloudStorageUrl,
+    String? sourceUrl,
+    @Deprecated('Use sourceUrl instead.') String? cloudStorageUrl,
     this.model,
     this.language,
     this.format,
@@ -71,7 +75,7 @@ class STTRequest {
     this.prompt,
     this.responseFormat,
     this.enableLogging = true,
-  });
+  }) : sourceUrl = sourceUrl ?? cloudStorageUrl;
 
   /// Create STT request from audio data
   factory STTRequest.fromAudio(
@@ -145,7 +149,44 @@ class STTRequest {
         enableLogging: enableLogging,
       );
 
-  /// Create STT request from cloud storage URL (ElevenLabs specific)
+  /// Create STT request from source URL
+  factory STTRequest.fromSourceUrl(
+    String sourceUrl, {
+    String? model,
+    String? language,
+    String? format,
+    bool includeWordTiming = false,
+    bool includeConfidence = false,
+    double? temperature,
+    TimestampGranularity timestampGranularity = TimestampGranularity.word,
+    bool diarize = false,
+    int? numSpeakers,
+    bool tagAudioEvents = true,
+    bool webhook = false,
+    String? prompt,
+    String? responseFormat,
+    bool enableLogging = true,
+  }) =>
+      STTRequest(
+        sourceUrl: sourceUrl,
+        model: model,
+        language: language,
+        format: format,
+        includeWordTiming: includeWordTiming,
+        includeConfidence: includeConfidence,
+        temperature: temperature,
+        timestampGranularity: timestampGranularity,
+        diarize: diarize,
+        numSpeakers: numSpeakers,
+        tagAudioEvents: tagAudioEvents,
+        webhook: webhook,
+        prompt: prompt,
+        responseFormat: responseFormat,
+        enableLogging: enableLogging,
+      );
+
+  /// Create STT request from cloud storage URL
+  @Deprecated('Use STTRequest.fromSourceUrl(...) instead.')
   factory STTRequest.fromCloudUrl(
     String cloudStorageUrl, {
     String? model,
@@ -163,8 +204,8 @@ class STTRequest {
     String? responseFormat,
     bool enableLogging = true,
   }) =>
-      STTRequest(
-        cloudStorageUrl: cloudStorageUrl,
+      STTRequest.fromSourceUrl(
+        cloudStorageUrl,
         model: model,
         language: language,
         format: format,
@@ -184,7 +225,8 @@ class STTRequest {
   Map<String, dynamic> toJson() => {
         if (audioData != null) 'audio_data': audioData,
         if (filePath != null) 'file_path': filePath,
-        if (cloudStorageUrl != null) 'cloud_storage_url': cloudStorageUrl,
+        if (sourceUrl != null) 'source_url': sourceUrl,
+        if (sourceUrl != null) 'cloud_storage_url': sourceUrl,
         if (model != null) 'model': model,
         if (language != null) 'language': language,
         if (format != null) 'format': format,
@@ -206,7 +248,8 @@ class STTRequest {
             ? List<int>.from(json['audio_data'] as List)
             : null,
         filePath: json['file_path'] as String?,
-        cloudStorageUrl: json['cloud_storage_url'] as String?,
+        sourceUrl: json['source_url'] as String? ??
+            json['cloud_storage_url'] as String?,
         model: json['model'] as String?,
         language: json['language'] as String?,
         format: json['format'] as String?,
