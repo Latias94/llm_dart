@@ -4,6 +4,10 @@ import '../../../../models/chat_models.dart';
 import 'client.dart';
 import '../../../../providers/openai/config.dart';
 
+part 'openai_models_fetch_support.dart';
+part 'openai_models_pricing_support.dart';
+part 'openai_models_query_support.dart';
+
 /// OpenAI Model Listing capability implementation
 ///
 /// This module handles model listing and information retrieval
@@ -11,216 +15,83 @@ import '../../../../providers/openai/config.dart';
 class OpenAIModels implements ModelListingCapability {
   final OpenAIClient client;
   final OpenAIConfig config;
+  late final _OpenAIModelsFetchSupport _fetchSupport =
+      _OpenAIModelsFetchSupport(client);
+  late final _OpenAIModelsQuerySupport _querySupport =
+      _OpenAIModelsQuerySupport(
+    listModels: () => models(),
+    getModel: getModel,
+  );
+  final _OpenAIModelsPricingSupport _pricingSupport =
+      const _OpenAIModelsPricingSupport();
 
   OpenAIModels(this.client, this.config);
 
   @override
-  Future<List<AIModel>> models({TransportCancellation? cancelToken}) async {
-    final responseData = await client.get('models', cancelToken: cancelToken);
-
-    // responseData is already Map<String, dynamic> from client.get()
-
-    final modelsData = responseData['data'] as List?;
-    if (modelsData == null) {
-      return [];
-    }
-
-    // Convert OpenAI model format to AIModel
-    final models = modelsData
-        .map((modelData) {
-          if (modelData is! Map<String, dynamic>) return null;
-
-          try {
-            return AIModel(
-              id: modelData['id'] as String,
-              description: modelData['description'] as String?,
-              object: modelData['object'] as String? ?? 'model',
-              ownedBy: modelData['owned_by'] as String?,
-            );
-          } catch (e) {
-            client.logger.warning('Failed to parse model: $e');
-            return null;
-          }
-        })
-        .where((model) => model != null)
-        .cast<AIModel>()
-        .toList();
-
-    client.logger.fine('Retrieved ${models.length} models from OpenAI');
-    return models;
+  Future<List<AIModel>> models({TransportCancellation? cancelToken}) {
+    return _fetchSupport.models(cancelToken: cancelToken);
   }
 
   /// Get a specific model by ID
-  Future<AIModel?> getModel(String modelId) async {
-    try {
-      final responseData = await client.get('models/$modelId');
-
-      return AIModel(
-        id: responseData['id'] as String,
-        description: responseData['description'] as String?,
-        object: responseData['object'] as String? ?? 'model',
-        ownedBy: responseData['owned_by'] as String?,
-      );
-    } catch (e) {
-      if (e is ResponseFormatError && e.message.contains('404')) {
-        return null;
-      }
-      rethrow;
-    }
+  Future<AIModel?> getModel(String modelId) {
+    return _fetchSupport.getModel(modelId);
   }
 
   /// Check if a model exists and is accessible
-  Future<bool> modelExists(String modelId) async {
-    final model = await getModel(modelId);
-    return model != null;
+  Future<bool> modelExists(String modelId) {
+    return _querySupport.modelExists(modelId);
   }
 
   /// Get models by owner
-  Future<List<AIModel>> getModelsByOwner(String owner) async {
-    final allModels = await models();
-    return allModels.where((model) => model.ownedBy == owner).toList();
+  Future<List<AIModel>> getModelsByOwner(String owner) {
+    return _querySupport.getModelsByOwner(owner);
   }
 
   /// Get OpenAI models only
-  Future<List<AIModel>> getOpenAIModels() async {
-    return getModelsByOwner('openai');
+  Future<List<AIModel>> getOpenAIModels() {
+    return _querySupport.getOpenAIModels();
   }
 
   /// Get fine-tuned models
-  Future<List<AIModel>> getFineTunedModels() async {
-    final allModels = await models();
-    return allModels
-        .where(
-            (model) => model.ownedBy != 'openai' && model.ownedBy != 'system')
-        .toList();
+  Future<List<AIModel>> getFineTunedModels() {
+    return _querySupport.getFineTunedModels();
   }
 
   /// Get models suitable for chat
-  Future<List<AIModel>> getChatModels() async {
-    final allModels = await models();
-    return allModels
-        .where((model) =>
-            model.id.contains('gpt') ||
-            model.id.contains('chat') ||
-            model.id.contains('turbo'))
-        .toList();
+  Future<List<AIModel>> getChatModels() {
+    return _querySupport.getChatModels();
   }
 
   /// Get models suitable for embeddings
-  Future<List<AIModel>> getEmbeddingModels() async {
-    final allModels = await models();
-    return allModels
-        .where((model) =>
-            model.id.contains('embedding') || model.id.contains('ada'))
-        .toList();
+  Future<List<AIModel>> getEmbeddingModels() {
+    return _querySupport.getEmbeddingModels();
   }
 
   /// Get models suitable for image generation
-  Future<List<AIModel>> getImageModels() async {
-    final allModels = await models();
-    return allModels
-        .where((model) =>
-            model.id.contains('dall-e') || model.id.contains('dalle'))
-        .toList();
+  Future<List<AIModel>> getImageModels() {
+    return _querySupport.getImageModels();
   }
 
   /// Get models suitable for audio/speech
-  Future<List<AIModel>> getAudioModels() async {
-    final allModels = await models();
-    return allModels
-        .where(
-            (model) => model.id.contains('whisper') || model.id.contains('tts'))
-        .toList();
+  Future<List<AIModel>> getAudioModels() {
+    return _querySupport.getAudioModels();
   }
 
   /// Check if a model supports a specific capability
   Future<bool> modelSupportsCapability(
-      String modelId, String capability) async {
-    final model = await getModel(modelId);
-    if (model == null) return false;
-
-    switch (capability.toLowerCase()) {
-      case 'chat':
-        return model.id.contains('gpt') ||
-            model.id.contains('chat') ||
-            model.id.contains('turbo');
-      case 'embedding':
-        return model.id.contains('embedding') || model.id.contains('ada');
-      case 'image':
-        return model.id.contains('dall-e') || model.id.contains('dalle');
-      case 'audio':
-      case 'speech':
-        return model.id.contains('whisper') || model.id.contains('tts');
-      case 'reasoning':
-        return model.id.contains('o1') || model.id.contains('reasoning');
-      default:
-        return false;
-    }
+    String modelId,
+    String capability,
+  ) {
+    return _querySupport.modelSupportsCapability(modelId, capability);
   }
 
   /// Get recommended model for a specific use case
-  Future<AIModel?> getRecommendedModel(String useCase) async {
-    final allModels = await models();
-
-    switch (useCase.toLowerCase()) {
-      case 'chat':
-      case 'conversation':
-        return allModels.firstWhere(
-          (model) => model.id == 'gpt-4' || model.id == 'gpt-4-turbo',
-          orElse: () => allModels.firstWhere(
-            (model) => model.id.contains('gpt-4'),
-            orElse: () => allModels.first,
-          ),
-        );
-      case 'embedding':
-        return allModels.firstWhere(
-          (model) => model.id.contains('text-embedding-3'),
-          orElse: () => allModels.firstWhere(
-            (model) => model.id.contains('embedding'),
-            orElse: () => allModels.first,
-          ),
-        );
-      case 'image':
-        return allModels.firstWhere(
-          (model) => model.id.contains('dall-e-3'),
-          orElse: () => allModels.firstWhere(
-            (model) => model.id.contains('dall-e'),
-            orElse: () => allModels.first,
-          ),
-        );
-      case 'reasoning':
-        return allModels.firstWhere(
-          (model) => model.id.contains('o1-preview'),
-          orElse: () => allModels.firstWhere(
-            (model) => model.id.contains('o1'),
-            orElse: () => allModels.first,
-          ),
-        );
-      default:
-        return allModels.isNotEmpty ? allModels.first : null;
-    }
+  Future<AIModel?> getRecommendedModel(String useCase) {
+    return _querySupport.getRecommendedModel(useCase);
   }
 
   /// Get model pricing information (if available)
   Map<String, dynamic> getModelPricing(String modelId) {
-    // This is a simplified pricing map - in a real implementation,
-    // you might fetch this from an API or configuration
-    const pricingMap = {
-      'gpt-4': {'input': 0.03, 'output': 0.06, 'unit': 'per 1K tokens'},
-      'gpt-4-turbo': {'input': 0.01, 'output': 0.03, 'unit': 'per 1K tokens'},
-      'gpt-3.5-turbo': {
-        'input': 0.0015,
-        'output': 0.002,
-        'unit': 'per 1K tokens'
-      },
-      'text-embedding-3-large': {'input': 0.00013, 'unit': 'per 1K tokens'},
-      'text-embedding-3-small': {'input': 0.00002, 'unit': 'per 1K tokens'},
-      'dall-e-3': {'price': 0.04, 'unit': 'per image (1024×1024)'},
-      'dall-e-2': {'price': 0.02, 'unit': 'per image (1024×1024)'},
-      'whisper-1': {'price': 0.006, 'unit': 'per minute'},
-      'tts-1': {'price': 0.015, 'unit': 'per 1K characters'},
-    };
-
-    return pricingMap[modelId] ?? {'price': 'Unknown', 'unit': 'Unknown'};
+    return _pricingSupport.getModelPricing(modelId);
   }
 }
