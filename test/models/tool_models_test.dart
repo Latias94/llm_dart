@@ -141,6 +141,40 @@ void main() {
       });
     });
 
+    group('StructuredOutputFormat', () {
+      test('should create with required fields', () {
+        const format = StructuredOutputFormat(
+          name: 'answer',
+          description: 'Structured answer payload.',
+        );
+
+        expect(format.name, equals('answer'));
+        expect(format.description, equals('Structured answer payload.'));
+        expect(format.schema, isNull);
+        expect(format.strict, isNull);
+      });
+
+      test('should serialize to JSON correctly', () {
+        const format = StructuredOutputFormat(
+          name: 'answer',
+          description: 'Structured answer payload.',
+          schema: {
+            'type': 'object',
+            'properties': {
+              'value': {'type': 'string'},
+            },
+          },
+          strict: true,
+        );
+
+        final json = format.toJson();
+        expect(json['name'], equals('answer'));
+        expect(json['description'], equals('Structured answer payload.'));
+        expect(json['schema'], isA<Map>());
+        expect(json['strict'], isTrue);
+      });
+    });
+
     group('Tool', () {
       test('should create function tool', () {
         final tool = Tool.function(

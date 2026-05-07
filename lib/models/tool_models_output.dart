@@ -1,8 +1,6 @@
 part of 'tool_models.dart';
 
-/// Defines rules for structured output responses based on OpenAI's structured output requirements.
-///
-/// **API Reference:** https://platform.openai.com/docs/guides/structured-outputs
+/// Defines a JSON schema-backed structured output contract.
 class StructuredOutputFormat {
   /// Name of the schema
   final String name;
@@ -40,12 +38,6 @@ class StructuredOutputFormat {
 
     return json;
   }
-
-  /// Convert to OpenAI response_format
-  Map<String, dynamic> toOpenAIResponseFormat() => {
-        'type': 'json_schema',
-        'json_schema': toJson(),
-      };
 
   factory StructuredOutputFormat.fromJson(Map<String, dynamic> json) =>
       StructuredOutputFormat(
