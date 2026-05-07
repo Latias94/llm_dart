@@ -134,67 +134,6 @@ class FileObject {
     this.metadata,
   });
 
-  /// Create from OpenAI file format
-  factory FileObject.fromOpenAI(Map<String, dynamic> json) {
-    return FileObject(
-      id: json['id'] as String,
-      sizeBytes: json['bytes'] as int,
-      createdAt: DateTime.fromMillisecondsSinceEpoch(
-          (json['created_at'] as int) * 1000),
-      filename: json['filename'] as String,
-      object: json['object'] as String? ?? 'file',
-      purpose: json['purpose'] != null
-          ? FilePurpose.fromString(json['purpose'] as String)
-          : null,
-      status: json['status'] != null
-          ? FileStatus.fromString(json['status'] as String)
-          : null,
-      statusDetails: json['status_details'] as String?,
-      metadata: {'provider': 'openai'},
-    );
-  }
-
-  /// Create from Anthropic file format
-  factory FileObject.fromAnthropic(Map<String, dynamic> json) {
-    return FileObject(
-      id: json['id'] as String,
-      sizeBytes: json['size_bytes'] as int,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      filename: json['filename'] as String,
-      object: json['type'] as String? ?? 'file',
-      mimeType: json['mime_type'] as String?,
-      downloadable: json['downloadable'] as bool?,
-      metadata: {'provider': 'anthropic'},
-    );
-  }
-
-  /// Convert to OpenAI format for backward compatibility
-  Map<String, dynamic> toOpenAIJson() {
-    return {
-      'id': id,
-      'bytes': sizeBytes,
-      'created_at': createdAt.millisecondsSinceEpoch ~/ 1000,
-      'filename': filename,
-      'object': object,
-      if (purpose != null) 'purpose': purpose!.value,
-      if (status != null) 'status': status!.value,
-      if (statusDetails != null) 'status_details': statusDetails,
-    };
-  }
-
-  /// Convert to Anthropic format
-  Map<String, dynamic> toAnthropicJson() {
-    return {
-      'id': id,
-      'size_bytes': sizeBytes,
-      'created_at': createdAt.toIso8601String(),
-      'filename': filename,
-      'type': object,
-      if (mimeType != null) 'mime_type': mimeType,
-      if (downloadable != null) 'downloadable': downloadable,
-    };
-  }
-
   /// Generic JSON representation
   Map<String, dynamic> toJson() {
     return {
@@ -244,21 +183,6 @@ class FileUploadRequest {
     this.purpose,
     this.metadata,
   });
-
-  /// Convert to OpenAI format
-  Map<String, dynamic> toOpenAIJson() {
-    return {
-      'filename': filename,
-      if (purpose != null) 'purpose': purpose!.value,
-    };
-  }
-
-  /// Convert to Anthropic format
-  Map<String, dynamic> toAnthropicJson() {
-    return {
-      'filename': filename,
-    };
-  }
 }
 
 /// File list response that works across providers
@@ -289,53 +213,6 @@ class FileListResponse {
     this.limit,
     this.offset,
   });
-
-  /// Create from OpenAI format
-  factory FileListResponse.fromOpenAI(Map<String, dynamic> json) {
-    return FileListResponse(
-      data: (json['data'] as List)
-          .map((item) => FileObject.fromOpenAI(item as Map<String, dynamic>))
-          .toList(),
-      object: json['object'] as String? ?? 'list',
-      total: json['total'] as int?,
-      limit: json['limit'] as int?,
-      offset: json['offset'] as int?,
-    );
-  }
-
-  /// Create from Anthropic format
-  factory FileListResponse.fromAnthropic(Map<String, dynamic> json) {
-    return FileListResponse(
-      data: (json['data'] as List)
-          .map((item) => FileObject.fromAnthropic(item as Map<String, dynamic>))
-          .toList(),
-      object: 'list',
-      firstId: json['first_id'] as String?,
-      lastId: json['last_id'] as String?,
-      hasMore: json['has_more'] as bool?,
-    );
-  }
-
-  /// Convert to OpenAI format
-  Map<String, dynamic> toOpenAIJson() {
-    return {
-      'data': data.map((file) => file.toOpenAIJson()).toList(),
-      'object': object,
-      if (total != null) 'total': total,
-      if (limit != null) 'limit': limit,
-      if (offset != null) 'offset': offset,
-    };
-  }
-
-  /// Convert to Anthropic format
-  Map<String, dynamic> toAnthropicJson() {
-    return {
-      'data': data.map((file) => file.toAnthropicJson()).toList(),
-      if (firstId != null) 'first_id': firstId,
-      if (lastId != null) 'last_id': lastId,
-      if (hasMore != null) 'has_more': hasMore,
-    };
-  }
 }
 
 /// File deletion response that works across providers
@@ -358,35 +235,6 @@ class FileDeleteResponse {
     required this.deleted,
     this.error,
   });
-
-  /// Create from OpenAI format
-  factory FileDeleteResponse.fromOpenAI(Map<String, dynamic> json) {
-    return FileDeleteResponse(
-      id: json['id'] as String,
-      object: json['object'] as String? ?? 'file',
-      deleted: json['deleted'] as bool,
-    );
-  }
-
-  /// Create from boolean result (Anthropic style)
-  factory FileDeleteResponse.fromBoolean(String id, bool success,
-      {String? error}) {
-    return FileDeleteResponse(
-      id: id,
-      object: 'file',
-      deleted: success,
-      error: error,
-    );
-  }
-
-  /// Convert to OpenAI format
-  Map<String, dynamic> toOpenAIJson() {
-    return {
-      'id': id,
-      'object': object,
-      'deleted': deleted,
-    };
-  }
 }
 
 /// File list query parameters that work across providers
@@ -415,27 +263,4 @@ class FileListQuery {
     this.beforeId,
     this.afterId,
   });
-
-  /// Convert to OpenAI query parameters
-  Map<String, dynamic> toOpenAIQueryParameters() {
-    final params = <String, dynamic>{};
-
-    if (purpose != null) params['purpose'] = purpose!.value;
-    if (limit != null) params['limit'] = limit;
-    if (order != null) params['order'] = order;
-    if (after != null) params['after'] = after;
-
-    return params;
-  }
-
-  /// Convert to Anthropic query parameters
-  Map<String, String> toAnthropicQueryParameters() {
-    final params = <String, String>{};
-
-    if (beforeId != null) params['before_id'] = beforeId!;
-    if (afterId != null) params['after_id'] = afterId!;
-    if (limit != null) params['limit'] = limit.toString();
-
-    return params;
-  }
 }

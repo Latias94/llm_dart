@@ -4,6 +4,7 @@ import 'package:llm_dart/models/assistant_models.dart';
 import 'package:llm_dart/models/file_models.dart';
 import 'package:llm_dart/models/moderation_models.dart';
 import 'package:llm_dart/providers/openai/openai.dart';
+import 'package:llm_dart/src/compatibility/providers/openai/openai_file_codec.dart';
 import 'dart:typed_data';
 
 void main() {
@@ -44,6 +45,7 @@ void main() {
       });
 
       test('FileObject should serialize/deserialize correctly', () {
+        const codec = OpenAIFileCodec();
         final file = FileObject(
           id: 'file-123',
           sizeBytes: 1024,
@@ -54,13 +56,13 @@ void main() {
           statusDetails: 'File uploaded successfully',
         );
 
-        final json = file.toOpenAIJson();
+        final json = codec.fileToJson(file);
         expect(json['id'], equals('file-123'));
         expect(json['bytes'], equals(1024));
         expect(json['purpose'], equals('assistants'));
         expect(json['status'], equals('uploaded'));
 
-        final fromJson = FileObject.fromOpenAI(json);
+        final fromJson = codec.fileFromJson(json);
         expect(fromJson.id, equals(file.id));
         expect(fromJson.sizeBytes, equals(file.sizeBytes));
         expect(fromJson.purpose, equals(file.purpose));
@@ -68,6 +70,7 @@ void main() {
       });
 
       test('FileUploadRequest should work correctly', () {
+        const codec = OpenAIFileCodec();
         final fileData = Uint8List.fromList([1, 2, 3, 4, 5]);
         final request = FileUploadRequest(
           file: fileData,
@@ -75,7 +78,7 @@ void main() {
           purpose: FilePurpose.assistants,
         );
 
-        final json = request.toOpenAIJson();
+        final json = codec.uploadRequestToJson(request);
         expect(json['filename'], equals('test.txt'));
         expect(json['purpose'], equals('assistants'));
       });
