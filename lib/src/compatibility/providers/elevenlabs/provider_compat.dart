@@ -9,6 +9,10 @@ import 'elevenlabs_audio_compat.dart' show ElevenLabsAudio;
 import 'elevenlabs_models_compat.dart' show ElevenLabsModels;
 import 'shell_support.dart';
 
+part 'provider_compat_audio_shortcuts.dart';
+part 'provider_compat_chat_support.dart';
+part 'provider_compat_info_support.dart';
+
 /// Compatibility-first root ElevenLabs provider shell.
 ///
 /// New shared-capability mainlines should prefer the package-owned modern
@@ -19,11 +23,17 @@ import 'shell_support.dart';
 class ElevenLabsProvider implements ChatCapability, AudioCapability {
   final ElevenLabsConfig config;
   final ElevenLabsCompatShellSupport _compatShell;
+  final _ElevenLabsUnsupportedChatSupport _chatSupport =
+      const _ElevenLabsUnsupportedChatSupport();
+  late final _ElevenLabsProviderAudioShortcuts _audioShortcuts =
+      _ElevenLabsProviderAudioShortcuts(_compatShell);
+  late final _ElevenLabsProviderInfoSupport _providerInfo =
+      _ElevenLabsProviderInfoSupport(config: config);
 
   ElevenLabsProvider(this.config)
       : _compatShell = ElevenLabsCompatShellSupport(config: config);
 
-  String get providerName => 'ElevenLabs';
+  String get providerName => _providerInfo.providerName;
 
   ElevenLabsClient get client => _compatShell.client;
   ElevenLabsAudio get audio => _compatShell.audio;
@@ -35,7 +45,11 @@ class ElevenLabsProvider implements ChatCapability, AudioCapability {
     List<Tool>? tools, {
     TransportCancellation? cancelToken,
   }) async {
-    throw const ProviderError('ElevenLabs does not support chat functionality');
+    return _chatSupport.chatWithTools(
+      messages,
+      tools,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
@@ -43,15 +57,17 @@ class ElevenLabsProvider implements ChatCapability, AudioCapability {
     List<ChatMessage> messages, {
     TransportCancellation? cancelToken,
   }) async {
-    return chatWithTools(messages, null, cancelToken: cancelToken);
+    return _chatSupport.chat(messages, cancelToken: cancelToken);
   }
 
   @override
-  Future<List<ChatMessage>?> memoryContents() async => null;
+  Future<List<ChatMessage>?> memoryContents() async {
+    return _chatSupport.memoryContents();
+  }
 
   @override
   Future<String> summarizeHistory(List<ChatMessage> messages) async {
-    throw const ProviderError('ElevenLabs does not support chat functionality');
+    return _chatSupport.summarizeHistory(messages);
   }
 
   @override
@@ -60,8 +76,11 @@ class ElevenLabsProvider implements ChatCapability, AudioCapability {
     List<Tool>? tools,
     TransportCancellation? cancelToken,
   }) async* {
-    yield ErrorEvent(
-        const ProviderError('ElevenLabs does not support chat functionality'));
+    yield* _chatSupport.chatStream(
+      messages,
+      tools: tools,
+      cancelToken: cancelToken,
+    );
   }
 
   @override
@@ -125,46 +144,32 @@ class ElevenLabsProvider implements ChatCapability, AudioCapability {
     String text, {
     TransportCancellation? cancelToken,
   }) async {
-    final response = await textToSpeech(
-      TTSRequest(text: text),
-      cancelToken: cancelToken,
-    );
-    return response.audioData;
+    return _audioShortcuts.speech(text, cancelToken: cancelToken);
   }
 
   @override
   Stream<List<int>> speechStream(String text) async* {
-    await for (final event in textToSpeechStream(TTSRequest(text: text))) {
-      if (event is AudioDataEvent) {
-        yield event.data;
-      }
-    }
+    yield* _audioShortcuts.speechStream(text);
   }
 
   @override
   Future<String> transcribe(List<int> audio) async {
-    final response = await speechToText(STTRequest.fromAudio(audio));
-    return response.text;
+    return _audioShortcuts.transcribe(audio);
   }
 
   @override
   Future<String> transcribeFile(String filePath) async {
-    final response = await speechToText(STTRequest.fromFile(filePath));
-    return response.text;
+    return _audioShortcuts.transcribeFile(filePath);
   }
 
   @override
   Future<String> translate(List<int> audio) async {
-    final response =
-        await translateAudio(AudioTranslationRequest.fromAudio(audio));
-    return response.text;
+    return _audioShortcuts.translate(audio);
   }
 
   @override
   Future<String> translateFile(String filePath) async {
-    final response =
-        await translateAudio(AudioTranslationRequest.fromFile(filePath));
-    return response.text;
+    return _audioShortcuts.translateFile(filePath);
   }
 
   Future<List<Map<String, dynamic>>> getModels() async {
@@ -186,7 +191,7 @@ class ElevenLabsProvider implements ChatCapability, AudioCapability {
     double? style,
     bool? useSpeakerBoost,
   }) {
-    final newConfig = config.copyWith(
+    return _providerInfo.copyWith(
       apiKey: apiKey,
       baseUrl: baseUrl,
       voiceId: voiceId,
@@ -197,30 +202,14 @@ class ElevenLabsProvider implements ChatCapability, AudioCapability {
       style: style,
       useSpeakerBoost: useSpeakerBoost,
     );
-
-    return ElevenLabsProvider(newConfig);
   }
 
   bool supportsCapability(Type capability) {
-    if (capability == AudioCapability) return true;
-    if (capability == ChatCapability) return false;
-    return false;
+    return _providerInfo.supportsCapability(capability);
   }
 
-  Map<String, dynamic> get info => {
-        'provider': providerName,
-        'baseUrl': config.baseUrl,
-        'supportsChat': false,
-        'supportsTextToSpeech': config.supportsTextToSpeech,
-        'supportsSpeechToText': config.supportsSpeechToText,
-        'supportsVoiceCloning': config.supportsVoiceCloning,
-        'supportsRealTimeStreaming': config.supportsRealTimeStreaming,
-        'defaultVoiceId': config.defaultVoiceId,
-        'defaultTTSModel': config.defaultTTSModel,
-        'defaultSTTModel': config.defaultSTTModel,
-        'supportedAudioFormats': config.supportedAudioFormats,
-      };
+  Map<String, dynamic> get info => _providerInfo.info;
 
   @override
-  String toString() => 'ElevenLabsProvider(voice: ${config.defaultVoiceId})';
+  String toString() => _providerInfo.describeProvider();
 }
