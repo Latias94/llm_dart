@@ -53,19 +53,23 @@ final class _OpenAICompatCommonRequestFieldSupport {
 
   void _applyGenerationControls(Map<String, dynamic> body) {
     body.addAll(
-      ReasoningUtils.getMaxTokensParams(
+      OpenAICompatReasoningRequestSupport.getMaxTokensParams(
         model: requestConfig.model,
         maxTokens: requestConfig.maxTokens,
       ),
     );
 
     if (requestConfig.temperature != null &&
-        !ReasoningUtils.shouldDisableTemperature(requestConfig.model)) {
+        !OpenAICompatReasoningRequestSupport.shouldDisableTemperature(
+          requestConfig.model,
+        )) {
       body['temperature'] = requestConfig.temperature;
     }
 
     if (requestConfig.topP != null &&
-        !ReasoningUtils.shouldDisableTopP(requestConfig.model)) {
+        !OpenAICompatReasoningRequestSupport.shouldDisableTopP(
+          requestConfig.model,
+        )) {
       body['top_p'] = requestConfig.topP;
     }
 
@@ -97,7 +101,9 @@ final class _OpenAICompatCommonRequestFieldSupport {
 
   void _applyOpenAIFamilyProviderOptions(Map<String, dynamic> body) {
     final isOpenAIReasoningModel = client.providerId == 'openai' &&
-        ReasoningUtils.isOpenAIReasoningModel(requestConfig.model);
+        OpenAICompatReasoningRequestSupport.isOpenAIReasoningModel(
+          requestConfig.model,
+        );
 
     final frequencyPenalty = getOpenAIFamilyProviderOption<double>(
       config: config,

@@ -1,9 +1,9 @@
 import '../../../../models/chat_models.dart';
 import '../../../../models/tool_models.dart';
 import '../../../../providers/openai/config.dart';
-import '../../../../utils/reasoning_utils.dart';
 import 'client.dart';
 import 'config_views.dart';
+import 'openai_reasoning_request_support.dart';
 import 'openai_tool_choice_codec.dart';
 import 'request_body_support.dart';
 
@@ -40,7 +40,7 @@ class OpenAIChatRequestBuilder {
     };
 
     body.addAll(
-      ReasoningUtils.getReasoningEffortParams(
+      OpenAICompatReasoningRequestSupport.getReasoningEffortParams(
         providerId: client.providerId,
         model: requestConfig.model,
         reasoningEffort: requestConfig.reasoningEffort,
