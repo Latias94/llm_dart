@@ -32,7 +32,6 @@ const Set<String> _allowedRootSrcTopLevelFiles = {
   'dio_cancellation_adapter.dart',
   'dio_error_handler.dart',
   'llm_error_types.dart',
-  'openai_compatible_configs.dart',
   'provider_defaults.dart',
 };
 

@@ -1,1 +1,1 @@
-export '../src/openai_compatible_configs.dart';
+export '../src/compatibility/openai_compatible_configs.dart';

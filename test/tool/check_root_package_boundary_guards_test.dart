@@ -347,7 +347,6 @@ export 'package:llm_dart_chat/llm_dart_chat.dart';
     'lib/src/dio_cancellation_adapter.dart',
     'lib/src/dio_error_handler.dart',
     'lib/src/llm_error_types.dart',
-    'lib/src/openai_compatible_configs.dart',
     'lib/src/provider_defaults.dart',
   ]) {
     await _writeFile(repoRoot, file, 'library;\n');
