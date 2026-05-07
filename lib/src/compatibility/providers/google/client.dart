@@ -1,9 +1,6 @@
 import 'package:llm_dart_transport/dio.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart'
-    show
-        decodeDioResponseTextStream,
-        Logger,
-        ProviderDioClientFactory;
+    show decodeDioResponseTextStream, Logger, ProviderDioClientFactory;
 
 import '../../../../core/cancellation.dart';
 import '../../../../utils/http_response_handler.dart';
@@ -31,6 +28,7 @@ class GoogleClient {
     dio = ProviderDioClientFactory.create(
       strategy: GoogleDioStrategy(),
       config: config,
+      overrides: config.dioOverrides,
     );
     _requestExecutor = CompatibilityDioRequestExecutor(
       dio: dio,

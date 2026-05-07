@@ -5,6 +5,7 @@ import 'package:llm_dart/models/tool_models.dart';
 import 'package:llm_dart/providers/google/chat.dart';
 import 'package:llm_dart/providers/google/client.dart';
 import 'package:llm_dart/providers/google/config.dart';
+import 'package:llm_dart/src/compatibility/providers/google_config_adapter.dart';
 import 'package:test/test.dart';
 
 class RecordingGoogleClient extends GoogleClient {
@@ -105,7 +106,7 @@ void main() {
         },
       );
 
-      final config = GoogleConfig.fromLLMConfig(
+      final config = createLegacyGoogleConfig(
         LLMConfig(
           apiKey: 'test-key',
           baseUrl: 'https://generativelanguage.googleapis.com/v1beta/',

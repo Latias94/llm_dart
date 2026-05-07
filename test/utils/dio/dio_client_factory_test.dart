@@ -22,6 +22,8 @@ import 'package:llm_dart/providers/elevenlabs/config.dart';
 import 'package:llm_dart/providers/elevenlabs/dio_strategy.dart';
 import 'package:llm_dart/src/compatibility/providers/elevenlabs/config_adapter.dart'
     show createLegacyElevenLabsConfig;
+import 'package:llm_dart/src/compatibility/providers/google_config_adapter.dart'
+    show createLegacyGoogleConfig;
 import 'package:llm_dart/src/compatibility/providers/openai_family_compat_deepseek_config.dart'
     show createLegacyDeepSeekConfig;
 import 'package:llm_dart/src/compatibility/providers/openai_family_compat_groq_config.dart'
@@ -341,11 +343,7 @@ void main() {
         },
         {
           'strategy': GoogleDioStrategy(),
-          'config': GoogleConfig(
-              apiKey: 'test-key',
-              baseUrl: 'https://api.example.com',
-              model: 'test-model',
-              originalConfig: llmConfig)
+          'config': createLegacyGoogleConfig(llmConfig)
         },
         {
           'strategy': XAIDioStrategy(),
@@ -414,11 +412,7 @@ void main() {
         },
         {
           'strategy': GoogleDioStrategy(),
-          'config': GoogleConfig(
-              apiKey: 'test-key',
-              baseUrl: 'https://api.example.com',
-              model: 'test-model',
-              originalConfig: llmConfig)
+          'config': createLegacyGoogleConfig(llmConfig)
         },
         {
           'strategy': XAIDioStrategy(),

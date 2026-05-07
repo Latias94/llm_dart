@@ -16,6 +16,7 @@ import 'package:llm_dart/providers/xai/config.dart';
 import 'package:llm_dart/src/compatibility/providers/openai_family_compat_deepseek_config.dart';
 import 'package:llm_dart/src/compatibility/providers/openai_family_compat_groq_config.dart';
 import 'package:llm_dart/src/compatibility/providers/openai_family_compat_xai_config.dart';
+import 'package:llm_dart/src/compatibility/providers/google_config_adapter.dart';
 import 'package:llm_dart/src/compatibility/providers/ollama/config_adapter.dart';
 import 'package:test/test.dart';
 import 'package:llm_dart_transport/dio.dart';
@@ -211,7 +212,7 @@ void main() {
       test(
           'should use unified HTTP configuration when originalConfig is available',
           () {
-        final config = GoogleConfig.fromLLMConfig(baseConfig);
+        final config = createLegacyGoogleConfig(baseConfig);
         final client = GoogleClient(config);
 
         expect(client.dio, isA<Dio>());

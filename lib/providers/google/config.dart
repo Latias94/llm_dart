@@ -1,8 +1,9 @@
+import 'package:llm_dart_transport/llm_dart_transport.dart'
+    show DioClientOverrides, HasDioClientOverrides;
+
+import '../../core/web_search.dart';
 import '../../models/tool_models.dart';
 import '../../models/chat_models.dart';
-import '../../core/config.dart';
-import '../../src/config/legacy_dio_client_overrides.dart';
-import '../../src/config/legacy_config_extensions.dart';
 
 /// Google AI harm categories
 enum HarmCategory {
@@ -55,15 +56,16 @@ class SafetySetting {
 ///
 /// This class contains all configuration options for the Google providers.
 /// It's extracted from the main provider to improve modularity and reusability.
-class GoogleConfig with LegacyDioClientOverrides {
+class GoogleConfig implements HasDioClientOverrides {
   final String apiKey;
   final String baseUrl;
   final String model;
   final int? maxTokens;
   final double? temperature;
   final String? systemPrompt;
-  @override
   final Duration? timeout;
+  @override
+  final DioClientOverrides? dioOverrides;
   final bool stream;
   final double? topP;
   final int? topK;
@@ -75,6 +77,7 @@ class GoogleConfig with LegacyDioClientOverrides {
   final bool? includeThoughts;
   final bool? enableImageGeneration;
   final List<String>? responseModalities;
+  final WebSearchConfig? webSearchConfig;
   final List<SafetySetting>? safetySettings;
   final int maxInlineDataSize;
   final int? candidateCount;
@@ -85,9 +88,6 @@ class GoogleConfig with LegacyDioClientOverrides {
   final String? embeddingTitle;
   final int? embeddingDimensions;
 
-  /// Reference to original LLMConfig for accessing extensions
-  final LLMConfig? _originalConfig;
-
   const GoogleConfig({
     required this.apiKey,
     this.baseUrl = 'https://generativelanguage.googleapis.com/v1beta/',
@@ -96,6 +96,7 @@ class GoogleConfig with LegacyDioClientOverrides {
     this.temperature,
     this.systemPrompt,
     this.timeout,
+    this.dioOverrides,
     this.stream = false,
     this.topP,
     this.topK,
@@ -107,6 +108,7 @@ class GoogleConfig with LegacyDioClientOverrides {
     this.includeThoughts,
     this.enableImageGeneration,
     this.responseModalities,
+    this.webSearchConfig,
     this.safetySettings,
     this.maxInlineDataSize = 20 * 1024 * 1024, // 20MB default
     this.candidateCount,
@@ -114,61 +116,7 @@ class GoogleConfig with LegacyDioClientOverrides {
     this.embeddingTaskType,
     this.embeddingTitle,
     this.embeddingDimensions,
-    LLMConfig? originalConfig,
-  }) : _originalConfig = originalConfig;
-
-  /// Create GoogleConfig from unified LLMConfig
-  factory GoogleConfig.fromLLMConfig(LLMConfig config) {
-    return GoogleConfig(
-      apiKey: config.apiKey!,
-      baseUrl: config.baseUrl,
-      model: config.model,
-      maxTokens: config.maxTokens,
-      temperature: config.temperature,
-      systemPrompt: config.systemPrompt,
-      timeout: config.timeout,
-      topP: config.topP,
-      topK: config.topK,
-      tools: config.tools,
-      toolChoice: config.toolChoice,
-      jsonSchema: config.legacyJsonSchema,
-      // Google-specific extensions
-      reasoningEffort:
-          ReasoningEffort.fromString(config.legacyReasoningEffortValue),
-      thinkingBudgetTokens:
-          config.getExtension<int>(LegacyExtensionKeys.thinkingBudgetTokens),
-      includeThoughts:
-          config.getExtension<bool>(LegacyExtensionKeys.includeThoughts),
-      enableImageGeneration:
-          config.getExtension<bool>(LegacyExtensionKeys.enableImageGeneration),
-      responseModalities: config.getExtension<List<String>>(
-        LegacyExtensionKeys.responseModalities,
-      ),
-      safetySettings: config.getExtension<List<SafetySetting>>(
-        LegacyExtensionKeys.safetySettings,
-      ),
-      maxInlineDataSize:
-          config.getExtension<int>(LegacyExtensionKeys.maxInlineDataSize) ??
-              20 * 1024 * 1024,
-      candidateCount:
-          config.getExtension<int>(LegacyExtensionKeys.candidateCount),
-      stopSequences: config.getExtension<List<String>>('stopSequences'),
-      // Embedding-specific extensions
-      embeddingTaskType:
-          config.getExtension<String>(LegacyExtensionKeys.embeddingTaskType),
-      embeddingTitle:
-          config.getExtension<String>(LegacyExtensionKeys.embeddingTitle),
-      embeddingDimensions: config.legacyEmbeddingDimensions,
-      originalConfig: config,
-    );
-  }
-
-  /// Get extension value from original config
-  T? getExtension<T>(String key) => _originalConfig?.getExtension<T>(key);
-
-  /// Get the original LLMConfig for HTTP configuration
-  @override
-  LLMConfig? get originalConfig => _originalConfig;
+  });
 
   /// Check if this model supports reasoning/thinking
   bool get supportsReasoning {
@@ -196,6 +144,9 @@ class GoogleConfig with LegacyDioClientOverrides {
     // Imagen models and some Gemini models support image generation
     return model.contains('imagen') || enableImageGeneration == true;
   }
+
+  /// Check if Google native web search is configured.
+  bool get webSearchEnabled => webSearchConfig?.enabled == true;
 
   /// Check if this model supports embeddings
   bool get supportsEmbeddings {
@@ -239,6 +190,7 @@ class GoogleConfig with LegacyDioClientOverrides {
     double? temperature,
     String? systemPrompt,
     Duration? timeout,
+    DioClientOverrides? dioOverrides,
     bool? stream,
     double? topP,
     int? topK,
@@ -250,6 +202,7 @@ class GoogleConfig with LegacyDioClientOverrides {
     bool? includeThoughts,
     bool? enableImageGeneration,
     List<String>? responseModalities,
+    WebSearchConfig? webSearchConfig,
     List<SafetySetting>? safetySettings,
     int? maxInlineDataSize,
     int? candidateCount,
@@ -266,6 +219,7 @@ class GoogleConfig with LegacyDioClientOverrides {
         temperature: temperature ?? this.temperature,
         systemPrompt: systemPrompt ?? this.systemPrompt,
         timeout: timeout ?? this.timeout,
+        dioOverrides: dioOverrides ?? this.dioOverrides,
         stream: stream ?? this.stream,
         topP: topP ?? this.topP,
         topK: topK ?? this.topK,
@@ -278,6 +232,7 @@ class GoogleConfig with LegacyDioClientOverrides {
         enableImageGeneration:
             enableImageGeneration ?? this.enableImageGeneration,
         responseModalities: responseModalities ?? this.responseModalities,
+        webSearchConfig: webSearchConfig ?? this.webSearchConfig,
         safetySettings: safetySettings ?? this.safetySettings,
         maxInlineDataSize: maxInlineDataSize ?? this.maxInlineDataSize,
         candidateCount: candidateCount ?? this.candidateCount,

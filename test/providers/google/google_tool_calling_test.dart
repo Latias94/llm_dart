@@ -2,6 +2,7 @@ import 'package:llm_dart/core/capability.dart';
 import 'package:llm_dart/core/config.dart';
 import 'package:llm_dart/models/tool_models.dart';
 import 'package:llm_dart/providers/google/google.dart';
+import 'package:llm_dart/src/compatibility/providers/google_config_adapter.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -139,7 +140,7 @@ void main() {
           temperature: 0.7,
         );
 
-        final googleConfig = GoogleConfig.fromLLMConfig(llmConfig);
+        final googleConfig = createLegacyGoogleConfig(llmConfig);
 
         expect(googleConfig.toolChoice, isA<SpecificToolChoice>());
         expect(googleConfig.temperature, equals(0.7));
@@ -157,7 +158,7 @@ void main() {
           tools: testTools,
         );
 
-        final googleConfig = GoogleConfig.fromLLMConfig(llmConfig);
+        final googleConfig = createLegacyGoogleConfig(llmConfig);
 
         expect(googleConfig.toolChoice, isNull);
         expect(googleConfig.tools, equals(testTools));
@@ -185,7 +186,7 @@ void main() {
           model: 'gemini-1.5-flash',
         ).withExtension('jsonSchema', jsonSchema);
 
-        final googleConfig = GoogleConfig.fromLLMConfig(llmConfig);
+        final googleConfig = createLegacyGoogleConfig(llmConfig);
 
         expect(googleConfig.jsonSchema, isNotNull);
         expect(googleConfig.jsonSchema?.name, equals('weather_response'));

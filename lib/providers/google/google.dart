@@ -23,6 +23,7 @@
 /// ```
 library;
 
+import '../../core/web_search.dart';
 import '../../models/chat_models.dart';
 import 'config.dart';
 import 'provider.dart';
@@ -49,6 +50,7 @@ GoogleProvider createGoogleProvider({
   bool? includeThoughts,
   bool? enableImageGeneration,
   List<String>? responseModalities,
+  WebSearchConfig? webSearchConfig,
   List<SafetySetting>? safetySettings,
   int? maxInlineDataSize,
   int? candidateCount,
@@ -73,6 +75,7 @@ GoogleProvider createGoogleProvider({
     includeThoughts: includeThoughts,
     enableImageGeneration: enableImageGeneration,
     responseModalities: responseModalities,
+    webSearchConfig: webSearchConfig,
     safetySettings: safetySettings,
     maxInlineDataSize: maxInlineDataSize ?? 20 * 1024 * 1024,
     candidateCount: candidateCount,

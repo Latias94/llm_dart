@@ -142,7 +142,7 @@ class GoogleChatRequestBuilder {
       }
     }
 
-    if (config.getExtension<bool>('webSearchEnabled') == true) {
+    if (config.webSearchEnabled) {
       body['tools'] ??= [];
       body['tools'].add({'google_search': {}});
     }

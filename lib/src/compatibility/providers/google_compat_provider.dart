@@ -10,10 +10,11 @@ import '../chat_route_compatibility.dart';
 import '../compat_transport.dart';
 import '../legacy_chat_adapter.dart';
 import 'compat_provider_support.dart';
+import 'google_config_adapter.dart';
 import 'google/provider_compat.dart';
 
 ChatCapability buildCompatGoogleProvider(LLMConfig config) {
-  final legacyConfig = GoogleConfig.fromLLMConfig(config);
+  final legacyConfig = createLegacyGoogleConfig(config);
   final model = modern_google.Google(
     apiKey: config.apiKey!,
     baseUrl: config.baseUrl,
@@ -27,17 +28,15 @@ ChatCapability buildCompatGoogleProvider(LLMConfig config) {
       model: model,
       config: config,
       providerOptions: modern_google.GoogleGenerateTextOptions(
-        candidateCount: config.getExtension<int>('candidateCount'),
-        thinkingBudgetTokens: config.getExtension<int>('thinkingBudgetTokens'),
-        thinkingLevel: _mapGoogleThinkingLevel(
-          config.extensions['reasoningEffort'],
-        ),
-        includeThoughts: config.getExtension<bool>('includeThoughts'),
-        responseModalities: _mapGoogleResponseModalities(config),
+        candidateCount: legacyConfig.candidateCount,
+        thinkingBudgetTokens: legacyConfig.thinkingBudgetTokens,
+        thinkingLevel: _mapGoogleThinkingLevel(legacyConfig.reasoningEffort),
+        includeThoughts: legacyConfig.includeThoughts,
+        responseModalities: _mapGoogleResponseModalities(legacyConfig),
         safetySettings: _mapGoogleSafetySettings(
-          config.getExtension<List<SafetySetting>>('safetySettings'),
+          legacyConfig.safetySettings,
         ),
-        tools: _buildGoogleNativeTools(config),
+        tools: _buildGoogleNativeTools(legacyConfig),
       ),
     ),
   );
@@ -112,21 +111,22 @@ final class CompatGoogleProvider extends GoogleProvider {
   }
 }
 
-modern_google.GoogleThinkingLevel? _mapGoogleThinkingLevel(Object? rawValue) {
-  final value = compatStringValue(rawValue)?.toLowerCase();
-  return switch (value) {
-    'minimal' => modern_google.GoogleThinkingLevel.minimal,
-    'low' => modern_google.GoogleThinkingLevel.low,
-    'medium' => modern_google.GoogleThinkingLevel.medium,
-    'high' => modern_google.GoogleThinkingLevel.high,
+modern_google.GoogleThinkingLevel? _mapGoogleThinkingLevel(
+  ReasoningEffort? effort,
+) {
+  return switch (effort) {
+    ReasoningEffort.minimal => modern_google.GoogleThinkingLevel.minimal,
+    ReasoningEffort.low => modern_google.GoogleThinkingLevel.low,
+    ReasoningEffort.medium => modern_google.GoogleThinkingLevel.medium,
+    ReasoningEffort.high => modern_google.GoogleThinkingLevel.high,
     _ => null,
   };
 }
 
 List<modern_google.GoogleResponseModality>? _mapGoogleResponseModalities(
-  LLMConfig config,
+  GoogleConfig config,
 ) {
-  final rawValues = config.getExtension<List<dynamic>>('responseModalities');
+  final rawValues = config.responseModalities;
   final mapped = <modern_google.GoogleResponseModality>[];
 
   if (rawValues != null) {
@@ -142,7 +142,7 @@ List<modern_google.GoogleResponseModality>? _mapGoogleResponseModalities(
           break;
       }
     }
-  } else if (config.getExtension<bool>('enableImageGeneration') == true) {
+  } else if (config.enableImageGeneration == true) {
     mapped.addAll(const [
       modern_google.GoogleResponseModality.text,
       modern_google.GoogleResponseModality.image,
@@ -176,15 +176,13 @@ List<modern_google.GoogleSafetySetting>? _mapGoogleSafetySettings(
 }
 
 List<modern_google.GoogleNativeTool>? _buildGoogleNativeTools(
-  LLMConfig config,
+  GoogleConfig config,
 ) {
-  if (!hasEnabledWebSearch(config)) {
+  if (!config.webSearchEnabled) {
     return null;
   }
 
-  final webSearchConfig =
-      config.getExtension<WebSearchConfig>('webSearchConfig');
-  final timeRangeFilter = _buildGoogleTimeRangeFilter(webSearchConfig);
+  final timeRangeFilter = _buildGoogleTimeRangeFilter(config.webSearchConfig);
 
   return [
     modern_google.GoogleTools.googleSearch(

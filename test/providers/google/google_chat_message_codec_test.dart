@@ -1,5 +1,6 @@
 import 'package:llm_dart/models/chat_models.dart';
 import 'package:llm_dart/models/tool_models.dart';
+import 'package:llm_dart/core/web_search.dart';
 import 'package:llm_dart/providers/google/config.dart';
 import 'package:llm_dart/src/compatibility/providers/google/client.dart';
 import 'package:llm_dart/src/compatibility/providers/google/google_chat_message_codec.dart';
@@ -173,6 +174,30 @@ void main() {
           'allowed_function_names': ['get_weather'],
         },
       });
+    });
+
+    test('request builder maps explicit web search config without LLMConfig',
+        () {
+      final config = GoogleConfig(
+        apiKey: 'test-key',
+        model: 'gemini-2.0-flash',
+        webSearchConfig: const WebSearchConfig(),
+      );
+      final client = GoogleClient(config);
+      final builder = GoogleChatRequestBuilder(
+        client: client,
+        config: config,
+      );
+
+      final body = builder.buildRequestBody(
+        [ChatMessage.user('Search current information.')],
+        null,
+        false,
+      );
+
+      expect(body['tools'], [
+        {'google_search': <String, Object?>{}},
+      ]);
     });
   });
 }
