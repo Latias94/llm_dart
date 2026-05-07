@@ -8,7 +8,7 @@ import '../legacy_chat_adapter.dart';
 import 'compat_provider_support.dart';
 import 'openai/bridge_support.dart';
 import 'openai/provider_compat.dart';
-import 'openai_family_compat_support.dart';
+import 'openai_family_compat_openai_config.dart';
 
 ChatCapability buildCompatOpenAIProvider(LLMConfig config) {
   final legacyConfig = toCompatLegacyOpenAIConfig(config);

@@ -2,7 +2,7 @@ import '../../core/capability.dart';
 import '../../core/config.dart';
 import '../../core/registry.dart';
 import '../../src/compatibility/providers/openai_family_compat_openrouter.dart';
-import '../../src/compatibility/providers/openai_family_compat_support.dart';
+import '../../src/compatibility/providers/openai_family_compat_openai_config.dart';
 import '../../src/compatibility/openai_compatible_configs.dart';
 import '../openai/openai.dart';
 import 'base_factory.dart';

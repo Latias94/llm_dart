@@ -10,7 +10,6 @@ import '../chat_route_compatibility.dart';
 import '../compat_transport.dart';
 import '../legacy_chat_adapter.dart';
 import 'compat_provider_support.dart';
-import 'openai_family_compat_support.dart';
 import 'openai_family_compat_xai_config.dart';
 
 ChatCapability buildCompatXAIProvider(LLMConfig config) {

@@ -12,7 +12,7 @@ import '../compat_transport.dart';
 import '../legacy_chat_adapter.dart';
 import 'compat_provider_support.dart';
 import 'openai/provider_compat.dart';
-import 'openai_family_compat_support.dart';
+import 'openai_family_compat_openrouter_config.dart';
 
 ChatCapability buildCompatOpenRouterProvider(LLMConfig config) {
   final legacyConfig = toCompatLegacyOpenRouterConfig(config);
