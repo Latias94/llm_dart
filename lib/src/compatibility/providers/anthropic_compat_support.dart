@@ -6,7 +6,10 @@ import '../../../models/tool_models.dart';
 import '../anthropic_legacy_extensions.dart';
 
 part 'anthropic_compat_message_converter.dart';
+part 'anthropic_compat_message_roles.dart';
+part 'anthropic_compat_prompt_parts.dart';
 part 'anthropic_compat_request_planner.dart';
+part 'anthropic_compat_tool_results.dart';
 
 /// Provider-local support for Anthropic compatibility request planning and
 /// role-aware prompt conversion.
