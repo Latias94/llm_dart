@@ -1,5 +1,6 @@
 export 'llm_builder_provider_capability_extensions.dart';
 export 'llm_builder_provider_extensions.dart';
+export 'llm_builder_media_config.dart';
 
 import '../core/capability.dart';
 import '../core/config.dart';
@@ -16,7 +17,6 @@ import 'http_config.dart';
 part 'llm_builder_builds.dart';
 part 'llm_builder_common_config.dart';
 part 'llm_builder_internal.dart';
-part 'llm_builder_media_config.dart';
 part 'llm_builder_provider_selection.dart';
 
 /// Builder for configuring and instantiating LLM providers
