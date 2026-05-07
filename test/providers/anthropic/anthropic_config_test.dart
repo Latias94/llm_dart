@@ -1,5 +1,6 @@
 import 'package:llm_dart/core/config.dart';
 import 'package:llm_dart/providers/anthropic/config.dart';
+import 'package:llm_dart/src/compatibility/providers/anthropic_config_adapter.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -207,7 +208,7 @@ void main() {
           },
         );
 
-        final anthropicConfig = AnthropicConfig.fromLLMConfig(llmConfig);
+        final anthropicConfig = createLegacyAnthropicConfig(llmConfig);
 
         expect(anthropicConfig.apiKey, equals('test-key'));
         expect(anthropicConfig.model, equals('claude-sonnet-4-20250514'));
@@ -217,18 +218,22 @@ void main() {
         expect(anthropicConfig.interleavedThinking, isFalse);
       });
 
-      test('should access extensions from original config', () {
+      test('should map supported legacy extensions into explicit fields', () {
         final llmConfig = LLMConfig(
           apiKey: 'test-key',
           baseUrl: 'https://api.anthropic.com',
           model: 'claude-3-5-sonnet-20241022',
-          extensions: {'customParam': 'customValue'},
+          extensions: {
+            'metadata': {'customParam': 'customValue'},
+            'container': 'container-1',
+          },
         );
 
-        final anthropicConfig = AnthropicConfig.fromLLMConfig(llmConfig);
+        final anthropicConfig = createLegacyAnthropicConfig(llmConfig);
 
-        expect(anthropicConfig.getExtension<String>('customParam'),
-            equals('customValue'));
+        expect(
+            anthropicConfig.metadata, equals({'customParam': 'customValue'}));
+        expect(anthropicConfig.container, equals('container-1'));
       });
     });
 

@@ -76,7 +76,7 @@ class AnthropicDioStrategy extends BaseProviderDioStrategy {
     }
 
     // Add MCP connector beta if MCP servers are configured
-    final mcpServers = config.getExtension<List>('mcpServers');
+    final mcpServers = config.mcpServers;
     if (mcpServers != null && mcpServers.isNotEmpty) {
       betaFeatures.add('mcp-client-2025-04-04');
     }

@@ -5,6 +5,7 @@ import 'package:llm_dart/providers/anthropic/config.dart';
 import 'package:llm_dart/providers/openai/client.dart';
 import 'package:llm_dart/providers/openai/config.dart';
 import 'package:llm_dart/providers/xai/client.dart';
+import 'package:llm_dart/src/compatibility/providers/anthropic_config_adapter.dart';
 import 'package:llm_dart/src/compatibility/providers/openai_family_compat_xai_config.dart';
 import 'package:llm_dart_transport/dio.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
@@ -36,7 +37,7 @@ void main() {
         });
 
         // Test with Anthropic provider
-        final anthropicConfig = AnthropicConfig.fromLLMConfig(llmConfig);
+        final anthropicConfig = createLegacyAnthropicConfig(llmConfig);
         final anthropicClient = AnthropicClient(anthropicConfig);
 
         // Custom Dio should be used directly
@@ -63,7 +64,7 @@ void main() {
           'enableHttpLogging': true,
         });
 
-        final anthropicConfig = AnthropicConfig.fromLLMConfig(llmConfig);
+        final anthropicConfig = createLegacyAnthropicConfig(llmConfig);
         final anthropicClient = AnthropicClient(anthropicConfig);
 
         // Should use HTTP configuration
@@ -119,7 +120,7 @@ void main() {
           'customDio': customDio,
         });
 
-        final anthropicConfig = AnthropicConfig.fromLLMConfig(llmConfig);
+        final anthropicConfig = createLegacyAnthropicConfig(llmConfig);
         final anthropicClient = AnthropicClient(anthropicConfig);
 
         // Should have both custom interceptor and Anthropic-specific interceptor(s)
@@ -156,7 +157,7 @@ void main() {
           'customDio': customDio,
         });
 
-        final anthropicConfig = AnthropicConfig.fromLLMConfig(llmConfig);
+        final anthropicConfig = createLegacyAnthropicConfig(llmConfig);
         final anthropicClient = AnthropicClient(anthropicConfig);
 
         // Should have 2 custom interceptors + Anthropic interceptor(s) >= 3 total
@@ -179,7 +180,7 @@ void main() {
           'customDio': customDio,
         });
 
-        final anthropicConfig = AnthropicConfig.fromLLMConfig(llmConfig);
+        final anthropicConfig = createLegacyAnthropicConfig(llmConfig);
         final anthropicClient = AnthropicClient(anthropicConfig);
 
         // Base URL should be applied from config
@@ -199,7 +200,7 @@ void main() {
           'customDio': customDio,
         });
 
-        final anthropicConfig = AnthropicConfig.fromLLMConfig(llmConfig);
+        final anthropicConfig = createLegacyAnthropicConfig(llmConfig);
         final anthropicClient = AnthropicClient(anthropicConfig);
 
         // Custom base URL should be preserved
@@ -222,7 +223,7 @@ void main() {
           'customDio': customDio,
         });
 
-        final anthropicConfig = AnthropicConfig.fromLLMConfig(llmConfig);
+        final anthropicConfig = createLegacyAnthropicConfig(llmConfig);
         final anthropicClient = AnthropicClient(anthropicConfig);
 
         // Custom headers should be preserved (user's headers take precedence)
@@ -254,7 +255,7 @@ void main() {
           'customDio': customDio,
         });
 
-        final anthropicConfig = AnthropicConfig.fromLLMConfig(llmConfig);
+        final anthropicConfig = createLegacyAnthropicConfig(llmConfig);
         final anthropicClient = AnthropicClient(anthropicConfig);
 
         // Should have both custom and essential headers
@@ -289,7 +290,7 @@ void main() {
         });
 
         // Test with multiple providers
-        final anthropicConfig = AnthropicConfig.fromLLMConfig(llmConfig);
+        final anthropicConfig = createLegacyAnthropicConfig(llmConfig);
         final anthropicClient = AnthropicClient(anthropicConfig);
 
         final openaiConfig = OpenAIConfig(
@@ -338,7 +339,7 @@ void main() {
         });
 
         // Create clients for different providers
-        final anthropicConfig = AnthropicConfig.fromLLMConfig(llmConfig);
+        final anthropicConfig = createLegacyAnthropicConfig(llmConfig);
         final anthropicClient = AnthropicClient(anthropicConfig);
 
         final openaiConfig = OpenAIConfig(
@@ -369,7 +370,7 @@ void main() {
           'customDio': null, // Explicitly null
         });
 
-        final anthropicConfig = AnthropicConfig.fromLLMConfig(llmConfig);
+        final anthropicConfig = createLegacyAnthropicConfig(llmConfig);
 
         // Should not throw and should fall back to HTTP configuration
         expect(() => AnthropicClient(anthropicConfig), returnsNormally);
@@ -394,7 +395,7 @@ void main() {
           'customDio': customDio,
         });
 
-        final anthropicConfig = AnthropicConfig.fromLLMConfig(llmConfig);
+        final anthropicConfig = createLegacyAnthropicConfig(llmConfig);
 
         // Should not throw during client creation
         expect(() => AnthropicClient(anthropicConfig), returnsNormally);

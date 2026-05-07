@@ -1,9 +1,6 @@
 import 'package:llm_dart_transport/dio.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart'
-    show
-        decodeDioResponseTextStream,
-        Logger,
-        ProviderDioClientFactory;
+    show decodeDioResponseTextStream, Logger, ProviderDioClientFactory;
 
 import '../../../../core/cancellation.dart';
 import '../../../../core/llm_error.dart';
@@ -38,6 +35,7 @@ class AnthropicClient {
     dio = ProviderDioClientFactory.create(
       strategy: AnthropicDioStrategy(),
       config: config,
+      overrides: config.dioOverrides,
     );
     _requestExecutor = CompatibilityDioRequestExecutor(
       dio: dio,

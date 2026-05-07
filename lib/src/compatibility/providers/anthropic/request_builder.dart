@@ -1,11 +1,9 @@
 import 'dart:convert';
 
 import '../../../../core/llm_error.dart';
-import '../../../../core/web_search.dart';
 import '../../../../models/chat_models.dart';
 import '../../../../models/tool_models.dart';
 import '../../../../providers/anthropic/config.dart';
-import '../../../../providers/anthropic/mcp_models.dart';
 
 /// Helper class to build Anthropic API request bodies
 /// Separates the complex request building logic into focused methods
@@ -335,15 +333,14 @@ class AnthropicRequestBuilder {
       body['service_tier'] = config.serviceTier!.value;
     }
 
-    // Add metadata if user is specified or extensions contain metadata
+    // Add metadata if user is specified or config contains metadata
     final metadata = <String, dynamic>{};
     if (config.user != null) {
       metadata['user_id'] = config.user;
     }
 
-    // Add custom metadata from extensions
-    final customMetadata =
-        config.getExtension<Map<String, dynamic>>('metadata');
+    // Add custom metadata from explicit config
+    final customMetadata = config.metadata;
     if (customMetadata != null) {
       metadata.addAll(customMetadata);
     }
@@ -352,15 +349,14 @@ class AnthropicRequestBuilder {
       body['metadata'] = metadata;
     }
 
-    // Add container identifier from extensions
-    final container = config.getExtension<String>('container');
+    // Add container identifier from explicit config
+    final container = config.container;
     if (container != null) {
       body['container'] = container;
     }
 
-    // Add MCP servers from extensions
-    final mcpServers =
-        config.getExtension<List<AnthropicMCPServer>>('mcpServers');
+    // Add MCP servers from explicit config
+    final mcpServers = config.mcpServers;
     if (mcpServers != null && mcpServers.isNotEmpty) {
       body['mcp_servers'] =
           mcpServers.map((server) => server.toJson()).toList();
@@ -503,8 +499,7 @@ class AnthropicRequestBuilder {
       // According to https://docs.claude.com/en/docs/agents-and-tools/tool-use/web-search-tool
       // web_search is a server-side tool with a different format
       if (tool.function.name == 'web_search') {
-        final webSearchConfig =
-            config.getExtension<WebSearchConfig>('webSearchConfig');
+        final webSearchConfig = config.webSearchConfig;
 
         // Base definition
         final toolDef = <String, dynamic>{

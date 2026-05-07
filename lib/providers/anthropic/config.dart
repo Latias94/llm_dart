@@ -1,10 +1,11 @@
-import '../../core/config.dart';
+import 'package:llm_dart_transport/llm_dart_transport.dart'
+    show DioClientOverrides, HasDioClientOverrides;
+
 import '../../src/provider_defaults.dart';
 import '../../core/web_search.dart';
-import '../../src/config/legacy_dio_client_overrides.dart';
-import '../../src/config/legacy_config_extensions.dart';
 import '../../models/chat_models.dart';
 import '../../models/tool_models.dart';
+import 'mcp_models.dart';
 
 /// Anthropic provider configuration
 ///
@@ -17,15 +18,16 @@ import '../../models/tool_models.dart';
 /// - Vision: https://docs.anthropic.com/en/docs/build-with-claude/vision
 /// - Tool Use: https://docs.anthropic.com/en/docs/tool-use
 /// - PDF Support: https://docs.anthropic.com/en/docs/build-with-claude/pdf-support
-class AnthropicConfig with LegacyDioClientOverrides {
+class AnthropicConfig implements HasDioClientOverrides {
   final String apiKey;
   final String baseUrl;
   final String model;
   final int? maxTokens;
   final double? temperature;
   final String? systemPrompt;
-  @override
   final Duration? timeout;
+  @override
+  final DioClientOverrides? dioOverrides;
   final bool stream;
   final double? topP;
   final int? topK;
@@ -37,9 +39,10 @@ class AnthropicConfig with LegacyDioClientOverrides {
   final List<String>? stopSequences;
   final String? user;
   final ServiceTier? serviceTier;
-
-  /// Reference to original LLMConfig for accessing extensions
-  final LLMConfig? _originalConfig;
+  final Map<String, dynamic>? metadata;
+  final String? container;
+  final List<AnthropicMCPServer>? mcpServers;
+  final WebSearchConfig? webSearchConfig;
 
   const AnthropicConfig({
     required this.apiKey,
@@ -49,6 +52,7 @@ class AnthropicConfig with LegacyDioClientOverrides {
     this.temperature,
     this.systemPrompt,
     this.timeout,
+    this.dioOverrides,
     this.stream = false,
     this.topP,
     this.topK,
@@ -60,91 +64,11 @@ class AnthropicConfig with LegacyDioClientOverrides {
     this.stopSequences,
     this.user,
     this.serviceTier,
-    LLMConfig? originalConfig,
-  }) : _originalConfig = originalConfig;
-
-  /// Create AnthropicConfig from unified LLMConfig
-  factory AnthropicConfig.fromLLMConfig(LLMConfig config) {
-    // Handle web search configuration
-    List<Tool>? tools = config.tools;
-
-    // Add web search tool if enabled or configured
-    final webSearchEnabled = config.legacyWebSearchEnabled;
-    final webSearchConfig = config.legacyWebSearchConfig;
-    if (webSearchEnabled || webSearchConfig != null) {
-      tools = _addWebSearchTool(tools, webSearchConfig);
-    }
-
-    return AnthropicConfig(
-      apiKey: config.apiKey!,
-      baseUrl: config.baseUrl,
-      model: config.model,
-      maxTokens: config.maxTokens,
-      temperature: config.temperature,
-      systemPrompt: config.systemPrompt,
-      timeout: config.timeout,
-
-      topP: config.topP,
-      topK: config.topK,
-      tools: tools,
-      toolChoice: config.toolChoice,
-      // Common parameters
-      stopSequences: config.stopSequences,
-      user: config.user,
-      serviceTier: config.serviceTier,
-      // Anthropic-specific extensions
-      reasoning:
-          config.getExtension<bool>(LegacyExtensionKeys.reasoning) ?? false,
-      thinkingBudgetTokens:
-          config.getExtension<int>(LegacyExtensionKeys.thinkingBudgetTokens),
-      interleavedThinking: config.getExtension<bool>(
-            LegacyExtensionKeys.interleavedThinking,
-          ) ??
-          false,
-      originalConfig: config,
-    );
-  }
-
-  /// Add web search tool to the tools list
-  static List<Tool> _addWebSearchTool(
-      List<Tool>? existingTools, WebSearchConfig? config) {
-    final tools = List<Tool>.from(existingTools ?? []);
-
-    // Check if web search tool already exists
-    final hasWebSearchTool =
-        tools.any((tool) => tool.function.name == 'web_search');
-    if (hasWebSearchTool) {
-      return tools; // Don't add duplicate
-    }
-
-    // Create web search tool based on Anthropic's specification
-    // Note: For Anthropic, we need to create a special tool that will be handled differently
-    // in the chat implementation to use the web_search_20250305 tool type
-    final webSearchTool = Tool.function(
-      name: 'web_search',
-      description: 'Search the web for current information',
-      parameters: ParametersSchema(
-        schemaType: 'object',
-        properties: {
-          'query': ParameterProperty(
-            propertyType: 'string',
-            description: 'The search query to execute',
-          ),
-        },
-        required: ['query'],
-      ),
-    );
-
-    tools.add(webSearchTool);
-    return tools;
-  }
-
-  /// Get extension value from original config
-  T? getExtension<T>(String key) => _originalConfig?.getExtension<T>(key);
-
-  /// Get the original LLMConfig for HTTP configuration
-  @override
-  LLMConfig? get originalConfig => _originalConfig;
+    this.metadata,
+    this.container,
+    this.mcpServers,
+    this.webSearchConfig,
+  });
 
   /// Check if this model supports reasoning/thinking
   ///
@@ -180,6 +104,9 @@ class AnthropicConfig with LegacyDioClientOverrides {
     // All modern Claude models support tool calling
     return !model.contains('claude-1') && !model.contains('claude-2');
   }
+
+  /// Check if Anthropic native web search is configured.
+  bool get webSearchEnabled => webSearchConfig?.enabled == true;
 
   /// Check if this model supports interleaved thinking
   ///
@@ -247,6 +174,11 @@ class AnthropicConfig with LegacyDioClientOverrides {
     List<String>? stopSequences,
     String? user,
     ServiceTier? serviceTier,
+    DioClientOverrides? dioOverrides,
+    Map<String, dynamic>? metadata,
+    String? container,
+    List<AnthropicMCPServer>? mcpServers,
+    WebSearchConfig? webSearchConfig,
   }) =>
       AnthropicConfig(
         apiKey: apiKey ?? this.apiKey,
@@ -256,6 +188,7 @@ class AnthropicConfig with LegacyDioClientOverrides {
         temperature: temperature ?? this.temperature,
         systemPrompt: systemPrompt ?? this.systemPrompt,
         timeout: timeout ?? this.timeout,
+        dioOverrides: dioOverrides ?? this.dioOverrides,
         stream: stream ?? this.stream,
         topP: topP ?? this.topP,
         topK: topK ?? this.topK,
@@ -267,5 +200,9 @@ class AnthropicConfig with LegacyDioClientOverrides {
         stopSequences: stopSequences ?? this.stopSequences,
         user: user ?? this.user,
         serviceTier: serviceTier ?? this.serviceTier,
+        metadata: metadata ?? this.metadata,
+        container: container ?? this.container,
+        mcpServers: mcpServers ?? this.mcpServers,
+        webSearchConfig: webSearchConfig ?? this.webSearchConfig,
       );
 }

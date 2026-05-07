@@ -20,6 +20,8 @@ import 'package:llm_dart/providers/phind/config.dart';
 import 'package:llm_dart/providers/phind/dio_strategy.dart';
 import 'package:llm_dart/providers/elevenlabs/config.dart';
 import 'package:llm_dart/providers/elevenlabs/dio_strategy.dart';
+import 'package:llm_dart/src/compatibility/providers/anthropic_config_adapter.dart'
+    show createLegacyAnthropicConfig;
 import 'package:llm_dart/src/compatibility/providers/elevenlabs/config_adapter.dart'
     show createLegacyElevenLabsConfig;
 import 'package:llm_dart/src/compatibility/providers/google_config_adapter.dart'
@@ -110,12 +112,7 @@ void main() {
         'customDio': customDio,
       });
 
-      final config = AnthropicConfig(
-        baseUrl: 'https://api.anthropic.com/v1/',
-        apiKey: 'test-key',
-        model: 'claude-sonnet-4-20250514',
-        originalConfig: llmConfig,
-      );
+      final config = createLegacyAnthropicConfig(llmConfig);
 
       final dio = DioClientFactory.create(
         strategy: AnthropicDioStrategy(),
@@ -151,12 +148,7 @@ void main() {
         'customDio': customDio,
       });
 
-      final config = AnthropicConfig(
-        baseUrl: 'https://api.anthropic.com/v1/',
-        apiKey: 'test-key',
-        model: 'claude-sonnet-4-20250514',
-        originalConfig: llmConfig,
-      );
+      final config = createLegacyAnthropicConfig(llmConfig);
 
       final dio = DioClientFactory.create(
         strategy: AnthropicDioStrategy(),
@@ -331,7 +323,7 @@ void main() {
       final providers = [
         {
           'strategy': AnthropicDioStrategy(),
-          'config': AnthropicConfig.fromLLMConfig(llmConfig)
+          'config': createLegacyAnthropicConfig(llmConfig)
         },
         {
           'strategy': OpenAIDioStrategy(),
@@ -400,7 +392,7 @@ void main() {
       final providers = [
         {
           'strategy': AnthropicDioStrategy(),
-          'config': AnthropicConfig.fromLLMConfig(llmConfig)
+          'config': createLegacyAnthropicConfig(llmConfig)
         },
         {
           'strategy': OpenAIDioStrategy(),
@@ -469,7 +461,7 @@ void main() {
       final testCases = [
         {
           'strategy': AnthropicDioStrategy(),
-          'config': AnthropicConfig.fromLLMConfig(llmConfig),
+          'config': createLegacyAnthropicConfig(llmConfig),
           'expectedHeaders': {
             'x-api-key': 'test-key',
             'anthropic-version': '2023-06-01'

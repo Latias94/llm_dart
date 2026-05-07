@@ -2,7 +2,6 @@ import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as modern_anthropic;
 
 import '../../../core/capability.dart';
 import '../../../core/config.dart';
-import '../../../core/web_search.dart';
 import '../../../models/chat_models.dart';
 import '../../../models/tool_models.dart';
 import '../../../providers/anthropic/config.dart';
@@ -12,10 +11,11 @@ import '../compat_transport.dart';
 import '../legacy_chat_adapter.dart';
 import 'anthropic/provider_compat.dart';
 import 'anthropic_compat_adapter.dart';
+import 'anthropic_config_adapter.dart';
 import 'compat_provider_support.dart';
 
 ChatCapability buildCompatAnthropicProvider(LLMConfig config) {
-  final legacyConfig = AnthropicConfig.fromLLMConfig(config);
+  final legacyConfig = createLegacyAnthropicConfig(config);
   final model = modern_anthropic.Anthropic(
     apiKey: config.apiKey!,
     baseUrl: config.baseUrl,
@@ -29,16 +29,14 @@ ChatCapability buildCompatAnthropicProvider(LLMConfig config) {
       model: model,
       config: config,
       providerOptions: modern_anthropic.AnthropicGenerateTextOptions(
-        extendedThinking: config.getExtension<bool>('reasoning'),
-        thinkingBudgetTokens: config.getExtension<int>('thinkingBudgetTokens'),
-        interleavedThinking: config.getExtension<bool>('interleavedThinking'),
-        serviceTier: config.serviceTier?.value,
-        metadata: buildAnthropicCompatMetadata(config),
-        container: config.getExtension<String>('container'),
-        mcpServers: mapAnthropicCompatMcpServers(
-          config.getExtension<List<AnthropicMCPServer>>('mcpServers'),
-        ),
-        tools: buildAnthropicCompatNativeTools(config),
+        extendedThinking: legacyConfig.reasoning,
+        thinkingBudgetTokens: legacyConfig.thinkingBudgetTokens,
+        interleavedThinking: legacyConfig.interleavedThinking,
+        serviceTier: legacyConfig.serviceTier?.value,
+        metadata: buildAnthropicCompatMetadata(legacyConfig),
+        container: legacyConfig.container,
+        mcpServers: mapAnthropicCompatMcpServers(legacyConfig.mcpServers),
+        tools: buildAnthropicCompatNativeTools(legacyConfig),
       ),
     ),
   );
@@ -113,13 +111,13 @@ final class CompatAnthropicProvider extends AnthropicProvider {
   }
 }
 
-Map<String, Object?>? buildAnthropicCompatMetadata(LLMConfig config) {
+Map<String, Object?>? buildAnthropicCompatMetadata(AnthropicConfig config) {
   final metadata = <String, Object?>{};
   if (config.user != null) {
     metadata['user_id'] = config.user;
   }
 
-  final customMetadata = config.getExtension<Map<String, dynamic>>('metadata');
+  final customMetadata = config.metadata;
   if (customMetadata != null) {
     metadata.addAll(
       customMetadata.map(
@@ -157,14 +155,13 @@ List<modern_anthropic.AnthropicMcpServer>? mapAnthropicCompatMcpServers(
 }
 
 List<modern_anthropic.AnthropicNativeTool>? buildAnthropicCompatNativeTools(
-  LLMConfig config,
+  AnthropicConfig config,
 ) {
-  if (!hasEnabledWebSearch(config)) {
+  if (!config.webSearchEnabled) {
     return null;
   }
 
-  final webSearchConfig =
-      config.getExtension<WebSearchConfig>('webSearchConfig');
+  final webSearchConfig = config.webSearchConfig;
   final location = webSearchConfig?.location;
 
   return [
