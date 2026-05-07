@@ -1,8 +1,13 @@
 part of 'elevenlabs_audio_bridge_support.dart';
 
-mixin _ElevenLabsTranscriptionBridgeSupport {
-  ElevenLabsConfig get config;
-  modern_community.ElevenLabs get modernProvider;
+final class _ElevenLabsTranscriptionBridgeSupport {
+  final ElevenLabsConfig config;
+  final modern_community.ElevenLabs modernProvider;
+
+  const _ElevenLabsTranscriptionBridgeSupport({
+    required this.config,
+    required this.modernProvider,
+  });
 
   bool canUseTranscriptionBridge(STTRequest request) {
     if (request.audioData == null) {

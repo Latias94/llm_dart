@@ -14,15 +14,49 @@ part 'elevenlabs_transcription_bridge_support.dart';
 /// This keeps modern-community bridge constraints and codec translation out of
 /// the compatibility shell so the shell can stay focused on bridge-vs-fallback
 /// orchestration.
-final class ElevenLabsAudioBridgeSupport
-    with _ElevenLabsSpeechBridgeSupport, _ElevenLabsTranscriptionBridgeSupport {
-  @override
+final class ElevenLabsAudioBridgeSupport {
   final ElevenLabsConfig config;
-  @override
   final modern_community.ElevenLabs modernProvider;
+  final _ElevenLabsSpeechBridgeSupport _speechSupport;
+  final _ElevenLabsTranscriptionBridgeSupport _transcriptionSupport;
 
-  const ElevenLabsAudioBridgeSupport({
+  ElevenLabsAudioBridgeSupport({
     required this.config,
     required this.modernProvider,
-  });
+  })  : _speechSupport = _ElevenLabsSpeechBridgeSupport(
+          config: config,
+          modernProvider: modernProvider,
+        ),
+        _transcriptionSupport = _ElevenLabsTranscriptionBridgeSupport(
+          config: config,
+          modernProvider: modernProvider,
+        );
+
+  bool canUseSpeechBridge(TTSRequest request) {
+    return _speechSupport.canUseSpeechBridge(request);
+  }
+
+  Future<TTSResponse> bridgeTextToSpeech(
+    TTSRequest request, {
+    TransportCancellation? cancelToken,
+  }) {
+    return _speechSupport.bridgeTextToSpeech(
+      request,
+      cancelToken: cancelToken,
+    );
+  }
+
+  bool canUseTranscriptionBridge(STTRequest request) {
+    return _transcriptionSupport.canUseTranscriptionBridge(request);
+  }
+
+  Future<STTResponse> bridgeSpeechToText(
+    STTRequest request, {
+    TransportCancellation? cancelToken,
+  }) {
+    return _transcriptionSupport.bridgeSpeechToText(
+      request,
+      cancelToken: cancelToken,
+    );
+  }
 }

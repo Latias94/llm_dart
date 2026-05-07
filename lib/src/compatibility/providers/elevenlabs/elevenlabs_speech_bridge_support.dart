@@ -1,8 +1,13 @@
 part of 'elevenlabs_audio_bridge_support.dart';
 
-mixin _ElevenLabsSpeechBridgeSupport {
-  ElevenLabsConfig get config;
-  modern_community.ElevenLabs get modernProvider;
+final class _ElevenLabsSpeechBridgeSupport {
+  final ElevenLabsConfig config;
+  final modern_community.ElevenLabs modernProvider;
+
+  const _ElevenLabsSpeechBridgeSupport({
+    required this.config,
+    required this.modernProvider,
+  });
 
   bool canUseSpeechBridge(TTSRequest request) {
     return _isValidSpeechRatio(request.stability) &&
