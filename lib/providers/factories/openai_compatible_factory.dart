@@ -2,10 +2,8 @@ import '../../core/capability.dart';
 import '../../core/config.dart';
 import '../../core/registry.dart';
 import '../../src/compatibility/providers/openai_family_compat_openrouter.dart';
+import '../../src/compatibility/providers/openai_family_compat_support.dart';
 import '../../src/openai_compatible_configs.dart';
-import '../../models/chat_models.dart';
-import '../../src/config/legacy_config_extensions.dart';
-import '../../src/compatibility/providers/community_provider_config_adapters.dart';
 import '../openai/openai.dart';
 import 'base_factory.dart';
 
@@ -43,7 +41,7 @@ class OpenAICompatibleProviderFactory
 
     return createProviderSafely<OpenAIConfig>(
       config,
-      () => _transformConfig(config),
+      () => createLegacyOpenAICompatibleConfig(config),
       (openaiConfig) => OpenAIProvider(openaiConfig),
     );
   }
@@ -54,57 +52,6 @@ class OpenAICompatibleProviderFactory
       'baseUrl': _config.defaultBaseUrl,
       'model': _config.defaultModel,
     };
-  }
-
-  /// Transform unified config to OpenAI-compatible config
-  OpenAIConfig _transformConfig(LLMConfig config) {
-    return OpenAIConfig(
-      apiKey: config.apiKey!,
-      baseUrl: config.baseUrl,
-      model: config.model,
-      maxTokens: config.maxTokens,
-      temperature: config.temperature,
-      systemPrompt: config.systemPrompt,
-      timeout: config.timeout,
-      dioOverrides: createLegacyDioClientOverrides(config),
-      transportClient: config.legacyTransportClient,
-      topP: config.topP,
-      topK: config.topK,
-      tools: config.tools,
-      toolChoice: config.toolChoice,
-      // Common parameters
-      stopSequences: config.stopSequences,
-      user: config.user,
-      serviceTier: config.serviceTier,
-      // OpenAI-compatible extensions using safe access
-      reasoningEffort:
-          ReasoningEffort.fromString(config.legacyReasoningEffortValue),
-      jsonSchema: config.legacyJsonSchema,
-      voice: config.legacyVoice,
-      embeddingEncodingFormat: config.legacyEmbeddingEncodingFormat,
-      embeddingDimensions: config.legacyEmbeddingDimensions,
-      // Responses API configuration (most OpenAI-compatible providers don't support this yet)
-      useResponsesAPI:
-          config.getExtension<bool>(LegacyExtensionKeys.useResponsesApi) ??
-              false,
-      previousResponseId:
-          config.getExtension<String>(LegacyExtensionKeys.previousResponseId),
-      builtInTools: config.getExtension<List<OpenAIBuiltInTool>>(
-          LegacyExtensionKeys.builtInTools),
-      frequencyPenalty:
-          config.getExtension<double>(LegacyExtensionKeys.frequencyPenalty),
-      presencePenalty:
-          config.getExtension<double>(LegacyExtensionKeys.presencePenalty),
-      logitBias: config.getExtension<Map<String, double>>(
-        LegacyExtensionKeys.logitBias,
-      ),
-      seed: config.getExtension<int>(LegacyExtensionKeys.seed),
-      parallelToolCalls:
-          config.getExtension<bool>(LegacyExtensionKeys.parallelToolCalls),
-      logprobs: config.getExtension<bool>(LegacyExtensionKeys.logprobs),
-      topLogprobs: config.getExtension<int>(LegacyExtensionKeys.topLogprobs),
-      verbosity: config.getExtension<String>(LegacyExtensionKeys.verbosity),
-    );
   }
 
   /// Check if this is an OpenRouter provider

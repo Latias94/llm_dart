@@ -205,6 +205,90 @@ OpenAIConfig toCompatLegacyOpenRouterConfig(LLMConfig config) {
   );
 }
 
+OpenAIConfig createLegacyOpenAICompatibleConfig(LLMConfig config) {
+  return OpenAIConfig(
+    apiKey: config.apiKey!,
+    baseUrl: config.baseUrl,
+    model: config.model,
+    maxTokens: config.maxTokens,
+    temperature: config.temperature,
+    systemPrompt: config.systemPrompt,
+    timeout: config.timeout,
+    dioOverrides: createLegacyDioClientOverrides(config),
+    transportClient: config.legacyTransportClient,
+    topP: config.topP,
+    topK: config.topK,
+    tools: config.tools,
+    toolChoice: config.toolChoice,
+    stopSequences: config.stopSequences,
+    user: config.user,
+    serviceTier: config.serviceTier,
+    reasoningEffort: ReasoningEffort.fromString(
+      config.legacyReasoningEffortValue,
+    ),
+    jsonSchema: config.legacyJsonSchema,
+    voice: config.legacyVoice,
+    embeddingEncodingFormat: config.legacyEmbeddingEncodingFormat,
+    embeddingDimensions: config.legacyEmbeddingDimensions,
+    useResponsesAPI: getLegacyProviderOption<bool>(
+          config,
+          LegacyProviderOptionNamespaces.openai,
+          LegacyExtensionKeys.useResponsesApi,
+        ) ??
+        false,
+    previousResponseId: getLegacyProviderOption<String>(
+      config,
+      LegacyProviderOptionNamespaces.openai,
+      LegacyExtensionKeys.previousResponseId,
+    ),
+    builtInTools: getLegacyProviderOption<List<OpenAIBuiltInTool>>(
+      config,
+      LegacyProviderOptionNamespaces.openai,
+      LegacyExtensionKeys.builtInTools,
+    ),
+    frequencyPenalty: getLegacyProviderOption<double>(
+      config,
+      LegacyProviderOptionNamespaces.openai,
+      LegacyExtensionKeys.frequencyPenalty,
+    ),
+    presencePenalty: getLegacyProviderOption<double>(
+      config,
+      LegacyProviderOptionNamespaces.openai,
+      LegacyExtensionKeys.presencePenalty,
+    ),
+    logitBias: getLegacyProviderOption<Map<String, double>>(
+      config,
+      LegacyProviderOptionNamespaces.openai,
+      LegacyExtensionKeys.logitBias,
+    ),
+    seed: getLegacyProviderOption<int>(
+      config,
+      LegacyProviderOptionNamespaces.openai,
+      LegacyExtensionKeys.seed,
+    ),
+    parallelToolCalls: getLegacyProviderOption<bool>(
+      config,
+      LegacyProviderOptionNamespaces.openai,
+      LegacyExtensionKeys.parallelToolCalls,
+    ),
+    logprobs: getLegacyProviderOption<bool>(
+      config,
+      LegacyProviderOptionNamespaces.openai,
+      LegacyExtensionKeys.logprobs,
+    ),
+    topLogprobs: getLegacyProviderOption<int>(
+      config,
+      LegacyProviderOptionNamespaces.openai,
+      LegacyExtensionKeys.topLogprobs,
+    ),
+    verbosity: getLegacyProviderOption<String>(
+      config,
+      LegacyProviderOptionNamespaces.openai,
+      LegacyExtensionKeys.verbosity,
+    ),
+  );
+}
+
 core.ProviderModelOptions buildCompatOpenRouterModelSettings(
   LLMConfig config,
 ) {
