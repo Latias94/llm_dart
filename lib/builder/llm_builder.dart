@@ -1,5 +1,6 @@
 export 'llm_builder_provider_capability_extensions.dart';
 export 'llm_builder_provider_extensions.dart';
+export 'llm_builder_legacy_extension_config.dart';
 export 'llm_builder_media_config.dart';
 
 import '../core/capability.dart';
@@ -9,7 +10,6 @@ import '../core/registry.dart';
 import '../models/chat_models.dart';
 import '../models/tool_models.dart';
 import '../src/bootstrap/root_registry_bootstrap.dart';
-import '../src/compatibility/config/legacy_config_keys.dart';
 import '../src/compatibility/compatibility_resolver.dart';
 import '../src/compatibility/providers/openai/assistant_capability.dart';
 import 'http_config.dart';
