@@ -5,8 +5,9 @@ import 'package:llm_dart_transport/dio.dart';
 import '../../../../core/capability.dart';
 import '../../../../core/llm_error.dart';
 import '../../../../models/file_models.dart';
-import 'client.dart';
 import '../../../../providers/openai/config.dart';
+import 'client.dart';
+import 'openai_file_codec.dart';
 
 /// OpenAI File Management capability implementation
 ///
@@ -15,6 +16,7 @@ import '../../../../providers/openai/config.dart';
 class OpenAIFiles implements FileManagementCapability {
   final OpenAIClient client;
   final OpenAIConfig config;
+  static const _fileCodec = OpenAIFileCodec();
 
   OpenAIFiles(this.client, this.config);
 
@@ -37,7 +39,7 @@ class OpenAIFiles implements FileManagementCapability {
     }
 
     final responseData = await client.postForm('files', formData);
-    return FileObject.fromOpenAI(responseData);
+    return _fileCodec.fileFromJson(responseData);
   }
 
   @override
@@ -45,7 +47,7 @@ class OpenAIFiles implements FileManagementCapability {
     String endpoint = 'files';
 
     if (query != null) {
-      final queryParams = query.toOpenAIQueryParameters();
+      final queryParams = _fileCodec.queryParameters(query);
       if (queryParams.isNotEmpty) {
         final queryString = queryParams.entries
             .map((e) => '${e.key}=${Uri.encodeComponent(e.value.toString())}')
@@ -55,19 +57,19 @@ class OpenAIFiles implements FileManagementCapability {
     }
 
     final responseData = await client.get(endpoint);
-    return FileListResponse.fromOpenAI(responseData);
+    return _fileCodec.fileListFromJson(responseData);
   }
 
   @override
   Future<FileObject> retrieveFile(String fileId) async {
     final responseData = await client.get('files/$fileId');
-    return FileObject.fromOpenAI(responseData);
+    return _fileCodec.fileFromJson(responseData);
   }
 
   @override
   Future<FileDeleteResponse> deleteFile(String fileId) async {
     final responseData = await client.delete('files/$fileId');
-    return FileDeleteResponse.fromOpenAI(responseData);
+    return _fileCodec.deleteResponseFromJson(responseData);
   }
 
   @override

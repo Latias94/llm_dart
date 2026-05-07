@@ -5,6 +5,7 @@ import 'package:llm_dart_transport/dio.dart';
 import '../../../../core/capability.dart';
 import '../../../../models/file_models.dart';
 import '../../../../providers/anthropic/config.dart';
+import 'anthropic_file_codec.dart';
 import 'client.dart';
 
 export 'anthropic_file_models.dart';
@@ -24,6 +25,7 @@ export 'anthropic_file_models.dart';
 class AnthropicFiles implements FileManagementCapability {
   final AnthropicClient client;
   final AnthropicConfig config;
+  static const _fileCodec = AnthropicFileCodec();
 
   AnthropicFiles(this.client, this.config);
 
@@ -48,7 +50,7 @@ class AnthropicFiles implements FileManagementCapability {
     );
 
     final responseData = await client.postForm('files', formData);
-    return FileObject.fromAnthropic(responseData);
+    return _fileCodec.fileFromJson(responseData);
   }
 
   @override
@@ -56,7 +58,7 @@ class AnthropicFiles implements FileManagementCapability {
     String endpoint = 'files';
 
     if (query != null) {
-      final queryParams = query.toAnthropicQueryParameters();
+      final queryParams = _fileCodec.queryParameters(query);
       if (queryParams.isNotEmpty) {
         final queryString = queryParams.entries
             .map((e) => '${e.key}=${Uri.encodeComponent(e.value)}')
@@ -66,7 +68,7 @@ class AnthropicFiles implements FileManagementCapability {
     }
 
     final responseData = await client.getJson(endpoint);
-    return FileListResponse.fromAnthropic(responseData);
+    return _fileCodec.fileListFromJson(responseData);
   }
 
   /// List files in the workspace
@@ -77,7 +79,7 @@ class AnthropicFiles implements FileManagementCapability {
   @override
   Future<FileObject> retrieveFile(String fileId) async {
     final responseData = await client.getJson('files/$fileId');
-    return FileObject.fromAnthropic(responseData);
+    return _fileCodec.fileFromJson(responseData);
   }
 
   /// Get file metadata
@@ -100,10 +102,14 @@ class AnthropicFiles implements FileManagementCapability {
   Future<FileDeleteResponse> deleteFile(String fileId) async {
     try {
       await client.delete('files/$fileId');
-      return FileDeleteResponse.fromBoolean(fileId, true);
+      return _fileCodec.deleteResponseFromBoolean(fileId, true);
     } catch (e) {
       client.logger.warning('Failed to delete file $fileId: $e');
-      return FileDeleteResponse.fromBoolean(fileId, false, error: e.toString());
+      return _fileCodec.deleteResponseFromBoolean(
+        fileId,
+        false,
+        error: e.toString(),
+      );
     }
   }
 
