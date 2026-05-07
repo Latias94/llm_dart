@@ -3,25 +3,17 @@ part of 'request_builder.dart';
 final class _AnthropicToolExtractionSupport {
   const _AnthropicToolExtractionSupport();
 
+  static const _extensionSupport = _AnthropicMessageExtensionSupport();
+
   ToolExtractionResult extractFromMessage(ChatMessage message) {
     final tools = <Tool>[];
     Map<String, dynamic>? cacheControl;
 
-    final anthropicData = message.getExtension<Map<String, dynamic>>(
-      'anthropic',
-    );
-    if (anthropicData != null) {
-      final contentBlocks = anthropicData['contentBlocks'] as List<dynamic>?;
-      if (contentBlocks != null) {
-        for (final block in contentBlocks) {
-          if (block is Map<String, dynamic>) {
-            if (block['cache_control'] != null && block['text'] == '') {
-              cacheControl = block['cache_control'];
-            } else if (block['type'] == 'tools') {
-              tools.addAll(convertToolsFromBlock(block));
-            }
-          }
-        }
+    for (final block in _extensionSupport.rawContentBlocksFor(message)) {
+      if (_extensionSupport.isCacheMarker(block)) {
+        cacheControl = block['cache_control'] as Map<String, dynamic>?;
+      } else if (_extensionSupport.isToolsBlock(block)) {
+        tools.addAll(convertToolsFromBlock(block));
       }
     }
 

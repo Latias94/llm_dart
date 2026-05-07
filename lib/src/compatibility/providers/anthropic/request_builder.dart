@@ -6,8 +6,12 @@ import '../../../../models/tool_models.dart';
 import '../../../../providers/anthropic/config.dart';
 
 part 'request_builder_body.dart';
+part 'request_builder_message_content_support.dart';
+part 'request_builder_message_extension_support.dart';
+part 'request_builder_message_tool_support.dart';
 part 'request_builder_messages.dart';
 part 'request_builder_models.dart';
+part 'request_builder_system_message_support.dart';
 part 'request_builder_tool_choice_support.dart';
 part 'request_builder_tool_extraction_support.dart';
 part 'request_builder_tool_schema_support.dart';
