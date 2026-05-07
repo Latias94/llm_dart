@@ -11,11 +11,6 @@ import '../../legacy_chat_adapter.dart';
 import '../compat_provider_support.dart';
 
 LLMConfig buildRootOpenAIChatBridgeConfig(OpenAIConfig config) {
-  final originalConfig = config.originalConfig;
-  if (originalConfig != null) {
-    return originalConfig;
-  }
-
   final extensions = <String, dynamic>{};
   if (config.reasoningEffort case final reasoningEffort?) {
     extensions[LegacyExtensionKeys.reasoningEffort] = reasoningEffort.value;
@@ -32,6 +27,9 @@ LLMConfig buildRootOpenAIChatBridgeConfig(OpenAIConfig config) {
   if (config.embeddingDimensions case final embeddingDimensions?) {
     extensions[LegacyExtensionKeys.embeddingDimensions] = embeddingDimensions;
   }
+  if (config.transportClient case final transportClient?) {
+    extensions[LegacyExtensionKeys.customTransportClient] = transportClient;
+  }
 
   final providerOptions = <String, dynamic>{
     LegacyExtensionKeys.useResponsesApi: config.useResponsesAPI,
@@ -39,6 +37,10 @@ LLMConfig buildRootOpenAIChatBridgeConfig(OpenAIConfig config) {
       LegacyExtensionKeys.previousResponseId: previousResponseId,
     if (config.builtInTools case final builtInTools?)
       LegacyExtensionKeys.builtInTools: builtInTools,
+    if (config.parallelToolCalls case final parallelToolCalls?)
+      LegacyExtensionKeys.parallelToolCalls: parallelToolCalls,
+    if (config.verbosity case final verbosity?)
+      LegacyExtensionKeys.verbosity: verbosity,
   };
   extensions[legacyProviderOptionsBagKey] = {
     LegacyProviderOptionNamespaces.openai: providerOptions,
@@ -106,19 +108,21 @@ modern_openai.OpenAIGenerateTextOptions buildCompatOpenAIInvocationOptions({
           LegacyProviderOptionNamespaces.openai,
           LegacyExtensionKeys.previousResponseId,
         ),
-    parallelToolCalls: getLegacyProviderOption<bool>(
-      bridgeConfig,
-      LegacyProviderOptionNamespaces.openai,
-      LegacyExtensionKeys.parallelToolCalls,
-    ),
+    parallelToolCalls: legacyConfig.parallelToolCalls ??
+        getLegacyProviderOption<bool>(
+          bridgeConfig,
+          LegacyProviderOptionNamespaces.openai,
+          LegacyExtensionKeys.parallelToolCalls,
+        ),
     serviceTier:
         legacyConfig.serviceTier?.value ?? bridgeConfig.serviceTier?.value,
     user: legacyConfig.user ?? bridgeConfig.user,
-    verbosity: getLegacyProviderOption<String>(
-      bridgeConfig,
-      LegacyProviderOptionNamespaces.openai,
-      LegacyExtensionKeys.verbosity,
-    ),
+    verbosity: legacyConfig.verbosity ??
+        getLegacyProviderOption<String>(
+          bridgeConfig,
+          LegacyProviderOptionNamespaces.openai,
+          LegacyExtensionKeys.verbosity,
+        ),
     reasoningEffort: mapCompatOpenAIReasoningEffort(reasoningEffort),
     builtInTools: mapCompatOpenAIBuiltInTools(
       legacyConfig.builtInTools ??

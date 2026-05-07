@@ -1,7 +1,8 @@
+import 'package:llm_dart_transport/llm_dart_transport.dart'
+    show DioClientOverrides, HasDioClientOverrides, TransportClient;
+
 import '../../models/tool_models.dart';
 import '../../models/chat_models.dart';
-import '../../core/config.dart';
-import '../../src/config/legacy_dio_client_overrides.dart';
 import '../../src/provider_defaults.dart';
 import 'builtin_tools.dart';
 
@@ -14,15 +15,17 @@ import 'builtin_tools.dart';
 ///
 /// New code should prefer the stable OpenAI-family provider package and the
 /// `AI` facade when it only needs migrated model surfaces.
-class OpenAIConfig with LegacyDioClientOverrides {
+class OpenAIConfig implements HasDioClientOverrides {
   final String apiKey;
   final String baseUrl;
   final String model;
   final int? maxTokens;
   final double? temperature;
   final String? systemPrompt;
-  @override
   final Duration? timeout;
+  @override
+  final DioClientOverrides? dioOverrides;
+  final TransportClient? transportClient;
 
   final double? topP;
   final int? topK;
@@ -46,8 +49,14 @@ class OpenAIConfig with LegacyDioClientOverrides {
   /// Built-in tools to use with Responses API
   final List<OpenAIBuiltInTool>? builtInTools;
 
-  /// Reference to original LLMConfig for accessing extensions
-  final LLMConfig? _originalConfig;
+  final double? frequencyPenalty;
+  final double? presencePenalty;
+  final Map<String, double>? logitBias;
+  final int? seed;
+  final bool? parallelToolCalls;
+  final bool? logprobs;
+  final int? topLogprobs;
+  final String? verbosity;
 
   const OpenAIConfig({
     required this.apiKey,
@@ -57,6 +66,8 @@ class OpenAIConfig with LegacyDioClientOverrides {
     this.temperature,
     this.systemPrompt,
     this.timeout,
+    this.dioOverrides,
+    this.transportClient,
     this.topP,
     this.topK,
     this.tools,
@@ -72,15 +83,15 @@ class OpenAIConfig with LegacyDioClientOverrides {
     this.useResponsesAPI = false,
     this.previousResponseId,
     this.builtInTools,
-    LLMConfig? originalConfig,
-  }) : _originalConfig = originalConfig;
-
-  /// Get extension value from original config
-  T? getExtension<T>(String key) => _originalConfig?.getExtension<T>(key);
-
-  /// Get the original LLMConfig for HTTP configuration
-  @override
-  LLMConfig? get originalConfig => _originalConfig;
+    this.frequencyPenalty,
+    this.presencePenalty,
+    this.logitBias,
+    this.seed,
+    this.parallelToolCalls,
+    this.logprobs,
+    this.topLogprobs,
+    this.verbosity,
+  });
 
   OpenAIConfig copyWith({
     String? apiKey,
@@ -90,6 +101,8 @@ class OpenAIConfig with LegacyDioClientOverrides {
     double? temperature,
     String? systemPrompt,
     Duration? timeout,
+    DioClientOverrides? dioOverrides,
+    TransportClient? transportClient,
     double? topP,
     int? topK,
     List<Tool>? tools,
@@ -105,6 +118,14 @@ class OpenAIConfig with LegacyDioClientOverrides {
     bool? useResponsesAPI,
     String? previousResponseId,
     List<OpenAIBuiltInTool>? builtInTools,
+    double? frequencyPenalty,
+    double? presencePenalty,
+    Map<String, double>? logitBias,
+    int? seed,
+    bool? parallelToolCalls,
+    bool? logprobs,
+    int? topLogprobs,
+    String? verbosity,
   }) =>
       OpenAIConfig(
         apiKey: apiKey ?? this.apiKey,
@@ -114,6 +135,8 @@ class OpenAIConfig with LegacyDioClientOverrides {
         temperature: temperature ?? this.temperature,
         systemPrompt: systemPrompt ?? this.systemPrompt,
         timeout: timeout ?? this.timeout,
+        dioOverrides: dioOverrides ?? this.dioOverrides,
+        transportClient: transportClient ?? this.transportClient,
         topP: topP ?? this.topP,
         topK: topK ?? this.topK,
         tools: tools ?? this.tools,
@@ -130,6 +153,14 @@ class OpenAIConfig with LegacyDioClientOverrides {
         useResponsesAPI: useResponsesAPI ?? this.useResponsesAPI,
         previousResponseId: previousResponseId ?? this.previousResponseId,
         builtInTools: builtInTools ?? this.builtInTools,
+        frequencyPenalty: frequencyPenalty ?? this.frequencyPenalty,
+        presencePenalty: presencePenalty ?? this.presencePenalty,
+        logitBias: logitBias ?? this.logitBias,
+        seed: seed ?? this.seed,
+        parallelToolCalls: parallelToolCalls ?? this.parallelToolCalls,
+        logprobs: logprobs ?? this.logprobs,
+        topLogprobs: topLogprobs ?? this.topLogprobs,
+        verbosity: verbosity ?? this.verbosity,
       );
 
   @override
@@ -153,6 +184,8 @@ class OpenAIConfig with LegacyDioClientOverrides {
         other.temperature == temperature &&
         other.systemPrompt == systemPrompt &&
         other.timeout == timeout &&
+        other.dioOverrides == dioOverrides &&
+        other.transportClient == transportClient &&
         other.topP == topP &&
         other.topK == topK &&
         other.tools == tools &&
@@ -167,7 +200,15 @@ class OpenAIConfig with LegacyDioClientOverrides {
         other.serviceTier == serviceTier &&
         other.useResponsesAPI == useResponsesAPI &&
         other.previousResponseId == previousResponseId &&
-        other.builtInTools == builtInTools;
+        other.builtInTools == builtInTools &&
+        other.frequencyPenalty == frequencyPenalty &&
+        other.presencePenalty == presencePenalty &&
+        other.logitBias == logitBias &&
+        other.seed == seed &&
+        other.parallelToolCalls == parallelToolCalls &&
+        other.logprobs == logprobs &&
+        other.topLogprobs == topLogprobs &&
+        other.verbosity == verbosity;
   }
 
   @override
@@ -180,6 +221,8 @@ class OpenAIConfig with LegacyDioClientOverrides {
       temperature,
       systemPrompt,
       timeout,
+      dioOverrides,
+      transportClient,
       topP,
       topK,
       tools,
@@ -195,6 +238,14 @@ class OpenAIConfig with LegacyDioClientOverrides {
       useResponsesAPI,
       previousResponseId,
       builtInTools,
+      frequencyPenalty,
+      presencePenalty,
+      logitBias,
+      seed,
+      parallelToolCalls,
+      logprobs,
+      topLogprobs,
+      verbosity,
     ]);
   }
 }

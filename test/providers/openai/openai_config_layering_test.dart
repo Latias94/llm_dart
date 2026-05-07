@@ -2,6 +2,8 @@ import 'package:llm_dart_transport/dio.dart';
 import 'package:llm_dart/core/config.dart';
 import 'package:llm_dart/models/audio_models.dart';
 import 'package:llm_dart/providers/openai/openai.dart';
+import 'package:llm_dart/src/compatibility/providers/openai_family_compat_support.dart'
+    show createLegacyOpenAIConfig;
 import 'package:test/test.dart';
 
 void main() {
@@ -37,11 +39,8 @@ void main() {
       });
 
       final provider = OpenAIProvider(
-        OpenAIConfig(
-          apiKey: 'test-key',
-          model: 'gpt-4o',
+        createLegacyOpenAIConfig(llmConfig).copyWith(
           voice: 'verse',
-          originalConfig: llmConfig,
         ),
       );
 

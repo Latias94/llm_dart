@@ -7,6 +7,8 @@ import 'package:llm_dart/core/config.dart';
 import 'package:llm_dart/models/chat_models.dart';
 import 'package:llm_dart/models/tool_models.dart';
 import 'package:llm_dart/providers/openai/openai.dart';
+import 'package:llm_dart/src/compatibility/providers/openai_family_compat_support.dart'
+    show createLegacyOpenAIConfig;
 import 'package:llm_dart_test/llm_dart_test.dart';
 import 'package:test/test.dart';
 
@@ -342,12 +344,7 @@ void main() {
       });
 
       final provider = OpenAIProvider(
-        OpenAIConfig(
-          apiKey: 'test-key',
-          baseUrl: 'https://openrouter.ai/api/v1/',
-          model: 'openai/gpt-4o-mini',
-          originalConfig: originalConfig,
-        ),
+        createLegacyOpenAIConfig(originalConfig),
       );
 
       final response = await provider.chat([
@@ -443,14 +440,10 @@ OpenAIProvider _buildProvider({
   });
 
   return OpenAIProvider(
-    OpenAIConfig(
-      apiKey: 'test-key',
-      baseUrl: 'https://api.openai.com/v1/',
-      model: 'gpt-4.1-mini',
+    createLegacyOpenAIConfig(originalConfig).copyWith(
       toolChoice: toolChoice,
       useResponsesAPI: useResponsesAPI,
       jsonSchema: jsonSchema,
-      originalConfig: originalConfig,
     ),
   );
 }

@@ -41,6 +41,7 @@ class OpenAIClient {
     dio = ProviderDioClientFactory.create(
       strategy: OpenAIDioStrategy(),
       config: config,
+      overrides: config.dioOverrides,
     );
     _sseChunkParser = OpenAISseChunkParser(logger);
     _messageCodec = OpenAIClientMessageCodec(

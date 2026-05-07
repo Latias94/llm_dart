@@ -14,6 +14,7 @@ import 'package:llm_dart/providers/openai/config.dart';
 import 'package:llm_dart/providers/xai/client.dart';
 import 'package:llm_dart/providers/xai/config.dart';
 import 'package:llm_dart/src/compatibility/providers/anthropic_config_adapter.dart';
+import 'package:llm_dart/src/compatibility/providers/openai_family_compat_support.dart';
 import 'package:llm_dart/src/compatibility/providers/openai_family_compat_deepseek_config.dart';
 import 'package:llm_dart/src/compatibility/providers/openai_family_compat_groq_config.dart';
 import 'package:llm_dart/src/compatibility/providers/openai_family_compat_xai_config.dart';
@@ -77,11 +78,8 @@ void main() {
       test(
           'should use unified HTTP configuration when originalConfig is available',
           () {
-        final config = OpenAIConfig(
-          apiKey: 'test-key',
-          baseUrl: 'https://api.example.com',
+        final config = createLegacyOpenAIConfig(baseConfig).copyWith(
           model: 'gpt-4',
-          originalConfig: baseConfig,
         );
         final client = OpenAIClient(config);
 

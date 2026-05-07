@@ -18,6 +18,8 @@ export 'src/compatibility/providers/openai_family_compat_groq_config.dart'
     show createLegacyGroqConfig;
 export 'src/compatibility/providers/openai_family_compat_phind_config.dart'
     show createLegacyPhindConfig;
+export 'src/compatibility/providers/openai_family_compat_support.dart'
+    show createLegacyOpenAIConfig;
 export 'src/compatibility/providers/openai_family_compat_xai_config.dart'
     show createLegacyXAIConfig;
 export 'src/compatibility/providers/anthropic_config_adapter.dart'

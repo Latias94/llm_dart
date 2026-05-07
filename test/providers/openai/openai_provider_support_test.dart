@@ -2,6 +2,8 @@ import 'package:llm_dart/core/capability.dart';
 import 'package:llm_dart/core/config.dart';
 import 'package:llm_dart/models/chat_models.dart';
 import 'package:llm_dart/providers/openai/openai.dart';
+import 'package:llm_dart/src/compatibility/providers/openai_family_compat_support.dart'
+    show createLegacyOpenAIConfig;
 import 'package:llm_dart_transport/dio.dart';
 import 'package:test/test.dart';
 
@@ -205,10 +207,6 @@ OpenAIProvider _buildProvider(Dio dio) {
   });
 
   return OpenAIProvider(
-    OpenAIConfig(
-      apiKey: 'test-key',
-      model: 'gpt-4o',
-      originalConfig: llmConfig,
-    ),
+    createLegacyOpenAIConfig(llmConfig),
   );
 }

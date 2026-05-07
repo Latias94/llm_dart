@@ -32,6 +32,8 @@ import 'package:llm_dart/src/compatibility/providers/openai_family_compat_groq_c
     show createLegacyGroqConfig;
 import 'package:llm_dart/src/compatibility/providers/openai_family_compat_phind_config.dart'
     show createLegacyPhindConfig;
+import 'package:llm_dart/src/compatibility/providers/openai_family_compat_support.dart'
+    show createLegacyOpenAIConfig;
 import 'package:llm_dart/src/compatibility/providers/openai_family_compat_xai_config.dart'
     show createLegacyXAIConfig;
 import 'package:llm_dart/src/compatibility/providers/ollama/config_adapter.dart'
@@ -327,11 +329,7 @@ void main() {
         },
         {
           'strategy': OpenAIDioStrategy(),
-          'config': OpenAIConfig(
-              apiKey: 'test-key',
-              baseUrl: 'https://api.example.com',
-              model: 'test-model',
-              originalConfig: llmConfig)
+          'config': createLegacyOpenAIConfig(llmConfig)
         },
         {
           'strategy': GoogleDioStrategy(),
@@ -396,11 +394,7 @@ void main() {
         },
         {
           'strategy': OpenAIDioStrategy(),
-          'config': OpenAIConfig(
-              apiKey: 'test-key',
-              baseUrl: 'https://api.example.com',
-              model: 'test-model',
-              originalConfig: llmConfig)
+          'config': createLegacyOpenAIConfig(llmConfig)
         },
         {
           'strategy': GoogleDioStrategy(),
@@ -469,11 +463,7 @@ void main() {
         },
         {
           'strategy': OpenAIDioStrategy(),
-          'config': OpenAIConfig(
-              apiKey: 'test-key',
-              baseUrl: 'https://api.example.com',
-              model: 'test-model',
-              originalConfig: llmConfig),
+          'config': createLegacyOpenAIConfig(llmConfig),
           'expectedHeaders': {'Authorization': 'Bearer test-key'}
         },
         {

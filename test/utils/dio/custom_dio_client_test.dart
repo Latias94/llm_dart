@@ -3,9 +3,10 @@ import 'package:llm_dart/core/config.dart';
 import 'package:llm_dart/providers/anthropic/client.dart';
 import 'package:llm_dart/providers/anthropic/config.dart';
 import 'package:llm_dart/providers/openai/client.dart';
-import 'package:llm_dart/providers/openai/config.dart';
 import 'package:llm_dart/providers/xai/client.dart';
 import 'package:llm_dart/src/compatibility/providers/anthropic_config_adapter.dart';
+import 'package:llm_dart/src/compatibility/providers/openai_family_compat_support.dart'
+    show createLegacyOpenAIConfig;
 import 'package:llm_dart/src/compatibility/providers/openai_family_compat_xai_config.dart';
 import 'package:llm_dart_transport/dio.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
@@ -293,11 +294,9 @@ void main() {
         final anthropicConfig = createLegacyAnthropicConfig(llmConfig);
         final anthropicClient = AnthropicClient(anthropicConfig);
 
-        final openaiConfig = OpenAIConfig(
-          apiKey: 'test-key',
+        final openaiConfig = createLegacyOpenAIConfig(llmConfig).copyWith(
           baseUrl: 'https://api.openai.com/v1/',
           model: 'gpt-4',
-          originalConfig: llmConfig,
         );
         final openaiClient = OpenAIClient(openaiConfig);
 
@@ -342,11 +341,9 @@ void main() {
         final anthropicConfig = createLegacyAnthropicConfig(llmConfig);
         final anthropicClient = AnthropicClient(anthropicConfig);
 
-        final openaiConfig = OpenAIConfig(
-          apiKey: 'test-key',
+        final openaiConfig = createLegacyOpenAIConfig(llmConfig).copyWith(
           baseUrl: 'https://api.openai.com/v1/',
           model: 'gpt-4',
-          originalConfig: llmConfig,
         );
         final openaiClient = OpenAIClient(openaiConfig);
 

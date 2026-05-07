@@ -8,9 +8,13 @@ import '../../../models/tool_models.dart';
 import '../../../providers/openai/builtin_tools.dart';
 import '../../../providers/openai/config.dart';
 import '../../../providers/xai/config.dart';
-import '../../config/legacy_config_keys.dart';
+import '../../config/legacy_config_extensions.dart';
 import '../../config/legacy_provider_options.dart';
+import 'community_provider_config_adapters.dart';
 import 'compat_provider_support.dart';
+
+OpenAIConfig createLegacyOpenAIConfig(LLMConfig config) =>
+    toCompatLegacyOpenAIConfig(config);
 
 OpenAIConfig toCompatLegacyOpenAIConfig(LLMConfig config) {
   var model = config.model;
@@ -34,6 +38,8 @@ OpenAIConfig toCompatLegacyOpenAIConfig(LLMConfig config) {
     temperature: config.temperature,
     systemPrompt: config.systemPrompt,
     timeout: config.timeout,
+    dioOverrides: createLegacyDioClientOverrides(config),
+    transportClient: config.legacyTransportClient,
     topP: config.topP,
     topK: config.topK,
     tools: config.tools,
@@ -65,7 +71,46 @@ OpenAIConfig toCompatLegacyOpenAIConfig(LLMConfig config) {
       LegacyProviderOptionNamespaces.openai,
       LegacyExtensionKeys.builtInTools,
     ),
-    originalConfig: config,
+    frequencyPenalty: getLegacyProviderOption<double>(
+      config,
+      LegacyProviderOptionNamespaces.openai,
+      LegacyExtensionKeys.frequencyPenalty,
+    ),
+    presencePenalty: getLegacyProviderOption<double>(
+      config,
+      LegacyProviderOptionNamespaces.openai,
+      LegacyExtensionKeys.presencePenalty,
+    ),
+    logitBias: getLegacyProviderOption<Map<String, double>>(
+      config,
+      LegacyProviderOptionNamespaces.openai,
+      LegacyExtensionKeys.logitBias,
+    ),
+    seed: getLegacyProviderOption<int>(
+      config,
+      LegacyProviderOptionNamespaces.openai,
+      LegacyExtensionKeys.seed,
+    ),
+    parallelToolCalls: getLegacyProviderOption<bool>(
+      config,
+      LegacyProviderOptionNamespaces.openai,
+      LegacyExtensionKeys.parallelToolCalls,
+    ),
+    logprobs: getLegacyProviderOption<bool>(
+      config,
+      LegacyProviderOptionNamespaces.openai,
+      LegacyExtensionKeys.logprobs,
+    ),
+    topLogprobs: getLegacyProviderOption<int>(
+      config,
+      LegacyProviderOptionNamespaces.openai,
+      LegacyExtensionKeys.topLogprobs,
+    ),
+    verbosity: getLegacyProviderOption<String>(
+      config,
+      LegacyProviderOptionNamespaces.openai,
+      LegacyExtensionKeys.verbosity,
+    ),
   );
 }
 
@@ -91,6 +136,8 @@ OpenAIConfig toCompatLegacyOpenRouterConfig(LLMConfig config) {
     temperature: config.temperature,
     systemPrompt: config.systemPrompt,
     timeout: config.timeout,
+    dioOverrides: createLegacyDioClientOverrides(config),
+    transportClient: config.legacyTransportClient,
     topP: config.topP,
     topK: config.topK,
     tools: config.tools,
@@ -115,7 +162,46 @@ OpenAIConfig toCompatLegacyOpenRouterConfig(LLMConfig config) {
       LegacyProviderOptionNamespaces.openrouter,
       LegacyExtensionKeys.builtInTools,
     ),
-    originalConfig: config,
+    frequencyPenalty: getLegacyProviderOption<double>(
+      config,
+      LegacyProviderOptionNamespaces.openrouter,
+      LegacyExtensionKeys.frequencyPenalty,
+    ),
+    presencePenalty: getLegacyProviderOption<double>(
+      config,
+      LegacyProviderOptionNamespaces.openrouter,
+      LegacyExtensionKeys.presencePenalty,
+    ),
+    logitBias: getLegacyProviderOption<Map<String, double>>(
+      config,
+      LegacyProviderOptionNamespaces.openrouter,
+      LegacyExtensionKeys.logitBias,
+    ),
+    seed: getLegacyProviderOption<int>(
+      config,
+      LegacyProviderOptionNamespaces.openrouter,
+      LegacyExtensionKeys.seed,
+    ),
+    parallelToolCalls: getLegacyProviderOption<bool>(
+      config,
+      LegacyProviderOptionNamespaces.openrouter,
+      LegacyExtensionKeys.parallelToolCalls,
+    ),
+    logprobs: getLegacyProviderOption<bool>(
+      config,
+      LegacyProviderOptionNamespaces.openrouter,
+      LegacyExtensionKeys.logprobs,
+    ),
+    topLogprobs: getLegacyProviderOption<int>(
+      config,
+      LegacyProviderOptionNamespaces.openrouter,
+      LegacyExtensionKeys.topLogprobs,
+    ),
+    verbosity: getLegacyProviderOption<String>(
+      config,
+      LegacyProviderOptionNamespaces.openrouter,
+      LegacyExtensionKeys.verbosity,
+    ),
   );
 }
 

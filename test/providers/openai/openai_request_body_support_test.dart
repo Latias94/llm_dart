@@ -8,6 +8,8 @@ import 'package:llm_dart/providers/openai/config.dart' as openai_config;
 import 'package:llm_dart/providers/openai/responses.dart' as openai_responses;
 import 'package:llm_dart/src/config/legacy_config_keys.dart';
 import 'package:llm_dart/src/config/legacy_provider_options.dart';
+import 'package:llm_dart/src/compatibility/providers/openai_family_compat_support.dart'
+    show createLegacyOpenAIConfig;
 import 'package:llm_dart_transport/dio.dart';
 import 'package:test/test.dart';
 
@@ -286,12 +288,7 @@ void main() {
         LegacyExtensionKeys.customDio: dio,
       });
 
-      final config = openai_config.OpenAIConfig(
-        apiKey: 'test-key',
-        baseUrl: 'https://openrouter.ai/api/v1/',
-        model: 'deepseek-r1',
-        originalConfig: originalConfig,
-      );
+      final config = createLegacyOpenAIConfig(originalConfig);
       final client = openai_client.OpenAIClient(config);
       final chat = openai_chat.OpenAIChat(client, config);
 
@@ -327,10 +324,7 @@ openai_config.OpenAIConfig _buildConfig({
     },
   });
 
-  return openai_config.OpenAIConfig(
-    apiKey: 'test-key',
-    baseUrl: 'https://api.openai.com/v1/',
-    model: 'gpt-4.1-mini',
+  return createLegacyOpenAIConfig(originalConfig).copyWith(
     systemPrompt: 'Be concise.',
     serviceTier: ServiceTier.priority,
     useResponsesAPI: useResponsesApi,
@@ -349,7 +343,6 @@ openai_config.OpenAIConfig _buildConfig({
         'required': ['value'],
       },
     ),
-    originalConfig: originalConfig,
   );
 }
 

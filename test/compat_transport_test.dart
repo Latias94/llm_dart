@@ -1,6 +1,6 @@
 import 'package:llm_dart_transport/dio.dart';
 import 'package:llm_dart/core/config.dart';
-import 'package:llm_dart/providers/openai/config.dart';
+import 'package:llm_dart/legacy.dart' show createLegacyOpenAIConfig;
 import 'package:llm_dart/providers/openai/dio_strategy.dart';
 import 'package:llm_dart/src/compatibility/compat_transport.dart';
 import 'package:llm_dart_test/llm_dart_test.dart';
@@ -52,12 +52,7 @@ void main() {
 
       final dio = DioClientFactory.create(
         strategy: OpenAIDioStrategy(),
-        config: OpenAIConfig(
-          apiKey: 'test-key',
-          baseUrl: 'https://example.com/',
-          model: 'gpt-4o',
-          originalConfig: originalConfig,
-        ),
+        config: createLegacyOpenAIConfig(originalConfig),
       );
 
       expect(dio, same(customDio));

@@ -146,6 +146,19 @@ bool supportsRootOpenAIChatBridgeHost(OpenAIConfig config) {
   // OpenAI-hosted requests. Deprecated OpenAI-compatible preset helpers stay on
   // the compatibility fallback path until or unless the project chooses a
   // separate provider-owned migration for them.
+  if (hasOpenAICompatFallbackOnlyRequestOptions(config)) {
+    return false;
+  }
+
   final uri = Uri.tryParse(config.baseUrl);
   return uri?.host.toLowerCase() == 'api.openai.com';
+}
+
+bool hasOpenAICompatFallbackOnlyRequestOptions(OpenAIConfig config) {
+  return config.frequencyPenalty != null ||
+      config.presencePenalty != null ||
+      config.logitBias != null ||
+      config.seed != null ||
+      config.logprobs != null ||
+      config.topLogprobs != null;
 }

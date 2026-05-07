@@ -3,7 +3,6 @@ import '../../../../models/tool_models.dart';
 import '../../../../providers/openai/config.dart';
 import '../../../../utils/reasoning_utils.dart';
 import '../../../config/legacy_config_keys.dart';
-import '../../../config/legacy_provider_options.dart';
 import 'client.dart';
 import 'config_views.dart';
 
@@ -190,28 +189,23 @@ Map<String, dynamic> buildOpenAICompatStructuredOutputFormat(
   return responseFormat;
 }
 
-/// Reads a provider option from the transitional namespaced bag when the
-/// OpenAI-family compatibility client has a stable namespace, and otherwise
-/// falls back to the flat legacy extension key.
+/// Reads OpenAI-family options from the explicit compatibility config fields.
 T? getOpenAIFamilyProviderOption<T>({
   required OpenAIConfig config,
   required String providerId,
   required String key,
 }) {
-  final originalConfig = config.originalConfig;
-  if (originalConfig == null) {
-    return config.getExtension<T>(key);
-  }
-
-  final namespace = switch (providerId) {
-    'openai' => LegacyProviderOptionNamespaces.openai,
-    'openrouter' => LegacyProviderOptionNamespaces.openrouter,
+  final value = switch (key) {
+    LegacyExtensionKeys.frequencyPenalty => config.frequencyPenalty,
+    LegacyExtensionKeys.presencePenalty => config.presencePenalty,
+    LegacyExtensionKeys.logitBias => config.logitBias,
+    LegacyExtensionKeys.seed => config.seed,
+    LegacyExtensionKeys.parallelToolCalls => config.parallelToolCalls,
+    LegacyExtensionKeys.logprobs => config.logprobs,
+    LegacyExtensionKeys.topLogprobs => config.topLogprobs,
+    LegacyExtensionKeys.verbosity => config.verbosity,
     _ => null,
   };
 
-  if (namespace == null) {
-    return originalConfig.getExtension<T>(key);
-  }
-
-  return getLegacyProviderOption<T>(originalConfig, namespace, key);
+  return value as T?;
 }
