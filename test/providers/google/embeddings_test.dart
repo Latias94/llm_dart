@@ -1,6 +1,8 @@
 import 'package:test/test.dart';
 import 'package:llm_dart/core/capability.dart';
 import 'package:llm_dart/core/llm_error.dart';
+import 'package:llm_dart/src/compatibility/providers/google/google_embeddings_request_builder.dart';
+import 'package:llm_dart/src/compatibility/providers/google/google_embeddings_response_parser.dart';
 import 'package:llm_dart/providers/google/client.dart';
 import 'package:llm_dart/providers/google/embeddings.dart';
 import 'package:llm_dart/providers/google/google.dart';
@@ -9,6 +11,8 @@ void main() {
   group('GoogleEmbeddings', () {
     late GoogleConfig config;
     late GoogleEmbeddings embeddings;
+    late GoogleEmbeddingsRequestBuilder requestBuilder;
+    late GoogleEmbeddingsResponseParser responseParser;
 
     setUp(() {
       config = const GoogleConfig(
@@ -16,6 +20,8 @@ void main() {
         model: 'text-embedding-004',
       );
       embeddings = GoogleEmbeddings(GoogleClient(config), config);
+      requestBuilder = GoogleEmbeddingsRequestBuilder(config);
+      responseParser = const GoogleEmbeddingsResponseParser();
     });
 
     group('Configuration', () {
@@ -46,7 +52,7 @@ void main() {
 
     group('Request Building', () {
       test('should build single embedding request correctly', () {
-        final request = embeddings._buildSingleEmbeddingRequest('test text');
+        final request = requestBuilder.buildSingleEmbeddingRequest('test text');
 
         expect(request['content'], isA<Map<String, dynamic>>());
         expect(request['content']['parts'], isA<List>());
@@ -62,11 +68,11 @@ void main() {
           embeddingTitle: 'Test Doc',
           embeddingDimensions: 256,
         );
-        final embeddingsWithParams =
-            GoogleEmbeddings(GoogleClient(configWithParams), configWithParams);
+        final requestBuilderWithParams =
+            GoogleEmbeddingsRequestBuilder(configWithParams);
 
         final request =
-            embeddingsWithParams._buildSingleEmbeddingRequest('test text');
+            requestBuilderWithParams.buildSingleEmbeddingRequest('test text');
 
         expect(request['taskType'], 'RETRIEVAL_DOCUMENT');
         expect(request['title'], 'Test Doc');
@@ -75,7 +81,7 @@ void main() {
 
       test('should build batch embedding request correctly', () {
         final request =
-            embeddings._buildBatchEmbeddingRequest(['text1', 'text2']);
+            requestBuilder.buildBatchEmbeddingRequest(['text1', 'text2']);
 
         expect(request['requests'], isA<List>());
         expect(request['requests'].length, 2);
@@ -97,7 +103,9 @@ void main() {
           }
         };
 
-        final result = embeddings._parseSingleEmbeddingResponse(responseData);
+        final result = responseParser.parseSingleEmbeddingResponse(
+          responseData,
+        );
 
         expect(result, [0.1, 0.2, 0.3, 0.4, 0.5]);
       });
@@ -108,7 +116,7 @@ void main() {
         final responseData = {'invalid': 'response'};
 
         expect(
-          () => embeddings._parseSingleEmbeddingResponse(responseData),
+          () => responseParser.parseSingleEmbeddingResponse(responseData),
           throwsA(isA<ResponseFormatError>()),
         );
       });
@@ -129,7 +137,9 @@ void main() {
           ]
         };
 
-        final result = embeddings._parseBatchEmbeddingResponse(responseData);
+        final result = responseParser.parseBatchEmbeddingResponse(
+          responseData,
+        );
 
         expect(result.length, 2);
         expect(result[0], [0.1, 0.2, 0.3]);
@@ -142,7 +152,7 @@ void main() {
         final responseData = {'invalid': 'response'};
 
         expect(
-          () => embeddings._parseBatchEmbeddingResponse(responseData),
+          () => responseParser.parseBatchEmbeddingResponse(responseData),
           throwsA(isA<ResponseFormatError>()),
         );
       });
@@ -222,154 +232,4 @@ void main() {
       });
     });
   });
-}
-
-// Extension to access private methods for testing
-extension GoogleEmbeddingsTestExtension on GoogleEmbeddings {
-  Map<String, dynamic> _buildSingleEmbeddingRequest(String text) {
-    return buildSingleEmbeddingRequest(text);
-  }
-
-  Map<String, dynamic> _buildBatchEmbeddingRequest(List<String> input) {
-    return buildBatchEmbeddingRequest(input);
-  }
-
-  List<double> _parseSingleEmbeddingResponse(
-      Map<String, dynamic> responseData) {
-    return parseSingleEmbeddingResponse(responseData);
-  }
-
-  List<List<double>> _parseBatchEmbeddingResponse(
-      Map<String, dynamic> responseData) {
-    return parseBatchEmbeddingResponse(responseData);
-  }
-}
-
-// Make private methods accessible for testing
-extension on GoogleEmbeddings {
-  Map<String, dynamic> buildSingleEmbeddingRequest(String text) {
-    final body = <String, dynamic>{
-      'content': {
-        'parts': [
-          {'text': text}
-        ]
-      },
-    };
-
-    if (config.embeddingTaskType != null) {
-      body['taskType'] = config.embeddingTaskType;
-    }
-
-    if (config.embeddingTitle != null) {
-      body['title'] = config.embeddingTitle;
-    }
-
-    if (config.embeddingDimensions != null) {
-      body['outputDimensionality'] = config.embeddingDimensions;
-    }
-
-    return body;
-  }
-
-  Map<String, dynamic> buildBatchEmbeddingRequest(List<String> input) {
-    final requests = input.map((text) {
-      final request = <String, dynamic>{
-        'model': 'models/${config.model}',
-        'content': {
-          'parts': [
-            {'text': text}
-          ]
-        },
-      };
-
-      if (config.embeddingTaskType != null) {
-        request['taskType'] = config.embeddingTaskType;
-      }
-
-      if (config.embeddingTitle != null) {
-        request['title'] = config.embeddingTitle;
-      }
-
-      if (config.embeddingDimensions != null) {
-        request['outputDimensionality'] = config.embeddingDimensions;
-      }
-
-      return request;
-    }).toList();
-
-    return {'requests': requests};
-  }
-
-  List<double> parseSingleEmbeddingResponse(Map<String, dynamic> responseData) {
-    final embedding = responseData['embedding'] as Map<String, dynamic>?;
-    if (embedding == null) {
-      throw ResponseFormatError(
-        'Invalid embedding response format: missing embedding field',
-        responseData.toString(),
-      );
-    }
-
-    final values = embedding['values'] as List?;
-    if (values == null) {
-      throw ResponseFormatError(
-        'Invalid embedding format: missing values field',
-        embedding.toString(),
-      );
-    }
-
-    try {
-      return values.cast<double>();
-    } catch (e) {
-      throw ResponseFormatError(
-        'Failed to parse embedding values: $e',
-        values.toString(),
-      );
-    }
-  }
-
-  List<List<double>> parseBatchEmbeddingResponse(
-      Map<String, dynamic> responseData) {
-    final embeddings = responseData['embeddings'] as List?;
-    if (embeddings == null) {
-      throw ResponseFormatError(
-        'Invalid batch embedding response format: missing embeddings field',
-        responseData.toString(),
-      );
-    }
-
-    try {
-      return embeddings.map((item) {
-        if (item is! Map<String, dynamic>) {
-          throw ResponseFormatError(
-            'Invalid embedding item format: expected Map<String, dynamic>',
-            item.toString(),
-          );
-        }
-
-        final embedding = item['embedding'] as Map<String, dynamic>?;
-        if (embedding == null) {
-          throw ResponseFormatError(
-            'Invalid embedding item format: missing embedding field',
-            item.toString(),
-          );
-        }
-
-        final values = embedding['values'] as List?;
-        if (values == null) {
-          throw ResponseFormatError(
-            'Invalid embedding format: missing values field',
-            embedding.toString(),
-          );
-        }
-
-        return values.cast<double>();
-      }).toList();
-    } catch (e) {
-      if (e is LLMError) rethrow;
-      throw ResponseFormatError(
-        'Failed to parse batch embedding response: $e',
-        responseData.toString(),
-      );
-    }
-  }
 }

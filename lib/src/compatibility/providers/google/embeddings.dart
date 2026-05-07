@@ -4,6 +4,8 @@ import '../../../../core/capability.dart';
 import '../../../../core/llm_error.dart';
 import 'client.dart';
 import '../../../../providers/google/config.dart';
+import 'google_embeddings_request_builder.dart';
+import 'google_embeddings_response_parser.dart';
 
 /// Google Embeddings capability implementation
 ///
@@ -13,8 +15,12 @@ import '../../../../providers/google/config.dart';
 class GoogleEmbeddings implements EmbeddingCapability {
   final GoogleClient client;
   final GoogleConfig config;
+  final GoogleEmbeddingsRequestBuilder _requestBuilder;
+  final GoogleEmbeddingsResponseParser _responseParser;
 
-  GoogleEmbeddings(this.client, this.config);
+  GoogleEmbeddings(this.client, this.config)
+      : _requestBuilder = GoogleEmbeddingsRequestBuilder(config),
+        _responseParser = const GoogleEmbeddingsResponseParser();
 
   String get embeddingEndpoint => 'models/${config.model}:embedContent';
   String get batchEmbeddingEndpoint =>
@@ -32,22 +38,23 @@ class GoogleEmbeddings implements EmbeddingCapability {
     try {
       // For single input or small batches, use single endpoint
       if (input.length == 1) {
-        final requestBody = _buildSingleEmbeddingRequest(input.first);
+        final requestBody =
+            _requestBuilder.buildSingleEmbeddingRequest(input.first);
         final responseData = await client.postJson(
           embeddingEndpoint,
           requestBody,
           cancelToken: cancelToken,
         );
-        return [_parseSingleEmbeddingResponse(responseData)];
+        return [_responseParser.parseSingleEmbeddingResponse(responseData)];
       } else {
         // For multiple inputs, use batch endpoint
-        final requestBody = _buildBatchEmbeddingRequest(input);
+        final requestBody = _requestBuilder.buildBatchEmbeddingRequest(input);
         final responseData = await client.postJson(
           batchEmbeddingEndpoint,
           requestBody,
           cancelToken: cancelToken,
         );
-        return _parseBatchEmbeddingResponse(responseData);
+        return _responseParser.parseBatchEmbeddingResponse(responseData);
       }
     } on DioException catch (e) {
       throw await DioErrorHandler.handleDioError(e, 'Google');
@@ -56,144 +63,13 @@ class GoogleEmbeddings implements EmbeddingCapability {
     }
   }
 
-  /// Build request body for single embedding API
-  Map<String, dynamic> _buildSingleEmbeddingRequest(String text) {
-    final body = <String, dynamic>{
-      'content': {
-        'parts': [
-          {'text': text}
-        ]
-      },
-    };
-
-    // Add optional parameters
-    if (config.embeddingTaskType != null) {
-      body['taskType'] = config.embeddingTaskType;
-    }
-
-    if (config.embeddingTitle != null) {
-      body['title'] = config.embeddingTitle;
-    }
-
-    if (config.embeddingDimensions != null) {
-      body['outputDimensionality'] = config.embeddingDimensions;
-    }
-
-    return body;
-  }
-
-  /// Build request body for batch embedding API
-  Map<String, dynamic> _buildBatchEmbeddingRequest(List<String> input) {
-    final requests = input.map((text) {
-      final request = <String, dynamic>{
-        'model': 'models/${config.model}',
-        'content': {
-          'parts': [
-            {'text': text}
-          ]
-        },
-      };
-
-      // Add optional parameters
-      if (config.embeddingTaskType != null) {
-        request['taskType'] = config.embeddingTaskType;
-      }
-
-      if (config.embeddingTitle != null) {
-        request['title'] = config.embeddingTitle;
-      }
-
-      if (config.embeddingDimensions != null) {
-        request['outputDimensionality'] = config.embeddingDimensions;
-      }
-
-      return request;
-    }).toList();
-
-    return {'requests': requests};
-  }
-
-  /// Parse single embedding response
-  List<double> _parseSingleEmbeddingResponse(
-      Map<String, dynamic> responseData) {
-    final embedding = responseData['embedding'] as Map<String, dynamic>?;
-    if (embedding == null) {
-      throw ResponseFormatError(
-        'Invalid embedding response format: missing embedding field',
-        responseData.toString(),
-      );
-    }
-
-    final values = embedding['values'] as List?;
-    if (values == null) {
-      throw ResponseFormatError(
-        'Invalid embedding format: missing values field',
-        embedding.toString(),
-      );
-    }
-
-    try {
-      return values.cast<double>();
-    } catch (e) {
-      throw ResponseFormatError(
-        'Failed to parse embedding values: $e',
-        values.toString(),
-      );
-    }
-  }
-
-  /// Parse batch embedding response
-  List<List<double>> _parseBatchEmbeddingResponse(
-      Map<String, dynamic> responseData) {
-    final embeddings = responseData['embeddings'] as List?;
-    if (embeddings == null) {
-      throw ResponseFormatError(
-        'Invalid batch embedding response format: missing embeddings field',
-        responseData.toString(),
-      );
-    }
-
-    try {
-      return embeddings.map((item) {
-        if (item is! Map<String, dynamic>) {
-          throw ResponseFormatError(
-            'Invalid embedding item format: expected Map<String, dynamic>',
-            item.toString(),
-          );
-        }
-
-        final embedding = item['embedding'] as Map<String, dynamic>?;
-        if (embedding == null) {
-          throw ResponseFormatError(
-            'Invalid embedding item format: missing embedding field',
-            item.toString(),
-          );
-        }
-
-        final values = embedding['values'] as List?;
-        if (values == null) {
-          throw ResponseFormatError(
-            'Invalid embedding format: missing values field',
-            embedding.toString(),
-          );
-        }
-
-        return values.cast<double>();
-      }).toList();
-    } catch (e) {
-      if (e is LLMError) rethrow;
-      throw ResponseFormatError(
-        'Failed to parse batch embedding response: $e',
-        responseData.toString(),
-      );
-    }
-  }
-
   /// Get embedding dimensions for a model
   Future<int> getEmbeddingDimensions() async {
-    final requestBody = _buildSingleEmbeddingRequest('test');
+    final requestBody = _requestBuilder.buildSingleEmbeddingRequest('test');
     final responseData = await client.postJson(embeddingEndpoint, requestBody);
-    final embedding = _parseSingleEmbeddingResponse(responseData);
+    final embedding = _responseParser.parseSingleEmbeddingResponse(
+      responseData,
+    );
     return embedding.length;
   }
 }
