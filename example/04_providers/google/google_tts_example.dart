@@ -2,11 +2,11 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/core/capability.dart' as compat_core;
 import 'package:llm_dart/google.dart' as google;
 import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/models/google_tts_models.dart';
 import 'package:llm_dart/providers/google/google.dart' as google_compat;
+import 'package:llm_dart/providers/google/tts.dart' as google_tts;
 
 /// Stable-first Google speech example with a provider-owned streaming appendix.
 ///
@@ -234,7 +234,7 @@ Speaker2: Nice? It's amazing! This is going to change everything!''',
   print('');
 }
 
-Future<void> streamingExample(compat_core.GoogleTTSCapability ttsProvider) async {
+Future<void> streamingExample(google_tts.GoogleTTSCapability ttsProvider) async {
   print('🌊 Example 4: Compatibility Streaming Appendix');
 
   final request = GoogleTTSRequest.singleSpeaker(
@@ -272,7 +272,7 @@ Future<void> streamingExample(compat_core.GoogleTTSCapability ttsProvider) async
 }
 
 Future<void> voiceDiscoveryExample(
-  compat_core.GoogleTTSCapability ttsProvider,
+  google_tts.GoogleTTSCapability ttsProvider,
 ) async {
   print('🔍 Example 5: Compatibility Voice Discovery');
 

@@ -123,14 +123,6 @@ class CapabilityUtils {
     return await withCapability<ModerationCapability, R>(provider, action);
   }
 
-  /// Assistant helper
-  static Future<R?> withAssistant<R>(
-    dynamic provider,
-    Future<R> Function(AssistantCapability) action,
-  ) async {
-    return await withCapability<AssistantCapability, R>(provider, action);
-  }
-
   // ========== Capability Discovery ==========
 
   /// Get all supported capabilities for a provider
@@ -218,9 +210,6 @@ class CapabilityUtils {
     }
     if (provider is ModerationCapability) {
       capabilities.add(LLMCapability.moderation);
-    }
-    if (provider is AssistantCapability) {
-      capabilities.add(LLMCapability.assistants);
     }
     if (provider is AudioCapability) {
       if (provider.supportedFeatures.contains(AudioFeature.textToSpeech)) {

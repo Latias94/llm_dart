@@ -1,8 +1,6 @@
-import '../models/assistant_models.dart';
 import '../models/audio_models.dart';
 import '../models/chat_models.dart';
 import '../models/file_models.dart';
-import '../models/google_tts_models.dart';
 import '../models/image_models.dart';
 import '../models/moderation_models.dart';
 import '../models/tool_models.dart';
@@ -14,7 +12,6 @@ export '../models/usage_models.dart' show UsageInfo;
 export 'cancellation.dart' show CancellationHelper, TransportCancellation;
 
 part 'capability_audio.dart';
-part 'capability_audio_google_tts.dart';
 part 'capability_audio_realtime.dart';
 part 'capability_chat.dart';
 part 'capability_generation.dart';

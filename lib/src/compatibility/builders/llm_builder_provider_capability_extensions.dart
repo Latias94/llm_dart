@@ -1,7 +1,7 @@
 import '../../../builder/llm_builder.dart';
-import '../../../core/capability.dart';
 import '../../../core/llm_error.dart';
 import '../../../providers/openai/provider.dart';
+import '../providers/google/google_tts_capability.dart';
 import 'google_builder.dart';
 import 'openai_builder.dart';
 

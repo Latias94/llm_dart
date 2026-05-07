@@ -4,6 +4,7 @@ import '../../../core/llm_error.dart';
 import '../../../models/chat_models.dart';
 import '../../../providers/google/config.dart';
 import '../config/legacy_config_keys.dart';
+import '../providers/google/google_tts_capability.dart';
 
 /// Google-specific legacy builder DSL layered on top of [LLMBuilder].
 class GoogleLLMBuilder {

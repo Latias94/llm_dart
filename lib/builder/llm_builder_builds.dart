@@ -63,7 +63,7 @@ extension LLMBuilderBuilds on LLMBuilder {
     );
   }
 
-  /// Builds a provider with AssistantCapability
+  /// Builds a provider with OpenAI assistant capability
   Future<AssistantCapability> buildAssistant() {
     return _buildCapability<AssistantCapability>(
       unsupportedMessage:

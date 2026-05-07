@@ -10,6 +10,7 @@ import '../models/tool_models.dart';
 import '../src/bootstrap/root_registry_bootstrap.dart';
 import '../src/compatibility/config/legacy_config_keys.dart';
 import '../src/compatibility/compatibility_resolver.dart';
+import '../src/compatibility/providers/openai/assistant_capability.dart';
 import 'http_config.dart';
 
 part 'llm_builder_builds.dart';

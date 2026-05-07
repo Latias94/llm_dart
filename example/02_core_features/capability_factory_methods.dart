@@ -12,7 +12,7 @@ import 'package:llm_dart/models/audio_models.dart';
 /// - buildEmbedding() - Returns EmbeddingCapability directly
 /// - buildFileManagement() - Returns FileManagementCapability directly
 /// - buildModeration() - Returns ModerationCapability directly
-/// - buildAssistant() - Returns AssistantCapability directly
+/// - buildAssistant() - Returns OpenAI AssistantCapability directly
 /// - buildModelListing() - Returns ModelListingCapability directly
 ///
 /// This is not the new primary app architecture.

@@ -6,6 +6,7 @@ import '../../../providers/openai/builtin_tools.dart';
 import '../../../providers/openai/provider.dart';
 import '../config/legacy_config_keys.dart';
 import '../config/legacy_provider_options.dart';
+import '../providers/openai/assistant_capability.dart';
 
 part 'openai_builder_builds.dart';
 part 'openai_builder_presets.dart';

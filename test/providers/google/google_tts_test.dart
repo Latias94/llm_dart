@@ -1,4 +1,3 @@
-import 'package:llm_dart/core/capability.dart';
 import 'package:llm_dart/providers/google/tts.dart';
 import 'package:test/test.dart';
 

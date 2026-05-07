@@ -6,6 +6,7 @@ import '../../../../models/image_models.dart';
 import '../../../../models/file_models.dart';
 import '../../../../models/moderation_models.dart';
 import '../../../../providers/openai/config.dart';
+import 'assistant_capability.dart';
 import 'assistant_models.dart';
 import 'assistants.dart';
 import 'audio.dart';

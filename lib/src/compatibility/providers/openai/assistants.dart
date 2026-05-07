@@ -1,6 +1,6 @@
-import '../../../../core/capability.dart';
 import 'client.dart';
 import '../../../../providers/openai/config.dart';
+import 'assistant_capability.dart';
 import 'assistant_models.dart';
 import 'openai_assistant_support.dart';
 

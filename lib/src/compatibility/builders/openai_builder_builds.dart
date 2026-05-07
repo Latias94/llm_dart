@@ -35,7 +35,7 @@ mixin _OpenAIBuilderBuilds {
     return _baseBuilder.buildModeration();
   }
 
-  /// Builds a provider with AssistantCapability.
+  /// Builds a provider with OpenAI assistant capability.
   Future<AssistantCapability> buildAssistant() async {
     return _baseBuilder.buildAssistant();
   }

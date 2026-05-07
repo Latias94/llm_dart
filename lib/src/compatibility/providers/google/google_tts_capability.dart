@@ -1,4 +1,4 @@
-part of 'capability.dart';
+import 'google_tts_models.dart';
 
 /// Google-specific TTS capability interface.
 abstract class GoogleTTSCapability {

@@ -1,11 +1,12 @@
 import 'dart:convert';
 
-import '../../../../core/capability.dart';
 import '../../../../core/llm_error.dart';
 import 'client.dart';
 import '../../../../providers/google/config.dart';
+import 'google_tts_capability.dart';
 import 'google_tts_models.dart';
 
+export 'google_tts_capability.dart';
 export 'google_tts_models.dart';
 
 part 'google_tts_request_support.dart';
