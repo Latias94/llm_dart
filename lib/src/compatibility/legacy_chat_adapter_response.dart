@@ -87,46 +87,6 @@ LLMError _toLegacyError(Object error) {
   return GenericError(message);
 }
 
-Object? _decodeToolResultOutput({
-  required String encodedOutput,
-  required String fallbackText,
-}) {
-  if (encodedOutput.trim().isNotEmpty) {
-    return _decodeJsonValue(encodedOutput);
-  }
-
-  if (fallbackText.isNotEmpty) {
-    return fallbackText;
-  }
-
-  return null;
-}
-
-Object? _decodeJsonValue(String encoded) {
-  final normalized = encoded.trim();
-  if (normalized.isEmpty) {
-    return null;
-  }
-
-  try {
-    return jsonDecode(normalized);
-  } catch (_) {
-    return normalized;
-  }
-}
-
-String _encodeJsonValue(Object? value) {
-  if (value == null) {
-    return '{}';
-  }
-
-  if (value is String) {
-    return value;
-  }
-
-  return jsonEncode(value);
-}
-
 Future<T> _awaitWithCancellation<T>(
   Future<T> operation,
   TransportCancellation? cancelToken,

@@ -10,6 +10,10 @@ import '../../models/chat_models.dart';
 import '../../models/tool_models.dart';
 
 part 'legacy_chat_adapter_request.dart';
+part 'legacy_chat_adapter_json.dart';
+part 'legacy_chat_adapter_request_messages.dart';
+part 'legacy_chat_adapter_request_response_format.dart';
+part 'legacy_chat_adapter_request_tools.dart';
 part 'legacy_chat_adapter_response.dart';
 part 'legacy_chat_adapter_streaming.dart';
 
@@ -93,30 +97,14 @@ class LegacyChatCapabilityAdapter implements ChatCapability {
     List<Tool>? tools, {
     core.ProviderInvocationOptions? providerOptionsOverride,
   }) {
-    final effectiveTools = tools ?? config.tools ?? const <Tool>[];
-    final convertedTools =
-        effectiveTools.map(_convertTool).toList(growable: false);
-    final convertedToolChoice =
-        convertedTools.isEmpty ? null : _convertToolChoice(config.toolChoice);
-
-    return core.GenerateTextRequest(
-      prompt: convertMessages(messages),
-      tools: convertedTools,
-      toolChoice: convertedToolChoice,
-      options: core.GenerateTextOptions(
-        maxOutputTokens: config.maxTokens,
-        temperature: config.temperature,
-        stopSequences: config.stopSequences,
-        topP: config.topP,
-        topK: config.topK,
-        responseFormat: _buildCompatResponseFormat(
-          config.getExtension<StructuredOutputFormat>('jsonSchema'),
-        ),
-      ),
-      callOptions: core.CallOptions(
-        timeout: config.timeout,
-        providerOptions: providerOptionsOverride ?? providerOptions,
-      ),
+    return _LegacyChatRequestBuilder(
+      config: config,
+      providerOptions: providerOptions,
+    ).build(
+      messages,
+      tools,
+      convertMessagesCallback: convertMessages,
+      providerOptionsOverride: providerOptionsOverride,
     );
   }
 
