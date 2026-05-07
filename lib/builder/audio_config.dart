@@ -1,4 +1,4 @@
-import '../src/config/legacy_config_keys.dart';
+import '../src/compatibility/config/legacy_config_keys.dart';
 
 /// Audio configuration builder for LLM providers
 class AudioConfig {

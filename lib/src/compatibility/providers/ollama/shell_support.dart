@@ -9,7 +9,7 @@ import '../../../../models/chat_models.dart';
 import '../../../../models/tool_models.dart';
 import '../../../../providers/ollama/client.dart';
 import '../../../../providers/ollama/config.dart';
-import '../../../config/legacy_config_keys.dart';
+import '../../config/legacy_config_keys.dart';
 import '../compat_provider_support.dart';
 import '../../legacy_chat_adapter.dart';
 import 'ollama_chat_compat.dart';
@@ -74,8 +74,8 @@ final class OllamaCompatShellSupport {
       return false;
     }
 
-    final hasConfigSystemPrompt =
-        compatConfig.systemPrompt != null && compatConfig.systemPrompt!.isNotEmpty;
+    final hasConfigSystemPrompt = compatConfig.systemPrompt != null &&
+        compatConfig.systemPrompt!.isNotEmpty;
     if (hasConfigSystemPrompt &&
         messages.any((message) => message.role == ChatRole.system)) {
       return false;
@@ -114,8 +114,8 @@ final class OllamaCompatShellSupport {
       messages: messages,
       tools: tools,
       canUseBridge: (config, messages, tools) => canUseChatBridge(messages),
-      bridge: () =>
-          compatChat.chatStream(messages, tools: tools, cancelToken: cancelToken),
+      bridge: () => compatChat.chatStream(messages,
+          tools: tools, cancelToken: cancelToken),
       fallback: () => chatFallback.chatStream(
         messages,
         tools: tools,

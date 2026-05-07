@@ -2,7 +2,7 @@ import '../../../../models/chat_models.dart';
 import '../../../../models/tool_models.dart';
 import '../../../../providers/openai/config.dart';
 import '../../../../utils/reasoning_utils.dart';
-import '../../../config/legacy_config_keys.dart';
+import '../../config/legacy_config_keys.dart';
 import 'client.dart';
 import 'config_views.dart';
 

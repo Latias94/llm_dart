@@ -4,8 +4,8 @@ import '../../../core/web_search.dart';
 import '../../../models/chat_models.dart';
 import '../../../providers/openai/builtin_tools.dart';
 import '../../../providers/openai/provider.dart';
-import '../../config/legacy_config_keys.dart';
-import '../../config/legacy_provider_options.dart';
+import '../config/legacy_config_keys.dart';
+import '../config/legacy_provider_options.dart';
 
 /// Compatibility-only OpenAI builder DSL for the legacy root provider surface.
 ///

@@ -3,7 +3,7 @@ import '../../../core/capability.dart';
 import '../../../core/llm_error.dart';
 import '../../../models/chat_models.dart';
 import '../../../providers/google/config.dart';
-import '../../config/legacy_config_keys.dart';
+import '../config/legacy_config_keys.dart';
 
 /// Google-specific legacy builder DSL layered on top of [LLMBuilder].
 class GoogleLLMBuilder {

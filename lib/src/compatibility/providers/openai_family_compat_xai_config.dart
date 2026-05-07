@@ -2,7 +2,7 @@ import '../../../core/config.dart';
 import '../../../core/web_search.dart';
 import '../../../models/tool_models.dart';
 import '../../../providers/xai/config.dart';
-import '../../config/legacy_config_keys.dart';
+import '../config/legacy_config_keys.dart';
 import 'community_provider_config_adapters.dart';
 
 /// Adapts a legacy root `LLMConfig` into an xAI provider config.

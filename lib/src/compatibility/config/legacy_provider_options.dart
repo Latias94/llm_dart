@@ -1,4 +1,4 @@
-import '../../core/config.dart';
+import '../../../core/config.dart';
 
 /// Top-level bag key used to stage the legacy root-package migration toward
 /// provider-scoped option groups.

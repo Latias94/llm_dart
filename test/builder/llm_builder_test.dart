@@ -5,8 +5,8 @@ import 'package:llm_dart/models/chat_models.dart';
 import 'package:llm_dart/models/tool_models.dart';
 import 'package:llm_dart/providers/openai/builtin_tools.dart';
 import 'package:test/test.dart';
-import 'package:llm_dart/src/config/legacy_config_keys.dart';
-import 'package:llm_dart/src/config/legacy_provider_options.dart';
+import 'package:llm_dart/src/compatibility/config/legacy_config_keys.dart';
+import 'package:llm_dart/src/compatibility/config/legacy_provider_options.dart';
 
 void main() {
   group('LLM Builder Tests', () {

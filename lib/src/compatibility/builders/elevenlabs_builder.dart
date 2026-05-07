@@ -1,6 +1,6 @@
 import '../../../builder/llm_builder.dart';
 import '../../../core/capability.dart';
-import '../../config/legacy_config_keys.dart';
+import '../config/legacy_config_keys.dart';
 
 /// ElevenLabs-specific LLM builder with provider-specific configuration
 /// methods.

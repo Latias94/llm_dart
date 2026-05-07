@@ -1,7 +1,7 @@
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
-import '../../core/config.dart';
-import 'legacy_config_extensions.dart';
+import '../../../core/config.dart';
+import '../config/legacy_config_extensions.dart';
 
 /// Builds transport-owned HTTP client config from legacy root `LLMConfig`.
 DioHttpClientConfig createLegacyHttpClientConfig({

@@ -8,8 +8,8 @@ import '../../../models/tool_models.dart';
 import '../../../providers/openai/builtin_tools.dart';
 import '../../../providers/openai/config.dart';
 import '../../../providers/xai/config.dart';
-import '../../config/legacy_config_extensions.dart';
-import '../../config/legacy_provider_options.dart';
+import '../config/legacy_config_extensions.dart';
+import '../config/legacy_provider_options.dart';
 import 'community_provider_config_adapters.dart';
 import 'compat_provider_support.dart';
 

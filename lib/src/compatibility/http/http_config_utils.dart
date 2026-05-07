@@ -2,7 +2,7 @@ import 'package:llm_dart_transport/dio.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import '../../../core/config.dart';
-import '../../config/legacy_http_client_config_adapter.dart';
+import 'legacy_http_client_config_adapter.dart';
 
 /// HTTP configuration utilities for unified Dio setup across providers
 ///

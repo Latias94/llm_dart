@@ -1,7 +1,7 @@
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import '../../core/config.dart';
-import '../config/legacy_config_extensions.dart';
+import 'config/legacy_config_extensions.dart';
 import 'http/http_config_utils.dart';
 
 TransportClient createCompatTransport(LLMConfig config) {

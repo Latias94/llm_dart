@@ -1,5 +1,5 @@
-import '../src/config/legacy_config_keys.dart';
-import '../src/config/legacy_provider_options.dart';
+import '../src/compatibility/config/legacy_config_keys.dart';
+import '../src/compatibility/config/legacy_provider_options.dart';
 
 /// Provider-specific configuration builder
 class ProviderConfig {

@@ -1,6 +1,6 @@
 import '../../../../core/config.dart';
 import '../../../../providers/ollama/config.dart';
-import '../../../config/legacy_config_extensions.dart';
+import '../../config/legacy_config_extensions.dart';
 import '../community_provider_config_adapters.dart';
 
 /// Adapts a legacy root `LLMConfig` into an Ollama provider config.

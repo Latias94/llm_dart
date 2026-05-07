@@ -1,9 +1,9 @@
 import 'package:llm_dart_transport/dio.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
-import '../../core/config.dart';
-import '../../core/web_search.dart';
-import '../../models/tool_models.dart';
+import '../../../core/config.dart';
+import '../../../core/web_search.dart';
+import '../../../models/tool_models.dart';
 
 export 'legacy_config_keys.dart';
 import 'legacy_config_keys.dart';

@@ -1,6 +1,6 @@
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
-import '../src/config/legacy_config_keys.dart';
+import '../src/compatibility/config/legacy_config_keys.dart';
 
 /// HTTP configuration builder for LLM providers
 ///

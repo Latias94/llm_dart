@@ -2,7 +2,7 @@ import 'package:llm_dart_transport/llm_dart_transport.dart'
     show DioClientOverrides, DioTransportClient, ImmutableDioClientOverrides;
 
 import '../../../core/config.dart';
-import '../../config/legacy_config_extensions.dart';
+import '../config/legacy_config_extensions.dart';
 
 /// Projects legacy HTTP-related `LLMConfig` settings into transport-owned
 /// provider Dio overrides for compatibility-era community providers.

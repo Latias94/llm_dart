@@ -4,8 +4,8 @@ import 'package:llm_dart/providers/factories/openai_compatible_factory.dart';
 import 'package:llm_dart/providers/factories/openai_factory.dart';
 import 'package:llm_dart/providers/openai/openai.dart';
 import 'package:llm_dart/src/compatibility/compat_providers.dart';
-import 'package:llm_dart/src/config/legacy_config_keys.dart';
-import 'package:llm_dart/src/config/legacy_provider_options.dart';
+import 'package:llm_dart/src/compatibility/config/legacy_config_keys.dart';
+import 'package:llm_dart/src/compatibility/config/legacy_provider_options.dart';
 import 'package:test/test.dart';
 
 void main() {

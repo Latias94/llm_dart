@@ -1,6 +1,6 @@
 import '../../../../builder/llm_builder.dart';
 import '../../../../core/capability.dart';
-import '../../../../src/config/legacy_config_keys.dart';
+import '../../../../src/compatibility/config/legacy_config_keys.dart';
 
 /// OpenRouter-specific LLM builder with provider-specific configuration methods
 ///

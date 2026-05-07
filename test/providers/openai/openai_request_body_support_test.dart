@@ -6,8 +6,8 @@ import 'package:llm_dart/providers/openai/chat.dart' as openai_chat;
 import 'package:llm_dart/providers/openai/client.dart' as openai_client;
 import 'package:llm_dart/providers/openai/config.dart' as openai_config;
 import 'package:llm_dart/providers/openai/responses.dart' as openai_responses;
-import 'package:llm_dart/src/config/legacy_config_keys.dart';
-import 'package:llm_dart/src/config/legacy_provider_options.dart';
+import 'package:llm_dart/src/compatibility/config/legacy_config_keys.dart';
+import 'package:llm_dart/src/compatibility/config/legacy_provider_options.dart';
 import 'package:llm_dart/src/compatibility/providers/openai_family_compat_support.dart'
     show createLegacyOpenAIConfig;
 import 'package:llm_dart_transport/dio.dart';

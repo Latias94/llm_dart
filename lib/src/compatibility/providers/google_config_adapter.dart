@@ -3,7 +3,7 @@ import '../../../core/web_search.dart';
 import '../../../models/chat_models.dart';
 import '../../../models/tool_models.dart';
 import '../../../providers/google/config.dart';
-import '../../config/legacy_config_keys.dart';
+import '../config/legacy_config_keys.dart';
 import 'community_provider_config_adapters.dart';
 
 /// Adapts a legacy root `LLMConfig` into a Google provider config.
