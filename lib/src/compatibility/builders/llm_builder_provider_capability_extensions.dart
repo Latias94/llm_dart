@@ -2,6 +2,7 @@ import '../../../builder/llm_builder.dart';
 import '../../../core/llm_error.dart';
 import '../../../providers/openai/provider.dart';
 import '../providers/google/google_tts_capability.dart';
+import '../providers/openai/assistant_capability.dart';
 import 'google_builder.dart';
 import 'openai_builder.dart';
 
@@ -25,6 +26,19 @@ extension LLMBuilderProviderCapabilityExtensions on LLMBuilder {
     }
 
     return OpenAIBuilder(this).buildOpenAIResponses();
+  }
+
+  /// Builds a provider with OpenAI assistant capability.
+  Future<AssistantCapability> buildAssistant() async {
+    final provider = await build();
+    if (provider is! AssistantCapability) {
+      throw UnsupportedCapabilityError(
+        'Provider "$currentProviderId" does not support assistant capabilities. '
+        'Supported providers: OpenAI',
+      );
+    }
+
+    return provider as AssistantCapability;
   }
 
   /// Builds a Google provider with TTS capability.

@@ -63,15 +63,6 @@ extension LLMBuilderBuilds on LLMBuilder {
     );
   }
 
-  /// Builds a provider with OpenAI assistant capability
-  Future<AssistantCapability> buildAssistant() {
-    return _buildCapability<AssistantCapability>(
-      unsupportedMessage:
-          'Provider "$_providerId" does not support assistant capabilities. '
-          'Supported providers: OpenAI',
-    );
-  }
-
   /// Builds a provider with ModelListingCapability
   Future<ModelListingCapability> buildModelListing() {
     return _buildCapability<ModelListingCapability>(
