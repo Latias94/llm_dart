@@ -33,7 +33,7 @@ class ElevenLabsProviderFactory extends BaseProviderFactory<ChatCapability> {
   ChatCapability create(LLMConfig config) {
     return createProviderSafely<ElevenLabsConfig>(
       config,
-      () => _transformConfig(config),
+      () => createLegacyElevenLabsConfig(config),
       (elevenLabsConfig) {
         final provider = ElevenLabsProvider(elevenLabsConfig);
         // Return the provider - it should implement the necessary interfaces
@@ -45,10 +45,5 @@ class ElevenLabsProviderFactory extends BaseProviderFactory<ChatCapability> {
   @override
   Map<String, dynamic> getProviderDefaults() {
     return ProviderDefaults.getDefaults('elevenlabs');
-  }
-
-  /// Transform unified config to ElevenLabs-specific config
-  ElevenLabsConfig _transformConfig(LLMConfig config) {
-    return createLegacyElevenLabsConfig(config);
   }
 }

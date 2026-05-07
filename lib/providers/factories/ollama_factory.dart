@@ -30,7 +30,7 @@ class OllamaProviderFactory extends LocalProviderFactory<ChatCapability> {
   ChatCapability create(LLMConfig config) {
     return createProviderSafely<OllamaConfig>(
       config,
-      () => _transformConfig(config),
+      () => createLegacyOllamaConfig(config),
       (ollamaConfig) => OllamaProvider(ollamaConfig),
     );
   }
@@ -38,10 +38,5 @@ class OllamaProviderFactory extends LocalProviderFactory<ChatCapability> {
   @override
   Map<String, dynamic> getProviderDefaults() {
     return ProviderDefaults.getDefaults('ollama');
-  }
-
-  /// Transform unified config to Ollama-specific config
-  OllamaConfig _transformConfig(LLMConfig config) {
-    return createLegacyOllamaConfig(config);
   }
 }
