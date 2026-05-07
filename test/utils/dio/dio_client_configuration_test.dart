@@ -41,8 +41,7 @@ void main() {
     });
 
     group('Anthropic Client', () {
-      test(
-          'should use unified HTTP configuration when originalConfig is available',
+      test('should use unified HTTP configuration from legacy dioOverrides',
           () {
         final config = createLegacyAnthropicConfig(baseConfig);
         final client = AnthropicClient(config);
@@ -56,7 +55,7 @@ void main() {
         expect(client.dio.interceptors.length, greaterThan(1));
       });
 
-      test('should fall back to simple Dio when originalConfig is null', () {
+      test('should fall back to simple Dio without legacy dioOverrides', () {
         final config = AnthropicConfig(
           apiKey: 'test-key',
           baseUrl: 'https://api.anthropic.com/v1/',
@@ -69,14 +68,13 @@ void main() {
             equals('https://api.anthropic.com/v1/'));
 
         // Should have provider-specific interceptors but no logging interceptor
-        // When using unified config, it would have more interceptors (provider + logging)
+        // When legacy dioOverrides are projected, it would have more interceptors.
         expect(client.dio.interceptors.length, greaterThanOrEqualTo(1));
       });
     });
 
     group('OpenAI Client', () {
-      test(
-          'should use unified HTTP configuration when originalConfig is available',
+      test('should use unified HTTP configuration from legacy dioOverrides',
           () {
         final config = createLegacyOpenAIConfig(baseConfig).copyWith(
           model: 'gpt-4',
@@ -92,7 +90,7 @@ void main() {
         expect(client.dio.interceptors.length, greaterThan(0));
       });
 
-      test('should fall back to simple Dio when originalConfig is null', () {
+      test('should fall back to simple Dio without legacy dioOverrides', () {
         final config = OpenAIConfig(
           apiKey: 'test-key',
           baseUrl: 'https://api.openai.com/v1/',
@@ -110,8 +108,7 @@ void main() {
     });
 
     group('DeepSeek Client', () {
-      test(
-          'should use unified HTTP configuration when originalConfig is available',
+      test('should use unified HTTP configuration from legacy dioOverrides',
           () {
         final config = createLegacyDeepSeekConfig(baseConfig);
         final client = DeepSeekClient(config);
@@ -125,7 +122,7 @@ void main() {
         expect(client.dio.interceptors.length, greaterThan(0));
       });
 
-      test('should fall back to simple Dio when originalConfig is null', () {
+      test('should fall back to simple Dio without legacy dioOverrides', () {
         final config = DeepSeekConfig(
           apiKey: 'test-key',
           baseUrl: 'https://api.deepseek.com/v1/',
@@ -143,8 +140,7 @@ void main() {
     });
 
     group('Groq Client', () {
-      test(
-          'should use unified HTTP configuration when originalConfig is available',
+      test('should use unified HTTP configuration from legacy dioOverrides',
           () {
         final config = createLegacyGroqConfig(baseConfig);
         final client = GroqClient(config);
@@ -158,7 +154,7 @@ void main() {
         expect(client.dio.interceptors.length, greaterThan(0));
       });
 
-      test('should fall back to simple Dio when originalConfig is null', () {
+      test('should fall back to simple Dio without legacy dioOverrides', () {
         final config = GroqConfig(
           apiKey: 'test-key',
           baseUrl: 'https://api.groq.com/openai/v1/',
@@ -176,8 +172,7 @@ void main() {
     });
 
     group('xAI Client', () {
-      test(
-          'should use unified HTTP configuration when originalConfig is available',
+      test('should use unified HTTP configuration from legacy dioOverrides',
           () {
         final config = createLegacyXAIConfig(baseConfig);
         final client = XAIClient(config);
@@ -191,7 +186,7 @@ void main() {
         expect(client.dio.interceptors.length, greaterThan(0));
       });
 
-      test('should fall back to simple Dio when originalConfig is null', () {
+      test('should fall back to simple Dio without legacy dioOverrides', () {
         final config = XAIConfig(
           apiKey: 'test-key',
           baseUrl: 'https://api.x.ai/v1/',
@@ -208,8 +203,7 @@ void main() {
     });
 
     group('Google Client', () {
-      test(
-          'should use unified HTTP configuration when originalConfig is available',
+      test('should use unified HTTP configuration from legacy dioOverrides',
           () {
         final config = createLegacyGoogleConfig(baseConfig);
         final client = GoogleClient(config);
@@ -223,7 +217,7 @@ void main() {
         expect(client.dio.interceptors.length, greaterThan(0));
       });
 
-      test('should fall back to simple Dio when originalConfig is null', () {
+      test('should fall back to simple Dio without legacy dioOverrides', () {
         final config = GoogleConfig(
           apiKey: 'test-key',
           baseUrl: 'https://generativelanguage.googleapis.com/v1beta/',
@@ -241,8 +235,7 @@ void main() {
     });
 
     group('Ollama Client', () {
-      test(
-          'should use unified HTTP configuration when originalConfig is available',
+      test('should use unified HTTP configuration from legacy dioOverrides',
           () {
         final config = createLegacyOllamaConfig(baseConfig);
         final client = OllamaClient(config);
@@ -256,7 +249,7 @@ void main() {
         expect(client.dio.interceptors.length, greaterThan(0));
       });
 
-      test('should fall back to simple Dio when originalConfig is null', () {
+      test('should fall back to simple Dio without legacy dioOverrides', () {
         final config = OllamaConfig(
           baseUrl: 'http://localhost:11434',
           model: 'llama3.2',
