@@ -71,34 +71,6 @@ abstract class BaseProviderFactory<T extends ChatCapability>
   /// Override this for providers like Ollama that don't need API keys
   bool get requiresApiKey => true;
 
-  /// Common configuration transformation for basic parameters
-  /// This handles the most common config fields that most providers use
-  Map<String, dynamic> getBaseConfigMap(LLMConfig config) {
-    return {
-      'apiKey': config.apiKey,
-      'baseUrl': config.baseUrl,
-      'model': config.model,
-      'maxTokens': config.maxTokens,
-      'temperature': config.temperature,
-      'systemPrompt': config.systemPrompt,
-      'timeout': config.timeout,
-      'topP': config.topP,
-      'topK': config.topK,
-      'tools': config.tools,
-      'toolChoice': config.toolChoice,
-    };
-  }
-
-  /// Helper method to safely get extensions with type checking
-  E? getExtension<E>(LLMConfig config, String key, [E? defaultValue]) {
-    try {
-      return config.getExtension<E>(key) ?? defaultValue;
-    } catch (e) {
-      // Log warning but don't fail
-      return defaultValue;
-    }
-  }
-
   /// Create default config with provider-specific defaults
   /// Subclasses should override getProviderDefaults() to customize
   @override
@@ -151,32 +123,5 @@ abstract class LocalProviderFactory<T extends ChatCapability>
   @override
   bool validateConfig(LLMConfig config) {
     return validateModelOnly(config);
-  }
-}
-
-/// Specialized base factory for audio-only providers
-abstract class AudioProviderFactory<T extends ChatCapability>
-    extends BaseProviderFactory<T> {
-  @override
-  Set<LLMCapability> get supportedCapabilities => {
-        LLMCapability.textToSpeech,
-        LLMCapability.speechToText,
-      };
-
-  /// Audio providers typically need voice-related extensions
-  Map<String, dynamic> getAudioConfigMap(LLMConfig config) {
-    final baseMap = getBaseConfigMap(config);
-
-    baseMap.addAll({
-      'voiceId': getExtension<String>(config, 'voiceId'),
-      'stability': getExtension<double>(config, 'stability'),
-      'similarityBoost': getExtension<double>(config, 'similarityBoost'),
-      'style': getExtension<double>(config, 'style'),
-      'useSpeakerBoost': getExtension<bool>(config, 'useSpeakerBoost'),
-    });
-
-    baseMap.removeWhere((key, value) => value == null);
-
-    return baseMap;
   }
 }

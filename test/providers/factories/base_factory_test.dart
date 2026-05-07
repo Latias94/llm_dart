@@ -141,35 +141,6 @@ class MockLocalFactory extends LocalProviderFactory<ChatCapability> {
       };
 }
 
-// Mock audio provider factory
-class MockAudioFactory extends AudioProviderFactory<ChatCapability> {
-  @override
-  String get providerId => 'mock-audio';
-
-  @override
-  String get displayName => 'Mock Audio Provider';
-
-  @override
-  String get description => 'A mock audio provider for testing';
-
-  @override
-  Set<LLMCapability> get supportedCapabilities => {
-        LLMCapability.textToSpeech,
-        LLMCapability.speechToText,
-      };
-
-  @override
-  ChatCapability create(LLMConfig config) {
-    return MockProvider();
-  }
-
-  @override
-  Map<String, dynamic> getProviderDefaults() => {
-        'model': 'audio-model',
-        'baseUrl': 'https://api.audio.com',
-      };
-}
-
 void main() {
   group('Base Factory Tests', () {
     group('BaseProviderFactory', () {
@@ -217,23 +188,6 @@ void main() {
         expect(factory.validateConfig(invalidConfig), isTrue);
         expect(() => factory.validateConfigWithDetails(invalidConfig),
             throwsA(isA<InvalidRequestError>()));
-      });
-
-      test('should get base config map', () {
-        final config = LLMConfig(
-          apiKey: 'test-key',
-          baseUrl: 'https://api.test.com',
-          model: 'test-model',
-          temperature: 0.8,
-          maxTokens: 1000,
-        );
-
-        final baseConfig = factory.getBaseConfigMap(config);
-        expect(baseConfig['apiKey'], equals('test-key'));
-        expect(baseConfig['baseUrl'], equals('https://api.test.com'));
-        expect(baseConfig['model'], equals('test-model'));
-        expect(baseConfig['temperature'], equals(0.8));
-        expect(baseConfig['maxTokens'], equals(1000));
       });
 
       test('should get provider defaults', () {
@@ -324,34 +278,6 @@ void main() {
         );
 
         expect(factory.validateConfig(config), isFalse);
-      });
-    });
-
-    group('AudioProviderFactory', () {
-      late MockAudioFactory factory;
-
-      setUp(() {
-        factory = MockAudioFactory();
-      });
-
-      test('should have audio capabilities', () {
-        final capabilities = factory.supportedCapabilities;
-        expect(capabilities, contains(LLMCapability.textToSpeech));
-        expect(capabilities, contains(LLMCapability.speechToText));
-      });
-
-      test('should require API key', () {
-        expect(factory.requiresApiKey, isTrue);
-      });
-
-      test('should validate config with API key', () {
-        final config = LLMConfig(
-          apiKey: 'test-key',
-          baseUrl: 'https://api.audio.com',
-          model: 'audio-model',
-        );
-
-        expect(factory.validateConfig(config), isTrue);
       });
     });
 
