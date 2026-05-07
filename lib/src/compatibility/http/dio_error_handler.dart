@@ -5,7 +5,7 @@ import 'package:llm_dart_transport/dio.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart'
     show collectDioResponseTextBody;
 
-import '../../llm_error_types.dart';
+import '../llm_error_types.dart';
 
 /// Dio error handler utility for consistent error handling across providers
 class DioErrorHandler {
