@@ -20,7 +20,6 @@ void main() {
         expect(capabilities, contains(LLMCapability.imageGeneration));
         expect(capabilities, contains(LLMCapability.fileManagement));
         expect(capabilities, contains(LLMCapability.moderation));
-        expect(capabilities, contains(LLMCapability.assistants));
       });
 
       test('should convert to string correctly', () {

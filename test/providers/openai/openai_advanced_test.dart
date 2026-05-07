@@ -184,14 +184,12 @@ void main() {
         expect(capabilities.contains(LLMCapability.imageGeneration), isTrue);
         expect(capabilities.contains(LLMCapability.fileManagement), isTrue);
         expect(capabilities.contains(LLMCapability.moderation), isTrue);
-        expect(capabilities.contains(LLMCapability.assistants), isTrue);
       });
 
       test('Provider should implement capability interfaces', () {
         // Test that provider supports the capabilities through the supports method
         expect(provider.supports(LLMCapability.fileManagement), isTrue);
         expect(provider.supports(LLMCapability.moderation), isTrue);
-        expect(provider.supports(LLMCapability.assistants), isTrue);
 
         // Test interface implementations
         expect(provider, isA<FileManagementCapability>());

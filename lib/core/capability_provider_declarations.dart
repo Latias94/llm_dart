@@ -50,9 +50,6 @@ enum LLMCapability {
   /// Content moderation capabilities
   moderation,
 
-  /// Assistant capabilities
-  assistants,
-
   /// Live search capabilities (real-time web search)
   liveSearch,
 }
