@@ -1,1 +1,1 @@
-export '../src/google_openai_transformers.dart';
+export '../src/compatibility/google_openai_transformers.dart';

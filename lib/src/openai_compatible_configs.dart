@@ -1,6 +1,6 @@
 import '../core/capability.dart';
 import '../core/config.dart';
-import 'google_openai_transformers.dart';
+import 'compatibility/google_openai_transformers.dart';
 import 'provider_defaults.dart';
 
 /// Pre-configured OpenAI-compatible provider configurations
