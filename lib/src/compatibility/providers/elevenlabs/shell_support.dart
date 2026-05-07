@@ -11,6 +11,8 @@ import 'elevenlabs_audio_compat.dart';
 import 'elevenlabs_audio_bridge_support.dart';
 import 'elevenlabs_models_compat.dart';
 
+part 'shell_support_bridge_router.dart';
+
 /// Root-compatibility glue for the ElevenLabs provider shell.
 ///
 /// This keeps modern-model bridge setup and request-shaping helpers out of the
@@ -23,6 +25,11 @@ final class ElevenLabsCompatShellSupport {
   final ElevenLabsModels models;
   final modern_community.ElevenLabs modernProvider;
   final ElevenLabsAudioBridgeSupport bridgeSupport;
+  late final _ElevenLabsCompatBridgeRouter _bridgeRouter =
+      _ElevenLabsCompatBridgeRouter(
+    audio: audio,
+    bridgeSupport: bridgeSupport,
+  );
 
   ElevenLabsCompatShellSupport._({
     required this.config,
@@ -58,16 +65,16 @@ final class ElevenLabsCompatShellSupport {
   Set<AudioFeature> get supportedFeatures => audio.supportedFeatures;
 
   bool canUseSpeechBridge(TTSRequest request) =>
-      bridgeSupport.canUseSpeechBridge(request);
+      _bridgeRouter.canUseSpeechBridge(request);
 
   bool canUseTranscriptionBridge(STTRequest request) =>
-      bridgeSupport.canUseTranscriptionBridge(request);
+      _bridgeRouter.canUseTranscriptionBridge(request);
 
   Future<TTSResponse> bridgeTextToSpeech(
     TTSRequest request, {
     TransportCancellation? cancelToken,
   }) {
-    return bridgeSupport.bridgeTextToSpeech(
+    return _bridgeRouter.bridgeTextToSpeech(
       request,
       cancelToken: cancelToken,
     );
@@ -77,20 +84,10 @@ final class ElevenLabsCompatShellSupport {
     TTSRequest request, {
     TransportCancellation? cancelToken,
   }) async {
-    if (canUseSpeechBridge(request)) {
-      try {
-        return await bridgeTextToSpeech(
-          request,
-          cancelToken: cancelToken,
-        );
-      } catch (error) {
-        if (!isCompatibilityError(error)) {
-          rethrow;
-        }
-      }
-    }
-
-    return audio.textToSpeech(request, cancelToken: cancelToken);
+    return _bridgeRouter.textToSpeech(
+      request,
+      cancelToken: cancelToken,
+    );
   }
 
   Stream<AudioStreamEvent> textToSpeechStream(
@@ -108,7 +105,7 @@ final class ElevenLabsCompatShellSupport {
     STTRequest request, {
     TransportCancellation? cancelToken,
   }) {
-    return bridgeSupport.bridgeSpeechToText(
+    return _bridgeRouter.bridgeSpeechToText(
       request,
       cancelToken: cancelToken,
     );
@@ -118,20 +115,10 @@ final class ElevenLabsCompatShellSupport {
     STTRequest request, {
     TransportCancellation? cancelToken,
   }) async {
-    if (canUseTranscriptionBridge(request)) {
-      try {
-        return await bridgeSpeechToText(
-          request,
-          cancelToken: cancelToken,
-        );
-      } catch (error) {
-        if (!isCompatibilityError(error)) {
-          rethrow;
-        }
-      }
-    }
-
-    return audio.speechToText(request, cancelToken: cancelToken);
+    return _bridgeRouter.speechToText(
+      request,
+      cancelToken: cancelToken,
+    );
   }
 
   Future<STTResponse> translateAudio(
