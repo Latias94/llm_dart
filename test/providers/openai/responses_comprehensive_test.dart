@@ -255,7 +255,8 @@ void main() {
         expect(provider, isA<OpenAIProvider>());
         expect(provider.responses, isNotNull);
         expect(provider.config.useResponsesAPI, isTrue);
-        expect(provider.supports(LLMCapability.openaiResponses), isTrue);
+        expect(provider.supportsResponsesApi, isTrue);
+        expect(provider.responses, isA<OpenAIResponsesCapability>());
       });
     });
 
@@ -401,37 +402,30 @@ void main() {
 
     // ========== Capability Detection Tests ==========
     group('Capability Detection', () {
-      test('should detect OpenAI Responses capability when enabled', () async {
+      test('should expose OpenAI Responses when enabled', () async {
         final provider = await LLMBuilder()
             .openai((openai) => openai.useResponsesAPI())
             .apiKey('test-key')
             .model('gpt-4o')
             .build();
 
-        expect(provider, isA<ProviderCapabilities>());
-        final capabilities = provider as ProviderCapabilities;
-        expect(capabilities.supports(LLMCapability.openaiResponses), isTrue);
-        expect(
-            capabilities.supportedCapabilities
-                .contains(LLMCapability.openaiResponses),
-            isTrue);
+        expect(provider, isA<OpenAIProvider>());
+        final openaiProvider = provider as OpenAIProvider;
+        expect(openaiProvider.supportsResponsesApi, isTrue);
+        expect(openaiProvider.responses, isA<OpenAIResponsesCapability>());
       });
 
-      test('should not detect OpenAI Responses capability when disabled',
-          () async {
+      test('should not expose OpenAI Responses when disabled', () async {
         final provider = await LLMBuilder()
             .openai()
             .apiKey('test-key')
             .model('gpt-4o')
             .build();
 
-        expect(provider, isA<ProviderCapabilities>());
-        final capabilities = provider as ProviderCapabilities;
-        expect(capabilities.supports(LLMCapability.openaiResponses), isFalse);
-        expect(
-            capabilities.supportedCapabilities
-                .contains(LLMCapability.openaiResponses),
-            isFalse);
+        expect(provider, isA<OpenAIProvider>());
+        final openaiProvider = provider as OpenAIProvider;
+        expect(openaiProvider.supportsResponsesApi, isFalse);
+        expect(openaiProvider.responses, isNull);
       });
 
       test('should provide responses getter when capability is enabled',
@@ -469,10 +463,8 @@ void main() {
             .build();
 
         // Type-safe capability detection
-        if (provider is ProviderCapabilities &&
-            (provider as ProviderCapabilities)
-                .supports(LLMCapability.openaiResponses) &&
-            provider is OpenAIProvider) {
+        if (provider is OpenAIProvider &&
+            provider.responses is OpenAIResponsesCapability) {
           final openaiProvider = provider;
           final responses = openaiProvider.responses;
 

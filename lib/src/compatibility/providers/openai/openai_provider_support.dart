@@ -15,7 +15,6 @@ class OpenAIProviderSupport {
   final OpenAIChat chat;
   final OpenAIEmbeddings embeddings;
   final OpenAIAudio audio;
-  final bool hasResponsesApi;
 
   OpenAIProviderSupport({
     required this.config,
@@ -23,7 +22,6 @@ class OpenAIProviderSupport {
     required this.chat,
     required this.embeddings,
     required this.audio,
-    required this.hasResponsesApi,
   });
 
   Set<LLMCapability> get supportedCapabilities {
@@ -43,11 +41,6 @@ class OpenAIProviderSupport {
       LLMCapability.completion,
       LLMCapability.modelListing,
     };
-
-    if (hasResponsesApi) {
-      capabilities.add(LLMCapability.openaiResponses);
-    }
-
     return capabilities;
   }
 

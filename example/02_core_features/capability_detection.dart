@@ -46,7 +46,7 @@ Future<void> main() async {
 
   printProviderOverview(providers);
   printScenarioRecommendations(providers);
-  printBoundaryGuidance(providers);
+  printBoundaryGuidance();
   await demonstrateStableExecution(providers);
 
   print(
@@ -68,7 +68,8 @@ List<compat_registry.ProviderInfo> loadExampleProviderInfo() {
   ];
 
   final allProviders = {
-    for (final provider in compat_registry.LLMProviderRegistry.getAllProviderInfo())
+    for (final provider
+        in compat_registry.LLMProviderRegistry.getAllProviderInfo())
       provider.id: provider,
   };
 
@@ -102,7 +103,8 @@ void printProviderOverview(List<compat_registry.ProviderInfo> providers) {
   print('');
 }
 
-void printScenarioRecommendations(List<compat_registry.ProviderInfo> providers) {
+void printScenarioRecommendations(
+    List<compat_registry.ProviderInfo> providers) {
   print('--- Scenario Recommendations ---');
 
   const scenarios = [
@@ -164,23 +166,17 @@ void printScenarioRecommendations(List<compat_registry.ProviderInfo> providers) 
   print('');
 }
 
-void printBoundaryGuidance(List<compat_registry.ProviderInfo> providers) {
+void printBoundaryGuidance() {
   print('--- Boundary Guidance ---');
 
-  final rawResponsesProviders = _providersSupportingAll(
-    providers,
-    const {compat_core.LLMCapability.openaiResponses},
-  );
-
   print(
-    '  Raw OpenAI response lifecycle boundary: '
-    '${rawResponsesProviders.isEmpty ? 'none declared' : rawResponsesProviders.map((provider) => _providerLabel(provider.id)).join(', ')}',
+    '  Raw OpenAI response lifecycle is provider-owned, not a shared capability.',
   );
   print(
-    '  Use `openaiResponses` only when you explicitly need provider-specific',
+    '  Check `OpenAIProvider.supportsResponsesApi` or `provider.responses`',
   );
   print(
-    '  lifecycle APIs such as fetching, continuing, or deleting raw responses.',
+    '  when you explicitly need fetching, continuing, or deleting raw responses.',
   );
   print(
     '  For normal Flutter chat flows, keep using `AI.openai(...).chatModel(...)`',
@@ -399,8 +395,6 @@ String _capabilityLabel(compat_core.LLMCapability capability) {
       return 'image generation';
     case compat_core.LLMCapability.modelListing:
       return 'model listing';
-    case compat_core.LLMCapability.openaiResponses:
-      return 'openai responses';
     default:
       return capability.name;
   }
@@ -426,7 +420,6 @@ const _highSignalCapabilities = [
   compat_core.LLMCapability.textToSpeech,
   compat_core.LLMCapability.speechToText,
   compat_core.LLMCapability.modelListing,
-  compat_core.LLMCapability.openaiResponses,
 ];
 
 final class _CapabilityScenario {

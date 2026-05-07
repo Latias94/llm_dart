@@ -1,4 +1,3 @@
-import 'package:llm_dart/core/capability.dart';
 import 'package:llm_dart/core/config.dart';
 import 'package:llm_dart/models/chat_models.dart';
 import 'package:llm_dart/providers/openai/openai.dart';
@@ -9,7 +8,7 @@ import 'package:test/test.dart';
 
 void main() {
   group('OpenAI provider support extraction', () {
-    test('supportedCapabilities keeps Responses flag provider-local', () {
+    test('Responses API support stays provider-local', () {
       final withoutResponses = OpenAIProvider(
         OpenAIConfig(
           apiKey: 'test-key',
@@ -25,15 +24,13 @@ void main() {
         ),
       );
 
+      expect(withoutResponses.supportsResponsesApi, isFalse);
+      expect(withoutResponses.responses, isNull);
+      expect(withResponses.supportsResponsesApi, isTrue);
+      expect(withResponses.responses, isA<OpenAIResponsesCapability>());
       expect(
-        withoutResponses.supportedCapabilities
-            .contains(LLMCapability.openaiResponses),
-        isFalse,
-      );
-      expect(
-        withResponses.supportedCapabilities
-            .contains(LLMCapability.openaiResponses),
-        isTrue,
+        withResponses.supportedCapabilities,
+        equals(withoutResponses.supportedCapabilities),
       );
     });
 

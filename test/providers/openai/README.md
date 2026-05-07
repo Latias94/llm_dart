@@ -103,10 +103,10 @@ The OpenAI Responses API tests cover:
 - [x] JSON serialization/deserialization
 - [x] Model equality and edge cases
 
-### ✅ Capability Detection
-- [x] `LLMCapability.openaiResponses` detection
-- [x] Type-safe capability checking
-- [x] Provider capability consistency
+### ✅ Provider-Local Responses Boundary
+- [x] `OpenAIProvider.supportsResponsesApi` detection
+- [x] Type-safe Responses module checking
+- [x] Shared provider capability consistency
 - [x] Responses getter availability
 
 ### ✅ Error Handling

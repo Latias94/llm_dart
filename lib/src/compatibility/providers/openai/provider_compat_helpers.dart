@@ -11,6 +11,9 @@ mixin OpenAIProviderHelpersMixin {
   /// Get the Responses API module, when `useResponsesAPI` is enabled.
   OpenAIResponses? get responses => _responses;
 
+  /// Whether the provider-owned OpenAI Responses API module is enabled.
+  bool get supportsResponsesApi => _responses != null;
+
   /// Get embedding dimensions for the configured model.
   Future<int> getEmbeddingDimensions() async {
     return _support.getEmbeddingDimensions();

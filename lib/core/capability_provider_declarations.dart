@@ -55,9 +55,6 @@ enum LLMCapability {
 
   /// Live search capabilities (real-time web search)
   liveSearch,
-
-  /// OpenAI Responses API capabilities
-  openaiResponses,
 }
 
 /// Audio features that providers can support

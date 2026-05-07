@@ -14,7 +14,6 @@ extension LLMBuilderProviderCapabilityExtensions on LLMBuilder {
   /// - Ensures the provider is OpenAI
   /// - Enables the Responses API (`useResponsesAPI(true)`)
   /// - Returns a properly typed OpenAIProvider with Responses API access
-  /// - Ensures the `openaiResponses` capability is available
   ///
   /// Throws [UnsupportedCapabilityError] if the provider is not OpenAI.
   Future<OpenAIProvider> buildOpenAIResponses() async {

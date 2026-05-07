@@ -6,7 +6,6 @@ library;
 
 import 'package:test/test.dart';
 import 'package:llm_dart/builder/llm_builder.dart';
-import 'package:llm_dart/core/capability.dart';
 import 'package:llm_dart/core/llm_error.dart';
 import 'package:llm_dart/models/responses_models.dart';
 import 'package:llm_dart/providers/openai/openai.dart';
@@ -331,10 +330,7 @@ void main() {
             .model('gpt-4o')
             .build();
 
-        expect(
-            (provider1 as ProviderCapabilities)
-                .supports(LLMCapability.openaiResponses),
-            isTrue);
+        expect((provider1 as OpenAIProvider).supportsResponsesApi, isTrue);
 
         // Provider with tools but no explicit Responses API
         final provider2 = await LLMBuilder()
@@ -343,10 +339,7 @@ void main() {
             .model('gpt-4o')
             .build();
 
-        expect(
-            (provider2 as ProviderCapabilities)
-                .supports(LLMCapability.openaiResponses),
-            isFalse);
+        expect((provider2 as OpenAIProvider).supportsResponsesApi, isFalse);
       });
 
       test('should handle responses getter consistency', () async {

@@ -90,8 +90,7 @@ Future<void> demonstrateDirectCompatibilityEquivalent(String apiKey) async {
       'This is the provider-owned equivalent of the old builder convenience helper.',
     );
     print(
-      'Provider supports openaiResponses: '
-      '${provider.supports(compat_core.LLMCapability.openaiResponses)}',
+      'Provider supports Responses API: ${provider.supportsResponsesApi}',
     );
 
     final responses = provider.responses!;
@@ -133,12 +132,12 @@ Future<void> demonstrateGuardrails(String apiKey) async {
     );
 
     print(
-      'Standard OpenAIProvider exposes openaiResponses: '
-      '${standardProvider.supports(compat_core.LLMCapability.openaiResponses)}',
+      'Standard OpenAIProvider exposes Responses API: '
+      '${standardProvider.supportsResponsesApi}',
     );
     print(
-      'Responses-enabled OpenAIProvider exposes openaiResponses: '
-      '${responsesProvider.supports(compat_core.LLMCapability.openaiResponses)}',
+      'Responses-enabled OpenAIProvider exposes Responses API: '
+      '${responsesProvider.supportsResponsesApi}',
     );
     print(
         'Standard provider.responses == null: ${standardProvider.responses == null}');

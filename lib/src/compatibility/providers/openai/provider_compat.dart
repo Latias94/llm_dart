@@ -117,7 +117,6 @@ class OpenAIProvider
       chat: _chat,
       embeddings: _embeddings,
       audio: _audio,
-      hasResponsesApi: _responses != null,
     );
   }
 
