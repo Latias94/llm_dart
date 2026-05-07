@@ -1,5 +1,5 @@
-import '../../../../models/assistant_models.dart';
 import '../../../../models/tool_models.dart';
+import 'assistant_models.dart';
 
 part 'openai_assistant_query_support.dart';
 part 'openai_assistant_request_support.dart';

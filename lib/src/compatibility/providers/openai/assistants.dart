@@ -1,7 +1,7 @@
 import '../../../../core/capability.dart';
-import '../../../../models/assistant_models.dart';
 import 'client.dart';
 import '../../../../providers/openai/config.dart';
+import 'assistant_models.dart';
 import 'openai_assistant_support.dart';
 
 /// OpenAI Assistant Management capability implementation
