@@ -9,6 +9,12 @@ import 'embeddings.dart';
 import 'images.dart';
 import 'tts.dart';
 
+part 'provider_compat_chat.dart';
+part 'provider_compat_embeddings.dart';
+part 'provider_compat_images.dart';
+part 'provider_compat_provider_capabilities.dart';
+part 'provider_compat_tts.dart';
+
 /// Compatibility-first root Google provider shell.
 ///
 /// New shared-capability mainlines should prefer the package-owned modern
@@ -17,6 +23,12 @@ import 'tts.dart';
 /// residual Google-specific capability modules still hosted by the root
 /// package.
 class GoogleProvider
+    with
+        _GoogleProviderCapabilities,
+        _GoogleProviderChat,
+        _GoogleProviderEmbeddings,
+        _GoogleProviderImages,
+        _GoogleProviderTTS
     implements
         ChatCapability,
         EmbeddingCapability,
@@ -24,165 +36,23 @@ class GoogleProvider
         GoogleTTSCapability,
         ProviderCapabilities {
   final GoogleClient _client;
+  @override
   final GoogleConfig config;
 
-  // Capability modules
+  // Capability modules.
+  @override
   late final GoogleChat _chat;
+  @override
   late final GoogleEmbeddings _embeddings;
+  @override
   late final GoogleImages _images;
+  @override
   late final GoogleTTS _tts;
 
   GoogleProvider(this.config) : _client = GoogleClient(config) {
-    // Initialize capability modules
     _chat = GoogleChat(_client, config);
     _embeddings = GoogleEmbeddings(_client, config);
     _images = GoogleImages(_client, config);
     _tts = GoogleTTS(_client, config);
-  }
-
-  @override
-  Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
-    TransportCancellation? cancelToken,
-  }) async {
-    return _chat.chat(messages, cancelToken: cancelToken);
-  }
-
-  @override
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
-    TransportCancellation? cancelToken,
-  }) async {
-    return _chat.chatWithTools(messages, tools, cancelToken: cancelToken);
-  }
-
-  @override
-  Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
-    List<Tool>? tools,
-    TransportCancellation? cancelToken,
-  }) {
-    return _chat.chatStream(messages, tools: tools, cancelToken: cancelToken);
-  }
-
-  @override
-  Future<List<ChatMessage>?> memoryContents() async {
-    return _chat.memoryContents();
-  }
-
-  @override
-  Future<String> summarizeHistory(List<ChatMessage> messages) async {
-    return _chat.summarizeHistory(messages);
-  }
-
-  @override
-  Future<List<List<double>>> embed(
-    List<String> input, {
-    TransportCancellation? cancelToken,
-  }) async {
-    return _embeddings.embed(input, cancelToken: cancelToken);
-  }
-
-  @override
-  Future<ImageGenerationResponse> generateImages(
-    ImageGenerationRequest request,
-  ) async {
-    return _images.generateImages(request);
-  }
-
-  @override
-  Future<ImageGenerationResponse> editImage(ImageEditRequest request) async {
-    return _images.editImage(request);
-  }
-
-  @override
-  Future<ImageGenerationResponse> createVariation(
-    ImageVariationRequest request,
-  ) async {
-    return _images.createVariation(request);
-  }
-
-  @override
-  List<String> getSupportedSizes() {
-    return _images.getSupportedSizes();
-  }
-
-  @override
-  List<String> getSupportedFormats() {
-    return _images.getSupportedFormats();
-  }
-
-  @override
-  bool get supportsImageEditing => _images.supportsImageEditing;
-
-  @override
-  bool get supportsImageVariations => _images.supportsImageVariations;
-
-  @override
-  Future<List<String>> generateImage({
-    required String prompt,
-    String? model,
-    String? negativePrompt,
-    String? imageSize,
-    int? batchSize,
-    String? seed,
-    int? numInferenceSteps,
-    double? guidanceScale,
-    bool? promptEnhancement,
-  }) async {
-    return _images.generateImage(
-      prompt: prompt,
-      model: model,
-      negativePrompt: negativePrompt,
-      imageSize: imageSize,
-      batchSize: batchSize,
-      seed: seed,
-      numInferenceSteps: numInferenceSteps,
-      guidanceScale: guidanceScale,
-      promptEnhancement: promptEnhancement,
-    );
-  }
-
-  @override
-  Future<GoogleTTSResponse> generateSpeech(GoogleTTSRequest request) async {
-    return _tts.generateSpeech(request);
-  }
-
-  @override
-  Stream<GoogleTTSStreamEvent> generateSpeechStream(GoogleTTSRequest request) {
-    return _tts.generateSpeechStream(request);
-  }
-
-  @override
-  Future<List<GoogleVoiceInfo>> getAvailableVoices() async {
-    return _tts.getAvailableVoices();
-  }
-
-  @override
-  Future<List<String>> getSupportedLanguages() async {
-    return _tts.getSupportedLanguages();
-  }
-
-  bool get _supportsTTS => config.supportsTTS;
-
-  String get providerName => 'Google';
-
-  @override
-  Set<LLMCapability> get supportedCapabilities => {
-        LLMCapability.chat,
-        LLMCapability.streaming,
-        LLMCapability.toolCalling,
-        if (config.supportsVision) LLMCapability.vision,
-        if (config.supportsReasoning) LLMCapability.reasoning,
-        if (config.supportsImageGeneration) LLMCapability.imageGeneration,
-        if (config.supportsEmbeddings) LLMCapability.embedding,
-        if (_supportsTTS) LLMCapability.textToSpeech,
-        if (_supportsTTS) LLMCapability.streamingTextToSpeech,
-      };
-
-  @override
-  bool supports(LLMCapability capability) {
-    return supportedCapabilities.contains(capability);
   }
 }
