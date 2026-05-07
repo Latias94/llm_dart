@@ -1,7 +1,9 @@
 part of 'openai_moderation_support.dart';
 
-mixin _OpenAIModerationBatchSupport {
-  Map<String, bool> categoriesToMap(ModerationCategories categories);
+final class _OpenAIModerationBatchSupport {
+  static const _categorySupport = _OpenAIModerationCategorySupport();
+
+  const _OpenAIModerationBatchSupport();
 
   List<String> filterSafeContent(
     List<String> texts,
@@ -25,7 +27,7 @@ mixin _OpenAIModerationBatchSupport {
     final categoryStats = <String, int>{};
 
     for (final result in results) {
-      final categoriesMap = categoriesToMap(result.categories);
+      final categoriesMap = _categorySupport.categoriesToMap(result.categories);
       for (final category in categoriesMap.keys) {
         if (categoriesMap[category] == true) {
           categoryStats[category] = (categoryStats[category] ?? 0) + 1;
