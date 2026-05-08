@@ -1,7 +1,7 @@
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
-import '../../../../utils/config_utils.dart';
 import '../../../../providers/openai/config.dart';
+import '../../http/header_utils.dart';
 
 /// OpenAI-specific Dio strategy implementation
 ///
@@ -14,6 +14,6 @@ class OpenAIDioStrategy extends BaseProviderDioStrategy {
   @override
   Map<String, String> buildHeaders(dynamic config) {
     final openaiConfig = config as OpenAIConfig;
-    return ConfigUtils.buildBearerAuthHeaders(openaiConfig.apiKey);
+    return CompatHeaderUtils.buildBearerAuthHeaders(openaiConfig.apiKey);
   }
 }

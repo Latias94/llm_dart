@@ -58,6 +58,9 @@ into a routine `0.10.x` maintenance release.
 - Removed `BaseProviderFactory.getProviderDefaults()`. Use
   `LLMProviderFactory.getDefaultConfig()` for registry-facing default
   configuration.
+- Removed the public `ConfigUtils` compatibility utility. Authentication header
+  shaping is now an internal compatibility HTTP helper used by provider Dio
+  strategies.
 
 ### Deprecated
 

@@ -1,6 +1,6 @@
-import '../../utils/config_utils.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
+import '../../src/compatibility/http/header_utils.dart';
 import 'config.dart';
 
 /// DeepSeek-specific Dio strategy implementation
@@ -13,6 +13,6 @@ class DeepSeekDioStrategy extends BaseProviderDioStrategy {
   @override
   Map<String, String> buildHeaders(dynamic config) {
     final deepSeekConfig = config as DeepSeekConfig;
-    return ConfigUtils.buildBearerAuthHeaders(deepSeekConfig.apiKey);
+    return CompatHeaderUtils.buildBearerAuthHeaders(deepSeekConfig.apiKey);
   }
 }

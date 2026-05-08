@@ -3,8 +3,8 @@
 /// Most request-body and message conversion logic now lives in provider-owned
 /// compatibility adapters. This helper remains only for the small set of
 /// legacy Dio strategies that still share header shaping.
-class ConfigUtils {
-  /// Extract common HTTP headers from config
+class CompatHeaderUtils {
+  /// Extract common HTTP headers from config.
   static Map<String, String> buildHeaders({
     required String apiKey,
     required String authHeaderName,

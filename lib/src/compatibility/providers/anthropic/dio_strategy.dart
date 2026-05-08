@@ -2,7 +2,7 @@ import 'package:llm_dart_transport/dio.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import '../../../../providers/anthropic/config.dart';
-import '../../../../utils/config_utils.dart';
+import '../../http/header_utils.dart';
 
 /// Anthropic-specific Dio strategy implementation
 ///
@@ -18,7 +18,7 @@ class AnthropicDioStrategy extends BaseProviderDioStrategy {
   @override
   Map<String, String> buildHeaders(dynamic config) {
     final anthropicConfig = config as AnthropicConfig;
-    return ConfigUtils.buildApiKeyHeaders(
+    return CompatHeaderUtils.buildApiKeyHeaders(
       apiKey: anthropicConfig.apiKey,
       authHeaderName: 'x-api-key',
       additionalHeaders: const {

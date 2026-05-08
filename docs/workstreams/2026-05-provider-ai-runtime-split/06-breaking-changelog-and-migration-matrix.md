@@ -60,6 +60,8 @@ The following slices are already landed on this branch:
   classes such as `OpenAIDefaults`, `GoogleDefaults`, and `PhindDefaults`.
 - `BaseProviderFactory.getProviderDefaults()` is removed; the registry-facing
   default configuration surface is the typed `getDefaultConfig()`.
+- The public `ConfigUtils` compatibility utility is removed; provider Dio
+  strategies use an internal compatibility HTTP header helper instead.
 
 ## Suggested Breaking Changelog Draft
 
@@ -159,6 +161,7 @@ Use this as the starting point for the next explicit breaking release.
 | `ProviderDefaults.getDefaults(...)` | Factory `getDefaultConfig()` | Removed | Removes the root string-switch map and keeps default configs at the factory boundary that consumes them. |
 | `package:llm_dart/core/provider_defaults.dart` and `ProviderDefaults.*` constants | Provider-owned defaults classes or factory `getDefaultConfig()` | Removed | Removes the remaining root defaults catalog so endpoint/model ownership stays with the provider that consumes it. |
 | `BaseProviderFactory.getProviderDefaults()` | `LLMProviderFactory.getDefaultConfig()` | Removed | Avoids string-keyed default maps in factory code; provider defaults now become typed `LLMConfig` values. |
+| `ConfigUtils` | Provider-owned Dio strategies or internal compatibility HTTP helpers | Removed | Header construction is an implementation detail, not a public root utility. |
 | `LLMBuilder.githubCopilot()` and `LLMBuilder.togetherAI()` | Explicit provider registration or provider-owned OpenAI-family profile composition | Removed from default builder surface | These methods only selected unregistered provider IDs. For generic compatible endpoints, construct a provider-owned OpenAI-family model/profile explicitly or register a concrete factory. |
 
 ## Compatibility Policy

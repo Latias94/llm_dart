@@ -100,7 +100,6 @@ export 'providers/factories/base_factory.dart';
 export 'builder/llm_builder.dart';
 export 'builder/http_config.dart';
 
-export 'utils/config_utils.dart';
 export 'utils/capability_utils.dart';
 export 'utils/provider_registry.dart';
 export 'utils/utf8_stream_decoder.dart';
