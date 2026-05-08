@@ -1,4 +1,10 @@
 import 'package:llm_dart_transport/dio.dart';
+import 'package:llm_dart_transport/llm_dart_transport.dart'
+    show
+        DioClientOverrides,
+        HasDioClientOverrides,
+        ProviderDioClientFactory,
+        ProviderDioStrategy;
 import 'package:test/test.dart';
 
 import 'package:llm_dart/core/config.dart';
@@ -38,10 +44,9 @@ import 'package:llm_dart/src/compatibility/providers/openai_family_compat_xai_co
     show createLegacyXAIConfig;
 import 'package:llm_dart/src/compatibility/providers/ollama/config_adapter.dart'
     show createLegacyOllamaConfig;
-import 'package:llm_dart/utils/dio_client_factory.dart';
 
 void main() {
-  group('DioClientFactory', () {
+  group('ProviderDioClientFactory', () {
     test('should create Dio client with Anthropic strategy', () {
       final config = AnthropicConfig(
         baseUrl: 'https://api.anthropic.com/v1/',
@@ -49,7 +54,7 @@ void main() {
         model: 'claude-sonnet-4-20250514',
       );
 
-      final dio = DioClientFactory.create(
+      final dio = _createDio(
         strategy: AnthropicDioStrategy(),
         config: config,
       );
@@ -70,7 +75,7 @@ void main() {
         model: 'gpt-4',
       );
 
-      final dio = DioClientFactory.create(
+      final dio = _createDio(
         strategy: OpenAIDioStrategy(),
         config: config,
       );
@@ -88,7 +93,7 @@ void main() {
         model: 'gemini-pro',
       );
 
-      final dio = DioClientFactory.create(
+      final dio = _createDio(
         strategy: GoogleDioStrategy(),
         config: config,
       );
@@ -116,7 +121,7 @@ void main() {
 
       final config = createLegacyAnthropicConfig(llmConfig);
 
-      final dio = DioClientFactory.create(
+      final dio = _createDio(
         strategy: AnthropicDioStrategy(),
         config: config,
       );
@@ -152,7 +157,7 @@ void main() {
 
       final config = createLegacyAnthropicConfig(llmConfig);
 
-      final dio = DioClientFactory.create(
+      final dio = _createDio(
         strategy: AnthropicDioStrategy(),
         config: config,
       );
@@ -365,7 +370,7 @@ void main() {
         final strategy = provider['strategy'] as ProviderDioStrategy;
         final config = provider['config'];
 
-        final dio = DioClientFactory.create(
+        final dio = _createDio(
           strategy: strategy,
           config: config,
         );
@@ -430,7 +435,7 @@ void main() {
         final strategy = provider['strategy'] as ProviderDioStrategy;
         final config = provider['config'];
 
-        final dio = DioClientFactory.create(
+        final dio = _createDio(
           strategy: strategy,
           config: config,
         );
@@ -499,7 +504,7 @@ void main() {
         final expectedHeaders =
             testCase['expectedHeaders'] as Map<String, String>;
 
-        final dio = DioClientFactory.create(
+        final dio = _createDio(
           strategy: strategy,
           config: config,
         );
@@ -512,4 +517,29 @@ void main() {
       }
     });
   });
+}
+
+Dio _createDio({
+  required ProviderDioStrategy strategy,
+  required dynamic config,
+}) {
+  return ProviderDioClientFactory.create(
+    strategy: strategy,
+    config: config,
+    overrides: _resolveOverrides(config),
+  );
+}
+
+DioClientOverrides? _resolveOverrides(dynamic config) {
+  if (config is HasDioClientOverrides) {
+    final overrides = config.dioOverrides;
+    if (overrides != null) {
+      return overrides;
+    }
+  }
+
+  if (config is DioClientOverrides) {
+    return config;
+  }
+  return null;
 }

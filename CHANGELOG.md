@@ -64,6 +64,8 @@ into a routine `0.10.x` maintenance release.
 - Removed the public `utils/reasoning_utils.dart` utility path. Reasoning and
   thinking-tag heuristics are now internal provider compatibility
   implementation details.
+- Removed the public `utils/dio_client_factory.dart` wrapper. Provider clients
+  use the transport-owned `ProviderDioClientFactory` directly.
 
 ### Deprecated
 
