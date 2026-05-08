@@ -32,11 +32,11 @@ bool canUseXAIChatBridge(
     config: config,
     allowedKeys: {
       ..._httpExtensionKeys,
-      'jsonSchema',
-      'liveSearch',
-      'searchParameters',
-      'webSearchEnabled',
-      'webSearchConfig',
+      LegacyExtensionKeys.jsonSchema,
+      LegacyExtensionKeys.xaiLiveSearch,
+      LegacyExtensionKeys.xaiSearchParameters,
+      LegacyExtensionKeys.webSearchEnabled,
+      LegacyExtensionKeys.webSearchConfig,
     },
   )) {
     return false;

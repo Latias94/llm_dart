@@ -11,7 +11,8 @@ import 'compat_provider_support.dart';
 /// Adapts a legacy root `LLMConfig` into an xAI provider config.
 XAIConfig createLegacyXAIConfig(LLMConfig config) {
   final searchParameters = _createLegacyXAISearchParameters(config);
-  final liveSearchEnabled = config.getExtension<bool>('liveSearch');
+  final liveSearchEnabled =
+      config.getExtension<bool>(LegacyExtensionKeys.xaiLiveSearch);
 
   return XAIConfig(
     apiKey: config.apiKey!,
@@ -132,8 +133,9 @@ List<modern_openai.XAISearchSource>? mapCompatXAISearchSources(
 }
 
 SearchParameters? _createLegacyXAISearchParameters(LLMConfig config) {
-  final searchParameters =
-      config.getExtension<SearchParameters>('searchParameters');
+  final searchParameters = config.getExtension<SearchParameters>(
+    LegacyExtensionKeys.xaiSearchParameters,
+  );
   if (searchParameters != null) {
     return searchParameters;
   }

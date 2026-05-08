@@ -22,6 +22,10 @@ abstract final class LegacyExtensionKeys {
   static const useOnlineShortcut = 'useOnlineShortcut';
   static const maxSearchResults = 'maxSearchResults';
 
+  // xAI legacy compatibility options
+  static const xaiLiveSearch = 'liveSearch';
+  static const xaiSearchParameters = 'searchParameters';
+
   // HTTP / transport compatibility options
   static const httpProxy = 'httpProxy';
   static const customHeaders = 'customHeaders';
@@ -43,6 +47,12 @@ abstract final class LegacyExtensionKeys {
   static const logprobs = 'logprobs';
   static const topLogprobs = 'topLogprobs';
   static const verbosity = 'verbosity';
+
+  // DeepSeek legacy factory compatibility options
+  static const deepSeekTopLogprobs = 'top_logprobs';
+  static const deepSeekFrequencyPenalty = 'frequency_penalty';
+  static const deepSeekPresencePenalty = 'presence_penalty';
+  static const deepSeekResponseFormat = 'response_format';
 
   // Anthropic legacy compatibility options
   static const reasoning = 'reasoning';

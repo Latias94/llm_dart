@@ -298,7 +298,9 @@ void main() {
         );
 
         expect(
-          builder.currentConfig.getExtension<String>('reasoningEffort'),
+          builder.currentConfig.getExtension<String>(
+            LegacyExtensionKeys.reasoningEffort,
+          ),
           equals('high'),
         );
       });

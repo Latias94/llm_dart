@@ -13,23 +13,24 @@ bool canUseGoogleChatBridge(
     config: config,
     allowedKeys: {
       ..._httpExtensionKeys,
-      'jsonSchema',
-      'reasoningEffort',
-      'thinkingBudgetTokens',
-      'includeThoughts',
-      'enableImageGeneration',
-      'responseModalities',
-      'safetySettings',
-      'candidateCount',
-      'webSearchEnabled',
-      'webSearchConfig',
+      LegacyExtensionKeys.jsonSchema,
+      LegacyExtensionKeys.reasoningEffort,
+      LegacyExtensionKeys.thinkingBudgetTokens,
+      LegacyExtensionKeys.includeThoughts,
+      LegacyExtensionKeys.enableImageGeneration,
+      LegacyExtensionKeys.responseModalities,
+      LegacyExtensionKeys.safetySettings,
+      LegacyExtensionKeys.candidateCount,
+      LegacyExtensionKeys.webSearchEnabled,
+      LegacyExtensionKeys.webSearchConfig,
     },
   )) {
     return false;
   }
 
-  final responseModalities =
-      config.getExtension<List<dynamic>>('responseModalities');
+  final responseModalities = config.getExtension<List<dynamic>>(
+    LegacyExtensionKeys.responseModalities,
+  );
   if (responseModalities != null &&
       responseModalities.any(
         (value) => value != 'TEXT' && value != 'IMAGE',
@@ -81,14 +82,14 @@ bool canUseAnthropicChatBridge(
     config: config,
     allowedKeys: {
       ..._httpExtensionKeys,
-      'reasoning',
-      'thinkingBudgetTokens',
-      'interleavedThinking',
-      'metadata',
-      'container',
-      'mcpServers',
-      'webSearchEnabled',
-      'webSearchConfig',
+      LegacyExtensionKeys.reasoning,
+      LegacyExtensionKeys.thinkingBudgetTokens,
+      LegacyExtensionKeys.interleavedThinking,
+      LegacyExtensionKeys.metadata,
+      LegacyExtensionKeys.container,
+      LegacyExtensionKeys.mcpServers,
+      LegacyExtensionKeys.webSearchEnabled,
+      LegacyExtensionKeys.webSearchConfig,
     },
   )) {
     return false;
