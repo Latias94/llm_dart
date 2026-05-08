@@ -26,14 +26,10 @@ T resolveOpenAIModelSettings<T extends ProviderModelOptions>(
   required String parameterName,
   required String expectedTypeName,
 }) {
-  if (settings is T) {
-    return settings;
-  }
-
-  throw ArgumentError.value(
+  return resolveProviderModelOptions<T>(
     settings,
-    parameterName,
-    'Expected $expectedTypeName.',
+    parameterName: parameterName,
+    expectedTypeName: expectedTypeName,
   );
 }
 
@@ -42,16 +38,11 @@ T? resolveOpenAIProviderOptions<T extends ProviderInvocationOptions>(
   required String parameterName,
   required String expectedTypeName,
 }) {
-  final providerOptions = callOptions.providerOptions;
-  if (providerOptions != null && providerOptions is! T) {
-    throw ArgumentError.value(
-      providerOptions,
-      parameterName,
-      'Expected $expectedTypeName.',
-    );
-  }
-
-  return providerOptions as T?;
+  return resolveProviderInvocationOptions<T>(
+    callOptions.providerOptions,
+    parameterName: parameterName,
+    expectedTypeName: expectedTypeName,
+  );
 }
 
 Map<String, Object?> decodeOpenAIJsonObject(

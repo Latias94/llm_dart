@@ -109,14 +109,11 @@ final class OllamaEmbeddingModel
   static OllamaEmbeddingModelSettings _resolveSettings(
     ProviderModelOptions settings,
   ) {
-    if (settings is OllamaEmbeddingModelSettings) {
-      return settings;
-    }
-
-    throw ArgumentError.value(
+    return resolveProviderModelOptions<OllamaEmbeddingModelSettings>(
       settings,
-      'settings',
-      'Expected OllamaEmbeddingModelSettings for Ollama embedding models.',
+      parameterName: 'settings',
+      expectedTypeName: 'OllamaEmbeddingModelSettings',
+      usageContext: 'Ollama embedding models',
     );
   }
 }

@@ -42,16 +42,12 @@ final class GoogleEmbeddingModel
 
   @override
   Future<EmbedResult> embed(EmbedRequest request) async {
-    final providerOptions = request.callOptions.providerOptions;
-    if (providerOptions != null && providerOptions is! GoogleEmbedOptions) {
-      throw ArgumentError.value(
-        providerOptions,
-        'request.callOptions.providerOptions',
-        'Expected GoogleEmbedOptions for Google embedding models.',
-      );
-    }
-
-    final options = providerOptions as GoogleEmbedOptions?;
+    final options = resolveProviderInvocationOptions<GoogleEmbedOptions>(
+      request.callOptions.providerOptions,
+      parameterName: 'request.callOptions.providerOptions',
+      expectedTypeName: 'GoogleEmbedOptions',
+      usageContext: 'Google embedding models',
+    );
     final isSingle = request.values.length == 1;
     final response = await transport.send(
       TransportRequest(
@@ -244,14 +240,11 @@ final class GoogleEmbeddingModel
   static GoogleEmbeddingModelSettings _resolveSettings(
     ProviderModelOptions settings,
   ) {
-    if (settings is GoogleEmbeddingModelSettings) {
-      return settings;
-    }
-
-    throw ArgumentError.value(
+    return resolveProviderModelOptions<GoogleEmbeddingModelSettings>(
       settings,
-      'settings',
-      'Expected GoogleEmbeddingModelSettings for Google embedding models.',
+      parameterName: 'settings',
+      expectedTypeName: 'GoogleEmbeddingModelSettings',
+      usageContext: 'Google embedding models',
     );
   }
 

@@ -38,19 +38,14 @@ final class _AnthropicCompatRequestPlanner {
   modern_anthropic.AnthropicGenerateTextOptions _resolveProviderOptions(
     core.ProviderInvocationOptions? options,
   ) {
-    if (options == null) {
-      return const modern_anthropic.AnthropicGenerateTextOptions();
-    }
-
-    if (options is modern_anthropic.AnthropicGenerateTextOptions) {
-      return options;
-    }
-
-    throw ArgumentError.value(
-      options,
-      'providerOptions',
-      'Expected AnthropicGenerateTextOptions for Anthropic compatibility requests.',
-    );
+    return core.resolveProviderInvocationOptions<
+            modern_anthropic.AnthropicGenerateTextOptions>(
+          options,
+          parameterName: 'providerOptions',
+          expectedTypeName: 'AnthropicGenerateTextOptions',
+          usageContext: 'Anthropic compatibility requests',
+        ) ??
+        const modern_anthropic.AnthropicGenerateTextOptions();
   }
 
   modern_anthropic.AnthropicCacheControl? _mergeToolCacheControl(

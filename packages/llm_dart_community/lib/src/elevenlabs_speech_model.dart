@@ -47,17 +47,12 @@ final class ElevenLabsSpeechModel
   Future<SpeechGenerationResult> generateSpeech(
     SpeechGenerationRequest request,
   ) async {
-    final providerOptions = request.callOptions.providerOptions;
-    if (providerOptions != null &&
-        providerOptions is! ElevenLabsSpeechOptions) {
-      throw ArgumentError.value(
-        providerOptions,
-        'request.callOptions.providerOptions',
-        'Expected ElevenLabsSpeechOptions for ElevenLabs speech models.',
-      );
-    }
-
-    final options = providerOptions as ElevenLabsSpeechOptions?;
+    final options = resolveProviderInvocationOptions<ElevenLabsSpeechOptions>(
+      request.callOptions.providerOptions,
+      parameterName: 'request.callOptions.providerOptions',
+      expectedTypeName: 'ElevenLabsSpeechOptions',
+      usageContext: 'ElevenLabs speech models',
+    );
     _validateSpeechOptions(options);
 
     final voiceId = _resolveVoiceId(request.voice);
@@ -220,14 +215,11 @@ final class ElevenLabsSpeechModel
   static ElevenLabsSpeechModelSettings _resolveSettings(
     ProviderModelOptions settings,
   ) {
-    if (settings is ElevenLabsSpeechModelSettings) {
-      return settings;
-    }
-
-    throw ArgumentError.value(
+    return resolveProviderModelOptions<ElevenLabsSpeechModelSettings>(
       settings,
-      'settings',
-      'Expected ElevenLabsSpeechModelSettings for ElevenLabs speech models.',
+      parameterName: 'settings',
+      expectedTypeName: 'ElevenLabsSpeechModelSettings',
+      usageContext: 'ElevenLabs speech models',
     );
   }
 }

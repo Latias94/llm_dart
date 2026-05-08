@@ -44,16 +44,12 @@ final class GoogleSpeechModel implements SpeechModel, CapabilityDescribedModel {
   Future<SpeechGenerationResult> generateSpeech(
     SpeechGenerationRequest request,
   ) async {
-    final providerOptions = request.callOptions.providerOptions;
-    if (providerOptions != null && providerOptions is! GoogleSpeechOptions) {
-      throw ArgumentError.value(
-        providerOptions,
-        'request.callOptions.providerOptions',
-        'Expected GoogleSpeechOptions for Google speech models.',
-      );
-    }
-
-    final options = providerOptions as GoogleSpeechOptions?;
+    final options = resolveProviderInvocationOptions<GoogleSpeechOptions>(
+      request.callOptions.providerOptions,
+      parameterName: 'request.callOptions.providerOptions',
+      expectedTypeName: 'GoogleSpeechOptions',
+      usageContext: 'Google speech models',
+    );
     _validateRequest(request, options);
 
     final response = await transport.send(
@@ -268,14 +264,11 @@ final class GoogleSpeechModel implements SpeechModel, CapabilityDescribedModel {
   static GoogleSpeechModelSettings _resolveSettings(
     ProviderModelOptions settings,
   ) {
-    if (settings is GoogleSpeechModelSettings) {
-      return settings;
-    }
-
-    throw ArgumentError.value(
+    return resolveProviderModelOptions<GoogleSpeechModelSettings>(
       settings,
-      'settings',
-      'Expected GoogleSpeechModelSettings for Google speech models.',
+      parameterName: 'settings',
+      expectedTypeName: 'GoogleSpeechModelSettings',
+      usageContext: 'Google speech models',
     );
   }
 }

@@ -201,14 +201,11 @@ final class OllamaLanguageModel
 
   OllamaGenerateTextOptions? _resolveProviderOptions(
       GenerateTextRequest request) {
-    final providerOptions = request.callOptions.providerOptions;
-    if (providerOptions == null) return null;
-    if (providerOptions is OllamaGenerateTextOptions) return providerOptions;
-
-    throw ArgumentError.value(
-      providerOptions,
-      'request.callOptions.providerOptions',
-      'Expected OllamaGenerateTextOptions for Ollama language models.',
+    return resolveProviderInvocationOptions<OllamaGenerateTextOptions>(
+      request.callOptions.providerOptions,
+      parameterName: 'request.callOptions.providerOptions',
+      expectedTypeName: 'OllamaGenerateTextOptions',
+      usageContext: 'Ollama language models',
     );
   }
 

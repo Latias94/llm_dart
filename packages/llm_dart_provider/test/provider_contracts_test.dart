@@ -509,6 +509,77 @@ void main() {
   });
 
   group('CallOptions and ProviderCancellation', () {
+    test('resolves typed provider invocation options', () {
+      final options = _TestProviderOptions();
+
+      expect(
+        resolveProviderInvocationOptions<_TestProviderOptions>(
+          options,
+          parameterName: 'providerOptions',
+          expectedTypeName: '_TestProviderOptions',
+          usageContext: 'test models',
+        ),
+        same(options),
+      );
+      expect(
+        resolveProviderInvocationOptions<_TestProviderOptions>(
+          null,
+          parameterName: 'providerOptions',
+          expectedTypeName: '_TestProviderOptions',
+          usageContext: 'test models',
+        ),
+        isNull,
+      );
+      expect(
+        () => resolveProviderInvocationOptions<_TestProviderOptions>(
+          _OtherProviderOptions(),
+          parameterName: 'providerOptions',
+          expectedTypeName: '_TestProviderOptions',
+          usageContext: 'test models',
+        ),
+        throwsA(
+          isA<ArgumentError>()
+              .having((error) => error.name, 'name', 'providerOptions')
+              .having(
+                (error) => error.message,
+                'message',
+                'Expected _TestProviderOptions for test models.',
+              ),
+        ),
+      );
+    });
+
+    test('resolves typed provider model options', () {
+      final options = _TestModelOptions();
+
+      expect(
+        resolveProviderModelOptions<_TestModelOptions>(
+          options,
+          parameterName: 'settings',
+          expectedTypeName: '_TestModelOptions',
+          usageContext: 'test models',
+        ),
+        same(options),
+      );
+      expect(
+        () => resolveProviderModelOptions<_TestModelOptions>(
+          _OtherModelOptions(),
+          parameterName: 'settings',
+          expectedTypeName: '_TestModelOptions',
+          usageContext: 'test models',
+        ),
+        throwsA(
+          isA<ArgumentError>()
+              .having((error) => error.name, 'name', 'settings')
+              .having(
+                (error) => error.message,
+                'message',
+                'Expected _TestModelOptions for test models.',
+              ),
+        ),
+      );
+    });
+
     test('carries provider invocation options and cancellation', () {
       final cancellation = ProviderCancellation();
       final options = CallOptions(
@@ -547,3 +618,9 @@ void main() {
 }
 
 final class _TestProviderOptions implements ProviderInvocationOptions {}
+
+final class _OtherProviderOptions implements ProviderInvocationOptions {}
+
+final class _TestModelOptions implements ProviderModelOptions {}
+
+final class _OtherModelOptions implements ProviderModelOptions {}

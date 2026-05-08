@@ -338,16 +338,12 @@ final class GoogleImageModel implements ImageModel, CapabilityDescribedModel {
     CallOptions callOptions, {
     required String parameterName,
   }) {
-    final providerOptions = callOptions.providerOptions;
-    if (providerOptions != null && providerOptions is! GoogleImageOptions) {
-      throw ArgumentError.value(
-        providerOptions,
-        parameterName,
-        'Expected GoogleImageOptions for Google image models.',
-      );
-    }
-
-    return providerOptions as GoogleImageOptions?;
+    return resolveProviderInvocationOptions<GoogleImageOptions>(
+      callOptions.providerOptions,
+      parameterName: parameterName,
+      expectedTypeName: 'GoogleImageOptions',
+      usageContext: 'Google image models',
+    );
   }
 
   ImageGenerationResult _decodeImagenResponse(Map<String, Object?> json) {
@@ -498,14 +494,11 @@ final class GoogleImageModel implements ImageModel, CapabilityDescribedModel {
 
   static GoogleImageModelSettings _resolveSettings(
       ProviderModelOptions settings) {
-    if (settings is GoogleImageModelSettings) {
-      return settings;
-    }
-
-    throw ArgumentError.value(
+    return resolveProviderModelOptions<GoogleImageModelSettings>(
       settings,
-      'settings',
-      'Expected GoogleImageModelSettings for Google image models.',
+      parameterName: 'settings',
+      expectedTypeName: 'GoogleImageModelSettings',
+      usageContext: 'Google image models',
     );
   }
 }

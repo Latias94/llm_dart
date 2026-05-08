@@ -177,19 +177,13 @@ final class AnthropicLanguageModel
   AnthropicGenerateTextOptions _resolveProviderOptions(
     ProviderInvocationOptions? options,
   ) {
-    if (options == null) {
-      return const AnthropicGenerateTextOptions();
-    }
-
-    if (options is AnthropicGenerateTextOptions) {
-      return options;
-    }
-
-    throw ArgumentError.value(
-      options,
-      'providerOptions',
-      'Expected AnthropicGenerateTextOptions for Anthropic language models.',
-    );
+    return resolveProviderInvocationOptions<AnthropicGenerateTextOptions>(
+          options,
+          parameterName: 'providerOptions',
+          expectedTypeName: 'AnthropicGenerateTextOptions',
+          usageContext: 'Anthropic language models',
+        ) ??
+        const AnthropicGenerateTextOptions();
   }
 
   Map<String, String> _buildRequestHeaders({

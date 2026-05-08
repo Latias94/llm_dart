@@ -43,17 +43,13 @@ final class ElevenLabsTranscriptionModel
 
   @override
   Future<TranscriptionResult> transcribe(TranscriptionRequest request) async {
-    final providerOptions = request.callOptions.providerOptions;
-    if (providerOptions != null &&
-        providerOptions is! ElevenLabsTranscriptionOptions) {
-      throw ArgumentError.value(
-        providerOptions,
-        'request.callOptions.providerOptions',
-        'Expected ElevenLabsTranscriptionOptions for ElevenLabs transcription models.',
-      );
-    }
-
-    final options = providerOptions as ElevenLabsTranscriptionOptions?;
+    final options =
+        resolveProviderInvocationOptions<ElevenLabsTranscriptionOptions>(
+      request.callOptions.providerOptions,
+      parameterName: 'request.callOptions.providerOptions',
+      expectedTypeName: 'ElevenLabsTranscriptionOptions',
+      usageContext: 'ElevenLabs transcription models',
+    );
     _validateTranscriptionOptions(options);
 
     final multipart = buildTransportMultipartBody(
@@ -175,14 +171,11 @@ final class ElevenLabsTranscriptionModel
   static ElevenLabsTranscriptionModelSettings _resolveSettings(
     ProviderModelOptions settings,
   ) {
-    if (settings is ElevenLabsTranscriptionModelSettings) {
-      return settings;
-    }
-
-    throw ArgumentError.value(
+    return resolveProviderModelOptions<ElevenLabsTranscriptionModelSettings>(
       settings,
-      'settings',
-      'Expected ElevenLabsTranscriptionModelSettings for ElevenLabs transcription models.',
+      parameterName: 'settings',
+      expectedTypeName: 'ElevenLabsTranscriptionModelSettings',
+      usageContext: 'ElevenLabs transcription models',
     );
   }
 }

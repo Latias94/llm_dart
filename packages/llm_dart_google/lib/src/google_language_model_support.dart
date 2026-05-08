@@ -13,18 +13,13 @@ GoogleGenerateTextOptions resolveGoogleProviderOptions(
     request.options.responseFormat,
   );
 
-  GoogleGenerateTextOptions resolved;
-  if (options == null) {
-    resolved = const GoogleGenerateTextOptions();
-  } else if (options is GoogleGenerateTextOptions) {
-    resolved = options;
-  } else {
-    throw ArgumentError.value(
-      options,
-      'providerOptions',
-      'Expected GoogleGenerateTextOptions for Google language models.',
-    );
-  }
+  final resolved = resolveProviderInvocationOptions<GoogleGenerateTextOptions>(
+        options,
+        parameterName: 'providerOptions',
+        expectedTypeName: 'GoogleGenerateTextOptions',
+        usageContext: 'Google language models',
+      ) ??
+      const GoogleGenerateTextOptions();
 
   if (request.options.responseFormat != null &&
       resolved.responseFormat != null) {
