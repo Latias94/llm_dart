@@ -1,12 +1,20 @@
 part of 'openai_compatible_configs.dart';
 
+const String _openRouterBaseUrl = 'https://openrouter.ai/api/v1/';
+const String _openRouterDefaultModel = 'openai/gpt-4';
+const String _githubCopilotBaseUrl =
+    'https://api.githubcopilot.com/chat/completions';
+const String _githubCopilotDefaultModel = 'gpt-4';
+const String _togetherAIBaseUrl = 'https://api.together.xyz/v1/';
+const String _togetherAIDefaultModel = 'meta-llama/Llama-3-70b-chat-hf';
+
 const OpenAICompatibleProviderConfig _openRouterOpenAICompatibleConfig =
     OpenAICompatibleProviderConfig(
   providerId: 'openrouter',
   displayName: 'OpenRouter',
   description: 'OpenRouter unified API for multiple AI models',
-  defaultBaseUrl: ProviderDefaults.openRouterBaseUrl,
-  defaultModel: ProviderDefaults.openRouterDefaultModel,
+  defaultBaseUrl: _openRouterBaseUrl,
+  defaultModel: _openRouterDefaultModel,
   supportedCapabilities: {
     LLMCapability.chat,
     LLMCapability.streaming,
@@ -41,8 +49,8 @@ const OpenAICompatibleProviderConfig _githubCopilotOpenAICompatibleConfig =
   providerId: 'github-copilot',
   displayName: 'GitHub Copilot',
   description: 'GitHub Copilot Chat API',
-  defaultBaseUrl: ProviderDefaults.githubCopilotBaseUrl,
-  defaultModel: ProviderDefaults.githubCopilotDefaultModel,
+  defaultBaseUrl: _githubCopilotBaseUrl,
+  defaultModel: _githubCopilotDefaultModel,
   supportedCapabilities: {
     LLMCapability.chat,
     LLMCapability.streaming,
@@ -55,8 +63,8 @@ const OpenAICompatibleProviderConfig _togetherAIOpenAICompatibleConfig =
   providerId: 'together-ai',
   displayName: 'Together AI',
   description: 'Together AI platform for open source models',
-  defaultBaseUrl: ProviderDefaults.togetherAIBaseUrl,
-  defaultModel: ProviderDefaults.togetherAIDefaultModel,
+  defaultBaseUrl: _togetherAIBaseUrl,
+  defaultModel: _togetherAIDefaultModel,
   supportedCapabilities: {
     LLMCapability.chat,
     LLMCapability.streaming,

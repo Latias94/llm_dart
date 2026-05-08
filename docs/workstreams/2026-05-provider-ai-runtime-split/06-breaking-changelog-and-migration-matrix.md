@@ -46,6 +46,9 @@ The following slices are already landed on this branch:
 - the legacy map-based `OpenAICompatibleDefaults` catalog is removed; typed
   `OpenAICompatibleConfigs` owns compatible provider profiles, while
   `ProviderDefaults` only keeps coarse endpoint/model defaults.
+- generic OpenAI-compatible endpoint defaults for OpenRouter, GitHub Copilot,
+  and Together AI moved out of `ProviderDefaults` and now live only in typed
+  compatible profiles.
 
 ## Suggested Breaking Changelog Draft
 
@@ -88,6 +91,8 @@ Use this as the starting point for the next explicit breaking release.
   their own explicit compatible profile.
 - OpenAI-compatible provider profile metadata is no longer duplicated in
   `OpenAICompatibleDefaults`; use typed `OpenAICompatibleConfigs`.
+- `ProviderDefaults` no longer owns generic OpenAI-compatible endpoints; use
+  `OpenAICompatibleConfigs` to inspect those profiles.
 
 ### Kept
 
@@ -130,6 +135,7 @@ Use this as the starting point for the next explicit breaking release.
 | `LLMBuilder.deepseekOpenAI()` and other provider-owned `*-openai` builder aliases | Dedicated providers such as `deepseek`, `google`, `xai`, `groq`, `phind` | Removed | These aliases are no longer kept as explicit generic-compatible registration targets. Use the dedicated provider ID so provider-specific behavior stays on the provider-owned path. |
 | Default registry entries for `deepseek-openai`, `google-openai`, `xai-openai`, `groq-openai`, `phind-openai` | Dedicated provider entries plus `openrouter` | Removed | Default app discovery should not show duplicate lower-fidelity aliases, and the explicit compatible registrar now only covers OpenRouter plus non-dedicated generic endpoints. |
 | `OpenAICompatibleDefaults` map catalog | `OpenAICompatibleConfigs` for typed profiles; `ProviderDefaults.getDefaults(...)` for coarse endpoint/model defaults | Removed | Avoids maintaining a second untyped profile catalog beside the typed provider-compatible config list. |
+| `ProviderDefaults.getDefaults('openrouter'/'github-copilot'/'together-ai')` | `OpenAICompatibleConfigs.getConfig(...)` | Removed | Generic compatible endpoints are profile-owned, not root default-owned dedicated providers. |
 | `LLMBuilder.githubCopilot()` and `LLMBuilder.togetherAI()` | Explicit provider registration or provider-owned OpenAI-family profile composition | Removed from default builder surface | These methods only selected unregistered provider IDs. For generic compatible endpoints, construct a provider-owned OpenAI-family model/profile explicitly or register a concrete factory. |
 
 ## Compatibility Policy

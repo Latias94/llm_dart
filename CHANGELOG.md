@@ -41,6 +41,9 @@ into a routine `0.10.x` maintenance release.
 - Removed the legacy map-based `OpenAICompatibleDefaults` catalog. Use
   typed `OpenAICompatibleConfigs` for compatible provider profiles and
   `ProviderDefaults.getDefaults(...)` only for coarse endpoint/model defaults.
+- Moved generic OpenAI-compatible endpoint defaults out of `ProviderDefaults`.
+  OpenRouter, GitHub Copilot, and Together AI defaults now live only on typed
+  `OpenAICompatibleConfigs`.
 
 ### Deprecated
 

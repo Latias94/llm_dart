@@ -1,5 +1,4 @@
 import '../../core/capability.dart';
-import '../config/provider_defaults.dart';
 import 'openai_compatible_provider_config.dart';
 
 part 'openai_compatible_provider_profiles.dart';

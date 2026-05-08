@@ -117,19 +117,6 @@ class ProviderDefaults {
   static const String ollamaBaseUrl = 'http://localhost:11434/';
   static const String ollamaDefaultModel = 'llama3.2';
 
-  // OpenAI-compatible providers
-  static const String openRouterBaseUrl = 'https://openrouter.ai/api/v1/';
-  static const String openRouterDefaultModel = 'openai/gpt-4';
-
-  static const String azureOpenAIApiVersion = '2024-02-15-preview';
-
-  static const String githubCopilotBaseUrl =
-      'https://api.githubcopilot.com/chat/completions';
-  static const String githubCopilotDefaultModel = 'gpt-4';
-
-  static const String togetherAIBaseUrl = 'https://api.together.xyz/v1/';
-  static const String togetherAIDefaultModel = 'meta-llama/Llama-3-70b-chat-hf';
-
   /// Get default configuration for a provider
   static Map<String, dynamic> getDefaults(String providerId) {
     switch (providerId) {
@@ -190,21 +177,6 @@ class ProviderDefaults {
         return {
           'baseUrl': ollamaBaseUrl,
           'model': ollamaDefaultModel,
-        };
-      case 'openrouter':
-        return {
-          'baseUrl': openRouterBaseUrl,
-          'model': openRouterDefaultModel,
-        };
-      case 'github-copilot':
-        return {
-          'baseUrl': githubCopilotBaseUrl,
-          'model': githubCopilotDefaultModel,
-        };
-      case 'together-ai':
-        return {
-          'baseUrl': togetherAIBaseUrl,
-          'model': togetherAIDefaultModel,
         };
       default:
         throw ArgumentError('Unknown provider: $providerId');
@@ -282,25 +254,6 @@ class ProviderDefaults {
           LLMCapability.streaming,
           LLMCapability.embedding,
           LLMCapability.modelListing,
-        };
-      case 'openrouter':
-        return {
-          LLMCapability.chat,
-          LLMCapability.streaming,
-          LLMCapability.toolCalling,
-          LLMCapability.vision,
-        };
-      case 'github-copilot':
-        return {
-          LLMCapability.chat,
-          LLMCapability.streaming,
-          LLMCapability.toolCalling,
-        };
-      case 'together-ai':
-        return {
-          LLMCapability.chat,
-          LLMCapability.streaming,
-          LLMCapability.toolCalling,
         };
       default:
         return <LLMCapability>{};
