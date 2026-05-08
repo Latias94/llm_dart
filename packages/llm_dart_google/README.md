@@ -33,7 +33,7 @@ contract.
 ```dart
 import 'dart:io';
 
-import 'package:llm_dart_provider/llm_dart_provider.dart' as core;
+import 'package:llm_dart_ai/llm_dart_ai.dart' as ai;
 import 'package:llm_dart_google/llm_dart_google.dart';
 
 Future<void> main() async {
@@ -50,7 +50,7 @@ Future<void> main() async {
     GoogleImageEditRequest(
       prompt: 'Make this image look like a polished mobile app hero asset.',
       images: [input],
-      callOptions: const core.CallOptions(
+      callOptions: const ai.CallOptions(
         providerOptions: GoogleImageOptions(
           aspectRatio: GoogleImageAspectRatio.landscape16x9,
         ),

@@ -14,11 +14,14 @@ These providers remain grouped intentionally in one workspace package.
 
 It depends only on:
 
-- `llm_dart_core`
+- `llm_dart_provider`
 - `llm_dart_transport`
 
 That keeps the modern community-provider path independent from the root
 compatibility layer.
+
+Examples and tests may use `llm_dart_ai` for shared runtime helpers, but the
+published library boundary does not depend on that app-facing helper package.
 
 ## Why They Stay Together
 
