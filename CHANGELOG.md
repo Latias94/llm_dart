@@ -68,6 +68,8 @@ into a routine `0.10.x` maintenance release.
   use the transport-owned `ProviderDioClientFactory` directly.
 - Removed the public `utils/http_response_handler.dart` wrapper. Shared
   compatibility response handling is now internal HTTP infrastructure.
+- Removed the unused public `utils/log_sanitizer.dart` re-export. Internal
+  code imports transport logging helpers from `llm_dart_transport`.
 
 ### Deprecated
 
