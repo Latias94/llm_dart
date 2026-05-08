@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'bootstrap_workspace_pubspec_overrides.dart';
@@ -11,6 +12,8 @@ final class PublishDryRunSummary {
     required this.hints,
   });
 }
+
+const publishDryRunTimeout = Duration(minutes: 3);
 
 Future<void> main() async {
   final repoRoot = Directory.current.absolute;
@@ -44,26 +47,28 @@ Future<void> main() async {
       packageDirectory: packageDirectory,
     );
     try {
-      final result = await Process.run(
-        'dart',
-        const ['pub', 'publish', '--dry-run'],
-        workingDirectory: workingDirectory.path,
-      );
+      ProcessResult result;
+      try {
+        result = await runPublishDryRunProcess(workingDirectory);
+      } on TimeoutException catch (error) {
+        final duration = error.duration ?? publishDryRunTimeout;
+        stderr.writeln(
+          'workspace publish dry-run timed out for `$packageName` after '
+          '${duration.inSeconds}s.',
+        );
+        exitCode = 1;
+        return;
+      }
 
       final stdoutText = result.stdout is String ? result.stdout as String : '';
       final stderrText = result.stderr is String ? result.stderr as String : '';
+      final combinedOutput = '$stdoutText\n$stderrText';
+      final summary = extractPublishDryRunSummary(combinedOutput);
+      final shouldPrintFullOutput =
+          result.exitCode != 0 || (summary?.warnings ?? 0) > 0;
 
-      if (stdoutText.isNotEmpty) {
-        stdout.write(stdoutText);
-        if (!stdoutText.endsWith('\n')) {
-          stdout.writeln();
-        }
-      }
-      if (stderrText.isNotEmpty) {
-        stderr.write(stderrText);
-        if (!stderrText.endsWith('\n')) {
-          stderr.writeln();
-        }
+      if (shouldPrintFullOutput) {
+        writeProcessOutput(stdoutText: stdoutText, stderrText: stderrText);
       }
 
       if (result.exitCode != 0) {
@@ -75,7 +80,6 @@ Future<void> main() async {
         return;
       }
 
-      final summary = extractPublishDryRunSummary('$stdoutText\n$stderrText');
       if (summary != null && summary.warnings > 0) {
         stderr.writeln(
           'workspace publish dry-run failed for `$packageName`: '
@@ -86,10 +90,35 @@ Future<void> main() async {
       }
 
       if (summary != null) {
+        final knownWorkspaceOverrideHints =
+            countWorkspaceOverridePublishDryRunHints(combinedOutput);
+        final suppressedKnownHints = knownWorkspaceOverrideHints > summary.hints
+            ? summary.hints
+            : knownWorkspaceOverrideHints;
+        final hasOtherHints = summary.hints > suppressedKnownHints;
+
+        if (!shouldPrintFullOutput && hasOtherHints) {
+          final diagnostics = extractPublishDryRunValidationDiagnostics(
+            combinedOutput,
+          );
+          if (diagnostics.isNotEmpty) {
+            stdout.write(diagnostics);
+            if (!diagnostics.endsWith('\n')) {
+              stdout.writeln();
+            }
+          }
+        }
+
         stdout.writeln(
           'dry-run summary for `$packageName`: '
           '${summary.warnings} warning(s), ${summary.hints} hint(s).',
         );
+        if (suppressedKnownHints > 0 && !hasOtherHints) {
+          stdout.writeln(
+            'note: suppressed $suppressedKnownHints expected workspace '
+            'override hint(s) from staged local path dependencies.',
+          );
+        }
       }
     } finally {
       if (workingDirectory.existsSync()) {
@@ -105,6 +134,20 @@ Future<void> main() async {
   );
 }
 
+Future<ProcessResult> runPublishDryRunProcess(Directory workingDirectory) {
+  return Process.run(
+    'dart',
+    const ['pub', 'publish', '--dry-run'],
+    workingDirectory: workingDirectory.path,
+  ).timeout(
+    publishDryRunTimeout,
+    onTimeout: () => throw TimeoutException(
+      'workspace publish dry-run timed out',
+      publishDryRunTimeout,
+    ),
+  );
+}
+
 Directory _resolvePackageDirectory({
   required Directory repoRoot,
   required String packageName,
@@ -114,6 +157,24 @@ Directory _resolvePackageDirectory({
   }
 
   return Directory.fromUri(repoRoot.uri.resolve('packages/$packageName/'));
+}
+
+void writeProcessOutput({
+  required String stdoutText,
+  required String stderrText,
+}) {
+  if (stdoutText.isNotEmpty) {
+    stdout.write(stdoutText);
+    if (!stdoutText.endsWith('\n')) {
+      stdout.writeln();
+    }
+  }
+  if (stderrText.isNotEmpty) {
+    stderr.write(stderrText);
+    if (!stderrText.endsWith('\n')) {
+      stderr.writeln();
+    }
+  }
 }
 
 PublishDryRunSummary? extractPublishDryRunSummary(String text) {
@@ -128,6 +189,31 @@ PublishDryRunSummary? extractPublishDryRunSummary(String text) {
     warnings: int.parse(match.group(1)!),
     hints: match.group(2) == null ? 0 : int.parse(match.group(2)!),
   );
+}
+
+int countWorkspaceOverridePublishDryRunHints(String text) {
+  return RegExp(
+    r'Non-dev dependencies are overridden in pubspec_overrides\.yaml\.',
+  ).allMatches(text).length;
+}
+
+String extractPublishDryRunValidationDiagnostics(String text) {
+  final validationIndex = text.indexOf('Validating package...');
+  if (validationIndex >= 0) {
+    return text.substring(validationIndex).trimRight();
+  }
+
+  final packageValidationIndex = text.indexOf('Package validation found');
+  if (packageValidationIndex >= 0) {
+    return text.substring(packageValidationIndex).trimRight();
+  }
+
+  final summaryIndex = text.indexOf(RegExp(r'Package has \d+ warnings?'));
+  if (summaryIndex >= 0) {
+    return text.substring(summaryIndex).trimRight();
+  }
+
+  return '';
 }
 
 Future<Directory> preparePackageDryRunDirectory({

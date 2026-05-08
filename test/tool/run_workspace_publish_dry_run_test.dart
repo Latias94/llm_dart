@@ -34,6 +34,35 @@ void main() {
     });
   });
 
+  group('publish dry-run output helpers', () {
+    test('counts workspace override hints', () {
+      final count = countWorkspaceOverridePublishDryRunHints('''
+* Non-dev dependencies are overridden in pubspec_overrides.yaml.
+* Non-dev dependencies are overridden in pubspec_overrides.yaml.
+''');
+
+      expect(count, 2);
+    });
+
+    test('extracts validation diagnostics without archive listing', () {
+      final diagnostics = extractPublishDryRunValidationDiagnostics('''
+Building package archive...
+├── lib
+│   └── example.dart
+
+Validating package...
+Package validation found the following 1 hint:
+* Some hint.
+
+Package has 0 warnings and 1 hint.
+''');
+
+      expect(diagnostics, startsWith('Validating package...'));
+      expect(diagnostics, isNot(contains('Building package archive')));
+      expect(diagnostics, contains('Package has 0 warnings and 1 hint.'));
+    });
+  });
+
   group('preparePackageDryRunDirectory', () {
     test('stages root package without workspace-only and local files',
         () async {
