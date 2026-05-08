@@ -7,17 +7,6 @@ import 'package:test/test.dart';
 
 void main() {
   group('Audio Models Tests', () {
-    group('AudioProcessingMode Enum', () {
-      test('should have correct values', () {
-        expect(AudioProcessingMode.values, hasLength(3));
-        expect(AudioProcessingMode.values, contains(AudioProcessingMode.batch));
-        expect(AudioProcessingMode.values,
-            contains(AudioProcessingMode.streaming));
-        expect(
-            AudioProcessingMode.values, contains(AudioProcessingMode.realtime));
-      });
-    });
-
     group('AudioQuality Enum', () {
       test('should have correct values', () {
         expect(AudioQuality.values, hasLength(4));
@@ -89,10 +78,6 @@ void main() {
           format: 'mp3_44100_128',
           quality: 'high',
           sampleRate: 44100,
-          processingMode: AudioProcessingMode.streaming,
-          includeTimestamps: true,
-          timestampGranularity: TimestampGranularity.character,
-          textNormalization: TextNormalization.off,
           languageCode: 'en',
         );
 
@@ -103,10 +88,6 @@ void main() {
         expect(request.format, equals('mp3_44100_128'));
         expect(request.quality, equals('high'));
         expect(request.sampleRate, equals(44100));
-        expect(request.processingMode, AudioProcessingMode.streaming);
-        expect(request.includeTimestamps, isTrue);
-        expect(request.timestampGranularity, TimestampGranularity.character);
-        expect(request.textNormalization, TextNormalization.off);
         expect(request.languageCode, equals('en'));
       });
 

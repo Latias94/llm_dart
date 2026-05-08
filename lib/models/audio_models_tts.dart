@@ -23,18 +23,6 @@ class TTSRequest {
   /// Speed/rate of speech (provider-specific)
   final double? speed;
 
-  /// Processing mode (batch, streaming, realtime)
-  final AudioProcessingMode processingMode;
-
-  /// Whether to include timing information
-  final bool includeTimestamps;
-
-  /// Timestamp granularity (word, character, segment)
-  final TimestampGranularity timestampGranularity;
-
-  /// Text normalization mode
-  final TextNormalization textNormalization;
-
   /// Language code for TTS (ISO 639-1)
   final String? languageCode;
 
@@ -49,10 +37,6 @@ class TTSRequest {
     this.quality,
     this.sampleRate,
     this.speed,
-    this.processingMode = AudioProcessingMode.batch,
-    this.includeTimestamps = false,
-    this.timestampGranularity = TimestampGranularity.word,
-    this.textNormalization = TextNormalization.auto,
     this.languageCode,
     this.providerOptions,
   });
@@ -65,10 +49,6 @@ class TTSRequest {
         if (quality != null) 'quality': quality,
         if (sampleRate != null) 'sample_rate': sampleRate,
         if (speed != null) 'speed': speed,
-        'processing_mode': processingMode.name,
-        'include_timestamps': includeTimestamps,
-        'timestamp_granularity': timestampGranularity.name,
-        'text_normalization': textNormalization.name,
         if (languageCode != null) 'language_code': languageCode,
       };
 
@@ -80,19 +60,6 @@ class TTSRequest {
         quality: json['quality'] as String?,
         sampleRate: json['sample_rate'] as int?,
         speed: json['speed'] as double?,
-        processingMode: AudioProcessingMode.values.firstWhere(
-          (e) => e.name == json['processing_mode'],
-          orElse: () => AudioProcessingMode.batch,
-        ),
-        includeTimestamps: json['include_timestamps'] as bool? ?? false,
-        timestampGranularity: TimestampGranularity.values.firstWhere(
-          (e) => e.name == json['timestamp_granularity'],
-          orElse: () => TimestampGranularity.word,
-        ),
-        textNormalization: TextNormalization.values.firstWhere(
-          (e) => e.name == json['text_normalization'],
-          orElse: () => TextNormalization.auto,
-        ),
         languageCode: json['language_code'] as String?,
       );
 }

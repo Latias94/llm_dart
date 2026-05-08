@@ -1,17 +1,5 @@
 part of 'audio_models.dart';
 
-/// Audio processing mode for different use cases
-enum AudioProcessingMode {
-  /// Standard batch processing
-  batch,
-
-  /// Streaming processing for real-time applications
-  streaming,
-
-  /// Real-time processing with minimal latency
-  realtime,
-}
-
 /// Audio quality settings
 enum AudioQuality {
   /// Low quality, smaller file size
@@ -146,16 +134,4 @@ enum TimestampGranularity {
 
   /// Segment-level timestamps
   segment,
-}
-
-/// Text normalization mode for TTS
-enum TextNormalization {
-  /// Automatic normalization
-  auto,
-
-  /// Always apply normalization
-  on,
-
-  /// Never apply normalization
-  off,
 }

@@ -18,9 +18,11 @@ final class _ElevenLabsAudioRequestSupport {
       'text': request.text,
       'model_id': effectiveModel,
       'voice_settings': voiceSettings,
-      'apply_text_normalization':
-          (options?.textNormalization?.name ?? request.textNormalization.name),
     };
+    final textNormalization = options?.textNormalization;
+    if (textNormalization != null) {
+      requestBody['apply_text_normalization'] = textNormalization.name;
+    }
 
     final languageCode = options?.languageCode ?? request.languageCode;
     if (languageCode != null) {

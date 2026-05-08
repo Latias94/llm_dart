@@ -57,8 +57,7 @@ final class _ElevenLabsSpeechBridgeSupport {
               options?.previousRequestIds,
             ),
             nextRequestIds: _takeAtMostThree(options?.nextRequestIds),
-            textNormalization: options?.textNormalization ??
-                _toModernTextNormalization(request.textNormalization),
+            textNormalization: options?.textNormalization,
             applyLanguageTextNormalization:
                 options?.applyLanguageTextNormalization,
             enableLogging: options?.enableLogging,
@@ -99,16 +98,6 @@ List<String> _takeAtMostThree(List<String>? values) {
   }
 
   return values.take(3).toList(growable: false);
-}
-
-modern_community.ElevenLabsTextNormalization _toModernTextNormalization(
-  TextNormalization normalization,
-) {
-  return switch (normalization) {
-    TextNormalization.auto => modern_community.ElevenLabsTextNormalization.auto,
-    TextNormalization.on => modern_community.ElevenLabsTextNormalization.on,
-    TextNormalization.off => modern_community.ElevenLabsTextNormalization.off,
-  };
 }
 
 String? _mapLegacySpeechOutputFormat(

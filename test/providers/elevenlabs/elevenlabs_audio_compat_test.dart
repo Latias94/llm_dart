@@ -24,7 +24,6 @@ void main() {
           voice: 'voice_123',
           model: 'eleven_turbo_v2',
           languageCode: 'en',
-          textNormalization: TextNormalization.off,
           speed: 1.3,
           providerOptions: modern_community.ElevenLabsSpeechOptions(
             seed: 7,
@@ -35,6 +34,7 @@ void main() {
             enableLogging: false,
             optimizeStreamingLatency: 2,
             stability: 0.9,
+            textNormalization: modern_community.ElevenLabsTextNormalization.off,
           ),
         ),
       );

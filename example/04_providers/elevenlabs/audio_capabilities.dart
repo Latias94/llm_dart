@@ -244,7 +244,6 @@ Future<void> testCompatibilityStreaming(
         text: 'This is a streaming test for ElevenLabs advanced capabilities.',
         voice: _elevenLabsVoiceId,
         model: _elevenLabsSpeechModelId,
-        processingMode: AudioProcessingMode.streaming,
         providerOptions: community.ElevenLabsSpeechOptions(
           optimizeStreamingLatency: 2,
         ),
