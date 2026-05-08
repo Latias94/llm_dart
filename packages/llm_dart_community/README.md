@@ -25,8 +25,8 @@ published library boundary does not depend on that app-facing helper package.
 
 ## Why They Stay Together
 
-The repository does not currently need the same package granularity as
-`repo-ref/ai`.
+The repository does not currently need one package per provider or one package
+per small runtime slice.
 
 Keeping these providers together is the deliberate current tradeoff:
 

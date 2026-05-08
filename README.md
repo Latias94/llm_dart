@@ -129,7 +129,7 @@ For release validation across the root package plus the publishable workspace
 packages, run:
 
 ```bash
-dart tool/run_workspace_publish_dry_run.dart
+dart run tool/release_readiness.dart
 ```
 
 ## Focused Entry Points
@@ -204,7 +204,7 @@ Future<void> main() async {
 ```
 
 Example file:
-[quick_start.dart](E:/codes/flutter/llm_dart/example/01_getting_started/quick_start.dart)
+[quick_start.dart](example/01_getting_started/quick_start.dart)
 
 ## Provider-Owned Helper Boundaries
 
@@ -284,7 +284,7 @@ Future<void> main() async {
 ```
 
 Example file:
-[embeddings_stable.dart](E:/codes/flutter/llm_dart/example/02_core_features/embeddings_stable.dart)
+[embeddings_stable.dart](example/02_core_features/embeddings_stable.dart)
 
 ## Streaming
 
@@ -328,7 +328,7 @@ Future<void> main() async {
 ```
 
 Example file:
-[streaming_chat.dart](E:/codes/flutter/llm_dart/example/02_core_features/streaming_chat.dart)
+[streaming_chat.dart](example/02_core_features/streaming_chat.dart)
 
 ## Tool Calling
 
@@ -397,7 +397,7 @@ Future<void> main() async {
 ```
 
 Example file:
-[tool_calling.dart](E:/codes/flutter/llm_dart/example/02_core_features/tool_calling.dart)
+[tool_calling.dart](example/02_core_features/tool_calling.dart)
 
 ## Reasoning
 
@@ -425,7 +425,7 @@ Future<void> main() async {
 ```
 
 Example file:
-[reasoning_models.dart](E:/codes/flutter/llm_dart/example/03_advanced_features/reasoning_models.dart)
+[reasoning_models.dart](example/03_advanced_features/reasoning_models.dart)
 
 ## Pure Dart Chat Runtime
 
@@ -444,10 +444,10 @@ shared UI model layer, and remains available from `package:llm_dart/chat.dart`
 for chat-runtime-oriented imports.
 
 Runnable pure Dart runtime example:
-[chat_runtime.dart](E:/codes/flutter/llm_dart/packages/llm_dart_chat/example/chat_runtime.dart)
+[chat_runtime.dart](packages/llm_dart_chat/example/chat_runtime.dart)
 
 Package guide:
-[packages/llm_dart_chat/README.md](E:/codes/flutter/llm_dart/packages/llm_dart_chat/README.md)
+[packages/llm_dart_chat/README.md](packages/llm_dart_chat/README.md)
 
 ## Flutter Chat Session
 
@@ -486,10 +486,10 @@ Future<void> main() async {
 ```
 
 Example file:
-[flutter_integration.dart](E:/codes/flutter/llm_dart/packages/llm_dart_flutter/example/flutter_integration.dart)
+[flutter_integration.dart](packages/llm_dart_flutter/example/flutter_integration.dart)
 
 Package guide:
-[packages/llm_dart_flutter/README.md](E:/codes/flutter/llm_dart/packages/llm_dart_flutter/README.md)
+[packages/llm_dart_flutter/README.md](packages/llm_dart_flutter/README.md)
 
 For snapshot persistence, keep storage application-owned and use
 `ChatPersistenceAdapter` as the thin codec bridge:
@@ -655,21 +655,21 @@ Future<void> main() async {
 ## Current Reference Docs
 
 - Post-closure roadmap:
-  [docs/workstreams/2026-04-post-closure-priorities/README.md](E:/codes/flutter/llm_dart/docs/workstreams/2026-04-post-closure-priorities/README.md)
+  [docs/workstreams/2026-04-post-closure-priorities/README.md](docs/workstreams/2026-04-post-closure-priorities/README.md)
 - Community provider workspace guide:
-  [packages/llm_dart_community/README.md](E:/codes/flutter/llm_dart/packages/llm_dart_community/README.md)
+  [packages/llm_dart_community/README.md](packages/llm_dart_community/README.md)
 - Migration guide:
-  [38-migration-guide.md](E:/codes/flutter/llm_dart/docs/workstreams/2026-03-architecture-refactor/38-migration-guide.md)
+  [38-migration-guide.md](docs/workstreams/2026-03-architecture-refactor/38-migration-guide.md)
 - Architecture workstream index:
-  [docs/workstreams/2026-03-architecture-refactor/README.md](E:/codes/flutter/llm_dart/docs/workstreams/2026-03-architecture-refactor/README.md)
+  [docs/workstreams/2026-03-architecture-refactor/README.md](docs/workstreams/2026-03-architecture-refactor/README.md)
 - Provider UI extension contract:
-  [docs/workstreams/2026-04-post-closure-priorities/01-provider-ui-extension-contract.md](E:/codes/flutter/llm_dart/docs/workstreams/2026-04-post-closure-priorities/01-provider-ui-extension-contract.md)
+  [docs/workstreams/2026-04-post-closure-priorities/01-provider-ui-extension-contract.md](docs/workstreams/2026-04-post-closure-priorities/01-provider-ui-extension-contract.md)
 - Community provider public-entry guidance:
-  [104-community-provider-public-entry-guidance.md](E:/codes/flutter/llm_dart/docs/workstreams/2026-03-architecture-refactor/104-community-provider-public-entry-guidance.md)
+  [104-community-provider-public-entry-guidance.md](docs/workstreams/2026-03-architecture-refactor/104-community-provider-public-entry-guidance.md)
 - Prompt normalization contract:
-  [37-prompt-normalization-contract.md](E:/codes/flutter/llm_dart/docs/workstreams/2026-03-architecture-refactor/37-prompt-normalization-contract.md)
+  [37-prompt-normalization-contract.md](docs/workstreams/2026-03-architecture-refactor/37-prompt-normalization-contract.md)
 - Stream coverage matrix:
-  [36-provider-stream-coverage-matrix.md](E:/codes/flutter/llm_dart/docs/workstreams/2026-03-architecture-refactor/36-provider-stream-coverage-matrix.md)
+  [36-provider-stream-coverage-matrix.md](docs/workstreams/2026-03-architecture-refactor/36-provider-stream-coverage-matrix.md)
 
 ## Legacy Compatibility
 

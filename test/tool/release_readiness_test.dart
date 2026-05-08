@@ -137,6 +137,9 @@ version: 1.2.3-alpha.1
 
       expect(report, contains('Result: `failed`'));
       expect(report, contains('Fix the test failure.'));
+      expect(report, contains('## Publish Order'));
+      expect(report, contains('- `llm_dart_provider`'));
+      expect(report, contains('- `llm_dart`'));
       expect(report, contains('Manual Consumer Smoke'));
     });
   });

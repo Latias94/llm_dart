@@ -2,6 +2,9 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'bootstrap_workspace_pubspec_overrides.dart'
+    show publishableWorkspacePackages;
+
 final class ReleaseReadinessOptions {
   final bool skipTests;
   final bool skipPublishDryRun;
@@ -382,6 +385,15 @@ String buildReleaseReadinessReport(ReleaseReadinessRunResult result) {
       '${resultStep.exitCode} | '
       '${formatDuration(resultStep.elapsed)} |',
     );
+  }
+
+  buffer
+    ..writeln()
+    ..writeln('## Publish Order')
+    ..writeln();
+
+  for (final packageName in publishableWorkspacePackages) {
+    buffer.writeln('- `$packageName`');
   }
 
   if (!result.passed && result.steps.isNotEmpty) {

@@ -52,6 +52,13 @@ Current status:
   readiness checklist
 - root and core package descriptions have already been corrected for the
   compatibility-shell role
+- `02-package-metadata-and-publish-order.md` now records the alpha.1
+  dependency-aware publish order, package ownership audit, and
+  `llm_dart_test` non-publishable status
+- the release-readiness report now prints the same publish order from the
+  workspace bootstrap source of truth
+- root README links have been cleaned to repository-relative paths, and public
+  package README language no longer references the internal reference repo
 
 ## M3 - Clean Consumer Smoke
 
@@ -91,4 +98,6 @@ Acceptance criteria:
 
 Current status:
 
-- not started
+- a full local release-readiness run passed on 2026-05-08 with guards,
+  analysis, tests, and workspace publish dry-run for 11 package(s)
+- actual publishing has not started

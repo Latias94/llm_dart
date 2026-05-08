@@ -17,11 +17,11 @@
 
 ## Package Metadata And Publish Order
 
-- [ ] Re-audit all publishable package `pubspec.yaml` descriptions
-- [ ] Re-audit package README ownership language
-- [ ] Re-audit package changelog entries for the alpha line
-- [ ] Verify publish order against workspace dependencies
-- [ ] Confirm `llm_dart_test` remains non-publishable
+- [x] Re-audit all publishable package `pubspec.yaml` descriptions
+- [x] Re-audit package README ownership language
+- [x] Re-audit package changelog entries for the alpha line
+- [x] Verify publish order against workspace dependencies
+- [x] Confirm `llm_dart_test` remains non-publishable
 
 ## Consumer Smoke Validation
 
@@ -34,7 +34,7 @@
 
 ## Publish Execution
 
-- [ ] Run final release-readiness command
+- [x] Run final release-readiness command
 - [ ] Publish packages in dependency order
 - [ ] Re-run clean consumer smoke against pub.dev versions
 - [ ] Record alpha release feedback and decide the next targeted workstream
