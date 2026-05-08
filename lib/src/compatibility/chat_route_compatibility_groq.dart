@@ -13,18 +13,7 @@ bool canUseGroqChatBridge(
     return false;
   }
 
-  if (config.stopSequences case final stopSequences?
-      when stopSequences.isNotEmpty) {
-    return false;
-  }
-
-  if (config.user != null || config.serviceTier != null) {
-    return false;
-  }
-
-  if (config.systemPrompt != null &&
-      config.systemPrompt!.isNotEmpty &&
-      messages.any((message) => message.role == ChatRole.system)) {
+  if (_hasOpenAICompatibleShellRequestConflict(config, messages)) {
     return false;
   }
 
@@ -35,10 +24,8 @@ bool canUseGroqChatBridge(
     return false;
   }
 
-  for (final message in messages) {
-    if (message.messageType is! TextMessage) {
-      return false;
-    }
+  if (_hasNonTextMessages(messages)) {
+    return false;
   }
 
   return true;

@@ -32,18 +32,7 @@ bool canUseDeepSeekChatBridge(
     return false;
   }
 
-  if (config.stopSequences case final stopSequences?
-      when stopSequences.isNotEmpty) {
-    return false;
-  }
-
-  if (config.user != null || config.serviceTier != null) {
-    return false;
-  }
-
-  if (config.systemPrompt != null &&
-      config.systemPrompt!.isNotEmpty &&
-      messages.any((message) => message.role == ChatRole.system)) {
+  if (_hasOpenAICompatibleShellRequestConflict(config, messages)) {
     return false;
   }
 
@@ -54,23 +43,8 @@ bool canUseDeepSeekChatBridge(
     return false;
   }
 
-  for (final message in messages) {
-    switch (message.messageType) {
-      case TextMessage():
-        break;
-      case ToolUseMessage():
-        if (message.role != ChatRole.assistant) {
-          return false;
-        }
-      case ToolResultMessage():
-        if (message.role != ChatRole.user) {
-          return false;
-        }
-      case ImageMessage():
-      case ImageUrlMessage():
-      case FileMessage():
-        return false;
-    }
+  if (_hasUnsupportedTextToolReplayMessages(messages)) {
+    return false;
   }
 
   return true;

@@ -45,23 +45,8 @@ bool canUseOpenRouterChatBridge(
     return false;
   }
 
-  for (final message in messages) {
-    switch (message.messageType) {
-      case TextMessage():
-        break;
-      case ToolUseMessage():
-        if (message.role != ChatRole.assistant) {
-          return false;
-        }
-      case ToolResultMessage():
-        if (message.role != ChatRole.user) {
-          return false;
-        }
-      case ImageMessage():
-      case ImageUrlMessage():
-      case FileMessage():
-        return false;
-    }
+  if (_hasUnsupportedTextToolReplayMessages(messages)) {
+    return false;
   }
 
   return true;

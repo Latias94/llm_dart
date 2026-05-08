@@ -104,6 +104,55 @@ bool _hasNamedMessages(List<ChatMessage> messages) {
   return messages.any((message) => message.name != null);
 }
 
+bool _hasOpenAICompatibleShellRequestConflict(
+  LLMConfig config,
+  List<ChatMessage> messages,
+) {
+  if (config.stopSequences case final stopSequences?
+      when stopSequences.isNotEmpty) {
+    return true;
+  }
+
+  if (config.user != null || config.serviceTier != null) {
+    return true;
+  }
+
+  if (config.systemPrompt != null &&
+      config.systemPrompt!.isNotEmpty &&
+      messages.any((message) => message.role == ChatRole.system)) {
+    return true;
+  }
+
+  return false;
+}
+
+bool _hasNonTextMessages(List<ChatMessage> messages) {
+  return messages.any((message) => message.messageType is! TextMessage);
+}
+
+bool _hasUnsupportedTextToolReplayMessages(List<ChatMessage> messages) {
+  for (final message in messages) {
+    switch (message.messageType) {
+      case TextMessage():
+        break;
+      case ToolUseMessage():
+        if (message.role != ChatRole.assistant) {
+          return true;
+        }
+      case ToolResultMessage():
+        if (message.role != ChatRole.user) {
+          return true;
+        }
+      case ImageMessage():
+      case ImageUrlMessage():
+      case FileMessage():
+        return true;
+    }
+  }
+
+  return false;
+}
+
 bool _systemMessagesLead(List<ChatMessage> messages) {
   var sawConversationMessage = false;
 
