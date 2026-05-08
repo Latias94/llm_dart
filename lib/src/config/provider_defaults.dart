@@ -1,10 +1,9 @@
-import '../../core/capability.dart';
-
 /// Centralized provider default configurations
 ///
-/// This file contains all default endpoints, models, and capabilities
-/// for all supported providers to eliminate configuration duplication
-/// and ensure consistency across the library.
+/// This file contains legacy root factory endpoint/model defaults.
+///
+/// Capability declarations live on providers and factories, while
+/// OpenAI-compatible generic endpoint profiles live in `OpenAICompatibleConfigs`.
 class ProviderDefaults {
   // Core OpenAI
   static const String openaiBaseUrl = 'https://api.openai.com/v1/';
@@ -180,83 +179,6 @@ class ProviderDefaults {
         };
       default:
         throw ArgumentError('Unknown provider: $providerId');
-    }
-  }
-
-  /// Get supported capabilities for a provider
-  static Set<LLMCapability> getCapabilities(String providerId) {
-    switch (providerId) {
-      case 'openai':
-        return {
-          LLMCapability.chat,
-          LLMCapability.streaming,
-          LLMCapability.embedding,
-          LLMCapability.modelListing,
-          LLMCapability.toolCalling,
-          LLMCapability.reasoning,
-          LLMCapability.vision,
-          LLMCapability.textToSpeech,
-          LLMCapability.speechToText,
-          LLMCapability.imageGeneration,
-        };
-      case 'anthropic':
-        return {
-          LLMCapability.chat,
-          LLMCapability.streaming,
-          LLMCapability.toolCalling,
-          LLMCapability.reasoning,
-          LLMCapability.vision,
-        };
-      case 'google':
-        return {
-          LLMCapability.chat,
-          LLMCapability.streaming,
-          LLMCapability.toolCalling,
-          LLMCapability.reasoning,
-          LLMCapability.vision,
-          LLMCapability.imageGeneration,
-        };
-      case 'deepseek':
-        return {
-          LLMCapability.chat,
-          LLMCapability.streaming,
-          LLMCapability.toolCalling,
-          LLMCapability.reasoning,
-        };
-      case 'groq':
-        return {
-          LLMCapability.chat,
-          LLMCapability.streaming,
-          LLMCapability.toolCalling,
-        };
-      case 'xai':
-        return {
-          LLMCapability.chat,
-          LLMCapability.streaming,
-          LLMCapability.toolCalling,
-          LLMCapability.reasoning,
-          LLMCapability.embedding,
-        };
-      case 'phind':
-        return {
-          LLMCapability.chat,
-          LLMCapability.streaming,
-          LLMCapability.toolCalling,
-        };
-      case 'elevenlabs':
-        return {
-          LLMCapability.textToSpeech,
-          LLMCapability.speechToText,
-        };
-      case 'ollama':
-        return {
-          LLMCapability.chat,
-          LLMCapability.streaming,
-          LLMCapability.embedding,
-          LLMCapability.modelListing,
-        };
-      default:
-        return <LLMCapability>{};
     }
   }
 }

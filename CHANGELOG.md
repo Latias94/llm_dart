@@ -44,6 +44,8 @@ into a routine `0.10.x` maintenance release.
 - Moved generic OpenAI-compatible endpoint defaults out of `ProviderDefaults`.
   OpenRouter, GitHub Copilot, and Together AI defaults now live only on typed
   `OpenAICompatibleConfigs`.
+- Removed `ProviderDefaults.getCapabilities(...)`; capability declarations are
+  owned by provider factories and provider instances.
 
 ### Deprecated
 

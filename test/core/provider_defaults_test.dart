@@ -4,7 +4,8 @@ import 'package:test/test.dart';
 
 void main() {
   group('ProviderDefaults', () {
-    test('keeps coarse endpoint and model defaults for dedicated providers', () {
+    test('keeps coarse endpoint and model defaults for dedicated providers',
+        () {
       expect(
         ProviderDefaults.getDefaults('openai'),
         containsPair('baseUrl', ProviderDefaults.openaiBaseUrl),
@@ -20,10 +21,10 @@ void main() {
         () => ProviderDefaults.getDefaults('openrouter'),
         throwsArgumentError,
       );
-      expect(ProviderDefaults.getCapabilities('together-ai'), isEmpty);
 
       final togetherAI = OpenAICompatibleConfigs.getConfig('together-ai');
-      expect(togetherAI?.defaultBaseUrl, equals('https://api.together.xyz/v1/'));
+      expect(
+          togetherAI?.defaultBaseUrl, equals('https://api.together.xyz/v1/'));
     });
   });
 }
