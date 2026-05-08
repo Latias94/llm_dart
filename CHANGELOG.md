@@ -66,6 +66,8 @@ into a routine `0.10.x` maintenance release.
   implementation details.
 - Removed the public `utils/dio_client_factory.dart` wrapper. Provider clients
   use the transport-owned `ProviderDioClientFactory` directly.
+- Removed the public `utils/http_response_handler.dart` wrapper. Shared
+  compatibility response handling is now internal HTTP infrastructure.
 
 ### Deprecated
 

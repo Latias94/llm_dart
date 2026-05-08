@@ -5,8 +5,8 @@ import 'package:llm_dart_transport/llm_dart_transport.dart'
 import '../../../../core/cancellation.dart';
 import '../../../../core/llm_error.dart';
 import '../../../../providers/anthropic/config.dart';
-import '../../../../utils/http_response_handler.dart';
 import '../../http/dio_request_executor.dart';
+import '../../http/http_response_handler.dart';
 import 'dio_strategy.dart';
 
 /// Core Anthropic HTTP client shared across all capability modules

@@ -12,7 +12,7 @@ import '../../../../core/cancellation.dart' show TransportCancellation;
 import '../../../../core/llm_error.dart';
 import '../../../../models/chat_models.dart';
 import '../../../../providers/openai/config.dart';
-import '../../../../utils/http_response_handler.dart';
+import '../../http/http_response_handler.dart';
 import 'client_error_support.dart';
 import 'client_message_support.dart';
 import 'client_sse_support.dart';

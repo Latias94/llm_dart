@@ -187,5 +187,4 @@ class HttpResponseHandler {
       throw GenericError('Unexpected error: $e');
     }
   }
-
 }

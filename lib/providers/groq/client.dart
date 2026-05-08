@@ -3,7 +3,7 @@ import 'package:llm_dart_transport/llm_dart_transport.dart'
     show Logger, ProviderDioClientFactory;
 
 import '../../core/cancellation.dart';
-import '../../utils/http_response_handler.dart';
+import '../../src/compatibility/http/http_response_handler.dart';
 import 'config.dart';
 import 'dio_strategy.dart';
 

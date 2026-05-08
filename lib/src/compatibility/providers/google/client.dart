@@ -3,9 +3,9 @@ import 'package:llm_dart_transport/llm_dart_transport.dart'
     show decodeDioResponseTextStream, Logger, ProviderDioClientFactory;
 
 import '../../../../core/cancellation.dart';
-import '../../../../utils/http_response_handler.dart';
 import '../../../../providers/google/config.dart';
 import '../../http/dio_request_executor.dart';
+import '../../http/http_response_handler.dart';
 import 'dio_strategy.dart';
 
 part 'client_http_mixin.dart';
