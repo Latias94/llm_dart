@@ -1,7 +1,6 @@
 export 'llm_builder_provider_capability_extensions.dart';
 export 'llm_builder_provider_extensions.dart';
 export 'llm_builder_legacy_extension_config.dart';
-export 'llm_builder_media_config.dart';
 
 import '../core/capability.dart';
 import '../core/config.dart';

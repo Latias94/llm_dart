@@ -47,11 +47,13 @@ Implementation moved into same-library part files:
 - `llm_builder_provider_selection.dart`
 - `llm_builder_common_config.dart`
 - `llm_builder_web_search.dart`
-- `llm_builder_media_config.dart`
 - `llm_builder_builds.dart`
 - `llm_builder_internal.dart`
 
 This keeps the external API stable while making ownership clearer.
+
+The old media extension was later removed during the architecture foundation
+cleanup because its image/audio extension keys had no runtime consumers.
 
 ## 4. What Stayed Out Of This Slice
 
