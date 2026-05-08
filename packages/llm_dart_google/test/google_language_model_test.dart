@@ -319,6 +319,83 @@ void main() {
     });
 
     test(
+        'generate preserves Google provider options when applying shared responseFormat',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = Google(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return const TransportResponse(
+              statusCode: 200,
+              body: {
+                'responseId': 'resp_structured_options',
+                'modelVersion': 'gemini-2.5-flash',
+                'candidates': [
+                  {
+                    'content': {
+                      'parts': [
+                        {
+                          'text': '{"answer":"Hello"}',
+                        },
+                      ],
+                    },
+                    'finishReason': 'STOP',
+                  },
+                ],
+              },
+            );
+          },
+        ),
+      ).chatModel('gemini-2.5-flash');
+
+      await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage.text('Return JSON.'),
+          ],
+          options: GenerateTextOptions(
+            responseFormat: JsonResponseFormat(
+              schema: JsonSchema.object(
+                properties: const {
+                  'answer': {'type': 'string'},
+                },
+              ),
+            ),
+          ),
+          callOptions: const CallOptions(
+            providerOptions: GoogleGenerateTextOptions(
+              candidateCount: 1,
+              includeThoughts: true,
+              cachedContent: 'cachedContents/demo',
+            ),
+          ),
+        ),
+      );
+
+      final body = capturedRequest!.body as Map<String, Object?>;
+      expect(body['cachedContent'], 'cachedContents/demo');
+      expect(
+        body['generationConfig'],
+        {
+          'candidateCount': 1,
+          'thinkingConfig': {
+            'includeThoughts': true,
+          },
+          'responseMimeType': 'application/json',
+          'responseSchema': {
+            'type': 'object',
+            'properties': {
+              'answer': {'type': 'string'},
+            },
+          },
+        },
+      );
+    });
+
+    test(
         'generate rejects configuring shared and Google-specific response formats at the same time',
         () async {
       final model = Google(

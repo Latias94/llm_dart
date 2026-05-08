@@ -32,18 +32,7 @@ GoogleGenerateTextOptions resolveGoogleProviderOptions(
     return resolved;
   }
 
-  return GoogleGenerateTextOptions(
-    candidateCount: resolved.candidateCount,
-    thinkingBudgetTokens: resolved.thinkingBudgetTokens,
-    thinkingLevel: resolved.thinkingLevel,
-    includeThoughts: resolved.includeThoughts,
-    responseModalities: resolved.responseModalities,
-    cachedContent: resolved.cachedContent,
-    safetySettings: resolved.safetySettings,
-    tools: resolved.tools,
-    includeServerSideToolInvocations: resolved.includeServerSideToolInvocations,
-    responseFormat: sharedResponseFormat,
-  );
+  return resolved.copyWith(responseFormat: sharedResponseFormat);
 }
 
 Map<String, String> buildGoogleRequestHeaders({
