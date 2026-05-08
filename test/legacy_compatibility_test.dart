@@ -12,6 +12,7 @@ import 'package:llm_dart/src/compatibility/config/legacy_ollama_options.dart';
 import 'package:llm_dart/src/compatibility/config/legacy_openai_options.dart';
 import 'package:llm_dart/src/compatibility/config/legacy_provider_options.dart';
 import 'package:llm_dart/src/compatibility/config/legacy_web_search_options.dart';
+import 'package:llm_dart/src/compatibility/config/legacy_xai_options.dart';
 import 'package:llm_dart_core/llm_dart_core.dart' as core;
 import 'package:llm_dart_openai/llm_dart_openai.dart' as modern_openai;
 import 'package:llm_dart_test/llm_dart_test.dart';
@@ -427,6 +428,59 @@ void main() {
       expect(deepSeek.frequencyPenalty, 0.2);
       expect(deepSeek.presencePenalty, 0.4);
       expect(deepSeek.responseFormat, {'type': 'json_object'});
+    });
+
+    test('LegacyXAIOptions centralizes xAI option reads', () {
+      const schema = legacy.StructuredOutputFormat(
+        name: 'answer',
+        schema: {'type': 'object'},
+      );
+      const config = legacy.LLMConfig(
+        apiKey: 'test-key',
+        baseUrl: 'https://api.x.ai/v1',
+        model: 'grok-3',
+        extensions: {
+          LegacyExtensionKeys.xaiLiveSearch: true,
+          LegacyExtensionKeys.webSearchConfig: legacy.WebSearchConfig(
+            enabled: true,
+            searchType: legacy.WebSearchType.news,
+            maxResults: 4,
+            blockedDomains: ['example.com'],
+            fromDate: '2025-01-01',
+            toDate: '2025-01-31',
+            mode: 'always',
+          ),
+          legacyProviderOptionsBagKey: {
+            LegacyProviderOptionNamespaces.xai: {
+              LegacyExtensionKeys.jsonSchema: schema,
+              LegacyExtensionKeys.embeddingEncodingFormat: 'float',
+              LegacyExtensionKeys.embeddingDimensions: 1024,
+              LegacyExtensionKeys.xaiLiveSearch: null,
+            },
+          },
+        },
+      );
+
+      final xai = legacyXAIOptions(
+        legacyProviderOptionView(
+          config,
+          LegacyProviderOptionNamespaces.xai,
+        ),
+      );
+
+      expect(xai.jsonSchema, schema);
+      expect(xai.embeddingEncodingFormat, 'float');
+      expect(xai.embeddingDimensions, 1024);
+      expect(xai.liveSearchEnabled, isNull);
+      expect(xai.liveSearch, isTrue);
+      expect(xai.searchParameters?.mode, 'always');
+      expect(xai.searchParameters?.maxSearchResults, 4);
+      expect(xai.searchParameters?.fromDate, '2025-01-01');
+      expect(xai.searchParameters?.toDate, '2025-01-31');
+      expect(xai.searchParameters?.sources?.single.sourceType, 'news');
+      expect(xai.searchParameters?.sources?.single.excludedWebsites, [
+        'example.com',
+      ]);
     });
 
     test(

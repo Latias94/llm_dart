@@ -1,12 +1,9 @@
 import 'package:llm_dart_openai/llm_dart_openai.dart' as modern_openai;
 
 import '../../../core/config.dart';
-import '../../../core/web_search.dart';
-import '../../../models/tool_models.dart';
 import '../../../providers/xai/config.dart';
-import '../config/legacy_config_keys.dart';
+import '../config/legacy_xai_options.dart';
 import '../config/legacy_provider_options.dart';
-import '../config/legacy_web_search_options.dart';
 import 'community_provider_config_adapters.dart';
 import 'compat_provider_support.dart';
 
@@ -16,10 +13,7 @@ XAIConfig createLegacyXAIConfig(LLMConfig config) {
     config,
     LegacyProviderOptionNamespaces.xai,
   );
-  final searchParameters = _createLegacyXAISearchParameters(options);
-  final liveSearchEnabled = options.getWithFlatFallback<bool>(
-    LegacyExtensionKeys.xaiLiveSearch,
-  );
+  final xaiOptions = legacyXAIOptions(options);
 
   return XAIConfig(
     apiKey: config.apiKey!,
@@ -34,17 +28,11 @@ XAIConfig createLegacyXAIConfig(LLMConfig config) {
     topK: config.topK,
     tools: config.tools,
     toolChoice: config.toolChoice,
-    jsonSchema: options.getWithFlatFallback<StructuredOutputFormat>(
-      LegacyExtensionKeys.jsonSchema,
-    ),
-    embeddingEncodingFormat: options.getWithFlatFallback<String>(
-      LegacyExtensionKeys.embeddingEncodingFormat,
-    ),
-    embeddingDimensions: options.getWithFlatFallback<int>(
-      LegacyExtensionKeys.embeddingDimensions,
-    ),
-    searchParameters: searchParameters,
-    liveSearch: liveSearchEnabled ?? searchParameters != null,
+    jsonSchema: xaiOptions.jsonSchema,
+    embeddingEncodingFormat: xaiOptions.embeddingEncodingFormat,
+    embeddingDimensions: xaiOptions.embeddingDimensions,
+    searchParameters: xaiOptions.searchParameters,
+    liveSearch: xaiOptions.liveSearch,
   );
 }
 
@@ -139,46 +127,4 @@ List<modern_openai.XAISearchSource>? mapCompatXAISearchSources(
   }
 
   return mapped;
-}
-
-SearchParameters? _createLegacyXAISearchParameters(
-  LegacyProviderOptionView options,
-) {
-  final searchParameters = options.getWithFlatFallback<SearchParameters>(
-    LegacyExtensionKeys.xaiSearchParameters,
-  );
-  if (searchParameters != null) {
-    return searchParameters;
-  }
-
-  final webSearchOptions = legacyWebSearchOptions(options);
-  final webSearchConfig = webSearchOptions.config;
-  if (webSearchConfig != null) {
-    return _convertWebSearchConfigToSearchParameters(webSearchConfig);
-  }
-
-  if (webSearchOptions.enabled) {
-    return SearchParameters.webSearch();
-  }
-
-  return null;
-}
-
-SearchParameters _convertWebSearchConfigToSearchParameters(
-  WebSearchConfig config,
-) {
-  final sourceType = config.searchType == WebSearchType.news ? 'news' : 'web';
-
-  return SearchParameters(
-    mode: config.mode ?? 'auto',
-    sources: [
-      SearchSource(
-        sourceType: sourceType,
-        excludedWebsites: config.blockedDomains,
-      ),
-    ],
-    maxSearchResults: config.maxResults,
-    fromDate: config.fromDate,
-    toDate: config.toDate,
-  );
 }
