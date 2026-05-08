@@ -1,5 +1,22 @@
 part of 'chat_route_compatibility.dart';
 
+const _openRouterChatBridgeOptionKeys = {
+  LegacyExtensionKeys.parallelToolCalls,
+  LegacyExtensionKeys.verbosity,
+  LegacyExtensionKeys.jsonSchema,
+  LegacyExtensionKeys.webSearchEnabled,
+  LegacyExtensionKeys.webSearchConfig,
+};
+const _openRouterChatBridgeExtensionAllowlist = _ChatBridgeExtensionAllowlist(
+  flatKeys: {
+    ..._httpExtensionKeys,
+    ..._openRouterChatBridgeOptionKeys,
+  },
+  providerOptions: {
+    LegacyProviderOptionNamespaces.openrouter: _openRouterChatBridgeOptionKeys,
+  },
+);
+
 bool canUseOpenRouterChatBridge(
   LLMConfig config,
   List<ChatMessage> messages,
@@ -23,23 +40,7 @@ bool canUseOpenRouterChatBridge(
 
   if (_hasUnsupportedExtensions(
     config: config,
-    allowedKeys: {
-      ..._httpExtensionKeys,
-      LegacyExtensionKeys.parallelToolCalls,
-      LegacyExtensionKeys.verbosity,
-      LegacyExtensionKeys.jsonSchema,
-      LegacyExtensionKeys.webSearchEnabled,
-      LegacyExtensionKeys.webSearchConfig,
-    },
-    allowedProviderOptions: {
-      LegacyProviderOptionNamespaces.openrouter: {
-        LegacyExtensionKeys.parallelToolCalls,
-        LegacyExtensionKeys.verbosity,
-        LegacyExtensionKeys.jsonSchema,
-        LegacyExtensionKeys.webSearchEnabled,
-        LegacyExtensionKeys.webSearchConfig,
-      },
-    },
+    allowlist: _openRouterChatBridgeExtensionAllowlist,
   )) {
     return false;
   }

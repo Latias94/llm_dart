@@ -1,25 +1,37 @@
 part of 'chat_route_compatibility.dart';
 
 const Set<String> _httpExtensionKeys = legacyHttpExtensionKeys;
+const _httpOnlyChatBridgeExtensionAllowlist = _ChatBridgeExtensionAllowlist(
+  flatKeys: _httpExtensionKeys,
+);
+
+final class _ChatBridgeExtensionAllowlist {
+  final Set<String> flatKeys;
+  final Map<String, Set<String>> providerOptions;
+
+  const _ChatBridgeExtensionAllowlist({
+    required this.flatKeys,
+    this.providerOptions = const {},
+  });
+}
 
 bool _hasUnsupportedExtensions({
   required LLMConfig config,
-  required Set<String> allowedKeys,
-  Map<String, Set<String>> allowedProviderOptions = const {},
+  required _ChatBridgeExtensionAllowlist allowlist,
 }) {
   for (final key in config.extensions.keys) {
     if (key == legacyProviderOptionsBagKey) {
       continue;
     }
 
-    if (!allowedKeys.contains(key)) {
+    if (!allowlist.flatKeys.contains(key)) {
       return true;
     }
   }
 
   if (_hasUnsupportedProviderOptions(
     config: config,
-    allowedProviderOptions: allowedProviderOptions,
+    allowedProviderOptions: allowlist.providerOptions,
   )) {
     return true;
   }

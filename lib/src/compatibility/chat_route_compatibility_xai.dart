@@ -1,5 +1,27 @@
 part of 'chat_route_compatibility.dart';
 
+const _xaiChatBridgeFlatOptionKeys = {
+  LegacyExtensionKeys.jsonSchema,
+  LegacyExtensionKeys.xaiLiveSearch,
+  LegacyExtensionKeys.xaiSearchParameters,
+  LegacyExtensionKeys.webSearchEnabled,
+  LegacyExtensionKeys.webSearchConfig,
+};
+const _xaiChatBridgeProviderOptionKeys = {
+  ..._xaiChatBridgeFlatOptionKeys,
+  LegacyExtensionKeys.embeddingEncodingFormat,
+  LegacyExtensionKeys.embeddingDimensions,
+};
+const _xaiChatBridgeExtensionAllowlist = _ChatBridgeExtensionAllowlist(
+  flatKeys: {
+    ..._httpExtensionKeys,
+    ..._xaiChatBridgeFlatOptionKeys,
+  },
+  providerOptions: {
+    LegacyProviderOptionNamespaces.xai: _xaiChatBridgeProviderOptionKeys,
+  },
+);
+
 bool canUseXAIChatBridge(
   LLMConfig config,
   List<ChatMessage> messages,
@@ -30,25 +52,7 @@ bool canUseXAIChatBridge(
 
   if (_hasUnsupportedExtensions(
     config: config,
-    allowedKeys: {
-      ..._httpExtensionKeys,
-      LegacyExtensionKeys.jsonSchema,
-      LegacyExtensionKeys.xaiLiveSearch,
-      LegacyExtensionKeys.xaiSearchParameters,
-      LegacyExtensionKeys.webSearchEnabled,
-      LegacyExtensionKeys.webSearchConfig,
-    },
-    allowedProviderOptions: {
-      LegacyProviderOptionNamespaces.xai: {
-        LegacyExtensionKeys.jsonSchema,
-        LegacyExtensionKeys.xaiLiveSearch,
-        LegacyExtensionKeys.xaiSearchParameters,
-        LegacyExtensionKeys.webSearchEnabled,
-        LegacyExtensionKeys.webSearchConfig,
-        LegacyExtensionKeys.embeddingEncodingFormat,
-        LegacyExtensionKeys.embeddingDimensions,
-      },
-    },
+    allowlist: _xaiChatBridgeExtensionAllowlist,
   )) {
     return false;
   }

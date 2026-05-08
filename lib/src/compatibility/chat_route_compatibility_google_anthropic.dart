@@ -1,5 +1,47 @@
 part of 'chat_route_compatibility.dart';
 
+const _googleChatBridgeOptionKeys = {
+  LegacyExtensionKeys.jsonSchema,
+  LegacyExtensionKeys.reasoningEffort,
+  LegacyExtensionKeys.thinkingBudgetTokens,
+  LegacyExtensionKeys.includeThoughts,
+  LegacyExtensionKeys.enableImageGeneration,
+  LegacyExtensionKeys.responseModalities,
+  LegacyExtensionKeys.safetySettings,
+  LegacyExtensionKeys.candidateCount,
+  LegacyExtensionKeys.webSearchEnabled,
+  LegacyExtensionKeys.webSearchConfig,
+};
+const _googleChatBridgeExtensionAllowlist = _ChatBridgeExtensionAllowlist(
+  flatKeys: {
+    ..._httpExtensionKeys,
+    ..._googleChatBridgeOptionKeys,
+  },
+  providerOptions: {
+    LegacyProviderOptionNamespaces.google: _googleChatBridgeOptionKeys,
+  },
+);
+
+const _anthropicChatBridgeOptionKeys = {
+  LegacyExtensionKeys.reasoning,
+  LegacyExtensionKeys.thinkingBudgetTokens,
+  LegacyExtensionKeys.interleavedThinking,
+  LegacyExtensionKeys.metadata,
+  LegacyExtensionKeys.container,
+  LegacyExtensionKeys.mcpServers,
+  LegacyExtensionKeys.webSearchEnabled,
+  LegacyExtensionKeys.webSearchConfig,
+};
+const _anthropicChatBridgeExtensionAllowlist = _ChatBridgeExtensionAllowlist(
+  flatKeys: {
+    ..._httpExtensionKeys,
+    ..._anthropicChatBridgeOptionKeys,
+  },
+  providerOptions: {
+    LegacyProviderOptionNamespaces.anthropic: _anthropicChatBridgeOptionKeys,
+  },
+);
+
 bool canUseGoogleChatBridge(
   LLMConfig config,
   List<ChatMessage> messages,
@@ -11,33 +53,7 @@ bool canUseGoogleChatBridge(
 
   if (_hasUnsupportedExtensions(
     config: config,
-    allowedKeys: {
-      ..._httpExtensionKeys,
-      LegacyExtensionKeys.jsonSchema,
-      LegacyExtensionKeys.reasoningEffort,
-      LegacyExtensionKeys.thinkingBudgetTokens,
-      LegacyExtensionKeys.includeThoughts,
-      LegacyExtensionKeys.enableImageGeneration,
-      LegacyExtensionKeys.responseModalities,
-      LegacyExtensionKeys.safetySettings,
-      LegacyExtensionKeys.candidateCount,
-      LegacyExtensionKeys.webSearchEnabled,
-      LegacyExtensionKeys.webSearchConfig,
-    },
-    allowedProviderOptions: {
-      LegacyProviderOptionNamespaces.google: {
-        LegacyExtensionKeys.jsonSchema,
-        LegacyExtensionKeys.reasoningEffort,
-        LegacyExtensionKeys.thinkingBudgetTokens,
-        LegacyExtensionKeys.includeThoughts,
-        LegacyExtensionKeys.enableImageGeneration,
-        LegacyExtensionKeys.responseModalities,
-        LegacyExtensionKeys.safetySettings,
-        LegacyExtensionKeys.candidateCount,
-        LegacyExtensionKeys.webSearchEnabled,
-        LegacyExtensionKeys.webSearchConfig,
-      },
-    },
+    allowlist: _googleChatBridgeExtensionAllowlist,
   )) {
     return false;
   }
@@ -93,29 +109,7 @@ bool canUseAnthropicChatBridge(
 
   if (_hasUnsupportedExtensions(
     config: config,
-    allowedKeys: {
-      ..._httpExtensionKeys,
-      LegacyExtensionKeys.reasoning,
-      LegacyExtensionKeys.thinkingBudgetTokens,
-      LegacyExtensionKeys.interleavedThinking,
-      LegacyExtensionKeys.metadata,
-      LegacyExtensionKeys.container,
-      LegacyExtensionKeys.mcpServers,
-      LegacyExtensionKeys.webSearchEnabled,
-      LegacyExtensionKeys.webSearchConfig,
-    },
-    allowedProviderOptions: {
-      LegacyProviderOptionNamespaces.anthropic: {
-        LegacyExtensionKeys.reasoning,
-        LegacyExtensionKeys.thinkingBudgetTokens,
-        LegacyExtensionKeys.interleavedThinking,
-        LegacyExtensionKeys.metadata,
-        LegacyExtensionKeys.container,
-        LegacyExtensionKeys.mcpServers,
-        LegacyExtensionKeys.webSearchEnabled,
-        LegacyExtensionKeys.webSearchConfig,
-      },
-    },
+    allowlist: _anthropicChatBridgeExtensionAllowlist,
   )) {
     return false;
   }

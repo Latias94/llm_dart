@@ -1,5 +1,24 @@
 part of 'chat_route_compatibility.dart';
 
+const _openAIChatBridgeOptionKeys = {
+  LegacyExtensionKeys.useResponsesApi,
+  LegacyExtensionKeys.previousResponseId,
+  LegacyExtensionKeys.parallelToolCalls,
+  LegacyExtensionKeys.verbosity,
+  LegacyExtensionKeys.reasoningEffort,
+  LegacyExtensionKeys.jsonSchema,
+  LegacyExtensionKeys.builtInTools,
+};
+const _openAIChatBridgeExtensionAllowlist = _ChatBridgeExtensionAllowlist(
+  flatKeys: {
+    ..._httpExtensionKeys,
+    ..._openAIChatBridgeOptionKeys,
+  },
+  providerOptions: {
+    LegacyProviderOptionNamespaces.openai: _openAIChatBridgeOptionKeys,
+  },
+);
+
 bool canUseOpenAIChatBridge(
   LLMConfig config,
   List<ChatMessage> messages,
@@ -22,27 +41,7 @@ bool canUseOpenAIChatBridge(
 
   if (_hasUnsupportedExtensions(
     config: config,
-    allowedKeys: {
-      ..._httpExtensionKeys,
-      LegacyExtensionKeys.useResponsesApi,
-      LegacyExtensionKeys.previousResponseId,
-      LegacyExtensionKeys.parallelToolCalls,
-      LegacyExtensionKeys.verbosity,
-      LegacyExtensionKeys.reasoningEffort,
-      LegacyExtensionKeys.jsonSchema,
-      LegacyExtensionKeys.builtInTools,
-    },
-    allowedProviderOptions: {
-      LegacyProviderOptionNamespaces.openai: {
-        LegacyExtensionKeys.useResponsesApi,
-        LegacyExtensionKeys.previousResponseId,
-        LegacyExtensionKeys.parallelToolCalls,
-        LegacyExtensionKeys.verbosity,
-        LegacyExtensionKeys.reasoningEffort,
-        LegacyExtensionKeys.jsonSchema,
-        LegacyExtensionKeys.builtInTools,
-      },
-    },
+    allowlist: _openAIChatBridgeExtensionAllowlist,
   )) {
     return false;
   }

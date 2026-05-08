@@ -34,7 +34,7 @@ bool canUsePhindChatBridge(
 
   if (_hasUnsupportedExtensions(
     config: config,
-    allowedKeys: _httpExtensionKeys,
+    allowlist: _httpOnlyChatBridgeExtensionAllowlist,
   )) {
     return false;
   }

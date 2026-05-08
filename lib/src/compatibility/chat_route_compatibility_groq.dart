@@ -30,7 +30,7 @@ bool canUseGroqChatBridge(
 
   if (_hasUnsupportedExtensions(
     config: config,
-    allowedKeys: _httpExtensionKeys,
+    allowlist: _httpOnlyChatBridgeExtensionAllowlist,
   )) {
     return false;
   }
