@@ -122,22 +122,28 @@ So the correct current state is:
 
 ### DeepSeek
 
-- status: conservative compatibility route for subset V1
+- status: conservative compatibility route for subset V2
 - current blocker:
   - only the `deepseek-chat` subset is currently frozen
-  - `deepseek-reasoner` and DeepSeek-specific legacy extensions still remain fallback-only
+  - `deepseek-reasoner` and old flat DeepSeek-specific legacy extensions still
+    remain fallback-only
 - legacy-specific concerns:
   - the old provider has `deepseek-reasoner` specific request restrictions
   - the old provider reads DeepSeek-only legacy extensions such as `logprobs`, `top_logprobs`, `frequency_penalty`, `presence_penalty`, and `response_format`
-  - the refactored package now preserves the basic `reasoning_content` path, but not the full DeepSeek-specific legacy option surface
+  - the refactored package now preserves the basic `reasoning_content` path and
+    the namespaced `providerOptions.deepseek` request option subset, but not
+    old flat DeepSeek extension routing
 - current compatibility subset:
   - `deepseek-chat` only
-  - no DeepSeek-only extensions
+  - namespaced `providerOptions.deepseek` options for `logprobs`,
+    `top_logprobs`, `frequency_penalty`, `presence_penalty`, and
+    `response_format`
   - no `stopSequences`, `serviceTier`, or `user` overrides
   - no legacy message decorators
 - current recommendation:
   - keep the new conservative DeepSeek subset enabled
-  - keep `deepseek-reasoner` and DeepSeek-specific extensions on legacy fallback until their request policy is frozen
+  - keep `deepseek-reasoner` and old flat DeepSeek-specific extensions on
+    legacy fallback until their request policy is frozen
 
 ### Groq
 
@@ -202,7 +208,7 @@ So the correct current state is:
 | --- | --- | --- | --- | --- |
 | OpenAI | yes | yes | already has a migrated bridge-safe subset | keep expanding tests |
 | OpenRouter | yes | yes, subset only | search-shaped OpenRouter traffic is not frozen | expand the OpenRouter subset only after explicit search audits |
-| DeepSeek | yes | yes, subset only | `deepseek-reasoner` and DeepSeek-specific request shapes are still not bridged | expand the DeepSeek subset only after explicit audits |
+| DeepSeek | yes | yes, subset only | `deepseek-reasoner` and old flat DeepSeek-specific request shapes are still not bridged | expand the DeepSeek subset only after explicit audits |
 | Groq | yes | yes, subset only | tool replay, multimodal requests, and ignored legacy extras are still not bridged | audit the next Groq subset explicitly |
 | xAI | yes | yes, subset only | prompt-side tool replay and unsupported search shapes are still not frozen | audit the next xAI subset explicitly after the live-search migration subset |
 | Phind | yes | no | legacy request format is not plain OpenAI-compatible | dedicated Phind request audit |

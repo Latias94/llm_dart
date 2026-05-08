@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import 'deepseek_options.dart';
 import 'openai_family_profile.dart';
 import 'openai_options.dart';
 import 'openai_response_format.dart';
@@ -67,11 +68,23 @@ ResolvedOpenAIGenerateTextOptions resolveOpenAIProviderOptions({
 
   OpenAIGenerateTextOptions common = const OpenAIGenerateTextOptions();
   XAILiveSearchOptions? xaiSearch;
+  DeepSeekGenerateTextOptions? deepseekOptions;
 
   if (options == null) {
     common = const OpenAIGenerateTextOptions();
   } else if (options is OpenAIGenerateTextOptions) {
     common = options;
+  } else if (options is DeepSeekGenerateTextOptions) {
+    if (profile.providerId != 'deepseek') {
+      throw ArgumentError.value(
+        options,
+        'providerOptions',
+        'DeepSeekGenerateTextOptions are only valid for DeepSeek language models.',
+      );
+    }
+
+    common = options.common;
+    deepseekOptions = options;
   } else if (options is XAIGenerateTextOptions) {
     if (profile.providerId != 'xai') {
       throw ArgumentError.value(
@@ -97,6 +110,14 @@ ResolvedOpenAIGenerateTextOptions resolveOpenAIProviderOptions({
     );
   }
 
+  if (deepseekOptions?.responseFormat != null &&
+      (request.options.responseFormat != null ||
+          common.responseFormat != null)) {
+    throw ArgumentError(
+      'DeepSeekGenerateTextOptions.responseFormat cannot be combined with shared or OpenAI JSON-schema responseFormat.',
+    );
+  }
+
   if (common.builtInTools == null && settings.common.builtInTools.isNotEmpty) {
     common = common.copyWith(
       builtInTools: settings.common.builtInTools,
@@ -112,6 +133,7 @@ ResolvedOpenAIGenerateTextOptions resolveOpenAIProviderOptions({
   return ResolvedOpenAIGenerateTextOptions(
     common: common,
     xaiSearch: xaiSearch,
+    deepseek: deepseekOptions,
   );
 }
 

@@ -19,6 +19,14 @@ extension _OpenAIChatCompletionsCodecRequestEncoder
       modelId,
       providerOptions.common,
     );
+    final deepseekOptions =
+        providerNamespace == 'deepseek' ? providerOptions.deepseek : null;
+    final deepseekLogprobs = deepseekOptions?.logprobs;
+    final deepseekTopLogprobs = deepseekOptions?.topLogprobs;
+    final deepseekFrequencyPenalty = deepseekOptions?.frequencyPenalty;
+    final deepseekPresencePenalty = deepseekOptions?.presencePenalty;
+    final deepseekResponseFormat = deepseekOptions?.responseFormat;
+    final commonLogprobs = providerOptions.common.logprobs;
 
     for (final message in prompt) {
       messages.addAll(
@@ -55,9 +63,15 @@ extension _OpenAIChatCompletionsCodecRequestEncoder
       if (providerNamespace == 'openai' &&
           providerOptions.common.maxCompletionTokens != null)
         'max_completion_tokens': providerOptions.common.maxCompletionTokens,
-      if (providerOptions.common.logprobs != null) 'logprobs': true,
-      if (providerOptions.common.logprobs case final logprobs?)
-        'top_logprobs': _encodeChatTopLogProbs(logprobs),
+      if (deepseekLogprobs != null) 'logprobs': deepseekLogprobs,
+      if (deepseekLogprobs == null && commonLogprobs != null) 'logprobs': true,
+      if (deepseekTopLogprobs != null) 'top_logprobs': deepseekTopLogprobs,
+      if (deepseekTopLogprobs == null && commonLogprobs != null)
+        'top_logprobs': _encodeChatTopLogProbs(commonLogprobs),
+      if (providerNamespace == 'deepseek' && deepseekFrequencyPenalty != null)
+        'frequency_penalty': deepseekFrequencyPenalty,
+      if (providerNamespace == 'deepseek' && deepseekPresencePenalty != null)
+        'presence_penalty': deepseekPresencePenalty,
       if (providerOptions.xaiSearch != null)
         'search_parameters': providerOptions.xaiSearch!.toJson(),
     };
@@ -65,6 +79,11 @@ extension _OpenAIChatCompletionsCodecRequestEncoder
     _applyOpenAICompatibilityRules(
       modelId: modelId,
       providerOptions: providerOptions.common,
+      body: body,
+      warnings: warnings,
+    );
+    _applyDeepSeekCompatibilityRules(
+      modelId: modelId,
       body: body,
       warnings: warnings,
     );
@@ -83,6 +102,9 @@ extension _OpenAIChatCompletionsCodecRequestEncoder
 
     if (providerOptions.common.responseFormat case final responseFormat?) {
       body['response_format'] = _encodeResponseFormat(responseFormat);
+    } else if (providerNamespace == 'deepseek' &&
+        deepseekResponseFormat != null) {
+      body['response_format'] = deepseekResponseFormat;
     }
 
     return OpenAIChatCompletionsRequest(

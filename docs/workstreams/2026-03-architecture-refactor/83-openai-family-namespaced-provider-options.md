@@ -66,7 +66,8 @@ The first namespaced migration slice now covers these OpenAI-family areas:
   OpenAI `webSearchConfig`
 - OpenRouter legacy search config through namespaced
   `providerOptions.openrouter.webSearchConfig`
-- OpenRouter and Ollama structured-output compatibility builder callbacks
+- OpenRouter, xAI, and Ollama structured-output compatibility builder
+  callbacks
 - DeepSeek builder options such as `logprobs`, `top_logprobs`,
   `frequency_penalty`, `presence_penalty`, and `response_format`
 - xAI builder options such as `liveSearch`, `searchParameters`,
@@ -74,7 +75,13 @@ The first namespaced migration slice now covers these OpenAI-family areas:
 - OpenAI and OpenAI-compatible factory reads
 - OpenAI chat and Responses request shaping
 - OpenAI-family compatibility provider adapters
-- OpenAI / OpenRouter compatibility route allowlists
+- OpenAI / OpenRouter / DeepSeek / xAI compatibility route allowlists
+- provider-aware structured-output resolution in the legacy chat adapter so
+  namespaced OpenRouter and xAI `jsonSchema` values flow into shared
+  `responseFormat`
+- typed DeepSeek invocation options in `llm_dart_openai` so namespaced
+  DeepSeek options can use the modern chat-completions bridge without widening
+  the old flat extension surface
 - removal of the broad root `LLMBuilder.legacyExtension(...)` write path in
   favor of provider-specific callback methods
 
@@ -96,6 +103,8 @@ Examples:
   not an OpenAI-owned stable option surface
 - generic legacy adapter fallback can still read flat `jsonSchema` so it can
   normalize old structured-output requests into shared `responseFormat`
+- flat DeepSeek-specific extension keys still force fallback; only the
+  namespaced `providerOptions.deepseek` subset is bridge-compatible
 - Groq and Phind still do not have provider-specific callback surfaces because
   their current root compatibility adapters do not expose stable extra knobs
 
@@ -118,8 +127,7 @@ After this migration slice, the next valuable OpenAI-family steps are:
 
 - audit whether more OpenRouter legacy search controls should stay fallback-only
   forever or be removed entirely
-- decide whether the remaining flat `jsonSchema` fallback should stay as a
-  generic legacy adapter input or move behind a provider-aware response-format
-  resolver
+- decide when the remaining flat `jsonSchema` fallback can be deprecated now
+  that namespaced structured output resolves through a provider-aware path
 - keep pressure on moving long-term app-facing usage toward the stable package
   APIs instead of expanding the root compatibility builder surface

@@ -161,6 +161,57 @@ extension _OpenAIChatCompletionsCodecRequestSupport
     );
   }
 
+  void _applyDeepSeekCompatibilityRules({
+    required String modelId,
+    required Map<String, Object?> body,
+    required List<ModelWarning> warnings,
+  }) {
+    if (providerNamespace != 'deepseek' || !modelId.contains('reasoner')) {
+      return;
+    }
+
+    _removeBodyFieldWithWarning(
+      body,
+      'logprobs',
+      warnings,
+      warning: const ModelWarning(
+        type: ModelWarningType.unsupported,
+        field: 'logprobs',
+        message: 'logprobs is not supported for DeepSeek reasoner models',
+      ),
+    );
+    _removeBodyFieldWithWarning(
+      body,
+      'top_logprobs',
+      warnings,
+      warning: const ModelWarning(
+        type: ModelWarningType.unsupported,
+        field: 'topLogprobs',
+        message: 'topLogprobs is not supported for DeepSeek reasoner models',
+      ),
+    );
+    _removeBodyFieldWithWarning(
+      body,
+      'frequency_penalty',
+      warnings,
+      warning: const ModelWarning(
+        type: ModelWarningType.unsupported,
+        field: 'frequencyPenalty',
+        message: 'frequencyPenalty has no effect on DeepSeek reasoner models',
+      ),
+    );
+    _removeBodyFieldWithWarning(
+      body,
+      'presence_penalty',
+      warnings,
+      warning: const ModelWarning(
+        type: ModelWarningType.unsupported,
+        field: 'presencePenalty',
+        message: 'presencePenalty has no effect on DeepSeek reasoner models',
+      ),
+    );
+  }
+
   void _applyOpenAIServiceTierCompatibility({
     required String modelId,
     required Map<String, Object?> body,

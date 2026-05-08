@@ -814,6 +814,69 @@ void main() {
     });
 
     test(
+        'Compat DeepSeek provider maps namespaced providerOptions into typed DeepSeek request options',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final provider = buildCompatDeepSeekProvider(
+        legacy.LLMConfig(
+          apiKey: 'test-key',
+          baseUrl: 'https://api.deepseek.com/v1/',
+          model: 'deepseek-chat',
+        ).withExtensions({
+          'customTransportClient': _FakeTransportClient(
+            onSend: (request) async {
+              capturedRequest = request;
+              return TransportResponse(
+                statusCode: 200,
+                body: {
+                  'id': 'chatcmpl_deepseek_compat_options',
+                  'model': 'deepseek-chat',
+                  'created': 1710000200,
+                  'choices': [
+                    {
+                      'index': 0,
+                      'finish_reason': 'stop',
+                      'message': {
+                        'role': 'assistant',
+                        'content': '{"value":"Done."}',
+                      },
+                    },
+                  ],
+                },
+              );
+            },
+          ),
+          legacyProviderOptionsBagKey: {
+            LegacyProviderOptionNamespaces.deepseek: {
+              LegacyExtensionKeys.logprobs: false,
+              LegacyExtensionKeys.deepSeekTopLogprobs: 2,
+              LegacyExtensionKeys.deepSeekFrequencyPenalty: 0.1,
+              LegacyExtensionKeys.deepSeekPresencePenalty: 0.2,
+              LegacyExtensionKeys.deepSeekResponseFormat: {
+                'type': 'json_object',
+              },
+            },
+          },
+        }),
+      );
+
+      final response = await provider.chat([
+        legacy.ChatMessage.user('Return JSON.'),
+      ]);
+
+      expect(response.text, '{"value":"Done."}');
+      expect(capturedRequest, isNotNull);
+
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(requestBody['logprobs'], isFalse);
+      expect(requestBody['top_logprobs'], 2);
+      expect(requestBody['frequency_penalty'], 0.1);
+      expect(requestBody['presence_penalty'], 0.2);
+      expect(requestBody['response_format'], {'type': 'json_object'});
+    });
+
+    test(
         'Compat OpenRouter provider maps legacy webSearchConfig into online-model settings',
         () async {
       TransportRequest? capturedRequest;

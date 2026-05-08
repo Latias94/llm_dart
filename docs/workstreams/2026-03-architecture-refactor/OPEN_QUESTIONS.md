@@ -251,7 +251,9 @@ Resolved in the current breaking round:
 - Groq tool replay, multimodal traffic, and ignored legacy extras still stay on legacy fallback
 - xAI prompt-side tool replay, multimodal traffic, and unsupported search shapes still stay on legacy fallback
 - OpenRouter search-shaped requests and OpenRouter DeepSeek R1 traffic still stay on legacy fallback
-- `deepseek-reasoner` and DeepSeek-specific legacy extensions still stay on legacy fallback
+- `deepseek-reasoner` and old flat DeepSeek-specific legacy extensions still
+  stay on legacy fallback; namespaced `providerOptions.deepseek` now routes
+  through typed DeepSeek provider options
 - the refactored `llm_dart_openai` package now has an initial OpenAI-family chat-completions mainline, and non-Responses profiles run there directly through the new facade
 - the remaining blocker is no longer package runtime support; it is the missing bridge-safe legacy subset audit for each provider, or for each additional subset of an already-routed provider
 - each provider also still carries legacy-specific behavior that needs its own audit before a bridge-safe subset can be declared

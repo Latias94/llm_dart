@@ -316,6 +316,129 @@ void main() {
       expect(result.usage?.reasoningTokens, 1);
     });
 
+    test('chat completions encode typed DeepSeek provider options', () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        profile: const DeepSeekProfile(),
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'chatcmpl_deepseek_options',
+                'model': 'deepseek-chat',
+                'created': 1710000001,
+                'choices': [
+                  {
+                    'index': 0,
+                    'finish_reason': 'stop',
+                    'message': {
+                      'role': 'assistant',
+                      'content': '{"value":"Done."}',
+                    },
+                  },
+                ],
+              },
+            );
+          },
+        ),
+      ).chatModel('deepseek-chat');
+
+      final result = await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage.text('Return JSON.'),
+          ],
+          callOptions: const CallOptions(
+            providerOptions: DeepSeekGenerateTextOptions(
+              logprobs: false,
+              topLogprobs: 2,
+              frequencyPenalty: 0.1,
+              presencePenalty: 0.2,
+              responseFormat: {'type': 'json_object'},
+            ),
+          ),
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(requestBody['logprobs'], isFalse);
+      expect(requestBody['top_logprobs'], 2);
+      expect(requestBody['frequency_penalty'], 0.1);
+      expect(requestBody['presence_penalty'], 0.2);
+      expect(requestBody['response_format'], {'type': 'json_object'});
+      expect(result.text, '{"value":"Done."}');
+    });
+
+    test('chat completions drop unsupported DeepSeek reasoner options',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        profile: const DeepSeekProfile(),
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'chatcmpl_deepseek_reasoner_options',
+                'model': 'deepseek-reasoner',
+                'created': 1710000002,
+                'choices': [
+                  {
+                    'index': 0,
+                    'finish_reason': 'stop',
+                    'message': {
+                      'role': 'assistant',
+                      'content': 'Done.',
+                    },
+                  },
+                ],
+              },
+            );
+          },
+        ),
+      ).chatModel('deepseek-reasoner');
+
+      final result = await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage.text('Think first.'),
+          ],
+          callOptions: const CallOptions(
+            providerOptions: DeepSeekGenerateTextOptions(
+              logprobs: true,
+              topLogprobs: 2,
+              frequencyPenalty: 0.1,
+              presencePenalty: 0.2,
+            ),
+          ),
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(requestBody.containsKey('logprobs'), isFalse);
+      expect(requestBody.containsKey('top_logprobs'), isFalse);
+      expect(requestBody.containsKey('frequency_penalty'), isFalse);
+      expect(requestBody.containsKey('presence_penalty'), isFalse);
+      expect(
+        result.warnings.map((warning) => warning.field),
+        containsAll([
+          'logprobs',
+          'topLogprobs',
+          'frequencyPenalty',
+          'presencePenalty',
+        ]),
+      );
+    });
+
     test('chat completions keep system messages for OpenAI gpt-5 chat variants',
         () async {
       TransportRequest? capturedRequest;
@@ -2731,6 +2854,47 @@ void main() {
             (error) => error.message,
             'message',
             contains('only valid for xAI'),
+          ),
+        ),
+      );
+
+      expect(sendCount, 0);
+    });
+
+    test(
+        'DeepSeek typed provider options are rejected on non-DeepSeek profiles',
+        () async {
+      var sendCount = 0;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        profile: const OpenRouterProfile(),
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            sendCount += 1;
+            return TransportResponse(statusCode: 200, body: const {});
+          },
+        ),
+      ).chatModel('openai/gpt-4o-mini');
+
+      await expectLater(
+        model.generate(
+          GenerateTextRequest(
+            prompt: [
+              UserPromptMessage.text('hello'),
+            ],
+            callOptions: const CallOptions(
+              providerOptions: DeepSeekGenerateTextOptions(
+                responseFormat: {'type': 'json_object'},
+              ),
+            ),
+          ),
+        ),
+        throwsA(
+          isA<ArgumentError>().having(
+            (error) => error.message,
+            'message',
+            contains('only valid for DeepSeek'),
           ),
         ),
       );

@@ -167,7 +167,7 @@ void main() {
     });
 
     test(
-        'DeepSeek bridge rejects deepseek-reasoner and DeepSeek-specific legacy extensions',
+        'DeepSeek bridge rejects deepseek-reasoner and DeepSeek-specific flat legacy extensions',
         () {
       final reasonerResult = canUseDeepSeekChatBridge(
         _baseConfig('deepseek-reasoner'),
@@ -189,6 +189,30 @@ void main() {
 
       expect(reasonerResult, isFalse);
       expect(extensionResult, isFalse);
+    });
+
+    test('DeepSeek bridge accepts namespaced providerOptions', () {
+      final result = canUseDeepSeekChatBridge(
+        _baseConfig('deepseek-chat').withExtensions({
+          legacyProviderOptionsBagKey: {
+            LegacyProviderOptionNamespaces.deepseek: {
+              LegacyExtensionKeys.logprobs: true,
+              LegacyExtensionKeys.deepSeekTopLogprobs: 2,
+              LegacyExtensionKeys.deepSeekFrequencyPenalty: 0.1,
+              LegacyExtensionKeys.deepSeekPresencePenalty: 0.2,
+              LegacyExtensionKeys.deepSeekResponseFormat: {
+                'type': 'json_object',
+              },
+            },
+          },
+        }),
+        [
+          legacy.ChatMessage.user('Return JSON.'),
+        ],
+        null,
+      );
+
+      expect(result, isTrue);
     });
 
     test(

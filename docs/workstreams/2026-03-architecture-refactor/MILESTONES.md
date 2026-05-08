@@ -354,7 +354,10 @@ Current status:
 - `LLMBuilder.build()` now also returns a compatibility xAI provider subclass, and its routing now covers the audited text subset plus the audited legacy live-search migration subset
 - those compatibility providers route legacy chat requests into the new package-owned `LanguageModel` implementations only when the request shape is explicitly bridge-compatible
 - the OpenAI compatibility bridge now covers the legacy text mainline plus common function tools, built-in tools, and structured output request encoding
-- the DeepSeek compatibility bridge now covers the initial `deepseek-chat` text-and-function-tool subset while keeping `deepseek-reasoner` and DeepSeek-specific extensions on legacy fallback
+- the DeepSeek compatibility bridge now covers the `deepseek-chat`
+  text-and-function-tool subset plus namespaced `providerOptions.deepseek`
+  request options, while keeping `deepseek-reasoner` and old flat
+  DeepSeek-specific extensions on legacy fallback
 - the OpenRouter compatibility bridge now covers the initial plain-chat subset while keeping search-shaped requests and OpenRouter DeepSeek R1 traffic on legacy fallback
 - the Groq compatibility bridge now covers the initial text-and-function-tool-definition subset while keeping tool replay, multimodal traffic, and ignored legacy extras on legacy fallback
 - the xAI compatibility bridge now covers the audited text-and-function-tool-definition subset plus the audited legacy live-search migration inputs (`liveSearch`, `searchParameters`, `webSearchEnabled`, `webSearchConfig`) for the web/news search-parameters subset, while prompt-side tool replay, multimodal traffic, unsupported search shapes, and ignored legacy extras stay on legacy fallback

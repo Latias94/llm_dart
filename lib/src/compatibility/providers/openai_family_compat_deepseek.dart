@@ -7,6 +7,7 @@ import '../../../models/tool_models.dart';
 import '../../../providers/deepseek/config.dart';
 import '../../../providers/deepseek/provider.dart';
 import '../chat_route_compatibility.dart';
+import '../config/legacy_provider_options.dart';
 import '../compat_transport.dart';
 import '../legacy_chat_adapter.dart';
 import 'compat_provider_support.dart';
@@ -27,7 +28,23 @@ ChatCapability buildCompatDeepSeekProvider(LLMConfig config) {
     adapter: LegacyChatCapabilityAdapter(
       model: model,
       config: config,
+      providerOptionsNamespace: LegacyProviderOptionNamespaces.deepseek,
+      providerOptions: buildCompatDeepSeekInvocationOptions(legacyConfig),
     ),
+  );
+}
+
+modern_openai.DeepSeekGenerateTextOptions buildCompatDeepSeekInvocationOptions(
+  DeepSeekConfig config,
+) {
+  return modern_openai.DeepSeekGenerateTextOptions(
+    logprobs: config.logprobs,
+    topLogprobs: config.topLogprobs,
+    frequencyPenalty: config.frequencyPenalty,
+    presencePenalty: config.presencePenalty,
+    responseFormat: config.responseFormat == null
+        ? null
+        : Map<String, Object?>.from(config.responseFormat!),
   );
 }
 

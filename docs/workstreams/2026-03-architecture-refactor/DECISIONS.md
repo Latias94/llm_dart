@@ -285,7 +285,10 @@ Provider-specific features should be represented through:
 
 - Phind must stay out of the compatibility resolver until the refactored `llm_dart_openai` package has both a usable package mainline and an explicit bridge-safe subset for that provider
 - the initial OpenAI-family chat-completions mainline now exists, but that alone is not sufficient to enable automatic legacy routing
-- DeepSeek now has a narrow audited compatibility subset for `deepseek-chat`, while `deepseek-reasoner` and DeepSeek-specific legacy extensions still remain fallback-only
+- DeepSeek now has a narrow audited compatibility subset for `deepseek-chat`,
+  including namespaced `providerOptions.deepseek` request options, while
+  `deepseek-reasoner` and old flat DeepSeek-specific legacy extensions still
+  remain fallback-only
 - OpenRouter now has a narrow audited plain-chat compatibility subset, while search-shaped requests and OpenRouter DeepSeek R1 traffic still remain fallback-only
 - Groq now has a narrow audited text-and-function-tool compatibility subset, while tool replay, multimodal traffic, and ignored legacy extras still remain fallback-only
 - xAI now has an audited text subset plus an audited legacy live-search migration subset, while prompt-side tool replay, provider-native search semantics beyond shared citations, and unsupported search shapes still remain fallback-only

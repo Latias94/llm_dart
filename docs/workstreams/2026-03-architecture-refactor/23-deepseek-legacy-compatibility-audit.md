@@ -61,14 +61,12 @@ Current direct-package coverage includes:
 - typed JSON-schema response format
 - OpenAI-family profiles with provider-owned metadata namespaces
 
-Current gaps relative to the old DeepSeek provider still include:
+Current remaining gaps relative to the old DeepSeek provider include:
 
-- no typed DeepSeek invocation options for `logprobs`
-- no typed DeepSeek invocation options for `top_logprobs`
-- no typed DeepSeek invocation options for `frequency_penalty`
-- no typed DeepSeek invocation options for `presence_penalty`
-- no explicit model-aware gating for `deepseek-reasoner` restrictions
-- no frozen mapping from the old raw `response_format` extension to the new typed response-format contract
+- no automatic compatibility routing for `deepseek-reasoner`
+- no decision to make old flat DeepSeek extension keys bridge-compatible
+- no broader provider-native replay support beyond the common
+  chat-completions subset
 
 This means the package mainline exists, but the legacy DeepSeek bridge is still incomplete.
 
@@ -85,13 +83,25 @@ This means the package mainline exists, but the legacy DeepSeek bridge is still 
 ### Not bridge-safe yet for automatic legacy routing
 
 - `deepseek-reasoner` requests without a frozen model-aware restriction policy
-- any request using DeepSeek-specific extensions:
+- any request using old flat DeepSeek-specific extensions:
   - `logprobs`
   - `top_logprobs`
   - `frequency_penalty`
   - `presence_penalty`
   - raw `response_format`
 - any request that depends on legacy message decorators or replay semantics not representable by the current chat-completions codec without warnings
+
+### Bridge-safe after the namespaced providerOptions slice
+
+For `deepseek-chat`, the compatibility bridge now accepts the audited
+`providerOptions.deepseek` subset and maps it into typed
+`DeepSeekGenerateTextOptions`:
+
+- `logprobs`
+- `top_logprobs`
+- `frequency_penalty`
+- `presence_penalty`
+- raw `response_format`
 
 ### Why `deepseek-reasoner` is still special
 
@@ -101,15 +111,15 @@ The old provider explicitly knows that:
 - `temperature`, `top_p`, `presence_penalty`, and `frequency_penalty` are ineffective for `deepseek-reasoner`
 - prompt-side `reasoning_content` must be stripped
 
-The new package currently covers only the output-side reasoning path cleanly.
-
-It does not yet freeze the request-side restriction policy for compatibility routing.
+The package now warning-drops unsupported DeepSeek reasoner request options,
+but the root compatibility route still keeps `deepseek-reasoner` off the bridge
+until the full prompt-side policy is frozen.
 
 So `deepseek-reasoner` should stay off the compatibility bridge for now.
 
-## 4. Proposed Bridge-Safe Subset V1
+## 4. Bridge-Safe Subset V2
 
-The first acceptable DeepSeek compatibility subset should be intentionally small:
+The current DeepSeek compatibility subset remains intentionally small:
 
 - provider: `deepseek`
 - model: `deepseek-chat` only
@@ -127,33 +137,40 @@ The first acceptable DeepSeek compatibility subset should be intentionally small
 - common tool support:
   - common function tools only
   - common `ToolChoice`
+- namespaced provider-owned options:
+  - `providerOptions.deepseek.logprobs`
+  - `providerOptions.deepseek.top_logprobs`
+  - `providerOptions.deepseek.frequency_penalty`
+  - `providerOptions.deepseek.presence_penalty`
+  - `providerOptions.deepseek.response_format`
 
-The first subset should explicitly exclude:
+The subset still explicitly excludes:
 
 - `deepseek-reasoner`
-- raw DeepSeek extension fields
+- old flat DeepSeek extension fields
 - provider-native or approval-style tool semantics
 - replay shapes that already produce compatibility warnings in the current chat-completions codec
 
 ## 5. Routing Rule Recommendation
 
-The DeepSeek subset V1 is now the active compatibility rule.
+The DeepSeek subset V2 is now the active compatibility rule.
 
 Current routing rule:
 
-- if the request matches the DeepSeek subset V1 exactly, it routes to `llm_dart_openai` with `DeepSeekProfile`
+- if the request matches the DeepSeek subset V2 exactly, it routes to `llm_dart_openai` with `DeepSeekProfile`
 - otherwise it stays on the legacy DeepSeek provider path automatically
 
 This is intentionally a per-request rule, not a provider-wide declaration that all DeepSeek legacy traffic is now bridge-safe.
 
 ## 6. Follow-Up Work Needed Before Routing
 
-1. Freeze whether legacy structured output should map only through the shared typed JSON-schema path, or whether raw DeepSeek `response_format` must remain fallback-only.
-2. Decide whether `deepseek-reasoner` deserves a separate bridge profile later, or should remain legacy-only until request-side restriction handling is explicit.
+1. Decide whether `deepseek-reasoner` deserves a separate bridge profile later, or should remain legacy-only until prompt-side request handling is explicit.
+2. Decide when old flat DeepSeek extension keys can be deprecated now that namespaced `providerOptions.deepseek` is bridge-compatible.
 3. Keep compatibility tests that prove:
    - `deepseek-chat` text-only requests route safely
    - common function tools route safely
-   - all DeepSeek-specific extensions force fallback
+   - namespaced DeepSeek providerOptions route safely
+   - old flat DeepSeek-specific extensions force fallback
    - `deepseek-reasoner` forces fallback
 
 ## 7. Current Conclusion

@@ -35,6 +35,15 @@ bool canUseDeepSeekChatBridge(
   if (_hasUnsupportedExtensions(
     config: config,
     allowedKeys: _httpExtensionKeys,
+    allowedProviderOptions: {
+      LegacyProviderOptionNamespaces.deepseek: {
+        LegacyExtensionKeys.logprobs,
+        LegacyExtensionKeys.deepSeekTopLogprobs,
+        LegacyExtensionKeys.deepSeekFrequencyPenalty,
+        LegacyExtensionKeys.deepSeekPresencePenalty,
+        LegacyExtensionKeys.deepSeekResponseFormat,
+      },
+    },
   )) {
     return false;
   }
