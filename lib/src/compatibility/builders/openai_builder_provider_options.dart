@@ -9,6 +9,42 @@ mixin _OpenAIBuilderProviderOptions {
     return this as OpenAIBuilder;
   }
 
+  /// Sets reasoning effort for models that support it.
+  OpenAIBuilder reasoningEffort(ReasoningEffort effort) {
+    _setOpenAIProviderOption(LegacyExtensionKeys.reasoningEffort, effort.value);
+    return this as OpenAIBuilder;
+  }
+
+  /// Sets structured output schema for JSON responses.
+  OpenAIBuilder jsonSchema(StructuredOutputFormat schema) {
+    _setOpenAIProviderOption(LegacyExtensionKeys.jsonSchema, schema);
+    return this as OpenAIBuilder;
+  }
+
+  /// Sets voice for text-to-speech requests.
+  OpenAIBuilder voice(String voiceName) {
+    _setOpenAIProviderOption(LegacyExtensionKeys.voice, voiceName);
+    return this as OpenAIBuilder;
+  }
+
+  /// Sets embedding encoding format.
+  OpenAIBuilder embeddingEncodingFormat(String format) {
+    _setOpenAIProviderOption(
+      LegacyExtensionKeys.embeddingEncodingFormat,
+      format,
+    );
+    return this as OpenAIBuilder;
+  }
+
+  /// Sets embedding dimensions.
+  OpenAIBuilder embeddingDimensions(int dimensions) {
+    _setOpenAIProviderOption(
+      LegacyExtensionKeys.embeddingDimensions,
+      dimensions,
+    );
+    return this as OpenAIBuilder;
+  }
+
   /// Sets presence penalty for encouraging topic diversity (-2.0 to 2.0).
   OpenAIBuilder presencePenalty(double penalty) {
     _setOpenAIProviderOption(LegacyExtensionKeys.presencePenalty, penalty);

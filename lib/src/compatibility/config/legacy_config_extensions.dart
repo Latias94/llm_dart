@@ -14,19 +14,8 @@ import 'legacy_config_keys.dart';
 /// repeated string-key lookups without widening `LLMConfig` itself with more
 /// provider-specific surface area.
 extension LegacyConfigAccessors on LLMConfig {
-  String? get legacyReasoningEffortValue =>
-      getExtension<String>(LegacyExtensionKeys.reasoningEffort);
-
   StructuredOutputFormat? get legacyJsonSchema =>
       getExtension<StructuredOutputFormat>(LegacyExtensionKeys.jsonSchema);
-
-  String? get legacyVoice => getExtension<String>(LegacyExtensionKeys.voice);
-
-  String? get legacyEmbeddingEncodingFormat =>
-      getExtension<String>(LegacyExtensionKeys.embeddingEncodingFormat);
-
-  int? get legacyEmbeddingDimensions =>
-      getExtension<int>(LegacyExtensionKeys.embeddingDimensions);
 
   bool get legacyWebSearchEnabled =>
       getExtension<bool>(LegacyExtensionKeys.webSearchEnabled) == true;

@@ -165,44 +165,93 @@ void main() {
 
     group('OpenAI-Specific Configuration', () {
       test('should set reasoning effort', () {
-        final builder = LLMBuilder().reasoningEffort(ReasoningEffort.medium);
-        expect(builder, isNotNull);
+        final builder = LLMBuilder().openai(
+          (openai) => openai.reasoningEffort(ReasoningEffort.medium),
+        );
+        final openaiOptions = legacyProviderOptionsNamespace(
+          builder.currentConfig,
+          LegacyProviderOptionNamespaces.openai,
+        );
+        expect(openaiOptions[LegacyExtensionKeys.reasoningEffort], 'medium');
       });
 
       test('should set low reasoning effort', () {
-        final builder = LLMBuilder().reasoningEffort(ReasoningEffort.low);
-        expect(builder, isNotNull);
+        final builder = LLMBuilder().openai(
+          (openai) => openai.reasoningEffort(ReasoningEffort.low),
+        );
+        final openaiOptions = legacyProviderOptionsNamespace(
+          builder.currentConfig,
+          LegacyProviderOptionNamespaces.openai,
+        );
+        expect(openaiOptions[LegacyExtensionKeys.reasoningEffort], 'low');
       });
 
       test('should set medium reasoning effort', () {
-        final builder = LLMBuilder().reasoningEffort(ReasoningEffort.medium);
-        expect(builder, isNotNull);
+        final builder = LLMBuilder().openai(
+          (openai) => openai.reasoningEffort(ReasoningEffort.medium),
+        );
+        final openaiOptions = legacyProviderOptionsNamespace(
+          builder.currentConfig,
+          LegacyProviderOptionNamespaces.openai,
+        );
+        expect(openaiOptions[LegacyExtensionKeys.reasoningEffort], 'medium');
       });
 
       test('should set high reasoning effort', () {
-        final builder = LLMBuilder().reasoningEffort(ReasoningEffort.high);
-        expect(builder, isNotNull);
+        final builder = LLMBuilder().openai(
+          (openai) => openai.reasoningEffort(ReasoningEffort.high),
+        );
+        final openaiOptions = legacyProviderOptionsNamespace(
+          builder.currentConfig,
+          LegacyProviderOptionNamespaces.openai,
+        );
+        expect(openaiOptions[LegacyExtensionKeys.reasoningEffort], 'high');
       });
 
       test('should set voice', () {
-        final builder = LLMBuilder().voice('alloy');
-        expect(builder, isNotNull);
+        final builder = LLMBuilder().openai((openai) => openai.voice('alloy'));
+        final openaiOptions = legacyProviderOptionsNamespace(
+          builder.currentConfig,
+          LegacyProviderOptionNamespaces.openai,
+        );
+        expect(openaiOptions[LegacyExtensionKeys.voice], 'alloy');
       });
 
       test('should set structured output schema', () {
-        final builder = LLMBuilder().jsonSchema(
-          const StructuredOutputFormat(
-            name: 'answer',
-            schema: {
-              'type': 'object',
-              'properties': {
-                'value': {'type': 'string'},
-              },
+        const schema = StructuredOutputFormat(
+          name: 'answer',
+          schema: {
+            'type': 'object',
+            'properties': {
+              'value': {'type': 'string'},
             },
-            strict: true,
-          ),
+          },
+          strict: true,
         );
-        expect(builder, isNotNull);
+        final builder = LLMBuilder().openai(
+          (openai) => openai.jsonSchema(schema),
+        );
+        final openaiOptions = legacyProviderOptionsNamespace(
+          builder.currentConfig,
+          LegacyProviderOptionNamespaces.openai,
+        );
+        expect(openaiOptions[LegacyExtensionKeys.jsonSchema], same(schema));
+      });
+
+      test('should set embedding options', () {
+        final builder = LLMBuilder().openai(
+          (openai) =>
+              openai.embeddingEncodingFormat('float').embeddingDimensions(512),
+        );
+        final openaiOptions = legacyProviderOptionsNamespace(
+          builder.currentConfig,
+          LegacyProviderOptionNamespaces.openai,
+        );
+        expect(
+          openaiOptions[LegacyExtensionKeys.embeddingEncodingFormat],
+          'float',
+        );
+        expect(openaiOptions[LegacyExtensionKeys.embeddingDimensions], 512);
       });
     });
 
@@ -281,7 +330,11 @@ void main() {
 
       test('should configure Anthropic with callback', () {
         final builder = LLMBuilder().anthropic((anthropic) => anthropic
-            .metadata({'user_id': 'test123'}).container('container-123'));
+            .metadata({'user_id': 'test123'})
+            .reasoning(true)
+            .thinkingBudgetTokens(2048)
+            .interleavedThinking(true)
+            .container('container-123'));
 
         final anthropicOptions = legacyProviderOptionsNamespace(
           builder.currentConfig,
@@ -290,6 +343,10 @@ void main() {
         expect(anthropicOptions[LegacyExtensionKeys.metadata], {
           'user_id': 'test123',
         });
+        expect(anthropicOptions[LegacyExtensionKeys.reasoning], isTrue);
+        expect(
+            anthropicOptions[LegacyExtensionKeys.thinkingBudgetTokens], 2048);
+        expect(anthropicOptions[LegacyExtensionKeys.interleavedThinking], true);
         expect(
             anthropicOptions[LegacyExtensionKeys.container], 'container-123');
       });
@@ -494,24 +551,27 @@ void main() {
         );
 
         final builder = LLMBuilder()
-            .openai((openai) => openai.seed(12345).parallelToolCalls(true))
+            .openai(
+              (openai) => openai
+                  .seed(12345)
+                  .parallelToolCalls(true)
+                  .reasoningEffort(ReasoningEffort.medium)
+                  .voice('alloy')
+                  .jsonSchema(
+                    const StructuredOutputFormat(
+                      name: 'answer',
+                      schema: {
+                        'type': 'object',
+                        'properties': {
+                          'value': {'type': 'string'},
+                        },
+                      },
+                    ),
+                  ),
+            )
             .apiKey('test-key')
             .model('gpt-4')
-            .tools([tool])
-            .toolChoice(AutoToolChoice())
-            .reasoningEffort(ReasoningEffort.medium)
-            .voice('alloy')
-            .jsonSchema(
-              const StructuredOutputFormat(
-                name: 'answer',
-                schema: {
-                  'type': 'object',
-                  'properties': {
-                    'value': {'type': 'string'},
-                  },
-                },
-              ),
-            );
+            .tools([tool]).toolChoice(AutoToolChoice());
 
         expect(builder, isNotNull);
       });

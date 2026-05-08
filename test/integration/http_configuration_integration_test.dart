@@ -229,11 +229,12 @@ void main() {
       test('should handle HTTP configuration with provider-specific methods',
           () {
         final builder = LLMBuilder()
-            .openai((openai) => openai.frequencyPenalty(0.1))
+            .openai((openai) => openai
+                .frequencyPenalty(0.1)
+                .reasoningEffort(ReasoningEffort.medium))
             .apiKey('test-key')
             .model('gpt-4')
-            .http((http) => http.enableLogging(true))
-            .reasoningEffort(ReasoningEffort.medium);
+            .http((http) => http.enableLogging(true));
 
         expect(builder, isNotNull);
       });

@@ -17,6 +17,24 @@ class AnthropicBuilder {
     return this;
   }
 
+  /// Enables or disables extended thinking.
+  AnthropicBuilder reasoning(bool enable) {
+    _setProviderOption(LegacyExtensionKeys.reasoning, enable);
+    return this;
+  }
+
+  /// Sets thinking budget tokens for extended thinking.
+  AnthropicBuilder thinkingBudgetTokens(int tokens) {
+    _setProviderOption(LegacyExtensionKeys.thinkingBudgetTokens, tokens);
+    return this;
+  }
+
+  /// Enables or disables interleaved thinking.
+  AnthropicBuilder interleavedThinking(bool enable) {
+    _setProviderOption(LegacyExtensionKeys.interleavedThinking, enable);
+    return this;
+  }
+
   /// Sets the container ID for workbench usage.
   AnthropicBuilder container(String containerId) {
     _setProviderOption(LegacyExtensionKeys.container, containerId);

@@ -2,6 +2,7 @@ import '../../../builder/llm_builder.dart';
 import '../../../core/capability.dart';
 import '../../../core/web_search.dart';
 import '../../../models/chat_models.dart';
+import '../../../models/tool_models.dart';
 import '../../../providers/openai/builtin_tools.dart';
 import '../../../providers/openai/provider.dart';
 import '../config/legacy_config_keys.dart';

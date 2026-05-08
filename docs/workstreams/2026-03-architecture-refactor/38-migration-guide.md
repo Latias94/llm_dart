@@ -342,8 +342,9 @@ real feature differences.
 
 ### Structured Output Migration
 
-The compatibility builder still accepts legacy `jsonSchema(...)`, but that path
-is now only a bridge.
+Provider-specific compatibility builders now keep structured-output settings
+under provider-scoped options; the old root `LLMBuilder.jsonSchema(...)`
+shortcut has been removed.
 
 Current rule:
 

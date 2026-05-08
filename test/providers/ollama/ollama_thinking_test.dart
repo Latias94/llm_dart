@@ -88,10 +88,9 @@ void main() {
 
     test('Builder reasoning method should work end-to-end', () async {
       final provider = await LLMBuilder()
-          .ollama()
+          .ollama((builder) => builder.reasoning(true))
           .baseUrl('http://localhost:11434')
           .model('gpt-oss:latest')
-          .reasoning(true)
           .build();
 
       expect(provider, isA<OllamaProvider>());

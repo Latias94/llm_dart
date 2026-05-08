@@ -1,6 +1,7 @@
 import '../../../core/config.dart';
 import '../../../core/web_search.dart';
 import '../../../models/chat_models.dart';
+import '../../../models/tool_models.dart';
 import '../../../providers/openai/builtin_tools.dart';
 import '../../../providers/openai/config.dart';
 import '../config/legacy_config_extensions.dart';
@@ -52,10 +53,26 @@ OpenAIConfig toCompatLegacyOpenAIConfig(LLMConfig config) {
         ),
       ),
     ),
-    jsonSchema: config.legacyJsonSchema,
-    voice: config.legacyVoice,
-    embeddingEncodingFormat: config.legacyEmbeddingEncodingFormat,
-    embeddingDimensions: config.legacyEmbeddingDimensions,
+    jsonSchema: getLegacyProviderOption<StructuredOutputFormat>(
+      config,
+      LegacyProviderOptionNamespaces.openai,
+      LegacyExtensionKeys.jsonSchema,
+    ),
+    voice: getLegacyProviderOption<String>(
+      config,
+      LegacyProviderOptionNamespaces.openai,
+      LegacyExtensionKeys.voice,
+    ),
+    embeddingEncodingFormat: getLegacyProviderOption<String>(
+      config,
+      LegacyProviderOptionNamespaces.openai,
+      LegacyExtensionKeys.embeddingEncodingFormat,
+    ),
+    embeddingDimensions: getLegacyProviderOption<int>(
+      config,
+      LegacyProviderOptionNamespaces.openai,
+      LegacyExtensionKeys.embeddingDimensions,
+    ),
     stopSequences: config.stopSequences,
     user: config.user,
     serviceTier: config.serviceTier,
@@ -137,12 +154,34 @@ OpenAIConfig createLegacyOpenAICompatibleConfig(LLMConfig config) {
     user: config.user,
     serviceTier: config.serviceTier,
     reasoningEffort: ReasoningEffort.fromString(
-      config.legacyReasoningEffortValue,
+      compatStringValue(
+        getLegacyProviderOption<dynamic>(
+          config,
+          LegacyProviderOptionNamespaces.openai,
+          LegacyExtensionKeys.reasoningEffort,
+        ),
+      ),
     ),
-    jsonSchema: config.legacyJsonSchema,
-    voice: config.legacyVoice,
-    embeddingEncodingFormat: config.legacyEmbeddingEncodingFormat,
-    embeddingDimensions: config.legacyEmbeddingDimensions,
+    jsonSchema: getLegacyProviderOption<StructuredOutputFormat>(
+      config,
+      LegacyProviderOptionNamespaces.openai,
+      LegacyExtensionKeys.jsonSchema,
+    ),
+    voice: getLegacyProviderOption<String>(
+      config,
+      LegacyProviderOptionNamespaces.openai,
+      LegacyExtensionKeys.voice,
+    ),
+    embeddingEncodingFormat: getLegacyProviderOption<String>(
+      config,
+      LegacyProviderOptionNamespaces.openai,
+      LegacyExtensionKeys.embeddingEncodingFormat,
+    ),
+    embeddingDimensions: getLegacyProviderOption<int>(
+      config,
+      LegacyProviderOptionNamespaces.openai,
+      LegacyExtensionKeys.embeddingDimensions,
+    ),
     useResponsesAPI: getLegacyProviderOption<bool>(
           config,
           LegacyProviderOptionNamespaces.openai,
