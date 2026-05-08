@@ -46,6 +46,8 @@ into a routine `0.10.x` maintenance release.
   `OpenAICompatibleConfigs`.
 - Removed `ProviderDefaults.getCapabilities(...)`; capability declarations are
   owned by provider factories and provider instances.
+- Moved OpenAI audio and image compatibility catalogs out of `ProviderDefaults`
+  into the OpenAI compatibility provider modules.
 
 ### Deprecated
 

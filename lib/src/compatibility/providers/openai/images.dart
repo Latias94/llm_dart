@@ -1,5 +1,4 @@
 import '../../../../core/capability.dart';
-import '../../../config/provider_defaults.dart';
 import '../../../../models/image_models.dart';
 import 'client.dart';
 import '../../../../providers/openai/config.dart';
@@ -9,6 +8,15 @@ import 'openai_image_support.dart';
 ///
 /// This module handles image generation functionality for OpenAI providers.
 class OpenAIImages implements ImageGenerationCapability {
+  static const List<String> _supportedSizes = [
+    '256x256',
+    '512x512',
+    '1024x1024',
+    '1792x1024',
+    '1024x1792',
+  ];
+  static const List<String> _supportedFormats = ['url', 'b64_json'];
+
   final OpenAIClient client;
   final OpenAIConfig config;
   final OpenAIImageSupport _support = const OpenAIImageSupport();
@@ -62,12 +70,12 @@ class OpenAIImages implements ImageGenerationCapability {
 
   @override
   List<String> getSupportedSizes() {
-    return ProviderDefaults.openaiSupportedImageSizes;
+    return _supportedSizes;
   }
 
   @override
   List<String> getSupportedFormats() {
-    return ProviderDefaults.openaiSupportedImageFormats;
+    return _supportedFormats;
   }
 
   @override

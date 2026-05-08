@@ -25,7 +25,7 @@ final class _OpenAIAudioTranscriptionSupport {
     formData.fields.add(
       MapEntry(
         'model',
-        request.model ?? ProviderDefaults.openaiDefaultSTTModel,
+        request.model ?? OpenAIAudioCatalog.defaultSttModel,
       ),
     );
     final language = options?.language ?? request.language;

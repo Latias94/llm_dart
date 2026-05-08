@@ -1,9 +1,13 @@
 import '../../../../models/audio_models.dart';
-import '../../../config/provider_defaults.dart';
 
 /// Static OpenAI audio capability catalogs that do not belong inside the
 /// request/response orchestration facade.
 final class OpenAIAudioCatalog {
+  static const String defaultTtsModel = 'tts-1';
+  static const String defaultSttModel = 'whisper-1';
+  static const String defaultVoice = 'alloy';
+  static const String defaultAudioFormat = 'mp3';
+
   static const List<VoiceInfo> voices = [
     VoiceInfo(id: 'alloy', name: 'Alloy', description: 'Neutral voice'),
     VoiceInfo(id: 'ash', name: 'Ash', description: 'Expressive voice'),
@@ -22,8 +26,30 @@ final class OpenAIAudioCatalog {
     VoiceInfo(id: 'verse', name: 'Verse', description: 'Poetic voice'),
   ];
 
+  static const List<String> _supportedTtsFormats = [
+    'mp3',
+    'opus',
+    'aac',
+    'flac',
+    'wav',
+    'pcm',
+  ];
+
+  static const List<String> supportedSttFormats = [
+    'flac',
+    'm4a',
+    'mp3',
+    'mp4',
+    'mpeg',
+    'mpga',
+    'oga',
+    'ogg',
+    'wav',
+    'webm',
+  ];
+
   static List<String> supportedTtsFormats() {
-    return ProviderDefaults.openaiSupportedTTSFormats;
+    return _supportedTtsFormats;
   }
 
   static const List<LanguageInfo> supportedLanguages = [

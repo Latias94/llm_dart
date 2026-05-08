@@ -114,7 +114,7 @@ The effective OpenAI TTS voice is now resolved as:
 
 - `request.voice`
 - then `config.voice`
-- then `ProviderDefaults.openaiDefaultVoice`
+- then `OpenAIAudioCatalog.defaultVoice`
 
 And the returned `TTSResponse.voice` now reports that resolved value instead of
 dropping the config-level default.

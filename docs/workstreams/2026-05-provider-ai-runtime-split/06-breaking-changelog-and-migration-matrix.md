@@ -51,6 +51,8 @@ The following slices are already landed on this branch:
   compatible profiles.
 - `ProviderDefaults.getCapabilities(...)` is removed; provider factories and
   provider instances own capability declarations.
+- OpenAI audio and image compatibility catalogs moved out of `ProviderDefaults`
+  into OpenAI compatibility provider modules.
 
 ## Suggested Breaking Changelog Draft
 
@@ -97,6 +99,8 @@ Use this as the starting point for the next explicit breaking release.
   `OpenAICompatibleConfigs` to inspect those profiles.
 - Capability lookup is no longer duplicated through `ProviderDefaults`; ask the
   factory/provider instead.
+- OpenAI voice/audio/image catalog details are no longer exposed through
+  `ProviderDefaults.getDefaults('openai')`; use the OpenAI provider APIs.
 
 ### Kept
 
@@ -141,6 +145,7 @@ Use this as the starting point for the next explicit breaking release.
 | `OpenAICompatibleDefaults` map catalog | `OpenAICompatibleConfigs` for typed profiles; `ProviderDefaults.getDefaults(...)` for coarse endpoint/model defaults | Removed | Avoids maintaining a second untyped profile catalog beside the typed provider-compatible config list. |
 | `ProviderDefaults.getDefaults('openrouter'/'github-copilot'/'together-ai')` | `OpenAICompatibleConfigs.getConfig(...)` | Removed | Generic compatible endpoints are profile-owned, not root default-owned dedicated providers. |
 | `ProviderDefaults.getCapabilities(...)` | Factory/provider `supportedCapabilities` or typed compatible profile capabilities | Removed | Removes a stale parallel capability catalog from the root defaults class. |
+| OpenAI audio/image catalog keys from `ProviderDefaults.getDefaults('openai')` | OpenAI provider compatibility audio/image APIs | Removed | Keeps provider-owned model, voice, format, and image-size catalogs with OpenAI implementation code. |
 | `LLMBuilder.githubCopilot()` and `LLMBuilder.togetherAI()` | Explicit provider registration or provider-owned OpenAI-family profile composition | Removed from default builder surface | These methods only selected unregistered provider IDs. For generic compatible endpoints, construct a provider-owned OpenAI-family model/profile explicitly or register a concrete factory. |
 
 ## Compatibility Policy

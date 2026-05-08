@@ -5,8 +5,8 @@ import 'package:llm_dart_transport/dio.dart';
 import '../../../../core/llm_error.dart';
 import '../../../../models/audio_models.dart';
 import '../../../../providers/openai/config.dart';
-import '../../../config/provider_defaults.dart';
 import 'config_views.dart';
+import 'openai_audio_catalog.dart';
 import 'openai_audio_translation_models.dart';
 
 part 'openai_audio_form_support.dart';

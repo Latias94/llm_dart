@@ -24,7 +24,7 @@ final class _OpenAIAudioTranslationSupport {
     formData.fields.add(
       MapEntry(
         'model',
-        request.model ?? ProviderDefaults.openaiDefaultSTTModel,
+        request.model ?? OpenAIAudioCatalog.defaultSttModel,
       ),
     );
     if (request.prompt != null) {

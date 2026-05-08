@@ -9,67 +9,6 @@ class ProviderDefaults {
   static const String openaiBaseUrl = 'https://api.openai.com/v1/';
   static const String openaiDefaultModel = 'gpt-4o';
 
-  // OpenAI Audio defaults
-  static const String openaiDefaultTTSModel = 'tts-1';
-  static const String openaiDefaultSTTModel = 'whisper-1';
-  static const String openaiDefaultVoice = 'alloy';
-  static const String openaiDefaultAudioFormat = 'mp3';
-
-  // OpenAI supported voices
-  // Reference: https://platform.openai.com/docs/guides/text-to-speech#voice-options
-  static const List<String> openaiSupportedVoices = [
-    'alloy', // Neutral voice
-    'ash', // Expressive voice
-    'ballad', // Melodic voice
-    'coral', // Warm voice
-    'echo', // Male voice
-    'fable', // British accent
-    'nova', // Female voice
-    'onyx', // Deep male voice
-    'sage', // Wise voice
-    'shimmer', // Soft female voice
-    'verse', // Poetic voice
-  ];
-
-  // OpenAI supported audio formats for TTS
-  static const List<String> openaiSupportedTTSFormats = [
-    'mp3',
-    'opus',
-    'aac',
-    'flac',
-    'wav',
-    'pcm',
-  ];
-
-  // OpenAI supported audio formats for STT (input)
-  static const List<String> openaiSupportedSTTFormats = [
-    'flac',
-    'm4a',
-    'mp3',
-    'mp4',
-    'mpeg',
-    'mpga',
-    'oga',
-    'ogg',
-    'wav',
-    'webm',
-  ];
-
-  // OpenAI supported image sizes
-  static const List<String> openaiSupportedImageSizes = [
-    '256x256', // DALL-E 2 only
-    '512x512', // DALL-E 2 only
-    '1024x1024', // Both DALL-E 2 and 3
-    '1792x1024', // DALL-E 3 only (landscape)
-    '1024x1792', // DALL-E 3 only (portrait)
-  ];
-
-  // OpenAI supported image formats
-  static const List<String> openaiSupportedImageFormats = [
-    'url', // Image URL (default)
-    'b64_json', // Base64 encoded JSON
-  ];
-
   // Anthropic
   static const String anthropicBaseUrl = 'https://api.anthropic.com/v1/';
   static const String anthropicDefaultModel = 'claude-sonnet-4-20250514';
@@ -123,15 +62,6 @@ class ProviderDefaults {
         return {
           'baseUrl': openaiBaseUrl,
           'model': openaiDefaultModel,
-          'ttsModel': openaiDefaultTTSModel,
-          'sttModel': openaiDefaultSTTModel,
-          'defaultVoice': openaiDefaultVoice,
-          'defaultAudioFormat': openaiDefaultAudioFormat,
-          'supportedVoices': openaiSupportedVoices,
-          'supportedTTSFormats': openaiSupportedTTSFormats,
-          'supportedSTTFormats': openaiSupportedSTTFormats,
-          'supportedImageSizes': openaiSupportedImageSizes,
-          'supportedImageFormats': openaiSupportedImageFormats,
         };
       case 'anthropic':
         return {

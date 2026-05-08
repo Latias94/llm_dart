@@ -21,7 +21,7 @@ final class _OpenAIAudioSpeechSupport {
     final language = options?.language ?? request.languageCode;
 
     final requestBody = <String, dynamic>{
-      'model': request.model ?? ProviderDefaults.openaiDefaultTTSModel,
+      'model': request.model ?? OpenAIAudioCatalog.defaultTtsModel,
       'input': request.text,
       'voice': resolvedVoice,
       if (outputFormat != null) 'response_format': outputFormat,

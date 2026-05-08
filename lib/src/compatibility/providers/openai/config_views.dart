@@ -2,7 +2,7 @@ import '../../../../models/chat_models.dart';
 import '../../../../models/tool_models.dart';
 import '../../../../providers/openai/builtin_tools.dart';
 import '../../../../providers/openai/config.dart';
-import '../../../config/provider_defaults.dart';
+import 'openai_audio_catalog.dart';
 
 /// Internal grouped views for compatibility-era OpenAI config reads.
 ///
@@ -67,6 +67,5 @@ final class OpenAIAudioCompatibilityConfigView {
 
   const OpenAIAudioCompatibilityConfigView(this._config);
 
-  String get defaultVoice =>
-      _config.voice ?? ProviderDefaults.openaiDefaultVoice;
+  String get defaultVoice => _config.voice ?? OpenAIAudioCatalog.defaultVoice;
 }
