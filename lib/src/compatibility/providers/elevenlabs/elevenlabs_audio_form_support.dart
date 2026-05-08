@@ -58,16 +58,20 @@ final class _ElevenLabsAudioFormSupport {
     final options = _resolveElevenLabsTranscriptionOptions(
       request.providerOptions,
     );
-    final tagAudioEvents = options?.tagAudioEvents ?? request.tagAudioEvents;
     final timestampGranularity = options?.timestampGranularity?.name ??
         request.timestampGranularity.name;
-    final diarize = options?.diarize ?? request.diarize;
     final fields = <String, dynamic>{
       'model_id': effectiveModel,
-      'tag_audio_events': tagAudioEvents.toString(),
       'timestamps_granularity': timestampGranularity,
-      'diarize': diarize.toString(),
     };
+    final tagAudioEvents = options?.tagAudioEvents;
+    if (tagAudioEvents != null) {
+      fields['tag_audio_events'] = tagAudioEvents.toString();
+    }
+    final diarize = options?.diarize;
+    if (diarize != null) {
+      fields['diarize'] = diarize.toString();
+    }
 
     if (file != null) {
       fields['file'] = file;
@@ -80,7 +84,7 @@ final class _ElevenLabsAudioFormSupport {
     if (languageCode != null) {
       fields['language_code'] = languageCode;
     }
-    final numSpeakers = options?.numSpeakers ?? request.numSpeakers;
+    final numSpeakers = options?.numSpeakers;
     if (numSpeakers != null) {
       fields['num_speakers'] = numSpeakers.toString();
     }

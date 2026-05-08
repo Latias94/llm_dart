@@ -32,26 +32,11 @@ class STTRequest {
   /// Timestamp granularity (word, character, segment)
   final TimestampGranularity timestampGranularity;
 
-  /// Whether to enable speaker diarization (ElevenLabs specific)
-  final bool diarize;
-
-  /// Maximum number of speakers (ElevenLabs specific)
-  final int? numSpeakers;
-
-  /// Whether to tag audio events like (laughter) (ElevenLabs specific)
-  final bool tagAudioEvents;
-
-  /// Whether to use webhook for async processing (ElevenLabs specific)
-  final bool webhook;
-
   /// Prompt to guide transcription style (OpenAI specific)
   final String? prompt;
 
   /// Response format (json, text, srt, verbose_json, vtt)
   final String? responseFormat;
-
-  /// Enable logging (ElevenLabs specific)
-  final bool enableLogging;
 
   /// Provider-owned invocation options.
   final ProviderInvocationOptions? providerOptions;
@@ -71,13 +56,8 @@ class STTRequest {
     this.includeConfidence = false,
     this.temperature,
     this.timestampGranularity = TimestampGranularity.word,
-    this.diarize = false,
-    this.numSpeakers,
-    this.tagAudioEvents = true,
-    this.webhook = false,
     this.prompt,
     this.responseFormat,
-    this.enableLogging = true,
     this.providerOptions,
   }) : sourceUrl = sourceUrl ?? cloudStorageUrl;
 
@@ -91,13 +71,8 @@ class STTRequest {
     bool includeConfidence = false,
     double? temperature,
     TimestampGranularity timestampGranularity = TimestampGranularity.word,
-    bool diarize = false,
-    int? numSpeakers,
-    bool tagAudioEvents = true,
-    bool webhook = false,
     String? prompt,
     String? responseFormat,
-    bool enableLogging = true,
     ProviderInvocationOptions? providerOptions,
   }) =>
       STTRequest(
@@ -109,13 +84,8 @@ class STTRequest {
         includeConfidence: includeConfidence,
         temperature: temperature,
         timestampGranularity: timestampGranularity,
-        diarize: diarize,
-        numSpeakers: numSpeakers,
-        tagAudioEvents: tagAudioEvents,
-        webhook: webhook,
         prompt: prompt,
         responseFormat: responseFormat,
-        enableLogging: enableLogging,
         providerOptions: providerOptions,
       );
 
@@ -129,13 +99,8 @@ class STTRequest {
     bool includeConfidence = false,
     double? temperature,
     TimestampGranularity timestampGranularity = TimestampGranularity.word,
-    bool diarize = false,
-    int? numSpeakers,
-    bool tagAudioEvents = true,
-    bool webhook = false,
     String? prompt,
     String? responseFormat,
-    bool enableLogging = true,
     ProviderInvocationOptions? providerOptions,
   }) =>
       STTRequest(
@@ -147,13 +112,8 @@ class STTRequest {
         includeConfidence: includeConfidence,
         temperature: temperature,
         timestampGranularity: timestampGranularity,
-        diarize: diarize,
-        numSpeakers: numSpeakers,
-        tagAudioEvents: tagAudioEvents,
-        webhook: webhook,
         prompt: prompt,
         responseFormat: responseFormat,
-        enableLogging: enableLogging,
         providerOptions: providerOptions,
       );
 
@@ -167,13 +127,8 @@ class STTRequest {
     bool includeConfidence = false,
     double? temperature,
     TimestampGranularity timestampGranularity = TimestampGranularity.word,
-    bool diarize = false,
-    int? numSpeakers,
-    bool tagAudioEvents = true,
-    bool webhook = false,
     String? prompt,
     String? responseFormat,
-    bool enableLogging = true,
     ProviderInvocationOptions? providerOptions,
   }) =>
       STTRequest(
@@ -185,13 +140,8 @@ class STTRequest {
         includeConfidence: includeConfidence,
         temperature: temperature,
         timestampGranularity: timestampGranularity,
-        diarize: diarize,
-        numSpeakers: numSpeakers,
-        tagAudioEvents: tagAudioEvents,
-        webhook: webhook,
         prompt: prompt,
         responseFormat: responseFormat,
-        enableLogging: enableLogging,
         providerOptions: providerOptions,
       );
 
@@ -206,13 +156,8 @@ class STTRequest {
     bool includeConfidence = false,
     double? temperature,
     TimestampGranularity timestampGranularity = TimestampGranularity.word,
-    bool diarize = false,
-    int? numSpeakers,
-    bool tagAudioEvents = true,
-    bool webhook = false,
     String? prompt,
     String? responseFormat,
-    bool enableLogging = true,
     ProviderInvocationOptions? providerOptions,
   }) =>
       STTRequest.fromSourceUrl(
@@ -224,13 +169,8 @@ class STTRequest {
         includeConfidence: includeConfidence,
         temperature: temperature,
         timestampGranularity: timestampGranularity,
-        diarize: diarize,
-        numSpeakers: numSpeakers,
-        tagAudioEvents: tagAudioEvents,
-        webhook: webhook,
         prompt: prompt,
         responseFormat: responseFormat,
-        enableLogging: enableLogging,
         providerOptions: providerOptions,
       );
 
@@ -246,13 +186,8 @@ class STTRequest {
         'include_confidence': includeConfidence,
         if (temperature != null) 'temperature': temperature,
         'timestamp_granularity': timestampGranularity.name,
-        'diarize': diarize,
-        if (numSpeakers != null) 'num_speakers': numSpeakers,
-        'tag_audio_events': tagAudioEvents,
-        'webhook': webhook,
         if (prompt != null) 'prompt': prompt,
         if (responseFormat != null) 'response_format': responseFormat,
-        'enable_logging': enableLogging,
       };
 
   factory STTRequest.fromJson(Map<String, dynamic> json) => STTRequest(
@@ -272,13 +207,8 @@ class STTRequest {
           (e) => e.name == json['timestamp_granularity'],
           orElse: () => TimestampGranularity.word,
         ),
-        diarize: json['diarize'] as bool? ?? false,
-        numSpeakers: json['num_speakers'] as int?,
-        tagAudioEvents: json['tag_audio_events'] as bool? ?? true,
-        webhook: json['webhook'] as bool? ?? false,
         prompt: json['prompt'] as String?,
         responseFormat: json['response_format'] as String?,
-        enableLogging: json['enable_logging'] as bool? ?? true,
       );
 }
 

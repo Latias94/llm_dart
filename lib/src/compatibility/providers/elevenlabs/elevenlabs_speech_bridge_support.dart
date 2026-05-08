@@ -11,12 +11,10 @@ final class _ElevenLabsSpeechBridgeSupport {
 
   bool canUseSpeechBridge(TTSRequest request) {
     final options = _resolveElevenLabsSpeechOptions(request.providerOptions);
-    return _isValidSpeechRatio(options?.stability ?? request.stability) &&
-        _isValidSpeechRatio(
-          options?.similarityBoost ?? request.similarityBoost,
-        ) &&
-        _isValidSpeechRatio(options?.style ?? request.style) &&
-        _isValidSpeechSeed(options?.seed ?? request.seed);
+    return _isValidSpeechRatio(options?.stability) &&
+        _isValidSpeechRatio(options?.similarityBoost) &&
+        _isValidSpeechRatio(options?.style) &&
+        _isValidSpeechSeed(options?.seed);
   }
 
   Future<TTSResponse> bridgeTextToSpeech(
@@ -52,30 +50,23 @@ final class _ElevenLabsSpeechBridgeSupport {
             speed: options?.speed ?? request.speed,
             pronunciationDictionaryLocators:
                 options?.pronunciationDictionaryLocators ?? const [],
-            seed: options?.seed ?? request.seed,
-            previousText: options?.previousText ?? request.previousText,
-            nextText: options?.nextText ?? request.nextText,
-            previousRequestIds: _resolveRequestIds(
+            seed: options?.seed,
+            previousText: options?.previousText,
+            nextText: options?.nextText,
+            previousRequestIds: _takeAtMostThree(
               options?.previousRequestIds,
-              request.previousRequestIds,
             ),
-            nextRequestIds: _resolveRequestIds(
-              options?.nextRequestIds,
-              request.nextRequestIds,
-            ),
+            nextRequestIds: _takeAtMostThree(options?.nextRequestIds),
             textNormalization: options?.textNormalization ??
                 _toModernTextNormalization(request.textNormalization),
             applyLanguageTextNormalization:
                 options?.applyLanguageTextNormalization,
-            enableLogging: options?.enableLogging ?? request.enableLogging,
-            optimizeStreamingLatency: options?.optimizeStreamingLatency ??
-                request.optimizeStreamingLatency,
-            stability: options?.stability ?? request.stability,
-            similarityBoost:
-                options?.similarityBoost ?? request.similarityBoost,
-            style: options?.style ?? request.style,
-            useSpeakerBoost:
-                options?.useSpeakerBoost ?? request.useSpeakerBoost,
+            enableLogging: options?.enableLogging,
+            optimizeStreamingLatency: options?.optimizeStreamingLatency,
+            stability: options?.stability,
+            similarityBoost: options?.similarityBoost,
+            style: options?.style,
+            useSpeakerBoost: options?.useSpeakerBoost,
           ),
         ),
       ),
@@ -108,16 +99,6 @@ List<String> _takeAtMostThree(List<String>? values) {
   }
 
   return values.take(3).toList(growable: false);
-}
-
-List<String> _resolveRequestIds(
-  List<String>? optionValues,
-  List<String>? legacyValues,
-) {
-  if (optionValues != null && optionValues.isNotEmpty) {
-    return optionValues.take(3).toList(growable: false);
-  }
-  return _takeAtMostThree(legacyValues);
 }
 
 modern_community.ElevenLabsTextNormalization _toModernTextNormalization(

@@ -22,7 +22,7 @@ final class _ElevenLabsTranscriptionBridgeSupport {
       return false;
     }
 
-    final numSpeakers = options?.numSpeakers ?? request.numSpeakers;
+    final numSpeakers = options?.numSpeakers;
     if (numSpeakers != null && (numSpeakers < 1 || numSpeakers > 32)) {
       return false;
     }
@@ -50,14 +50,14 @@ final class _ElevenLabsTranscriptionBridgeSupport {
           cancellation: cancelToken,
           providerOptions: modern_community.ElevenLabsTranscriptionOptions(
             languageCode: options?.languageCode ?? request.language,
-            tagAudioEvents: options?.tagAudioEvents ?? request.tagAudioEvents,
-            numSpeakers: options?.numSpeakers ?? request.numSpeakers,
+            tagAudioEvents: options?.tagAudioEvents,
+            numSpeakers: options?.numSpeakers,
             timestampGranularity: options?.timestampGranularity ??
                 _toModernTimestampGranularity(request.timestampGranularity),
-            diarize: options?.diarize ?? request.diarize,
+            diarize: options?.diarize,
             fileFormat: options?.fileFormat ??
                 _toModernTranscriptionFileFormat(request.format),
-            enableLogging: options?.enableLogging ?? request.enableLogging,
+            enableLogging: options?.enableLogging,
           ),
         ),
       ),

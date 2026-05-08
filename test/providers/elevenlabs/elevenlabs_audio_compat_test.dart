@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:llm_dart_community/llm_dart_community.dart' as modern_community;
 import 'package:llm_dart/models/audio_models.dart';
 import 'package:llm_dart/providers/elevenlabs/audio.dart';
 import 'package:llm_dart/providers/elevenlabs/client.dart';
@@ -23,16 +24,18 @@ void main() {
           voice: 'voice_123',
           model: 'eleven_turbo_v2',
           languageCode: 'en',
-          seed: 7,
-          previousText: 'before',
-          nextText: 'after',
-          previousRequestIds: ['a', 'b', 'c', 'd'],
-          nextRequestIds: ['x', 'y'],
           textNormalization: TextNormalization.off,
-          enableLogging: false,
-          optimizeStreamingLatency: 2,
           speed: 1.3,
-          stability: 0.9,
+          providerOptions: modern_community.ElevenLabsSpeechOptions(
+            seed: 7,
+            previousText: 'before',
+            nextText: 'after',
+            previousRequestIds: ['a', 'b', 'c', 'd'],
+            nextRequestIds: ['x', 'y'],
+            enableLogging: false,
+            optimizeStreamingLatency: 2,
+            stability: 0.9,
+          ),
         ),
       );
 
@@ -40,7 +43,10 @@ void main() {
       expect(client.lastBinaryBody, {
         'text': 'hello world',
         'model_id': 'eleven_turbo_v2',
-        'voice_settings': client.config.voiceSettings,
+        'voice_settings': {
+          'stability': 0.9,
+          'speed': 1.3,
+        },
         'apply_text_normalization': 'off',
         'language_code': 'en',
         'seed': 7,
@@ -96,10 +102,12 @@ void main() {
           language: 'en',
           format: 'wav',
           timestampGranularity: TimestampGranularity.character,
-          diarize: true,
-          numSpeakers: 2,
-          tagAudioEvents: false,
-          enableLogging: false,
+          providerOptions: modern_community.ElevenLabsTranscriptionOptions(
+            diarize: true,
+            numSpeakers: 2,
+            tagAudioEvents: false,
+            enableLogging: false,
+          ),
         ),
       );
 
@@ -167,7 +175,10 @@ void main() {
       final response = await audio.speechToText(
         STTRequest.fromSourceUrl(
           'https://storage.example.com/audio.mp3',
-          enableLogging: false,
+          providerOptions:
+              const modern_community.ElevenLabsTranscriptionOptions(
+            enableLogging: false,
+          ),
         ),
       );
 
@@ -206,7 +217,6 @@ void main() {
       final response = await audio.speechToText(
         STTRequest.fromFile(
           audioFile.path,
-          enableLogging: false,
         ),
       );
 

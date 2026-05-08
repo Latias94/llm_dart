@@ -245,7 +245,9 @@ Future<void> testCompatibilityStreaming(
         voice: _elevenLabsVoiceId,
         model: _elevenLabsSpeechModelId,
         processingMode: AudioProcessingMode.streaming,
-        optimizeStreamingLatency: 2,
+        providerOptions: community.ElevenLabsSpeechOptions(
+          optimizeStreamingLatency: 2,
+        ),
       ),
     )) {
       if (event is AudioDataEvent) {

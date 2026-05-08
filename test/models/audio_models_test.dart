@@ -88,13 +88,13 @@ void main() {
           speed: 1.2,
           format: 'mp3_44100_128',
           quality: 'high',
-          stability: 0.8,
-          similarityBoost: 0.9,
-          style: 0.1,
-          useSpeakerBoost: true,
+          sampleRate: 44100,
+          processingMode: AudioProcessingMode.streaming,
           includeTimestamps: true,
-          optimizeStreamingLatency: 2,
-          enableLogging: false,
+          timestampGranularity: TimestampGranularity.character,
+          textNormalization: TextNormalization.off,
+          languageCode: 'en',
+          instructions: 'Speak warmly.',
         );
 
         expect(request.text, equals('Hello, world!'));
@@ -103,13 +103,13 @@ void main() {
         expect(request.speed, equals(1.2));
         expect(request.format, equals('mp3_44100_128'));
         expect(request.quality, equals('high'));
-        expect(request.stability, equals(0.8));
-        expect(request.similarityBoost, equals(0.9));
-        expect(request.style, equals(0.1));
-        expect(request.useSpeakerBoost, isTrue);
+        expect(request.sampleRate, equals(44100));
+        expect(request.processingMode, AudioProcessingMode.streaming);
         expect(request.includeTimestamps, isTrue);
-        expect(request.optimizeStreamingLatency, equals(2));
-        expect(request.enableLogging, isFalse);
+        expect(request.timestampGranularity, TimestampGranularity.character);
+        expect(request.textNormalization, TextNormalization.off);
+        expect(request.languageCode, equals('en'));
+        expect(request.instructions, equals('Speak warmly.'));
       });
 
       test('should serialize to JSON correctly', () {
@@ -262,13 +262,8 @@ void main() {
           includeConfidence: true,
           temperature: 0.2,
           timestampGranularity: TimestampGranularity.word,
-          diarize: true,
-          numSpeakers: 2,
-          tagAudioEvents: true,
-          webhook: false,
           prompt: 'Transcribe this audio',
           responseFormat: 'json',
-          enableLogging: false,
         );
 
         final json = request.toJson();
@@ -280,13 +275,8 @@ void main() {
         expect(json['include_confidence'], isTrue);
         expect(json['temperature'], equals(0.2));
         expect(json['timestamp_granularity'], equals('word'));
-        expect(json['diarize'], isTrue);
-        expect(json['num_speakers'], equals(2));
-        expect(json['tag_audio_events'], isTrue);
-        expect(json['webhook'], equals(false));
         expect(json['prompt'], equals('Transcribe this audio'));
         expect(json['response_format'], equals('json'));
-        expect(json['enable_logging'], isFalse);
       });
     });
 

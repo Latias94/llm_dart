@@ -26,28 +26,24 @@ final class _ElevenLabsAudioRequestSupport {
     if (languageCode != null) {
       requestBody['language_code'] = languageCode;
     }
-    final seed = options?.seed ?? request.seed;
+    final seed = options?.seed;
     if (seed != null) {
       requestBody['seed'] = seed;
     }
-    final previousText = options?.previousText ?? request.previousText;
+    final previousText = options?.previousText;
     if (previousText != null) {
       requestBody['previous_text'] = previousText;
     }
-    final nextText = options?.nextText ?? request.nextText;
+    final nextText = options?.nextText;
     if (nextText != null) {
       requestBody['next_text'] = nextText;
     }
-    final previousRequestIds = options?.previousRequestIds.isNotEmpty == true
-        ? options!.previousRequestIds
-        : request.previousRequestIds;
+    final previousRequestIds = options?.previousRequestIds;
     if (previousRequestIds != null && previousRequestIds.isNotEmpty) {
       requestBody['previous_request_ids'] =
           previousRequestIds.take(3).toList(growable: false);
     }
-    final nextRequestIds = options?.nextRequestIds.isNotEmpty == true
-        ? options!.nextRequestIds
-        : request.nextRequestIds;
+    final nextRequestIds = options?.nextRequestIds;
     if (nextRequestIds != null && nextRequestIds.isNotEmpty) {
       requestBody['next_request_ids'] =
           nextRequestIds.take(3).toList(growable: false);
@@ -59,13 +55,14 @@ final class _ElevenLabsAudioRequestSupport {
   Map<String, String> buildTextToSpeechQueryParams(TTSRequest request) {
     final options = _resolveElevenLabsSpeechOptions(request.providerOptions);
     final outputFormat = options?.outputFormat ?? 'mp3_44100_128';
-    final enableLogging = options?.enableLogging ?? request.enableLogging;
-    final optimizeStreamingLatency =
-        options?.optimizeStreamingLatency ?? request.optimizeStreamingLatency;
     final queryParams = <String, String>{
       'output_format': outputFormat,
-      'enable_logging': enableLogging.toString(),
     };
+    final enableLogging = options?.enableLogging;
+    if (enableLogging != null) {
+      queryParams['enable_logging'] = enableLogging.toString();
+    }
+    final optimizeStreamingLatency = options?.optimizeStreamingLatency;
     if (optimizeStreamingLatency != null) {
       queryParams['optimize_streaming_latency'] =
           optimizeStreamingLatency.toString();
@@ -77,9 +74,9 @@ final class _ElevenLabsAudioRequestSupport {
     final options = _resolveElevenLabsTranscriptionOptions(
       request.providerOptions,
     );
-    final enableLogging = options?.enableLogging ?? request.enableLogging;
-    if (!enableLogging) {
-      return const {'enable_logging': 'false'};
+    final enableLogging = options?.enableLogging;
+    if (enableLogging != null) {
+      return {'enable_logging': enableLogging.toString()};
     }
     return null;
   }
@@ -101,7 +98,7 @@ final class _ElevenLabsAudioRequestSupport {
     if (useSpeakerBoost != null) {
       settings['use_speaker_boost'] = useSpeakerBoost;
     }
-    final speed = options?.speed;
+    final speed = options?.speed ?? request.speed;
     if (speed != null) {
       settings['speed'] = speed;
     }
