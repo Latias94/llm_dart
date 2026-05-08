@@ -5,14 +5,13 @@ StructuredOutputFormat? _resolveCompatStructuredOutputFormat(
   String? providerOptionsNamespace,
 ) {
   if (providerOptionsNamespace != null) {
-    final namespaceOptions = legacyProviderOptionsNamespaceOrNull(
+    final options = legacyProviderOptionView(
       config,
       providerOptionsNamespace,
     );
-    final namespacedFormat = namespaceOptions?[LegacyExtensionKeys.jsonSchema];
-    if (namespacedFormat is StructuredOutputFormat) {
-      return namespacedFormat;
-    }
+    return options.getWithFlatFallback<StructuredOutputFormat>(
+      LegacyExtensionKeys.jsonSchema,
+    );
   }
 
   return config.getExtension<StructuredOutputFormat>(

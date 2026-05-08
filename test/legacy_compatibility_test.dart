@@ -692,6 +692,39 @@ void main() {
       expect(providerOptions.responseFormat, isNull);
     });
 
+    test(
+        'legacy chat adapter lets namespaced jsonSchema null block flat fallback',
+        () {
+      const flatSchema = legacy.StructuredOutputFormat(
+        name: 'flat',
+        schema: {'type': 'object'},
+      );
+      const config = legacy.LLMConfig(
+        apiKey: 'test-key',
+        baseUrl: 'https://example.com',
+        model: 'test-model',
+        extensions: {
+          LegacyExtensionKeys.jsonSchema: flatSchema,
+          legacyProviderOptionsBagKey: {
+            LegacyProviderOptionNamespaces.openrouter: {
+              LegacyExtensionKeys.jsonSchema: null,
+            },
+          },
+        },
+      );
+      final adapter = LegacyChatCapabilityAdapter(
+        model: _FakeLanguageModel(),
+        config: config,
+        providerOptionsNamespace: LegacyProviderOptionNamespaces.openrouter,
+      );
+
+      final request = adapter.buildRequest([
+        legacy.ChatMessage.user('Return JSON.'),
+      ], null);
+
+      expect(request.options.responseFormat, isNull);
+    });
+
     test('legacy chat adapter maps streaming deltas and completion events',
         () async {
       final fakeModel = _FakeLanguageModel(
