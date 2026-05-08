@@ -93,28 +93,29 @@ modern_openai.OpenAIGenerateTextOptions buildCompatOpenAIInvocationOptions({
   final reasoningEffort = legacyConfig.reasoningEffort ??
       ReasoningEffort.fromString(
         compatStringValue(
-          options.get<dynamic>(LegacyExtensionKeys.reasoningEffort),
+          options.getWithFlatFallback<dynamic>(
+              LegacyExtensionKeys.reasoningEffort),
         ),
       );
 
   return modern_openai.OpenAIGenerateTextOptions(
     previousResponseId: legacyConfig.previousResponseId ??
-        options.get<String>(
+        options.getWithFlatFallback<String>(
           LegacyExtensionKeys.previousResponseId,
         ),
     parallelToolCalls: legacyConfig.parallelToolCalls ??
-        options.get<bool>(
+        options.getWithFlatFallback<bool>(
           LegacyExtensionKeys.parallelToolCalls,
         ),
     serviceTier:
         legacyConfig.serviceTier?.value ?? bridgeConfig.serviceTier?.value,
     user: legacyConfig.user ?? bridgeConfig.user,
     verbosity: legacyConfig.verbosity ??
-        options.get<String>(LegacyExtensionKeys.verbosity),
+        options.getWithFlatFallback<String>(LegacyExtensionKeys.verbosity),
     reasoningEffort: mapCompatOpenAIReasoningEffort(reasoningEffort),
     builtInTools: mapCompatOpenAIBuiltInTools(
       legacyConfig.builtInTools ??
-          options.get<List<OpenAIBuiltInTool>>(
+          options.getWithFlatFallback<List<OpenAIBuiltInTool>>(
             LegacyExtensionKeys.builtInTools,
           ),
     ),

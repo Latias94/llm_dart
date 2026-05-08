@@ -12,6 +12,50 @@ import 'package:test/test.dart';
 
 void main() {
   group('Legacy Compatibility', () {
+    test('LegacyProviderOptionView makes flat fallback explicit', () {
+      const config = legacy.LLMConfig(
+        apiKey: 'test-key',
+        baseUrl: 'https://api.openai.com/v1',
+        model: 'gpt-4o',
+        extensions: {
+          LegacyExtensionKeys.verbosity: 'flat',
+          legacyProviderOptionsBagKey: {
+            LegacyProviderOptionNamespaces.openai: {
+              LegacyExtensionKeys.verbosity: 'namespaced',
+              LegacyExtensionKeys.previousResponseId: null,
+            },
+          },
+        },
+      );
+      final options = legacyProviderOptionView(
+        config,
+        LegacyProviderOptionNamespaces.openai,
+      );
+
+      expect(
+        options.get<String>(LegacyExtensionKeys.verbosity),
+        'namespaced',
+      );
+      expect(
+        options.get<String>(LegacyExtensionKeys.voice),
+        isNull,
+      );
+      expect(
+        options.getWithFlatFallback<String>(
+          LegacyExtensionKeys.voice,
+          fallbackKey: LegacyExtensionKeys.verbosity,
+        ),
+        'flat',
+      );
+      expect(
+        options.getWithFlatFallback<String>(
+          LegacyExtensionKeys.previousResponseId,
+          fallbackKey: LegacyExtensionKeys.verbosity,
+        ),
+        isNull,
+      );
+    });
+
     test(
         'LLMBuilder.build returns compat provider subclasses for migrated providers',
         () async {

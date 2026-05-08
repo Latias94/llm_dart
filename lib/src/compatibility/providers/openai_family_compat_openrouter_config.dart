@@ -17,9 +17,10 @@ OpenAIConfig toCompatLegacyOpenRouterConfig(LLMConfig config) {
   );
   var model = config.model;
   final webSearchEnabled =
-      options.get<bool>(LegacyExtensionKeys.webSearchEnabled) == true;
-  final webSearchConfig =
-      options.get<WebSearchConfig>(LegacyExtensionKeys.webSearchConfig);
+      options.getWithFlatFallback<bool>(LegacyExtensionKeys.webSearchEnabled) ==
+          true;
+  final webSearchConfig = options.getWithFlatFallback<WebSearchConfig>(
+      LegacyExtensionKeys.webSearchConfig);
   if ((webSearchEnabled || webSearchConfig != null) &&
       !model.endsWith(':online')) {
     model = '$model:online';
@@ -39,36 +40,39 @@ OpenAIConfig toCompatLegacyOpenRouterConfig(LLMConfig config) {
     topK: config.topK,
     tools: config.tools,
     toolChoice: config.toolChoice,
-    jsonSchema: options.get<StructuredOutputFormat>(
+    jsonSchema: options.getWithFlatFallback<StructuredOutputFormat>(
       LegacyExtensionKeys.jsonSchema,
     ),
     stopSequences: config.stopSequences,
     user: config.user,
     serviceTier: config.serviceTier,
-    useResponsesAPI:
-        options.get<bool>(LegacyExtensionKeys.useResponsesApi) ?? false,
-    previousResponseId: options.get<String>(
+    useResponsesAPI: options
+            .getWithFlatFallback<bool>(LegacyExtensionKeys.useResponsesApi) ??
+        false,
+    previousResponseId: options.getWithFlatFallback<String>(
       LegacyExtensionKeys.previousResponseId,
     ),
-    builtInTools: options.get<List<OpenAIBuiltInTool>>(
+    builtInTools: options.getWithFlatFallback<List<OpenAIBuiltInTool>>(
       LegacyExtensionKeys.builtInTools,
     ),
-    frequencyPenalty: options.get<double>(
+    frequencyPenalty: options.getWithFlatFallback<double>(
       LegacyExtensionKeys.frequencyPenalty,
     ),
-    presencePenalty: options.get<double>(
+    presencePenalty: options.getWithFlatFallback<double>(
       LegacyExtensionKeys.presencePenalty,
     ),
-    logitBias: options.get<Map<String, double>>(
+    logitBias: options.getWithFlatFallback<Map<String, double>>(
       LegacyExtensionKeys.logitBias,
     ),
-    seed: options.get<int>(LegacyExtensionKeys.seed),
-    parallelToolCalls: options.get<bool>(
+    seed: options.getWithFlatFallback<int>(LegacyExtensionKeys.seed),
+    parallelToolCalls: options.getWithFlatFallback<bool>(
       LegacyExtensionKeys.parallelToolCalls,
     ),
-    logprobs: options.get<bool>(LegacyExtensionKeys.logprobs),
-    topLogprobs: options.get<int>(LegacyExtensionKeys.topLogprobs),
-    verbosity: options.get<String>(LegacyExtensionKeys.verbosity),
+    logprobs: options.getWithFlatFallback<bool>(LegacyExtensionKeys.logprobs),
+    topLogprobs:
+        options.getWithFlatFallback<int>(LegacyExtensionKeys.topLogprobs),
+    verbosity:
+        options.getWithFlatFallback<String>(LegacyExtensionKeys.verbosity),
   );
 }
 
@@ -80,9 +84,10 @@ core.ProviderModelOptions buildCompatOpenRouterModelSettings(
     LegacyProviderOptionNamespaces.openrouter,
   );
   final webSearchEnabled =
-      options.get<bool>(LegacyExtensionKeys.webSearchEnabled) == true;
-  final webSearchConfig =
-      options.get<WebSearchConfig>(LegacyExtensionKeys.webSearchConfig);
+      options.getWithFlatFallback<bool>(LegacyExtensionKeys.webSearchEnabled) ==
+          true;
+  final webSearchConfig = options.getWithFlatFallback<WebSearchConfig>(
+      LegacyExtensionKeys.webSearchConfig);
   if ((webSearchEnabled || webSearchConfig != null) &&
       !config.model.endsWith(':online')) {
     return const modern_openai.OpenRouterChatModelSettings(

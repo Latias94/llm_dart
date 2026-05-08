@@ -24,16 +24,17 @@ OllamaConfig createLegacyOllamaConfig(LLMConfig config) {
     topP: config.topP,
     topK: config.topK,
     tools: config.tools,
-    jsonSchema: options.get<StructuredOutputFormat>(
+    jsonSchema: options.getWithFlatFallback<StructuredOutputFormat>(
       LegacyExtensionKeys.jsonSchema,
     ),
-    numCtx: options.get<int>(LegacyExtensionKeys.numCtx),
-    numGpu: options.get<int>(LegacyExtensionKeys.numGpu),
-    numThread: options.get<int>(LegacyExtensionKeys.numThread),
-    numa: options.get<bool>(LegacyExtensionKeys.numa),
-    numBatch: options.get<int>(LegacyExtensionKeys.numBatch),
-    keepAlive: options.get<String>(LegacyExtensionKeys.keepAlive),
-    raw: options.get<bool>(LegacyExtensionKeys.raw),
-    reasoning: options.get<bool>(LegacyExtensionKeys.reasoning),
+    numCtx: options.getWithFlatFallback<int>(LegacyExtensionKeys.numCtx),
+    numGpu: options.getWithFlatFallback<int>(LegacyExtensionKeys.numGpu),
+    numThread: options.getWithFlatFallback<int>(LegacyExtensionKeys.numThread),
+    numa: options.getWithFlatFallback<bool>(LegacyExtensionKeys.numa),
+    numBatch: options.getWithFlatFallback<int>(LegacyExtensionKeys.numBatch),
+    keepAlive:
+        options.getWithFlatFallback<String>(LegacyExtensionKeys.keepAlive),
+    raw: options.getWithFlatFallback<bool>(LegacyExtensionKeys.raw),
+    reasoning: options.getWithFlatFallback<bool>(LegacyExtensionKeys.reasoning),
   );
 }

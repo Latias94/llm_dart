@@ -90,14 +90,16 @@ bool _hasGoogleStructuredOutputConflict(
     config,
     LegacyProviderOptionNamespaces.google,
   );
-  final structuredOutput = options.get<StructuredOutputFormat>(
+  final structuredOutput = options.getWithFlatFallback<StructuredOutputFormat>(
     LegacyExtensionKeys.jsonSchema,
   );
   if (structuredOutput == null) {
     return false;
   }
 
-  if (options.get<bool>(LegacyExtensionKeys.enableImageGeneration) == true) {
+  if (options.getWithFlatFallback<bool>(
+          LegacyExtensionKeys.enableImageGeneration) ==
+      true) {
     return true;
   }
 

@@ -19,9 +19,10 @@ OpenAIConfig toCompatLegacyOpenAIConfig(LLMConfig config) {
   );
   var model = config.model;
   final webSearchEnabled =
-      options.get<bool>(LegacyExtensionKeys.webSearchEnabled) == true;
-  final webSearchConfig =
-      options.get<WebSearchConfig>(LegacyExtensionKeys.webSearchConfig);
+      options.getWithFlatFallback<bool>(LegacyExtensionKeys.webSearchEnabled) ==
+          true;
+  final webSearchConfig = options.getWithFlatFallback<WebSearchConfig>(
+      LegacyExtensionKeys.webSearchConfig);
   if ((webSearchEnabled || webSearchConfig != null) &&
       !isCompatOpenAISearchModel(model)) {
     model = compatOpenAISearchModelFor(model);
@@ -66,46 +67,50 @@ OpenAIConfig _createCompatOpenAIConfig({
     toolChoice: config.toolChoice,
     reasoningEffort: ReasoningEffort.fromString(
       compatStringValue(
-        options.get<dynamic>(LegacyExtensionKeys.reasoningEffort),
+        options
+            .getWithFlatFallback<dynamic>(LegacyExtensionKeys.reasoningEffort),
       ),
     ),
-    jsonSchema: options.get<StructuredOutputFormat>(
+    jsonSchema: options.getWithFlatFallback<StructuredOutputFormat>(
       LegacyExtensionKeys.jsonSchema,
     ),
-    voice: options.get<String>(LegacyExtensionKeys.voice),
-    embeddingEncodingFormat: options.get<String>(
+    voice: options.getWithFlatFallback<String>(LegacyExtensionKeys.voice),
+    embeddingEncodingFormat: options.getWithFlatFallback<String>(
       LegacyExtensionKeys.embeddingEncodingFormat,
     ),
-    embeddingDimensions: options.get<int>(
+    embeddingDimensions: options.getWithFlatFallback<int>(
       LegacyExtensionKeys.embeddingDimensions,
     ),
     stopSequences: config.stopSequences,
     user: config.user,
     serviceTier: config.serviceTier,
-    useResponsesAPI:
-        options.get<bool>(LegacyExtensionKeys.useResponsesApi) ?? false,
-    previousResponseId: options.get<String>(
+    useResponsesAPI: options
+            .getWithFlatFallback<bool>(LegacyExtensionKeys.useResponsesApi) ??
+        false,
+    previousResponseId: options.getWithFlatFallback<String>(
       LegacyExtensionKeys.previousResponseId,
     ),
-    builtInTools: options.get<List<OpenAIBuiltInTool>>(
+    builtInTools: options.getWithFlatFallback<List<OpenAIBuiltInTool>>(
       LegacyExtensionKeys.builtInTools,
     ),
-    frequencyPenalty: options.get<double>(
+    frequencyPenalty: options.getWithFlatFallback<double>(
       LegacyExtensionKeys.frequencyPenalty,
     ),
-    presencePenalty: options.get<double>(
+    presencePenalty: options.getWithFlatFallback<double>(
       LegacyExtensionKeys.presencePenalty,
     ),
-    logitBias: options.get<Map<String, double>>(
+    logitBias: options.getWithFlatFallback<Map<String, double>>(
       LegacyExtensionKeys.logitBias,
     ),
-    seed: options.get<int>(LegacyExtensionKeys.seed),
-    parallelToolCalls: options.get<bool>(
+    seed: options.getWithFlatFallback<int>(LegacyExtensionKeys.seed),
+    parallelToolCalls: options.getWithFlatFallback<bool>(
       LegacyExtensionKeys.parallelToolCalls,
     ),
-    logprobs: options.get<bool>(LegacyExtensionKeys.logprobs),
-    topLogprobs: options.get<int>(LegacyExtensionKeys.topLogprobs),
-    verbosity: options.get<String>(LegacyExtensionKeys.verbosity),
+    logprobs: options.getWithFlatFallback<bool>(LegacyExtensionKeys.logprobs),
+    topLogprobs:
+        options.getWithFlatFallback<int>(LegacyExtensionKeys.topLogprobs),
+    verbosity:
+        options.getWithFlatFallback<String>(LegacyExtensionKeys.verbosity),
   );
 }
 

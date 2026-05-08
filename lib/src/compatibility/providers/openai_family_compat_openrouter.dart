@@ -38,11 +38,12 @@ ChatCapability buildCompatOpenRouterProvider(LLMConfig config) {
       config: config,
       providerOptionsNamespace: LegacyProviderOptionNamespaces.openrouter,
       providerOptions: modern_openai.OpenAIGenerateTextOptions(
-        parallelToolCalls: options.get<bool>(
+        parallelToolCalls: options.getWithFlatFallback<bool>(
           LegacyExtensionKeys.parallelToolCalls,
         ),
         serviceTier: config.serviceTier?.value,
-        verbosity: options.get<String>(LegacyExtensionKeys.verbosity),
+        verbosity:
+            options.getWithFlatFallback<String>(LegacyExtensionKeys.verbosity),
       ),
     ),
   );

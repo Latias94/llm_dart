@@ -12,7 +12,7 @@ bool canUseOpenAIChatBridge(
   );
   if (_hasNonFunctionTools(effectiveTools) ||
       !_canMapOpenAIBuiltInTools(
-        options.get<List<OpenAIBuiltInTool>>(
+        options.getWithFlatFallback<List<OpenAIBuiltInTool>>(
           LegacyExtensionKeys.builtInTools,
         ),
       )) {

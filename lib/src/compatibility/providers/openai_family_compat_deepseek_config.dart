@@ -24,17 +24,17 @@ DeepSeekConfig createLegacyDeepSeekConfig(LLMConfig config) {
     topK: config.topK,
     tools: config.tools,
     toolChoice: config.toolChoice,
-    logprobs: options.get<bool>(LegacyExtensionKeys.logprobs),
-    topLogprobs: options.get<int>(
+    logprobs: options.getWithFlatFallback<bool>(LegacyExtensionKeys.logprobs),
+    topLogprobs: options.getWithFlatFallback<int>(
       LegacyExtensionKeys.deepSeekTopLogprobs,
     ),
-    frequencyPenalty: options.get<double>(
+    frequencyPenalty: options.getWithFlatFallback<double>(
       LegacyExtensionKeys.deepSeekFrequencyPenalty,
     ),
-    presencePenalty: options.get<double>(
+    presencePenalty: options.getWithFlatFallback<double>(
       LegacyExtensionKeys.deepSeekPresencePenalty,
     ),
-    responseFormat: options.get<Map<String, dynamic>>(
+    responseFormat: options.getWithFlatFallback<Map<String, dynamic>>(
       LegacyExtensionKeys.deepSeekResponseFormat,
     ),
   );

@@ -16,7 +16,7 @@ XAIConfig createLegacyXAIConfig(LLMConfig config) {
     LegacyProviderOptionNamespaces.xai,
   );
   final searchParameters = _createLegacyXAISearchParameters(options);
-  final liveSearchEnabled = options.get<bool>(
+  final liveSearchEnabled = options.getWithFlatFallback<bool>(
     LegacyExtensionKeys.xaiLiveSearch,
   );
 
@@ -33,13 +33,13 @@ XAIConfig createLegacyXAIConfig(LLMConfig config) {
     topK: config.topK,
     tools: config.tools,
     toolChoice: config.toolChoice,
-    jsonSchema: options.get<StructuredOutputFormat>(
+    jsonSchema: options.getWithFlatFallback<StructuredOutputFormat>(
       LegacyExtensionKeys.jsonSchema,
     ),
-    embeddingEncodingFormat: options.get<String>(
+    embeddingEncodingFormat: options.getWithFlatFallback<String>(
       LegacyExtensionKeys.embeddingEncodingFormat,
     ),
-    embeddingDimensions: options.get<int>(
+    embeddingDimensions: options.getWithFlatFallback<int>(
       LegacyExtensionKeys.embeddingDimensions,
     ),
     searchParameters: searchParameters,
@@ -143,21 +143,22 @@ List<modern_openai.XAISearchSource>? mapCompatXAISearchSources(
 SearchParameters? _createLegacyXAISearchParameters(
   LegacyProviderOptionView options,
 ) {
-  final searchParameters = options.get<SearchParameters>(
+  final searchParameters = options.getWithFlatFallback<SearchParameters>(
     LegacyExtensionKeys.xaiSearchParameters,
   );
   if (searchParameters != null) {
     return searchParameters;
   }
 
-  final webSearchConfig = options.get<WebSearchConfig>(
+  final webSearchConfig = options.getWithFlatFallback<WebSearchConfig>(
     LegacyExtensionKeys.webSearchConfig,
   );
   if (webSearchConfig != null) {
     return _convertWebSearchConfigToSearchParameters(webSearchConfig);
   }
 
-  if (options.get<bool>(LegacyExtensionKeys.webSearchEnabled) == true) {
+  if (options.getWithFlatFallback<bool>(LegacyExtensionKeys.webSearchEnabled) ==
+      true) {
     return SearchParameters.webSearch();
   }
 

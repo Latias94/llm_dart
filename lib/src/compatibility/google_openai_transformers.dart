@@ -29,11 +29,13 @@ class GoogleRequestBodyTransformer implements RequestBodyTransformer {
       config,
       LegacyProviderOptionNamespaces.google,
     );
-    final reasoning = options.get<bool>(LegacyExtensionKeys.reasoning) ?? false;
-    final includeThoughts = options.get<bool>(
+    final reasoning =
+        options.getWithFlatFallback<bool>(LegacyExtensionKeys.reasoning) ??
+            false;
+    final includeThoughts = options.getWithFlatFallback<bool>(
       LegacyExtensionKeys.includeThoughts,
     );
-    final thinkingBudgetTokens = options.get<int>(
+    final thinkingBudgetTokens = options.getWithFlatFallback<int>(
       LegacyExtensionKeys.thinkingBudgetTokens,
     );
 
@@ -65,7 +67,7 @@ class GoogleRequestBodyTransformer implements RequestBodyTransformer {
       config,
       LegacyProviderOptionNamespaces.google,
     );
-    final reasoningEffortString = options.get<String>(
+    final reasoningEffortString = options.getWithFlatFallback<String>(
       LegacyExtensionKeys.reasoningEffort,
     );
     if (reasoningEffortString != null && reasoningEffortString.isNotEmpty) {
@@ -98,8 +100,10 @@ class GoogleHeadersTransformer implements HeadersTransformer {
       config,
       LegacyProviderOptionNamespaces.google,
     );
-    final reasoning = options.get<bool>(LegacyExtensionKeys.reasoning) ?? false;
-    final includeThoughts = options.get<bool>(
+    final reasoning =
+        options.getWithFlatFallback<bool>(LegacyExtensionKeys.reasoning) ??
+            false;
+    final includeThoughts = options.getWithFlatFallback<bool>(
       LegacyExtensionKeys.includeThoughts,
     );
 

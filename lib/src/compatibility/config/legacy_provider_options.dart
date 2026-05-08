@@ -80,7 +80,18 @@ final class LegacyProviderOptionView {
   Map<String, dynamic> get options =>
       legacyProviderOptionsNamespace(config, namespace);
 
-  T? get<T>(String key, {String? fallbackKey}) {
+  /// Reads only from the namespaced legacy `providerOptions` bag.
+  T? get<T>(String key) {
+    final namespaceOptions = optionsOrNull;
+    if (namespaceOptions != null && namespaceOptions.containsKey(key)) {
+      return namespaceOptions[key] as T?;
+    }
+
+    return null;
+  }
+
+  /// Reads namespaced provider options first, then old flat extensions.
+  T? getWithFlatFallback<T>(String key, {String? fallbackKey}) {
     final namespaceOptions = optionsOrNull;
     if (namespaceOptions != null && namespaceOptions.containsKey(key)) {
       return namespaceOptions[key] as T?;

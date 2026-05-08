@@ -27,44 +27,44 @@ GoogleConfig createLegacyGoogleConfig(LLMConfig config) {
     topK: config.topK,
     tools: config.tools,
     toolChoice: config.toolChoice,
-    jsonSchema: options.get<StructuredOutputFormat>(
+    jsonSchema: options.getWithFlatFallback<StructuredOutputFormat>(
       LegacyExtensionKeys.jsonSchema,
     ),
     reasoningEffort: ReasoningEffort.fromString(
-      options.get<String>(
+      options.getWithFlatFallback<String>(
         LegacyExtensionKeys.reasoningEffort,
       ),
     ),
-    thinkingBudgetTokens: options.get<int>(
+    thinkingBudgetTokens: options.getWithFlatFallback<int>(
       LegacyExtensionKeys.thinkingBudgetTokens,
     ),
-    includeThoughts: options.get<bool>(
+    includeThoughts: options.getWithFlatFallback<bool>(
       LegacyExtensionKeys.includeThoughts,
     ),
-    enableImageGeneration: options.get<bool>(
+    enableImageGeneration: options.getWithFlatFallback<bool>(
       LegacyExtensionKeys.enableImageGeneration,
     ),
     webSearchConfig: _createLegacyGoogleWebSearchConfig(options),
-    responseModalities: options.get<List<String>>(
+    responseModalities: options.getWithFlatFallback<List<String>>(
       LegacyExtensionKeys.responseModalities,
     ),
-    safetySettings: options.get<List<SafetySetting>>(
+    safetySettings: options.getWithFlatFallback<List<SafetySetting>>(
       LegacyExtensionKeys.safetySettings,
     ),
-    maxInlineDataSize:
-        options.get<int>(LegacyExtensionKeys.maxInlineDataSize) ??
-            20 * 1024 * 1024,
-    candidateCount: options.get<int>(
+    maxInlineDataSize: options
+            .getWithFlatFallback<int>(LegacyExtensionKeys.maxInlineDataSize) ??
+        20 * 1024 * 1024,
+    candidateCount: options.getWithFlatFallback<int>(
       LegacyExtensionKeys.candidateCount,
     ),
     stopSequences: config.stopSequences,
-    embeddingTaskType: options.get<String>(
+    embeddingTaskType: options.getWithFlatFallback<String>(
       LegacyExtensionKeys.embeddingTaskType,
     ),
-    embeddingTitle: options.get<String>(
+    embeddingTitle: options.getWithFlatFallback<String>(
       LegacyExtensionKeys.embeddingTitle,
     ),
-    embeddingDimensions: options.get<int>(
+    embeddingDimensions: options.getWithFlatFallback<int>(
       LegacyExtensionKeys.embeddingDimensions,
     ),
   );
@@ -73,14 +73,15 @@ GoogleConfig createLegacyGoogleConfig(LLMConfig config) {
 WebSearchConfig? _createLegacyGoogleWebSearchConfig(
   LegacyProviderOptionView options,
 ) {
-  final webSearchConfig = options.get<WebSearchConfig>(
+  final webSearchConfig = options.getWithFlatFallback<WebSearchConfig>(
     LegacyExtensionKeys.webSearchConfig,
   );
   if (webSearchConfig != null) {
     return webSearchConfig;
   }
 
-  if (options.get<bool>(LegacyExtensionKeys.webSearchEnabled) == true) {
+  if (options.getWithFlatFallback<bool>(LegacyExtensionKeys.webSearchEnabled) ==
+      true) {
     return const WebSearchConfig();
   }
 

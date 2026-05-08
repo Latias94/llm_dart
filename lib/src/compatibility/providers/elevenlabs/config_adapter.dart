@@ -17,13 +17,14 @@ ElevenLabsConfig createLegacyElevenLabsConfig(LLMConfig config) {
     model: config.model,
     timeout: config.timeout,
     dioOverrides: createLegacyDioClientOverrides(config),
-    voiceId: options.get<String>(LegacyExtensionKeys.voiceId),
-    stability: options.get<double>(LegacyExtensionKeys.stability),
-    similarityBoost: options.get<double>(
+    voiceId: options.getWithFlatFallback<String>(LegacyExtensionKeys.voiceId),
+    stability:
+        options.getWithFlatFallback<double>(LegacyExtensionKeys.stability),
+    similarityBoost: options.getWithFlatFallback<double>(
       LegacyExtensionKeys.similarityBoost,
     ),
-    style: options.get<double>(LegacyExtensionKeys.style),
-    useSpeakerBoost: options.get<bool>(
+    style: options.getWithFlatFallback<double>(LegacyExtensionKeys.style),
+    useSpeakerBoost: options.getWithFlatFallback<bool>(
       LegacyExtensionKeys.useSpeakerBoost,
     ),
   );

@@ -31,17 +31,21 @@ AnthropicConfig createLegacyAnthropicConfig(LLMConfig config) {
     stopSequences: config.stopSequences,
     user: config.user,
     serviceTier: config.serviceTier,
-    reasoning: options.get<bool>(LegacyExtensionKeys.reasoning) ?? false,
-    thinkingBudgetTokens: options.get<int>(
+    reasoning:
+        options.getWithFlatFallback<bool>(LegacyExtensionKeys.reasoning) ??
+            false,
+    thinkingBudgetTokens: options.getWithFlatFallback<int>(
       LegacyExtensionKeys.thinkingBudgetTokens,
     ),
-    interleavedThinking:
-        options.get<bool>(LegacyExtensionKeys.interleavedThinking) ?? false,
-    metadata: options.get<Map<String, dynamic>>(
+    interleavedThinking: options.getWithFlatFallback<bool>(
+            LegacyExtensionKeys.interleavedThinking) ??
+        false,
+    metadata: options.getWithFlatFallback<Map<String, dynamic>>(
       LegacyExtensionKeys.metadata,
     ),
-    container: options.get<String>(LegacyExtensionKeys.container),
-    mcpServers: options.get<List<AnthropicMCPServer>>(
+    container:
+        options.getWithFlatFallback<String>(LegacyExtensionKeys.container),
+    mcpServers: options.getWithFlatFallback<List<AnthropicMCPServer>>(
       LegacyExtensionKeys.mcpServers,
     ),
     webSearchConfig: webSearchConfig,
@@ -51,14 +55,15 @@ AnthropicConfig createLegacyAnthropicConfig(LLMConfig config) {
 WebSearchConfig? _createLegacyAnthropicWebSearchConfig(
   LegacyProviderOptionView options,
 ) {
-  final webSearchConfig = options.get<WebSearchConfig>(
+  final webSearchConfig = options.getWithFlatFallback<WebSearchConfig>(
     LegacyExtensionKeys.webSearchConfig,
   );
   if (webSearchConfig != null) {
     return webSearchConfig;
   }
 
-  if (options.get<bool>(LegacyExtensionKeys.webSearchEnabled) == true) {
+  if (options.getWithFlatFallback<bool>(LegacyExtensionKeys.webSearchEnabled) ==
+      true) {
     return const WebSearchConfig();
   }
 
