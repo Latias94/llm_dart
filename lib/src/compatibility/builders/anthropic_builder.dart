@@ -3,7 +3,6 @@ import '../../../core/capability.dart';
 import '../../../providers/anthropic/mcp_models.dart';
 import '../config/legacy_config_keys.dart';
 import '../config/legacy_provider_options.dart';
-import 'llm_builder_legacy_provider_options.dart';
 
 /// Anthropic-specific legacy builder DSL layered on top of [LLMBuilder].
 class AnthropicBuilder {

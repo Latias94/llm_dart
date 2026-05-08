@@ -3,7 +3,6 @@ import '../../../core/capability.dart';
 import '../../../models/tool_models.dart';
 import '../config/legacy_config_keys.dart';
 import '../config/legacy_provider_options.dart';
-import 'llm_builder_legacy_provider_options.dart';
 
 /// Ollama-specific LLM builder with provider-specific configuration methods.
 ///

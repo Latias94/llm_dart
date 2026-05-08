@@ -9,8 +9,6 @@ import '../config/legacy_config_keys.dart';
 import '../config/legacy_provider_options.dart';
 import '../providers/openai/assistant_capability.dart';
 import '../web_search_presets.dart';
-import 'llm_builder_legacy_provider_options.dart';
-
 part 'openai_builder_builds.dart';
 part 'openai_builder_presets.dart';
 part 'openai_builder_provider_options.dart';

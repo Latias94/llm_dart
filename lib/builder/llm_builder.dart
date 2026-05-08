@@ -9,11 +9,13 @@ import '../models/chat_models.dart';
 import '../models/tool_models.dart';
 import '../src/bootstrap/root_registry_bootstrap.dart';
 import '../src/compatibility/compatibility_resolver.dart';
+import '../src/compatibility/config/legacy_provider_options.dart';
 import 'http_config.dart';
 
 part 'llm_builder_builds.dart';
 part 'llm_builder_common_config.dart';
 part 'llm_builder_internal.dart';
+part 'llm_builder_legacy_provider_options.dart';
 part 'llm_builder_provider_selection.dart';
 
 /// Builder for configuring and instantiating LLM providers

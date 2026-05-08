@@ -1,7 +1,6 @@
 import '../../../../builder/llm_builder.dart';
 import '../../../../core/capability.dart';
 import '../../../../models/tool_models.dart';
-import '../../../../src/compatibility/builders/llm_builder_legacy_provider_options.dart';
 import '../../../../src/compatibility/config/legacy_config_keys.dart';
 import '../../../../src/compatibility/config/legacy_provider_options.dart';
 

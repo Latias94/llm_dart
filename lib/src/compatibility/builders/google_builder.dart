@@ -6,7 +6,6 @@ import '../../../providers/google/config.dart';
 import '../config/legacy_config_keys.dart';
 import '../config/legacy_provider_options.dart';
 import '../providers/google/google_tts_capability.dart';
-import 'llm_builder_legacy_provider_options.dart';
 
 /// Google-specific legacy builder DSL layered on top of [LLMBuilder].
 class GoogleLLMBuilder {
