@@ -45,6 +45,8 @@ bool canUseXAIChatBridge(
         LegacyExtensionKeys.xaiSearchParameters,
         LegacyExtensionKeys.webSearchEnabled,
         LegacyExtensionKeys.webSearchConfig,
+        LegacyExtensionKeys.embeddingEncodingFormat,
+        LegacyExtensionKeys.embeddingDimensions,
       },
     },
   )) {

@@ -608,6 +608,25 @@ void main() {
       expect(webSearchConfigResult, isTrue);
     });
 
+    test('xAI bridge ignores namespaced non-chat embedding options', () {
+      final result = canUseXAIChatBridge(
+        _baseConfig('grok-3').withExtensions({
+          legacyProviderOptionsBagKey: {
+            LegacyProviderOptionNamespaces.xai: {
+              LegacyExtensionKeys.embeddingEncodingFormat: 'float',
+              LegacyExtensionKeys.embeddingDimensions: 1536,
+            },
+          },
+        }),
+        [
+          legacy.ChatMessage.user('Hello'),
+        ],
+        null,
+      );
+
+      expect(result, isTrue);
+    });
+
     test(
         'xAI bridge still rejects tool replay, ignored legacy-only controls, and unsupported search subset',
         () {
