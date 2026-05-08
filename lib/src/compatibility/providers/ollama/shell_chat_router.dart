@@ -4,8 +4,13 @@ final class _OllamaCompatChatRouter {
   final LLMConfig compatConfig;
   final LegacyChatCapabilityAdapter compatChat;
   final OllamaChat chatFallback;
+  late final CompatChatBridgeRouter _bridgeRouter = CompatChatBridgeRouter(
+    originalConfig: compatConfig,
+    adapter: compatChat,
+    canUseBridge: (config, messages, tools) => canUseChatBridge(messages),
+  );
 
-  const _OllamaCompatChatRouter({
+  _OllamaCompatChatRouter({
     required this.compatConfig,
     required this.compatChat,
     required this.chatFallback,
@@ -31,13 +36,10 @@ final class _OllamaCompatChatRouter {
     List<Tool>? tools, {
     TransportCancellation? cancelToken,
   }) async {
-    return executeCompatChat(
-      originalConfig: compatConfig,
+    return _bridgeRouter.chatWithTools(
       messages: messages,
       tools: tools,
-      canUseBridge: (config, messages, tools) => canUseChatBridge(messages),
-      bridge: () =>
-          compatChat.chatWithTools(messages, tools, cancelToken: cancelToken),
+      cancelToken: cancelToken,
       fallback: () => chatFallback.chatWithTools(
         messages,
         tools,
@@ -51,16 +53,10 @@ final class _OllamaCompatChatRouter {
     List<Tool>? tools,
     TransportCancellation? cancelToken,
   }) {
-    return executeCompatChatStream(
-      originalConfig: compatConfig,
+    return _bridgeRouter.chatStream(
       messages: messages,
       tools: tools,
-      canUseBridge: (config, messages, tools) => canUseChatBridge(messages),
-      bridge: () => compatChat.chatStream(
-        messages,
-        tools: tools,
-        cancelToken: cancelToken,
-      ),
+      cancelToken: cancelToken,
       fallback: () => chatFallback.chatStream(
         messages,
         tools: tools,
