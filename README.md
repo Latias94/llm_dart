@@ -77,8 +77,8 @@ or reasoning output as potentially `inferred` rather than as hard guarantees.
   - framework-neutral generation helpers, runners, result accumulation, and
     structured output utilities
 - `llm_dart_core`
-  - compatibility re-exports plus UI message models, serialization codecs, and
-    the shared `ChatMessageMapper`
+  - historical core compatibility shell that re-exports provider contracts,
+    runtime helpers, UI projection, and serialization from the focused packages
 - `llm_dart_transport`
   - HTTP, SSE, and shared logging primitives
 - `llm_dart_chat`
