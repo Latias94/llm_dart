@@ -1,45 +1,41 @@
 # llm_dart_provider
 
-Provider specification contracts and shared provider-facing data structures for
-`llm_dart`.
+Shared provider contracts and provider-neutral data structures for `llm_dart`.
 
-This package is the new landing zone for stable model/provider contracts that
-provider implementations can depend on without pulling in AI runtime
-orchestration, chat session code, Flutter adapters, or the root compatibility
-package.
+Most applications should use the root `llm_dart` package instead. Depend on
+`llm_dart_provider` directly when you are writing a provider package, a custom
+model implementation, or an integration that needs the shared prompt/result
+types without also depending on runtime helpers, HTTP clients, chat sessions, or
+Flutter adapters.
 
-The current migration slices own provider-facing contracts:
+## What It Provides
 
-- `JsonSchema`
-- `ModelError` and `ModelErrorKind`
-- `ModelWarning` and `ModelWarningType`
-- `ProviderMetadata`
-- `UsageStats`
-- `ProviderModelOptions`
-- `ProviderInvocationOptions`
-- `ProviderCancellation` and `ProviderCancelledException`
-- `CallOptions`
-- prompt message and prompt part contracts
-- generated content part contracts
-- tool definition and tool choice contracts
-- `FinishReason`
-- response format contracts
-- text stream event contracts
-- file data and provider reference contracts
+- prompt messages and content parts
+- tool definitions and tool outputs
 - language, embedding, image, speech, and transcription model interfaces
-- model response metadata and capability profiles
-- shared UI message, UI stream chunk, projection, and mapping contracts
-- prompt, text-stream, and chat-UI serialization codecs
+- model results, warnings, errors, usage, metadata, and finish reasons
+- model capability profiles for UI gating and provider discovery
+- shared chat UI message/projection types
+- JSON codecs for prompts, text stream events, and chat UI transport
 
-Future slices should keep this package focused on stable provider-facing
-contracts and avoid moving runtime orchestration, transport, or Flutter adapter
-logic here.
+## When To Use It
 
-## Ownership Rules
+Use this package directly when you need to:
 
-- Do not depend on `llm_dart_core`, `llm_dart_transport`, concrete provider
-  packages, chat packages, Flutter packages, or the root `llm_dart` package.
-- Do not add runtime orchestration helpers such as multi-step generation loops
-  here. Those belong in `llm_dart_ai`.
-- Do not add transport implementations or Dio types here. Those belong in
-  `llm_dart_transport`.
+- implement a custom `LanguageModel` or other shared model interface
+- build a provider package that should stay independent from the root facade
+- serialize shared prompt, stream, or chat UI payloads
+- inspect capability profiles without taking a dependency on app runtimes
+
+## When Not To Use It
+
+This package does not include:
+
+- generation helper functions such as `generateTextCall(...)`
+- Dio/HTTP transport clients
+- provider-specific request codecs or options
+- chat session orchestration
+- Flutter controller adapters
+
+For those layers, use `llm_dart_ai`, `llm_dart_transport`, provider packages,
+`llm_dart_chat`, or `llm_dart_flutter`.

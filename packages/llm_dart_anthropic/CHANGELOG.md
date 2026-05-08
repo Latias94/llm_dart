@@ -1,7 +1,9 @@
 # Changelog
 
-## [0.11.0-alpha.1] - 2026-04-22
+## [0.11.0-alpha.1] - 2026-05-08
 
-- First alpha release of the focused `llm_dart_anthropic` package.
-- Publishes the provider-owned Anthropic runtime, codecs, files support, and
-  typed Anthropic options split out from the root facade transition.
+- Alpha release of the Anthropic provider package.
+- Use this package directly when you need Anthropic-specific options, files
+  support, or lower-level provider APIs.
+- Most app code can still access Anthropic through `AI.anthropic(...)` from the
+  root `llm_dart` package.

@@ -164,7 +164,9 @@ Target mapping:
 
 ## 6. Transport, Codec, and Provider Logic Are Still Mixed
 
-The current [lib/core/base_http_provider.dart](../../../lib/core/base_http_provider.dart) still mixes:
+The historical `lib/core/base_http_provider.dart` file, later removed in
+[151-remove-dead-base-http-provider.md](151-remove-dead-base-http-provider.md),
+still mixed:
 
 - Dio lifecycle management
 - request execution

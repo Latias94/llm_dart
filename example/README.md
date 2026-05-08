@@ -155,12 +155,13 @@ inference that still needs real request-path validation.
 Run these examples from the standalone package in `example/06_mcp_integration`.
 
 - [mcp_concept_demo.dart](06_mcp_integration/mcp_concept_demo.dart) - Core concepts
-- [simple_mcp_demo.dart](06_mcp_integration/simple_mcp_demo.dart) - Basic integration
-- [basic_mcp_client.dart](06_mcp_integration/basic_mcp_client.dart) - MCP client
-- [custom_mcp_server_stdio.dart](06_mcp_integration/custom_mcp_server_stdio.dart) - Custom server
-- [mcp_tool_bridge.dart](06_mcp_integration/mcp_tool_bridge.dart) - Tool bridging
-- [mcp_with_llm.dart](06_mcp_integration/mcp_with_llm.dart) - LLM integration
-- [test_all_examples.dart](06_mcp_integration/test_all_examples.dart) - Test runner
+- [shared/mcp_tool_bridge.dart](06_mcp_integration/shared/mcp_tool_bridge.dart) - Tool bridging
+- [stdio_examples/client.dart](06_mcp_integration/stdio_examples/client.dart) - Direct stdio MCP client
+- [stdio_examples/llm_client.dart](06_mcp_integration/stdio_examples/llm_client.dart) - LLM integration over stdio MCP tools
+- [http_examples/server.dart](06_mcp_integration/http_examples/server.dart) - HTTP MCP server
+- [http_examples/client.dart](06_mcp_integration/http_examples/client.dart) - Direct HTTP MCP client
+- [http_examples/llm_client.dart](06_mcp_integration/http_examples/llm_client.dart) - LLM integration over HTTP MCP tools
+- [http_examples/simple_stream_client.dart](06_mcp_integration/http_examples/simple_stream_client.dart) - Streaming LLM integration over HTTP MCP tools
 
 ## Setup
 
@@ -182,10 +183,13 @@ dart run 02_core_features/capability_profile_ui_gating.dart
 dart run 05_use_cases/chatbot.dart
 dart run ../packages/llm_dart_chat/example/chat_runtime.dart
 dart run ../packages/llm_dart_chat/example/http_backend_hint_mapping.dart
-flutter run ../packages/llm_dart_flutter/example/flutter_material_chat_demo.dart
-flutter run ../packages/llm_dart_flutter/example/flutter_capability_gated_controls.dart
 dart run 05_use_cases/batch_processor.dart --help
 dart run 05_use_cases/multimodal_app.dart --demo
+
+# Flutter package examples should be run from the Flutter package directory.
+cd ../packages/llm_dart_flutter
+flutter run -t example/flutter_material_chat_demo.dart
+flutter run -t example/flutter_capability_gated_controls.dart
 ```
 
 ## Learning Path
@@ -207,4 +211,4 @@ dart run 05_use_cases/multimodal_app.dart --demo
 - [Main Documentation](../README.md)
 - [Community Provider Workspace Guide](../packages/llm_dart_community/README.md)
 - [API Reference](https://pub.dev/documentation/llm_dart/)
-- [GitHub Issues](https://github.com/your-repo/llm_dart/issues)
+- [GitHub Issues](https://github.com/Latias94/llm_dart/issues)

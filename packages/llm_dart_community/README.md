@@ -1,59 +1,12 @@
 # llm_dart_community
 
-Modern shared-capability entrypoints for the current community-provider set in
-`llm_dart`.
+Modern shared-capability entrypoints for Ollama and ElevenLabs.
 
-## What This Package Owns
+Use this package when you want a small direct dependency for local Ollama
+chat/embeddings or ElevenLabs speech/transcription without depending on the
+root `llm_dart` package.
 
-This package currently owns the modern shared-capability surfaces for:
-
-- Ollama chat and embeddings
-- ElevenLabs speech and transcription
-
-These providers remain grouped intentionally in one workspace package.
-
-It depends only on:
-
-- `llm_dart_provider`
-- `llm_dart_transport`
-
-That keeps the modern community-provider path independent from the root
-compatibility layer.
-
-Examples and tests may use `llm_dart_ai` for shared runtime helpers, but the
-published library boundary does not depend on that app-facing helper package.
-
-## Why They Stay Together
-
-The repository does not currently need one package per provider or one package
-per small runtime slice.
-
-Keeping these providers together is the deliberate current tradeoff:
-
-- smaller maintenance surface
-- clearer migration path out of the root compatibility host
-- enough isolation to keep modern provider code out of root `llm_dart`
-
-This package should only be split further if real release, ownership, or
-surface-growth pressure appears.
-
-## Current Scope
-
-Use this package when application code only needs a shared-capability model
-surface with provider-owned typed settings or the current narrow provider-owned
-helper additions.
-
-Current intentional limits still include:
-
-- Ollama `/api/generate` completion stays outside the shared modern surface
-- stronger shared `ToolChoice` forcing for Ollama still degrades to
-  provider-side automatic tool selection with warnings
-- ElevenLabs realtime flows, cloning, and admin-style APIs stay outside the
-  shared modern surface
-- ElevenLabs file-path convenience beyond the byte-oriented
-  `TranscriptionModel` stays outside this package
-
-## When To Use This Package
+## Supported Surfaces
 
 Use `llm_dart_community` when you want the modern shared-capability APIs for:
 
@@ -63,6 +16,16 @@ Use `llm_dart_community` when you want the modern shared-capability APIs for:
 - `ElevenLabs(...).speechModel(...)`
 - `ElevenLabs(...).transcriptionModel(...)`
 - `ElevenLabs(...).voices().listVoices()`
+
+## Intentional Limits
+
+This alpha package focuses on the shared model APIs. Some broader provider APIs
+remain outside this package:
+
+- Ollama `/api/generate` completion
+- guaranteed forced tool-choice behavior for every Ollama model
+- ElevenLabs realtime, cloning, and admin-style APIs
+- ElevenLabs file-path convenience beyond byte-oriented transcription requests
 
 ## Capability Profiles
 
@@ -81,9 +44,7 @@ descriptive rather than authoritative. In particular, Ollama model capability
 details such as image input or reasoning output may be marked as inferred when
 the local model family is not standardized enough for a stronger guarantee.
 
-### Current Confidence Posture
-
-For the current modern community surfaces, the practical rule is:
+For the current surfaces, the practical rule is:
 
 - treat ElevenLabs speech and transcription capability answers as the stronger
   hosted-API baseline for this package

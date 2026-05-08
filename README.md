@@ -69,7 +69,7 @@ or reasoning output as potentially `inferred` rather than as hard guarantees.
 ## Packages
 
 - `llm_dart`
-  - modern default root facade over the stable migrated model API
+  - recommended root package for the stable model-first API
 - `llm_dart_provider`
   - provider-facing prompt, content, tool, model, response, and stream
     contracts
@@ -77,12 +77,11 @@ or reasoning output as potentially `inferred` rather than as hard guarantees.
   - framework-neutral generation helpers, runners, result accumulation, and
     structured output utilities
 - `llm_dart_core`
-  - historical core compatibility shell that re-exports provider contracts,
-    runtime helpers, UI projection, and serialization from the focused packages
+  - compatibility package for historical core imports
 - `llm_dart_transport`
   - HTTP, SSE, and shared logging primitives
 - `llm_dart_chat`
-  - pure Dart chat session, transport, snapshot, and compatibility re-exports over the chat runtime layer
+  - pure Dart chat sessions, transports, snapshots, and persistence helpers
 - `llm_dart_openai`
   - OpenAI-family providers
 - `llm_dart_anthropic`
@@ -90,15 +89,14 @@ or reasoning output as potentially `inferred` rather than as hard guarantees.
 - `llm_dart_google`
   - Google provider
 - `llm_dart_community`
-  - alpha-preview package for modern Ollama chat/embeddings and ElevenLabs speech/transcription shared-capability surfaces
+  - alpha package for Ollama chat/embeddings and ElevenLabs speech/transcription
 - `llm_dart_flutter`
   - thin Flutter adapter above `llm_dart_chat`
 
 For the `0.11.0-alpha.x` preview line, the focused workspace packages are also
-being prepared as publishable alpha packages. The root `llm_dart` facade
-remains the default entrypoint, while `llm_dart_provider`, `llm_dart_ai`,
-`llm_dart_chat`, `llm_dart_community`, and `llm_dart_flutter` are available for
-narrower adoption when you want the split package boundaries directly.
+available as alpha packages. The root `llm_dart` package remains the default
+entrypoint, while the split packages are available for narrower adoption when
+you want those dependencies directly.
 
 ## Installation
 
@@ -120,7 +118,7 @@ linking before you run package resolution or analysis.
 The supported bootstrap command is:
 
 ```bash
-dart tool/bootstrap_workspace_pubspec_overrides.dart
+dart run tool/bootstrap_workspace_pubspec_overrides.dart
 ```
 
 Those generated `pubspec_overrides.yaml` files are intentionally ignored by git.

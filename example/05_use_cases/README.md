@@ -76,16 +76,19 @@ export OPENAI_API_KEY="your-openai-key"
 export ANTHROPIC_API_KEY="your-anthropic-key"
 export GROQ_API_KEY="your-groq-key"
 
-# Run use case examples
+# Run Dart use case examples
 dart run chatbot.dart
 dart run cli_tool.dart --help
 dart run web_service.dart
 dart run ../../packages/llm_dart_chat/example/chat_runtime.dart
 dart run ../../packages/llm_dart_chat/example/http_backend_hint_mapping.dart
-dart run ../../packages/llm_dart_flutter/example/flutter_integration.dart
-flutter run ../../packages/llm_dart_flutter/example/flutter_material_chat_demo.dart
 dart run batch_processor.dart --help
 dart run multimodal_app.dart --demo
+
+# Run Flutter examples from the Flutter package root.
+cd ../../packages/llm_dart_flutter
+flutter run -t example/flutter_material_chat_demo.dart
+flutter run -t example/flutter_http_backend_integration.dart
 ```
 
 ## Key Concepts

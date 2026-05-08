@@ -59,8 +59,8 @@ await for (final event in stream) {
   separate shared abstraction.
 - The stable architecture therefore keeps Groq on the shared `LanguageModel`
   contract instead of inventing a Groq-specific app-facing interface.
-- This is the same design direction as `repo-ref/ai`: shared model contract,
-  provider-owned transport and request shaping.
+- The design direction is a shared model contract with provider-owned
+  transport and request shaping.
 
 ## Next Steps
 

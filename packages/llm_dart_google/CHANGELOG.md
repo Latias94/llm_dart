@@ -1,7 +1,9 @@
 # Changelog
 
-## [0.11.0-alpha.1] - 2026-04-22
+## [0.11.0-alpha.1] - 2026-05-08
 
-- First alpha release of the focused `llm_dart_google` package.
-- Publishes the provider-owned Google/Gemini runtime, codecs, image/speech
-  models, and typed Google options.
+- Alpha release of the Google/Gemini provider package.
+- Use this package directly when you need Google-specific options, image or
+  speech models, or lower-level provider APIs.
+- Most app code can still access Gemini through `AI.google(...)` from the root
+  `llm_dart` package.

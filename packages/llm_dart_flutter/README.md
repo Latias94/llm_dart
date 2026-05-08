@@ -184,7 +184,7 @@ routing pattern, see `example/flutter_material_chat_demo.dart`.
 Run it from the package root with:
 
 ```bash
-flutter run example/flutter_material_chat_demo.dart
+flutter run -t example/flutter_material_chat_demo.dart
 ```
 
 For a widget-level reconnect recovery example that uses `HttpChatTransport`

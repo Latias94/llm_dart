@@ -5,125 +5,79 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.11.0-alpha.1] - 2026-04-22
+## [0.11.0-alpha.1] - 2026-05-08
 
-This branch currently carries a conservative wave-1 removal set that is
-intended only for the next explicit breaking release. It must not be folded
-into a routine `0.10.x` maintenance release.
+This alpha moves new application code toward the model-first API:
+`AI.<provider>(...).chatModel(...)` plus the shared helpers from
+`package:llm_dart/core.dart`.
+
+Most apps should continue depending on the root `llm_dart` package. The new
+split packages are available when you want smaller direct dependencies,
+provider-specific entrypoints, or custom provider implementation contracts.
+Older builder-era code should migrate through `package:llm_dart/legacy.dart`.
 
 ### Added
 
-- Added community-package capability describers and direct
-  `capabilityProfile` exposure for modern Ollama and ElevenLabs models, plus
-  updated app/Flutter capability-gated demos to include the community path.
+- Added focused packages for users who want direct access to provider
+  contracts, generation helpers, chat sessions, transport, Flutter adapters, or
+  provider-specific APIs.
+- Added model capability profiles for modern Ollama and ElevenLabs models in
+  `llm_dart_community`.
+- Added updated app and Flutter examples that show the model-first path,
+  provider-owned options, capability-gated UI, and the pure Dart chat runtime.
 
-### Removed
+### Changed
 
-- Removed the previously deprecated preset helper aliases across the
-  OpenAI-family, Google, Anthropic, Groq, DeepSeek, Ollama, xAI, Phind, and
-  ElevenLabs compatibility families. Use `AI.<provider>(...).<model/api>(...)`
-  for modern app-facing code, or the non-deprecated root provider constructor
-  when you still need the compatibility root surface.
-- Removed the deprecated builder web-search helpers and the deprecated
-  OpenRouter builder search ergonomics. Use provider-owned search tools,
-  typed provider options, and provider-owned model settings on
-  `AI.<provider>(...).chatModel(...)` instead.
-- Removed the deprecated `extensions` escape hatch from
-  `createProvider(...)`. The `createProvider(...)` helper itself remains
-  available for compatibility code, but provider-specific behavior should now
-  move to typed provider APIs/options or explicit provider/builder surfaces.
-- Removed the deprecated `CancelToken` alias. Use
-  `TransportCancellation` instead.
-- Removed provider-owned OpenAI-compatible registry aliases such as
-  `deepseek-openai`, `google-openai`, `xai-openai`, `groq-openai`, and
-  `phind-openai`. Use the dedicated provider IDs; the generic compatible
-  registry is now reserved for OpenRouter and explicit non-dedicated endpoints.
-- Removed the legacy map-based `OpenAICompatibleDefaults` catalog. Use
-  typed `OpenAICompatibleConfigs` for compatible provider profiles and
-  provider-owned defaults classes for coarse dedicated provider endpoint/model
-  defaults.
-- Moved generic OpenAI-compatible endpoint defaults out of `ProviderDefaults`.
-  OpenRouter, GitHub Copilot, and Together AI defaults now live only on typed
-  `OpenAICompatibleConfigs`.
-- Removed `ProviderDefaults.getCapabilities(...)`; capability declarations are
-  owned by provider factories and provider instances.
-- Moved OpenAI audio and image compatibility catalogs out of `ProviderDefaults`
-  into the OpenAI compatibility provider modules.
-- Removed `ProviderDefaults.getDefaults(...)`; provider factories now return
-  typed `LLMConfig` defaults through `getDefaultConfig()`.
-- Removed `ProviderDefaults` and `package:llm_dart/core/provider_defaults.dart`.
-  Dedicated provider defaults now live beside each provider, for example
-  `OpenAIDefaults`, `AnthropicDefaults`, `GoogleDefaults`, and
-  `PhindDefaults`.
-- Removed `BaseProviderFactory.getProviderDefaults()`. Use
-  `LLMProviderFactory.getDefaultConfig()` for registry-facing default
-  configuration.
-- Removed the public `ConfigUtils` compatibility utility. Authentication header
-  shaping is now an internal compatibility HTTP helper used by provider Dio
-  strategies.
-- Removed the public `utils/reasoning_utils.dart` utility path. Reasoning and
-  thinking-tag heuristics are now internal provider compatibility
-  implementation details.
-- Removed the public `utils/dio_client_factory.dart` wrapper. Provider clients
-  use the transport-owned `ProviderDioClientFactory` directly.
-- Removed the public `utils/http_response_handler.dart` wrapper. Shared
-  compatibility response handling is now internal HTTP infrastructure.
-- Removed the unused public `utils/log_sanitizer.dart` re-export. Internal
-  code imports transport logging helpers from `llm_dart_transport`.
-- Removed the legacy/root `utils/utf8_stream_decoder.dart` re-export. Import
-  `Utf8StreamDecoder` from `package:llm_dart_transport/llm_dart_transport.dart`.
-- Removed the legacy `CapabilityUtils` and `ProviderRegistry` utilities. Use
-  `ProviderCapabilities` for coarse compatibility checks, `LLMProviderRegistry`
-  for provider factories, and model capability profiles for modern app-facing
-  discovery.
-- Removed the public `utils/http_config_utils.dart` re-export. HTTP
-  configuration shaping remains internal compatibility infrastructure.
-- Moved `ToolCallAggregator` from `package:llm_dart/utils/tool_call_aggregator.dart`
-  to `package:llm_dart/core/tool_call_aggregator.dart`; `legacy.dart` still
-  exports the class for compatibility-oriented imports.
-- Removed provider-specific root model re-exports for OpenAI Assistants and
-  Google TTS. Import those compatibility models from
-  `package:llm_dart/providers/openai/assistants.dart` and
-  `package:llm_dart/providers/google/tts.dart`.
-- Removed `DioErrorHandler` and `HttpErrorMapper` from
-  `package:llm_dart/core/llm_error.dart`; Dio/HTTP error mapping is now
-  internal compatibility infrastructure.
-- Removed the thin public builder extension wrapper files
-  `builder/llm_builder_provider_extensions.dart` and
-  `builder/llm_builder_provider_capability_extensions.dart`; import
-  `package:llm_dart/builder/llm_builder.dart` for the compatibility builder.
-- Removed thin OpenAI Responses wrapper files
-  `providers/openai/responses_capability.dart` and
-  `providers/openai/responses_models.dart`; import
-  `package:llm_dart/providers/openai/responses.dart` for the Responses
-  compatibility surface.
+- The root `llm_dart` package is now the recommended entrypoint for the stable
+  model API.
+- Older core imports remain available, but new code should prefer the root
+  model API or the focused packages directly.
+- Provider-specific features now use typed provider options, focused provider
+  entrypoints, or provider helper clients instead of broad shared option bags.
 
-### Deprecated
+### Breaking Changes
 
-- `ai()` remains deprecated. Use `AI.<provider>(...)` for modern code or
-  `LLMBuilder()` for explicit compatibility builder flows.
+- Removed deprecated preset helper aliases. Use
+  `AI.<provider>(...).chatModel(...)`, `embeddingModel(...)`,
+  `imageModel(...)`, `speechModel(...)`, or `transcriptionModel(...)`.
+- Removed deprecated builder web-search helpers. Use provider-owned search
+  options such as `OpenAIGenerateTextOptions`, `AnthropicGenerateTextOptions`,
+  `XAIGenerateTextOptions`, or `OpenRouterChatModelSettings`.
+- Removed the raw `extensions` escape hatch from `createProvider(...)`.
+  Provider-specific behavior should now use typed provider options or focused
+  provider APIs.
+- Removed legacy global defaults and utility surfaces such as
+  `ProviderDefaults`, `CapabilityUtils`, `ProviderRegistry`, `ConfigUtils`, and
+  root `utils/*` re-exports. Use model capability profiles,
+  `LLMProviderRegistry`, focused provider defaults, and `llm_dart_transport`
+  utilities instead.
+- Removed the deprecated `CancelToken` alias. Use `TransportCancellation`.
+- Removed provider-specific root model re-exports and compatibility-only
+  wrapper entrypoints. Import those APIs from their focused compatibility paths
+  when you still need them.
 
 ### Migration Notes
 
-- Replace preset helper aliases such as `createGoogleChatProvider(...)` with
-  `AI.google(...).chatModel(...)` for modern code, or `createGoogleProvider(...)`
-  when you still need the frozen compatibility provider surface.
-- Replace shared builder web-search helpers with provider-owned search APIs
-  such as `OpenAIGenerateTextOptions`, `AnthropicGenerateTextOptions`,
-  `XAIGenerateTextOptions`, or `OpenRouterChatModelSettings`.
-- Replace `createProvider(..., extensions: ...)` by branching earlier into the
-  known provider API, or by staying on `LLMBuilder()` / `createProvider(...)`
-  without raw extension bags.
-- Replace `CancelToken` with `TransportCancellation`.
+- For new chat/text generation, start with `AI.<provider>(...).chatModel(...)`
+  plus `generateTextCall(...)` or `streamTextCall(...)`.
+- For embeddings, images, speech, and transcription, use the model-specific
+  factories on `AI.<provider>(...)` plus the shared helpers from
+  `package:llm_dart/core.dart`.
+- For provider-specific controls, import the focused provider entrypoint such
+  as `package:llm_dart/openai.dart`, `package:llm_dart/google.dart`, or
+  `package:llm_dart/anthropic.dart`.
+- For compatibility builder code, import `package:llm_dart/legacy.dart` or
+  the focused builder path explicitly.
 
-### Kept
+### Still Available
 
-- `legacy.dart` remains the explicit compatibility import.
-- `LLMBuilder()` remains the compatibility builder trunk.
-- `createProvider(...)` remains the frozen generic compatibility helper.
-- Non-deprecated root provider constructors such as
-  `createOpenAIProvider(...)` and `createGoogleProvider(...)` remain
-  available.
+- `package:llm_dart/legacy.dart` remains the explicit compatibility import.
+- `LLMBuilder()` remains available for builder-era migrations.
+- `createProvider(...)` remains available without raw extension bags.
+- Non-deprecated root provider constructors such as `createOpenAIProvider(...)`
+  and `createGoogleProvider(...)` remain available for compatibility code.
+- `ai()` remains as a deprecated migration alias; use `AI.<provider>(...)` for
+  new code.
 
 ## [0.10.7] - 2026-03-26
 
