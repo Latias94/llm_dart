@@ -1,0 +1,112 @@
+# Alpha Release Hardening
+
+## Why This Workstream Exists
+
+The provider and AI runtime split has reached an architecture-complete state
+for the breaking preview. The remaining work should no longer be framed as
+open-ended refactoring.
+
+This workstream turns the refactor into a publishable alpha line. It is a
+release-hardening phase: prove the package graph, automate the release gate,
+validate clean consumers, and fix only issues that block publishing or
+migration.
+
+## Goal
+
+Prepare and publish the `0.11.0-alpha.x` line with confidence that:
+
+- the focused packages resolve and analyze outside the monorepo
+- the root facade remains a good default entrypoint
+- `legacy.dart` remains an explicit compatibility rail
+- package metadata and README guidance match the implemented ownership model
+- release validation is repeatable without relying on memory or chat history
+
+## Release Posture
+
+This is still an alpha preview, not a stability promise.
+
+Breaking changes can still happen before `1.0.0`, but the package boundaries
+introduced by the architecture split should be treated as the intended
+direction. Release-hardening changes should therefore preserve the new
+architecture unless a real consumer, packaging, or migration issue proves that
+the boundary is wrong.
+
+## Scope
+
+This workstream should:
+
+- add a repeatable release-readiness command
+- validate publish dry-runs for all publishable workspace packages
+- validate clean Dart and Flutter consumers
+- check package names, versions, dependency order, metadata, README language,
+  changelog entries, and migration docs
+- document publish sequencing and post-publish verification
+- fix release blockers discovered by those gates
+
+## Non-Goals
+
+This workstream should not:
+
+- keep splitting compatibility files by size
+- redesign provider/model data structures without a concrete release blocker
+- add new provider features
+- remove `legacy.dart`
+- create `llm_dart_legacy`
+- split `llm_dart_community`
+- delete `llm_dart_core`
+- broaden shared abstractions for reference-repository parity
+
+Those may be valid future workstreams, but only after alpha release feedback or
+real product pressure.
+
+## Success Criteria
+
+The workstream is complete when:
+
+- a single release-readiness command exists and is documented
+- the command runs guards, analysis, tests, publish dry-run, and consumer smoke
+  checks or clearly documents which steps are manual
+- package versions and publish order are verified
+- release notes and migration guidance cover the breaking preview
+- clean consumer validation passes for Dart and Flutter
+- the alpha publish sequence is ready to execute or has been executed
+- post-publish verification steps are documented
+
+## Tracks
+
+### P0 - Release Gate Automation
+
+Create a Dart-based tool that orchestrates the current manual checklist and
+prints a concise release report.
+
+### P1 - Package And Metadata Audit
+
+Confirm that every publishable package has accurate descriptions, dependency
+constraints, changelog entries, README guidance, repository links, and publish
+expectations.
+
+### P1 - Consumer Smoke Validation
+
+Keep real clean-consumer checks in the release gate so missing exports and
+dependency override mistakes are caught outside the monorepo.
+
+### P1 - Publish Sequencing
+
+Freeze the dependency-aware publish order and the expected local override
+hints before running publication.
+
+### P2 - Post-Publish Verification
+
+After publishing, repeat clean consumer checks against pub.dev versions and
+record any alpha feedback as targeted follow-up work.
+
+## Documents
+
+- [00-priority-map.md](00-priority-map.md)
+  - Ordered release-hardening priorities and stop conditions.
+- [01-release-readiness-command.md](01-release-readiness-command.md)
+  - Desired behavior for the release-readiness automation.
+- [MILESTONES.md](MILESTONES.md)
+  - Milestones and acceptance criteria.
+- [TODO.md](TODO.md)
+  - Executable checklist.

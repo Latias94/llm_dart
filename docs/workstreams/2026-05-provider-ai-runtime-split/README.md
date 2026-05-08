@@ -38,6 +38,14 @@ ownership clarity while preserving Dart-specific strengths:
 - OpenAI-family profiles for OpenRouter, DeepSeek, Groq, xAI, Phind, and other
   compatible providers
 
+This architecture workstream is now in release-hardening handoff. The active
+follow-up phase is:
+
+- [`../2026-05-alpha-release-hardening/README.md`](../2026-05-alpha-release-hardening/README.md)
+  - turns the completed breaking architecture split into a publishable
+    `0.11.0-alpha.x` line through release gates, package metadata audits, clean
+    consumer smoke validation, and publish sequencing
+
 ## Target Package Direction
 
 Long-term package ownership should move toward:
