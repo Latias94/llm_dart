@@ -5,7 +5,7 @@ import 'package:mcp_dart/mcp_dart.dart';
 /// HTTP REST Client - Real test client for HTTP MCP server
 ///
 /// This client demonstrates how to connect to and interact with the
-/// HTTP MCP server using the mcp_dart Client and StreamableHttpClientTransport.
+/// HTTP MCP server using the mcp_dart McpClient and StreamableHttpClientTransport.
 /// This is a "REST" client in the sense that it makes direct HTTP calls to
 /// test the server's tools without LLM integration.
 ///
@@ -13,9 +13,11 @@ import 'package:mcp_dart/mcp_dart.dart';
 /// 1. Start the server: dart run http_examples/server.dart
 /// 2. Run this client: dart run http_examples/client.dart
 void main() async {
+  silenceMcpLogs();
+
   print('🧪 Testing HTTP MCP Server - Real REST Client\n');
 
-  Client? client;
+  McpClient? client;
   StreamableHttpClientTransport? transport;
   final serverUrl = 'http://localhost:3000/mcp';
 
@@ -23,7 +25,7 @@ void main() async {
     // Step 1: Initialize MCP client and connection
     print('1️⃣ Initializing HTTP MCP connection...');
 
-    client = Client(
+    client = McpClient(
       Implementation(name: 'http-rest-client', version: '1.0.0'),
     );
 
@@ -98,7 +100,7 @@ void main() async {
 }
 
 /// List available tools using real MCP client
-Future<void> listTools(Client client) async {
+Future<void> listTools(McpClient client) async {
   try {
     final toolsResult = await client.listTools();
     print('   📋 Available HTTP tools:');
@@ -116,7 +118,7 @@ Future<void> listTools(Client client) async {
 }
 
 /// Test the greeting tool using real MCP client
-Future<void> testGreetingTool(Client client) async {
+Future<void> testGreetingTool(McpClient client) async {
   print('   👋 Testing HTTP greeting tool');
 
   try {
@@ -124,7 +126,7 @@ Future<void> testGreetingTool(Client client) async {
     print('      Args: {name: "Alice"}');
 
     final result = await client.callTool(
-      CallToolRequestParams(
+      CallToolRequest(
         name: 'greet',
         arguments: {'name': 'Alice'},
       ),
@@ -144,7 +146,7 @@ Future<void> testGreetingTool(Client client) async {
 }
 
 /// Test the calculation tool using real MCP client
-Future<void> testCalculationTool(Client client) async {
+Future<void> testCalculationTool(McpClient client) async {
   print('   🧮 Testing calculation via HTTP: 42 * 13 + 5');
 
   try {
@@ -153,7 +155,7 @@ Future<void> testCalculationTool(Client client) async {
     print('      Args: {expression: "$expression"}');
 
     final result = await client.callTool(
-      CallToolRequestParams(
+      CallToolRequest(
         name: 'calculate',
         arguments: {'expression': expression},
       ),
@@ -173,7 +175,7 @@ Future<void> testCalculationTool(Client client) async {
 }
 
 /// Test the random number tool using real MCP client
-Future<void> testRandomNumberTool(Client client) async {
+Future<void> testRandomNumberTool(McpClient client) async {
   print(
       '   🎲 Testing random number generation via HTTP: 5 numbers between 10-50');
 
@@ -182,7 +184,7 @@ Future<void> testRandomNumberTool(Client client) async {
     print('      Args: {min: 10, max: 50, count: 5}');
 
     final result = await client.callTool(
-      CallToolRequestParams(
+      CallToolRequest(
         name: 'random_number',
         arguments: {'min': 10, 'max': 50, 'count': 5},
       ),
@@ -202,7 +204,7 @@ Future<void> testRandomNumberTool(Client client) async {
 }
 
 /// Test the time tool using real MCP client
-Future<void> testTimeTool(Client client) async {
+Future<void> testTimeTool(McpClient client) async {
   print('   ⏰ Testing current time via HTTP in UTC format');
 
   try {
@@ -210,7 +212,7 @@ Future<void> testTimeTool(Client client) async {
     print('      Args: {format: "utc"}');
 
     final result = await client.callTool(
-      CallToolRequestParams(
+      CallToolRequest(
         name: 'current_time',
         arguments: {'format': 'utc'},
       ),
@@ -230,7 +232,7 @@ Future<void> testTimeTool(Client client) async {
 }
 
 /// Test the streaming tool using real MCP client
-Future<void> testStreamingTool(Client client) async {
+Future<void> testStreamingTool(McpClient client) async {
   print('   🌊 Testing streaming notifications via HTTP');
 
   try {
@@ -253,7 +255,7 @@ Future<void> testStreamingTool(Client client) async {
     print('      Args: {name: "Bob"}');
 
     final result = await client.callTool(
-      CallToolRequestParams(
+      CallToolRequest(
         name: 'multi-greet',
         arguments: {'name': 'Bob'},
       ),

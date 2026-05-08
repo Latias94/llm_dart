@@ -34,6 +34,8 @@ Older builder-era code should migrate through `package:llm_dart/legacy.dart`.
   model API or the focused packages directly.
 - Provider-specific features now use typed provider options, focused provider
   entrypoints, or provider helper clients instead of broad shared option bags.
+- The MCP examples now use the current `mcp_dart` 2.x package and document the
+  run-from-package commands for stdio and HTTP transports.
 
 ### Breaking Changes
 

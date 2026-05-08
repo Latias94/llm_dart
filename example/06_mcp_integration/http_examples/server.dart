@@ -20,8 +20,10 @@ import '../shared/common_tools.dart';
 /// - Shared tool implementations from common_tools.dart
 ///
 /// To run this server:
-/// dart run example/06_mcp_integration/http_examples/server.dart
+/// dart run http_examples/server.dart
 void main() async {
+  silenceMcpLogs();
+
   print('🌐 HTTP MCP Server - Starting real MCP server with HTTP transport\n');
 
   // Map to store transports by session ID
@@ -358,32 +360,28 @@ Future<List<int>> _collectBytes(HttpRequest request) {
 /// Register HTTP-specific tools
 void _registerHttpSpecificTools(McpServer server) {
   // Simple greeting tool
-  server.tool(
+  server.registerTool(
     'greet',
     description: 'A simple greeting tool',
-    toolInputSchema: ToolInputSchema(
+    inputSchema: JsonObject(
       properties: {
-        'name': {'type': 'string', 'description': 'Name to greet'},
+        'name': JsonSchema.string(description: 'Name to greet'),
       },
     ),
-    callback: ({args, extra}) async {
-      final name = args?['name'] as String? ?? 'world';
-      return CallToolResult.fromContent(
-        content: [
-          TextContent(text: 'Hello, $name!'),
-        ],
-      );
+    callback: (args, extra) async {
+      final name = args['name'] as String? ?? 'world';
+      return _textResult('Hello, $name!');
     },
   );
 
   // Multi-greeting tool with notifications
-  server.tool(
+  server.registerTool(
     'multi-greet',
     description:
         'A tool that sends different greetings with delays between them',
-    toolInputSchema: ToolInputSchema(
+    inputSchema: JsonObject(
       properties: {
-        'name': {'type': 'string', 'description': 'Name to greet'},
+        'name': JsonSchema.string(description: 'Name to greet'),
       },
     ),
     annotations: ToolAnnotations(
@@ -391,15 +389,15 @@ void _registerHttpSpecificTools(McpServer server) {
       readOnlyHint: true,
       openWorldHint: false,
     ),
-    callback: ({args, extra}) async {
-      final name = args?['name'] as String? ?? 'world';
+    callback: (args, extra) async {
+      final name = args['name'] as String? ?? 'world';
 
       // Helper function for sleeping
       Future<void> sleep(int ms) => Future.delayed(Duration(milliseconds: ms));
 
       // Send debug notification
-      await extra?.sendNotification(JsonRpcLoggingMessageNotification(
-          logParams: LoggingMessageNotificationParams(
+      await extra.sendNotification(JsonRpcLoggingMessageNotification(
+          logParams: LoggingMessageNotification(
         level: LoggingLevel.debug,
         data: 'Starting multi-greet for $name',
       )));
@@ -407,8 +405,8 @@ void _registerHttpSpecificTools(McpServer server) {
       await sleep(1000); // Wait 1 second before first greeting
 
       // Send first info notification
-      await extra?.sendNotification(JsonRpcLoggingMessageNotification(
-          logParams: LoggingMessageNotificationParams(
+      await extra.sendNotification(JsonRpcLoggingMessageNotification(
+          logParams: LoggingMessageNotification(
         level: LoggingLevel.info,
         data: 'Sending first greeting to $name',
       )));
@@ -416,42 +414,36 @@ void _registerHttpSpecificTools(McpServer server) {
       await sleep(1000); // Wait another second before second greeting
 
       // Send second info notification
-      await extra?.sendNotification(JsonRpcLoggingMessageNotification(
-          logParams: LoggingMessageNotificationParams(
+      await extra.sendNotification(JsonRpcLoggingMessageNotification(
+          logParams: LoggingMessageNotification(
         level: LoggingLevel.info,
         data: 'Sending second greeting to $name',
       )));
 
-      return CallToolResult.fromContent(
-        content: [
-          TextContent(text: 'Good morning, $name!'),
-        ],
-      );
+      return _textResult('Good morning, $name!');
     },
   );
 
   // Register a tool specifically for testing resumability
-  server.tool(
+  server.registerTool(
     'start-notification-stream',
     description:
         'Starts sending periodic notifications for testing resumability',
-    toolInputSchema: ToolInputSchema(
+    inputSchema: JsonObject(
       properties: {
-        'interval': {
-          'type': 'number',
-          'description': 'Interval in milliseconds between notifications',
-          'default': 100,
-        },
-        'count': {
-          'type': 'number',
-          'description': 'Number of notifications to send (0 for 100)',
-          'default': 50,
-        },
+        'interval': JsonSchema.number(
+          description: 'Interval in milliseconds between notifications',
+          defaultValue: 100,
+        ),
+        'count': JsonSchema.number(
+          description: 'Number of notifications to send (0 for 100)',
+          defaultValue: 50,
+        ),
       },
     ),
-    callback: ({args, extra}) async {
-      final interval = args?['interval'] as num? ?? 100;
-      final count = args?['count'] as num? ?? 50;
+    callback: (args, extra) async {
+      final interval = args['interval'] as num? ?? 100;
+      final count = args['count'] as num? ?? 50;
 
       // Helper function for sleeping
       Future<void> sleep(int ms) => Future.delayed(Duration(milliseconds: ms));
@@ -461,8 +453,8 @@ void _registerHttpSpecificTools(McpServer server) {
       while (count == 0 || counter < count) {
         counter++;
         try {
-          await extra?.sendNotification(JsonRpcLoggingMessageNotification(
-              logParams: LoggingMessageNotificationParams(
+          await extra.sendNotification(JsonRpcLoggingMessageNotification(
+              logParams: LoggingMessageNotification(
             level: LoggingLevel.info,
             data:
                 'Periodic notification #$counter at ${DateTime.now().toIso8601String()}',
@@ -475,13 +467,16 @@ void _registerHttpSpecificTools(McpServer server) {
         await sleep(interval.toInt());
       }
 
-      return CallToolResult.fromContent(
-        content: [
-          TextContent(
-            text: 'Started sending periodic notifications every ${interval}ms',
-          ),
-        ],
+      return _textResult(
+        'Started sending periodic notifications every ${interval}ms',
       );
     },
+  );
+}
+
+CallToolResult _textResult(String text, {bool isError = false}) {
+  return CallToolResult(
+    content: [TextContent(text: text)],
+    isError: isError,
   );
 }

@@ -8,7 +8,7 @@ environment:
 dependencies:
   llm_dart:
     path: ../..
-  mcp_dart: ^0.6.3
+  mcp_dart: ^2.1.1
 
 dev_dependencies:
   lints: ^6.0.0

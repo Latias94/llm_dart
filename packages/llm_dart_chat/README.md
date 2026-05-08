@@ -131,7 +131,7 @@ frames encoded with `HttpChatTransportServerAdapter`.
 Run the self-contained in-process demo with:
 
 ```bash
-dart run packages/llm_dart_chat/example/http_backend_hint_mapping.dart
+dart run example/http_backend_hint_mapping.dart
 ```
 
 ## Message Mapping Layers

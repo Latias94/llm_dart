@@ -25,11 +25,11 @@ dart pub get
 # Start with the concept walkthrough
 dart run mcp_concept_demo.dart
 
-# stdio MCP
+# stdio MCP. The client examples spawn the stdio server process.
 dart run stdio_examples/client.dart
 dart run stdio_examples/llm_client.dart
 
-# HTTP MCP
+# HTTP MCP. Start the server in one terminal, then run clients separately.
 dart run http_examples/server.dart
 dart run http_examples/client.dart
 dart run http_examples/llm_client.dart
@@ -94,7 +94,10 @@ The direct MCP client examples do not need an API key.
 
 - **Package not found**: Run `dart pub get` inside `example/06_mcp_integration`
 - **LLM request failed**: Set a valid `OPENAI_API_KEY`
-- **Connection failed**: Check whether the MCP server is already running
+- **stdio connection failed**: Run the client from `example/06_mcp_integration`
+  so its spawned Dart process can resolve `stdio_examples/server.dart`
+- **HTTP connection failed**: Check whether `http_examples/server.dart` is
+  already running
 - **No tool call happened**: Use prompts that explicitly require tool usage
 - **Streaming output looks incomplete**: Check the tool-call event log before
   assuming the model failed
@@ -109,6 +112,10 @@ Logger.root.onRecord.listen((record) {
   print('${record.level.name}: ${record.time}: ${record.message}');
 });
 ```
+
+The MCP examples call `silenceMcpLogs()` so transport internals do not obscure
+the walkthrough output. Remove that call or use `resetMcpLogHandler()` when you
+need raw `mcp_dart` protocol and transport diagnostics.
 
 ## Resources
 

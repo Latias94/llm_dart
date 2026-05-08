@@ -165,7 +165,7 @@ Current state:
   linking flow:
 
 ```bash
-dart tool/bootstrap_workspace_pubspec_overrides.dart
+dart run tool/bootstrap_workspace_pubspec_overrides.dart
 ```
 
 That is much closer to a real alpha publication plan, but it still requires the
@@ -228,12 +228,12 @@ The current repository now also has a concrete validation command for the full
 workspace publish sequence:
 
 ```bash
-dart tool/run_workspace_publish_dry_run.dart
+dart run tool/run_workspace_publish_dry_run.dart
 ```
 
 Latest local validation on 2026-04-29:
 
-- `dart tool/run_workspace_publish_dry_run.dart` passed for all 9 publishable
+- `dart run tool/run_workspace_publish_dry_run.dart` passed for all 9 publishable
   packages.
 - Every package reported `0 warnings`.
 - The only remaining hints were the expected local `pubspec_overrides.yaml`

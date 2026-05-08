@@ -13,6 +13,8 @@ import '../shared/mcp_tool_bridge.dart';
 /// HTTP transport, while preserving HTTP-specific concerns such as session IDs
 /// and server-sent notifications.
 void main() async {
+  silenceMcpLogs();
+
   print('🌐 HTTP LLM Integration - Real AI Agents with HTTP MCP Tools\n');
 
   final apiKey = Platform.environment['OPENAI_API_KEY'] ?? 'sk-TESTKEY';
@@ -202,7 +204,7 @@ Future<core.GenerateTextRunResult> _runToolEnabledPrompt({
   required core.LanguageModel model,
   required List<core.PromptMessage> prompt,
   required List<core.FunctionToolDefinition> tools,
-  required Client mcpClient,
+  required McpClient mcpClient,
   required core.GenerateTextOptions options,
   required String? sessionId,
 }) {
@@ -215,7 +217,8 @@ Future<core.GenerateTextRunResult> _runToolEnabledPrompt({
     functionToolExecutor: createMcpFunctionToolExecutor(
       mcpClient,
       onExecutionStart: (request, arguments) {
-        print('      🛠️  Executing HTTP MCP tool: ${request.toolCall.toolName}');
+        print(
+            '      🛠️  Executing HTTP MCP tool: ${request.toolCall.toolName}');
         print('         🆔 Call ID: ${request.toolCall.toolCallId}');
         if (sessionId != null) {
           print('         🌐 Session: HTTP session $sessionId');
@@ -259,7 +262,7 @@ core.LanguageModel _createOpenAIModel(String apiKey) {
 }
 
 class McpConnection {
-  final Client client;
+  final McpClient client;
   final StreamableHttpClientTransport transport;
 
   McpConnection(this.client, this.transport);
@@ -268,7 +271,7 @@ class McpConnection {
 Future<McpConnection> _createHttpMcpClient() async {
   print('   🌐 Creating HTTP MCP client connection...');
 
-  final client = Client(
+  final client = McpClient(
     const Implementation(name: 'http-llm-client', version: '1.0.0'),
   );
 
@@ -287,7 +290,8 @@ Future<McpConnection> _createHttpMcpClient() async {
   return McpConnection(client, transport);
 }
 
-Future<void> _closeHttpTransport(StreamableHttpClientTransport transport) async {
+Future<void> _closeHttpTransport(
+    StreamableHttpClientTransport transport) async {
   try {
     await transport.close();
   } catch (e) {

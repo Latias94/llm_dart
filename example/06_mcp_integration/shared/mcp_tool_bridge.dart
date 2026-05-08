@@ -22,7 +22,7 @@ typedef McpToolExecutionErrorCallback = void Function(
 );
 
 Future<List<core.FunctionToolDefinition>> discoverMcpFunctionTools(
-  mcp.Client client,
+  mcp.McpClient client,
 ) async {
   final toolsResult = await client.listTools();
   return toolsResult.tools
@@ -31,7 +31,7 @@ Future<List<core.FunctionToolDefinition>> discoverMcpFunctionTools(
 }
 
 core.GenerateTextFunctionToolExecutor createMcpFunctionToolExecutor(
-  mcp.Client client, {
+  mcp.McpClient client, {
   McpToolExecutionStartCallback? onExecutionStart,
   McpToolExecutionFinishCallback? onExecutionFinish,
   McpToolExecutionErrorCallback? onExecutionError,
@@ -60,7 +60,7 @@ core.GenerateTextFunctionToolExecutor createMcpFunctionToolExecutor(
 
     try {
       final result = await client.callTool(
-        mcp.CallToolRequestParams(
+        mcp.CallToolRequest(
           name: request.toolCall.toolName,
           arguments: arguments,
         ),
@@ -123,12 +123,14 @@ Map<String, dynamic> decodeMcpToolArguments(
 }
 
 Object? normalizeMcpToolResultOutput(mcp.CallToolResult result) {
-  final structuredContent = result.structuredContent.isEmpty
-      ? null
-      : _normalizeJsonObject(
-          result.structuredContent,
-          path: 'callToolResult.structuredContent',
-        );
+  final rawStructuredContent = result.structuredContent;
+  final structuredContent =
+      rawStructuredContent == null || rawStructuredContent.isEmpty
+          ? null
+          : _normalizeJsonObject(
+              rawStructuredContent,
+              path: 'callToolResult.structuredContent',
+            );
   final content = <Map<String, Object?>>[
     for (var index = 0; index < result.content.length; index++)
       _normalizeJsonObject(

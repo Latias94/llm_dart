@@ -15,6 +15,8 @@ import '../shared/mcp_tool_bridge.dart';
 /// - execute MCP tools through the shared executor bridge
 /// - continue automatically into the final answer
 void main() async {
+  silenceMcpLogs();
+
   print('🌊 Simple HTTP Streaming Tool Use Demo\n');
 
   final apiKey = Platform.environment['OPENAI_API_KEY'] ?? 'sk-TESTKEY';
@@ -276,7 +278,7 @@ core.LanguageModel _createOpenAIModel(String apiKey) {
 }
 
 class McpConnection {
-  final Client client;
+  final McpClient client;
   final StreamableHttpClientTransport transport;
 
   McpConnection(this.client, this.transport);
@@ -285,7 +287,7 @@ class McpConnection {
 Future<McpConnection> _createHttpMcpClient() async {
   print('   🌐 Creating HTTP MCP client connection...');
 
-  final client = Client(
+  final client = McpClient(
     const Implementation(name: 'simple-stream-client', version: '1.0.0'),
   );
 
@@ -304,7 +306,8 @@ Future<McpConnection> _createHttpMcpClient() async {
   return McpConnection(client, transport);
 }
 
-Future<void> _closeHttpTransport(StreamableHttpClientTransport transport) async {
+Future<void> _closeHttpTransport(
+    StreamableHttpClientTransport transport) async {
   try {
     await transport.close();
   } catch (e) {

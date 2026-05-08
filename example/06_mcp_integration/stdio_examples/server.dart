@@ -16,8 +16,10 @@ import '../shared/common_tools.dart';
 /// - Simple process-based communication
 ///
 /// To run this server:
-/// dart run example/06_mcp_integration/stdio_examples/server.dart
+/// dart run stdio_examples/server.dart
 void main() async {
+  silenceMcpLogs();
+
   // Use stderr for all logging since stdout is reserved for JSON-RPC communication
   stderr.writeln(
       '🛠️ stdio MCP Server - Starting MCP server with stdio transport\n');
@@ -25,7 +27,7 @@ void main() async {
   // Create MCP server with capabilities
   final server = McpServer(
     Implementation(name: "llm-dart-stdio-server", version: "1.0.0"),
-    options: ServerOptions(
+    options: McpServerOptions(
       capabilities: ServerCapabilities(
         tools: ServerCapabilitiesTools(),
         resources: ServerCapabilitiesResources(),

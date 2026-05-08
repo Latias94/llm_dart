@@ -15,6 +15,8 @@ import '../shared/mcp_tool_bridge.dart';
 /// - let `core.runTextGeneration(...)` orchestrate tool continuation
 /// - keep MCP-specific schema/result handling inside the bridge layer
 void main() async {
+  silenceMcpLogs();
+
   print('🤖 stdio LLM Integration - AI Agents with Real stdio MCP Tools\n');
 
   final apiKey = Platform.environment['OPENAI_API_KEY'] ?? 'sk-TESTKEY';
@@ -35,7 +37,7 @@ void main() async {
 Future<void> demonstrateBasicStdioIntegration(String apiKey) async {
   print('🔗 Basic stdio MCP + LLM Integration:\n');
 
-  Client? mcpClient;
+  McpClient? mcpClient;
   try {
     final model = _createOpenAIModel(apiKey);
     mcpClient = await _createRealStdioMcpClient();
@@ -74,7 +76,7 @@ Future<void> demonstrateBasicStdioIntegration(String apiKey) async {
 Future<void> demonstrateStdioCalculationWorkflow(String apiKey) async {
   print('🧮 stdio Calculation Workflow:\n');
 
-  Client? mcpClient;
+  McpClient? mcpClient;
   try {
     final model = _createOpenAIModel(apiKey);
     mcpClient = await _createRealStdioMcpClient();
@@ -86,8 +88,9 @@ Future<void> demonstrateStdioCalculationWorkflow(String apiKey) async {
       core.SystemPromptMessage.text(
         'You are a math assistant that can use calculation tools. '
         'The calculation tool supports basic operations: +, -, *, /. '
-        'It does NOT support ^ (power), pi, sqrt, or other advanced functions. '
-        'Use only basic arithmetic operations and break down complex '
+        'For this workflow, do not use ^ (power), pi constants, sqrt, or '
+        'other advanced functions. Use only basic arithmetic operations and '
+        'break down complex '
         'calculations into simple steps.',
       ),
       core.UserPromptMessage.text(
@@ -123,7 +126,7 @@ Future<void> demonstrateStdioCalculationWorkflow(String apiKey) async {
 Future<void> demonstrateStdioMultiToolWorkflow(String apiKey) async {
   print('⚡ stdio Multi-Tool Workflow:\n');
 
-  Client? mcpClient;
+  McpClient? mcpClient;
   try {
     final model = _createOpenAIModel(apiKey);
     mcpClient = await _createRealStdioMcpClient();
@@ -172,7 +175,7 @@ Future<core.GenerateTextRunResult> _runToolEnabledPrompt({
   required core.LanguageModel model,
   required List<core.PromptMessage> prompt,
   required List<core.FunctionToolDefinition> tools,
-  required Client mcpClient,
+  required McpClient mcpClient,
   required core.GenerateTextOptions options,
 }) {
   return core.runTextGeneration(
@@ -222,13 +225,13 @@ core.LanguageModel _createOpenAIModel(String apiKey) {
   return llm.AI.openai(apiKey: apiKey).chatModel('gpt-4o-mini');
 }
 
-Future<Client> _createRealStdioMcpClient() async {
+Future<McpClient> _createRealStdioMcpClient() async {
   print('   🔌 Creating real stdio MCP client...');
 
   const serverCommand = 'dart';
   const serverArgs = <String>[
     'run',
-    'example/06_mcp_integration/stdio_examples/server.dart',
+    'stdio_examples/server.dart',
   ];
 
   final serverParams = StdioServerParameters(
@@ -242,7 +245,7 @@ Future<Client> _createRealStdioMcpClient() async {
     name: 'LlmDartStdioClient',
     version: '1.0.0',
   );
-  final client = Client(clientInfo);
+  final client = McpClient(clientInfo);
 
   transport.onerror = (error) {
     print('   ❌ MCP Transport error: $error');

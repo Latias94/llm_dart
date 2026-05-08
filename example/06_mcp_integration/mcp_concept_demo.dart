@@ -12,7 +12,8 @@ import 'dart:convert';
 /// - Tool discovery and execution patterns
 /// - Integration strategies with LLMs
 ///
-/// Run: dart run new_example/07_mcp_integration/mcp_concept_demo.dart
+/// Run from this package:
+/// dart run mcp_concept_demo.dart
 void main() async {
   print('MCP Concept Demo - Understanding Model Context Protocol\n');
 

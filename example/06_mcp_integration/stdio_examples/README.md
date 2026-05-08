@@ -20,25 +20,32 @@ The examples now keep a clean separation between:
 
 ## Quick Start
 
-### 1. Start the stdio MCP server
+### 1. Validate transport directly
 
 ```bash
 cd example/06_mcp_integration
-dart run stdio_examples/server.dart
-```
-
-### 2. Validate transport directly
-
-```bash
 dart run stdio_examples/client.dart
 ```
 
-### 3. Run the LLM integration example
+The stdio client spawns `stdio_examples/server.dart` as a child process. You
+normally do not start the stdio server manually in a separate terminal.
+
+### 2. Run the LLM integration example
 
 ```bash
 export OPENAI_API_KEY="your-key-here"
 dart run stdio_examples/llm_client.dart
 ```
+
+### 3. Inspect the raw server
+
+```bash
+dart run stdio_examples/server.dart
+```
+
+This command is useful for debugging server startup logs. It waits for MCP
+JSON-RPC messages on stdin, so direct terminal use will not exercise tools by
+itself.
 
 ## Stable Runtime Shape
 

@@ -11,65 +11,60 @@ class CommonMcpTools {
   /// Register all common mathematical tools
   static void registerMathTools(McpServer server) {
     // Basic calculator
-    server.tool(
-      "calculate",
+    server.registerTool(
+      'calculate',
       description:
-          'Perform mathematical calculations (supports +, -, *, /, ^, sqrt, sin, cos, tan)',
-      toolInputSchema: ToolInputSchema(
+          'Perform mathematical calculations (supports +, -, *, /, parentheses, sqrt, sin, cos, tan)',
+      inputSchema: JsonObject(
         properties: {
-          'expression': {
-            'type': 'string',
-            'description':
-                'Mathematical expression to evaluate (e.g., "2 + 3 * 4", "sqrt(16)", "sin(30)")',
-          },
+          'expression': JsonSchema.string(
+            description:
+                'Mathematical expression to evaluate, such as "2 + 3 * 4", "sqrt(16)", or "sin(30)".',
+          ),
         },
+        required: ['expression'],
       ),
-      callback: ({args, extra}) async {
+      callback: (args, extra) async {
         try {
-          final expression = args!['expression'] as String;
+          final expression = args['expression'] as String;
           final result = _evaluateMathExpression(expression);
-          return CallToolResult.fromContent(
-            content: [
-              TextContent(text: 'Expression: $expression\nResult: $result'),
-            ],
+          return _textResult(
+            'Expression: $expression\nResult: $result',
           );
         } catch (e) {
-          return CallToolResult.fromContent(
+          return _textResult(
+            'Math error: $e',
             isError: true,
-            content: [TextContent(text: 'Math error: $e')],
           );
         }
       },
     );
 
     // Random number generator
-    server.tool(
-      "random_number",
+    server.registerTool(
+      'random_number',
       description: 'Generate random numbers within specified range',
-      toolInputSchema: ToolInputSchema(
+      inputSchema: JsonObject(
         properties: {
-          'min': {
-            'type': 'number',
-            'description': 'Minimum value (inclusive)',
-            'default': 0,
-          },
-          'max': {
-            'type': 'number',
-            'description': 'Maximum value (inclusive)',
-            'default': 100,
-          },
-          'count': {
-            'type': 'integer',
-            'description': 'Number of random numbers to generate',
-            'default': 1,
-            'minimum': 1,
-            'maximum': 10,
-          },
+          'min': JsonSchema.number(
+            description: 'Minimum value (inclusive)',
+            defaultValue: 0,
+          ),
+          'max': JsonSchema.number(
+            description: 'Maximum value (inclusive)',
+            defaultValue: 100,
+          ),
+          'count': JsonSchema.integer(
+            description: 'Number of random numbers to generate',
+            defaultValue: 1,
+            minimum: 1,
+            maximum: 10,
+          ),
         },
       ),
-      callback: ({args, extra}) async {
+      callback: (args, extra) async {
         try {
-          final min = (args!['min'] as num?)?.toInt() ?? 0;
+          final min = (args['min'] as num?)?.toInt() ?? 0;
           final max = (args['max'] as num?)?.toInt() ?? 100;
           final count = (args['count'] as num?)?.toInt() ?? 1;
 
@@ -79,17 +74,12 @@ class CommonMcpTools {
             (_) => min + random.nextInt(max - min + 1),
           );
 
-          return CallToolResult.fromContent(
-            content: [
-              TextContent(
-                text:
-                    'Random numbers between $min and $max:\n${numbers.join(', ')}',
-              ),
-            ],
+          return _textResult(
+            'Random numbers between $min and $max:\n${numbers.join(', ')}',
           );
         } catch (e) {
-          return CallToolResult.fromContent(
-            content: [TextContent(text: 'Random generation error: $e')],
+          return _textResult(
+            'Random generation error: $e',
             isError: true,
           );
         }
@@ -100,27 +90,25 @@ class CommonMcpTools {
   /// Register all common utility tools
   static void registerUtilityTools(McpServer server) {
     // Current time
-    server.tool(
-      "current_time",
+    server.registerTool(
+      'current_time',
       description: 'Get current date and time in various formats',
-      toolInputSchema: ToolInputSchema(
+      inputSchema: JsonObject(
         properties: {
-          'format': {
-            'type': 'string',
-            'description': 'Time format: iso, local, utc, timestamp',
-            'enum': ['iso', 'local', 'utc', 'timestamp'],
-            'default': 'local',
-          },
-          'timezone': {
-            'type': 'string',
-            'description': 'Timezone (only for local format)',
-            'default': 'system',
-          },
+          'format': JsonSchema.string(
+            description: 'Time format: iso, local, utc, timestamp',
+            enumValues: ['iso', 'local', 'utc', 'timestamp'],
+            defaultValue: 'local',
+          ),
+          'timezone': JsonSchema.string(
+            description: 'Timezone (only for local format)',
+            defaultValue: 'system',
+          ),
         },
       ),
-      callback: ({args, extra}) async {
+      callback: (args, extra) async {
         try {
-          final format = args!['format'] as String? ?? 'local';
+          final format = args['format'] as String? ?? 'local';
           final now = DateTime.now();
 
           String timeString;
@@ -140,16 +128,12 @@ class CommonMcpTools {
               break;
           }
 
-          return CallToolResult.fromContent(
-            content: [
-              TextContent(
-                text: 'Current time ($format): $timeString',
-              ),
-            ],
+          return _textResult(
+            'Current time ($format): $timeString',
           );
         } catch (e) {
-          return CallToolResult.fromContent(
-            content: [TextContent(text: 'Time error: $e')],
+          return _textResult(
+            'Time error: $e',
             isError: true,
           );
         }
@@ -157,37 +141,32 @@ class CommonMcpTools {
     );
 
     // UUID generator
-    server.tool(
-      "uuid_generate",
+    server.registerTool(
+      'uuid_generate',
       description: 'Generate UUID (Universally Unique Identifier)',
-      toolInputSchema: ToolInputSchema(
+      inputSchema: JsonObject(
         properties: {
-          'count': {
-            'type': 'integer',
-            'description': 'Number of UUIDs to generate',
-            'default': 1,
-            'minimum': 1,
-            'maximum': 5,
-          },
+          'count': JsonSchema.integer(
+            description: 'Number of UUIDs to generate',
+            defaultValue: 1,
+            minimum: 1,
+            maximum: 5,
+          ),
         },
       ),
-      callback: ({args, extra}) async {
+      callback: (args, extra) async {
         try {
-          final count = (args!['count'] as num?)?.toInt() ?? 1;
+          final count = (args['count'] as num?)?.toInt() ?? 1;
           final uuids = List.generate(count, (_) => _generateUuid());
 
-          return CallToolResult.fromContent(
-            content: [
-              TextContent(
-                text: count == 1
-                    ? 'Generated UUID: ${uuids.first}'
-                    : 'Generated UUIDs:\n${uuids.map((u) => '• $u').join('\n')}',
-              ),
-            ],
+          return _textResult(
+            count == 1
+                ? 'Generated UUID: ${uuids.first}'
+                : 'Generated UUIDs:\n${uuids.map((u) => '• $u').join('\n')}',
           );
         } catch (e) {
-          return CallToolResult.fromContent(
-            content: [TextContent(text: 'UUID generation error: $e')],
+          return _textResult(
+            'UUID generation error: $e',
             isError: true,
           );
         }
@@ -197,20 +176,20 @@ class CommonMcpTools {
 
   /// Register all common file operation tools
   static void registerFileTools(McpServer server) {
-    server.tool(
-      "file_info",
+    server.registerTool(
+      'file_info',
       description: 'Get information about a file or directory',
-      toolInputSchema: ToolInputSchema(
+      inputSchema: JsonObject(
         properties: {
-          'path': {
-            'type': 'string',
-            'description': 'File or directory path',
-          },
+          'path': JsonSchema.string(
+            description: 'File or directory path',
+          ),
         },
+        required: ['path'],
       ),
-      callback: ({args, extra}) async {
+      callback: (args, extra) async {
         try {
-          final path = args!['path'] as String;
+          final path = args['path'] as String;
           final file = File(path);
           final directory = Directory(path);
 
@@ -232,12 +211,10 @@ class CommonMcpTools {
             info = 'Path does not exist: $path';
           }
 
-          return CallToolResult.fromContent(
-            content: [TextContent(text: info)],
-          );
+          return _textResult(info);
         } catch (e) {
-          return CallToolResult.fromContent(
-            content: [TextContent(text: 'File info error: $e')],
+          return _textResult(
+            'File info error: $e',
             isError: true,
           );
         }
@@ -247,22 +224,21 @@ class CommonMcpTools {
 
   /// Register all common system information tools
   static void registerSystemTools(McpServer server) {
-    server.tool(
-      "system_info",
+    server.registerTool(
+      'system_info',
       description: 'Get system information',
-      toolInputSchema: ToolInputSchema(
+      inputSchema: JsonObject(
         properties: {
-          'type': {
-            'type': 'string',
-            'description': 'Type of system info: os, memory, environment',
-            'enum': ['os', 'memory', 'environment', 'all'],
-            'default': 'all',
-          },
+          'type': JsonSchema.string(
+            description: 'Type of system info: os, memory, environment',
+            enumValues: ['os', 'memory', 'environment', 'all'],
+            defaultValue: 'all',
+          ),
         },
       ),
-      callback: ({args, extra}) async {
+      callback: (args, extra) async {
         try {
-          final type = args!['type'] as String? ?? 'all';
+          final type = args['type'] as String? ?? 'all';
           final info = StringBuffer();
 
           if (type == 'os' || type == 'all') {
@@ -282,12 +258,10 @@ class CommonMcpTools {
             }
           }
 
-          return CallToolResult.fromContent(
-            content: [TextContent(text: info.toString().trim())],
-          );
+          return _textResult(info.toString().trim());
         } catch (e) {
-          return CallToolResult.fromContent(
-            content: [TextContent(text: 'System info error: $e')],
+          return _textResult(
+            'System info error: $e',
             isError: true,
           );
         }
@@ -389,6 +363,13 @@ class CommonMcpTools {
     }
 
     return expression;
+  }
+
+  static CallToolResult _textResult(String text, {bool isError = false}) {
+    return CallToolResult(
+      content: [TextContent(text: text)],
+      isError: isError,
+    );
   }
 
   /// Generate a simple UUID (not cryptographically secure)

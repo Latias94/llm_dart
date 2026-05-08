@@ -179,9 +179,9 @@ What is now also landed on this branch:
   `0 warnings`, with only local `pubspec_overrides.yaml` hints during workspace
   development
 - the repository now has a concrete local workspace bootstrap command:
-  `dart tool/bootstrap_workspace_pubspec_overrides.dart`
+  `dart run tool/bootstrap_workspace_pubspec_overrides.dart`
 - the repository now also has a concrete workspace publish dry-run command:
-  `dart tool/run_workspace_publish_dry_run.dart`
+  `dart run tool/run_workspace_publish_dry_run.dart`
 
 What remains open before a wider deprecation wave:
 

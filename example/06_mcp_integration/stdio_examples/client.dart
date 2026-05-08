@@ -5,17 +5,19 @@ import 'package:mcp_dart/mcp_dart.dart';
 /// stdio REST Client - Test client for stdio MCP server
 ///
 /// This client demonstrates how to connect to and interact with the
-/// stdio MCP server using the mcp_dart Client and StdioClientTransport.
+/// stdio MCP server using the mcp_dart McpClient and StdioClientTransport.
 /// This is a "REST" client in the sense that it makes direct calls to
 /// test the server's tools without LLM integration.
 ///
 /// Usage:
-/// 1. Start the server: dart run stdio_examples/server.dart
-/// 2. Run this client: dart run stdio_examples/client.dart
+/// Run this client from example/06_mcp_integration:
+/// dart run stdio_examples/client.dart
 void main() async {
+  silenceMcpLogs();
+
   print('🧪 Testing stdio MCP Server - Real REST Client\n');
 
-  Client? client;
+  McpClient? client;
 
   try {
     // Step 1: Initialize real MCP client and connection
@@ -71,14 +73,14 @@ void main() async {
 }
 
 /// Create real MCP client connected to stdio server
-Future<Client> _createRealStdioMcpClient() async {
+Future<McpClient> _createRealStdioMcpClient() async {
   print('   🔌 Creating real stdio MCP client...');
 
   // Define the server executable and arguments
   const serverCommand = 'dart';
   const serverArgs = <String>[
     'run',
-    'example/06_mcp_integration/stdio_examples/server.dart'
+    'stdio_examples/server.dart',
   ];
 
   // Create StdioServerParameters
@@ -95,7 +97,7 @@ Future<Client> _createRealStdioMcpClient() async {
   final clientInfo = Implementation(name: 'StdioRestClient', version: '1.0.0');
 
   // Create the MCP client
-  final client = Client(clientInfo);
+  final client = McpClient(clientInfo);
 
   // Set up error and close handlers
   transport.onerror = (error) {
@@ -115,7 +117,7 @@ Future<Client> _createRealStdioMcpClient() async {
 }
 
 /// List available tools from real server
-Future<void> _listRealTools(Client client) async {
+Future<void> _listRealTools(McpClient client) async {
   try {
     final toolsResult = await client.listTools();
     print('   📋 Available tools from real server:');
@@ -133,7 +135,7 @@ Future<void> _listRealTools(Client client) async {
 }
 
 /// Test calculation tool with real server
-Future<void> _testRealCalculationTool(Client client) async {
+Future<void> _testRealCalculationTool(McpClient client) async {
   print('   🧮 Testing calculation: 15 * 23 + 7');
 
   try {
@@ -144,7 +146,7 @@ Future<void> _testRealCalculationTool(Client client) async {
     print('      Args: {expression: "$expression"}');
 
     final result = await client.callTool(
-      CallToolRequestParams(
+      CallToolRequest(
         name: 'calculate',
         arguments: {'expression': expression},
       ),
@@ -162,7 +164,7 @@ Future<void> _testRealCalculationTool(Client client) async {
 }
 
 /// Test random number tool with real server
-Future<void> _testRealRandomNumberTool(Client client) async {
+Future<void> _testRealRandomNumberTool(McpClient client) async {
   print('   🎲 Testing random number generation: 3 numbers between 1-100');
 
   try {
@@ -171,7 +173,7 @@ Future<void> _testRealRandomNumberTool(Client client) async {
     print('      Args: {min: 1, max: 100, count: 3}');
 
     final result = await client.callTool(
-      CallToolRequestParams(
+      CallToolRequest(
         name: 'random_number',
         arguments: {'min': 1, 'max': 100, 'count': 3},
       ),
@@ -189,7 +191,7 @@ Future<void> _testRealRandomNumberTool(Client client) async {
 }
 
 /// Test time tool with real server
-Future<void> _testRealTimeTool(Client client) async {
+Future<void> _testRealTimeTool(McpClient client) async {
   print('   ⏰ Testing current time in ISO format');
 
   try {
@@ -198,7 +200,7 @@ Future<void> _testRealTimeTool(Client client) async {
     print('      Args: {format: "iso"}');
 
     final result = await client.callTool(
-      CallToolRequestParams(
+      CallToolRequest(
         name: 'current_time',
         arguments: {'format': 'iso'},
       ),
@@ -216,7 +218,7 @@ Future<void> _testRealTimeTool(Client client) async {
 }
 
 /// Test file info tool with real server
-Future<void> _testRealFileInfoTool(Client client) async {
+Future<void> _testRealFileInfoTool(McpClient client) async {
   print('   📁 Testing file info for current directory');
 
   try {
@@ -225,7 +227,7 @@ Future<void> _testRealFileInfoTool(Client client) async {
     print('      Args: {path: "."}');
 
     final result = await client.callTool(
-      CallToolRequestParams(
+      CallToolRequest(
         name: 'file_info',
         arguments: {'path': '.'},
       ),
@@ -243,7 +245,7 @@ Future<void> _testRealFileInfoTool(Client client) async {
 }
 
 /// Test UUID generation tool with real server
-Future<void> _testRealUuidTool(Client client) async {
+Future<void> _testRealUuidTool(McpClient client) async {
   print('   🆔 Testing UUID generation');
 
   try {
@@ -252,7 +254,7 @@ Future<void> _testRealUuidTool(Client client) async {
     print('      Args: {}');
 
     final result = await client.callTool(
-      CallToolRequestParams(
+      CallToolRequest(
         name: 'uuid_generate',
         arguments: {},
       ),
