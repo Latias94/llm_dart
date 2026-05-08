@@ -37,8 +37,6 @@ export 'builder.dart';
 
 // Explicit residual public OpenAI compatibility surfaces
 export 'responses.dart';
-export 'responses_capability.dart';
-export 'responses_models.dart';
 export 'assistants.dart';
 export 'builtin_tools.dart';
 export 'audio.dart' show AudioTranslationRequest;

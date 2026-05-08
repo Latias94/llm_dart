@@ -92,6 +92,11 @@ into a routine `0.10.x` maintenance release.
   `builder/llm_builder_provider_extensions.dart` and
   `builder/llm_builder_provider_capability_extensions.dart`; import
   `package:llm_dart/builder/llm_builder.dart` for the compatibility builder.
+- Removed thin OpenAI Responses wrapper files
+  `providers/openai/responses_capability.dart` and
+  `providers/openai/responses_models.dart`; import
+  `package:llm_dart/providers/openai/responses.dart` for the Responses
+  compatibility surface.
 
 ### Deprecated
 

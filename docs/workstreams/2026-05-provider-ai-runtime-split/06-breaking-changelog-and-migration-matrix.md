@@ -86,6 +86,8 @@ The following slices are already landed on this branch:
   `core/llm_error.dart`; core keeps only the compatibility error types.
 - Thin public `LLMBuilder` extension wrapper files are removed; the
   compatibility builder entrypoint exports its own extension surface directly.
+- Thin OpenAI Responses public wrapper files are removed; `responses.dart` is
+  the single residual Responses compatibility path.
 
 ## Suggested Breaking Changelog Draft
 
@@ -198,6 +200,7 @@ Use this as the starting point for the next explicit breaking release.
 | `package:llm_dart/models/google_tts_models.dart` | `package:llm_dart/providers/google/tts.dart` or `package:llm_dart/legacy.dart` | Removed | Google native TTS streaming models are a provider-specific residual surface. |
 | `DioErrorHandler`, `HttpErrorMapper` from `package:llm_dart/core/llm_error.dart` | Provider-owned clients and internal compatibility HTTP error mapping | Removed | Core error types remain public; Dio-specific mapping is compatibility implementation detail. |
 | `package:llm_dart/builder/llm_builder_provider_extensions.dart` and `builder/llm_builder_provider_capability_extensions.dart` | `package:llm_dart/builder/llm_builder.dart` or `package:llm_dart/legacy.dart` | Removed | The removed files were thin re-export wrappers; the compatibility builder barrel still exports the extension methods. |
+| `package:llm_dart/providers/openai/responses_capability.dart` and `providers/openai/responses_models.dart` | `package:llm_dart/providers/openai/responses.dart` or `package:llm_dart/providers/openai/openai.dart` | Removed | Keep OpenAI Responses residual API on one provider-owned compatibility path. |
 | `LLMBuilder.githubCopilot()` and `LLMBuilder.togetherAI()` | Explicit provider registration or provider-owned OpenAI-family profile composition | Removed from default builder surface | These methods only selected unregistered provider IDs. For generic compatible endpoints, construct a provider-owned OpenAI-family model/profile explicitly or register a concrete factory. |
 
 ## Compatibility Policy

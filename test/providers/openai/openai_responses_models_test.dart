@@ -1,4 +1,4 @@
-import 'package:llm_dart/src/compatibility/providers/openai/openai_responses_models.dart';
+import 'package:llm_dart/providers/openai/responses.dart';
 import 'package:test/test.dart';
 
 void main() {
