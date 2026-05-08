@@ -49,12 +49,15 @@ into a routine `0.10.x` maintenance release.
   owned by provider factories and provider instances.
 - Moved OpenAI audio and image compatibility catalogs out of `ProviderDefaults`
   into the OpenAI compatibility provider modules.
-- Removed `ProviderDefaults.getDefaults(...)`; provider factories now declare
-  their default maps directly.
+- Removed `ProviderDefaults.getDefaults(...)`; provider factories now return
+  typed `LLMConfig` defaults through `getDefaultConfig()`.
 - Removed `ProviderDefaults` and `package:llm_dart/core/provider_defaults.dart`.
   Dedicated provider defaults now live beside each provider, for example
   `OpenAIDefaults`, `AnthropicDefaults`, `GoogleDefaults`, and
   `PhindDefaults`.
+- Removed `BaseProviderFactory.getProviderDefaults()`. Use
+  `LLMProviderFactory.getDefaultConfig()` for registry-facing default
+  configuration.
 
 ### Deprecated
 

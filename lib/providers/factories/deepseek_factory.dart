@@ -34,10 +34,8 @@ class DeepSeekProviderFactory extends BaseProviderFactory<ChatCapability> {
   }
 
   @override
-  Map<String, dynamic> getProviderDefaults() {
-    return {
-      'baseUrl': DeepSeekDefaults.baseUrl,
-      'model': DeepSeekDefaults.defaultModel,
-    };
-  }
+  LLMConfig getDefaultConfig() => const LLMConfig(
+        baseUrl: DeepSeekDefaults.baseUrl,
+        model: DeepSeekDefaults.defaultModel,
+      );
 }

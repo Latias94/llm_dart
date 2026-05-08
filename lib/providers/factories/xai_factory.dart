@@ -37,10 +37,8 @@ class XAIProviderFactory extends BaseProviderFactory<ChatCapability> {
   }
 
   @override
-  Map<String, dynamic> getProviderDefaults() {
-    return {
-      'baseUrl': XAIDefaults.baseUrl,
-      'model': XAIDefaults.defaultModel,
-    };
-  }
+  LLMConfig getDefaultConfig() => const LLMConfig(
+        baseUrl: XAIDefaults.baseUrl,
+        model: XAIDefaults.defaultModel,
+      );
 }

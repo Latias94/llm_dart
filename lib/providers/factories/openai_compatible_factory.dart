@@ -50,12 +50,10 @@ class OpenAICompatibleProviderFactory
   }
 
   @override
-  Map<String, dynamic> getProviderDefaults() {
-    return {
-      'baseUrl': _config.defaultBaseUrl,
-      'model': _config.defaultModel,
-    };
-  }
+  LLMConfig getDefaultConfig() => LLMConfig(
+        baseUrl: _config.defaultBaseUrl,
+        model: _config.defaultModel,
+      );
 
   /// Check if this is an OpenRouter provider.
   bool _isOpenRouter() {

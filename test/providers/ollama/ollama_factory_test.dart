@@ -141,27 +141,24 @@ void main() {
 
     group('Default Configuration', () {
       test('should provide default configuration', () {
-        final defaultConfig = factory.getProviderDefaults();
+        final defaultConfig = factory.getDefaultConfig();
 
-        expect(defaultConfig, isNotEmpty);
-        expect(defaultConfig['model'], isNotNull);
-        expect(defaultConfig['baseUrl'], isNotNull);
+        expect(defaultConfig.model, isNotEmpty);
+        expect(defaultConfig.baseUrl, isNotEmpty);
       });
 
       test('should have valid default model', () {
-        final defaultConfig = factory.getProviderDefaults();
-        final model = defaultConfig['model'] as String?;
+        final defaultConfig = factory.getDefaultConfig();
+        final model = defaultConfig.model;
 
-        expect(model, isNotNull);
         expect(model, isNotEmpty);
         expect(model, equals('llama3.2'));
       });
 
       test('should have valid default base URL', () {
-        final defaultConfig = factory.getProviderDefaults();
-        final baseUrl = defaultConfig['baseUrl'] as String?;
+        final defaultConfig = factory.getDefaultConfig();
+        final baseUrl = defaultConfig.baseUrl;
 
-        expect(baseUrl, isNotNull);
         expect(baseUrl, equals('http://localhost:11434/'));
       });
     });

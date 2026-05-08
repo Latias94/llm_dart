@@ -34,10 +34,8 @@ class PhindProviderFactory extends BaseProviderFactory<ChatCapability> {
   }
 
   @override
-  Map<String, dynamic> getProviderDefaults() {
-    return {
-      'baseUrl': PhindDefaults.openAICompatibleBaseUrl,
-      'model': PhindDefaults.defaultModel,
-    };
-  }
+  LLMConfig getDefaultConfig() => const LLMConfig(
+        baseUrl: PhindDefaults.openAICompatibleBaseUrl,
+        model: PhindDefaults.defaultModel,
+      );
 }

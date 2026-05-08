@@ -35,10 +35,8 @@ class AnthropicProviderFactory extends BaseProviderFactory<ChatCapability> {
   }
 
   @override
-  Map<String, dynamic> getProviderDefaults() {
-    return {
-      'baseUrl': AnthropicDefaults.baseUrl,
-      'model': AnthropicDefaults.defaultModel,
-    };
-  }
+  LLMConfig getDefaultConfig() => const LLMConfig(
+        baseUrl: AnthropicDefaults.baseUrl,
+        model: AnthropicDefaults.defaultModel,
+      );
 }

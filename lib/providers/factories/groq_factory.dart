@@ -32,10 +32,8 @@ class GroqProviderFactory extends BaseProviderFactory<ChatCapability> {
   }
 
   @override
-  Map<String, dynamic> getProviderDefaults() {
-    return {
-      'baseUrl': GroqDefaults.baseUrl,
-      'model': GroqDefaults.defaultModel,
-    };
-  }
+  LLMConfig getDefaultConfig() => const LLMConfig(
+        baseUrl: GroqDefaults.baseUrl,
+        model: GroqDefaults.defaultModel,
+      );
 }

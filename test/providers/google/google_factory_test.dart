@@ -36,10 +36,10 @@ void main() {
       expect(factory.supportedCapabilities, contains(LLMCapability.streaming));
       expect(factory.supportedCapabilities, contains(LLMCapability.vision));
 
-      final defaults = factory.getProviderDefaults();
-      expect(defaults['baseUrl'],
+      final defaults = factory.getDefaultConfig();
+      expect(defaults.baseUrl,
           'https://generativelanguage.googleapis.com/v1beta/');
-      expect(defaults['model'], isNotEmpty);
+      expect(defaults.model, isNotEmpty);
     });
   });
 }

@@ -42,14 +42,8 @@ class ElevenLabsProviderFactory extends BaseProviderFactory<ChatCapability> {
   }
 
   @override
-  Map<String, dynamic> getProviderDefaults() {
-    return {
-      'baseUrl': ElevenLabsDefaults.baseUrl,
-      'model': ElevenLabsDefaults.defaultTtsModel,
-      'voiceId': ElevenLabsDefaults.defaultVoiceId,
-      'ttsModel': ElevenLabsDefaults.defaultTtsModel,
-      'sttModel': ElevenLabsDefaults.defaultSttModel,
-      'supportedAudioFormats': ElevenLabsDefaults.supportedAudioFormats,
-    };
-  }
+  LLMConfig getDefaultConfig() => const LLMConfig(
+        baseUrl: ElevenLabsDefaults.baseUrl,
+        model: ElevenLabsDefaults.defaultTtsModel,
+      );
 }

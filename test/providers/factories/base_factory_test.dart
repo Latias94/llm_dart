@@ -59,11 +59,11 @@ class MockBaseFactory extends BaseProviderFactory<ChatCapability> {
   }
 
   @override
-  Map<String, dynamic> getProviderDefaults() => {
-        'model': 'mock-model',
-        'baseUrl': 'https://api.mock.com',
-        'temperature': 0.7,
-      };
+  LLMConfig getDefaultConfig() => const LLMConfig(
+        model: 'mock-model',
+        baseUrl: 'https://api.mock.com',
+        temperature: 0.7,
+      );
 }
 
 // Mock provider implementation
@@ -135,10 +135,10 @@ class MockLocalFactory extends LocalProviderFactory<ChatCapability> {
   }
 
   @override
-  Map<String, dynamic> getProviderDefaults() => {
-        'model': 'local-model',
-        'baseUrl': 'http://localhost:8080',
-      };
+  LLMConfig getDefaultConfig() => const LLMConfig(
+        model: 'local-model',
+        baseUrl: 'http://localhost:8080',
+      );
 }
 
 void main() {
@@ -190,11 +190,11 @@ void main() {
             throwsA(isA<InvalidRequestError>()));
       });
 
-      test('should get provider defaults', () {
-        final defaults = factory.getProviderDefaults();
-        expect(defaults['model'], equals('mock-model'));
-        expect(defaults['baseUrl'], equals('https://api.mock.com'));
-        expect(defaults['temperature'], equals(0.7));
+      test('should get typed default config', () {
+        final defaults = factory.getDefaultConfig();
+        expect(defaults.model, equals('mock-model'));
+        expect(defaults.baseUrl, equals('https://api.mock.com'));
+        expect(defaults.temperature, equals(0.7));
       });
 
       test('should create provider safely', () {

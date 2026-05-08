@@ -72,27 +72,10 @@ abstract class BaseProviderFactory<T extends ChatCapability>
   bool get requiresApiKey => true;
 
   /// Create default config with provider-specific defaults
-  /// Subclasses should override getProviderDefaults() to customize
+  /// Subclasses must provide a typed default config directly instead of a
+  /// string-keyed defaults map.
   @override
-  LLMConfig getDefaultConfig() {
-    final defaults = getProviderDefaults();
-    final baseUrl = defaults['baseUrl'] as String?;
-    final model = defaults['model'] as String?;
-
-    if (baseUrl == null) {
-      throw GenericError(
-          'Provider $providerId must provide a baseUrl in getProviderDefaults()');
-    }
-
-    return LLMConfig(
-      baseUrl: baseUrl,
-      model: model ?? 'default-model',
-    );
-  }
-
-  /// Provider-specific default values
-  /// Subclasses must implement this to provide their defaults
-  Map<String, dynamic> getProviderDefaults();
+  LLMConfig getDefaultConfig();
 
   /// Helper method for creating provider instances with error handling
   T createProviderSafely<P>(

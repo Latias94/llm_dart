@@ -40,10 +40,8 @@ class OpenAIProviderFactory extends BaseProviderFactory<ChatCapability> {
   }
 
   @override
-  Map<String, dynamic> getProviderDefaults() {
-    return {
-      'baseUrl': OpenAIDefaults.baseUrl,
-      'model': OpenAIDefaults.defaultModel,
-    };
-  }
+  LLMConfig getDefaultConfig() => const LLMConfig(
+        baseUrl: OpenAIDefaults.baseUrl,
+        model: OpenAIDefaults.defaultModel,
+      );
 }

@@ -35,10 +35,8 @@ class OllamaProviderFactory extends LocalProviderFactory<ChatCapability> {
   }
 
   @override
-  Map<String, dynamic> getProviderDefaults() {
-    return {
-      'baseUrl': OllamaDefaults.baseUrl,
-      'model': OllamaDefaults.defaultModel,
-    };
-  }
+  LLMConfig getDefaultConfig() => const LLMConfig(
+        baseUrl: OllamaDefaults.baseUrl,
+        model: OllamaDefaults.defaultModel,
+      );
 }

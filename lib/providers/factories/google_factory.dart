@@ -36,10 +36,8 @@ class GoogleProviderFactory extends BaseProviderFactory<ChatCapability> {
   }
 
   @override
-  Map<String, dynamic> getProviderDefaults() {
-    return {
-      'baseUrl': GoogleDefaults.baseUrl,
-      'model': GoogleDefaults.defaultModel,
-    };
-  }
+  LLMConfig getDefaultConfig() => const LLMConfig(
+        baseUrl: GoogleDefaults.baseUrl,
+        model: GoogleDefaults.defaultModel,
+      );
 }
