@@ -173,7 +173,7 @@ Future<void> testInvalidApiKey() async {
 
 Future<void> testInvalidModel(String apiKey) async {
   try {
-    final model = llm.AI.openai(apiKey: apiKey).chatModel('invalid-model-name');
+    final model = llm.openai(apiKey: apiKey).chatModel('invalid-model-name');
     await core.generateTextCall(
       model: model,
       prompt: [
@@ -254,7 +254,7 @@ Future<void> demonstrateTimeoutSettings(String apiKey) async {
 }
 
 core.LanguageModel _openAIModel(String apiKey) {
-  return llm.AI.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
+  return llm.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
 }
 
 core.ModelError _normalizeError(Object error) {

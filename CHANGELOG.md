@@ -8,8 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.11.0-alpha.1] - 2026-05-08
 
 This alpha moves new application code toward the model-first API:
-`AI.<provider>(...).chatModel(...)` plus the shared helpers from
-`package:llm_dart/core.dart`.
+`openai(...).chatModel(...)` and other short provider factories plus the shared
+helpers from `package:llm_dart/core.dart`. The grouped
+`AI.<provider>(...)` facade remains available when you prefer one namespace.
 
 Most apps should continue depending on the root `llm_dart` package. The new
 split packages are available when you want smaller direct dependencies,
@@ -21,6 +22,12 @@ Older builder-era code should migrate through `package:llm_dart/legacy.dart`.
 - Added focused packages for users who want direct access to provider
   contracts, generation helpers, chat sessions, transport, Flutter adapters, or
   provider-specific APIs.
+- Added short root provider factories such as `openai(...)`,
+  `anthropic(...)`, and `google(...)` as ergonomic equivalents to the grouped
+  `AI.<provider>(...)` facade.
+- Added focused root entrypoints for xAI, DeepSeek, OpenRouter, Groq, and
+  Phind so OpenAI-family profiles can be imported from provider-shaped paths
+  instead of the broad OpenAI-family entrypoint.
 - Added model capability profiles for modern Ollama and ElevenLabs models in
   `llm_dart_community`.
 - Added updated app and Flutter examples that show the model-first path,
@@ -40,8 +47,8 @@ Older builder-era code should migrate through `package:llm_dart/legacy.dart`.
 ### Breaking Changes
 
 - Removed deprecated preset helper aliases. Use
-  `AI.<provider>(...).chatModel(...)`, `embeddingModel(...)`,
-  `imageModel(...)`, `speechModel(...)`, or `transcriptionModel(...)`.
+  `<provider>(...).chatModel(...)`, `embeddingModel(...)`, `imageModel(...)`,
+  `speechModel(...)`, or `transcriptionModel(...)`.
 - Removed deprecated builder web-search helpers. Use provider-owned search
   options such as `OpenAIGenerateTextOptions`, `AnthropicGenerateTextOptions`,
   `XAIGenerateTextOptions`, or `OpenRouterChatModelSettings`.
@@ -60,13 +67,14 @@ Older builder-era code should migrate through `package:llm_dart/legacy.dart`.
 
 ### Migration Notes
 
-- For new chat/text generation, start with `AI.<provider>(...).chatModel(...)`
+- For new chat/text generation, start with `<provider>(...).chatModel(...)`
   plus `generateTextCall(...)` or `streamTextCall(...)`.
 - For embeddings, images, speech, and transcription, use the model-specific
-  factories on `AI.<provider>(...)` plus the shared helpers from
+  factories on `<provider>(...)` plus the shared helpers from
   `package:llm_dart/core.dart`.
 - For provider-specific controls, import the focused provider entrypoint such
-  as `package:llm_dart/openai.dart`, `package:llm_dart/google.dart`, or
+  as `package:llm_dart/openai.dart`, `package:llm_dart/xai.dart`,
+  `package:llm_dart/openrouter.dart`, `package:llm_dart/google.dart`, or
   `package:llm_dart/anthropic.dart`.
 - For compatibility builder code, import `package:llm_dart/legacy.dart` or
   the focused builder path explicitly.
@@ -78,8 +86,9 @@ Older builder-era code should migrate through `package:llm_dart/legacy.dart`.
 - `createProvider(...)` remains available without raw extension bags.
 - Non-deprecated root provider constructors such as `createOpenAIProvider(...)`
   and `createGoogleProvider(...)` remain available for compatibility code.
-- `ai()` remains as a deprecated migration alias; use `AI.<provider>(...)` for
-  new code.
+- `AI.<provider>(...)` remains as a supported grouped facade.
+- `ai()` remains as a deprecated migration alias; use short provider factories
+  or `AI.<provider>(...)` for new code.
 
 ## [0.10.7] - 2026-03-26
 

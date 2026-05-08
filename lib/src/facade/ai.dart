@@ -3,6 +3,118 @@ import 'package:llm_dart_google/llm_dart_google.dart' as google_pkg;
 import 'package:llm_dart_openai/llm_dart_openai.dart' as openai_pkg;
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
+/// Creates an OpenAI provider facade.
+///
+/// This is the short root-package equivalent of `AI.openai(...)`.
+openai_pkg.OpenAI openai({
+  required String apiKey,
+  TransportClient? transport,
+  String? baseUrl,
+  openai_pkg.OpenAIFamilyProfile? profile,
+}) {
+  return AI.openai(
+    apiKey: apiKey,
+    transport: transport,
+    baseUrl: baseUrl,
+    profile: profile,
+  );
+}
+
+/// Creates an OpenRouter provider facade backed by the OpenAI-family adapter.
+openai_pkg.OpenAI openRouter({
+  required String apiKey,
+  TransportClient? transport,
+  String? baseUrl,
+}) {
+  return AI.openRouter(
+    apiKey: apiKey,
+    transport: transport,
+    baseUrl: baseUrl,
+  );
+}
+
+/// Creates a DeepSeek provider facade backed by the OpenAI-family adapter.
+openai_pkg.OpenAI deepSeek({
+  required String apiKey,
+  TransportClient? transport,
+  String? baseUrl,
+}) {
+  return AI.deepSeek(
+    apiKey: apiKey,
+    transport: transport,
+    baseUrl: baseUrl,
+  );
+}
+
+/// Creates a Groq provider facade backed by the OpenAI-family adapter.
+openai_pkg.OpenAI groq({
+  required String apiKey,
+  TransportClient? transport,
+  String? baseUrl,
+}) {
+  return AI.groq(
+    apiKey: apiKey,
+    transport: transport,
+    baseUrl: baseUrl,
+  );
+}
+
+/// Creates an xAI provider facade backed by the OpenAI-family adapter.
+openai_pkg.OpenAI xai({
+  required String apiKey,
+  TransportClient? transport,
+  String? baseUrl,
+}) {
+  return AI.xai(
+    apiKey: apiKey,
+    transport: transport,
+    baseUrl: baseUrl,
+  );
+}
+
+/// Creates a Phind provider facade backed by the OpenAI-family adapter.
+openai_pkg.OpenAI phind({
+  required String apiKey,
+  TransportClient? transport,
+  String? baseUrl,
+}) {
+  return AI.phind(
+    apiKey: apiKey,
+    transport: transport,
+    baseUrl: baseUrl,
+  );
+}
+
+/// Creates a Google provider facade.
+///
+/// This is the short root-package equivalent of `AI.google(...)`.
+google_pkg.Google google({
+  required String apiKey,
+  TransportClient? transport,
+  String? baseUrl,
+}) {
+  return AI.google(
+    apiKey: apiKey,
+    transport: transport,
+    baseUrl: baseUrl,
+  );
+}
+
+/// Creates an Anthropic provider facade.
+///
+/// This is the short root-package equivalent of `AI.anthropic(...)`.
+anthropic_pkg.Anthropic anthropic({
+  required String apiKey,
+  TransportClient? transport,
+  String? baseUrl,
+}) {
+  return AI.anthropic(
+    apiKey: apiKey,
+    transport: transport,
+    baseUrl: baseUrl,
+  );
+}
+
 /// Stable model-factory facade for the refactored architecture.
 ///
 /// This is the new primary entry path for the root package.

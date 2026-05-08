@@ -471,10 +471,15 @@ import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic;
 import 'package:llm_dart_chat/llm_dart_chat.dart' as chat;
 import 'package:llm_dart_community/llm_dart_community.dart' as community;
 import 'package:llm_dart_core/llm_dart_core.dart' as compat_core;
+import 'package:llm_dart/deepseek.dart' as deepseek;
+import 'package:llm_dart/groq.dart' as groq;
 import 'package:llm_dart_google/llm_dart_google.dart' as google;
 import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
+import 'package:llm_dart/openrouter.dart' as openrouter;
+import 'package:llm_dart/phind.dart' as phind;
 import 'package:llm_dart_provider/llm_dart_provider.dart' as provider;
 import 'package:llm_dart_transport/llm_dart_transport.dart' as transport;
+import 'package:llm_dart/xai.dart' as xai;
 
 void main() {
   final prompts = <provider.PromptMessage>[
@@ -483,11 +488,16 @@ void main() {
   ];
 
   final models = [
-    llm.AI.openai(apiKey: 'test').chatModel('gpt-4.1-mini'),
+    llm.openai(apiKey: 'test').chatModel('gpt-4.1-mini'),
     openai.OpenAI(apiKey: 'test').chatModel('gpt-4.1-mini'),
     google.Google(apiKey: 'test').chatModel('gemini-2.0-flash'),
     anthropic.Anthropic(apiKey: 'test').chatModel('claude-3-5-haiku-latest'),
     community.Ollama().chatModel('llama3.2'),
+    xai.xai(apiKey: 'test').chatModel('grok-3'),
+    deepseek.deepSeek(apiKey: 'test').chatModel('deepseek-chat'),
+    openrouter.openRouter(apiKey: 'test').chatModel('openai/gpt-4o-mini'),
+    groq.groq(apiKey: 'test').chatModel('llama-3.3-70b-versatile'),
+    phind.phind(apiKey: 'test').chatModel('Phind-70B'),
   ];
 
   final speechModel =
@@ -499,7 +509,7 @@ void main() {
   final callOptions = const provider.CallOptions();
 
   if (prompts.length != 2 ||
-      models.length != 5 ||
+      models.length != 10 ||
       chatInput.message.role != provider.PromptRole.user ||
       !cancellation.isCancelled ||
       callOptions.timeout != null) {

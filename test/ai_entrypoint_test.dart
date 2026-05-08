@@ -6,17 +6,26 @@ void main() {
   group('AI entrypoint', () {
     test('is an explicit alias of the root modern surface', () {
       final aiModel = ai.AI.openai(apiKey: 'test-key').chatModel('gpt-5-mini');
+      final aiShortcutModel =
+          ai.openai(apiKey: 'test-key').chatModel('gpt-5-mini');
       final rootModel =
           root.AI.openai(apiKey: 'test-key').chatModel('gpt-5-mini');
-      final root.TransportCancellation cancellation = ai.TransportCancellation();
+      final rootShortcutModel =
+          root.openai(apiKey: 'test-key').chatModel('gpt-5-mini');
+      final root.TransportCancellation cancellation =
+          ai.TransportCancellation();
       const root.OpenAIGenerateTextOptions rootOptions =
           ai.OpenAIGenerateTextOptions();
       const ai.GenerateTextOptions aiRequest =
           root.GenerateTextOptions(maxOutputTokens: 32);
 
       expect(aiModel.providerId, 'openai');
+      expect(aiShortcutModel.providerId, aiModel.providerId);
+      expect(aiShortcutModel.modelId, aiModel.modelId);
       expect(rootModel.providerId, aiModel.providerId);
       expect(rootModel.modelId, aiModel.modelId);
+      expect(rootShortcutModel.providerId, rootModel.providerId);
+      expect(rootShortcutModel.modelId, rootModel.modelId);
       expect(cancellation.isCancelled, isFalse);
       expect(rootOptions, isA<ai.OpenAIGenerateTextOptions>());
       expect(aiRequest.maxOutputTokens, 32);

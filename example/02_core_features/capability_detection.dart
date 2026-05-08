@@ -12,7 +12,7 @@ import 'package:llm_dart/llm_dart.dart' as ai;
 ///
 /// This example intentionally separates two layers:
 /// 1. registry-level capability metadata for provider selection
-/// 2. stable `AI.*(...).chatModel(...)` creation for actual execution
+/// 2. stable `<provider>(...).chatModel(...)` creation for actual execution
 ///
 /// Capability metadata is useful for:
 /// - shortlisting providers before choosing API keys and models
@@ -179,7 +179,7 @@ void printBoundaryGuidance() {
     '  when you explicitly need fetching, continuing, or deleting raw responses.',
   );
   print(
-    '  For normal Flutter chat flows, keep using `AI.openai(...).chatModel(...)`',
+    '  For normal Flutter chat flows, keep using `openai(...).chatModel(...)`',
   );
   print(
     '  plus shared `generateTextCall(...)` or `streamTextCall(...)` helpers.',
@@ -278,7 +278,7 @@ _SelectedModel? _stableModelForProvider(String providerId) {
       return _SelectedModel(
         providerId: providerId,
         modelLabel: 'OpenAI / gpt-4.1-mini',
-        model: ai.AI.openai(apiKey: apiKey).chatModel('gpt-4.1-mini'),
+        model: ai.openai(apiKey: apiKey).chatModel('gpt-4.1-mini'),
       );
     case 'anthropic':
       final apiKey = Platform.environment['ANTHROPIC_API_KEY'];
@@ -288,7 +288,7 @@ _SelectedModel? _stableModelForProvider(String providerId) {
       return _SelectedModel(
         providerId: providerId,
         modelLabel: 'Anthropic / claude-sonnet-4-5',
-        model: ai.AI.anthropic(apiKey: apiKey).chatModel('claude-sonnet-4-5'),
+        model: ai.anthropic(apiKey: apiKey).chatModel('claude-sonnet-4-5'),
       );
     case 'google':
       final apiKey = Platform.environment['GOOGLE_API_KEY'];
@@ -298,7 +298,7 @@ _SelectedModel? _stableModelForProvider(String providerId) {
       return _SelectedModel(
         providerId: providerId,
         modelLabel: 'Google / gemini-2.5-flash',
-        model: ai.AI.google(apiKey: apiKey).chatModel('gemini-2.5-flash'),
+        model: ai.google(apiKey: apiKey).chatModel('gemini-2.5-flash'),
       );
     case 'groq':
       final apiKey = Platform.environment['GROQ_API_KEY'];
@@ -308,7 +308,7 @@ _SelectedModel? _stableModelForProvider(String providerId) {
       return _SelectedModel(
         providerId: providerId,
         modelLabel: 'Groq / llama-3.3-70b-versatile',
-        model: ai.AI.groq(apiKey: apiKey).chatModel('llama-3.3-70b-versatile'),
+        model: ai.groq(apiKey: apiKey).chatModel('llama-3.3-70b-versatile'),
       );
     case 'deepseek':
       final apiKey = Platform.environment['DEEPSEEK_API_KEY'];
@@ -318,7 +318,7 @@ _SelectedModel? _stableModelForProvider(String providerId) {
       return _SelectedModel(
         providerId: providerId,
         modelLabel: 'DeepSeek / deepseek-chat',
-        model: ai.AI.deepSeek(apiKey: apiKey).chatModel('deepseek-chat'),
+        model: ai.deepSeek(apiKey: apiKey).chatModel('deepseek-chat'),
       );
     case 'xai':
       final apiKey = Platform.environment['XAI_API_KEY'];
@@ -328,7 +328,7 @@ _SelectedModel? _stableModelForProvider(String providerId) {
       return _SelectedModel(
         providerId: providerId,
         modelLabel: 'xAI / grok-3',
-        model: ai.AI.xai(apiKey: apiKey).chatModel('grok-3'),
+        model: ai.xai(apiKey: apiKey).chatModel('grok-3'),
       );
     case 'openrouter':
       final apiKey = Platform.environment['OPENROUTER_API_KEY'];
@@ -338,8 +338,7 @@ _SelectedModel? _stableModelForProvider(String providerId) {
       return _SelectedModel(
         providerId: providerId,
         modelLabel: 'OpenRouter / openai/gpt-4.1-mini',
-        model:
-            ai.AI.openRouter(apiKey: apiKey).chatModel('openai/gpt-4.1-mini'),
+        model: ai.openRouter(apiKey: apiKey).chatModel('openai/gpt-4.1-mini'),
       );
     default:
       return null;

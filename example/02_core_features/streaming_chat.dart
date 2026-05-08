@@ -12,7 +12,7 @@ Future<void> main() async {
     return;
   }
 
-  final model = llm.AI.deepSeek(apiKey: apiKey).chatModel('deepseek-reasoner');
+  final model = llm.deepSeek(apiKey: apiKey).chatModel('deepseek-reasoner');
 
   print('Streaming response:\n');
 

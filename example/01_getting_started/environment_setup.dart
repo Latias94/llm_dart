@@ -70,7 +70,7 @@ Future<void> demonstrateEnvironmentVariables() async {
     final openaiKey = Platform.environment['OPENAI_API_KEY'];
     if (openaiKey != null) {
       final openaiModel =
-          llm.AI.openai(apiKey: openaiKey).chatModel('gpt-4.1-mini');
+          llm.openai(apiKey: openaiKey).chatModel('gpt-4.1-mini');
       print('      ✅ OpenAI model configured (${openaiModel.runtimeType})');
     } else {
       print('      ⚠️  OpenAI: Set OPENAI_API_KEY environment variable');
@@ -79,7 +79,7 @@ Future<void> demonstrateEnvironmentVariables() async {
     // Anthropic example
     final anthropicKey = Platform.environment['ANTHROPIC_API_KEY'];
     if (anthropicKey != null) {
-      final anthropicModel = llm.AI
+      final anthropicModel = llm
           .anthropic(
             apiKey: anthropicKey,
           )

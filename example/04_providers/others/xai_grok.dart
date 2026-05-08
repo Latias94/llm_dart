@@ -3,13 +3,12 @@
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
-import 'package:llm_dart/openai.dart' as openai;
+import 'package:llm_dart/xai.dart' as xai;
 
 /// 🚀 X.AI Grok Integration - Real-Time AI with Personality
 ///
 /// This example demonstrates xAI's Grok model capabilities through the stable
-/// `AI.xai(...).chatModel(...)` facade.
+/// `xai(...).chatModel(...)` facade.
 ///
 /// Before running, set your API key:
 /// export XAI_API_KEY="your-xai-api-key"
@@ -144,8 +143,8 @@ Future<void> demonstrateRealTimeInformation(String apiKey) async {
         temperature: 0.3,
         maxOutputTokens: 600,
         callOptions: const core.CallOptions(
-          providerOptions: openai.XAIGenerateTextOptions(
-            search: openai.XAILiveSearchOptions.autoWeb(
+          providerOptions: xai.XAIGenerateTextOptions(
+            search: xai.XAILiveSearchOptions.autoWeb(
               maxSearchResults: 5,
             ),
           ),
@@ -324,7 +323,7 @@ Future<void> demonstrateBestPractices(String apiKey) async {
 }
 
 core.LanguageModel _createGrokModel(String apiKey) {
-  return llm.AI.xai(apiKey: apiKey).chatModel('grok-3');
+  return xai.xai(apiKey: apiKey).chatModel('grok-3');
 }
 
 Future<core.GenerateTextCallResult<Never>> _generateText({

@@ -19,7 +19,7 @@ Future<void> runAnthropicReasoning() async {
     return;
   }
 
-  final model = llm.AI.anthropic(apiKey: apiKey).chatModel('claude-sonnet-4-5');
+  final model = llm.anthropic(apiKey: apiKey).chatModel('claude-sonnet-4-5');
   final result = await core.generateTextCall(
     model: model,
     prompt: [
@@ -39,7 +39,7 @@ Future<void> runDeepSeekReasoningStream() async {
     return;
   }
 
-  final model = llm.AI.deepSeek(apiKey: apiKey).chatModel('deepseek-reasoner');
+  final model = llm.deepSeek(apiKey: apiKey).chatModel('deepseek-reasoner');
 
   print('DeepSeek reasoning stream');
   final stream = core.streamTextCall(
@@ -72,7 +72,7 @@ Future<void> runGoogleReasoning() async {
     return;
   }
 
-  final model = llm.AI.google(apiKey: apiKey).chatModel('gemini-2.5-flash');
+  final model = llm.google(apiKey: apiKey).chatModel('gemini-2.5-flash');
   final result = await core.generateTextCall(
     model: model,
     prompt: [

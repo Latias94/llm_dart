@@ -2,8 +2,8 @@
 
 import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/openrouter.dart' as openrouter;
 import 'package:llm_dart_community/llm_dart_community.dart' as community;
-import 'package:llm_dart/openai.dart' as openai;
 
 void main() {
   print('Capability Profiles for App and Flutter UI Gating\n');
@@ -13,29 +13,29 @@ void main() {
       label: 'OpenAI / gpt-5.4',
       recommendedUse:
           'Reasoning-first assistant with OpenAI Responses routing.',
-      model: llm.AI.openai(apiKey: 'demo-key').chatModel('gpt-5.4'),
+      model: llm.openai(apiKey: 'demo-key').chatModel('gpt-5.4'),
     ),
     _DemoModel(
       label: 'OpenAI / gpt-4.1-mini',
       recommendedUse: 'General chat baseline with shared structured output.',
-      model: llm.AI.openai(apiKey: 'demo-key').chatModel('gpt-4.1-mini'),
+      model: llm.openai(apiKey: 'demo-key').chatModel('gpt-4.1-mini'),
     ),
     _DemoModel(
       label: 'xAI / grok-3',
       recommendedUse: 'Source-backed chat with shared source output.',
-      model: llm.AI.xai(apiKey: 'demo-key').chatModel('grok-3'),
+      model: llm.xai(apiKey: 'demo-key').chatModel('grok-3'),
     ),
     _DemoModel(
       label: 'OpenRouter / openai/gpt-4o-mini :online',
       recommendedUse: 'Provider-routed web model with online search routing.',
-      model: llm.AI
+      model: llm
           .openRouter(
             apiKey: 'demo-key',
           )
           .chatModel(
             'openai/gpt-4o-mini',
-            settings: const openai.OpenRouterChatModelSettings(
-              search: openai.OpenRouterSearchOptions.onlineModel(),
+            settings: const openrouter.OpenRouterChatModelSettings(
+              search: openrouter.OpenRouterSearchOptions.onlineModel(),
             ),
           ),
     ),
@@ -43,16 +43,11 @@ void main() {
       label: 'DeepSeek / deepseek-reasoner',
       recommendedUse:
           'Reasoning model on the chat-completions-compatible path.',
-      model: llm.AI
+      model: llm
           .deepSeek(
             apiKey: 'demo-key',
           )
-          .chatModel(
-            'deepseek-reasoner',
-            settings: const openai.OpenAIChatModelSettings(
-              useResponsesApi: false,
-            ),
-          ),
+          .chatModel('deepseek-reasoner'),
     ),
     _DemoModel(
       label: 'Ollama / llama3.2-vision',

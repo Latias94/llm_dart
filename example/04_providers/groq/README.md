@@ -4,7 +4,8 @@ Groq already fits cleanly into the stable OpenAI-family chat facade.
 
 For new code, prefer:
 
-- `AI.groq(...).chatModel(...)`
+- `groq(...).chatModel(...)`
+- `AI.groq(...).chatModel(...)` when you prefer a grouped namespace
 - shared `generateTextCall(...)` and `streamTextCall(...)`
 - provider-owned Groq profile routing instead of legacy builder setup
 
@@ -27,9 +28,10 @@ dart run fast_inference.dart
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/groq.dart' as groq;
 
-final model = llm.AI.groq(apiKey: 'your-key').chatModel('llama-3.1-8b-instant');
+final model =
+    groq.groq(apiKey: 'your-key').chatModel('llama-3.1-8b-instant');
 final stopwatch = Stopwatch()..start();
 
 final stream = core.streamTextCall(

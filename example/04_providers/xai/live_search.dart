@@ -3,10 +3,9 @@
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
-import 'package:llm_dart/openai.dart' as openai;
+import 'package:llm_dart/xai.dart' as xai;
 
-/// xAI live search examples using the stable `AI.xai(...).chatModel(...)` API.
+/// xAI live search examples using the stable `xai(...).chatModel(...)` API.
 ///
 /// The shared app-facing layer remains `generateTextCall(...)`, while xAI's
 /// search behavior is configured through `XAIGenerateTextOptions`.
@@ -19,7 +18,7 @@ Future<void> main() async {
     return;
   }
 
-  final model = llm.AI.xai(apiKey: apiKey).chatModel('grok-3');
+  final model = xai.xai(apiKey: apiKey).chatModel('grok-3');
 
   await runCurrentEventsSearch(model);
   await runNewsFocusedSearch(model);
@@ -33,7 +32,7 @@ Future<void> runCurrentEventsSearch(core.LanguageModel model) async {
     label: 'Current events search',
     model: model,
     prompt: 'What are the latest developments in AI this week?',
-    search: const openai.XAILiveSearchOptions.autoWeb(
+    search: const xai.XAILiveSearchOptions.autoWeb(
       maxSearchResults: 5,
     ),
   );
@@ -45,11 +44,11 @@ Future<void> runNewsFocusedSearch(core.LanguageModel model) async {
     model: model,
     prompt:
         'Summarize the top technology news stories from the last few days and explain why they matter.',
-    search: openai.XAILiveSearchOptions(
+    search: xai.XAILiveSearchOptions(
       maxSearchResults: 6,
       sources: const [
-        openai.XAINewsSearchSource(countryCode: 'US'),
-        openai.XAIWebSearchSource(
+        xai.XAINewsSearchSource(countryCode: 'US'),
+        xai.XAIWebSearchSource(
           allowedWebsites: [
             'techcrunch.com',
             'theverge.com',
@@ -82,8 +81,8 @@ Future<void> runConversationWithFreshData(core.LanguageModel model) async {
       maxOutputTokens: 160,
     ),
     callOptions: const core.CallOptions(
-      providerOptions: openai.XAIGenerateTextOptions(
-        search: openai.XAILiveSearchOptions.autoWeb(
+      providerOptions: xai.XAIGenerateTextOptions(
+        search: xai.XAILiveSearchOptions.autoWeb(
           maxSearchResults: 4,
         ),
       ),
@@ -108,12 +107,12 @@ Future<void> runConversationWithFreshData(core.LanguageModel model) async {
       maxOutputTokens: 180,
     ),
     callOptions: core.CallOptions(
-      providerOptions: openai.XAIGenerateTextOptions(
-        search: openai.XAILiveSearchOptions(
+      providerOptions: xai.XAIGenerateTextOptions(
+        search: xai.XAILiveSearchOptions(
           maxSearchResults: 5,
           sources: const [
-            openai.XAINewsSearchSource(countryCode: 'US'),
-            openai.XAIWebSearchSource(),
+            xai.XAINewsSearchSource(countryCode: 'US'),
+            xai.XAIWebSearchSource(),
           ],
         ),
       ),
@@ -129,7 +128,7 @@ Future<void> runSearchCase({
   required String label,
   required core.LanguageModel model,
   required String prompt,
-  required openai.XAILiveSearchOptions search,
+  required xai.XAILiveSearchOptions search,
 }) async {
   print('=== $label ===');
 
@@ -147,7 +146,7 @@ Future<void> runSearchCase({
         maxOutputTokens: 180,
       ),
       callOptions: core.CallOptions(
-        providerOptions: openai.XAIGenerateTextOptions(search: search),
+        providerOptions: xai.XAIGenerateTextOptions(search: search),
       ),
     );
 

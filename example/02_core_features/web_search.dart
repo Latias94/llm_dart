@@ -6,6 +6,8 @@ import 'package:llm_dart/anthropic.dart' as anthropic;
 import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/openai.dart' as openai;
+import 'package:llm_dart/openrouter.dart' as openrouter;
+import 'package:llm_dart/xai.dart' as xai;
 
 /// Stable web-search examples built on the shared text-call layer.
 ///
@@ -108,7 +110,7 @@ Future<void> runXAISearch(String? apiKey) async {
     return;
   }
 
-  final model = llm.AI.xai(apiKey: apiKey).chatModel('grok-3');
+  final model = llm.xai(apiKey: apiKey).chatModel('grok-3');
 
   await runSearchCase(
     label: 'xAI live search',
@@ -116,12 +118,12 @@ Future<void> runXAISearch(String? apiKey) async {
     prompt:
         'Find the latest announcements about open-source AI coding tools and summarize the trend.',
     callOptions: const core.CallOptions(
-      providerOptions: openai.XAIGenerateTextOptions(
-        search: openai.XAILiveSearchOptions(
+      providerOptions: xai.XAIGenerateTextOptions(
+        search: xai.XAILiveSearchOptions(
           maxSearchResults: 5,
           sources: [
-            openai.XAIWebSearchSource(),
-            openai.XAINewsSearchSource(),
+            xai.XAIWebSearchSource(),
+            xai.XAINewsSearchSource(),
           ],
         ),
       ),
@@ -135,14 +137,14 @@ Future<void> runOpenRouterSearch(String? apiKey) async {
     return;
   }
 
-  final model = llm.AI
+  final model = llm
       .openRouter(
         apiKey: apiKey,
       )
       .chatModel(
         'openai/gpt-4.1-mini',
-        settings: const openai.OpenRouterChatModelSettings(
-          search: openai.OpenRouterSearchOptions.onlineModel(),
+        settings: const openrouter.OpenRouterChatModelSettings(
+          search: openrouter.OpenRouterSearchOptions.onlineModel(),
         ),
       );
 

@@ -4,15 +4,16 @@ Sophisticated AI capabilities for production applications with LLM Dart.
 
 This directory is now modern-first:
 
-- stable model-based examples built on `AI.*(...).chatModel(...)`
+- stable model-based examples built on short provider factories such as
+  `openai(...).chatModel(...)`
 - stable transport recipes built on `TransportClient`,
   `DioHttpClientConfig`, and `CallOptions`
 - explicit provider-owned appendices only where the capability is not honestly
   cross-provider, such as realtime audio
 
-For new application logic, prefer the stable `AI` facade, the shared helpers
-from `package:llm_dart/core.dart`, and transport-owned configuration through
-`package:llm_dart/transport.dart`.
+For new application logic, prefer short provider factories such as
+`openai(...)`, the shared helpers from `package:llm_dart/core.dart`, and
+transport-owned configuration through `package:llm_dart/transport.dart`.
 
 ## Examples
 
@@ -107,7 +108,7 @@ import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
 
 final model =
-    llm.AI.deepSeek(apiKey: 'your-key').chatModel('deepseek-reasoner');
+    llm.deepSeek(apiKey: 'your-key').chatModel('deepseek-reasoner');
 
 final result = await core.generateTextCall(
   model: model,
@@ -127,7 +128,7 @@ print('Answer: ${result.text}');
 import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/llm_dart.dart' as llm;
 
-final model = llm.AI.openai(apiKey: 'your-key').chatModel('gpt-4o');
+final model = llm.openai(apiKey: 'your-key').chatModel('gpt-4o');
 
 final response = await core.generateTextCall(
   model: model,
@@ -151,7 +152,7 @@ import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/llm_dart.dart' as llm;
 
 final batchProcessor = BatchProcessor(
-  model: llm.AI.groq(apiKey: 'your-key').chatModel('llama-3.1-8b-instant'),
+  model: llm.groq(apiKey: 'your-key').chatModel('llama-3.1-8b-instant'),
   defaultOptions: const core.GenerateTextOptions(maxOutputTokens: 120),
 );
 final tasks = List.generate(
@@ -167,7 +168,7 @@ print('Completed: ${results.where((r) => r.isSuccess).length}');
 ```dart
 import 'package:llm_dart/llm_dart.dart' as llm;
 
-final embeddingModel = llm.AI.openai(
+final embeddingModel = llm.openai(
   apiKey: 'your-key',
 ).embeddingModel('text-embedding-3-small');
 
@@ -200,7 +201,7 @@ final transportClient = transport.DioTransportClient(
   ),
 );
 
-final model = llm.AI.openai(
+final model = llm.openai(
   apiKey: 'your-key',
   transport: transportClient,
 ).chatModel('gpt-4.1-mini');
@@ -225,7 +226,7 @@ customDio.interceptors.add(dio.InterceptorsWrapper(
   },
 ));
 
-final model = llm.AI.anthropic(
+final model = llm.anthropic(
   apiKey: 'your-key',
   transport: transport.DioTransportClient(dio: customDio),
 ).chatModel('claude-3-5-haiku-20241022');
@@ -249,7 +250,7 @@ final transportClient = transport.DioTransportClient(
   ),
 );
 
-final model = llm.AI.openai(
+final model = llm.openai(
   apiKey: 'your-key',
   transport: transportClient,
 ).chatModel('gpt-4.1-mini');

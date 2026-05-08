@@ -3,8 +3,10 @@ import 'package:test/test.dart';
 
 void main() {
   group('Root chat entrypoint', () {
-    test('exports the pure Dart chat runtime and AI facade', () async {
-      final model = chat.AI.openai(apiKey: 'test-key').chatModel('gpt-5-mini');
+    test('exports the pure Dart chat runtime and model factories', () async {
+      final model = chat.openai(apiKey: 'test-key').chatModel('gpt-5-mini');
+      final groupedModel =
+          chat.AI.openai(apiKey: 'test-key').chatModel('gpt-5-mini');
       final transport = chat.DirectChatTransport(model: model);
       final session = chat.DefaultChatSession(transport: transport);
       const options = chat.ChatRequestOptions(
@@ -12,6 +14,7 @@ void main() {
       );
 
       expect(model.providerId, 'openai');
+      expect(groupedModel.providerId, model.providerId);
       expect(transport, isA<chat.ChatTransport>());
       expect(session, isA<chat.ChatSession>());
       expect(options.metadata['origin'], 'root-chat-entrypoint');

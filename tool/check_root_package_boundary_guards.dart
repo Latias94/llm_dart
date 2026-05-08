@@ -13,11 +13,16 @@ const Set<String> _allowedRootTopLevelFiles = {
   'anthropic.dart',
   'chat.dart',
   'core.dart',
+  'deepseek.dart',
   'google.dart',
+  'groq.dart',
   'legacy.dart',
   'llm_dart.dart',
   'openai.dart',
+  'openrouter.dart',
+  'phind.dart',
   'transport.dart',
+  'xai.dart',
 };
 
 const Set<String> _allowedRootSrcTopLevelDirectories = {
@@ -59,21 +64,49 @@ const List<String> _expectedModernAggregatorEntrypointDirectives = [
   "export 'google.dart';",
   "export 'openai.dart';",
   "export 'transport.dart';",
-  "export 'src/facade/ai.dart' show AI;",
+  "export 'src/facade/ai.dart' show AI, anthropic, deepSeek, google, groq, openRouter, openai, phind, xai;",
 ];
 
 const Map<String, List<String>> _expectedFocusedRootEntrypointDirectives = {
   'lib/anthropic.dart': [
     'library;',
     "export 'package:llm_dart_anthropic/llm_dart_anthropic.dart';",
+    "export 'src/facade/ai.dart' show AI, anthropic;",
   ],
   'lib/google.dart': [
     'library;',
     "export 'package:llm_dart_google/llm_dart_google.dart';",
+    "export 'src/facade/ai.dart' show AI, google;",
   ],
   'lib/openai.dart': [
     'library;',
     "export 'package:llm_dart_openai/llm_dart_openai.dart';",
+    "export 'src/facade/ai.dart' show AI, openai;",
+  ],
+  'lib/groq.dart': [
+    'library;',
+    "export 'package:llm_dart_openai/llm_dart_openai.dart' show GroqProfile, OpenAI, OpenAIChatModelSettings, OpenAIGenerateTextOptions, OpenAILanguageModel;",
+    "export 'src/facade/ai.dart' show AI, groq;",
+  ],
+  'lib/phind.dart': [
+    'library;',
+    "export 'package:llm_dart_openai/llm_dart_openai.dart' show OpenAI, OpenAIChatModelSettings, OpenAIGenerateTextOptions, OpenAILanguageModel, PhindProfile;",
+    "export 'src/facade/ai.dart' show AI, phind;",
+  ],
+  'lib/xai.dart': [
+    'library;',
+    "export 'package:llm_dart_openai/llm_dart_openai.dart' show OpenAI, OpenAIChatModelSettings, OpenAIGenerateTextOptions, OpenAILanguageModel, XAIProfile, XAIGenerateTextOptions, XAILiveSearchOptions, XAINewsSearchSource, XAIRssSearchSource, XAISearchMode, XAISearchSource, XAIWebSearchSource, XAIXSearchSource;",
+    "export 'src/facade/ai.dart' show AI, xai;",
+  ],
+  'lib/deepseek.dart': [
+    'library;',
+    "export 'package:llm_dart_openai/llm_dart_openai.dart' show DeepSeekGenerateTextOptions, DeepSeekProfile, OpenAI, OpenAIChatModelSettings, OpenAIGenerateTextOptions, OpenAILanguageModel;",
+    "export 'src/facade/ai.dart' show AI, deepSeek;",
+  ],
+  'lib/openrouter.dart': [
+    'library;',
+    "export 'package:llm_dart_openai/llm_dart_openai.dart' show OpenAI, OpenAIChatModelSettings, OpenAIGenerateTextOptions, OpenAILanguageModel, OpenRouterChatModelSettings, OpenRouterGenerateTextOptions, OpenRouterProfile, OpenRouterSearchMode, OpenRouterSearchOptions;",
+    "export 'src/facade/ai.dart' show AI, openRouter;",
   ],
 };
 
@@ -404,15 +437,29 @@ List<String> _sorted(Set<String> values) {
 }
 
 Future<List<String>> _readPublicDirectives(File file) async {
-  return (await file.readAsLines())
-      .map((line) => line.trim())
-      .where(
-        (line) =>
-            line.isNotEmpty &&
-            !line.startsWith('///') &&
-            !line.startsWith('//'),
-      )
-      .toList();
+  final directives = <String>[];
+  var pendingDirective = '';
+
+  for (final rawLine in await file.readAsLines()) {
+    final line = rawLine.trim();
+    if (line.isEmpty || line.startsWith('///') || line.startsWith('//')) {
+      continue;
+    }
+
+    pendingDirective =
+        pendingDirective.isEmpty ? line : '$pendingDirective $line';
+
+    if (line.endsWith(';')) {
+      directives.add(pendingDirective);
+      pendingDirective = '';
+    }
+  }
+
+  if (pendingDirective.isNotEmpty) {
+    directives.add(pendingDirective);
+  }
+
+  return directives;
 }
 
 bool _listEquals(List<String> a, List<String> b) {

@@ -5,7 +5,7 @@ import 'dart:io';
 import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/llm_dart.dart' as llm;
 
-/// Compare providers that already have stable `AI` facade constructors.
+/// Compare providers that already have stable root provider factories.
 ///
 /// This example intentionally focuses on the migrated model path instead of the
 /// legacy root builder surface.
@@ -51,12 +51,12 @@ Map<String, core.LanguageModel> createModelsByProvider() {
   final openAIKey = Platform.environment['OPENAI_API_KEY'];
   if (openAIKey != null && openAIKey.isNotEmpty) {
     modelsByProvider['OpenAI'] =
-        llm.AI.openai(apiKey: openAIKey).chatModel('gpt-4.1-mini');
+        llm.openai(apiKey: openAIKey).chatModel('gpt-4.1-mini');
   }
 
   final anthropicKey = Platform.environment['ANTHROPIC_API_KEY'];
   if (anthropicKey != null && anthropicKey.isNotEmpty) {
-    modelsByProvider['Anthropic'] = llm.AI
+    modelsByProvider['Anthropic'] = llm
         .anthropic(
           apiKey: anthropicKey,
         )
@@ -65,7 +65,7 @@ Map<String, core.LanguageModel> createModelsByProvider() {
 
   final groqKey = Platform.environment['GROQ_API_KEY'];
   if (groqKey != null && groqKey.isNotEmpty) {
-    modelsByProvider['Groq'] = llm.AI
+    modelsByProvider['Groq'] = llm
         .groq(
           apiKey: groqKey,
         )
@@ -74,7 +74,7 @@ Map<String, core.LanguageModel> createModelsByProvider() {
 
   final deepSeekKey = Platform.environment['DEEPSEEK_API_KEY'];
   if (deepSeekKey != null && deepSeekKey.isNotEmpty) {
-    modelsByProvider['DeepSeek'] = llm.AI
+    modelsByProvider['DeepSeek'] = llm
         .deepSeek(
           apiKey: deepSeekKey,
         )
@@ -83,7 +83,7 @@ Map<String, core.LanguageModel> createModelsByProvider() {
 
   final xaiKey = Platform.environment['XAI_API_KEY'];
   if (xaiKey != null && xaiKey.isNotEmpty) {
-    modelsByProvider['xAI'] = llm.AI.xai(apiKey: xaiKey).chatModel('grok-3');
+    modelsByProvider['xAI'] = llm.xai(apiKey: xaiKey).chatModel('grok-3');
   }
 
   return modelsByProvider;

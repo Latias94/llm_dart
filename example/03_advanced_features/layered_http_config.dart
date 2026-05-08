@@ -15,7 +15,7 @@ const _deepSeekBaseUrl = 'https://api.deepseek.com/v1';
 ///
 /// The architecture boundary is:
 ///
-/// - provider choice and model selection on `AI.*(...).chatModel(...)`
+/// - provider choice and model selection on `<provider>(...).chatModel(...)`
 /// - HTTP wiring on `TransportClient`
 /// - reusable transport presets on `DioHttpClientConfig`
 /// - advanced custom transport control through an injected Dio instance
@@ -80,13 +80,15 @@ Future<void> demonstrateBasicLayeredConfig(String apiKey) async {
 
   try {
     final result = await _runPrompt(
-      model: llm.AI.openai(
-        apiKey: apiKey,
-        transport: _transportFromConfig(
-          config,
-          loggerName: 'layered_http.openai',
-        ),
-      ).chatModel('gpt-4.1-mini'),
+      model: llm
+          .openai(
+            apiKey: apiKey,
+            transport: _transportFromConfig(
+              config,
+              loggerName: 'layered_http.openai',
+            ),
+          )
+          .chatModel('gpt-4.1-mini'),
       prompt: 'Explain why transport settings belong below provider selection.',
     );
 
@@ -117,13 +119,15 @@ Future<void> demonstrateAdvancedLayeredConfig(String apiKey) async {
 
   try {
     final result = await _runPrompt(
-      model: llm.AI.anthropic(
-        apiKey: apiKey,
-        transport: _transportFromConfig(
-          config,
-          loggerName: 'layered_http.anthropic',
-        ),
-      ).chatModel('claude-3-5-haiku-20241022'),
+      model: llm
+          .anthropic(
+            apiKey: apiKey,
+            transport: _transportFromConfig(
+              config,
+              loggerName: 'layered_http.anthropic',
+            ),
+          )
+          .chatModel('claude-3-5-haiku-20241022'),
       prompt:
           'Describe a production-grade transport profile in one compact paragraph.',
     );
@@ -160,8 +164,8 @@ Future<void> demonstrateCustomDioClient(String apiKey) async {
           handler.next(options);
         },
         onResponse: (response, handler) {
-          final startTime = response.requestOptions.extra['startTime']
-              as DateTime?;
+          final startTime =
+              response.requestOptions.extra['startTime'] as DateTime?;
           if (startTime != null) {
             final duration = DateTime.now().difference(startTime);
             print('Completed in ${duration.inMilliseconds}ms');
@@ -192,10 +196,12 @@ Future<void> demonstrateCustomDioClient(String apiKey) async {
       ),
     );
 
-    final model = llm.AI.anthropic(
-      apiKey: apiKey,
-      transport: transport.DioTransportClient(dio: customDio),
-    ).chatModel('claude-3-5-haiku-20241022');
+    final model = llm
+        .anthropic(
+          apiKey: apiKey,
+          transport: transport.DioTransportClient(dio: customDio),
+        )
+        .chatModel('claude-3-5-haiku-20241022');
 
     final result = await _runPrompt(
       model: model,
@@ -224,13 +230,15 @@ Future<void> demonstrateTimeoutPriorityInLayeredConfig(String apiKey) async {
     receiveTimeout: Duration(minutes: 5),
   );
 
-  final model = llm.AI.deepSeek(
-    apiKey: apiKey,
-    transport: _transportFromConfig(
-      config,
-      loggerName: 'layered_http.deepseek',
-    ),
-  ).chatModel('deepseek-chat');
+  final model = llm
+      .deepSeek(
+        apiKey: apiKey,
+        transport: _transportFromConfig(
+          config,
+          loggerName: 'layered_http.deepseek',
+        ),
+      )
+      .chatModel('deepseek-chat');
 
   try {
     final baselineResult = await _runPrompt(
@@ -352,7 +360,7 @@ void demonstrateConfigReusability() {
     '  development headers -> ${developmentDio.options.headers.keys.join(', ')}',
   );
   print(
-    'Inject with AI.*(..., transport: DioTransportClient(dio: createProductionDio())).\n',
+    'Inject with <provider>(..., transport: DioTransportClient(dio: createProductionDio())).\n',
   );
 }
 

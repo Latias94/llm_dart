@@ -7,10 +7,10 @@ top-level facade.
 
 For new code, prefer stable profile facades:
 
-- `AI.openRouter(...)`
-- `AI.deepSeek(...)`
-- `AI.groq(...)`
-- `AI.xai(...)`
+- `openRouter(...)`
+- `deepSeek(...)`
+- `groq(...)`
+- `xai(...)`
 
 The default modern root import for those profile facades is
 `package:llm_dart/llm_dart.dart`.
@@ -22,7 +22,7 @@ Stable OpenAI-family profile showcase plus an explicit custom Together-style
 endpoint example.
 
 ### [xai_grok.dart](xai_grok.dart)
-Stable xAI example built on the `AI.xai(...).chatModel(...)` facade.
+Stable xAI example built on the `xai(...).chatModel(...)` facade.
 
 ## Setup
 
@@ -46,9 +46,9 @@ import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/llm_dart.dart' as llm;
 
 final providers = <core.LanguageModel>[
-  llm.AI.groq(apiKey: 'groq-key').chatModel('llama-3.3-70b-versatile'),
-  llm.AI.deepSeek(apiKey: 'deepseek-key').chatModel('deepseek-chat'),
-  llm.AI.openRouter(apiKey: 'openrouter-key').chatModel('openai/gpt-4o-mini'),
+  llm.groq(apiKey: 'groq-key').chatModel('llama-3.3-70b-versatile'),
+  llm.deepSeek(apiKey: 'deepseek-key').chatModel('deepseek-chat'),
+  llm.openRouter(apiKey: 'openrouter-key').chatModel('openai/gpt-4o-mini'),
 ];
 
 for (final model in providers) {
@@ -74,7 +74,6 @@ for (final model in providers) {
 
 ```dart
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/openai.dart' as openai;
 
 const togetherProfile = openai.OpenAIProfile(
@@ -83,7 +82,7 @@ const togetherProfile = openai.OpenAIProfile(
   supportsResponsesApi: false,
 );
 
-final model = llm.AI.openai(
+final model = openai.openai(
   apiKey: 'together-key',
   profile: togetherProfile,
 ).chatModel('meta-llama/Llama-3-70b-chat-hf');
@@ -104,7 +103,7 @@ print(result.text);
   features should still stay provider owned.
 - If a provider shares the OpenAI-family transport/request shape but does not
   deserve a dedicated root facade yet, keep it explicit through
-  `AI.openai(..., profile: ...)` or `AI.openai(..., baseUrl: ...)` instead of
+  `openai(..., profile: ...)` or `openai(..., baseUrl: ...)` instead of
   creating another global shortcut immediately.
 - For example, OpenRouter online search belongs on
   `OpenRouterChatModelSettings`, and xAI live search belongs on

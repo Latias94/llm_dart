@@ -3,8 +3,11 @@
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/deepseek.dart' as deepseek;
+import 'package:llm_dart/groq.dart' as groq;
 import 'package:llm_dart/openai.dart' as openai;
+import 'package:llm_dart/openrouter.dart' as openrouter;
+import 'package:llm_dart/xai.dart' as xai;
 
 const _togetherBaseUrl = 'https://api.together.xyz/v1';
 const _togetherModelId = 'meta-llama/Llama-3-70b-chat-hf';
@@ -17,7 +20,7 @@ const _togetherProfile = openai.OpenAIProfile(
 /// Stable OpenAI-family profile examples.
 ///
 /// This example demonstrates two explicit layers:
-/// - stable provider facades such as `AI.deepSeek(...)` and `AI.openRouter(...)`
+/// - stable provider facades such as `deepSeek(...)` and `openRouter(...)`
 /// - provider-owned settings/options when capabilities diverge
 ///
 /// "OpenAI-compatible" here means "shares the `LanguageModel` contract",
@@ -46,28 +49,29 @@ Future<void> demonstrateStableProfiles() async {
       label: 'DeepSeek',
       description: 'Dedicated facade for cost-effective chat and reasoning.',
       envVar: 'DEEPSEEK_API_KEY',
-      createModel: (apiKey) =>
-          llm.AI.deepSeek(apiKey: apiKey).chatModel('deepseek-chat'),
+      createModel: (apiKey) => deepseek.deepSeek(apiKey: apiKey).chatModel(
+            'deepseek-chat',
+          ),
     ),
     (
       label: 'Groq',
       description: 'Dedicated facade for low-latency inference.',
       envVar: 'GROQ_API_KEY',
       createModel: (apiKey) =>
-          llm.AI.groq(apiKey: apiKey).chatModel('llama-3.3-70b-versatile'),
+          groq.groq(apiKey: apiKey).chatModel('llama-3.3-70b-versatile'),
     ),
     (
       label: 'xAI',
       description: 'Dedicated facade for Grok models and live-search options.',
       envVar: 'XAI_API_KEY',
-      createModel: (apiKey) => llm.AI.xai(apiKey: apiKey).chatModel('grok-3'),
+      createModel: (apiKey) => xai.xai(apiKey: apiKey).chatModel('grok-3'),
     ),
     (
       label: 'OpenRouter',
       description: 'Dedicated facade for audited OpenRouter model routing.',
       envVar: 'OPENROUTER_API_KEY',
       createModel: (apiKey) =>
-          llm.AI.openRouter(apiKey: apiKey).chatModel('openai/gpt-4o-mini'),
+          openrouter.openRouter(apiKey: apiKey).chatModel('openai/gpt-4o-mini'),
     ),
   ];
 
@@ -122,7 +126,7 @@ Future<void> demonstrateDeepSeekReasoningStream() async {
 
   try {
     final model =
-        llm.AI.deepSeek(apiKey: apiKey).chatModel('deepseek-reasoner');
+        deepseek.deepSeek(apiKey: apiKey).chatModel('deepseek-reasoner');
     final stream = core.streamTextCall(
       model: model,
       prompt: [
@@ -167,7 +171,7 @@ Future<void> demonstrateXAILiveSearch() async {
   }
 
   try {
-    final model = llm.AI.xai(apiKey: apiKey).chatModel('grok-3');
+    final model = xai.xai(apiKey: apiKey).chatModel('grok-3');
     final result = await _generateText(
       model: model,
       prompt: [
@@ -179,8 +183,8 @@ Future<void> demonstrateXAILiveSearch() async {
         ),
       ],
       callOptions: const core.CallOptions(
-        providerOptions: openai.XAIGenerateTextOptions(
-          search: openai.XAILiveSearchOptions.autoWeb(
+        providerOptions: xai.XAIGenerateTextOptions(
+          search: xai.XAILiveSearchOptions.autoWeb(
             maxSearchResults: 4,
           ),
         ),
@@ -207,10 +211,10 @@ Future<void> demonstrateOpenRouterOnlineRouting() async {
   }
 
   try {
-    final model = llm.AI.openRouter(apiKey: apiKey).chatModel(
+    final model = openrouter.openRouter(apiKey: apiKey).chatModel(
           'openai/gpt-4o-mini',
-          settings: const openai.OpenRouterChatModelSettings(
-            search: openai.OpenRouterSearchOptions.onlineModel(),
+          settings: const openrouter.OpenRouterChatModelSettings(
+            search: openrouter.OpenRouterSearchOptions.onlineModel(),
           ),
         );
 
@@ -243,11 +247,11 @@ Future<void> demonstrateFallbackComposition() async {
 
   final models = <core.LanguageModel>[
     if (_readApiKey('GROQ_API_KEY') case final apiKey?)
-      llm.AI.groq(apiKey: apiKey).chatModel('llama-3.3-70b-versatile'),
+      groq.groq(apiKey: apiKey).chatModel('llama-3.3-70b-versatile'),
     if (_readApiKey('DEEPSEEK_API_KEY') case final apiKey?)
-      llm.AI.deepSeek(apiKey: apiKey).chatModel('deepseek-chat'),
+      deepseek.deepSeek(apiKey: apiKey).chatModel('deepseek-chat'),
     if (_readApiKey('OPENROUTER_API_KEY') case final apiKey?)
-      llm.AI.openRouter(apiKey: apiKey).chatModel('openai/gpt-4o-mini'),
+      openrouter.openRouter(apiKey: apiKey).chatModel('openai/gpt-4o-mini'),
   ];
 
   if (models.isEmpty) {
@@ -298,7 +302,7 @@ Future<void> demonstrateGenericCompatibleEndpoint() async {
   }
 
   try {
-    final model = llm.AI
+    final model = openai
         .openai(
           apiKey: apiKey,
           profile: _togetherProfile,

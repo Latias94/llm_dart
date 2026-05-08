@@ -17,13 +17,16 @@ below is the intended direction for new code.
 
 The new primary entry path is:
 
-- `AI.openai(...).chatModel(...)`
-- `AI.anthropic(...).chatModel(...)`
-- `AI.google(...).chatModel(...)`
-- `AI.deepSeek(...).chatModel(...)`
-- `AI.groq(...).chatModel(...)`
-- `AI.openRouter(...).chatModel(...)`
-- `AI.xai(...).chatModel(...)`
+- `openai(...).chatModel(...)`
+- `anthropic(...).chatModel(...)`
+- `google(...).chatModel(...)`
+- `deepSeek(...).chatModel(...)`
+- `groq(...).chatModel(...)`
+- `openRouter(...).chatModel(...)`
+- `xai(...).chatModel(...)`
+
+The equivalent grouped facade remains available as
+`AI.<provider>(...).chatModel(...)` when you prefer a single namespace.
 
 Within this workspace, the modern shared-capability path for the current
 community providers now lives in:
@@ -47,10 +50,11 @@ named AI-focused shell.
 Recommended entry flow for new code:
 
 - import `package:llm_dart/llm_dart.dart` or `package:llm_dart/ai.dart`
-- create concrete models through `AI.*(...).chatModel(...)`,
-  `embeddingModel(...)`, `imageModel(...)`, `speechModel(...)`, or
-  `transcriptionModel(...)`
-- call shared helpers from `package:llm_dart/core.dart`
+- create concrete models through `openai(...).chatModel(...)`,
+  `anthropic(...).chatModel(...)`, `embeddingModel(...)`,
+  `imageModel(...)`, `speechModel(...)`, or `transcriptionModel(...)`
+- call shared helpers from the same root import or from
+  `package:llm_dart/core.dart` when you want a narrower shared-runtime import
 - add provider-owned option types, metadata inspection, or lifecycle APIs only
   at explicit application boundaries
 - reach for `package:llm_dart/legacy.dart` only when migrating older
@@ -133,19 +137,36 @@ dart run tool/release_readiness.dart
 ## Focused Entry Points
 
 - `package:llm_dart/llm_dart.dart`
-  - default modern root entrypoint, equivalent stable surface to `ai.dart`
+  - default modern root entrypoint, equivalent stable surface to `ai.dart`;
+    exposes short provider factories such as `openai(...)` plus the grouped
+    `AI` facade
 - `package:llm_dart/ai.dart`
   - explicit equivalent alias of the default modern root surface
 - `package:llm_dart/chat.dart`
   - focused pure Dart chat runtime entrypoint over `llm_dart_chat`
 - `package:llm_dart/openai.dart`
-  - focused OpenAI-family provider entrypoint for provider-owned options,
-    native tools, custom parts, and `OpenAIMessageMapper`
+  - focused OpenAI-family provider entrypoint for `openai(...)`,
+    provider-owned options, native tools, custom parts, and
+    `OpenAIMessageMapper`
+- `package:llm_dart/xai.dart`
+  - focused xAI entrypoint for `xai(...)`, live-search options, and xAI-owned
+    source controls
+- `package:llm_dart/deepseek.dart`
+  - focused DeepSeek entrypoint for `deepSeek(...)` and DeepSeek-owned
+    invocation options
+- `package:llm_dart/openrouter.dart`
+  - focused OpenRouter entrypoint for `openRouter(...)`, online-model routing,
+    and OpenRouter-owned settings
+- `package:llm_dart/groq.dart`
+  - focused Groq entrypoint for `groq(...)` and Groq profile settings
+- `package:llm_dart/phind.dart`
+  - focused Phind entrypoint for `phind(...)` and Phind profile settings
 - `package:llm_dart/google.dart`
-  - focused Google provider entrypoint for provider-owned options, replay
-    helpers, custom parts, and `GoogleMessageMapper`
+  - focused Google provider entrypoint for `google(...)`, provider-owned
+    options, replay helpers, custom parts, and `GoogleMessageMapper`
 - `package:llm_dart/anthropic.dart`
-  - focused Anthropic provider entrypoint for Anthropic-owned types
+  - focused Anthropic provider entrypoint for `anthropic(...)` and
+    Anthropic-owned types
 - `package:llm_dart/legacy.dart`
   - explicit compatibility shell for `LLMBuilder()`, `ai()`,
     `createProvider(...)`, legacy models, and builder-era APIs
@@ -182,18 +203,17 @@ Other shared capability helpers:
 
 ```dart
 import 'package:llm_dart/llm_dart.dart' as llm;
-import 'package:llm_dart/core.dart' as core;
 
 Future<void> main() async {
-  final model = llm.AI.openai(
+  final model = llm.openai(
     apiKey: 'your-openai-key',
   ).chatModel('gpt-4.1-mini');
 
-  final result = await core.generateTextCall(
+  final result = await llm.generateTextCall(
     model: model,
     prompt: [
-      core.SystemPromptMessage.text('You are concise.'),
-      core.UserPromptMessage.text('Explain Dart in one sentence.'),
+      llm.SystemPromptMessage.text('You are concise.'),
+      llm.UserPromptMessage.text('Explain Dart in one sentence.'),
     ],
   );
 
@@ -211,11 +231,11 @@ focused provider helper when the semantics are provider-native:
 
 | Product need | Modern path | Why it stays provider-owned |
 | --- | --- | --- |
-| OpenAI hosted files | `AI.openai(...).files()` | Purpose values, hosted storage, and download semantics are OpenAI-specific |
-| Anthropic beta files | `AI.anthropic(...).files()` | File lifecycle, beta headers, and IDs are Anthropic-specific |
-| OpenAI moderation | `AI.openai(...).moderation()` | Category taxonomy and score meanings must map into app-owned policy |
-| OpenAI image editing | `AI.openai(...).imageModel(...).edit(...)` | File inputs, masks, fidelity, and output options are OpenAI-specific |
-| Google image editing/variation | `AI.google(...).imageModel(...).edit(...)` / `createVariation(...)` | Gemini edit inputs and variation prompts are Google-specific |
+| OpenAI hosted files | `openai(...).files()` | Purpose values, hosted storage, and download semantics are OpenAI-specific |
+| Anthropic beta files | `anthropic(...).files()` | File lifecycle, beta headers, and IDs are Anthropic-specific |
+| OpenAI moderation | `openai(...).moderation()` | Category taxonomy and score meanings must map into app-owned policy |
+| OpenAI image editing | `openai(...).imageModel(...).edit(...)` | File inputs, masks, fidelity, and output options are OpenAI-specific |
+| Google image editing/variation | `google(...).imageModel(...).edit(...)` / `createVariation(...)` | Gemini edit inputs and variation prompts are Google-specific |
 | Ollama installed models | `community.Ollama(...).catalog().listModels()` | Local runtime tags are not a shared remote model registry |
 | ElevenLabs voices | `community.ElevenLabs(...).voices().listVoices()` | Voice IDs, preview URLs, labels, and tiers are provider-owned |
 
@@ -233,7 +253,7 @@ import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
 
 Future<void> main() async {
-  final model = llm.AI.openai(
+  final model = llm.openai(
     apiKey: 'your-openai-key',
   ).chatModel('gpt-4.1-mini');
 
@@ -261,14 +281,14 @@ Future<void> main() async {
 
 Shared embeddings now follow the same function-based helper direction:
 application code uses `embed(...)` / `embedMany(...)`, while providers expose
-typed capability models such as `AI.openai(...).embeddingModel(...)`.
+typed capability models such as `openai(...).embeddingModel(...)`.
 
 ```dart
 import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
 
 Future<void> main() async {
-  final model = llm.AI.openai(
+  final model = llm.openai(
     apiKey: 'your-openai-key',
   ).embeddingModel('text-embedding-3-small');
 
@@ -295,7 +315,7 @@ import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
 
 Future<void> main() async {
-  final model = llm.AI.deepSeek(
+  final model = llm.deepSeek(
     apiKey: 'your-deepseek-key',
   ).chatModel('deepseek-reasoner');
 
@@ -337,7 +357,7 @@ import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
 
 Future<void> main() async {
-  final model = llm.AI.openai(
+  final model = llm.openai(
     apiKey: 'your-openai-key',
   ).chatModel('gpt-4.1-mini');
 
@@ -406,7 +426,7 @@ import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
 
 Future<void> main() async {
-  final model = llm.AI.anthropic(
+  final model = llm.anthropic(
     apiKey: 'your-anthropic-key',
   ).chatModel('claude-sonnet-4-5');
 
@@ -435,7 +455,8 @@ import 'package:llm_dart/chat.dart';
 
 This entrypoint re-exports `DefaultChatSession`, `DirectChatTransport`,
 `HttpChatTransport`, `ChatRequestOptions`, `ChatMessageMapper`, and the stable
-`AI` facade without pulling Flutter adapters into the root package surface.
+provider factories without pulling Flutter adapters into the root package
+surface.
 
 `ChatMessageMapper` now lives in `package:llm_dart/core.dart` as part of the
 shared UI model layer, and remains available from `package:llm_dart/chat.dart`
@@ -462,7 +483,7 @@ Future<void> main() async {
   final controller = ChatController(
     session: DefaultChatSession(
       transport: DirectChatTransport(
-        model: llm.AI.openai(
+        model: llm.openai(
           apiKey: 'your-openai-key',
         ).chatModel('gpt-4.1-mini'),
       ),
@@ -573,19 +594,21 @@ void renderGoogle(ChatUiMessage message) {
 
 The unified request shape stays small. Provider-specific features are passed through typed provider options.
 
-Import provider-owned option types from provider entrypoints such as
-`package:llm_dart/openai.dart` or `package:llm_dart/google.dart`.
-OpenAI-family providers, including xAI, currently share the `openai.dart` entrypoint.
+Import provider-owned option types and provider factories from focused
+entrypoints such as `package:llm_dart/openai.dart`,
+`package:llm_dart/xai.dart`, `package:llm_dart/openrouter.dart`,
+`package:llm_dart/deepseek.dart`, or `package:llm_dart/google.dart`.
+OpenAI-family providers still share the same internal transport adapter, but
+dedicated focused entrypoints keep application imports provider-shaped.
 
 OpenAI Responses example:
 
 ```dart
-import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/openai.dart' as openai;
 
 Future<void> main() async {
-  final model = llm.AI.openai(
+  final model = openai.openai(
     apiKey: 'your-openai-key',
   ).chatModel('gpt-5-mini');
 
@@ -608,12 +631,11 @@ Future<void> main() async {
 xAI live search example:
 
 ```dart
-import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/openai.dart' as openai;
+import 'package:llm_dart/xai.dart' as xai;
 
 Future<void> main() async {
-  final model = llm.AI.xai(
+  final model = xai.xai(
     apiKey: 'your-xai-key',
   ).chatModel('grok-3');
 
@@ -623,8 +645,8 @@ Future<void> main() async {
       core.UserPromptMessage.text('Find the latest Grok announcements.'),
     ],
     callOptions: const core.CallOptions(
-      providerOptions: openai.XAIGenerateTextOptions(
-        search: openai.XAILiveSearchOptions.autoWeb(),
+      providerOptions: xai.XAIGenerateTextOptions(
+        search: xai.XAILiveSearchOptions.autoWeb(),
       ),
     ),
   );

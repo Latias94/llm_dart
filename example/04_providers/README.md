@@ -6,7 +6,8 @@ This directory shows how provider-owned capabilities fit into the refactored
 For new code, prefer:
 
 - the default modern root import `package:llm_dart/llm_dart.dart`
-- the stable `AI.*(...)` facade to create provider-owned models
+- stable short provider factories such as `openai(...)`, `google(...)`, and
+  `xai(...)` to create provider-owned models
 - shared app-facing helpers from `package:llm_dart/core.dart`
 - the shared `ChatMessageMapper` from `package:llm_dart/core.dart` for stable
   UI summaries
@@ -91,10 +92,9 @@ dart run xai/live_search.dart
 
 ```dart
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/openai.dart' as openai;
 
-final imageModel = llm.AI.openai(apiKey: 'your-key').imageModel('dall-e-3');
+final imageModel = openai.openai(apiKey: 'your-key').imageModel('dall-e-3');
 
 final result = await core.generateImage(
   model: imageModel,
@@ -116,9 +116,8 @@ print(result.images.first.uri);
 ```dart
 import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/google.dart' as google;
-import 'package:llm_dart/llm_dart.dart' as llm;
 
-final imageModel = llm.AI.google(apiKey: 'your-key')
+final imageModel = google.google(apiKey: 'your-key')
     .imageModel('gemini-2.5-flash-image');
 
 final result = await core.generateImage(
@@ -139,9 +138,9 @@ print(result.images.first.bytes?.length);
 ```dart
 import 'package:llm_dart/anthropic.dart' as anthropic;
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
 
-final model = llm.AI.anthropic(apiKey: 'your-key').chatModel('claude-sonnet-4-5');
+final model =
+    anthropic.anthropic(apiKey: 'your-key').chatModel('claude-sonnet-4-5');
 
 final result = await core.generateTextCall(
   model: model,
@@ -166,9 +165,10 @@ print(result.text);
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/deepseek.dart' as deepseek;
 
-final model = llm.AI.deepSeek(apiKey: 'your-key').chatModel('deepseek-reasoner');
+final model =
+    deepseek.deepSeek(apiKey: 'your-key').chatModel('deepseek-reasoner');
 
 final stream = core.streamTextCall(
   model: model,
@@ -193,10 +193,9 @@ await for (final event in stream) {
 
 ```dart
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
-import 'package:llm_dart/openai.dart' as openai;
+import 'package:llm_dart/xai.dart' as xai;
 
-final model = llm.AI.xai(apiKey: 'your-key').chatModel('grok-3');
+final model = xai.xai(apiKey: 'your-key').chatModel('grok-3');
 
 final result = await core.generateTextCall(
   model: model,
@@ -204,8 +203,8 @@ final result = await core.generateTextCall(
     core.UserPromptMessage.text('What are the latest AI developments this week?'),
   ],
   callOptions: const core.CallOptions(
-    providerOptions: openai.XAIGenerateTextOptions(
-      search: openai.XAILiveSearchOptions.autoWeb(maxSearchResults: 5),
+    providerOptions: xai.XAIGenerateTextOptions(
+      search: xai.XAILiveSearchOptions.autoWeb(maxSearchResults: 5),
     ),
   ),
 );

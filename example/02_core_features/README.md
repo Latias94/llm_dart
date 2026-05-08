@@ -15,7 +15,7 @@ provider-owned typed options for OpenAI, Anthropic, xAI, and OpenRouter.
 
 ### [capability_detection.dart](capability_detection.dart)
 Registry-level capability inspection for provider selection and architecture
-planning, with a stable `AI.*(...).chatModel(...)` execution appendix.
+planning, with a stable `<provider>(...).chatModel(...)` execution appendix.
 
 ### [capability_profile_ui_gating.dart](capability_profile_ui_gating.dart)
 Modern model-centric capability profile inspection for shared UI affordances,
@@ -42,7 +42,7 @@ Stable multi-provider embeddings example using shared `embed(...)` and
 
 ### [embeddings_stable.dart](embeddings_stable.dart)
 Stable shared `embed(...)` and `embedMany(...)` helpers with
-`AI.openai(...).embeddingModel(...)`.
+`openai(...).embeddingModel(...)`.
 
 ### [file_management.dart](file_management.dart)
 Stable local `FilePromptPart` usage first, followed by explicit provider-owned
@@ -147,7 +147,7 @@ dart run enhanced_tool_calling.dart
 
 This directory intentionally mixes:
 
-- stable shared-model examples centered on `AI.*(...).chatModel(...)`,
+- stable shared-model examples centered on `<provider>(...).chatModel(...)`,
   `embeddingModel(...)`, `imageModel(...)`, `speechModel(...)`, and
   `transcriptionModel(...)`
 - explicit boundary appendices for capability families that still depend on
@@ -188,8 +188,8 @@ void inspectMessage(core.ChatUiMessage message) {
 
 ### Capability Metadata vs Stable App Code
 
-- **Stable app path**: Create models through `AI.*(...)` and keep application
-  code on the shared call layer.
+- **Stable app path**: Create models through short provider factories and keep
+  application code on the shared call layer.
 - **Modern model-centric discovery**: Use `CapabilityDescribedModel` and
   `ModelCapabilityProfile` when a concrete model should gate app or Flutter UI
   affordances.
@@ -226,7 +226,7 @@ The snippets below are ordered intentionally:
 import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
 
-final model = llm.AI.openai(apiKey: 'your-key').chatModel('gpt-4.1-mini');
+final model = llm.openai(apiKey: 'your-key').chatModel('gpt-4.1-mini');
 
 final result = await core.generateTextCall(
   model: model,
@@ -244,7 +244,7 @@ print(result.text);
 import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
 
-final model = llm.AI.openai(
+final model = llm.openai(
   apiKey: 'your-key',
 ).embeddingModel('text-embedding-3-small');
 
@@ -285,7 +285,7 @@ import 'dart:io';
 import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/openai.dart' as openai;
 
-final files = llm.AI.openai(apiKey: 'your-key').files();
+final files = llm.openai(apiKey: 'your-key').files();
 final file = await files.uploadFile(openai.OpenAIFileUpload(
   bytes: await File('document.pdf').readAsBytes(),
   purpose: openai.OpenAIFilePurposes.assistants,
@@ -293,7 +293,7 @@ final file = await files.uploadFile(openai.OpenAIFileUpload(
   mediaType: 'application/pdf',
 ));
 
-final anthropicFiles = llm.AI.anthropic(apiKey: 'your-key').files();
+final anthropicFiles = llm.anthropic(apiKey: 'your-key').files();
 final uploaded = await anthropicFiles.uploadBytes(
   bytes: await File('notes.txt').readAsBytes(),
   filename: 'notes.txt',

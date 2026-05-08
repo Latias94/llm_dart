@@ -2,8 +2,8 @@
 
 Real-time web search and live information access with Grok.
 
-New code should prefer the stable `AI.xai(...).chatModel(...)` facade plus
-typed xAI provider options from `package:llm_dart/openai.dart`.
+New code should prefer the stable `xai(...).chatModel(...)` facade plus typed
+xAI provider options from `package:llm_dart/xai.dart`.
 
 ## Examples
 
@@ -43,11 +43,10 @@ dart run live_search.dart
 
 ### Live Search Query
 ```dart
-import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/openai.dart' as openai;
+import 'package:llm_dart/xai.dart' as xai;
 
-final model = llm.AI.xai(apiKey: 'your-key').chatModel('grok-3');
+final model = xai.xai(apiKey: 'your-key').chatModel('grok-3');
 
 final result = await core.generateTextCall(
   model: model,
@@ -55,8 +54,8 @@ final result = await core.generateTextCall(
     core.UserPromptMessage.text('What are the latest AI developments this week?'),
   ],
   callOptions: const core.CallOptions(
-    providerOptions: openai.XAIGenerateTextOptions(
-      search: openai.XAILiveSearchOptions.autoWeb(maxSearchResults: 5),
+    providerOptions: xai.XAIGenerateTextOptions(
+      search: xai.XAILiveSearchOptions.autoWeb(maxSearchResults: 5),
     ),
   ),
 );
@@ -66,11 +65,10 @@ print(result.text);
 
 ### Real-time Data Access
 ```dart
-import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/openai.dart' as openai;
+import 'package:llm_dart/xai.dart' as xai;
 
-final model = llm.AI.xai(apiKey: 'your-key').chatModel('grok-3');
+final model = xai.xai(apiKey: 'your-key').chatModel('grok-3');
 
 final result = await core.generateTextCall(
   model: model,
@@ -78,12 +76,12 @@ final result = await core.generateTextCall(
     core.UserPromptMessage.text('Current Bitcoin price and market trends'),
   ],
   callOptions: const core.CallOptions(
-    providerOptions: openai.XAIGenerateTextOptions(
-      search: const openai.XAILiveSearchOptions(
+    providerOptions: xai.XAIGenerateTextOptions(
+      search: const xai.XAILiveSearchOptions(
         maxSearchResults: 4,
         sources: [
-          openai.XAINewsSearchSource(),
-          openai.XAIWebSearchSource(),
+          xai.XAINewsSearchSource(),
+          xai.XAIWebSearchSource(),
         ],
       ),
     ),

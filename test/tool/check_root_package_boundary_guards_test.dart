@@ -288,11 +288,16 @@ Future<Directory> _createTempRootLayout() async {
     'lib/anthropic.dart',
     'lib/chat.dart',
     'lib/core.dart',
+    'lib/deepseek.dart',
     'lib/google.dart',
+    'lib/groq.dart',
     'lib/legacy.dart',
     'lib/llm_dart.dart',
     'lib/openai.dart',
+    'lib/openrouter.dart',
+    'lib/phind.dart',
     'lib/transport.dart',
+    'lib/xai.dart',
   ]) {
     await _writeFile(repoRoot, file, 'library;\n');
   }
@@ -320,7 +325,7 @@ export 'core.dart';
 export 'google.dart';
 export 'openai.dart';
 export 'transport.dart';
-export 'src/facade/ai.dart' show AI;
+export 'src/facade/ai.dart' show AI, anthropic, deepSeek, google, groq, openRouter, openai, phind, xai;
 ''',
   );
 
@@ -331,6 +336,7 @@ export 'src/facade/ai.dart' show AI;
 library;
 
 export 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
+export 'src/facade/ai.dart' show AI, anthropic;
 ''',
   );
 
@@ -341,6 +347,7 @@ export 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
 library;
 
 export 'package:llm_dart_google/llm_dart_google.dart';
+export 'src/facade/ai.dart' show AI, google;
 ''',
   );
 
@@ -351,6 +358,105 @@ export 'package:llm_dart_google/llm_dart_google.dart';
 library;
 
 export 'package:llm_dart_openai/llm_dart_openai.dart';
+export 'src/facade/ai.dart' show AI, openai;
+''',
+  );
+
+  await _writeFile(
+    repoRoot,
+    'lib/groq.dart',
+    '''
+library;
+
+export 'package:llm_dart_openai/llm_dart_openai.dart'
+    show
+        GroqProfile,
+        OpenAI,
+        OpenAIChatModelSettings,
+        OpenAIGenerateTextOptions,
+        OpenAILanguageModel;
+export 'src/facade/ai.dart' show AI, groq;
+''',
+  );
+
+  await _writeFile(
+    repoRoot,
+    'lib/phind.dart',
+    '''
+library;
+
+export 'package:llm_dart_openai/llm_dart_openai.dart'
+    show
+        OpenAI,
+        OpenAIChatModelSettings,
+        OpenAIGenerateTextOptions,
+        OpenAILanguageModel,
+        PhindProfile;
+export 'src/facade/ai.dart' show AI, phind;
+''',
+  );
+
+  await _writeFile(
+    repoRoot,
+    'lib/xai.dart',
+    '''
+library;
+
+export 'package:llm_dart_openai/llm_dart_openai.dart'
+    show
+        OpenAI,
+        OpenAIChatModelSettings,
+        OpenAIGenerateTextOptions,
+        OpenAILanguageModel,
+        XAIProfile,
+        XAIGenerateTextOptions,
+        XAILiveSearchOptions,
+        XAINewsSearchSource,
+        XAIRssSearchSource,
+        XAISearchMode,
+        XAISearchSource,
+        XAIWebSearchSource,
+        XAIXSearchSource;
+export 'src/facade/ai.dart' show AI, xai;
+''',
+  );
+
+  await _writeFile(
+    repoRoot,
+    'lib/deepseek.dart',
+    '''
+library;
+
+export 'package:llm_dart_openai/llm_dart_openai.dart'
+    show
+        DeepSeekGenerateTextOptions,
+        DeepSeekProfile,
+        OpenAI,
+        OpenAIChatModelSettings,
+        OpenAIGenerateTextOptions,
+        OpenAILanguageModel;
+export 'src/facade/ai.dart' show AI, deepSeek;
+''',
+  );
+
+  await _writeFile(
+    repoRoot,
+    'lib/openrouter.dart',
+    '''
+library;
+
+export 'package:llm_dart_openai/llm_dart_openai.dart'
+    show
+        OpenAI,
+        OpenAIChatModelSettings,
+        OpenAIGenerateTextOptions,
+        OpenAILanguageModel,
+        OpenRouterChatModelSettings,
+        OpenRouterGenerateTextOptions,
+        OpenRouterProfile,
+        OpenRouterSearchMode,
+        OpenRouterSearchOptions;
+export 'src/facade/ai.dart' show AI, openRouter;
 ''',
   );
 

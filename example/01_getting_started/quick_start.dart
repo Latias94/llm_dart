@@ -2,7 +2,6 @@
 
 import 'dart:io';
 
-import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/llm_dart.dart' as llm;
 
 Future<void> main() async {
@@ -20,12 +19,12 @@ Future<void> runOpenAIExample() async {
     return;
   }
 
-  final model = llm.AI.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
-  final result = await core.generateTextCall(
+  final model = llm.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
+  final result = await llm.generateTextCall(
     model: model,
     prompt: [
-      core.SystemPromptMessage.text('You are concise.'),
-      core.UserPromptMessage.text('Explain Dart in one sentence.'),
+      llm.SystemPromptMessage.text('You are concise.'),
+      llm.UserPromptMessage.text('Explain Dart in one sentence.'),
     ],
   );
 
@@ -41,11 +40,11 @@ Future<void> runAnthropicExample() async {
     return;
   }
 
-  final model = llm.AI.anthropic(apiKey: apiKey).chatModel('claude-sonnet-4-5');
-  final result = await core.generateTextCall(
+  final model = llm.anthropic(apiKey: apiKey).chatModel('claude-sonnet-4-5');
+  final result = await llm.generateTextCall(
     model: model,
     prompt: [
-      core.UserPromptMessage.text('Summarize why strong typing helps APIs.'),
+      llm.UserPromptMessage.text('Summarize why strong typing helps APIs.'),
     ],
   );
 
@@ -61,11 +60,11 @@ Future<void> runGoogleExample() async {
     return;
   }
 
-  final model = llm.AI.google(apiKey: apiKey).chatModel('gemini-2.5-flash');
-  final result = await core.generateTextCall(
+  final model = llm.google(apiKey: apiKey).chatModel('gemini-2.5-flash');
+  final result = await llm.generateTextCall(
     model: model,
     prompt: [
-      core.UserPromptMessage.text('Give one sentence about Flutter layouts.'),
+      llm.UserPromptMessage.text('Give one sentence about Flutter layouts.'),
     ],
   );
 

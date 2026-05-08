@@ -4,11 +4,11 @@ Basic examples to get you up and running with LLM Dart.
 
 The default modern entry path for new code is
 `package:llm_dart/llm_dart.dart` plus the stable
-`AI.*(...).chatModel(...)` facade and the shared helpers in
-`package:llm_dart/core.dart`.
+short provider factories such as `openai(...).chatModel(...)` and the shared
+helpers in `package:llm_dart/core.dart`.
 
-`package:llm_dart/ai.dart` remains available as an equivalent explicit alias
-when you want a named AI-focused import style.
+`AI.*(...).chatModel(...)` remains available when you prefer a grouped
+namespace.
 
 This directory stays on the modern model-first path. If you need older
 compatibility builders or broad provider shells, jump to the explicit appendix
