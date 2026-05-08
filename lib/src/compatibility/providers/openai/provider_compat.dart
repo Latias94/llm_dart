@@ -18,6 +18,7 @@ import 'files.dart';
 import 'images.dart';
 import 'models.dart';
 import 'moderation.dart';
+import 'openai_audio_translation_models.dart';
 import 'openai_provider_support.dart';
 import 'provider_chat_facade.dart';
 import 'responses.dart';

@@ -40,6 +40,7 @@ export 'responses_capability.dart';
 export 'responses_models.dart';
 export 'assistants.dart';
 export 'builtin_tools.dart';
+export 'audio.dart' show AudioTranslationRequest;
 
 /// Create an OpenAI provider with default settings
 OpenAIProvider createOpenAIProvider({

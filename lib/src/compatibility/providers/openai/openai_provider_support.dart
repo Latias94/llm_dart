@@ -6,6 +6,7 @@ import 'audio.dart';
 import 'chat.dart';
 import 'client.dart';
 import 'embeddings.dart';
+import 'openai_audio_translation_models.dart';
 
 /// Provider-owned helper/support logic that should not keep inflating the main
 /// compatibility delegation shell.

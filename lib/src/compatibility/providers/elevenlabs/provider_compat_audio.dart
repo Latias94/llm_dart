@@ -37,14 +37,6 @@ mixin _ElevenLabsProviderAudio implements AudioCapability {
   }
 
   @override
-  Future<STTResponse> translateAudio(
-    AudioTranslationRequest request, {
-    TransportCancellation? cancelToken,
-  }) async {
-    return _compatShell.translateAudio(request, cancelToken: cancelToken);
-  }
-
-  @override
   Future<List<LanguageInfo>> getSupportedLanguages() async {
     return _compatShell.getSupportedLanguages();
   }
@@ -82,15 +74,5 @@ mixin _ElevenLabsProviderAudio implements AudioCapability {
   @override
   Future<String> transcribeFile(String filePath) async {
     return _audioShortcuts.transcribeFile(filePath);
-  }
-
-  @override
-  Future<String> translate(List<int> audio) async {
-    return _audioShortcuts.translate(audio);
-  }
-
-  @override
-  Future<String> translateFile(String filePath) async {
-    return _audioShortcuts.translateFile(filePath);
   }
 }

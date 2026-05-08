@@ -121,13 +121,6 @@ final class ElevenLabsCompatShellSupport {
     );
   }
 
-  Future<STTResponse> translateAudio(
-    AudioTranslationRequest request, {
-    TransportCancellation? cancelToken,
-  }) {
-    return audio.translateAudio(request, cancelToken: cancelToken);
-  }
-
   Future<List<LanguageInfo>> getSupportedLanguages() {
     return audio.getSupportedLanguages();
   }

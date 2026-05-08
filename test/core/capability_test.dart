@@ -37,7 +37,6 @@ void main() {
 
         expect(features, contains(AudioFeature.textToSpeech));
         expect(features, contains(AudioFeature.speechToText));
-        expect(features, contains(AudioFeature.audioTranslation));
         expect(features, contains(AudioFeature.realtimeProcessing));
         expect(features, contains(AudioFeature.voiceCloning));
         expect(features, contains(AudioFeature.audioEnhancement));

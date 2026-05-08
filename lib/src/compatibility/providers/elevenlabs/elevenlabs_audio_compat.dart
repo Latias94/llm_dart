@@ -70,14 +70,6 @@ class ElevenLabsAudio extends BaseAudioCapability {
   }
 
   @override
-  Future<STTResponse> translateAudio(
-    AudioTranslationRequest request, {
-    TransportCancellation? cancelToken,
-  }) {
-    throw UnsupportedError('ElevenLabs does not support audio translation');
-  }
-
-  @override
   Future<RealtimeAudioSession> startRealtimeSession(
       RealtimeAudioConfig config) {
     throw UnsupportedError('Real-time audio session implementation pending');

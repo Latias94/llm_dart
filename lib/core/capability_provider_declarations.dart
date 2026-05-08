@@ -20,9 +20,6 @@ enum LLMCapability {
   /// Speech-to-text conversion
   speechToText,
 
-  /// Audio translation (speech to English text)
-  audioTranslation,
-
   /// Real-time audio processing
   realtimeAudio,
 
@@ -64,9 +61,6 @@ enum AudioFeature {
 
   /// Basic speech-to-text conversion
   speechToText,
-
-  /// Audio translation (speech to English text)
-  audioTranslation,
 
   /// Real-time audio processing
   realtimeProcessing,

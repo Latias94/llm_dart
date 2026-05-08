@@ -41,14 +41,6 @@ abstract class AudioCapability {
     throw UnsupportedError('Speech-to-text not supported by this provider');
   }
 
-  /// Translate audio to English text
-  Future<STTResponse> translateAudio(
-    AudioTranslationRequest request, {
-    TransportCancellation? cancelToken,
-  }) {
-    throw UnsupportedError('Audio translation not supported by this provider');
-  }
-
   /// Get supported languages for transcription and translation
   Future<List<LanguageInfo>> getSupportedLanguages() {
     throw UnsupportedError('Language listing not supported by this provider');
@@ -103,20 +95,6 @@ abstract class AudioCapability {
     final response = await speechToText(STTRequest.fromFile(filePath));
     return response.text;
   }
-
-  /// Simple audio translation (convenience method)
-  Future<String> translate(List<int> audio) async {
-    final response =
-        await translateAudio(AudioTranslationRequest.fromAudio(audio));
-    return response.text;
-  }
-
-  /// Simple file translation (convenience method)
-  Future<String> translateFile(String filePath) async {
-    final response =
-        await translateAudio(AudioTranslationRequest.fromFile(filePath));
-    return response.text;
-  }
 }
 
 /// Base implementation of AudioCapability with convenience methods
@@ -151,20 +129,6 @@ abstract class BaseAudioCapability implements AudioCapability {
   @override
   Future<String> transcribeFile(String filePath) async {
     final response = await speechToText(STTRequest.fromFile(filePath));
-    return response.text;
-  }
-
-  @override
-  Future<String> translate(List<int> audio) async {
-    final response =
-        await translateAudio(AudioTranslationRequest.fromAudio(audio));
-    return response.text;
-  }
-
-  @override
-  Future<String> translateFile(String filePath) async {
-    final response =
-        await translateAudio(AudioTranslationRequest.fromFile(filePath));
     return response.text;
   }
 }

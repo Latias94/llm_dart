@@ -36,7 +36,6 @@ mixin OpenAIProviderAudioMixin implements AudioCapability {
     return _audio.speechToText(request, cancelToken: cancelToken);
   }
 
-  @override
   Future<STTResponse> translateAudio(
     AudioTranslationRequest request, {
     TransportCancellation? cancelToken,
@@ -87,12 +86,10 @@ mixin OpenAIProviderAudioMixin implements AudioCapability {
     return _support.transcribeFile(filePath);
   }
 
-  @override
   Future<String> translate(List<int> audio) async {
     return _support.translate(audio);
   }
 
-  @override
   Future<String> translateFile(String filePath) async {
     return _support.translateFile(filePath);
   }

@@ -95,10 +95,6 @@ void main() {
         expect(provider.speechToText, isA<Function>());
       });
 
-      test('should have translateAudio method', () {
-        expect(provider.translateAudio, isA<Function>());
-      });
-
       test('should have getVoices method', () {
         expect(provider.getVoices, isA<Function>());
       });
@@ -131,14 +127,6 @@ void main() {
 
       test('should have transcribeFile method', () {
         expect(provider.transcribeFile, isA<Function>());
-      });
-
-      test('should have translate method', () {
-        expect(provider.translate, isA<Function>());
-      });
-
-      test('should have translateFile method', () {
-        expect(provider.translateFile, isA<Function>());
       });
     });
 

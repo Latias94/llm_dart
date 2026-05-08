@@ -34,18 +34,4 @@ final class _ElevenLabsProviderAudioShortcuts {
     final response = await _shell.speechToText(STTRequest.fromFile(filePath));
     return response.text;
   }
-
-  Future<String> translate(List<int> audio) async {
-    final response = await _shell.translateAudio(
-      AudioTranslationRequest.fromAudio(audio),
-    );
-    return response.text;
-  }
-
-  Future<String> translateFile(String filePath) async {
-    final response = await _shell.translateAudio(
-      AudioTranslationRequest.fromFile(filePath),
-    );
-    return response.text;
-  }
 }

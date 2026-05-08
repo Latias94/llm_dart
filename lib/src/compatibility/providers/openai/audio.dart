@@ -3,6 +3,7 @@ import '../../../../models/audio_models.dart';
 import 'client.dart';
 import 'openai_audio_catalog.dart';
 import 'openai_audio_support.dart';
+import 'openai_audio_translation_models.dart';
 import '../../../../providers/openai/config.dart';
 
 /// OpenAI Audio capabilities implementation
@@ -24,7 +25,6 @@ class OpenAIAudio extends BaseAudioCapability {
   Set<AudioFeature> get supportedFeatures => {
         AudioFeature.textToSpeech,
         AudioFeature.speechToText,
-        AudioFeature.audioTranslation,
         // OpenAI doesn't support streaming TTS or real-time processing
       };
 
@@ -84,7 +84,6 @@ class OpenAIAudio extends BaseAudioCapability {
 
   // Audio translation implementation (OpenAI specific)
 
-  @override
   Future<STTResponse> translateAudio(
     AudioTranslationRequest request, {
     TransportCancellation? cancelToken,
