@@ -2,8 +2,6 @@ import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as modern_anthropic;
 
 import '../../../core/capability.dart';
 import '../../../core/config.dart';
-import '../../../models/chat_models.dart';
-import '../../../models/tool_models.dart';
 import '../../../providers/anthropic/config.dart';
 import '../../../providers/anthropic/mcp_models.dart';
 import '../chat_route_compatibility.dart';
@@ -42,63 +40,21 @@ ChatCapability buildCompatAnthropicProvider(LLMConfig config) {
   );
 }
 
-final class CompatAnthropicProvider extends AnthropicProvider {
-  final CompatChatBridgeRouter _chatRouter;
+final class CompatAnthropicProvider extends AnthropicProvider
+    with CompatChatBridgeRoutingMixin {
+  @override
+  final CompatChatBridgeRouter compatChatRouter;
 
   CompatAnthropicProvider({
     required LLMConfig originalConfig,
     required AnthropicConfig legacyConfig,
     required LegacyChatCapabilityAdapter adapter,
-  })  : _chatRouter = CompatChatBridgeRouter(
+  })  : compatChatRouter = CompatChatBridgeRouter(
           originalConfig: originalConfig,
           adapter: adapter,
           canUseBridge: canUseAnthropicChatBridge,
         ),
         super(legacyConfig);
-
-  @override
-  Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
-    TransportCancellation? cancelToken,
-  }) {
-    return chatWithTools(messages, null, cancelToken: cancelToken);
-  }
-
-  @override
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
-    TransportCancellation? cancelToken,
-  }) {
-    return _chatRouter.chatWithTools(
-      messages: messages,
-      tools: tools,
-      cancelToken: cancelToken,
-      fallback: () => super.chatWithTools(
-        messages,
-        tools,
-        cancelToken: cancelToken,
-      ),
-    );
-  }
-
-  @override
-  Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
-    List<Tool>? tools,
-    TransportCancellation? cancelToken,
-  }) {
-    return _chatRouter.chatStream(
-      messages: messages,
-      tools: tools,
-      cancelToken: cancelToken,
-      fallback: () => super.chatStream(
-        messages,
-        tools: tools,
-        cancelToken: cancelToken,
-      ),
-    );
-  }
 }
 
 Map<String, Object?>? buildAnthropicCompatMetadata(AnthropicConfig config) {

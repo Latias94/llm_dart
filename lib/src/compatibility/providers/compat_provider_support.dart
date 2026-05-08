@@ -62,6 +62,54 @@ final class CompatChatBridgeRouter {
   }
 }
 
+mixin CompatChatBridgeRoutingMixin on ChatCapability {
+  CompatChatBridgeRouter get compatChatRouter;
+
+  @override
+  Future<ChatResponse> chat(
+    List<ChatMessage> messages, {
+    TransportCancellation? cancelToken,
+  }) {
+    return chatWithTools(messages, null, cancelToken: cancelToken);
+  }
+
+  @override
+  Future<ChatResponse> chatWithTools(
+    List<ChatMessage> messages,
+    List<Tool>? tools, {
+    TransportCancellation? cancelToken,
+  }) {
+    return compatChatRouter.chatWithTools(
+      messages: messages,
+      tools: tools,
+      cancelToken: cancelToken,
+      fallback: () => super.chatWithTools(
+        messages,
+        tools,
+        cancelToken: cancelToken,
+      ),
+    );
+  }
+
+  @override
+  Stream<ChatStreamEvent> chatStream(
+    List<ChatMessage> messages, {
+    List<Tool>? tools,
+    TransportCancellation? cancelToken,
+  }) {
+    return compatChatRouter.chatStream(
+      messages: messages,
+      tools: tools,
+      cancelToken: cancelToken,
+      fallback: () => super.chatStream(
+        messages,
+        tools: tools,
+        cancelToken: cancelToken,
+      ),
+    );
+  }
+}
+
 Future<ChatResponse> executeCompatChat({
   required LLMConfig originalConfig,
   required List<ChatMessage> messages,

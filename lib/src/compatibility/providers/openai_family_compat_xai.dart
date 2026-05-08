@@ -2,8 +2,6 @@ import 'package:llm_dart_openai/llm_dart_openai.dart' as modern_openai;
 
 import '../../../core/capability.dart';
 import '../../../core/config.dart';
-import '../../../models/chat_models.dart';
-import '../../../models/tool_models.dart';
 import '../../../providers/xai/config.dart';
 import '../../../providers/xai/provider.dart';
 import '../chat_route_compatibility.dart';
@@ -37,61 +35,19 @@ ChatCapability buildCompatXAIProvider(LLMConfig config) {
   );
 }
 
-final class CompatXAIProvider extends XAIProvider {
-  final CompatChatBridgeRouter _chatRouter;
+final class CompatXAIProvider extends XAIProvider
+    with CompatChatBridgeRoutingMixin {
+  @override
+  final CompatChatBridgeRouter compatChatRouter;
 
   CompatXAIProvider({
     required LLMConfig originalConfig,
     required XAIConfig legacyConfig,
     required LegacyChatCapabilityAdapter adapter,
-  })  : _chatRouter = CompatChatBridgeRouter(
+  })  : compatChatRouter = CompatChatBridgeRouter(
           originalConfig: originalConfig,
           adapter: adapter,
           canUseBridge: canUseXAIChatBridge,
         ),
         super(legacyConfig);
-
-  @override
-  Future<ChatResponse> chat(
-    List<ChatMessage> messages, {
-    TransportCancellation? cancelToken,
-  }) {
-    return chatWithTools(messages, null, cancelToken: cancelToken);
-  }
-
-  @override
-  Future<ChatResponse> chatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
-    TransportCancellation? cancelToken,
-  }) {
-    return _chatRouter.chatWithTools(
-      messages: messages,
-      tools: tools,
-      cancelToken: cancelToken,
-      fallback: () => super.chatWithTools(
-        messages,
-        tools,
-        cancelToken: cancelToken,
-      ),
-    );
-  }
-
-  @override
-  Stream<ChatStreamEvent> chatStream(
-    List<ChatMessage> messages, {
-    List<Tool>? tools,
-    TransportCancellation? cancelToken,
-  }) {
-    return _chatRouter.chatStream(
-      messages: messages,
-      tools: tools,
-      cancelToken: cancelToken,
-      fallback: () => super.chatStream(
-        messages,
-        tools: tools,
-        cancelToken: cancelToken,
-      ),
-    );
-  }
 }
