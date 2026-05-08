@@ -40,7 +40,8 @@ into a routine `0.10.x` maintenance release.
   registry is now reserved for OpenRouter and explicit non-dedicated endpoints.
 - Removed the legacy map-based `OpenAICompatibleDefaults` catalog. Use
   typed `OpenAICompatibleConfigs` for compatible provider profiles and
-  `ProviderDefaults.getDefaults(...)` only for coarse endpoint/model defaults.
+  factory-owned defaults or `ProviderDefaults` constants for coarse dedicated
+  provider endpoint/model defaults.
 - Moved generic OpenAI-compatible endpoint defaults out of `ProviderDefaults`.
   OpenRouter, GitHub Copilot, and Together AI defaults now live only on typed
   `OpenAICompatibleConfigs`.
@@ -48,6 +49,8 @@ into a routine `0.10.x` maintenance release.
   owned by provider factories and provider instances.
 - Moved OpenAI audio and image compatibility catalogs out of `ProviderDefaults`
   into the OpenAI compatibility provider modules.
+- Removed `ProviderDefaults.getDefaults(...)`; provider factories now declare
+  their default maps directly.
 
 ### Deprecated
 

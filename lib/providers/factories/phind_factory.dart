@@ -35,6 +35,9 @@ class PhindProviderFactory extends BaseProviderFactory<ChatCapability> {
 
   @override
   Map<String, dynamic> getProviderDefaults() {
-    return ProviderDefaults.getDefaults('phind');
+    return {
+      'baseUrl': ProviderDefaults.phindBaseUrl,
+      'model': ProviderDefaults.phindDefaultModel,
+    };
   }
 }

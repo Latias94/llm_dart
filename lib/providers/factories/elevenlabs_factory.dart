@@ -1,7 +1,7 @@
 import '../../core/capability.dart';
 import '../../core/config.dart';
-import '../../src/config/provider_defaults.dart';
 import '../../src/compatibility/providers/elevenlabs/config_adapter.dart';
+import '../elevenlabs/defaults.dart';
 import '../elevenlabs/elevenlabs.dart';
 import 'base_factory.dart';
 
@@ -44,6 +44,13 @@ class ElevenLabsProviderFactory extends BaseProviderFactory<ChatCapability> {
 
   @override
   Map<String, dynamic> getProviderDefaults() {
-    return ProviderDefaults.getDefaults('elevenlabs');
+    return {
+      'baseUrl': ElevenLabsDefaults.baseUrl,
+      'model': ElevenLabsDefaults.defaultTtsModel,
+      'voiceId': ElevenLabsDefaults.defaultVoiceId,
+      'ttsModel': ElevenLabsDefaults.defaultTtsModel,
+      'sttModel': ElevenLabsDefaults.defaultSttModel,
+      'supportedAudioFormats': ElevenLabsDefaults.supportedAudioFormats,
+    };
   }
 }

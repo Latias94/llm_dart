@@ -35,6 +35,9 @@ class DeepSeekProviderFactory extends BaseProviderFactory<ChatCapability> {
 
   @override
   Map<String, dynamic> getProviderDefaults() {
-    return ProviderDefaults.getDefaults('deepseek');
+    return {
+      'baseUrl': ProviderDefaults.deepseekBaseUrl,
+      'model': ProviderDefaults.deepseekDefaultModel,
+    };
   }
 }

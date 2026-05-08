@@ -38,6 +38,9 @@ class XAIProviderFactory extends BaseProviderFactory<ChatCapability> {
 
   @override
   Map<String, dynamic> getProviderDefaults() {
-    return ProviderDefaults.getDefaults('xai');
+    return {
+      'baseUrl': ProviderDefaults.xaiBaseUrl,
+      'model': ProviderDefaults.xaiDefaultModel,
+    };
   }
 }

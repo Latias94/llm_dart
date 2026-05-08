@@ -37,6 +37,9 @@ class GoogleProviderFactory extends BaseProviderFactory<ChatCapability> {
 
   @override
   Map<String, dynamic> getProviderDefaults() {
-    return ProviderDefaults.getDefaults('google');
+    return {
+      'baseUrl': ProviderDefaults.googleBaseUrl,
+      'model': ProviderDefaults.googleDefaultModel,
+    };
   }
 }

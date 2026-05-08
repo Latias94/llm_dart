@@ -33,6 +33,9 @@ class GroqProviderFactory extends BaseProviderFactory<ChatCapability> {
 
   @override
   Map<String, dynamic> getProviderDefaults() {
-    return ProviderDefaults.getDefaults('groq');
+    return {
+      'baseUrl': ProviderDefaults.groqBaseUrl,
+      'model': ProviderDefaults.groqDefaultModel,
+    };
   }
 }

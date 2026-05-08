@@ -41,6 +41,9 @@ class OpenAIProviderFactory extends BaseProviderFactory<ChatCapability> {
 
   @override
   Map<String, dynamic> getProviderDefaults() {
-    return ProviderDefaults.getDefaults('openai');
+    return {
+      'baseUrl': ProviderDefaults.openaiBaseUrl,
+      'model': ProviderDefaults.openaiDefaultModel,
+    };
   }
 }

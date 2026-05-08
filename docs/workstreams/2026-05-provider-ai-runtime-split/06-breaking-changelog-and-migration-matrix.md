@@ -53,6 +53,8 @@ The following slices are already landed on this branch:
   provider instances own capability declarations.
 - OpenAI audio and image compatibility catalogs moved out of `ProviderDefaults`
   into OpenAI compatibility provider modules.
+- `ProviderDefaults.getDefaults(...)` is removed; provider factories declare
+  their default maps directly.
 
 ## Suggested Breaking Changelog Draft
 
@@ -101,6 +103,8 @@ Use this as the starting point for the next explicit breaking release.
   factory/provider instead.
 - OpenAI voice/audio/image catalog details are no longer exposed through
   `ProviderDefaults.getDefaults('openai')`; use the OpenAI provider APIs.
+- Dynamic provider default lookup is no longer part of `ProviderDefaults`.
+  Factories remain the compatibility source for default config maps.
 
 ### Kept
 
@@ -142,10 +146,11 @@ Use this as the starting point for the next explicit breaking release.
 | `package:llm_dart/legacy.dart` | Keep in root for first preview | Compatibility bridge | Move to `llm_dart_legacy` only in a later release if root dependency shrink requires it. |
 | `LLMBuilder.deepseekOpenAI()` and other provider-owned `*-openai` builder aliases | Dedicated providers such as `deepseek`, `google`, `xai`, `groq`, `phind` | Removed | These aliases are no longer kept as explicit generic-compatible registration targets. Use the dedicated provider ID so provider-specific behavior stays on the provider-owned path. |
 | Default registry entries for `deepseek-openai`, `google-openai`, `xai-openai`, `groq-openai`, `phind-openai` | Dedicated provider entries plus `openrouter` | Removed | Default app discovery should not show duplicate lower-fidelity aliases, and the explicit compatible registrar now only covers OpenRouter plus non-dedicated generic endpoints. |
-| `OpenAICompatibleDefaults` map catalog | `OpenAICompatibleConfigs` for typed profiles; `ProviderDefaults.getDefaults(...)` for coarse endpoint/model defaults | Removed | Avoids maintaining a second untyped profile catalog beside the typed provider-compatible config list. |
+| `OpenAICompatibleDefaults` map catalog | `OpenAICompatibleConfigs` for typed profiles; factory-owned defaults or `ProviderDefaults` constants for coarse dedicated provider defaults | Removed | Avoids maintaining a second untyped profile catalog beside the typed provider-compatible config list. |
 | `ProviderDefaults.getDefaults('openrouter'/'github-copilot'/'together-ai')` | `OpenAICompatibleConfigs.getConfig(...)` | Removed | Generic compatible endpoints are profile-owned, not root default-owned dedicated providers. |
 | `ProviderDefaults.getCapabilities(...)` | Factory/provider `supportedCapabilities` or typed compatible profile capabilities | Removed | Removes a stale parallel capability catalog from the root defaults class. |
 | OpenAI audio/image catalog keys from `ProviderDefaults.getDefaults('openai')` | OpenAI provider compatibility audio/image APIs | Removed | Keeps provider-owned model, voice, format, and image-size catalogs with OpenAI implementation code. |
+| `ProviderDefaults.getDefaults(...)` | Factory `getProviderDefaults()` | Removed | Removes the root string-switch map and keeps default maps at the factory boundary that consumes them. |
 | `LLMBuilder.githubCopilot()` and `LLMBuilder.togetherAI()` | Explicit provider registration or provider-owned OpenAI-family profile composition | Removed from default builder surface | These methods only selected unregistered provider IDs. For generic compatible endpoints, construct a provider-owned OpenAI-family model/profile explicitly or register a concrete factory. |
 
 ## Compatibility Policy

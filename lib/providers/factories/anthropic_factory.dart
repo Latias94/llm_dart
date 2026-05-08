@@ -36,6 +36,9 @@ class AnthropicProviderFactory extends BaseProviderFactory<ChatCapability> {
 
   @override
   Map<String, dynamic> getProviderDefaults() {
-    return ProviderDefaults.getDefaults('anthropic');
+    return {
+      'baseUrl': ProviderDefaults.anthropicBaseUrl,
+      'model': ProviderDefaults.anthropicDefaultModel,
+    };
   }
 }
