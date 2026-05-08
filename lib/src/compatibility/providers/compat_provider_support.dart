@@ -2,12 +2,65 @@ import '../../../core/capability.dart';
 import '../../../core/config.dart';
 import '../../../models/chat_models.dart';
 import '../../../models/tool_models.dart';
+import '../legacy_chat_adapter.dart';
 
 typedef CompatBridgePredicate = bool Function(
   LLMConfig config,
   List<ChatMessage> messages,
   List<Tool>? tools,
 );
+
+final class CompatChatBridgeRouter {
+  final LLMConfig originalConfig;
+  final LegacyChatCapabilityAdapter adapter;
+  final CompatBridgePredicate canUseBridge;
+
+  const CompatChatBridgeRouter({
+    required this.originalConfig,
+    required this.adapter,
+    required this.canUseBridge,
+  });
+
+  Future<ChatResponse> chatWithTools({
+    required List<ChatMessage> messages,
+    required List<Tool>? tools,
+    TransportCancellation? cancelToken,
+    required Future<ChatResponse> Function() fallback,
+  }) {
+    return executeCompatChat(
+      originalConfig: originalConfig,
+      messages: messages,
+      tools: tools,
+      canUseBridge: canUseBridge,
+      bridge: () => adapter.chatWithTools(
+        messages,
+        tools,
+        cancelToken: cancelToken,
+      ),
+      fallback: fallback,
+    );
+  }
+
+  Stream<ChatStreamEvent> chatStream({
+    required List<ChatMessage> messages,
+    List<Tool>? tools,
+    TransportCancellation? cancelToken,
+    required Stream<ChatStreamEvent> Function() fallback,
+  }) {
+    return executeCompatChatStream(
+      originalConfig: originalConfig,
+      messages: messages,
+      tools: tools,
+      canUseBridge: canUseBridge,
+      bridge: () => adapter.chatStream(
+        messages,
+        tools: tools,
+        cancelToken: cancelToken,
+      ),
+      fallback: fallback,
+    );
+  }
+}
 
 Future<ChatResponse> executeCompatChat({
   required LLMConfig originalConfig,

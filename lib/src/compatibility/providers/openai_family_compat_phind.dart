@@ -32,15 +32,17 @@ ChatCapability buildCompatPhindProvider(LLMConfig config) {
 }
 
 final class CompatPhindProvider extends PhindProvider {
-  final LLMConfig _originalConfig;
-  final LegacyChatCapabilityAdapter _adapter;
+  final CompatChatBridgeRouter _chatRouter;
 
   CompatPhindProvider({
     required LLMConfig originalConfig,
     required PhindConfig legacyConfig,
     required LegacyChatCapabilityAdapter adapter,
-  })  : _originalConfig = originalConfig,
-        _adapter = adapter,
+  })  : _chatRouter = CompatChatBridgeRouter(
+          originalConfig: originalConfig,
+          adapter: adapter,
+          canUseBridge: canUsePhindChatBridge,
+        ),
         super(legacyConfig);
 
   @override
@@ -57,16 +59,10 @@ final class CompatPhindProvider extends PhindProvider {
     List<Tool>? tools, {
     TransportCancellation? cancelToken,
   }) {
-    return executeCompatChat(
-      originalConfig: _originalConfig,
+    return _chatRouter.chatWithTools(
       messages: messages,
       tools: tools,
-      canUseBridge: canUsePhindChatBridge,
-      bridge: () => _adapter.chatWithTools(
-        messages,
-        tools,
-        cancelToken: cancelToken,
-      ),
+      cancelToken: cancelToken,
       fallback: () => super.chatWithTools(
         messages,
         tools,
@@ -81,16 +77,10 @@ final class CompatPhindProvider extends PhindProvider {
     List<Tool>? tools,
     TransportCancellation? cancelToken,
   }) {
-    return executeCompatChatStream(
-      originalConfig: _originalConfig,
+    return _chatRouter.chatStream(
       messages: messages,
       tools: tools,
-      canUseBridge: canUsePhindChatBridge,
-      bridge: () => _adapter.chatStream(
-        messages,
-        tools: tools,
-        cancelToken: cancelToken,
-      ),
+      cancelToken: cancelToken,
       fallback: () => super.chatStream(
         messages,
         tools: tools,

@@ -38,15 +38,17 @@ ChatCapability buildCompatXAIProvider(LLMConfig config) {
 }
 
 final class CompatXAIProvider extends XAIProvider {
-  final LLMConfig _originalConfig;
-  final LegacyChatCapabilityAdapter _adapter;
+  final CompatChatBridgeRouter _chatRouter;
 
   CompatXAIProvider({
     required LLMConfig originalConfig,
     required XAIConfig legacyConfig,
     required LegacyChatCapabilityAdapter adapter,
-  })  : _originalConfig = originalConfig,
-        _adapter = adapter,
+  })  : _chatRouter = CompatChatBridgeRouter(
+          originalConfig: originalConfig,
+          adapter: adapter,
+          canUseBridge: canUseXAIChatBridge,
+        ),
         super(legacyConfig);
 
   @override
@@ -63,16 +65,10 @@ final class CompatXAIProvider extends XAIProvider {
     List<Tool>? tools, {
     TransportCancellation? cancelToken,
   }) {
-    return executeCompatChat(
-      originalConfig: _originalConfig,
+    return _chatRouter.chatWithTools(
       messages: messages,
       tools: tools,
-      canUseBridge: canUseXAIChatBridge,
-      bridge: () => _adapter.chatWithTools(
-        messages,
-        tools,
-        cancelToken: cancelToken,
-      ),
+      cancelToken: cancelToken,
       fallback: () => super.chatWithTools(
         messages,
         tools,
@@ -87,16 +83,10 @@ final class CompatXAIProvider extends XAIProvider {
     List<Tool>? tools,
     TransportCancellation? cancelToken,
   }) {
-    return executeCompatChatStream(
-      originalConfig: _originalConfig,
+    return _chatRouter.chatStream(
       messages: messages,
       tools: tools,
-      canUseBridge: canUseXAIChatBridge,
-      bridge: () => _adapter.chatStream(
-        messages,
-        tools: tools,
-        cancelToken: cancelToken,
-      ),
+      cancelToken: cancelToken,
       fallback: () => super.chatStream(
         messages,
         tools: tools,
