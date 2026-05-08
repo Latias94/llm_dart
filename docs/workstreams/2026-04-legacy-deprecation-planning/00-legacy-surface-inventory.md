@@ -56,7 +56,7 @@ recommendation, but they are not yet ready for broad deprecation:
 | Surface group | Examples | Why not deprecate yet? | Current decision |
 | --- | --- | --- | --- |
 | Builder trunk | `LLMBuilder` | Still the broadest migration rail for old fluent root usage even after the `ai()` alias deprecates | Freeze |
-| Builder config shells | `HttpConfig`, `ProviderConfig` | Still coupled to the builder migration rail; deprecating them before the builder decision would create half-migrations | Freeze |
+| Builder config shells | `HttpConfig` | Still coupled to the builder migration rail; deprecating it before the builder decision would create a half-migration | Freeze |
 | Root generic factory paths | `createProvider(...)`, `providers/factories/*`, root registry helpers | Still used to resolve builder-era provider selection and compatibility routing | Freeze |
 | Provider root constructors with broad parameter coverage | `createGoogleProvider`, `createOpenAIProvider`, similar non-preset constructors | Still the simplest bridge for old root users who are not ready to adopt package-owned model APIs directly | Freeze |
 
@@ -72,6 +72,8 @@ Rationale:
 - `ImageConfig` and the legacy media builder extension are no longer part of
   this frozen shell; image generation now uses `ImageGenerationRequest` and
   capability method parameters rather than unconsumed extension keys
+- `ProviderConfig` is no longer part of this frozen shell; provider-specific
+  builder callbacks and typed provider options now own those knobs
 
 ### 4. Do Not Deprecate As Part Of This Phase
 

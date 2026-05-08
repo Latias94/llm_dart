@@ -57,8 +57,6 @@ The first namespaced migration slice now covers these OpenAI-family areas:
   `parallelToolCalls`, `builtInTools`, `verbosity`, `frequencyPenalty`,
   `presencePenalty`, `logitBias`, `seed`, `logprobs`, `topLogprobs`, and
   OpenAI `webSearchConfig`
-- the legacy `ProviderConfig` helper for OpenAI-family tuning, which now emits
-  namespaced option bags instead of fresh flat OpenAI keys
 - OpenRouter legacy search config through namespaced
   `providerOptions.openrouter.webSearchConfig`
 - OpenAI and OpenAI-compatible factory reads
@@ -70,6 +68,10 @@ The first namespaced migration slice now covers these OpenAI-family areas:
 
 This change does not claim that every old OpenAI-family option is now bridge
 compatible or newly stable.
+
+The old `ProviderConfig` map builder was later removed during the architecture
+foundation cleanup. Provider-specific builder callbacks and typed provider
+options now own these knobs instead of a broad raw-extension shell.
 
 Examples:
 
