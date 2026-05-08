@@ -26,12 +26,14 @@ The first version orchestrates the checks that are already proven:
 - `dart analyze lib test example tool`
 - `dart test`
 - `dart run tool/run_workspace_publish_dry_run.dart`
+- `dart run tool/check_pub_version_availability.dart`
 
 The command records elapsed time and command exit codes.
 
 Implemented flags:
 
 - `--skip-publish-dry-run`
+- `--skip-pub-version-check`
 - `--skip-tests`
 - `--proxy=http://127.0.0.1:10809`
 - `--report=path/to/report.md`
@@ -79,6 +81,8 @@ The command prints:
 - each command before it runs
 - pass/fail status for each step
 - elapsed time per step
+- dependency-aware publish order
+- pub.dev target-version availability
 - final release readiness summary
 - next action when a step fails
 

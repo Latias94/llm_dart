@@ -10,12 +10,14 @@ void main() {
       final options = parseReleaseReadinessOptions([
         '--skip-tests',
         '--skip-publish-dry-run',
+        '--skip-pub-version-check',
         '--proxy=http://127.0.0.1:10809',
         '--report=build/release-report.md',
       ]);
 
       expect(options.skipTests, isTrue);
       expect(options.skipPublishDryRun, isTrue);
+      expect(options.skipPubVersionCheck, isTrue);
       expect(options.proxy, 'http://127.0.0.1:10809');
       expect(options.reportPath, 'build/release-report.md');
     });
@@ -39,6 +41,7 @@ void main() {
         containsAll([
           'Workspace tests',
           'Workspace publish dry-run',
+          'Pub version availability',
         ]),
       );
     });
@@ -61,7 +64,26 @@ void main() {
       );
       expect(
         steps.map((step) => step.name),
+        isNot(contains('Pub version availability')),
+      );
+      expect(
+        steps.map((step) => step.name),
         contains('Workspace analysis'),
+      );
+    });
+
+    test('skips pub version availability when requested', () {
+      final steps = buildReleaseReadinessSteps(
+        const ReleaseReadinessOptions(skipPubVersionCheck: true),
+      );
+
+      expect(
+        steps.map((step) => step.name),
+        contains('Workspace publish dry-run'),
+      );
+      expect(
+        steps.map((step) => step.name),
+        isNot(contains('Pub version availability')),
       );
     });
   });

@@ -47,6 +47,9 @@ The order follows the current workspace dependency graph:
 `publishableWorkspacePackages` list, and `tool/release_readiness.dart` prints
 that order in the generated report.
 
+`tool/check_pub_version_availability.dart` also uses the same package list to
+verify target versions on pub.dev before publishing.
+
 ## Metadata Audit
 
 The package metadata is aligned with the current ownership model:
@@ -85,5 +88,8 @@ Result:
 - `dart analyze lib test example tool` passed
 - `dart test` passed
 - workspace publish dry-run passed for 11 packages
+- pub.dev version availability passed: the 10 newly split package names were
+  not found on pub.dev, root `llm_dart` had latest `0.10.7`, and
+  `0.11.0-alpha.1` was available for every publishable package
 - publish dry-run reported `0 warnings`; remaining hints are the expected local
   `pubspec_overrides.yaml` hints while packages are still unpublished

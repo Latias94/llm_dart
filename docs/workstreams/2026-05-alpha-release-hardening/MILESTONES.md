@@ -57,6 +57,8 @@ Current status:
   `llm_dart_test` non-publishable status
 - the release-readiness report now prints the same publish order from the
   workspace bootstrap source of truth
+- the release-readiness command now checks pub.dev target-version availability
+  unless the publish dry-run or version check is explicitly skipped
 - root README links have been cleaned to repository-relative paths, and public
   package README language no longer references the internal reference repo
 

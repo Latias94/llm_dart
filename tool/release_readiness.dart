@@ -8,6 +8,7 @@ import 'bootstrap_workspace_pubspec_overrides.dart'
 final class ReleaseReadinessOptions {
   final bool skipTests;
   final bool skipPublishDryRun;
+  final bool skipPubVersionCheck;
   final bool showHelp;
   final bool includeConsumerSmokeChecklist;
   final String? proxy;
@@ -16,6 +17,7 @@ final class ReleaseReadinessOptions {
   const ReleaseReadinessOptions({
     this.skipTests = false,
     this.skipPublishDryRun = false,
+    this.skipPubVersionCheck = false,
     this.showHelp = false,
     this.includeConsumerSmokeChecklist = true,
     this.proxy,
@@ -215,6 +217,7 @@ Future<void> _pipeProcessOutput(
 ReleaseReadinessOptions parseReleaseReadinessOptions(List<String> arguments) {
   var skipTests = false;
   var skipPublishDryRun = false;
+  var skipPubVersionCheck = false;
   var showHelp = false;
   var includeConsumerSmokeChecklist = true;
   String? proxy;
@@ -228,6 +231,8 @@ ReleaseReadinessOptions parseReleaseReadinessOptions(List<String> arguments) {
         skipTests = true;
       case '--skip-publish-dry-run':
         skipPublishDryRun = true;
+      case '--skip-pub-version-check':
+        skipPubVersionCheck = true;
       case '--no-consumer-smoke-checklist':
         includeConsumerSmokeChecklist = false;
       default:
@@ -246,6 +251,7 @@ ReleaseReadinessOptions parseReleaseReadinessOptions(List<String> arguments) {
   return ReleaseReadinessOptions(
     skipTests: skipTests,
     skipPublishDryRun: skipPublishDryRun,
+    skipPubVersionCheck: skipPubVersionCheck,
     showHelp: showHelp,
     includeConsumerSmokeChecklist: includeConsumerSmokeChecklist,
     proxy: proxy,
@@ -323,6 +329,18 @@ List<ReleaseReadinessStep> buildReleaseReadinessSteps(
         arguments: ['run', 'tool/run_workspace_publish_dry_run.dart'],
         failureHint:
             'Fix package metadata, dependency resolution, or publish warnings before publishing.',
+      ),
+    if (!options.skipPublishDryRun && !options.skipPubVersionCheck)
+      ReleaseReadinessStep(
+        name: 'Pub version availability',
+        executable: 'dart',
+        arguments: [
+          'run',
+          'tool/check_pub_version_availability.dart',
+          if (options.proxy != null) '--proxy=${options.proxy}',
+        ],
+        failureHint:
+            'Choose a new package version or verify pub.dev availability before publishing.',
       ),
   ];
 }
@@ -455,6 +473,8 @@ Runs the alpha release readiness gate from the repository root.
 Options:
   --skip-tests                 Skip `dart test`.
   --skip-publish-dry-run       Skip workspace publish dry-runs.
+  --skip-pub-version-check     Skip pub.dev target-version availability checks.
+                               This is also skipped when publish dry-run is skipped.
   --proxy=<url>                Set HTTP_PROXY and HTTPS_PROXY for child steps.
   --report=<path>              Write the release readiness report to a file.
   --no-consumer-smoke-checklist

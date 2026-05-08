@@ -22,6 +22,7 @@
 - [x] Re-audit package changelog entries for the alpha line
 - [x] Verify publish order against workspace dependencies
 - [x] Confirm `llm_dart_test` remains non-publishable
+- [x] Add pub.dev target-version availability preflight
 
 ## Consumer Smoke Validation
 
