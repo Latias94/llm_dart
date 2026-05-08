@@ -3,6 +3,7 @@ import '../../models/chat_models.dart';
 import '../../models/tool_models.dart';
 import '../../providers/openai/builtin_tools.dart';
 import '../../providers/xai/config.dart';
+import 'compat_value_utils.dart';
 import 'config/legacy_config_keys.dart';
 import 'config/legacy_google_options.dart';
 import 'config/legacy_openai_options.dart';

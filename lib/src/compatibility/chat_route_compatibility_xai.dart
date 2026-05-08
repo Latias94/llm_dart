@@ -77,12 +77,12 @@ bool _canMapCompatXAILiveSearch(XAIConfig config) {
     return false;
   }
 
-  final fromDate = _parseCompatDate(searchParameters.fromDate);
+  final fromDate = parseCompatUtcDate(searchParameters.fromDate);
   if (searchParameters.fromDate != null && fromDate == null) {
     return false;
   }
 
-  final toDate = _parseCompatDate(searchParameters.toDate);
+  final toDate = parseCompatUtcDate(searchParameters.toDate);
   if (searchParameters.toDate != null && toDate == null) {
     return false;
   }
@@ -109,29 +109,4 @@ bool _hasSupportedCompatXAISources(List<SearchSource>? sources) {
   return sources.every(
     (source) => source.sourceType == 'web' || source.sourceType == 'news',
   );
-}
-
-DateTime? _parseCompatDate(String? value) {
-  if (value == null) {
-    return null;
-  }
-
-  final match = RegExp(r'^(\d{4})-(\d{2})-(\d{2})$').firstMatch(value);
-  if (match == null) {
-    return null;
-  }
-
-  final year = int.parse(match.group(1)!);
-  final month = int.parse(match.group(2)!);
-  final day = int.parse(match.group(3)!);
-
-  try {
-    final parsed = DateTime.utc(year, month, day);
-    if (parsed.year != year || parsed.month != month || parsed.day != day) {
-      return null;
-    }
-    return parsed;
-  } catch (_) {
-    return null;
-  }
 }

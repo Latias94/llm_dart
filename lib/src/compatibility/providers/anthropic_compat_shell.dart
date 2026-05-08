@@ -5,6 +5,7 @@ import '../../../core/config.dart';
 import '../../../providers/anthropic/config.dart';
 import '../../../providers/anthropic/mcp_models.dart';
 import '../chat_route_compatibility.dart';
+import '../compat_value_utils.dart';
 import '../compat_transport.dart';
 import '../legacy_chat_adapter.dart';
 import 'anthropic/provider_compat.dart';

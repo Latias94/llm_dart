@@ -2,10 +2,10 @@ import 'package:llm_dart_openai/llm_dart_openai.dart' as modern_openai;
 
 import '../../../core/config.dart';
 import '../../../providers/xai/config.dart';
+import '../compat_value_utils.dart';
 import '../config/legacy_xai_options.dart';
 import '../config/legacy_provider_options.dart';
 import 'community_provider_config_adapters.dart';
-import 'compat_provider_support.dart';
 
 /// Adapts a legacy root `LLMConfig` into an xAI provider config.
 XAIConfig createLegacyXAIConfig(LLMConfig config) {

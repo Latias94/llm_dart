@@ -7,9 +7,9 @@ import '../../../../providers/openai/config.dart';
 import '../../config/legacy_config_keys.dart';
 import '../../config/legacy_openai_options.dart';
 import '../../config/legacy_provider_options.dart';
+import '../../compat_value_utils.dart';
 import '../../compat_transport.dart';
 import '../../legacy_chat_adapter.dart';
-import '../compat_provider_support.dart';
 
 LLMConfig buildRootOpenAIChatBridgeConfig(OpenAIConfig config) {
   final extensions = <String, dynamic>{};
