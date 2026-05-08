@@ -78,11 +78,12 @@ Acceptance criteria:
 
 Current status:
 
-- manual clean Dart and Flutter consumer smoke validation passed on
-  2026-05-08
-- the validation result is recorded in the previous release readiness checklist
-- the first release-readiness command keeps consumer smoke as a documented
-  manual checklist instead of automatically creating temporary projects
+- automated clean Dart and Flutter consumer smoke validation is now part of the
+  release-readiness command
+- the command creates temporary consumer projects, validates path dependency
+  resolution, analyzes them, runs no-key smoke coverage, and removes them
+- after publish, repeat clean consumer smoke against pub.dev versions without
+  local path overrides
 
 ## M4 - Alpha Publish Execution
 

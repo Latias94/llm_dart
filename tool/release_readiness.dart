@@ -7,6 +7,7 @@ import 'bootstrap_workspace_pubspec_overrides.dart'
 
 final class ReleaseReadinessOptions {
   final bool skipTests;
+  final bool skipConsumerSmoke;
   final bool skipPublishDryRun;
   final bool skipPubVersionCheck;
   final bool showHelp;
@@ -16,6 +17,7 @@ final class ReleaseReadinessOptions {
 
   const ReleaseReadinessOptions({
     this.skipTests = false,
+    this.skipConsumerSmoke = false,
     this.skipPublishDryRun = false,
     this.skipPubVersionCheck = false,
     this.showHelp = false,
@@ -216,6 +218,7 @@ Future<void> _pipeProcessOutput(
 
 ReleaseReadinessOptions parseReleaseReadinessOptions(List<String> arguments) {
   var skipTests = false;
+  var skipConsumerSmoke = false;
   var skipPublishDryRun = false;
   var skipPubVersionCheck = false;
   var showHelp = false;
@@ -229,6 +232,8 @@ ReleaseReadinessOptions parseReleaseReadinessOptions(List<String> arguments) {
         showHelp = true;
       case '--skip-tests':
         skipTests = true;
+      case '--skip-consumer-smoke':
+        skipConsumerSmoke = true;
       case '--skip-publish-dry-run':
         skipPublishDryRun = true;
       case '--skip-pub-version-check':
@@ -250,6 +255,7 @@ ReleaseReadinessOptions parseReleaseReadinessOptions(List<String> arguments) {
 
   return ReleaseReadinessOptions(
     skipTests: skipTests,
+    skipConsumerSmoke: skipConsumerSmoke,
     skipPublishDryRun: skipPublishDryRun,
     skipPubVersionCheck: skipPubVersionCheck,
     showHelp: showHelp,
@@ -321,6 +327,18 @@ List<ReleaseReadinessStep> buildReleaseReadinessSteps(
         arguments: ['test'],
         failureHint:
             'Fix failing tests or intentionally update expectations before release.',
+      ),
+    if (!options.skipConsumerSmoke)
+      ReleaseReadinessStep(
+        name: 'Consumer smoke',
+        executable: 'dart',
+        arguments: [
+          'run',
+          'tool/run_consumer_smoke.dart',
+          if (options.proxy != null) '--proxy=${options.proxy}',
+        ],
+        failureHint:
+            'Fix clean-consumer dependency resolution, exports, or Flutter smoke coverage before release.',
       ),
     if (!options.skipPublishDryRun)
       const ReleaseReadinessStep(
@@ -428,17 +446,13 @@ String buildReleaseReadinessReport(ReleaseReadinessRunResult result) {
   if (result.consumerSmokeChecklistIncluded) {
     buffer
       ..writeln()
-      ..writeln('## Manual Consumer Smoke')
+      ..writeln('## Post-Publish Consumer Smoke')
       ..writeln()
-      ..writeln('- Create a clean Dart consumer and validate modern root, '
-          'focused packages, compatibility core, and `legacy.dart` imports.')
-      ..writeln('- Run `dart pub get`, `dart analyze`, and a no-key '
-          '`dart run` smoke program.')
-      ..writeln('- Create a clean Flutter consumer for `llm_dart_flutter` plus '
-          'one concrete provider package.')
-      ..writeln('- Run `flutter pub get`, `flutter analyze`, and '
-          '`flutter test`.')
-      ..writeln('- Use `test(...)` for pure controller/import smoke tests; '
+      ..writeln('- Repeat consumer smoke against the published pub.dev '
+          'versions after the packages are released.')
+      ..writeln('- Validate both a clean Dart consumer and a clean Flutter '
+          'consumer without local path overrides.')
+      ..writeln('- Keep `test(...)` for pure controller/import smoke tests; '
           'reserve `testWidgets(...)` for tests that pump widgets.');
   }
 
@@ -472,13 +486,14 @@ Runs the alpha release readiness gate from the repository root.
 
 Options:
   --skip-tests                 Skip `dart test`.
+  --skip-consumer-smoke        Skip clean Dart and Flutter consumer smoke.
   --skip-publish-dry-run       Skip workspace publish dry-runs.
   --skip-pub-version-check     Skip pub.dev target-version availability checks.
                                This is also skipped when publish dry-run is skipped.
   --proxy=<url>                Set HTTP_PROXY and HTTPS_PROXY for child steps.
   --report=<path>              Write the release readiness report to a file.
   --no-consumer-smoke-checklist
-                               Omit the manual consumer smoke checklist from
+                               Omit the post-publish consumer smoke checklist from
                                the report.
   -h, --help                   Print this help text.
 ''';

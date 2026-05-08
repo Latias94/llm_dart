@@ -9,6 +9,7 @@ void main() {
     test('parses skip, proxy, and report flags', () {
       final options = parseReleaseReadinessOptions([
         '--skip-tests',
+        '--skip-consumer-smoke',
         '--skip-publish-dry-run',
         '--skip-pub-version-check',
         '--proxy=http://127.0.0.1:10809',
@@ -16,6 +17,7 @@ void main() {
       ]);
 
       expect(options.skipTests, isTrue);
+      expect(options.skipConsumerSmoke, isTrue);
       expect(options.skipPublishDryRun, isTrue);
       expect(options.skipPubVersionCheck, isTrue);
       expect(options.proxy, 'http://127.0.0.1:10809');
@@ -40,6 +42,7 @@ void main() {
         steps.map((step) => step.name),
         containsAll([
           'Workspace tests',
+          'Consumer smoke',
           'Workspace publish dry-run',
           'Pub version availability',
         ]),
@@ -50,6 +53,7 @@ void main() {
       final steps = buildReleaseReadinessSteps(
         const ReleaseReadinessOptions(
           skipTests: true,
+          skipConsumerSmoke: true,
           skipPublishDryRun: true,
         ),
       );
@@ -57,6 +61,10 @@ void main() {
       expect(
         steps.map((step) => step.name),
         isNot(contains('Workspace tests')),
+      );
+      expect(
+        steps.map((step) => step.name),
+        isNot(contains('Consumer smoke')),
       );
       expect(
         steps.map((step) => step.name),
@@ -130,8 +138,7 @@ version: 1.2.3-alpha.1
   });
 
   group('buildReleaseReadinessReport', () {
-    test('includes failed step context and manual consumer smoke checklist',
-        () {
+    test('includes failed step context and post-publish smoke checklist', () {
       const step = ReleaseReadinessStep(
         name: 'Example step',
         executable: 'dart',
@@ -162,7 +169,7 @@ version: 1.2.3-alpha.1
       expect(report, contains('## Publish Order'));
       expect(report, contains('- `llm_dart_provider`'));
       expect(report, contains('- `llm_dart`'));
-      expect(report, contains('Manual Consumer Smoke'));
+      expect(report, contains('Post-Publish Consumer Smoke'));
     });
   });
 }

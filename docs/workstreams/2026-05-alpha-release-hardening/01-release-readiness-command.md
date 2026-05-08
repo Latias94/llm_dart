@@ -25,6 +25,7 @@ The first version orchestrates the checks that are already proven:
 - `dart run tool/check_test_legacy_import_guards.dart`
 - `dart analyze lib test example tool`
 - `dart test`
+- `dart run tool/run_consumer_smoke.dart`
 - `dart run tool/run_workspace_publish_dry_run.dart`
 - `dart run tool/check_pub_version_availability.dart`
 
@@ -35,21 +36,24 @@ Implemented flags:
 - `--skip-publish-dry-run`
 - `--skip-pub-version-check`
 - `--skip-tests`
+- `--skip-consumer-smoke`
 - `--proxy=http://127.0.0.1:10809`
 - `--report=path/to/report.md`
 - `--no-consumer-smoke-checklist`
 
 ## Consumer Smoke Checks
 
-The command currently supports consumer smoke validation as a manual report
-section. Future versions can add an automated full mode.
+The command now runs clean local consumer smoke validation by default:
 
-- default mode: print the consumer smoke checklist as a manual post-step
-- full mode: create temporary Dart and Flutter consumer projects, run their
-  package resolution, analysis, and no-key smoke tests, then remove them
+- create temporary Dart and Flutter consumer projects
+- wire local workspace packages through `path:` dependencies and dependency
+  overrides
+- run Dart package resolution, analysis, and a no-key smoke program
+- run Flutter package resolution, analysis, and a pure controller/import test
+- remove the temporary projects after the run
 
-The full mode remains deferred until the basic command has been used in the
-alpha publish flow.
+Use `--skip-consumer-smoke` only for short local iterations. After publishing,
+repeat the same idea against pub.dev versions without local path overrides.
 
 ## Flutter Notes
 
