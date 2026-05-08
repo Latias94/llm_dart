@@ -80,7 +80,7 @@ class GoogleLLMBuilder {
 
   /// Sets stop sequences for response generation.
   GoogleLLMBuilder stopSequences(List<String> sequences) {
-    _baseBuilder.extension('stopSequences', sequences);
+    _baseBuilder.stopSequences(sequences);
     return this;
   }
 
@@ -170,41 +170,9 @@ class GoogleLLMBuilder {
     return this;
   }
 
-  /// Configure for single-speaker TTS.
-  GoogleLLMBuilder singleSpeakerTTS({
-    String voiceName = 'Kore',
-    String? model,
-  }) {
-    if (model != null) {
-      ttsModel(model);
-    }
-    _baseBuilder.extension('defaultVoiceName', voiceName);
-    return this;
-  }
-
-  /// Configure for multi-speaker TTS.
-  GoogleLLMBuilder multiSpeakerTTS({
-    Map<String, String>? defaultSpeakerVoices,
-    String? model,
-  }) {
-    if (model != null) {
-      ttsModel(model);
-    }
-    if (defaultSpeakerVoices != null) {
-      _baseBuilder.extension('defaultSpeakerVoices', defaultSpeakerVoices);
-    }
-    return this;
-  }
-
   /// Enable audio response modality for TTS.
   GoogleLLMBuilder enableAudioOutput() {
     responseModalities(['AUDIO']);
-    return this;
-  }
-
-  /// Configure TTS with specific voice.
-  GoogleLLMBuilder voice(String voiceName) {
-    _baseBuilder.extension('defaultVoiceName', voiceName);
     return this;
   }
 }

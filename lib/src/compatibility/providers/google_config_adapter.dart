@@ -46,8 +46,7 @@ GoogleConfig createLegacyGoogleConfig(LLMConfig config) {
     candidateCount: config.getExtension<int>(
       LegacyExtensionKeys.candidateCount,
     ),
-    stopSequences: config.stopSequences ??
-        config.getExtension<List<String>>('stopSequences'),
+    stopSequences: config.stopSequences,
     embeddingTaskType: config.getExtension<String>(
       LegacyExtensionKeys.embeddingTaskType,
     ),
