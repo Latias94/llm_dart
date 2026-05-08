@@ -7,6 +7,7 @@ import 'package:llm_dart/src/compatibility/config/legacy_config_keys.dart';
 import 'package:llm_dart/src/compatibility/config/legacy_elevenlabs_options.dart';
 import 'package:llm_dart/src/compatibility/config/legacy_google_options.dart';
 import 'package:llm_dart/src/compatibility/config/legacy_google_thinking_options.dart';
+import 'package:llm_dart/src/compatibility/config/legacy_ollama_options.dart';
 import 'package:llm_dart/src/compatibility/config/legacy_openai_options.dart';
 import 'package:llm_dart/src/compatibility/config/legacy_provider_options.dart';
 import 'package:llm_dart/src/compatibility/config/legacy_web_search_options.dart';
@@ -343,6 +344,52 @@ void main() {
       expect(elevenLabs.similarityBoost, 0.8);
       expect(elevenLabs.style, 0.4);
       expect(elevenLabs.useSpeakerBoost, isTrue);
+    });
+
+    test('LegacyOllamaOptions centralizes Ollama option reads', () {
+      const schema = legacy.StructuredOutputFormat(
+        name: 'answer',
+        schema: {'type': 'object'},
+      );
+      const config = legacy.LLMConfig(
+        apiKey: 'test-key',
+        baseUrl: 'http://localhost:11434',
+        model: 'llama3.2',
+        extensions: {
+          LegacyExtensionKeys.numCtx: 1024,
+          LegacyExtensionKeys.keepAlive: 'flat',
+          legacyProviderOptionsBagKey: {
+            LegacyProviderOptionNamespaces.ollama: {
+              LegacyExtensionKeys.jsonSchema: schema,
+              LegacyExtensionKeys.numCtx: null,
+              LegacyExtensionKeys.numGpu: 2,
+              LegacyExtensionKeys.numThread: 8,
+              LegacyExtensionKeys.numa: true,
+              LegacyExtensionKeys.numBatch: 256,
+              LegacyExtensionKeys.keepAlive: '10m',
+              LegacyExtensionKeys.raw: false,
+              LegacyExtensionKeys.reasoning: true,
+            },
+          },
+        },
+      );
+
+      final ollama = legacyOllamaOptions(
+        legacyProviderOptionView(
+          config,
+          LegacyProviderOptionNamespaces.ollama,
+        ),
+      );
+
+      expect(ollama.jsonSchema, schema);
+      expect(ollama.numCtx, isNull);
+      expect(ollama.numGpu, 2);
+      expect(ollama.numThread, 8);
+      expect(ollama.numa, isTrue);
+      expect(ollama.numBatch, 256);
+      expect(ollama.keepAlive, '10m');
+      expect(ollama.raw, isFalse);
+      expect(ollama.reasoning, isTrue);
     });
 
     test(

@@ -1,7 +1,6 @@
 import '../../../../core/config.dart';
-import '../../../../models/tool_models.dart';
 import '../../../../providers/ollama/config.dart';
-import '../../config/legacy_config_keys.dart';
+import '../../config/legacy_ollama_options.dart';
 import '../../config/legacy_provider_options.dart';
 import '../community_provider_config_adapters.dart';
 
@@ -11,6 +10,7 @@ OllamaConfig createLegacyOllamaConfig(LLMConfig config) {
     config,
     LegacyProviderOptionNamespaces.ollama,
   );
+  final ollamaOptions = legacyOllamaOptions(options);
 
   return OllamaConfig(
     baseUrl: config.baseUrl,
@@ -24,17 +24,14 @@ OllamaConfig createLegacyOllamaConfig(LLMConfig config) {
     topP: config.topP,
     topK: config.topK,
     tools: config.tools,
-    jsonSchema: options.getWithFlatFallback<StructuredOutputFormat>(
-      LegacyExtensionKeys.jsonSchema,
-    ),
-    numCtx: options.getWithFlatFallback<int>(LegacyExtensionKeys.numCtx),
-    numGpu: options.getWithFlatFallback<int>(LegacyExtensionKeys.numGpu),
-    numThread: options.getWithFlatFallback<int>(LegacyExtensionKeys.numThread),
-    numa: options.getWithFlatFallback<bool>(LegacyExtensionKeys.numa),
-    numBatch: options.getWithFlatFallback<int>(LegacyExtensionKeys.numBatch),
-    keepAlive:
-        options.getWithFlatFallback<String>(LegacyExtensionKeys.keepAlive),
-    raw: options.getWithFlatFallback<bool>(LegacyExtensionKeys.raw),
-    reasoning: options.getWithFlatFallback<bool>(LegacyExtensionKeys.reasoning),
+    jsonSchema: ollamaOptions.jsonSchema,
+    numCtx: ollamaOptions.numCtx,
+    numGpu: ollamaOptions.numGpu,
+    numThread: ollamaOptions.numThread,
+    numa: ollamaOptions.numa,
+    numBatch: ollamaOptions.numBatch,
+    keepAlive: ollamaOptions.keepAlive,
+    raw: ollamaOptions.raw,
+    reasoning: ollamaOptions.reasoning,
   );
 }
