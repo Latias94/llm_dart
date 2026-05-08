@@ -1,6 +1,9 @@
 import 'package:llm_dart/builder/llm_builder.dart';
 import 'package:llm_dart/core/config.dart';
+import 'package:llm_dart/models/tool_models.dart';
 import 'package:llm_dart/providers/ollama/ollama.dart';
+import 'package:llm_dart/src/compatibility/config/legacy_config_keys.dart';
+import 'package:llm_dart/src/compatibility/config/legacy_provider_options.dart';
 import 'package:llm_dart/src/compatibility/providers/ollama/config_adapter.dart';
 import 'package:test/test.dart';
 
@@ -78,6 +81,34 @@ void main() {
       expect(ollamaConfig.reasoning, isTrue);
     });
 
+    test('legacy Ollama config adapter should read namespaced jsonSchema', () {
+      const schema = StructuredOutputFormat(
+        name: 'answer',
+        schema: {
+          'type': 'object',
+          'properties': {
+            'value': {'type': 'string'},
+          },
+        },
+      );
+      final llmConfig = LLMConfig(
+        apiKey: 'test',
+        baseUrl: 'http://localhost:11434',
+        model: 'llama3.2',
+        extensions: {
+          legacyProviderOptionsBagKey: {
+            LegacyProviderOptionNamespaces.ollama: {
+              LegacyExtensionKeys.jsonSchema: schema,
+            },
+          },
+        },
+      );
+
+      final ollamaConfig = createLegacyOllamaConfig(llmConfig);
+
+      expect(ollamaConfig.jsonSchema, same(schema));
+    });
+
     test('OllamaConfig default thinking should be null', () {
       final config = OllamaConfig(
         model: 'test-model',
@@ -112,6 +143,28 @@ void main() {
       final ollamaProvider = provider as OllamaProvider;
       final config = ollamaProvider.config;
       expect(config.reasoning, isTrue);
+    });
+
+    test('OllamaBuilder jsonSchema method should work end-to-end', () async {
+      const schema = StructuredOutputFormat(
+        name: 'answer',
+        schema: {
+          'type': 'object',
+          'properties': {
+            'value': {'type': 'string'},
+          },
+        },
+      );
+      final provider = await LLMBuilder()
+          .ollama((builder) => builder.jsonSchema(schema))
+          .baseUrl('http://localhost:11434')
+          .model('llama3.2')
+          .build();
+
+      expect(provider, isA<OllamaProvider>());
+
+      final ollamaProvider = provider as OllamaProvider;
+      expect(ollamaProvider.config.jsonSchema, same(schema));
     });
 
     test('OllamaChatResponse should handle thinking content in message', () {

@@ -1,6 +1,7 @@
 import '../../../../core/config.dart';
+import '../../../../models/tool_models.dart';
 import '../../../../providers/ollama/config.dart';
-import '../../config/legacy_config_extensions.dart';
+import '../../config/legacy_config_keys.dart';
 import '../../config/legacy_provider_options.dart';
 import '../community_provider_config_adapters.dart';
 
@@ -18,7 +19,11 @@ OllamaConfig createLegacyOllamaConfig(LLMConfig config) {
     topP: config.topP,
     topK: config.topK,
     tools: config.tools,
-    jsonSchema: config.legacyJsonSchema,
+    jsonSchema: getLegacyProviderOption<StructuredOutputFormat>(
+      config,
+      LegacyProviderOptionNamespaces.ollama,
+      LegacyExtensionKeys.jsonSchema,
+    ),
     numCtx: getLegacyProviderOption<int>(
       config,
       LegacyProviderOptionNamespaces.ollama,

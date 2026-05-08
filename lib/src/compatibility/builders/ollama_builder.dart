@@ -1,5 +1,6 @@
 import '../../../builder/llm_builder.dart';
 import '../../../core/capability.dart';
+import '../../../models/tool_models.dart';
 import '../config/legacy_config_keys.dart';
 import '../config/legacy_provider_options.dart';
 import 'llm_builder_legacy_provider_options.dart';
@@ -57,6 +58,12 @@ class OllamaBuilder {
   /// Enables or disables raw mode.
   OllamaBuilder raw(bool enabled) {
     _setProviderOption(LegacyExtensionKeys.raw, enabled);
+    return this;
+  }
+
+  /// Sets structured output schema for Ollama chat requests.
+  OllamaBuilder jsonSchema(StructuredOutputFormat schema) {
+    _setProviderOption(LegacyExtensionKeys.jsonSchema, schema);
     return this;
   }
 
