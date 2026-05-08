@@ -1,8 +1,7 @@
 import '../../../core/config.dart';
 import '../../../core/web_search.dart';
-import '../../../models/tool_models.dart';
 import '../../../providers/google/config.dart';
-import '../config/legacy_config_keys.dart';
+import '../config/legacy_google_options.dart';
 import '../config/legacy_google_thinking_options.dart';
 import '../config/legacy_provider_options.dart';
 import '../config/legacy_web_search_options.dart';
@@ -14,6 +13,7 @@ GoogleConfig createLegacyGoogleConfig(LLMConfig config) {
     config,
     LegacyProviderOptionNamespaces.google,
   );
+  final googleOptions = legacyGoogleOptions(options);
   final thinkingOptions = legacyGoogleThinkingOptions(options);
 
   return GoogleConfig(
@@ -29,38 +29,20 @@ GoogleConfig createLegacyGoogleConfig(LLMConfig config) {
     topK: config.topK,
     tools: config.tools,
     toolChoice: config.toolChoice,
-    jsonSchema: options.getWithFlatFallback<StructuredOutputFormat>(
-      LegacyExtensionKeys.jsonSchema,
-    ),
+    jsonSchema: googleOptions.jsonSchema,
     reasoningEffort: thinkingOptions.reasoningEffort,
     thinkingBudgetTokens: thinkingOptions.thinkingBudgetTokens,
     includeThoughts: thinkingOptions.includeThoughts,
-    enableImageGeneration: options.getWithFlatFallback<bool>(
-      LegacyExtensionKeys.enableImageGeneration,
-    ),
+    enableImageGeneration: googleOptions.enableImageGeneration,
     webSearchConfig: _createLegacyGoogleWebSearchConfig(options),
-    responseModalities: options.getWithFlatFallback<List<String>>(
-      LegacyExtensionKeys.responseModalities,
-    ),
-    safetySettings: options.getWithFlatFallback<List<SafetySetting>>(
-      LegacyExtensionKeys.safetySettings,
-    ),
-    maxInlineDataSize: options
-            .getWithFlatFallback<int>(LegacyExtensionKeys.maxInlineDataSize) ??
-        20 * 1024 * 1024,
-    candidateCount: options.getWithFlatFallback<int>(
-      LegacyExtensionKeys.candidateCount,
-    ),
+    responseModalities: googleOptions.responseModalities,
+    safetySettings: googleOptions.safetySettings,
+    maxInlineDataSize: googleOptions.maxInlineDataSize,
+    candidateCount: googleOptions.candidateCount,
     stopSequences: config.stopSequences,
-    embeddingTaskType: options.getWithFlatFallback<String>(
-      LegacyExtensionKeys.embeddingTaskType,
-    ),
-    embeddingTitle: options.getWithFlatFallback<String>(
-      LegacyExtensionKeys.embeddingTitle,
-    ),
-    embeddingDimensions: options.getWithFlatFallback<int>(
-      LegacyExtensionKeys.embeddingDimensions,
-    ),
+    embeddingTaskType: googleOptions.embeddingTaskType,
+    embeddingTitle: googleOptions.embeddingTitle,
+    embeddingDimensions: googleOptions.embeddingDimensions,
   );
 }
 

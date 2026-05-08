@@ -4,6 +4,7 @@ import 'package:llm_dart/src/compatibility/compat_providers.dart';
 import 'package:llm_dart/src/compatibility/legacy_chat_adapter.dart';
 import 'package:llm_dart/src/compatibility/config/legacy_anthropic_options.dart';
 import 'package:llm_dart/src/compatibility/config/legacy_config_keys.dart';
+import 'package:llm_dart/src/compatibility/config/legacy_google_options.dart';
 import 'package:llm_dart/src/compatibility/config/legacy_google_thinking_options.dart';
 import 'package:llm_dart/src/compatibility/config/legacy_openai_options.dart';
 import 'package:llm_dart/src/compatibility/config/legacy_provider_options.dart';
@@ -160,6 +161,55 @@ void main() {
         'includeThoughts': false,
         'thinkingBudget': 64,
       });
+    });
+
+    test('LegacyGoogleOptions centralizes Google option reads', () {
+      const schema = legacy.StructuredOutputFormat(
+        name: 'answer',
+        schema: {'type': 'object'},
+      );
+      const safety = legacy.SafetySetting(
+        category: legacy.HarmCategory.harmCategoryHarassment,
+        threshold: legacy.HarmBlockThreshold.blockOnlyHigh,
+      );
+      const config = legacy.LLMConfig(
+        apiKey: 'test-key',
+        baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
+        model: 'gemini-2.0-flash',
+        extensions: {
+          LegacyExtensionKeys.maxInlineDataSize: 1024,
+          legacyProviderOptionsBagKey: {
+            LegacyProviderOptionNamespaces.google: {
+              LegacyExtensionKeys.jsonSchema: schema,
+              LegacyExtensionKeys.enableImageGeneration: true,
+              LegacyExtensionKeys.responseModalities: ['TEXT', 'IMAGE'],
+              LegacyExtensionKeys.safetySettings: [safety],
+              LegacyExtensionKeys.maxInlineDataSize: null,
+              LegacyExtensionKeys.candidateCount: 2,
+              LegacyExtensionKeys.embeddingTaskType: 'retrieval_document',
+              LegacyExtensionKeys.embeddingTitle: 'Docs',
+              LegacyExtensionKeys.embeddingDimensions: 768,
+            },
+          },
+        },
+      );
+
+      final google = legacyGoogleOptions(
+        legacyProviderOptionView(
+          config,
+          LegacyProviderOptionNamespaces.google,
+        ),
+      );
+
+      expect(google.jsonSchema, schema);
+      expect(google.enableImageGeneration, isTrue);
+      expect(google.responseModalities, ['TEXT', 'IMAGE']);
+      expect(google.safetySettings, [safety]);
+      expect(google.maxInlineDataSize, legacyGoogleDefaultMaxInlineDataSize);
+      expect(google.candidateCount, 2);
+      expect(google.embeddingTaskType, 'retrieval_document');
+      expect(google.embeddingTitle, 'Docs');
+      expect(google.embeddingDimensions, 768);
     });
 
     test('LegacyOpenAIOptions centralizes OpenAI-family option reads', () {
