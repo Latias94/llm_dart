@@ -6,6 +6,7 @@ import '../../../models/tool_models.dart';
 import '../../../providers/xai/config.dart';
 import '../config/legacy_config_keys.dart';
 import '../config/legacy_provider_options.dart';
+import '../config/legacy_web_search_options.dart';
 import 'community_provider_config_adapters.dart';
 import 'compat_provider_support.dart';
 
@@ -150,15 +151,13 @@ SearchParameters? _createLegacyXAISearchParameters(
     return searchParameters;
   }
 
-  final webSearchConfig = options.getWithFlatFallback<WebSearchConfig>(
-    LegacyExtensionKeys.webSearchConfig,
-  );
+  final webSearchOptions = legacyWebSearchOptions(options);
+  final webSearchConfig = webSearchOptions.config;
   if (webSearchConfig != null) {
     return _convertWebSearchConfigToSearchParameters(webSearchConfig);
   }
 
-  if (options.getWithFlatFallback<bool>(LegacyExtensionKeys.webSearchEnabled) ==
-      true) {
+  if (webSearchOptions.enabled) {
     return SearchParameters.webSearch();
   }
 

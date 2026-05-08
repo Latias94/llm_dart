@@ -4,6 +4,7 @@ import 'package:llm_dart/src/compatibility/compat_providers.dart';
 import 'package:llm_dart/src/compatibility/legacy_chat_adapter.dart';
 import 'package:llm_dart/src/compatibility/config/legacy_config_keys.dart';
 import 'package:llm_dart/src/compatibility/config/legacy_provider_options.dart';
+import 'package:llm_dart/src/compatibility/config/legacy_web_search_options.dart';
 import 'package:llm_dart_core/llm_dart_core.dart' as core;
 import 'package:llm_dart_openai/llm_dart_openai.dart' as modern_openai;
 import 'package:llm_dart_test/llm_dart_test.dart';
@@ -54,6 +55,72 @@ void main() {
         ),
         isNull,
       );
+    });
+
+    test('LegacyWebSearchOptions centralizes migrated search intent', () {
+      const config = legacy.LLMConfig(
+        apiKey: 'test-key',
+        baseUrl: 'https://openrouter.ai/api/v1',
+        model: 'openai/gpt-4o-mini',
+        extensions: {
+          LegacyExtensionKeys.webSearchEnabled: true,
+          LegacyExtensionKeys.webSearchConfig: legacy.WebSearchConfig(
+            maxResults: 3,
+          ),
+          legacyProviderOptionsBagKey: {
+            LegacyProviderOptionNamespaces.openrouter: {
+              LegacyExtensionKeys.webSearchConfig: legacy.WebSearchConfig(
+                maxResults: 7,
+              ),
+            },
+          },
+        },
+      );
+
+      final search = legacyWebSearchOptions(
+        legacyProviderOptionView(
+          config,
+          LegacyProviderOptionNamespaces.openrouter,
+        ),
+      );
+
+      expect(search.enabled, isTrue);
+      expect(search.hasSearchIntent, isTrue);
+      expect(search.config?.maxResults, 7);
+      expect(search.configOrEnabledDefault?.maxResults, 7);
+    });
+
+    test('LegacyWebSearchOptions preserves explicit null namespace overrides',
+        () {
+      const config = legacy.LLMConfig(
+        apiKey: 'test-key',
+        baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
+        model: 'gemini-2.0-flash',
+        extensions: {
+          LegacyExtensionKeys.webSearchEnabled: true,
+          LegacyExtensionKeys.webSearchConfig: legacy.WebSearchConfig(
+            maxResults: 3,
+          ),
+          legacyProviderOptionsBagKey: {
+            LegacyProviderOptionNamespaces.google: {
+              LegacyExtensionKeys.webSearchEnabled: false,
+              LegacyExtensionKeys.webSearchConfig: null,
+            },
+          },
+        },
+      );
+
+      final search = legacyWebSearchOptions(
+        legacyProviderOptionView(
+          config,
+          LegacyProviderOptionNamespaces.google,
+        ),
+      );
+
+      expect(search.enabled, isFalse);
+      expect(search.config, isNull);
+      expect(search.hasSearchIntent, isFalse);
+      expect(search.configOrEnabledDefault, isNull);
     });
 
     test(

@@ -1,11 +1,11 @@
 import '../../../core/config.dart';
-import '../../../core/web_search.dart';
 import '../../../models/chat_models.dart';
 import '../../../models/tool_models.dart';
 import '../../../providers/openai/builtin_tools.dart';
 import '../../../providers/openai/config.dart';
 import '../config/legacy_config_extensions.dart';
 import '../config/legacy_provider_options.dart';
+import '../config/legacy_web_search_options.dart';
 import 'community_provider_config_adapters.dart';
 import 'compat_provider_support.dart';
 
@@ -18,13 +18,8 @@ OpenAIConfig toCompatLegacyOpenAIConfig(LLMConfig config) {
     LegacyProviderOptionNamespaces.openai,
   );
   var model = config.model;
-  final webSearchEnabled =
-      options.getWithFlatFallback<bool>(LegacyExtensionKeys.webSearchEnabled) ==
-          true;
-  final webSearchConfig = options.getWithFlatFallback<WebSearchConfig>(
-      LegacyExtensionKeys.webSearchConfig);
-  if ((webSearchEnabled || webSearchConfig != null) &&
-      !isCompatOpenAISearchModel(model)) {
+  final webSearchOptions = legacyWebSearchOptions(options);
+  if (webSearchOptions.hasSearchIntent && !isCompatOpenAISearchModel(model)) {
     model = compatOpenAISearchModelFor(model);
   }
 

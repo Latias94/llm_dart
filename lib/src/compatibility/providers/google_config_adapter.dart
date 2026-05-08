@@ -5,6 +5,7 @@ import '../../../models/tool_models.dart';
 import '../../../providers/google/config.dart';
 import '../config/legacy_config_keys.dart';
 import '../config/legacy_provider_options.dart';
+import '../config/legacy_web_search_options.dart';
 import 'community_provider_config_adapters.dart';
 
 /// Adapts a legacy root `LLMConfig` into a Google provider config.
@@ -72,18 +73,5 @@ GoogleConfig createLegacyGoogleConfig(LLMConfig config) {
 
 WebSearchConfig? _createLegacyGoogleWebSearchConfig(
   LegacyProviderOptionView options,
-) {
-  final webSearchConfig = options.getWithFlatFallback<WebSearchConfig>(
-    LegacyExtensionKeys.webSearchConfig,
-  );
-  if (webSearchConfig != null) {
-    return webSearchConfig;
-  }
-
-  if (options.getWithFlatFallback<bool>(LegacyExtensionKeys.webSearchEnabled) ==
-      true) {
-    return const WebSearchConfig();
-  }
-
-  return null;
-}
+) =>
+    legacyWebSearchOptions(options).configOrEnabledDefault;

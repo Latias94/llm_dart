@@ -5,6 +5,7 @@ import '../../../providers/anthropic/config.dart';
 import '../../../providers/anthropic/mcp_models.dart';
 import '../config/legacy_config_keys.dart';
 import '../config/legacy_provider_options.dart';
+import '../config/legacy_web_search_options.dart';
 import 'community_provider_config_adapters.dart';
 
 /// Adapts a legacy root `LLMConfig` into an Anthropic provider config.
@@ -54,21 +55,8 @@ AnthropicConfig createLegacyAnthropicConfig(LLMConfig config) {
 
 WebSearchConfig? _createLegacyAnthropicWebSearchConfig(
   LegacyProviderOptionView options,
-) {
-  final webSearchConfig = options.getWithFlatFallback<WebSearchConfig>(
-    LegacyExtensionKeys.webSearchConfig,
-  );
-  if (webSearchConfig != null) {
-    return webSearchConfig;
-  }
-
-  if (options.getWithFlatFallback<bool>(LegacyExtensionKeys.webSearchEnabled) ==
-      true) {
-    return const WebSearchConfig();
-  }
-
-  return null;
-}
+) =>
+    legacyWebSearchOptions(options).configOrEnabledDefault;
 
 List<Tool>? _addLegacyWebSearchTool(
   List<Tool>? existingTools,
