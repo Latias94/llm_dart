@@ -69,7 +69,7 @@ mixin _OpenAIBuilderResponsesTools {
       _baseBuilder.currentConfig,
       LegacyProviderOptionNamespaces.openai,
     );
-    final existingTools = options.getWithFlatFallback<List<OpenAIBuiltInTool>>(
+    final existingTools = options.get<List<OpenAIBuiltInTool>>(
       LegacyExtensionKeys.builtInTools,
     );
     return existingTools != null

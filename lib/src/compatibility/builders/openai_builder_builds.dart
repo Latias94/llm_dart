@@ -51,9 +51,8 @@ mixin _OpenAIBuilderBuilds {
       _baseBuilder.currentConfig,
       LegacyProviderOptionNamespaces.openai,
     );
-    final isResponsesApiEnabled = options
-            .getWithFlatFallback<bool>(LegacyExtensionKeys.useResponsesApi) ??
-        false;
+    final isResponsesApiEnabled =
+        options.get<bool>(LegacyExtensionKeys.useResponsesApi) ?? false;
     if (!isResponsesApiEnabled) {
       useResponsesAPI(true);
     }
