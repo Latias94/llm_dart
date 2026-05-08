@@ -7,13 +7,13 @@
 
 ## Release Gate Automation
 
-- [ ] Add `tool/release_readiness.dart`
-- [ ] Run existing guard scripts from the release-readiness command
-- [ ] Run `dart analyze lib test example tool`
-- [ ] Run `dart test`
-- [ ] Run `dart run tool/run_workspace_publish_dry_run.dart`
-- [ ] Print a concise release report with elapsed time and failed-step context
-- [ ] Add focused tests for command planning/reporting helpers
+- [x] Add `tool/release_readiness.dart`
+- [x] Run existing guard scripts from the release-readiness command
+- [x] Run `dart analyze lib test example tool`
+- [x] Run `dart test`
+- [x] Run `dart run tool/run_workspace_publish_dry_run.dart`
+- [x] Print a concise release report with elapsed time and failed-step context
+- [x] Add focused tests for command planning/reporting helpers
 
 ## Package Metadata And Publish Order
 
@@ -25,12 +25,12 @@
 
 ## Consumer Smoke Validation
 
-- [ ] Decide whether consumer smoke is manual-only for alpha.1 or automated in
+- [x] Decide whether consumer smoke is manual-only for alpha.1 or automated in
   the first readiness command
-- [ ] Document clean Dart consumer smoke commands in the command output or docs
-- [ ] Document clean Flutter consumer smoke commands in the command output or
+- [x] Document clean Dart consumer smoke commands in the command output or docs
+- [x] Document clean Flutter consumer smoke commands in the command output or
   docs
-- [ ] Add optional proxy handling for Flutter network checks if automated
+- [x] Add optional proxy handling for Flutter network checks if automated
 
 ## Publish Execution
 

@@ -18,9 +18,17 @@ Acceptance criteria:
 
 Current status:
 
-- manual validation commands are documented in the previous workstream's
-  release readiness checklist
-- no unified command exists yet
+- `tool/release_readiness.dart` now exists as the single release-readiness
+  command
+- the command runs dependency/root/core/transport/test import guards,
+  workspace analysis, workspace tests, and workspace publish dry-run by default
+- `--skip-tests` and `--skip-publish-dry-run` support shorter smoke runs
+- `--proxy=<url>` can pass HTTP proxy settings to child validation steps
+- `--report=<path>` writes a Markdown release report
+- focused tests cover option parsing, step planning, proxy environment
+  construction, version reading, and report generation
+- a short readiness smoke run passed with guards plus analysis while skipping
+  the longest test and publish dry-run steps
 
 ## M2 - Package Metadata And Publish Order
 
@@ -64,6 +72,8 @@ Current status:
 - manual clean Dart and Flutter consumer smoke validation passed on
   2026-05-08
 - the validation result is recorded in the previous release readiness checklist
+- the first release-readiness command keeps consumer smoke as a documented
+  manual checklist instead of automatically creating temporary projects
 
 ## M4 - Alpha Publish Execution
 

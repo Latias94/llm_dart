@@ -11,12 +11,12 @@ Preferred entrypoint:
 dart run tool/release_readiness.dart
 ```
 
-The command should be safe to run from the repository root and should not
-require shell-specific behavior.
+The command is safe to run from the repository root and does not require
+shell-specific behavior.
 
 ## Required Checks
 
-The first version should orchestrate the checks that are already proven:
+The first version orchestrates the checks that are already proven:
 
 - `dart run tool/check_workspace_dependency_guards.dart`
 - `dart run tool/check_root_package_boundary_guards.dart`
@@ -27,25 +27,27 @@ The first version should orchestrate the checks that are already proven:
 - `dart test`
 - `dart run tool/run_workspace_publish_dry_run.dart`
 
-The command should record elapsed time and command exit codes.
+The command records elapsed time and command exit codes.
+
+Implemented flags:
+
+- `--skip-publish-dry-run`
+- `--skip-tests`
+- `--proxy=http://127.0.0.1:10809`
+- `--report=path/to/report.md`
+- `--no-consumer-smoke-checklist`
 
 ## Consumer Smoke Checks
 
-The command should support consumer smoke validation in one of two modes:
+The command currently supports consumer smoke validation as a manual report
+section. Future versions can add an automated full mode.
 
 - default mode: print the consumer smoke checklist as a manual post-step
 - full mode: create temporary Dart and Flutter consumer projects, run their
   package resolution, analysis, and no-key smoke tests, then remove them
 
-The full mode can be introduced after the basic command exists.
-
-Expected eventual flags:
-
-- `--skip-publish-dry-run`
-- `--skip-tests`
-- `--consumer-smoke`
-- `--proxy=http://127.0.0.1:10809`
-- `--report=path/to/report.md`
+The full mode remains deferred until the basic command has been used in the
+alpha publish flow.
 
 ## Flutter Notes
 
@@ -70,7 +72,7 @@ variables to be passed through:
 
 ## Output Shape
 
-The command should print:
+The command prints:
 
 - repository path
 - package version being validated
