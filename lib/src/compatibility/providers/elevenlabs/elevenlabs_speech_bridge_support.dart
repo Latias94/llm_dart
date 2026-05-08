@@ -81,8 +81,6 @@ final class _ElevenLabsSpeechBridgeSupport {
       ),
     );
 
-    final metadata = result.providerMetadata?.namespace('elevenlabs');
-
     return TTSResponse(
       audioData: result.audioBytes,
       contentType: result.mediaType,
@@ -91,7 +89,6 @@ final class _ElevenLabsSpeechBridgeSupport {
       duration: null,
       sampleRate: null,
       usage: null,
-      requestId: metadata?['requestId'] as String?,
       providerMetadata: result.providerMetadata,
     );
   }

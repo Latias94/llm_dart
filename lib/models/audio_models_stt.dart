@@ -308,12 +308,6 @@ class STTResponse {
   /// Usage information if available
   final UsageInfo? usage;
 
-  /// Language probability (ElevenLabs specific)
-  final double? languageProbability;
-
-  /// Additional formats (ElevenLabs specific)
-  final Map<String, dynamic>? additionalFormats;
-
   /// Provider-owned response metadata.
   final ProviderMetadata? providerMetadata;
 
@@ -326,8 +320,6 @@ class STTResponse {
     this.model,
     this.duration,
     this.usage,
-    this.languageProbability,
-    this.additionalFormats,
     this.providerMetadata,
   });
 
@@ -341,9 +333,6 @@ class STTResponse {
         if (model != null) 'model': model,
         if (duration != null) 'duration': duration,
         if (usage != null) 'usage': usage!.toJson(),
-        if (languageProbability != null)
-          'language_probability': languageProbability,
-        if (additionalFormats != null) 'additional_formats': additionalFormats,
         if (providerMetadata != null)
           'provider_metadata': providerMetadata!.toJsonMap(),
       };
@@ -371,8 +360,6 @@ class STTResponse {
         usage: json['usage'] != null
             ? UsageInfo.fromJson(json['usage'] as Map<String, dynamic>)
             : null,
-        languageProbability: json['language_probability'] as double?,
-        additionalFormats: json['additional_formats'] as Map<String, dynamic>?,
         providerMetadata: _providerMetadataFromJson(json),
       );
 }

@@ -74,8 +74,6 @@ final class _ElevenLabsTranscriptionBridgeSupport {
       model: request.model,
       duration: null,
       usage: null,
-      languageProbability: languageProbability,
-      additionalFormats: _asStringDynamicMap(metadata?['additionalFormats']),
       providerMetadata: result.providerMetadata,
     );
   }
@@ -151,16 +149,6 @@ double? _asDouble(Object? value) {
     num() => value.toDouble(),
     _ => null,
   };
-}
-
-Map<String, dynamic>? _asStringDynamicMap(Object? value) {
-  if (value is! Map) {
-    return null;
-  }
-
-  return value.map(
-    (key, nestedValue) => MapEntry(key as String, nestedValue),
-  );
 }
 
 List<WordTiming>? _decodeLegacyWordTimings(Object? value) {

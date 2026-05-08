@@ -72,7 +72,6 @@ void main() {
 
       expect(response.audioData, [1, 2, 3, 4]);
       expect(response.contentType, 'audio/pcm');
-      expect(response.requestId, 'req_tts_123');
       expect(
         response.providerMetadata?.namespace('elevenlabs')?['requestId'],
         'req_tts_123',
@@ -173,18 +172,21 @@ void main() {
       expect(response.text, 'hello world');
       expect(response.language, 'en');
       expect(response.confidence, 0.98);
-      expect(response.languageProbability, 0.98);
       expect(response.words, isNotNull);
       expect(response.words!.single.word, 'hello');
-      expect(response.additionalFormats, {
-        'segments': [
-          {'text': 'hello world'},
-        ],
-      });
       expect(
         response.providerMetadata
             ?.namespace('elevenlabs')?['languageProbability'],
         0.98,
+      );
+      expect(
+        response.providerMetadata
+            ?.namespace('elevenlabs')?['additionalFormats'],
+        {
+          'segments': [
+            {'text': 'hello world'},
+          ],
+        },
       );
 
       expect(capturedOptions, isNotNull);

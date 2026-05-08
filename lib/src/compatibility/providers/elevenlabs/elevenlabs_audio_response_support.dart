@@ -43,9 +43,6 @@ final class _ElevenLabsAudioResponseSupport {
       model: request.model,
       duration: null,
       usage: null,
-      languageProbability: languageProbability,
-      additionalFormats:
-          responseData['additional_formats'] as Map<String, dynamic>?,
       providerMetadata: ProviderMetadata.forNamespace(
         'elevenlabs',
         {

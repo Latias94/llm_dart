@@ -144,11 +144,12 @@ void main() {
       expect(response.text, 'hello world');
       expect(response.language, 'en');
       expect(response.confidence, 0.75);
-      expect(response.languageProbability, 0.75);
       expect(response.words, hasLength(2));
       expect(response.words!.first.word, 'hello');
       expect(response.words!.first.confidence, 0.8);
-      expect(response.additionalFormats, {
+      final metadata = response.providerMetadata?.namespace('elevenlabs');
+      expect(metadata?['languageProbability'], 0.75);
+      expect(metadata?['additionalFormats'], {
         'segments': [
           {'text': 'hello world'},
         ],

@@ -198,15 +198,6 @@ class TTSResponse {
   /// Usage information if available
   final UsageInfo? usage;
 
-  /// Character-level timing alignment (ElevenLabs specific)
-  final AudioAlignment? alignment;
-
-  /// Normalized character-level timing alignment (ElevenLabs specific)
-  final AudioAlignment? normalizedAlignment;
-
-  /// Request ID for continuity (ElevenLabs specific)
-  final String? requestId;
-
   /// Provider-owned response metadata.
   final ProviderMetadata? providerMetadata;
 
@@ -218,9 +209,6 @@ class TTSResponse {
     this.voice,
     this.model,
     this.usage,
-    this.alignment,
-    this.normalizedAlignment,
-    this.requestId,
     this.providerMetadata,
   });
 
@@ -232,10 +220,6 @@ class TTSResponse {
         if (voice != null) 'voice': voice,
         if (model != null) 'model': model,
         if (usage != null) 'usage': usage!.toJson(),
-        if (alignment != null) 'alignment': alignment!.toJson(),
-        if (normalizedAlignment != null)
-          'normalized_alignment': normalizedAlignment!.toJson(),
-        if (requestId != null) 'request_id': requestId,
         if (providerMetadata != null)
           'provider_metadata': providerMetadata!.toJsonMap(),
       };
@@ -250,15 +234,6 @@ class TTSResponse {
         usage: json['usage'] != null
             ? UsageInfo.fromJson(json['usage'] as Map<String, dynamic>)
             : null,
-        alignment: json['alignment'] != null
-            ? AudioAlignment.fromJson(json['alignment'] as Map<String, dynamic>)
-            : null,
-        normalizedAlignment: json['normalized_alignment'] != null
-            ? AudioAlignment.fromJson(
-                json['normalized_alignment'] as Map<String, dynamic>,
-              )
-            : null,
-        requestId: json['request_id'] as String?,
         providerMetadata: _providerMetadataFromJson(json),
       );
 }
