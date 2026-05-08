@@ -11,10 +11,12 @@ import 'compat_provider_support.dart';
 
 /// Adapts a legacy root `LLMConfig` into an xAI provider config.
 XAIConfig createLegacyXAIConfig(LLMConfig config) {
-  final searchParameters = _createLegacyXAISearchParameters(config);
-  final liveSearchEnabled = getLegacyProviderOption<bool>(
+  final options = legacyProviderOptionView(
     config,
     LegacyProviderOptionNamespaces.xai,
+  );
+  final searchParameters = _createLegacyXAISearchParameters(options);
+  final liveSearchEnabled = options.get<bool>(
     LegacyExtensionKeys.xaiLiveSearch,
   );
 
@@ -31,19 +33,13 @@ XAIConfig createLegacyXAIConfig(LLMConfig config) {
     topK: config.topK,
     tools: config.tools,
     toolChoice: config.toolChoice,
-    jsonSchema: getLegacyProviderOption<StructuredOutputFormat>(
-      config,
-      LegacyProviderOptionNamespaces.xai,
+    jsonSchema: options.get<StructuredOutputFormat>(
       LegacyExtensionKeys.jsonSchema,
     ),
-    embeddingEncodingFormat: getLegacyProviderOption<String>(
-      config,
-      LegacyProviderOptionNamespaces.xai,
+    embeddingEncodingFormat: options.get<String>(
       LegacyExtensionKeys.embeddingEncodingFormat,
     ),
-    embeddingDimensions: getLegacyProviderOption<int>(
-      config,
-      LegacyProviderOptionNamespaces.xai,
+    embeddingDimensions: options.get<int>(
       LegacyExtensionKeys.embeddingDimensions,
     ),
     searchParameters: searchParameters,
@@ -144,31 +140,24 @@ List<modern_openai.XAISearchSource>? mapCompatXAISearchSources(
   return mapped;
 }
 
-SearchParameters? _createLegacyXAISearchParameters(LLMConfig config) {
-  final searchParameters = getLegacyProviderOption<SearchParameters>(
-    config,
-    LegacyProviderOptionNamespaces.xai,
+SearchParameters? _createLegacyXAISearchParameters(
+  LegacyProviderOptionView options,
+) {
+  final searchParameters = options.get<SearchParameters>(
     LegacyExtensionKeys.xaiSearchParameters,
   );
   if (searchParameters != null) {
     return searchParameters;
   }
 
-  final webSearchConfig = getLegacyProviderOption<WebSearchConfig>(
-    config,
-    LegacyProviderOptionNamespaces.xai,
+  final webSearchConfig = options.get<WebSearchConfig>(
     LegacyExtensionKeys.webSearchConfig,
   );
   if (webSearchConfig != null) {
     return _convertWebSearchConfigToSearchParameters(webSearchConfig);
   }
 
-  if (getLegacyProviderOption<bool>(
-        config,
-        LegacyProviderOptionNamespaces.xai,
-        LegacyExtensionKeys.webSearchEnabled,
-      ) ==
-      true) {
+  if (options.get<bool>(LegacyExtensionKeys.webSearchEnabled) == true) {
     return SearchParameters.webSearch();
   }
 

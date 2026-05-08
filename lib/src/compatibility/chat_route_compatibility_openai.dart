@@ -6,11 +6,13 @@ bool canUseOpenAIChatBridge(
   List<Tool>? tools,
 ) {
   final effectiveTools = tools ?? config.tools;
+  final options = legacyProviderOptionView(
+    config,
+    LegacyProviderOptionNamespaces.openai,
+  );
   if (_hasNonFunctionTools(effectiveTools) ||
       !_canMapOpenAIBuiltInTools(
-        getLegacyProviderOption<List<OpenAIBuiltInTool>>(
-          config,
-          LegacyProviderOptionNamespaces.openai,
+        options.get<List<OpenAIBuiltInTool>>(
           LegacyExtensionKeys.builtInTools,
         ),
       )) {

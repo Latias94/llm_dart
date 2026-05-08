@@ -68,21 +68,54 @@ Map<String, dynamic> legacyProviderOptionsNamespace(
     legacyProviderOptionsNamespaceOrNull(config, namespace) ??
     <String, dynamic>{};
 
+final class LegacyProviderOptionView {
+  final LLMConfig config;
+  final String namespace;
+
+  const LegacyProviderOptionView(this.config, this.namespace);
+
+  Map<String, dynamic>? get optionsOrNull =>
+      legacyProviderOptionsNamespaceOrNull(config, namespace);
+
+  Map<String, dynamic> get options =>
+      legacyProviderOptionsNamespace(config, namespace);
+
+  T? get<T>(String key, {String? fallbackKey}) {
+    final namespaceOptions = optionsOrNull;
+    if (namespaceOptions != null && namespaceOptions.containsKey(key)) {
+      return namespaceOptions[key] as T?;
+    }
+
+    return config.getExtension<T>(fallbackKey ?? key);
+  }
+
+  Map<String, dynamic> set(String key, dynamic value) {
+    final providerOptions = legacyProviderOptionsBag(config);
+    final namespaceOptions = options;
+
+    namespaceOptions[key] = value;
+    providerOptions[namespace] = namespaceOptions;
+
+    return providerOptions;
+  }
+}
+
+LegacyProviderOptionView legacyProviderOptionView(
+  LLMConfig config,
+  String namespace,
+) =>
+    LegacyProviderOptionView(config, namespace);
+
 T? getLegacyProviderOption<T>(
   LLMConfig config,
   String namespace,
   String key, {
   String? fallbackKey,
 }) {
-  final namespaceOptions = legacyProviderOptionsNamespaceOrNull(
-    config,
-    namespace,
+  return legacyProviderOptionView(config, namespace).get<T>(
+    key,
+    fallbackKey: fallbackKey,
   );
-  if (namespaceOptions != null && namespaceOptions.containsKey(key)) {
-    return namespaceOptions[key] as T?;
-  }
-
-  return config.getExtension<T>(fallbackKey ?? key);
 }
 
 Map<String, dynamic> setLegacyProviderOption(
@@ -90,12 +123,5 @@ Map<String, dynamic> setLegacyProviderOption(
   String namespace,
   String key,
   dynamic value,
-) {
-  final providerOptions = legacyProviderOptionsBag(config);
-  final namespaceOptions = legacyProviderOptionsNamespace(config, namespace);
-
-  namespaceOptions[key] = value;
-  providerOptions[namespace] = namespaceOptions;
-
-  return providerOptions;
-}
+) =>
+    legacyProviderOptionView(config, namespace).set(key, value);

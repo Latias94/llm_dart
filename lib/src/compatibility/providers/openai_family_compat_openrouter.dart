@@ -16,6 +16,10 @@ import 'openai_family_compat_openrouter_config.dart';
 
 ChatCapability buildCompatOpenRouterProvider(LLMConfig config) {
   final legacyConfig = toCompatLegacyOpenRouterConfig(config);
+  final options = legacyProviderOptionView(
+    config,
+    LegacyProviderOptionNamespaces.openrouter,
+  );
   final model = modern_openai.OpenAI(
     apiKey: config.apiKey!,
     baseUrl: config.baseUrl,
@@ -34,17 +38,11 @@ ChatCapability buildCompatOpenRouterProvider(LLMConfig config) {
       config: config,
       providerOptionsNamespace: LegacyProviderOptionNamespaces.openrouter,
       providerOptions: modern_openai.OpenAIGenerateTextOptions(
-        parallelToolCalls: getLegacyProviderOption<bool>(
-          config,
-          LegacyProviderOptionNamespaces.openrouter,
+        parallelToolCalls: options.get<bool>(
           LegacyExtensionKeys.parallelToolCalls,
         ),
         serviceTier: config.serviceTier?.value,
-        verbosity: getLegacyProviderOption<String>(
-          config,
-          LegacyProviderOptionNamespaces.openrouter,
-          LegacyExtensionKeys.verbosity,
-        ),
+        verbosity: options.get<String>(LegacyExtensionKeys.verbosity),
       ),
     ),
   );

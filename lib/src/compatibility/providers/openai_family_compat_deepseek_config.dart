@@ -6,6 +6,11 @@ import 'community_provider_config_adapters.dart';
 
 /// Adapts a legacy root `LLMConfig` into a DeepSeek provider config.
 DeepSeekConfig createLegacyDeepSeekConfig(LLMConfig config) {
+  final options = legacyProviderOptionView(
+    config,
+    LegacyProviderOptionNamespaces.deepseek,
+  );
+
   return DeepSeekConfig(
     apiKey: config.apiKey!,
     baseUrl: config.baseUrl,
@@ -19,29 +24,17 @@ DeepSeekConfig createLegacyDeepSeekConfig(LLMConfig config) {
     topK: config.topK,
     tools: config.tools,
     toolChoice: config.toolChoice,
-    logprobs: getLegacyProviderOption<bool>(
-      config,
-      LegacyProviderOptionNamespaces.deepseek,
-      LegacyExtensionKeys.logprobs,
-    ),
-    topLogprobs: getLegacyProviderOption<int>(
-      config,
-      LegacyProviderOptionNamespaces.deepseek,
+    logprobs: options.get<bool>(LegacyExtensionKeys.logprobs),
+    topLogprobs: options.get<int>(
       LegacyExtensionKeys.deepSeekTopLogprobs,
     ),
-    frequencyPenalty: getLegacyProviderOption<double>(
-      config,
-      LegacyProviderOptionNamespaces.deepseek,
+    frequencyPenalty: options.get<double>(
       LegacyExtensionKeys.deepSeekFrequencyPenalty,
     ),
-    presencePenalty: getLegacyProviderOption<double>(
-      config,
-      LegacyProviderOptionNamespaces.deepseek,
+    presencePenalty: options.get<double>(
       LegacyExtensionKeys.deepSeekPresencePenalty,
     ),
-    responseFormat: getLegacyProviderOption<Map<String, dynamic>>(
-      config,
-      LegacyProviderOptionNamespaces.deepseek,
+    responseFormat: options.get<Map<String, dynamic>>(
       LegacyExtensionKeys.deepSeekResponseFormat,
     ),
   );

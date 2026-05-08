@@ -11,18 +11,15 @@ import '../config/legacy_provider_options.dart';
 import 'community_provider_config_adapters.dart';
 
 OpenAIConfig toCompatLegacyOpenRouterConfig(LLMConfig config) {
-  var model = config.model;
-  final webSearchEnabled = getLegacyProviderOption<bool>(
-        config,
-        LegacyProviderOptionNamespaces.openrouter,
-        LegacyExtensionKeys.webSearchEnabled,
-      ) ==
-      true;
-  final webSearchConfig = getLegacyProviderOption<WebSearchConfig>(
+  final options = legacyProviderOptionView(
     config,
     LegacyProviderOptionNamespaces.openrouter,
-    LegacyExtensionKeys.webSearchConfig,
   );
+  var model = config.model;
+  final webSearchEnabled =
+      options.get<bool>(LegacyExtensionKeys.webSearchEnabled) == true;
+  final webSearchConfig =
+      options.get<WebSearchConfig>(LegacyExtensionKeys.webSearchConfig);
   if ((webSearchEnabled || webSearchConfig != null) &&
       !model.endsWith(':online')) {
     model = '$model:online';
@@ -42,87 +39,50 @@ OpenAIConfig toCompatLegacyOpenRouterConfig(LLMConfig config) {
     topK: config.topK,
     tools: config.tools,
     toolChoice: config.toolChoice,
-    jsonSchema: getLegacyProviderOption<StructuredOutputFormat>(
-      config,
-      LegacyProviderOptionNamespaces.openrouter,
+    jsonSchema: options.get<StructuredOutputFormat>(
       LegacyExtensionKeys.jsonSchema,
     ),
     stopSequences: config.stopSequences,
     user: config.user,
     serviceTier: config.serviceTier,
-    useResponsesAPI: getLegacyProviderOption<bool>(
-          config,
-          LegacyProviderOptionNamespaces.openrouter,
-          LegacyExtensionKeys.useResponsesApi,
-        ) ??
-        false,
-    previousResponseId: getLegacyProviderOption<String>(
-      config,
-      LegacyProviderOptionNamespaces.openrouter,
+    useResponsesAPI:
+        options.get<bool>(LegacyExtensionKeys.useResponsesApi) ?? false,
+    previousResponseId: options.get<String>(
       LegacyExtensionKeys.previousResponseId,
     ),
-    builtInTools: getLegacyProviderOption<List<OpenAIBuiltInTool>>(
-      config,
-      LegacyProviderOptionNamespaces.openrouter,
+    builtInTools: options.get<List<OpenAIBuiltInTool>>(
       LegacyExtensionKeys.builtInTools,
     ),
-    frequencyPenalty: getLegacyProviderOption<double>(
-      config,
-      LegacyProviderOptionNamespaces.openrouter,
+    frequencyPenalty: options.get<double>(
       LegacyExtensionKeys.frequencyPenalty,
     ),
-    presencePenalty: getLegacyProviderOption<double>(
-      config,
-      LegacyProviderOptionNamespaces.openrouter,
+    presencePenalty: options.get<double>(
       LegacyExtensionKeys.presencePenalty,
     ),
-    logitBias: getLegacyProviderOption<Map<String, double>>(
-      config,
-      LegacyProviderOptionNamespaces.openrouter,
+    logitBias: options.get<Map<String, double>>(
       LegacyExtensionKeys.logitBias,
     ),
-    seed: getLegacyProviderOption<int>(
-      config,
-      LegacyProviderOptionNamespaces.openrouter,
-      LegacyExtensionKeys.seed,
-    ),
-    parallelToolCalls: getLegacyProviderOption<bool>(
-      config,
-      LegacyProviderOptionNamespaces.openrouter,
+    seed: options.get<int>(LegacyExtensionKeys.seed),
+    parallelToolCalls: options.get<bool>(
       LegacyExtensionKeys.parallelToolCalls,
     ),
-    logprobs: getLegacyProviderOption<bool>(
-      config,
-      LegacyProviderOptionNamespaces.openrouter,
-      LegacyExtensionKeys.logprobs,
-    ),
-    topLogprobs: getLegacyProviderOption<int>(
-      config,
-      LegacyProviderOptionNamespaces.openrouter,
-      LegacyExtensionKeys.topLogprobs,
-    ),
-    verbosity: getLegacyProviderOption<String>(
-      config,
-      LegacyProviderOptionNamespaces.openrouter,
-      LegacyExtensionKeys.verbosity,
-    ),
+    logprobs: options.get<bool>(LegacyExtensionKeys.logprobs),
+    topLogprobs: options.get<int>(LegacyExtensionKeys.topLogprobs),
+    verbosity: options.get<String>(LegacyExtensionKeys.verbosity),
   );
 }
 
 core.ProviderModelOptions buildCompatOpenRouterModelSettings(
   LLMConfig config,
 ) {
-  final webSearchEnabled = getLegacyProviderOption<bool>(
-        config,
-        LegacyProviderOptionNamespaces.openrouter,
-        LegacyExtensionKeys.webSearchEnabled,
-      ) ==
-      true;
-  final webSearchConfig = getLegacyProviderOption<WebSearchConfig>(
+  final options = legacyProviderOptionView(
     config,
     LegacyProviderOptionNamespaces.openrouter,
-    LegacyExtensionKeys.webSearchConfig,
   );
+  final webSearchEnabled =
+      options.get<bool>(LegacyExtensionKeys.webSearchEnabled) == true;
+  final webSearchConfig =
+      options.get<WebSearchConfig>(LegacyExtensionKeys.webSearchConfig);
   if ((webSearchEnabled || webSearchConfig != null) &&
       !config.model.endsWith(':online')) {
     return const modern_openai.OpenRouterChatModelSettings(

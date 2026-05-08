@@ -86,45 +86,35 @@ modern_openai.OpenAIGenerateTextOptions buildCompatOpenAIInvocationOptions({
   required OpenAIConfig legacyConfig,
   required LLMConfig bridgeConfig,
 }) {
+  final options = legacyProviderOptionView(
+    bridgeConfig,
+    LegacyProviderOptionNamespaces.openai,
+  );
   final reasoningEffort = legacyConfig.reasoningEffort ??
       ReasoningEffort.fromString(
         compatStringValue(
-          getLegacyProviderOption<dynamic>(
-            bridgeConfig,
-            LegacyProviderOptionNamespaces.openai,
-            LegacyExtensionKeys.reasoningEffort,
-          ),
+          options.get<dynamic>(LegacyExtensionKeys.reasoningEffort),
         ),
       );
 
   return modern_openai.OpenAIGenerateTextOptions(
     previousResponseId: legacyConfig.previousResponseId ??
-        getLegacyProviderOption<String>(
-          bridgeConfig,
-          LegacyProviderOptionNamespaces.openai,
+        options.get<String>(
           LegacyExtensionKeys.previousResponseId,
         ),
     parallelToolCalls: legacyConfig.parallelToolCalls ??
-        getLegacyProviderOption<bool>(
-          bridgeConfig,
-          LegacyProviderOptionNamespaces.openai,
+        options.get<bool>(
           LegacyExtensionKeys.parallelToolCalls,
         ),
     serviceTier:
         legacyConfig.serviceTier?.value ?? bridgeConfig.serviceTier?.value,
     user: legacyConfig.user ?? bridgeConfig.user,
     verbosity: legacyConfig.verbosity ??
-        getLegacyProviderOption<String>(
-          bridgeConfig,
-          LegacyProviderOptionNamespaces.openai,
-          LegacyExtensionKeys.verbosity,
-        ),
+        options.get<String>(LegacyExtensionKeys.verbosity),
     reasoningEffort: mapCompatOpenAIReasoningEffort(reasoningEffort),
     builtInTools: mapCompatOpenAIBuiltInTools(
       legacyConfig.builtInTools ??
-          getLegacyProviderOption<List<OpenAIBuiltInTool>>(
-            bridgeConfig,
-            LegacyProviderOptionNamespaces.openai,
+          options.get<List<OpenAIBuiltInTool>>(
             LegacyExtensionKeys.builtInTools,
           ),
     ),
