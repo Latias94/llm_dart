@@ -30,21 +30,18 @@ final class _ElevenLabsCompatBridgeRouter {
   Future<TTSResponse> textToSpeech(
     TTSRequest request, {
     TransportCancellation? cancelToken,
-  }) async {
-    if (canUseSpeechBridge(request)) {
-      try {
-        return await bridgeTextToSpeech(
-          request,
-          cancelToken: cancelToken,
-        );
-      } catch (error) {
-        if (!isCompatibilityError(error)) {
-          rethrow;
-        }
-      }
-    }
-
-    return audio.textToSpeech(request, cancelToken: cancelToken);
+  }) {
+    return executeCompatBridge(
+      canUseBridge: canUseSpeechBridge(request),
+      bridge: () => bridgeTextToSpeech(
+        request,
+        cancelToken: cancelToken,
+      ),
+      fallback: () => audio.textToSpeech(
+        request,
+        cancelToken: cancelToken,
+      ),
+    );
   }
 
   Future<STTResponse> bridgeSpeechToText(
@@ -60,20 +57,17 @@ final class _ElevenLabsCompatBridgeRouter {
   Future<STTResponse> speechToText(
     STTRequest request, {
     TransportCancellation? cancelToken,
-  }) async {
-    if (canUseTranscriptionBridge(request)) {
-      try {
-        return await bridgeSpeechToText(
-          request,
-          cancelToken: cancelToken,
-        );
-      } catch (error) {
-        if (!isCompatibilityError(error)) {
-          rethrow;
-        }
-      }
-    }
-
-    return audio.speechToText(request, cancelToken: cancelToken);
+  }) {
+    return executeCompatBridge(
+      canUseBridge: canUseTranscriptionBridge(request),
+      bridge: () => bridgeSpeechToText(
+        request,
+        cancelToken: cancelToken,
+      ),
+      fallback: () => audio.speechToText(
+        request,
+        cancelToken: cancelToken,
+      ),
+    );
   }
 }

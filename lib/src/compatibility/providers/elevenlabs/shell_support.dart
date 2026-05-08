@@ -6,7 +6,7 @@ import '../../../../core/capability.dart';
 import '../../../../models/audio_models.dart';
 import '../../../../providers/elevenlabs/client.dart';
 import '../../../../providers/elevenlabs/config.dart';
-import '../compat_provider_support.dart' show isCompatibilityError;
+import '../compat_provider_support.dart' show executeCompatBridge;
 import 'elevenlabs_audio_compat.dart';
 import 'elevenlabs_audio_bridge_support.dart';
 import 'elevenlabs_models_compat.dart';

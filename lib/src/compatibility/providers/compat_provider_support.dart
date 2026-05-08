@@ -117,8 +117,35 @@ Future<ChatResponse> executeCompatChat({
   required CompatBridgePredicate canUseBridge,
   required Future<ChatResponse> Function() bridge,
   required Future<ChatResponse> Function() fallback,
+}) {
+  return executeCompatBridge(
+    canUseBridge: canUseBridge(originalConfig, messages, tools),
+    bridge: bridge,
+    fallback: fallback,
+  );
+}
+
+Stream<ChatStreamEvent> executeCompatChatStream({
+  required LLMConfig originalConfig,
+  required List<ChatMessage> messages,
+  required List<Tool>? tools,
+  required CompatBridgePredicate canUseBridge,
+  required Stream<ChatStreamEvent> Function() bridge,
+  required Stream<ChatStreamEvent> Function() fallback,
+}) {
+  return executeCompatBridgeStream(
+    canUseBridge: canUseBridge(originalConfig, messages, tools),
+    bridge: bridge,
+    fallback: fallback,
+  );
+}
+
+Future<T> executeCompatBridge<T>({
+  required bool canUseBridge,
+  required Future<T> Function() bridge,
+  required Future<T> Function() fallback,
 }) async {
-  if (canUseBridge(originalConfig, messages, tools)) {
+  if (canUseBridge) {
     try {
       return await bridge();
     } catch (error) {
@@ -131,15 +158,12 @@ Future<ChatResponse> executeCompatChat({
   return fallback();
 }
 
-Stream<ChatStreamEvent> executeCompatChatStream({
-  required LLMConfig originalConfig,
-  required List<ChatMessage> messages,
-  required List<Tool>? tools,
-  required CompatBridgePredicate canUseBridge,
-  required Stream<ChatStreamEvent> Function() bridge,
-  required Stream<ChatStreamEvent> Function() fallback,
+Stream<T> executeCompatBridgeStream<T>({
+  required bool canUseBridge,
+  required Stream<T> Function() bridge,
+  required Stream<T> Function() fallback,
 }) async* {
-  if (canUseBridge(originalConfig, messages, tools)) {
+  if (canUseBridge) {
     try {
       yield* bridge();
       return;
