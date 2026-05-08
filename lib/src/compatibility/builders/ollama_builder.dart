@@ -1,6 +1,8 @@
 import '../../../builder/llm_builder.dart';
 import '../../../core/capability.dart';
 import '../config/legacy_config_keys.dart';
+import '../config/legacy_provider_options.dart';
+import 'llm_builder_legacy_provider_options.dart';
 
 /// Ollama-specific LLM builder with provider-specific configuration methods.
 ///
@@ -18,43 +20,43 @@ class OllamaBuilder {
 
   /// Sets the context window size (number of tokens).
   OllamaBuilder numCtx(int contextLength) {
-    _baseBuilder.extension(LegacyExtensionKeys.numCtx, contextLength);
+    _setProviderOption(LegacyExtensionKeys.numCtx, contextLength);
     return this;
   }
 
   /// Sets the number of GPU layers to use.
   OllamaBuilder numGpu(int gpuLayers) {
-    _baseBuilder.extension(LegacyExtensionKeys.numGpu, gpuLayers);
+    _setProviderOption(LegacyExtensionKeys.numGpu, gpuLayers);
     return this;
   }
 
   /// Sets the number of threads to use for computation.
   OllamaBuilder numThread(int threads) {
-    _baseBuilder.extension(LegacyExtensionKeys.numThread, threads);
+    _setProviderOption(LegacyExtensionKeys.numThread, threads);
     return this;
   }
 
   /// Enables or disables NUMA optimization.
   OllamaBuilder numa(bool enabled) {
-    _baseBuilder.extension(LegacyExtensionKeys.numa, enabled);
+    _setProviderOption(LegacyExtensionKeys.numa, enabled);
     return this;
   }
 
   /// Sets the batch size for processing.
   OllamaBuilder numBatch(int batchSize) {
-    _baseBuilder.extension(LegacyExtensionKeys.numBatch, batchSize);
+    _setProviderOption(LegacyExtensionKeys.numBatch, batchSize);
     return this;
   }
 
   /// Sets how long to keep the model loaded in memory.
   OllamaBuilder keepAlive(String duration) {
-    _baseBuilder.extension(LegacyExtensionKeys.keepAlive, duration);
+    _setProviderOption(LegacyExtensionKeys.keepAlive, duration);
     return this;
   }
 
   /// Enables or disables raw mode.
   OllamaBuilder raw(bool enabled) {
-    _baseBuilder.extension(LegacyExtensionKeys.raw, enabled);
+    _setProviderOption(LegacyExtensionKeys.raw, enabled);
     return this;
   }
 
@@ -90,7 +92,7 @@ class OllamaBuilder {
 
   /// Enables thinking for reasoning models.
   OllamaBuilder reasoning(bool enabled) {
-    _baseBuilder.extension(LegacyExtensionKeys.reasoning, enabled);
+    _setProviderOption(LegacyExtensionKeys.reasoning, enabled);
     return this;
   }
 
@@ -118,5 +120,14 @@ class OllamaBuilder {
   /// Builds a provider with ModelListingCapability.
   Future<ModelListingCapability> buildModelListing() async {
     return _baseBuilder.buildModelListing();
+  }
+
+  void _setProviderOption(String key, dynamic value) {
+    setLegacyBuilderProviderOption(
+      _baseBuilder,
+      LegacyProviderOptionNamespaces.ollama,
+      key,
+      value,
+    );
   }
 }

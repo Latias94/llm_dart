@@ -65,18 +65,6 @@ void main() {
         final builder = LLMBuilder().serviceTier(ServiceTier.auto);
         expect(builder, isNotNull);
       });
-
-      test('should add extension', () {
-        final builder = LLMBuilder().extension('custom', 'value');
-        expect(builder, isNotNull);
-      });
-
-      test('should add multiple extensions', () {
-        final builder = LLMBuilder()
-            .extension('key1', 'value1')
-            .extension('key2', 'value2');
-        expect(builder, isNotNull);
-      });
     });
 
     group('Provider Selection', () {
@@ -226,7 +214,13 @@ void main() {
             .similarityBoost(0.8)
             .style(0.2)
             .useSpeakerBoost(true));
-        expect(builder, isNotNull);
+
+        final elevenLabsOptions = legacyProviderOptionsNamespace(
+          builder.currentConfig,
+          LegacyProviderOptionNamespaces.elevenlabs,
+        );
+        expect(elevenLabsOptions[LegacyExtensionKeys.voiceId], 'voice-123');
+        expect(elevenLabsOptions[LegacyExtensionKeys.stability], 0.7);
       });
 
       test('should configure OpenAI with callback', () {
@@ -276,22 +270,42 @@ void main() {
             .numBatch(512)
             .keepAlive('10m')
             .raw(false));
-        expect(builder, isNotNull);
+
+        final ollamaOptions = legacyProviderOptionsNamespace(
+          builder.currentConfig,
+          LegacyProviderOptionNamespaces.ollama,
+        );
+        expect(ollamaOptions[LegacyExtensionKeys.numCtx], 4096);
+        expect(ollamaOptions[LegacyExtensionKeys.raw], isFalse);
       });
 
       test('should configure Anthropic with callback', () {
         final builder = LLMBuilder().anthropic((anthropic) => anthropic
             .metadata({'user_id': 'test123'}).container('container-123'));
-        expect(builder, isNotNull);
+
+        final anthropicOptions = legacyProviderOptionsNamespace(
+          builder.currentConfig,
+          LegacyProviderOptionNamespaces.anthropic,
+        );
+        expect(anthropicOptions[LegacyExtensionKeys.metadata], {
+          'user_id': 'test123',
+        });
+        expect(
+            anthropicOptions[LegacyExtensionKeys.container], 'container-123');
       });
 
       test('should configure OpenRouter with callback', () {
         final builder =
             LLMBuilder().openRouter((openrouter) => openrouter.onlineSearch());
-        expect(builder, isNotNull);
+
+        final openRouterOptions = legacyProviderOptionsNamespace(
+          builder.currentConfig,
+          LegacyProviderOptionNamespaces.openrouter,
+        );
+        expect(openRouterOptions[LegacyExtensionKeys.webSearchEnabled], isTrue);
       });
 
-      test('should normalize Google reasoning effort into string extension',
+      test('should store Google callback options in namespaced providerOptions',
           () {
         final builder = LLMBuilder().google(
           (google) => google.reasoningEffort(ReasoningEffort.high),
@@ -301,6 +315,15 @@ void main() {
           builder.currentConfig.getExtension<String>(
             LegacyExtensionKeys.reasoningEffort,
           ),
+          isNull,
+        );
+
+        final googleOptions = legacyProviderOptionsNamespace(
+          builder.currentConfig,
+          LegacyProviderOptionNamespaces.google,
+        );
+        expect(
+          googleOptions[LegacyExtensionKeys.reasoningEffort],
           equals('high'),
         );
       });
@@ -454,8 +477,7 @@ void main() {
             .topP(0.9)
             .topK(50)
             .user('test-user')
-            .serviceTier(ServiceTier.auto)
-            .extension('custom', 'value');
+            .serviceTier(ServiceTier.auto);
 
         expect(builder, isNotNull);
       });

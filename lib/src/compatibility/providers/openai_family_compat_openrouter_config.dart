@@ -11,8 +11,12 @@ import 'community_provider_config_adapters.dart';
 
 OpenAIConfig toCompatLegacyOpenRouterConfig(LLMConfig config) {
   var model = config.model;
-  final webSearchEnabled =
-      config.getExtension<bool>(LegacyExtensionKeys.webSearchEnabled) == true;
+  final webSearchEnabled = getLegacyProviderOption<bool>(
+        config,
+        LegacyProviderOptionNamespaces.openrouter,
+        LegacyExtensionKeys.webSearchEnabled,
+      ) ==
+      true;
   final webSearchConfig = getLegacyProviderOption<WebSearchConfig>(
     config,
     LegacyProviderOptionNamespaces.openrouter,
@@ -103,8 +107,12 @@ OpenAIConfig toCompatLegacyOpenRouterConfig(LLMConfig config) {
 core.ProviderModelOptions buildCompatOpenRouterModelSettings(
   LLMConfig config,
 ) {
-  final webSearchEnabled =
-      config.getExtension<bool>(LegacyExtensionKeys.webSearchEnabled) == true;
+  final webSearchEnabled = getLegacyProviderOption<bool>(
+        config,
+        LegacyProviderOptionNamespaces.openrouter,
+        LegacyExtensionKeys.webSearchEnabled,
+      ) ==
+      true;
   final webSearchConfig = getLegacyProviderOption<WebSearchConfig>(
     config,
     LegacyProviderOptionNamespaces.openrouter,

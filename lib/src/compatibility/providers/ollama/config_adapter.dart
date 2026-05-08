@@ -1,6 +1,7 @@
 import '../../../../core/config.dart';
 import '../../../../providers/ollama/config.dart';
 import '../../config/legacy_config_extensions.dart';
+import '../../config/legacy_provider_options.dart';
 import '../community_provider_config_adapters.dart';
 
 /// Adapts a legacy root `LLMConfig` into an Ollama provider config.
@@ -18,13 +19,45 @@ OllamaConfig createLegacyOllamaConfig(LLMConfig config) {
     topK: config.topK,
     tools: config.tools,
     jsonSchema: config.legacyJsonSchema,
-    numCtx: config.getExtension<int>(LegacyExtensionKeys.numCtx),
-    numGpu: config.getExtension<int>(LegacyExtensionKeys.numGpu),
-    numThread: config.getExtension<int>(LegacyExtensionKeys.numThread),
-    numa: config.getExtension<bool>(LegacyExtensionKeys.numa),
-    numBatch: config.getExtension<int>(LegacyExtensionKeys.numBatch),
-    keepAlive: config.getExtension<String>(LegacyExtensionKeys.keepAlive),
-    raw: config.getExtension<bool>(LegacyExtensionKeys.raw),
-    reasoning: config.getExtension<bool>(LegacyExtensionKeys.reasoning),
+    numCtx: getLegacyProviderOption<int>(
+      config,
+      LegacyProviderOptionNamespaces.ollama,
+      LegacyExtensionKeys.numCtx,
+    ),
+    numGpu: getLegacyProviderOption<int>(
+      config,
+      LegacyProviderOptionNamespaces.ollama,
+      LegacyExtensionKeys.numGpu,
+    ),
+    numThread: getLegacyProviderOption<int>(
+      config,
+      LegacyProviderOptionNamespaces.ollama,
+      LegacyExtensionKeys.numThread,
+    ),
+    numa: getLegacyProviderOption<bool>(
+      config,
+      LegacyProviderOptionNamespaces.ollama,
+      LegacyExtensionKeys.numa,
+    ),
+    numBatch: getLegacyProviderOption<int>(
+      config,
+      LegacyProviderOptionNamespaces.ollama,
+      LegacyExtensionKeys.numBatch,
+    ),
+    keepAlive: getLegacyProviderOption<String>(
+      config,
+      LegacyProviderOptionNamespaces.ollama,
+      LegacyExtensionKeys.keepAlive,
+    ),
+    raw: getLegacyProviderOption<bool>(
+      config,
+      LegacyProviderOptionNamespaces.ollama,
+      LegacyExtensionKeys.raw,
+    ),
+    reasoning: getLegacyProviderOption<bool>(
+      config,
+      LegacyProviderOptionNamespaces.ollama,
+      LegacyExtensionKeys.reasoning,
+    ),
   );
 }

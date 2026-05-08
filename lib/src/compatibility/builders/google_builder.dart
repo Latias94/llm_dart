@@ -4,7 +4,9 @@ import '../../../core/llm_error.dart';
 import '../../../models/chat_models.dart';
 import '../../../providers/google/config.dart';
 import '../config/legacy_config_keys.dart';
+import '../config/legacy_provider_options.dart';
 import '../providers/google/google_tts_capability.dart';
+import 'llm_builder_legacy_provider_options.dart';
 
 /// Google-specific legacy builder DSL layered on top of [LLMBuilder].
 class GoogleLLMBuilder {
@@ -14,67 +16,67 @@ class GoogleLLMBuilder {
 
   /// Sets the task type for embeddings.
   GoogleLLMBuilder embeddingTaskType(String taskType) {
-    _baseBuilder.extension(LegacyExtensionKeys.embeddingTaskType, taskType);
+    _setProviderOption(LegacyExtensionKeys.embeddingTaskType, taskType);
     return this;
   }
 
   /// Sets the title for embedding documents.
   GoogleLLMBuilder embeddingTitle(String title) {
-    _baseBuilder.extension(LegacyExtensionKeys.embeddingTitle, title);
+    _setProviderOption(LegacyExtensionKeys.embeddingTitle, title);
     return this;
   }
 
   /// Sets the output dimensionality for embeddings.
   GoogleLLMBuilder embeddingDimensions(int dimensions) {
-    _baseBuilder.extension(LegacyExtensionKeys.embeddingDimensions, dimensions);
+    _setProviderOption(LegacyExtensionKeys.embeddingDimensions, dimensions);
     return this;
   }
 
   /// Sets the reasoning effort for models that support it.
   GoogleLLMBuilder reasoningEffort(ReasoningEffort effort) {
-    _baseBuilder.extension(LegacyExtensionKeys.reasoningEffort, effort.value);
+    _setProviderOption(LegacyExtensionKeys.reasoningEffort, effort.value);
     return this;
   }
 
   /// Sets thinking budget tokens for reasoning models.
   GoogleLLMBuilder thinkingBudgetTokens(int tokens) {
-    _baseBuilder.extension(LegacyExtensionKeys.thinkingBudgetTokens, tokens);
+    _setProviderOption(LegacyExtensionKeys.thinkingBudgetTokens, tokens);
     return this;
   }
 
   /// Enables or disables including thoughts in the response.
   GoogleLLMBuilder includeThoughts(bool include) {
-    _baseBuilder.extension(LegacyExtensionKeys.includeThoughts, include);
+    _setProviderOption(LegacyExtensionKeys.includeThoughts, include);
     return this;
   }
 
   /// Enables image generation capability.
   GoogleLLMBuilder enableImageGeneration(bool enable) {
-    _baseBuilder.extension(LegacyExtensionKeys.enableImageGeneration, enable);
+    _setProviderOption(LegacyExtensionKeys.enableImageGeneration, enable);
     return this;
   }
 
   /// Sets response modalities.
   GoogleLLMBuilder responseModalities(List<String> modalities) {
-    _baseBuilder.extension(LegacyExtensionKeys.responseModalities, modalities);
+    _setProviderOption(LegacyExtensionKeys.responseModalities, modalities);
     return this;
   }
 
   /// Sets safety settings for content filtering.
   GoogleLLMBuilder safetySettings(List<SafetySetting> settings) {
-    _baseBuilder.extension(LegacyExtensionKeys.safetySettings, settings);
+    _setProviderOption(LegacyExtensionKeys.safetySettings, settings);
     return this;
   }
 
   /// Sets maximum inline data size.
   GoogleLLMBuilder maxInlineDataSize(int size) {
-    _baseBuilder.extension(LegacyExtensionKeys.maxInlineDataSize, size);
+    _setProviderOption(LegacyExtensionKeys.maxInlineDataSize, size);
     return this;
   }
 
   /// Sets candidate count for response generation.
   GoogleLLMBuilder candidateCount(int count) {
-    _baseBuilder.extension(LegacyExtensionKeys.candidateCount, count);
+    _setProviderOption(LegacyExtensionKeys.candidateCount, count);
     return this;
   }
 
@@ -174,5 +176,14 @@ class GoogleLLMBuilder {
   GoogleLLMBuilder enableAudioOutput() {
     responseModalities(['AUDIO']);
     return this;
+  }
+
+  void _setProviderOption(String key, dynamic value) {
+    setLegacyBuilderProviderOption(
+      _baseBuilder,
+      LegacyProviderOptionNamespaces.google,
+      key,
+      value,
+    );
   }
 }

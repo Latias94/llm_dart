@@ -2,6 +2,8 @@ import '../../../builder/llm_builder.dart';
 import '../../../core/capability.dart';
 import '../../../providers/anthropic/mcp_models.dart';
 import '../config/legacy_config_keys.dart';
+import '../config/legacy_provider_options.dart';
+import 'llm_builder_legacy_provider_options.dart';
 
 /// Anthropic-specific legacy builder DSL layered on top of [LLMBuilder].
 class AnthropicBuilder {
@@ -11,19 +13,19 @@ class AnthropicBuilder {
 
   /// Sets metadata for the request.
   AnthropicBuilder metadata(Map<String, dynamic> data) {
-    _baseBuilder.extension(LegacyExtensionKeys.metadata, data);
+    _setProviderOption(LegacyExtensionKeys.metadata, data);
     return this;
   }
 
   /// Sets the container ID for workbench usage.
   AnthropicBuilder container(String containerId) {
-    _baseBuilder.extension(LegacyExtensionKeys.container, containerId);
+    _setProviderOption(LegacyExtensionKeys.container, containerId);
     return this;
   }
 
   /// Sets MCP (Model Context Protocol) servers.
   AnthropicBuilder mcpServers(List<AnthropicMCPServer> servers) {
-    _baseBuilder.extension(LegacyExtensionKeys.mcpServers, servers);
+    _setProviderOption(LegacyExtensionKeys.mcpServers, servers);
     return this;
   }
 
@@ -157,5 +159,14 @@ class AnthropicBuilder {
   /// Builds a provider with ModelListingCapability.
   Future<ModelListingCapability> buildModelListing() async {
     return _baseBuilder.buildModelListing();
+  }
+
+  void _setProviderOption(String key, dynamic value) {
+    setLegacyBuilderProviderOption(
+      _baseBuilder,
+      LegacyProviderOptionNamespaces.anthropic,
+      key,
+      value,
+    );
   }
 }

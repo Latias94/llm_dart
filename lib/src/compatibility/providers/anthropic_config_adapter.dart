@@ -4,6 +4,7 @@ import '../../../models/tool_models.dart';
 import '../../../providers/anthropic/config.dart';
 import '../../../providers/anthropic/mcp_models.dart';
 import '../config/legacy_config_keys.dart';
+import '../config/legacy_provider_options.dart';
 import 'community_provider_config_adapters.dart';
 
 /// Adapts a legacy root `LLMConfig` into an Anthropic provider config.
@@ -26,17 +27,36 @@ AnthropicConfig createLegacyAnthropicConfig(LLMConfig config) {
     stopSequences: config.stopSequences,
     user: config.user,
     serviceTier: config.serviceTier,
-    reasoning:
-        config.getExtension<bool>(LegacyExtensionKeys.reasoning) ?? false,
-    thinkingBudgetTokens:
-        config.getExtension<int>(LegacyExtensionKeys.thinkingBudgetTokens),
-    interleavedThinking:
-        config.getExtension<bool>(LegacyExtensionKeys.interleavedThinking) ??
-            false,
-    metadata:
-        config.getExtension<Map<String, dynamic>>(LegacyExtensionKeys.metadata),
-    container: config.getExtension<String>(LegacyExtensionKeys.container),
-    mcpServers: config.getExtension<List<AnthropicMCPServer>>(
+    reasoning: getLegacyProviderOption<bool>(
+          config,
+          LegacyProviderOptionNamespaces.anthropic,
+          LegacyExtensionKeys.reasoning,
+        ) ??
+        false,
+    thinkingBudgetTokens: getLegacyProviderOption<int>(
+      config,
+      LegacyProviderOptionNamespaces.anthropic,
+      LegacyExtensionKeys.thinkingBudgetTokens,
+    ),
+    interleavedThinking: getLegacyProviderOption<bool>(
+          config,
+          LegacyProviderOptionNamespaces.anthropic,
+          LegacyExtensionKeys.interleavedThinking,
+        ) ??
+        false,
+    metadata: getLegacyProviderOption<Map<String, dynamic>>(
+      config,
+      LegacyProviderOptionNamespaces.anthropic,
+      LegacyExtensionKeys.metadata,
+    ),
+    container: getLegacyProviderOption<String>(
+      config,
+      LegacyProviderOptionNamespaces.anthropic,
+      LegacyExtensionKeys.container,
+    ),
+    mcpServers: getLegacyProviderOption<List<AnthropicMCPServer>>(
+      config,
+      LegacyProviderOptionNamespaces.anthropic,
       LegacyExtensionKeys.mcpServers,
     ),
     webSearchConfig: webSearchConfig,
@@ -44,14 +64,21 @@ AnthropicConfig createLegacyAnthropicConfig(LLMConfig config) {
 }
 
 WebSearchConfig? _createLegacyAnthropicWebSearchConfig(LLMConfig config) {
-  final webSearchConfig = config.getExtension<WebSearchConfig>(
+  final webSearchConfig = getLegacyProviderOption<WebSearchConfig>(
+    config,
+    LegacyProviderOptionNamespaces.anthropic,
     LegacyExtensionKeys.webSearchConfig,
   );
   if (webSearchConfig != null) {
     return webSearchConfig;
   }
 
-  if (config.getExtension<bool>(LegacyExtensionKeys.webSearchEnabled) == true) {
+  if (getLegacyProviderOption<bool>(
+        config,
+        LegacyProviderOptionNamespaces.anthropic,
+        LegacyExtensionKeys.webSearchEnabled,
+      ) ==
+      true) {
     return const WebSearchConfig();
   }
 

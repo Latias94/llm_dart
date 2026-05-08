@@ -86,12 +86,20 @@ bool _hasGoogleStructuredOutputConflict(
   LLMConfig config,
   List<dynamic>? responseModalities,
 ) {
-  final structuredOutput = config.legacyJsonSchema;
+  final structuredOutput = getLegacyProviderOption<StructuredOutputFormat>(
+    config,
+    LegacyProviderOptionNamespaces.google,
+    LegacyExtensionKeys.jsonSchema,
+  );
   if (structuredOutput == null) {
     return false;
   }
 
-  if (config.getExtension<bool>(LegacyExtensionKeys.enableImageGeneration) ==
+  if (getLegacyProviderOption<bool>(
+        config,
+        LegacyProviderOptionNamespaces.google,
+        LegacyExtensionKeys.enableImageGeneration,
+      ) ==
       true) {
     return true;
   }

@@ -54,8 +54,12 @@ extension LLMBuilderCommonConfig on LLMBuilder {
   LLMBuilder serviceTier(ServiceTier tier) =>
       _setConfig(_config.copyWith(serviceTier: tier));
 
-  /// Sets provider-specific extension
-  LLMBuilder extension(String key, dynamic value) => _setExtension(key, value);
+  /// Sets a legacy compatibility extension.
+  ///
+  /// New provider-specific options should use typed provider builders, which
+  /// store provider-owned values under providerOptions.
+  LLMBuilder legacyExtension(String key, dynamic value) =>
+      _setExtension(key, value);
 
   /// Gets the current configuration (for internal use by builders)
   LLMConfig get currentConfig => _config;

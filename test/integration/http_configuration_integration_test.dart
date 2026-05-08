@@ -3,7 +3,6 @@ import 'package:llm_dart/builder/llm_builder.dart';
 import 'package:llm_dart/core/llm_error.dart';
 import 'package:llm_dart/models/chat_models.dart';
 import 'package:llm_dart/models/tool_models.dart';
-import 'package:llm_dart/src/compatibility/config/legacy_config_keys.dart';
 
 void main() {
   group('HTTP Configuration Integration Tests', () {
@@ -264,13 +263,12 @@ void main() {
 
       test('should handle HTTP configuration with web search', () {
         final builder = LLMBuilder()
-            .xai()
+            .openRouter((openrouter) => openrouter.onlineSearch())
             .apiKey('test-key')
-            .model('grok-3')
+            .model('openai/gpt-4o-mini')
             .http((http) => http
                 .headers({'X-Search-Enabled': 'true'}).receiveTimeout(
-                    Duration(minutes: 5)))
-            .extension(LegacyExtensionKeys.webSearchEnabled, true);
+                    Duration(minutes: 5)));
 
         expect(builder, isNotNull);
       });

@@ -24,11 +24,27 @@ bool canUseGoogleChatBridge(
       LegacyExtensionKeys.webSearchEnabled,
       LegacyExtensionKeys.webSearchConfig,
     },
+    allowedProviderOptions: {
+      LegacyProviderOptionNamespaces.google: {
+        LegacyExtensionKeys.jsonSchema,
+        LegacyExtensionKeys.reasoningEffort,
+        LegacyExtensionKeys.thinkingBudgetTokens,
+        LegacyExtensionKeys.includeThoughts,
+        LegacyExtensionKeys.enableImageGeneration,
+        LegacyExtensionKeys.responseModalities,
+        LegacyExtensionKeys.safetySettings,
+        LegacyExtensionKeys.candidateCount,
+        LegacyExtensionKeys.webSearchEnabled,
+        LegacyExtensionKeys.webSearchConfig,
+      },
+    },
   )) {
     return false;
   }
 
-  final responseModalities = config.getExtension<List<dynamic>>(
+  final responseModalities = getLegacyProviderOption<List<dynamic>>(
+    config,
+    LegacyProviderOptionNamespaces.google,
     LegacyExtensionKeys.responseModalities,
   );
   if (responseModalities != null &&
@@ -90,6 +106,18 @@ bool canUseAnthropicChatBridge(
       LegacyExtensionKeys.mcpServers,
       LegacyExtensionKeys.webSearchEnabled,
       LegacyExtensionKeys.webSearchConfig,
+    },
+    allowedProviderOptions: {
+      LegacyProviderOptionNamespaces.anthropic: {
+        LegacyExtensionKeys.reasoning,
+        LegacyExtensionKeys.thinkingBudgetTokens,
+        LegacyExtensionKeys.interleavedThinking,
+        LegacyExtensionKeys.metadata,
+        LegacyExtensionKeys.container,
+        LegacyExtensionKeys.mcpServers,
+        LegacyExtensionKeys.webSearchEnabled,
+        LegacyExtensionKeys.webSearchConfig,
+      },
     },
   )) {
     return false;

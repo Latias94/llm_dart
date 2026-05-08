@@ -52,13 +52,11 @@ mixin _OpenAIBuilderProviderOptions {
   }
 
   void _setOpenAIProviderOption(String key, dynamic value) {
-    final providerOptions = setLegacyProviderOption(
-      _baseBuilder.currentConfig,
+    setLegacyBuilderProviderOption(
+      _baseBuilder,
       LegacyProviderOptionNamespaces.openai,
       key,
       value,
     );
-
-    _baseBuilder.extension(legacyProviderOptionsBagKey, providerOptions);
   }
 }

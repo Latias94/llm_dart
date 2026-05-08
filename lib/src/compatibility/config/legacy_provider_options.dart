@@ -8,6 +8,10 @@ const legacyProviderOptionsBagKey = 'providerOptions';
 abstract final class LegacyProviderOptionNamespaces {
   static const openai = 'openai';
   static const openrouter = 'openrouter';
+  static const anthropic = 'anthropic';
+  static const google = 'google';
+  static const ollama = 'ollama';
+  static const elevenlabs = 'elevenlabs';
 }
 
 Map<String, dynamic>? legacyProviderOptionsBagOrNull(LLMConfig config) {
