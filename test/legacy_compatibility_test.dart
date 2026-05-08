@@ -2,6 +2,7 @@ import 'package:llm_dart/legacy.dart' as legacy;
 import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as modern_anthropic;
 import 'package:llm_dart/src/compatibility/compat_providers.dart';
 import 'package:llm_dart/src/compatibility/legacy_chat_adapter.dart';
+import 'package:llm_dart/src/compatibility/config/legacy_anthropic_options.dart';
 import 'package:llm_dart/src/compatibility/config/legacy_config_keys.dart';
 import 'package:llm_dart/src/compatibility/config/legacy_google_thinking_options.dart';
 import 'package:llm_dart/src/compatibility/config/legacy_openai_options.dart';
@@ -216,6 +217,47 @@ void main() {
       expect(hosted.voice, 'alloy');
       expect(hosted.embeddingEncodingFormat, 'float');
       expect(hosted.embeddingDimensions, 1024);
+    });
+
+    test('LegacyAnthropicOptions centralizes Anthropic option reads', () {
+      const server = legacy.AnthropicMCPServer.url(
+        name: 'docs',
+        url: 'https://example.com/mcp',
+      );
+      const config = legacy.LLMConfig(
+        apiKey: 'test-key',
+        baseUrl: 'https://api.anthropic.com/v1',
+        model: 'claude-3-5-sonnet-latest',
+        extensions: {
+          LegacyExtensionKeys.reasoning: true,
+          LegacyExtensionKeys.metadata: {'source': 'flat'},
+          LegacyExtensionKeys.container: 'flat-container',
+          legacyProviderOptionsBagKey: {
+            LegacyProviderOptionNamespaces.anthropic: {
+              LegacyExtensionKeys.reasoning: null,
+              LegacyExtensionKeys.thinkingBudgetTokens: 1024,
+              LegacyExtensionKeys.interleavedThinking: true,
+              LegacyExtensionKeys.metadata: {'source': 'namespaced'},
+              LegacyExtensionKeys.container: null,
+              LegacyExtensionKeys.mcpServers: [server],
+            },
+          },
+        },
+      );
+
+      final anthropic = legacyAnthropicOptions(
+        legacyProviderOptionView(
+          config,
+          LegacyProviderOptionNamespaces.anthropic,
+        ),
+      );
+
+      expect(anthropic.reasoning, isFalse);
+      expect(anthropic.thinkingBudgetTokens, 1024);
+      expect(anthropic.interleavedThinking, isTrue);
+      expect(anthropic.metadata, {'source': 'namespaced'});
+      expect(anthropic.container, isNull);
+      expect(anthropic.mcpServers, [server]);
     });
 
     test(

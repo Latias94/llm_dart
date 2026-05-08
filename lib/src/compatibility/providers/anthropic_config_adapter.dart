@@ -2,8 +2,7 @@ import '../../../core/config.dart';
 import '../../../core/web_search.dart';
 import '../../../models/tool_models.dart';
 import '../../../providers/anthropic/config.dart';
-import '../../../providers/anthropic/mcp_models.dart';
-import '../config/legacy_config_keys.dart';
+import '../config/legacy_anthropic_options.dart';
 import '../config/legacy_provider_options.dart';
 import '../config/legacy_web_search_options.dart';
 import 'community_provider_config_adapters.dart';
@@ -15,6 +14,7 @@ AnthropicConfig createLegacyAnthropicConfig(LLMConfig config) {
     LegacyProviderOptionNamespaces.anthropic,
   );
   final webSearchConfig = _createLegacyAnthropicWebSearchConfig(options);
+  final anthropicOptions = legacyAnthropicOptions(options);
 
   return AnthropicConfig(
     apiKey: config.apiKey!,
@@ -32,23 +32,12 @@ AnthropicConfig createLegacyAnthropicConfig(LLMConfig config) {
     stopSequences: config.stopSequences,
     user: config.user,
     serviceTier: config.serviceTier,
-    reasoning:
-        options.getWithFlatFallback<bool>(LegacyExtensionKeys.reasoning) ??
-            false,
-    thinkingBudgetTokens: options.getWithFlatFallback<int>(
-      LegacyExtensionKeys.thinkingBudgetTokens,
-    ),
-    interleavedThinking: options.getWithFlatFallback<bool>(
-            LegacyExtensionKeys.interleavedThinking) ??
-        false,
-    metadata: options.getWithFlatFallback<Map<String, dynamic>>(
-      LegacyExtensionKeys.metadata,
-    ),
-    container:
-        options.getWithFlatFallback<String>(LegacyExtensionKeys.container),
-    mcpServers: options.getWithFlatFallback<List<AnthropicMCPServer>>(
-      LegacyExtensionKeys.mcpServers,
-    ),
+    reasoning: anthropicOptions.reasoning,
+    thinkingBudgetTokens: anthropicOptions.thinkingBudgetTokens,
+    interleavedThinking: anthropicOptions.interleavedThinking,
+    metadata: anthropicOptions.metadata,
+    container: anthropicOptions.container,
+    mcpServers: anthropicOptions.mcpServers,
     webSearchConfig: webSearchConfig,
   );
 }
