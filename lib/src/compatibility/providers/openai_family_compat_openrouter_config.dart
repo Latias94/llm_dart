@@ -3,6 +3,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart' as core;
 
 import '../../../core/config.dart';
 import '../../../core/web_search.dart';
+import '../../../models/tool_models.dart';
 import '../../../providers/openai/builtin_tools.dart';
 import '../../../providers/openai/config.dart';
 import '../config/legacy_config_extensions.dart';
@@ -41,7 +42,11 @@ OpenAIConfig toCompatLegacyOpenRouterConfig(LLMConfig config) {
     topK: config.topK,
     tools: config.tools,
     toolChoice: config.toolChoice,
-    jsonSchema: config.legacyJsonSchema,
+    jsonSchema: getLegacyProviderOption<StructuredOutputFormat>(
+      config,
+      LegacyProviderOptionNamespaces.openrouter,
+      LegacyExtensionKeys.jsonSchema,
+    ),
     stopSequences: config.stopSequences,
     user: config.user,
     serviceTier: config.serviceTier,

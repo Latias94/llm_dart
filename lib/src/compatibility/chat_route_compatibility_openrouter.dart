@@ -35,6 +35,7 @@ bool canUseOpenRouterChatBridge(
       LegacyProviderOptionNamespaces.openrouter: {
         LegacyExtensionKeys.parallelToolCalls,
         LegacyExtensionKeys.verbosity,
+        LegacyExtensionKeys.jsonSchema,
         LegacyExtensionKeys.webSearchEnabled,
         LegacyExtensionKeys.webSearchConfig,
       },

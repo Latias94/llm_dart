@@ -1,5 +1,6 @@
 import '../../../../builder/llm_builder.dart';
 import '../../../../core/capability.dart';
+import '../../../../models/tool_models.dart';
 import '../../../../src/compatibility/builders/llm_builder_legacy_provider_options.dart';
 import '../../../../src/compatibility/config/legacy_config_keys.dart';
 import '../../../../src/compatibility/config/legacy_provider_options.dart';
@@ -30,6 +31,17 @@ class OpenRouterBuilder {
       LegacyProviderOptionNamespaces.openrouter,
       LegacyExtensionKeys.webSearchEnabled,
       true,
+    );
+    return this;
+  }
+
+  /// Sets structured output schema for OpenRouter chat requests.
+  OpenRouterBuilder jsonSchema(StructuredOutputFormat schema) {
+    setLegacyBuilderProviderOption(
+      _baseBuilder,
+      LegacyProviderOptionNamespaces.openrouter,
+      LegacyExtensionKeys.jsonSchema,
+      schema,
     );
     return this;
   }

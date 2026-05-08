@@ -1,4 +1,5 @@
 import 'package:llm_dart/core/config.dart';
+import 'package:llm_dart/models/tool_models.dart';
 import 'package:llm_dart/providers/factories/openai_compatible_factory.dart';
 import 'package:llm_dart/providers/factories/openai_factory.dart';
 import 'package:llm_dart/providers/openai/openai.dart';
@@ -92,6 +93,15 @@ void main() {
       final factory = OpenAICompatibleProviderFactory.createFactory(
         'openrouter',
       )!;
+      const schema = StructuredOutputFormat(
+        name: 'answer',
+        schema: {
+          'type': 'object',
+          'properties': {
+            'value': {'type': 'string'},
+          },
+        },
+      );
       final config = LLMConfig(
         apiKey: 'test-api-key',
         baseUrl: 'https://openrouter.ai/api/v1/',
@@ -103,6 +113,7 @@ void main() {
                   CompatWebSearchPresets.openRouter(
                 maxResults: 5,
               ),
+              LegacyExtensionKeys.jsonSchema: schema,
             },
           },
         },
@@ -112,6 +123,7 @@ void main() {
 
       expect(provider, isA<CompatOpenRouterProvider>());
       expect(provider.config.model, equals('openai/gpt-4o-mini:online'));
+      expect(provider.config.jsonSchema, same(schema));
     });
   });
 }

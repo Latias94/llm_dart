@@ -285,7 +285,7 @@ void main() {
     });
 
     test(
-        'OpenRouter bridge accepts namespaced webSearchConfig for the audited online subset',
+        'OpenRouter bridge accepts namespaced providerOptions for the audited subset',
         () {
       final result = canUseOpenRouterChatBridge(
         _baseConfig('openai/gpt-4o-mini').withExtensions({
@@ -295,6 +295,16 @@ void main() {
                   legacy.CompatWebSearchPresets.openRouter(
                 maxResults: 5,
                 searchPrompt: 'Focus on recent developments.',
+              ),
+              LegacyExtensionKeys.jsonSchema:
+                  const legacy.StructuredOutputFormat(
+                name: 'answer',
+                schema: {
+                  'type': 'object',
+                  'properties': {
+                    'value': {'type': 'string'},
+                  },
+                },
               ),
             },
           },
