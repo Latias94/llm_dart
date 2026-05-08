@@ -4,6 +4,7 @@ import '../../core/capability.dart';
 import '../../core/llm_error.dart';
 import '../../models/chat_models.dart';
 import '../../models/tool_models.dart';
+import '../../src/compatibility/providers/openai_compatible_legacy_message_codec.dart';
 import '../../src/compatibility/reasoning_utils.dart';
 import 'client.dart';
 import 'config.dart';
@@ -300,17 +301,10 @@ class DeepSeekChat implements ChatCapability {
     List<Tool>? tools,
     bool stream,
   ) {
-    final apiMessages = <Map<String, dynamic>>[];
-
-    // Add system message if configured
-    if (config.systemPrompt != null) {
-      apiMessages.add({'role': 'system', 'content': config.systemPrompt});
-    }
-
-    // Convert messages to DeepSeek format
-    for (final message in messages) {
-      apiMessages.add(_convertMessage(message));
-    }
+    final apiMessages = buildOpenAICompatibleLegacyMessages(
+      messages: messages,
+      systemPrompt: config.systemPrompt,
+    );
 
     final body = <String, dynamic>{
       'model': config.model,
@@ -387,40 +381,6 @@ class DeepSeekChat implements ChatCapability {
     }
 
     return body;
-  }
-
-  /// Convert ChatMessage to DeepSeek format
-  Map<String, dynamic> _convertMessage(ChatMessage message) {
-    final result = <String, dynamic>{'role': message.role.name};
-
-    // Add name field if present (DeepSeek is OpenAI-compatible)
-    if (message.name != null) {
-      result['name'] = message.name;
-    }
-
-    switch (message.messageType) {
-      case TextMessage():
-        result['content'] = message.content;
-        break;
-      case ToolUseMessage(toolCalls: final toolCalls):
-        result['tool_calls'] = toolCalls.map((tc) => tc.toJson()).toList();
-        break;
-      case ToolResultMessage():
-        // Tool results are handled as separate messages in DeepSeek
-        // This should be handled at a higher level
-        result['content'] = message.content;
-        break;
-      default:
-        result['content'] = message.content;
-    }
-
-    // Important: Remove reasoning_content field if present
-    // Reference: https://api-docs.deepseek.com/guides/reasoning_model
-    // "if the reasoning_content field is included in the sequence of input messages,
-    // the API will return a 400 error"
-    result.remove('reasoning_content');
-
-    return result;
   }
 }
 

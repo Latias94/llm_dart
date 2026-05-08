@@ -25,11 +25,15 @@ openai_pkg.OpenAI openRouter({
   required String apiKey,
   TransportClient? transport,
   String? baseUrl,
+  String? appReferer,
+  String? appTitle,
 }) {
   return AI.openRouter(
     apiKey: apiKey,
     transport: transport,
     baseUrl: baseUrl,
+    appReferer: appReferer,
+    appTitle: appTitle,
   );
 }
 
@@ -141,12 +145,17 @@ final class AI {
     required String apiKey,
     TransportClient? transport,
     String? baseUrl,
+    String? appReferer,
+    String? appTitle,
   }) {
     return _openaiFamily(
       apiKey: apiKey,
       transport: transport,
       baseUrl: baseUrl,
-      profile: const openai_pkg.OpenRouterProfile(),
+      profile: openai_pkg.OpenRouterProfile(
+        appReferer: appReferer,
+        appTitle: appTitle,
+      ),
     );
   }
 

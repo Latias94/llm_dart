@@ -28,6 +28,9 @@ Older builder-era code should migrate through `package:llm_dart/legacy.dart`.
 - Added focused root entrypoints for xAI, DeepSeek, OpenRouter, Groq, and
   Phind so OpenAI-family profiles can be imported from provider-shaped paths
   instead of the broad OpenAI-family entrypoint.
+- Added OpenRouter app attribution header support through
+  `OpenRouterProfile(appReferer: ..., appTitle: ...)` and root
+  `openRouter(...)` parameters.
 - Added model capability profiles for modern Ollama and ElevenLabs models in
   `llm_dart_community`.
 - Added updated app and Flutter examples that show the model-first path,
@@ -43,6 +46,12 @@ Older builder-era code should migrate through `package:llm_dart/legacy.dart`.
   entrypoints, or provider helper clients instead of broad shared option bags.
 - The MCP examples now use the current `mcp_dart` 2.x package and document the
   run-from-package commands for stdio and HTTP transports.
+
+### Fixed
+
+- Fixed legacy direct DeepSeek, Groq, and xAI provider tool-result replay so
+  OpenAI-compatible chat-completions requests send `role: tool` messages with
+  matching `tool_call_id` values after assistant `tool_calls`.
 
 ### Breaking Changes
 

@@ -48,7 +48,11 @@ import 'package:llm_dart/llm_dart.dart' as llm;
 final providers = <core.LanguageModel>[
   llm.groq(apiKey: 'groq-key').chatModel('llama-3.3-70b-versatile'),
   llm.deepSeek(apiKey: 'deepseek-key').chatModel('deepseek-chat'),
-  llm.openRouter(apiKey: 'openrouter-key').chatModel('openai/gpt-4o-mini'),
+  llm.openRouter(
+    apiKey: 'openrouter-key',
+    appReferer: 'https://example.com',
+    appTitle: 'Example App',
+  ).chatModel('openai/gpt-4o-mini'),
 ];
 
 for (final model in providers) {

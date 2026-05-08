@@ -76,6 +76,26 @@ void main() {
       }
     });
 
+    test('OpenRouter profile adds optional app attribution headers', () {
+      const profile = OpenRouterProfile(
+        appReferer: 'https://example.com',
+        appTitle: 'Example App',
+      );
+
+      expect(
+        profile.buildHeaders(
+          apiKey: 'test-key',
+          extraHeaders: {'x-trace': 'trace-1'},
+        ),
+        {
+          'authorization': 'Bearer test-key',
+          'HTTP-Referer': 'https://example.com',
+          'X-OpenRouter-Title': 'Example App',
+          'x-trace': 'trace-1',
+        },
+      );
+    });
+
     test(
         'OpenAI factory uses profile defaults for provider id, base url, and headers',
         () {
@@ -308,6 +328,104 @@ void main() {
       expect(result.text, 'hello');
       expect(result.providerMetadata?['deepseek'],
           containsPair('finishReason', 'stop'));
+    });
+
+    test('DeepSeek tool replay encodes matching role tool messages', () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        profile: const DeepSeekProfile(),
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'chatcmpl_deepseek_tool_1',
+                'model': 'deepseek-chat',
+                'created': 1710000000,
+                'choices': [
+                  {
+                    'index': 0,
+                    'finish_reason': 'stop',
+                    'message': {
+                      'role': 'assistant',
+                      'content': 'The weather in Hanoi is warm.',
+                    },
+                  },
+                ],
+                'usage': {
+                  'prompt_tokens': 8,
+                  'completion_tokens': 6,
+                  'total_tokens': 14,
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel('deepseek-chat');
+
+      await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage.text('What is the weather in Hanoi?'),
+            AssistantPromptMessage(
+              parts: const [
+                ToolCallPromptPart(
+                  toolCallId: 'call_weather_1',
+                  toolName: 'get_weather',
+                  input: {'city': 'Hanoi'},
+                ),
+              ],
+            ),
+            ToolPromptMessage(
+              toolName: 'get_weather',
+              parts: [
+                ToolResultPromptPart(
+                  toolCallId: 'call_weather_1',
+                  toolName: 'get_weather',
+                  output: {
+                    'city': 'Hanoi',
+                    'temperatureC': 31,
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(
+        requestBody['messages'],
+        [
+          {
+            'role': 'user',
+            'content': 'What is the weather in Hanoi?',
+          },
+          {
+            'role': 'assistant',
+            'content': '',
+            'tool_calls': [
+              {
+                'id': 'call_weather_1',
+                'type': 'function',
+                'function': {
+                  'name': 'get_weather',
+                  'arguments': '{"city":"Hanoi"}',
+                },
+              },
+            ],
+          },
+          {
+            'role': 'tool',
+            'tool_call_id': 'call_weather_1',
+            'content': '{"city":"Hanoi","temperatureC":31}',
+          },
+        ],
+      );
     });
   });
 }

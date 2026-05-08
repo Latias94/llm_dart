@@ -4,6 +4,7 @@ import '../../core/capability.dart';
 import '../../core/llm_error.dart';
 import '../../models/chat_models.dart';
 import '../../models/tool_models.dart';
+import '../../src/compatibility/providers/openai_compatible_legacy_message_codec.dart';
 import 'client.dart';
 import 'config.dart';
 
@@ -163,17 +164,11 @@ class XAIChat implements ChatCapability {
     List<Tool>? tools,
     bool stream,
   ) {
-    final apiMessages = <Map<String, dynamic>>[];
-
-    // Add system message if configured
-    if (config.systemPrompt != null) {
-      apiMessages.add({'role': 'system', 'content': config.systemPrompt});
-    }
-
-    // Convert messages to xAI format
-    for (final message in messages) {
-      apiMessages.add(_convertMessage(message));
-    }
+    final apiMessages = buildOpenAICompatibleLegacyMessages(
+      messages: messages,
+      systemPrompt: config.systemPrompt,
+      includeName: false,
+    );
 
     final body = <String, dynamic>{
       'model': config.model,
@@ -213,40 +208,6 @@ class XAIChat implements ChatCapability {
     }
 
     return body;
-  }
-
-  /// Convert ChatMessage to xAI format
-  Map<String, dynamic> _convertMessage(ChatMessage message) {
-    final result = <String, dynamic>{'role': message.role.name};
-
-    // Note: xAI API only supports role and content fields based on their specification
-    // Name field is not supported in pure xAI API (use OpenAI provider for OpenAI compatibility)
-
-    switch (message.messageType) {
-      case TextMessage():
-        result['content'] = message.content;
-        break;
-      case ToolUseMessage():
-        // xAI supports tool calls, convert to proper format
-        final toolUseMsg = message.messageType as ToolUseMessage;
-        result['tool_calls'] =
-            toolUseMsg.toolCalls.map((tc) => tc.toJson()).toList();
-        if (message.content.isNotEmpty) {
-          result['content'] = message.content;
-        }
-        break;
-      case ToolResultMessage():
-        // Tool results are handled as separate messages in xAI
-        final toolResultMsg = message.messageType as ToolResultMessage;
-        result['role'] = 'tool';
-        result['content'] = message.content;
-        result['tool_call_id'] = toolResultMsg.results.first.id;
-        break;
-      default:
-        result['content'] = message.content;
-    }
-
-    return result;
   }
 
   /// Build search parameters dynamically following xAI specification

@@ -141,6 +141,20 @@ If you prefer the root convenience surface, `groq(...)`, `deepSeek(...)`,
 `openRouter(...)`, and `xai(...)` are the equivalent stable entrypoints.
 The grouped `AI.*` facade remains available when you prefer one namespace.
 
+OpenRouter app attribution headers can live on the profile:
+
+```dart
+import 'package:llm_dart_openai/llm_dart_openai.dart';
+
+final openRouterModel = OpenAI(
+  apiKey: 'your-openrouter-key',
+  profile: const OpenRouterProfile(
+    appReferer: 'https://example.com',
+    appTitle: 'Example App',
+  ),
+).chatModel('openai/gpt-4o-mini');
+```
+
 ## OpenAI Moderation Example
 
 `OpenAI(...).moderation()` is intentionally OpenAI-profile only. Other

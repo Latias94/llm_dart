@@ -44,7 +44,11 @@ void main() {
 
     test('OpenRouter entrypoint exposes OpenRouter facade and typed settings',
         () {
-      final provider = openrouter.openRouter(apiKey: 'test-key');
+      final provider = openrouter.openRouter(
+        apiKey: 'test-key',
+        appReferer: 'https://example.com',
+        appTitle: 'Example App',
+      );
       final model = provider.chatModel(
         'openai/gpt-4o-mini',
         settings: const openrouter.OpenRouterChatModelSettings(
@@ -57,6 +61,14 @@ void main() {
 
       expect(provider.profile, isA<openrouter.OpenRouterProfile>());
       expect(model.providerId, 'openrouter');
+      expect(
+        model.defaultHeaders,
+        containsPair('HTTP-Referer', 'https://example.com'),
+      );
+      expect(
+        model.defaultHeaders,
+        containsPair('X-OpenRouter-Title', 'Example App'),
+      );
       expect(options.search, isA<openrouter.OpenRouterSearchOptions>());
     });
 

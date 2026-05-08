@@ -48,12 +48,30 @@ final class OpenAIProfile extends _BearerAuthOpenAIFamilyProfile {
 }
 
 final class OpenRouterProfile extends _BearerAuthOpenAIFamilyProfile {
+  final String? appReferer;
+  final String? appTitle;
+
   const OpenRouterProfile({
+    this.appReferer,
+    this.appTitle,
     super.defaultBaseUrl = 'https://openrouter.ai/api/v1',
   }) : super(
           providerId: 'openrouter',
           supportsResponsesApi: false,
         );
+
+  @override
+  Map<String, String> buildHeaders({
+    required String apiKey,
+    Map<String, String> extraHeaders = const {},
+  }) {
+    return <String, String>{
+      'authorization': 'Bearer $apiKey',
+      if (appReferer != null) 'HTTP-Referer': appReferer!,
+      if (appTitle != null) 'X-OpenRouter-Title': appTitle!,
+      ...extraHeaders,
+    };
+  }
 }
 
 final class DeepSeekProfile extends _BearerAuthOpenAIFamilyProfile {
