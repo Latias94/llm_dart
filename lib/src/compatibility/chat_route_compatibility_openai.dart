@@ -10,12 +10,9 @@ bool canUseOpenAIChatBridge(
     config,
     LegacyProviderOptionNamespaces.openai,
   );
+  final familyOptions = legacyOpenAIFamilyOptions(options);
   if (_hasNonFunctionTools(effectiveTools) ||
-      !_canMapOpenAIBuiltInTools(
-        options.getWithFlatFallback<List<OpenAIBuiltInTool>>(
-          LegacyExtensionKeys.builtInTools,
-        ),
-      )) {
+      !_canMapOpenAIBuiltInTools(familyOptions.builtInTools)) {
     return false;
   }
 

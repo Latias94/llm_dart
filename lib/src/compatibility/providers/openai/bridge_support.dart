@@ -5,6 +5,7 @@ import '../../../../models/chat_models.dart';
 import '../../../../providers/openai/builtin_tools.dart';
 import '../../../../providers/openai/config.dart';
 import '../../config/legacy_config_keys.dart';
+import '../../config/legacy_openai_options.dart';
 import '../../config/legacy_provider_options.dart';
 import '../../compat_transport.dart';
 import '../../legacy_chat_adapter.dart';
@@ -90,34 +91,23 @@ modern_openai.OpenAIGenerateTextOptions buildCompatOpenAIInvocationOptions({
     bridgeConfig,
     LegacyProviderOptionNamespaces.openai,
   );
-  final reasoningEffort = legacyConfig.reasoningEffort ??
-      ReasoningEffort.fromString(
-        compatStringValue(
-          options.getWithFlatFallback<dynamic>(
-              LegacyExtensionKeys.reasoningEffort),
-        ),
-      );
+  final familyOptions = legacyOpenAIFamilyOptions(options);
+  final hostedOptions = legacyOpenAIHostedOptions(options);
+  final reasoningEffort =
+      legacyConfig.reasoningEffort ?? hostedOptions.reasoningEffort;
 
   return modern_openai.OpenAIGenerateTextOptions(
-    previousResponseId: legacyConfig.previousResponseId ??
-        options.getWithFlatFallback<String>(
-          LegacyExtensionKeys.previousResponseId,
-        ),
-    parallelToolCalls: legacyConfig.parallelToolCalls ??
-        options.getWithFlatFallback<bool>(
-          LegacyExtensionKeys.parallelToolCalls,
-        ),
+    previousResponseId:
+        legacyConfig.previousResponseId ?? familyOptions.previousResponseId,
+    parallelToolCalls:
+        legacyConfig.parallelToolCalls ?? familyOptions.parallelToolCalls,
     serviceTier:
         legacyConfig.serviceTier?.value ?? bridgeConfig.serviceTier?.value,
     user: legacyConfig.user ?? bridgeConfig.user,
-    verbosity: legacyConfig.verbosity ??
-        options.getWithFlatFallback<String>(LegacyExtensionKeys.verbosity),
+    verbosity: legacyConfig.verbosity ?? familyOptions.verbosity,
     reasoningEffort: mapCompatOpenAIReasoningEffort(reasoningEffort),
     builtInTools: mapCompatOpenAIBuiltInTools(
-      legacyConfig.builtInTools ??
-          options.getWithFlatFallback<List<OpenAIBuiltInTool>>(
-            LegacyExtensionKeys.builtInTools,
-          ),
+      legacyConfig.builtInTools ?? familyOptions.builtInTools,
     ),
   );
 }

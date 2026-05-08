@@ -3,7 +3,7 @@ import 'package:llm_dart_openai/llm_dart_openai.dart' as modern_openai;
 import '../../../core/capability.dart';
 import '../../../core/config.dart';
 import '../../../providers/openai/config.dart';
-import '../config/legacy_config_keys.dart';
+import '../config/legacy_openai_options.dart';
 import '../config/legacy_provider_options.dart';
 import '../chat_route_compatibility.dart';
 import '../compat_transport.dart';
@@ -18,6 +18,7 @@ ChatCapability buildCompatOpenRouterProvider(LLMConfig config) {
     config,
     LegacyProviderOptionNamespaces.openrouter,
   );
+  final familyOptions = legacyOpenAIFamilyOptions(options);
   final model = modern_openai.OpenAI(
     apiKey: config.apiKey!,
     baseUrl: config.baseUrl,
@@ -37,13 +38,9 @@ ChatCapability buildCompatOpenRouterProvider(LLMConfig config) {
       providerOptionsNamespace: LegacyProviderOptionNamespaces.openrouter,
       providerOptions: modern_openai.OpenRouterGenerateTextOptions(
         common: modern_openai.OpenAIGenerateTextOptions(
-          parallelToolCalls: options.getWithFlatFallback<bool>(
-            LegacyExtensionKeys.parallelToolCalls,
-          ),
+          parallelToolCalls: familyOptions.parallelToolCalls,
           serviceTier: config.serviceTier?.value,
-          verbosity: options.getWithFlatFallback<String>(
-            LegacyExtensionKeys.verbosity,
-          ),
+          verbosity: familyOptions.verbosity,
         ),
       ),
     ),

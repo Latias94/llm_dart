@@ -4,6 +4,7 @@ import 'package:llm_dart/src/compatibility/compat_providers.dart';
 import 'package:llm_dart/src/compatibility/legacy_chat_adapter.dart';
 import 'package:llm_dart/src/compatibility/config/legacy_config_keys.dart';
 import 'package:llm_dart/src/compatibility/config/legacy_google_thinking_options.dart';
+import 'package:llm_dart/src/compatibility/config/legacy_openai_options.dart';
 import 'package:llm_dart/src/compatibility/config/legacy_provider_options.dart';
 import 'package:llm_dart/src/compatibility/config/legacy_web_search_options.dart';
 import 'package:llm_dart_core/llm_dart_core.dart' as core;
@@ -158,6 +159,63 @@ void main() {
         'includeThoughts': false,
         'thinkingBudget': 64,
       });
+    });
+
+    test('LegacyOpenAIOptions centralizes OpenAI-family option reads', () {
+      final webSearch = legacy.OpenAIBuiltInTools.webSearch();
+      final config = legacy.LLMConfig(
+        apiKey: 'test-key',
+        baseUrl: 'https://api.openai.com/v1',
+        model: 'gpt-4o',
+        extensions: {
+          LegacyExtensionKeys.reasoningEffort: legacy.ReasoningEffort.low,
+          LegacyExtensionKeys.useResponsesApi: true,
+          LegacyExtensionKeys.previousResponseId: 'flat-response',
+          LegacyExtensionKeys.verbosity: 'flat',
+          legacyProviderOptionsBagKey: {
+            LegacyProviderOptionNamespaces.openai: {
+              LegacyExtensionKeys.reasoningEffort: 'high',
+              LegacyExtensionKeys.useResponsesApi: null,
+              LegacyExtensionKeys.previousResponseId: null,
+              LegacyExtensionKeys.builtInTools: [webSearch],
+              LegacyExtensionKeys.frequencyPenalty: 0.2,
+              LegacyExtensionKeys.presencePenalty: 0.3,
+              LegacyExtensionKeys.logitBias: {'42': 1.5},
+              LegacyExtensionKeys.seed: 7,
+              LegacyExtensionKeys.parallelToolCalls: true,
+              LegacyExtensionKeys.logprobs: true,
+              LegacyExtensionKeys.topLogprobs: 3,
+              LegacyExtensionKeys.verbosity: 'high',
+              LegacyExtensionKeys.voice: 'alloy',
+              LegacyExtensionKeys.embeddingEncodingFormat: 'float',
+              LegacyExtensionKeys.embeddingDimensions: 1024,
+            },
+          },
+        },
+      );
+      final options = legacyProviderOptionView(
+        config,
+        LegacyProviderOptionNamespaces.openai,
+      );
+
+      final family = legacyOpenAIFamilyOptions(options);
+      final hosted = legacyOpenAIHostedOptions(options);
+
+      expect(family.useResponsesAPI, isFalse);
+      expect(family.previousResponseId, isNull);
+      expect(family.builtInTools, [webSearch]);
+      expect(family.frequencyPenalty, 0.2);
+      expect(family.presencePenalty, 0.3);
+      expect(family.logitBias, {'42': 1.5});
+      expect(family.seed, 7);
+      expect(family.parallelToolCalls, isTrue);
+      expect(family.logprobs, isTrue);
+      expect(family.topLogprobs, 3);
+      expect(family.verbosity, 'high');
+      expect(hosted.reasoningEffort, legacy.ReasoningEffort.high);
+      expect(hosted.voice, 'alloy');
+      expect(hosted.embeddingEncodingFormat, 'float');
+      expect(hosted.embeddingDimensions, 1024);
     });
 
     test(

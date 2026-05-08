@@ -1,13 +1,10 @@
 import '../../../core/config.dart';
-import '../../../models/chat_models.dart';
-import '../../../models/tool_models.dart';
-import '../../../providers/openai/builtin_tools.dart';
 import '../../../providers/openai/config.dart';
 import '../config/legacy_config_extensions.dart';
+import '../config/legacy_openai_options.dart';
 import '../config/legacy_provider_options.dart';
 import '../config/legacy_web_search_options.dart';
 import 'community_provider_config_adapters.dart';
-import 'compat_provider_support.dart';
 
 OpenAIConfig createLegacyOpenAIConfig(LLMConfig config) =>
     toCompatLegacyOpenAIConfig(config);
@@ -60,6 +57,10 @@ OpenAIConfig createCompatOpenAIFamilyConfig({
   required LegacyProviderOptionView options,
   bool includeOpenAIHostedOptions = false,
 }) {
+  final familyOptions = legacyOpenAIFamilyOptions(options);
+  final hostedOptions =
+      includeOpenAIHostedOptions ? legacyOpenAIHostedOptions(options) : null;
+
   return OpenAIConfig(
     apiKey: config.apiKey!,
     baseUrl: config.baseUrl,
@@ -74,61 +75,25 @@ OpenAIConfig createCompatOpenAIFamilyConfig({
     topK: config.topK,
     tools: config.tools,
     toolChoice: config.toolChoice,
-    reasoningEffort: includeOpenAIHostedOptions
-        ? ReasoningEffort.fromString(
-            compatStringValue(
-              options.getWithFlatFallback<dynamic>(
-                LegacyExtensionKeys.reasoningEffort,
-              ),
-            ),
-          )
-        : null,
-    jsonSchema: options.getWithFlatFallback<StructuredOutputFormat>(
-      LegacyExtensionKeys.jsonSchema,
-    ),
-    voice: includeOpenAIHostedOptions
-        ? options.getWithFlatFallback<String>(LegacyExtensionKeys.voice)
-        : null,
-    embeddingEncodingFormat: includeOpenAIHostedOptions
-        ? options.getWithFlatFallback<String>(
-            LegacyExtensionKeys.embeddingEncodingFormat,
-          )
-        : null,
-    embeddingDimensions: includeOpenAIHostedOptions
-        ? options.getWithFlatFallback<int>(
-            LegacyExtensionKeys.embeddingDimensions,
-          )
-        : null,
+    reasoningEffort: hostedOptions?.reasoningEffort,
+    jsonSchema: familyOptions.jsonSchema,
+    voice: hostedOptions?.voice,
+    embeddingEncodingFormat: hostedOptions?.embeddingEncodingFormat,
+    embeddingDimensions: hostedOptions?.embeddingDimensions,
     stopSequences: config.stopSequences,
     user: config.user,
     serviceTier: config.serviceTier,
-    useResponsesAPI: options
-            .getWithFlatFallback<bool>(LegacyExtensionKeys.useResponsesApi) ??
-        false,
-    previousResponseId: options.getWithFlatFallback<String>(
-      LegacyExtensionKeys.previousResponseId,
-    ),
-    builtInTools: options.getWithFlatFallback<List<OpenAIBuiltInTool>>(
-      LegacyExtensionKeys.builtInTools,
-    ),
-    frequencyPenalty: options.getWithFlatFallback<double>(
-      LegacyExtensionKeys.frequencyPenalty,
-    ),
-    presencePenalty: options.getWithFlatFallback<double>(
-      LegacyExtensionKeys.presencePenalty,
-    ),
-    logitBias: options.getWithFlatFallback<Map<String, double>>(
-      LegacyExtensionKeys.logitBias,
-    ),
-    seed: options.getWithFlatFallback<int>(LegacyExtensionKeys.seed),
-    parallelToolCalls: options.getWithFlatFallback<bool>(
-      LegacyExtensionKeys.parallelToolCalls,
-    ),
-    logprobs: options.getWithFlatFallback<bool>(LegacyExtensionKeys.logprobs),
-    topLogprobs:
-        options.getWithFlatFallback<int>(LegacyExtensionKeys.topLogprobs),
-    verbosity:
-        options.getWithFlatFallback<String>(LegacyExtensionKeys.verbosity),
+    useResponsesAPI: familyOptions.useResponsesAPI,
+    previousResponseId: familyOptions.previousResponseId,
+    builtInTools: familyOptions.builtInTools,
+    frequencyPenalty: familyOptions.frequencyPenalty,
+    presencePenalty: familyOptions.presencePenalty,
+    logitBias: familyOptions.logitBias,
+    seed: familyOptions.seed,
+    parallelToolCalls: familyOptions.parallelToolCalls,
+    logprobs: familyOptions.logprobs,
+    topLogprobs: familyOptions.topLogprobs,
+    verbosity: familyOptions.verbosity,
   );
 }
 
