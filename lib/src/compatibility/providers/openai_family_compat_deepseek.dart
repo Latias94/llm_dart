@@ -26,20 +26,6 @@ ChatCapability buildCompatDeepSeekProvider(LLMConfig config) {
   );
 }
 
-modern_openai.DeepSeekGenerateTextOptions buildCompatDeepSeekInvocationOptions(
-  DeepSeekConfig config,
-) {
-  return modern_openai.DeepSeekGenerateTextOptions(
-    logprobs: config.logprobs,
-    topLogprobs: config.topLogprobs,
-    frequencyPenalty: config.frequencyPenalty,
-    presencePenalty: config.presencePenalty,
-    responseFormat: config.responseFormat == null
-        ? null
-        : Map<String, Object?>.from(config.responseFormat!),
-  );
-}
-
 final class CompatDeepSeekProvider extends DeepSeekProvider
     with CompatChatBridgeRoutingMixin {
   @override

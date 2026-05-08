@@ -3,6 +3,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart' as core;
 
 import '../../../core/config.dart';
 import '../../../providers/openai/config.dart';
+import '../config/legacy_openai_options.dart';
 import '../config/legacy_provider_options.dart';
 import '../config/legacy_web_search_options.dart';
 import 'openai_family_compat_openai_config.dart';
@@ -40,4 +41,21 @@ core.ProviderModelOptions buildCompatOpenRouterModelSettings(
   }
 
   return const modern_openai.OpenAIChatModelSettings();
+}
+
+modern_openai.OpenRouterGenerateTextOptions
+    buildCompatOpenRouterInvocationOptions(LLMConfig config) {
+  final options = legacyProviderOptionView(
+    config,
+    LegacyProviderOptionNamespaces.openrouter,
+  );
+  final familyOptions = legacyOpenAIFamilyOptions(options);
+
+  return modern_openai.OpenRouterGenerateTextOptions(
+    common: modern_openai.OpenAIGenerateTextOptions(
+      parallelToolCalls: familyOptions.parallelToolCalls,
+      serviceTier: config.serviceTier?.value,
+      verbosity: familyOptions.verbosity,
+    ),
+  );
 }

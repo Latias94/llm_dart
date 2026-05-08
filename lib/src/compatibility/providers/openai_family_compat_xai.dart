@@ -21,10 +21,7 @@ ChatCapability buildCompatXAIProvider(LLMConfig config) {
       config: config,
       profile: const modern_openai.XAIProfile(),
       providerOptionsNamespace: LegacyProviderOptionNamespaces.xai,
-      providerOptions: modern_openai.XAIGenerateTextOptions(
-        common: const modern_openai.OpenAIGenerateTextOptions(),
-        search: buildCompatXAILiveSearchOptions(legacyConfig),
-      ),
+      providerOptions: buildCompatXAIInvocationOptions(legacyConfig),
     ),
   );
 }

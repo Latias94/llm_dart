@@ -36,6 +36,15 @@ XAIConfig createLegacyXAIConfig(LLMConfig config) {
   );
 }
 
+modern_openai.XAIGenerateTextOptions buildCompatXAIInvocationOptions(
+  XAIConfig config,
+) {
+  return modern_openai.XAIGenerateTextOptions(
+    common: const modern_openai.OpenAIGenerateTextOptions(),
+    search: buildCompatXAILiveSearchOptions(config),
+  );
+}
+
 modern_openai.XAILiveSearchOptions? buildCompatXAILiveSearchOptions(
   XAIConfig config,
 ) {
