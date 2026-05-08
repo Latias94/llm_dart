@@ -5,6 +5,7 @@ import 'elevenlabs_builder.dart';
 import 'google_builder.dart';
 import 'ollama_builder.dart';
 import 'openai_builder.dart';
+import 'xai_builder.dart';
 
 /// Provider-specific convenience methods layered on top of [LLMBuilder].
 extension LLMBuilderProviderExtensions on LLMBuilder {
@@ -68,8 +69,14 @@ extension LLMBuilderProviderExtensions on LLMBuilder {
   /// Selects the DeepSeek provider.
   LLMBuilder deepseek() => provider('deepseek');
 
-  /// Selects the xAI provider.
-  LLMBuilder xai() => provider('xai');
+  /// Selects the xAI provider and applies optional xAI-specific config.
+  LLMBuilder xai([XAIBuilder Function(XAIBuilder)? configure]) {
+    provider('xai');
+    if (configure != null) {
+      configure(XAIBuilder(this));
+    }
+    return this;
+  }
 
   /// Selects the Phind provider.
   LLMBuilder phind() => provider('phind');
