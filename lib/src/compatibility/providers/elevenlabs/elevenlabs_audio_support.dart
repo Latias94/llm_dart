@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:llm_dart_community/llm_dart_community.dart' as modern_community;
 import 'package:llm_dart_transport/dio.dart';
 
 import '../../../../models/audio_models.dart';
@@ -101,4 +102,35 @@ final class ElevenLabsAudioSupport {
   List<VoiceInfo> mapVoices(List<Map<String, dynamic>> rawVoices) {
     return _responseSupport.mapVoices(rawVoices);
   }
+}
+
+modern_community.ElevenLabsSpeechOptions? _resolveElevenLabsSpeechOptions(
+  Object? options,
+) {
+  if (options == null) {
+    return null;
+  }
+  if (options is modern_community.ElevenLabsSpeechOptions) {
+    return options;
+  }
+  throw ArgumentError.value(
+    options,
+    'providerOptions',
+    'Expected ElevenLabsSpeechOptions for ElevenLabs speech requests.',
+  );
+}
+
+modern_community.ElevenLabsTranscriptionOptions?
+    _resolveElevenLabsTranscriptionOptions(Object? options) {
+  if (options == null) {
+    return null;
+  }
+  if (options is modern_community.ElevenLabsTranscriptionOptions) {
+    return options;
+  }
+  throw ArgumentError.value(
+    options,
+    'providerOptions',
+    'Expected ElevenLabsTranscriptionOptions for ElevenLabs transcription requests.',
+  );
 }

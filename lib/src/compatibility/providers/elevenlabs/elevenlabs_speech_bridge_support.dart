@@ -10,16 +10,20 @@ final class _ElevenLabsSpeechBridgeSupport {
   });
 
   bool canUseSpeechBridge(TTSRequest request) {
-    return _isValidSpeechRatio(request.stability) &&
-        _isValidSpeechRatio(request.similarityBoost) &&
-        _isValidSpeechRatio(request.style) &&
-        _isValidSpeechSeed(request.seed);
+    final options = _resolveElevenLabsSpeechOptions(request.providerOptions);
+    return _isValidSpeechRatio(options?.stability ?? request.stability) &&
+        _isValidSpeechRatio(
+          options?.similarityBoost ?? request.similarityBoost,
+        ) &&
+        _isValidSpeechRatio(options?.style ?? request.style) &&
+        _isValidSpeechSeed(options?.seed ?? request.seed);
   }
 
   Future<TTSResponse> bridgeTextToSpeech(
     TTSRequest request, {
     TransportCancellation? cancelToken,
   }) async {
+    final options = _resolveElevenLabsSpeechOptions(request.providerOptions);
     final model = modernProvider.speechModel(
       request.model ?? config.defaultTTSModel,
       settings: modern_community.ElevenLabsSpeechModelSettings(
@@ -39,25 +43,39 @@ final class _ElevenLabsSpeechBridgeSupport {
           timeout: config.timeout,
           cancellation: cancelToken,
           providerOptions: modern_community.ElevenLabsSpeechOptions(
-            outputFormat: _mapLegacySpeechOutputFormat(
-              request.format,
-              sampleRate: request.sampleRate,
+            outputFormat: options?.outputFormat ??
+                _mapLegacySpeechOutputFormat(
+                  request.format,
+                  sampleRate: request.sampleRate,
+                ),
+            languageCode: options?.languageCode ?? request.languageCode,
+            speed: options?.speed ?? request.speed,
+            pronunciationDictionaryLocators:
+                options?.pronunciationDictionaryLocators ?? const [],
+            seed: options?.seed ?? request.seed,
+            previousText: options?.previousText ?? request.previousText,
+            nextText: options?.nextText ?? request.nextText,
+            previousRequestIds: _resolveRequestIds(
+              options?.previousRequestIds,
+              request.previousRequestIds,
             ),
-            languageCode: request.languageCode,
-            speed: request.speed,
-            seed: request.seed,
-            previousText: request.previousText,
-            nextText: request.nextText,
-            previousRequestIds: _takeAtMostThree(request.previousRequestIds),
-            nextRequestIds: _takeAtMostThree(request.nextRequestIds),
-            textNormalization:
+            nextRequestIds: _resolveRequestIds(
+              options?.nextRequestIds,
+              request.nextRequestIds,
+            ),
+            textNormalization: options?.textNormalization ??
                 _toModernTextNormalization(request.textNormalization),
-            enableLogging: request.enableLogging,
-            optimizeStreamingLatency: request.optimizeStreamingLatency,
-            stability: request.stability,
-            similarityBoost: request.similarityBoost,
-            style: request.style,
-            useSpeakerBoost: request.useSpeakerBoost,
+            applyLanguageTextNormalization:
+                options?.applyLanguageTextNormalization,
+            enableLogging: options?.enableLogging ?? request.enableLogging,
+            optimizeStreamingLatency: options?.optimizeStreamingLatency ??
+                request.optimizeStreamingLatency,
+            stability: options?.stability ?? request.stability,
+            similarityBoost:
+                options?.similarityBoost ?? request.similarityBoost,
+            style: options?.style ?? request.style,
+            useSpeakerBoost:
+                options?.useSpeakerBoost ?? request.useSpeakerBoost,
           ),
         ),
       ),
@@ -92,6 +110,16 @@ List<String> _takeAtMostThree(List<String>? values) {
   }
 
   return values.take(3).toList(growable: false);
+}
+
+List<String> _resolveRequestIds(
+  List<String>? optionValues,
+  List<String>? legacyValues,
+) {
+  if (optionValues != null && optionValues.isNotEmpty) {
+    return optionValues.take(3).toList(growable: false);
+  }
+  return _takeAtMostThree(legacyValues);
 }
 
 modern_community.ElevenLabsTextNormalization _toModernTextNormalization(

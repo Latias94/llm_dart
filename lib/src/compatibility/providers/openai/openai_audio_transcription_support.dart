@@ -6,6 +6,9 @@ final class _OpenAIAudioTranscriptionSupport {
   const _OpenAIAudioTranscriptionSupport();
 
   Future<FormData> buildTranscriptionFormData(STTRequest request) async {
+    final options = _resolveOpenAITranscriptionOptions(
+      request.providerOptions,
+    );
     _formSupport.validateAudioSource(
       audioData: request.audioData,
       filePath: request.filePath,
@@ -25,22 +28,30 @@ final class _OpenAIAudioTranscriptionSupport {
         request.model ?? ProviderDefaults.openaiDefaultSTTModel,
       ),
     );
-    if (request.language != null) {
-      formData.fields.add(MapEntry('language', request.language!));
+    final language = options?.language ?? request.language;
+    if (language != null) {
+      formData.fields.add(MapEntry('language', language));
     }
-    if (request.prompt != null) {
-      formData.fields.add(MapEntry('prompt', request.prompt!));
+    final prompt = options?.prompt ?? request.prompt;
+    if (prompt != null) {
+      formData.fields.add(MapEntry('prompt', prompt));
     }
-    if (request.responseFormat != null) {
-      formData.fields.add(MapEntry('response_format', request.responseFormat!));
+    final responseFormat =
+        options?.responseFormat?.value ?? request.responseFormat;
+    if (responseFormat != null) {
+      formData.fields.add(MapEntry('response_format', responseFormat));
     }
-    if (request.temperature != null) {
+    final temperature = options?.temperature ?? request.temperature;
+    if (temperature != null) {
       formData.fields.add(
-        MapEntry('temperature', request.temperature.toString()),
+        MapEntry('temperature', temperature.toString()),
       );
     }
 
-    for (final granularity in _resolveTimestampGranularities(request)) {
+    for (final granularity in _resolveTimestampGranularities(
+      request,
+      options,
+    )) {
       formData.fields.add(MapEntry('timestamp_granularities[]', granularity));
     }
 
@@ -51,10 +62,11 @@ final class _OpenAIAudioTranscriptionSupport {
     STTRequest request,
     Map<String, dynamic> responseData,
   ) {
+    final options = _resolveOpenAITranscriptionOptions(
+      request.providerOptions,
+    );
     List<WordTiming>? words;
-    if ((request.includeWordTiming ||
-            request.timestampGranularity == TimestampGranularity.word) &&
-        responseData['words'] != null) {
+    if (_shouldDecodeWords(request, options) && responseData['words'] != null) {
       final wordsData = responseData['words'] as List;
       words = wordsData.map((word) {
         final wordMap = word as Map<String, dynamic>;
@@ -78,7 +90,28 @@ final class _OpenAIAudioTranscriptionSupport {
     );
   }
 
-  List<String> _resolveTimestampGranularities(STTRequest request) {
+  bool _shouldDecodeWords(
+    STTRequest request,
+    modern_openai.OpenAITranscriptionOptions? options,
+  ) {
+    return request.includeWordTiming ||
+        request.timestampGranularity == TimestampGranularity.word ||
+        (options?.timestampGranularities.contains(
+              modern_openai.OpenAITranscriptionTimestampGranularity.word,
+            ) ??
+            false);
+  }
+
+  List<String> _resolveTimestampGranularities(
+    STTRequest request,
+    modern_openai.OpenAITranscriptionOptions? options,
+  ) {
+    if (options != null && options.timestampGranularities.isNotEmpty) {
+      return options.timestampGranularities
+          .map((granularity) => granularity.value)
+          .toList(growable: false);
+    }
+
     final granularities = <String>[];
     if (request.includeWordTiming ||
         request.timestampGranularity == TimestampGranularity.word) {
@@ -88,5 +121,20 @@ final class _OpenAIAudioTranscriptionSupport {
       granularities.add('segment');
     }
     return granularities;
+  }
+
+  modern_openai.OpenAITranscriptionOptions? _resolveOpenAITranscriptionOptions(
+      Object? options) {
+    if (options == null) {
+      return null;
+    }
+    if (options is modern_openai.OpenAITranscriptionOptions) {
+      return options;
+    }
+    throw ArgumentError.value(
+      options,
+      'providerOptions',
+      'Expected OpenAITranscriptionOptions for OpenAI transcription requests.',
+    );
   }
 }

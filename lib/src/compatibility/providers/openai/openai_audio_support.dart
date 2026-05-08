@@ -1,3 +1,4 @@
+import 'package:llm_dart_openai/llm_dart_openai.dart' as modern_openai;
 import 'package:llm_dart_transport/dio.dart';
 
 import '../../../../core/llm_error.dart';

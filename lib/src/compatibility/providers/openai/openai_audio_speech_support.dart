@@ -14,19 +14,26 @@ final class _OpenAIAudioSpeechSupport {
 
     final audioConfig = config.audioCompat;
     final resolvedVoice = request.voice ?? audioConfig.defaultVoice;
+    final options = _resolveOpenAISpeechOptions(request.providerOptions);
+    final outputFormat = options?.outputFormat ?? request.format;
+    final speed = options?.speed ?? request.speed;
+    final instructions = options?.instructions ?? request.instructions;
+    final language = options?.language ?? request.languageCode;
 
     final requestBody = <String, dynamic>{
       'model': request.model ?? ProviderDefaults.openaiDefaultTTSModel,
       'input': request.text,
       'voice': resolvedVoice,
-      if (request.format != null) 'response_format': request.format,
-      if (request.speed != null) 'speed': request.speed,
+      if (outputFormat != null) 'response_format': outputFormat,
+      if (instructions != null) 'instructions': instructions,
+      if (speed != null) 'speed': speed,
+      if (language != null) 'language': language,
     };
 
     return (
       body: requestBody,
       voice: resolvedVoice,
-      contentType: _resolveSpeechContentType(request.format),
+      contentType: _resolveSpeechContentType(outputFormat),
     );
   }
 
@@ -56,5 +63,21 @@ final class _OpenAIAudioSpeechSupport {
       'pcm' => 'audio/pcm',
       _ => 'audio/mpeg',
     };
+  }
+
+  modern_openai.OpenAISpeechOptions? _resolveOpenAISpeechOptions(
+    Object? options,
+  ) {
+    if (options == null) {
+      return null;
+    }
+    if (options is modern_openai.OpenAISpeechOptions) {
+      return options;
+    }
+    throw ArgumentError.value(
+      options,
+      'providerOptions',
+      'Expected OpenAISpeechOptions for OpenAI text-to-speech requests.',
+    );
   }
 }

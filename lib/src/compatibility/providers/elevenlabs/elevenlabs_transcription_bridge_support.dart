@@ -10,15 +10,19 @@ final class _ElevenLabsTranscriptionBridgeSupport {
   });
 
   bool canUseTranscriptionBridge(STTRequest request) {
+    final options = _resolveElevenLabsTranscriptionOptions(
+      request.providerOptions,
+    );
     if (request.audioData == null) {
       return false;
     }
 
-    if (request.timestampGranularity == TimestampGranularity.segment) {
+    if (request.timestampGranularity == TimestampGranularity.segment &&
+        options?.timestampGranularity == null) {
       return false;
     }
 
-    final numSpeakers = request.numSpeakers;
+    final numSpeakers = options?.numSpeakers ?? request.numSpeakers;
     if (numSpeakers != null && (numSpeakers < 1 || numSpeakers > 32)) {
       return false;
     }
@@ -30,6 +34,9 @@ final class _ElevenLabsTranscriptionBridgeSupport {
     STTRequest request, {
     TransportCancellation? cancelToken,
   }) async {
+    final options = _resolveElevenLabsTranscriptionOptions(
+      request.providerOptions,
+    );
     final model = modernProvider.transcriptionModel(
       request.model ?? config.defaultSTTModel,
     );
@@ -37,19 +44,20 @@ final class _ElevenLabsTranscriptionBridgeSupport {
     final result = await model.transcribe(
       core.TranscriptionRequest(
         audioBytes: request.audioData!,
-        mediaType: _legacyAudioMediaType(request.format),
+        mediaType: _resolveTranscriptionMediaType(request, options),
         callOptions: core.CallOptions(
           timeout: config.timeout,
           cancellation: cancelToken,
           providerOptions: modern_community.ElevenLabsTranscriptionOptions(
-            languageCode: request.language,
-            tagAudioEvents: request.tagAudioEvents,
-            numSpeakers: request.numSpeakers,
-            timestampGranularity:
+            languageCode: options?.languageCode ?? request.language,
+            tagAudioEvents: options?.tagAudioEvents ?? request.tagAudioEvents,
+            numSpeakers: options?.numSpeakers ?? request.numSpeakers,
+            timestampGranularity: options?.timestampGranularity ??
                 _toModernTimestampGranularity(request.timestampGranularity),
-            diarize: request.diarize,
-            fileFormat: _toModernTranscriptionFileFormat(request.format),
-            enableLogging: request.enableLogging,
+            diarize: options?.diarize ?? request.diarize,
+            fileFormat: options?.fileFormat ??
+                _toModernTranscriptionFileFormat(request.format),
+            enableLogging: options?.enableLogging ?? request.enableLogging,
           ),
         ),
       ),
@@ -70,6 +78,19 @@ final class _ElevenLabsTranscriptionBridgeSupport {
       additionalFormats: _asStringDynamicMap(metadata?['additionalFormats']),
     );
   }
+}
+
+String _resolveTranscriptionMediaType(
+  STTRequest request,
+  modern_community.ElevenLabsTranscriptionOptions? options,
+) {
+  return switch (options?.fileFormat) {
+    modern_community.ElevenLabsTranscriptionFileFormat.pcmS16le16 =>
+      'audio/pcm',
+    modern_community.ElevenLabsTranscriptionFileFormat.other ||
+    null =>
+      _legacyAudioMediaType(request.format),
+  };
 }
 
 modern_community.ElevenLabsTranscriptionTimestampGranularity?

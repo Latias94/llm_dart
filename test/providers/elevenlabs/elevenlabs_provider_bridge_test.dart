@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:llm_dart_community/llm_dart_community.dart' as modern_community;
 import 'package:llm_dart_transport/dio.dart';
 import 'package:llm_dart/models/audio_models.dart';
 import 'package:llm_dart/providers/elevenlabs/elevenlabs.dart';
@@ -45,22 +46,27 @@ void main() {
         const TTSRequest(
           text: 'Hello bridge.',
           voice: 'voice_override',
-          format: 'pcm',
-          sampleRate: 16000,
-          languageCode: 'en',
-          speed: 1.1,
-          seed: 7,
-          previousText: 'Earlier text.',
-          nextText: 'Later text.',
-          previousRequestIds: ['req_prev_1', 'req_prev_2', 'req_prev_3'],
-          nextRequestIds: ['req_next_1'],
-          textNormalization: TextNormalization.off,
-          enableLogging: false,
-          optimizeStreamingLatency: 2,
-          stability: 0.8,
-          similarityBoost: 0.9,
-          style: 1.0,
-          useSpeakerBoost: false,
+          providerOptions: modern_community.ElevenLabsSpeechOptions(
+            outputFormat: 'pcm_16000',
+            languageCode: 'en',
+            speed: 1.1,
+            seed: 7,
+            previousText: 'Earlier text.',
+            nextText: 'Later text.',
+            previousRequestIds: [
+              'req_prev_1',
+              'req_prev_2',
+              'req_prev_3',
+            ],
+            nextRequestIds: ['req_next_1'],
+            textNormalization: modern_community.ElevenLabsTextNormalization.off,
+            enableLogging: false,
+            optimizeStreamingLatency: 2,
+            stability: 0.8,
+            similarityBoost: 0.9,
+            style: 1.0,
+            useSpeakerBoost: false,
+          ),
         ),
       );
 
@@ -146,13 +152,17 @@ void main() {
         const STTRequest(
           audioData: [1, 2, 3],
           model: 'scribe_v1',
-          language: 'en',
-          format: 'pcm_s16le_16',
-          timestampGranularity: TimestampGranularity.character,
-          diarize: true,
-          numSpeakers: 2,
-          tagAudioEvents: false,
-          enableLogging: false,
+          providerOptions: modern_community.ElevenLabsTranscriptionOptions(
+            languageCode: 'en',
+            fileFormat:
+                modern_community.ElevenLabsTranscriptionFileFormat.pcmS16le16,
+            timestampGranularity: modern_community
+                .ElevenLabsTranscriptionTimestampGranularity.character,
+            diarize: true,
+            numSpeakers: 2,
+            tagAudioEvents: false,
+            enableLogging: false,
+          ),
         ),
       );
 

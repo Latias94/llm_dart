@@ -55,11 +55,18 @@ final class _ElevenLabsAudioFormSupport {
     MultipartFile? file,
     String? sourceUrl,
   }) {
+    final options = _resolveElevenLabsTranscriptionOptions(
+      request.providerOptions,
+    );
+    final tagAudioEvents = options?.tagAudioEvents ?? request.tagAudioEvents;
+    final timestampGranularity = options?.timestampGranularity?.name ??
+        request.timestampGranularity.name;
+    final diarize = options?.diarize ?? request.diarize;
     final fields = <String, dynamic>{
       'model_id': effectiveModel,
-      'tag_audio_events': request.tagAudioEvents.toString(),
-      'timestamps_granularity': request.timestampGranularity.name,
-      'diarize': request.diarize.toString(),
+      'tag_audio_events': tagAudioEvents.toString(),
+      'timestamps_granularity': timestampGranularity,
+      'diarize': diarize.toString(),
     };
 
     if (file != null) {
@@ -69,14 +76,17 @@ final class _ElevenLabsAudioFormSupport {
       fields['source_url'] = sourceUrl;
     }
 
-    if (request.language != null) {
-      fields['language_code'] = request.language;
+    final languageCode = options?.languageCode ?? request.language;
+    if (languageCode != null) {
+      fields['language_code'] = languageCode;
     }
-    if (request.numSpeakers != null) {
-      fields['num_speakers'] = request.numSpeakers.toString();
+    final numSpeakers = options?.numSpeakers ?? request.numSpeakers;
+    if (numSpeakers != null) {
+      fields['num_speakers'] = numSpeakers.toString();
     }
-    if (request.format != null) {
-      fields['file_format'] = request.format;
+    final fileFormat = options?.fileFormat?.value ?? request.format;
+    if (fileFormat != null) {
+      fields['file_format'] = fileFormat;
     }
 
     return fields;

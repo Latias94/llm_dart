@@ -53,6 +53,9 @@ class STTRequest {
   /// Enable logging (ElevenLabs specific)
   final bool enableLogging;
 
+  /// Provider-owned invocation options.
+  final ProviderInvocationOptions? providerOptions;
+
   @Deprecated('Use sourceUrl instead.')
   String? get cloudStorageUrl => sourceUrl;
 
@@ -75,6 +78,7 @@ class STTRequest {
     this.prompt,
     this.responseFormat,
     this.enableLogging = true,
+    this.providerOptions,
   }) : sourceUrl = sourceUrl ?? cloudStorageUrl;
 
   /// Create STT request from audio data
@@ -94,6 +98,7 @@ class STTRequest {
     String? prompt,
     String? responseFormat,
     bool enableLogging = true,
+    ProviderInvocationOptions? providerOptions,
   }) =>
       STTRequest(
         audioData: audioData,
@@ -111,6 +116,7 @@ class STTRequest {
         prompt: prompt,
         responseFormat: responseFormat,
         enableLogging: enableLogging,
+        providerOptions: providerOptions,
       );
 
   /// Create STT request from file
@@ -130,6 +136,7 @@ class STTRequest {
     String? prompt,
     String? responseFormat,
     bool enableLogging = true,
+    ProviderInvocationOptions? providerOptions,
   }) =>
       STTRequest(
         filePath: filePath,
@@ -147,6 +154,7 @@ class STTRequest {
         prompt: prompt,
         responseFormat: responseFormat,
         enableLogging: enableLogging,
+        providerOptions: providerOptions,
       );
 
   /// Create STT request from source URL
@@ -166,6 +174,7 @@ class STTRequest {
     String? prompt,
     String? responseFormat,
     bool enableLogging = true,
+    ProviderInvocationOptions? providerOptions,
   }) =>
       STTRequest(
         sourceUrl: sourceUrl,
@@ -183,6 +192,7 @@ class STTRequest {
         prompt: prompt,
         responseFormat: responseFormat,
         enableLogging: enableLogging,
+        providerOptions: providerOptions,
       );
 
   /// Create STT request from cloud storage URL
@@ -203,6 +213,7 @@ class STTRequest {
     String? prompt,
     String? responseFormat,
     bool enableLogging = true,
+    ProviderInvocationOptions? providerOptions,
   }) =>
       STTRequest.fromSourceUrl(
         cloudStorageUrl,
@@ -220,6 +231,7 @@ class STTRequest {
         prompt: prompt,
         responseFormat: responseFormat,
         enableLogging: enableLogging,
+        providerOptions: providerOptions,
       );
 
   Map<String, dynamic> toJson() => {

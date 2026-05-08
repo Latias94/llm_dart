@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:llm_dart/models/audio_models.dart';
 import 'package:llm_dart/models/usage_models.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -65,6 +66,18 @@ void main() {
         expect(request.model, isNull);
         expect(request.speed, isNull);
         expect(request.format, isNull);
+        expect(request.providerOptions, isNull);
+      });
+
+      test('should retain provider invocation options', () {
+        const options = _TestAudioProviderOptions();
+        const request = TTSRequest(
+          text: 'Hello, world!',
+          providerOptions: options,
+        );
+
+        expect(request.providerOptions, same(options));
+        expect(request.toJson().containsKey('provider_options'), isFalse);
       });
 
       test('should create with all fields', () {
@@ -168,6 +181,18 @@ void main() {
         expect(request.filePath, isNull);
         expect(request.model, equals('whisper-1'));
         expect(request.language, equals('en'));
+        expect(request.providerOptions, isNull);
+      });
+
+      test('should retain provider invocation options', () {
+        const options = _TestAudioProviderOptions();
+        final request = STTRequest.fromAudio(
+          [1, 2, 3],
+          providerOptions: options,
+        );
+
+        expect(request.providerOptions, same(options));
+        expect(request.toJson().containsKey('provider_options'), isFalse);
       });
 
       test('should create from source URL', () {
@@ -269,4 +294,8 @@ void main() {
       });
     });
   });
+}
+
+final class _TestAudioProviderOptions implements ProviderInvocationOptions {
+  const _TestAudioProviderOptions();
 }

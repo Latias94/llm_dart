@@ -74,6 +74,9 @@ class TTSRequest {
   /// Optimize streaming latency (ElevenLabs specific)
   final int? optimizeStreamingLatency;
 
+  /// Provider-owned invocation options.
+  final ProviderInvocationOptions? providerOptions;
+
   const TTSRequest({
     required this.text,
     this.voice,
@@ -99,6 +102,7 @@ class TTSRequest {
     this.seed,
     this.enableLogging = true,
     this.optimizeStreamingLatency,
+    this.providerOptions,
   });
 
   Map<String, dynamic> toJson() => {

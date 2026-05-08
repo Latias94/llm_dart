@@ -60,3 +60,34 @@ final class ElevenLabsAudioBridgeSupport {
     );
   }
 }
+
+modern_community.ElevenLabsSpeechOptions? _resolveElevenLabsSpeechOptions(
+  Object? options,
+) {
+  if (options == null) {
+    return null;
+  }
+  if (options is modern_community.ElevenLabsSpeechOptions) {
+    return options;
+  }
+  throw ArgumentError.value(
+    options,
+    'providerOptions',
+    'Expected ElevenLabsSpeechOptions for ElevenLabs speech requests.',
+  );
+}
+
+modern_community.ElevenLabsTranscriptionOptions?
+    _resolveElevenLabsTranscriptionOptions(Object? options) {
+  if (options == null) {
+    return null;
+  }
+  if (options is modern_community.ElevenLabsTranscriptionOptions) {
+    return options;
+  }
+  throw ArgumentError.value(
+    options,
+    'providerOptions',
+    'Expected ElevenLabsTranscriptionOptions for ElevenLabs transcription requests.',
+  );
+}

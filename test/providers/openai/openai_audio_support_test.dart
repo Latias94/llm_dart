@@ -1,5 +1,6 @@
 import 'package:llm_dart/core/config.dart';
 import 'package:llm_dart/models/audio_models.dart';
+import 'package:llm_dart/openai.dart' as modern_openai;
 import 'package:llm_dart/providers/openai/openai.dart';
 import 'package:llm_dart/src/compatibility/providers/openai_family_compat_support.dart'
     show createLegacyOpenAIConfig;
@@ -34,8 +35,12 @@ void main() {
       final response = await provider.textToSpeech(
         const TTSRequest(
           text: 'Hello audio',
-          format: 'wav',
-          speed: 1.2,
+          providerOptions: modern_openai.OpenAISpeechOptions(
+            outputFormat: 'wav',
+            speed: 1.2,
+            instructions: 'Speak clearly',
+            language: 'en',
+          ),
         ),
       );
 
@@ -43,6 +48,8 @@ void main() {
       expect(capturedBody!['voice'], equals('verse'));
       expect(capturedBody!['response_format'], equals('wav'));
       expect(capturedBody!['speed'], equals(1.2));
+      expect(capturedBody!['instructions'], equals('Speak clearly'));
+      expect(capturedBody!['language'], equals('en'));
       expect(response.voice, equals('verse'));
       expect(response.contentType, equals('audio/wav'));
     });
@@ -88,11 +95,17 @@ void main() {
         STTRequest.fromAudio(
           [1, 2, 3, 4],
           format: 'mp3',
-          language: 'en',
-          prompt: 'Transcribe clearly',
-          responseFormat: 'verbose_json',
-          temperature: 0.2,
-          includeWordTiming: true,
+          timestampGranularity: TimestampGranularity.none,
+          providerOptions: const modern_openai.OpenAITranscriptionOptions(
+            language: 'en',
+            prompt: 'Transcribe clearly',
+            responseFormat:
+                modern_openai.OpenAITranscriptionResponseFormat.verboseJson,
+            temperature: 0.2,
+            timestampGranularities: [
+              modern_openai.OpenAITranscriptionTimestampGranularity.word,
+            ],
+          ),
         ),
       );
 
