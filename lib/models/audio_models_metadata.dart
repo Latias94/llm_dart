@@ -120,43 +120,7 @@ class LanguageInfo {
       );
 }
 
-/// Character-level timing alignment for TTS (ElevenLabs specific)
-class AudioAlignment {
-  /// List of characters
-  final List<String> characters;
-
-  /// Start times for each character in seconds
-  final List<double> characterStartTimes;
-
-  /// End times for each character in seconds
-  final List<double> characterEndTimes;
-
-  const AudioAlignment({
-    required this.characters,
-    required this.characterStartTimes,
-    required this.characterEndTimes,
-  });
-
-  Map<String, dynamic> toJson() => {
-        'characters': characters,
-        'character_start_times_seconds': characterStartTimes,
-        'character_end_times_seconds': characterEndTimes,
-      };
-
-  factory AudioAlignment.fromJson(Map<String, dynamic> json) => AudioAlignment(
-        characters: List<String>.from(json['characters'] as List),
-        characterStartTimes: List<double>.from(
-          (json['character_start_times_seconds'] as List)
-              .map((e) => (e as num).toDouble()),
-        ),
-        characterEndTimes: List<double>.from(
-          (json['character_end_times_seconds'] as List)
-              .map((e) => (e as num).toDouble()),
-        ),
-      );
-}
-
-/// Transcription segment information (OpenAI specific)
+/// Verbose transcription segment information
 class TranscriptionSegment {
   /// Unique identifier of the segment
   final int id;
@@ -226,46 +190,5 @@ class TranscriptionSegment {
         avgLogprob: (json['avg_logprob'] as num).toDouble(),
         compressionRatio: (json['compression_ratio'] as num).toDouble(),
         noSpeechProb: (json['no_speech_prob'] as num).toDouble(),
-      );
-}
-
-/// Enhanced word timing with speaker information (ElevenLabs specific)
-class EnhancedWordTiming extends WordTiming {
-  /// Type of the word (word, spacing, punctuation)
-  final String? type;
-
-  /// Log probability of the word
-  final double? logprob;
-
-  /// Speaker ID if diarization is enabled
-  final String? speakerId;
-
-  const EnhancedWordTiming({
-    required super.word,
-    required super.start,
-    required super.end,
-    super.confidence,
-    this.type,
-    this.logprob,
-    this.speakerId,
-  });
-
-  @override
-  Map<String, dynamic> toJson() => {
-        ...super.toJson(),
-        if (type != null) 'type': type,
-        if (logprob != null) 'logprob': logprob,
-        if (speakerId != null) 'speaker_id': speakerId,
-      };
-
-  factory EnhancedWordTiming.fromJson(Map<String, dynamic> json) =>
-      EnhancedWordTiming(
-        word: json['word'] as String,
-        start: (json['start'] as num).toDouble(),
-        end: (json['end'] as num).toDouble(),
-        confidence: json['confidence'] as double?,
-        type: json['type'] as String?,
-        logprob: json['logprob'] as double?,
-        speakerId: json['speaker_id'] as String?,
       );
 }

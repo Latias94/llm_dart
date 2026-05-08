@@ -184,7 +184,7 @@ class STTResponse {
   /// Word-level timing and confidence information
   final List<WordTiming>? words;
 
-  /// Segment-level information (OpenAI specific)
+  /// Segment-level timing information
   final List<TranscriptionSegment>? segments;
 
   /// Model used for transcription

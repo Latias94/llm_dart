@@ -17,7 +17,7 @@ class TTSRequest {
   /// Sample rate (e.g., 44100, 22050)
   final int? sampleRate;
 
-  /// Speed/rate of speech (provider-specific)
+  /// Speed/rate of speech.
   final double? speed;
 
   /// Language code for TTS (ISO 639-1)
