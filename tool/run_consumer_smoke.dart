@@ -135,6 +135,12 @@ Future<ConsumerSmokeRunResult> runConsumerSmoke({
     final dartConsumer = Directory.fromUri(tempRoot.uri.resolve(
       'dart_consumer/',
     ));
+    final openAIOnlyConsumer = Directory.fromUri(tempRoot.uri.resolve(
+      'openai_only_consumer/',
+    ));
+    final splitPackageConsumer = Directory.fromUri(tempRoot.uri.resolve(
+      'split_package_consumer/',
+    ));
     final flutterConsumer = Directory.fromUri(tempRoot.uri.resolve(
       'flutter_consumer/',
     ));
@@ -143,6 +149,14 @@ Future<ConsumerSmokeRunResult> runConsumerSmoke({
       repoRoot: repoRoot,
       consumerDirectory: dartConsumer,
     );
+    await writeOpenAIOnlyConsumer(
+      repoRoot: repoRoot,
+      consumerDirectory: openAIOnlyConsumer,
+    );
+    await writeSplitPackageConsumer(
+      repoRoot: repoRoot,
+      consumerDirectory: splitPackageConsumer,
+    );
     await writeFlutterConsumer(
       repoRoot: repoRoot,
       consumerDirectory: flutterConsumer,
@@ -150,6 +164,8 @@ Future<ConsumerSmokeRunResult> runConsumerSmoke({
 
     final commands = buildConsumerSmokeCommands(
       dartConsumer: dartConsumer,
+      openAIOnlyConsumer: openAIOnlyConsumer,
+      splitPackageConsumer: splitPackageConsumer,
       flutterConsumer: flutterConsumer,
     );
     final environment = buildConsumerSmokeEnvironment(options);
@@ -191,6 +207,8 @@ Future<ConsumerSmokeRunResult> runConsumerSmoke({
 
 List<ConsumerSmokeCommand> buildConsumerSmokeCommands({
   required Directory dartConsumer,
+  required Directory openAIOnlyConsumer,
+  required Directory splitPackageConsumer,
   required Directory flutterConsumer,
 }) {
   return [
@@ -211,6 +229,42 @@ List<ConsumerSmokeCommand> buildConsumerSmokeCommands({
       executable: 'dart',
       arguments: const ['run', 'bin/smoke.dart'],
       workingDirectory: dartConsumer,
+    ),
+    ConsumerSmokeCommand(
+      name: 'OpenAI-only consumer pub get',
+      executable: 'dart',
+      arguments: const ['pub', 'get'],
+      workingDirectory: openAIOnlyConsumer,
+    ),
+    ConsumerSmokeCommand(
+      name: 'OpenAI-only consumer analysis',
+      executable: 'dart',
+      arguments: const ['analyze'],
+      workingDirectory: openAIOnlyConsumer,
+    ),
+    ConsumerSmokeCommand(
+      name: 'OpenAI-only consumer no-key run',
+      executable: 'dart',
+      arguments: const ['run', 'bin/smoke.dart'],
+      workingDirectory: openAIOnlyConsumer,
+    ),
+    ConsumerSmokeCommand(
+      name: 'Split package consumer pub get',
+      executable: 'dart',
+      arguments: const ['pub', 'get'],
+      workingDirectory: splitPackageConsumer,
+    ),
+    ConsumerSmokeCommand(
+      name: 'Split package consumer analysis',
+      executable: 'dart',
+      arguments: const ['analyze'],
+      workingDirectory: splitPackageConsumer,
+    ),
+    ConsumerSmokeCommand(
+      name: 'Split package consumer no-key run',
+      executable: 'dart',
+      arguments: const ['run', 'bin/smoke.dart'],
+      workingDirectory: splitPackageConsumer,
     ),
     ConsumerSmokeCommand(
       name: 'Flutter consumer pub get',
@@ -270,6 +324,36 @@ Future<void> writeDartConsumer({
   await writeTextFile(
     File.fromUri(consumerDirectory.uri.resolve('bin/smoke.dart')),
     dartConsumerSmokeProgram,
+  );
+}
+
+Future<void> writeOpenAIOnlyConsumer({
+  required Directory repoRoot,
+  required Directory consumerDirectory,
+}) async {
+  final paths = buildConsumerSmokePaths(repoRoot);
+  await writeTextFile(
+    File.fromUri(consumerDirectory.uri.resolve('pubspec.yaml')),
+    buildOpenAIOnlyConsumerPubspec(paths),
+  );
+  await writeTextFile(
+    File.fromUri(consumerDirectory.uri.resolve('bin/smoke.dart')),
+    openAIOnlyConsumerSmokeProgram,
+  );
+}
+
+Future<void> writeSplitPackageConsumer({
+  required Directory repoRoot,
+  required Directory consumerDirectory,
+}) async {
+  final paths = buildConsumerSmokePaths(repoRoot);
+  await writeTextFile(
+    File.fromUri(consumerDirectory.uri.resolve('pubspec.yaml')),
+    buildSplitPackageConsumerPubspec(paths),
+  );
+  await writeTextFile(
+    File.fromUri(consumerDirectory.uri.resolve('bin/smoke.dart')),
+    splitPackageConsumerSmokeProgram,
   );
 }
 
@@ -340,6 +424,59 @@ ${_pathEntries([
         'llm_dart_chat',
         'llm_dart_community',
         'llm_dart_core',
+        'llm_dart_google',
+        'llm_dart_openai',
+        'llm_dart_provider',
+        'llm_dart_transport',
+      ], paths.packagePaths)}
+''';
+}
+
+String buildOpenAIOnlyConsumerPubspec(ConsumerSmokePaths paths) {
+  return '''
+name: llm_dart_openai_only_consumer_smoke
+publish_to: none
+
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+
+dependencies:
+  llm_dart_openai:
+    path: ${paths.packagePaths['llm_dart_openai']}
+
+dependency_overrides:
+${_pathEntries([
+        'llm_dart_provider',
+        'llm_dart_transport',
+      ], paths.packagePaths)}
+''';
+}
+
+String buildSplitPackageConsumerPubspec(ConsumerSmokePaths paths) {
+  return '''
+name: llm_dart_split_package_consumer_smoke
+publish_to: none
+
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+
+dependencies:
+${_pathEntries([
+        'llm_dart_ai',
+        'llm_dart_anthropic',
+        'llm_dart_chat',
+        'llm_dart_community',
+        'llm_dart_google',
+        'llm_dart_openai',
+        'llm_dart_provider',
+        'llm_dart_transport',
+      ], paths.packagePaths)}
+dependency_overrides:
+${_pathEntries([
+        'llm_dart_ai',
+        'llm_dart_anthropic',
+        'llm_dart_chat',
+        'llm_dart_community',
         'llm_dart_google',
         'llm_dart_openai',
         'llm_dart_provider',
@@ -525,6 +662,90 @@ void main() {
 }
 ''';
 
+const openAIOnlyConsumerSmokeProgram = r'''
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
+
+void main() {
+  final openAIProvider = openai.OpenAI(apiKey: 'test');
+  final openAIModel = openAIProvider.chatModel('gpt-4.1-mini');
+  final xaiModel = openai.OpenAI(
+    apiKey: 'test',
+    profile: const openai.XAIProfile(),
+  ).chatModel('grok-3');
+  const xaiOptions = openai.XAIGenerateTextOptions(
+    search: openai.XAILiveSearchOptions.autoWeb(maxSearchResults: 3),
+  );
+  final openRouterModel = openai.OpenAI(
+    apiKey: 'test',
+    profile: const openai.OpenRouterProfile(),
+  ).chatModel(
+    'openai/gpt-4o-mini',
+    settings: const openai.OpenRouterChatModelSettings(
+      search: openai.OpenRouterSearchOptions.onlineModel(),
+    ),
+  );
+
+  if (openAIModel.providerId != 'openai' ||
+      xaiModel.providerId != 'xai' ||
+      openRouterModel.providerId != 'openrouter' ||
+      xaiOptions.search?.maxSearchResults != 3) {
+    throw StateError('OpenAI-only consumer smoke failed');
+  }
+
+  print('openai-only ok');
+}
+''';
+
+const splitPackageConsumerSmokeProgram = r'''
+import 'package:llm_dart_ai/llm_dart_ai.dart' as ai;
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic;
+import 'package:llm_dart_chat/llm_dart_chat.dart' as chat;
+import 'package:llm_dart_community/llm_dart_community.dart' as community;
+import 'package:llm_dart_google/llm_dart_google.dart' as google;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
+import 'package:llm_dart_provider/llm_dart_provider.dart' as provider;
+import 'package:llm_dart_transport/llm_dart_transport.dart' as transport;
+
+Future<void> main() async {
+  final prompt = ai.UserPromptMessage.text('Say hello.');
+  final openAIModel = openai.OpenAI(apiKey: 'test').chatModel('gpt-4.1-mini');
+  final anthropicModel =
+      anthropic.Anthropic(apiKey: 'test').chatModel('claude-3-5-haiku-latest');
+  final googleModel =
+      google.Google(apiKey: 'test').chatModel('gemini-2.0-flash');
+  final ollamaModel = community.Ollama().chatModel('llama3.2');
+  final speechModel =
+      community.ElevenLabs(apiKey: 'test').speechModel('eleven_multilingual_v2');
+  final cancellation = transport.TransportCancellation()..cancel('smoke');
+  final session = chat.DefaultChatSession(
+    transport: chat.DirectChatTransport(model: openAIModel),
+  );
+
+  try {
+    final models = <provider.LanguageModel>[
+      openAIModel,
+      anthropicModel,
+      googleModel,
+      ollamaModel,
+    ];
+    const options = provider.GenerateTextOptions(maxOutputTokens: 16);
+
+    if (prompt.role != provider.PromptRole.user ||
+        models.map((model) => model.providerId).join(',') !=
+            'openai,anthropic,google,ollama' ||
+        speechModel.providerId != 'elevenlabs' ||
+        !cancellation.isCancelled ||
+        options.maxOutputTokens != 16) {
+      throw StateError('split package consumer smoke failed');
+    }
+
+    print('split-package ok');
+  } finally {
+    await session.dispose();
+  }
+}
+''';
+
 const flutterConsumerSmokeTest = r'''
 import 'package:flutter_test/flutter_test.dart';
 import 'package:llm_dart_flutter/llm_dart_flutter.dart';
@@ -553,8 +774,8 @@ void main() {
 const consumerSmokeUsage = '''
 Usage: dart run tool/run_consumer_smoke.dart [options]
 
-Creates clean temporary Dart and Flutter consumers, validates local path
-dependency resolution, analyzes them, and runs no-key smoke tests.
+Creates clean temporary Dart, split-package, and Flutter consumers, validates
+local path dependency resolution, analyzes them, and runs no-key smoke tests.
 
 Options:
   --proxy=<url>  Set HTTP_PROXY and HTTPS_PROXY for child commands.

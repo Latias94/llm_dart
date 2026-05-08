@@ -81,6 +81,61 @@ void main() {
       );
       expect(pubspec, contains('dev_dependencies:'));
     });
+
+    test('builds OpenAI-only consumer pubspec without root package', () {
+      final paths = ConsumerSmokePaths(
+        repoRoot: 'F:/repo/llm_dart',
+        packagePaths: {
+          for (final packageName in const [
+            'llm_dart_openai',
+            'llm_dart_provider',
+            'llm_dart_transport',
+          ])
+            packageName: 'F:/repo/llm_dart/packages/$packageName',
+        },
+      );
+
+      final pubspec = buildOpenAIOnlyConsumerPubspec(paths);
+
+      expect(pubspec, isNot(contains('llm_dart:\n')));
+      expect(pubspec, contains('llm_dart_openai:'));
+      expect(
+        pubspec,
+        contains('path: F:/repo/llm_dart/packages/llm_dart_openai'),
+      );
+      expect(pubspec, contains('dependency_overrides:'));
+      expect(pubspec, contains('llm_dart_provider:'));
+      expect(pubspec, contains('llm_dart_transport:'));
+    });
+
+    test('builds split package consumer pubspec without root package', () {
+      final paths = ConsumerSmokePaths(
+        repoRoot: 'F:/repo/llm_dart',
+        packagePaths: {
+          for (final packageName in const [
+            'llm_dart_ai',
+            'llm_dart_anthropic',
+            'llm_dart_chat',
+            'llm_dart_community',
+            'llm_dart_google',
+            'llm_dart_openai',
+            'llm_dart_provider',
+            'llm_dart_transport',
+          ])
+            packageName: 'F:/repo/llm_dart/packages/$packageName',
+        },
+      );
+
+      final pubspec = buildSplitPackageConsumerPubspec(paths);
+
+      expect(pubspec, isNot(contains('llm_dart:\n')));
+      expect(pubspec, contains('llm_dart_ai:'));
+      expect(pubspec, contains('llm_dart_openai:'));
+      expect(pubspec, contains('llm_dart_anthropic:'));
+      expect(pubspec, contains('llm_dart_google:'));
+      expect(pubspec, contains('llm_dart_chat:'));
+      expect(pubspec, contains('llm_dart_community:'));
+    });
   });
 
   test('buildConsumerSmokeEnvironment returns proxy overrides', () {
