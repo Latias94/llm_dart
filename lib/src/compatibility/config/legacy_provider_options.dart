@@ -106,18 +106,6 @@ LegacyProviderOptionView legacyProviderOptionView(
 ) =>
     LegacyProviderOptionView(config, namespace);
 
-T? getLegacyProviderOption<T>(
-  LLMConfig config,
-  String namespace,
-  String key, {
-  String? fallbackKey,
-}) {
-  return legacyProviderOptionView(config, namespace).get<T>(
-    key,
-    fallbackKey: fallbackKey,
-  );
-}
-
 Map<String, dynamic> setLegacyProviderOption(
   LLMConfig config,
   String namespace,

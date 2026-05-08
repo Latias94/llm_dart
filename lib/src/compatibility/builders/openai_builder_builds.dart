@@ -47,12 +47,12 @@ mixin _OpenAIBuilderBuilds {
 
   /// Builds an OpenAI provider with Responses API enabled.
   Future<OpenAIProvider> buildOpenAIResponses() async {
-    final isResponsesApiEnabled = getLegacyProviderOption<bool>(
-          _baseBuilder.currentConfig,
-          LegacyProviderOptionNamespaces.openai,
-          LegacyExtensionKeys.useResponsesApi,
-        ) ??
-        false;
+    final options = legacyProviderOptionView(
+      _baseBuilder.currentConfig,
+      LegacyProviderOptionNamespaces.openai,
+    );
+    final isResponsesApiEnabled =
+        options.get<bool>(LegacyExtensionKeys.useResponsesApi) ?? false;
     if (!isResponsesApiEnabled) {
       useResponsesAPI(true);
     }

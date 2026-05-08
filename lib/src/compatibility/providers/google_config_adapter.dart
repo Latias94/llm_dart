@@ -9,6 +9,11 @@ import 'community_provider_config_adapters.dart';
 
 /// Adapts a legacy root `LLMConfig` into a Google provider config.
 GoogleConfig createLegacyGoogleConfig(LLMConfig config) {
+  final options = legacyProviderOptionView(
+    config,
+    LegacyProviderOptionNamespaces.google,
+  );
+
   return GoogleConfig(
     apiKey: config.apiKey!,
     baseUrl: config.baseUrl,
@@ -22,90 +27,60 @@ GoogleConfig createLegacyGoogleConfig(LLMConfig config) {
     topK: config.topK,
     tools: config.tools,
     toolChoice: config.toolChoice,
-    jsonSchema: getLegacyProviderOption<StructuredOutputFormat>(
-      config,
-      LegacyProviderOptionNamespaces.google,
+    jsonSchema: options.get<StructuredOutputFormat>(
       LegacyExtensionKeys.jsonSchema,
     ),
     reasoningEffort: ReasoningEffort.fromString(
-      getLegacyProviderOption<String>(
-        config,
-        LegacyProviderOptionNamespaces.google,
+      options.get<String>(
         LegacyExtensionKeys.reasoningEffort,
       ),
     ),
-    thinkingBudgetTokens: getLegacyProviderOption<int>(
-      config,
-      LegacyProviderOptionNamespaces.google,
+    thinkingBudgetTokens: options.get<int>(
       LegacyExtensionKeys.thinkingBudgetTokens,
     ),
-    includeThoughts: getLegacyProviderOption<bool>(
-      config,
-      LegacyProviderOptionNamespaces.google,
+    includeThoughts: options.get<bool>(
       LegacyExtensionKeys.includeThoughts,
     ),
-    enableImageGeneration: getLegacyProviderOption<bool>(
-      config,
-      LegacyProviderOptionNamespaces.google,
+    enableImageGeneration: options.get<bool>(
       LegacyExtensionKeys.enableImageGeneration,
     ),
-    webSearchConfig: _createLegacyGoogleWebSearchConfig(config),
-    responseModalities: getLegacyProviderOption<List<String>>(
-      config,
-      LegacyProviderOptionNamespaces.google,
+    webSearchConfig: _createLegacyGoogleWebSearchConfig(options),
+    responseModalities: options.get<List<String>>(
       LegacyExtensionKeys.responseModalities,
     ),
-    safetySettings: getLegacyProviderOption<List<SafetySetting>>(
-      config,
-      LegacyProviderOptionNamespaces.google,
+    safetySettings: options.get<List<SafetySetting>>(
       LegacyExtensionKeys.safetySettings,
     ),
-    maxInlineDataSize: getLegacyProviderOption<int>(
-          config,
-          LegacyProviderOptionNamespaces.google,
-          LegacyExtensionKeys.maxInlineDataSize,
-        ) ??
-        20 * 1024 * 1024,
-    candidateCount: getLegacyProviderOption<int>(
-      config,
-      LegacyProviderOptionNamespaces.google,
+    maxInlineDataSize:
+        options.get<int>(LegacyExtensionKeys.maxInlineDataSize) ??
+            20 * 1024 * 1024,
+    candidateCount: options.get<int>(
       LegacyExtensionKeys.candidateCount,
     ),
     stopSequences: config.stopSequences,
-    embeddingTaskType: getLegacyProviderOption<String>(
-      config,
-      LegacyProviderOptionNamespaces.google,
+    embeddingTaskType: options.get<String>(
       LegacyExtensionKeys.embeddingTaskType,
     ),
-    embeddingTitle: getLegacyProviderOption<String>(
-      config,
-      LegacyProviderOptionNamespaces.google,
+    embeddingTitle: options.get<String>(
       LegacyExtensionKeys.embeddingTitle,
     ),
-    embeddingDimensions: getLegacyProviderOption<int>(
-      config,
-      LegacyProviderOptionNamespaces.google,
+    embeddingDimensions: options.get<int>(
       LegacyExtensionKeys.embeddingDimensions,
     ),
   );
 }
 
-WebSearchConfig? _createLegacyGoogleWebSearchConfig(LLMConfig config) {
-  final webSearchConfig = getLegacyProviderOption<WebSearchConfig>(
-    config,
-    LegacyProviderOptionNamespaces.google,
+WebSearchConfig? _createLegacyGoogleWebSearchConfig(
+  LegacyProviderOptionView options,
+) {
+  final webSearchConfig = options.get<WebSearchConfig>(
     LegacyExtensionKeys.webSearchConfig,
   );
   if (webSearchConfig != null) {
     return webSearchConfig;
   }
 
-  if (getLegacyProviderOption<bool>(
-        config,
-        LegacyProviderOptionNamespaces.google,
-        LegacyExtensionKeys.webSearchEnabled,
-      ) ==
-      true) {
+  if (options.get<bool>(LegacyExtensionKeys.webSearchEnabled) == true) {
     return const WebSearchConfig();
   }
 

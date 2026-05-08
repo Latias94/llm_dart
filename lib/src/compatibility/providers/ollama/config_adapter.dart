@@ -7,6 +7,11 @@ import '../community_provider_config_adapters.dart';
 
 /// Adapts a legacy root `LLMConfig` into an Ollama provider config.
 OllamaConfig createLegacyOllamaConfig(LLMConfig config) {
+  final options = legacyProviderOptionView(
+    config,
+    LegacyProviderOptionNamespaces.ollama,
+  );
+
   return OllamaConfig(
     baseUrl: config.baseUrl,
     apiKey: config.apiKey,
@@ -19,50 +24,16 @@ OllamaConfig createLegacyOllamaConfig(LLMConfig config) {
     topP: config.topP,
     topK: config.topK,
     tools: config.tools,
-    jsonSchema: getLegacyProviderOption<StructuredOutputFormat>(
-      config,
-      LegacyProviderOptionNamespaces.ollama,
+    jsonSchema: options.get<StructuredOutputFormat>(
       LegacyExtensionKeys.jsonSchema,
     ),
-    numCtx: getLegacyProviderOption<int>(
-      config,
-      LegacyProviderOptionNamespaces.ollama,
-      LegacyExtensionKeys.numCtx,
-    ),
-    numGpu: getLegacyProviderOption<int>(
-      config,
-      LegacyProviderOptionNamespaces.ollama,
-      LegacyExtensionKeys.numGpu,
-    ),
-    numThread: getLegacyProviderOption<int>(
-      config,
-      LegacyProviderOptionNamespaces.ollama,
-      LegacyExtensionKeys.numThread,
-    ),
-    numa: getLegacyProviderOption<bool>(
-      config,
-      LegacyProviderOptionNamespaces.ollama,
-      LegacyExtensionKeys.numa,
-    ),
-    numBatch: getLegacyProviderOption<int>(
-      config,
-      LegacyProviderOptionNamespaces.ollama,
-      LegacyExtensionKeys.numBatch,
-    ),
-    keepAlive: getLegacyProviderOption<String>(
-      config,
-      LegacyProviderOptionNamespaces.ollama,
-      LegacyExtensionKeys.keepAlive,
-    ),
-    raw: getLegacyProviderOption<bool>(
-      config,
-      LegacyProviderOptionNamespaces.ollama,
-      LegacyExtensionKeys.raw,
-    ),
-    reasoning: getLegacyProviderOption<bool>(
-      config,
-      LegacyProviderOptionNamespaces.ollama,
-      LegacyExtensionKeys.reasoning,
-    ),
+    numCtx: options.get<int>(LegacyExtensionKeys.numCtx),
+    numGpu: options.get<int>(LegacyExtensionKeys.numGpu),
+    numThread: options.get<int>(LegacyExtensionKeys.numThread),
+    numa: options.get<bool>(LegacyExtensionKeys.numa),
+    numBatch: options.get<int>(LegacyExtensionKeys.numBatch),
+    keepAlive: options.get<String>(LegacyExtensionKeys.keepAlive),
+    raw: options.get<bool>(LegacyExtensionKeys.raw),
+    reasoning: options.get<bool>(LegacyExtensionKeys.reasoning),
   );
 }

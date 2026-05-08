@@ -9,7 +9,11 @@ import 'community_provider_config_adapters.dart';
 
 /// Adapts a legacy root `LLMConfig` into an Anthropic provider config.
 AnthropicConfig createLegacyAnthropicConfig(LLMConfig config) {
-  final webSearchConfig = _createLegacyAnthropicWebSearchConfig(config);
+  final options = legacyProviderOptionView(
+    config,
+    LegacyProviderOptionNamespaces.anthropic,
+  );
+  final webSearchConfig = _createLegacyAnthropicWebSearchConfig(options);
 
   return AnthropicConfig(
     apiKey: config.apiKey!,
@@ -27,58 +31,34 @@ AnthropicConfig createLegacyAnthropicConfig(LLMConfig config) {
     stopSequences: config.stopSequences,
     user: config.user,
     serviceTier: config.serviceTier,
-    reasoning: getLegacyProviderOption<bool>(
-          config,
-          LegacyProviderOptionNamespaces.anthropic,
-          LegacyExtensionKeys.reasoning,
-        ) ??
-        false,
-    thinkingBudgetTokens: getLegacyProviderOption<int>(
-      config,
-      LegacyProviderOptionNamespaces.anthropic,
+    reasoning: options.get<bool>(LegacyExtensionKeys.reasoning) ?? false,
+    thinkingBudgetTokens: options.get<int>(
       LegacyExtensionKeys.thinkingBudgetTokens,
     ),
-    interleavedThinking: getLegacyProviderOption<bool>(
-          config,
-          LegacyProviderOptionNamespaces.anthropic,
-          LegacyExtensionKeys.interleavedThinking,
-        ) ??
-        false,
-    metadata: getLegacyProviderOption<Map<String, dynamic>>(
-      config,
-      LegacyProviderOptionNamespaces.anthropic,
+    interleavedThinking:
+        options.get<bool>(LegacyExtensionKeys.interleavedThinking) ?? false,
+    metadata: options.get<Map<String, dynamic>>(
       LegacyExtensionKeys.metadata,
     ),
-    container: getLegacyProviderOption<String>(
-      config,
-      LegacyProviderOptionNamespaces.anthropic,
-      LegacyExtensionKeys.container,
-    ),
-    mcpServers: getLegacyProviderOption<List<AnthropicMCPServer>>(
-      config,
-      LegacyProviderOptionNamespaces.anthropic,
+    container: options.get<String>(LegacyExtensionKeys.container),
+    mcpServers: options.get<List<AnthropicMCPServer>>(
       LegacyExtensionKeys.mcpServers,
     ),
     webSearchConfig: webSearchConfig,
   );
 }
 
-WebSearchConfig? _createLegacyAnthropicWebSearchConfig(LLMConfig config) {
-  final webSearchConfig = getLegacyProviderOption<WebSearchConfig>(
-    config,
-    LegacyProviderOptionNamespaces.anthropic,
+WebSearchConfig? _createLegacyAnthropicWebSearchConfig(
+  LegacyProviderOptionView options,
+) {
+  final webSearchConfig = options.get<WebSearchConfig>(
     LegacyExtensionKeys.webSearchConfig,
   );
   if (webSearchConfig != null) {
     return webSearchConfig;
   }
 
-  if (getLegacyProviderOption<bool>(
-        config,
-        LegacyProviderOptionNamespaces.anthropic,
-        LegacyExtensionKeys.webSearchEnabled,
-      ) ==
-      true) {
+  if (options.get<bool>(LegacyExtensionKeys.webSearchEnabled) == true) {
     return const WebSearchConfig();
   }
 

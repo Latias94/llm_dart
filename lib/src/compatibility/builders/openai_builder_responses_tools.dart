@@ -65,9 +65,11 @@ mixin _OpenAIBuilderResponsesTools {
   }
 
   List<OpenAIBuiltInTool> _getBuiltInTools() {
-    final existingTools = getLegacyProviderOption<List<OpenAIBuiltInTool>>(
+    final options = legacyProviderOptionView(
       _baseBuilder.currentConfig,
       LegacyProviderOptionNamespaces.openai,
+    );
+    final existingTools = options.get<List<OpenAIBuiltInTool>>(
       LegacyExtensionKeys.builtInTools,
     );
     return existingTools != null

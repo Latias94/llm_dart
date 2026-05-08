@@ -6,35 +6,24 @@ import '../community_provider_config_adapters.dart';
 
 /// Adapts a legacy root `LLMConfig` into an ElevenLabs provider config.
 ElevenLabsConfig createLegacyElevenLabsConfig(LLMConfig config) {
+  final options = legacyProviderOptionView(
+    config,
+    LegacyProviderOptionNamespaces.elevenlabs,
+  );
+
   return ElevenLabsConfig(
     apiKey: config.apiKey!,
     baseUrl: config.baseUrl,
     model: config.model,
     timeout: config.timeout,
     dioOverrides: createLegacyDioClientOverrides(config),
-    voiceId: getLegacyProviderOption<String>(
-      config,
-      LegacyProviderOptionNamespaces.elevenlabs,
-      LegacyExtensionKeys.voiceId,
-    ),
-    stability: getLegacyProviderOption<double>(
-      config,
-      LegacyProviderOptionNamespaces.elevenlabs,
-      LegacyExtensionKeys.stability,
-    ),
-    similarityBoost: getLegacyProviderOption<double>(
-      config,
-      LegacyProviderOptionNamespaces.elevenlabs,
+    voiceId: options.get<String>(LegacyExtensionKeys.voiceId),
+    stability: options.get<double>(LegacyExtensionKeys.stability),
+    similarityBoost: options.get<double>(
       LegacyExtensionKeys.similarityBoost,
     ),
-    style: getLegacyProviderOption<double>(
-      config,
-      LegacyProviderOptionNamespaces.elevenlabs,
-      LegacyExtensionKeys.style,
-    ),
-    useSpeakerBoost: getLegacyProviderOption<bool>(
-      config,
-      LegacyProviderOptionNamespaces.elevenlabs,
+    style: options.get<double>(LegacyExtensionKeys.style),
+    useSpeakerBoost: options.get<bool>(
       LegacyExtensionKeys.useSpeakerBoost,
     ),
   );

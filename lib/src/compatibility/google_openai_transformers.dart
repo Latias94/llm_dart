@@ -25,20 +25,15 @@ class GoogleRequestBodyTransformer implements RequestBodyTransformer {
   }
 
   void _addThinkingConfig(Map<String, dynamic> body, LLMConfig config) {
-    final reasoning = getLegacyProviderOption<bool>(
-          config,
-          LegacyProviderOptionNamespaces.google,
-          LegacyExtensionKeys.reasoning,
-        ) ??
-        false;
-    final includeThoughts = getLegacyProviderOption<bool>(
+    final options = legacyProviderOptionView(
       config,
       LegacyProviderOptionNamespaces.google,
+    );
+    final reasoning = options.get<bool>(LegacyExtensionKeys.reasoning) ?? false;
+    final includeThoughts = options.get<bool>(
       LegacyExtensionKeys.includeThoughts,
     );
-    final thinkingBudgetTokens = getLegacyProviderOption<int>(
-      config,
-      LegacyProviderOptionNamespaces.google,
+    final thinkingBudgetTokens = options.get<int>(
       LegacyExtensionKeys.thinkingBudgetTokens,
     );
 
@@ -59,15 +54,18 @@ class GoogleRequestBodyTransformer implements RequestBodyTransformer {
 
       if (thinkingConfig.isNotEmpty) {
         configSection['thinkingConfig'] = thinkingConfig;
+        extraBody['config'] = configSection;
         body['extra_body'] = extraBody;
       }
     }
   }
 
   void _addReasoningEffort(Map<String, dynamic> body, LLMConfig config) {
-    final reasoningEffortString = getLegacyProviderOption<String>(
+    final options = legacyProviderOptionView(
       config,
       LegacyProviderOptionNamespaces.google,
+    );
+    final reasoningEffortString = options.get<String>(
       LegacyExtensionKeys.reasoningEffort,
     );
     if (reasoningEffortString != null && reasoningEffortString.isNotEmpty) {
@@ -96,15 +94,12 @@ class GoogleHeadersTransformer implements HeadersTransformer {
   }
 
   void _addThinkingHeaders(Map<String, String> headers, LLMConfig config) {
-    final reasoning = getLegacyProviderOption<bool>(
-          config,
-          LegacyProviderOptionNamespaces.google,
-          LegacyExtensionKeys.reasoning,
-        ) ??
-        false;
-    final includeThoughts = getLegacyProviderOption<bool>(
+    final options = legacyProviderOptionView(
       config,
       LegacyProviderOptionNamespaces.google,
+    );
+    final reasoning = options.get<bool>(LegacyExtensionKeys.reasoning) ?? false;
+    final includeThoughts = options.get<bool>(
       LegacyExtensionKeys.includeThoughts,
     );
 

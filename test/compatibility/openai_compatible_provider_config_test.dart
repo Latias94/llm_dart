@@ -1,4 +1,8 @@
 import 'package:llm_dart/core/capability.dart';
+import 'package:llm_dart/core/config.dart';
+import 'package:llm_dart/src/compatibility/config/legacy_config_keys.dart';
+import 'package:llm_dart/src/compatibility/config/legacy_provider_options.dart';
+import 'package:llm_dart/src/compatibility/google_openai_transformers.dart';
 import 'package:llm_dart/src/compatibility/openai_compatible_provider_config.dart';
 import 'package:test/test.dart';
 
@@ -81,4 +85,54 @@ void main() {
       );
     });
   });
+
+  group('Google OpenAI-compatible transformers', () {
+    test('writes thinking config under extra_body.config', () {
+      final config = _googleCompatConfig(
+        providerOptions: {
+          LegacyExtensionKeys.includeThoughts: true,
+          LegacyExtensionKeys.thinkingBudgetTokens: 256,
+        },
+      );
+
+      final transformed = const GoogleRequestBodyTransformer().transform(
+        {'model': 'gemini-2.0-flash'},
+        config,
+        _providerConfig,
+      );
+
+      expect(transformed['extra_body'], {
+        'config': {
+          'thinkingConfig': {
+            'includeThoughts': true,
+            'thinkingBudget': 256,
+          },
+        },
+      });
+    });
+  });
+}
+
+const _providerConfig = OpenAICompatibleProviderConfig(
+  providerId: 'google-openai',
+  displayName: 'Google Gemini',
+  description: 'Google OpenAI-compatible test profile',
+  defaultBaseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai/',
+  defaultModel: 'gemini-2.0-flash',
+  supportedCapabilities: {LLMCapability.chat},
+);
+
+LLMConfig _googleCompatConfig({
+  required Map<String, dynamic> providerOptions,
+}) {
+  return LLMConfig(
+    apiKey: 'test-key',
+    baseUrl: _providerConfig.defaultBaseUrl,
+    model: _providerConfig.defaultModel,
+    extensions: {
+      legacyProviderOptionsBagKey: {
+        LegacyProviderOptionNamespaces.google: providerOptions,
+      },
+    },
+  );
 }

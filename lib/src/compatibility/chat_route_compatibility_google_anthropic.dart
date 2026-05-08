@@ -42,9 +42,11 @@ bool canUseGoogleChatBridge(
     return false;
   }
 
-  final responseModalities = getLegacyProviderOption<List<dynamic>>(
+  final options = legacyProviderOptionView(
     config,
     LegacyProviderOptionNamespaces.google,
+  );
+  final responseModalities = options.get<List<dynamic>>(
     LegacyExtensionKeys.responseModalities,
   );
   if (responseModalities != null &&
