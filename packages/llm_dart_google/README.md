@@ -9,6 +9,18 @@ behavior, and additive provider-owned image-editing helpers.
 Use this package when you want direct access to the focused Google package
 boundary instead of the broader root facade.
 
+It can be consumed without a dependency on the root `llm_dart` package. Add
+`llm_dart_ai` only when you want the shared generation, image, speech, or
+embedding helper calls.
+
+## Installation
+
+```yaml
+dependencies:
+  llm_dart_google: ^0.11.0-alpha.1
+  llm_dart_ai: ^0.11.0-alpha.1
+```
+
 That includes:
 
 - `Google(...).chatModel(...)`, `embeddingModel(...)`, `imageModel(...)`, and

@@ -8,6 +8,17 @@ typed Anthropic options, and Anthropic-specific request/response codecs.
 Use this package when you want the focused Anthropic package boundary directly
 instead of the broader root facade.
 
+It can be consumed without a dependency on the root `llm_dart` package. Add
+`llm_dart_ai` only when you want the shared generation helper calls.
+
+## Installation
+
+```yaml
+dependencies:
+  llm_dart_anthropic: ^0.11.0-alpha.1
+  llm_dart_ai: ^0.11.0-alpha.1
+```
+
 The root `llm_dart` package re-exports the main focused entrypoint through:
 
 - `package:llm_dart/anthropic.dart`

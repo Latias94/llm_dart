@@ -100,7 +100,9 @@ or reasoning output as potentially `inferred` rather than as hard guarantees.
 For the `0.11.0-alpha.x` preview line, the focused workspace packages are also
 available as alpha packages. The root `llm_dart` package remains the default
 entrypoint, while the split packages are available for narrower adoption when
-you want those dependencies directly.
+you want those dependencies directly. They are normal consumable Dart packages,
+not implementation-only internals. For example, an OpenAI-only app can depend
+on `llm_dart_openai` directly without adding the root `llm_dart` package.
 
 ## Installation
 
@@ -108,6 +110,18 @@ you want those dependencies directly.
 dependencies:
   llm_dart: ^0.11.0-alpha.1
 ```
+
+For a focused dependency set, depend on the package boundary you actually use:
+
+```yaml
+dependencies:
+  llm_dart_openai: ^0.11.0-alpha.1
+  llm_dart_ai: ^0.11.0-alpha.1
+```
+
+`llm_dart_ai` is needed only when you want the shared helper calls such as
+`generateTextCall(...)`; provider packages such as `llm_dart_openai` can also
+be imported directly on their own.
 
 Then run:
 

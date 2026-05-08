@@ -34,6 +34,21 @@ Use this package when you want:
 If you prefer the convenience root package, the same focused entrypoint is
 re-exported from `package:llm_dart/openai.dart`.
 
+This package can also be consumed without a dependency on the root `llm_dart`
+package. Pair it with `llm_dart_ai` only when you want the shared helper calls
+such as `generateTextCall(...)`, `streamTextCall(...)`, or `generateImage(...)`.
+
+## Installation
+
+```yaml
+dependencies:
+  llm_dart_openai: ^0.11.0-alpha.1
+  llm_dart_ai: ^0.11.0-alpha.1
+```
+
+Omit `llm_dart_ai` if your application only constructs provider models or calls
+provider-owned lifecycle APIs directly.
+
 ## Recommended Layering
 
 1. Create a concrete model with `OpenAI(...).chatModel(...)`, the root

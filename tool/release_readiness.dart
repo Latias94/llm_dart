@@ -450,8 +450,8 @@ String buildReleaseReadinessReport(ReleaseReadinessRunResult result) {
       ..writeln()
       ..writeln('- Repeat consumer smoke against the published pub.dev '
           'versions after the packages are released.')
-      ..writeln('- Validate both a clean Dart consumer and a clean Flutter '
-          'consumer without local path overrides.')
+      ..writeln('- Validate clean root Dart, OpenAI-only, split-package, and '
+          'Flutter consumers without local path overrides.')
       ..writeln('- Keep `test(...)` for pure controller/import smoke tests; '
           'reserve `testWidgets(...)` for tests that pump widgets.');
   }
