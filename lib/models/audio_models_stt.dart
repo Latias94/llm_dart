@@ -26,17 +26,8 @@ class STTRequest {
   /// Whether to include confidence scores
   final bool includeConfidence;
 
-  /// Temperature for transcription (provider-specific)
-  final double? temperature;
-
   /// Timestamp granularity (word, character, segment)
   final TimestampGranularity timestampGranularity;
-
-  /// Prompt to guide transcription style (OpenAI specific)
-  final String? prompt;
-
-  /// Response format (json, text, srt, verbose_json, vtt)
-  final String? responseFormat;
 
   /// Provider-owned invocation options.
   final ProviderInvocationOptions? providerOptions;
@@ -54,10 +45,7 @@ class STTRequest {
     this.format,
     this.includeWordTiming = false,
     this.includeConfidence = false,
-    this.temperature,
     this.timestampGranularity = TimestampGranularity.word,
-    this.prompt,
-    this.responseFormat,
     this.providerOptions,
   }) : sourceUrl = sourceUrl ?? cloudStorageUrl;
 
@@ -69,10 +57,7 @@ class STTRequest {
     String? format,
     bool includeWordTiming = false,
     bool includeConfidence = false,
-    double? temperature,
     TimestampGranularity timestampGranularity = TimestampGranularity.word,
-    String? prompt,
-    String? responseFormat,
     ProviderInvocationOptions? providerOptions,
   }) =>
       STTRequest(
@@ -82,10 +67,7 @@ class STTRequest {
         format: format,
         includeWordTiming: includeWordTiming,
         includeConfidence: includeConfidence,
-        temperature: temperature,
         timestampGranularity: timestampGranularity,
-        prompt: prompt,
-        responseFormat: responseFormat,
         providerOptions: providerOptions,
       );
 
@@ -97,10 +79,7 @@ class STTRequest {
     String? format,
     bool includeWordTiming = false,
     bool includeConfidence = false,
-    double? temperature,
     TimestampGranularity timestampGranularity = TimestampGranularity.word,
-    String? prompt,
-    String? responseFormat,
     ProviderInvocationOptions? providerOptions,
   }) =>
       STTRequest(
@@ -110,10 +89,7 @@ class STTRequest {
         format: format,
         includeWordTiming: includeWordTiming,
         includeConfidence: includeConfidence,
-        temperature: temperature,
         timestampGranularity: timestampGranularity,
-        prompt: prompt,
-        responseFormat: responseFormat,
         providerOptions: providerOptions,
       );
 
@@ -125,10 +101,7 @@ class STTRequest {
     String? format,
     bool includeWordTiming = false,
     bool includeConfidence = false,
-    double? temperature,
     TimestampGranularity timestampGranularity = TimestampGranularity.word,
-    String? prompt,
-    String? responseFormat,
     ProviderInvocationOptions? providerOptions,
   }) =>
       STTRequest(
@@ -138,10 +111,7 @@ class STTRequest {
         format: format,
         includeWordTiming: includeWordTiming,
         includeConfidence: includeConfidence,
-        temperature: temperature,
         timestampGranularity: timestampGranularity,
-        prompt: prompt,
-        responseFormat: responseFormat,
         providerOptions: providerOptions,
       );
 
@@ -154,10 +124,7 @@ class STTRequest {
     String? format,
     bool includeWordTiming = false,
     bool includeConfidence = false,
-    double? temperature,
     TimestampGranularity timestampGranularity = TimestampGranularity.word,
-    String? prompt,
-    String? responseFormat,
     ProviderInvocationOptions? providerOptions,
   }) =>
       STTRequest.fromSourceUrl(
@@ -167,10 +134,7 @@ class STTRequest {
         format: format,
         includeWordTiming: includeWordTiming,
         includeConfidence: includeConfidence,
-        temperature: temperature,
         timestampGranularity: timestampGranularity,
-        prompt: prompt,
-        responseFormat: responseFormat,
         providerOptions: providerOptions,
       );
 
@@ -184,10 +148,7 @@ class STTRequest {
         if (format != null) 'format': format,
         'include_word_timing': includeWordTiming,
         'include_confidence': includeConfidence,
-        if (temperature != null) 'temperature': temperature,
         'timestamp_granularity': timestampGranularity.name,
-        if (prompt != null) 'prompt': prompt,
-        if (responseFormat != null) 'response_format': responseFormat,
       };
 
   factory STTRequest.fromJson(Map<String, dynamic> json) => STTRequest(
@@ -202,13 +163,10 @@ class STTRequest {
         format: json['format'] as String?,
         includeWordTiming: json['include_word_timing'] as bool? ?? false,
         includeConfidence: json['include_confidence'] as bool? ?? false,
-        temperature: json['temperature'] as double?,
         timestampGranularity: TimestampGranularity.values.firstWhere(
           (e) => e.name == json['timestamp_granularity'],
           orElse: () => TimestampGranularity.word,
         ),
-        prompt: json['prompt'] as String?,
-        responseFormat: json['response_format'] as String?,
       );
 }
 

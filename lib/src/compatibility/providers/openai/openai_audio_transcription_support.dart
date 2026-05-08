@@ -32,16 +32,15 @@ final class _OpenAIAudioTranscriptionSupport {
     if (language != null) {
       formData.fields.add(MapEntry('language', language));
     }
-    final prompt = options?.prompt ?? request.prompt;
+    final prompt = options?.prompt;
     if (prompt != null) {
       formData.fields.add(MapEntry('prompt', prompt));
     }
-    final responseFormat =
-        options?.responseFormat?.value ?? request.responseFormat;
+    final responseFormat = options?.responseFormat?.value;
     if (responseFormat != null) {
       formData.fields.add(MapEntry('response_format', responseFormat));
     }
-    final temperature = options?.temperature ?? request.temperature;
+    final temperature = options?.temperature;
     if (temperature != null) {
       formData.fields.add(
         MapEntry('temperature', temperature.toString()),

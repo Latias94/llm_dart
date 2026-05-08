@@ -38,9 +38,6 @@ class TTSRequest {
   /// Language code for TTS (ISO 639-1)
   final String? languageCode;
 
-  /// Instructions for voice control (OpenAI specific)
-  final String? instructions;
-
   /// Provider-owned invocation options.
   final ProviderInvocationOptions? providerOptions;
 
@@ -57,7 +54,6 @@ class TTSRequest {
     this.timestampGranularity = TimestampGranularity.word,
     this.textNormalization = TextNormalization.auto,
     this.languageCode,
-    this.instructions,
     this.providerOptions,
   });
 
@@ -74,7 +70,6 @@ class TTSRequest {
         'timestamp_granularity': timestampGranularity.name,
         'text_normalization': textNormalization.name,
         if (languageCode != null) 'language_code': languageCode,
-        if (instructions != null) 'instructions': instructions,
       };
 
   factory TTSRequest.fromJson(Map<String, dynamic> json) => TTSRequest(
@@ -99,7 +94,6 @@ class TTSRequest {
           orElse: () => TextNormalization.auto,
         ),
         languageCode: json['language_code'] as String?,
-        instructions: json['instructions'] as String?,
       );
 }
 

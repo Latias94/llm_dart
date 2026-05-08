@@ -94,7 +94,6 @@ void main() {
           timestampGranularity: TimestampGranularity.character,
           textNormalization: TextNormalization.off,
           languageCode: 'en',
-          instructions: 'Speak warmly.',
         );
 
         expect(request.text, equals('Hello, world!'));
@@ -109,7 +108,6 @@ void main() {
         expect(request.timestampGranularity, TimestampGranularity.character);
         expect(request.textNormalization, TextNormalization.off);
         expect(request.languageCode, equals('en'));
-        expect(request.instructions, equals('Speak warmly.'));
       });
 
       test('should serialize to JSON correctly', () {
@@ -260,10 +258,7 @@ void main() {
           format: 'mp3',
           includeWordTiming: true,
           includeConfidence: true,
-          temperature: 0.2,
           timestampGranularity: TimestampGranularity.word,
-          prompt: 'Transcribe this audio',
-          responseFormat: 'json',
         );
 
         final json = request.toJson();
@@ -273,10 +268,7 @@ void main() {
         expect(json['format'], equals('mp3'));
         expect(json['include_word_timing'], isTrue);
         expect(json['include_confidence'], isTrue);
-        expect(json['temperature'], equals(0.2));
         expect(json['timestamp_granularity'], equals('word'));
-        expect(json['prompt'], equals('Transcribe this audio'));
-        expect(json['response_format'], equals('json'));
       });
     });
 

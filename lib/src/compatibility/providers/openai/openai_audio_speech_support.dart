@@ -17,7 +17,7 @@ final class _OpenAIAudioSpeechSupport {
     final options = _resolveOpenAISpeechOptions(request.providerOptions);
     final outputFormat = options?.outputFormat ?? request.format;
     final speed = options?.speed ?? request.speed;
-    final instructions = options?.instructions ?? request.instructions;
+    final instructions = options?.instructions;
     final language = options?.language ?? request.languageCode;
 
     final requestBody = <String, dynamic>{
