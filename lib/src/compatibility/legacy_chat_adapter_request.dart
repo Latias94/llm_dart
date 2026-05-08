@@ -32,9 +32,7 @@ final class _LegacyChatRequestBuilder {
         stopSequences: config.stopSequences,
         topP: config.topP,
         topK: config.topK,
-        responseFormat: _buildCompatResponseFormat(
-          config.getExtension<StructuredOutputFormat>('jsonSchema'),
-        ),
+        responseFormat: _buildCompatResponseFormat(config.legacyJsonSchema),
       ),
       callOptions: core.CallOptions(
         timeout: config.timeout,

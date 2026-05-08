@@ -1,6 +1,7 @@
 import '../../../builder/llm_builder.dart';
 import '../../../core/capability.dart';
 import '../../../providers/anthropic/mcp_models.dart';
+import '../config/legacy_config_keys.dart';
 
 /// Anthropic-specific legacy builder DSL layered on top of [LLMBuilder].
 class AnthropicBuilder {
@@ -10,19 +11,19 @@ class AnthropicBuilder {
 
   /// Sets metadata for the request.
   AnthropicBuilder metadata(Map<String, dynamic> data) {
-    _baseBuilder.extension('metadata', data);
+    _baseBuilder.extension(LegacyExtensionKeys.metadata, data);
     return this;
   }
 
   /// Sets the container ID for workbench usage.
   AnthropicBuilder container(String containerId) {
-    _baseBuilder.extension('container', containerId);
+    _baseBuilder.extension(LegacyExtensionKeys.container, containerId);
     return this;
   }
 
   /// Sets MCP (Model Context Protocol) servers.
   AnthropicBuilder mcpServers(List<AnthropicMCPServer> servers) {
-    _baseBuilder.extension('mcpServers', servers);
+    _baseBuilder.extension(LegacyExtensionKeys.mcpServers, servers);
     return this;
   }
 

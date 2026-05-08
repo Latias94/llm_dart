@@ -1,7 +1,6 @@
 import '../../../core/config.dart';
 import '../../../core/web_search.dart';
 import '../../../models/chat_models.dart';
-import '../../../models/tool_models.dart';
 import '../../../providers/openai/builtin_tools.dart';
 import '../../../providers/openai/config.dart';
 import '../config/legacy_config_extensions.dart';
@@ -41,13 +40,12 @@ OpenAIConfig toCompatLegacyOpenAIConfig(LLMConfig config) {
     tools: config.tools,
     toolChoice: config.toolChoice,
     reasoningEffort: ReasoningEffort.fromString(
-      compatStringValue(config.extensions['reasoningEffort']),
+      compatStringValue(config.extensions[LegacyExtensionKeys.reasoningEffort]),
     ),
-    jsonSchema: config.getExtension<StructuredOutputFormat>('jsonSchema'),
-    voice: config.getExtension<String>('voice'),
-    embeddingEncodingFormat:
-        config.getExtension<String>('embeddingEncodingFormat'),
-    embeddingDimensions: config.getExtension<int>('embeddingDimensions'),
+    jsonSchema: config.legacyJsonSchema,
+    voice: config.legacyVoice,
+    embeddingEncodingFormat: config.legacyEmbeddingEncodingFormat,
+    embeddingDimensions: config.legacyEmbeddingDimensions,
     stopSequences: config.stopSequences,
     user: config.user,
     serviceTier: config.serviceTier,

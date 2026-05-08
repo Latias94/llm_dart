@@ -1,4 +1,5 @@
 import '../../core/config.dart';
+import 'config/legacy_config_keys.dart';
 import 'openai_compatible_provider_config.dart';
 
 /// Google-specific request body transformer for OpenAI-compatible interface
@@ -23,10 +24,12 @@ class GoogleRequestBodyTransformer implements RequestBodyTransformer {
   }
 
   void _addThinkingConfig(Map<String, dynamic> body, LLMConfig config) {
-    final reasoning = config.getExtension<bool>('reasoning') ?? false;
-    final includeThoughts = config.getExtension<bool>('includeThoughts');
+    final reasoning =
+        config.getExtension<bool>(LegacyExtensionKeys.reasoning) ?? false;
+    final includeThoughts =
+        config.getExtension<bool>(LegacyExtensionKeys.includeThoughts);
     final thinkingBudgetTokens =
-        config.getExtension<int>('thinkingBudgetTokens');
+        config.getExtension<int>(LegacyExtensionKeys.thinkingBudgetTokens);
 
     if (reasoning || includeThoughts != null || thinkingBudgetTokens != null) {
       final extraBody = body['extra_body'] as Map<String, dynamic>? ?? {};
@@ -51,8 +54,9 @@ class GoogleRequestBodyTransformer implements RequestBodyTransformer {
   }
 
   void _addReasoningEffort(Map<String, dynamic> body, LLMConfig config) {
-    final reasoningEffortString =
-        config.getExtension<String>('reasoningEffort');
+    final reasoningEffortString = config.getExtension<String>(
+      LegacyExtensionKeys.reasoningEffort,
+    );
     if (reasoningEffortString != null && reasoningEffortString.isNotEmpty) {
       final extraBody = body['extra_body'] as Map<String, dynamic>? ?? {};
       extraBody['reasoning_effort'] = reasoningEffortString;
@@ -79,8 +83,10 @@ class GoogleHeadersTransformer implements HeadersTransformer {
   }
 
   void _addThinkingHeaders(Map<String, String> headers, LLMConfig config) {
-    final reasoning = config.getExtension<bool>('reasoning') ?? false;
-    final includeThoughts = config.getExtension<bool>('includeThoughts');
+    final reasoning =
+        config.getExtension<bool>(LegacyExtensionKeys.reasoning) ?? false;
+    final includeThoughts =
+        config.getExtension<bool>(LegacyExtensionKeys.includeThoughts);
 
     if (reasoning || includeThoughts == true) {
       headers['X-Goog-Include-Thoughts'] = 'true';

@@ -33,9 +33,12 @@ AnthropicConfig createLegacyAnthropicConfig(LLMConfig config) {
     interleavedThinking:
         config.getExtension<bool>(LegacyExtensionKeys.interleavedThinking) ??
             false,
-    metadata: config.getExtension<Map<String, dynamic>>('metadata'),
-    container: config.getExtension<String>('container'),
-    mcpServers: config.getExtension<List<AnthropicMCPServer>>('mcpServers'),
+    metadata:
+        config.getExtension<Map<String, dynamic>>(LegacyExtensionKeys.metadata),
+    container: config.getExtension<String>(LegacyExtensionKeys.container),
+    mcpServers: config.getExtension<List<AnthropicMCPServer>>(
+      LegacyExtensionKeys.mcpServers,
+    ),
     webSearchConfig: webSearchConfig,
   );
 }

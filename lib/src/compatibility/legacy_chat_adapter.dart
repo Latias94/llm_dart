@@ -8,6 +8,7 @@ import '../../core/config.dart';
 import '../../core/llm_error.dart';
 import '../../models/chat_models.dart';
 import '../../models/tool_models.dart';
+import 'config/legacy_config_extensions.dart';
 
 part 'legacy_chat_adapter_request.dart';
 part 'legacy_chat_adapter_json.dart';

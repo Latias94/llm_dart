@@ -1,5 +1,6 @@
 import '../../../builder/llm_builder.dart';
 import '../../../core/capability.dart';
+import '../config/legacy_config_keys.dart';
 
 /// Ollama-specific LLM builder with provider-specific configuration methods.
 ///
@@ -17,43 +18,43 @@ class OllamaBuilder {
 
   /// Sets the context window size (number of tokens).
   OllamaBuilder numCtx(int contextLength) {
-    _baseBuilder.extension('numCtx', contextLength);
+    _baseBuilder.extension(LegacyExtensionKeys.numCtx, contextLength);
     return this;
   }
 
   /// Sets the number of GPU layers to use.
   OllamaBuilder numGpu(int gpuLayers) {
-    _baseBuilder.extension('numGpu', gpuLayers);
+    _baseBuilder.extension(LegacyExtensionKeys.numGpu, gpuLayers);
     return this;
   }
 
   /// Sets the number of threads to use for computation.
   OllamaBuilder numThread(int threads) {
-    _baseBuilder.extension('numThread', threads);
+    _baseBuilder.extension(LegacyExtensionKeys.numThread, threads);
     return this;
   }
 
   /// Enables or disables NUMA optimization.
   OllamaBuilder numa(bool enabled) {
-    _baseBuilder.extension('numa', enabled);
+    _baseBuilder.extension(LegacyExtensionKeys.numa, enabled);
     return this;
   }
 
   /// Sets the batch size for processing.
   OllamaBuilder numBatch(int batchSize) {
-    _baseBuilder.extension('numBatch', batchSize);
+    _baseBuilder.extension(LegacyExtensionKeys.numBatch, batchSize);
     return this;
   }
 
   /// Sets how long to keep the model loaded in memory.
   OllamaBuilder keepAlive(String duration) {
-    _baseBuilder.extension('keepAlive', duration);
+    _baseBuilder.extension(LegacyExtensionKeys.keepAlive, duration);
     return this;
   }
 
   /// Enables or disables raw mode.
   OllamaBuilder raw(bool enabled) {
-    _baseBuilder.extension('raw', enabled);
+    _baseBuilder.extension(LegacyExtensionKeys.raw, enabled);
     return this;
   }
 
@@ -89,7 +90,7 @@ class OllamaBuilder {
 
   /// Enables thinking for reasoning models.
   OllamaBuilder reasoning(bool enabled) {
-    _baseBuilder.extension('reasoning', enabled);
+    _baseBuilder.extension(LegacyExtensionKeys.reasoning, enabled);
     return this;
   }
 

@@ -49,6 +49,8 @@ abstract final class LegacyExtensionKeys {
   static const thinkingBudgetTokens = 'thinkingBudgetTokens';
   static const interleavedThinking = 'interleavedThinking';
   static const metadata = 'metadata';
+  static const container = 'container';
+  static const mcpServers = 'mcpServers';
 
   // Google legacy compatibility options
   static const includeThoughts = 'includeThoughts';
