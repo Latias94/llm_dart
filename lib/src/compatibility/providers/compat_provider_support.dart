@@ -27,11 +27,8 @@ final class CompatChatBridgeRouter {
     TransportCancellation? cancelToken,
     required Future<ChatResponse> Function() fallback,
   }) {
-    return executeCompatChat(
-      originalConfig: originalConfig,
-      messages: messages,
-      tools: tools,
-      canUseBridge: canUseBridge,
+    return executeCompatBridge(
+      canUseBridge: canUseBridge(originalConfig, messages, tools),
       bridge: () => adapter.chatWithTools(
         messages,
         tools,
@@ -47,11 +44,8 @@ final class CompatChatBridgeRouter {
     TransportCancellation? cancelToken,
     required Stream<ChatStreamEvent> Function() fallback,
   }) {
-    return executeCompatChatStream(
-      originalConfig: originalConfig,
-      messages: messages,
-      tools: tools,
-      canUseBridge: canUseBridge,
+    return executeCompatBridgeStream(
+      canUseBridge: canUseBridge(originalConfig, messages, tools),
       bridge: () => adapter.chatStream(
         messages,
         tools: tools,
@@ -108,36 +102,6 @@ mixin CompatChatBridgeRoutingMixin on ChatCapability {
       ),
     );
   }
-}
-
-Future<ChatResponse> executeCompatChat({
-  required LLMConfig originalConfig,
-  required List<ChatMessage> messages,
-  required List<Tool>? tools,
-  required CompatBridgePredicate canUseBridge,
-  required Future<ChatResponse> Function() bridge,
-  required Future<ChatResponse> Function() fallback,
-}) {
-  return executeCompatBridge(
-    canUseBridge: canUseBridge(originalConfig, messages, tools),
-    bridge: bridge,
-    fallback: fallback,
-  );
-}
-
-Stream<ChatStreamEvent> executeCompatChatStream({
-  required LLMConfig originalConfig,
-  required List<ChatMessage> messages,
-  required List<Tool>? tools,
-  required CompatBridgePredicate canUseBridge,
-  required Stream<ChatStreamEvent> Function() bridge,
-  required Stream<ChatStreamEvent> Function() fallback,
-}) {
-  return executeCompatBridgeStream(
-    canUseBridge: canUseBridge(originalConfig, messages, tools),
-    bridge: bridge,
-    fallback: fallback,
-  );
 }
 
 Future<T> executeCompatBridge<T>({
