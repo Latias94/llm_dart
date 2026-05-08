@@ -126,3 +126,4 @@
 - [x] Prepare breaking changelog and migration matrix
 - [x] Run workspace publish dry-run after the root legacy cleanup slices
 - [x] Document release readiness and publish stop conditions
+- [x] Run clean Dart and Flutter consumer smoke validation for release imports

@@ -17,6 +17,58 @@ Recorded on 2026-05-08:
 - `dart test` passed.
 - `dart run tool/run_workspace_publish_dry_run.dart` passed for all 11
   publishable workspace packages.
+- A clean Dart consumer smoke project passed local path dependency resolution,
+  analysis, and execution for:
+  - the modern root facade
+  - focused provider/runtime/transport/chat packages
+  - the `llm_dart_core` compatibility shell
+  - the explicit `package:llm_dart/legacy.dart` compatibility surface
+- A clean Flutter consumer smoke project passed local path dependency
+  resolution, `flutter analyze`, and a `flutter test` smoke test for
+  `llm_dart_flutter` plus `llm_dart_openai`.
+
+## Consumer Smoke Validation
+
+Before publishing, create clean temporary consumer projects instead of relying
+only on in-repository tests. They catch missing exports, bad package metadata,
+and dependency override drift from the perspective of a real app.
+
+Minimum Dart consumer smoke:
+
+- depend on the root package and focused workspace packages through local
+  `path:` entries or through the published versions being staged
+- construct models through `AI.openai(...)`, `AI.google(...)`, and
+  `AI.anthropic(...)`
+- construct focused package APIs from `llm_dart_openai`, `llm_dart_google`,
+  `llm_dart_anthropic`, `llm_dart_community`, `llm_dart_transport`, and
+  `llm_dart_chat`
+- construct at least one shared provider contract such as
+  `FunctionToolDefinition`
+- construct one `llm_dart_core` compatibility prompt type
+- construct one `LLMBuilder()` chain from `package:llm_dart/legacy.dart`
+- run `dart pub get`, `dart analyze`, and a no-key `dart run` smoke program
+
+Minimum Flutter consumer smoke:
+
+- depend on `llm_dart_flutter` and one concrete provider package
+- construct `ChatController`, `DefaultChatSession`, `DirectChatTransport`, and
+  a provider-backed model without sending a network request
+- run `flutter pub get`, `flutter analyze`, and `flutter test`
+
+Flutter test note:
+
+- Do not run Flutter package entrypoints with `dart run`; Flutter imports
+  depend on `dart:ui`.
+- Prefer a normal `test(...)` for pure controller/import smoke tests. Use
+  `testWidgets(...)` only when the test pumps widgets or genuinely needs the
+  widget binding.
+- If Flutter network checks fail on this machine, retry with
+  `HTTP_PROXY=http://127.0.0.1:10809` and
+  `HTTPS_PROXY=http://127.0.0.1:10809`.
+- With that proxy, `flutter doctor -v` reached Flutter network resources on
+  2026-05-08. Remaining local doctor issues were Android licenses and
+  `NO_PROXY` missing `::1`, neither of which blocked package analysis or smoke
+  tests.
 
 ## Publish Dry-Run Expectations
 

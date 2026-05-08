@@ -239,3 +239,6 @@ Current status:
   dry-run expectations, manual release checks, and stop conditions
 - workspace publish dry-run passed for all 11 publishable packages with zero
   warnings on 2026-05-08
+- clean Dart and Flutter consumer smoke validation passed for modern root,
+  focused packages, core compatibility, legacy compatibility, and
+  `llm_dart_flutter` import/controller construction paths
