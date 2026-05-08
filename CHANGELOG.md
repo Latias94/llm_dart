@@ -88,6 +88,10 @@ into a routine `0.10.x` maintenance release.
 - Removed `DioErrorHandler` and `HttpErrorMapper` from
   `package:llm_dart/core/llm_error.dart`; Dio/HTTP error mapping is now
   internal compatibility infrastructure.
+- Removed the thin public builder extension wrapper files
+  `builder/llm_builder_provider_extensions.dart` and
+  `builder/llm_builder_provider_capability_extensions.dart`; import
+  `package:llm_dart/builder/llm_builder.dart` for the compatibility builder.
 
 ### Deprecated
 

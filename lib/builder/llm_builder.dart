@@ -1,5 +1,7 @@
-export 'llm_builder_provider_capability_extensions.dart';
-export 'llm_builder_provider_extensions.dart';
+export '../src/compatibility/builders/llm_builder_provider_capability_extensions.dart'
+    show LLMBuilderProviderCapabilityExtensions;
+export '../src/compatibility/builders/llm_builder_provider_extensions.dart'
+    show LLMBuilderProviderExtensions;
 
 import '../core/capability.dart';
 import '../core/config.dart';
