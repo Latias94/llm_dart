@@ -1,6 +1,7 @@
 import '../../../builder/llm_builder.dart';
 import '../../../providers/openai/compatible/openrouter/builder.dart';
 import 'anthropic_builder.dart';
+import 'deepseek_builder.dart';
 import 'elevenlabs_builder.dart';
 import 'google_builder.dart';
 import 'ollama_builder.dart';
@@ -66,8 +67,14 @@ extension LLMBuilderProviderExtensions on LLMBuilder {
     return this;
   }
 
-  /// Selects the DeepSeek provider.
-  LLMBuilder deepseek() => provider('deepseek');
+  /// Selects the DeepSeek provider and applies optional DeepSeek config.
+  LLMBuilder deepseek([DeepSeekBuilder Function(DeepSeekBuilder)? configure]) {
+    provider('deepseek');
+    if (configure != null) {
+      configure(DeepSeekBuilder(this));
+    }
+    return this;
+  }
 
   /// Selects the xAI provider and applies optional xAI-specific config.
   LLMBuilder xai([XAIBuilder Function(XAIBuilder)? configure]) {
