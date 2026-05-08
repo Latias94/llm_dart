@@ -1,4 +1,4 @@
-import '../../../../models/assistant_models.dart';
+import 'assistant_models.dart';
 
 /// Assistant management capability for OpenAI providers.
 abstract class AssistantCapability {

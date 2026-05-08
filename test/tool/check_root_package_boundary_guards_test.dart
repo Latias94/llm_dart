@@ -17,7 +17,7 @@ void main() {
       );
     });
 
-    test('reports unexpected root public entry files and src directories',
+    test('reports unexpected root public entry files and directories',
         () async {
       final repoRoot = await _createTempRootLayout();
       addTearDown(() async {
@@ -37,6 +37,11 @@ void main() {
       await Directory(
         '${repoRoot.path}${Platform.pathSeparator}lib${Platform.pathSeparator}utils',
       ).create(recursive: true);
+      await _writeFile(
+        repoRoot,
+        'lib/models/assistant_models.dart',
+        'library;\n',
+      );
 
       final result = await guard.evaluateRootPackageBoundaryGuards(
         repoRoot: repoRoot,
@@ -51,6 +56,14 @@ void main() {
       expect(
         result.violations,
         contains(contains('lib/: unexpected top-level directories: utils')),
+      );
+      expect(
+        result.violations,
+        contains(
+          contains(
+            'provider-specific model files must stay with their provider: assistant_models.dart',
+          ),
+        ),
       );
       expect(
         result.violations,

@@ -81,6 +81,10 @@ into a routine `0.10.x` maintenance release.
 - Moved `ToolCallAggregator` from `package:llm_dart/utils/tool_call_aggregator.dart`
   to `package:llm_dart/core/tool_call_aggregator.dart`; `legacy.dart` still
   exports the class for compatibility-oriented imports.
+- Removed provider-specific root model re-exports for OpenAI Assistants and
+  Google TTS. Import those compatibility models from
+  `package:llm_dart/providers/openai/assistants.dart` and
+  `package:llm_dart/providers/google/tts.dart`.
 
 ### Deprecated
 

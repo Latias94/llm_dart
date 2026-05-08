@@ -26,6 +26,8 @@ void main() {
       expect(legacy.ChatMessage, isA<Type>());
       expect(legacy.ToolCall, isA<Type>());
       expect(legacy.ToolCallAggregator, isA<Type>());
+      expect(legacy.Assistant, isA<Type>());
+      expect(legacy.GoogleTTSRequest, isA<Type>());
       expect(legacy.HttpConfig, isA<Type>());
     });
   });

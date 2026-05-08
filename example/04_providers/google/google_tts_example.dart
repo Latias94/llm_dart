@@ -4,7 +4,6 @@ import 'dart:typed_data';
 import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/google.dart' as google;
 import 'package:llm_dart/llm_dart.dart' as llm;
-import 'package:llm_dart/models/google_tts_models.dart';
 import 'package:llm_dart/providers/google/google.dart' as google_compat;
 import 'package:llm_dart/providers/google/tts.dart' as google_tts;
 
@@ -74,12 +73,14 @@ Future<void> main() async {
 
   print('🎤 Google Speech Example\n');
 
-  final speechModel = llm.AI.google(
-    apiKey: apiKey,
-  ).speechModel(
-    _googleSpeechModelId,
-    settings: const google.GoogleSpeechModelSettings(defaultVoice: 'Kore'),
-  );
+  final speechModel = llm.AI
+      .google(
+        apiKey: apiKey,
+      )
+      .speechModel(
+        _googleSpeechModelId,
+        settings: const google.GoogleSpeechModelSettings(defaultVoice: 'Kore'),
+      );
 
   final compatibilityTts = google_compat.createGoogleProvider(
     apiKey: apiKey,
@@ -234,10 +235,11 @@ Speaker2: Nice? It's amazing! This is going to change everything!''',
   print('');
 }
 
-Future<void> streamingExample(google_tts.GoogleTTSCapability ttsProvider) async {
+Future<void> streamingExample(
+    google_tts.GoogleTTSCapability ttsProvider) async {
   print('🌊 Example 4: Compatibility Streaming Appendix');
 
-  final request = GoogleTTSRequest.singleSpeaker(
+  final request = google_tts.GoogleTTSRequest.singleSpeaker(
     text:
         'This is a streaming example. The audio will be generated in chunks as the text is processed.',
     voiceName: 'Zephyr',
@@ -247,14 +249,14 @@ Future<void> streamingExample(google_tts.GoogleTTSCapability ttsProvider) async 
 
   await for (final event in ttsProvider.generateSpeechStream(request)) {
     switch (event) {
-      case GoogleTTSAudioDataEvent():
+      case google_tts.GoogleTTSAudioDataEvent():
         audioChunks.addAll(event.data);
         print('📦 Received audio chunk: ${event.data.length} bytes');
-      case GoogleTTSMetadataEvent():
+      case google_tts.GoogleTTSMetadataEvent():
         print('📋 Metadata: ${event.contentType ?? 'unknown content type'}');
-      case GoogleTTSCompletionEvent():
+      case google_tts.GoogleTTSCompletionEvent():
         print('✅ Streaming completed');
-      case GoogleTTSErrorEvent():
+      case google_tts.GoogleTTSErrorEvent():
         print('❌ Stream error: ${event.message}');
     }
   }

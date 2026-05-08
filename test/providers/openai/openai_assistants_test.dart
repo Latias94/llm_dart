@@ -1,8 +1,7 @@
-import 'package:llm_dart/models/assistant_models.dart';
 import 'package:llm_dart/models/tool_models.dart';
+import 'package:llm_dart/providers/openai/assistants.dart';
 import 'package:llm_dart/providers/openai/client.dart';
 import 'package:llm_dart/providers/openai/config.dart';
-import 'package:llm_dart/src/compatibility/providers/openai/assistants.dart';
 import 'package:llm_dart/src/compatibility/providers/openai/openai_assistant_support.dart';
 import 'package:test/test.dart';
 

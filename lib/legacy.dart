@@ -64,11 +64,9 @@ export 'package:llm_dart_transport/llm_dart_transport.dart'
 export 'models/chat_models.dart';
 export 'models/tool_models.dart';
 export 'models/audio_models.dart';
-export 'models/google_tts_models.dart';
 export 'models/image_models.dart';
 export 'models/file_models.dart';
 export 'models/moderation_models.dart';
-export 'models/assistant_models.dart';
 
 export 'providers/openai/openai.dart';
 export 'providers/openai/client.dart';

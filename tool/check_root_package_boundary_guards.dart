@@ -29,6 +29,11 @@ const Set<String> _allowedRootSrcTopLevelDirectories = {
 
 const Set<String> _allowedRootSrcTopLevelFiles = {};
 
+const Set<String> _forbiddenRootModelFiles = {
+  'assistant_models.dart',
+  'google_tts_models.dart',
+};
+
 final RegExp _flutterImportPattern = RegExp(
   r'''^\s*(import|export)\s+['"]package:llm_dart_flutter/[^'"]+['"]''',
 );
@@ -173,6 +178,27 @@ Future<void> _collectLayoutViolations({
       '${unexpectedRootFiles.join(', ')}. Allowed files: '
       '${_sorted(_allowedRootTopLevelFiles).join(', ')}.',
     );
+  }
+
+  final modelsDir = Directory.fromUri(libDir.uri.resolve('models/'));
+  if (modelsDir.existsSync()) {
+    final forbiddenModelFiles = <String>[];
+    await for (final entity in modelsDir.list()) {
+      if (entity is! File) {
+        continue;
+      }
+      final name = entity.uri.pathSegments.last;
+      if (_forbiddenRootModelFiles.contains(name)) {
+        forbiddenModelFiles.add(name);
+      }
+    }
+    forbiddenModelFiles.sort();
+    if (forbiddenModelFiles.isNotEmpty) {
+      violations.add(
+        'lib/models/: provider-specific model files must stay with their '
+        'provider: ${forbiddenModelFiles.join(', ')}.',
+      );
+    }
   }
 
   final srcDir = Directory.fromUri(libDir.uri.resolve('src/'));

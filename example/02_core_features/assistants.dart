@@ -4,7 +4,6 @@ import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/llm_dart.dart' as llm;
-import 'package:llm_dart/models/assistant_models.dart';
 import 'package:llm_dart/providers/openai/openai.dart' as openai_compat;
 
 /// Assistants remain a provider-owned lifecycle boundary.
@@ -65,19 +64,19 @@ Future<void> demonstrateOpenAIAssistantBoundary(String apiKey) async {
     model: 'gpt-4o',
   );
 
-  Assistant? assistant;
+  openai_compat.Assistant? assistant;
 
   try {
     assistant = await assistantClient.createAssistant(
-      const CreateAssistantRequest(
+      const openai_compat.CreateAssistantRequest(
         model: 'gpt-4o',
         name: 'Release Ops Copilot',
         description: 'Temporary example assistant for release coordination.',
         instructions:
             'Help the team review rollout, verification, and rollback tasks.',
         tools: [
-          CodeInterpreterTool(),
-          FileSearchTool(maxNumResults: 3),
+          openai_compat.CodeInterpreterTool(),
+          openai_compat.FileSearchTool(maxNumResults: 3),
         ],
         metadata: {
           'example': 'core_features_assistants',
@@ -92,7 +91,7 @@ Future<void> demonstrateOpenAIAssistantBoundary(String apiKey) async {
     print('Tools: ${_toolList(assistant.tools)}');
 
     final listResponse = await assistantClient.listAssistants(
-      const ListAssistantsQuery(
+      const openai_compat.ListAssistantsQuery(
         limit: 5,
         order: 'desc',
       ),
@@ -104,7 +103,7 @@ Future<void> demonstrateOpenAIAssistantBoundary(String apiKey) async {
 
     final updated = await assistantClient.modifyAssistant(
       assistant.id,
-      const ModifyAssistantRequest(
+      const openai_compat.ModifyAssistantRequest(
         name: 'Release Ops Copilot (updated)',
         metadata: {
           'example': 'core_features_assistants',
@@ -145,7 +144,7 @@ void explainBoundary() {
   );
 }
 
-String _toolList(List<AssistantTool> tools) {
+String _toolList(List<openai_compat.AssistantTool> tools) {
   if (tools.isEmpty) {
     return '<none>';
   }

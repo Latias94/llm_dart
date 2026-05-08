@@ -80,6 +80,8 @@ The following slices are already landed on this branch:
 - `ToolCallAggregator` moved from the root `utils` directory to
   `core/tool_call_aggregator.dart`; `legacy.dart` still exports it as an
   explicit compatibility bridge.
+- Provider-specific root model re-exports for OpenAI Assistants and Google TTS
+  are removed; those compatibility models now stay on provider-owned paths.
 
 ## Suggested Breaking Changelog Draft
 
@@ -188,6 +190,8 @@ Use this as the starting point for the next explicit breaking release.
 | `CapabilityUtils`, `ProviderRegistry`, `globalProviderRegistry` | `ProviderCapabilities`, `LLMProviderRegistry`, and model capability profiles | Removed | The provider-level dynamic utility registry was legacy-only and conflicts with the model-centric capability discovery direction. |
 | `package:llm_dart/utils/http_config_utils.dart` and `legacy.HttpConfigUtils` | Provider-owned clients and internal compatibility HTTP config helpers | Removed | HTTP client configuration shaping is a compatibility implementation detail, not a stable root utility path. |
 | `package:llm_dart/utils/tool_call_aggregator.dart` | `package:llm_dart/core/tool_call_aggregator.dart` or `package:llm_dart/legacy.dart` | Moved | The helper remains stable, but the root `utils` directory is no longer a public ownership boundary. |
+| `package:llm_dart/models/assistant_models.dart` | `package:llm_dart/providers/openai/assistants.dart` or `package:llm_dart/legacy.dart` | Removed | Assistants are an OpenAI compatibility lifecycle boundary, not a shared root model family. |
+| `package:llm_dart/models/google_tts_models.dart` | `package:llm_dart/providers/google/tts.dart` or `package:llm_dart/legacy.dart` | Removed | Google native TTS streaming models are a provider-specific residual surface. |
 | `LLMBuilder.githubCopilot()` and `LLMBuilder.togetherAI()` | Explicit provider registration or provider-owned OpenAI-family profile composition | Removed from default builder surface | These methods only selected unregistered provider IDs. For generic compatible endpoints, construct a provider-owned OpenAI-family model/profile explicitly or register a concrete factory. |
 
 ## Compatibility Policy
