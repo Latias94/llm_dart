@@ -281,7 +281,7 @@
 - [x] Decompose `assistant_models.dart` into focused shared/legacy model modules without changing current public exports
 - [x] Decompose `core/config.dart` into focused configuration modules without changing current public exports
 - [x] Centralize legacy config extension keys and typed accessors before any deeper migration away from flat compatibility extensions
-- [x] Introduce namespaced OpenAI-family `providerOptions` reads/writes with flat-key fallback during the compatibility migration
+- [x] Introduce namespaced legacy `providerOptions` reads/writes with flat-key fallback for OpenAI-family and provider-specific builder callbacks during the compatibility migration
 - [x] Freeze the root shared web-search helpers and `createProvider(..., extensions: ...)` as compatibility-only migration surfaces
 - [x] Route `LLMBuilder.build()` through compat provider subclasses for OpenAI / Google / Anthropic chat
 - [x] Implement the old `ChatCapability` adapter

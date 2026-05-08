@@ -190,7 +190,7 @@ This workstream is not about a file-moving refactor. It is about defining stable
 - [82-legacy-config-extension-boundary.md](82-legacy-config-extension-boundary.md)
   - Status note for centralizing legacy extension keys and typed accessors as a transitional step before any deeper migration away from the flat compatibility extension map.
 - [83-openai-family-namespaced-provider-options.md](83-openai-family-namespaced-provider-options.md)
-  - Status note for the first OpenAI-family transition from flat compatibility extension keys toward namespaced `providerOptions` with namespaced-first and flat-fallback reads.
+  - Status note for the transition from flat compatibility extension keys toward namespaced legacy `providerOptions` with namespaced-first and flat-fallback reads.
 - [84-shared-web-search-and-raw-extension-boundary.md](84-shared-web-search-and-raw-extension-boundary.md)
   - Frozen boundary that marks the root shared web-search builder helpers and `createProvider(..., extensions: ...)` as compatibility-only migration surfaces rather than stable long-term API.
 - [85-public-example-surface-alignment.md](85-public-example-surface-alignment.md)
