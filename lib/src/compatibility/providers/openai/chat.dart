@@ -2,7 +2,7 @@ import '../../../../core/capability.dart';
 import '../../../../core/llm_error.dart';
 import '../../../../models/chat_models.dart';
 import '../../../../models/tool_models.dart';
-import '../../../../utils/reasoning_utils.dart';
+import '../../reasoning_utils.dart';
 import 'client.dart';
 import 'chat_request_builder.dart';
 import 'chat_stream_parser.dart';
@@ -98,7 +98,7 @@ class OpenAIChat implements ChatCapability {
     }
 
     // Filter out thinking content for reasoning models
-    return ReasoningUtils.filterThinkingContent(text);
+    return CompatReasoningUtils.filterThinkingContent(text);
   }
 
   /// Parse non-streaming response

@@ -62,6 +62,8 @@ The following slices are already landed on this branch:
   default configuration surface is the typed `getDefaultConfig()`.
 - The public `ConfigUtils` compatibility utility is removed; provider Dio
   strategies use an internal compatibility HTTP header helper instead.
+- The public `utils/reasoning_utils.dart` utility path is removed; reasoning
+  and thinking-tag heuristics are internal provider compatibility details.
 
 ## Suggested Breaking Changelog Draft
 
@@ -162,6 +164,7 @@ Use this as the starting point for the next explicit breaking release.
 | `package:llm_dart/core/provider_defaults.dart` and `ProviderDefaults.*` constants | Provider-owned defaults classes or factory `getDefaultConfig()` | Removed | Removes the remaining root defaults catalog so endpoint/model ownership stays with the provider that consumes it. |
 | `BaseProviderFactory.getProviderDefaults()` | `LLMProviderFactory.getDefaultConfig()` | Removed | Avoids string-keyed default maps in factory code; provider defaults now become typed `LLMConfig` values. |
 | `ConfigUtils` | Provider-owned Dio strategies or internal compatibility HTTP helpers | Removed | Header construction is an implementation detail, not a public root utility. |
+| `package:llm_dart/utils/reasoning_utils.dart` | Provider-owned reasoning events and response surfaces | Removed | Reasoning-field and `<think>` tag parsing is provider implementation detail, not a stable root utility contract. |
 | `LLMBuilder.githubCopilot()` and `LLMBuilder.togetherAI()` | Explicit provider registration or provider-owned OpenAI-family profile composition | Removed from default builder surface | These methods only selected unregistered provider IDs. For generic compatible endpoints, construct a provider-owned OpenAI-family model/profile explicitly or register a concrete factory. |
 
 ## Compatibility Policy

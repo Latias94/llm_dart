@@ -2,7 +2,7 @@ import '../../../../core/capability.dart';
 import '../../../../core/llm_error.dart';
 import '../../../../models/chat_models.dart';
 import '../../../../models/tool_models.dart';
-import '../../../../utils/reasoning_utils.dart';
+import '../../reasoning_utils.dart';
 import 'client.dart';
 import 'openai_responses_response.dart';
 import 'openai_responses_models.dart';
@@ -147,7 +147,7 @@ class OpenAIResponsesSupport {
       throw const GenericError('no text in summary response');
     }
 
-    return ReasoningUtils.filterThinkingContent(text);
+    return CompatReasoningUtils.filterThinkingContent(text);
   }
 
   ChatResponse parseResponse(Map<String, dynamic> responseData) {

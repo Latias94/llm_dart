@@ -11,7 +11,7 @@ bool addOpenAIReasoningDeltaEvents({
   required List<ChatStreamEvent> events,
   required Map<String, dynamic>? delta,
 }) {
-  final reasoningContent = ReasoningUtils.extractReasoningContent(delta);
+  final reasoningContent = CompatReasoningUtils.extractReasoningContent(delta);
   if (reasoningContent == null || reasoningContent.isEmpty) {
     return false;
   }
@@ -39,7 +39,7 @@ void addOpenAITextDeltaEvents({
 
   state.lastChunk = content;
   if (reasoningDelta != null &&
-      ReasoningUtils.hasReasoningContent(reasoningDelta)) {
+      CompatReasoningUtils.hasReasoningContent(reasoningDelta)) {
     state.hasReasoningContent = true;
   }
 

@@ -1,6 +1,6 @@
 import '../../../../core/capability.dart';
 import '../../../../models/chat_models.dart';
-import '../../../../utils/reasoning_utils.dart';
+import '../../reasoning_utils.dart';
 
 /// OpenAI chat response implementation.
 class OpenAIChatResponse implements ChatResponse {
@@ -106,13 +106,15 @@ String? _extractThinkingContent(
       }
 
       final content = message['content'] as String?;
-      if (content != null && ReasoningUtils.containsThinkingTags(content)) {
+      if (content != null &&
+          CompatReasoningUtils.containsThinkingTags(content)) {
         final thinkMatch = RegExp(
           r'<think>(.*?)</think>',
           dotAll: true,
         ).firstMatch(content);
         if (thinkMatch != null) {
-          message['content'] = ReasoningUtils.filterThinkingContent(content);
+          message['content'] =
+              CompatReasoningUtils.filterThinkingContent(content);
           return thinkMatch.group(1)?.trim();
         }
       }

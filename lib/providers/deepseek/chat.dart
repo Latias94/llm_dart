@@ -4,7 +4,7 @@ import '../../core/capability.dart';
 import '../../core/llm_error.dart';
 import '../../models/chat_models.dart';
 import '../../models/tool_models.dart';
-import '../../utils/reasoning_utils.dart';
+import '../../src/compatibility/reasoning_utils.dart';
 import 'client.dart';
 import 'config.dart';
 
@@ -140,7 +140,7 @@ class DeepSeekChat implements ChatCapability {
           // Update tracking variables using reasoning utils
           final delta = _getDelta(json);
           if (delta != null) {
-            final reasoningResult = ReasoningUtils.checkReasoningStatus(
+            final reasoningResult = CompatReasoningUtils.checkReasoningStatus(
               delta: delta,
               hasReasoningContent: _hasReasoningContent,
               lastChunk: _lastChunk,
@@ -179,7 +179,8 @@ class DeepSeekChat implements ChatCapability {
 
     // Handle reasoning content only for reasoning-capable models
     if (config.supportsReasoning) {
-      final reasoningContent = ReasoningUtils.extractReasoningContent(delta);
+      final reasoningContent =
+          CompatReasoningUtils.extractReasoningContent(delta);
 
       if (reasoningContent != null && reasoningContent.isNotEmpty) {
         thinkingBuffer.write(reasoningContent);
@@ -197,7 +198,7 @@ class DeepSeekChat implements ChatCapability {
 
       // Check reasoning status only for reasoning-capable models
       if (config.supportsReasoning) {
-        final reasoningResult = ReasoningUtils.checkReasoningStatus(
+        final reasoningResult = CompatReasoningUtils.checkReasoningStatus(
           delta: delta,
           hasReasoningContent: _hasReasoningContent,
           lastChunk: lastChunk,
@@ -213,7 +214,7 @@ class DeepSeekChat implements ChatCapability {
       }
 
       // Filter out thinking tags for models that use <think> tags
-      if (ReasoningUtils.containsThinkingTags(content)) {
+      if (CompatReasoningUtils.containsThinkingTags(content)) {
         // Extract thinking content and add to buffer
         final thinkMatch = RegExp(
           r'<think>(.*?)</think>',

@@ -61,6 +61,9 @@ into a routine `0.10.x` maintenance release.
 - Removed the public `ConfigUtils` compatibility utility. Authentication header
   shaping is now an internal compatibility HTTP helper used by provider Dio
   strategies.
+- Removed the public `utils/reasoning_utils.dart` utility path. Reasoning and
+  thinking-tag heuristics are now internal provider compatibility
+  implementation details.
 
 ### Deprecated
 
