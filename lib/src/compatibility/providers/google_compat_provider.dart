@@ -14,7 +14,6 @@ import 'google_config_adapter.dart';
 import 'google/provider_compat.dart';
 
 part 'google_compat_provider_adapter_support.dart';
-part 'google_compat_provider_chat_router.dart';
 
 ChatCapability buildCompatGoogleProvider(LLMConfig config) {
   final legacyConfig = createLegacyGoogleConfig(config);
@@ -36,21 +35,17 @@ ChatCapability buildCompatGoogleProvider(LLMConfig config) {
 }
 
 final class CompatGoogleProvider extends GoogleProvider {
-  final LLMConfig _originalConfig;
-  final LegacyChatCapabilityAdapter _adapter;
-  late final _GoogleCompatChatRouter _chatRouter = _GoogleCompatChatRouter(
-    originalConfig: _originalConfig,
-    adapter: _adapter,
-    fallbackChatWithTools: _fallbackChatWithTools,
-    fallbackChatStream: _fallbackChatStream,
-  );
+  final CompatChatBridgeRouter _chatRouter;
 
   CompatGoogleProvider({
     required LLMConfig originalConfig,
     required GoogleConfig legacyConfig,
     required LegacyChatCapabilityAdapter adapter,
-  })  : _originalConfig = originalConfig,
-        _adapter = adapter,
+  })  : _chatRouter = CompatChatBridgeRouter(
+          originalConfig: originalConfig,
+          adapter: adapter,
+          canUseBridge: canUseGoogleChatBridge,
+        ),
         super(legacyConfig);
 
   @override
@@ -68,9 +63,14 @@ final class CompatGoogleProvider extends GoogleProvider {
     TransportCancellation? cancelToken,
   }) {
     return _chatRouter.chatWithTools(
-      messages,
-      tools,
+      messages: messages,
+      tools: tools,
       cancelToken: cancelToken,
+      fallback: () => super.chatWithTools(
+        messages,
+        tools,
+        cancelToken: cancelToken,
+      ),
     );
   }
 
@@ -81,33 +81,14 @@ final class CompatGoogleProvider extends GoogleProvider {
     TransportCancellation? cancelToken,
   }) {
     return _chatRouter.chatStream(
-      messages,
+      messages: messages,
       tools: tools,
       cancelToken: cancelToken,
-    );
-  }
-
-  Future<ChatResponse> _fallbackChatWithTools(
-    List<ChatMessage> messages,
-    List<Tool>? tools, {
-    TransportCancellation? cancelToken,
-  }) {
-    return super.chatWithTools(
-      messages,
-      tools,
-      cancelToken: cancelToken,
-    );
-  }
-
-  Stream<ChatStreamEvent> _fallbackChatStream(
-    List<ChatMessage> messages, {
-    List<Tool>? tools,
-    TransportCancellation? cancelToken,
-  }) {
-    return super.chatStream(
-      messages,
-      tools: tools,
-      cancelToken: cancelToken,
+      fallback: () => super.chatStream(
+        messages,
+        tools: tools,
+        cancelToken: cancelToken,
+      ),
     );
   }
 }
