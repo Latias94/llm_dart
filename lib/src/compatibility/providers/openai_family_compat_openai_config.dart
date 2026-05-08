@@ -51,6 +51,20 @@ OpenAIConfig _createCompatOpenAIConfig({
   required String model,
   required LegacyProviderOptionView options,
 }) {
+  return createCompatOpenAIFamilyConfig(
+    config: config,
+    model: model,
+    options: options,
+    includeOpenAIHostedOptions: true,
+  );
+}
+
+OpenAIConfig createCompatOpenAIFamilyConfig({
+  required LLMConfig config,
+  required String model,
+  required LegacyProviderOptionView options,
+  bool includeOpenAIHostedOptions = false,
+}) {
   return OpenAIConfig(
     apiKey: config.apiKey!,
     baseUrl: config.baseUrl,
@@ -65,22 +79,31 @@ OpenAIConfig _createCompatOpenAIConfig({
     topK: config.topK,
     tools: config.tools,
     toolChoice: config.toolChoice,
-    reasoningEffort: ReasoningEffort.fromString(
-      compatStringValue(
-        options
-            .getWithFlatFallback<dynamic>(LegacyExtensionKeys.reasoningEffort),
-      ),
-    ),
+    reasoningEffort: includeOpenAIHostedOptions
+        ? ReasoningEffort.fromString(
+            compatStringValue(
+              options.getWithFlatFallback<dynamic>(
+                LegacyExtensionKeys.reasoningEffort,
+              ),
+            ),
+          )
+        : null,
     jsonSchema: options.getWithFlatFallback<StructuredOutputFormat>(
       LegacyExtensionKeys.jsonSchema,
     ),
-    voice: options.getWithFlatFallback<String>(LegacyExtensionKeys.voice),
-    embeddingEncodingFormat: options.getWithFlatFallback<String>(
-      LegacyExtensionKeys.embeddingEncodingFormat,
-    ),
-    embeddingDimensions: options.getWithFlatFallback<int>(
-      LegacyExtensionKeys.embeddingDimensions,
-    ),
+    voice: includeOpenAIHostedOptions
+        ? options.getWithFlatFallback<String>(LegacyExtensionKeys.voice)
+        : null,
+    embeddingEncodingFormat: includeOpenAIHostedOptions
+        ? options.getWithFlatFallback<String>(
+            LegacyExtensionKeys.embeddingEncodingFormat,
+          )
+        : null,
+    embeddingDimensions: includeOpenAIHostedOptions
+        ? options.getWithFlatFallback<int>(
+            LegacyExtensionKeys.embeddingDimensions,
+          )
+        : null,
     stopSequences: config.stopSequences,
     user: config.user,
     serviceTier: config.serviceTier,

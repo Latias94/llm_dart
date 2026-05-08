@@ -3,12 +3,10 @@ import 'package:llm_dart_provider/llm_dart_provider.dart' as core;
 
 import '../../../core/config.dart';
 import '../../../core/web_search.dart';
-import '../../../models/tool_models.dart';
-import '../../../providers/openai/builtin_tools.dart';
 import '../../../providers/openai/config.dart';
-import '../config/legacy_config_extensions.dart';
+import '../config/legacy_config_keys.dart';
 import '../config/legacy_provider_options.dart';
-import 'community_provider_config_adapters.dart';
+import 'openai_family_compat_openai_config.dart';
 
 OpenAIConfig toCompatLegacyOpenRouterConfig(LLMConfig config) {
   final options = legacyProviderOptionView(
@@ -26,53 +24,10 @@ OpenAIConfig toCompatLegacyOpenRouterConfig(LLMConfig config) {
     model = '$model:online';
   }
 
-  return OpenAIConfig(
-    apiKey: config.apiKey!,
-    baseUrl: config.baseUrl,
+  return createCompatOpenAIFamilyConfig(
+    config: config,
     model: model,
-    maxTokens: config.maxTokens,
-    temperature: config.temperature,
-    systemPrompt: config.systemPrompt,
-    timeout: config.timeout,
-    dioOverrides: createLegacyDioClientOverrides(config),
-    transportClient: config.legacyTransportClient,
-    topP: config.topP,
-    topK: config.topK,
-    tools: config.tools,
-    toolChoice: config.toolChoice,
-    jsonSchema: options.getWithFlatFallback<StructuredOutputFormat>(
-      LegacyExtensionKeys.jsonSchema,
-    ),
-    stopSequences: config.stopSequences,
-    user: config.user,
-    serviceTier: config.serviceTier,
-    useResponsesAPI: options
-            .getWithFlatFallback<bool>(LegacyExtensionKeys.useResponsesApi) ??
-        false,
-    previousResponseId: options.getWithFlatFallback<String>(
-      LegacyExtensionKeys.previousResponseId,
-    ),
-    builtInTools: options.getWithFlatFallback<List<OpenAIBuiltInTool>>(
-      LegacyExtensionKeys.builtInTools,
-    ),
-    frequencyPenalty: options.getWithFlatFallback<double>(
-      LegacyExtensionKeys.frequencyPenalty,
-    ),
-    presencePenalty: options.getWithFlatFallback<double>(
-      LegacyExtensionKeys.presencePenalty,
-    ),
-    logitBias: options.getWithFlatFallback<Map<String, double>>(
-      LegacyExtensionKeys.logitBias,
-    ),
-    seed: options.getWithFlatFallback<int>(LegacyExtensionKeys.seed),
-    parallelToolCalls: options.getWithFlatFallback<bool>(
-      LegacyExtensionKeys.parallelToolCalls,
-    ),
-    logprobs: options.getWithFlatFallback<bool>(LegacyExtensionKeys.logprobs),
-    topLogprobs:
-        options.getWithFlatFallback<int>(LegacyExtensionKeys.topLogprobs),
-    verbosity:
-        options.getWithFlatFallback<String>(LegacyExtensionKeys.verbosity),
+    options: options,
   );
 }
 
