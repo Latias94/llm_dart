@@ -69,20 +69,12 @@ abstract final class LegacyExtensionKeys {
   static const keepAlive = 'keepAlive';
   static const raw = 'raw';
 
-  // Audio / ElevenLabs legacy compatibility options
-  static const audioFormat = 'audioFormat';
-  static const audioQuality = 'audioQuality';
-  static const sampleRate = 'sampleRate';
-  static const languageCode = 'languageCode';
+  // ElevenLabs legacy compatibility options
   static const voiceId = 'voiceId';
   static const stability = 'stability';
   static const similarityBoost = 'similarityBoost';
   static const style = 'style';
   static const useSpeakerBoost = 'useSpeakerBoost';
-  static const diarize = 'diarize';
-  static const numSpeakers = 'numSpeakers';
-  static const includeTimestamps = 'includeTimestamps';
-  static const timestampGranularity = 'timestampGranularity';
 }
 
 const Set<String> legacyHttpExtensionKeys = {

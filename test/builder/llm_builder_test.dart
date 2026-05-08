@@ -201,18 +201,19 @@ void main() {
         expect(builder, isNotNull);
       });
 
-      test('should set response format', () {
-        final builder = LLMBuilder().responseFormat('json_object');
-        expect(builder, isNotNull);
-      });
-
-      test('should set JSON response format', () {
-        final builder = LLMBuilder().responseFormat('json_object');
-        expect(builder, isNotNull);
-      });
-
-      test('should set text response format', () {
-        final builder = LLMBuilder().responseFormat('text');
+      test('should set structured output schema', () {
+        final builder = LLMBuilder().jsonSchema(
+          const StructuredOutputFormat(
+            name: 'answer',
+            schema: {
+              'type': 'object',
+              'properties': {
+                'value': {'type': 'string'},
+              },
+            },
+            strict: true,
+          ),
+        );
         expect(builder, isNotNull);
       });
     });
@@ -476,7 +477,17 @@ void main() {
             .toolChoice(AutoToolChoice())
             .reasoningEffort(ReasoningEffort.medium)
             .voice('alloy')
-            .responseFormat('json_object');
+            .jsonSchema(
+              const StructuredOutputFormat(
+                name: 'answer',
+                schema: {
+                  'type': 'object',
+                  'properties': {
+                    'value': {'type': 'string'},
+                  },
+                },
+              ),
+            );
 
         expect(builder, isNotNull);
       });
