@@ -2,20 +2,19 @@ import 'package:llm_dart/core/provider_defaults.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('ProviderDefaults compatibility exports', () {
-    test(
-        'should expose legacy OpenAI-compatible defaults through the stable path',
-        () {
-      final config = OpenAICompatibleDefaults.getConfig('openrouter');
-
-      expect(config, isNotNull);
-      expect(config!['providerId'], equals('openrouter'));
-      expect(config['baseUrl'], equals(ProviderDefaults.openRouterBaseUrl));
-
-      expect(OpenAICompatibleDefaults.getConfig('deepseek-openai'), isNull);
+  group('ProviderDefaults', () {
+    test('keeps coarse endpoint and model defaults for generic endpoints', () {
       expect(
-        OpenAICompatibleDefaults.getConfig('together-ai')?['baseUrl'],
-        ProviderDefaults.togetherAIBaseUrl,
+        ProviderDefaults.getDefaults('openrouter'),
+        containsPair('baseUrl', ProviderDefaults.openRouterBaseUrl),
+      );
+      expect(
+        ProviderDefaults.getDefaults('github-copilot'),
+        containsPair('model', ProviderDefaults.githubCopilotDefaultModel),
+      );
+      expect(
+        ProviderDefaults.getDefaults('together-ai'),
+        containsPair('baseUrl', ProviderDefaults.togetherAIBaseUrl),
       );
     });
   });

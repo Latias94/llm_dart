@@ -1,8 +1,5 @@
 import '../../core/capability.dart';
 
-export '../compatibility/openai_compatible_defaults.dart'
-    show OpenAICompatibleDefaults;
-
 /// Centralized provider default configurations
 ///
 /// This file contains all default endpoints, models, and capabilities

@@ -34,6 +34,13 @@ into a routine `0.10.x` maintenance release.
   move to typed provider APIs/options or explicit provider/builder surfaces.
 - Removed the deprecated `CancelToken` alias. Use
   `TransportCancellation` instead.
+- Removed provider-owned OpenAI-compatible registry aliases such as
+  `deepseek-openai`, `google-openai`, `xai-openai`, `groq-openai`, and
+  `phind-openai`. Use the dedicated provider IDs; the generic compatible
+  registry is now reserved for OpenRouter and explicit non-dedicated endpoints.
+- Removed the legacy map-based `OpenAICompatibleDefaults` catalog. Use
+  typed `OpenAICompatibleConfigs` for compatible provider profiles and
+  `ProviderDefaults.getDefaults(...)` only for coarse endpoint/model defaults.
 
 ### Deprecated
 

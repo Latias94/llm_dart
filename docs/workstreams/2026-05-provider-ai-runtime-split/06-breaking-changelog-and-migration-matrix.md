@@ -39,9 +39,13 @@ The following slices are already landed on this branch:
   workspace package set it needs
 - the old `deepseek-openai`, `google-openai`, `xai-openai`, `groq-openai`,
   and `phind-openai` OpenAI-compatible aliases are no longer registered by
-  default or exposed as `LLMBuilder` convenience methods; use the dedicated
-  provider IDs or explicitly register the legacy alias when migration code
-  still needs the generic OpenAI-compatible shell
+  default, exposed as `LLMBuilder` convenience methods, or kept as typed
+  generic-compatible registration targets; use the dedicated provider IDs
+  instead. The generic-compatible shell stays only for OpenRouter and explicit
+  non-dedicated endpoints such as GitHub Copilot or Together AI.
+- the legacy map-based `OpenAICompatibleDefaults` catalog is removed; typed
+  `OpenAICompatibleConfigs` owns compatible provider profiles, while
+  `ProviderDefaults` only keeps coarse endpoint/model defaults.
 
 ## Suggested Breaking Changelog Draft
 
@@ -79,8 +83,11 @@ Use this as the starting point for the next explicit breaking release.
   belong in `llm_dart_provider`, and new runtime helpers belong in
   `llm_dart_ai`.
 - OpenAI-family default entrypoints now prefer dedicated provider IDs plus the
-  audited OpenRouter bridge. Legacy `*-openai` aliases remain available through
-  explicit compatibility registration only.
+  audited OpenRouter bridge. Provider-owned legacy `*-openai` aliases are no
+  longer a supported migration path; non-dedicated generic endpoints must use
+  their own explicit compatible profile.
+- OpenAI-compatible provider profile metadata is no longer duplicated in
+  `OpenAICompatibleDefaults`; use typed `OpenAICompatibleConfigs`.
 
 ### Kept
 
@@ -120,8 +127,9 @@ Use this as the starting point for the next explicit breaking release.
 | OpenAI input file IDs in `ProviderMetadata` | `FileProviderReferenceData` | Breaking migration | Provider metadata remains for output observation/replay details, not input file identity. |
 | `llm_dart_provider_utils` public package | Deferred | Not in first preview | Keep provider helper extraction internal until repeated cross-provider helper needs are stable. |
 | `package:llm_dart/legacy.dart` | Keep in root for first preview | Compatibility bridge | Move to `llm_dart_legacy` only in a later release if root dependency shrink requires it. |
-| `LLMBuilder.deepseekOpenAI()` and other `*-openai` builder aliases | Dedicated providers such as `deepseek`, `google`, `xai`, `groq`, `phind` | Removed from default builder surface | Use `provider('deepseek-openai')` only after explicit `OpenAICompatibleProviderRegistrar.registerProvider('deepseek-openai')` when migrating old generic-compatible code. |
-| Default registry entries for `deepseek-openai`, `google-openai`, `xai-openai`, `groq-openai`, `phind-openai` | Dedicated provider entries plus `openrouter` | Removed from default registry surface | The typed factory remains available for explicit registration; default app discovery should not show duplicate lower-fidelity aliases. |
+| `LLMBuilder.deepseekOpenAI()` and other provider-owned `*-openai` builder aliases | Dedicated providers such as `deepseek`, `google`, `xai`, `groq`, `phind` | Removed | These aliases are no longer kept as explicit generic-compatible registration targets. Use the dedicated provider ID so provider-specific behavior stays on the provider-owned path. |
+| Default registry entries for `deepseek-openai`, `google-openai`, `xai-openai`, `groq-openai`, `phind-openai` | Dedicated provider entries plus `openrouter` | Removed | Default app discovery should not show duplicate lower-fidelity aliases, and the explicit compatible registrar now only covers OpenRouter plus non-dedicated generic endpoints. |
+| `OpenAICompatibleDefaults` map catalog | `OpenAICompatibleConfigs` for typed profiles; `ProviderDefaults.getDefaults(...)` for coarse endpoint/model defaults | Removed | Avoids maintaining a second untyped profile catalog beside the typed provider-compatible config list. |
 | `LLMBuilder.githubCopilot()` and `LLMBuilder.togetherAI()` | Explicit provider registration or provider-owned OpenAI-family profile composition | Removed from default builder surface | These methods only selected unregistered provider IDs. For generic compatible endpoints, construct a provider-owned OpenAI-family model/profile explicitly or register a concrete factory. |
 
 ## Compatibility Policy
