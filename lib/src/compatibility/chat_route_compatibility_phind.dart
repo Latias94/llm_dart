@@ -5,30 +5,17 @@ bool canUsePhindChatBridge(
   List<ChatMessage> messages,
   List<Tool>? tools,
 ) {
-  final effectiveTools = tools ?? config.tools;
-  if (effectiveTools != null && effectiveTools.isNotEmpty ||
-      _hasNamedMessages(messages) ||
-      _hasMessageDecorators(messages) ||
-      !_systemMessagesLead(messages)) {
-    return false;
-  }
-
   if (!_isOpenAICompatiblePhindBaseUrl(config.baseUrl)) {
     return false;
   }
 
-  if (_hasOpenAICompatibleShellRequestConflict(config, messages)) {
-    return false;
-  }
-
-  if (_hasUnsupportedExtensions(
+  if (_hasOpenAICompatibleTextShellConflict(
     config: config,
+    messages: messages,
+    tools: tools,
     allowlist: _httpOnlyChatBridgeExtensionAllowlist,
+    allowFunctionTools: false,
   )) {
-    return false;
-  }
-
-  if (_hasNonTextMessages(messages)) {
     return false;
   }
 

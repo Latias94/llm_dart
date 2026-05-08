@@ -126,6 +126,41 @@ bool _hasOpenAICompatibleShellRequestConflict(
   return false;
 }
 
+bool _hasOpenAICompatibleTextShellConflict({
+  required LLMConfig config,
+  required List<ChatMessage> messages,
+  required List<Tool>? tools,
+  required _ChatBridgeExtensionAllowlist allowlist,
+  bool allowFunctionTools = true,
+  bool allowTextToolReplayMessages = false,
+}) {
+  final effectiveTools = tools ?? config.tools;
+  final hasUnsupportedTools = allowFunctionTools
+      ? _hasNonFunctionTools(effectiveTools)
+      : effectiveTools != null && effectiveTools.isNotEmpty;
+
+  if (hasUnsupportedTools ||
+      _hasMessageDecorators(messages) ||
+      !_systemMessagesLead(messages)) {
+    return true;
+  }
+
+  if (_hasOpenAICompatibleShellRequestConflict(config, messages)) {
+    return true;
+  }
+
+  if (_hasUnsupportedExtensions(
+    config: config,
+    allowlist: allowlist,
+  )) {
+    return true;
+  }
+
+  return allowTextToolReplayMessages
+      ? _hasUnsupportedTextToolReplayMessages(messages)
+      : _hasNonTextMessages(messages);
+}
+
 bool _hasNonTextMessages(List<ChatMessage> messages) {
   return messages.any((message) => message.messageType is! TextMessage);
 }
