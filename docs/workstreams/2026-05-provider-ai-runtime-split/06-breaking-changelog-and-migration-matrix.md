@@ -70,6 +70,8 @@ The following slices are already landed on this branch:
   compatibility response handling is internal HTTP infrastructure.
 - The unused public `utils/log_sanitizer.dart` re-export is removed; internal
   code imports transport logging helpers from `llm_dart_transport`.
+- The legacy/root `utils/utf8_stream_decoder.dart` re-export is removed; import
+  `Utf8StreamDecoder` from `package:llm_dart_transport/llm_dart_transport.dart`.
 
 ## Suggested Breaking Changelog Draft
 
@@ -174,6 +176,7 @@ Use this as the starting point for the next explicit breaking release.
 | `package:llm_dart/utils/dio_client_factory.dart` | `package:llm_dart_transport` `ProviderDioClientFactory` | Removed | The root wrapper no longer has production callers; provider clients pass typed Dio overrides to the transport-owned factory directly. |
 | `package:llm_dart/utils/http_response_handler.dart` | Provider-owned clients and internal compatibility HTTP helpers | Removed | Response parsing/error mapping is shared implementation infrastructure, not a stable root utility path. |
 | `package:llm_dart/utils/log_sanitizer.dart` | `package:llm_dart_transport` logging helpers | Removed | The root file was an unused re-export of transport-owned implementation. |
+| `package:llm_dart/utils/utf8_stream_decoder.dart` and `legacy.Utf8StreamDecoder` | `package:llm_dart_transport` `Utf8StreamDecoder` | Removed | UTF-8 stream decoding is transport-owned and should not be surfaced through the root compatibility barrel. |
 | `LLMBuilder.githubCopilot()` and `LLMBuilder.togetherAI()` | Explicit provider registration or provider-owned OpenAI-family profile composition | Removed from default builder surface | These methods only selected unregistered provider IDs. For generic compatible endpoints, construct a provider-owned OpenAI-family model/profile explicitly or register a concrete factory. |
 
 ## Compatibility Policy

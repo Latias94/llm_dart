@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:llm_dart/utils/utf8_stream_decoder.dart';
+import 'package:llm_dart_transport/llm_dart_transport.dart';
 import 'package:test/test.dart';
 
 void main() {

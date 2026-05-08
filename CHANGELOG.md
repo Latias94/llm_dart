@@ -70,6 +70,8 @@ into a routine `0.10.x` maintenance release.
   compatibility response handling is now internal HTTP infrastructure.
 - Removed the unused public `utils/log_sanitizer.dart` re-export. Internal
   code imports transport logging helpers from `llm_dart_transport`.
+- Removed the legacy/root `utils/utf8_stream_decoder.dart` re-export. Import
+  `Utf8StreamDecoder` from `package:llm_dart_transport/llm_dart_transport.dart`.
 
 ### Deprecated
 
