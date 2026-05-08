@@ -6,9 +6,9 @@ import '../../../models/tool_models.dart';
 import '../../../providers/openai/builtin_tools.dart';
 import '../../../providers/openai/provider.dart';
 import '../config/legacy_config_keys.dart';
-import '../config/legacy_provider_options.dart';
 import '../providers/openai/assistant_capability.dart';
 import '../web_search_presets.dart';
+import 'legacy_builder_provider_options.dart';
 part 'openai_builder_builds.dart';
 part 'openai_builder_presets.dart';
 part 'openai_builder_provider_options.dart';
@@ -30,6 +30,11 @@ class OpenAIBuilder
         _OpenAIBuilderBuilds {
   @override
   final LLMBuilder _baseBuilder;
+  @override
+  final LegacyBuilderProviderOptionWriter _providerOptions;
 
-  OpenAIBuilder(this._baseBuilder);
+  OpenAIBuilder(LLMBuilder baseBuilder)
+      : _baseBuilder = baseBuilder,
+        _providerOptions =
+            LegacyBuilderProviderOptionWriter.openAI(baseBuilder);
 }

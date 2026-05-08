@@ -1,7 +1,7 @@
 import '../../../builder/llm_builder.dart';
 import '../../../core/capability.dart';
 import '../config/legacy_config_keys.dart';
-import '../config/legacy_provider_options.dart';
+import 'legacy_builder_provider_options.dart';
 
 /// ElevenLabs-specific LLM builder with provider-specific configuration
 /// methods.
@@ -15,36 +15,43 @@ import '../config/legacy_provider_options.dart';
 /// methods.
 class ElevenLabsBuilder {
   final LLMBuilder _baseBuilder;
+  final LegacyBuilderProviderOptionWriter _providerOptions;
 
-  ElevenLabsBuilder(this._baseBuilder);
+  ElevenLabsBuilder(LLMBuilder baseBuilder)
+      : _baseBuilder = baseBuilder,
+        _providerOptions =
+            LegacyBuilderProviderOptionWriter.elevenLabs(baseBuilder);
 
   /// Sets voice ID for ElevenLabs TTS.
   ElevenLabsBuilder voiceId(String voiceId) {
-    _setProviderOption(LegacyExtensionKeys.voiceId, voiceId);
+    _providerOptions.set(LegacyExtensionKeys.voiceId, voiceId);
     return this;
   }
 
   /// Sets stability parameter for ElevenLabs TTS (0.0-1.0).
   ElevenLabsBuilder stability(double stability) {
-    _setProviderOption(LegacyExtensionKeys.stability, stability);
+    _providerOptions.set(LegacyExtensionKeys.stability, stability);
     return this;
   }
 
   /// Sets similarity boost parameter for ElevenLabs TTS (0.0-1.0).
   ElevenLabsBuilder similarityBoost(double similarityBoost) {
-    _setProviderOption(LegacyExtensionKeys.similarityBoost, similarityBoost);
+    _providerOptions.set(
+      LegacyExtensionKeys.similarityBoost,
+      similarityBoost,
+    );
     return this;
   }
 
   /// Sets style parameter for ElevenLabs TTS (0.0-1.0).
   ElevenLabsBuilder style(double style) {
-    _setProviderOption(LegacyExtensionKeys.style, style);
+    _providerOptions.set(LegacyExtensionKeys.style, style);
     return this;
   }
 
   /// Enables or disables speaker boost for ElevenLabs TTS.
   ElevenLabsBuilder useSpeakerBoost(bool enable) {
-    _setProviderOption(LegacyExtensionKeys.useSpeakerBoost, enable);
+    _providerOptions.set(LegacyExtensionKeys.useSpeakerBoost, enable);
     return this;
   }
 
@@ -79,14 +86,5 @@ class ElevenLabsBuilder {
   /// Builds a provider with AudioCapability.
   Future<AudioCapability> buildAudio() async {
     return _baseBuilder.buildAudio();
-  }
-
-  void _setProviderOption(String key, dynamic value) {
-    setLegacyBuilderProviderOption(
-      _baseBuilder,
-      LegacyProviderOptionNamespaces.elevenlabs,
-      key,
-      value,
-    );
   }
 }

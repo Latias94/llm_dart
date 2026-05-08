@@ -3,23 +3,26 @@ import '../../../core/capability.dart';
 import '../../../models/tool_models.dart';
 import '../../../providers/xai/config.dart';
 import '../config/legacy_config_keys.dart';
-import '../config/legacy_provider_options.dart';
+import 'legacy_builder_provider_options.dart';
 
 /// xAI-specific legacy builder DSL layered on top of [LLMBuilder].
 class XAIBuilder {
   final LLMBuilder _baseBuilder;
+  final LegacyBuilderProviderOptionWriter _providerOptions;
 
-  XAIBuilder(this._baseBuilder);
+  XAIBuilder(LLMBuilder baseBuilder)
+      : _baseBuilder = baseBuilder,
+        _providerOptions = LegacyBuilderProviderOptionWriter.xai(baseBuilder);
 
   /// Enables or disables xAI Live Search.
   XAIBuilder liveSearch(bool enabled) {
-    _setProviderOption(LegacyExtensionKeys.xaiLiveSearch, enabled);
+    _providerOptions.set(LegacyExtensionKeys.xaiLiveSearch, enabled);
     return this;
   }
 
   /// Sets xAI Live Search parameters.
   XAIBuilder searchParameters(SearchParameters parameters) {
-    _setProviderOption(LegacyExtensionKeys.xaiSearchParameters, parameters);
+    _providerOptions.set(LegacyExtensionKeys.xaiSearchParameters, parameters);
     return this;
   }
 
@@ -59,19 +62,19 @@ class XAIBuilder {
 
   /// Sets structured output schema for xAI chat requests.
   XAIBuilder jsonSchema(StructuredOutputFormat schema) {
-    _setProviderOption(LegacyExtensionKeys.jsonSchema, schema);
+    _providerOptions.set(LegacyExtensionKeys.jsonSchema, schema);
     return this;
   }
 
   /// Sets embedding encoding format.
   XAIBuilder embeddingEncodingFormat(String format) {
-    _setProviderOption(LegacyExtensionKeys.embeddingEncodingFormat, format);
+    _providerOptions.set(LegacyExtensionKeys.embeddingEncodingFormat, format);
     return this;
   }
 
   /// Sets embedding dimensions.
   XAIBuilder embeddingDimensions(int dimensions) {
-    _setProviderOption(LegacyExtensionKeys.embeddingDimensions, dimensions);
+    _providerOptions.set(LegacyExtensionKeys.embeddingDimensions, dimensions);
     return this;
   }
 
@@ -83,14 +86,5 @@ class XAIBuilder {
   /// Builds a provider with EmbeddingCapability.
   Future<EmbeddingCapability> buildEmbedding() async {
     return _baseBuilder.buildEmbedding();
-  }
-
-  void _setProviderOption(String key, dynamic value) {
-    setLegacyBuilderProviderOption(
-      _baseBuilder,
-      LegacyProviderOptionNamespaces.xai,
-      key,
-      value,
-    );
   }
 }

@@ -2,47 +2,51 @@ import '../../../builder/llm_builder.dart';
 import '../../../core/capability.dart';
 import '../../../providers/anthropic/mcp_models.dart';
 import '../config/legacy_config_keys.dart';
-import '../config/legacy_provider_options.dart';
+import 'legacy_builder_provider_options.dart';
 
 /// Anthropic-specific legacy builder DSL layered on top of [LLMBuilder].
 class AnthropicBuilder {
   final LLMBuilder _baseBuilder;
+  final LegacyBuilderProviderOptionWriter _providerOptions;
 
-  AnthropicBuilder(this._baseBuilder);
+  AnthropicBuilder(LLMBuilder baseBuilder)
+      : _baseBuilder = baseBuilder,
+        _providerOptions =
+            LegacyBuilderProviderOptionWriter.anthropic(baseBuilder);
 
   /// Sets metadata for the request.
   AnthropicBuilder metadata(Map<String, dynamic> data) {
-    _setProviderOption(LegacyExtensionKeys.metadata, data);
+    _providerOptions.set(LegacyExtensionKeys.metadata, data);
     return this;
   }
 
   /// Enables or disables extended thinking.
   AnthropicBuilder reasoning(bool enable) {
-    _setProviderOption(LegacyExtensionKeys.reasoning, enable);
+    _providerOptions.set(LegacyExtensionKeys.reasoning, enable);
     return this;
   }
 
   /// Sets thinking budget tokens for extended thinking.
   AnthropicBuilder thinkingBudgetTokens(int tokens) {
-    _setProviderOption(LegacyExtensionKeys.thinkingBudgetTokens, tokens);
+    _providerOptions.set(LegacyExtensionKeys.thinkingBudgetTokens, tokens);
     return this;
   }
 
   /// Enables or disables interleaved thinking.
   AnthropicBuilder interleavedThinking(bool enable) {
-    _setProviderOption(LegacyExtensionKeys.interleavedThinking, enable);
+    _providerOptions.set(LegacyExtensionKeys.interleavedThinking, enable);
     return this;
   }
 
   /// Sets the container ID for workbench usage.
   AnthropicBuilder container(String containerId) {
-    _setProviderOption(LegacyExtensionKeys.container, containerId);
+    _providerOptions.set(LegacyExtensionKeys.container, containerId);
     return this;
   }
 
   /// Sets MCP (Model Context Protocol) servers.
   AnthropicBuilder mcpServers(List<AnthropicMCPServer> servers) {
-    _setProviderOption(LegacyExtensionKeys.mcpServers, servers);
+    _providerOptions.set(LegacyExtensionKeys.mcpServers, servers);
     return this;
   }
 
@@ -176,14 +180,5 @@ class AnthropicBuilder {
   /// Builds a provider with ModelListingCapability.
   Future<ModelListingCapability> buildModelListing() async {
     return _baseBuilder.buildModelListing();
-  }
-
-  void _setProviderOption(String key, dynamic value) {
-    setLegacyBuilderProviderOption(
-      _baseBuilder,
-      LegacyProviderOptionNamespaces.anthropic,
-      key,
-      value,
-    );
   }
 }

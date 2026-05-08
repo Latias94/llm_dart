@@ -4,78 +4,82 @@ import '../../../core/llm_error.dart';
 import '../../../models/chat_models.dart';
 import '../../../providers/google/config.dart';
 import '../config/legacy_config_keys.dart';
-import '../config/legacy_provider_options.dart';
 import '../providers/google/google_tts_capability.dart';
+import 'legacy_builder_provider_options.dart';
 
 /// Google-specific legacy builder DSL layered on top of [LLMBuilder].
 class GoogleLLMBuilder {
   final LLMBuilder _baseBuilder;
+  final LegacyBuilderProviderOptionWriter _providerOptions;
 
-  GoogleLLMBuilder(this._baseBuilder);
+  GoogleLLMBuilder(LLMBuilder baseBuilder)
+      : _baseBuilder = baseBuilder,
+        _providerOptions =
+            LegacyBuilderProviderOptionWriter.google(baseBuilder);
 
   /// Sets the task type for embeddings.
   GoogleLLMBuilder embeddingTaskType(String taskType) {
-    _setProviderOption(LegacyExtensionKeys.embeddingTaskType, taskType);
+    _providerOptions.set(LegacyExtensionKeys.embeddingTaskType, taskType);
     return this;
   }
 
   /// Sets the title for embedding documents.
   GoogleLLMBuilder embeddingTitle(String title) {
-    _setProviderOption(LegacyExtensionKeys.embeddingTitle, title);
+    _providerOptions.set(LegacyExtensionKeys.embeddingTitle, title);
     return this;
   }
 
   /// Sets the output dimensionality for embeddings.
   GoogleLLMBuilder embeddingDimensions(int dimensions) {
-    _setProviderOption(LegacyExtensionKeys.embeddingDimensions, dimensions);
+    _providerOptions.set(LegacyExtensionKeys.embeddingDimensions, dimensions);
     return this;
   }
 
   /// Sets the reasoning effort for models that support it.
   GoogleLLMBuilder reasoningEffort(ReasoningEffort effort) {
-    _setProviderOption(LegacyExtensionKeys.reasoningEffort, effort.value);
+    _providerOptions.set(LegacyExtensionKeys.reasoningEffort, effort.value);
     return this;
   }
 
   /// Sets thinking budget tokens for reasoning models.
   GoogleLLMBuilder thinkingBudgetTokens(int tokens) {
-    _setProviderOption(LegacyExtensionKeys.thinkingBudgetTokens, tokens);
+    _providerOptions.set(LegacyExtensionKeys.thinkingBudgetTokens, tokens);
     return this;
   }
 
   /// Enables or disables including thoughts in the response.
   GoogleLLMBuilder includeThoughts(bool include) {
-    _setProviderOption(LegacyExtensionKeys.includeThoughts, include);
+    _providerOptions.set(LegacyExtensionKeys.includeThoughts, include);
     return this;
   }
 
   /// Enables image generation capability.
   GoogleLLMBuilder enableImageGeneration(bool enable) {
-    _setProviderOption(LegacyExtensionKeys.enableImageGeneration, enable);
+    _providerOptions.set(LegacyExtensionKeys.enableImageGeneration, enable);
     return this;
   }
 
   /// Sets response modalities.
   GoogleLLMBuilder responseModalities(List<String> modalities) {
-    _setProviderOption(LegacyExtensionKeys.responseModalities, modalities);
+    _providerOptions.set(LegacyExtensionKeys.responseModalities, modalities);
     return this;
   }
 
   /// Sets safety settings for content filtering.
   GoogleLLMBuilder safetySettings(List<SafetySetting> settings) {
-    _setProviderOption(LegacyExtensionKeys.safetySettings, settings);
+    _providerOptions.set(LegacyExtensionKeys.safetySettings, settings);
     return this;
   }
 
   /// Sets maximum inline data size.
   GoogleLLMBuilder maxInlineDataSize(int size) {
-    _setProviderOption(LegacyExtensionKeys.maxInlineDataSize, size);
+    _providerOptions.set(LegacyExtensionKeys.maxInlineDataSize, size);
     return this;
   }
 
   /// Sets candidate count for response generation.
   GoogleLLMBuilder candidateCount(int count) {
-    _setProviderOption(LegacyExtensionKeys.candidateCount, count);
+    _providerOptions.set(LegacyExtensionKeys.candidateCount, count);
     return this;
   }
 
@@ -175,14 +179,5 @@ class GoogleLLMBuilder {
   GoogleLLMBuilder enableAudioOutput() {
     responseModalities(['AUDIO']);
     return this;
-  }
-
-  void _setProviderOption(String key, dynamic value) {
-    setLegacyBuilderProviderOption(
-      _baseBuilder,
-      LegacyProviderOptionNamespaces.google,
-      key,
-      value,
-    );
   }
 }

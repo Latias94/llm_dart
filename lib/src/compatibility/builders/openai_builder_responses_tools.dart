@@ -1,19 +1,17 @@
 part of 'openai_builder.dart';
 
 mixin _OpenAIBuilderResponsesTools {
-  LLMBuilder get _baseBuilder;
-
-  void _setOpenAIProviderOption(String key, dynamic value);
+  LegacyBuilderProviderOptionWriter get _providerOptions;
 
   /// Enables the Responses API instead of Chat Completions API.
   OpenAIBuilder useResponsesAPI([bool use = true]) {
-    _setOpenAIProviderOption(LegacyExtensionKeys.useResponsesApi, use);
+    _providerOptions.set(LegacyExtensionKeys.useResponsesApi, use);
     return this as OpenAIBuilder;
   }
 
   /// Sets previous response ID for chaining responses.
   OpenAIBuilder previousResponseId(String responseId) {
-    _setOpenAIProviderOption(
+    _providerOptions.set(
       LegacyExtensionKeys.previousResponseId,
       responseId,
     );
@@ -24,7 +22,7 @@ mixin _OpenAIBuilderResponsesTools {
   OpenAIBuilder webSearchTool() {
     final tools = _getBuiltInTools();
     tools.add(OpenAIBuiltInTools.webSearch());
-    _setOpenAIProviderOption(LegacyExtensionKeys.builtInTools, tools);
+    _providerOptions.set(LegacyExtensionKeys.builtInTools, tools);
     return this as OpenAIBuilder;
   }
 
@@ -40,7 +38,7 @@ mixin _OpenAIBuilderResponsesTools {
         parameters: parameters,
       ),
     );
-    _setOpenAIProviderOption(LegacyExtensionKeys.builtInTools, tools);
+    _providerOptions.set(LegacyExtensionKeys.builtInTools, tools);
     return this as OpenAIBuilder;
   }
 
@@ -60,16 +58,12 @@ mixin _OpenAIBuilderResponsesTools {
         parameters: parameters,
       ),
     );
-    _setOpenAIProviderOption(LegacyExtensionKeys.builtInTools, tools);
+    _providerOptions.set(LegacyExtensionKeys.builtInTools, tools);
     return this as OpenAIBuilder;
   }
 
   List<OpenAIBuiltInTool> _getBuiltInTools() {
-    final options = legacyProviderOptionView(
-      _baseBuilder.currentConfig,
-      LegacyProviderOptionNamespaces.openai,
-    );
-    final existingTools = options.get<List<OpenAIBuiltInTool>>(
+    final existingTools = _providerOptions.get<List<OpenAIBuiltInTool>>(
       LegacyExtensionKeys.builtInTools,
     );
     return existingTools != null
@@ -81,7 +75,7 @@ mixin _OpenAIBuilderResponsesTools {
   OpenAIBuilder webSearch({
     WebSearchContextSize contextSize = WebSearchContextSize.medium,
   }) {
-    _setOpenAIProviderOption(
+    _providerOptions.set(
       LegacyExtensionKeys.webSearchConfig,
       CompatWebSearchPresets.openai(
         contextSize: contextSize,

@@ -3,6 +3,8 @@ part of 'openai_builder.dart';
 mixin _OpenAIBuilderBuilds {
   LLMBuilder get _baseBuilder;
 
+  LegacyBuilderProviderOptionWriter get _providerOptions;
+
   OpenAIBuilder useResponsesAPI([bool use = true]);
 
   /// Builds and returns a configured LLM provider instance.
@@ -47,12 +49,9 @@ mixin _OpenAIBuilderBuilds {
 
   /// Builds an OpenAI provider with Responses API enabled.
   Future<OpenAIProvider> buildOpenAIResponses() async {
-    final options = legacyProviderOptionView(
-      _baseBuilder.currentConfig,
-      LegacyProviderOptionNamespaces.openai,
-    );
     final isResponsesApiEnabled =
-        options.get<bool>(LegacyExtensionKeys.useResponsesApi) ?? false;
+        _providerOptions.get<bool>(LegacyExtensionKeys.useResponsesApi) ??
+            false;
     if (!isResponsesApiEnabled) {
       useResponsesAPI(true);
     }
