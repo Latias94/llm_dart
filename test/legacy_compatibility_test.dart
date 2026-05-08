@@ -4,6 +4,7 @@ import 'package:llm_dart/src/compatibility/compat_providers.dart';
 import 'package:llm_dart/src/compatibility/legacy_chat_adapter.dart';
 import 'package:llm_dart/src/compatibility/config/legacy_anthropic_options.dart';
 import 'package:llm_dart/src/compatibility/config/legacy_config_keys.dart';
+import 'package:llm_dart/src/compatibility/config/legacy_elevenlabs_options.dart';
 import 'package:llm_dart/src/compatibility/config/legacy_google_options.dart';
 import 'package:llm_dart/src/compatibility/config/legacy_google_thinking_options.dart';
 import 'package:llm_dart/src/compatibility/config/legacy_openai_options.dart';
@@ -308,6 +309,40 @@ void main() {
       expect(anthropic.metadata, {'source': 'namespaced'});
       expect(anthropic.container, isNull);
       expect(anthropic.mcpServers, [server]);
+    });
+
+    test('LegacyElevenLabsOptions centralizes ElevenLabs option reads', () {
+      const config = legacy.LLMConfig(
+        apiKey: 'test-key',
+        baseUrl: 'https://api.elevenlabs.io/v1',
+        model: 'eleven_multilingual_v2',
+        extensions: {
+          LegacyExtensionKeys.voiceId: 'flat-voice',
+          LegacyExtensionKeys.stability: 0.2,
+          legacyProviderOptionsBagKey: {
+            LegacyProviderOptionNamespaces.elevenlabs: {
+              LegacyExtensionKeys.voiceId: 'voice-123',
+              LegacyExtensionKeys.stability: null,
+              LegacyExtensionKeys.similarityBoost: 0.8,
+              LegacyExtensionKeys.style: 0.4,
+              LegacyExtensionKeys.useSpeakerBoost: true,
+            },
+          },
+        },
+      );
+
+      final elevenLabs = legacyElevenLabsOptions(
+        legacyProviderOptionView(
+          config,
+          LegacyProviderOptionNamespaces.elevenlabs,
+        ),
+      );
+
+      expect(elevenLabs.voiceId, 'voice-123');
+      expect(elevenLabs.stability, isNull);
+      expect(elevenLabs.similarityBoost, 0.8);
+      expect(elevenLabs.style, 0.4);
+      expect(elevenLabs.useSpeakerBoost, isTrue);
     });
 
     test(

@@ -1,6 +1,6 @@
 import '../../../../core/config.dart';
 import '../../../../providers/elevenlabs/config.dart';
-import '../../config/legacy_config_extensions.dart';
+import '../../config/legacy_elevenlabs_options.dart';
 import '../../config/legacy_provider_options.dart';
 import '../community_provider_config_adapters.dart';
 
@@ -10,6 +10,7 @@ ElevenLabsConfig createLegacyElevenLabsConfig(LLMConfig config) {
     config,
     LegacyProviderOptionNamespaces.elevenlabs,
   );
+  final elevenLabsOptions = legacyElevenLabsOptions(options);
 
   return ElevenLabsConfig(
     apiKey: config.apiKey!,
@@ -17,15 +18,10 @@ ElevenLabsConfig createLegacyElevenLabsConfig(LLMConfig config) {
     model: config.model,
     timeout: config.timeout,
     dioOverrides: createLegacyDioClientOverrides(config),
-    voiceId: options.getWithFlatFallback<String>(LegacyExtensionKeys.voiceId),
-    stability:
-        options.getWithFlatFallback<double>(LegacyExtensionKeys.stability),
-    similarityBoost: options.getWithFlatFallback<double>(
-      LegacyExtensionKeys.similarityBoost,
-    ),
-    style: options.getWithFlatFallback<double>(LegacyExtensionKeys.style),
-    useSpeakerBoost: options.getWithFlatFallback<bool>(
-      LegacyExtensionKeys.useSpeakerBoost,
-    ),
+    voiceId: elevenLabsOptions.voiceId,
+    stability: elevenLabsOptions.stability,
+    similarityBoost: elevenLabsOptions.similarityBoost,
+    style: elevenLabsOptions.style,
+    useSpeakerBoost: elevenLabsOptions.useSpeakerBoost,
   );
 }
