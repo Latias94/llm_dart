@@ -8,10 +8,12 @@ import '../../src/compatibility/openai_compatible_configs.dart';
 import '../openai/openai.dart';
 import 'base_factory.dart';
 
-/// Generic factory for creating OpenAI-compatible provider instances
+/// Factory for supported OpenAI-compatible provider presets.
 ///
-/// This factory can create providers for any service that offers an OpenAI-compatible API,
-/// using pre-configured settings for popular providers like DeepSeek, Gemini, xAI, etc.
+/// Provider-owned services such as DeepSeek, Google, Groq, Phind, and xAI are
+/// handled by their dedicated factories. This factory remains for OpenRouter's
+/// compatibility bridge and for explicit generic OpenAI-family endpoints that
+/// do not have a first-class provider facade.
 class OpenAICompatibleProviderFactory
     extends BaseProviderFactory<ChatCapability> {
   final OpenAICompatibleProviderConfig _config;
@@ -55,19 +57,19 @@ class OpenAICompatibleProviderFactory
     };
   }
 
-  /// Check if this is an OpenRouter provider
+  /// Check if this is an OpenRouter provider.
   bool _isOpenRouter() {
     return _config.providerId == 'openrouter';
   }
 
-  /// Create factory instances for all pre-configured providers
+  /// Create factory instances for all pre-configured compatible presets.
   static List<OpenAICompatibleProviderFactory> createAllFactories() {
     return OpenAICompatibleConfigs.getAllConfigs()
         .map((config) => OpenAICompatibleProviderFactory(config))
         .toList();
   }
 
-  /// Create a specific factory by provider ID
+  /// Create a specific factory by provider ID.
   static OpenAICompatibleProviderFactory? createFactory(String providerId) {
     final config = OpenAICompatibleConfigs.getConfig(providerId);
     if (config == null) return null;
@@ -78,7 +80,7 @@ class OpenAICompatibleProviderFactory
 
 /// Helper class for registering OpenAI-compatible providers
 class OpenAICompatibleProviderRegistrar {
-  /// Register all pre-configured OpenAI-compatible providers
+  /// Register default OpenAI-compatible providers.
   static void registerAll() {
     final factories = _createDefaultOpenAICompatibleFactories();
 
@@ -87,7 +89,7 @@ class OpenAICompatibleProviderRegistrar {
     }
   }
 
-  /// Register a specific OpenAI-compatible provider
+  /// Register a specific OpenAI-compatible provider.
   static bool registerProvider(String providerId) {
     final factory = OpenAICompatibleProviderFactory.createFactory(providerId);
     if (factory == null) return false;
@@ -96,7 +98,7 @@ class OpenAICompatibleProviderRegistrar {
     return true;
   }
 
-  /// Get list of available OpenAI-compatible provider IDs
+  /// Get list of available OpenAI-compatible provider IDs.
   static List<String> getAvailableProviders() {
     return OpenAICompatibleConfigs.getAllConfigs()
         .map((config) => config.providerId)
@@ -105,9 +107,9 @@ class OpenAICompatibleProviderRegistrar {
 
   /// Provider IDs registered by the root package by default.
   ///
-  /// Legacy `*-openai` aliases remain available through [registerProvider],
-  /// but are not part of the default registry surface because the dedicated
-  /// provider IDs now carry their provider-owned options and compat bridges.
+  /// Generic endpoints such as GitHub Copilot and Together AI remain available
+  /// through [registerProvider], but are not part of the default registry
+  /// surface. Dedicated providers carry their own options and compat bridges.
   static List<String> getDefaultProviders() {
     return _createDefaultOpenAICompatibleFactories()
         .map((factory) => factory.providerId)

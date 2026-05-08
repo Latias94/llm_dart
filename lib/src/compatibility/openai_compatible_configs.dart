@@ -1,38 +1,28 @@
 import '../../core/capability.dart';
 import '../config/provider_defaults.dart';
-import 'google_openai_transformers.dart';
 import 'openai_compatible_provider_config.dart';
 
 part 'openai_compatible_provider_profiles.dart';
 
-/// Pre-configured OpenAI-compatible provider configurations
+/// Pre-configured OpenAI-compatible provider configurations.
 ///
-/// This file contains configurations for popular AI providers that offer
-/// OpenAI-compatible APIs, making it easy for users to switch between
-/// providers without manual configuration.
+/// Dedicated providers such as DeepSeek, Google, Groq, Phind, and xAI are no
+/// longer duplicated here as `*-openai` aliases. They own their provider
+/// options through first-class facades. This registry is for OpenAI-family
+/// endpoints that either need a special compatibility bridge, like OpenRouter,
+/// or do not yet have a dedicated provider facade.
 class OpenAICompatibleConfigs {
-  /// DeepSeek configuration using OpenAI-compatible interface
-  static const OpenAICompatibleProviderConfig deepseek =
-      _deepseekOpenAICompatibleConfig;
-
-  /// Google Gemini configuration using OpenAI-compatible interface
-  static final OpenAICompatibleProviderConfig gemini =
-      _geminiOpenAICompatibleConfig;
-
-  /// xAI Grok configuration using OpenAI-compatible interface
-  static const OpenAICompatibleProviderConfig xai = _xaiOpenAICompatibleConfig;
-
-  /// Groq configuration using OpenAI-compatible interface
-  static const OpenAICompatibleProviderConfig groq =
-      _groqOpenAICompatibleConfig;
-
-  /// Phind configuration using OpenAI-compatible interface
-  static const OpenAICompatibleProviderConfig phind =
-      _phindOpenAICompatibleConfig;
-
   /// OpenRouter configuration using OpenAI-compatible interface
   static const OpenAICompatibleProviderConfig openRouter =
       _openRouterOpenAICompatibleConfig;
+
+  /// GitHub Copilot Chat API using the generic OpenAI-family compatibility path.
+  static const OpenAICompatibleProviderConfig githubCopilot =
+      _githubCopilotOpenAICompatibleConfig;
+
+  /// Together AI using the generic OpenAI-family compatibility path.
+  static const OpenAICompatibleProviderConfig togetherAI =
+      _togetherAIOpenAICompatibleConfig;
 
   /// Get all available OpenAI-compatible configurations
   static List<OpenAICompatibleProviderConfig> getAllConfigs() {

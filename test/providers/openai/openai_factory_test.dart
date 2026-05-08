@@ -63,15 +63,21 @@ void main() {
   });
 
   group('OpenAICompatibleProviderFactory Tests', () {
-    test('should keep legacy compatible aliases on generic OpenAI provider',
-        () {
+    test('should reject provider-owned OpenAI-compatible aliases', () {
+      expect(
+        OpenAICompatibleProviderFactory.createFactory('deepseek-openai'),
+        isNull,
+      );
+    });
+
+    test('should keep generic endpoint presets on OpenAI provider', () {
       final factory = OpenAICompatibleProviderFactory.createFactory(
-        'deepseek-openai',
+        'together-ai',
       )!;
       final config = LLMConfig(
         apiKey: 'test-api-key',
-        baseUrl: 'https://api.deepseek.com/v1/',
-        model: 'deepseek-chat',
+        baseUrl: 'https://api.together.xyz/v1/',
+        model: 'meta-llama/Llama-3-70b-chat-hf',
         extensions: {
           LegacyExtensionKeys.useResponsesApi: true,
           LegacyExtensionKeys.previousResponseId: 'resp_compat',
@@ -83,7 +89,7 @@ void main() {
 
       final provider = factory.create(config) as OpenAIProvider;
 
-      expect(provider, isNot(isA<CompatDeepSeekProvider>()));
+      expect(provider, isNot(isA<CompatOpenRouterProvider>()));
       expect(provider.config.useResponsesAPI, isTrue);
       expect(provider.config.previousResponseId, equals('resp_compat'));
       expect(provider.config.builtInTools, hasLength(1));

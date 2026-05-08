@@ -11,6 +11,12 @@ void main() {
       expect(config, isNotNull);
       expect(config!['providerId'], equals('openrouter'));
       expect(config['baseUrl'], equals(ProviderDefaults.openRouterBaseUrl));
+
+      expect(OpenAICompatibleDefaults.getConfig('deepseek-openai'), isNull);
+      expect(
+        OpenAICompatibleDefaults.getConfig('together-ai')?['baseUrl'],
+        ProviderDefaults.togetherAIBaseUrl,
+      );
     });
   });
 }

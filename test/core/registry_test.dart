@@ -304,16 +304,30 @@ void main() {
         expect(providers, isNot(contains('xai-openai')));
         expect(providers, isNot(contains('groq-openai')));
         expect(providers, isNot(contains('phind-openai')));
+        expect(providers, isNot(contains('github-copilot')));
+        expect(providers, isNot(contains('together-ai')));
       });
 
-      test('should register legacy OpenAI-compatible aliases explicitly', () {
+      test('should reject provider-owned OpenAI-compatible aliases', () {
         final registered = OpenAICompatibleProviderRegistrar.registerProvider(
             'deepseek-openai');
+
+        expect(registered, isFalse);
+        expect(
+          LLMProviderRegistry.getRegisteredProviders(),
+          isNot(contains('deepseek-openai')),
+        );
+      });
+
+      test('should register explicit generic OpenAI-compatible presets', () {
+        final registered = OpenAICompatibleProviderRegistrar.registerProvider(
+          'together-ai',
+        );
 
         expect(registered, isTrue);
         expect(
           LLMProviderRegistry.getRegisteredProviders(),
-          contains('deepseek-openai'),
+          contains('together-ai'),
         );
       });
     });
