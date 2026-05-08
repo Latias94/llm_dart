@@ -72,6 +72,10 @@ into a routine `0.10.x` maintenance release.
   code imports transport logging helpers from `llm_dart_transport`.
 - Removed the legacy/root `utils/utf8_stream_decoder.dart` re-export. Import
   `Utf8StreamDecoder` from `package:llm_dart_transport/llm_dart_transport.dart`.
+- Removed the legacy `CapabilityUtils` and `ProviderRegistry` utilities. Use
+  `ProviderCapabilities` for coarse compatibility checks, `LLMProviderRegistry`
+  for provider factories, and model capability profiles for modern app-facing
+  discovery.
 
 ### Deprecated
 

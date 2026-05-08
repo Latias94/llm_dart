@@ -32,7 +32,6 @@ import 'utils/utf8_stream_decoder_test.dart' as utf8_decoder_tests;
 import 'utils/http_config_utils_test.dart' as http_config_utils_tests;
 import 'utils/timeout_priority_test.dart' as timeout_priority_tests;
 import 'utils/dio/dio_proxy_test.dart' as dio_proxy_tests;
-import 'utils/capability_utils_test.dart' as capability_utils_tests;
 import 'tool/check_workspace_dependency_guards_test.dart'
     as dependency_guard_tool_tests;
 import 'tool/check_root_package_boundary_guards_test.dart'
@@ -119,7 +118,6 @@ void main() {
       http_config_utils_tests.main();
       timeout_priority_tests.main();
       dio_proxy_tests.main();
-      capability_utils_tests.main();
       dependency_guard_tool_tests.main();
       root_boundary_guard_tool_tests.main();
     });

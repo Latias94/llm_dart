@@ -72,6 +72,9 @@ The following slices are already landed on this branch:
   code imports transport logging helpers from `llm_dart_transport`.
 - The legacy/root `utils/utf8_stream_decoder.dart` re-export is removed; import
   `Utf8StreamDecoder` from `package:llm_dart_transport/llm_dart_transport.dart`.
+- Legacy `CapabilityUtils` and `ProviderRegistry` are removed. Use
+  `ProviderCapabilities` for coarse compatibility checks, `LLMProviderRegistry`
+  for provider factories, and model capability profiles for modern discovery.
 
 ## Suggested Breaking Changelog Draft
 
@@ -177,6 +180,7 @@ Use this as the starting point for the next explicit breaking release.
 | `package:llm_dart/utils/http_response_handler.dart` | Provider-owned clients and internal compatibility HTTP helpers | Removed | Response parsing/error mapping is shared implementation infrastructure, not a stable root utility path. |
 | `package:llm_dart/utils/log_sanitizer.dart` | `package:llm_dart_transport` logging helpers | Removed | The root file was an unused re-export of transport-owned implementation. |
 | `package:llm_dart/utils/utf8_stream_decoder.dart` and `legacy.Utf8StreamDecoder` | `package:llm_dart_transport` `Utf8StreamDecoder` | Removed | UTF-8 stream decoding is transport-owned and should not be surfaced through the root compatibility barrel. |
+| `CapabilityUtils`, `ProviderRegistry`, `globalProviderRegistry` | `ProviderCapabilities`, `LLMProviderRegistry`, and model capability profiles | Removed | The provider-level dynamic utility registry was legacy-only and conflicts with the model-centric capability discovery direction. |
 | `LLMBuilder.githubCopilot()` and `LLMBuilder.togetherAI()` | Explicit provider registration or provider-owned OpenAI-family profile composition | Removed from default builder surface | These methods only selected unregistered provider IDs. For generic compatible endpoints, construct a provider-owned OpenAI-family model/profile explicitly or register a concrete factory. |
 
 ## Compatibility Policy
