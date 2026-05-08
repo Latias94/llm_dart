@@ -4,6 +4,7 @@ import 'package:llm_dart/src/compatibility/compat_providers.dart';
 import 'package:llm_dart/src/compatibility/legacy_chat_adapter.dart';
 import 'package:llm_dart/src/compatibility/config/legacy_anthropic_options.dart';
 import 'package:llm_dart/src/compatibility/config/legacy_config_keys.dart';
+import 'package:llm_dart/src/compatibility/config/legacy_deepseek_options.dart';
 import 'package:llm_dart/src/compatibility/config/legacy_elevenlabs_options.dart';
 import 'package:llm_dart/src/compatibility/config/legacy_google_options.dart';
 import 'package:llm_dart/src/compatibility/config/legacy_google_thinking_options.dart';
@@ -390,6 +391,42 @@ void main() {
       expect(ollama.keepAlive, '10m');
       expect(ollama.raw, isFalse);
       expect(ollama.reasoning, isTrue);
+    });
+
+    test('LegacyDeepSeekOptions centralizes DeepSeek option reads', () {
+      const config = legacy.LLMConfig(
+        apiKey: 'test-key',
+        baseUrl: 'https://api.deepseek.com',
+        model: 'deepseek-chat',
+        extensions: {
+          LegacyExtensionKeys.logprobs: true,
+          LegacyExtensionKeys.deepSeekTopLogprobs: 1,
+          legacyProviderOptionsBagKey: {
+            LegacyProviderOptionNamespaces.deepseek: {
+              LegacyExtensionKeys.logprobs: null,
+              LegacyExtensionKeys.deepSeekTopLogprobs: 3,
+              LegacyExtensionKeys.deepSeekFrequencyPenalty: 0.2,
+              LegacyExtensionKeys.deepSeekPresencePenalty: 0.4,
+              LegacyExtensionKeys.deepSeekResponseFormat: {
+                'type': 'json_object',
+              },
+            },
+          },
+        },
+      );
+
+      final deepSeek = legacyDeepSeekOptions(
+        legacyProviderOptionView(
+          config,
+          LegacyProviderOptionNamespaces.deepseek,
+        ),
+      );
+
+      expect(deepSeek.logprobs, isNull);
+      expect(deepSeek.topLogprobs, 3);
+      expect(deepSeek.frequencyPenalty, 0.2);
+      expect(deepSeek.presencePenalty, 0.4);
+      expect(deepSeek.responseFormat, {'type': 'json_object'});
     });
 
     test(
