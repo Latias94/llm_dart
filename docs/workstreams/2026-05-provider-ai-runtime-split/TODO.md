@@ -124,3 +124,5 @@
 - [x] Run Flutter adapter analysis and tests after toolchain recovery
 - [x] Run MCP example dependency resolution, analysis, and no-key smoke test
 - [x] Prepare breaking changelog and migration matrix
+- [x] Run workspace publish dry-run after the root legacy cleanup slices
+- [x] Document release readiness and publish stop conditions

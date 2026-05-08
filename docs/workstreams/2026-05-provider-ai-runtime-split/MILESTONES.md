@@ -235,3 +235,7 @@ Current status:
 - transport boundary guards now cover the transport public barrel as well
 - foundational test legacy-import guards now keep core/model/builder/utils
   tests on focused entrypoints
+- release readiness is documented, including validation commands, publish
+  dry-run expectations, manual release checks, and stop conditions
+- workspace publish dry-run passed for all 11 publishable packages with zero
+  warnings on 2026-05-08

@@ -124,6 +124,9 @@ The workstream is complete only when:
   - Root package and legacy compatibility exit strategy.
 - [06-breaking-changelog-and-migration-matrix.md](06-breaking-changelog-and-migration-matrix.md)
   - Breaking changelog draft and migration matrix for the current slice.
+- [07-release-readiness-checklist.md](07-release-readiness-checklist.md)
+  - Release validation, publish dry-run expectations, and manual publishing
+    checklist for the breaking preview.
 - [MILESTONES.md](MILESTONES.md)
   - Milestones and acceptance criteria.
 - [TODO.md](TODO.md)
