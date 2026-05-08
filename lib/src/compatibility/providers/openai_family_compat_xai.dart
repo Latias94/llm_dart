@@ -6,26 +6,20 @@ import '../../../providers/xai/config.dart';
 import '../../../providers/xai/provider.dart';
 import '../chat_route_compatibility.dart';
 import '../config/legacy_provider_options.dart';
-import '../compat_transport.dart';
 import '../legacy_chat_adapter.dart';
 import 'compat_provider_support.dart';
+import 'openai_family_compat_chat_bridge.dart';
 import 'openai_family_compat_xai_config.dart';
 
 ChatCapability buildCompatXAIProvider(LLMConfig config) {
   final legacyConfig = createLegacyXAIConfig(config);
-  final model = modern_openai.OpenAI(
-    apiKey: config.apiKey!,
-    baseUrl: config.baseUrl,
-    transport: createCompatTransport(config),
-    profile: const modern_openai.XAIProfile(),
-  ).chatModel(config.model);
 
   return CompatXAIProvider(
     originalConfig: config,
     legacyConfig: legacyConfig,
-    adapter: LegacyChatCapabilityAdapter(
-      model: model,
+    adapter: buildOpenAIFamilyLegacyChatAdapter(
       config: config,
+      profile: const modern_openai.XAIProfile(),
       providerOptionsNamespace: LegacyProviderOptionNamespaces.xai,
       providerOptions: modern_openai.XAIGenerateTextOptions(
         common: const modern_openai.OpenAIGenerateTextOptions(),

@@ -6,26 +6,20 @@ import '../../../providers/deepseek/config.dart';
 import '../../../providers/deepseek/provider.dart';
 import '../chat_route_compatibility.dart';
 import '../config/legacy_provider_options.dart';
-import '../compat_transport.dart';
 import '../legacy_chat_adapter.dart';
 import 'compat_provider_support.dart';
+import 'openai_family_compat_chat_bridge.dart';
 import 'openai_family_compat_deepseek_config.dart';
 
 ChatCapability buildCompatDeepSeekProvider(LLMConfig config) {
   final legacyConfig = createLegacyDeepSeekConfig(config);
-  final model = modern_openai.OpenAI(
-    apiKey: config.apiKey!,
-    baseUrl: config.baseUrl,
-    transport: createCompatTransport(config),
-    profile: const modern_openai.DeepSeekProfile(),
-  ).chatModel(config.model);
 
   return CompatDeepSeekProvider(
     originalConfig: config,
     legacyConfig: legacyConfig,
-    adapter: LegacyChatCapabilityAdapter(
-      model: model,
+    adapter: buildOpenAIFamilyLegacyChatAdapter(
       config: config,
+      profile: const modern_openai.DeepSeekProfile(),
       providerOptionsNamespace: LegacyProviderOptionNamespaces.deepseek,
       providerOptions: buildCompatDeepSeekInvocationOptions(legacyConfig),
     ),
