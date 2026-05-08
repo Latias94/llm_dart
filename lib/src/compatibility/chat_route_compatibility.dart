@@ -4,6 +4,7 @@ import '../../models/tool_models.dart';
 import '../../providers/openai/builtin_tools.dart';
 import '../../providers/xai/config.dart';
 import 'config/legacy_config_keys.dart';
+import 'config/legacy_google_options.dart';
 import 'config/legacy_openai_options.dart';
 import 'config/legacy_provider_options.dart';
 import 'providers/openai_family_compat_xai_config.dart';

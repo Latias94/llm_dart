@@ -46,17 +46,12 @@ bool canUseGoogleChatBridge(
     config,
     LegacyProviderOptionNamespaces.google,
   );
-  final responseModalities = options.getWithFlatFallback<List<dynamic>>(
-    LegacyExtensionKeys.responseModalities,
-  );
-  if (responseModalities != null &&
-      responseModalities.any(
-        (value) => value != 'TEXT' && value != 'IMAGE',
-      )) {
+  final googleOptions = legacyGoogleOptions(options);
+  if (!googleOptions.hasChatBridgeSupportedResponseModalities) {
     return false;
   }
 
-  if (_hasGoogleStructuredOutputConflict(config, responseModalities)) {
+  if (googleOptions.hasStructuredOutputChatBridgeConflict) {
     return false;
   }
 

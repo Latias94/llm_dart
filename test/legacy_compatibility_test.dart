@@ -176,7 +176,8 @@ void main() {
         category: legacy.HarmCategory.harmCategoryHarassment,
         threshold: legacy.HarmBlockThreshold.blockOnlyHigh,
       );
-      const config = legacy.LLMConfig(
+      final responseModalities = <dynamic>['TEXT', 'IMAGE'];
+      final config = legacy.LLMConfig(
         apiKey: 'test-key',
         baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
         model: 'gemini-2.0-flash',
@@ -186,7 +187,7 @@ void main() {
             LegacyProviderOptionNamespaces.google: {
               LegacyExtensionKeys.jsonSchema: schema,
               LegacyExtensionKeys.enableImageGeneration: true,
-              LegacyExtensionKeys.responseModalities: ['TEXT', 'IMAGE'],
+              LegacyExtensionKeys.responseModalities: responseModalities,
               LegacyExtensionKeys.safetySettings: [safety],
               LegacyExtensionKeys.maxInlineDataSize: null,
               LegacyExtensionKeys.candidateCount: 2,
@@ -208,6 +209,8 @@ void main() {
       expect(google.jsonSchema, schema);
       expect(google.enableImageGeneration, isTrue);
       expect(google.responseModalities, ['TEXT', 'IMAGE']);
+      expect(google.hasChatBridgeSupportedResponseModalities, isTrue);
+      expect(google.hasStructuredOutputChatBridgeConflict, isTrue);
       expect(google.safetySettings, [safety]);
       expect(google.maxInlineDataSize, legacyGoogleDefaultMaxInlineDataSize);
       expect(google.candidateCount, 2);

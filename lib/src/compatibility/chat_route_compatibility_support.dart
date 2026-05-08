@@ -82,36 +82,6 @@ bool _canMapOpenAIBuiltInTools(List<OpenAIBuiltInTool>? tools) {
   );
 }
 
-bool _hasGoogleStructuredOutputConflict(
-  LLMConfig config,
-  List<dynamic>? responseModalities,
-) {
-  final options = legacyProviderOptionView(
-    config,
-    LegacyProviderOptionNamespaces.google,
-  );
-  final structuredOutput = options.getWithFlatFallback<StructuredOutputFormat>(
-    LegacyExtensionKeys.jsonSchema,
-  );
-  if (structuredOutput == null) {
-    return false;
-  }
-
-  if (options.getWithFlatFallback<bool>(
-          LegacyExtensionKeys.enableImageGeneration) ==
-      true) {
-    return true;
-  }
-
-  if (responseModalities != null &&
-      responseModalities
-          .any((value) => value.toString().toUpperCase() != 'TEXT')) {
-    return true;
-  }
-
-  return false;
-}
-
 bool _hasMessageDecorators(List<ChatMessage> messages) {
   return messages.any(
     (message) => message.name != null || message.extensions.isNotEmpty,

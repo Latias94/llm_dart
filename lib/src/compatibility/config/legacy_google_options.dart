@@ -8,7 +8,7 @@ const legacyGoogleDefaultMaxInlineDataSize = 20 * 1024 * 1024;
 final class LegacyGoogleOptions {
   final StructuredOutputFormat? jsonSchema;
   final bool? enableImageGeneration;
-  final List<String>? responseModalities;
+  final List<dynamic>? _rawResponseModalities;
   final List<SafetySetting>? safetySettings;
   final int maxInlineDataSize;
   final int? candidateCount;
@@ -19,19 +19,56 @@ final class LegacyGoogleOptions {
   const LegacyGoogleOptions({
     required this.jsonSchema,
     required this.enableImageGeneration,
-    required this.responseModalities,
+    required List<dynamic>? rawResponseModalities,
     required this.safetySettings,
     required this.maxInlineDataSize,
     required this.candidateCount,
     required this.embeddingTaskType,
     required this.embeddingTitle,
     required this.embeddingDimensions,
-  });
+  }) : _rawResponseModalities = rawResponseModalities;
+
+  List<String>? get responseModalities =>
+      _stringListOrNull(_rawResponseModalities);
+
+  bool get hasChatBridgeSupportedResponseModalities {
+    final responseModalities = _rawResponseModalities;
+    if (responseModalities == null) {
+      return true;
+    }
+
+    return responseModalities.every(
+      (value) => value == 'TEXT' || value == 'IMAGE',
+    );
+  }
+
+  bool get hasStructuredOutputChatBridgeConflict {
+    if (jsonSchema == null) {
+      return false;
+    }
+
+    if (enableImageGeneration == true) {
+      return true;
+    }
+
+    final responseModalities = _rawResponseModalities;
+    if (responseModalities == null) {
+      return false;
+    }
+
+    return responseModalities.any(
+      (value) => value.toString().toUpperCase() != 'TEXT',
+    );
+  }
 }
 
 LegacyGoogleOptions legacyGoogleOptions(
   LegacyProviderOptionView options,
 ) {
+  final responseModalities = options.getWithFlatFallback<List<dynamic>>(
+    LegacyExtensionKeys.responseModalities,
+  );
+
   return LegacyGoogleOptions(
     jsonSchema: options.getWithFlatFallback<StructuredOutputFormat>(
       LegacyExtensionKeys.jsonSchema,
@@ -39,9 +76,7 @@ LegacyGoogleOptions legacyGoogleOptions(
     enableImageGeneration: options.getWithFlatFallback<bool>(
       LegacyExtensionKeys.enableImageGeneration,
     ),
-    responseModalities: options.getWithFlatFallback<List<String>>(
-      LegacyExtensionKeys.responseModalities,
-    ),
+    rawResponseModalities: responseModalities,
     safetySettings: options.getWithFlatFallback<List<SafetySetting>>(
       LegacyExtensionKeys.safetySettings,
     ),
@@ -62,4 +97,12 @@ LegacyGoogleOptions legacyGoogleOptions(
       LegacyExtensionKeys.embeddingDimensions,
     ),
   );
+}
+
+List<String>? _stringListOrNull(List<dynamic>? values) {
+  if (values == null) {
+    return null;
+  }
+
+  return values.map((value) => value as String).toList(growable: false);
 }
