@@ -100,4 +100,4 @@ export 'providers/factories/base_factory.dart';
 export 'builder/llm_builder.dart';
 export 'builder/http_config.dart';
 
-export 'utils/tool_call_aggregator.dart';
+export 'core/tool_call_aggregator.dart';

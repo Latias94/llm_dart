@@ -25,6 +25,7 @@ void main() {
       expect(() => legacy.ai(), returnsNormally);
       expect(legacy.ChatMessage, isA<Type>());
       expect(legacy.ToolCall, isA<Type>());
+      expect(legacy.ToolCallAggregator, isA<Type>());
       expect(legacy.HttpConfig, isA<Type>());
     });
   });

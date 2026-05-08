@@ -34,6 +34,9 @@ void main() {
       await Directory(
         '${repoRoot.path}${Platform.pathSeparator}lib${Platform.pathSeparator}src${Platform.pathSeparator}runtime',
       ).create(recursive: true);
+      await Directory(
+        '${repoRoot.path}${Platform.pathSeparator}lib${Platform.pathSeparator}utils',
+      ).create(recursive: true);
 
       final result = await guard.evaluateRootPackageBoundaryGuards(
         repoRoot: repoRoot,
@@ -44,6 +47,10 @@ void main() {
         result.violations,
         contains(
             contains('unexpected top-level public entry files: flutter.dart')),
+      );
+      expect(
+        result.violations,
+        contains(contains('lib/: unexpected top-level directories: utils')),
       );
       expect(
         result.violations,
@@ -253,7 +260,6 @@ Future<Directory> _createTempRootLayout() async {
     'lib/models',
     'lib/providers',
     'lib/src',
-    'lib/utils',
     'lib/src/bootstrap',
     'lib/src/compatibility',
     'lib/src/config',

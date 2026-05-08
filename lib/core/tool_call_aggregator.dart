@@ -2,11 +2,12 @@ import '../models/chat_models.dart';
 
 /// Utility for aggregating incremental ToolCall deltas from streaming APIs.
 ///
-/// Many providers (including OpenAI) stream tool calls in multiple chunks:
+/// Many providers stream tool calls in multiple chunks:
 /// - The first chunk usually contains id + function.name + initial arguments.
 /// - Subsequent chunks often only include additional arguments.
 ///
-/// This helper lets you merge those deltas into a single ToolCall per id.
+/// This helper lets compatibility-stream consumers merge those deltas into a
+/// single ToolCall per id.
 class ToolCallAggregator {
   final Map<String, ToolCall> _calls = {};
 

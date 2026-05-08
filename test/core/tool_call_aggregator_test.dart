@@ -1,5 +1,5 @@
+import 'package:llm_dart/core/tool_call_aggregator.dart';
 import 'package:llm_dart/models/chat_models.dart';
-import 'package:llm_dart/utils/tool_call_aggregator.dart';
 import 'package:test/test.dart';
 
 void main() {

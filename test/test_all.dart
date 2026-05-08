@@ -12,6 +12,7 @@ import 'core/config_test.dart' as config_tests;
 import 'core/error_test.dart' as error_tests;
 import 'core/registry_test.dart' as registry_tests;
 import 'core/tool_validator_test.dart' as tool_validator_tests;
+import 'core/tool_call_aggregator_test.dart' as tool_call_aggregator_tests;
 import 'core/tool_execution_test.dart' as tool_execution_tests;
 import 'core/tool_parameter_validation_test.dart'
     as tool_parameter_validation_tests;
@@ -96,6 +97,7 @@ void main() {
       error_tests.main();
       registry_tests.main();
       tool_validator_tests.main();
+      tool_call_aggregator_tests.main();
       tool_execution_tests.main();
       tool_parameter_validation_tests.main();
       tool_streaming_tests.main();

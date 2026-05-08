@@ -6,7 +6,6 @@ const Set<String> _allowedRootTopLevelDirectories = {
   'models',
   'providers',
   'src',
-  'utils',
 };
 
 const Set<String> _allowedRootTopLevelFiles = {

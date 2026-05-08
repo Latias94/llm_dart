@@ -78,6 +78,9 @@ into a routine `0.10.x` maintenance release.
   discovery.
 - Removed the public `utils/http_config_utils.dart` re-export. HTTP
   configuration shaping remains internal compatibility infrastructure.
+- Moved `ToolCallAggregator` from `package:llm_dart/utils/tool_call_aggregator.dart`
+  to `package:llm_dart/core/tool_call_aggregator.dart`; `legacy.dart` still
+  exports the class for compatibility-oriented imports.
 
 ### Deprecated
 
