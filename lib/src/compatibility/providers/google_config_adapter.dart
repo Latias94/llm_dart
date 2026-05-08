@@ -1,9 +1,9 @@
 import '../../../core/config.dart';
 import '../../../core/web_search.dart';
-import '../../../models/chat_models.dart';
 import '../../../models/tool_models.dart';
 import '../../../providers/google/config.dart';
 import '../config/legacy_config_keys.dart';
+import '../config/legacy_google_thinking_options.dart';
 import '../config/legacy_provider_options.dart';
 import '../config/legacy_web_search_options.dart';
 import 'community_provider_config_adapters.dart';
@@ -14,6 +14,7 @@ GoogleConfig createLegacyGoogleConfig(LLMConfig config) {
     config,
     LegacyProviderOptionNamespaces.google,
   );
+  final thinkingOptions = legacyGoogleThinkingOptions(options);
 
   return GoogleConfig(
     apiKey: config.apiKey!,
@@ -31,17 +32,9 @@ GoogleConfig createLegacyGoogleConfig(LLMConfig config) {
     jsonSchema: options.getWithFlatFallback<StructuredOutputFormat>(
       LegacyExtensionKeys.jsonSchema,
     ),
-    reasoningEffort: ReasoningEffort.fromString(
-      options.getWithFlatFallback<String>(
-        LegacyExtensionKeys.reasoningEffort,
-      ),
-    ),
-    thinkingBudgetTokens: options.getWithFlatFallback<int>(
-      LegacyExtensionKeys.thinkingBudgetTokens,
-    ),
-    includeThoughts: options.getWithFlatFallback<bool>(
-      LegacyExtensionKeys.includeThoughts,
-    ),
+    reasoningEffort: thinkingOptions.reasoningEffort,
+    thinkingBudgetTokens: thinkingOptions.thinkingBudgetTokens,
+    includeThoughts: thinkingOptions.includeThoughts,
     enableImageGeneration: options.getWithFlatFallback<bool>(
       LegacyExtensionKeys.enableImageGeneration,
     ),

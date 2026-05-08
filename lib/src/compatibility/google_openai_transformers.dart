@@ -1,5 +1,5 @@
 import '../../core/config.dart';
-import 'config/legacy_config_keys.dart';
+import 'config/legacy_google_thinking_options.dart';
 import 'config/legacy_provider_options.dart';
 import 'openai_compatible_provider_config.dart';
 
@@ -29,30 +29,12 @@ class GoogleRequestBodyTransformer implements RequestBodyTransformer {
       config,
       LegacyProviderOptionNamespaces.google,
     );
-    final reasoning =
-        options.getWithFlatFallback<bool>(LegacyExtensionKeys.reasoning) ??
-            false;
-    final includeThoughts = options.getWithFlatFallback<bool>(
-      LegacyExtensionKeys.includeThoughts,
-    );
-    final thinkingBudgetTokens = options.getWithFlatFallback<int>(
-      LegacyExtensionKeys.thinkingBudgetTokens,
-    );
+    final thinkingOptions = legacyGoogleThinkingOptions(options);
 
-    if (reasoning || includeThoughts != null || thinkingBudgetTokens != null) {
+    if (thinkingOptions.hasThinkingConfig) {
       final extraBody = body['extra_body'] as Map<String, dynamic>? ?? {};
       final configSection = extraBody['config'] as Map<String, dynamic>? ?? {};
-      final thinkingConfig = <String, dynamic>{};
-
-      if (includeThoughts != null) {
-        thinkingConfig['includeThoughts'] = includeThoughts;
-      } else if (reasoning) {
-        thinkingConfig['includeThoughts'] = true;
-      }
-
-      if (thinkingBudgetTokens != null) {
-        thinkingConfig['thinkingBudget'] = thinkingBudgetTokens;
-      }
+      final thinkingConfig = thinkingOptions.toThinkingConfig();
 
       if (thinkingConfig.isNotEmpty) {
         configSection['thinkingConfig'] = thinkingConfig;
@@ -67,9 +49,8 @@ class GoogleRequestBodyTransformer implements RequestBodyTransformer {
       config,
       LegacyProviderOptionNamespaces.google,
     );
-    final reasoningEffortString = options.getWithFlatFallback<String>(
-      LegacyExtensionKeys.reasoningEffort,
-    );
+    final reasoningEffortString =
+        legacyGoogleThinkingOptions(options).reasoningEffortValue;
     if (reasoningEffortString != null && reasoningEffortString.isNotEmpty) {
       final extraBody = body['extra_body'] as Map<String, dynamic>? ?? {};
       extraBody['reasoning_effort'] = reasoningEffortString;
@@ -100,14 +81,9 @@ class GoogleHeadersTransformer implements HeadersTransformer {
       config,
       LegacyProviderOptionNamespaces.google,
     );
-    final reasoning =
-        options.getWithFlatFallback<bool>(LegacyExtensionKeys.reasoning) ??
-            false;
-    final includeThoughts = options.getWithFlatFallback<bool>(
-      LegacyExtensionKeys.includeThoughts,
-    );
+    final thinkingOptions = legacyGoogleThinkingOptions(options);
 
-    if (reasoning || includeThoughts == true) {
+    if (thinkingOptions.includeThoughtsHeader) {
       headers['X-Goog-Include-Thoughts'] = 'true';
     }
   }

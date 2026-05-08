@@ -3,6 +3,7 @@ import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as modern_anthropic;
 import 'package:llm_dart/src/compatibility/compat_providers.dart';
 import 'package:llm_dart/src/compatibility/legacy_chat_adapter.dart';
 import 'package:llm_dart/src/compatibility/config/legacy_config_keys.dart';
+import 'package:llm_dart/src/compatibility/config/legacy_google_thinking_options.dart';
 import 'package:llm_dart/src/compatibility/config/legacy_provider_options.dart';
 import 'package:llm_dart/src/compatibility/config/legacy_web_search_options.dart';
 import 'package:llm_dart_core/llm_dart_core.dart' as core;
@@ -121,6 +122,42 @@ void main() {
       expect(search.config, isNull);
       expect(search.hasSearchIntent, isFalse);
       expect(search.configOrEnabledDefault, isNull);
+    });
+
+    test('LegacyGoogleThinkingOptions centralizes thinking reads', () {
+      const config = legacy.LLMConfig(
+        apiKey: 'test-key',
+        baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
+        model: 'gemini-2.0-flash',
+        extensions: {
+          LegacyExtensionKeys.reasoning: true,
+          legacyProviderOptionsBagKey: {
+            LegacyProviderOptionNamespaces.google: {
+              LegacyExtensionKeys.includeThoughts: false,
+              LegacyExtensionKeys.thinkingBudgetTokens: 64,
+              LegacyExtensionKeys.reasoningEffort: 'high',
+            },
+          },
+        },
+      );
+
+      final thinking = legacyGoogleThinkingOptions(
+        legacyProviderOptionView(
+          config,
+          LegacyProviderOptionNamespaces.google,
+        ),
+      );
+
+      expect(thinking.reasoning, isTrue);
+      expect(thinking.includeThoughts, isFalse);
+      expect(thinking.thinkingBudgetTokens, 64);
+      expect(thinking.reasoningEffort, legacy.ReasoningEffort.high);
+      expect(thinking.hasThinkingConfig, isTrue);
+      expect(thinking.includeThoughtsHeader, isTrue);
+      expect(thinking.toThinkingConfig(), {
+        'includeThoughts': false,
+        'thinkingBudget': 64,
+      });
     });
 
     test(
