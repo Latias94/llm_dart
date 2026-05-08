@@ -97,6 +97,54 @@ void main() {
       );
     });
 
+    test('keeps non-chat OpenAI options out of bridge routing', () async {
+      TransportRequest? capturedRequest;
+
+      final provider = _buildProvider(
+        useResponsesAPI: false,
+        voice: 'alloy',
+        embeddingEncodingFormat: 'float',
+        embeddingDimensions: 1536,
+        transport: FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return const TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'resp_root_non_chat_options',
+                'model': 'gpt-4.1-mini',
+                'created_at': 1710000550,
+                'status': 'completed',
+                'output': [
+                  {
+                    'id': 'msg_1',
+                    'type': 'message',
+                    'status': 'completed',
+                    'role': 'assistant',
+                    'content': [
+                      {
+                        'type': 'output_text',
+                        'text': 'Hello',
+                        'annotations': [],
+                      },
+                    ],
+                  },
+                ],
+              },
+            );
+          },
+        ),
+      );
+
+      final response = await provider.chat([
+        ChatMessage.user('Hello'),
+      ]);
+
+      expect(response.text, 'Hello');
+      expect(capturedRequest, isNotNull);
+      expect(capturedRequest!.uri.toString(), contains('/responses'));
+    });
+
     test(
         'routes user image and file messages through the modern Responses bridge even when responses compatibility is disabled',
         () async {
@@ -411,6 +459,9 @@ OpenAIProvider _buildProvider({
   bool useResponsesAPI = false,
   StructuredOutputFormat? jsonSchema,
   ToolChoice? toolChoice,
+  String? voice,
+  String? embeddingEncodingFormat,
+  int? embeddingDimensions,
 }) {
   final fallbackDio = Dio();
   fallbackDio.interceptors.add(
@@ -444,6 +495,9 @@ OpenAIProvider _buildProvider({
       toolChoice: toolChoice,
       useResponsesAPI: useResponsesAPI,
       jsonSchema: jsonSchema,
+      voice: voice,
+      embeddingEncodingFormat: embeddingEncodingFormat,
+      embeddingDimensions: embeddingDimensions,
     ),
   );
 }

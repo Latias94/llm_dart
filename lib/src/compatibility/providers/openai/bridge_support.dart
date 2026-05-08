@@ -12,26 +12,16 @@ import '../compat_provider_support.dart';
 
 LLMConfig buildRootOpenAIChatBridgeConfig(OpenAIConfig config) {
   final extensions = <String, dynamic>{};
-  if (config.reasoningEffort case final reasoningEffort?) {
-    extensions[LegacyExtensionKeys.reasoningEffort] = reasoningEffort.value;
-  }
   if (config.jsonSchema case final jsonSchema?) {
     extensions[LegacyExtensionKeys.jsonSchema] = jsonSchema;
-  }
-  if (config.voice case final voice?) {
-    extensions[LegacyExtensionKeys.voice] = voice;
-  }
-  if (config.embeddingEncodingFormat case final encodingFormat?) {
-    extensions[LegacyExtensionKeys.embeddingEncodingFormat] = encodingFormat;
-  }
-  if (config.embeddingDimensions case final embeddingDimensions?) {
-    extensions[LegacyExtensionKeys.embeddingDimensions] = embeddingDimensions;
   }
   if (config.transportClient case final transportClient?) {
     extensions[LegacyExtensionKeys.customTransportClient] = transportClient;
   }
 
   final providerOptions = <String, dynamic>{
+    if (config.reasoningEffort case final reasoningEffort?)
+      LegacyExtensionKeys.reasoningEffort: reasoningEffort.value,
     LegacyExtensionKeys.useResponsesApi: config.useResponsesAPI,
     if (config.previousResponseId case final previousResponseId?)
       LegacyExtensionKeys.previousResponseId: previousResponseId,
@@ -98,7 +88,12 @@ modern_openai.OpenAIGenerateTextOptions buildCompatOpenAIInvocationOptions({
   final reasoningEffort = legacyConfig.reasoningEffort ??
       ReasoningEffort.fromString(
         compatStringValue(
-            bridgeConfig.extensions[LegacyExtensionKeys.reasoningEffort]),
+          getLegacyProviderOption<dynamic>(
+            bridgeConfig,
+            LegacyProviderOptionNamespaces.openai,
+            LegacyExtensionKeys.reasoningEffort,
+          ),
+        ),
       );
 
   return modern_openai.OpenAIGenerateTextOptions(
