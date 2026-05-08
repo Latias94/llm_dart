@@ -151,7 +151,3 @@ bool _hasAnthropicParallelToolOverride(ToolChoice? toolChoice) {
     _ => false,
   };
 }
-
-bool hasEnabledWebSearch(LLMConfig config) {
-  return config.hasLegacyWebSearch;
-}

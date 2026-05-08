@@ -2,8 +2,6 @@ import 'package:llm_dart_transport/dio.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import '../../../core/config.dart';
-import '../../../core/web_search.dart';
-import '../../../models/tool_models.dart';
 
 export 'legacy_config_keys.dart';
 import 'legacy_config_keys.dart';
@@ -14,18 +12,6 @@ import 'legacy_config_keys.dart';
 /// repeated string-key lookups without widening `LLMConfig` itself with more
 /// provider-specific surface area.
 extension LegacyConfigAccessors on LLMConfig {
-  StructuredOutputFormat? get legacyJsonSchema =>
-      getExtension<StructuredOutputFormat>(LegacyExtensionKeys.jsonSchema);
-
-  bool get legacyWebSearchEnabled =>
-      getExtension<bool>(LegacyExtensionKeys.webSearchEnabled) == true;
-
-  WebSearchConfig? get legacyWebSearchConfig =>
-      getExtension<WebSearchConfig>(LegacyExtensionKeys.webSearchConfig);
-
-  bool get hasLegacyWebSearch =>
-      legacyWebSearchEnabled || legacyWebSearchConfig != null;
-
   Duration? get legacyConnectionTimeout =>
       getExtension<Duration>(LegacyExtensionKeys.connectionTimeout);
 
