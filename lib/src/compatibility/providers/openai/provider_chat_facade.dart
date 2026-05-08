@@ -1,10 +1,8 @@
 import '../../../../core/capability.dart';
-import '../../../../core/config.dart';
 import '../../../../models/chat_models.dart';
 import '../../../../models/tool_models.dart';
 import '../../../../providers/openai/config.dart';
 import '../../chat_route_compatibility.dart';
-import '../../legacy_chat_adapter.dart';
 import '../compat_provider_support.dart';
 import 'bridge_support.dart';
 import 'chat.dart';
@@ -18,8 +16,7 @@ import 'responses.dart';
 final class OpenAIProviderChatFacade {
   final OpenAIChat _chat;
   final OpenAIResponses? _responses;
-  final LLMConfig? _chatBridgeConfig;
-  final LegacyChatCapabilityAdapter? _chatBridge;
+  final CompatChatBridgeRouter? _chatBridgeRouter;
 
   factory OpenAIProviderChatFacade({
     required OpenAIConfig config,
@@ -33,12 +30,15 @@ final class OpenAIProviderChatFacade {
     return OpenAIProviderChatFacade._(
       chat: chat,
       responses: responses,
-      chatBridgeConfig: chatBridgeConfig,
-      chatBridge: chatBridgeConfig == null
+      chatBridgeRouter: chatBridgeConfig == null
           ? null
-          : buildCompatOpenAIChatBridge(
-              legacyConfig: config,
-              bridgeConfig: chatBridgeConfig,
+          : CompatChatBridgeRouter(
+              originalConfig: chatBridgeConfig,
+              adapter: buildCompatOpenAIChatBridge(
+                legacyConfig: config,
+                bridgeConfig: chatBridgeConfig,
+              ),
+              canUseBridge: canUseOpenAIChatBridge,
             ),
     );
   }
@@ -46,12 +46,10 @@ final class OpenAIProviderChatFacade {
   const OpenAIProviderChatFacade._({
     required OpenAIChat chat,
     required OpenAIResponses? responses,
-    required LLMConfig? chatBridgeConfig,
-    required LegacyChatCapabilityAdapter? chatBridge,
+    required CompatChatBridgeRouter? chatBridgeRouter,
   })  : _chat = chat,
         _responses = responses,
-        _chatBridgeConfig = chatBridgeConfig,
-        _chatBridge = chatBridge;
+        _chatBridgeRouter = chatBridgeRouter;
 
   Future<ChatResponse> chat(
     List<ChatMessage> messages, {
@@ -69,19 +67,12 @@ final class OpenAIProviderChatFacade {
     List<Tool>? tools, {
     TransportCancellation? cancelToken,
   }) {
-    final chatBridge = _chatBridge;
-    final chatBridgeConfig = _chatBridgeConfig;
-    if (chatBridge != null && chatBridgeConfig != null) {
-      return executeCompatChat(
-        originalConfig: chatBridgeConfig,
+    final chatBridgeRouter = _chatBridgeRouter;
+    if (chatBridgeRouter != null) {
+      return chatBridgeRouter.chatWithTools(
         messages: messages,
         tools: tools,
-        canUseBridge: canUseOpenAIChatBridge,
-        bridge: () => chatBridge.chatWithTools(
-          messages,
-          tools,
-          cancelToken: cancelToken,
-        ),
+        cancelToken: cancelToken,
         fallback: () => _fallbackChat.chatWithTools(
           messages,
           tools,
@@ -102,19 +93,12 @@ final class OpenAIProviderChatFacade {
     List<Tool>? tools,
     TransportCancellation? cancelToken,
   }) {
-    final chatBridge = _chatBridge;
-    final chatBridgeConfig = _chatBridgeConfig;
-    if (chatBridge != null && chatBridgeConfig != null) {
-      return executeCompatChatStream(
-        originalConfig: chatBridgeConfig,
+    final chatBridgeRouter = _chatBridgeRouter;
+    if (chatBridgeRouter != null) {
+      return chatBridgeRouter.chatStream(
         messages: messages,
         tools: tools,
-        canUseBridge: canUseOpenAIChatBridge,
-        bridge: () => chatBridge.chatStream(
-          messages,
-          tools: tools,
-          cancelToken: cancelToken,
-        ),
+        cancelToken: cancelToken,
         fallback: () => _fallbackChat.chatStream(
           messages,
           tools: tools,
