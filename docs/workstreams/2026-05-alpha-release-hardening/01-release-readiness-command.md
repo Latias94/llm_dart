@@ -23,6 +23,7 @@ The first version orchestrates the checks that are already proven:
 - `dart run tool/check_core_compatibility_shell_guard.dart`
 - `dart run tool/check_transport_boundary_guards.dart`
 - `dart run tool/check_test_legacy_import_guards.dart`
+- `dart run tool/check_example_api_guards.dart`
 - `dart analyze lib test example tool`
 - `dart test`
 - `dart run tool/run_consumer_smoke.dart`

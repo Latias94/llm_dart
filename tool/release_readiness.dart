@@ -314,6 +314,13 @@ List<ReleaseReadinessStep> buildReleaseReadinessSteps(
           'Move foundational tests to focused imports and keep legacy.dart imports only for explicit compatibility coverage.',
     ),
     const ReleaseReadinessStep(
+      name: 'Example API guard',
+      executable: 'dart',
+      arguments: ['run', 'tool/check_example_api_guards.dart'],
+      failureHint:
+          'Keep default examples on model-first entrypoints and move legacy builder material to explicit compatibility appendices.',
+    ),
+    const ReleaseReadinessStep(
       name: 'Workspace analysis',
       executable: 'dart',
       arguments: ['analyze', 'lib', 'test', 'example', 'tool'],

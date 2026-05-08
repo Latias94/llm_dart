@@ -13,6 +13,7 @@ Recorded on 2026-05-08:
 - `dart run tool/check_core_compatibility_shell_guard.dart` passed.
 - `dart run tool/check_transport_boundary_guards.dart` passed.
 - `dart run tool/check_test_legacy_import_guards.dart` passed.
+- `dart run tool/check_example_api_guards.dart` passed.
 - `dart analyze lib test example tool` passed.
 - `dart test` passed.
 - `dart run tool/run_workspace_publish_dry_run.dart` passed for all 11

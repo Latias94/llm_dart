@@ -41,6 +41,7 @@ void main() {
       expect(
         steps.map((step) => step.name),
         containsAll([
+          'Example API guard',
           'Workspace tests',
           'Consumer smoke',
           'Workspace publish dry-run',

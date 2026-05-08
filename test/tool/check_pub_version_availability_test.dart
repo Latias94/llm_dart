@@ -38,6 +38,20 @@ void main() {
     });
   });
 
+  group('buildPubVersionAvailabilityNetworkFailureMessage', () {
+    test('summarizes package and retry action', () {
+      final message = buildPubVersionAvailabilityNetworkFailureMessage(
+        packageName: 'llm_dart',
+        error: const SocketException('connection reset'),
+      );
+
+      expect(message, contains('llm_dart'));
+      expect(message, contains('SocketException'));
+      expect(message, contains('--proxy=http://127.0.0.1:10809'));
+      expect(message, contains('pub.dev is reachable'));
+    });
+  });
+
   group('parsePubPackageApiResult', () {
     test('extracts latest and published versions', () {
       final result = parsePubPackageApiResult(

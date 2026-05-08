@@ -4,6 +4,8 @@ import 'dart:io';
 import 'bootstrap_workspace_pubspec_overrides.dart'
     show publishableWorkspacePackages;
 
+const Duration pubVersionAvailabilityRequestTimeout = Duration(seconds: 20);
+
 final class PubVersionAvailabilityOptions {
   final String? proxy;
   final bool showHelp;
@@ -89,10 +91,23 @@ Future<void> main(List<String> arguments) async {
       repoRoot: repoRoot,
       packageName: packageName,
     );
-    final apiResult = await fetchPubPackageApiResult(
-      packageName,
-      proxy: options.proxy,
-    );
+    late final PubPackageApiResult apiResult;
+    try {
+      apiResult = await fetchPubPackageApiResult(
+        packageName,
+        proxy: options.proxy,
+      );
+    } catch (error) {
+      stderr.writeln('');
+      stderr.writeln(
+        buildPubVersionAvailabilityNetworkFailureMessage(
+          packageName: packageName,
+          error: error,
+        ),
+      );
+      exitCode = 69;
+      return;
+    }
     final availability = PubVersionAvailability(
       packageName: packageName,
       targetVersion: targetVersion,
@@ -196,10 +211,14 @@ Future<PubPackageApiResult> fetchPubPackageApiResult(
   try {
     final request = await client.getUrl(
       Uri.https('pub.dev', '/api/packages/$packageName'),
-    );
+    ).timeout(pubVersionAvailabilityRequestTimeout);
     request.headers.set(HttpHeaders.acceptHeader, 'application/json');
-    final response = await request.close();
-    final body = await utf8.decoder.bind(response).join();
+    final response =
+        await request.close().timeout(pubVersionAvailabilityRequestTimeout);
+    final body = await utf8.decoder
+        .bind(response)
+        .join()
+        .timeout(pubVersionAvailabilityRequestTimeout);
 
     if (response.statusCode == HttpStatus.notFound) {
       return PubPackageApiResult(
@@ -223,6 +242,16 @@ Future<PubPackageApiResult> fetchPubPackageApiResult(
   } finally {
     client.close(force: true);
   }
+}
+
+String buildPubVersionAvailabilityNetworkFailureMessage({
+  required String packageName,
+  required Object error,
+}) {
+  return 'pub.dev version availability could not check `$packageName`: '
+      '${error.runtimeType}: $error\n'
+      'next action: retry with --proxy=http://127.0.0.1:10809 if the network '
+      'requires a proxy, or run the check again when pub.dev is reachable.';
 }
 
 String buildPubProxyRule(String proxy) {
