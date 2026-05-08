@@ -24,7 +24,7 @@ Use this package when you want:
   `OpenAISpeechModelSettings`, and `OpenAITranscriptionModelSettings`
 - provider-owned invocation options such as `OpenAIGenerateTextOptions`,
   `OpenAIImageOptions`, `OpenAISpeechOptions`, `OpenAITranscriptionOptions`,
-  OpenRouter options, and xAI options
+  OpenRouter options, DeepSeek options, and xAI options
 - provider-owned image editing through `OpenAIImageModel.edit(...)` and
   `OpenAIImageEditRequest`
 - provider-native built-in tools, response formats, custom parts, and UI
@@ -38,7 +38,7 @@ re-exported from `package:llm_dart/openai.dart`.
 
 1. Create a concrete model with `OpenAI(...).chatModel(...)` or the root
    `AI.openai(...).chatModel(...)` facade.
-2. Keep application calls on the shared helpers from `llm_dart_core` such as
+2. Keep application calls on the shared helpers from `llm_dart_ai` such as
    `generateTextCall(...)`, `streamTextCall(...)`, `embed(...)`,
    `generateImage(...)`, `generateSpeech(...)`, and `transcribe(...)`.
 3. Add OpenAI-family behavior through model settings or
@@ -52,7 +52,7 @@ re-exported from `package:llm_dart/openai.dart`.
 ## Basic Example
 
 ```dart
-import 'package:llm_dart_provider/llm_dart_provider.dart' as core;
+import 'package:llm_dart_ai/llm_dart_ai.dart' as ai;
 import 'package:llm_dart_openai/llm_dart_openai.dart';
 
 Future<void> main() async {
@@ -60,10 +60,10 @@ Future<void> main() async {
     apiKey: 'your-openai-key',
   ).chatModel('gpt-4.1-mini');
 
-  final result = await core.generateTextCall(
+  final result = await ai.generateTextCall(
     model: model,
     prompt: [
-      core.UserPromptMessage.text(
+      ai.UserPromptMessage.text(
         'Summarize the release plan in three short bullets.',
       ),
     ],
@@ -76,7 +76,7 @@ Future<void> main() async {
 ## Provider-Owned Options Example
 
 ```dart
-import 'package:llm_dart_provider/llm_dart_provider.dart' as core;
+import 'package:llm_dart_ai/llm_dart_ai.dart' as ai;
 import 'package:llm_dart_openai/llm_dart_openai.dart';
 
 Future<void> main() async {
@@ -90,12 +90,12 @@ Future<void> main() async {
     ),
   );
 
-  final result = await core.generateTextCall(
+  final result = await ai.generateTextCall(
     model: model,
     prompt: [
-      core.UserPromptMessage.text('Find recent Dart release highlights.'),
+      ai.UserPromptMessage.text('Find recent Dart release highlights.'),
     ],
-    callOptions: const core.CallOptions(
+    callOptions: const ai.CallOptions(
       providerOptions: OpenAIGenerateTextOptions(
         reasoningEffort: OpenAIReasoningEffort.medium,
         promptCacheKey: 'release-highlights',
@@ -187,7 +187,7 @@ fidelity, partial images, and output options are OpenAI-specific.
 ```dart
 import 'dart:io';
 
-import 'package:llm_dart_provider/llm_dart_provider.dart' as core;
+import 'package:llm_dart_ai/llm_dart_ai.dart' as ai;
 import 'package:llm_dart_openai/llm_dart_openai.dart';
 
 Future<void> main() async {
@@ -207,7 +207,7 @@ Future<void> main() async {
         ),
       ],
       inputFidelity: OpenAIImageInputFidelity.high,
-      callOptions: const core.CallOptions(
+      callOptions: const ai.CallOptions(
         providerOptions: OpenAIImageOptions(
           quality: OpenAIImageQuality.high,
           responseFormat: OpenAIImageResponseFormat.base64Json,
