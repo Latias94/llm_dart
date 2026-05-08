@@ -1,20 +1,5 @@
 part of 'audio_models.dart';
 
-/// Audio quality settings
-enum AudioQuality {
-  /// Low quality, smaller file size
-  low,
-
-  /// Standard quality, balanced size and quality
-  standard,
-
-  /// High quality, larger file size
-  high,
-
-  /// Ultra high quality, maximum file size
-  ultra,
-}
-
 /// Audio format enumeration for better type safety
 enum AudioFormat {
   /// MP3 format

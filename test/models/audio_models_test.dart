@@ -7,16 +7,6 @@ import 'package:test/test.dart';
 
 void main() {
   group('Audio Models Tests', () {
-    group('AudioQuality Enum', () {
-      test('should have correct values', () {
-        expect(AudioQuality.values, hasLength(4));
-        expect(AudioQuality.values, contains(AudioQuality.low));
-        expect(AudioQuality.values, contains(AudioQuality.standard));
-        expect(AudioQuality.values, contains(AudioQuality.high));
-        expect(AudioQuality.values, contains(AudioQuality.ultra));
-      });
-    });
-
     group('AudioFormat Enum', () {
       test('should have correct values', () {
         final formats = AudioFormat.values;
@@ -76,7 +66,6 @@ void main() {
           model: 'tts-1',
           speed: 1.2,
           format: 'mp3_44100_128',
-          quality: 'high',
           sampleRate: 44100,
           languageCode: 'en',
         );
@@ -86,7 +75,6 @@ void main() {
         expect(request.model, equals('tts-1'));
         expect(request.speed, equals(1.2));
         expect(request.format, equals('mp3_44100_128'));
-        expect(request.quality, equals('high'));
         expect(request.sampleRate, equals(44100));
         expect(request.languageCode, equals('en'));
       });

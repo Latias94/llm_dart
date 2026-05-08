@@ -14,9 +14,6 @@ class TTSRequest {
   /// Audio format (mp3, wav, ogg, etc.)
   final String? format;
 
-  /// Audio quality/bitrate
-  final String? quality;
-
   /// Sample rate (e.g., 44100, 22050)
   final int? sampleRate;
 
@@ -34,7 +31,6 @@ class TTSRequest {
     this.voice,
     this.model,
     this.format,
-    this.quality,
     this.sampleRate,
     this.speed,
     this.languageCode,
@@ -46,7 +42,6 @@ class TTSRequest {
         if (voice != null) 'voice': voice,
         if (model != null) 'model': model,
         if (format != null) 'format': format,
-        if (quality != null) 'quality': quality,
         if (sampleRate != null) 'sample_rate': sampleRate,
         if (speed != null) 'speed': speed,
         if (languageCode != null) 'language_code': languageCode,
@@ -57,7 +52,6 @@ class TTSRequest {
         voice: json['voice'] as String?,
         model: json['model'] as String?,
         format: json['format'] as String?,
-        quality: json['quality'] as String?,
         sampleRate: json['sample_rate'] as int?,
         speed: json['speed'] as double?,
         languageCode: json['language_code'] as String?,
