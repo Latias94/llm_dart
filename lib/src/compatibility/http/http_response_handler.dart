@@ -14,6 +14,7 @@ import 'package:llm_dart_transport/llm_dart_transport.dart'
 
 import '../../../core/cancellation.dart';
 import '../../../core/llm_error.dart';
+import 'dio_error_handler.dart';
 
 typedef CompatibilityDioErrorMapper = Future<LLMError> Function(
   DioException error,

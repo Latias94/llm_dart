@@ -1,12 +1,10 @@
 import 'dart:typed_data';
 import 'package:llm_dart_transport/dio.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart'
-    show
-        Logger,
-        ProviderDioClientFactory,
-        TransportCancellation;
+    show Logger, ProviderDioClientFactory, TransportCancellation;
 
 import '../../core/llm_error.dart';
+import '../../src/compatibility/http/dio_error_handler.dart';
 import '../../src/compatibility/http/dio_request_executor.dart';
 import 'config.dart';
 import 'dio_strategy.dart';
@@ -117,7 +115,8 @@ class ElevenLabsClient {
 
     _ensureSuccessStatus(
       response,
-      customMessage: 'ElevenLabs STT API returned status ${response.statusCode}',
+      customMessage:
+          'ElevenLabs STT API returned status ${response.statusCode}',
     );
 
     try {

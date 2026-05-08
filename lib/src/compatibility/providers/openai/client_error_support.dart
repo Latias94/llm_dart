@@ -2,6 +2,7 @@ import 'package:llm_dart_transport/dio.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart' show Logger;
 
 import '../../../../core/llm_error.dart';
+import '../../http/dio_error_handler.dart';
 import '../../http/http_response_handler.dart';
 
 /// OpenAI-family HTTP error adapter shared by the compatibility client facade.

@@ -5,6 +5,7 @@ import '../../../../core/llm_error.dart';
 import '../../../../models/chat_models.dart';
 import '../../../../providers/ollama/client.dart';
 import '../../../../providers/ollama/config.dart';
+import '../../http/dio_error_handler.dart';
 
 /// Compatibility-oriented Ollama model-listing implementation.
 class OllamaModels implements ModelListingCapability {

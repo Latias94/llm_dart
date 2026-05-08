@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:llm_dart/core/llm_error.dart';
+import 'package:llm_dart/src/compatibility/http/dio_error_handler.dart';
 import 'package:llm_dart_transport/dio.dart';
 import 'package:test/test.dart';
 

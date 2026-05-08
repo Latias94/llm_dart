@@ -4,6 +4,7 @@ import '../../../../core/capability.dart';
 import '../../../../core/llm_error.dart';
 import '../../../../providers/ollama/client.dart';
 import '../../../../providers/ollama/config.dart';
+import '../../http/dio_error_handler.dart';
 
 /// Compatibility-oriented Ollama completion implementation for `/api/generate`.
 class OllamaCompletion implements CompletionCapability {

@@ -2,6 +2,7 @@ import 'package:llm_dart_transport/dio.dart';
 
 import '../../core/capability.dart';
 import '../../core/llm_error.dart';
+import '../../src/compatibility/http/dio_error_handler.dart';
 import 'client.dart';
 import 'config.dart';
 

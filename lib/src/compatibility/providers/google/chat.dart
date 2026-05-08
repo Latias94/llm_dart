@@ -5,6 +5,7 @@ import '../../../../core/llm_error.dart';
 import '../../../../models/chat_models.dart';
 import '../../../../models/tool_models.dart';
 import '../../../../providers/google/config.dart';
+import '../../http/dio_error_handler.dart';
 import 'client.dart';
 import 'google_chat_file_support.dart';
 import 'google_chat_request_builder.dart';

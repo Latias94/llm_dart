@@ -2,8 +2,9 @@ import 'package:llm_dart_transport/dio.dart';
 
 import '../../../../core/capability.dart';
 import '../../../../core/llm_error.dart';
-import 'client.dart';
 import '../../../../providers/google/config.dart';
+import '../../http/dio_error_handler.dart';
+import 'client.dart';
 import 'google_embeddings_request_builder.dart';
 import 'google_embeddings_response_parser.dart';
 

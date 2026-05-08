@@ -85,6 +85,9 @@ into a routine `0.10.x` maintenance release.
   Google TTS. Import those compatibility models from
   `package:llm_dart/providers/openai/assistants.dart` and
   `package:llm_dart/providers/google/tts.dart`.
+- Removed `DioErrorHandler` and `HttpErrorMapper` from
+  `package:llm_dart/core/llm_error.dart`; Dio/HTTP error mapping is now
+  internal compatibility infrastructure.
 
 ### Deprecated
 

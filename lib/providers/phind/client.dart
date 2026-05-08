@@ -5,6 +5,7 @@ import 'package:llm_dart_transport/llm_dart_transport.dart'
 
 import '../../core/cancellation.dart';
 import '../../core/llm_error.dart';
+import '../../src/compatibility/http/dio_error_handler.dart';
 import '../../src/compatibility/http/dio_request_executor.dart';
 import 'config.dart';
 import 'dio_strategy.dart';

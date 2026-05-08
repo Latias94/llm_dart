@@ -6,6 +6,7 @@ import '../../../../models/chat_models.dart';
 import '../../../../models/tool_models.dart';
 import '../../../../providers/ollama/client.dart';
 import '../../../../providers/ollama/config.dart';
+import '../../http/dio_error_handler.dart';
 import 'ollama_chat_request_builder.dart';
 import 'ollama_chat_response.dart';
 import 'ollama_chat_stream_parser.dart';
