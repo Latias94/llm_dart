@@ -38,6 +38,15 @@ bool canUseXAIChatBridge(
       LegacyExtensionKeys.webSearchEnabled,
       LegacyExtensionKeys.webSearchConfig,
     },
+    allowedProviderOptions: {
+      LegacyProviderOptionNamespaces.xai: {
+        LegacyExtensionKeys.jsonSchema,
+        LegacyExtensionKeys.xaiLiveSearch,
+        LegacyExtensionKeys.xaiSearchParameters,
+        LegacyExtensionKeys.webSearchEnabled,
+        LegacyExtensionKeys.webSearchConfig,
+      },
+    },
   )) {
     return false;
   }

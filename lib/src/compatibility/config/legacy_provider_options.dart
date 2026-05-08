@@ -12,6 +12,8 @@ abstract final class LegacyProviderOptionNamespaces {
   static const google = 'google';
   static const ollama = 'ollama';
   static const elevenlabs = 'elevenlabs';
+  static const xai = 'xai';
+  static const deepseek = 'deepseek';
 }
 
 Map<String, dynamic>? legacyProviderOptionsBagOrNull(LLMConfig config) {

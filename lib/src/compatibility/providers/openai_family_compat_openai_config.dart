@@ -13,8 +13,12 @@ OpenAIConfig createLegacyOpenAIConfig(LLMConfig config) =>
 
 OpenAIConfig toCompatLegacyOpenAIConfig(LLMConfig config) {
   var model = config.model;
-  final webSearchEnabled =
-      config.getExtension<bool>(LegacyExtensionKeys.webSearchEnabled) == true;
+  final webSearchEnabled = getLegacyProviderOption<bool>(
+        config,
+        LegacyProviderOptionNamespaces.openai,
+        LegacyExtensionKeys.webSearchEnabled,
+      ) ==
+      true;
   final webSearchConfig = getLegacyProviderOption<WebSearchConfig>(
     config,
     LegacyProviderOptionNamespaces.openai,
@@ -40,7 +44,13 @@ OpenAIConfig toCompatLegacyOpenAIConfig(LLMConfig config) {
     tools: config.tools,
     toolChoice: config.toolChoice,
     reasoningEffort: ReasoningEffort.fromString(
-      compatStringValue(config.extensions[LegacyExtensionKeys.reasoningEffort]),
+      compatStringValue(
+        getLegacyProviderOption<dynamic>(
+          config,
+          LegacyProviderOptionNamespaces.openai,
+          LegacyExtensionKeys.reasoningEffort,
+        ),
+      ),
     ),
     jsonSchema: config.legacyJsonSchema,
     voice: config.legacyVoice,

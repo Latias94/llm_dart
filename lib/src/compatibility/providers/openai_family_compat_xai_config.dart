@@ -5,14 +5,18 @@ import '../../../core/web_search.dart';
 import '../../../models/tool_models.dart';
 import '../../../providers/xai/config.dart';
 import '../config/legacy_config_keys.dart';
+import '../config/legacy_provider_options.dart';
 import 'community_provider_config_adapters.dart';
 import 'compat_provider_support.dart';
 
 /// Adapts a legacy root `LLMConfig` into an xAI provider config.
 XAIConfig createLegacyXAIConfig(LLMConfig config) {
   final searchParameters = _createLegacyXAISearchParameters(config);
-  final liveSearchEnabled =
-      config.getExtension<bool>(LegacyExtensionKeys.xaiLiveSearch);
+  final liveSearchEnabled = getLegacyProviderOption<bool>(
+    config,
+    LegacyProviderOptionNamespaces.xai,
+    LegacyExtensionKeys.xaiLiveSearch,
+  );
 
   return XAIConfig(
     apiKey: config.apiKey!,
@@ -27,13 +31,21 @@ XAIConfig createLegacyXAIConfig(LLMConfig config) {
     topK: config.topK,
     tools: config.tools,
     toolChoice: config.toolChoice,
-    jsonSchema: config.getExtension<StructuredOutputFormat>(
+    jsonSchema: getLegacyProviderOption<StructuredOutputFormat>(
+      config,
+      LegacyProviderOptionNamespaces.xai,
       LegacyExtensionKeys.jsonSchema,
     ),
-    embeddingEncodingFormat: config
-        .getExtension<String>(LegacyExtensionKeys.embeddingEncodingFormat),
-    embeddingDimensions:
-        config.getExtension<int>(LegacyExtensionKeys.embeddingDimensions),
+    embeddingEncodingFormat: getLegacyProviderOption<String>(
+      config,
+      LegacyProviderOptionNamespaces.xai,
+      LegacyExtensionKeys.embeddingEncodingFormat,
+    ),
+    embeddingDimensions: getLegacyProviderOption<int>(
+      config,
+      LegacyProviderOptionNamespaces.xai,
+      LegacyExtensionKeys.embeddingDimensions,
+    ),
     searchParameters: searchParameters,
     liveSearch: liveSearchEnabled ?? searchParameters != null,
   );
@@ -133,21 +145,30 @@ List<modern_openai.XAISearchSource>? mapCompatXAISearchSources(
 }
 
 SearchParameters? _createLegacyXAISearchParameters(LLMConfig config) {
-  final searchParameters = config.getExtension<SearchParameters>(
+  final searchParameters = getLegacyProviderOption<SearchParameters>(
+    config,
+    LegacyProviderOptionNamespaces.xai,
     LegacyExtensionKeys.xaiSearchParameters,
   );
   if (searchParameters != null) {
     return searchParameters;
   }
 
-  final webSearchConfig = config.getExtension<WebSearchConfig>(
+  final webSearchConfig = getLegacyProviderOption<WebSearchConfig>(
+    config,
+    LegacyProviderOptionNamespaces.xai,
     LegacyExtensionKeys.webSearchConfig,
   );
   if (webSearchConfig != null) {
     return _convertWebSearchConfigToSearchParameters(webSearchConfig);
   }
 
-  if (config.getExtension<bool>(LegacyExtensionKeys.webSearchEnabled) == true) {
+  if (getLegacyProviderOption<bool>(
+        config,
+        LegacyProviderOptionNamespaces.xai,
+        LegacyExtensionKeys.webSearchEnabled,
+      ) ==
+      true) {
     return SearchParameters.webSearch();
   }
 

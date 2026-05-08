@@ -1,5 +1,6 @@
 import '../../core/config.dart';
 import 'config/legacy_config_keys.dart';
+import 'config/legacy_provider_options.dart';
 import 'openai_compatible_provider_config.dart';
 
 /// Google-specific request body transformer for OpenAI-compatible interface
@@ -24,12 +25,22 @@ class GoogleRequestBodyTransformer implements RequestBodyTransformer {
   }
 
   void _addThinkingConfig(Map<String, dynamic> body, LLMConfig config) {
-    final reasoning =
-        config.getExtension<bool>(LegacyExtensionKeys.reasoning) ?? false;
-    final includeThoughts =
-        config.getExtension<bool>(LegacyExtensionKeys.includeThoughts);
-    final thinkingBudgetTokens =
-        config.getExtension<int>(LegacyExtensionKeys.thinkingBudgetTokens);
+    final reasoning = getLegacyProviderOption<bool>(
+          config,
+          LegacyProviderOptionNamespaces.google,
+          LegacyExtensionKeys.reasoning,
+        ) ??
+        false;
+    final includeThoughts = getLegacyProviderOption<bool>(
+      config,
+      LegacyProviderOptionNamespaces.google,
+      LegacyExtensionKeys.includeThoughts,
+    );
+    final thinkingBudgetTokens = getLegacyProviderOption<int>(
+      config,
+      LegacyProviderOptionNamespaces.google,
+      LegacyExtensionKeys.thinkingBudgetTokens,
+    );
 
     if (reasoning || includeThoughts != null || thinkingBudgetTokens != null) {
       final extraBody = body['extra_body'] as Map<String, dynamic>? ?? {};
@@ -54,7 +65,9 @@ class GoogleRequestBodyTransformer implements RequestBodyTransformer {
   }
 
   void _addReasoningEffort(Map<String, dynamic> body, LLMConfig config) {
-    final reasoningEffortString = config.getExtension<String>(
+    final reasoningEffortString = getLegacyProviderOption<String>(
+      config,
+      LegacyProviderOptionNamespaces.google,
       LegacyExtensionKeys.reasoningEffort,
     );
     if (reasoningEffortString != null && reasoningEffortString.isNotEmpty) {
@@ -83,10 +96,17 @@ class GoogleHeadersTransformer implements HeadersTransformer {
   }
 
   void _addThinkingHeaders(Map<String, String> headers, LLMConfig config) {
-    final reasoning =
-        config.getExtension<bool>(LegacyExtensionKeys.reasoning) ?? false;
-    final includeThoughts =
-        config.getExtension<bool>(LegacyExtensionKeys.includeThoughts);
+    final reasoning = getLegacyProviderOption<bool>(
+          config,
+          LegacyProviderOptionNamespaces.google,
+          LegacyExtensionKeys.reasoning,
+        ) ??
+        false;
+    final includeThoughts = getLegacyProviderOption<bool>(
+      config,
+      LegacyProviderOptionNamespaces.google,
+      LegacyExtensionKeys.includeThoughts,
+    );
 
     if (reasoning || includeThoughts == true) {
       headers['X-Goog-Include-Thoughts'] = 'true';
