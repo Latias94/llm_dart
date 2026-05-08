@@ -22,6 +22,7 @@ That includes:
 The root `llm_dart` package re-exports the main focused entrypoint through:
 
 - `package:llm_dart/google.dart`
+  - includes the `google(...)` factory plus provider-owned Google types
 
 ## Image Editing
 

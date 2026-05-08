@@ -1,9 +1,9 @@
 /// Explicit compatibility entrypoint for the legacy root surface.
 ///
-/// New code should prefer focused entrypoints such as `ai.dart`, `core.dart`,
-/// `openai.dart`, `chat.dart`, and provider-specific typed APIs. This barrel
-/// exists so migration-oriented code can depend on a stable compatibility shell
-/// even after the broad root `llm_dart.dart` surface starts shrinking.
+/// New code should prefer `llm_dart.dart` or focused provider entrypoints such
+/// as `openai.dart`, `xai.dart`, `deepseek.dart`, `core.dart`, and `chat.dart`.
+/// This barrel exists so migration-oriented code can depend on a stable
+/// compatibility shell even after the broad root surface starts shrinking.
 library;
 
 export 'src/facade/ai.dart' show AI;

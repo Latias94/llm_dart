@@ -11,6 +11,7 @@ instead of the broader root facade.
 The root `llm_dart` package re-exports the main focused entrypoint through:
 
 - `package:llm_dart/anthropic.dart`
+  - includes the `anthropic(...)` factory plus provider-owned Anthropic types
 
 For the larger repository architecture and migration story, start with the root
 package README.

@@ -81,14 +81,13 @@ Use `DirectChatTransport` when Flutter can call the model directly.
 
 ```dart
 import 'package:llm_dart/openai.dart' as openai;
-import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart_flutter/llm_dart_flutter.dart';
 
 Future<void> main() async {
   final controller = ChatController(
     session: DefaultChatSession(
       transport: DirectChatTransport(
-        model: llm.AI.openai(
+        model: openai.openai(
           apiKey: 'your-openai-key',
         ).chatModel('gpt-4.1-mini'),
       ),

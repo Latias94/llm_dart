@@ -4,7 +4,7 @@ MCP (Model Context Protocol) examples for `llm_dart`.
 
 This standalone example package now follows a stable-first integration shape:
 
-1. create a model with `AI.openai(...).chatModel(...)`
+1. create a model with `openai(...).chatModel(...)`
 2. discover MCP tools through `mcp_dart`
 3. convert them into shared `FunctionToolDefinition`s
 4. let `core.runTextGeneration(...)` or `core.streamTextRun(...)` handle the
@@ -51,7 +51,7 @@ dart run http_examples/simple_stream_client.dart
 ## Stable Integration Shape
 
 ```text
-AI facade / LanguageModel
+provider factory / LanguageModel
         │
         ▼
 llm_dart core runners

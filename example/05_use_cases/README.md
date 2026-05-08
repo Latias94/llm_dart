@@ -5,7 +5,8 @@ Complete application examples showing real-world usage patterns with LLM Dart.
 These end-to-end examples are being migrated incrementally.
 
 For new applications, prefer injecting stable `LanguageModel` instances created
-through `AI.*(...).chatModel(...)`, or `ChatSession` abstractions from
+through short provider factories such as `openai(...).chatModel(...)`, or
+`ChatSession` abstractions from
 `llm_dart_chat`, adding `llm_dart_flutter` only when you need a widget-facing
 `ChatController`, instead of centering new code on the legacy root builder.
 
@@ -118,7 +119,7 @@ flutter run -t example/flutter_http_backend_integration.dart
 import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
 
-final model = llm.AI.openai(apiKey: 'your-key').chatModel('gpt-4.1-mini');
+final model = llm.openai(apiKey: 'your-key').chatModel('gpt-4.1-mini');
 
 final result = await core.generateTextCall(
   model: model,
@@ -136,8 +137,8 @@ import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
 
 final models = <String, core.LanguageModel>{
-  'openai': llm.AI.openai(apiKey: 'key').chatModel('gpt-4.1-mini'),
-  'anthropic': llm.AI.anthropic(apiKey: 'key').chatModel('claude-sonnet-4-5'),
+  'openai': llm.openai(apiKey: 'key').chatModel('gpt-4.1-mini'),
+  'anthropic': llm.anthropic(apiKey: 'key').chatModel('claude-sonnet-4-5'),
 };
 
 final result = await core.generateTextCall(
@@ -156,7 +157,7 @@ import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
 
 final model =
-    llm.AI.groq(apiKey: 'your-key').chatModel('llama-3.3-70b-versatile');
+    llm.groq(apiKey: 'your-key').chatModel('llama-3.3-70b-versatile');
 
 Future<Map<String, Object?>> handleChat(String message) async {
   final result = await core.generateTextCall(
@@ -172,14 +173,13 @@ Future<Map<String, Object?>> handleChat(String message) async {
 
 ### Flutter Integration
 ```dart
-import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/openai.dart' as openai;
 import 'package:llm_dart_flutter/llm_dart_flutter.dart';
 
 final controller = ChatController(
   session: DefaultChatSession(
     transport: DirectChatTransport(
-      model: llm.AI.openai(
+      model: openai.openai(
         apiKey: 'your-key',
       ).chatModel('gpt-4.1-mini'),
     ),

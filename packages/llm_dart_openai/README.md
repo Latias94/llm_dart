@@ -36,8 +36,9 @@ re-exported from `package:llm_dart/openai.dart`.
 
 ## Recommended Layering
 
-1. Create a concrete model with `OpenAI(...).chatModel(...)` or the root
-   `AI.openai(...).chatModel(...)` facade.
+1. Create a concrete model with `OpenAI(...).chatModel(...)`, the root
+   `openai(...).chatModel(...)` factory, or the focused
+   `package:llm_dart/openai.dart` entrypoint.
 2. Keep application calls on the shared helpers from `llm_dart_ai` such as
    `generateTextCall(...)`, `streamTextCall(...)`, `embed(...)`,
    `generateImage(...)`, `generateSpeech(...)`, and `transcribe(...)`.
@@ -121,8 +122,9 @@ final groqModel = OpenAI(
 ).chatModel('llama-3.3-70b-versatile');
 ```
 
-If you prefer the root convenience facade, `AI.groq(...)`, `AI.deepSeek(...)`,
-`AI.openRouter(...)`, and `AI.xai(...)` are the equivalent stable entrypoints.
+If you prefer the root convenience surface, `groq(...)`, `deepSeek(...)`,
+`openRouter(...)`, and `xai(...)` are the equivalent stable entrypoints.
+The grouped `AI.*` facade remains available when you prefer one namespace.
 
 ## OpenAI Moderation Example
 
