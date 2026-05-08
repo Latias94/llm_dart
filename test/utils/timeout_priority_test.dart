@@ -1,6 +1,6 @@
 import 'package:llm_dart/builder/llm_builder.dart';
 import 'package:llm_dart/core/config.dart';
-import 'package:llm_dart/utils/http_config_utils.dart';
+import 'package:llm_dart/src/compatibility/http/http_config_utils.dart';
 import 'package:test/test.dart';
 
 void main() {

@@ -76,6 +76,8 @@ into a routine `0.10.x` maintenance release.
   `ProviderCapabilities` for coarse compatibility checks, `LLMProviderRegistry`
   for provider factories, and model capability profiles for modern app-facing
   discovery.
+- Removed the public `utils/http_config_utils.dart` re-export. HTTP
+  configuration shaping remains internal compatibility infrastructure.
 
 ### Deprecated
 

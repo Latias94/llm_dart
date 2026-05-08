@@ -75,6 +75,8 @@ The following slices are already landed on this branch:
 - Legacy `CapabilityUtils` and `ProviderRegistry` are removed. Use
   `ProviderCapabilities` for coarse compatibility checks, `LLMProviderRegistry`
   for provider factories, and model capability profiles for modern discovery.
+- The public `utils/http_config_utils.dart` re-export is removed. HTTP
+  configuration shaping remains internal compatibility infrastructure.
 
 ## Suggested Breaking Changelog Draft
 
@@ -181,6 +183,7 @@ Use this as the starting point for the next explicit breaking release.
 | `package:llm_dart/utils/log_sanitizer.dart` | `package:llm_dart_transport` logging helpers | Removed | The root file was an unused re-export of transport-owned implementation. |
 | `package:llm_dart/utils/utf8_stream_decoder.dart` and `legacy.Utf8StreamDecoder` | `package:llm_dart_transport` `Utf8StreamDecoder` | Removed | UTF-8 stream decoding is transport-owned and should not be surfaced through the root compatibility barrel. |
 | `CapabilityUtils`, `ProviderRegistry`, `globalProviderRegistry` | `ProviderCapabilities`, `LLMProviderRegistry`, and model capability profiles | Removed | The provider-level dynamic utility registry was legacy-only and conflicts with the model-centric capability discovery direction. |
+| `package:llm_dart/utils/http_config_utils.dart` and `legacy.HttpConfigUtils` | Provider-owned clients and internal compatibility HTTP config helpers | Removed | HTTP client configuration shaping is a compatibility implementation detail, not a stable root utility path. |
 | `LLMBuilder.githubCopilot()` and `LLMBuilder.togetherAI()` | Explicit provider registration or provider-owned OpenAI-family profile composition | Removed from default builder surface | These methods only selected unregistered provider IDs. For generic compatible endpoints, construct a provider-owned OpenAI-family model/profile explicitly or register a concrete factory. |
 
 ## Compatibility Policy
