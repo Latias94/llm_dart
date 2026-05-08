@@ -207,6 +207,9 @@ class TTSResponse {
   /// Request ID for continuity (ElevenLabs specific)
   final String? requestId;
 
+  /// Provider-owned response metadata.
+  final ProviderMetadata? providerMetadata;
+
   const TTSResponse({
     required this.audioData,
     this.contentType,
@@ -218,6 +221,7 @@ class TTSResponse {
     this.alignment,
     this.normalizedAlignment,
     this.requestId,
+    this.providerMetadata,
   });
 
   Map<String, dynamic> toJson() => {
@@ -232,6 +236,8 @@ class TTSResponse {
         if (normalizedAlignment != null)
           'normalized_alignment': normalizedAlignment!.toJson(),
         if (requestId != null) 'request_id': requestId,
+        if (providerMetadata != null)
+          'provider_metadata': providerMetadata!.toJsonMap(),
       };
 
   factory TTSResponse.fromJson(Map<String, dynamic> json) => TTSResponse(
@@ -253,5 +259,6 @@ class TTSResponse {
               )
             : null,
         requestId: json['request_id'] as String?,
+        providerMetadata: _providerMetadataFromJson(json),
       );
 }

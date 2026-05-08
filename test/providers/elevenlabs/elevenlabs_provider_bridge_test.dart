@@ -73,6 +73,10 @@ void main() {
       expect(response.audioData, [1, 2, 3, 4]);
       expect(response.contentType, 'audio/pcm');
       expect(response.requestId, 'req_tts_123');
+      expect(
+        response.providerMetadata?.namespace('elevenlabs')?['requestId'],
+        'req_tts_123',
+      );
 
       expect(capturedOptions, isNotNull);
       expect(capturedOptions!.uri.path, '/v1/text-to-speech/voice_override');
@@ -177,6 +181,11 @@ void main() {
           {'text': 'hello world'},
         ],
       });
+      expect(
+        response.providerMetadata
+            ?.namespace('elevenlabs')?['languageProbability'],
+        0.98,
+      );
 
       expect(capturedOptions, isNotNull);
       expect(capturedOptions!.uri.path, '/v1/speech-to-text');

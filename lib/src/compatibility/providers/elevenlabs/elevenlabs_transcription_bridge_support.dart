@@ -76,6 +76,7 @@ final class _ElevenLabsTranscriptionBridgeSupport {
       usage: null,
       languageProbability: languageProbability,
       additionalFormats: _asStringDynamicMap(metadata?['additionalFormats']),
+      providerMetadata: result.providerMetadata,
     );
   }
 }

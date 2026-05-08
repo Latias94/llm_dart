@@ -314,6 +314,9 @@ class STTResponse {
   /// Additional formats (ElevenLabs specific)
   final Map<String, dynamic>? additionalFormats;
 
+  /// Provider-owned response metadata.
+  final ProviderMetadata? providerMetadata;
+
   const STTResponse({
     required this.text,
     this.language,
@@ -325,6 +328,7 @@ class STTResponse {
     this.usage,
     this.languageProbability,
     this.additionalFormats,
+    this.providerMetadata,
   });
 
   Map<String, dynamic> toJson() => {
@@ -340,6 +344,8 @@ class STTResponse {
         if (languageProbability != null)
           'language_probability': languageProbability,
         if (additionalFormats != null) 'additional_formats': additionalFormats,
+        if (providerMetadata != null)
+          'provider_metadata': providerMetadata!.toJsonMap(),
       };
 
   factory STTResponse.fromJson(Map<String, dynamic> json) => STTResponse(
@@ -367,5 +373,6 @@ class STTResponse {
             : null,
         languageProbability: json['language_probability'] as double?,
         additionalFormats: json['additional_formats'] as Map<String, dynamic>?,
+        providerMetadata: _providerMetadataFromJson(json),
       );
 }

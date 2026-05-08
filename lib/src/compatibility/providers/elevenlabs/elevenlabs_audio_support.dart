@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:llm_dart_community/llm_dart_community.dart' as modern_community;
+import 'package:llm_dart_provider/llm_dart_provider.dart' show ProviderMetadata;
 import 'package:llm_dart_transport/dio.dart';
 
 import '../../../../models/audio_models.dart';

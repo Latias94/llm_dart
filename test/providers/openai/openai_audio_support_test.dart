@@ -128,6 +128,10 @@ void main() {
       expect(response.language, equals('en'));
       expect(response.words, hasLength(2));
       expect(response.words!.first.word, equals('Hello'));
+      expect(
+        response.providerMetadata?.namespace('openai')?['durationSeconds'],
+        equals(2.5),
+      );
     });
 
     test('translateAudio preserves multipart shaping and english response',
@@ -178,6 +182,10 @@ void main() {
       expect(fieldMap['temperature'], equals('0.1'));
       expect(response.text, equals('Translated text'));
       expect(response.language, equals('en'));
+      expect(
+        response.providerMetadata?.namespace('openai')?['endpoint'],
+        equals('audio.translations'),
+      );
     });
   });
 }

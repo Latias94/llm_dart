@@ -92,6 +92,7 @@ final class _ElevenLabsSpeechBridgeSupport {
       sampleRate: null,
       usage: null,
       requestId: metadata?['requestId'] as String?,
+      providerMetadata: result.providerMetadata,
     );
   }
 }

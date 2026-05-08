@@ -144,6 +144,10 @@ void main() {
 
       test('should create with all fields', () {
         final audioData = Uint8List.fromList([1, 2, 3, 4]);
+        final providerMetadata = ProviderMetadata.forNamespace(
+          'elevenlabs',
+          {'requestId': 'req_123'},
+        );
         final response = TTSResponse(
           audioData: audioData,
           contentType: 'audio/mpeg',
@@ -156,6 +160,7 @@ void main() {
             completionTokens: 0,
             totalTokens: 10,
           ),
+          providerMetadata: providerMetadata,
         );
 
         expect(response.audioData, equals(audioData));
@@ -165,6 +170,32 @@ void main() {
         expect(response.voice, equals('alloy'));
         expect(response.model, equals('tts-1'));
         expect(response.usage, isNotNull);
+        expect(
+          response.providerMetadata?.namespace('elevenlabs')?['requestId'],
+          equals('req_123'),
+        );
+      });
+
+      test('should serialize provider metadata', () {
+        final response = TTSResponse(
+          audioData: const [1, 2, 3],
+          providerMetadata: ProviderMetadata.forNamespace(
+            'openai',
+            {'responseFormat': 'mp3'},
+          ),
+        );
+
+        final json = response.toJson();
+        expect(
+          json['provider_metadata']['openai']['responseFormat'],
+          equals('mp3'),
+        );
+
+        final restored = TTSResponse.fromJson(json);
+        expect(
+          restored.providerMetadata?.namespace('openai')?['responseFormat'],
+          equals('mp3'),
+        );
       });
     });
 
@@ -272,6 +303,10 @@ void main() {
       });
 
       test('should create with all fields', () {
+        final providerMetadata = ProviderMetadata.forNamespace(
+          'openai',
+          {'durationSeconds': 2.0},
+        );
         final response = STTResponse(
           text: 'Hello, world!',
           language: 'en',
@@ -283,6 +318,7 @@ void main() {
             completionTokens: 5,
             totalTokens: 5,
           ),
+          providerMetadata: providerMetadata,
         );
 
         expect(response.text, equals('Hello, world!'));
@@ -291,6 +327,10 @@ void main() {
         expect(response.confidence, equals(0.98));
         expect(response.model, equals('whisper-1'));
         expect(response.usage, isNotNull);
+        expect(
+          response.providerMetadata?.namespace('openai')?['durationSeconds'],
+          equals(2.0),
+        );
       });
     });
   });

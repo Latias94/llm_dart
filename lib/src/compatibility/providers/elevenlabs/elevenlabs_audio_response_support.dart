@@ -46,6 +46,18 @@ final class _ElevenLabsAudioResponseSupport {
       languageProbability: languageProbability,
       additionalFormats:
           responseData['additional_formats'] as Map<String, dynamic>?,
+      providerMetadata: ProviderMetadata.forNamespace(
+        'elevenlabs',
+        {
+          if (responseData['language_code'] != null)
+            'languageCode': responseData['language_code'],
+          if (languageProbability != null)
+            'languageProbability': languageProbability,
+          if (responseData['words'] != null) 'words': responseData['words'],
+          if (responseData['additional_formats'] != null)
+            'additionalFormats': responseData['additional_formats'],
+        },
+      ),
     );
   }
 

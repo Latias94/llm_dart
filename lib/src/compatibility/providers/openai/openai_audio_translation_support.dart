@@ -54,6 +54,14 @@ final class _OpenAIAudioTranslationSupport {
       model: request.model,
       duration: responseData['duration'] as double?,
       usage: null,
+      providerMetadata: ProviderMetadata.forNamespace(
+        'openai',
+        {
+          'endpoint': 'audio.translations',
+          if (responseData['duration'] != null)
+            'durationSeconds': responseData['duration'],
+        },
+      ),
     );
   }
 }
