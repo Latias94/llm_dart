@@ -2,6 +2,7 @@ import 'package:llm_dart_transport/llm_dart_transport.dart'
     show DioClientOverrides, HasDioClientOverrides;
 
 import '../../models/tool_models.dart';
+import 'defaults.dart';
 
 /// Phind provider configuration
 ///
@@ -25,8 +26,8 @@ class PhindConfig implements HasDioClientOverrides {
 
   const PhindConfig({
     required this.apiKey,
-    this.baseUrl = 'https://https.extension.phind.com/agent/',
-    this.model = 'Phind-70B',
+    this.baseUrl = PhindDefaults.legacyExtensionBaseUrl,
+    this.model = PhindDefaults.defaultModel,
     this.maxTokens,
     this.temperature,
     this.systemPrompt,

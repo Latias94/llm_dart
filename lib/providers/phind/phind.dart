@@ -36,10 +36,12 @@
 library;
 
 import 'config.dart';
+import 'defaults.dart';
 import 'provider.dart';
 
 // Core exports
 export 'config.dart';
+export 'defaults.dart';
 export 'client.dart';
 export 'provider.dart';
 
@@ -49,8 +51,8 @@ export 'chat.dart';
 /// Create a Phind provider with default settings
 PhindProvider createPhindProvider({
   required String apiKey,
-  String model = 'Phind-70B',
-  String baseUrl = 'https://https.extension.phind.com/agent/',
+  String model = PhindDefaults.defaultModel,
+  String baseUrl = PhindDefaults.legacyExtensionBaseUrl,
   double? temperature,
   int? maxTokens,
   String? systemPrompt,
@@ -66,4 +68,3 @@ PhindProvider createPhindProvider({
 
   return PhindProvider(config);
 }
-

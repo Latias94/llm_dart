@@ -1,10 +1,10 @@
 import 'package:llm_dart_transport/llm_dart_transport.dart'
     show DioClientOverrides, HasDioClientOverrides;
 
-import '../../src/config/provider_defaults.dart';
 import '../../core/web_search.dart';
 import '../../models/chat_models.dart';
 import '../../models/tool_models.dart';
+import 'defaults.dart';
 import 'mcp_models.dart';
 
 /// Anthropic provider configuration
@@ -46,8 +46,8 @@ class AnthropicConfig implements HasDioClientOverrides {
 
   const AnthropicConfig({
     required this.apiKey,
-    this.baseUrl = ProviderDefaults.anthropicBaseUrl,
-    this.model = ProviderDefaults.anthropicDefaultModel,
+    this.baseUrl = AnthropicDefaults.baseUrl,
+    this.model = AnthropicDefaults.defaultModel,
     this.maxTokens,
     this.temperature,
     this.systemPrompt,

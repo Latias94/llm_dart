@@ -26,10 +26,12 @@ library;
 import '../../core/web_search.dart';
 import '../../models/chat_models.dart';
 import 'config.dart';
+import 'defaults.dart';
 import 'provider.dart';
 
 // Core exports
 export 'config.dart';
+export 'defaults.dart';
 export 'provider.dart';
 export 'builder.dart';
 
@@ -61,8 +63,8 @@ GoogleProvider createGoogleProvider({
 }) {
   final config = GoogleConfig(
     apiKey: apiKey,
-    model: model ?? 'gemini-1.5-flash',
-    baseUrl: baseUrl ?? 'https://generativelanguage.googleapis.com/v1beta/',
+    model: model ?? GoogleDefaults.defaultModel,
+    baseUrl: baseUrl ?? GoogleDefaults.baseUrl,
     maxTokens: maxTokens,
     temperature: temperature,
     systemPrompt: systemPrompt,
@@ -77,7 +79,7 @@ GoogleProvider createGoogleProvider({
     responseModalities: responseModalities,
     webSearchConfig: webSearchConfig,
     safetySettings: safetySettings,
-    maxInlineDataSize: maxInlineDataSize ?? 20 * 1024 * 1024,
+    maxInlineDataSize: maxInlineDataSize ?? GoogleDefaults.maxInlineDataSize,
     candidateCount: candidateCount,
     stopSequences: stopSequences,
     embeddingTaskType: embeddingTaskType,

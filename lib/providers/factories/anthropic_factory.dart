@@ -1,7 +1,7 @@
 import '../../core/capability.dart';
 import '../../core/config.dart';
 import '../../src/compatibility/providers/anthropic_compat_shell.dart';
-import '../../src/config/provider_defaults.dart';
+import '../anthropic/defaults.dart';
 import 'base_factory.dart';
 
 /// Factory for creating Anthropic provider instances
@@ -37,8 +37,8 @@ class AnthropicProviderFactory extends BaseProviderFactory<ChatCapability> {
   @override
   Map<String, dynamic> getProviderDefaults() {
     return {
-      'baseUrl': ProviderDefaults.anthropicBaseUrl,
-      'model': ProviderDefaults.anthropicDefaultModel,
+      'baseUrl': AnthropicDefaults.baseUrl,
+      'model': AnthropicDefaults.defaultModel,
     };
   }
 }

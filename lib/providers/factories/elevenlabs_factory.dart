@@ -1,7 +1,6 @@
 import '../../core/capability.dart';
 import '../../core/config.dart';
 import '../../src/compatibility/providers/elevenlabs/config_adapter.dart';
-import '../elevenlabs/defaults.dart';
 import '../elevenlabs/elevenlabs.dart';
 import 'base_factory.dart';
 

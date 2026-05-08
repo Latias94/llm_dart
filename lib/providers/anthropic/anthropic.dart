@@ -23,12 +23,13 @@
 /// ```
 library;
 
-import '../../src/config/provider_defaults.dart';
 import 'config.dart';
+import 'defaults.dart';
 import 'provider.dart';
 
 // Core exports
 export 'config.dart';
+export 'defaults.dart';
 export 'client.dart';
 export 'provider.dart';
 export 'builder.dart';
@@ -58,8 +59,8 @@ AnthropicProvider createAnthropicProvider({
 }) {
   final config = AnthropicConfig(
     apiKey: apiKey,
-    model: model ?? ProviderDefaults.anthropicDefaultModel,
-    baseUrl: baseUrl ?? ProviderDefaults.anthropicBaseUrl,
+    model: model ?? AnthropicDefaults.defaultModel,
+    baseUrl: baseUrl ?? AnthropicDefaults.baseUrl,
     maxTokens: maxTokens,
     temperature: temperature,
     systemPrompt: systemPrompt,

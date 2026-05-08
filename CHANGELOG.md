@@ -40,8 +40,8 @@ into a routine `0.10.x` maintenance release.
   registry is now reserved for OpenRouter and explicit non-dedicated endpoints.
 - Removed the legacy map-based `OpenAICompatibleDefaults` catalog. Use
   typed `OpenAICompatibleConfigs` for compatible provider profiles and
-  factory-owned defaults or `ProviderDefaults` constants for coarse dedicated
-  provider endpoint/model defaults.
+  provider-owned defaults classes for coarse dedicated provider endpoint/model
+  defaults.
 - Moved generic OpenAI-compatible endpoint defaults out of `ProviderDefaults`.
   OpenRouter, GitHub Copilot, and Together AI defaults now live only on typed
   `OpenAICompatibleConfigs`.
@@ -51,6 +51,10 @@ into a routine `0.10.x` maintenance release.
   into the OpenAI compatibility provider modules.
 - Removed `ProviderDefaults.getDefaults(...)`; provider factories now declare
   their default maps directly.
+- Removed `ProviderDefaults` and `package:llm_dart/core/provider_defaults.dart`.
+  Dedicated provider defaults now live beside each provider, for example
+  `OpenAIDefaults`, `AnthropicDefaults`, `GoogleDefaults`, and
+  `PhindDefaults`.
 
 ### Deprecated
 

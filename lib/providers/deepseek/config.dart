@@ -2,7 +2,7 @@ import 'package:llm_dart_transport/llm_dart_transport.dart'
     show DioClientOverrides, HasDioClientOverrides;
 
 import '../../models/tool_models.dart';
-import '../../src/config/provider_defaults.dart';
+import 'defaults.dart';
 
 /// DeepSeek provider configuration
 ///
@@ -33,8 +33,8 @@ class DeepSeekConfig implements HasDioClientOverrides {
 
   const DeepSeekConfig({
     required this.apiKey,
-    this.baseUrl = ProviderDefaults.deepseekBaseUrl,
-    this.model = ProviderDefaults.deepseekDefaultModel,
+    this.baseUrl = DeepSeekDefaults.baseUrl,
+    this.model = DeepSeekDefaults.defaultModel,
     this.maxTokens,
     this.temperature,
     this.systemPrompt,

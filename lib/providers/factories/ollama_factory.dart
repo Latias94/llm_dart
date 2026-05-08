@@ -1,7 +1,6 @@
 import '../../core/capability.dart';
 import '../../core/config.dart';
 import '../../src/compatibility/providers/ollama/config_adapter.dart';
-import '../ollama/defaults.dart';
 import '../ollama/ollama.dart';
 import 'base_factory.dart';
 

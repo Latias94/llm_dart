@@ -2,7 +2,7 @@ import 'package:llm_dart_transport/llm_dart_transport.dart'
     show DioClientOverrides, HasDioClientOverrides;
 
 import '../../models/tool_models.dart';
-import '../../src/config/provider_defaults.dart';
+import 'defaults.dart';
 
 /// Groq provider configuration
 ///
@@ -26,8 +26,8 @@ class GroqConfig implements HasDioClientOverrides {
 
   const GroqConfig({
     required this.apiKey,
-    this.baseUrl = ProviderDefaults.groqBaseUrl,
-    this.model = ProviderDefaults.groqDefaultModel,
+    this.baseUrl = GroqDefaults.baseUrl,
+    this.model = GroqDefaults.defaultModel,
     this.maxTokens,
     this.temperature,
     this.systemPrompt,

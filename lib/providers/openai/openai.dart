@@ -25,12 +25,13 @@
 /// ```
 library;
 
-import '../../src/config/provider_defaults.dart';
 import 'config.dart';
+import 'defaults.dart';
 import 'provider.dart';
 
 // Core exports
 export 'config.dart';
+export 'defaults.dart';
 export 'provider.dart';
 export 'builder.dart';
 
@@ -45,8 +46,8 @@ export 'audio.dart' show AudioTranslationRequest;
 /// Create an OpenAI provider with default settings
 OpenAIProvider createOpenAIProvider({
   required String apiKey,
-  String model = ProviderDefaults.openaiDefaultModel,
-  String baseUrl = ProviderDefaults.openaiBaseUrl,
+  String model = OpenAIDefaults.defaultModel,
+  String baseUrl = OpenAIDefaults.baseUrl,
   double? temperature,
   int? maxTokens,
   String? systemPrompt,

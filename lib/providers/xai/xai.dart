@@ -39,10 +39,12 @@
 library;
 
 import 'config.dart';
+import 'defaults.dart';
 import 'provider.dart';
 
 // Core exports
 export 'config.dart';
+export 'defaults.dart';
 export 'client.dart';
 export 'provider.dart';
 
@@ -53,8 +55,8 @@ export 'embeddings.dart';
 /// Create an xAI provider with default settings
 XAIProvider createXAIProvider({
   required String apiKey,
-  String model = 'grok-3',
-  String baseUrl = 'https://api.x.ai/v1/',
+  String model = XAIDefaults.defaultModel,
+  String baseUrl = XAIDefaults.baseUrl,
   double? temperature,
   int? maxTokens,
   String? systemPrompt,
@@ -74,4 +76,3 @@ XAIProvider createXAIProvider({
 
   return XAIProvider(config);
 }
-

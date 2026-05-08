@@ -1,7 +1,7 @@
 import '../../core/capability.dart';
 import '../../core/config.dart';
 import '../../src/compatibility/providers/openai_family_compat_phind.dart';
-import '../../src/config/provider_defaults.dart';
+import '../phind/defaults.dart';
 import 'base_factory.dart';
 
 /// Factory for creating Phind provider instances through the compatibility
@@ -36,8 +36,8 @@ class PhindProviderFactory extends BaseProviderFactory<ChatCapability> {
   @override
   Map<String, dynamic> getProviderDefaults() {
     return {
-      'baseUrl': ProviderDefaults.phindBaseUrl,
-      'model': ProviderDefaults.phindDefaultModel,
+      'baseUrl': PhindDefaults.openAICompatibleBaseUrl,
+      'model': PhindDefaults.defaultModel,
     };
   }
 }

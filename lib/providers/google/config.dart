@@ -4,6 +4,7 @@ import 'package:llm_dart_transport/llm_dart_transport.dart'
 import '../../core/web_search.dart';
 import '../../models/tool_models.dart';
 import '../../models/chat_models.dart';
+import 'defaults.dart';
 
 /// Google AI harm categories
 enum HarmCategory {
@@ -90,8 +91,8 @@ class GoogleConfig implements HasDioClientOverrides {
 
   const GoogleConfig({
     required this.apiKey,
-    this.baseUrl = 'https://generativelanguage.googleapis.com/v1beta/',
-    this.model = 'gemini-1.5-flash',
+    this.baseUrl = GoogleDefaults.baseUrl,
+    this.model = GoogleDefaults.defaultModel,
     this.maxTokens,
     this.temperature,
     this.systemPrompt,
@@ -110,7 +111,7 @@ class GoogleConfig implements HasDioClientOverrides {
     this.responseModalities,
     this.webSearchConfig,
     this.safetySettings,
-    this.maxInlineDataSize = 20 * 1024 * 1024, // 20MB default
+    this.maxInlineDataSize = GoogleDefaults.maxInlineDataSize,
     this.candidateCount,
     this.stopSequences,
     this.embeddingTaskType,

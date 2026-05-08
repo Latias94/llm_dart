@@ -1,7 +1,7 @@
 import '../../core/capability.dart';
 import '../../core/config.dart';
 import '../../src/compatibility/providers/openai_family_compat_xai.dart';
-import '../../src/config/provider_defaults.dart';
+import '../xai/defaults.dart';
 import 'base_factory.dart';
 
 /// Factory for creating XAI provider instances through the compatibility shell.
@@ -39,8 +39,8 @@ class XAIProviderFactory extends BaseProviderFactory<ChatCapability> {
   @override
   Map<String, dynamic> getProviderDefaults() {
     return {
-      'baseUrl': ProviderDefaults.xaiBaseUrl,
-      'model': ProviderDefaults.xaiDefaultModel,
+      'baseUrl': XAIDefaults.baseUrl,
+      'model': XAIDefaults.defaultModel,
     };
   }
 }

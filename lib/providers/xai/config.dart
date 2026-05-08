@@ -2,6 +2,7 @@ import 'package:llm_dart_transport/llm_dart_transport.dart'
     show DioClientOverrides, HasDioClientOverrides;
 
 import '../../models/tool_models.dart';
+import 'defaults.dart';
 
 /// Search source configuration for search parameters
 class SearchSource {
@@ -200,8 +201,8 @@ class XAIConfig implements HasDioClientOverrides {
 
   const XAIConfig({
     required this.apiKey,
-    this.baseUrl = 'https://api.x.ai/v1/',
-    this.model = 'grok-3',
+    this.baseUrl = XAIDefaults.baseUrl,
+    this.model = XAIDefaults.defaultModel,
     this.maxTokens,
     this.temperature,
     this.systemPrompt,

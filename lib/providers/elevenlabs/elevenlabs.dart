@@ -45,6 +45,7 @@ import 'provider.dart';
 
 // Core exports
 export 'config.dart';
+export 'defaults.dart';
 export 'client.dart';
 export 'provider.dart';
 

@@ -1,7 +1,7 @@
 import '../../core/capability.dart';
 import '../../core/config.dart';
 import '../../src/compatibility/providers/google_compat_provider.dart';
-import '../../src/config/provider_defaults.dart';
+import '../google/defaults.dart';
 import 'base_factory.dart';
 
 /// Factory for creating Google (Gemini) provider instances
@@ -38,8 +38,8 @@ class GoogleProviderFactory extends BaseProviderFactory<ChatCapability> {
   @override
   Map<String, dynamic> getProviderDefaults() {
     return {
-      'baseUrl': ProviderDefaults.googleBaseUrl,
-      'model': ProviderDefaults.googleDefaultModel,
+      'baseUrl': GoogleDefaults.baseUrl,
+      'model': GoogleDefaults.defaultModel,
     };
   }
 }

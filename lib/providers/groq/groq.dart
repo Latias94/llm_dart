@@ -26,10 +26,12 @@ library;
 
 import '../../models/tool_models.dart';
 import 'config.dart';
+import 'defaults.dart';
 import 'provider.dart';
 
 // Core exports
 export 'config.dart';
+export 'defaults.dart';
 export 'client.dart';
 export 'provider.dart';
 
@@ -53,8 +55,8 @@ GroqProvider createGroqProvider({
 }) {
   final config = GroqConfig(
     apiKey: apiKey,
-    model: model ?? 'llama-3.3-70b-versatile',
-    baseUrl: baseUrl ?? 'https://api.groq.com/openai/v1/',
+    model: model ?? GroqDefaults.defaultModel,
+    baseUrl: baseUrl ?? GroqDefaults.baseUrl,
     maxTokens: maxTokens,
     temperature: temperature,
     systemPrompt: systemPrompt,
@@ -67,4 +69,3 @@ GroqProvider createGroqProvider({
 
   return GroqProvider(config);
 }
-
