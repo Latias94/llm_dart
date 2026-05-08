@@ -9,6 +9,7 @@ import '../../core/llm_error.dart';
 import '../../models/chat_models.dart';
 import '../../models/tool_models.dart';
 import 'config/legacy_config_keys.dart';
+import 'config/legacy_provider_options.dart';
 
 part 'legacy_chat_adapter_request.dart';
 part 'legacy_chat_adapter_json.dart';
@@ -22,11 +23,13 @@ class LegacyChatCapabilityAdapter implements ChatCapability {
   final core.LanguageModel model;
   final LLMConfig config;
   final core.ProviderInvocationOptions? providerOptions;
+  final String? providerOptionsNamespace;
 
   const LegacyChatCapabilityAdapter({
     required this.model,
     required this.config,
     this.providerOptions,
+    this.providerOptionsNamespace,
   });
 
   @override
@@ -101,6 +104,7 @@ class LegacyChatCapabilityAdapter implements ChatCapability {
     return _LegacyChatRequestBuilder(
       config: config,
       providerOptions: providerOptions,
+      providerOptionsNamespace: providerOptionsNamespace,
     ).build(
       messages,
       tools,

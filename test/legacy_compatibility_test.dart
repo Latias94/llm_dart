@@ -923,6 +923,85 @@ void main() {
     });
 
     test(
+        'Compat OpenRouter provider routes namespaced jsonSchema through shared responseFormat',
+        () async {
+      TransportRequest? capturedRequest;
+      const schema = legacy.StructuredOutputFormat(
+        name: 'answer',
+        strict: true,
+        schema: {
+          'type': 'object',
+          'properties': {
+            'value': {'type': 'string'},
+          },
+        },
+      );
+
+      final provider = buildCompatOpenRouterProvider(
+        legacy.LLMConfig(
+          apiKey: 'test-key',
+          baseUrl: 'https://openrouter.ai/api/v1/',
+          model: 'openai/gpt-4o-mini',
+        ).withExtensions({
+          'customTransportClient': _FakeTransportClient(
+            onSend: (request) async {
+              capturedRequest = request;
+              return TransportResponse(
+                statusCode: 200,
+                body: {
+                  'id': 'chatcmpl_openrouter_structured',
+                  'model': 'openai/gpt-4o-mini',
+                  'created': 1710000402,
+                  'choices': [
+                    {
+                      'index': 0,
+                      'finish_reason': 'stop',
+                      'message': {
+                        'role': 'assistant',
+                        'content': '{"value":"Done."}',
+                      },
+                    },
+                  ],
+                },
+              );
+            },
+          ),
+          legacyProviderOptionsBagKey: {
+            LegacyProviderOptionNamespaces.openrouter: {
+              LegacyExtensionKeys.jsonSchema: schema,
+            },
+          },
+        }),
+      );
+
+      final response = await provider.chat([
+        legacy.ChatMessage.user('Return JSON.'),
+      ]);
+
+      expect(response.text, '{"value":"Done."}');
+      expect(capturedRequest, isNotNull);
+
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(
+        requestBody['response_format'],
+        {
+          'type': 'json_schema',
+          'json_schema': {
+            'name': 'answer',
+            'schema': {
+              'type': 'object',
+              'properties': {
+                'value': {'type': 'string'},
+              },
+              'additionalProperties': false,
+            },
+            'strict': true,
+          },
+        },
+      );
+    });
+
+    test(
         'Compat OpenAI provider routes legacy jsonSchema through shared responseFormat',
         () async {
       TransportRequest? capturedRequest;
@@ -1443,6 +1522,85 @@ void main() {
           ],
         },
       );
+      expect(
+        requestBody['response_format'],
+        {
+          'type': 'json_schema',
+          'json_schema': {
+            'name': 'answer',
+            'schema': {
+              'type': 'object',
+              'properties': {
+                'value': {'type': 'string'},
+              },
+              'additionalProperties': false,
+            },
+            'strict': true,
+          },
+        },
+      );
+    });
+
+    test(
+        'Compat xAI provider routes namespaced jsonSchema through shared responseFormat',
+        () async {
+      TransportRequest? capturedRequest;
+      const schema = legacy.StructuredOutputFormat(
+        name: 'answer',
+        strict: true,
+        schema: {
+          'type': 'object',
+          'properties': {
+            'value': {'type': 'string'},
+          },
+        },
+      );
+
+      final provider = buildCompatXAIProvider(
+        legacy.LLMConfig(
+          apiKey: 'test-key',
+          baseUrl: 'https://example.com/v1/',
+          model: 'grok-3',
+        ).withExtensions({
+          'customTransportClient': _FakeTransportClient(
+            onSend: (request) async {
+              capturedRequest = request;
+              return TransportResponse(
+                statusCode: 200,
+                body: {
+                  'id': 'chatcmpl_xai_structured',
+                  'model': 'grok-3',
+                  'created': 1710000301,
+                  'choices': [
+                    {
+                      'index': 0,
+                      'finish_reason': 'stop',
+                      'message': {
+                        'role': 'assistant',
+                        'content': '{"value":"Done."}',
+                      },
+                    },
+                  ],
+                },
+              );
+            },
+          ),
+          legacyProviderOptionsBagKey: {
+            LegacyProviderOptionNamespaces.xai: {
+              LegacyExtensionKeys.jsonSchema: schema,
+            },
+          },
+        }),
+      );
+
+      final response = await provider.chat([
+        legacy.ChatMessage.user('Return JSON.'),
+      ]);
+
+      expect(response.text, '{"value":"Done."}');
+      expect(capturedRequest, isNotNull);
+
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
       expect(
         requestBody['response_format'],
         {

@@ -32,6 +32,7 @@ ChatCapability buildCompatOpenRouterProvider(LLMConfig config) {
     adapter: LegacyChatCapabilityAdapter(
       model: model,
       config: config,
+      providerOptionsNamespace: LegacyProviderOptionNamespaces.openrouter,
       providerOptions: modern_openai.OpenAIGenerateTextOptions(
         parallelToolCalls: getLegacyProviderOption<bool>(
           config,

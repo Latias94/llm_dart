@@ -7,6 +7,7 @@ import '../../../models/tool_models.dart';
 import '../../../providers/xai/config.dart';
 import '../../../providers/xai/provider.dart';
 import '../chat_route_compatibility.dart';
+import '../config/legacy_provider_options.dart';
 import '../compat_transport.dart';
 import '../legacy_chat_adapter.dart';
 import 'compat_provider_support.dart';
@@ -27,6 +28,7 @@ ChatCapability buildCompatXAIProvider(LLMConfig config) {
     adapter: LegacyChatCapabilityAdapter(
       model: model,
       config: config,
+      providerOptionsNamespace: LegacyProviderOptionNamespaces.xai,
       providerOptions: modern_openai.XAIGenerateTextOptions(
         common: const modern_openai.OpenAIGenerateTextOptions(),
         search: buildCompatXAILiveSearchOptions(legacyConfig),

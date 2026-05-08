@@ -3,10 +3,12 @@ part of 'legacy_chat_adapter.dart';
 final class _LegacyChatRequestBuilder {
   final LLMConfig config;
   final core.ProviderInvocationOptions? providerOptions;
+  final String? providerOptionsNamespace;
 
   const _LegacyChatRequestBuilder({
     required this.config,
     this.providerOptions,
+    this.providerOptionsNamespace,
   });
 
   core.GenerateTextRequest build(
@@ -33,8 +35,9 @@ final class _LegacyChatRequestBuilder {
         topP: config.topP,
         topK: config.topK,
         responseFormat: _buildCompatResponseFormat(
-          config.getExtension<StructuredOutputFormat>(
-            LegacyExtensionKeys.jsonSchema,
+          _resolveCompatStructuredOutputFormat(
+            config,
+            providerOptionsNamespace,
           ),
         ),
       ),

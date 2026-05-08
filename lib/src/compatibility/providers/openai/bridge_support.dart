@@ -74,6 +74,7 @@ LegacyChatCapabilityAdapter buildCompatOpenAIChatBridge({
   return LegacyChatCapabilityAdapter(
     model: model,
     config: bridgeConfig,
+    providerOptionsNamespace: LegacyProviderOptionNamespaces.openai,
     providerOptions: buildCompatOpenAIInvocationOptions(
       legacyConfig: legacyConfig,
       bridgeConfig: bridgeConfig,

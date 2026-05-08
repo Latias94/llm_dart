@@ -1,5 +1,25 @@
 part of 'legacy_chat_adapter.dart';
 
+StructuredOutputFormat? _resolveCompatStructuredOutputFormat(
+  LLMConfig config,
+  String? providerOptionsNamespace,
+) {
+  if (providerOptionsNamespace != null) {
+    final namespaceOptions = legacyProviderOptionsNamespaceOrNull(
+      config,
+      providerOptionsNamespace,
+    );
+    final namespacedFormat = namespaceOptions?[LegacyExtensionKeys.jsonSchema];
+    if (namespacedFormat is StructuredOutputFormat) {
+      return namespacedFormat;
+    }
+  }
+
+  return config.getExtension<StructuredOutputFormat>(
+    LegacyExtensionKeys.jsonSchema,
+  );
+}
+
 core.ResponseFormat? _buildCompatResponseFormat(
   StructuredOutputFormat? format,
 ) {
