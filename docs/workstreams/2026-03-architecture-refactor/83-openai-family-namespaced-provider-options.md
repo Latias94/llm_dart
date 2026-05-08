@@ -27,6 +27,11 @@ The compatibility root package now has an internal staged bag:
 
 - `extensions['providerOptions']['openai'][key]`
 - `extensions['providerOptions']['openrouter'][key]`
+- `extensions['providerOptions']['deepseek'][key]`
+- `extensions['providerOptions']['xai'][key]`
+- the same provider-owned bag shape is also used by the remaining
+  provider-specific compatibility builders such as Google, Anthropic, Ollama,
+  and ElevenLabs
 
 This bag is still a compatibility-layer implementation detail. It is not yet
 the final stable public configuration design for the long-term API.
@@ -38,6 +43,8 @@ The transition rule for the OpenAI family is now:
 - OpenAI-specific builder helpers write into `providerOptions.openai`
 - OpenRouter-specific legacy search helpers write into
   `providerOptions.openrouter`
+- DeepSeek-specific builder helpers write into `providerOptions.deepseek`
+- xAI-specific builder helpers write into `providerOptions.xai`
 - readers in factories, request shaping, and compatibility providers read
   namespaced options first
 - those readers still fall back to the old flat extension keys
@@ -59,10 +66,17 @@ The first namespaced migration slice now covers these OpenAI-family areas:
   OpenAI `webSearchConfig`
 - OpenRouter legacy search config through namespaced
   `providerOptions.openrouter.webSearchConfig`
+- OpenRouter and Ollama structured-output compatibility builder callbacks
+- DeepSeek builder options such as `logprobs`, `top_logprobs`,
+  `frequency_penalty`, `presence_penalty`, and `response_format`
+- xAI builder options such as `liveSearch`, `searchParameters`,
+  structured output, and embedding dimensions
 - OpenAI and OpenAI-compatible factory reads
 - OpenAI chat and Responses request shaping
 - OpenAI-family compatibility provider adapters
 - OpenAI / OpenRouter compatibility route allowlists
+- removal of the broad root `LLMBuilder.legacyExtension(...)` write path in
+  favor of provider-specific callback methods
 
 ## 5. What Still Intentionally Falls Back
 
@@ -80,8 +94,10 @@ Examples:
 - the shared root `LLMBuilder.webSearch(...)` helper still writes the old flat
   compatibility search config because it is a cross-provider migration entry,
   not an OpenAI-owned stable option surface
-- shared fields like `jsonSchema` are still not moved into provider namespaces
-- other OpenAI-compatible providers still mainly rely on the old flat path
+- generic legacy adapter fallback can still read flat `jsonSchema` so it can
+  normalize old structured-output requests into shared `responseFormat`
+- Groq and Phind still do not have provider-specific callback surfaces because
+  their current root compatibility adapters do not expose stable extra knobs
 
 ## 6. Why This Matches The Reference Better
 
@@ -102,7 +118,8 @@ After this migration slice, the next valuable OpenAI-family steps are:
 
 - audit whether more OpenRouter legacy search controls should stay fallback-only
   forever or be removed entirely
-- decide whether any additional OpenAI-family option groups deserve typed
-  helper accessors above the transitional bag
+- decide whether the remaining flat `jsonSchema` fallback should stay as a
+  generic legacy adapter input or move behind a provider-aware response-format
+  resolver
 - keep pressure on moving long-term app-facing usage toward the stable package
   APIs instead of expanding the root compatibility builder surface
