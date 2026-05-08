@@ -43,15 +43,17 @@ ChatCapability buildCompatAnthropicProvider(LLMConfig config) {
 }
 
 final class CompatAnthropicProvider extends AnthropicProvider {
-  final LLMConfig _originalConfig;
-  final LegacyChatCapabilityAdapter _adapter;
+  final CompatChatBridgeRouter _chatRouter;
 
   CompatAnthropicProvider({
     required LLMConfig originalConfig,
     required AnthropicConfig legacyConfig,
     required LegacyChatCapabilityAdapter adapter,
-  })  : _originalConfig = originalConfig,
-        _adapter = adapter,
+  })  : _chatRouter = CompatChatBridgeRouter(
+          originalConfig: originalConfig,
+          adapter: adapter,
+          canUseBridge: canUseAnthropicChatBridge,
+        ),
         super(legacyConfig);
 
   @override
@@ -68,16 +70,10 @@ final class CompatAnthropicProvider extends AnthropicProvider {
     List<Tool>? tools, {
     TransportCancellation? cancelToken,
   }) {
-    return executeCompatChat(
-      originalConfig: _originalConfig,
+    return _chatRouter.chatWithTools(
       messages: messages,
       tools: tools,
-      canUseBridge: canUseAnthropicChatBridge,
-      bridge: () => _adapter.chatWithTools(
-        messages,
-        tools,
-        cancelToken: cancelToken,
-      ),
+      cancelToken: cancelToken,
       fallback: () => super.chatWithTools(
         messages,
         tools,
@@ -92,16 +88,10 @@ final class CompatAnthropicProvider extends AnthropicProvider {
     List<Tool>? tools,
     TransportCancellation? cancelToken,
   }) {
-    return executeCompatChatStream(
-      originalConfig: _originalConfig,
+    return _chatRouter.chatStream(
       messages: messages,
       tools: tools,
-      canUseBridge: canUseAnthropicChatBridge,
-      bridge: () => _adapter.chatStream(
-        messages,
-        tools: tools,
-        cancelToken: cancelToken,
-      ),
+      cancelToken: cancelToken,
       fallback: () => super.chatStream(
         messages,
         tools: tools,
