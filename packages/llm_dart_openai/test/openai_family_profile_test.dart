@@ -148,6 +148,92 @@ void main() {
       expect(requestBody['model'], 'openai/gpt-4o-mini:online');
     });
 
+    test('OpenRouter call options shape the request model to :online',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        profile: const OpenRouterProfile(),
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'chatcmpl_or_1',
+                'model': 'openai/gpt-4o-mini:online',
+                'created': 1710000000,
+                'choices': [
+                  {
+                    'index': 0,
+                    'finish_reason': 'stop',
+                    'message': {
+                      'role': 'assistant',
+                      'content': 'hello',
+                    },
+                  },
+                ],
+                'usage': {
+                  'prompt_tokens': 1,
+                  'completion_tokens': 1,
+                  'total_tokens': 2,
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel('openai/gpt-4o-mini');
+
+      await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage.text('hello'),
+          ],
+          callOptions: const CallOptions(
+            providerOptions: OpenRouterGenerateTextOptions(
+              search: OpenRouterSearchOptions.onlineModel(),
+            ),
+          ),
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(requestBody['model'], 'openai/gpt-4o-mini:online');
+    });
+
+    test('OpenRouter call options are rejected on non-OpenRouter profiles',
+        () async {
+      final model = OpenAI(
+        apiKey: 'test-key',
+        profile: const DeepSeekProfile(),
+        transport: const _FakeTransportClient(),
+      ).chatModel('deepseek-chat');
+
+      await expectLater(
+        model.generate(
+          GenerateTextRequest(
+            prompt: [
+              UserPromptMessage.text('hello'),
+            ],
+            callOptions: const CallOptions(
+              providerOptions: OpenRouterGenerateTextOptions(
+                search: OpenRouterSearchOptions.onlineModel(),
+              ),
+            ),
+          ),
+        ),
+        throwsA(
+          isA<ArgumentError>().having(
+            (error) => error.message,
+            'message',
+            contains('only valid for OpenRouter'),
+          ),
+        ),
+      );
+    });
+
     test('OpenRouter model settings are rejected on non-OpenRouter profiles',
         () {
       expect(

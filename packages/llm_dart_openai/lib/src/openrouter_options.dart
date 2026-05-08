@@ -22,3 +22,13 @@ final class OpenRouterChatModelSettings implements ProviderModelOptions {
     this.search,
   });
 }
+
+final class OpenRouterGenerateTextOptions implements ProviderInvocationOptions {
+  final OpenAIGenerateTextOptions common;
+  final OpenRouterSearchOptions? search;
+
+  const OpenRouterGenerateTextOptions({
+    this.common = const OpenAIGenerateTextOptions(),
+    this.search,
+  });
+}

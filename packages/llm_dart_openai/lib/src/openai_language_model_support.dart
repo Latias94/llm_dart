@@ -45,6 +45,7 @@ ResolvedOpenAILanguageModelCall resolveOpenAILanguageModelCall({
     modelId: modelId,
     profile: profile,
     settings: settings,
+    requestSearch: providerOptions.openRouterSearch,
   );
 
   return ResolvedOpenAILanguageModelCall(
@@ -68,6 +69,7 @@ ResolvedOpenAIGenerateTextOptions resolveOpenAIProviderOptions({
 
   OpenAIGenerateTextOptions common = const OpenAIGenerateTextOptions();
   XAILiveSearchOptions? xaiSearch;
+  OpenRouterSearchOptions? openRouterSearch;
   DeepSeekGenerateTextOptions? deepseekOptions;
 
   if (options == null) {
@@ -85,6 +87,17 @@ ResolvedOpenAIGenerateTextOptions resolveOpenAIProviderOptions({
 
     common = options.common;
     deepseekOptions = options;
+  } else if (options is OpenRouterGenerateTextOptions) {
+    if (profile.providerId != 'openrouter') {
+      throw ArgumentError.value(
+        options,
+        'providerOptions',
+        'OpenRouterGenerateTextOptions are only valid for OpenRouter language models.',
+      );
+    }
+
+    common = options.common;
+    openRouterSearch = options.search;
   } else if (options is XAIGenerateTextOptions) {
     if (profile.providerId != 'xai') {
       throw ArgumentError.value(
@@ -133,6 +146,7 @@ ResolvedOpenAIGenerateTextOptions resolveOpenAIProviderOptions({
   return ResolvedOpenAIGenerateTextOptions(
     common: common,
     xaiSearch: xaiSearch,
+    openRouterSearch: openRouterSearch,
     deepseek: deepseekOptions,
   );
 }
@@ -173,8 +187,9 @@ String resolveOpenAIRequestModelId({
   required String modelId,
   required OpenAIFamilyProfile profile,
   required ResolvedOpenAIChatModelSettings settings,
+  OpenRouterSearchOptions? requestSearch,
 }) {
-  final search = settings.openRouterSearch;
+  final search = requestSearch ?? settings.openRouterSearch;
   if (search == null) {
     return modelId;
   }
