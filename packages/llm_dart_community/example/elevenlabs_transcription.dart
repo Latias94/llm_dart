@@ -33,9 +33,11 @@ Future<void> main() async {
       Platform.environment['ELEVENLABS_TRANSCRIPTION_MODEL'] ?? 'scribe_v1';
   final audioBytes = await audioFile.readAsBytes();
 
-  final model = community.ElevenLabs(
-    apiKey: apiKey,
-  ).transcriptionModel(modelId);
+  final model = community
+      .elevenLabs(
+        apiKey: apiKey,
+      )
+      .transcriptionModel(modelId);
 
   final result = await core.transcribe(
     model: model,

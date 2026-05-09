@@ -631,7 +631,7 @@ void main() {
     anthropic
         .anthropic(apiKey: 'test')
         .chatModel('claude-3-5-haiku-latest'),
-    community.Ollama().chatModel('llama3.2'),
+    community.ollama().chatModel('llama3.2'),
     xai.xai(apiKey: 'test').chatModel('grok-3'),
     deepseek.deepSeek(apiKey: 'test').chatModel('deepseek-chat'),
     openrouter.openRouter(apiKey: 'test').chatModel('openai/gpt-4o-mini'),
@@ -640,7 +640,7 @@ void main() {
   ];
 
   final speechModel =
-      community.ElevenLabs(apiKey: 'test').speechModel('eleven_multilingual_v2');
+      community.elevenLabs(apiKey: 'test').speechModel('eleven_multilingual_v2');
   final chatInput = chat.ChatInput.text('hello');
   final cancellation = transport.TransportCancellation()..cancel('smoke');
   final legacyBuilder = legacy.LLMBuilder();
@@ -711,9 +711,9 @@ Future<void> main() async {
       anthropic.anthropic(apiKey: 'test').chatModel('claude-3-5-haiku-latest');
   final googleModel =
       google.google(apiKey: 'test').chatModel('gemini-2.0-flash');
-  final ollamaModel = community.Ollama().chatModel('llama3.2');
+  final ollamaModel = community.ollama().chatModel('llama3.2');
   final speechModel =
-      community.ElevenLabs(apiKey: 'test').speechModel('eleven_multilingual_v2');
+      community.elevenLabs(apiKey: 'test').speechModel('eleven_multilingual_v2');
   final cancellation = transport.TransportCancellation()..cancel('smoke');
   final session = chat.DefaultChatSession(
     transport: chat.DirectChatTransport(model: openAIModel),

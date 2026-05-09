@@ -32,9 +32,9 @@ Within this workspace, the modern shared-capability path for the current
 community providers now lives in:
 
 - `package:llm_dart_community/llm_dart_community.dart` for
-  `Ollama(...).chatModel(...)`, `Ollama(...).embeddingModel(...)`,
-  `ElevenLabs(...).speechModel(...)`, and
-  `ElevenLabs(...).transcriptionModel(...)`
+  `ollama(...).chatModel(...)`, `ollama(...).embeddingModel(...)`,
+  `elevenLabs(...).speechModel(...)`, and
+  `elevenLabs(...).transcriptionModel(...)`
 
 The legacy compatibility builder still exists through
 `package:llm_dart/legacy.dart`.
@@ -254,8 +254,8 @@ focused provider helper when the semantics are provider-native:
 | OpenAI moderation | `openai(...).moderation()` | Category taxonomy and score meanings must map into app-owned policy |
 | OpenAI image editing | `openai(...).imageModel(...).edit(...)` | File inputs, masks, fidelity, and output options are OpenAI-specific |
 | Google image editing/variation | `google(...).imageModel(...).edit(...)` / `createVariation(...)` | Gemini edit inputs and variation prompts are Google-specific |
-| Ollama installed models | `community.Ollama(...).catalog().listModels()` | Local runtime tags are not a shared remote model registry |
-| ElevenLabs voices | `community.ElevenLabs(...).voices().listVoices()` | Voice IDs, preview URLs, labels, and tiers are provider-owned |
+| Ollama installed models | `community.ollama(...).catalog().listModels()` | Local runtime tags are not a shared remote model registry |
+| ElevenLabs voices | `community.elevenLabs(...).voices().listVoices()` | Voice IDs, preview URLs, labels, and tiers are provider-owned |
 
 The rule is simple: keep the shared helper for the common model operation, and
 use a provider-owned helper for lifecycle, policy, catalog, or edit workflows

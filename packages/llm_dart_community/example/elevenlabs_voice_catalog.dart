@@ -12,7 +12,7 @@ Future<void> main() async {
     return;
   }
 
-  final voices = await ElevenLabs(apiKey: apiKey).voices().listVoices();
+  final voices = await elevenLabs(apiKey: apiKey).voices().listVoices();
 
   print('ElevenLabs voices: ${voices.length}');
   for (final voice in voices.take(10)) {

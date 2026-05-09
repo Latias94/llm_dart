@@ -3,9 +3,9 @@
 ElevenLabs now has modern shared-capability surfaces in this workspace through
 `package:llm_dart_community/llm_dart_community.dart`:
 
-- `ElevenLabs(...).speechModel(...)`
-- `ElevenLabs(...).transcriptionModel(...)`
-- `ElevenLabs(...).voices().listVoices()`
+- `elevenLabs(...).speechModel(...)`
+- `elevenLabs(...).transcriptionModel(...)`
+- `elevenLabs(...).voices().listVoices()`
 
 This directory now uses a stable-first posture for normal speech and
 transcription flows, while still keeping the broader voice/audio appendix
@@ -23,7 +23,7 @@ catalog:
 import 'package:llm_dart_community/llm_dart_community.dart' as community;
 import 'package:llm_dart/core.dart' as core;
 
-final speechModel = community.ElevenLabs(
+final speechModel = community.elevenLabs(
   apiKey: 'your-elevenlabs-key',
 ).speechModel('eleven_multilingual_v2');
 
@@ -39,7 +39,7 @@ For transcription:
 import 'package:llm_dart_community/llm_dart_community.dart' as community;
 import 'package:llm_dart/core.dart' as core;
 
-final transcriptionModel = community.ElevenLabs(
+final transcriptionModel = community.elevenLabs(
   apiKey: 'your-elevenlabs-key',
 ).transcriptionModel('scribe_v1');
 
@@ -55,7 +55,7 @@ For voice selection UI:
 ```dart
 import 'package:llm_dart_community/llm_dart_community.dart' as community;
 
-final voices = await community.ElevenLabs(
+final voices = await community.elevenLabs(
   apiKey: 'your-elevenlabs-key',
 ).voices().listVoices();
 
@@ -116,9 +116,9 @@ shared-capability app code.
 
 The important distinction is:
 
-- use `ElevenLabs(...).speechModel(...)` and `transcriptionModel(...)` for
+- use `elevenLabs(...).speechModel(...)` and `transcriptionModel(...)` for
   stable app-facing media flows
-- use `ElevenLabs(...).voices().listVoices()` for voice-picker UI
+- use `elevenLabs(...).voices().listVoices()` for voice-picker UI
 - use `providers/elevenlabs/elevenlabs.dart` only when you really need
   realtime/session behavior or broader audio shell methods
 

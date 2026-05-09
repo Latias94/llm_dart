@@ -28,6 +28,8 @@ Older builder-era code should migrate through `package:llm_dart/legacy.dart`.
 - Added the same short factories to the focused OpenAI-family, Google, and
   Anthropic packages so split-package users can use the model-first path
   without depending on the root facade.
+- Added `ollama(...)` and `elevenLabs(...)` short factories to
+  `llm_dart_community`.
 - Added focused root entrypoints for xAI, DeepSeek, OpenRouter, Groq, and
   Phind so OpenAI-family profiles can be imported from provider-shaped paths
   instead of the broad OpenAI-family entrypoint.

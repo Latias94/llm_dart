@@ -3,17 +3,17 @@
 Ollama now has modern shared-capability surfaces in this workspace through
 `package:llm_dart_community/llm_dart_community.dart`:
 
-- `Ollama(...).chatModel(...)`
-- `Ollama(...).embeddingModel(...)`
+- `ollama(...).chatModel(...)`
+- `ollama(...).embeddingModel(...)`
 
 This directory now focuses on provider-owned local runtime behavior on top of
 the modern community surface.
 
 That means:
 
-- chat and embedding entrypoints stay on `community.Ollama(...).*Model(...)`
+- chat and embedding entrypoints stay on `community.ollama(...).*Model(...)`
 - local model catalog listing now also has a focused provider-owned helper on
-  `community.Ollama(...).catalog().listModels()`
+  `community.ollama(...).catalog().listModels()`
 - Ollama-specific runtime controls stay on
   `community.OllamaGenerateTextOptions`
 - only truly residual surfaces such as `/api/generate` remain on the
@@ -30,7 +30,7 @@ for chat or embeddings:
 import 'package:llm_dart_community/llm_dart_community.dart' as community;
 import 'package:llm_dart/core.dart' as core;
 
-final model = community.Ollama(
+final model = community.ollama(
   baseUrl: 'http://localhost:11434',
 ).chatModel('llama3.2');
 
@@ -48,7 +48,7 @@ For embeddings:
 import 'package:llm_dart_community/llm_dart_community.dart' as community;
 import 'package:llm_dart/core.dart' as core;
 
-final embeddingModel = community.Ollama(
+final embeddingModel = community.ollama(
   baseUrl: 'http://localhost:11434',
 ).embeddingModel('nomic-embed-text');
 
@@ -63,7 +63,7 @@ For installed local model listing:
 ```dart
 import 'package:llm_dart_community/llm_dart_community.dart' as community;
 
-final catalog = community.Ollama(
+final catalog = community.ollama(
   baseUrl: 'http://localhost:11434',
 ).catalog();
 
@@ -132,9 +132,9 @@ shared-capability app code.
 
 The important distinction is:
 
-- use `Ollama(...).chatModel(...)` and `embeddingModel(...)` for stable
+- use `ollama(...).chatModel(...)` and `embeddingModel(...)` for stable
   app-facing code
-- use `Ollama(...).catalog().listModels()` for installed-model picker or local
+- use `ollama(...).catalog().listModels()` for installed-model picker or local
   diagnostics UI
 - use `providers/ollama/ollama.dart` only when you need `/api/generate` or
   broader compatibility surfaces that are still outside the shared community

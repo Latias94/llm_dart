@@ -6,6 +6,19 @@ import 'elevenlabs_speech_model.dart';
 import 'elevenlabs_transcription_model.dart';
 import 'elevenlabs_voice_catalog.dart';
 
+/// Creates an ElevenLabs provider facade for speech, transcription, and voices.
+ElevenLabs elevenLabs({
+  required String apiKey,
+  TransportClient? transport,
+  String? baseUrl,
+}) {
+  return ElevenLabs(
+    apiKey: apiKey,
+    transport: transport,
+    baseUrl: baseUrl,
+  );
+}
+
 /// Package-owned ElevenLabs namespace for modern community provider surfaces.
 final class ElevenLabs {
   static const String defaultBaseUrl = elevenLabsDefaultBaseUrl;

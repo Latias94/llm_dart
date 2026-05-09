@@ -11,9 +11,11 @@ Future<void> main() async {
   final modelId =
       Platform.environment['OLLAMA_EMBEDDING_MODEL'] ?? 'nomic-embed-text';
 
-  final model = community.Ollama(
-    baseUrl: baseUrl,
-  ).embeddingModel(modelId);
+  final model = community
+      .ollama(
+        baseUrl: baseUrl,
+      )
+      .embeddingModel(modelId);
 
   final result = await core.embed(
     model: model,

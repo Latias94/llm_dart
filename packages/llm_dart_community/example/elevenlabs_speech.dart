@@ -18,9 +18,11 @@ Future<void> main() async {
   final outputPath = Platform.environment['ELEVENLABS_OUTPUT_PATH'] ??
       'elevenlabs_example.mp3';
 
-  final model = community.ElevenLabs(
-    apiKey: apiKey,
-  ).speechModel(modelId);
+  final model = community
+      .elevenLabs(
+        apiKey: apiKey,
+      )
+      .speechModel(modelId);
 
   final result = await core.generateSpeech(
     model: model,

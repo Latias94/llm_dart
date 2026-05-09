@@ -6,6 +6,19 @@ import 'ollama_language_model.dart';
 import 'ollama_model_catalog.dart';
 import 'ollama_options.dart';
 
+/// Creates an Ollama provider facade for local chat, embeddings, and catalog APIs.
+Ollama ollama({
+  String? apiKey,
+  TransportClient? transport,
+  String? baseUrl,
+}) {
+  return Ollama(
+    apiKey: apiKey,
+    transport: transport,
+    baseUrl: baseUrl,
+  );
+}
+
 /// Package-owned Ollama namespace for modern community provider surfaces.
 final class Ollama {
   static const String defaultBaseUrl = ollamaDefaultBaseUrl;

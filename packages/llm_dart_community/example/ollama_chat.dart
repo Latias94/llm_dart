@@ -10,9 +10,11 @@ Future<void> main() async {
       community.Ollama.defaultBaseUrl;
   final modelId = Platform.environment['OLLAMA_MODEL'] ?? 'llama3.2';
 
-  final model = community.Ollama(
-    baseUrl: baseUrl,
-  ).chatModel(modelId);
+  final model = community
+      .ollama(
+        baseUrl: baseUrl,
+      )
+      .chatModel(modelId);
 
   final result = await core.generateTextCall(
     model: model,
