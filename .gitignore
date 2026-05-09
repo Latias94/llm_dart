@@ -38,7 +38,3 @@ CLAUDE.md
 repo-ref/
 
 # Monorepo workspace directories and tooling
-docs/
-tool/
-melos.yaml
-codecov.yml

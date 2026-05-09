@@ -1,0 +1,11 @@
+# Repository-only files that should not ship with the root package.
+repo-ref/
+docs/
+tool/
+build/
+coverage/
+*.log
+melos.yaml
+codecov.yml
+pubspec_overrides.yaml
+**/pubspec_overrides.yaml
