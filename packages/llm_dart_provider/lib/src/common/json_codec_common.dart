@@ -24,6 +24,13 @@ Object? ensureJsonValue(
   };
 }
 
+Object? normalizeJsonValue(
+  Object? value, {
+  String path = r'$',
+}) {
+  return ensureJsonValue(value, path: path);
+}
+
 JsonMap asJsonMap(
   Object? value, {
   required String path,

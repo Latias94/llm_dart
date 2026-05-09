@@ -743,39 +743,7 @@ final class AnthropicStreamCodec {
   }
 
   Object? _normalizeJsonValue(Object? value) {
-    if (value == null || value is String || value is num || value is bool) {
-      return value;
-    }
-
-    if (value is Map<String, Object?>) {
-      return value.map(
-        (key, nestedValue) => MapEntry(key, _normalizeJsonValue(nestedValue)),
-      );
-    }
-
-    if (value is Map) {
-      final normalized = <String, Object?>{};
-      for (final entry in value.entries) {
-        if (entry.key is! String) {
-          throw UnsupportedError(
-            'Expected a string key in Anthropic JSON payload.',
-          );
-        }
-
-        normalized[entry.key as String] = _normalizeJsonValue(entry.value);
-      }
-      return normalized;
-    }
-
-    if (value is List) {
-      return [
-        for (final item in value) _normalizeJsonValue(item),
-      ];
-    }
-
-    throw UnsupportedError(
-      'Expected a JSON-safe Anthropic payload but received ${value.runtimeType}.',
-    );
+    return normalizeJsonValue(value);
   }
 
   Map<String, Object?>? _asMap(Object? value) {

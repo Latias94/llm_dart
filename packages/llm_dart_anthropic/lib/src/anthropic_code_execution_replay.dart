@@ -668,38 +668,7 @@ Object? _normalizeJsonValue(
   Object? value, {
   required String path,
 }) {
-  if (value == null || value is String || value is num || value is bool) {
-    return value;
-  }
-
-  if (value is Map) {
-    final normalized = <String, Object?>{};
-    for (final entry in value.entries) {
-      if (entry.key is! String) {
-        throw FormatException('Expected a string key at $path.');
-      }
-
-      normalized[entry.key as String] = _normalizeJsonValue(
-        entry.value,
-        path: '$path.${entry.key}',
-      );
-    }
-    return normalized;
-  }
-
-  if (value is List) {
-    return [
-      for (var index = 0; index < value.length; index++)
-        _normalizeJsonValue(
-          value[index],
-          path: '$path[$index]',
-        ),
-    ];
-  }
-
-  throw FormatException(
-    'Expected a JSON-safe value at $path, got ${value.runtimeType}.',
-  );
+  return normalizeJsonValue(value, path: path);
 }
 
 Map<String, Object?> _requiredObject(

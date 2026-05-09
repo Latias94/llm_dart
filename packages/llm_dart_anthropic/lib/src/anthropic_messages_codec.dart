@@ -1145,39 +1145,7 @@ final class AnthropicMessagesCodec {
     Object? value, {
     required String path,
   }) {
-    if (value == null || value is String || value is num || value is bool) {
-      return value;
-    }
-
-    if (value is Map) {
-      final normalized = <String, Object?>{};
-      for (final entry in value.entries) {
-        final key = entry.key;
-        if (key is! String) {
-          throw UnsupportedError('Expected a string key at $path.');
-        }
-
-        normalized[key] = _normalizeJsonValue(
-          entry.value,
-          path: '$path.$key',
-        );
-      }
-      return normalized;
-    }
-
-    if (value is List) {
-      return [
-        for (var index = 0; index < value.length; index++)
-          _normalizeJsonValue(
-            value[index],
-            path: '$path[$index]',
-          ),
-      ];
-    }
-
-    throw UnsupportedError(
-      'Expected a JSON-safe value at $path, but received ${value.runtimeType}.',
-    );
+    return normalizeJsonValue(value, path: path);
   }
 
   Object? _encodeToolOutput(
