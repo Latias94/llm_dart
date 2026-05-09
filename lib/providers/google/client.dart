@@ -1,2 +1,1 @@
-export '../../src/compatibility/providers/google/client.dart'
-    show GoogleClient;
+export '../../src/compatibility/providers/google/client.dart' show GoogleClient;

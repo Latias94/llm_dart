@@ -2,7 +2,7 @@ part of 'elevenlabs_audio_bridge_support.dart';
 
 final class _ElevenLabsTranscriptionBridgeSupport {
   final ElevenLabsConfig config;
-  final modern_community.ElevenLabs modernProvider;
+  final modern_elevenlabs.ElevenLabs modernProvider;
 
   const _ElevenLabsTranscriptionBridgeSupport({
     required this.config,
@@ -48,7 +48,7 @@ final class _ElevenLabsTranscriptionBridgeSupport {
         callOptions: core.CallOptions(
           timeout: config.timeout,
           cancellation: cancelToken,
-          providerOptions: modern_community.ElevenLabsTranscriptionOptions(
+          providerOptions: modern_elevenlabs.ElevenLabsTranscriptionOptions(
             languageCode: options?.languageCode ?? request.language,
             tagAudioEvents: options?.tagAudioEvents,
             numSpeakers: options?.numSpeakers,
@@ -81,33 +81,33 @@ final class _ElevenLabsTranscriptionBridgeSupport {
 
 String _resolveTranscriptionMediaType(
   STTRequest request,
-  modern_community.ElevenLabsTranscriptionOptions? options,
+  modern_elevenlabs.ElevenLabsTranscriptionOptions? options,
 ) {
   return switch (options?.fileFormat) {
-    modern_community.ElevenLabsTranscriptionFileFormat.pcmS16le16 =>
+    modern_elevenlabs.ElevenLabsTranscriptionFileFormat.pcmS16le16 =>
       'audio/pcm',
-    modern_community.ElevenLabsTranscriptionFileFormat.other ||
+    modern_elevenlabs.ElevenLabsTranscriptionFileFormat.other ||
     null =>
       _legacyAudioMediaType(request.format),
   };
 }
 
-modern_community.ElevenLabsTranscriptionTimestampGranularity?
+modern_elevenlabs.ElevenLabsTranscriptionTimestampGranularity?
     _toModernTimestampGranularity(
   TimestampGranularity granularity,
 ) {
   return switch (granularity) {
     TimestampGranularity.none =>
-      modern_community.ElevenLabsTranscriptionTimestampGranularity.none,
+      modern_elevenlabs.ElevenLabsTranscriptionTimestampGranularity.none,
     TimestampGranularity.word =>
-      modern_community.ElevenLabsTranscriptionTimestampGranularity.word,
+      modern_elevenlabs.ElevenLabsTranscriptionTimestampGranularity.word,
     TimestampGranularity.character =>
-      modern_community.ElevenLabsTranscriptionTimestampGranularity.character,
+      modern_elevenlabs.ElevenLabsTranscriptionTimestampGranularity.character,
     TimestampGranularity.segment => null,
   };
 }
 
-modern_community.ElevenLabsTranscriptionFileFormat?
+modern_elevenlabs.ElevenLabsTranscriptionFileFormat?
     _toModernTranscriptionFileFormat(String? format) {
   final normalized = format?.trim().toLowerCase();
   if (normalized == null || normalized.isEmpty) {
@@ -116,8 +116,8 @@ modern_community.ElevenLabsTranscriptionFileFormat?
 
   return switch (normalized) {
     'pcm_s16le_16' =>
-      modern_community.ElevenLabsTranscriptionFileFormat.pcmS16le16,
-    _ => modern_community.ElevenLabsTranscriptionFileFormat.other,
+      modern_elevenlabs.ElevenLabsTranscriptionFileFormat.pcmS16le16,
+    _ => modern_elevenlabs.ElevenLabsTranscriptionFileFormat.other,
   };
 }
 

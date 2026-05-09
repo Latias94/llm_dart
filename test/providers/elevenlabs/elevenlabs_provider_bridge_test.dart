@@ -1,7 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:llm_dart_community/llm_dart_community.dart' as modern_community;
+import 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart'
+    as modern_elevenlabs;
 import 'package:llm_dart_transport/dio.dart';
 import 'package:llm_dart/models/audio_models.dart';
 import 'package:llm_dart/providers/elevenlabs/elevenlabs.dart';
@@ -46,7 +47,7 @@ void main() {
         const TTSRequest(
           text: 'Hello bridge.',
           voice: 'voice_override',
-          providerOptions: modern_community.ElevenLabsSpeechOptions(
+          providerOptions: modern_elevenlabs.ElevenLabsSpeechOptions(
             outputFormat: 'pcm_16000',
             languageCode: 'en',
             speed: 1.1,
@@ -59,7 +60,8 @@ void main() {
               'req_prev_3',
             ],
             nextRequestIds: ['req_next_1'],
-            textNormalization: modern_community.ElevenLabsTextNormalization.off,
+            textNormalization:
+                modern_elevenlabs.ElevenLabsTextNormalization.off,
             enableLogging: false,
             optimizeStreamingLatency: 2,
             stability: 0.8,
@@ -155,11 +157,11 @@ void main() {
         const STTRequest(
           audioData: [1, 2, 3],
           model: 'scribe_v1',
-          providerOptions: modern_community.ElevenLabsTranscriptionOptions(
+          providerOptions: modern_elevenlabs.ElevenLabsTranscriptionOptions(
             languageCode: 'en',
             fileFormat:
-                modern_community.ElevenLabsTranscriptionFileFormat.pcmS16le16,
-            timestampGranularity: modern_community
+                modern_elevenlabs.ElevenLabsTranscriptionFileFormat.pcmS16le16,
+            timestampGranularity: modern_elevenlabs
                 .ElevenLabsTranscriptionTimestampGranularity.character,
             diarize: true,
             numSpeakers: 2,

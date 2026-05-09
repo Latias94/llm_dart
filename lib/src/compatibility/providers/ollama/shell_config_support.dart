@@ -31,10 +31,10 @@ LLMConfig _toCompatConfig(OllamaConfig config) {
   );
 }
 
-modern_community.OllamaGenerateTextOptions _buildCompatProviderOptions(
+modern_ollama.OllamaGenerateTextOptions _buildCompatProviderOptions(
   OllamaConfig config,
 ) {
-  return modern_community.OllamaGenerateTextOptions(
+  return modern_ollama.OllamaGenerateTextOptions(
     numCtx: config.numCtx,
     numGpu: config.numGpu,
     numThread: config.numThread,

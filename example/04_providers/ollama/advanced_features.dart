@@ -3,16 +3,16 @@
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart_community/llm_dart_community.dart' as community;
+import 'package:llm_dart_ollama/llm_dart_ollama.dart' as ollama_pkg;
 
-/// Modern Ollama local-runtime tuning on the shared community surface.
+/// Modern Ollama local-runtime tuning on the shared Ollama package surface.
 ///
 /// These examples stay honest about provider-specific controls by keeping local
-/// runtime knobs in `community.OllamaGenerateTextOptions`, while chat,
+/// runtime knobs in `ollama_pkg.OllamaGenerateTextOptions`, while chat,
 /// streaming, tools, and structured output stay on shared contracts.
 Future<void> main() async {
-  final baseUrl =
-      Platform.environment['OLLAMA_BASE_URL'] ?? community.Ollama.defaultBaseUrl;
+  final baseUrl = Platform.environment['OLLAMA_BASE_URL'] ??
+      ollama_pkg.Ollama.defaultBaseUrl;
 
   print('Ollama Advanced Features - Performance And Optimization\n');
 
@@ -33,13 +33,14 @@ Future<void> demonstratePerformanceOptimization(String baseUrl) async {
     final highPerfResult = await _generateTextPrompt(
       model: _model(baseUrl, 'llama3.2'),
       prompt: [
-        core.UserPromptMessage.text('Explain quantum computing in 3 sentences.'),
+        core.UserPromptMessage.text(
+            'Explain quantum computing in 3 sentences.'),
       ],
       options: const core.GenerateTextOptions(
         temperature: 0.7,
         maxOutputTokens: 160,
       ),
-      providerOptions: const community.OllamaGenerateTextOptions(
+      providerOptions: const ollama_pkg.OllamaGenerateTextOptions(
         numCtx: 4096,
         numGpu: 1,
         numThread: 8,
@@ -60,7 +61,7 @@ Future<void> demonstratePerformanceOptimization(String baseUrl) async {
         temperature: 0.7,
         maxOutputTokens: 120,
       ),
-      providerOptions: const community.OllamaGenerateTextOptions(
+      providerOptions: const ollama_pkg.OllamaGenerateTextOptions(
         numCtx: 2048,
         numGpu: 0,
         numThread: 4,
@@ -81,7 +82,7 @@ Future<void> demonstrateContextManagement(String baseUrl) async {
 
   try {
     final model = _model(baseUrl, 'llama3.2');
-    final longContextOptions = const community.OllamaGenerateTextOptions(
+    final longContextOptions = const ollama_pkg.OllamaGenerateTextOptions(
       numCtx: 8192,
       keepAlive: '10m',
     );
@@ -170,7 +171,7 @@ Future<void> demonstrateStructuredOutput(String baseUrl) async {
         decode: ProductReview.fromJson,
       ),
       callOptions: const core.CallOptions(
-        providerOptions: community.OllamaGenerateTextOptions(
+        providerOptions: ollama_pkg.OllamaGenerateTextOptions(
           numCtx: 4096,
           keepAlive: '5m',
         ),
@@ -197,7 +198,7 @@ Future<void> demonstrateModelMemoryManagement(String baseUrl) async {
       prompt: [
         core.UserPromptMessage.text('Say hello in one sentence.'),
       ],
-      providerOptions: const community.OllamaGenerateTextOptions(
+      providerOptions: const ollama_pkg.OllamaGenerateTextOptions(
         keepAlive: '30s',
       ),
     );
@@ -208,7 +209,7 @@ Future<void> demonstrateModelMemoryManagement(String baseUrl) async {
       prompt: [
         core.UserPromptMessage.text('Say hello in one sentence.'),
       ],
-      providerOptions: const community.OllamaGenerateTextOptions(
+      providerOptions: const ollama_pkg.OllamaGenerateTextOptions(
         keepAlive: '30m',
       ),
     );
@@ -257,14 +258,15 @@ Future<void> demonstrateToolCalling(String baseUrl) async {
       ),
       tools: [weatherTool],
       callOptions: const core.CallOptions(
-        providerOptions: community.OllamaGenerateTextOptions(
+        providerOptions: ollama_pkg.OllamaGenerateTextOptions(
           numCtx: 4096,
           keepAlive: '5m',
         ),
       ),
     );
 
-    final toolCalls = result.content.whereType<core.ToolCallContentPart>().toList();
+    final toolCalls =
+        result.content.whereType<core.ToolCallContentPart>().toList();
     if (toolCalls.isNotEmpty) {
       print('Tool calls:');
       for (final toolCallPart in toolCalls) {
@@ -290,7 +292,7 @@ Future<void> demonstrateToolCalling(String baseUrl) async {
 }
 
 core.LanguageModel _model(String baseUrl, String modelId) {
-  return community.Ollama(
+  return ollama_pkg.Ollama(
     baseUrl: baseUrl,
   ).chatModel(modelId);
 }
@@ -298,8 +300,8 @@ core.LanguageModel _model(String baseUrl, String modelId) {
 Future<core.GenerateTextCallResult<void>> _generateTextPrompt({
   required core.LanguageModel model,
   required List<core.PromptMessage> prompt,
-  community.OllamaGenerateTextOptions providerOptions =
-      const community.OllamaGenerateTextOptions(),
+  ollama_pkg.OllamaGenerateTextOptions providerOptions =
+      const ollama_pkg.OllamaGenerateTextOptions(),
   core.GenerateTextOptions options = const core.GenerateTextOptions(),
 }) {
   return core.generateTextCall<void>(

@@ -86,7 +86,7 @@ final class _ElevenLabsAudioRequestSupport {
   Map<String, dynamic> _buildVoiceSettings(
     TTSRequest request, {
     required ElevenLabsConfig config,
-    required modern_community.ElevenLabsSpeechOptions? options,
+    required modern_elevenlabs.ElevenLabsSpeechOptions? options,
   }) {
     final settings = <String, dynamic>{...config.voiceSettings};
     _addRatio(settings, 'stability', options?.stability);

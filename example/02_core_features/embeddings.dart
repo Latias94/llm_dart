@@ -5,7 +5,7 @@ import 'dart:math' as math;
 
 import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/llm_dart.dart' as llm;
-import 'package:llm_dart_community/llm_dart_community.dart' as community;
+import 'package:llm_dart_ollama/llm_dart_ollama.dart' as ollama_pkg;
 
 /// Stable shared embeddings example across multiple provider families.
 ///
@@ -66,11 +66,11 @@ List<_EmbeddingDemoEntry> _collectEmbeddingModels() {
   }
 
   final ollamaBaseUrl = Platform.environment['OLLAMA_BASE_URL'] ??
-      community.Ollama.defaultBaseUrl;
+      ollama_pkg.Ollama.defaultBaseUrl;
   entries.add(
     _EmbeddingDemoEntry(
       label: 'Ollama nomic-embed-text',
-      model: community.Ollama(
+      model: ollama_pkg.Ollama(
         baseUrl: ollamaBaseUrl,
       ).embeddingModel(
         Platform.environment['OLLAMA_EMBEDDING_MODEL'] ?? 'nomic-embed-text',

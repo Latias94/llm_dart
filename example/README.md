@@ -114,7 +114,7 @@ Most provider directories now follow one of two roles:
 - compatibility or provider-specific residual examples for broader legacy shells
 
 Ollama and ElevenLabs now also have modern shared-capability surfaces in the
-workspace `llm_dart_community` package. The directories below focus on the
+workspace `llm_dart_ollama` and `llm_dart_elevenlabs` packages. The directories below focus on the
 remaining provider-specific or compatibility-oriented flows rather than the
 shared-capability happy path.
 
@@ -125,7 +125,7 @@ shared-capability happy path.
 | DeepSeek / OpenRouter / custom OpenAI-family | Stable profile flows plus explicit compatible endpoint wiring | [others/](04_providers/others/) |
 | Groq | Fast inference | [groq/](04_providers/groq/) |
 | Google | Gemini/Imagen images, embeddings, speech, and image editing/variation | [google/](04_providers/google/) |
-| Ollama | Modern community-surface local runtime tuning with provider-owned options | [ollama/](04_providers/ollama/) |
+| Ollama | Modern local runtime tuning with provider-owned options | [ollama/](04_providers/ollama/) |
 | ElevenLabs | Stable shared speech/transcription plus provider-owned voice and realtime appendices | [elevenlabs/](04_providers/elevenlabs/) |
 | xAI | Live search, Grok | [xai/](04_providers/xai/) |
 
@@ -146,10 +146,11 @@ shared-capability happy path.
 - [batch_processor.dart](05_use_cases/batch_processor.dart) - Large-scale data processing
 - [multimodal_app.dart](05_use_cases/multimodal_app.dart) - Text, image, and audio processing
 
-Capability-profile demos now also include the modern `llm_dart_community`
-surface. Treat current ElevenLabs capability answers as stronger hosted-API
-descriptors, while reading Ollama vision/reasoning affordances as model-family
-inference that still needs real request-path validation.
+Capability-profile demos now also include the modern `llm_dart_ollama` and
+`llm_dart_elevenlabs` surfaces. Treat current ElevenLabs capability answers as
+stronger hosted-API descriptors, while reading Ollama vision/reasoning
+affordances as model-family inference that still needs real request-path
+validation.
 
 ### MCP Integration
 *External tool connections*
@@ -211,6 +212,7 @@ flutter run -t example/flutter_capability_gated_controls.dart
 ## Resources
 
 - [Main Documentation](../README.md)
-- [Community Provider Workspace Guide](../packages/llm_dart_community/README.md)
+- [Ollama Provider Package Guide](../packages/llm_dart_ollama/README.md)
+- [ElevenLabs Provider Package Guide](../packages/llm_dart_elevenlabs/README.md)
 - [API Reference](https://pub.dev/documentation/llm_dart/)
 - [GitHub Issues](https://github.com/Latias94/llm_dart/issues)

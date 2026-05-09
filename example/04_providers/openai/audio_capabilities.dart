@@ -18,8 +18,7 @@ Future<void> main() async {
 
   print('🤖 OpenAI Audio Models Demo\n');
 
-  final speechModel =
-      llm.openai(apiKey: apiKey).speechModel('gpt-4o-mini-tts');
+  final speechModel = llm.openai(apiKey: apiKey).speechModel('gpt-4o-mini-tts');
   final transcriptionModel = llm
       .openai(
         apiKey: apiKey,

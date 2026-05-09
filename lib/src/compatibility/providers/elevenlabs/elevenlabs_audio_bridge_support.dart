@@ -1,4 +1,5 @@
-import 'package:llm_dart_community/llm_dart_community.dart' as modern_community;
+import 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart'
+    as modern_elevenlabs;
 import 'package:llm_dart_provider/llm_dart_provider.dart' as core;
 import 'package:llm_dart_transport/llm_dart_transport.dart'
     show TransportCancellation;
@@ -16,7 +17,7 @@ part 'elevenlabs_transcription_bridge_support.dart';
 /// orchestration.
 final class ElevenLabsAudioBridgeSupport {
   final ElevenLabsConfig config;
-  final modern_community.ElevenLabs modernProvider;
+  final modern_elevenlabs.ElevenLabs modernProvider;
   final _ElevenLabsSpeechBridgeSupport _speechSupport;
   final _ElevenLabsTranscriptionBridgeSupport _transcriptionSupport;
 
@@ -61,13 +62,13 @@ final class ElevenLabsAudioBridgeSupport {
   }
 }
 
-modern_community.ElevenLabsSpeechOptions? _resolveElevenLabsSpeechOptions(
+modern_elevenlabs.ElevenLabsSpeechOptions? _resolveElevenLabsSpeechOptions(
   Object? options,
 ) {
   if (options == null) {
     return null;
   }
-  if (options is modern_community.ElevenLabsSpeechOptions) {
+  if (options is modern_elevenlabs.ElevenLabsSpeechOptions) {
     return options;
   }
   throw ArgumentError.value(
@@ -77,12 +78,12 @@ modern_community.ElevenLabsSpeechOptions? _resolveElevenLabsSpeechOptions(
   );
 }
 
-modern_community.ElevenLabsTranscriptionOptions?
+modern_elevenlabs.ElevenLabsTranscriptionOptions?
     _resolveElevenLabsTranscriptionOptions(Object? options) {
   if (options == null) {
     return null;
   }
-  if (options is modern_community.ElevenLabsTranscriptionOptions) {
+  if (options is modern_elevenlabs.ElevenLabsTranscriptionOptions) {
     return options;
   }
   throw ArgumentError.value(

@@ -1,4 +1,4 @@
-import 'package:llm_dart_community/llm_dart_community.dart' as modern_community;
+import 'package:llm_dart_ollama/llm_dart_ollama.dart' as modern_ollama;
 import 'package:llm_dart_provider/llm_dart_provider.dart' as core;
 import 'package:llm_dart_transport/llm_dart_transport.dart'
     show DioTransportClient;
@@ -60,7 +60,7 @@ final class OllamaCompatShellSupport {
     required OllamaConfig config,
   }) {
     final client = OllamaClient(config);
-    final modernProvider = modern_community.Ollama(
+    final modernProvider = modern_ollama.Ollama(
       apiKey: config.apiKey,
       baseUrl: config.baseUrl,
       transport: DioTransportClient(dio: client.dio),

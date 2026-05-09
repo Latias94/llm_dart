@@ -115,7 +115,8 @@ Future<void> _demonstrateCachingWrapper() async {
       model: model,
       prompt: prompt,
     );
-    print('  Second call: ${second.text} (${second.duration.inMilliseconds}ms)');
+    print(
+        '  Second call: ${second.text} (${second.duration.inMilliseconds}ms)');
 
     final stream = core.streamTextCall(
       model: model,
@@ -410,7 +411,8 @@ final class CachingLanguageModel implements core.LanguageModel {
 
   String _cacheKey(core.GenerateTextRequest request) {
     return [
-      for (final message in request.prompt) '${message.role.name}:${_messageText(message)}',
+      for (final message in request.prompt)
+        '${message.role.name}:${_messageText(message)}',
       'max=${request.options.maxOutputTokens}',
       'temp=${request.options.temperature}',
     ].join('|');

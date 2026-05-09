@@ -32,9 +32,10 @@ void main() {
             'llm_dart_ai',
             'llm_dart_anthropic',
             'llm_dart_chat',
-            'llm_dart_community',
             'llm_dart_core',
+            'llm_dart_elevenlabs',
             'llm_dart_google',
+            'llm_dart_ollama',
             'llm_dart_openai',
             'llm_dart_provider',
             'llm_dart_transport',
@@ -61,7 +62,6 @@ void main() {
           for (final packageName in const [
             'llm_dart_ai',
             'llm_dart_chat',
-            'llm_dart_community',
             'llm_dart_flutter',
             'llm_dart_openai',
             'llm_dart_provider',
@@ -160,12 +160,12 @@ void main() {
       expect(pubspec, contains('llm_dart_transport:'));
     });
 
-    test('builds Community-only consumer pubspec without root package', () {
+    test('builds Ollama-only consumer pubspec without root package', () {
       final paths = ConsumerSmokePaths(
         repoRoot: 'F:/repo/llm_dart',
         packagePaths: {
           for (final packageName in const [
-            'llm_dart_community',
+            'llm_dart_ollama',
             'llm_dart_provider',
             'llm_dart_transport',
           ])
@@ -173,13 +173,39 @@ void main() {
         },
       );
 
-      final pubspec = buildCommunityOnlyConsumerPubspec(paths);
+      final pubspec = buildOllamaOnlyConsumerPubspec(paths);
 
       expect(pubspec, isNot(contains('llm_dart:\n')));
-      expect(pubspec, contains('llm_dart_community:'));
+      expect(pubspec, contains('llm_dart_ollama:'));
       expect(
         pubspec,
-        contains('path: F:/repo/llm_dart/packages/llm_dart_community'),
+        contains('path: F:/repo/llm_dart/packages/llm_dart_ollama'),
+      );
+      expect(pubspec, contains('dependency_overrides:'));
+      expect(pubspec, contains('llm_dart_provider:'));
+      expect(pubspec, contains('llm_dart_transport:'));
+    });
+
+    test('builds ElevenLabs-only consumer pubspec without root package', () {
+      final paths = ConsumerSmokePaths(
+        repoRoot: 'F:/repo/llm_dart',
+        packagePaths: {
+          for (final packageName in const [
+            'llm_dart_elevenlabs',
+            'llm_dart_provider',
+            'llm_dart_transport',
+          ])
+            packageName: 'F:/repo/llm_dart/packages/$packageName',
+        },
+      );
+
+      final pubspec = buildElevenLabsOnlyConsumerPubspec(paths);
+
+      expect(pubspec, isNot(contains('llm_dart:\n')));
+      expect(pubspec, contains('llm_dart_elevenlabs:'));
+      expect(
+        pubspec,
+        contains('path: F:/repo/llm_dart/packages/llm_dart_elevenlabs'),
       );
       expect(pubspec, contains('dependency_overrides:'));
       expect(pubspec, contains('llm_dart_provider:'));
@@ -194,8 +220,9 @@ void main() {
             'llm_dart_ai',
             'llm_dart_anthropic',
             'llm_dart_chat',
-            'llm_dart_community',
+            'llm_dart_elevenlabs',
             'llm_dart_google',
+            'llm_dart_ollama',
             'llm_dart_openai',
             'llm_dart_provider',
             'llm_dart_transport',
@@ -212,7 +239,8 @@ void main() {
       expect(pubspec, contains('llm_dart_anthropic:'));
       expect(pubspec, contains('llm_dart_google:'));
       expect(pubspec, contains('llm_dart_chat:'));
-      expect(pubspec, contains('llm_dart_community:'));
+      expect(pubspec, contains('llm_dart_ollama:'));
+      expect(pubspec, contains('llm_dart_elevenlabs:'));
     });
   });
 

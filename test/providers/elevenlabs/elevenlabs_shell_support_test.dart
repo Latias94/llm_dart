@@ -1,4 +1,5 @@
-import 'package:llm_dart_community/llm_dart_community.dart' as modern_community;
+import 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart'
+    as modern_elevenlabs;
 import 'package:llm_dart/models/audio_models.dart';
 import 'package:llm_dart/providers/elevenlabs/config.dart';
 import 'package:llm_dart/src/compatibility/providers/elevenlabs/shell_support.dart';
@@ -19,7 +20,7 @@ void main() {
         shell.canUseSpeechBridge(
           const TTSRequest(
             text: 'hello',
-            providerOptions: modern_community.ElevenLabsSpeechOptions(
+            providerOptions: modern_elevenlabs.ElevenLabsSpeechOptions(
               stability: 1.2,
             ),
           ),
@@ -30,7 +31,7 @@ void main() {
         shell.canUseSpeechBridge(
           const TTSRequest(
             text: 'hello',
-            providerOptions: modern_community.ElevenLabsSpeechOptions(
+            providerOptions: modern_elevenlabs.ElevenLabsSpeechOptions(
               similarityBoost: -0.1,
             ),
           ),
@@ -41,7 +42,7 @@ void main() {
         shell.canUseSpeechBridge(
           const TTSRequest(
             text: 'hello',
-            providerOptions: modern_community.ElevenLabsSpeechOptions(
+            providerOptions: modern_elevenlabs.ElevenLabsSpeechOptions(
               seed: -1,
             ),
           ),
@@ -70,7 +71,7 @@ void main() {
         shell.canUseTranscriptionBridge(
           const STTRequest(
             audioData: [1, 2, 3],
-            providerOptions: modern_community.ElevenLabsTranscriptionOptions(
+            providerOptions: modern_elevenlabs.ElevenLabsTranscriptionOptions(
               numSpeakers: 33,
             ),
           ),
@@ -82,7 +83,7 @@ void main() {
           const STTRequest(
             audioData: [1, 2, 3],
             timestampGranularity: TimestampGranularity.word,
-            providerOptions: modern_community.ElevenLabsTranscriptionOptions(
+            providerOptions: modern_elevenlabs.ElevenLabsTranscriptionOptions(
               numSpeakers: 2,
             ),
           ),

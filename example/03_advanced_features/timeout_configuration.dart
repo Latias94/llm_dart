@@ -118,7 +118,8 @@ Future<void> example4EnterpriseScenario(String apiKey) async {
   if (proxyUrl case final value?) {
     print('Proxy configured through HTTP_PROXY_URL=$value');
   } else {
-    print('No proxy configured; enterprise example still uses conservative timeouts');
+    print(
+        'No proxy configured; enterprise example still uses conservative timeouts');
   }
   print('');
 
@@ -179,7 +180,8 @@ void explainTimeoutPriority() {
   print('=== Timeout Priority Hierarchy ===');
   print('1. CallOptions.timeout');
   print('   Per-request send/receive override on the shared model call.');
-  print('2. DioHttpClientConfig.connectionTimeout / receiveTimeout / sendTimeout');
+  print(
+      '2. DioHttpClientConfig.connectionTimeout / receiveTimeout / sendTimeout');
   print('   Transport-level fine-grained defaults.');
   print('3. DioHttpClientConfig.timeout');
   print('   Transport-level fallback baseline for unspecified channels.');
@@ -189,7 +191,8 @@ void explainTimeoutPriority() {
   print('Best Practices:');
   print('  - keep connection timeout short for faster failure detection');
   print('  - allow longer receive timeouts for complex reasoning tasks');
-  print('  - use CallOptions.timeout when a single request needs a different SLA');
+  print(
+      '  - use CallOptions.timeout when a single request needs a different SLA');
   print('  - keep provider selection and timeout policy on separate layers');
 }
 
@@ -202,10 +205,12 @@ core.LanguageModel _openAIModel(
     logger: transport.Logger('timeout_configuration'),
   );
 
-  return llm.openai(
-    apiKey: apiKey,
-    transport: transport.DioTransportClient(dio: dioClient),
-  ).chatModel(_modelId);
+  return llm
+      .openai(
+        apiKey: apiKey,
+        transport: transport.DioTransportClient(dio: dioClient),
+      )
+      .chatModel(_modelId);
 }
 
 Future<core.GenerateTextCallResult<void>> _runPrompt({

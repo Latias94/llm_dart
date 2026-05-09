@@ -3,7 +3,7 @@
 import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/openrouter.dart' as openrouter;
-import 'package:llm_dart_community/llm_dart_community.dart' as community;
+import 'package:llm_dart_ollama/llm_dart_ollama.dart' as ollama_pkg;
 
 void main() {
   print('Capability Profiles for App and Flutter UI Gating\n');
@@ -53,7 +53,7 @@ void main() {
       label: 'Ollama / llama3.2-vision',
       recommendedUse:
           'Local multimodal chat where image input is inferred from the model family.',
-      model: community.Ollama().chatModel('llama3.2-vision'),
+      model: ollama_pkg.Ollama().chatModel('llama3.2-vision'),
     ),
   ];
 

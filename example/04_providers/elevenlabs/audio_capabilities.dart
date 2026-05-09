@@ -5,13 +5,13 @@ import 'package:llm_dart/core/capability.dart' as compat_core;
 import 'package:llm_dart/models/audio_models.dart';
 import 'package:llm_dart/providers/elevenlabs/elevenlabs.dart'
     as elevenlabs_compat;
-import 'package:llm_dart_community/llm_dart_community.dart' as community;
+import 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart' as elevenlabs_pkg;
 
 /// ElevenLabs shared speech/transcription models plus provider-owned appendix.
 ///
 /// This example keeps the boundary explicit:
-/// - stable app-facing TTS and STT use `llm_dart_community`
-/// - provider-owned voice catalogs use a focused community helper
+/// - stable app-facing TTS and STT use `llm_dart_elevenlabs`
+/// - provider-owned voice catalogs use a focused provider helper
 /// - streaming helpers and realtime flags stay on the compatibility provider surface
 
 const _elevenLabsVoiceId = 'JBFqnCBsd6RMkjVDRZzb';
@@ -27,11 +27,11 @@ Future<void> main() async {
 
   print('🎙️ ElevenLabs Audio Boundary Demo\n');
 
-  final speechModel = community.ElevenLabs(
+  final speechModel = elevenlabs_pkg.ElevenLabs(
     apiKey: apiKey,
   ).speechModel(
     _elevenLabsSpeechModelId,
-    settings: const community.ElevenLabsSpeechModelSettings(
+    settings: const elevenlabs_pkg.ElevenLabsSpeechModelSettings(
       defaultVoiceId: _elevenLabsVoiceId,
       stability: 0.5,
       similarityBoost: 0.75,
@@ -39,11 +39,11 @@ Future<void> main() async {
     ),
   );
 
-  final transcriptionModel = community.ElevenLabs(
+  final transcriptionModel = elevenlabs_pkg.ElevenLabs(
     apiKey: apiKey,
   ).transcriptionModel(_elevenLabsTranscriptionModelId);
 
-  final voiceCatalog = community.ElevenLabs(
+  final voiceCatalog = elevenlabs_pkg.ElevenLabs(
     apiKey: apiKey,
   ).voices();
 
@@ -94,7 +94,7 @@ void displaySupportedFeatures({
     '   ✅ Stable transcription model: '
     '${transcriptionModel.providerId}/${transcriptionModel.modelId}',
   );
-  print('   ✅ Provider-owned voice catalog: llm_dart_community');
+  print('   ✅ Provider-owned voice catalog: llm_dart_elevenlabs');
   print('   ⚠️  Streamed TTS helpers and realtime flags remain');
   print('      provider owned on the compatibility surface');
 
@@ -121,9 +121,9 @@ Future<File> testTextToSpeech(core.SpeechModel speechModel) async {
       model: speechModel,
       text: 'Welcome to ElevenLabs, the most advanced text-to-speech platform.',
       callOptions: const core.CallOptions(
-        providerOptions: community.ElevenLabsSpeechOptions(
+        providerOptions: elevenlabs_pkg.ElevenLabsSpeechOptions(
           outputFormat: 'mp3',
-          textNormalization: community.ElevenLabsTextNormalization.auto,
+          textNormalization: elevenlabs_pkg.ElevenLabsTextNormalization.auto,
           enableLogging: true,
         ),
       ),
@@ -164,12 +164,12 @@ Future<void> testSpeechToText({
       audioBytes: await audioFile.readAsBytes(),
       mediaType: 'audio/mpeg',
       callOptions: const core.CallOptions(
-        providerOptions: community.ElevenLabsTranscriptionOptions(
+        providerOptions: elevenlabs_pkg.ElevenLabsTranscriptionOptions(
           diarize: true,
           numSpeakers: 1,
           tagAudioEvents: true,
           timestampGranularity:
-              community.ElevenLabsTranscriptionTimestampGranularity.word,
+              elevenlabs_pkg.ElevenLabsTranscriptionTimestampGranularity.word,
           enableLogging: true,
         ),
       ),
@@ -198,7 +198,7 @@ Future<void> testSpeechToText({
 }
 
 Future<void> testVoiceCatalog({
-  required community.ElevenLabsVoiceCatalogClient voices,
+  required elevenlabs_pkg.ElevenLabsVoiceCatalogClient voices,
   required compat_core.AudioCapability provider,
 }) async {
   print('📚 Provider-Owned Voice Catalog');
@@ -244,7 +244,7 @@ Future<void> testCompatibilityStreaming(
         text: 'This is a streaming test for ElevenLabs advanced capabilities.',
         voice: _elevenLabsVoiceId,
         model: _elevenLabsSpeechModelId,
-        providerOptions: community.ElevenLabsSpeechOptions(
+        providerOptions: elevenlabs_pkg.ElevenLabsSpeechOptions(
           optimizeStreamingLatency: 2,
         ),
       ),

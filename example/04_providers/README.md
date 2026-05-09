@@ -19,8 +19,8 @@ Pick the entrypoint by the surface you need:
 
 - root package short factories for stable first-party providers: OpenAI,
   OpenRouter, DeepSeek, Groq, xAI, Anthropic, and Google
-- `llm_dart_community` short factories for Ollama shared chat/embeddings and
-  ElevenLabs shared speech/transcription/voice catalog
+- `llm_dart_ollama` short factory for Ollama shared chat/embeddings/catalog
+- `llm_dart_elevenlabs` short factory for ElevenLabs shared speech/transcription/voice catalog
 - provider package options for provider-owned controls such as OpenAI built-in
   tools, Anthropic extended thinking, Google image settings, and xAI live search
 - compatibility appendices only when a provider-owned lifecycle or residual
@@ -51,15 +51,14 @@ TTS example is now stable-first for one-shot speech and keeps only streaming
 and discovery as provider-owned appendix material.
 
 ### [ollama/](ollama/)
-Modern community-surface local runtime examples with provider-owned Ollama
-options and the provider-owned local model catalog helper. Residual
-compatibility flows now mainly cover `/api/generate` and broader legacy shell
-behavior.
+Modern local runtime examples with provider-owned Ollama options and the
+provider-owned local model catalog helper. Residual compatibility flows now
+mainly cover `/api/generate` and broader legacy shell behavior.
 
 ### [elevenlabs/](elevenlabs/)
 Stable shared-capability speech/transcription examples plus the provider-owned
 voice catalog helper. Modern shared ElevenLabs surfaces live in
-`packages/llm_dart_community`, while this directory still covers streaming
+`packages/llm_dart_elevenlabs`, while this directory still covers streaming
 helpers and realtime boundary residue.
 
 ### [xai/](xai/)
@@ -240,4 +239,5 @@ print(result.text);
 - [Advanced Features](../03_advanced_features/) - Shared higher-level workflows
 - [Use Cases](../05_use_cases/) - Complete apps and Flutter integration
 - [Getting Started](../01_getting_started/) - Stable setup and configuration
-- [Community Provider Workspace Guide](../../packages/llm_dart_community/README.md) - Modern Ollama and ElevenLabs package-owned surfaces
+- [Ollama Provider Package Guide](../../packages/llm_dart_ollama/README.md) - Direct Ollama package-owned surfaces
+- [ElevenLabs Provider Package Guide](../../packages/llm_dart_elevenlabs/README.md) - Direct ElevenLabs package-owned surfaces

@@ -5,14 +5,14 @@ import 'dart:math' as math;
 import 'package:llm_dart/core/capability.dart' as compat;
 import 'package:llm_dart/providers/elevenlabs/elevenlabs.dart'
     as elevenlabs_compat;
-import 'package:llm_dart_community/llm_dart_community.dart' as community;
+import 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart' as elevenlabs_pkg;
 
 /// Provider-owned realtime audio appendix.
 ///
 /// This example intentionally does not pretend realtime audio already has a
 /// shared modern facade. The current boundary is:
 ///
-/// - shared speech/transcription models live in `llm_dart_community`
+/// - shared speech/transcription models live in `llm_dart_elevenlabs`
 /// - realtime sessions remain provider-owned compatibility surface
 ///
 /// The example therefore demonstrates:
@@ -25,7 +25,8 @@ Future<void> main() async {
 
   final apiKey = Platform.environment['ELEVENLABS_API_KEY'];
   if (apiKey == null || apiKey.isEmpty) {
-    print('Set ELEVENLABS_API_KEY to inspect the provider-owned realtime surface.');
+    print(
+        'Set ELEVENLABS_API_KEY to inspect the provider-owned realtime surface.');
     return;
   }
 
@@ -68,10 +69,10 @@ Future<void> main() async {
 Future<void> _demonstrateSharedAudioBoundary(String apiKey) async {
   print('Shared audio boundary:');
 
-  final speechModel = community.ElevenLabs(
+  final speechModel = elevenlabs_pkg.ElevenLabs(
     apiKey: apiKey,
   ).speechModel('eleven_multilingual_v2');
-  final transcriptionModel = community.ElevenLabs(
+  final transcriptionModel = elevenlabs_pkg.ElevenLabs(
     apiKey: apiKey,
   ).transcriptionModel('scribe_v1');
 
@@ -115,7 +116,8 @@ Future<void> _demonstrateProviderSessionBoundary({
 }) async {
   print('Provider boundary: realtime session startup');
 
-  if (!provider.supportedFeatures.contains(compat.AudioFeature.realtimeProcessing)) {
+  if (!provider.supportedFeatures
+      .contains(compat.AudioFeature.realtimeProcessing)) {
     print('  Provider does not advertise realtime processing on this surface.');
     print('');
     return;

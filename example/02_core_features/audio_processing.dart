@@ -5,7 +5,7 @@ import 'dart:io';
 import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/openai.dart' as openai;
-import 'package:llm_dart_community/llm_dart_community.dart' as community;
+import 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart' as elevenlabs_pkg;
 
 /// Stable audio processing example built on shared speech/transcription helpers.
 ///
@@ -82,11 +82,11 @@ List<_SpeechDemoEntry> _collectSpeechModels() {
     entries.add(
       _SpeechDemoEntry(
         label: 'ElevenLabs eleven_multilingual_v2',
-        model: community.ElevenLabs(
+        model: elevenlabs_pkg.ElevenLabs(
           apiKey: elevenLabsKey,
         ).speechModel('eleven_multilingual_v2'),
         callOptions: const core.CallOptions(
-          providerOptions: community.ElevenLabsSpeechOptions(
+          providerOptions: elevenlabs_pkg.ElevenLabsSpeechOptions(
             outputFormat: 'mp3',
           ),
         ),
@@ -128,13 +128,13 @@ List<_TranscriptionDemoEntry> _collectTranscriptionModels() {
     entries.add(
       _TranscriptionDemoEntry(
         label: 'ElevenLabs scribe_v1',
-        model: community.ElevenLabs(
+        model: elevenlabs_pkg.ElevenLabs(
           apiKey: elevenLabsKey,
         ).transcriptionModel('scribe_v1'),
         callOptions: const core.CallOptions(
-          providerOptions: community.ElevenLabsTranscriptionOptions(
+          providerOptions: elevenlabs_pkg.ElevenLabsTranscriptionOptions(
             timestampGranularity:
-                community.ElevenLabsTranscriptionTimestampGranularity.word,
+                elevenlabs_pkg.ElevenLabsTranscriptionTimestampGranularity.word,
           ),
         ),
       ),

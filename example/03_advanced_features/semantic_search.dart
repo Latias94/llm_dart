@@ -40,9 +40,11 @@ _EmbeddingModelEntry? _resolveEmbeddingModel() {
   if (openAIKey != null && openAIKey.isNotEmpty) {
     return _EmbeddingModelEntry(
       label: 'OpenAI text-embedding-3-small',
-      model: llm.openai(
-        apiKey: openAIKey,
-      ).embeddingModel('text-embedding-3-small'),
+      model: llm
+          .openai(
+            apiKey: openAIKey,
+          )
+          .embeddingModel('text-embedding-3-small'),
     );
   }
 
@@ -50,9 +52,11 @@ _EmbeddingModelEntry? _resolveEmbeddingModel() {
   if (googleKey != null && googleKey.isNotEmpty) {
     return _EmbeddingModelEntry(
       label: 'Google text-embedding-004',
-      model: llm.google(
-        apiKey: googleKey,
-      ).embeddingModel('text-embedding-004'),
+      model: llm
+          .google(
+            apiKey: googleKey,
+          )
+          .embeddingModel('text-embedding-004'),
     );
   }
 
@@ -499,9 +503,8 @@ class SemanticSearchEngine {
         queryEmbedding,
         _documentEmbeddings[index],
       );
-      final keywordScore = includeKeywordScore
-          ? _keywordScore(query, document.fullText)
-          : 0.0;
+      final keywordScore =
+          includeKeywordScore ? _keywordScore(query, document.fullText) : 0.0;
       final score = includeKeywordScore
           ? semanticScore * 0.7 + keywordScore * 0.3
           : semanticScore;

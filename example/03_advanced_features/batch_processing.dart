@@ -47,9 +47,11 @@ _BatchModelEntry? _resolveBatchModel() {
   if (groqKey != null && groqKey.isNotEmpty) {
     return _BatchModelEntry(
       label: 'Groq llama-3.1-8b-instant',
-      model: llm.groq(
-        apiKey: groqKey,
-      ).chatModel('llama-3.1-8b-instant'),
+      model: llm
+          .groq(
+            apiKey: groqKey,
+          )
+          .chatModel('llama-3.1-8b-instant'),
       defaultOptions: const core.GenerateTextOptions(
         temperature: 0.4,
         maxOutputTokens: 160,
@@ -61,9 +63,11 @@ _BatchModelEntry? _resolveBatchModel() {
   if (openAIKey != null && openAIKey.isNotEmpty) {
     return _BatchModelEntry(
       label: 'OpenAI gpt-4o-mini',
-      model: llm.openai(
-        apiKey: openAIKey,
-      ).chatModel('gpt-4o-mini'),
+      model: llm
+          .openai(
+            apiKey: openAIKey,
+          )
+          .chatModel('gpt-4o-mini'),
       defaultOptions: const core.GenerateTextOptions(
         temperature: 0.4,
         maxOutputTokens: 160,
@@ -231,8 +235,8 @@ Future<void> demonstrateProgressTracking(BatchProcessor processor) async {
       tasks,
       config,
       onProgress: (progress) {
-        final percentage =
-            (progress.completedTasks / progress.totalTasks * 100).toStringAsFixed(1);
+        final percentage = (progress.completedTasks / progress.totalTasks * 100)
+            .toStringAsFixed(1);
         print(
           '    Progress: $percentage% '
           '(${progress.completedTasks}/${progress.totalTasks}) '
@@ -347,7 +351,8 @@ Future<void> demonstrateCostOptimization(BatchProcessor processor) async {
       final config = processor.getOptimalConfigForComplexity(complexity);
 
       print('  Processing $complexity tasks with optimized config...');
-      final results = await processor.processBatchWithConfig(groupTasks, config);
+      final results =
+          await processor.processBatchWithConfig(groupTasks, config);
       allResults.addAll(results);
 
       final estimatedCost = processor.estimateCost(groupTasks, complexity);
@@ -479,7 +484,8 @@ class BatchProcessor {
         await Future.delayed(config.rateLimitDelay!);
       }
 
-      if (!config.continueOnError && chunkResults.any((result) => !result.isSuccess)) {
+      if (!config.continueOnError &&
+          chunkResults.any((result) => !result.isSuccess)) {
         break;
       }
     }

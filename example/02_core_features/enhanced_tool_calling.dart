@@ -158,7 +158,8 @@ Keep the plan walkable and below 180 USD.
   print('Structured headline: ${finalTurn.output.headline}');
   print('Structured summary: ${finalTurn.output.summary}');
   print('Stops: ${finalTurn.output.stops.join(' -> ')}');
-  print('Estimated budget: ${finalTurn.output.estimatedBudgetUsd.toStringAsFixed(2)} USD');
+  print(
+      'Estimated budget: ${finalTurn.output.estimatedBudgetUsd.toStringAsFixed(2)} USD');
   print('Provider notes: ${finalTurn.output.providerNotes.join(' | ')}');
   print('');
 }

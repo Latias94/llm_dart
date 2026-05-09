@@ -7,7 +7,7 @@ import 'shell_support.dart';
 /// Compatibility-first root Ollama provider shell.
 ///
 /// New shared-capability mainlines should prefer the package-owned modern
-/// surfaces in `llm_dart_community` where possible. This root provider remains
+/// surfaces in `llm_dart_ollama` where possible. This root provider remains
 /// the migration-era adapter that preserves legacy capability interfaces,
 /// fallback routing, and residual provider-shaped APIs such as completion and
 /// model listing.

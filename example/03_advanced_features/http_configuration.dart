@@ -130,7 +130,8 @@ Future<void> demonstrateSslConfiguration(String apiKey) async {
 
   if (!allowInsecureSsl &&
       (certificatePath == null || certificatePath.isEmpty)) {
-    print('Set ALLOW_INSECURE_SSL=true or CUSTOM_CA_CERT_PATH to run this demo.');
+    print(
+        'Set ALLOW_INSECURE_SSL=true or CUSTOM_CA_CERT_PATH to run this demo.');
     print('No live SSL override was requested.\n');
     return;
   }
@@ -227,7 +228,8 @@ Future<void> demonstrateTimeoutBaseline(String apiKey) async {
     );
 
     print('Configured connection=15s, receive=3m, send=2m.');
-    print('Priority: specific transport timeout > transport timeout > defaults.');
+    print(
+        'Priority: specific transport timeout > transport timeout > defaults.');
     print('Response: ${result.text}\n');
   } catch (error) {
     print('Transport timeout baseline failed: $error\n');
@@ -253,7 +255,8 @@ Future<void> demonstrateLoggingConfiguration(String apiKey) async {
           loggerName: 'http_configuration.logging',
         ),
       ),
-      prompt: 'Generate a short line so transport logging has activity to show.',
+      prompt:
+          'Generate a short line so transport logging has activity to show.',
     );
 
     print('Transport logging was enabled for this request.');
@@ -316,10 +319,12 @@ core.LanguageModel _openAIModel(
   String apiKey, {
   required transport.TransportClient transportClient,
 }) {
-  return llm.openai(
-    apiKey: apiKey,
-    transport: transportClient,
-  ).chatModel(_modelId);
+  return llm
+      .openai(
+        apiKey: apiKey,
+        transport: transportClient,
+      )
+      .chatModel(_modelId);
 }
 
 transport.TransportClient _transportFromConfig(

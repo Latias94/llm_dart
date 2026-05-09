@@ -431,13 +431,12 @@ This is the intended layering:
 - use provider feature descriptors for provider-aware panels and badges
 - keep capability checks descriptive, not as hard runtime guarantees
 
-For `llm_dart_community`, also look at descriptor confidence before turning a
-community-model answer into strong UI copy. ElevenLabs capability descriptors
-are comparatively strong for the current modern surfaces, while Ollama
+For `llm_dart_ollama` and `llm_dart_elevenlabs`, also look at descriptor
+confidence before turning a model answer into strong UI copy. Ollama
 vision/reasoning hints may be `inferred` from the local model family.
 
 ```dart
-import 'package:llm_dart_community/llm_dart_community.dart';
+import 'package:llm_dart_ollama/llm_dart_ollama.dart';
 
 final profile = describeOllamaChatModel('llama3.2-vision');
 final imageInput = profile.sharedFeature(

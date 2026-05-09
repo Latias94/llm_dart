@@ -1,5 +1,7 @@
 import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic_pkg;
+import 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart' as elevenlabs_pkg;
 import 'package:llm_dart_google/llm_dart_google.dart' as google_pkg;
+import 'package:llm_dart_ollama/llm_dart_ollama.dart' as ollama_pkg;
 import 'package:llm_dart_openai/llm_dart_openai.dart' as openai_pkg;
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
@@ -122,6 +124,38 @@ anthropic_pkg.Anthropic anthropic({
   );
 }
 
+/// Creates an Ollama provider facade.
+///
+/// Prefer this short factory in new root-package code. `AI.ollama(...)`
+/// remains as an optional grouped-namespace alias.
+ollama_pkg.Ollama ollama({
+  String? apiKey,
+  TransportClient? transport,
+  String? baseUrl,
+}) {
+  return ollama_pkg.ollama(
+    apiKey: apiKey,
+    transport: transport,
+    baseUrl: baseUrl,
+  );
+}
+
+/// Creates an ElevenLabs provider facade.
+///
+/// Prefer this short factory in new root-package code. `AI.elevenLabs(...)`
+/// remains as an optional grouped-namespace alias.
+elevenlabs_pkg.ElevenLabs elevenLabs({
+  required String apiKey,
+  TransportClient? transport,
+  String? baseUrl,
+}) {
+  return elevenlabs_pkg.elevenLabs(
+    apiKey: apiKey,
+    transport: transport,
+    baseUrl: baseUrl,
+  );
+}
+
 /// Optional grouped namespace for root provider factories.
 ///
 /// New examples and docs should prefer the short root factories such as
@@ -228,6 +262,30 @@ final class AI {
     String? baseUrl,
   }) {
     return anthropic_pkg.anthropic(
+      apiKey: apiKey,
+      transport: transport,
+      baseUrl: baseUrl,
+    );
+  }
+
+  static ollama_pkg.Ollama ollama({
+    String? apiKey,
+    TransportClient? transport,
+    String? baseUrl,
+  }) {
+    return ollama_pkg.ollama(
+      apiKey: apiKey,
+      transport: transport,
+      baseUrl: baseUrl,
+    );
+  }
+
+  static elevenlabs_pkg.ElevenLabs elevenLabs({
+    required String apiKey,
+    TransportClient? transport,
+    String? baseUrl,
+  }) {
+    return elevenlabs_pkg.elevenLabs(
       apiKey: apiKey,
       transport: transport,
       baseUrl: baseUrl,

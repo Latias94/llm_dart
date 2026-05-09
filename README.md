@@ -24,18 +24,23 @@ The primary entry path for new code is the short provider factory:
 - `groq(...).chatModel(...)`
 - `openRouter(...).chatModel(...)`
 - `xai(...).chatModel(...)`
+- `ollama(...).chatModel(...)`
+- `elevenLabs(...).speechModel(...)`
 
 The equivalent grouped facade remains available as
 `AI.<provider>(...).chatModel(...)` when you prefer a single namespace, but new
 examples should teach the short factories first.
 
-Within this workspace, the modern shared-capability path for the current
-community providers now lives in:
+Within this workspace, the modern shared-capability paths for Ollama and
+ElevenLabs now live in dedicated provider packages:
 
-- `package:llm_dart_community/llm_dart_community.dart` for
-  `ollama(...).chatModel(...)`, `ollama(...).embeddingModel(...)`,
-  `elevenLabs(...).speechModel(...)`, and
-  `elevenLabs(...).transcriptionModel(...)`
+- `package:llm_dart_ollama/llm_dart_ollama.dart` for
+  `ollama(...).chatModel(...)`, `ollama(...).embeddingModel(...)`, and
+  `ollama(...).catalog().listModels()`
+- `package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart` for
+  `elevenLabs(...).speechModel(...)`,
+  `elevenLabs(...).transcriptionModel(...)`, and
+  `elevenLabs(...).voices().listVoices()`
 
 The legacy compatibility builder still exists through
 `package:llm_dart/legacy.dart`.
@@ -62,14 +67,14 @@ Recommended entry flow for new code:
   builder-era code
 
 For Ollama and ElevenLabs specifically, the root compatibility shells are now
-migration surfaces. New app code should start from `llm_dart_community`
-instead.
+migration surfaces. New app code should start from `llm_dart_ollama` or
+`llm_dart_elevenlabs` instead.
 
-Community-provider capability profiles are now also available through the
-modern `llm_dart_community` package. For app and Flutter gating, treat the
-current ElevenLabs descriptors and the shared Ollama baseline as descriptive
-library-owned signals, but treat family-shaped Ollama hints such as image input
-or reasoning output as potentially `inferred` rather than as hard guarantees.
+Ollama and ElevenLabs capability profiles are also available through their
+dedicated packages. For app and Flutter gating, treat the current ElevenLabs
+descriptors and the shared Ollama baseline as descriptive library-owned
+signals, but treat family-shaped Ollama hints such as image input or reasoning
+output as potentially `inferred` rather than as hard guarantees.
 
 ## Packages
 
@@ -93,8 +98,10 @@ or reasoning output as potentially `inferred` rather than as hard guarantees.
   - Anthropic provider
 - `llm_dart_google`
   - Google provider
-- `llm_dart_community`
-  - alpha package for Ollama chat/embeddings and ElevenLabs speech/transcription
+- `llm_dart_ollama`
+  - Ollama chat, embeddings, catalog, options, and capability descriptors
+- `llm_dart_elevenlabs`
+  - ElevenLabs speech, transcription, voices, options, and capability descriptors
 - `llm_dart_flutter`
   - thin Flutter adapter above `llm_dart_chat`
 
@@ -186,13 +193,19 @@ resolve unpublished workspace dependencies from this checkout.
 - `package:llm_dart/anthropic.dart`
   - focused Anthropic provider entrypoint for `anthropic(...)` and
     Anthropic-owned types
+- `package:llm_dart/ollama.dart`
+  - focused Ollama provider entrypoint for `ollama(...)`, local-runtime
+    options, embeddings, and installed-model catalog APIs
+- `package:llm_dart/elevenlabs.dart`
+  - focused ElevenLabs provider entrypoint for `elevenLabs(...)`, speech,
+    transcription, voice catalogs, and audio options
 - `package:llm_dart/legacy.dart`
   - explicit compatibility shell for `LLMBuilder()`, `ai()`,
     `createProvider(...)`, legacy models, and builder-era APIs
-- `package:llm_dart_community/llm_dart_community.dart`
-  - alpha-preview modern community-provider entrypoint for Ollama
-    chat/embeddings and ElevenLabs speech/transcription shared-capability
-    models
+- `package:llm_dart_ollama/llm_dart_ollama.dart`
+  - direct Ollama provider package without depending on root `llm_dart`
+- `package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart`
+  - direct ElevenLabs provider package without depending on root `llm_dart`
 - `package:llm_dart/transport.dart`
   - transport abstractions and shared logging primitives re-exported from `llm_dart_transport`
 - `package:llm_dart_transport/dio.dart`
@@ -255,8 +268,8 @@ focused provider helper when the semantics are provider-native:
 | OpenAI moderation | `openai(...).moderation()` | Category taxonomy and score meanings must map into app-owned policy |
 | OpenAI image editing | `openai(...).imageModel(...).edit(...)` | File inputs, masks, fidelity, and output options are OpenAI-specific |
 | Google image editing/variation | `google(...).imageModel(...).edit(...)` / `createVariation(...)` | Gemini edit inputs and variation prompts are Google-specific |
-| Ollama installed models | `community.ollama(...).catalog().listModels()` | Local runtime tags are not a shared remote model registry |
-| ElevenLabs voices | `community.elevenLabs(...).voices().listVoices()` | Voice IDs, preview URLs, labels, and tiers are provider-owned |
+| Ollama installed models | `ollama(...).catalog().listModels()` | Local runtime tags are not a shared remote model registry |
+| ElevenLabs voices | `elevenLabs(...).voices().listVoices()` | Voice IDs, preview URLs, labels, and tiers are provider-owned |
 
 The rule is simple: keep the shared helper for the common model operation, and
 use a provider-owned helper for lifecycle, policy, catalog, or edit workflows
@@ -689,22 +702,24 @@ Future<void> main() async {
   compatibility APIs, not the target architecture.
 - Treat the root Ollama and ElevenLabs surfaces as compatibility-first shells
   when the modern shared-capability path already exists in
-  `llm_dart_community`.
+  `llm_dart_ollama` or `llm_dart_elevenlabs`.
 
 ## Current Reference Docs
 
 - Post-closure roadmap:
   [docs/workstreams/2026-04-post-closure-priorities/README.md](docs/workstreams/2026-04-post-closure-priorities/README.md)
-- Community provider workspace guide:
-  [packages/llm_dart_community/README.md](packages/llm_dart_community/README.md)
+- Ollama provider package guide:
+  [packages/llm_dart_ollama/README.md](packages/llm_dart_ollama/README.md)
+- ElevenLabs provider package guide:
+  [packages/llm_dart_elevenlabs/README.md](packages/llm_dart_elevenlabs/README.md)
 - Migration guide:
   [38-migration-guide.md](docs/workstreams/2026-03-architecture-refactor/38-migration-guide.md)
 - Architecture workstream index:
   [docs/workstreams/2026-03-architecture-refactor/README.md](docs/workstreams/2026-03-architecture-refactor/README.md)
 - Provider UI extension contract:
   [docs/workstreams/2026-04-post-closure-priorities/01-provider-ui-extension-contract.md](docs/workstreams/2026-04-post-closure-priorities/01-provider-ui-extension-contract.md)
-- Community provider public-entry guidance:
-  [104-community-provider-public-entry-guidance.md](docs/workstreams/2026-03-architecture-refactor/104-community-provider-public-entry-guidance.md)
+- Provider package split guidance:
+  [195-provider-package-split-guidance.md](docs/workstreams/2026-03-architecture-refactor/195-provider-package-split-guidance.md)
 - Prompt normalization contract:
   [37-prompt-normalization-contract.md](docs/workstreams/2026-03-architecture-refactor/37-prompt-normalization-contract.md)
 - Stream coverage matrix:

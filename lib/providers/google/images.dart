@@ -1,2 +1,1 @@
-export '../../src/compatibility/providers/google/images.dart'
-    show GoogleImages;
+export '../../src/compatibility/providers/google/images.dart' show GoogleImages;

@@ -214,7 +214,8 @@ Future<void> demonstrateFallbackPattern() async {
     'Fallback answer from a cached or secondary path.',
   );
 
-  final fallbackExecutor = _FallbackExecutor<core.GenerateTextCallResult<dynamic>>();
+  final fallbackExecutor =
+      _FallbackExecutor<core.GenerateTextCallResult<dynamic>>();
 
   final outcome = await fallbackExecutor.execute(
     [
@@ -526,7 +527,8 @@ final class _CircuitBreaker {
       if (elapsed < resetTimeout) {
         throw core.ModelError(
           kind: core.ModelErrorKind.transport,
-          message: 'Circuit breaker is open. Skip the call and use fallback UI.',
+          message:
+              'Circuit breaker is open. Skip the call and use fallback UI.',
           code: 'circuit-open',
           isRetryable: false,
         );

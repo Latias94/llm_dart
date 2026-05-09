@@ -144,8 +144,11 @@ Future<ConsumerSmokeRunResult> runConsumerSmoke({
     final anthropicOnlyConsumer = Directory.fromUri(tempRoot.uri.resolve(
       'anthropic_only_consumer/',
     ));
-    final communityOnlyConsumer = Directory.fromUri(tempRoot.uri.resolve(
-      'community_only_consumer/',
+    final ollamaOnlyConsumer = Directory.fromUri(tempRoot.uri.resolve(
+      'ollama_only_consumer/',
+    ));
+    final elevenLabsOnlyConsumer = Directory.fromUri(tempRoot.uri.resolve(
+      'elevenlabs_only_consumer/',
     ));
     final splitPackageConsumer = Directory.fromUri(tempRoot.uri.resolve(
       'split_package_consumer/',
@@ -170,9 +173,13 @@ Future<ConsumerSmokeRunResult> runConsumerSmoke({
       repoRoot: repoRoot,
       consumerDirectory: anthropicOnlyConsumer,
     );
-    await writeCommunityOnlyConsumer(
+    await writeOllamaOnlyConsumer(
       repoRoot: repoRoot,
-      consumerDirectory: communityOnlyConsumer,
+      consumerDirectory: ollamaOnlyConsumer,
+    );
+    await writeElevenLabsOnlyConsumer(
+      repoRoot: repoRoot,
+      consumerDirectory: elevenLabsOnlyConsumer,
     );
     await writeSplitPackageConsumer(
       repoRoot: repoRoot,
@@ -188,7 +195,8 @@ Future<ConsumerSmokeRunResult> runConsumerSmoke({
       openAIOnlyConsumer: openAIOnlyConsumer,
       googleOnlyConsumer: googleOnlyConsumer,
       anthropicOnlyConsumer: anthropicOnlyConsumer,
-      communityOnlyConsumer: communityOnlyConsumer,
+      ollamaOnlyConsumer: ollamaOnlyConsumer,
+      elevenLabsOnlyConsumer: elevenLabsOnlyConsumer,
       splitPackageConsumer: splitPackageConsumer,
       flutterConsumer: flutterConsumer,
     );
@@ -234,7 +242,8 @@ List<ConsumerSmokeCommand> buildConsumerSmokeCommands({
   required Directory openAIOnlyConsumer,
   required Directory googleOnlyConsumer,
   required Directory anthropicOnlyConsumer,
-  required Directory communityOnlyConsumer,
+  required Directory ollamaOnlyConsumer,
+  required Directory elevenLabsOnlyConsumer,
   required Directory splitPackageConsumer,
   required Directory flutterConsumer,
 }) {
@@ -312,22 +321,40 @@ List<ConsumerSmokeCommand> buildConsumerSmokeCommands({
       workingDirectory: anthropicOnlyConsumer,
     ),
     ConsumerSmokeCommand(
-      name: 'Community-only consumer pub get',
+      name: 'Ollama-only consumer pub get',
       executable: 'dart',
       arguments: const ['pub', 'get'],
-      workingDirectory: communityOnlyConsumer,
+      workingDirectory: ollamaOnlyConsumer,
     ),
     ConsumerSmokeCommand(
-      name: 'Community-only consumer analysis',
+      name: 'Ollama-only consumer analysis',
       executable: 'dart',
       arguments: const ['analyze'],
-      workingDirectory: communityOnlyConsumer,
+      workingDirectory: ollamaOnlyConsumer,
     ),
     ConsumerSmokeCommand(
-      name: 'Community-only consumer no-key run',
+      name: 'Ollama-only consumer no-key run',
       executable: 'dart',
       arguments: const ['run', 'bin/smoke.dart'],
-      workingDirectory: communityOnlyConsumer,
+      workingDirectory: ollamaOnlyConsumer,
+    ),
+    ConsumerSmokeCommand(
+      name: 'ElevenLabs-only consumer pub get',
+      executable: 'dart',
+      arguments: const ['pub', 'get'],
+      workingDirectory: elevenLabsOnlyConsumer,
+    ),
+    ConsumerSmokeCommand(
+      name: 'ElevenLabs-only consumer analysis',
+      executable: 'dart',
+      arguments: const ['analyze'],
+      workingDirectory: elevenLabsOnlyConsumer,
+    ),
+    ConsumerSmokeCommand(
+      name: 'ElevenLabs-only consumer no-key run',
+      executable: 'dart',
+      arguments: const ['run', 'bin/smoke.dart'],
+      workingDirectory: elevenLabsOnlyConsumer,
     ),
     ConsumerSmokeCommand(
       name: 'Split package consumer pub get',
@@ -453,18 +480,33 @@ Future<void> writeAnthropicOnlyConsumer({
   );
 }
 
-Future<void> writeCommunityOnlyConsumer({
+Future<void> writeOllamaOnlyConsumer({
   required Directory repoRoot,
   required Directory consumerDirectory,
 }) async {
   final paths = buildConsumerSmokePaths(repoRoot);
   await writeTextFile(
     File.fromUri(consumerDirectory.uri.resolve('pubspec.yaml')),
-    buildCommunityOnlyConsumerPubspec(paths),
+    buildOllamaOnlyConsumerPubspec(paths),
   );
   await writeTextFile(
     File.fromUri(consumerDirectory.uri.resolve('bin/smoke.dart')),
-    communityOnlyConsumerSmokeProgram,
+    ollamaOnlyConsumerSmokeProgram,
+  );
+}
+
+Future<void> writeElevenLabsOnlyConsumer({
+  required Directory repoRoot,
+  required Directory consumerDirectory,
+}) async {
+  final paths = buildConsumerSmokePaths(repoRoot);
+  await writeTextFile(
+    File.fromUri(consumerDirectory.uri.resolve('pubspec.yaml')),
+    buildElevenLabsOnlyConsumerPubspec(paths),
+  );
+  await writeTextFile(
+    File.fromUri(consumerDirectory.uri.resolve('bin/smoke.dart')),
+    elevenLabsOnlyConsumerSmokeProgram,
   );
 }
 
@@ -506,10 +548,11 @@ ConsumerSmokePaths buildConsumerSmokePaths(Directory repoRoot) {
         'llm_dart_ai',
         'llm_dart_anthropic',
         'llm_dart_chat',
-        'llm_dart_community',
         'llm_dart_core',
+        'llm_dart_elevenlabs',
         'llm_dart_flutter',
         'llm_dart_google',
+        'llm_dart_ollama',
         'llm_dart_openai',
         'llm_dart_provider',
         'llm_dart_transport',
@@ -536,9 +579,10 @@ ${_pathEntries([
         'llm_dart_ai',
         'llm_dart_anthropic',
         'llm_dart_chat',
-        'llm_dart_community',
         'llm_dart_core',
+        'llm_dart_elevenlabs',
         'llm_dart_google',
+        'llm_dart_ollama',
         'llm_dart_openai',
         'llm_dart_provider',
         'llm_dart_transport',
@@ -548,9 +592,10 @@ ${_pathEntries([
         'llm_dart_ai',
         'llm_dart_anthropic',
         'llm_dart_chat',
-        'llm_dart_community',
         'llm_dart_core',
+        'llm_dart_elevenlabs',
         'llm_dart_google',
+        'llm_dart_ollama',
         'llm_dart_openai',
         'llm_dart_provider',
         'llm_dart_transport',
@@ -618,17 +663,37 @@ ${_pathEntries([
 ''';
 }
 
-String buildCommunityOnlyConsumerPubspec(ConsumerSmokePaths paths) {
+String buildOllamaOnlyConsumerPubspec(ConsumerSmokePaths paths) {
   return '''
-name: llm_dart_community_only_consumer_smoke
+name: llm_dart_ollama_only_consumer_smoke
 publish_to: none
 
 environment:
   sdk: '>=3.5.0 <4.0.0'
 
 dependencies:
-  llm_dart_community:
-    path: ${paths.packagePaths['llm_dart_community']}
+  llm_dart_ollama:
+    path: ${paths.packagePaths['llm_dart_ollama']}
+
+dependency_overrides:
+${_pathEntries([
+        'llm_dart_provider',
+        'llm_dart_transport',
+      ], paths.packagePaths)}
+''';
+}
+
+String buildElevenLabsOnlyConsumerPubspec(ConsumerSmokePaths paths) {
+  return '''
+name: llm_dart_elevenlabs_only_consumer_smoke
+publish_to: none
+
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+
+dependencies:
+  llm_dart_elevenlabs:
+    path: ${paths.packagePaths['llm_dart_elevenlabs']}
 
 dependency_overrides:
 ${_pathEntries([
@@ -651,8 +716,9 @@ ${_pathEntries([
         'llm_dart_ai',
         'llm_dart_anthropic',
         'llm_dart_chat',
-        'llm_dart_community',
+        'llm_dart_elevenlabs',
         'llm_dart_google',
+        'llm_dart_ollama',
         'llm_dart_openai',
         'llm_dart_provider',
         'llm_dart_transport',
@@ -662,8 +728,9 @@ ${_pathEntries([
         'llm_dart_ai',
         'llm_dart_anthropic',
         'llm_dart_chat',
-        'llm_dart_community',
+        'llm_dart_elevenlabs',
         'llm_dart_google',
+        'llm_dart_ollama',
         'llm_dart_openai',
         'llm_dart_provider',
         'llm_dart_transport',
@@ -692,7 +759,6 @@ dependency_overrides:
 ${_pathEntries([
         'llm_dart_ai',
         'llm_dart_chat',
-        'llm_dart_community',
         'llm_dart_openai',
         'llm_dart_provider',
         'llm_dart_transport',
@@ -792,11 +858,12 @@ import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart_ai/llm_dart_ai.dart' as ai;
 import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic;
 import 'package:llm_dart_chat/llm_dart_chat.dart' as chat;
-import 'package:llm_dart_community/llm_dart_community.dart' as community;
 import 'package:llm_dart_core/llm_dart_core.dart' as compat_core;
 import 'package:llm_dart/deepseek.dart' as deepseek;
+import 'package:llm_dart/elevenlabs.dart' as elevenlabs;
 import 'package:llm_dart/groq.dart' as groq;
 import 'package:llm_dart_google/llm_dart_google.dart' as google;
+import 'package:llm_dart/ollama.dart' as ollama;
 import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 import 'package:llm_dart/openrouter.dart' as openrouter;
 import 'package:llm_dart/phind.dart' as phind;
@@ -817,7 +884,7 @@ void main() {
     anthropic
         .anthropic(apiKey: 'test')
         .chatModel('claude-3-5-haiku-latest'),
-    community.ollama().chatModel('llama3.2'),
+    ollama.ollama().chatModel('llama3.2'),
     xai.xai(apiKey: 'test').chatModel('grok-3'),
     deepseek.deepSeek(apiKey: 'test').chatModel('deepseek-chat'),
     openrouter.openRouter(apiKey: 'test').chatModel('openai/gpt-4o-mini'),
@@ -826,7 +893,7 @@ void main() {
   ];
 
   final speechModel =
-      community.elevenLabs(apiKey: 'test').speechModel('eleven_multilingual_v2');
+      elevenlabs.elevenLabs(apiKey: 'test').speechModel('eleven_multilingual_v2');
   final chatInput = chat.ChatInput.text('hello');
   final cancellation = transport.TransportCancellation()..cancel('smoke');
   final legacyBuilder = legacy.LLMBuilder();
@@ -952,39 +1019,51 @@ void main() {
 }
 ''';
 
-const communityOnlyConsumerSmokeProgram = r'''
-import 'package:llm_dart_community/llm_dart_community.dart' as community;
+const ollamaOnlyConsumerSmokeProgram = r'''
+import 'package:llm_dart_ollama/llm_dart_ollama.dart' as ollama;
 
 void main() {
-  final ollama = community.ollama(baseUrl: 'http://localhost:11434');
-  final ollamaChat = ollama.chatModel('llama3.2');
-  final ollamaEmbeddings = ollama.embeddingModel('nomic-embed-text');
-  final ollamaCatalog = ollama.catalog();
-  final elevenLabs = community.elevenLabs(apiKey: 'test');
-  final speechModel = elevenLabs.speechModel('eleven_multilingual_v2');
-  final transcriptionModel = elevenLabs.transcriptionModel('scribe_v1');
-  final voices = elevenLabs.voices();
-  const ollamaOptions = community.OllamaGenerateTextOptions(
+  final provider = ollama.ollama(baseUrl: 'http://localhost:11434');
+  final chatModel = provider.chatModel('llama3.2');
+  final embeddingModel = provider.embeddingModel('nomic-embed-text');
+  final catalog = provider.catalog();
+  const options = ollama.OllamaGenerateTextOptions(
     numCtx: 4096,
     keepAlive: '10m',
   );
-  const speechOptions = community.ElevenLabsSpeechOptions(
+
+  if (chatModel.providerId != 'ollama' ||
+      embeddingModel.providerId != 'ollama' ||
+      catalog.runtimeType.toString().isEmpty ||
+      options.numCtx != 4096) {
+    throw StateError('Ollama-only consumer smoke failed');
+  }
+
+  print('ollama-only ok');
+}
+''';
+
+const elevenLabsOnlyConsumerSmokeProgram = r'''
+import 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart' as elevenlabs;
+
+void main() {
+  final provider = elevenlabs.elevenLabs(apiKey: 'test');
+  final speechModel = provider.speechModel('eleven_multilingual_v2');
+  final transcriptionModel = provider.transcriptionModel('scribe_v1');
+  final voices = provider.voices();
+  const speechOptions = elevenlabs.ElevenLabsSpeechOptions(
     outputFormat: 'mp3_44100_128',
     speed: 1.0,
   );
 
-  if (ollamaChat.providerId != 'ollama' ||
-      ollamaEmbeddings.providerId != 'ollama' ||
-      ollamaCatalog.runtimeType.toString().isEmpty ||
-      speechModel.providerId != 'elevenlabs' ||
+  if (speechModel.providerId != 'elevenlabs' ||
       transcriptionModel.providerId != 'elevenlabs' ||
       voices.runtimeType.toString().isEmpty ||
-      ollamaOptions.numCtx != 4096 ||
       speechOptions.outputFormat != 'mp3_44100_128') {
-    throw StateError('Community-only consumer smoke failed');
+    throw StateError('ElevenLabs-only consumer smoke failed');
   }
 
-  print('community-only ok');
+  print('elevenlabs-only ok');
 }
 ''';
 
@@ -992,8 +1071,9 @@ const splitPackageConsumerSmokeProgram = r'''
 import 'package:llm_dart_ai/llm_dart_ai.dart' as ai;
 import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic;
 import 'package:llm_dart_chat/llm_dart_chat.dart' as chat;
-import 'package:llm_dart_community/llm_dart_community.dart' as community;
+import 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart' as elevenlabs;
 import 'package:llm_dart_google/llm_dart_google.dart' as google;
+import 'package:llm_dart_ollama/llm_dart_ollama.dart' as ollama;
 import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 import 'package:llm_dart_provider/llm_dart_provider.dart' as provider;
 import 'package:llm_dart_transport/llm_dart_transport.dart' as transport;
@@ -1005,9 +1085,9 @@ Future<void> main() async {
       anthropic.anthropic(apiKey: 'test').chatModel('claude-3-5-haiku-latest');
   final googleModel =
       google.google(apiKey: 'test').chatModel('gemini-2.0-flash');
-  final ollamaModel = community.ollama().chatModel('llama3.2');
+  final ollamaModel = ollama.ollama().chatModel('llama3.2');
   final speechModel =
-      community.elevenLabs(apiKey: 'test').speechModel('eleven_multilingual_v2');
+      elevenlabs.elevenLabs(apiKey: 'test').speechModel('eleven_multilingual_v2');
   final cancellation = transport.TransportCancellation()..cancel('smoke');
   final session = chat.DefaultChatSession(
     transport: chat.DirectChatTransport(model: openAIModel),

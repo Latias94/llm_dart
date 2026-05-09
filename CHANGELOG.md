@@ -29,8 +29,10 @@ Older builder-era code should migrate through `package:llm_dart/legacy.dart`.
 - Added the same short factories to the focused OpenAI-family, Google, and
   Anthropic packages so split-package users can use the model-first path
   without depending on the root facade.
-- Added `ollama(...)` and `elevenLabs(...)` short factories to
-  `llm_dart_community`.
+- Added dedicated `llm_dart_ollama` and `llm_dart_elevenlabs` packages with
+  `ollama(...)` and `elevenLabs(...)` short factories.
+- Added focused root entrypoints `package:llm_dart/ollama.dart` and
+  `package:llm_dart/elevenlabs.dart`.
 - Added focused root entrypoints for xAI, DeepSeek, OpenRouter, Groq, and
   Phind so OpenAI-family profiles can be imported from provider-shaped paths
   instead of the broad OpenAI-family entrypoint.
@@ -38,7 +40,7 @@ Older builder-era code should migrate through `package:llm_dart/legacy.dart`.
   `OpenRouterProfile(appReferer: ..., appTitle: ...)` and root
   `openRouter(...)` parameters.
 - Added model capability profiles for modern Ollama and ElevenLabs models in
-  `llm_dart_community`.
+  their dedicated provider packages.
 - Added updated app and Flutter examples that show the model-first path,
   provider-owned options, capability-gated UI, and the pure Dart chat runtime.
 
@@ -46,6 +48,8 @@ Older builder-era code should migrate through `package:llm_dart/legacy.dart`.
 
 - The root `llm_dart` package is now the recommended entrypoint for the stable
   model API.
+- Split the previous `llm_dart_community` provider bucket into dedicated
+  Ollama and ElevenLabs provider packages.
 - Older core imports remain available, but new code should prefer the root
   model API or the focused packages directly.
 - Provider-specific features now use typed provider options, focused provider

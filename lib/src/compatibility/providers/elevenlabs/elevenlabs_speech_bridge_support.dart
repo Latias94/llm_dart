@@ -2,7 +2,7 @@ part of 'elevenlabs_audio_bridge_support.dart';
 
 final class _ElevenLabsSpeechBridgeSupport {
   final ElevenLabsConfig config;
-  final modern_community.ElevenLabs modernProvider;
+  final modern_elevenlabs.ElevenLabs modernProvider;
 
   const _ElevenLabsSpeechBridgeSupport({
     required this.config,
@@ -24,7 +24,7 @@ final class _ElevenLabsSpeechBridgeSupport {
     final options = _resolveElevenLabsSpeechOptions(request.providerOptions);
     final model = modernProvider.speechModel(
       request.model ?? config.defaultTTSModel,
-      settings: modern_community.ElevenLabsSpeechModelSettings(
+      settings: modern_elevenlabs.ElevenLabsSpeechModelSettings(
         defaultVoiceId: config.voiceId,
         stability: config.stability,
         similarityBoost: config.similarityBoost,
@@ -40,7 +40,7 @@ final class _ElevenLabsSpeechBridgeSupport {
         callOptions: core.CallOptions(
           timeout: config.timeout,
           cancellation: cancelToken,
-          providerOptions: modern_community.ElevenLabsSpeechOptions(
+          providerOptions: modern_elevenlabs.ElevenLabsSpeechOptions(
             outputFormat: options?.outputFormat ??
                 _mapLegacySpeechOutputFormat(
                   request.format,

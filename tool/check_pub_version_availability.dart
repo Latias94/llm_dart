@@ -209,9 +209,11 @@ Future<PubPackageApiResult> fetchPubPackageApiResult(
   }
 
   try {
-    final request = await client.getUrl(
-      Uri.https('pub.dev', '/api/packages/$packageName'),
-    ).timeout(pubVersionAvailabilityRequestTimeout);
+    final request = await client
+        .getUrl(
+          Uri.https('pub.dev', '/api/packages/$packageName'),
+        )
+        .timeout(pubVersionAvailabilityRequestTimeout);
     request.headers.set(HttpHeaders.acceptHeader, 'application/json');
     final response =
         await request.close().timeout(pubVersionAvailabilityRequestTimeout);

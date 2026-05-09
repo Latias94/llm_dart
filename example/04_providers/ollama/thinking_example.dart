@@ -3,16 +3,16 @@
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart_community/llm_dart_community.dart' as community;
+import 'package:llm_dart_ollama/llm_dart_ollama.dart' as ollama_pkg;
 
-/// Local Ollama reasoning on the modern community package surface.
+/// Local Ollama reasoning on the modern Ollama package surface.
 ///
 /// This example keeps the stable shared chat contract while preserving
 /// Ollama-specific local runtime controls through
-/// `community.OllamaGenerateTextOptions`.
+/// `ollama_pkg.OllamaGenerateTextOptions`.
 Future<void> main() async {
-  final baseUrl =
-      Platform.environment['OLLAMA_BASE_URL'] ?? community.Ollama.defaultBaseUrl;
+  final baseUrl = Platform.environment['OLLAMA_BASE_URL'] ??
+      ollama_pkg.Ollama.defaultBaseUrl;
 
   print('Ollama Thinking - Local Reasoning With Open Models\n');
 
@@ -41,7 +41,7 @@ that I get exactly one ball of each color?
         temperature: 0.3,
         maxOutputTokens: 1000,
       ),
-      providerOptions: const community.OllamaGenerateTextOptions(
+      providerOptions: const ollama_pkg.OllamaGenerateTextOptions(
         reasoning: true,
         numCtx: 4096,
         keepAlive: '5m',
@@ -92,7 +92,7 @@ Show your work step by step.
         temperature: 0.1,
         maxOutputTokens: 1500,
       ),
-      providerOptions: const community.OllamaGenerateTextOptions(
+      providerOptions: const ollama_pkg.OllamaGenerateTextOptions(
         reasoning: true,
         numCtx: 6144,
         keepAlive: '5m',
@@ -119,7 +119,7 @@ Future<void> demonstrateStreamingThinking(String baseUrl) async {
   print('=== Streaming Thinking Process ===\n');
 
   try {
-    final model = community.Ollama(
+    final model = ollama_pkg.Ollama(
       baseUrl: baseUrl,
     ).chatModel('gpt-oss:latest');
 
@@ -139,7 +139,7 @@ slower person's pace. What is the minimum time to get everyone across?
         maxOutputTokens: 1200,
       ),
       callOptions: const core.CallOptions(
-        providerOptions: community.OllamaGenerateTextOptions(
+        providerOptions: ollama_pkg.OllamaGenerateTextOptions(
           reasoning: true,
           numCtx: 6144,
           keepAlive: '5m',
@@ -201,7 +201,7 @@ How do you identify the fake coin? Describe your strategy step by step.
         temperature: 0.3,
         maxOutputTokens: 1500,
       ),
-      providerOptions: const community.OllamaGenerateTextOptions(
+      providerOptions: const ollama_pkg.OllamaGenerateTextOptions(
         reasoning: true,
         numCtx: 6144,
         keepAlive: '5m',
@@ -246,7 +246,7 @@ of getting heads on the 11th flip? Explain your reasoning.
           temperature: 0.2,
           maxOutputTokens: 800,
         ),
-        providerOptions: const community.OllamaGenerateTextOptions(
+        providerOptions: const ollama_pkg.OllamaGenerateTextOptions(
           reasoning: true,
           numCtx: 4096,
           keepAlive: '3m',
@@ -283,9 +283,9 @@ Future<core.GenerateTextCallResult<void>> _runReasonedCall({
   required String modelId,
   required String prompt,
   required core.GenerateTextOptions options,
-  required community.OllamaGenerateTextOptions providerOptions,
+  required ollama_pkg.OllamaGenerateTextOptions providerOptions,
 }) {
-  final model = community.Ollama(
+  final model = ollama_pkg.Ollama(
     baseUrl: baseUrl,
   ).chatModel(modelId);
 
@@ -306,7 +306,8 @@ void _printModelError(Object error, {String prefix = ''}) {
   if (message.contains('404') ||
       message.contains('model') ||
       message.contains('not found')) {
-    print('${prefix}Model not available. Pull it first with `ollama pull ...`.');
+    print(
+        '${prefix}Model not available. Pull it first with `ollama pull ...`.');
     return;
   }
 

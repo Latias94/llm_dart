@@ -1,7 +1,7 @@
 # ElevenLabs Provider Features
 
 ElevenLabs now has modern shared-capability surfaces in this workspace through
-`package:llm_dart_community/llm_dart_community.dart`:
+`package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart`:
 
 - `elevenLabs(...).speechModel(...)`
 - `elevenLabs(...).transcriptionModel(...)`
@@ -13,17 +13,17 @@ explicitly provider owned.
 
 ## When To Use Which Path
 
-### Prefer The Modern Community Surface
+### Prefer The Dedicated Package Surface
 
-Use `llm_dart_community` when you need shared-capability speech generation or
-direct-audio transcription, or when a product UI needs the provider-owned voice
-catalog:
+Use `llm_dart_elevenlabs` when you need dedicated shared-capability speech
+generation or direct-audio transcription, or when a product UI needs the
+provider-owned voice catalog:
 
 ```dart
-import 'package:llm_dart_community/llm_dart_community.dart' as community;
+import 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart' as elevenlabs_pkg;
 import 'package:llm_dart/core.dart' as core;
 
-final speechModel = community.elevenLabs(
+final speechModel = elevenlabs_pkg.elevenLabs(
   apiKey: 'your-elevenlabs-key',
 ).speechModel('eleven_multilingual_v2');
 
@@ -36,10 +36,10 @@ final result = await core.generateSpeech(
 For transcription:
 
 ```dart
-import 'package:llm_dart_community/llm_dart_community.dart' as community;
+import 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart' as elevenlabs_pkg;
 import 'package:llm_dart/core.dart' as core;
 
-final transcriptionModel = community.elevenLabs(
+final transcriptionModel = elevenlabs_pkg.elevenLabs(
   apiKey: 'your-elevenlabs-key',
 ).transcriptionModel('scribe_v1');
 
@@ -53,9 +53,9 @@ final result = await core.transcribe(
 For voice selection UI:
 
 ```dart
-import 'package:llm_dart_community/llm_dart_community.dart' as community;
+import 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart' as elevenlabs_pkg;
 
-final voices = await community.elevenLabs(
+final voices = await elevenlabs_pkg.elevenLabs(
   apiKey: 'your-elevenlabs-key',
 ).voices().listVoices();
 
@@ -80,9 +80,9 @@ streaming, convenience, and realtime-boundary appendix.
 
 ### Modern Shared Examples
 
-- [Community ElevenLabs Speech Example](../../../packages/llm_dart_community/example/elevenlabs_speech.dart)
-- [Community ElevenLabs Transcription Example](../../../packages/llm_dart_community/example/elevenlabs_transcription.dart)
-- [Community ElevenLabs Voice Catalog Example](../../../packages/llm_dart_community/example/elevenlabs_voice_catalog.dart)
+- [ElevenLabs Speech Example](../../../packages/llm_dart_elevenlabs/example/elevenlabs_speech.dart)
+- [ElevenLabs Transcription Example](../../../packages/llm_dart_elevenlabs/example/elevenlabs_transcription.dart)
+- [ElevenLabs Voice Catalog Example](../../../packages/llm_dart_elevenlabs/example/elevenlabs_voice_catalog.dart)
 
 ## Setup
 
@@ -132,7 +132,7 @@ The important distinction is:
 
 ## Next Steps
 
-- [Community Provider Workspace Guide](../../../packages/llm_dart_community/README.md) - Modern Ollama and ElevenLabs shared-capability surfaces
+- [ElevenLabs Provider Package Guide](../../../packages/llm_dart_elevenlabs/README.md) - Modern Ollama and ElevenLabs shared-capability surfaces
 - [Core Features](../../02_core_features/) - Shared audio capability examples
 - [Advanced Features](../../03_advanced_features/) - Cross-provider multimodal work and provider-owned realtime appendix
 - [Migration Guide](../../../docs/workstreams/2026-03-architecture-refactor/38-migration-guide.md) - Current migration recommendations

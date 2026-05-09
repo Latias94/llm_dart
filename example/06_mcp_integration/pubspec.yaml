@@ -20,12 +20,14 @@ dependency_overrides:
     path: ../../packages/llm_dart_anthropic
   llm_dart_chat:
     path: ../../packages/llm_dart_chat
-  llm_dart_community:
-    path: ../../packages/llm_dart_community
   llm_dart_core:
     path: ../../packages/llm_dart_core
+  llm_dart_elevenlabs:
+    path: ../../packages/llm_dart_elevenlabs
   llm_dart_google:
     path: ../../packages/llm_dart_google
+  llm_dart_ollama:
+    path: ../../packages/llm_dart_ollama
   llm_dart_openai:
     path: ../../packages/llm_dart_openai
   llm_dart_provider:

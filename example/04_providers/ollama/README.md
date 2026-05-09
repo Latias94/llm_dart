@@ -1,36 +1,36 @@
 # Ollama Provider Features
 
 Ollama now has modern shared-capability surfaces in this workspace through
-`package:llm_dart_community/llm_dart_community.dart`:
+`package:llm_dart_ollama/llm_dart_ollama.dart`:
 
 - `ollama(...).chatModel(...)`
 - `ollama(...).embeddingModel(...)`
 
 This directory now focuses on provider-owned local runtime behavior on top of
-the modern community surface.
+the dedicated Ollama package surface.
 
 That means:
 
-- chat and embedding entrypoints stay on `community.ollama(...).*Model(...)`
+- chat and embedding entrypoints stay on `ollama_pkg.ollama(...).*Model(...)`
 - local model catalog listing now also has a focused provider-owned helper on
-  `community.ollama(...).catalog().listModels()`
+  `ollama_pkg.ollama(...).catalog().listModels()`
 - Ollama-specific runtime controls stay on
-  `community.OllamaGenerateTextOptions`
+  `ollama_pkg.OllamaGenerateTextOptions`
 - only truly residual surfaces such as `/api/generate` remain on the
   compatibility shell
 
 ## When To Use Which Path
 
-### Prefer The Modern Community Surface
+### Prefer The Dedicated Package Surface
 
-Use `llm_dart_community` when you only need shared-capability application code
+Use `llm_dart_ollama` when you only need shared-capability application code
 for chat or embeddings:
 
 ```dart
-import 'package:llm_dart_community/llm_dart_community.dart' as community;
+import 'package:llm_dart_ollama/llm_dart_ollama.dart' as ollama_pkg;
 import 'package:llm_dart/core.dart' as core;
 
-final model = community.ollama(
+final model = ollama_pkg.ollama(
   baseUrl: 'http://localhost:11434',
 ).chatModel('llama3.2');
 
@@ -45,10 +45,10 @@ final result = await core.generateTextCall(
 For embeddings:
 
 ```dart
-import 'package:llm_dart_community/llm_dart_community.dart' as community;
+import 'package:llm_dart_ollama/llm_dart_ollama.dart' as ollama_pkg;
 import 'package:llm_dart/core.dart' as core;
 
-final embeddingModel = community.ollama(
+final embeddingModel = ollama_pkg.ollama(
   baseUrl: 'http://localhost:11434',
 ).embeddingModel('nomic-embed-text');
 
@@ -61,9 +61,9 @@ final batch = await core.embedMany(
 For installed local model listing:
 
 ```dart
-import 'package:llm_dart_community/llm_dart_community.dart' as community;
+import 'package:llm_dart_ollama/llm_dart_ollama.dart' as ollama_pkg;
 
-final catalog = community.ollama(
+final catalog = ollama_pkg.ollama(
   baseUrl: 'http://localhost:11434',
 ).catalog();
 
@@ -94,8 +94,8 @@ surface.
 
 ### Modern Shared Examples
 
-- [Community Ollama Chat Example](../../../packages/llm_dart_community/example/ollama_chat.dart)
-- [Community Ollama Embeddings Example](../../../packages/llm_dart_community/example/ollama_embeddings.dart)
+- [Ollama Chat Example](../../../packages/llm_dart_ollama/example/ollama_chat.dart)
+- [Ollama Embeddings Example](../../../packages/llm_dart_ollama/example/ollama_embeddings.dart)
 
 ## Setup
 
@@ -137,8 +137,8 @@ The important distinction is:
 - use `ollama(...).catalog().listModels()` for installed-model picker or local
   diagnostics UI
 - use `providers/ollama/ollama.dart` only when you need `/api/generate` or
-  broader compatibility surfaces that are still outside the shared community
-  package
+  broader compatibility surfaces that are still outside the dedicated package
+  surface
 
 ## What Is Not Being Forced Into The Shared Surface
 
@@ -150,7 +150,7 @@ The important distinction is:
 
 ## Next Steps
 
-- [Community Provider Workspace Guide](../../../packages/llm_dart_community/README.md) - Modern Ollama and ElevenLabs shared-capability surfaces
+- [Ollama Provider Package Guide](../../../packages/llm_dart_ollama/README.md) - Modern Ollama and ElevenLabs shared-capability surfaces
 - [Core Features](../../02_core_features/) - Shared chat contract examples
 - [Advanced Features](../../03_advanced_features/) - Custom provider patterns
 - [Migration Guide](../../../docs/workstreams/2026-03-architecture-refactor/38-migration-guide.md) - Current migration recommendations

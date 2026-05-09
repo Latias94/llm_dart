@@ -1,7 +1,7 @@
 /// Compatibility-first root Ollama provider entrypoint.
 ///
 /// For new shared-capability code, prefer the package-owned modern Ollama
-/// surfaces in `package:llm_dart_community/llm_dart_community.dart`:
+/// surfaces in `package:llm_dart_ollama/llm_dart_ollama.dart`:
 ///
 /// - `Ollama(...).chatModel(...)`
 /// - `Ollama(...).embeddingModel(...)`

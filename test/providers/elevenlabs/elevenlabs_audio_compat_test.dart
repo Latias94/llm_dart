@@ -1,7 +1,8 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:llm_dart_community/llm_dart_community.dart' as modern_community;
+import 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart'
+    as modern_elevenlabs;
 import 'package:llm_dart/models/audio_models.dart';
 import 'package:llm_dart/providers/elevenlabs/audio.dart';
 import 'package:llm_dart/providers/elevenlabs/client.dart';
@@ -25,7 +26,7 @@ void main() {
           model: 'eleven_turbo_v2',
           languageCode: 'en',
           speed: 1.3,
-          providerOptions: modern_community.ElevenLabsSpeechOptions(
+          providerOptions: modern_elevenlabs.ElevenLabsSpeechOptions(
             seed: 7,
             previousText: 'before',
             nextText: 'after',
@@ -34,7 +35,8 @@ void main() {
             enableLogging: false,
             optimizeStreamingLatency: 2,
             stability: 0.9,
-            textNormalization: modern_community.ElevenLabsTextNormalization.off,
+            textNormalization:
+                modern_elevenlabs.ElevenLabsTextNormalization.off,
           ),
         ),
       );
@@ -102,7 +104,7 @@ void main() {
           language: 'en',
           format: 'wav',
           timestampGranularity: TimestampGranularity.character,
-          providerOptions: modern_community.ElevenLabsTranscriptionOptions(
+          providerOptions: modern_elevenlabs.ElevenLabsTranscriptionOptions(
             diarize: true,
             numSpeakers: 2,
             tagAudioEvents: false,
@@ -176,7 +178,7 @@ void main() {
         STTRequest.fromSourceUrl(
           'https://storage.example.com/audio.mp3',
           providerOptions:
-              const modern_community.ElevenLabsTranscriptionOptions(
+              const modern_elevenlabs.ElevenLabsTranscriptionOptions(
             enableLogging: false,
           ),
         ),

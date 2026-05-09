@@ -1,4 +1,5 @@
-import 'package:llm_dart_community/llm_dart_community.dart' as modern_community;
+import 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart'
+    as modern_elevenlabs;
 import 'package:llm_dart_transport/llm_dart_transport.dart'
     show DioTransportClient;
 
@@ -23,7 +24,7 @@ final class ElevenLabsCompatShellSupport {
   final ElevenLabsClient client;
   final ElevenLabsAudio audio;
   final ElevenLabsModels models;
-  final modern_community.ElevenLabs modernProvider;
+  final modern_elevenlabs.ElevenLabs modernProvider;
   final ElevenLabsAudioBridgeSupport bridgeSupport;
   late final _ElevenLabsCompatBridgeRouter _bridgeRouter =
       _ElevenLabsCompatBridgeRouter(
@@ -44,7 +45,7 @@ final class ElevenLabsCompatShellSupport {
     required ElevenLabsConfig config,
   }) {
     final client = ElevenLabsClient(config);
-    final modernProvider = modern_community.ElevenLabs(
+    final modernProvider = modern_elevenlabs.ElevenLabs(
       apiKey: config.apiKey,
       baseUrl: config.baseUrl,
       transport: DioTransportClient(dio: client.dio),

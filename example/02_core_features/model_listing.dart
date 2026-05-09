@@ -2,7 +2,7 @@
 
 import 'dart:io';
 
-import 'package:llm_dart_community/llm_dart_community.dart' as community;
+import 'package:llm_dart_ollama/llm_dart_ollama.dart' as ollama_pkg;
 import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/models/chat_models.dart';
@@ -129,7 +129,7 @@ Future<void> demonstrateAnthropicRemoteCatalogBoundary(String apiKey) async {
 Future<void> demonstrateOllamaLocalCatalogBoundary(String baseUrl) async {
   print('=== Provider-Owned Ollama Local Catalog Boundary ===\n');
 
-  final catalog = community.Ollama(baseUrl: baseUrl).catalog();
+  final catalog = ollama_pkg.Ollama(baseUrl: baseUrl).catalog();
   final models = await catalog.listModels();
   print('Catalog size: ${models.length}');
 

@@ -5,7 +5,7 @@ import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/llm_dart.dart' as llm;
-import 'package:llm_dart_community/llm_dart_community.dart' as community;
+import 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart' as elevenlabs_pkg;
 
 /// Stable multimodal processing examples built on shared prompt parts and
 /// shared media helpers.
@@ -182,7 +182,7 @@ Future<void> demonstrateAudioProcessing(
 
     if (elevenLabsKey != null && elevenLabsKey.isNotEmpty) {
       final elevenLabsSpeech = await core.generateSpeech(
-        model: community.ElevenLabs(
+        model: elevenlabs_pkg.ElevenLabs(
           apiKey: elevenLabsKey,
         ).speechModel('eleven_multilingual_v2'),
         text:

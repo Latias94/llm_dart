@@ -20,7 +20,7 @@ part 'provider_compat_models.dart';
 /// Compatibility-first root ElevenLabs provider shell.
 ///
 /// New shared-capability mainlines should prefer the package-owned modern
-/// surfaces in `llm_dart_community` where possible. This root provider remains
+/// surfaces in `llm_dart_elevenlabs` where possible. This root provider remains
 /// the migration-era adapter that preserves legacy audio capability interfaces,
 /// fallback routing, and residual provider-shaped APIs such as voice catalogs,
 /// realtime flows, and account/model helpers.

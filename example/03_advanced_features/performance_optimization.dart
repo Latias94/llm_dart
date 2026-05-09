@@ -44,7 +44,8 @@ Future<void> main() async {
   }
 
   print('Completed stable performance optimization examples.');
-  print('Keep caches, batching, and memory policies in your app/runtime layer.');
+  print(
+      'Keep caches, batching, and memory policies in your app/runtime layer.');
 }
 
 _TextModelEntry? _resolveBalancedModel() {
@@ -52,9 +53,11 @@ _TextModelEntry? _resolveBalancedModel() {
   if (openAIKey != null && openAIKey.isNotEmpty) {
     return _TextModelEntry(
       label: 'OpenAI gpt-4o-mini',
-      model: llm.openai(
-        apiKey: openAIKey,
-      ).chatModel('gpt-4o-mini'),
+      model: llm
+          .openai(
+            apiKey: openAIKey,
+          )
+          .chatModel('gpt-4o-mini'),
       defaultOptions: const core.GenerateTextOptions(
         temperature: 0.3,
         maxOutputTokens: 180,
@@ -66,9 +69,11 @@ _TextModelEntry? _resolveBalancedModel() {
   if (groqKey != null && groqKey.isNotEmpty) {
     return _TextModelEntry(
       label: 'Groq llama-3.1-8b-instant',
-      model: llm.groq(
-        apiKey: groqKey,
-      ).chatModel('llama-3.1-8b-instant'),
+      model: llm
+          .groq(
+            apiKey: groqKey,
+          )
+          .chatModel('llama-3.1-8b-instant'),
       defaultOptions: const core.GenerateTextOptions(
         temperature: 0.3,
         maxOutputTokens: 180,
@@ -84,9 +89,11 @@ _TextModelEntry? _resolveStreamingModel(_TextModelEntry? fallback) {
   if (groqKey != null && groqKey.isNotEmpty) {
     return _TextModelEntry(
       label: 'Groq llama-3.1-8b-instant',
-      model: llm.groq(
-        apiKey: groqKey,
-      ).chatModel('llama-3.1-8b-instant'),
+      model: llm
+          .groq(
+            apiKey: groqKey,
+          )
+          .chatModel('llama-3.1-8b-instant'),
       defaultOptions: const core.GenerateTextOptions(
         temperature: 0.7,
         maxOutputTokens: 260,
@@ -130,7 +137,8 @@ Future<void> _demonstrateCachingStrategies(_TextModelEntry entry) async {
     }
 
     print('\n  Cache size: ${cache.length}');
-    print('  Cached responses avoid repeated model calls and rate-limit usage.');
+    print(
+        '  Cached responses avoid repeated model calls and rate-limit usage.');
   } catch (error) {
     print('  Failed: $error');
   }
@@ -223,8 +231,7 @@ Future<void> _demonstrateStreamingOptimization(_TextModelEntry entry) async {
 
     final firstChunkDelay =
         firstChunkAt < 0 ? streamStopwatch.elapsedMilliseconds : firstChunkAt;
-    final perceivedSpeedup =
-        regular.duration.inMilliseconds / firstChunkDelay;
+    final perceivedSpeedup = regular.duration.inMilliseconds / firstChunkDelay;
 
     print('  Regular response time: ${regular.duration.inMilliseconds}ms');
     print('  Streaming first chunk: ${firstChunkDelay}ms');
@@ -346,7 +353,8 @@ Future<void> _demonstrateMemoryOptimization(_TextModelEntry entry) async {
       }
     }
 
-    print('  Streamed characters without building large prompt state: $totalChars');
+    print(
+        '  Streamed characters without building large prompt state: $totalChars');
     print('  Context trimming keeps runtime memory bounded in long sessions.');
   } catch (error) {
     print('  Failed: $error');

@@ -1,7 +1,7 @@
 /// Compatibility-first root ElevenLabs provider entrypoint.
 ///
 /// For new shared-capability code, prefer the package-owned modern ElevenLabs
-/// surfaces in `package:llm_dart_community/llm_dart_community.dart`:
+/// surfaces in `package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart`:
 ///
 /// - `ElevenLabs(...).speechModel(...)`
 /// - `ElevenLabs(...).transcriptionModel(...)`
