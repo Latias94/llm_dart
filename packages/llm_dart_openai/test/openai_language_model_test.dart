@@ -2711,6 +2711,7 @@ void main() {
       expect(toolResult.toolName, 'mcp.create_short_url');
       expect(toolResult.isDynamic, isTrue);
       expect(toolResult.isError, isFalse);
+      expect(toolResult.toolOutput, isA<JsonToolOutput>());
       expect((toolResult.output as Map<String, Object?>)['type'], 'mcp_call');
       expect(
         ((toolResult.output as Map<String, Object?>)['output']
@@ -2846,6 +2847,7 @@ void main() {
       expect(toolResult.toolResult.toolName, 'mcp.create_short_url');
       expect(toolResult.toolResult.isDynamic, isTrue);
       expect(toolResult.toolResult.isError, isFalse);
+      expect(toolResult.toolResult.toolOutput, isA<JsonToolOutput>());
       expect(
         (toolResult.toolResult.output as Map<String, Object?>)['type'],
         'mcp_call',

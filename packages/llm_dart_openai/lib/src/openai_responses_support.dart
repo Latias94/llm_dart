@@ -206,15 +206,17 @@ List<ContentPart> decodeOpenAIResponsesMcpCallOutput(
       ToolResultContent(
         toolCallId: toolCallId,
         toolName: qualifiedToolName,
-        output: {
-          'type': 'mcp_call',
-          'serverLabel': _asString(item['server_label']),
-          'name': toolName,
-          'arguments': arguments,
-          if (item['output'] != null) 'output': item['output'],
-          if (item['error'] != null) 'error': item['error'],
-        },
-        isError: item['error'] != null,
+        toolOutput: ToolOutput.fromValue(
+          {
+            'type': 'mcp_call',
+            'serverLabel': _asString(item['server_label']),
+            'name': toolName,
+            'arguments': arguments,
+            if (item['output'] != null) 'output': item['output'],
+            if (item['error'] != null) 'error': item['error'],
+          },
+          isError: item['error'] != null,
+        ),
         isDynamic: true,
       ),
       providerMetadata: providerMetadata,
