@@ -1,5 +1,3 @@
-part of 'openai_moderation_support.dart';
-
 /// Extended moderation analysis result.
 class ModerationAnalysis {
   final String text;

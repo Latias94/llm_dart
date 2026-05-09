@@ -1,4 +1,10 @@
-part of 'request_body_support.dart';
+import '../../../../providers/openai/config.dart';
+import '../../config/legacy_config_keys.dart';
+import 'client.dart';
+import 'config_views.dart';
+import 'openai_reasoning_request_support.dart';
+import 'request_body_provider_options.dart';
+import 'request_body_structured_output.dart';
 
 /// Applies the common OpenAI-family request fields shared by chat-completions
 /// and Responses compatibility request builders.

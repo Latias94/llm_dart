@@ -1,4 +1,6 @@
-part of 'request_body_support.dart';
+import '../../../../models/chat_models.dart';
+import 'client.dart';
+import 'config_views.dart';
 
 /// Builds OpenAI-compatible request messages while preserving the legacy
 /// compatibility rule that config-level system prompts are only prepended when

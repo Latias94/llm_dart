@@ -1,4 +1,5 @@
-part of 'request_body_support.dart';
+import '../../../../models/tool_models.dart';
+import 'openai_structured_output_codec.dart';
 
 const _structuredOutputCodec = OpenAIStructuredOutputCodec();
 

@@ -1,4 +1,5 @@
-part of 'request_body_support.dart';
+import '../../../../providers/openai/config.dart';
+import '../../config/legacy_config_keys.dart';
 
 /// Reads OpenAI-family options from the explicit compatibility config fields.
 T? getOpenAIFamilyProviderOption<T>({
