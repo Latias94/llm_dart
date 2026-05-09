@@ -54,16 +54,14 @@ final class GoogleProjectedToolCall {
 final class GoogleProjectedToolResult {
   final String toolCallId;
   final String toolName;
-  final Object? output;
-  final bool isError;
+  final ToolOutput toolOutput;
   final bool isDynamic;
   final ProviderMetadata? providerMetadata;
 
   const GoogleProjectedToolResult({
     required this.toolCallId,
     required this.toolName,
-    required this.output,
-    required this.isError,
+    required this.toolOutput,
     this.isDynamic = false,
     this.providerMetadata,
   });
@@ -98,8 +96,10 @@ GoogleProjectedToolResult projectGoogleCodeExecutionToolResult({
   return GoogleProjectedToolResult(
     toolCallId: tracker.consumeResultToolCall(),
     toolName: 'code_execution',
-    output: normalizeJsonValue(executionResult),
-    isError: isGoogleCodeExecutionError(normalizedResult),
+    toolOutput: ToolOutput.fromValue(
+      normalizeJsonValue(executionResult),
+      isError: isGoogleCodeExecutionError(normalizedResult),
+    ),
     isDynamic: true,
     providerMetadata: providerMetadata,
   );

@@ -152,6 +152,11 @@ void main() {
       expect(toolResult.toolResult.toolName, 'code_execution');
       expect(toolResult.toolResult.isDynamic, isTrue);
       expect(toolResult.toolResult.isError, isFalse);
+      expect(toolResult.toolResult.toolOutput, isA<JsonToolOutput>());
+      expect(toolResult.toolResult.output, {
+        'outcome': 'OUTCOME_OK',
+        'output': 'hi',
+      });
     });
 
     test('decodes thought inline data into reasoning-file content', () {

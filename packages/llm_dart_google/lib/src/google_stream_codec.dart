@@ -141,8 +141,7 @@ final class GoogleGenerateContentStreamCodec {
           toolResult: ToolResultContent(
             toolCallId: projectedToolResult.toolCallId,
             toolName: projectedToolResult.toolName,
-            output: projectedToolResult.output,
-            isError: projectedToolResult.isError,
+            toolOutput: projectedToolResult.toolOutput,
             isDynamic: projectedToolResult.isDynamic,
           ),
           providerMetadata: projectedToolResult.providerMetadata,

@@ -180,6 +180,11 @@ void main() {
       expect(toolResult.toolName, 'code_execution');
       expect(toolResult.isDynamic, isTrue);
       expect(toolResult.isError, isFalse);
+      expect(toolResult.toolOutput, isA<JsonToolOutput>());
+      expect(toolResult.output, {
+        'outcome': 'OUTCOME_OK',
+        'output': 'hi',
+      });
     });
 
     test('maps thought inline data into reasoning-file events', () {
