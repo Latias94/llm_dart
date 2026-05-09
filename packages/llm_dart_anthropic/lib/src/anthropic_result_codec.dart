@@ -216,8 +216,7 @@ final class AnthropicMessagesResultCodec {
         ToolResultContent(
           toolCallId: toolUseId,
           toolName: toolName,
-          output: _toolResultOutput(type, part),
-          isError: _isErrorToolResult(type, part),
+          toolOutput: _toolResultOutput(type, part),
           isDynamic: descriptor?.isDynamic ?? true,
         ),
         providerMetadata: metadata,
@@ -432,12 +431,11 @@ final class AnthropicMessagesResultCodec {
     return contentType != null && contentType.endsWith('_error');
   }
 
-  Object? _toolResultOutput(String partType, Map<String, Object?> part) {
-    if (partType == 'mcp_tool_result') {
-      return normalizeJsonValue(part['content']);
-    }
-
-    return normalizeJsonValue(part['content']);
+  ToolOutput _toolResultOutput(String partType, Map<String, Object?> part) {
+    return ToolOutput.fromValue(
+      normalizeJsonValue(part['content']),
+      isError: _isErrorToolResult(partType, part),
+    );
   }
 
   String? _toolResultCustomKind(String partType) {

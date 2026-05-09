@@ -531,8 +531,7 @@ final class AnthropicStreamCodec {
       toolResult: ToolResultContent(
         toolCallId: toolUseId,
         toolName: toolName,
-        output: _toolResultOutput(blockType, contentBlock),
-        isError: _isErrorToolResult(blockType, contentBlock),
+        toolOutput: _toolResultOutput(blockType, contentBlock),
         isDynamic: descriptor?.isDynamic ?? _isDynamicToolResult(blockType),
       ),
       providerMetadata: providerMetadata,
@@ -837,15 +836,14 @@ final class AnthropicStreamCodec {
     return contentType != null && contentType.endsWith('_error');
   }
 
-  Object? _toolResultOutput(
+  ToolOutput _toolResultOutput(
     String blockType,
     Map<String, Object?> contentBlock,
   ) {
-    if (blockType == 'mcp_tool_result') {
-      return normalizeJsonValue(contentBlock['content']);
-    }
-
-    return normalizeJsonValue(contentBlock['content']);
+    return ToolOutput.fromValue(
+      normalizeJsonValue(contentBlock['content']),
+      isError: _isErrorToolResult(blockType, contentBlock),
+    );
   }
 
   String? _toolResultCustomKind(String blockType) {

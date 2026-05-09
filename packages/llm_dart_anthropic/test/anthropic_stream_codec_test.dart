@@ -316,6 +316,13 @@ void main() {
       final toolResultEvent = events[4] as ToolResultEvent;
       expect(toolResultEvent.toolResult.toolName, 'mcp.search');
       expect(toolResultEvent.toolResult.isDynamic, isTrue);
+      expect(toolResultEvent.toolResult.toolOutput, isA<JsonToolOutput>());
+      expect(toolResultEvent.toolResult.output, [
+        {
+          'type': 'text',
+          'text': 'done',
+        },
+      ]);
       expect(
         toolResultEvent.providerMetadata?.values['anthropic'],
         {

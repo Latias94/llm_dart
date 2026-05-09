@@ -98,6 +98,13 @@ void main() {
       expect(toolResult.toolResult.toolName, 'mcp.echo');
       expect(toolResult.toolResult.isDynamic, isTrue);
       expect(toolResult.toolResult.isError, isFalse);
+      expect(toolResult.toolResult.toolOutput, isA<JsonToolOutput>());
+      expect(toolResult.toolResult.output, [
+        {
+          'type': 'text',
+          'text': 'Tool echo: hello world',
+        },
+      ]);
       expect(
         toolResult.providerMetadata?.values['anthropic'],
         {
