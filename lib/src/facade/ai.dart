@@ -15,6 +15,20 @@ openai_pkg.OpenAI openai({
   String? baseUrl,
   openai_pkg.OpenAIFamilyProfile? profile,
 }) {
+  return _createOpenAI(
+    apiKey: apiKey,
+    transport: transport,
+    baseUrl: baseUrl,
+    profile: profile,
+  );
+}
+
+openai_pkg.OpenAI _createOpenAI({
+  required String apiKey,
+  TransportClient? transport,
+  String? baseUrl,
+  openai_pkg.OpenAIFamilyProfile? profile,
+}) {
   return openai_pkg.openai(
     apiKey: apiKey,
     transport: transport,
@@ -25,6 +39,22 @@ openai_pkg.OpenAI openai({
 
 /// Creates an OpenRouter provider facade backed by the OpenAI-family adapter.
 openai_pkg.OpenAI openRouter({
+  required String apiKey,
+  TransportClient? transport,
+  String? baseUrl,
+  String? appReferer,
+  String? appTitle,
+}) {
+  return _createOpenRouter(
+    apiKey: apiKey,
+    transport: transport,
+    baseUrl: baseUrl,
+    appReferer: appReferer,
+    appTitle: appTitle,
+  );
+}
+
+openai_pkg.OpenAI _createOpenRouter({
   required String apiKey,
   TransportClient? transport,
   String? baseUrl,
@@ -46,6 +76,18 @@ openai_pkg.OpenAI deepSeek({
   TransportClient? transport,
   String? baseUrl,
 }) {
+  return _createDeepSeek(
+    apiKey: apiKey,
+    transport: transport,
+    baseUrl: baseUrl,
+  );
+}
+
+openai_pkg.OpenAI _createDeepSeek({
+  required String apiKey,
+  TransportClient? transport,
+  String? baseUrl,
+}) {
   return openai_pkg.deepSeek(
     apiKey: apiKey,
     transport: transport,
@@ -55,6 +97,18 @@ openai_pkg.OpenAI deepSeek({
 
 /// Creates a Groq provider facade backed by the OpenAI-family adapter.
 openai_pkg.OpenAI groq({
+  required String apiKey,
+  TransportClient? transport,
+  String? baseUrl,
+}) {
+  return _createGroq(
+    apiKey: apiKey,
+    transport: transport,
+    baseUrl: baseUrl,
+  );
+}
+
+openai_pkg.OpenAI _createGroq({
   required String apiKey,
   TransportClient? transport,
   String? baseUrl,
@@ -72,6 +126,18 @@ openai_pkg.OpenAI xai({
   TransportClient? transport,
   String? baseUrl,
 }) {
+  return _createXAI(
+    apiKey: apiKey,
+    transport: transport,
+    baseUrl: baseUrl,
+  );
+}
+
+openai_pkg.OpenAI _createXAI({
+  required String apiKey,
+  TransportClient? transport,
+  String? baseUrl,
+}) {
   return openai_pkg.xai(
     apiKey: apiKey,
     transport: transport,
@@ -81,6 +147,18 @@ openai_pkg.OpenAI xai({
 
 /// Creates a Phind provider facade backed by the OpenAI-family adapter.
 openai_pkg.OpenAI phind({
+  required String apiKey,
+  TransportClient? transport,
+  String? baseUrl,
+}) {
+  return _createPhind(
+    apiKey: apiKey,
+    transport: transport,
+    baseUrl: baseUrl,
+  );
+}
+
+openai_pkg.OpenAI _createPhind({
   required String apiKey,
   TransportClient? transport,
   String? baseUrl,
@@ -101,6 +179,18 @@ google_pkg.Google google({
   TransportClient? transport,
   String? baseUrl,
 }) {
+  return _createGoogle(
+    apiKey: apiKey,
+    transport: transport,
+    baseUrl: baseUrl,
+  );
+}
+
+google_pkg.Google _createGoogle({
+  required String apiKey,
+  TransportClient? transport,
+  String? baseUrl,
+}) {
   return google_pkg.google(
     apiKey: apiKey,
     transport: transport,
@@ -113,6 +203,18 @@ google_pkg.Google google({
 /// Prefer this short factory in new root-package code. `AI.anthropic(...)`
 /// remains as an optional grouped-namespace alias.
 anthropic_pkg.Anthropic anthropic({
+  required String apiKey,
+  TransportClient? transport,
+  String? baseUrl,
+}) {
+  return _createAnthropic(
+    apiKey: apiKey,
+    transport: transport,
+    baseUrl: baseUrl,
+  );
+}
+
+anthropic_pkg.Anthropic _createAnthropic({
   required String apiKey,
   TransportClient? transport,
   String? baseUrl,
@@ -133,6 +235,18 @@ ollama_pkg.Ollama ollama({
   TransportClient? transport,
   String? baseUrl,
 }) {
+  return _createOllama(
+    apiKey: apiKey,
+    transport: transport,
+    baseUrl: baseUrl,
+  );
+}
+
+ollama_pkg.Ollama _createOllama({
+  String? apiKey,
+  TransportClient? transport,
+  String? baseUrl,
+}) {
   return ollama_pkg.ollama(
     apiKey: apiKey,
     transport: transport,
@@ -145,6 +259,18 @@ ollama_pkg.Ollama ollama({
 /// Prefer this short factory in new root-package code. `AI.elevenLabs(...)`
 /// remains as an optional grouped-namespace alias.
 elevenlabs_pkg.ElevenLabs elevenLabs({
+  required String apiKey,
+  TransportClient? transport,
+  String? baseUrl,
+}) {
+  return _createElevenLabs(
+    apiKey: apiKey,
+    transport: transport,
+    baseUrl: baseUrl,
+  );
+}
+
+elevenlabs_pkg.ElevenLabs _createElevenLabs({
   required String apiKey,
   TransportClient? transport,
   String? baseUrl,
@@ -172,7 +298,7 @@ final class AI {
     String? baseUrl,
     openai_pkg.OpenAIFamilyProfile? profile,
   }) {
-    return openai_pkg.openai(
+    return _createOpenAI(
       apiKey: apiKey,
       transport: transport,
       baseUrl: baseUrl,
@@ -187,7 +313,7 @@ final class AI {
     String? appReferer,
     String? appTitle,
   }) {
-    return openai_pkg.openRouter(
+    return _createOpenRouter(
       apiKey: apiKey,
       transport: transport,
       baseUrl: baseUrl,
@@ -201,7 +327,7 @@ final class AI {
     TransportClient? transport,
     String? baseUrl,
   }) {
-    return openai_pkg.deepSeek(
+    return _createDeepSeek(
       apiKey: apiKey,
       transport: transport,
       baseUrl: baseUrl,
@@ -213,7 +339,7 @@ final class AI {
     TransportClient? transport,
     String? baseUrl,
   }) {
-    return openai_pkg.groq(
+    return _createGroq(
       apiKey: apiKey,
       transport: transport,
       baseUrl: baseUrl,
@@ -225,7 +351,7 @@ final class AI {
     TransportClient? transport,
     String? baseUrl,
   }) {
-    return openai_pkg.xai(
+    return _createXAI(
       apiKey: apiKey,
       transport: transport,
       baseUrl: baseUrl,
@@ -237,7 +363,7 @@ final class AI {
     TransportClient? transport,
     String? baseUrl,
   }) {
-    return openai_pkg.phind(
+    return _createPhind(
       apiKey: apiKey,
       transport: transport,
       baseUrl: baseUrl,
@@ -249,7 +375,7 @@ final class AI {
     TransportClient? transport,
     String? baseUrl,
   }) {
-    return google_pkg.google(
+    return _createGoogle(
       apiKey: apiKey,
       transport: transport,
       baseUrl: baseUrl,
@@ -261,7 +387,7 @@ final class AI {
     TransportClient? transport,
     String? baseUrl,
   }) {
-    return anthropic_pkg.anthropic(
+    return _createAnthropic(
       apiKey: apiKey,
       transport: transport,
       baseUrl: baseUrl,
@@ -273,7 +399,7 @@ final class AI {
     TransportClient? transport,
     String? baseUrl,
   }) {
-    return ollama_pkg.ollama(
+    return _createOllama(
       apiKey: apiKey,
       transport: transport,
       baseUrl: baseUrl,
@@ -285,7 +411,7 @@ final class AI {
     TransportClient? transport,
     String? baseUrl,
   }) {
-    return elevenlabs_pkg.elevenLabs(
+    return _createElevenLabs(
       apiKey: apiKey,
       transport: transport,
       baseUrl: baseUrl,
