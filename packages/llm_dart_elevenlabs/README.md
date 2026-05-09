@@ -44,10 +44,10 @@ Future<void> main() async {
 
   final result = await ai.generateSpeech(
     model: model,
-    input: 'Hello from llm_dart.',
+    text: 'Hello from llm_dart.',
   );
 
-  print('Generated ${result.audio.length} bytes');
+  print('Generated ${result.audioBytes.length} bytes');
 }
 ```
 

@@ -2,16 +2,14 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:llm_dart/models/chat_models.dart';
-import 'package:llm_dart/models/file_models.dart';
-import 'package:llm_dart/providers/anthropic/anthropic.dart'
-    as anthropic_compat;
+import 'package:llm_dart/anthropic.dart' as anthropic;
+import 'package:llm_dart/core.dart' as core;
 
 /// 🟣 Anthropic File Handling - Provider-Owned File Lifecycle and Analysis
 ///
 /// This example demonstrates:
 /// - Provider-owned upload, list, download, and delete flows through the
-///   Anthropic compatibility provider
+///   focused Anthropic provider package
 /// - Document processing and analysis with Claude
 /// - File listing, retrieval, and deletion
 /// - Multi-file analysis capabilities
@@ -44,22 +42,20 @@ Future<void> demonstrateFileManagement(String apiKey) async {
   print('📁 File Management API:\n');
 
   try {
-    final provider = anthropic_compat.createAnthropicProvider(
-      apiKey: apiKey,
-      model: 'claude-sonnet-4-20250514',
-    );
+    final files = anthropic.anthropic(apiKey: apiKey).files();
 
     // Example 1: Upload a text file
     print('   === Uploading a text file ===');
     final textContent = 'Hello, this is a test file for Anthropic Files API!';
     final textBytes = Uint8List.fromList(textContent.codeUnits);
 
-    final uploadRequest = FileUploadRequest(
-      file: textBytes,
+    final uploadRequest = anthropic.AnthropicFileUpload(
+      bytes: textBytes,
       filename: 'test.txt',
+      mediaType: 'text/plain',
     );
 
-    final uploadedFile = await provider.uploadFile(uploadRequest);
+    final uploadedFile = await files.uploadFile(uploadRequest);
     print('      Uploaded file: ${uploadedFile.filename}');
     print('      File ID: ${uploadedFile.id}');
     print('      Size: ${uploadedFile.sizeBytes} bytes');
@@ -72,15 +68,16 @@ Future<void> demonstrateFileManagement(String apiKey) async {
     final jsonContent = '{"message": "Hello from JSON file"}';
     final jsonBytes = jsonContent.codeUnits;
 
-    final autoFile = await provider.uploadFileFromBytes(
-      jsonBytes,
+    final autoFile = await files.uploadBytes(
+      bytes: jsonBytes,
       filename: 'data.json',
+      mediaType: 'application/json',
     );
     print('      Auto-uploaded file: ${autoFile.filename} (${autoFile.id})');
 
     // Example 3: List all files
     print('\n   === Listing all files ===');
-    final fileList = await provider.listFiles();
+    final fileList = await files.listFiles();
     print('      Total files: ${fileList.data.length}');
     print('      Has more: ${fileList.hasMore}');
 
@@ -90,13 +87,11 @@ Future<void> demonstrateFileManagement(String apiKey) async {
 
     // Example 4: List files with pagination
     print('\n   === Listing files with pagination ===');
-    final paginatedQuery = FileListQuery(
+    final paginatedList = await files.listFiles(
       limit: 5,
       // beforeId: 'some-file-id',  // For pagination
       // afterId: 'some-file-id',   // For pagination
     );
-
-    final paginatedList = await provider.listFiles(paginatedQuery);
     print('      Paginated results: ${paginatedList.data.length} files');
     if (paginatedList.firstId != null) {
       print('      First ID: ${paginatedList.firstId}');
@@ -107,7 +102,7 @@ Future<void> demonstrateFileManagement(String apiKey) async {
 
     // Example 5: Get file metadata
     print('\n   === Getting file metadata ===');
-    final metadata = await provider.retrieveFile(uploadedFile.id);
+    final metadata = await files.getFile(uploadedFile.id);
     print('      File metadata for ${metadata.filename}:');
     print('      - ID: ${metadata.id}');
     print('      - Size: ${metadata.sizeBytes} bytes');
@@ -116,25 +111,18 @@ Future<void> demonstrateFileManagement(String apiKey) async {
 
     // Example 6: Download file content
     print('\n   === Downloading file content ===');
-    final downloadedBytes = await provider.getFileContent(uploadedFile.id);
+    final downloaded = await files.downloadFile(uploadedFile.id);
+    final downloadedBytes = downloaded.bytes;
     final downloadedText = String.fromCharCodes(downloadedBytes);
     print('      Downloaded content: $downloadedText');
 
-    // Example 7: Check if file exists
-    print('\n   === Checking file existence ===');
-    final exists = await provider.fileExists(uploadedFile.id);
-    print('      File exists: $exists');
-
-    final nonExistentExists = await provider.fileExists('non-existent-id');
-    print('      Non-existent file exists: $nonExistentExists');
-
-    // Example 8: Delete files
+    // Example 7: Delete files
     print('\n   === Deleting files ===');
-    final deleteResult1 = await provider.deleteFile(uploadedFile.id);
+    final deleteResult1 = await files.deleteFile(uploadedFile.id);
     print(
         '      Delete ${uploadedFile.filename}: ${deleteResult1.deleted ? "Success" : "Failed"}');
 
-    final deleteResult2 = await provider.deleteFile(autoFile.id);
+    final deleteResult2 = await files.deleteFile(autoFile.id);
     print(
         '      Delete ${autoFile.filename}: ${deleteResult2.deleted ? "Success" : "Failed"}');
 
@@ -149,12 +137,7 @@ Future<void> demonstrateTextFileProcessing(String apiKey) async {
   print('📄 Text File Processing:\n');
 
   try {
-    final provider = anthropic_compat.createAnthropicProvider(
-      apiKey: apiKey,
-      model: 'claude-sonnet-4-20250514',
-      temperature: 0.3,
-      maxTokens: 1500,
-    );
+    final model = _anthropicModel(apiKey);
 
     // Create a sample text file
     const sampleText = '''
@@ -191,27 +174,36 @@ from 3.2 to 4.7 out of 5.
     // Read and process the file
     final fileData = await File(filename).readAsBytes();
 
-    final response = await provider.chat([
-      ChatMessage.user(
-          'Please analyze this project report and provide insights:'),
-      ChatMessage.file(
-        role: ChatRole.user,
-        mime: FileMime.txt,
-        data: fileData,
-        content: 'Project report for analysis',
-      ),
-      ChatMessage.user('''
+    final response = await _generateText(
+      model,
+      prompt: [
+        core.UserPromptMessage(
+          parts: [
+            const core.TextPromptPart(
+              'Please analyze this project report and provide insights:',
+            ),
+            core.FilePromptPart(
+              mediaType: 'text/plain',
+              filename: filename,
+              data: core.FileBytesData(fileData),
+            ),
+            const core.TextPromptPart('''
 Based on this report, please:
 1. Summarize the key achievements
 2. Identify potential risks or concerns
 3. Suggest next steps for improvement
 4. Rate the project success (1-10) with justification
 '''),
-    ]);
+          ],
+        ),
+      ],
+      temperature: 0.3,
+      maxOutputTokens: 1500,
+    );
 
     print('      ✅ File processed successfully');
     print('      File size: ${fileData.length} bytes');
-    print('      Analysis: ${response.text}');
+    print('      Analysis: $response');
 
     // Clean up
     await File(filename).delete();
@@ -227,12 +219,7 @@ Future<void> demonstrateImageAnalysis(String apiKey) async {
   print('🖼️  Image Analysis:\n');
 
   try {
-    final provider = anthropic_compat.createAnthropicProvider(
-      apiKey: apiKey,
-      model: 'claude-sonnet-4-20250514',
-      temperature: 0.4,
-      maxTokens: 1000,
-    );
+    final model = _anthropicModel(apiKey);
 
     // Create a simple test image (placeholder - in real use, you'd have actual images)
     print('   Note: This example shows the structure for image analysis.');
@@ -246,31 +233,39 @@ Future<void> demonstrateImageAnalysis(String apiKey) async {
     if (await imageFile.exists()) {
       final imageData = await imageFile.readAsBytes();
 
-      final response = await provider.chat([
-        ChatMessage.user(
-            'Please analyze this image and describe what you see:'),
-        ChatMessage.file(
-          role: ChatRole.user,
-          mime: FileMime.png,
-          data: imageData,
-          content: 'Chart or diagram for analysis',
-        ),
-        ChatMessage.user('''
+      final response = await _generateText(
+        model,
+        prompt: [
+          core.UserPromptMessage(
+            parts: [
+              const core.TextPromptPart(
+                'Please analyze this image and describe what you see:',
+              ),
+              core.ImagePromptPart(
+                mediaType: 'image/png',
+                data: core.FileBytesData(imageData),
+              ),
+              const core.TextPromptPart('''
 Please provide:
 1. A detailed description of the image
 2. Any data or trends you can identify
 3. Insights or conclusions you can draw
 4. Suggestions for improvement if applicable
 '''),
-      ]);
+            ],
+          ),
+        ],
+        temperature: 0.4,
+        maxOutputTokens: 1000,
+      );
 
       print('      ✅ Image analyzed successfully');
       print('      Image size: ${imageData.length} bytes');
-      print('      Analysis: ${response.text}');
+      print('      Analysis: $response');
     } else {
       print('      ℹ️  No sample image found. Here\'s how to analyze images:');
       print('      1. Load image file as bytes');
-      print('      2. Create ChatMessage.file with appropriate MIME type');
+      print('      2. Add an ImagePromptPart with appropriate MIME type');
       print('      3. Include descriptive prompts for analysis');
       print('      4. Claude can analyze charts, diagrams, photos, etc.');
     }
@@ -286,12 +281,7 @@ Future<void> demonstratePDFProcessing(String apiKey) async {
   print('📋 PDF Processing:\n');
 
   try {
-    final provider = anthropic_compat.createAnthropicProvider(
-      apiKey: apiKey,
-      model: 'claude-sonnet-4-20250514',
-      temperature: 0.3,
-      maxTokens: 2000,
-    );
+    final model = _anthropicModel(apiKey);
 
     // Create a sample PDF content (as text for demonstration)
     const pdfContent = '''
@@ -330,16 +320,20 @@ advantages and operational improvements for modern businesses.
     // Simulate PDF processing
     final pdfBytes = Uint8List.fromList(pdfContent.codeUnits);
 
-    final response = await provider.chat([
-      ChatMessage.user(
-          'Please analyze this research paper and provide a comprehensive review:'),
-      ChatMessage.file(
-        role: ChatRole.user,
-        mime: FileMime.pdf,
-        data: pdfBytes,
-        content: 'Research paper on AI impact in business',
-      ),
-      ChatMessage.user('''
+    final response = await _generateText(
+      model,
+      prompt: [
+        core.UserPromptMessage(
+          parts: [
+            const core.TextPromptPart(
+              'Please analyze this research paper and provide a comprehensive review:',
+            ),
+            core.FilePromptPart(
+              mediaType: 'application/pdf',
+              filename: 'ai_business_impact.pdf',
+              data: core.FileBytesData(pdfBytes),
+            ),
+            const core.TextPromptPart('''
 Please provide:
 1. A concise summary of the paper's main findings
 2. Critical analysis of the methodology
@@ -347,11 +341,16 @@ Please provide:
 4. Suggestions for future research directions
 5. Overall quality rating (1-10) with justification
 '''),
-    ]);
+          ],
+        ),
+      ],
+      temperature: 0.3,
+      maxOutputTokens: 2000,
+    );
 
     print('      ✅ PDF content processed successfully');
     print('      Content size: ${pdfBytes.length} bytes');
-    print('      Analysis: ${response.text}');
+    print('      Analysis: $response');
 
     print('   ✅ PDF processing demonstration completed\n');
   } catch (e) {
@@ -364,12 +363,7 @@ Future<void> demonstrateMultiFileAnalysis(String apiKey) async {
   print('📚 Multi-File Analysis:\n');
 
   try {
-    final provider = anthropic_compat.createAnthropicProvider(
-      apiKey: apiKey,
-      model: 'claude-sonnet-4-20250514',
-      temperature: 0.3,
-      maxTokens: 2000,
-    );
+    final model = _anthropicModel(apiKey);
 
     // Create multiple sample files
     const file1Content = '''
@@ -408,28 +402,30 @@ Q3 Sales Report:
     final file2Data = await File('q2_report.txt').readAsBytes();
     final file3Data = await File('q3_report.txt').readAsBytes();
 
-    final response = await provider.chat([
-      ChatMessage.user(
-          'Please analyze these quarterly sales reports and provide insights:'),
-      ChatMessage.file(
-        role: ChatRole.user,
-        mime: FileMime.txt,
-        data: file1Data,
-        content: 'Q1 Sales Report',
-      ),
-      ChatMessage.file(
-        role: ChatRole.user,
-        mime: FileMime.txt,
-        data: file2Data,
-        content: 'Q2 Sales Report',
-      ),
-      ChatMessage.file(
-        role: ChatRole.user,
-        mime: FileMime.txt,
-        data: file3Data,
-        content: 'Q3 Sales Report',
-      ),
-      ChatMessage.user('''
+    final response = await _generateText(
+      model,
+      prompt: [
+        core.UserPromptMessage(
+          parts: [
+            const core.TextPromptPart(
+              'Please analyze these quarterly sales reports and provide insights:',
+            ),
+            core.FilePromptPart(
+              mediaType: 'text/plain',
+              filename: 'q1_report.txt',
+              data: core.FileBytesData(file1Data),
+            ),
+            core.FilePromptPart(
+              mediaType: 'text/plain',
+              filename: 'q2_report.txt',
+              data: core.FileBytesData(file2Data),
+            ),
+            core.FilePromptPart(
+              mediaType: 'text/plain',
+              filename: 'q3_report.txt',
+              data: core.FileBytesData(file3Data),
+            ),
+            const core.TextPromptPart('''
 Based on these three quarterly reports, please:
 1. Identify trends across the quarters
 2. Analyze product performance patterns
@@ -437,13 +433,18 @@ Based on these three quarterly reports, please:
 4. Predict Q4 performance
 5. Recommend strategic actions
 '''),
-    ]);
+          ],
+        ),
+      ],
+      temperature: 0.3,
+      maxOutputTokens: 2000,
+    );
 
     print('      ✅ Multi-file analysis completed');
     print('      Files processed: 3');
     print(
         '      Total data: ${file1Data.length + file2Data.length + file3Data.length} bytes');
-    print('      Analysis: ${response.text}');
+    print('      Analysis: $response');
 
     // Clean up
     await File('q1_report.txt').delete();
@@ -461,12 +462,7 @@ Future<void> demonstrateDocumentComparison(String apiKey) async {
   print('🔍 Document Comparison:\n');
 
   try {
-    final provider = anthropic_compat.createAnthropicProvider(
-      apiKey: apiKey,
-      model: 'claude-sonnet-4-20250514',
-      temperature: 0.2, // Lower for analytical comparison
-      maxTokens: 1500,
-    );
+    final model = _anthropicModel(apiKey);
 
     // Create two versions of a document
     const version1 = '''
@@ -499,22 +495,25 @@ Company Policy: Remote Work Guidelines
     final v1Data = await File('policy_v1.txt').readAsBytes();
     final v2Data = await File('policy_v2.txt').readAsBytes();
 
-    final response = await provider.chat([
-      ChatMessage.user(
-          'Please compare these two versions of our remote work policy:'),
-      ChatMessage.file(
-        role: ChatRole.user,
-        mime: FileMime.txt,
-        data: v1Data,
-        content: 'Remote Work Policy - Version 1',
-      ),
-      ChatMessage.file(
-        role: ChatRole.user,
-        mime: FileMime.txt,
-        data: v2Data,
-        content: 'Remote Work Policy - Version 2',
-      ),
-      ChatMessage.user('''
+    final response = await _generateText(
+      model,
+      prompt: [
+        core.UserPromptMessage(
+          parts: [
+            const core.TextPromptPart(
+              'Please compare these two versions of our remote work policy:',
+            ),
+            core.FilePromptPart(
+              mediaType: 'text/plain',
+              filename: 'policy_v1.txt',
+              data: core.FileBytesData(v1Data),
+            ),
+            core.FilePromptPart(
+              mediaType: 'text/plain',
+              filename: 'policy_v2.txt',
+              data: core.FileBytesData(v2Data),
+            ),
+            const core.TextPromptPart('''
 Please provide:
 1. Key differences between the versions
 2. Analysis of which changes are improvements
@@ -522,11 +521,16 @@ Please provide:
 4. Recommendations for further refinements
 5. Overall assessment of the policy evolution
 '''),
-    ]);
+          ],
+        ),
+      ],
+      temperature: 0.2,
+      maxOutputTokens: 1500,
+    );
 
     print('      ✅ Document comparison completed');
     print('      Documents compared: 2 versions');
-    print('      Analysis: ${response.text}');
+    print('      Analysis: $response');
 
     // Clean up
     await File('policy_v1.txt').delete();
@@ -538,15 +542,37 @@ Please provide:
   }
 }
 
+core.LanguageModel _anthropicModel(String apiKey) {
+  return anthropic
+      .anthropic(apiKey: apiKey)
+      .chatModel('claude-sonnet-4-20250514');
+}
+
+Future<String> _generateText(
+  core.LanguageModel model, {
+  required List<core.PromptMessage> prompt,
+  required double temperature,
+  required int maxOutputTokens,
+}) async {
+  final result = await core.generateTextCall(
+    model: model,
+    prompt: prompt,
+    options: core.GenerateTextOptions(
+      temperature: temperature,
+      maxOutputTokens: maxOutputTokens,
+    ),
+  );
+  return result.text;
+}
+
 /// 🎯 Key Anthropic File Handling Concepts Summary:
 ///
 /// File Management API:
-/// - Upload files: uploadFile(FileUploadRequest) or uploadFileFromBytes()
-/// - List files: listFiles([FileListQuery?])
-/// - Get metadata: retrieveFile(String fileId)
-/// - Download content: getFileContent(String fileId)
+/// - Upload files: uploadFile(AnthropicFileUpload) or uploadBytes(...)
+/// - List files: listFiles(limit: ...)
+/// - Get metadata: getFile(String fileId)
+/// - Download content: downloadFile(String fileId)
 /// - Delete files: deleteFile(String fileId)
-/// - Check existence: fileExists(String fileId)
 ///
 /// Supported File Types:
 /// - Text files (.txt, .md, .csv)
@@ -562,8 +588,7 @@ Please provide:
 /// - Cross-document pattern recognition
 ///
 /// Best Practices:
-/// - Use createAnthropicProvider() for provider-owned remote file lifecycle
-///   access
+/// - Use anthropic(...).files() for provider-owned remote file lifecycle access
 /// - Use appropriate MIME types for files
 /// - Provide context with file uploads
 /// - Use lower temperature for analytical tasks

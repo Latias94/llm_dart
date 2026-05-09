@@ -27,9 +27,11 @@ Future<void> main() async {
 
   print('🎙️ ElevenLabs Audio Boundary Demo\n');
 
-  final speechModel = elevenlabs_pkg.ElevenLabs(
+  final provider = elevenlabs_pkg.elevenLabs(
     apiKey: apiKey,
-  ).speechModel(
+  );
+
+  final speechModel = provider.speechModel(
     _elevenLabsSpeechModelId,
     settings: const elevenlabs_pkg.ElevenLabsSpeechModelSettings(
       defaultVoiceId: _elevenLabsVoiceId,
@@ -39,13 +41,10 @@ Future<void> main() async {
     ),
   );
 
-  final transcriptionModel = elevenlabs_pkg.ElevenLabs(
-    apiKey: apiKey,
-  ).transcriptionModel(_elevenLabsTranscriptionModelId);
+  final transcriptionModel =
+      provider.transcriptionModel(_elevenLabsTranscriptionModelId);
 
-  final voiceCatalog = elevenlabs_pkg.ElevenLabs(
-    apiKey: apiKey,
-  ).voices();
+  final voiceCatalog = provider.voices();
 
   final audioProvider = elevenlabs_compat.createElevenLabsProvider(
     apiKey: apiKey,

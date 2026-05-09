@@ -17,9 +17,6 @@ For new code, prefer:
 - [extended_thinking.dart](extended_thinking.dart)
 - [streaming_tool_calling.dart](streaming_tool_calling.dart)
 - [mcp_connector.dart](mcp_connector.dart)
-
-### Transitional or Compatibility-Oriented
-
 - [file_handling.dart](file_handling.dart)
 
 ## Setup
@@ -32,8 +29,8 @@ dart run streaming_tool_calling.dart
 dart run mcp_connector.dart
 ```
 
-Run the legacy file-handling appendix only when checking old provider-shell
-integration code:
+Run the file-handling example when checking Anthropic's provider-owned files
+client and shared file/image prompt parts:
 
 ```bash
 dart run file_handling.dart
@@ -146,7 +143,7 @@ import 'package:llm_dart/llm_dart.dart' as llm;
 final files = llm.anthropic(apiKey: 'your-key').files();
 
 final uploaded = await files.uploadBytes(
-  [72, 101, 108, 108, 111],
+  bytes: [72, 101, 108, 108, 111],
   filename: 'hello.txt',
   mediaType: 'text/plain',
 );
@@ -167,8 +164,9 @@ print(deleted.deleted);
   `thinkingBudgetTokens` into shared `GenerateTextOptions`.
 - Anthropic's stable files client now covers upload, list, metadata, download,
   and delete through `anthropic(...).files()`.
-  `file_handling.dart` remains a compatibility appendix; the modern end-to-end
-  files example lives in `example/02_core_features/file_management.dart`.
+  `file_handling.dart` now uses that focused client plus shared file/image
+  prompt parts; the broader app-level files example lives in
+  `example/02_core_features/file_management.dart`.
 - Anthropic streaming tool activity should stay on shared `TextStreamEvent`
   surfaces. Do not introduce Anthropic-only stream contracts for ordinary tool
   tracing.
