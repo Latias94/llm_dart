@@ -16,8 +16,10 @@ Recorded on 2026-05-09:
 - `dart run tool/check_example_api_guards.dart` passed.
 - `dart analyze lib test example tool` passed.
 - `dart test` passed.
-- `dart run tool/run_workspace_publish_dry_run.dart` passed for all 11
+- `dart run tool/run_workspace_publish_dry_run.dart` passed for all 12
   publishable workspace packages.
+- `dart run tool/check_pub_version_availability.dart --proxy=http://127.0.0.1:10809`
+  passed for all 12 publishable workspace packages.
 - Focused provider and chat entrypoints were narrowed so they expose short
   factories and provider/runtime-owned APIs without exporting the grouped
   `AI` namespace. `AI.<provider>(...)` remains available from
@@ -26,11 +28,12 @@ Recorded on 2026-05-09:
   analysis, and execution for:
   - the modern root facade
   - provider-only root consumers for OpenAI, Google, Anthropic, OpenAI-family
-    profiles, and community providers
+    profiles, Ollama, and ElevenLabs
   - focused provider/runtime/transport/chat packages
   - split provider package consumers that depend directly on
     `llm_dart_openai`, `llm_dart_google`, `llm_dart_anthropic`, or
-    `llm_dart_community` without the root `llm_dart` package
+    the dedicated `llm_dart_ollama` and `llm_dart_elevenlabs` packages without
+    the root `llm_dart` package
   - the `llm_dart_core` compatibility shell
   - the explicit `package:llm_dart/legacy.dart` compatibility surface
 - A clean Flutter consumer smoke project passed local path dependency
@@ -50,8 +53,8 @@ Minimum Dart consumer smoke:
 - construct models through `openai(...)`, `google(...)`, and
   `anthropic(...)`
 - construct focused package APIs from `llm_dart_openai`, `llm_dart_google`,
-  `llm_dart_anthropic`, `llm_dart_community`, `llm_dart_transport`, and
-  `llm_dart_chat`
+  `llm_dart_anthropic`, `llm_dart_ollama`, `llm_dart_elevenlabs`,
+  `llm_dart_transport`, and `llm_dart_chat`
 - construct at least one shared provider contract such as
   `FunctionToolDefinition`
 - construct one `llm_dart_core` compatibility prompt type
@@ -105,7 +108,8 @@ Publishable package order:
 - `llm_dart_openai`
 - `llm_dart_google`
 - `llm_dart_anthropic`
-- `llm_dart_community`
+- `llm_dart_ollama`
+- `llm_dart_elevenlabs`
 - `llm_dart_flutter`
 - `llm_dart`
 

@@ -52,7 +52,8 @@ This workstream should not:
 - add new provider features
 - remove `legacy.dart`
 - create `llm_dart_legacy`
-- split `llm_dart_community`
+- recreate a broad provider bucket after the dedicated Ollama and ElevenLabs
+  split
 - delete `llm_dart_core`
 - broaden shared abstractions for reference-repository parity
 

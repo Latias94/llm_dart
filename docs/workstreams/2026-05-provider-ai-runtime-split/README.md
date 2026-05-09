@@ -69,7 +69,8 @@ Long-term package ownership should move toward:
 - `llm_dart_flutter`
   - Flutter-specific controllers and widgets
 - provider packages
-  - OpenAI, Anthropic, Google, community providers, and future providers
+  - OpenAI, Anthropic, Google, Ollama, ElevenLabs, OpenAI-compatible profiles,
+    and future providers
 - root `llm_dart`
   - modern convenience facade plus explicit compatibility bridge while legacy
     removal is staged

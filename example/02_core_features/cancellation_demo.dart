@@ -4,7 +4,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/core/cancellation.dart' as cancellation;
 import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/providers/openai/openai.dart' as openai_compat;
 
@@ -133,13 +132,13 @@ Future<void> demonstrateGenerateCancellation(core.LanguageModel model) async {
   } on core.TransportCancelledException catch (error) {
     print('Caught TransportCancelledException');
     print(
-      'Reason: ${cancellation.CancellationHelper.getCancellationReason(error)}\n',
+      'Reason: ${core.CancellationHelper.getCancellationReason(error)}\n',
     );
   } catch (error) {
-    if (cancellation.CancellationHelper.isCancelled(error)) {
+    if (core.CancellationHelper.isCancelled(error)) {
       print(
         'Cancelled via helper: '
-        '${cancellation.CancellationHelper.getCancellationReason(error)}\n',
+        '${core.CancellationHelper.getCancellationReason(error)}\n',
       );
     } else {
       print('Generate cancellation demo failed: $error\n');
@@ -183,7 +182,7 @@ Future<void> demonstrateSharedCancellation(core.LanguageModel model) async {
         await request;
         completedCount += 1;
       } catch (error) {
-        if (cancellation.CancellationHelper.isCancelled(error)) {
+        if (core.CancellationHelper.isCancelled(error)) {
           cancelledCount += 1;
         } else {
           rethrow;
@@ -219,10 +218,10 @@ Future<void> demonstratePreCancelledRequest(core.LanguageModel model) async {
 
     print('[warning] request unexpectedly ran despite pre-cancellation\n');
   } catch (error) {
-    if (cancellation.CancellationHelper.isCancelled(error)) {
+    if (core.CancellationHelper.isCancelled(error)) {
       print(
         'Pre-cancelled request rejected: '
-        '${cancellation.CancellationHelper.getCancellationReason(error)}\n',
+        '${core.CancellationHelper.getCancellationReason(error)}\n',
       );
     } else {
       print('Pre-cancelled request demo failed: $error\n');
@@ -250,10 +249,10 @@ Future<void> demonstrateModelListingBoundary(String apiKey) async {
       '(${models.length} models)\n',
     );
   } catch (error) {
-    if (cancellation.CancellationHelper.isCancelled(error)) {
+    if (core.CancellationHelper.isCancelled(error)) {
       print(
         'Boundary cancellation handled by the compatibility layer: '
-        '${cancellation.CancellationHelper.getCancellationReason(error)}',
+        '${core.CancellationHelper.getCancellationReason(error)}',
       );
       print('Remote model listing still lives on a provider-owned boundary.\n');
     } else {

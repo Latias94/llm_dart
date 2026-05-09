@@ -62,6 +62,9 @@ Older builder-era code should migrate through `package:llm_dart/legacy.dart`.
 - Fixed legacy direct DeepSeek, Groq, and xAI provider tool-result replay so
   OpenAI-compatible chat-completions requests send `role: tool` messages with
   matching `tool_call_id` values after assistant `tool_calls`.
+- Exported `CancellationHelper` from `package:llm_dart/core.dart` so
+  cancellation examples and new app code no longer need the older
+  `core/cancellation.dart` subpath import.
 
 ### Breaking Changes
 

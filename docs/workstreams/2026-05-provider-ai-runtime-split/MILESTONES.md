@@ -141,14 +141,15 @@ Current status:
   surface
 - active provider-reference coverage is closed for the first breaking preview:
   OpenAI, Anthropic, and Google/Vertex have hosted-reference support, while
-  current community providers do not expose a hosted input file reference path
+  current Ollama and ElevenLabs provider packages do not expose a hosted input
+  file reference path
 
 ## M5 - Provider Package Migration
 
 Goals:
 
-- migrate OpenAI, Anthropic, Google, and community providers to the new spec
-  package
+- migrate OpenAI, Anthropic, Google, Ollama, and ElevenLabs providers to the
+  new spec package
 - keep provider-native helpers provider-owned
 - preserve capability profile support
 
@@ -161,8 +162,9 @@ Acceptance criteria:
 
 Current status:
 
-- OpenAI, Anthropic, Google, and community provider packages now depend on
-  `llm_dart_provider` for runtime contracts instead of `llm_dart_core`
+- OpenAI, Anthropic, Google, Ollama, and ElevenLabs provider packages now
+  depend on `llm_dart_provider` for runtime contracts instead of
+  `llm_dart_core`
 - provider tests and examples that need high-level helpers use
   `llm_dart_ai` as a dev dependency only
 - shared workspace test helpers in `llm_dart_test` now depend on
@@ -237,8 +239,8 @@ Current status:
   tests on focused entrypoints
 - release readiness is documented, including validation commands, publish
   dry-run expectations, manual release checks, and stop conditions
-- workspace publish dry-run passed for all 11 publishable packages with zero
-  warnings on 2026-05-08
+- workspace publish dry-run passed for all 12 publishable packages with zero
+  warnings after the dedicated Ollama and ElevenLabs split
 - clean Dart and Flutter consumer smoke validation passed for modern root,
   focused packages, core compatibility, legacy compatibility, and
   `llm_dart_flutter` import/controller construction paths

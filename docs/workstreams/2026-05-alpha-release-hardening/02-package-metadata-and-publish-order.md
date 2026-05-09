@@ -19,9 +19,10 @@ The publishable packages for `0.11.0-alpha.1` are:
 6. `llm_dart_openai`
 7. `llm_dart_google`
 8. `llm_dart_anthropic`
-9. `llm_dart_community`
-10. `llm_dart_flutter`
-11. `llm_dart`
+9. `llm_dart_ollama`
+10. `llm_dart_elevenlabs`
+11. `llm_dart_flutter`
+12. `llm_dart`
 
 `packages/llm_dart_test` remains non-publishable through `publish_to: none`.
 
@@ -70,8 +71,8 @@ Public README fixes made in this audit:
 
 - root README example and reference links now use repository-relative paths
   instead of local machine paths.
-- `llm_dart_community` README no longer mentions the internal reference repo in
-  public package positioning.
+- the dedicated Ollama and ElevenLabs README files describe direct focused
+  provider-package adoption rather than a catch-all provider bucket.
 
 ## Validation
 
@@ -87,8 +88,9 @@ Result:
 - guards passed
 - `dart analyze lib test example tool` passed
 - `dart test` passed
-- workspace publish dry-run passed for 11 packages
-- pub.dev version availability passed: the 10 newly split package names were
+- workspace publish dry-run passed for 12 packages after the dedicated
+  Ollama and ElevenLabs package split
+- pub.dev version availability passed: the newly split package names were
   not found on pub.dev, root `llm_dart` had latest `0.10.7`, and
   `0.11.0-alpha.1` was available for every publishable package
 - publish dry-run reported `0 warnings`; remaining hints are the expected local

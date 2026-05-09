@@ -72,7 +72,8 @@
 - [x] Migrate `llm_dart_openai`
 - [x] Migrate `llm_dart_anthropic`
 - [x] Migrate `llm_dart_google`
-- [x] Migrate `llm_dart_community`
+- [x] Migrate dedicated provider packages including `llm_dart_ollama` and
+  `llm_dart_elevenlabs`
 - [x] Preserve provider-owned typed options
 - [x] Preserve model capability profiles
 - [x] Preserve OpenAI-family profiles

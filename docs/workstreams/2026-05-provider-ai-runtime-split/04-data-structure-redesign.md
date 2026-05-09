@@ -110,7 +110,7 @@ Provider-reference coverage audit:
 
 - active provider packages with hosted input file references are covered:
   OpenAI, Anthropic, and Google/Vertex
-- `llm_dart_community` currently has no hosted input file reference surface;
+- `llm_dart_ollama` currently has no hosted input file reference surface;
   Ollama image inputs resolve bytes or URI-backed bytes through its
   `binaryResolver`
 - planned provider package directories without a `pubspec.yaml` or `lib/`

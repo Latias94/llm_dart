@@ -74,6 +74,47 @@ void main() {
       expect(result.violations, contains(contains('LLMBuilder usage')));
     });
 
+    test(
+        'reports legacy provider, model, and core subpath imports in default examples',
+        () async {
+      final repoRoot = await _createTempWorkspace();
+      addTearDown(() async {
+        if (repoRoot.existsSync()) {
+          await repoRoot.delete(recursive: true);
+        }
+      });
+
+      await _writeFile(
+        repoRoot,
+        'example/02_core_features/chat_basics.dart',
+        '''
+import 'package:llm_dart/core/capability.dart';
+import 'package:llm_dart/models/chat_models.dart';
+import 'package:llm_dart/providers/openai/openai.dart';
+
+void main() {}
+''',
+      );
+
+      final result = await guard.evaluateExampleApiGuards(
+        repoRoot: repoRoot,
+      );
+
+      expect(result.passed, isFalse);
+      expect(
+        result.violations,
+        contains(contains('legacy core subpath import')),
+      );
+      expect(
+        result.violations,
+        contains(contains('legacy model compatibility import')),
+      );
+      expect(
+        result.violations,
+        contains(contains('legacy provider compatibility import')),
+      );
+    });
+
     test('reports deprecated ai helper usage in default examples', () async {
       final repoRoot = await _createTempWorkspace();
       addTearDown(() async {

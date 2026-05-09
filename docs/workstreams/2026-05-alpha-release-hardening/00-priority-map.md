@@ -64,9 +64,10 @@ Publishing should follow dependency direction:
 6. `llm_dart_openai`
 7. `llm_dart_google`
 8. `llm_dart_anthropic`
-9. `llm_dart_community`
-10. `llm_dart_flutter`
-11. `llm_dart`
+9. `llm_dart_ollama`
+10. `llm_dart_elevenlabs`
+11. `llm_dart_flutter`
+12. `llm_dart`
 
 The order can change only if the package graph changes and the release gate
 documents the new reason.

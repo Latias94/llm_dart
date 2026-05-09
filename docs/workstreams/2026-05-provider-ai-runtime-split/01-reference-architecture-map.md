@@ -26,7 +26,7 @@ UI adapters should not compete for the same package identity.
 | transport | `llm_dart_transport` | keep |
 | chat runtime | `llm_dart_chat` | keep |
 | Flutter adapter | `llm_dart_flutter` | keep |
-| provider implementations | `llm_dart_openai`, `llm_dart_google`, `llm_dart_anthropic`, `llm_dart_community`, and root legacy providers | provider packages only |
+| provider implementations | `llm_dart_openai`, `llm_dart_google`, `llm_dart_anthropic`, `llm_dart_ollama`, `llm_dart_elevenlabs`, and root legacy providers | provider packages only |
 | root package | modern facade plus compatibility host plus legacy implementation tail | facade plus explicit compatibility bridge |
 
 ## Deliberate Dart Differences
