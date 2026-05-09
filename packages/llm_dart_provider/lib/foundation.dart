@@ -34,6 +34,7 @@ export 'src/serialization/text_stream_event_json_codec.dart';
 export 'src/stream/text_stream_event.dart';
 export 'src/tool/tool_definition.dart';
 export 'src/tool/tool_output.dart';
+export 'src/tool/tool_output_projection.dart';
 export 'src/ui/chat_ui_accumulator.dart';
 export 'src/ui/chat_message_mapper.dart';
 export 'src/ui/chat_ui_message.dart';

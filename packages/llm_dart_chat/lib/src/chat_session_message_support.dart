@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 List<ChatUiMessage> visibleMessagesFromPrompt(
@@ -138,6 +140,7 @@ ChatUiMessage promptMessageToChatUiMessage(
             input: input,
             inputText: current?.inputText,
             output: current?.output,
+            toolOutput: current?.toolOutput,
             errorText: current?.errorText,
             providerExecuted:
                 providerExecuted || current?.providerExecuted == true,
@@ -167,6 +170,7 @@ ChatUiMessage promptMessageToChatUiMessage(
             input: current?.input,
             inputText: current?.inputText,
             output: current?.output,
+            toolOutput: current?.toolOutput,
             errorText: current?.errorText,
             providerExecuted: current?.providerExecuted ?? false,
             isDynamic: current?.isDynamic ?? false,
@@ -187,6 +191,7 @@ ChatUiMessage promptMessageToChatUiMessage(
           :final toolName,
           :final output,
           :final isError,
+          :final toolOutput,
           :final providerMetadata,
         ):
         upsertToolPart(
@@ -194,13 +199,12 @@ ChatUiMessage promptMessageToChatUiMessage(
           (current) => ToolUiPart(
             toolCallId: toolCallId,
             toolName: toolName,
-            state: isError
-                ? ToolUiPartState.outputError
-                : ToolUiPartState.outputAvailable,
+            state: _toolOutputState(toolOutput),
             input: current?.input,
             inputText: current?.inputText,
             output: output,
-            errorText: isError ? '$output' : null,
+            toolOutput: toolOutput,
+            errorText: isError ? _stringifyToolOutputValue(toolOutput) : null,
             providerExecuted: current?.providerExecuted ?? false,
             isDynamic: current?.isDynamic ?? false,
             preliminary: false,
@@ -232,6 +236,7 @@ ChatUiMessage promptMessageToChatUiMessage(
             input: current?.input,
             inputText: current?.inputText,
             output: current?.output,
+            toolOutput: current?.toolOutput,
             errorText: current?.errorText,
             providerExecuted: current?.providerExecuted ?? false,
             isDynamic: current?.isDynamic ?? false,
@@ -413,6 +418,7 @@ List<PromptMessage> assistantPromptMessagesFromChatUiMessage(
             :final title,
             :final callProviderMetadata,
             :final output,
+            :final toolOutput,
             :final resultProviderMetadata,
           )
           when state == ToolUiPartState.outputAvailable ||
@@ -446,6 +452,7 @@ List<PromptMessage> assistantPromptMessagesFromChatUiMessage(
                 toolCallId: toolCallId,
                 toolName: toolName,
                 output: output,
+                toolOutput: toolOutput,
                 isError: state == ToolUiPartState.outputError,
                 providerMetadata: resultProviderMetadata,
               ),
@@ -500,4 +507,27 @@ Map<String, Object?>? toolReplayPayloadMap(Object? data) {
   }
 
   return null;
+}
+
+ToolUiPartState _toolOutputState(ToolOutput output) {
+  if (output.denied) {
+    return ToolUiPartState.outputDenied;
+  }
+
+  return output.isError
+      ? ToolUiPartState.outputError
+      : ToolUiPartState.outputAvailable;
+}
+
+String _stringifyToolOutputValue(ToolOutput output) {
+  final value = output.value;
+  if (value is String) {
+    return value;
+  }
+
+  try {
+    return jsonEncode(value);
+  } catch (_) {
+    return '$value';
+  }
 }

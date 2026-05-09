@@ -342,6 +342,77 @@ void main() {
       );
     });
 
+    test('generate encodes explicit content tool output as stable JSON',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = Ollama(
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return const TransportResponse(
+              statusCode: 200,
+              body: {
+                'model': 'llama3.2',
+                'done': true,
+                'message': {
+                  'content': 'Handled',
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel('llama3.2');
+
+      await generateText(
+        model: model,
+        prompt: [
+          UserPromptMessage.text('Handle the structured tool result.'),
+          ToolPromptMessage(
+            toolName: 'weather',
+            parts: [
+              ToolResultPromptPart(
+                toolCallId: 'tool-1',
+                toolName: 'weather',
+                toolOutput: ContentToolOutput(
+                  parts: const [
+                    TextToolOutputContentPart('forecast'),
+                    JsonToolOutputContentPart({
+                      'tempC': 21,
+                    }),
+                    FileToolOutputContentPart(
+                      mediaType: 'text/plain',
+                      filename: 'note.txt',
+                      data: FileTextData('sunny'),
+                    ),
+                    CustomToolOutputContentPart(
+                      kind: 'provider-note',
+                      data: {
+                        'source': 'cache',
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+
+      final body = capturedRequest!.body as Map<String, Object?>;
+      final messages = body['messages'] as List<Object?>;
+      final toolMessage = messages[1] as Map<String, Object?>;
+      expect(
+        toolMessage['content'],
+        '[{"type":"text","text":"forecast"},'
+        '{"type":"json","value":{"tempC":21}},'
+        '{"type":"file","mediaType":"text/plain","filename":"note.txt",'
+        '"data":{"type":"text","text":"sunny"}},'
+        '{"type":"custom","kind":"provider-note",'
+        '"data":{"source":"cache"}}]',
+      );
+    });
+
     test('stream emits reasoning, text, tool call, and finish events',
         () async {
       final model = Ollama(

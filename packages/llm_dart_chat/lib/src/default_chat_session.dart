@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
@@ -175,6 +176,7 @@ final class DefaultChatSession implements ChatSession {
     _ensureUsable();
     _ensureIdle('addToolOutput');
 
+    final toolOutput = update.toolOutput;
     final assistantMessage = _requireLatestAssistantMessage();
     final updatedAssistantMessage = chatUpdateToolPartByCallId(
       assistantMessage,
@@ -182,13 +184,13 @@ final class DefaultChatSession implements ChatSession {
       (part) => ToolUiPart(
         toolCallId: part.toolCallId,
         toolName: part.toolName,
-        state: update.isError
-            ? ToolUiPartState.outputError
-            : ToolUiPartState.outputAvailable,
+        state: _toolOutputState(toolOutput),
         input: part.input,
         inputText: part.inputText,
         output: update.output,
-        errorText: update.isError ? '${update.output}' : null,
+        toolOutput: toolOutput,
+        errorText:
+            toolOutput.isError ? _stringifyToolOutputValue(toolOutput) : null,
         providerExecuted: part.providerExecuted,
         isDynamic: part.isDynamic,
         preliminary: false,
@@ -207,8 +209,7 @@ final class DefaultChatSession implements ChatSession {
           ToolResultPromptPart(
             toolCallId: update.toolCallId,
             toolName: update.toolName,
-            output: update.output,
-            isError: update.isError,
+            toolOutput: toolOutput,
           ),
         ],
       ),
@@ -289,6 +290,7 @@ final class DefaultChatSession implements ChatSession {
         input: part.input,
         inputText: part.inputText,
         output: part.output,
+        toolOutput: part.toolOutput,
         errorText: part.errorText,
         providerExecuted: part.providerExecuted,
         isDynamic: part.isDynamic,
@@ -738,8 +740,7 @@ final class DefaultChatSession implements ChatSession {
         ToolOutputUpdate(
           toolCallId: request.toolCallId,
           toolName: request.toolName,
-          output: result.output,
-          isError: result.isError,
+          toolOutput: result.toolOutput,
           options: result.options,
         ),
       );
@@ -851,6 +852,29 @@ MessageIdGenerator _sequentialMessageId({
 
 String _toolExecutionKey(String messageId, String toolCallId) {
   return '$messageId\u0000$toolCallId';
+}
+
+ToolUiPartState _toolOutputState(ToolOutput output) {
+  if (output.denied) {
+    return ToolUiPartState.outputDenied;
+  }
+
+  return output.isError
+      ? ToolUiPartState.outputError
+      : ToolUiPartState.outputAvailable;
+}
+
+String _stringifyToolOutputValue(ToolOutput output) {
+  final value = output.value;
+  if (value is String) {
+    return value;
+  }
+
+  try {
+    return jsonEncode(value);
+  } catch (_) {
+    return '$value';
+  }
 }
 
 ChatOnToolCall? _resolveToolExecutionCallback({

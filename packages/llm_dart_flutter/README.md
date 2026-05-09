@@ -475,6 +475,11 @@ final session = DefaultChatSession(
 );
 ```
 
+Use `ToolExecutionResult.toolOutput(...)` when a local tool needs to return an
+explicit `TextToolOutput`, `JsonToolOutput`, `ExecutionDeniedToolOutput`, or
+`ContentToolOutput`. The `output` and `error` constructors remain convenient
+shortcuts for simple JSON-like results.
+
 Important notes:
 
 - `onToolCall` only applies to client-executed tools

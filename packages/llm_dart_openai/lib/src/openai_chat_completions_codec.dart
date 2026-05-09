@@ -1124,78 +1124,7 @@ final class OpenAIChatCompletionsCodec {
   }
 
   String _encodeContentToolOutput(List<ToolOutputContentPart> parts) {
-    return jsonEncode([
-      for (final part in parts) _encodeContentToolOutputPart(part),
-    ]);
-  }
-
-  Map<String, Object?> _encodeContentToolOutputPart(
-    ToolOutputContentPart part,
-  ) {
-    return switch (part) {
-      TextToolOutputContentPart(:final text, :final providerMetadata) => {
-          'type': 'text',
-          'text': text,
-          if (providerMetadata != null)
-            'providerMetadata': providerMetadata.toJsonMap(),
-        },
-      JsonToolOutputContentPart(:final value, :final providerMetadata) => {
-          'type': 'json',
-          'value': normalizeJsonValue(value),
-          if (providerMetadata != null)
-            'providerMetadata': providerMetadata.toJsonMap(),
-        },
-      FileToolOutputContentPart(
-        :final mediaType,
-        :final filename,
-        :final data,
-        :final providerMetadata,
-      ) =>
-        {
-          'type': 'file',
-          'mediaType': mediaType,
-          if (filename != null) 'filename': filename,
-          'data': _encodeFileData(data),
-          if (providerMetadata != null)
-            'providerMetadata': providerMetadata.toJsonMap(),
-        },
-      CustomToolOutputContentPart(
-        :final kind,
-        :final data,
-        :final providerMetadata,
-      ) =>
-        {
-          'type': 'custom',
-          'kind': kind,
-          if (data != null) 'data': normalizeJsonValue(data),
-          if (providerMetadata != null)
-            'providerMetadata': providerMetadata.toJsonMap(),
-        },
-    };
-  }
-
-  Map<String, Object?> _encodeFileData(FileData data) {
-    return switch (data) {
-      FileBytesData(:final bytes) => {
-          'type': 'bytes',
-          'bytes': {
-            'encoding': 'base64',
-            'data': base64Encode(bytes),
-          },
-        },
-      FileUrlData(:final uri) => {
-          'type': 'url',
-          'uri': uri.toString(),
-        },
-      FileTextData(:final text) => {
-          'type': 'text',
-          'text': text,
-        },
-      FileProviderReferenceData(:final providerReference) => {
-          'type': 'provider-reference',
-          'providerReference': providerReference.toJsonMap(),
-        },
-    };
+    return jsonEncode(projectToolOutputContentPartsToJson(parts));
   }
 
   Map<String, Object?>? _asMap(Object? value) {

@@ -10,17 +10,28 @@ import 'chat_state.dart';
 final class ToolOutputUpdate {
   final String toolCallId;
   final String toolName;
-  final Object? output;
-  final bool isError;
+  final Object? _output;
+  final bool _isError;
+  final ToolOutput? _toolOutput;
   final ChatRequestOptions options;
 
   const ToolOutputUpdate({
     required this.toolCallId,
     required this.toolName,
-    this.output,
-    this.isError = false,
+    Object? output,
+    ToolOutput? toolOutput,
+    bool isError = false,
     this.options = const ChatRequestOptions(),
-  });
+  })  : _output = output,
+        _isError = isError,
+        _toolOutput = toolOutput;
+
+  ToolOutput get toolOutput =>
+      _toolOutput ?? ToolOutput.fromValue(_output, isError: _isError);
+
+  Object? get output => toolOutput.value;
+
+  bool get isError => toolOutput.isError;
 }
 
 final class ToolApprovalResponse {
@@ -124,19 +135,38 @@ final class ToolExecutionRequest {
 }
 
 final class ToolExecutionResult {
-  final Object? output;
-  final bool isError;
+  final Object? _output;
+  final bool _isError;
+  final ToolOutput? _toolOutput;
   final ChatRequestOptions options;
 
   const ToolExecutionResult.output(
-    this.output, {
+    Object? output, {
     this.options = const ChatRequestOptions(),
-  }) : isError = false;
+  })  : _output = output,
+        _isError = false,
+        _toolOutput = null;
 
   const ToolExecutionResult.error(
-    this.output, {
+    Object? output, {
     this.options = const ChatRequestOptions(),
-  }) : isError = true;
+  })  : _output = output,
+        _isError = true,
+        _toolOutput = null;
+
+  const ToolExecutionResult.toolOutput(
+    ToolOutput toolOutput, {
+    this.options = const ChatRequestOptions(),
+  })  : _output = null,
+        _isError = false,
+        _toolOutput = toolOutput;
+
+  ToolOutput get toolOutput =>
+      _toolOutput ?? ToolOutput.fromValue(_output, isError: _isError);
+
+  Object? get output => toolOutput.value;
+
+  bool get isError => toolOutput.isError;
 }
 
 typedef ChatOnToolCall = FutureOr<ToolExecutionResult?> Function(

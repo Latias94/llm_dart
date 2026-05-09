@@ -430,10 +430,9 @@ final class OllamaLanguageModel
       switch (part) {
         case ToolResultPromptPart(
             toolName: final toolName,
-            output: final output,
-            isError: final isError,
+            toolOutput: final toolOutput,
           ):
-          if (isError) {
+          if (toolOutput.isError) {
             _addWarningOnce(
               warnings,
               const ModelWarning(
@@ -447,7 +446,7 @@ final class OllamaLanguageModel
           encodedMessages.add({
             'role': 'tool',
             'tool_name': toolName,
-            'content': _stringifyToolOutput(output),
+            'content': _stringifyToolOutput(toolOutput),
           });
         default:
           throw UnsupportedError(
@@ -769,12 +768,21 @@ Object? _normalizeDecodedToolArguments(Object? arguments) {
   return arguments;
 }
 
-String _stringifyToolOutput(Object? output) {
-  return switch (output) {
-    null => '',
-    String() => output,
-    _ => jsonEncode(output),
-  };
+String _stringifyToolOutput(ToolOutput output) {
+  if (output is ExecutionDeniedToolOutput) {
+    return output.reason ?? 'Tool execution denied';
+  }
+
+  if (output is ContentToolOutput) {
+    return jsonEncode(projectToolOutputContentPartsToJson(output.parts));
+  }
+
+  final value = output.value;
+  if (value == null) {
+    return output.isError ? 'Tool execution failed' : '';
+  }
+
+  return value is String ? value : jsonEncode(normalizeJsonValue(value));
 }
 
 Future<List<int>> _resolveBinaryPromptBytes({
