@@ -1,5 +1,3 @@
-part of 'chat_models.dart';
-
 /// Reasoning effort levels for models that support reasoning
 enum ReasoningEffort {
   minimal,

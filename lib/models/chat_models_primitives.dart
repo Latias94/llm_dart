@@ -1,5 +1,3 @@
-part of 'chat_models.dart';
-
 /// Role of a participant in a chat conversation.
 enum ChatRole {
   /// The user/human participant in the conversation

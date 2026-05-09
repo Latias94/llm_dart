@@ -1,4 +1,6 @@
-part of 'chat_models.dart';
+import 'chat_models_message_types.dart';
+import 'chat_models_primitives.dart';
+import 'chat_models_tool_call_values.dart';
 
 /// A single message in a chat conversation.
 class ChatMessage {

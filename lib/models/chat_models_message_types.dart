@@ -1,4 +1,5 @@
-part of 'chat_models.dart';
+import 'chat_models_primitives.dart';
+import 'chat_models_tool_call_values.dart';
 
 /// The type of a message in a chat conversation.
 sealed class MessageType {

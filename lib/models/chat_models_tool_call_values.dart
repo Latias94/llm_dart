@@ -1,4 +1,4 @@
-part of 'chat_models.dart';
+import 'dart:convert';
 
 /// Tool call represents a function call that an LLM wants to make.
 class ToolCall {

@@ -1,4 +1,7 @@
-part of 'chat_models.dart';
+import 'chat_models_message.dart';
+import 'chat_models_message_types.dart';
+import 'chat_models_primitives.dart';
+import 'tool_models.dart';
 
 /// Simple interface for provider-specific blocks
 abstract class ContentBlock {
