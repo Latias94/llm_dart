@@ -1,7 +1,7 @@
-part of 'request_builder.dart';
+import '../../../../models/tool_models.dart';
 
-final class _AnthropicToolSchemaSupport {
-  const _AnthropicToolSchemaSupport();
+final class AnthropicToolSchemaSupport {
+  const AnthropicToolSchemaSupport();
 
   Map<String, dynamic> convertFunctionTool(Tool tool) {
     final schema = tool.function.parameters.toJson();

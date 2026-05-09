@@ -1,6 +1,9 @@
-part of 'request_builder.dart';
+import '../../../../providers/anthropic/config.dart';
+import 'request_builder_models.dart';
+import 'request_builder_tool_choice_support.dart';
+import 'request_builder_tools.dart';
 
-void _addAnthropicSystemContent(
+void addAnthropicSystemContent(
   Map<String, dynamic> body,
   AnthropicConfig config,
   ProcessedMessages data,
@@ -28,7 +31,7 @@ void _addAnthropicSystemContent(
   }
 }
 
-void _addAnthropicTools(
+void addAnthropicTools(
   Map<String, dynamic> body,
   AnthropicConfig config,
   ProcessedTools processedTools,
@@ -38,7 +41,7 @@ void _addAnthropicTools(
   }
 
   final convertedTools = processedTools.tools
-      .map((tool) => _convertAnthropicTool(config, tool))
+      .map((tool) => convertAnthropicTool(config, tool))
       .toList();
 
   if (processedTools.cacheControl != null && convertedTools.isNotEmpty) {
@@ -48,11 +51,11 @@ void _addAnthropicTools(
   body['tools'] = convertedTools;
 
   if (config.toolChoice != null) {
-    body['tool_choice'] = _convertAnthropicToolChoice(config.toolChoice!);
+    body['tool_choice'] = convertAnthropicToolChoice(config.toolChoice!);
   }
 }
 
-void _addAnthropicOptionalParameters(
+void addAnthropicOptionalParameters(
   Map<String, dynamic> body,
   AnthropicConfig config,
 ) {
@@ -68,7 +71,7 @@ void _addAnthropicOptionalParameters(
     body['top_k'] = config.topK;
   }
 
-  final thinkingConfig = _buildAnthropicThinkingConfig(config);
+  final thinkingConfig = buildAnthropicThinkingConfig(config);
   if (thinkingConfig != null) {
     body['thinking'] = thinkingConfig;
   }
@@ -106,7 +109,7 @@ void _addAnthropicOptionalParameters(
   }
 }
 
-Map<String, dynamic>? _buildAnthropicThinkingConfig(AnthropicConfig config) {
+Map<String, dynamic>? buildAnthropicThinkingConfig(AnthropicConfig config) {
   if (!config.reasoning) {
     return null;
   }

@@ -1,6 +1,12 @@
-part of 'request_builder.dart';
+import '../../../../models/chat_models.dart';
+import '../../../../models/tool_models.dart';
+import '../../../../providers/anthropic/config.dart';
+import 'request_builder_models.dart';
+import 'request_builder_tool_extraction_support.dart';
+import 'request_builder_tool_schema_support.dart';
+import 'request_builder_tool_web_search_support.dart';
 
-ProcessedTools _processAnthropicTools(
+ProcessedTools processAnthropicTools(
   AnthropicConfig config,
   List<ChatMessage> messages,
   List<Tool>? configTools,
@@ -9,7 +15,7 @@ ProcessedTools _processAnthropicTools(
   Map<String, dynamic>? toolCacheControl;
 
   for (final message in messages) {
-    final result = _extractAnthropicToolsFromMessage(message);
+    final result = extractAnthropicToolsFromMessage(message);
     messageTools.addAll(result.tools);
     toolCacheControl ??= result.cacheControl;
   }
@@ -28,20 +34,20 @@ ProcessedTools _processAnthropicTools(
   );
 }
 
-ToolExtractionResult _extractAnthropicToolsFromMessage(ChatMessage message) {
-  return const _AnthropicToolExtractionSupport().extractFromMessage(message);
+ToolExtractionResult extractAnthropicToolsFromMessage(ChatMessage message) {
+  return const AnthropicToolExtractionSupport().extractFromMessage(message);
 }
 
-Map<String, dynamic> _convertAnthropicTool(
+Map<String, dynamic> convertAnthropicTool(
   AnthropicConfig config,
   Tool tool,
 ) {
   try {
     if (tool.function.name == 'web_search') {
-      return _convertAnthropicWebSearchTool(config);
+      return convertAnthropicWebSearchTool(config);
     }
 
-    return const _AnthropicToolSchemaSupport().convertFunctionTool(tool);
+    return const AnthropicToolSchemaSupport().convertFunctionTool(tool);
   } catch (e) {
     throw ArgumentError(
       'Failed to convert tool "${tool.function.name}" to Anthropic format: $e',

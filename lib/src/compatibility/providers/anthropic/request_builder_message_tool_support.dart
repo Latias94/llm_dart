@@ -1,7 +1,9 @@
-part of 'request_builder.dart';
+import 'dart:convert';
 
-final class _AnthropicMessageToolSupport {
-  const _AnthropicMessageToolSupport();
+import '../../../../models/chat_models.dart';
+
+final class AnthropicMessageToolSupport {
+  const AnthropicMessageToolSupport();
 
   List<Map<String, dynamic>> convertToolUseBlocks(List<ToolCall> toolCalls) {
     final content = <Map<String, dynamic>>[];

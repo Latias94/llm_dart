@@ -1,4 +1,4 @@
-part of 'request_builder.dart';
+import '../../../../models/tool_models.dart';
 
 /// Data classes for better organization
 class ProcessedMessages {

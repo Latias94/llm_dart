@@ -1,9 +1,12 @@
-part of 'request_builder.dart';
+import '../../../../models/chat_models.dart';
+import '../../../../models/tool_models.dart';
+import 'request_builder_message_extension_support.dart';
+import 'request_builder_models.dart';
 
-final class _AnthropicToolExtractionSupport {
-  const _AnthropicToolExtractionSupport();
+final class AnthropicToolExtractionSupport {
+  const AnthropicToolExtractionSupport();
 
-  static const _extensionSupport = _AnthropicMessageExtensionSupport();
+  static const _extensionSupport = AnthropicMessageExtensionSupport();
 
   ToolExtractionResult extractFromMessage(ChatMessage message) {
     final tools = <Tool>[];

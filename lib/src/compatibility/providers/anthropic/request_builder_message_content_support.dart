@@ -1,10 +1,14 @@
-part of 'request_builder.dart';
+import 'dart:convert';
 
-final class _AnthropicMessageContentSupport {
-  const _AnthropicMessageContentSupport();
+import '../../../../models/chat_models.dart';
+import 'request_builder_message_extension_support.dart';
+import 'request_builder_message_tool_support.dart';
 
-  static const _extensionSupport = _AnthropicMessageExtensionSupport();
-  static const _toolSupport = _AnthropicMessageToolSupport();
+final class AnthropicMessageContentSupport {
+  const AnthropicMessageContentSupport();
+
+  static const _extensionSupport = AnthropicMessageExtensionSupport();
+  static const _toolSupport = AnthropicMessageToolSupport();
 
   Map<String, dynamic> convert(ChatMessage message) {
     return {

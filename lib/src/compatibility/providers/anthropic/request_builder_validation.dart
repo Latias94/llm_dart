@@ -1,6 +1,6 @@
-part of 'request_builder.dart';
+import '../../../../core/llm_error.dart';
 
-void _validateAnthropicMessageSequence(List<Map<String, dynamic>> messages) {
+void validateAnthropicMessageSequence(List<Map<String, dynamic>> messages) {
   if (messages.isEmpty) {
     return;
   }

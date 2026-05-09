@@ -1,14 +1,14 @@
-part of 'request_builder.dart';
+import '../../../../models/chat_models.dart';
 
-final class _AnthropicMessageExtensionSupport {
-  const _AnthropicMessageExtensionSupport();
+final class AnthropicMessageExtensionSupport {
+  const AnthropicMessageExtensionSupport();
 
-  _AnthropicMessageExtensionContent extractContent(ChatMessage message) {
+  AnthropicMessageExtensionContent extractContent(ChatMessage message) {
     final anthropicData = message.getExtension<Map<String, dynamic>>(
       'anthropic',
     );
     if (anthropicData == null) {
-      return const _AnthropicMessageExtensionContent.absent();
+      return const AnthropicMessageExtensionContent.absent();
     }
 
     final contentBlocks = <Map<String, dynamic>>[];
@@ -25,7 +25,7 @@ final class _AnthropicMessageExtensionSupport {
       contentBlocks.add(block);
     }
 
-    return _AnthropicMessageExtensionContent.present(
+    return AnthropicMessageExtensionContent.present(
       contentBlocks: contentBlocks,
       cacheControl: cacheControl,
     );
@@ -65,17 +65,17 @@ final class _AnthropicMessageExtensionSupport {
   }
 }
 
-final class _AnthropicMessageExtensionContent {
+final class AnthropicMessageExtensionContent {
   final bool hasExtension;
   final List<Map<String, dynamic>> contentBlocks;
   final Map<String, dynamic>? cacheControl;
 
-  const _AnthropicMessageExtensionContent.absent()
+  const AnthropicMessageExtensionContent.absent()
       : hasExtension = false,
         contentBlocks = const [],
         cacheControl = null;
 
-  const _AnthropicMessageExtensionContent.present({
+  const AnthropicMessageExtensionContent.present({
     required this.contentBlocks,
     this.cacheControl,
   }) : hasExtension = true;

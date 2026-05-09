@@ -1,6 +1,6 @@
-part of 'request_builder.dart';
+import '../../../../providers/anthropic/config.dart';
 
-Map<String, dynamic> _convertAnthropicWebSearchTool(
+Map<String, dynamic> convertAnthropicWebSearchTool(
   AnthropicConfig config,
 ) {
   final webSearchConfig = config.webSearchConfig;

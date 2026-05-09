@@ -1,9 +1,11 @@
-part of 'request_builder.dart';
+import '../../../../models/chat_models.dart';
+import 'request_builder_message_extension_support.dart';
+import 'request_builder_models.dart';
 
-final class _AnthropicSystemMessageSupport {
-  const _AnthropicSystemMessageSupport();
+final class AnthropicSystemMessageSupport {
+  const AnthropicSystemMessageSupport();
 
-  static const _extensionSupport = _AnthropicMessageExtensionSupport();
+  static const _extensionSupport = AnthropicMessageExtensionSupport();
 
   SystemMessageResult process(ChatMessage message) {
     final extensionContent = _extensionSupport.extractContent(message);

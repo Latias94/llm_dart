@@ -1,8 +1,11 @@
-part of 'request_builder.dart';
+import '../../../../models/chat_models.dart';
+import 'request_builder_message_content_support.dart';
+import 'request_builder_models.dart';
+import 'request_builder_system_message_support.dart';
 
-ProcessedMessages _processAnthropicMessages(List<ChatMessage> messages) {
-  const systemSupport = _AnthropicSystemMessageSupport();
-  const contentSupport = _AnthropicMessageContentSupport();
+ProcessedMessages processAnthropicMessages(List<ChatMessage> messages) {
+  const systemSupport = AnthropicSystemMessageSupport();
+  const contentSupport = AnthropicMessageContentSupport();
 
   final anthropicMessages = <Map<String, dynamic>>[];
   final systemContentBlocks = <Map<String, dynamic>>[];

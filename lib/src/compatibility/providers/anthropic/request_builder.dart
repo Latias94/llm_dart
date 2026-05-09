@@ -1,23 +1,11 @@
-import 'dart:convert';
-
 import '../../../../core/llm_error.dart';
 import '../../../../models/chat_models.dart';
 import '../../../../models/tool_models.dart';
 import '../../../../providers/anthropic/config.dart';
-
-part 'request_builder_body.dart';
-part 'request_builder_message_content_support.dart';
-part 'request_builder_message_extension_support.dart';
-part 'request_builder_message_tool_support.dart';
-part 'request_builder_messages.dart';
-part 'request_builder_models.dart';
-part 'request_builder_system_message_support.dart';
-part 'request_builder_tool_choice_support.dart';
-part 'request_builder_tool_extraction_support.dart';
-part 'request_builder_tool_schema_support.dart';
-part 'request_builder_tool_web_search_support.dart';
-part 'request_builder_tools.dart';
-part 'request_builder_validation.dart';
+import 'request_builder_body.dart';
+import 'request_builder_messages.dart';
+import 'request_builder_tools.dart';
+import 'request_builder_validation.dart';
 
 /// Helper class to build Anthropic API request bodies
 /// Separates the complex request building logic into focused methods
@@ -32,8 +20,8 @@ class AnthropicRequestBuilder {
     List<Tool>? tools,
     bool stream,
   ) {
-    final processedData = _processAnthropicMessages(messages);
-    final processedTools = _processAnthropicTools(config, messages, tools);
+    final processedData = processAnthropicMessages(messages);
+    final processedTools = processAnthropicTools(config, messages, tools);
 
     if (processedData.anthropicMessages.isEmpty) {
       throw const InvalidRequestError(
@@ -41,7 +29,7 @@ class AnthropicRequestBuilder {
       );
     }
 
-    _validateAnthropicMessageSequence(processedData.anthropicMessages);
+    validateAnthropicMessageSequence(processedData.anthropicMessages);
 
     final body = <String, dynamic>{
       'model': config.model,
@@ -50,9 +38,9 @@ class AnthropicRequestBuilder {
       'stream': stream,
     };
 
-    _addAnthropicSystemContent(body, config, processedData);
-    _addAnthropicTools(body, config, processedTools);
-    _addAnthropicOptionalParameters(body, config);
+    addAnthropicSystemContent(body, config, processedData);
+    addAnthropicTools(body, config, processedTools);
+    addAnthropicOptionalParameters(body, config);
 
     return body;
   }
@@ -62,23 +50,23 @@ class AnthropicRequestBuilder {
     List<ChatMessage> messages,
     List<Tool>? tools,
   ) {
-    final processedData = _processAnthropicMessages(messages);
-    final processedTools = _processAnthropicTools(config, messages, tools);
+    final processedData = processAnthropicMessages(messages);
+    final processedTools = processAnthropicTools(config, messages, tools);
 
     final body = <String, dynamic>{
       'model': config.model,
       'messages': processedData.anthropicMessages,
     };
 
-    _addAnthropicSystemContent(body, config, processedData);
+    addAnthropicSystemContent(body, config, processedData);
 
     if (processedTools.tools.isNotEmpty) {
       body['tools'] = processedTools.tools
-          .map((tool) => _convertAnthropicTool(config, tool))
+          .map((tool) => convertAnthropicTool(config, tool))
           .toList();
     }
 
-    final thinkingConfig = _buildAnthropicThinkingConfig(config);
+    final thinkingConfig = buildAnthropicThinkingConfig(config);
     if (thinkingConfig != null) {
       body['thinking'] = thinkingConfig;
     }

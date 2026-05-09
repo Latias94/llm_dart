@@ -1,6 +1,6 @@
-part of 'request_builder.dart';
+import '../../../../models/tool_models.dart';
 
-dynamic _convertAnthropicToolChoice(ToolChoice toolChoice) {
+dynamic convertAnthropicToolChoice(ToolChoice toolChoice) {
   switch (toolChoice) {
     case AutoToolChoice(disableParallelToolUse: final disableParallel):
       if (disableParallel == true) {
