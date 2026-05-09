@@ -1,7 +1,12 @@
-part of 'dio_error_handler.dart';
+import 'dart:async';
+import 'dart:convert';
+
+import 'package:llm_dart_transport/dio.dart' show ResponseBody;
+import 'package:llm_dart_transport/llm_dart_transport.dart'
+    show collectDioResponseTextBody;
 
 Future<({String message, Map<String, dynamic>? responseData})>
-    _extractDioErrorResponseDetails(
+    extractDioErrorResponseDetails(
   dynamic data, {
   required String fallbackMessage,
   String? Function(Map<String, dynamic> responseData)? mapMessageExtractor,

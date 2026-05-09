@@ -1,4 +1,4 @@
-part of 'dio_error_handler.dart';
+import '../llm_error_types.dart';
 
 /// HTTP error mapper utility
 class HttpErrorMapper {

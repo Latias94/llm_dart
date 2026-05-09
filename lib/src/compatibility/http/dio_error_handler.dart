@@ -1,14 +1,10 @@
-import 'dart:async';
-import 'dart:convert';
-
 import 'package:llm_dart_transport/dio.dart';
-import 'package:llm_dart_transport/llm_dart_transport.dart'
-    show collectDioResponseTextBody;
 
 import '../llm_error_types.dart';
+import 'dio_error_response_details.dart';
+import 'http_error_mapper.dart';
 
-part 'dio_error_response_details.dart';
-part 'http_error_mapper.dart';
+export 'http_error_mapper.dart';
 
 /// Dio error handler utility for consistent error handling across providers
 class DioErrorHandler {
@@ -52,7 +48,7 @@ class DioErrorHandler {
     String fallbackMessage = 'Unknown error',
     String? Function(Map<String, dynamic> responseData)? mapMessageExtractor,
   }) async {
-    return _extractDioErrorResponseDetails(
+    return extractDioErrorResponseDetails(
       data,
       fallbackMessage: fallbackMessage,
       mapMessageExtractor: mapMessageExtractor,
