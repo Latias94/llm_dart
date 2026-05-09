@@ -6,6 +6,7 @@ import 'package:llm_dart_transport/llm_dart_transport.dart'
 
 import '../../../../models/audio_models.dart';
 import '../../../../providers/elevenlabs/config.dart';
+import 'elevenlabs_option_support.dart';
 
 part 'elevenlabs_speech_bridge_support.dart';
 part 'elevenlabs_transcription_bridge_support.dart';
@@ -60,35 +61,4 @@ final class ElevenLabsAudioBridgeSupport {
       cancelToken: cancelToken,
     );
   }
-}
-
-modern_elevenlabs.ElevenLabsSpeechOptions? _resolveElevenLabsSpeechOptions(
-  Object? options,
-) {
-  if (options == null) {
-    return null;
-  }
-  if (options is modern_elevenlabs.ElevenLabsSpeechOptions) {
-    return options;
-  }
-  throw ArgumentError.value(
-    options,
-    'providerOptions',
-    'Expected ElevenLabsSpeechOptions for ElevenLabs speech requests.',
-  );
-}
-
-modern_elevenlabs.ElevenLabsTranscriptionOptions?
-    _resolveElevenLabsTranscriptionOptions(Object? options) {
-  if (options == null) {
-    return null;
-  }
-  if (options is modern_elevenlabs.ElevenLabsTranscriptionOptions) {
-    return options;
-  }
-  throw ArgumentError.value(
-    options,
-    'providerOptions',
-    'Expected ElevenLabsTranscriptionOptions for ElevenLabs transcription requests.',
-  );
 }

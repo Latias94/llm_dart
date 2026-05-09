@@ -12,8 +12,6 @@ import 'elevenlabs_audio_compat.dart';
 import 'elevenlabs_audio_bridge_support.dart';
 import 'elevenlabs_models_compat.dart';
 
-part 'shell_support_bridge_router.dart';
-
 /// Root-compatibility glue for the ElevenLabs provider shell.
 ///
 /// This keeps modern-model bridge setup and request-shaping helpers out of the
@@ -26,11 +24,6 @@ final class ElevenLabsCompatShellSupport {
   final ElevenLabsModels models;
   final modern_elevenlabs.ElevenLabs modernProvider;
   final ElevenLabsAudioBridgeSupport bridgeSupport;
-  late final _ElevenLabsCompatBridgeRouter _bridgeRouter =
-      _ElevenLabsCompatBridgeRouter(
-    audio: audio,
-    bridgeSupport: bridgeSupport,
-  );
 
   ElevenLabsCompatShellSupport._({
     required this.config,
@@ -66,16 +59,16 @@ final class ElevenLabsCompatShellSupport {
   Set<AudioFeature> get supportedFeatures => audio.supportedFeatures;
 
   bool canUseSpeechBridge(TTSRequest request) =>
-      _bridgeRouter.canUseSpeechBridge(request);
+      bridgeSupport.canUseSpeechBridge(request);
 
   bool canUseTranscriptionBridge(STTRequest request) =>
-      _bridgeRouter.canUseTranscriptionBridge(request);
+      bridgeSupport.canUseTranscriptionBridge(request);
 
   Future<TTSResponse> bridgeTextToSpeech(
     TTSRequest request, {
     TransportCancellation? cancelToken,
   }) {
-    return _bridgeRouter.bridgeTextToSpeech(
+    return bridgeSupport.bridgeTextToSpeech(
       request,
       cancelToken: cancelToken,
     );
@@ -85,9 +78,16 @@ final class ElevenLabsCompatShellSupport {
     TTSRequest request, {
     TransportCancellation? cancelToken,
   }) async {
-    return _bridgeRouter.textToSpeech(
-      request,
-      cancelToken: cancelToken,
+    return executeCompatBridge(
+      canUseBridge: canUseSpeechBridge(request),
+      bridge: () => bridgeTextToSpeech(
+        request,
+        cancelToken: cancelToken,
+      ),
+      fallback: () => audio.textToSpeech(
+        request,
+        cancelToken: cancelToken,
+      ),
     );
   }
 
@@ -106,7 +106,7 @@ final class ElevenLabsCompatShellSupport {
     STTRequest request, {
     TransportCancellation? cancelToken,
   }) {
-    return _bridgeRouter.bridgeSpeechToText(
+    return bridgeSupport.bridgeSpeechToText(
       request,
       cancelToken: cancelToken,
     );
@@ -116,9 +116,16 @@ final class ElevenLabsCompatShellSupport {
     STTRequest request, {
     TransportCancellation? cancelToken,
   }) async {
-    return _bridgeRouter.speechToText(
-      request,
-      cancelToken: cancelToken,
+    return executeCompatBridge(
+      canUseBridge: canUseTranscriptionBridge(request),
+      bridge: () => bridgeSpeechToText(
+        request,
+        cancelToken: cancelToken,
+      ),
+      fallback: () => audio.speechToText(
+        request,
+        cancelToken: cancelToken,
+      ),
     );
   }
 

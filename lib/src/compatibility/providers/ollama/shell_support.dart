@@ -16,7 +16,6 @@ import 'ollama_chat_compat.dart';
 import 'ollama_completion_compat.dart';
 import 'ollama_models_compat.dart';
 
-part 'shell_chat_router.dart';
 part 'shell_config_support.dart';
 part 'shell_embedding_support.dart';
 
@@ -34,10 +33,10 @@ final class OllamaCompatShellSupport {
   final OllamaChat chatFallback;
   final OllamaCompletion completion;
   final OllamaModels modelListing;
-  late final _OllamaCompatChatRouter _chatRouter = _OllamaCompatChatRouter(
-    compatConfig: compatConfig,
-    compatChat: compatChat,
-    chatFallback: chatFallback,
+  late final CompatChatBridgeRouter _chatBridgeRouter = CompatChatBridgeRouter(
+    originalConfig: compatConfig,
+    adapter: compatChat,
+    canUseBridge: (config, messages, tools) => canUseChatBridge(messages),
   );
   late final _OllamaCompatEmbeddingSupport _embeddingSupport =
       _OllamaCompatEmbeddingSupport(
@@ -84,7 +83,18 @@ final class OllamaCompatShellSupport {
   }
 
   bool canUseChatBridge(List<ChatMessage> messages) {
-    return _chatRouter.canUseChatBridge(messages);
+    if (messages.any((message) => message.name != null)) {
+      return false;
+    }
+
+    final hasConfigSystemPrompt = compatConfig.systemPrompt != null &&
+        compatConfig.systemPrompt!.isNotEmpty;
+    if (hasConfigSystemPrompt &&
+        messages.any((message) => message.role == ChatRole.system)) {
+      return false;
+    }
+
+    return true;
   }
 
   Future<ChatResponse> chatWithTools(
@@ -92,10 +102,15 @@ final class OllamaCompatShellSupport {
     List<Tool>? tools, {
     TransportCancellation? cancelToken,
   }) async {
-    return _chatRouter.chatWithTools(
-      messages,
-      tools,
+    return _chatBridgeRouter.chatWithTools(
+      messages: messages,
+      tools: tools,
       cancelToken: cancelToken,
+      fallback: () => chatFallback.chatWithTools(
+        messages,
+        tools,
+        cancelToken: cancelToken,
+      ),
     );
   }
 
@@ -104,10 +119,15 @@ final class OllamaCompatShellSupport {
     List<Tool>? tools,
     TransportCancellation? cancelToken,
   }) {
-    return _chatRouter.chatStream(
-      messages,
+    return _chatBridgeRouter.chatStream(
+      messages: messages,
       tools: tools,
       cancelToken: cancelToken,
+      fallback: () => chatFallback.chatStream(
+        messages,
+        tools: tools,
+        cancelToken: cancelToken,
+      ),
     );
   }
 

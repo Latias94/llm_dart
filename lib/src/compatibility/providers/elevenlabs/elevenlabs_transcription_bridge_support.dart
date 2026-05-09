@@ -10,7 +10,7 @@ final class _ElevenLabsTranscriptionBridgeSupport {
   });
 
   bool canUseTranscriptionBridge(STTRequest request) {
-    final options = _resolveElevenLabsTranscriptionOptions(
+    final options = resolveElevenLabsTranscriptionOptions(
       request.providerOptions,
     );
     if (request.audioData == null) {
@@ -34,7 +34,7 @@ final class _ElevenLabsTranscriptionBridgeSupport {
     STTRequest request, {
     TransportCancellation? cancelToken,
   }) async {
-    final options = _resolveElevenLabsTranscriptionOptions(
+    final options = resolveElevenLabsTranscriptionOptions(
       request.providerOptions,
     );
     final model = modernProvider.transcriptionModel(

@@ -8,6 +8,7 @@ import 'package:llm_dart_transport/dio.dart';
 import '../../../../models/audio_models.dart';
 import '../../../../providers/elevenlabs/config.dart';
 import 'elevenlabs_audio_catalog.dart';
+import 'elevenlabs_option_support.dart';
 
 part 'elevenlabs_audio_form_support.dart';
 part 'elevenlabs_audio_request_support.dart';
@@ -104,35 +105,4 @@ final class ElevenLabsAudioSupport {
   List<VoiceInfo> mapVoices(List<Map<String, dynamic>> rawVoices) {
     return _responseSupport.mapVoices(rawVoices);
   }
-}
-
-modern_elevenlabs.ElevenLabsSpeechOptions? _resolveElevenLabsSpeechOptions(
-  Object? options,
-) {
-  if (options == null) {
-    return null;
-  }
-  if (options is modern_elevenlabs.ElevenLabsSpeechOptions) {
-    return options;
-  }
-  throw ArgumentError.value(
-    options,
-    'providerOptions',
-    'Expected ElevenLabsSpeechOptions for ElevenLabs speech requests.',
-  );
-}
-
-modern_elevenlabs.ElevenLabsTranscriptionOptions?
-    _resolveElevenLabsTranscriptionOptions(Object? options) {
-  if (options == null) {
-    return null;
-  }
-  if (options is modern_elevenlabs.ElevenLabsTranscriptionOptions) {
-    return options;
-  }
-  throw ArgumentError.value(
-    options,
-    'providerOptions',
-    'Expected ElevenLabsTranscriptionOptions for ElevenLabs transcription requests.',
-  );
 }

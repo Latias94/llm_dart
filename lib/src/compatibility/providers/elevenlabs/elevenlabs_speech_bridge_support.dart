@@ -10,7 +10,7 @@ final class _ElevenLabsSpeechBridgeSupport {
   });
 
   bool canUseSpeechBridge(TTSRequest request) {
-    final options = _resolveElevenLabsSpeechOptions(request.providerOptions);
+    final options = resolveElevenLabsSpeechOptions(request.providerOptions);
     return _isValidSpeechRatio(options?.stability) &&
         _isValidSpeechRatio(options?.similarityBoost) &&
         _isValidSpeechRatio(options?.style) &&
@@ -21,7 +21,7 @@ final class _ElevenLabsSpeechBridgeSupport {
     TTSRequest request, {
     TransportCancellation? cancelToken,
   }) async {
-    final options = _resolveElevenLabsSpeechOptions(request.providerOptions);
+    final options = resolveElevenLabsSpeechOptions(request.providerOptions);
     final model = modernProvider.speechModel(
       request.model ?? config.defaultTTSModel,
       settings: modern_elevenlabs.ElevenLabsSpeechModelSettings(

@@ -55,7 +55,7 @@ final class _ElevenLabsAudioFormSupport {
     MultipartFile? file,
     String? sourceUrl,
   }) {
-    final options = _resolveElevenLabsTranscriptionOptions(
+    final options = resolveElevenLabsTranscriptionOptions(
       request.providerOptions,
     );
     final timestampGranularity = options?.timestampGranularity?.name ??

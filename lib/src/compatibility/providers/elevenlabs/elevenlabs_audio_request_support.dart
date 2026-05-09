@@ -8,7 +8,7 @@ final class _ElevenLabsAudioRequestSupport {
     required ElevenLabsConfig config,
     required String effectiveModel,
   }) {
-    final options = _resolveElevenLabsSpeechOptions(request.providerOptions);
+    final options = resolveElevenLabsSpeechOptions(request.providerOptions);
     final voiceSettings = _buildVoiceSettings(
       request,
       config: config,
@@ -55,7 +55,7 @@ final class _ElevenLabsAudioRequestSupport {
   }
 
   Map<String, String> buildTextToSpeechQueryParams(TTSRequest request) {
-    final options = _resolveElevenLabsSpeechOptions(request.providerOptions);
+    final options = resolveElevenLabsSpeechOptions(request.providerOptions);
     final outputFormat = options?.outputFormat ?? 'mp3_44100_128';
     final queryParams = <String, String>{
       'output_format': outputFormat,
@@ -73,7 +73,7 @@ final class _ElevenLabsAudioRequestSupport {
   }
 
   Map<String, String>? buildSpeechToTextQueryParams(STTRequest request) {
-    final options = _resolveElevenLabsTranscriptionOptions(
+    final options = resolveElevenLabsTranscriptionOptions(
       request.providerOptions,
     );
     final enableLogging = options?.enableLogging;
