@@ -1,6 +1,15 @@
-part of 'anthropic_legacy_extensions.dart';
+import '../../models/chat_models.dart';
+import '../../models/tool_models.dart';
+import 'anthropic_legacy_extensions_block_cache.dart';
+import 'anthropic_legacy_extensions_block_media_parsers.dart';
+import 'anthropic_legacy_extensions_block_text_parser.dart';
+import 'anthropic_legacy_extensions_block_tool_result_parsers.dart';
+import 'anthropic_legacy_extensions_block_tool_use_parsers.dart';
+import 'anthropic_legacy_extensions_block_tools_parser.dart';
+import 'anthropic_legacy_extensions_models.dart';
+import 'anthropic_legacy_extensions_utils.dart';
 
-final class _AnthropicLegacyMessageBlockCollector {
+final class AnthropicLegacyMessageBlockCollector {
   final ChatRole messageRole;
   final int messageIndex;
   final List<Tool> messageTools = <Tool>[];
@@ -8,7 +17,7 @@ final class _AnthropicLegacyMessageBlockCollector {
       <AnthropicLegacyPromptBlock>[];
   AnthropicLegacyCacheControl? cacheControl;
 
-  _AnthropicLegacyMessageBlockCollector({
+  AnthropicLegacyMessageBlockCollector({
     required this.messageRole,
     required this.messageIndex,
   });
@@ -19,9 +28,9 @@ final class _AnthropicLegacyMessageBlockCollector {
   }) {
     final path =
         'messages[$messageIndex].extensions.anthropic.contentBlocks[$blockIndex]';
-    final block = _asMap(rawBlock, path: path);
+    final block = asAnthropicLegacyMap(rawBlock, path: path);
 
-    if (_isAnthropicCacheMarker(block)) {
+    if (isAnthropicLegacyCacheMarker(block)) {
       _collectCacheMarker(block, path: path);
       return;
     }
@@ -31,21 +40,21 @@ final class _AnthropicLegacyMessageBlockCollector {
         _collectToolsBlock(block, path: path);
         return;
       case 'text':
-        promptBlocks.add(_parseTextBlock(block, path: path));
+        promptBlocks.add(parseAnthropicLegacyTextBlock(block, path: path));
         return;
       case 'image':
         _requireRole(
           ChatRole.user,
           'Anthropic compatibility only supports raw image blocks on user messages.',
         );
-        promptBlocks.add(_parseImageBlock(block, path: path));
+        promptBlocks.add(parseAnthropicLegacyImageBlock(block, path: path));
         return;
       case 'document':
         _requireRole(
           ChatRole.user,
           'Anthropic compatibility only supports raw document blocks on user messages.',
         );
-        promptBlocks.add(_parseDocumentBlock(block, path: path));
+        promptBlocks.add(parseAnthropicLegacyDocumentBlock(block, path: path));
         return;
       case 'tool_use':
       case 'server_tool_use':
@@ -53,28 +62,31 @@ final class _AnthropicLegacyMessageBlockCollector {
           ChatRole.assistant,
           'Anthropic compatibility only supports raw tool-use blocks on assistant messages.',
         );
-        promptBlocks.add(_parseToolUseBlock(block, path: path));
+        promptBlocks.add(parseAnthropicLegacyToolUseBlock(block, path: path));
         return;
       case 'mcp_tool_use':
         _requireRole(
           ChatRole.assistant,
           'Anthropic compatibility only supports raw MCP tool-use blocks on assistant messages.',
         );
-        promptBlocks.add(_parseMcpToolUseBlock(block, path: path));
+        promptBlocks
+            .add(parseAnthropicLegacyMcpToolUseBlock(block, path: path));
         return;
       case 'tool_result':
         _requireRole(
           ChatRole.user,
           'Anthropic compatibility only supports raw tool-result blocks on user messages.',
         );
-        promptBlocks.add(_parseToolResultBlock(block, path: path));
+        promptBlocks
+            .add(parseAnthropicLegacyToolResultBlock(block, path: path));
         return;
       case 'mcp_tool_result':
         _requireRole(
           ChatRole.user,
           'Anthropic compatibility only supports raw MCP tool-result blocks on user messages.',
         );
-        promptBlocks.add(_parseMcpToolResultBlock(block, path: path));
+        promptBlocks
+            .add(parseAnthropicLegacyMcpToolResultBlock(block, path: path));
         return;
       case 'web_search_tool_result':
         _collectProviderNativeToolResultBlock(
@@ -105,8 +117,8 @@ final class _AnthropicLegacyMessageBlockCollector {
           ChatRole.user,
           'Anthropic compatibility only supports raw ${block['type']} blocks on user messages.',
         );
-        _throwBridgeIncompatibleExecutionResultBlock(
-          _parseRequiredString(
+        throwBridgeIncompatibleExecutionResultBlock(
+          parseAnthropicLegacyRequiredString(
             block['type'],
             path: '$path.type',
           ),
@@ -160,7 +172,7 @@ final class _AnthropicLegacyMessageBlockCollector {
     Map<String, Object?> block, {
     required String path,
   }) {
-    final parsedCacheControl = _parseCacheControl(
+    final parsedCacheControl = parseAnthropicLegacyCacheControl(
       block['cache_control'],
       path: '$path.cache_control',
     );
@@ -184,7 +196,7 @@ final class _AnthropicLegacyMessageBlockCollector {
       );
     }
 
-    messageTools.addAll(_parseToolsBlock(block, path: path));
+    messageTools.addAll(parseAnthropicLegacyToolsBlock(block, path: path));
   }
 
   void _collectProviderNativeToolResultBlock(
@@ -197,7 +209,7 @@ final class _AnthropicLegacyMessageBlockCollector {
   }) {
     _requireRole(ChatRole.user, roleError);
     promptBlocks.add(
-      _parseProviderNativeToolResultBlock(
+      parseAnthropicLegacyProviderNativeToolResultBlock(
         block,
         path: path,
         expectedType: expectedType,

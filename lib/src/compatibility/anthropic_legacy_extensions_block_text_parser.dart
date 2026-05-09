@@ -1,6 +1,7 @@
-part of 'anthropic_legacy_extensions.dart';
+import 'anthropic_legacy_extensions_models.dart';
+import 'anthropic_legacy_extensions_utils.dart';
 
-AnthropicLegacyTextBlock _parseTextBlock(
+AnthropicLegacyTextBlock parseAnthropicLegacyTextBlock(
   Map<String, Object?> block, {
   required String path,
 }) {
@@ -24,7 +25,7 @@ AnthropicLegacyTextBlock _parseTextBlock(
     text: text,
     cacheControl: block['cache_control'] == null
         ? null
-        : _parseCacheControl(
+        : parseAnthropicLegacyCacheControl(
             block['cache_control'],
             path: '$path.cache_control',
           ),

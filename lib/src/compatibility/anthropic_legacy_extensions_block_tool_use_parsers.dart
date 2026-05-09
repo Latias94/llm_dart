@@ -1,6 +1,7 @@
-part of 'anthropic_legacy_extensions.dart';
+import 'anthropic_legacy_extensions_models.dart';
+import 'anthropic_legacy_extensions_utils.dart';
 
-AnthropicLegacyToolUseBlock _parseToolUseBlock(
+AnthropicLegacyToolUseBlock parseAnthropicLegacyToolUseBlock(
   Map<String, Object?> block, {
   required String path,
 }) {
@@ -13,21 +14,21 @@ AnthropicLegacyToolUseBlock _parseToolUseBlock(
     );
   }
 
-  final type = _parseRequiredString(
+  final type = parseAnthropicLegacyRequiredString(
     block['type'],
     path: '$path.type',
   );
 
   return AnthropicLegacyToolUseBlock(
-    toolCallId: _parseRequiredString(
+    toolCallId: parseAnthropicLegacyRequiredString(
       block['id'],
       path: '$path.id',
     ),
-    toolName: _parseRequiredString(
+    toolName: parseAnthropicLegacyRequiredString(
       block['name'],
       path: '$path.name',
     ),
-    input: _normalizeJsonPayload(
+    input: normalizeAnthropicLegacyJsonPayload(
       block['input'],
       path: '$path.input',
     ),
@@ -36,7 +37,7 @@ AnthropicLegacyToolUseBlock _parseToolUseBlock(
   );
 }
 
-AnthropicLegacyToolUseBlock _parseMcpToolUseBlock(
+AnthropicLegacyToolUseBlock parseAnthropicLegacyMcpToolUseBlock(
   Map<String, Object?> block, {
   required String path,
 }) {
@@ -55,16 +56,17 @@ AnthropicLegacyToolUseBlock _parseMcpToolUseBlock(
   }
 
   return AnthropicLegacyToolUseBlock(
-    toolCallId: _parseRequiredString(
+    toolCallId: parseAnthropicLegacyRequiredString(
       block['id'],
       path: '$path.id',
     ),
-    toolName: 'mcp.${_parseRequiredString(block['name'], path: '$path.name')}',
-    title: _parseRequiredString(
+    toolName:
+        'mcp.${parseAnthropicLegacyRequiredString(block['name'], path: '$path.name')}',
+    title: parseAnthropicLegacyRequiredString(
       block['server_name'],
       path: '$path.server_name',
     ),
-    input: _normalizeJsonPayload(
+    input: normalizeAnthropicLegacyJsonPayload(
       block['input'],
       path: '$path.input',
     ),

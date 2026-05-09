@@ -1,10 +1,12 @@
-part of 'anthropic_legacy_extensions.dart';
+import 'dart:convert';
 
-AnthropicLegacyCacheControl _parseCacheControl(
+import 'anthropic_legacy_extensions_models.dart';
+
+AnthropicLegacyCacheControl parseAnthropicLegacyCacheControl(
   Object? value, {
   required String path,
 }) {
-  final map = _asMap(value, path: path);
+  final map = asAnthropicLegacyMap(value, path: path);
   final type = map['type'];
   if (type is! String || type.isEmpty) {
     throw UnsupportedError('Anthropic cache control at $path requires a type.');
@@ -28,7 +30,7 @@ AnthropicLegacyCacheControl _parseCacheControl(
   );
 }
 
-String _parseRequiredString(
+String parseAnthropicLegacyRequiredString(
   Object? value, {
   required String path,
 }) {
@@ -41,11 +43,11 @@ String _parseRequiredString(
   return value;
 }
 
-Uri _parseHttpUri(
+Uri parseAnthropicLegacyHttpUri(
   Object? value, {
   required String path,
 }) {
-  final raw = _parseRequiredString(
+  final raw = parseAnthropicLegacyRequiredString(
     value,
     path: path,
   );
@@ -59,7 +61,7 @@ Uri _parseHttpUri(
   return uri;
 }
 
-List<int> _decodeBase64(
+List<int> decodeAnthropicLegacyBase64(
   String value, {
   required String path,
 }) {
@@ -72,7 +74,7 @@ List<int> _decodeBase64(
   }
 }
 
-Object? _normalizeJsonPayload(
+Object? normalizeAnthropicLegacyJsonPayload(
   Object? value, {
   required String path,
 }) {
@@ -83,7 +85,7 @@ Object? _normalizeJsonPayload(
   if (value is List) {
     return [
       for (var index = 0; index < value.length; index++)
-        _normalizeJsonPayload(
+        normalizeAnthropicLegacyJsonPayload(
           value[index],
           path: '$path[$index]',
         ),
@@ -97,7 +99,7 @@ Object? _normalizeJsonPayload(
         throw UnsupportedError('Expected a string key at $path.');
       }
 
-      normalized[entry.key as String] = _normalizeJsonPayload(
+      normalized[entry.key as String] = normalizeAnthropicLegacyJsonPayload(
         entry.value,
         path: '$path.${entry.key}',
       );
@@ -110,7 +112,7 @@ Object? _normalizeJsonPayload(
   );
 }
 
-Map<String, Object?> _asMap(
+Map<String, Object?> asAnthropicLegacyMap(
   Object? value, {
   required String path,
 }) {
@@ -159,18 +161,19 @@ Object? _toObject(Object? value) {
   return value.toString();
 }
 
-dynamic _toDynamic(Object? value) {
+dynamic toAnthropicLegacyDynamic(Object? value) {
   if (value == null || value is bool || value is num || value is String) {
     return value;
   }
 
   if (value is List) {
-    return value.map(_toDynamic).toList(growable: false);
+    return value.map(toAnthropicLegacyDynamic).toList(growable: false);
   }
 
   if (value is Map<String, Object?>) {
     return value.map(
-      (key, nestedValue) => MapEntry(key, _toDynamic(nestedValue)),
+      (key, nestedValue) =>
+          MapEntry(key, toAnthropicLegacyDynamic(nestedValue)),
     );
   }
 
@@ -178,10 +181,17 @@ dynamic _toDynamic(Object? value) {
     return value.map(
       (key, nestedValue) => MapEntry(
         key.toString(),
-        _toDynamic(nestedValue),
+        toAnthropicLegacyDynamic(nestedValue),
       ),
     );
   }
 
   return value.toString();
+}
+
+Never throwBridgeIncompatibleExecutionResultBlock(String blockType) {
+  throw UnsupportedError(
+    'Anthropic compatibility does not bridge raw $blockType blocks in legacy message extensions yet. '
+    'Use the provider-owned anthropic.result.code_execution replay path in the new Anthropic API, or keep this request on the old Anthropic provider path.',
+  );
 }

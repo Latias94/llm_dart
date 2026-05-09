@@ -1,6 +1,7 @@
-part of 'anthropic_legacy_extensions.dart';
+import 'anthropic_legacy_extensions_models.dart';
+import 'anthropic_legacy_extensions_utils.dart';
 
-AnthropicLegacyToolResultBlock _parseToolResultBlock(
+AnthropicLegacyToolResultBlock parseAnthropicLegacyToolResultBlock(
   Map<String, Object?> block, {
   required String path,
 }) {
@@ -33,7 +34,7 @@ AnthropicLegacyToolResultBlock _parseToolResultBlock(
 
   return AnthropicLegacyToolResultBlock(
     blockType: 'tool_result',
-    toolCallId: _parseRequiredString(
+    toolCallId: parseAnthropicLegacyRequiredString(
       block['tool_use_id'],
       path: '$path.tool_use_id',
     ),
@@ -42,7 +43,7 @@ AnthropicLegacyToolResultBlock _parseToolResultBlock(
   );
 }
 
-AnthropicLegacyToolResultBlock _parseMcpToolResultBlock(
+AnthropicLegacyToolResultBlock parseAnthropicLegacyMcpToolResultBlock(
   Map<String, Object?> block, {
   required String path,
 }) {
@@ -66,7 +67,7 @@ AnthropicLegacyToolResultBlock _parseMcpToolResultBlock(
     );
   }
 
-  final output = _normalizeJsonPayload(
+  final output = normalizeAnthropicLegacyJsonPayload(
     block['content'],
     path: '$path.content',
   );
@@ -78,7 +79,7 @@ AnthropicLegacyToolResultBlock _parseMcpToolResultBlock(
 
   return AnthropicLegacyToolResultBlock(
     blockType: 'mcp_tool_result',
-    toolCallId: _parseRequiredString(
+    toolCallId: parseAnthropicLegacyRequiredString(
       block['tool_use_id'],
       path: '$path.tool_use_id',
     ),
@@ -87,7 +88,8 @@ AnthropicLegacyToolResultBlock _parseMcpToolResultBlock(
   );
 }
 
-AnthropicLegacyToolResultBlock _parseProviderNativeToolResultBlock(
+AnthropicLegacyToolResultBlock
+    parseAnthropicLegacyProviderNativeToolResultBlock(
   Map<String, Object?> block, {
   required String path,
   required String expectedType,
@@ -103,7 +105,7 @@ AnthropicLegacyToolResultBlock _parseProviderNativeToolResultBlock(
     );
   }
 
-  final content = _normalizeJsonPayload(
+  final content = normalizeAnthropicLegacyJsonPayload(
     block['content'],
     path: '$path.content',
   );
@@ -120,15 +122,15 @@ AnthropicLegacyToolResultBlock _parseProviderNativeToolResultBlock(
 
   return AnthropicLegacyToolResultBlock(
     blockType: expectedType,
-    toolCallId: _parseRequiredString(
+    toolCallId: parseAnthropicLegacyRequiredString(
       block['tool_use_id'],
       path: '$path.tool_use_id',
     ),
     output: content,
     isError: false,
     customKind: customKind,
-    rawBlock: _asMap(
-      _normalizeJsonPayload(
+    rawBlock: asAnthropicLegacyMap(
+      normalizeAnthropicLegacyJsonPayload(
         block,
         path: path,
       ),

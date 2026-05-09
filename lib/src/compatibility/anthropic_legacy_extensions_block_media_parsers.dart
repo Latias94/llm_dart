@@ -1,6 +1,9 @@
-part of 'anthropic_legacy_extensions.dart';
+import 'dart:convert';
 
-AnthropicLegacyImageBlock _parseImageBlock(
+import 'anthropic_legacy_extensions_models.dart';
+import 'anthropic_legacy_extensions_utils.dart';
+
+AnthropicLegacyImageBlock parseAnthropicLegacyImageBlock(
   Map<String, Object?> block, {
   required String path,
 }) {
@@ -13,7 +16,7 @@ AnthropicLegacyImageBlock _parseImageBlock(
     );
   }
 
-  final source = _asMap(
+  final source = asAnthropicLegacyMap(
     block['source'],
     path: '$path.source',
   );
@@ -26,31 +29,31 @@ AnthropicLegacyImageBlock _parseImageBlock(
 
   final cacheControl = block['cache_control'] == null
       ? null
-      : _parseCacheControl(
+      : parseAnthropicLegacyCacheControl(
           block['cache_control'],
           path: '$path.cache_control',
         );
 
   switch (sourceType) {
     case 'base64':
-      final mediaType = _parseRequiredString(
+      final mediaType = parseAnthropicLegacyRequiredString(
         source['media_type'],
         path: '$path.source.media_type',
       );
-      if (!_supportedImageMediaTypes.contains(mediaType)) {
+      if (!supportedAnthropicLegacyImageMediaTypes.contains(mediaType)) {
         throw UnsupportedError(
           'Anthropic compatibility only supports JPEG, PNG, GIF, and WebP raw image blocks.',
         );
       }
 
-      final data = _parseRequiredString(
+      final data = parseAnthropicLegacyRequiredString(
         source['data'],
         path: '$path.source.data',
       );
 
       return AnthropicLegacyImageBlock(
         mediaType: mediaType,
-        bytes: _decodeBase64(
+        bytes: decodeAnthropicLegacyBase64(
           data,
           path: '$path.source.data',
         ),
@@ -59,7 +62,7 @@ AnthropicLegacyImageBlock _parseImageBlock(
     case 'url':
       return AnthropicLegacyImageBlock(
         mediaType: 'image/*',
-        uri: _parseHttpUri(
+        uri: parseAnthropicLegacyHttpUri(
           source['url'],
           path: '$path.source.url',
         ),
@@ -72,7 +75,7 @@ AnthropicLegacyImageBlock _parseImageBlock(
   }
 }
 
-AnthropicLegacyDocumentBlock _parseDocumentBlock(
+AnthropicLegacyDocumentBlock parseAnthropicLegacyDocumentBlock(
   Map<String, Object?> block, {
   required String path,
 }) {
@@ -89,7 +92,7 @@ AnthropicLegacyDocumentBlock _parseDocumentBlock(
     );
   }
 
-  final source = _asMap(
+  final source = asAnthropicLegacyMap(
     block['source'],
     path: '$path.source',
   );
@@ -109,14 +112,14 @@ AnthropicLegacyDocumentBlock _parseDocumentBlock(
 
   final cacheControl = block['cache_control'] == null
       ? null
-      : _parseCacheControl(
+      : parseAnthropicLegacyCacheControl(
           block['cache_control'],
           path: '$path.cache_control',
         );
 
   switch (sourceType) {
     case 'base64':
-      final mediaType = _parseRequiredString(
+      final mediaType = parseAnthropicLegacyRequiredString(
         source['media_type'],
         path: '$path.source.media_type',
       );
@@ -126,7 +129,7 @@ AnthropicLegacyDocumentBlock _parseDocumentBlock(
         );
       }
 
-      final data = _parseRequiredString(
+      final data = parseAnthropicLegacyRequiredString(
         source['data'],
         path: '$path.source.data',
       );
@@ -134,14 +137,14 @@ AnthropicLegacyDocumentBlock _parseDocumentBlock(
       return AnthropicLegacyDocumentBlock(
         mediaType: mediaType,
         title: title as String?,
-        bytes: _decodeBase64(
+        bytes: decodeAnthropicLegacyBase64(
           data,
           path: '$path.source.data',
         ),
         cacheControl: cacheControl,
       );
     case 'text':
-      final mediaType = _parseRequiredString(
+      final mediaType = parseAnthropicLegacyRequiredString(
         source['media_type'],
         path: '$path.source.media_type',
       );
@@ -151,7 +154,7 @@ AnthropicLegacyDocumentBlock _parseDocumentBlock(
         );
       }
 
-      final data = _parseRequiredString(
+      final data = parseAnthropicLegacyRequiredString(
         source['data'],
         path: '$path.source.data',
       );

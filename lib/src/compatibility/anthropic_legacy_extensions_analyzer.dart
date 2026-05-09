@@ -1,4 +1,7 @@
-part of 'anthropic_legacy_extensions.dart';
+import '../../models/chat_models.dart';
+import 'anthropic_legacy_extensions_block_collector.dart';
+import 'anthropic_legacy_extensions_models.dart';
+import 'anthropic_legacy_extensions_utils.dart';
 
 AnthropicLegacyExtensionAnalysis analyzeAnthropicLegacyMessageExtensions(
   List<ChatMessage> messages,
@@ -35,7 +38,7 @@ AnthropicLegacyMessageAnalysis analyzeAnthropicLegacyMessage(
     );
   }
 
-  final anthropicData = _asMap(
+  final anthropicData = asAnthropicLegacyMap(
     message.extensions['anthropic'],
     path: 'messages[$messageIndex].extensions.anthropic',
   );
@@ -63,7 +66,7 @@ AnthropicLegacyMessageAnalysis analyzeAnthropicLegacyMessage(
     );
   }
 
-  final collector = _AnthropicLegacyMessageBlockCollector(
+  final collector = AnthropicLegacyMessageBlockCollector(
     messageRole: message.role,
     messageIndex: messageIndex,
   );
@@ -77,11 +80,4 @@ AnthropicLegacyMessageAnalysis analyzeAnthropicLegacyMessage(
 
   collector.validateMessageContent(message.content);
   return collector.build();
-}
-
-Never _throwBridgeIncompatibleExecutionResultBlock(String blockType) {
-  throw UnsupportedError(
-    'Anthropic compatibility does not bridge raw $blockType blocks in legacy message extensions yet. '
-    'Use the provider-owned anthropic.result.code_execution replay path in the new Anthropic API, or keep this request on the old Anthropic provider path.',
-  );
 }

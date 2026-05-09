@@ -1,6 +1,7 @@
-part of 'anthropic_legacy_extensions.dart';
+import '../../models/tool_models.dart';
+import 'anthropic_legacy_extensions_utils.dart';
 
-List<Tool> _parseToolsBlock(
+List<Tool> parseAnthropicLegacyToolsBlock(
   Map<String, Object?> block, {
   required String path,
 }) {
@@ -14,10 +15,10 @@ List<Tool> _parseToolsBlock(
   final tools = <Tool>[];
   for (var index = 0; index < rawTools.length; index++) {
     final rawTool = rawTools[index];
-    final toolMap = _asMap(rawTool, path: '$path.tools[$index]');
+    final toolMap = asAnthropicLegacyMap(rawTool, path: '$path.tools[$index]');
     final tool = Tool.fromJson(
       toolMap.map(
-        (key, value) => MapEntry(key, _toDynamic(value)),
+        (key, value) => MapEntry(key, toAnthropicLegacyDynamic(value)),
       ),
     );
 

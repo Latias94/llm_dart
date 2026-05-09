@@ -1,4 +1,4 @@
-part of 'anthropic_legacy_extensions.dart';
+import '../../models/tool_models.dart';
 
 final class AnthropicLegacyCacheControl {
   final String type;
@@ -157,7 +157,7 @@ final class AnthropicLegacyExtensionAnalysis {
   }
 }
 
-const Set<String> _supportedImageMediaTypes = {
+const Set<String> supportedAnthropicLegacyImageMediaTypes = {
   'image/jpeg',
   'image/png',
   'image/gif',
