@@ -460,6 +460,11 @@ should usually pick `TextToolOutput`, `JsonToolOutput`,
 Use `ContentToolOutput` when a tool result needs multiple structured pieces,
 such as text, JSON, files, or custom provider-native payloads.
 
+For approval-gated tools, denied approval reasons are preserved in shared
+prompt history, chat UI state, snapshots, and stream JSON. Provider request
+replay still follows each provider's native protocol, so only fields supported
+by that provider's wire format are sent back to the model.
+
 ## Reasoning
 
 Reasoning is part of the common result and stream model, but replay fidelity remains provider-owned.

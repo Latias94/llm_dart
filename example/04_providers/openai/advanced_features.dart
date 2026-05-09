@@ -139,7 +139,7 @@ Future<void> demonstrateFunctionCalling(String apiKey) async {
             core.ToolResultPromptPart(
               toolCallId: toolCall.toolCallId,
               toolName: toolCall.toolName,
-              output: _mockToolOutput(toolCall),
+              toolOutput: _mockToolOutput(toolCall),
             ),
           ],
         ),
@@ -397,7 +397,7 @@ Future<void> demonstrateStreamingFeatures(String apiKey) async {
               core.ToolResultPromptPart(
                 toolCallId: toolCall.toolCallId,
                 toolName: toolCall.toolName,
-                output: _mockToolOutput(toolCall),
+                toolOutput: _mockToolOutput(toolCall),
               ),
             ],
           ),
@@ -499,27 +499,27 @@ core.AssistantPromptMessage _assistantReplayMessage({
   );
 }
 
-Map<String, Object?> _mockToolOutput(core.ToolCallContent toolCall) {
+core.ToolOutput _mockToolOutput(core.ToolCallContent toolCall) {
   final input = _asJsonMap(toolCall.input);
 
   switch (toolCall.toolName) {
     case 'get_weather':
-      return {
+      return core.JsonToolOutput({
         'location': input['location'] ?? 'unknown',
         'temperature': 22,
         'condition': 'sunny',
         'humidity': 65,
-      };
+      });
     case 'calculate':
       final expression = input['expression']?.toString() ?? '';
-      return {
+      return core.JsonToolOutput({
         'expression': expression,
         'result': expression.trim() == '15 * 23' ? 345 : 'not-evaluated',
-      };
+      });
     default:
-      return {
+      return core.ErrorJsonToolOutput({
         'error': 'Unknown function',
-      };
+      });
   }
 }
 

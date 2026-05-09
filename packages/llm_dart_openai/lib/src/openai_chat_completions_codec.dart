@@ -7,6 +7,7 @@ import 'openai_model_capabilities.dart';
 import 'openai_options.dart';
 import 'openai_response_format.dart';
 import 'openai_streaming_support.dart';
+import 'openai_tool_output_encoding.dart';
 import 'resolved_openai_options.dart';
 
 final class OpenAIChatCompletionsRequest {
@@ -1103,28 +1104,7 @@ final class OpenAIChatCompletionsCodec {
   }
 
   String _encodeToolOutput(ToolOutput output) {
-    if (output is ExecutionDeniedToolOutput) {
-      return output.reason ?? 'Tool execution denied';
-    }
-
-    if (output is ContentToolOutput) {
-      return _encodeContentToolOutput(output.parts);
-    }
-
-    final value = output.value;
-    if (value == null) {
-      return output.isError ? 'Tool execution failed' : 'null';
-    }
-
-    if (value is String) {
-      return value;
-    }
-
-    return jsonEncode(value);
-  }
-
-  String _encodeContentToolOutput(List<ToolOutputContentPart> parts) {
-    return jsonEncode(projectToolOutputContentPartsToJson(parts));
+    return encodeOpenAIToolOutputAsText(output);
   }
 
   Map<String, Object?>? _asMap(Object? value) {

@@ -65,17 +65,14 @@ Older builder-era code should migrate through `package:llm_dart/legacy.dart`.
 - Exported `CancellationHelper` from `package:llm_dart/core.dart` so
   cancellation examples and new app code no longer need the older
   `core/cancellation.dart` subpath import.
-- Preserved structured tool results, including denied and multimodal content
-  outputs, across stream replay, UI projection, and JSON codecs while still
-  decoding older `output` / `isError` payloads.
-- Preserved denied tool-output reasons across stream JSON, result accumulation,
-  and chat UI replay.
-- Preserved denied tool approval reasons as explicit denied tool outputs in the
-  chat session UI state.
-- Preserved explicit tool outputs through local chat-session tool callbacks and
-  Ollama tool-result replay.
-- Extended `ToolOutput` with provider metadata plus richer content parts for
-  text, JSON, files, and custom provider-native payloads.
+- Tool result replay now preserves explicit `ToolOutput` values, including
+  text, JSON, error, denied, multimodal, and provider-native content payloads,
+  across prompt codecs, stream JSON, chat sessions, UI snapshots, local tool
+  callbacks, and provider replay where supported. Older `output` / `isError`
+  payloads continue to decode for compatibility.
+- Denied approval reasons are now visible in shared chat UI state and
+  persistence snapshots as denied tool output, while provider request replay
+  continues to follow each provider's native approval protocol.
 - Accepted `dynamic` as a JSON alias for Dart `isDynamic` tool flags in prompt,
   stream, and Chat UI codecs for easier interop with AI SDK-style payloads.
 

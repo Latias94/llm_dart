@@ -8,6 +8,7 @@ import 'openai_options.dart';
 import 'openai_response_format.dart';
 import 'openai_responses_support.dart';
 import 'openai_streaming_support.dart';
+import 'openai_tool_output_encoding.dart';
 
 final class OpenAIResponsesRequest {
   final Map<String, Object?> body;
@@ -1079,24 +1080,11 @@ final class OpenAIResponsesCodec {
   }
 
   Object? _encodeToolOutput(ToolOutput output) {
-    if (output is ExecutionDeniedToolOutput) {
-      return output.reason ?? 'Tool execution denied';
-    }
-
     if (output is ContentToolOutput) {
       return _encodeContentToolOutput(output.parts);
     }
 
-    final value = output.value;
-    if (value == null) {
-      return output.isError ? 'Tool execution failed' : 'null';
-    }
-
-    if (value is String) {
-      return value;
-    }
-
-    return jsonEncode(value);
+    return encodeOpenAIToolOutputAsText(output);
   }
 
   List<Object?> _encodeContentToolOutput(List<ToolOutputContentPart> parts) {

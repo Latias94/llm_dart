@@ -53,11 +53,13 @@ DefaultChatSession _buildSession({
     decode: (json) => json['location']! as String,
     handle: (request, location) async {
       print('tool ${request.toolName} -> $location');
-      return ToolExecutionResult.output({
-        'location': location,
-        'temperatureC': 24,
-        'condition': 'clear',
-      });
+      return ToolExecutionResult.toolOutput(
+        JsonToolOutput({
+          'location': location,
+          'temperatureC': 24,
+          'condition': 'clear',
+        }),
+      );
     },
   );
 
@@ -162,7 +164,7 @@ final class _DemoWeatherLanguageModel implements LanguageModel {
     }
 
     final resultPart = toolMessage.parts.whereType<ToolResultPromptPart>().last;
-    final output = resultPart.output as Map<String, Object?>;
+    final output = resultPart.toolOutput.value as Map<String, Object?>;
     final location = output['location'] as String? ?? 'unknown';
     final temperatureC = output['temperatureC'];
     final condition = output['condition'] as String? ?? 'unknown';

@@ -46,7 +46,7 @@ String toolUiStateLabel(ToolUiPartState state) {
   };
 }
 
-Map<String, Object?> buildDemoLocalToolOutput(ToolUiPart part) {
+ToolOutput buildDemoLocalToolOutput(ToolUiPart part) {
   final input = switch (part.input) {
     Map<String, Object?>() => part.input as Map<String, Object?>,
     Map() => Map<String, Object?>.from(part.input as Map),
@@ -55,11 +55,11 @@ Map<String, Object?> buildDemoLocalToolOutput(ToolUiPart part) {
 
   final location = input['location'] as String? ?? 'Tokyo';
 
-  return {
+  return JsonToolOutput({
     'location': location,
     'temperatureC': 24,
     'condition': 'clear',
-  };
+  });
 }
 
 final class DemoMemoryChatPersistenceStore implements ChatPersistenceStore {
@@ -152,7 +152,7 @@ final class _ToolApprovalDemoLanguageModel implements LanguageModel {
       return;
     }
 
-    final localOutput = _normalizeLocalToolOutput(localToolResult?.output);
+    final localOutput = _normalizeLocalToolOutput(localToolResult?.toolOutput);
     final approvalStatus = approvalResponse?.approved == true
         ? 'The provider-side browser action was approved.'
         : 'The provider-side browser action was denied.';
@@ -235,13 +235,15 @@ final class _ToolApprovalDemoLanguageModel implements LanguageModel {
     return 'the user request';
   }
 
-  Map<String, Object?> _normalizeLocalToolOutput(Object? output) {
-    if (output is Map<String, Object?>) {
-      return output;
+  Map<String, Object?> _normalizeLocalToolOutput(ToolOutput? output) {
+    final value = output?.value;
+
+    if (value is Map<String, Object?>) {
+      return value;
     }
 
-    if (output is Map) {
-      return Map<String, Object?>.from(output);
+    if (value is Map) {
+      return Map<String, Object?>.from(value);
     }
 
     return const {

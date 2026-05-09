@@ -98,6 +98,31 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets('tool approval demo preserves denied approval reasons',
+      (tester) async {
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.binding.setSurfaceSize(const Size(900, 1000));
+
+    await tester.pumpWidget(const ToolApprovalMaterialChatApp());
+
+    await _sendInitialMessage(tester);
+    await _denyProviderAction(tester);
+    expect(find.text('status: awaitingTool'), findsOneWidget);
+
+    await _runLocalTool(tester);
+
+    expect(find.text('status: ready'), findsOneWidget);
+    expect(
+      find.textContaining('The provider-side browser action was denied.'),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining(
+          'Reason: Do not click the publish button from this demo.'),
+      findsOneWidget,
+    );
+  });
 }
 
 Future<void> _sendInitialMessage(WidgetTester tester) async {
@@ -113,6 +138,15 @@ Future<void> _approveProviderAction(WidgetTester tester) async {
     find.byKey(Key('tool-approve-$demoProviderApprovalId')),
   );
   await tester.tap(find.byKey(Key('tool-approve-$demoProviderApprovalId')));
+  await tester.pump();
+  await tester.pumpAndSettle();
+}
+
+Future<void> _denyProviderAction(WidgetTester tester) async {
+  await tester.ensureVisible(
+    find.byKey(Key('tool-deny-$demoProviderApprovalId')),
+  );
+  await tester.tap(find.byKey(Key('tool-deny-$demoProviderApprovalId')));
   await tester.pump();
   await tester.pumpAndSettle();
 }

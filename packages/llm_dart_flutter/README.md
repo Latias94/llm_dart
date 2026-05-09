@@ -396,6 +396,10 @@ Provider-executed tool behavior remains provider-owned. The session layer only
 models stable tool and approval state transitions that a Flutter UI needs to
 render.
 
+Denied approval reasons are preserved in shared session state and snapshots as
+explicit denied tool output. A provider package may still replay only the fields
+its native approval protocol supports.
+
 For a widget-level example that demonstrates HTTP stream failure, error-state
 rendering, and reconnect recovery through `resume()`, see
 `example/flutter_http_reconnect_demo.dart`.

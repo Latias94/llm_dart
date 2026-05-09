@@ -35,6 +35,11 @@ Use this package directly when you need to:
 provider code can keep tool result structure explicit. The compatibility
 `output:` and `isError:` shorthand remain available for older call sites.
 
+Use `ExecutionDeniedToolOutput` for denied execution or denied approval
+outcomes that the application should preserve in prompt history, stream JSON,
+or chat UI snapshots. Provider packages still decide how much of that shared
+state can be replayed through their native request formats.
+
 ## When Not To Use It
 
 This package does not include:

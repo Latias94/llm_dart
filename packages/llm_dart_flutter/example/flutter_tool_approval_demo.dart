@@ -108,7 +108,7 @@ class _ToolApprovalMaterialChatPageState
       ToolOutputUpdate(
         toolCallId: part.toolCallId,
         toolName: part.toolName,
-        output: buildDemoLocalToolOutput(part),
+        toolOutput: buildDemoLocalToolOutput(part),
       ),
     );
   }
