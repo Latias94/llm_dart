@@ -9,12 +9,6 @@ import 'openai_response_format.dart';
 import 'openai_responses_support.dart';
 import 'openai_streaming_support.dart';
 
-part 'openai_responses_request_encoder.dart';
-part 'openai_responses_prompt_encoder.dart';
-part 'openai_responses_request_support.dart';
-part 'openai_responses_response_decoder.dart';
-part 'openai_responses_stream_decoder.dart';
-
 final class OpenAIResponsesRequest {
   final Map<String, Object?> body;
   final List<ModelWarning> warnings;
@@ -42,7 +36,7 @@ final class OpenAIResponsesCodec {
     required OpenAIGenerateTextOptions providerOptions,
     required bool stream,
   }) {
-    return _OpenAIResponsesCodecRequestEncoder(this)._encodeRequest(
+    return _encodeRequest(
       modelId: modelId,
       prompt: prompt,
       tools: tools,
@@ -142,6 +136,1699 @@ final class OpenAIResponsesCodec {
     }
   }
 
+  OpenAIResponsesRequest _encodeRequest({
+    required String modelId,
+    required List<PromptMessage> prompt,
+    required List<FunctionToolDefinition> tools,
+    required ToolChoice? toolChoice,
+    required GenerateTextOptions options,
+    required OpenAIGenerateTextOptions providerOptions,
+    required bool stream,
+  }) {
+    final warnings = <ModelWarning>[];
+    final input = <Object?>[];
+    final capabilities = getOpenAIModelCapabilities(modelId);
+    final isReasoningModel =
+        providerOptions.forceReasoning ?? capabilities.isReasoningModel;
+    final store = providerOptions.store ?? true;
+    final hasConversation = providerOptions.conversation != null;
+    final systemMessageMode = providerOptions.systemMessageMode ??
+        (isReasoningModel
+            ? OpenAISystemMessageMode.developer
+            : capabilities.systemMessageMode);
+
+    if (hasConversation && providerOptions.previousResponseId != null) {
+      warnings.add(
+        const ModelWarning(
+          type: ModelWarningType.unsupported,
+          field: 'conversation',
+          message:
+              'conversation and previousResponseId cannot be used together',
+        ),
+      );
+    }
+
+    for (final message in prompt) {
+      input.addAll(
+        _encodePromptMessage(
+          message,
+          warnings,
+          systemMessageMode: systemMessageMode,
+          store: store,
+          hasConversation: hasConversation,
+        ),
+      );
+    }
+
+    final include = _resolveInclude(
+      providerOptions,
+      isReasoningModel: isReasoningModel,
+      store: store,
+    );
+    final topLogProbs = _encodeResponsesTopLogProbs(providerOptions.logprobs);
+
+    final body = <String, Object?>{
+      'model': modelId,
+      'input': input,
+      'stream': stream,
+      if (options.maxOutputTokens != null)
+        'max_output_tokens': options.maxOutputTokens,
+      if (options.temperature != null) 'temperature': options.temperature,
+      if (options.stopSequences != null && options.stopSequences!.isNotEmpty)
+        'stop': options.stopSequences,
+      if (options.topP != null) 'top_p': options.topP,
+      if (options.topK != null) 'top_k': options.topK,
+      if (providerOptions.previousResponseId != null)
+        'previous_response_id': providerOptions.previousResponseId,
+      if (providerOptions.conversation != null)
+        'conversation': providerOptions.conversation,
+      if (providerOptions.store != null) 'store': providerOptions.store,
+      if (providerOptions.parallelToolCalls != null)
+        'parallel_tool_calls': providerOptions.parallelToolCalls,
+      if (providerOptions.serviceTier != null)
+        'service_tier': providerOptions.serviceTier,
+      if (providerOptions.instructions != null)
+        'instructions': providerOptions.instructions,
+      if (providerOptions.maxToolCalls != null)
+        'max_tool_calls': providerOptions.maxToolCalls,
+      if (providerOptions.metadata != null)
+        'metadata': providerOptions.metadata,
+      if (providerOptions.truncation != null)
+        'truncation': providerOptions.truncation!.value,
+      if (providerOptions.user != null) 'user': providerOptions.user,
+      if (include != null) 'include': include,
+      if (providerOptions.promptCacheKey != null)
+        'prompt_cache_key': providerOptions.promptCacheKey,
+      if (providerOptions.promptCacheRetention != null)
+        'prompt_cache_retention': providerOptions.promptCacheRetention!.value,
+      if (providerOptions.safetyIdentifier != null)
+        'safety_identifier': providerOptions.safetyIdentifier,
+      if (topLogProbs != null) 'top_logprobs': topLogProbs,
+      if (isReasoningModel && providerOptions.reasoningEffort != null)
+        'reasoning': <String, Object?>{
+          'effort': providerOptions.reasoningEffort!.value,
+        },
+    };
+
+    _applyOpenAIReasoningCompatibility(
+      providerOptions: providerOptions,
+      body: body,
+      warnings: warnings,
+      isReasoningModel: isReasoningModel,
+      capabilities: capabilities,
+    );
+    _applyOpenAIServiceTierCompatibility(
+      body: body,
+      warnings: warnings,
+      capabilities: capabilities,
+    );
+
+    final encodedTools = _encodeTools(
+      tools: tools,
+      builtInTools: providerOptions.builtInTools,
+    );
+    if (encodedTools.isNotEmpty) {
+      body['tools'] = encodedTools;
+      final encodedToolChoice = _encodeToolChoice(
+        toolChoice,
+        hasFunctionTools: tools.isNotEmpty,
+      );
+      if (encodedToolChoice != null) {
+        body['tool_choice'] = encodedToolChoice;
+      }
+    }
+
+    if (providerOptions.verbosity != null) {
+      body['text'] = <String, Object?>{
+        'verbosity': providerOptions.verbosity,
+      };
+    }
+
+    if (providerOptions.responseFormat case final responseFormat?) {
+      body['response_format'] = _encodeResponseFormat(responseFormat);
+    }
+
+    return OpenAIResponsesRequest(
+      body: body,
+      warnings: warnings,
+    );
+  }
+
+  List<Object?> _encodePromptMessage(
+    PromptMessage message,
+    List<ModelWarning> warnings, {
+    required OpenAISystemMessageMode systemMessageMode,
+    required bool store,
+    required bool hasConversation,
+  }) {
+    if (message is SystemPromptMessage) {
+      if (systemMessageMode == OpenAISystemMessageMode.remove) {
+        warnings.add(
+          const ModelWarning(
+            type: ModelWarningType.other,
+            field: 'prompt.system',
+            message: 'system messages are removed for this model',
+          ),
+        );
+        return const [];
+      }
+
+      return [
+        {
+          'role': systemMessageMode.value,
+          'content': _joinTextParts(
+            role: 'system',
+            parts: message.parts,
+          ),
+        },
+      ];
+    }
+
+    if (message is UserPromptMessage) {
+      return [
+        {
+          'role': 'user',
+          'content': [
+            for (var index = 0; index < message.parts.length; index++)
+              _encodeUserPart(message.parts[index], index: index),
+          ],
+        },
+      ];
+    }
+
+    if (message is AssistantPromptMessage) {
+      return _encodeAssistantMessage(
+        message,
+        warnings,
+        store: store,
+        hasConversation: hasConversation,
+      );
+    }
+
+    if (message is ToolPromptMessage) {
+      return _encodeToolMessage(
+        message,
+        store: store,
+      );
+    }
+
+    throw UnsupportedError(
+      'Unsupported prompt message type: ${message.runtimeType}',
+    );
+  }
+
+  List<Object?> _encodeAssistantMessage(
+    AssistantPromptMessage message,
+    List<ModelWarning> warnings, {
+    required bool store,
+    required bool hasConversation,
+  }) {
+    final items = <Object?>[];
+    final textContent = <Object?>[];
+    final reasoningItemsById = <String, Map<String, Object?>>{};
+    final referencedReasoningIds = <String>{};
+    String? textItemId;
+    String? textPhase;
+
+    void flushTextContent() {
+      if (textContent.isEmpty) {
+        return;
+      }
+
+      items.add({
+        'role': 'assistant',
+        'content': List<Object?>.from(textContent),
+        if (textItemId != null) 'id': textItemId,
+        if (textPhase != null) 'phase': textPhase,
+      });
+      textContent.clear();
+      textItemId = null;
+      textPhase = null;
+    }
+
+    for (final part in message.parts) {
+      if (part is TextPromptPart) {
+        final metadata = _providerMetadataValues(
+          part.providerMetadata,
+          namespace: 'openai',
+        );
+        final partItemId = _asString(metadata?['itemId']);
+        final partPhase = _asString(metadata?['phase']);
+
+        if (hasConversation && partItemId != null) {
+          flushTextContent();
+          continue;
+        }
+
+        if (store && partItemId != null) {
+          flushTextContent();
+          items.add(_encodeItemReference(partItemId));
+          continue;
+        }
+
+        if (textContent.isNotEmpty &&
+            (partItemId != textItemId || partPhase != textPhase)) {
+          flushTextContent();
+        }
+
+        if (textContent.isEmpty) {
+          textItemId = partItemId;
+          textPhase = partPhase;
+        }
+
+        textContent.add({
+          'type': 'output_text',
+          'text': part.text,
+        });
+        continue;
+      }
+
+      if (part is ReasoningPromptPart) {
+        flushTextContent();
+
+        final metadata = _providerMetadataValues(
+          part.providerMetadata,
+          namespace: 'openai',
+        );
+        final reasoningId = _asString(metadata?['itemId']);
+        final encryptedContent =
+            _asString(metadata?['reasoningEncryptedContent']) ??
+                _asString(metadata?['encryptedContent']);
+        final summaryPart = part.text.isEmpty
+            ? null
+            : <String, Object?>{
+                'type': 'summary_text',
+                'text': part.text,
+              };
+
+        if (hasConversation && reasoningId != null) {
+          continue;
+        }
+
+        if (store && reasoningId != null) {
+          if (referencedReasoningIds.add(reasoningId)) {
+            items.add(_encodeItemReference(reasoningId));
+          }
+          continue;
+        }
+
+        if (reasoningId != null) {
+          final existingItem = reasoningItemsById[reasoningId];
+          if (existingItem == null) {
+            final reasoningItem = <String, Object?>{
+              'type': 'reasoning',
+              'id': reasoningId,
+              if (encryptedContent != null)
+                'encrypted_content': encryptedContent,
+              'summary': <Object?>[
+                if (summaryPart != null) summaryPart,
+              ],
+            };
+            reasoningItemsById[reasoningId] = reasoningItem;
+            items.add(reasoningItem);
+          } else {
+            final summary = existingItem['summary'];
+            if (summaryPart != null && summary is List<Object?>) {
+              summary.add(summaryPart);
+            } else if (summaryPart == null) {
+              warnings.add(
+                ModelWarning(
+                  type: ModelWarningType.other,
+                  field: 'prompt.assistant.reasoning',
+                  message:
+                      'Cannot append empty reasoning part to existing reasoning sequence. Skipping reasoning part with itemId "$reasoningId".',
+                ),
+              );
+            }
+            if (encryptedContent != null) {
+              existingItem['encrypted_content'] = encryptedContent;
+            }
+          }
+          continue;
+        }
+
+        if (encryptedContent == null) {
+          warnings.add(
+            const ModelWarning(
+              type: ModelWarningType.other,
+              field: 'prompt.assistant.reasoning',
+              message:
+                  'Non-OpenAI reasoning parts without itemId or encryptedContent are not sent to the OpenAI Responses API',
+            ),
+          );
+          continue;
+        }
+
+        items.add({
+          'type': 'reasoning',
+          'encrypted_content': encryptedContent,
+          'summary': <Object?>[
+            if (summaryPart != null) summaryPart,
+          ],
+        });
+        continue;
+      }
+
+      flushTextContent();
+
+      if (part is ToolCallPromptPart) {
+        final metadata = _providerMetadataValues(
+          part.providerMetadata,
+          namespace: 'openai',
+        );
+        final itemId = _asString(metadata?['itemId']);
+
+        if (hasConversation && itemId != null) {
+          continue;
+        }
+
+        if (store && itemId != null) {
+          items.add(_encodeItemReference(itemId));
+          continue;
+        }
+
+        if (part.providerExecuted) {
+          continue;
+        }
+
+        items.add({
+          'type': 'function_call',
+          'call_id': part.toolCallId,
+          if (itemId != null) 'id': itemId,
+          'name': part.toolName,
+          'arguments': _encodeJsonString(part.input),
+        });
+        continue;
+      }
+
+      if (part is ToolApprovalRequestPromptPart) {
+        continue;
+      }
+
+      if (part is FilePromptPart ||
+          part is ReasoningFilePromptPart ||
+          part is CustomPromptPart) {
+        if (part is CustomPromptPart && part.kind == 'openai.compaction') {
+          final compactionItem = _encodeOpenAICompactionItem(
+            part,
+            store: store,
+            hasConversation: hasConversation,
+          );
+          if (compactionItem != null) {
+            items.add(compactionItem);
+          }
+        }
+        continue;
+      }
+
+      if (part is ToolResultPromptPart) {
+        if (hasConversation) {
+          continue;
+        }
+
+        final metadata = _providerMetadataValues(
+          part.providerMetadata,
+          namespace: 'openai',
+        );
+        final itemId = _asString(metadata?['itemId']) ?? part.toolCallId;
+
+        if (store) {
+          items.add(_encodeItemReference(itemId));
+          continue;
+        }
+
+        warnings.add(
+          ModelWarning(
+            type: ModelWarningType.other,
+            field: 'prompt.assistant.toolResult',
+            message:
+                'Results for OpenAI tool ${part.toolName} are not sent to the API when store is false',
+          ),
+        );
+        continue;
+      }
+
+      throw UnsupportedError(
+        'Assistant prompt part ${part.runtimeType} is not supported by the migrated Responses codec yet.',
+      );
+    }
+
+    flushTextContent();
+    if (!store) {
+      var removedUnsupportedReasoning = false;
+      items.removeWhere((item) {
+        final map = _asMap(item);
+        final shouldRemove = map != null &&
+            _asString(map['type']) == 'reasoning' &&
+            !map.containsKey('encrypted_content');
+        if (shouldRemove) {
+          removedUnsupportedReasoning = true;
+        }
+        return shouldRemove;
+      });
+
+      if (removedUnsupportedReasoning) {
+        warnings.add(
+          const ModelWarning(
+            type: ModelWarningType.other,
+            field: 'prompt.assistant.reasoning',
+            message:
+                'Reasoning parts without encrypted content are not supported when store is false. Skipping reasoning parts.',
+          ),
+        );
+      }
+    }
+    return items;
+  }
+
+  List<Object?> _encodeToolMessage(
+    ToolPromptMessage message, {
+    required bool store,
+  }) {
+    final items = <Object?>[];
+
+    for (final part in message.parts) {
+      if (part is ToolApprovalResponsePromptPart) {
+        if (store) {
+          items.add(_encodeItemReference(part.approvalId));
+        }
+        items.add({
+          'type': 'mcp_approval_response',
+          'approval_request_id': part.approvalId,
+          'approve': part.approved,
+        });
+        continue;
+      }
+
+      if (part is! ToolResultPromptPart) {
+        throw UnsupportedError(
+          'Tool prompt part ${part.runtimeType} is not supported by the migrated Responses codec yet.',
+        );
+      }
+
+      items.add({
+        'type': 'function_call_output',
+        'call_id': part.toolCallId,
+        'output': _encodeToolOutput(part.toolOutput),
+      });
+    }
+
+    return items;
+  }
+
+  Object _encodeUserPart(
+    PromptPart part, {
+    required int index,
+  }) {
+    if (part is TextPromptPart) {
+      return {
+        'type': 'input_text',
+        'text': part.text,
+      };
+    }
+
+    if (part is ImagePromptPart) {
+      final openaiMetadata = _providerMetadataValues(
+        part.providerMetadata,
+        namespace: 'openai',
+      );
+      final imageDetail = _asString(openaiMetadata?['imageDetail']);
+      if (_openAIFileId(
+        data: part.data,
+      )
+          case final fileId?) {
+        return {
+          'type': 'input_image',
+          'file_id': fileId,
+          if (imageDetail != null) 'detail': imageDetail,
+        };
+      }
+
+      final imageUrl = part.uri?.toString() ??
+          (part.bytes == null
+              ? null
+              : 'data:${_normalizeImageMediaTypeForDataUrl(part.mediaType)};base64,'
+                  '${base64Encode(part.bytes!)}');
+      if (imageUrl == null) {
+        throw UnsupportedError(
+          'User image prompt parts need either a URI or bytes.',
+        );
+      }
+
+      return {
+        'type': 'input_image',
+        'image_url': imageUrl,
+        if (imageDetail != null) 'detail': imageDetail,
+      };
+    }
+
+    if (part is FilePromptPart) {
+      final openaiMetadata = _providerMetadataValues(
+        part.providerMetadata,
+        namespace: 'openai',
+      );
+      if (part.mediaType.startsWith('image/')) {
+        final imageDetail = _asString(openaiMetadata?['imageDetail']);
+        if (_openAIFileId(
+          data: part.data,
+        )
+            case final fileId?) {
+          return {
+            'type': 'input_image',
+            'file_id': fileId,
+            if (imageDetail != null) 'detail': imageDetail,
+          };
+        }
+
+        final imageUrl = part.uri?.toString() ??
+            (part.bytes == null
+                ? null
+                : 'data:${_normalizeImageMediaTypeForDataUrl(part.mediaType)};base64,'
+                    '${base64Encode(part.bytes!)}');
+        if (imageUrl == null) {
+          throw UnsupportedError(
+            'User image file prompt parts need either a URI or bytes.',
+          );
+        }
+
+        return {
+          'type': 'input_image',
+          'image_url': imageUrl,
+          if (imageDetail != null) 'detail': imageDetail,
+        };
+      }
+
+      if (part.mediaType == 'application/pdf') {
+        if (_openAIFileId(
+          data: part.data,
+        )
+            case final fileId?) {
+          return {
+            'type': 'input_file',
+            'file_id': fileId,
+          };
+        }
+
+        if (part.uri != null) {
+          return {
+            'type': 'input_file',
+            'file_url': part.uri!.toString(),
+          };
+        }
+
+        if (part.bytes == null) {
+          throw UnsupportedError(
+            'User PDF file prompt parts need bytes, a URI, or an OpenAI provider reference on the migrated Responses path.',
+          );
+        }
+
+        return {
+          'type': 'input_file',
+          'filename': part.filename ?? 'part-$index.pdf',
+          'file_data':
+              'data:application/pdf;base64,${base64Encode(part.bytes!)}',
+        };
+      }
+
+      if (part.uri != null) {
+        throw UnsupportedError(
+          'User file prompt parts need bytes on the migrated OpenAI Responses path.',
+        );
+      }
+
+      if (part.bytes == null) {
+        throw UnsupportedError(
+          'User file prompt parts need bytes on the migrated OpenAI Responses path.',
+        );
+      }
+
+      return {
+        'type': 'input_file',
+        'file_data': base64Encode(part.bytes!),
+      };
+    }
+
+    throw UnsupportedError(
+      'User prompt part ${part.runtimeType} is not supported by the migrated Responses codec yet.',
+    );
+  }
+
+  String _joinTextParts({
+    required String role,
+    required List<PromptPart> parts,
+  }) {
+    final buffer = <String>[];
+
+    for (final part in parts) {
+      if (part is! TextPromptPart) {
+        throw UnsupportedError(
+          '$role prompt part ${part.runtimeType} is not supported by the migrated Responses codec yet.',
+        );
+      }
+
+      buffer.add(part.text);
+    }
+
+    return buffer.join('\n\n');
+  }
+
+  void _applyOpenAIReasoningCompatibility({
+    required OpenAIGenerateTextOptions providerOptions,
+    required Map<String, Object?> body,
+    required List<ModelWarning> warnings,
+    required bool isReasoningModel,
+    required OpenAIModelCapabilities capabilities,
+  }) {
+    final reasoningEffort = providerOptions.reasoningEffort;
+
+    if (isReasoningModel) {
+      final supportsNonReasoningParameters =
+          reasoningEffort == OpenAIReasoningEffort.none &&
+              capabilities.supportsNonReasoningParameters;
+
+      if (!supportsNonReasoningParameters) {
+        _removeBodyFieldWithWarning(
+          body,
+          'temperature',
+          warnings,
+          warning: const ModelWarning(
+            type: ModelWarningType.unsupported,
+            field: 'temperature',
+            message: 'temperature is not supported for reasoning models',
+          ),
+        );
+        _removeBodyFieldWithWarning(
+          body,
+          'top_p',
+          warnings,
+          warning: const ModelWarning(
+            type: ModelWarningType.unsupported,
+            field: 'topP',
+            message: 'topP is not supported for reasoning models',
+          ),
+        );
+      }
+
+      return;
+    }
+
+    if (reasoningEffort != null) {
+      warnings.add(
+        const ModelWarning(
+          type: ModelWarningType.unsupported,
+          field: 'reasoningEffort',
+          message: 'reasoningEffort is not supported for non-reasoning models',
+        ),
+      );
+    }
+  }
+
+  void _applyOpenAIServiceTierCompatibility({
+    required Map<String, Object?> body,
+    required List<ModelWarning> warnings,
+    required OpenAIModelCapabilities capabilities,
+  }) {
+    final serviceTier = body['service_tier'];
+    if (serviceTier == 'flex' && !capabilities.supportsFlexProcessing) {
+      body.remove('service_tier');
+      warnings.add(
+        const ModelWarning(
+          type: ModelWarningType.unsupported,
+          field: 'serviceTier',
+          message:
+              'flex processing is only available for o3, o4-mini, and gpt-5 models',
+        ),
+      );
+    }
+
+    if (serviceTier == 'priority' && !capabilities.supportsPriorityProcessing) {
+      body.remove('service_tier');
+      warnings.add(
+        const ModelWarning(
+          type: ModelWarningType.unsupported,
+          field: 'serviceTier',
+          message:
+              'priority processing is only available for supported models (gpt-4, gpt-5, gpt-5-mini, o3, o4-mini) and requires Enterprise access. gpt-5-nano is not supported',
+        ),
+      );
+    }
+  }
+
+  void _removeBodyFieldWithWarning(
+    Map<String, Object?> body,
+    String key,
+    List<ModelWarning> warnings, {
+    required ModelWarning warning,
+  }) {
+    if (!body.containsKey(key)) {
+      return;
+    }
+
+    body.remove(key);
+    warnings.add(warning);
+  }
+
+  List<String>? _resolveInclude(
+    OpenAIGenerateTextOptions providerOptions, {
+    required bool isReasoningModel,
+    required bool store,
+  }) {
+    final values = <String>{};
+
+    if (providerOptions.include case final include?) {
+      for (final item in include) {
+        values.add(item.value);
+      }
+    }
+
+    if (providerOptions.logprobs != null) {
+      values.add(OpenAIResponsesInclude.messageOutputTextLogprobs.value);
+    }
+
+    if (!store && isReasoningModel) {
+      values.add(OpenAIResponsesInclude.reasoningEncryptedContent.value);
+    }
+
+    if (values.isEmpty) {
+      return null;
+    }
+
+    return values.toList(growable: false);
+  }
+
+  int? _encodeResponsesTopLogProbs(OpenAILogProbs? logprobs) {
+    if (logprobs == null) {
+      return null;
+    }
+
+    return logprobs.topLogProbs ?? OpenAILogProbs.responsesMaxTopLogProbs;
+  }
+
+  Map<String, Object?>? _encodeOpenAICompactionItem(
+    CustomPromptPart part, {
+    required bool store,
+    required bool hasConversation,
+  }) {
+    final data = part.data is Map
+        ? Map<String, Object?>.from(part.data as Map)
+        : const <String, Object?>{};
+    final metadata = _providerMetadataValues(
+      part.providerMetadata,
+      namespace: 'openai',
+    );
+    final id = _asString(metadata?['itemId']) ?? _asString(data['id']);
+    final encryptedContent = _asString(metadata?['encryptedContent']) ??
+        _asString(data['encrypted_content']) ??
+        _asString(data['encryptedContent']);
+
+    if (hasConversation && id != null) {
+      return null;
+    }
+
+    if (store && id != null) {
+      return _encodeItemReference(id);
+    }
+
+    if (id == null || encryptedContent == null) {
+      return null;
+    }
+
+    final item = <String, Object?>{
+      'type': 'compaction',
+      'id': id,
+      'encrypted_content': encryptedContent,
+    };
+
+    for (final entry in data.entries) {
+      if (entry.key == 'type' ||
+          entry.key == 'id' ||
+          entry.key == 'encrypted_content' ||
+          entry.key == 'encryptedContent') {
+        continue;
+      }
+      item[entry.key] = entry.value;
+    }
+
+    return item;
+  }
+
+  Map<String, Object?> _encodeItemReference(String id) {
+    return {
+      'type': 'item_reference',
+      'id': id,
+    };
+  }
+
+  Map<String, Object?>? _providerMetadataValues(
+    ProviderMetadata? metadata, {
+    required String namespace,
+  }) {
+    final value = metadata?[namespace];
+    if (value is Map<String, Object?>) {
+      return value;
+    }
+
+    if (value is Map) {
+      return Map<String, Object?>.from(value);
+    }
+
+    return null;
+  }
+
+  String _encodeJsonString(Object? value) {
+    if (value == null) {
+      return '{}';
+    }
+
+    if (value is String) {
+      return value;
+    }
+
+    return jsonEncode(value);
+  }
+
+  List<Map<String, Object?>> _encodeTools({
+    required List<FunctionToolDefinition> tools,
+    required List<OpenAIBuiltInTool>? builtInTools,
+  }) {
+    final encoded = <Map<String, Object?>>[
+      for (final tool in tools)
+        {
+          'type': 'function',
+          'name': tool.name,
+          if (tool.description != null) 'description': tool.description,
+          'parameters': tool.inputSchema.toJson(),
+          if (tool.strict != null) 'strict': tool.strict,
+        },
+    ];
+
+    if (builtInTools != null) {
+      encoded.addAll(
+        builtInTools.map((tool) => tool.toJson()),
+      );
+    }
+
+    return encoded;
+  }
+
+  Map<String, Object?>? _encodeToolChoice(
+    ToolChoice? toolChoice, {
+    required bool hasFunctionTools,
+  }) {
+    if (!hasFunctionTools || toolChoice == null) {
+      return null;
+    }
+
+    return switch (toolChoice) {
+      AutoToolChoice() => const {'type': 'auto'},
+      RequiredToolChoice() => const {'type': 'required'},
+      NoneToolChoice() => const {'type': 'none'},
+      SpecificToolChoice(toolName: final toolName) => {
+          'type': 'function',
+          'function': {
+            'name': toolName,
+          },
+        },
+    };
+  }
+
+  Map<String, Object?> _encodeResponseFormat(
+    OpenAIJsonSchemaResponseFormat responseFormat,
+  ) {
+    return {
+      'type': 'json_schema',
+      'json_schema': {
+        'name': responseFormat.name,
+        if (responseFormat.description != null)
+          'description': responseFormat.description,
+        if (responseFormat.schema != null)
+          'schema': _ensureOpenAIJsonSchemaObject(responseFormat.schema!),
+        if (responseFormat.strict != null) 'strict': responseFormat.strict,
+      },
+    };
+  }
+
+  Map<String, Object?> _ensureOpenAIJsonSchemaObject(
+    Map<String, Object?> schema,
+  ) {
+    final normalized = Map<String, Object?>.from(schema);
+    if (!normalized.containsKey('additionalProperties')) {
+      normalized['additionalProperties'] = false;
+    }
+    return normalized;
+  }
+
+  String _encodeToolOutput(ToolOutput output) {
+    if (output is ExecutionDeniedToolOutput) {
+      return output.reason ?? 'Tool execution denied';
+    }
+
+    if (output is ContentToolOutput) {
+      throw UnsupportedError(
+        'OpenAI Responses tool result replay does not support ContentToolOutput yet.',
+      );
+    }
+
+    final value = output.value;
+    if (value == null) {
+      return output.isError ? 'Tool execution failed' : 'null';
+    }
+
+    if (value is String) {
+      return value;
+    }
+
+    return jsonEncode(value);
+  }
+
+  String? _openAIFileId({
+    required FileData data,
+  }) {
+    return data.providerReference?.requireProvider(
+      'openai',
+      context: 'OpenAI file prompt part',
+    );
+  }
+
+  GenerateTextResult _decodeGenerateResponse(
+    Map<String, Object?> response, {
+    List<ModelWarning> warnings = const [],
+  }) {
+    _throwIfError(response);
+
+    final content = <ContentPart>[];
+    final collectedLogprobs = <Object?>[];
+    var hasToolCalls = false;
+
+    for (final item in _outputItems(response)) {
+      final type = _asString(item['type']);
+      if (type == 'message') {
+        collectOpenAIResponsesMessageOutputLogprobs(
+          item,
+          into: collectedLogprobs,
+        );
+        content.addAll(decodeOpenAIResponsesMessageOutput(item));
+        continue;
+      }
+
+      if (type == 'reasoning') {
+        content.addAll(decodeOpenAIResponsesReasoningOutput(item));
+        continue;
+      }
+
+      if (type == 'function_call') {
+        hasToolCalls = true;
+        final toolCall = decodeOpenAIResponsesFunctionCallOutput(item);
+        if (toolCall != null) {
+          content.add(toolCall);
+        }
+        continue;
+      }
+
+      if (type == 'mcp_approval_request') {
+        hasToolCalls = true;
+        content.addAll(decodeOpenAIResponsesMcpApprovalRequestOutput(item));
+        continue;
+      }
+
+      if (type == 'mcp_call') {
+        hasToolCalls = true;
+        content.addAll(decodeOpenAIResponsesMcpCallOutput(item));
+        continue;
+      }
+
+      final customPart = decodeOpenAIResponsesCustomOutput(item);
+      if (customPart != null) {
+        content.add(customPart);
+      }
+    }
+
+    final rawFinishReason = _responseFinishReason(response);
+
+    return GenerateTextResult(
+      content: content,
+      finishReason: _mapFinishReason(
+        rawReason: rawFinishReason,
+        hasToolCalls: hasToolCalls,
+        status: _asString(response['status']),
+      ),
+      rawFinishReason: rawFinishReason,
+      responseId: _asString(response['id']),
+      responseTimestamp: _decodeResponseTimestamp(response),
+      responseModelId: _asString(response['model']),
+      usage: _decodeUsage(_asMap(response['usage'])),
+      providerMetadata: openAIResponsesResponseMetadata(
+        response,
+        logprobs: collectedLogprobs,
+      ),
+      warnings: warnings,
+    );
+  }
+
+  void _throwIfError(Map<String, Object?> response) {
+    final error = _asMap(response['error']);
+    if (error == null) {
+      return;
+    }
+
+    final message = _asString(error['message']) ?? 'OpenAI response error';
+    final type = _asString(error['type']);
+    final code = error['code'];
+    throw StateError(
+      'OpenAI response error: $message'
+      '${type == null ? '' : ' (type: $type)'}'
+      '${code == null ? '' : ' (code: $code)'}',
+    );
+  }
+
+  FinishReason _mapFinishReason({
+    required String? rawReason,
+    required bool hasToolCalls,
+    required String? status,
+  }) {
+    if (status == 'failed') {
+      return FinishReason.error;
+    }
+
+    if (rawReason == null) {
+      return hasToolCalls ? FinishReason.toolCalls : FinishReason.stop;
+    }
+
+    if (rawReason == 'max_output_tokens') {
+      return FinishReason.maxTokens;
+    }
+
+    if (rawReason == 'content_filter') {
+      return FinishReason.contentFilter;
+    }
+
+    if (rawReason == 'cancelled') {
+      return FinishReason.aborted;
+    }
+
+    return hasToolCalls ? FinishReason.toolCalls : FinishReason.other;
+  }
+
+  UsageStats? _decodeUsage(Map<String, Object?>? usage) {
+    if (usage == null) {
+      return null;
+    }
+
+    final inputTokens = _asInt(usage['input_tokens']);
+    final outputTokens = _asInt(usage['output_tokens']);
+    final totalTokens = _asInt(usage['total_tokens']) ??
+        ((inputTokens != null && outputTokens != null)
+            ? inputTokens + outputTokens
+            : null);
+    final outputDetails = _asMap(usage['output_tokens_details']);
+
+    return UsageStats(
+      inputTokens: inputTokens,
+      outputTokens: outputTokens,
+      totalTokens: totalTokens,
+      reasoningTokens: _asInt(outputDetails?['reasoning_tokens']),
+    );
+  }
+
+  List<Map<String, Object?>> _outputItems(Map<String, Object?> response) {
+    final output = _asList(response['output']);
+    final items = <Map<String, Object?>>[];
+
+    for (final rawItem in output) {
+      final item = _asMap(rawItem);
+      if (item != null) {
+        items.add(item);
+      }
+    }
+
+    return items;
+  }
+
+  String? _responseFinishReason(Map<String, Object?> response) {
+    final incompleteDetails = _asMap(response['incomplete_details']);
+    return _asString(incompleteDetails?['reason']);
+  }
+
+  Iterable<TextStreamEvent> _handleResponseCreatedChunk(
+    Map<String, Object?> chunk,
+    OpenAIResponsesStreamState state,
+    _ResponsesStreamMetadataAdapter metadata,
+  ) sync* {
+    final response = _asMap(chunk['response']);
+    if (response == null) {
+      return;
+    }
+
+    captureOpenAIResponseMetadata(
+      state: state,
+      responseId: _asString(response['id']),
+      responseTimestamp: _decodeResponseTimestamp(response),
+      responseModelId: _asString(response['model']),
+      serviceTier: _asString(response['service_tier']),
+    );
+    final metadataEvent = maybeCreateOpenAIResponseMetadataEvent(
+      state: state,
+      metadata: () => metadata.response(response),
+    );
+    if (metadataEvent != null) {
+      yield metadataEvent;
+    }
+  }
+
+  Iterable<TextStreamEvent> _handleOutputItemAddedChunk(
+    Map<String, Object?> chunk,
+    OpenAIResponsesStreamState state,
+    _ResponsesStreamMetadataAdapter metadata,
+  ) sync* {
+    final item = _asMap(chunk['item']);
+    if (item == null) {
+      return;
+    }
+
+    final itemType = _asString(item['type']);
+    final providerMetadata = metadata.item(item);
+
+    if (itemType == 'message') {
+      final textId = _resolveTextId(chunk, item);
+      final textStartEvent = maybeCreateOpenAITextStartEvent(
+        state: state.textParts,
+        id: textId,
+        metadata: () => providerMetadata,
+      );
+      if (textStartEvent != null) {
+        yield textStartEvent;
+      }
+      return;
+    }
+
+    if (itemType == 'function_call') {
+      final outputIndex = _asInt(chunk['output_index']);
+      final fallbackToolCallId =
+          _asString(item['call_id']) ?? _asString(chunk['item_id']) ?? 'tool';
+      final toolState = resolveOpenAIStreamToolCallState(
+        state: state,
+        index: outputIndex,
+        fallbackToolCallId: fallbackToolCallId,
+        toolCallId: _asString(item['call_id']),
+        toolName: _asString(item['name']),
+        title: _asString(item['title']),
+        createEphemeralWhenIndexMissing: true,
+      );
+      final resolvedToolCallId =
+          toolState.resolveToolCallId(fallbackToolCallId);
+      final startEvent = maybeCreateOpenAIToolInputStartEvent(
+        toolState: toolState,
+        fallbackToolCallId: resolvedToolCallId,
+        title: _asString(item['title']),
+        metadata: () => providerMetadata,
+      );
+      if (startEvent != null) {
+        yield startEvent;
+      }
+    }
+  }
+
+  Iterable<TextStreamEvent> _handleOutputTextDeltaChunk(
+    Map<String, Object?> chunk,
+    OpenAIResponsesStreamState state,
+    _ResponsesStreamMetadataAdapter metadata,
+  ) sync* {
+    final textId = _resolveTextId(chunk, null);
+    yield* decodeOpenAITextDeltaEvents(
+      state: state.textParts,
+      id: textId,
+      delta: _asString(chunk['delta']),
+      aggregateLogprobs: state.logprobs,
+      deltaLogprobs: _jsonListOrNull(chunk['logprobs']),
+      startMetadata: metadata.item,
+      deltaMetadata: metadata.item,
+    );
+  }
+
+  Iterable<TextStreamEvent> _handleOutputTextDoneChunk(
+    Map<String, Object?> chunk,
+    OpenAIResponsesStreamState state,
+    _ResponsesStreamMetadataAdapter metadata,
+  ) sync* {
+    final textId = _resolveTextId(chunk, null);
+    final textEndEvent = maybeCreateOpenAITextEndEvent(
+      state: state.textParts,
+      id: textId,
+      metadata: metadata.item,
+    );
+    if (textEndEvent != null) {
+      yield textEndEvent;
+    }
+  }
+
+  Iterable<TextStreamEvent> _handleReasoningSummaryPartAddedChunk(
+    Map<String, Object?> chunk,
+    OpenAIResponsesStreamState state,
+    _ResponsesStreamMetadataAdapter metadata,
+  ) sync* {
+    final reasoningStartEvent = maybeCreateOpenAIReasoningStartEvent(
+      state: state.reasoningParts,
+      id: _resolveReasoningId(chunk),
+      metadata: metadata.item,
+    );
+    if (reasoningStartEvent != null) {
+      yield reasoningStartEvent;
+    }
+  }
+
+  Iterable<TextStreamEvent> _handleReasoningSummaryTextDeltaChunk(
+    Map<String, Object?> chunk,
+    OpenAIResponsesStreamState state,
+    _ResponsesStreamMetadataAdapter metadata,
+  ) sync* {
+    yield* decodeOpenAIReasoningDeltaEvents(
+      state: state.reasoningParts,
+      id: _resolveReasoningId(chunk),
+      delta: _asString(chunk['delta']),
+      startMetadata: metadata.item,
+      deltaMetadata: metadata.item,
+    );
+  }
+
+  Iterable<TextStreamEvent> _handleReasoningSummaryPartDoneChunk(
+    Map<String, Object?> chunk,
+    OpenAIResponsesStreamState state,
+    _ResponsesStreamMetadataAdapter metadata,
+  ) sync* {
+    final reasoningEndEvent = maybeCreateOpenAIReasoningEndEvent(
+      state: state.reasoningParts,
+      id: _resolveReasoningId(chunk),
+      metadata: metadata.item,
+    );
+    if (reasoningEndEvent != null) {
+      yield reasoningEndEvent;
+    }
+  }
+
+  Iterable<TextStreamEvent> _handleFunctionCallArgumentsDeltaChunk(
+    Map<String, Object?> chunk,
+    OpenAIResponsesStreamState state,
+    _ResponsesStreamMetadataAdapter metadata,
+  ) sync* {
+    final outputIndex = _asInt(chunk['output_index']);
+    final fallbackToolCallId = _asString(chunk['item_id']) ?? 'tool';
+    final deltaResult = consumeOpenAIToolCallDelta(
+      state: state,
+      index: outputIndex,
+      fallbackToolCallId: fallbackToolCallId,
+      argumentsDelta: _asString(chunk['delta']),
+      createEphemeralWhenIndexMissing: true,
+    );
+    final toolState = deltaResult.toolState;
+    final resolvedToolCallId = toolState.resolveToolCallId(fallbackToolCallId);
+    ProviderMetadata? itemMetadata() => metadata.item();
+
+    final startEvent = maybeCreateOpenAIToolInputStartEvent(
+      toolState: toolState,
+      fallbackToolCallId: resolvedToolCallId,
+      metadata: itemMetadata,
+    );
+    if (startEvent != null) {
+      yield startEvent;
+    }
+
+    final deltaEvent = maybeCreateOpenAIToolInputDeltaEvent(
+      toolState: toolState,
+      fallbackToolCallId: resolvedToolCallId,
+      delta: deltaResult.argumentsDelta,
+      metadata: itemMetadata,
+    );
+    if (deltaEvent != null) {
+      yield deltaEvent;
+    }
+  }
+
+  Iterable<TextStreamEvent> _handleOutputTextAnnotationAddedChunk(
+    Map<String, Object?> chunk,
+    OpenAIResponsesStreamState state,
+  ) sync* {
+    final annotation = _asMap(chunk['annotation']);
+    final sourceEvent = decodeOpenAIResponsesSourceEvent(
+      annotation,
+      emittedAnnotationKeys: state.emittedAnnotationKeys,
+    );
+    if (sourceEvent != null) {
+      yield sourceEvent;
+    }
+  }
+
+  Iterable<TextStreamEvent> _handleContentPartDoneChunk(
+    Map<String, Object?> chunk,
+    OpenAIResponsesStreamState state,
+    _ResponsesStreamMetadataAdapter metadata,
+  ) sync* {
+    final part = _asMap(chunk['part']);
+    if (part == null || _asString(part['type']) != 'output_text') {
+      return;
+    }
+
+    appendOpenAILogprobs(
+      state.logprobs,
+      _jsonListOrNull(part['logprobs']),
+    );
+
+    for (final rawAnnotation in _asList(part['annotations'])) {
+      final annotation = _asMap(rawAnnotation);
+      final sourceEvent = decodeOpenAIResponsesSourceEvent(
+        annotation,
+        emittedAnnotationKeys: state.emittedAnnotationKeys,
+      );
+      if (sourceEvent != null) {
+        yield sourceEvent;
+      }
+    }
+
+    final textId = _resolveTextId(chunk, null);
+    final textEndEvent = maybeCreateOpenAITextEndEvent(
+      state: state.textParts,
+      id: textId,
+      metadata: () => metadata.textPart(part),
+      allowUnstarted: true,
+    );
+    if (textEndEvent != null) {
+      yield textEndEvent;
+    }
+  }
+
+  Iterable<TextStreamEvent> _handlePartialImageChunk(
+    Map<String, Object?> chunk,
+    OpenAIResponsesStreamState state,
+    _ResponsesStreamMetadataAdapter metadata,
+  ) sync* {
+    yield CustomEvent(
+      kind: 'openai.image_generation_call.partial_image',
+      data: {
+        'item_id': _asString(chunk['item_id']),
+        'output_index': _asInt(chunk['output_index']),
+        'partial_image_b64': _asString(chunk['partial_image_b64']),
+      },
+      providerMetadata: metadata.custom({
+        'responseId': state.responseId,
+        'itemId': _asString(chunk['item_id']),
+        'itemType': 'image_generation_call.partial_image',
+        'outputIndex': _asInt(chunk['output_index']),
+        'serviceTier': state.serviceTier,
+      }),
+    );
+  }
+
+  Iterable<TextStreamEvent> _handleOutputItemDoneChunk(
+    Map<String, Object?> chunk,
+    OpenAIResponsesStreamState state,
+    _ResponsesStreamMetadataAdapter metadata,
+  ) sync* {
+    final item = _asMap(chunk['item']);
+    if (item == null) {
+      return;
+    }
+
+    final itemType = _asString(item['type']);
+    final providerMetadata = metadata.item(item);
+
+    if (itemType == 'message') {
+      final textId = _resolveTextId(chunk, item);
+      final textEndEvent = maybeCreateOpenAITextEndEvent(
+        state: state.textParts,
+        id: textId,
+        metadata: () => providerMetadata,
+        allowUnstarted: true,
+      );
+      if (textEndEvent != null) {
+        yield textEndEvent;
+      }
+      return;
+    }
+
+    if (itemType == 'function_call') {
+      final outputIndex = _asInt(chunk['output_index']);
+      var toolState =
+          outputIndex == null ? null : state.toolCalls.remove(outputIndex);
+      final fallbackToolCallId =
+          _asString(item['call_id']) ?? _asString(chunk['item_id']) ?? 'tool';
+
+      if (toolState != null) {
+        toolState.update(
+          toolCallId: _asString(item['call_id']),
+          toolName: _asString(item['name']),
+          title: _asString(item['title']),
+        );
+        state.hasToolCalls = true;
+      } else {
+        toolState = resolveOpenAIStreamToolCallState(
+          state: state,
+          index: null,
+          fallbackToolCallId: fallbackToolCallId,
+          toolCallId: _asString(item['call_id']),
+          toolName: _asString(item['name']),
+          title: _asString(item['title']),
+          createEphemeralWhenIndexMissing: true,
+        );
+      }
+
+      final resolvedToolCallId =
+          toolState.resolveToolCallId(fallbackToolCallId);
+      final resolvedToolName = toolState.resolveToolName();
+
+      final startEvent = maybeCreateOpenAIToolInputStartEvent(
+        toolState: toolState,
+        fallbackToolCallId: resolvedToolCallId,
+        title: _asString(item['title']),
+        metadata: () => providerMetadata,
+      );
+      if (startEvent != null) {
+        yield startEvent;
+      }
+
+      final encodedArguments = resolveOpenAIResponsesFunctionCallArguments(
+        item,
+        fallbackArguments: toolState.arguments.toString(),
+      );
+      final resolvedInput = resolveOpenAIStreamToolInput(
+        toolState: toolState,
+        fallbackToolCallId: resolvedToolCallId,
+        fallbackToolName: resolvedToolName,
+        encodedArguments: encodedArguments,
+      );
+      if (resolvedInput.decodeError != null) {
+        yield createOpenAIToolInputErrorEvent(
+          input: resolvedInput,
+          metadata: () => providerMetadata,
+        );
+        return;
+      }
+
+      final endEvent = maybeCreateOpenAIToolInputEndEvent(
+        toolState: toolState,
+        fallbackToolCallId: resolvedToolCallId,
+        metadata: () => providerMetadata,
+      );
+      if (endEvent != null) {
+        yield endEvent;
+      }
+
+      final toolCallPart = decodeOpenAIResponsesFunctionCallOutput(
+        item,
+        fallbackToolCallId: resolvedToolCallId,
+        fallbackArguments: toolState.arguments.toString(),
+        fallbackToolName: resolvedToolName,
+        decodedInput: resolvedInput.decodedInput,
+      );
+      if (toolCallPart != null) {
+        yield ToolCallEvent(
+          toolCall: toolCallPart.toolCall,
+          providerMetadata: toolCallPart.providerMetadata,
+        );
+      }
+      return;
+    }
+
+    if (itemType == 'mcp_approval_request') {
+      final approvalId =
+          _asString(item['approval_request_id']) ?? _asString(item['id']);
+      final toolName = _asString(item['name']);
+      if (approvalId == null || toolName == null) {
+        return;
+      }
+
+      state.hasToolCalls = true;
+      final providerMetadata = openAIResponsesItemMetadata(
+        item,
+        extra: {
+          'approvalRequestId': approvalId,
+          'serverLabel': _asString(item['server_label']),
+        },
+      );
+      final qualifiedToolName = 'mcp.$toolName';
+
+      yield ToolCallEvent(
+        toolCall: ToolCallContent(
+          toolCallId: approvalId,
+          toolName: qualifiedToolName,
+          input: decodeOpenAIResponsesJsonValue(
+            _asString(item['arguments']) ?? '{}',
+          ),
+          providerExecuted: true,
+          isDynamic: true,
+          title: _asString(item['server_label']),
+        ),
+        providerMetadata: providerMetadata,
+      );
+      yield ToolApprovalRequestEvent(
+        approvalId: approvalId,
+        toolCallId: approvalId,
+        providerMetadata: providerMetadata,
+      );
+      return;
+    }
+
+    if (itemType == 'mcp_call') {
+      final toolCallId =
+          _asString(item['approval_request_id']) ?? _asString(item['id']);
+      final toolName = _asString(item['name']);
+      if (toolCallId == null || toolName == null) {
+        return;
+      }
+
+      state.hasToolCalls = true;
+      final providerMetadata = openAIResponsesItemMetadata(
+        item,
+        extra: {
+          'approvalRequestId': _asString(item['approval_request_id']),
+          'serverLabel': _asString(item['server_label']),
+        },
+      );
+      final qualifiedToolName = 'mcp.$toolName';
+      final arguments = decodeOpenAIResponsesJsonValue(
+        _asString(item['arguments']) ?? '{}',
+      );
+
+      yield ToolCallEvent(
+        toolCall: ToolCallContent(
+          toolCallId: toolCallId,
+          toolName: qualifiedToolName,
+          input: arguments,
+          providerExecuted: true,
+          isDynamic: true,
+          title: _asString(item['server_label']),
+        ),
+        providerMetadata: providerMetadata,
+      );
+      yield ToolResultEvent(
+        toolResult: ToolResultContent(
+          toolCallId: toolCallId,
+          toolName: qualifiedToolName,
+          output: {
+            'type': 'mcp_call',
+            'serverLabel': _asString(item['server_label']),
+            'name': toolName,
+            'arguments': arguments,
+            if (item['output'] != null) 'output': item['output'],
+            if (item['error'] != null) 'error': item['error'],
+          },
+          isError: item['error'] != null,
+          isDynamic: true,
+        ),
+        providerMetadata: providerMetadata,
+      );
+      return;
+    }
+
+    if (itemType != 'reasoning' && itemType != null) {
+      yield CustomEvent(
+        kind: 'openai.$itemType',
+        data: item,
+        providerMetadata: providerMetadata,
+      );
+    }
+  }
+
+  Iterable<TextStreamEvent> _handleErrorChunk(
+    Map<String, Object?> chunk,
+  ) sync* {
+    yield ErrorEvent(
+      ModelError.fromUnknown(
+        chunk['error'] ?? chunk,
+        kind: ModelErrorKind.provider,
+      ),
+    );
+  }
+
+  Iterable<TextStreamEvent> _handleTerminalResponseChunk(
+    String chunkType,
+    Map<String, Object?> chunk,
+    OpenAIResponsesStreamState state,
+    _ResponsesStreamMetadataAdapter metadata,
+  ) sync* {
+    final response = _asMap(chunk['response']);
+    if (response == null) {
+      return;
+    }
+
+    captureOpenAIResponseMetadata(
+      state: state,
+      responseId: _asString(response['id']),
+      responseTimestamp: _decodeResponseTimestamp(response),
+      responseModelId: _asString(response['model']),
+      serviceTier: _asString(response['service_tier']),
+      rawFinishReason: _responseFinishReason(response),
+      usage: _decodeUsage(_asMap(response['usage'])),
+    );
+
+    final metadataEvent = maybeCreateOpenAIResponseMetadataEvent(
+      state: state,
+      metadata: () => metadata.response(response),
+    );
+    if (metadataEvent != null) {
+      yield metadataEvent;
+    }
+
+    if (chunkType == 'response.failed') {
+      final error = response['error'];
+      if (error != null) {
+        yield ErrorEvent(
+          ModelError.fromUnknown(
+            error,
+            kind: ModelErrorKind.provider,
+          ),
+        );
+      }
+    }
+
+    yield FinishEvent(
+      finishReason: _mapFinishReason(
+        rawReason: state.rawFinishReason,
+        hasToolCalls: state.hasToolCalls,
+        status: chunkType == 'response.failed'
+            ? 'failed'
+            : _asString(response['status']),
+      ),
+      rawFinishReason: state.rawFinishReason,
+      usage: state.usage,
+      providerMetadata: metadata.response(
+        response,
+        logprobs: state.logprobs,
+      ),
+    );
+  }
+
+  String _resolveTextId(
+    Map<String, Object?> chunk,
+    Map<String, Object?>? item,
+  ) {
+    return _asString(chunk['item_id']) ??
+        _asString(item?['id']) ??
+        'text-${_asInt(chunk['output_index']) ?? 0}';
+  }
+
+  String _resolveReasoningId(Map<String, Object?> chunk) {
+    return '${_asString(chunk['item_id']) ?? 'reasoning'}:${_asInt(chunk['summary_index']) ?? 0}';
+  }
+
   Map<String, Object?>? _asMap(Object? value) {
     if (value is Map<String, Object?>) {
       return value;
@@ -213,4 +1900,45 @@ final class OpenAIResponsesCodec {
 
     return mediaType;
   }
+}
+
+final class _ResponsesStreamMetadataAdapter {
+  final OpenAIResponsesStreamState state;
+  final Map<String, Object?> chunk;
+  final ProviderMetadata? Function(Map<String, Object?> values)
+      customMetadataBuilder;
+
+  const _ResponsesStreamMetadataAdapter({
+    required this.state,
+    required this.chunk,
+    required this.customMetadataBuilder,
+  });
+
+  ProviderMetadata? item([Map<String, Object?>? item]) =>
+      openAIResponsesStreamItemMetadata(
+        responseId: state.responseId,
+        serviceTier: state.serviceTier,
+        chunk: chunk,
+        item: item,
+      );
+
+  ProviderMetadata? textPart(Map<String, Object?> part) =>
+      openAIResponsesStreamTextPartMetadata(
+        responseId: state.responseId,
+        serviceTier: state.serviceTier,
+        chunk: chunk,
+        part: part,
+      );
+
+  ProviderMetadata? response(
+    Map<String, Object?> response, {
+    List<Object?>? logprobs,
+  }) =>
+      openAIResponsesResponseMetadata(
+        response,
+        logprobs: logprobs ?? const [],
+      );
+
+  ProviderMetadata? custom(Map<String, Object?> values) =>
+      customMetadataBuilder(values);
 }
