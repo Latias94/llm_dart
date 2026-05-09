@@ -1,5 +1,3 @@
-part of 'tool_models.dart';
-
 /// Tool choice determines how the LLM uses available tools.
 /// The behavior is standardized across different LLM providers.
 ///

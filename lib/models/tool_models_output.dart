@@ -1,5 +1,3 @@
-part of 'tool_models.dart';
-
 /// Defines a JSON schema-backed structured output contract.
 class StructuredOutputFormat {
   /// Name of the schema

@@ -1,5 +1,3 @@
-part of 'tool_models.dart';
-
 /// Represents a parameter in a function tool
 class ParameterProperty {
   /// The type of the parameter (e.g. "string", "number", "array", etc)

@@ -1,4 +1,5 @@
-part of 'image_models.dart';
+import 'image_models_primitives.dart';
+import 'usage_models.dart';
 
 /// Image generation request configuration
 class ImageGenerationRequest {

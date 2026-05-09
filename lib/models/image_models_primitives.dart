@@ -1,5 +1,3 @@
-part of 'image_models.dart';
-
 /// Image dimensions
 class ImageDimensions {
   final int width;

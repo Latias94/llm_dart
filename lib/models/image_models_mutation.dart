@@ -1,4 +1,4 @@
-part of 'image_models.dart';
+import 'image_models_primitives.dart';
 
 /// Image edit request model
 ///

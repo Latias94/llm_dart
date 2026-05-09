@@ -1,5 +1,3 @@
-part of 'tool_models.dart';
-
 /// Tool execution result that can be returned to the model
 class ToolResult {
   /// The ID of the tool call this result corresponds to
