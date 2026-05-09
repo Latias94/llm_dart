@@ -17,7 +17,7 @@ import 'package:llm_dart/models/audio_models.dart';
 ///
 /// This is not the new primary app architecture.
 ///
-/// For new app-facing code, prefer the stable facade when it exists:
+/// For new app-facing code, prefer stable short factories when they exist:
 /// - `<provider>(...).chatModel(...)`
 /// - `<provider>(...).embeddingModel(...)`
 /// - `<provider>(...).imageModel(...)`
@@ -39,7 +39,7 @@ import 'package:llm_dart/models/audio_models.dart';
 void main() async {
   print('Compatibility Builder Methods for Provider Capabilities\n');
 
-  // Position these helpers relative to the stable facade.
+  // Position these helpers relative to the stable short factories.
   demonstrateStableFirstPositioning();
 
   // Compare raw build() + cast with typed compatibility builders.
@@ -55,7 +55,8 @@ void main() async {
   await demonstratePracticalUsage();
 
   print('\nCompatibility builder demo completed.');
-  print('Use the stable AI facade first when a stable model factory exists.');
+  print(
+      'Use short provider factories first when stable model factories exist.');
 }
 
 void demonstrateStableFirstPositioning() {
@@ -67,8 +68,7 @@ void demonstrateStableFirstPositioning() {
       "   final chatModel = openai(apiKey: apiKey).chatModel('gpt-4.1-mini');");
   print(
       "   final embeddingModel = openai(apiKey: apiKey).embeddingModel('text-embedding-3-small');");
-  print(
-      "   final imageModel = openai(apiKey: apiKey).imageModel('dall-e-3');");
+  print("   final imageModel = openai(apiKey: apiKey).imageModel('dall-e-3');");
   print('   ```');
   print('');
 
@@ -108,7 +108,8 @@ Future<void> demonstrateCastVsCompatibilityBuild() async {
   print('');
 
   print('   Stable-first reminder:');
-  print('      • Prefer short provider model factories for new app-facing code');
+  print(
+      '      • Prefer short provider model factories for new app-facing code');
   print(
       '      • Use `build*()` when you are still on the compatibility surface');
   print(

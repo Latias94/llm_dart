@@ -5,4 +5,4 @@
 library;
 
 export 'package:llm_dart_anthropic/llm_dart_anthropic.dart' hide anthropic;
-export 'src/facade/ai.dart' show AI, anthropic;
+export 'src/facade/ai.dart' show anthropic;

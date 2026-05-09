@@ -9,4 +9,4 @@ export 'core.dart';
 export 'transport.dart';
 export 'package:llm_dart_chat/llm_dart_chat.dart';
 export 'src/facade/ai.dart'
-    show AI, anthropic, deepSeek, google, groq, openRouter, openai, phind, xai;
+    show anthropic, deepSeek, google, groq, openRouter, openai, phind, xai;

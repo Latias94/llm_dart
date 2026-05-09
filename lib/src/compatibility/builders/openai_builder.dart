@@ -20,8 +20,8 @@ part 'openai_builder_responses_tools.dart';
 /// `OpenAIProvider` compatibility surface alive, especially for residual APIs
 /// such as raw Responses lifecycle helpers.
 ///
-/// New code should usually prefer the stable `AI.openai(...).chatModel(...)`
-/// path plus typed provider-owned options from `package:llm_dart/openai.dart`.
+/// New code should usually prefer the stable `openai(...).chatModel(...)` path
+/// plus typed provider-owned options from `package:llm_dart/openai.dart`.
 class OpenAIBuilder
     with
         _OpenAIBuilderProviderOptions,

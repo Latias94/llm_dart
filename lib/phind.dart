@@ -12,4 +12,4 @@ export 'package:llm_dart_openai/llm_dart_openai.dart'
         OpenAIGenerateTextOptions,
         OpenAILanguageModel,
         PhindProfile;
-export 'src/facade/ai.dart' show AI, phind;
+export 'src/facade/ai.dart' show phind;

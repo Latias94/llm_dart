@@ -6,12 +6,13 @@ import 'package:test/test.dart';
 
 void main() {
   group('Modern Root Facade', () {
-    test('AI facade creates refactored OpenAI, Google, and Anthropic models',
+    test(
+        'short factories create refactored OpenAI, Google, and Anthropic models',
         () {
       final openaiModel =
-          modern.AI.openai(apiKey: 'test-key').chatModel('gpt-5-mini');
+          modern.openai(apiKey: 'test-key').chatModel('gpt-5-mini');
       final googleModel =
-          modern.AI.google(apiKey: 'test-key').chatModel('gemini-2.5-flash');
+          modern.google(apiKey: 'test-key').chatModel('gemini-2.5-flash');
       final anthropicModel = modern.AI
           .anthropic(apiKey: 'test-key')
           .chatModel('claude-sonnet-4-5');
@@ -51,13 +52,14 @@ void main() {
       expect(anthropicShortcut, isA<anthropic_entry.Anthropic>());
     });
 
-    test('AI facade exposes OpenAI-family profile convenience constructors',
+    test(
+        'short factories expose OpenAI-family profile convenience constructors',
         () {
-      final openRouterProvider = modern.AI.openRouter(apiKey: 'test-key');
-      final deepSeekProvider = modern.AI.deepSeek(apiKey: 'test-key');
-      final groqProvider = modern.AI.groq(apiKey: 'test-key');
-      final xaiProvider = modern.AI.xai(apiKey: 'test-key');
-      final phindProvider = modern.AI.phind(apiKey: 'test-key');
+      final openRouterProvider = modern.openRouter(apiKey: 'test-key');
+      final deepSeekProvider = modern.deepSeek(apiKey: 'test-key');
+      final groqProvider = modern.groq(apiKey: 'test-key');
+      final xaiProvider = modern.xai(apiKey: 'test-key');
+      final phindProvider = modern.phind(apiKey: 'test-key');
       final openRouterShortcut = modern.openRouter(apiKey: 'test-key');
       final deepSeekShortcut = modern.deepSeek(apiKey: 'test-key');
       final groqShortcut = modern.groq(apiKey: 'test-key');

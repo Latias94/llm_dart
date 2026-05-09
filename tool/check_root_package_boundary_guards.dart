@@ -71,42 +71,42 @@ const Map<String, List<String>> _expectedFocusedRootEntrypointDirectives = {
   'lib/anthropic.dart': [
     'library;',
     "export 'package:llm_dart_anthropic/llm_dart_anthropic.dart' hide anthropic;",
-    "export 'src/facade/ai.dart' show AI, anthropic;",
+    "export 'src/facade/ai.dart' show anthropic;",
   ],
   'lib/google.dart': [
     'library;',
     "export 'package:llm_dart_google/llm_dart_google.dart' hide google;",
-    "export 'src/facade/ai.dart' show AI, google;",
+    "export 'src/facade/ai.dart' show google;",
   ],
   'lib/openai.dart': [
     'library;',
     "export 'package:llm_dart_openai/llm_dart_openai.dart' hide deepSeek, groq, openRouter, openai, phind, xai;",
-    "export 'src/facade/ai.dart' show AI, openai;",
+    "export 'src/facade/ai.dart' show openai;",
   ],
   'lib/groq.dart': [
     'library;',
     "export 'package:llm_dart_openai/llm_dart_openai.dart' show GroqProfile, OpenAI, OpenAIChatModelSettings, OpenAIGenerateTextOptions, OpenAILanguageModel;",
-    "export 'src/facade/ai.dart' show AI, groq;",
+    "export 'src/facade/ai.dart' show groq;",
   ],
   'lib/phind.dart': [
     'library;',
     "export 'package:llm_dart_openai/llm_dart_openai.dart' show OpenAI, OpenAIChatModelSettings, OpenAIGenerateTextOptions, OpenAILanguageModel, PhindProfile;",
-    "export 'src/facade/ai.dart' show AI, phind;",
+    "export 'src/facade/ai.dart' show phind;",
   ],
   'lib/xai.dart': [
     'library;',
     "export 'package:llm_dart_openai/llm_dart_openai.dart' show OpenAI, OpenAIChatModelSettings, OpenAIGenerateTextOptions, OpenAILanguageModel, XAIProfile, XAIGenerateTextOptions, XAILiveSearchOptions, XAINewsSearchSource, XAIRssSearchSource, XAISearchMode, XAISearchSource, XAIWebSearchSource, XAIXSearchSource;",
-    "export 'src/facade/ai.dart' show AI, xai;",
+    "export 'src/facade/ai.dart' show xai;",
   ],
   'lib/deepseek.dart': [
     'library;',
     "export 'package:llm_dart_openai/llm_dart_openai.dart' show DeepSeekGenerateTextOptions, DeepSeekProfile, OpenAI, OpenAIChatModelSettings, OpenAIGenerateTextOptions, OpenAILanguageModel;",
-    "export 'src/facade/ai.dart' show AI, deepSeek;",
+    "export 'src/facade/ai.dart' show deepSeek;",
   ],
   'lib/openrouter.dart': [
     'library;',
     "export 'package:llm_dart_openai/llm_dart_openai.dart' show OpenAI, OpenAIChatModelSettings, OpenAIGenerateTextOptions, OpenAILanguageModel, OpenRouterChatModelSettings, OpenRouterGenerateTextOptions, OpenRouterProfile, OpenRouterSearchMode, OpenRouterSearchOptions;",
-    "export 'src/facade/ai.dart' show AI, openRouter;",
+    "export 'src/facade/ai.dart' show openRouter;",
   ],
 };
 
@@ -322,7 +322,7 @@ Future<void> _collectModernAggregatorEntrypointViolations({
 
   violations.add(
     'lib/ai.dart: modern aggregator entrypoint must only compose stable '
-    'root entrypoints and the AI facade. Found directives: '
+    'root entrypoints and optional AI namespace. Found directives: '
     '${directives.join(' ')}. Expected directives: '
     '${_expectedModernAggregatorEntrypointDirectives.join(' ')}.',
   );

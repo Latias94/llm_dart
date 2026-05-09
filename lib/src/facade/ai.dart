@@ -5,7 +5,8 @@ import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 /// Creates an OpenAI provider facade.
 ///
-/// This is the short root-package equivalent of `AI.openai(...)`.
+/// Prefer this short factory in new root-package code. `AI.openai(...)`
+/// remains as an optional grouped-namespace alias.
 openai_pkg.OpenAI openai({
   required String apiKey,
   TransportClient? transport,
@@ -91,7 +92,8 @@ openai_pkg.OpenAI phind({
 
 /// Creates a Google provider facade.
 ///
-/// This is the short root-package equivalent of `AI.google(...)`.
+/// Prefer this short factory in new root-package code. `AI.google(...)`
+/// remains as an optional grouped-namespace alias.
 google_pkg.Google google({
   required String apiKey,
   TransportClient? transport,
@@ -106,7 +108,8 @@ google_pkg.Google google({
 
 /// Creates an Anthropic provider facade.
 ///
-/// This is the short root-package equivalent of `AI.anthropic(...)`.
+/// Prefer this short factory in new root-package code. `AI.anthropic(...)`
+/// remains as an optional grouped-namespace alias.
 anthropic_pkg.Anthropic anthropic({
   required String apiKey,
   TransportClient? transport,
@@ -119,9 +122,11 @@ anthropic_pkg.Anthropic anthropic({
   );
 }
 
-/// Stable model-factory facade for the refactored architecture.
+/// Optional grouped namespace for root provider factories.
 ///
-/// This is the new primary entry path for the root package.
+/// New examples and docs should prefer the short root factories such as
+/// `openai(...)`, `google(...)`, and `anthropic(...)` because they make the
+/// concrete provider choice visible without an extra namespace hop.
 /// The legacy builder surface remains available through
 /// `package:llm_dart/legacy.dart`.
 final class AI {

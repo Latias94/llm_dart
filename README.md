@@ -15,7 +15,7 @@ The repository is currently on the `0.11.0-alpha.x` preview line.
 Breaking changes are still allowed before `1.0.0`, but the model-first surface
 below is the intended direction for new code.
 
-The new primary entry path is:
+The primary entry path for new code is the short provider factory:
 
 - `openai(...).chatModel(...)`
 - `anthropic(...).chatModel(...)`
@@ -26,7 +26,8 @@ The new primary entry path is:
 - `xai(...).chatModel(...)`
 
 The equivalent grouped facade remains available as
-`AI.<provider>(...).chatModel(...)` when you prefer a single namespace.
+`AI.<provider>(...).chatModel(...)` when you prefer a single namespace, but new
+examples should teach the short factories first.
 
 Within this workspace, the modern shared-capability path for the current
 community providers now lives in:

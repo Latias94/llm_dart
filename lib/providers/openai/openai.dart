@@ -8,7 +8,7 @@
 ///
 /// - `package:llm_dart/openai.dart` for the modern provider-owned OpenAI
 ///   package surface
-/// - `AI.openai(...).chatModel(...)` and the other stable model constructors
+/// - `openai(...).chatModel(...)` and the other stable model constructors
 /// - `package:llm_dart/legacy.dart` if broad compatibility exports are needed
 ///
 /// **Compatibility Usage:**

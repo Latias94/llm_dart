@@ -337,7 +337,7 @@ library;
 
 export 'package:llm_dart_anthropic/llm_dart_anthropic.dart'
     hide anthropic;
-export 'src/facade/ai.dart' show AI, anthropic;
+export 'src/facade/ai.dart' show anthropic;
 ''',
   );
 
@@ -348,7 +348,7 @@ export 'src/facade/ai.dart' show AI, anthropic;
 library;
 
 export 'package:llm_dart_google/llm_dart_google.dart' hide google;
-export 'src/facade/ai.dart' show AI, google;
+export 'src/facade/ai.dart' show google;
 ''',
   );
 
@@ -360,7 +360,7 @@ library;
 
 export 'package:llm_dart_openai/llm_dart_openai.dart'
     hide deepSeek, groq, openRouter, openai, phind, xai;
-export 'src/facade/ai.dart' show AI, openai;
+export 'src/facade/ai.dart' show openai;
 ''',
   );
 
@@ -377,7 +377,7 @@ export 'package:llm_dart_openai/llm_dart_openai.dart'
         OpenAIChatModelSettings,
         OpenAIGenerateTextOptions,
         OpenAILanguageModel;
-export 'src/facade/ai.dart' show AI, groq;
+export 'src/facade/ai.dart' show groq;
 ''',
   );
 
@@ -394,7 +394,7 @@ export 'package:llm_dart_openai/llm_dart_openai.dart'
         OpenAIGenerateTextOptions,
         OpenAILanguageModel,
         PhindProfile;
-export 'src/facade/ai.dart' show AI, phind;
+export 'src/facade/ai.dart' show phind;
 ''',
   );
 
@@ -419,7 +419,7 @@ export 'package:llm_dart_openai/llm_dart_openai.dart'
         XAISearchSource,
         XAIWebSearchSource,
         XAIXSearchSource;
-export 'src/facade/ai.dart' show AI, xai;
+export 'src/facade/ai.dart' show xai;
 ''',
   );
 
@@ -437,7 +437,7 @@ export 'package:llm_dart_openai/llm_dart_openai.dart'
         OpenAIChatModelSettings,
         OpenAIGenerateTextOptions,
         OpenAILanguageModel;
-export 'src/facade/ai.dart' show AI, deepSeek;
+export 'src/facade/ai.dart' show deepSeek;
 ''',
   );
 
@@ -458,7 +458,7 @@ export 'package:llm_dart_openai/llm_dart_openai.dart'
         OpenRouterProfile,
         OpenRouterSearchMode,
         OpenRouterSearchOptions;
-export 'src/facade/ai.dart' show AI, openRouter;
+export 'src/facade/ai.dart' show openRouter;
 ''',
   );
 

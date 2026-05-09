@@ -8,7 +8,8 @@ already migrated.
 
 The core rule is simple:
 
-- use `AI.*(...).chatModel(...)` for migrated chat behavior
+- use short provider factories such as `openai(...).chatModel(...)` for
+  migrated chat behavior
 - use `package:llm_dart/core.dart` for prompt, result, tool, and stream models
 - use provider entrypoints such as `package:llm_dart/openai.dart` or
   `package:llm_dart/google.dart` for provider-owned option types
@@ -19,13 +20,13 @@ The core rule is simple:
 
 These paths are already the recommended primary API:
 
-- `AI.openai(...).chatModel(...)`
-- `AI.openRouter(...).chatModel(...)`
-- `AI.deepSeek(...).chatModel(...)`
-- `AI.groq(...).chatModel(...)`
-- `AI.xai(...).chatModel(...)`
-- `AI.google(...).chatModel(...)`
-- `AI.anthropic(...).chatModel(...)`
+- `openai(...).chatModel(...)`
+- `openRouter(...).chatModel(...)`
+- `deepSeek(...).chatModel(...)`
+- `groq(...).chatModel(...)`
+- `xai(...).chatModel(...)`
+- `google(...).chatModel(...)`
+- `anthropic(...).chatModel(...)`
 
 These provider-package shared-capability paths are also now valid modern
 migration targets:
@@ -35,7 +36,7 @@ migration targets:
 - `package:llm_dart_community/llm_dart_community.dart` `ElevenLabs(...).speechModel(...)`
 - `package:llm_dart_community/llm_dart_community.dart` `ElevenLabs(...).transcriptionModel(...)`
 
-`AI.phind(...).chatModel(...)` also exists as a stable facade entrypoint, but it
+`phind(...).chatModel(...)` also exists as a stable facade entrypoint, but it
 should currently be treated as a direct new-path experiment rather than a
 legacy-parity migration target.
 
@@ -95,14 +96,14 @@ guesswork.
 
 | Old surface | New surface | Notes |
 | --- | --- | --- |
-| `ai().openai()...build()` | `AI.openai(...).chatModel(...)` | Use this when you only need migrated chat behavior. |
-| `ai().anthropic()...build()` | `AI.anthropic(...).chatModel(...)` | Same rule. |
-| `ai().google()...build()` | `AI.google(...).chatModel(...)` | Same rule. |
+| `ai().openai()...build()` | `openai(...).chatModel(...)` | Use this when you only need migrated chat behavior. |
+| `ai().anthropic()...build()` | `anthropic(...).chatModel(...)` | Same rule. |
+| `ai().google()...build()` | `google(...).chatModel(...)` | Same rule. |
 | `provider.chat(messages)` | `generateTextCall(model: ..., prompt: ...)` | Recommended app-facing text call surface. |
 | `provider.chatStream(messages)` | `streamTextCall(model: ..., prompt: ...)` | Recommended app-facing streamed text call surface. |
 | `ChatMessage.*` | `PromptMessage.*` | Replace legacy message DTOs with replay-safe prompt messages. |
 | `Tool.function(...)` | `FunctionToolDefinition(...)` | Use `ToolJsonSchema` and `ToolChoice`. |
-| legacy preset helpers | `AI.*(...).chatModel(...)` | Preset helpers are now compatibility-only. |
+| legacy preset helpers | short provider factories such as `openai(...).chatModel(...)` | Preset helpers are now compatibility-only. |
 | root-package provider-specific extension keys | typed `providerOptions` | Import option types from provider entrypoints. |
 
 ## 4. Minimal Chat Migration
@@ -134,7 +135,7 @@ import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
 
 Future<void> main() async {
-  final model = llm.AI.openai(
+  final model = llm.openai(
     apiKey: 'your-openai-key',
   ).chatModel('gpt-4.1-mini');
 
@@ -300,7 +301,7 @@ import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/openai.dart' as openai;
 
-final model = llm.AI.openai(apiKey: 'your-openai-key').chatModel('gpt-5-mini');
+final model = llm.openai(apiKey: 'your-openai-key').chatModel('gpt-5-mini');
 
 final result = await core.generateTextCall(
   model: model,
@@ -322,7 +323,8 @@ import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/google.dart' as google;
 
-final model = llm.AI.google(apiKey: 'your-google-key').chatModel('gemini-2.5-flash');
+final model =
+    llm.google(apiKey: 'your-google-key').chatModel('gemini-2.5-flash');
 
 final result = await core.generateTextCall(
   model: model,
@@ -377,7 +379,8 @@ Old pattern:
 
 New pattern:
 
-- create a model with `AI.*(...).chatModel(...)`
+- create a model with short provider factories such as
+  `openai(...).chatModel(...)`
 - wrap it with `DirectChatTransport` or `HttpChatTransport`
 - let `DefaultChatSession` own chat state, message projection, replay-safe
   history, and tool-output continuation
@@ -398,7 +401,7 @@ import 'package:llm_dart_flutter/llm_dart_flutter.dart';
 final controller = ChatController(
   session: DefaultChatSession(
     transport: DirectChatTransport(
-      model: llm.AI.openai(
+      model: llm.openai(
         apiKey: 'your-openai-key',
       ).chatModel('gpt-4.1-mini'),
     ),
@@ -426,7 +429,7 @@ Do not use deprecated preset helpers as the long-term migration target.
 
 The migration order should be:
 
-1. stable `AI` facade, when migrated chat behavior is enough
+1. stable short provider factory, when migrated chat behavior is enough
 2. base compatibility constructor, when the old provider surface is still needed
 3. old preset helper only as a temporary stopgap while that call site is being
    cleaned up
@@ -462,7 +465,7 @@ The old root-package compatibility surface is not removed during the current
 Current frozen policy:
 
 - deprecations may continue during `0.x`
-- examples and docs should move to the stable `AI` facade now
+- examples and docs should move to the stable short provider factories now
 - actual removal should happen only in an explicit breaking prerelease or
   later stable breaking release
 - even in that first breaking window, removal should happen only with
@@ -480,8 +483,9 @@ The right strategy is:
 
 For each caller, apply this checklist:
 
-1. Replace provider construction with `AI.*(...).chatModel(...)` if the caller
-   only needs migrated chat behavior.
+1. Replace provider construction with a short provider factory such as
+   `openai(...).chatModel(...)` if the caller only needs migrated chat
+   behavior.
 2. Replace `ChatMessage` with shared prompt messages.
 3. Replace `provider.chat(...)` or `provider.chatStream(...)` with
    `generateTextCall(...)` or `streamTextCall(...)`.

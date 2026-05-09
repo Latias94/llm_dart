@@ -10,7 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 This alpha moves new application code toward the model-first API:
 `openai(...).chatModel(...)` and other short provider factories plus the shared
 helpers from `package:llm_dart/core.dart`. The grouped
-`AI.<provider>(...)` facade remains available when you prefer one namespace.
+`AI.<provider>(...)` facade remains available from the root entrypoints when
+you prefer one namespace.
 
 Most apps should continue depending on the root `llm_dart` package. The new
 split packages are available when you want smaller direct dependencies,
@@ -23,8 +24,8 @@ Older builder-era code should migrate through `package:llm_dart/legacy.dart`.
   contracts, generation helpers, chat sessions, transport, Flutter adapters, or
   provider-specific APIs.
 - Added short root provider factories such as `openai(...)`,
-  `anthropic(...)`, and `google(...)` as ergonomic equivalents to the grouped
-  `AI.<provider>(...)` facade.
+  `anthropic(...)`, and `google(...)` as the primary ergonomic root
+  construction path.
 - Added the same short factories to the focused OpenAI-family, Google, and
   Anthropic packages so split-package users can use the model-first path
   without depending on the root facade.
@@ -78,6 +79,10 @@ Older builder-era code should migrate through `package:llm_dart/legacy.dart`.
 - Removed provider-specific root model re-exports and compatibility-only
   wrapper entrypoints. Import those APIs from their focused compatibility paths
   when you still need them.
+- Removed the grouped `AI` namespace from focused provider and chat entrypoints
+  such as `package:llm_dart/openai.dart`, `google.dart`, `xai.dart`, and
+  `chat.dart`. Import `package:llm_dart/llm_dart.dart` or
+  `package:llm_dart/ai.dart` when you want `AI.<provider>(...)`.
 
 ### Migration Notes
 
@@ -100,9 +105,10 @@ Older builder-era code should migrate through `package:llm_dart/legacy.dart`.
 - `createProvider(...)` remains available without raw extension bags.
 - Non-deprecated root provider constructors such as `createOpenAIProvider(...)`
   and `createGoogleProvider(...)` remain available for compatibility code.
-- `AI.<provider>(...)` remains as a supported grouped facade.
+- `AI.<provider>(...)` remains as a supported grouped facade from the root
+  modern entrypoints.
 - `ai()` remains as a deprecated migration alias; use short provider factories
-  or `AI.<provider>(...)` for new code.
+  for new code.
 
 ## [0.10.7] - 2026-03-26
 

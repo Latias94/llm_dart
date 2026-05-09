@@ -11,10 +11,10 @@ import 'defaults.dart';
 /// This type remains public because the root package still hosts the legacy
 /// OpenAI provider surface, including residual Responses, file, assistant,
 /// moderation, image, and audio APIs that do not map cleanly to the stable
-/// model-first `AI.openai(...).*.model(...)` path yet.
+/// model-first `openai(...).*Model(...)` path yet.
 ///
 /// New code should prefer the stable OpenAI-family provider package and the
-/// `AI` facade when it only needs migrated model surfaces.
+/// short root factory when it only needs migrated model surfaces.
 class OpenAIConfig implements HasDioClientOverrides {
   final String apiKey;
   final String baseUrl;

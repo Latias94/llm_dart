@@ -19,4 +19,4 @@ export 'package:llm_dart_openai/llm_dart_openai.dart'
         XAISearchSource,
         XAIWebSearchSource,
         XAIXSearchSource;
-export 'src/facade/ai.dart' show AI, xai;
+export 'src/facade/ai.dart' show xai;

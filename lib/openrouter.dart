@@ -16,4 +16,4 @@ export 'package:llm_dart_openai/llm_dart_openai.dart'
         OpenRouterProfile,
         OpenRouterSearchMode,
         OpenRouterSearchOptions;
-export 'src/facade/ai.dart' show AI, openRouter;
+export 'src/facade/ai.dart' show openRouter;

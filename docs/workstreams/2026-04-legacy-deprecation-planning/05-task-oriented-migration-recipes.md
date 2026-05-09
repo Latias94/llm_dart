@@ -15,10 +15,10 @@ plainly and keep the provider-owned compatibility boundary explicit.
 
 | Old builder job | Preferred direction now | Status |
 | --- | --- | --- |
-| `ai().<provider>().build()` for normal text generation | `AI.<provider>(...).chatModel(...)` + `generateTextCall(...)` or `streamTextCall(...)` | Stable |
+| `ai().<provider>().build()` for normal text generation | short provider factories such as `openai(...).chatModel(...)` + `generateTextCall(...)` or `streamTextCall(...)` | Stable |
 | `chatWithTools(...)` plus hand-written tool follow-up | `FunctionToolDefinition` + `runTextGeneration(...)` / `streamTextRun(...)` | Stable |
-| `buildEmbedding()` | `AI.<provider>(...).embeddingModel(...)` + `embed(...)` / `embedMany(...)` | Stable |
-| `buildImageGeneration()` for prompt-based generation | `AI.<provider>(...).imageModel(...)` + `generateImage(...)` | Stable for prompt generation |
+| `buildEmbedding()` | short provider factories such as `openai(...).embeddingModel(...)` + `embed(...)` / `embedMany(...)` | Stable |
+| `buildImageGeneration()` for prompt-based generation | short provider factories such as `openai(...).imageModel(...)` + `generateImage(...)` | Stable for prompt generation |
 | `buildAudio()` for TTS / STT | `speechModel(...)` / `transcriptionModel(...)` + `generateSpeech(...)` / `transcribe(...)` | Stable |
 | `buildModelListing()` for remote provider catalogs | Provider-owned compatibility provider or app-owned concrete-model profiles | Provider-owned boundary |
 | `buildOpenAIResponses()` for raw response lifecycle | Stable `chatModel(...)` for normal app flows; provider-owned OpenAI compatibility surface for raw lifecycle APIs | Provider-owned boundary |
@@ -44,7 +44,7 @@ final response = await provider.chat([
 ### Preferred pattern
 
 ```dart
-final model = AI.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
+final model = openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
 
 final result = await core.generateTextCall(
   model: model,
@@ -162,7 +162,7 @@ final vectors = await embeddingProvider.embed(['hello world']);
 ### Preferred pattern
 
 ```dart
-final model = AI.openai(apiKey: apiKey)
+final model = openai(apiKey: apiKey)
     .embeddingModel('text-embedding-3-small');
 
 final single = await core.embed(
@@ -203,7 +203,7 @@ final imageProvider = await ai()
 ### Preferred pattern
 
 ```dart
-final imageModel = AI.openai(apiKey: apiKey).imageModel('dall-e-3');
+final imageModel = openai(apiKey: apiKey).imageModel('dall-e-3');
 
 final result = await core.generateImage(
   model: imageModel,
@@ -237,9 +237,9 @@ final audioProvider = await ai().openai().apiKey(apiKey).buildAudio();
 
 ```dart
 final speechModel =
-    AI.openai(apiKey: apiKey).speechModel('gpt-4o-mini-tts');
+    openai(apiKey: apiKey).speechModel('gpt-4o-mini-tts');
 final transcriptionModel =
-    AI.openai(apiKey: apiKey).transcriptionModel('whisper-1');
+    openai(apiKey: apiKey).transcriptionModel('whisper-1');
 
 final speech = await core.generateSpeech(
   model: speechModel,
@@ -290,7 +290,7 @@ There are two different jobs:
 This is stable:
 
 ```dart
-final model = AI.openai(apiKey: 'demo-key').chatModel('gpt-4.1-mini');
+final model = openai(apiKey: 'demo-key').chatModel('gpt-4.1-mini');
 final profile = (model as core.CapabilityDescribedModel).capabilityProfile;
 ```
 
@@ -332,7 +332,7 @@ Reference example:
 Stay on the stable chat model:
 
 ```dart
-final model = AI.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
+final model = openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
 ```
 
 ### Raw lifecycle work
@@ -367,7 +367,7 @@ Split the job into:
 2. typed provider-owned call options
 
 ```dart
-final model = AI.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
+final model = openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
 
 final result = await core.generateTextCall(
   model: model,

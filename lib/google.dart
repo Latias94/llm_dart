@@ -5,4 +5,4 @@
 library;
 
 export 'package:llm_dart_google/llm_dart_google.dart' hide google;
-export 'src/facade/ai.dart' show AI, google;
+export 'src/facade/ai.dart' show google;

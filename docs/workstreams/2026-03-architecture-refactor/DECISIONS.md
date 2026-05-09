@@ -10,6 +10,12 @@ The following decisions are considered frozen for this workstream. Any future ch
 - The new primary architecture should use `AI.*` style model factories.
 - During migration, `ai()` becomes a facade only and stops defining the core design.
 
+2026-05 update: this decision has been narrowed by the root entrypoint cleanup.
+The model-first architecture remains the target, but new examples now teach the
+short provider factories (`openai(...)`, `google(...)`, `anthropic(...)`, and
+friends) first. `AI.*` remains as an optional grouped-namespace alias rather
+than the primary teaching path.
+
 ## D2. Unify Around Model Types and Use-Case Functions
 
 The following objects belong in the shared spec:

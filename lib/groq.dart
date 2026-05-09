@@ -11,4 +11,4 @@ export 'package:llm_dart_openai/llm_dart_openai.dart'
         OpenAIChatModelSettings,
         OpenAIGenerateTextOptions,
         OpenAILanguageModel;
-export 'src/facade/ai.dart' show AI, groq;
+export 'src/facade/ai.dart' show groq;
