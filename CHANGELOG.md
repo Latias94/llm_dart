@@ -70,6 +70,8 @@ Older builder-era code should migrate through `package:llm_dart/legacy.dart`.
   decoding older `output` / `isError` payloads.
 - Preserved denied tool-output reasons across stream JSON, result accumulation,
   and chat UI replay.
+- Preserved denied tool approval reasons as explicit denied tool outputs in the
+  chat session UI state.
 - Preserved explicit tool outputs through local chat-session tool callbacks and
   Ollama tool-result replay.
 - Extended `ToolOutput` with provider metadata plus richer content parts for

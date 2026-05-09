@@ -291,7 +291,9 @@ final class DefaultChatSession implements ChatSession {
         input: part.input,
         inputText: part.inputText,
         output: part.output,
-        toolOutput: part.toolOutput,
+        toolOutput: response.approved
+            ? part.toolOutput
+            : ExecutionDeniedToolOutput(response.reason),
         errorText: part.errorText,
         providerExecuted: part.providerExecuted,
         isDynamic: part.isDynamic,

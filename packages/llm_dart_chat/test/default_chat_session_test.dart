@@ -1193,6 +1193,11 @@ void main() {
       expect(deniedTool.state, ToolUiPartState.outputDenied);
       expect(deniedTool.approval?.approved, isFalse);
       expect(deniedTool.approval?.reason, 'The target page is not trusted.');
+      expect(deniedTool.toolOutput, isA<ExecutionDeniedToolOutput>());
+      expect(
+        (deniedTool.toolOutput as ExecutionDeniedToolOutput).reason,
+        'The target page is not trusted.',
+      );
 
       await session.sendMessage(ChatInput.text('What happened?'));
 

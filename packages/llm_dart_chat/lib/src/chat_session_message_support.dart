@@ -237,7 +237,9 @@ ChatUiMessage promptMessageToChatUiMessage(
             input: current?.input,
             inputText: current?.inputText,
             output: current?.output,
-            toolOutput: current?.toolOutput,
+            toolOutput: approved
+                ? current?.toolOutput
+                : ExecutionDeniedToolOutput(reason),
             errorText: current?.errorText,
             providerExecuted: current?.providerExecuted ?? false,
             isDynamic: current?.isDynamic ?? false,

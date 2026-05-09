@@ -57,5 +57,30 @@ void main() {
       final resultPart = resultMessage.parts.single as ToolResultPromptPart;
       expect(resultPart.toolOutput, same(toolOutput));
     });
+
+    test('maps denied approval responses to denied tool output', () {
+      final uiMessage = promptMessageToChatUiMessage(
+        ToolPromptMessage(
+          toolName: 'browser',
+          parts: const [
+            ToolApprovalResponsePromptPart(
+              approvalId: 'approval-1',
+              toolCallId: 'tool-1',
+              approved: false,
+              reason: 'User denied browser access.',
+            ),
+          ],
+        ),
+        id: 'message-1',
+      );
+
+      final toolPart = uiMessage.parts.whereType<ToolUiPart>().single;
+      expect(toolPart.state, ToolUiPartState.outputDenied);
+      expect(toolPart.toolOutput, isA<ExecutionDeniedToolOutput>());
+      expect(
+        (toolPart.toolOutput as ExecutionDeniedToolOutput).reason,
+        'User denied browser access.',
+      );
+    });
   });
 }
