@@ -7,12 +7,12 @@ import 'stream_parsing_support.dart';
 /// completion response reconstruction.
 class OpenAIResponsesStreamParser {
   final OpenAIClient client;
-  final OpenAIStreamParsingState _state = OpenAIStreamParsingState();
+  final OpenAIStreamParsingCodec _codec = OpenAIStreamParsingCodec();
 
   OpenAIResponsesStreamParser(this.client);
 
   void reset() {
-    _state.reset();
+    _codec.reset();
   }
 
   List<ChatStreamEvent> parseChunk(String chunk) {
@@ -36,8 +36,7 @@ class OpenAIResponsesStreamParser {
     if (eventType == 'response.output_text.delta') {
       final delta = json['delta'] as String?;
       if (delta != null && delta.isNotEmpty) {
-        addOpenAITextDeltaEvents(
-          state: _state,
+        _codec.addTextDeltaEvents(
           events: events,
           content: delta,
         );
@@ -48,8 +47,7 @@ class OpenAIResponsesStreamParser {
     if (eventType == 'response.completed') {
       final response = json['response'] as Map<String, dynamic>?;
       if (response != null) {
-        flushOpenAIPendingContentEvents(
-          state: _state,
+        _codec.flushPendingContentEvents(
           events: events,
         );
 
@@ -57,18 +55,17 @@ class OpenAIResponsesStreamParser {
           CompletionEvent(
             OpenAIResponsesResponse.fromResponseData(
               response,
-              thinkingContent: _state.thinkingContent,
+              thinkingContent: _codec.thinkingContent,
             ),
           ),
         );
 
-        _state.reset();
+        _codec.reset();
         return events;
       }
     }
 
-    if (addOpenAIReasoningDeltaEvents(
-      state: _state,
+    if (_codec.addReasoningDeltaEvents(
       events: events,
       delta: json,
     )) {
@@ -77,16 +74,14 @@ class OpenAIResponsesStreamParser {
 
     final content = json['output_text_delta'] as String?;
     if (content != null && content.isNotEmpty) {
-      addOpenAITextDeltaEvents(
-        state: _state,
+      _codec.addTextDeltaEvents(
         events: events,
         content: content,
         reasoningDelta: {'content': content},
       );
     }
 
-    addOpenAIToolCallDeltaEvents(
-      state: _state,
+    _codec.addToolCallDeltaEvents(
       events: events,
       toolCalls: json['tool_calls'] as List?,
       onWarning: client.logger.warning,
@@ -94,14 +89,13 @@ class OpenAIResponsesStreamParser {
 
     final finishReason = json['finish_reason'] as String?;
     if (finishReason != null) {
-      flushOpenAIPendingContentEvents(
-        state: _state,
+      _codec.flushPendingContentEvents(
         events: events,
       );
 
       final usage = json['usage'] as Map<String, dynamic>?;
-      final streamedText = _state.textContent ?? '';
-      final streamedToolCalls = _state.buildToolCalls();
+      final streamedText = _codec.textContent ?? '';
+      final streamedToolCalls = _codec.buildToolCalls();
 
       events.add(
         CompletionEvent(
@@ -114,12 +108,12 @@ class OpenAIResponsesStreamParser {
                     .toList(),
               if (usage != null) 'usage': usage,
             },
-            thinkingContent: _state.thinkingContent,
+            thinkingContent: _codec.thinkingContent,
           ),
         ),
       );
 
-      _state.reset();
+      _codec.reset();
     }
 
     return events;

@@ -7,7 +7,7 @@ import 'stream_parsing_support.dart';
 class OpenAIChatStreamParser {
   final OpenAIClient client;
   final String model;
-  final OpenAIStreamParsingState _state = OpenAIStreamParsingState();
+  final OpenAIStreamParsingCodec _codec = OpenAIStreamParsingCodec();
 
   OpenAIChatStreamParser({
     required this.client,
@@ -15,7 +15,7 @@ class OpenAIChatStreamParser {
   });
 
   void reset() {
-    _state.reset();
+    _codec.reset();
   }
 
   List<ChatStreamEvent> parseChunk(String chunk) {
@@ -45,8 +45,7 @@ class OpenAIChatStreamParser {
       return events;
     }
 
-    if (addOpenAIReasoningDeltaEvents(
-      state: _state,
+    if (_codec.addReasoningDeltaEvents(
       events: events,
       delta: delta,
     )) {
@@ -55,16 +54,14 @@ class OpenAIChatStreamParser {
 
     final content = delta['content'] as String?;
     if (content != null && content.isNotEmpty) {
-      addOpenAITextDeltaEvents(
-        state: _state,
+      _codec.addTextDeltaEvents(
         events: events,
         content: content,
         reasoningDelta: delta,
       );
     }
 
-    addOpenAIToolCallDeltaEvents(
-      state: _state,
+    _codec.addToolCallDeltaEvents(
       events: events,
       toolCalls: delta['tool_calls'] as List?,
       onWarning: client.logger.warning,
@@ -72,14 +69,13 @@ class OpenAIChatStreamParser {
 
     final finishReason = choice['finish_reason'] as String?;
     if (finishReason != null) {
-      flushOpenAIPendingContentEvents(
-        state: _state,
+      _codec.flushPendingContentEvents(
         events: events,
       );
 
       final usage = json['usage'] as Map<String, dynamic>?;
-      final streamedText = _state.textContent ?? '';
-      final streamedToolCalls = _state.buildToolCalls();
+      final streamedText = _codec.textContent ?? '';
+      final streamedToolCalls = _codec.buildToolCalls();
 
       events.add(
         CompletionEvent(
@@ -100,12 +96,12 @@ class OpenAIChatStreamParser {
               if (usage != null) 'usage': usage,
             },
             model: model,
-            thinkingContent: _state.thinkingContent,
+            thinkingContent: _codec.thinkingContent,
           ),
         ),
       );
 
-      _state.reset();
+      _codec.reset();
     }
 
     return events;
