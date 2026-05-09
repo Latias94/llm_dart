@@ -42,7 +42,7 @@ List<_EmbeddingDemoEntry> _collectEmbeddingModels() {
     entries.add(
       _EmbeddingDemoEntry(
         label: 'OpenAI text-embedding-3-small',
-        model: llm.AI
+        model: llm
             .openai(
               apiKey: openAIKey,
             )
@@ -56,7 +56,7 @@ List<_EmbeddingDemoEntry> _collectEmbeddingModels() {
     entries.add(
       _EmbeddingDemoEntry(
         label: 'Google text-embedding-004',
-        model: llm.AI
+        model: llm
             .google(
               apiKey: googleKey,
             )

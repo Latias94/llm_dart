@@ -11,7 +11,7 @@ import 'package:llm_dart/providers/openai/openai.dart' as openai_compat;
 
 /// OpenAI Responses examples with a stable-first split.
 ///
-/// 1. Most app-facing usage should stay on `AI.openai(...).chatModel(...)`
+/// 1. Most app-facing usage should stay on `openai(...).chatModel(...)`
 ///    plus shared `core.generateTextCall(...)` / `core.streamTextCall(...)`.
 /// 2. Only raw response lifecycle APIs such as `getResponse()` and
 ///    `continueConversation()` should fall back to the narrower OpenAI
@@ -343,7 +343,7 @@ core.LanguageModel _responsesModel(
   String modelId, {
   List<openai.OpenAIBuiltInTool> builtInTools = const [],
 }) {
-  return llm.AI
+  return llm
       .openai(
         apiKey: apiKey,
       )

@@ -59,15 +59,15 @@ void demonstrateConcreteModelProfiles() {
   final models = <(String label, core.LanguageModel model)>[
     (
       'OpenAI / gpt-4.1-mini',
-      llm.AI.openai(apiKey: 'demo-key').chatModel('gpt-4.1-mini'),
+      llm.openai(apiKey: 'demo-key').chatModel('gpt-4.1-mini'),
     ),
     (
       'Google / gemini-2.5-flash',
-      llm.AI.google(apiKey: 'demo-key').chatModel('gemini-2.5-flash'),
+      llm.google(apiKey: 'demo-key').chatModel('gemini-2.5-flash'),
     ),
     (
       'Anthropic / claude-sonnet-4-5',
-      llm.AI.anthropic(apiKey: 'demo-key').chatModel('claude-sonnet-4-5'),
+      llm.anthropic(apiKey: 'demo-key').chatModel('claude-sonnet-4-5'),
     ),
   ];
 

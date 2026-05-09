@@ -94,7 +94,7 @@ Future<void> demonstrateAuthenticationFailure() async {
   print('=== Authentication Failure ===\n');
 
   try {
-    final model = llm.AI.openai(apiKey: 'invalid-key').chatModel('gpt-4.1-mini');
+    final model = llm.openai(apiKey: 'invalid-key').chatModel('gpt-4.1-mini');
     await core.generateTextCall(
       model: model,
       prompt: [
@@ -117,7 +117,7 @@ Future<void> demonstrateNetworkFailure() async {
   print('=== Network Failure ===\n');
 
   try {
-    final model = llm.AI
+    final model = llm
         .openai(
           apiKey: 'not-used',
           baseUrl: 'https://unreachable-host.invalid/v1',
@@ -152,7 +152,7 @@ Future<void> demonstrateTimeoutFailure() async {
   }
 
   try {
-    final model = llm.AI.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
+    final model = llm.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
 
     await core.generateTextCall(
       model: model,

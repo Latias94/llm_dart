@@ -56,7 +56,7 @@ Release Notes Draft
 
   try {
     final fileBytes = await sampleFile.readAsBytes();
-    final model = llm.AI.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
+    final model = llm.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
 
     final result = await core.generateTextCall(
       model: model,
@@ -98,7 +98,7 @@ assistant resources, or provider-managed retrieval workflows.
 ''',
   );
 
-  final fileClient = llm.AI.openai(apiKey: apiKey).files();
+  final fileClient = llm.openai(apiKey: apiKey).files();
 
   openai.OpenAIFileObject? uploadedFile;
 
@@ -149,7 +149,7 @@ Keep the integration boundary explicit in application code.
 ''',
   );
 
-  final fileClient = llm.AI.anthropic(apiKey: apiKey).files();
+  final fileClient = llm.anthropic(apiKey: apiKey).files();
 
   anthropic.AnthropicFileDescriptor? uploadedFile;
 

@@ -40,7 +40,7 @@ Future<void> demonstrateGeminiImageGeneration(String apiKey) async {
   print('=' * 50);
 
   try {
-    final imageModel = llm.AI
+    final imageModel = llm
         .google(
           apiKey: apiKey,
         )
@@ -109,7 +109,7 @@ Future<void> demonstrateImagenGeneration(String apiKey) async {
   print('=' * 50);
 
   try {
-    final imageModel = llm.AI
+    final imageModel = llm
         .google(
           apiKey: apiKey,
         )
@@ -172,7 +172,7 @@ Future<void> demonstrateImageEditingHelpers(String apiKey) async {
   }
 
   try {
-    final imageModel = llm.AI
+    final imageModel = llm
         .google(
           apiKey: apiKey,
         )

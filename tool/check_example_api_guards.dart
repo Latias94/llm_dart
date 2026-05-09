@@ -21,6 +21,8 @@ final RegExp _llmBuilderPattern = RegExp(r'\bLLMBuilder\s*\(');
 
 final RegExp _deprecatedAiHelperPattern = RegExp(r'(^|[^\w.])ai\s*\(');
 
+final RegExp _groupedFacadePattern = RegExp(r'\bllm\s*\.\s*AI\b');
+
 final class ExampleApiGuardResult {
   final List<String> violations;
 
@@ -87,6 +89,9 @@ String? _findViolation(String line) {
   if (_deprecatedAiHelperPattern.hasMatch(line)) {
     return 'deprecated ai() helper usage found';
   }
+  if (_groupedFacadePattern.hasMatch(line)) {
+    return 'grouped AI facade usage found';
+  }
   return null;
 }
 
@@ -105,8 +110,8 @@ Future<void> main() async {
   if (result.passed) {
     stdout.writeln(
       'example API guard passed: default examples avoid legacy.dart, '
-      'LLMBuilder(), and the deprecated ai() helper outside explicit '
-      'compatibility appendices.',
+      'LLMBuilder(), the deprecated ai() helper, and grouped AI facade '
+      'usage outside explicit compatibility appendices.',
     );
     return;
   }

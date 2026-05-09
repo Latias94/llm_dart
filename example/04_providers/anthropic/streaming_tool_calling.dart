@@ -18,7 +18,7 @@ Future<void> main() async {
     return;
   }
 
-  final model = llm.AI
+  final model = llm
       .anthropic(
         apiKey: apiKey,
       )

@@ -11,7 +11,7 @@ const _modelId = 'gpt-4.1-mini';
 
 /// Stable transport configuration examples.
 ///
-/// This example keeps provider selection on the stable `AI.openai(...)`
+/// This example keeps provider selection on the stable `openai(...)`
 /// surface and moves HTTP concerns into the transport layer:
 ///
 /// - `DioHttpClientConfig` for typed transport settings
@@ -316,7 +316,7 @@ core.LanguageModel _openAIModel(
   String apiKey, {
   required transport.TransportClient transportClient,
 }) {
-  return llm.AI.openai(
+  return llm.openai(
     apiKey: apiKey,
     transport: transportClient,
   ).chatModel(_modelId);

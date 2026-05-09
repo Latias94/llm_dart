@@ -7,8 +7,8 @@ The default modern entry path for new code is
 short provider factories such as `openai(...).chatModel(...)` and the shared
 helpers in `package:llm_dart/core.dart`.
 
-`AI.*(...).chatModel(...)` remains available when you prefer a grouped
-namespace.
+The grouped `AI.<provider>(...).chatModel(...)` facade remains available when
+you prefer one namespace.
 
 This directory stays on the modern model-first path. If you need older
 compatibility builders or broad provider shells, jump to the explicit appendix

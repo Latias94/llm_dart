@@ -21,7 +21,7 @@ import 'package:llm_dart/xai.dart' as xai;
 /// - OpenRouter uses provider-owned model settings for `:online` shaping.
 ///
 /// The shared app-facing flow stays the same:
-/// 1. Create a stable `AI.*(...).chatModel(...)`.
+/// 1. Create a stable `<provider>(...).chatModel(...)`.
 /// 2. Call `generateTextCall(...)`.
 /// 3. Pass provider-specific search behavior through typed settings/options.
 Future<void> main() async {
@@ -59,7 +59,7 @@ Future<void> runOpenAISearch(String? apiKey) async {
     return;
   }
 
-  final model = llm.AI.openai(apiKey: apiKey).chatModel('gpt-5-mini');
+  final model = llm.openai(apiKey: apiKey).chatModel('gpt-5-mini');
 
   await runSearchCase(
     label: 'OpenAI Responses web search',
@@ -80,7 +80,7 @@ Future<void> runAnthropicSearch(String? apiKey) async {
     return;
   }
 
-  final model = llm.AI.anthropic(apiKey: apiKey).chatModel('claude-sonnet-4-5');
+  final model = llm.anthropic(apiKey: apiKey).chatModel('claude-sonnet-4-5');
 
   await runSearchCase(
     label: 'Anthropic native web search',

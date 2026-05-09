@@ -20,7 +20,7 @@ Future<void> main() async {
     return;
   }
 
-  final moderationClient = llm.AI.openai(apiKey: apiKey).moderation(
+  final moderationClient = llm.openai(apiKey: apiKey).moderation(
         settings: const openai.OpenAIModerationSettings(
           defaultModel: 'omni-moderation-latest',
         ),

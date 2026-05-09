@@ -12,7 +12,7 @@ import 'package:llm_dart/providers/openai/openai.dart' as openai_compat;
 /// - the stable shared path for assistant-like app behavior
 /// - the explicit OpenAI compatibility path for persisted assistant objects
 ///
-/// New chat apps should usually start from `AI.openai(...).chatModel(...)`.
+/// New chat apps should usually start from `openai(...).chatModel(...)`.
 /// Only drop to the compatibility provider surface when you truly need the
 /// provider-owned assistant lifecycle.
 Future<void> main() async {
@@ -34,7 +34,7 @@ Future<void> main() async {
 Future<void> demonstrateStableAssistantLikePath(String apiKey) async {
   print('=== Stable Assistant-Like Path ===\n');
 
-  final model = llm.AI.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
+  final model = llm.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
   final result = await core.generateTextCall(
     model: model,
     prompt: [

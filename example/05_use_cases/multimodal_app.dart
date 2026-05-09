@@ -118,13 +118,13 @@ EXAMPLES:
       final openaiKey = Platform.environment['OPENAI_API_KEY'];
 
       if (groqKey != null && groqKey.isNotEmpty) {
-        _chatModel = llm.AI
+        _chatModel = llm
             .groq(
               apiKey: groqKey,
             )
             .chatModel('llama-3.3-70b-versatile');
       } else if (openaiKey != null && openaiKey.isNotEmpty) {
-        _chatModel = llm.AI
+        _chatModel = llm
             .openai(
               apiKey: openaiKey,
             )
@@ -143,7 +143,7 @@ EXAMPLES:
 
       if (openaiKey != null && openaiKey.isNotEmpty) {
         try {
-          _imageModel = llm.AI
+          _imageModel = llm
               .openai(
                 apiKey: openaiKey,
               )
@@ -160,7 +160,7 @@ EXAMPLES:
         }
 
         try {
-          _speechModel = llm.AI
+          _speechModel = llm
               .openai(
                 apiKey: openaiKey,
               )

@@ -49,7 +49,7 @@ class AIWebService {
   Future<void> _initializeAI() async {
     final groqKey = Platform.environment['GROQ_API_KEY'];
     if (groqKey != null && groqKey.isNotEmpty) {
-      _model = llm.AI
+      _model = llm
           .groq(
             apiKey: groqKey,
           )
@@ -62,7 +62,7 @@ class AIWebService {
         );
       }
 
-      _model = llm.AI
+      _model = llm
           .openai(
             apiKey: openaiKey,
           )

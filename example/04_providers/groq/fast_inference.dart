@@ -183,7 +183,7 @@ Future<void> demonstrateParallelProcessing(String apiKey) async {
 }
 
 core.LanguageModel _createGroqModel(String apiKey) {
-  return llm.AI.groq(apiKey: apiKey).chatModel('llama-3.1-8b-instant');
+  return llm.groq(apiKey: apiKey).chatModel('llama-3.1-8b-instant');
 }
 
 Future<core.GenerateTextCallResult<Never>> _generateText(

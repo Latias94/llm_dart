@@ -202,7 +202,7 @@ core.LanguageModel _openAIModel(
     logger: transport.Logger('timeout_configuration'),
   );
 
-  return llm.AI.openai(
+  return llm.openai(
     apiKey: apiKey,
     transport: transport.DioTransportClient(dio: dioClient),
   ).chatModel(_modelId);

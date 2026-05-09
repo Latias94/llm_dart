@@ -7,7 +7,7 @@ import 'package:llm_dart/models/chat_models.dart';
 ///
 /// This example shows callback-style configuration for provider-specific
 /// parameters on the older `LLMBuilder` surface. Keep this as migration
-/// material; new app code should start from `AI.*(...).chatModel(...)` and
+/// material; new app code should start from `<provider>(...).chatModel(...)` and
 /// provider-owned typed options when a modern model factory exists.
 Future<void> main() async {
   print('🏗️  Provider-Specific Builders Demo\n');

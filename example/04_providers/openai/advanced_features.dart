@@ -435,7 +435,7 @@ Future<void> demonstrateStreamingFeatures(String apiKey) async {
 }
 
 core.LanguageModel _openAIModel(String apiKey, String modelId) {
-  return llm.AI
+  return llm
       .openai(
         apiKey: apiKey,
       )

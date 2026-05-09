@@ -13,7 +13,7 @@ import 'package:llm_dart/providers/openai/openai.dart' as openai_compat;
 ///
 /// This file keeps the old name so users searching for that helper land on the
 /// right migration guidance:
-/// - new app-facing code should stay on `AI.openai(...).chatModel(...)`
+/// - new app-facing code should stay on `openai(...).chatModel(...)`
 /// - raw response lifecycle APIs belong to the narrower OpenAI provider-owned
 ///   compatibility surface
 ///
@@ -39,7 +39,7 @@ Future<void> demonstrateStableFirstAlternative(String apiKey) async {
   print('--- Stable-First Alternative ---');
 
   try {
-    final model = llm.AI
+    final model = llm
         .openai(
           apiKey: apiKey,
         )

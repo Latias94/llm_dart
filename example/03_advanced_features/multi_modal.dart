@@ -42,7 +42,7 @@ Future<void> main() async {
 Future<void> demonstrateImageAnalysis(String apiKey) async {
   print('Image analysis:');
 
-  final model = llm.AI
+  final model = llm
       .openai(
         apiKey: apiKey,
       )
@@ -116,7 +116,7 @@ Future<void> demonstrateImageAnalysis(String apiKey) async {
 Future<void> demonstrateImageGeneration(String apiKey) async {
   print('Image generation:');
 
-  final model = llm.AI
+  final model = llm
       .openai(
         apiKey: apiKey,
       )
@@ -151,12 +151,12 @@ Future<void> demonstrateAudioProcessing(
 ) async {
   print('Audio processing:');
 
-  final speechModel = llm.AI
+  final speechModel = llm
       .openai(
         apiKey: openAIKey,
       )
       .speechModel('gpt-4o-mini-tts');
-  final transcriptionModel = llm.AI
+  final transcriptionModel = llm
       .openai(
         apiKey: openAIKey,
       )
@@ -207,12 +207,12 @@ Future<void> demonstrateDocumentProcessing(
 
   final core.LanguageModel model =
       anthropicKey != null && anthropicKey.isNotEmpty
-          ? llm.AI
+          ? llm
               .anthropic(
                 apiKey: anthropicKey,
               )
               .chatModel('claude-sonnet-4-5')
-          : llm.AI
+          : llm
               .openai(
                 apiKey: openAIKey,
               )
@@ -275,7 +275,7 @@ Recommendations:
 Future<void> demonstrateMultiModalConversation(String apiKey) async {
   print('Multi-modal conversation:');
 
-  final model = llm.AI
+  final model = llm
       .openai(
         apiKey: apiKey,
       )

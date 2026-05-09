@@ -100,6 +100,34 @@ void main() {
       expect(result.violations, contains(contains('deprecated ai() helper')));
     });
 
+    test('reports grouped AI facade usage in default examples', () async {
+      final repoRoot = await _createTempWorkspace();
+      addTearDown(() async {
+        if (repoRoot.existsSync()) {
+          await repoRoot.delete(recursive: true);
+        }
+      });
+
+      await _writeFile(
+        repoRoot,
+        'example/02_core_features/streaming_chat.dart',
+        '''
+import 'package:llm_dart/llm_dart.dart' as llm;
+
+void main() {
+  llm.AI.openai(apiKey: 'test');
+}
+''',
+      );
+
+      final result = await guard.evaluateExampleApiGuards(
+        repoRoot: repoRoot,
+      );
+
+      expect(result.passed, isFalse);
+      expect(result.violations, contains(contains('grouped AI facade')));
+    });
+
     test('allows explicitly allowlisted compatibility examples', () async {
       final repoRoot = await _createTempWorkspace();
       addTearDown(() async {

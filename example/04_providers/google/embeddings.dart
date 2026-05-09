@@ -210,7 +210,7 @@ Future<void> demonstrateSemanticSimilarity(String apiKey) async {
 }
 
 core.EmbeddingModel _createEmbeddingModel(String apiKey) {
-  return llm.AI
+  return llm
       .google(
         apiKey: apiKey,
       )

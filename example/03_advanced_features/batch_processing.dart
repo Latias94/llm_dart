@@ -47,7 +47,7 @@ _BatchModelEntry? _resolveBatchModel() {
   if (groqKey != null && groqKey.isNotEmpty) {
     return _BatchModelEntry(
       label: 'Groq llama-3.1-8b-instant',
-      model: llm.AI.groq(
+      model: llm.groq(
         apiKey: groqKey,
       ).chatModel('llama-3.1-8b-instant'),
       defaultOptions: const core.GenerateTextOptions(
@@ -61,7 +61,7 @@ _BatchModelEntry? _resolveBatchModel() {
   if (openAIKey != null && openAIKey.isNotEmpty) {
     return _BatchModelEntry(
       label: 'OpenAI gpt-4o-mini',
-      model: llm.AI.openai(
+      model: llm.openai(
         apiKey: openAIKey,
       ).chatModel('gpt-4o-mini'),
       defaultOptions: const core.GenerateTextOptions(

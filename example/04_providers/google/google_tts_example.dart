@@ -10,7 +10,7 @@ import 'package:llm_dart/providers/google/tts.dart' as google_tts;
 /// Stable-first Google speech example with a provider-owned streaming appendix.
 ///
 /// This example keeps the boundary explicit:
-/// - one-shot speech generation uses `AI.google(...).speechModel(...)`
+/// - one-shot speech generation uses `google(...).speechModel(...)`
 /// - provider-specific one-shot knobs stay on `GoogleSpeechOptions`
 /// - native streamed PCM output and voice discovery remain on the older
 ///   `GoogleTTSCapability` appendix
@@ -73,7 +73,7 @@ Future<void> main() async {
 
   print('🎤 Google Speech Example\n');
 
-  final speechModel = llm.AI
+  final speechModel = llm
       .google(
         apiKey: apiKey,
       )

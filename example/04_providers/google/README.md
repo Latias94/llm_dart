@@ -2,9 +2,9 @@
 
 Google is already on the stable provider-model architecture for:
 
-- embeddings through `AI.google(...).embeddingModel(...)`
-- image generation through `AI.google(...).imageModel(...)`
-- one-shot speech generation through `AI.google(...).speechModel(...)`
+- embeddings through `google(...).embeddingModel(...)`
+- image generation through `google(...).imageModel(...)`
+- one-shot speech generation through `google(...).speechModel(...)`
 
 For new code, prefer those stable model factories plus shared helpers from
 `package:llm_dart/core.dart`.
@@ -44,7 +44,7 @@ import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/google.dart' as google;
 import 'package:llm_dart/llm_dart.dart' as llm;
 
-final model = llm.AI.google(apiKey: 'your-google-api-key')
+final model = llm.google(apiKey: 'your-google-api-key')
     .embeddingModel('text-embedding-004');
 
 final result = await core.embedMany(
@@ -72,7 +72,7 @@ import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/google.dart' as google;
 import 'package:llm_dart/llm_dart.dart' as llm;
 
-final model = llm.AI.google(apiKey: 'your-google-api-key')
+final model = llm.google(apiKey: 'your-google-api-key')
     .imageModel('gemini-2.5-flash-image');
 
 final result = await core.generateImage(
@@ -97,7 +97,7 @@ import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/google.dart' as google;
 import 'package:llm_dart/llm_dart.dart' as llm;
 
-final model = llm.AI.google(apiKey: 'your-google-api-key')
+final model = llm.google(apiKey: 'your-google-api-key')
     .imageModel('gemini-2.5-flash-image');
 final input = google.GoogleImageEditInput.bytes(
   await File('input.png').readAsBytes(),
@@ -131,7 +131,7 @@ import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/google.dart' as google;
 import 'package:llm_dart/llm_dart.dart' as llm;
 
-final model = llm.AI.google(apiKey: 'your-google-api-key')
+final model = llm.google(apiKey: 'your-google-api-key')
     .speechModel('gemini-2.5-flash-preview-tts');
 
 final result = await core.generateSpeech(

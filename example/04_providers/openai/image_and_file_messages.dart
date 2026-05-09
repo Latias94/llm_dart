@@ -224,7 +224,7 @@ void explainStableBoundary() {
 }
 
 core.LanguageModel _model(String apiKey) {
-  return llm.AI
+  return llm
       .openai(
         apiKey: apiKey,
       )

@@ -130,19 +130,19 @@ ENVIRONMENT VARIABLES:
         if (apiKey == null || apiKey.isEmpty) {
           throw Exception('OPENAI_API_KEY environment variable not set');
         }
-        return llm.AI.openai(apiKey: apiKey).chatModel(_model);
+        return llm.openai(apiKey: apiKey).chatModel(_model);
       case 'groq':
         final apiKey = Platform.environment['GROQ_API_KEY'];
         if (apiKey == null || apiKey.isEmpty) {
           throw Exception('GROQ_API_KEY environment variable not set');
         }
-        return llm.AI.groq(apiKey: apiKey).chatModel(_model);
+        return llm.groq(apiKey: apiKey).chatModel(_model);
       case 'anthropic':
         final apiKey = Platform.environment['ANTHROPIC_API_KEY'];
         if (apiKey == null || apiKey.isEmpty) {
           throw Exception('ANTHROPIC_API_KEY environment variable not set');
         }
-        return llm.AI.anthropic(apiKey: apiKey).chatModel(_model);
+        return llm.anthropic(apiKey: apiKey).chatModel(_model);
       default:
         throw Exception(
           'Unknown provider: $_provider. Supported: openai, groq, anthropic',

@@ -5,10 +5,10 @@ refactored architecture.
 
 For new code, prefer:
 
-- `AI.openai(...).chatModel(...)`
-- `AI.openai(...).imageModel(...)`
-- `AI.openai(...).speechModel(...)`
-- `AI.openai(...).transcriptionModel(...)`
+- `openai(...).chatModel(...)`
+- `openai(...).imageModel(...)`
+- `openai(...).speechModel(...)`
+- `openai(...).transcriptionModel(...)`
 - shared helpers from `package:llm_dart/core.dart`
 - `ChatMessageMapper` from `package:llm_dart/core.dart` for stable shared chat
   summaries
@@ -63,7 +63,7 @@ import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/openai.dart' as openai;
 
-final model = llm.AI.openai(apiKey: 'your-key').chatModel('gpt-5-mini');
+final model = llm.openai(apiKey: 'your-key').chatModel('gpt-5-mini');
 
 final result = await core.generateTextCall(
   model: model,
@@ -89,7 +89,7 @@ import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/openai.dart' as openai;
 
-final imageModel = llm.AI.openai(apiKey: 'your-key').imageModel('dall-e-3');
+final imageModel = llm.openai(apiKey: 'your-key').imageModel('dall-e-3');
 
 final result = await core.generateImage(
   model: imageModel,
@@ -116,7 +116,7 @@ import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/openai.dart' as openai;
 
-final imageModel = llm.AI.openai(apiKey: 'your-key').imageModel('gpt-image-1');
+final imageModel = llm.openai(apiKey: 'your-key').imageModel('gpt-image-1');
 final inputBytes = await File('input.png').readAsBytes();
 
 final result = await imageModel.edit(
@@ -149,8 +149,8 @@ import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/openai.dart' as openai;
 
-final speechModel = llm.AI.openai(apiKey: 'your-key').speechModel('gpt-4o-mini-tts');
-final transcriptModel = llm.AI.openai(apiKey: 'your-key').transcriptionModel('whisper-1');
+final speechModel = llm.openai(apiKey: 'your-key').speechModel('gpt-4o-mini-tts');
+final transcriptModel = llm.openai(apiKey: 'your-key').transcriptionModel('whisper-1');
 
 final speech = await core.generateSpeech(
   model: speechModel,
@@ -185,7 +185,7 @@ import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/openai.dart' as openai;
 
-final model = llm.AI.openai(apiKey: 'your-key').chatModel('gpt-5.1');
+final model = llm.openai(apiKey: 'your-key').chatModel('gpt-5.1');
 
 final result = await core.generateTextCall(
   model: model,
@@ -210,7 +210,7 @@ print(result.usage?.reasoningTokens);
 import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/llm_dart.dart' as llm;
 
-final model = llm.AI.openai(apiKey: 'your-key').chatModel('gpt-4o');
+final model = llm.openai(apiKey: 'your-key').chatModel('gpt-4o');
 
 final result = await core.generateTextCall(
   model: model,
@@ -252,9 +252,9 @@ void inspectOpenAIMessage(core.ChatUiMessage message) {
 
 - provider-owned built-in tools through `OpenAIGenerateTextOptions`
 - model-level defaults through `OpenAIChatModelSettings`
-- provider-owned OpenAI-profile files through `AI.openai(...).files()`
+- provider-owned OpenAI-profile files through `openai(...).files()`
 - provider-owned OpenAI-profile moderation through
-  `AI.openai(...).moderation()`
+  `openai(...).moderation()`
 - image generation through `OpenAIImageOptions`
 - provider-owned image editing through `OpenAIImageModel.edit(...)` and
   `OpenAIImageEditRequest`

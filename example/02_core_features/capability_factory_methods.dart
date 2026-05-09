@@ -18,11 +18,11 @@ import 'package:llm_dart/models/audio_models.dart';
 /// This is not the new primary app architecture.
 ///
 /// For new app-facing code, prefer the stable facade when it exists:
-/// - `AI.*(...).chatModel(...)`
-/// - `AI.*(...).embeddingModel(...)`
-/// - `AI.*(...).imageModel(...)`
-/// - `AI.*(...).speechModel(...)`
-/// - `AI.*(...).transcriptionModel(...)`
+/// - `<provider>(...).chatModel(...)`
+/// - `<provider>(...).embeddingModel(...)`
+/// - `<provider>(...).imageModel(...)`
+/// - `<provider>(...).speechModel(...)`
+/// - `<provider>(...).transcriptionModel(...)`
 ///
 /// Keep `build*()` mainly for migration and for capability families that still
 /// remain provider-owned on the root package.
@@ -64,11 +64,11 @@ void demonstrateStableFirstPositioning() {
   print('   New app code should usually start here:');
   print('   ```dart');
   print(
-      "   final chatModel = AI.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');");
+      "   final chatModel = openai(apiKey: apiKey).chatModel('gpt-4.1-mini');");
   print(
-      "   final embeddingModel = AI.openai(apiKey: apiKey).embeddingModel('text-embedding-3-small');");
+      "   final embeddingModel = openai(apiKey: apiKey).embeddingModel('text-embedding-3-small');");
   print(
-      "   final imageModel = AI.openai(apiKey: apiKey).imageModel('dall-e-3');");
+      "   final imageModel = openai(apiKey: apiKey).imageModel('dall-e-3');");
   print('   ```');
   print('');
 
@@ -108,7 +108,7 @@ Future<void> demonstrateCastVsCompatibilityBuild() async {
   print('');
 
   print('   Stable-first reminder:');
-  print('      • Prefer `AI.*(...)` model factories for new app-facing code');
+  print('      • Prefer short provider model factories for new app-facing code');
   print(
       '      • Use `build*()` when you are still on the compatibility surface');
   print(

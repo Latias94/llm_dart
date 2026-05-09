@@ -40,7 +40,7 @@ _EmbeddingModelEntry? _resolveEmbeddingModel() {
   if (openAIKey != null && openAIKey.isNotEmpty) {
     return _EmbeddingModelEntry(
       label: 'OpenAI text-embedding-3-small',
-      model: llm.AI.openai(
+      model: llm.openai(
         apiKey: openAIKey,
       ).embeddingModel('text-embedding-3-small'),
     );
@@ -50,7 +50,7 @@ _EmbeddingModelEntry? _resolveEmbeddingModel() {
   if (googleKey != null && googleKey.isNotEmpty) {
     return _EmbeddingModelEntry(
       label: 'Google text-embedding-004',
-      model: llm.AI.google(
+      model: llm.google(
         apiKey: googleKey,
       ).embeddingModel('text-embedding-004'),
     );

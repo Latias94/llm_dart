@@ -132,7 +132,7 @@ OUTPUT FORMAT (JSONL):
       throw StateError('GROQ_API_KEY environment variable not set');
     }
 
-    _model = llm.AI
+    _model = llm
         .groq(
           apiKey: groqKey,
         )

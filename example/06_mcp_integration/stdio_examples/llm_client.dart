@@ -222,7 +222,7 @@ Future<core.GenerateTextRunResult> _runToolEnabledPrompt({
 }
 
 core.LanguageModel _createOpenAIModel(String apiKey) {
-  return llm.AI.openai(apiKey: apiKey).chatModel('gpt-4o-mini');
+  return llm.openai(apiKey: apiKey).chatModel('gpt-4o-mini');
 }
 
 Future<McpClient> _createRealStdioMcpClient() async {

@@ -151,7 +151,7 @@ Future<void> demonstrateMcpWithAuthentication(String apiKey) async {
 }
 
 core.LanguageModel _createAnthropicModel(String apiKey) {
-  return llm.AI
+  return llm
       .anthropic(
         apiKey: apiKey,
       )

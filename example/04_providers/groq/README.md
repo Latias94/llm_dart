@@ -5,7 +5,6 @@ Groq already fits cleanly into the stable OpenAI-family chat facade.
 For new code, prefer:
 
 - `groq(...).chatModel(...)`
-- `AI.groq(...).chatModel(...)` when you prefer a grouped namespace
 - shared `generateTextCall(...)` and `streamTextCall(...)`
 - provider-owned Groq profile routing instead of legacy builder setup
 

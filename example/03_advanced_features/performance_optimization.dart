@@ -52,7 +52,7 @@ _TextModelEntry? _resolveBalancedModel() {
   if (openAIKey != null && openAIKey.isNotEmpty) {
     return _TextModelEntry(
       label: 'OpenAI gpt-4o-mini',
-      model: llm.AI.openai(
+      model: llm.openai(
         apiKey: openAIKey,
       ).chatModel('gpt-4o-mini'),
       defaultOptions: const core.GenerateTextOptions(
@@ -66,7 +66,7 @@ _TextModelEntry? _resolveBalancedModel() {
   if (groqKey != null && groqKey.isNotEmpty) {
     return _TextModelEntry(
       label: 'Groq llama-3.1-8b-instant',
-      model: llm.AI.groq(
+      model: llm.groq(
         apiKey: groqKey,
       ).chatModel('llama-3.1-8b-instant'),
       defaultOptions: const core.GenerateTextOptions(
@@ -84,7 +84,7 @@ _TextModelEntry? _resolveStreamingModel(_TextModelEntry? fallback) {
   if (groqKey != null && groqKey.isNotEmpty) {
     return _TextModelEntry(
       label: 'Groq llama-3.1-8b-instant',
-      model: llm.AI.groq(
+      model: llm.groq(
         apiKey: groqKey,
       ).chatModel('llama-3.1-8b-instant'),
       defaultOptions: const core.GenerateTextOptions(

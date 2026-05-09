@@ -520,7 +520,7 @@ core.LanguageModel? createModelForEnvironment(String environment) {
   final apiKey = Platform.environment['OPENAI_API_KEY'];
   if (apiKey == null) return null;
 
-  return llm.AI
+  return llm
       .openai(
         apiKey: apiKey,
       )

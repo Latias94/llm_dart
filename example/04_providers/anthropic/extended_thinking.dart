@@ -9,7 +9,7 @@ import 'package:llm_dart/llm_dart.dart' as llm;
 /// 🟣 Anthropic Extended Thinking - Access Claude's Reasoning Process
 ///
 /// This example demonstrates Claude's extended-thinking capabilities through
-/// the stable `AI.anthropic(...).chatModel(...)` API plus typed Anthropic
+/// the stable `anthropic(...).chatModel(...)` API plus typed Anthropic
 /// provider options.
 ///
 /// Before running, set your API key:
@@ -362,7 +362,7 @@ Provide a comprehensive comparison with examples.
 }
 
 core.LanguageModel _createAnthropicModel(String apiKey) {
-  return llm.AI
+  return llm
       .anthropic(
         apiKey: apiKey,
       )

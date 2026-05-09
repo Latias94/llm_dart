@@ -129,7 +129,7 @@ Future<void> compareModelVariants(String apiKey) async {
 }
 
 core.LanguageModel _createModel(String apiKey, String modelId) {
-  return llm.AI
+  return llm
       .openai(
         apiKey: apiKey,
       )

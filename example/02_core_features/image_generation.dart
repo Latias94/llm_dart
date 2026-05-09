@@ -41,7 +41,7 @@ List<_ImageDemoEntry> _collectImageModels() {
     entries.add(
       _ImageDemoEntry(
         label: 'OpenAI DALL-E 3',
-        model: llm.AI
+        model: llm
             .openai(
               apiKey: openAIKey,
             )
@@ -66,7 +66,7 @@ List<_ImageDemoEntry> _collectImageModels() {
     entries.add(
       _ImageDemoEntry(
         label: 'Google Gemini Image',
-        model: llm.AI
+        model: llm
             .google(
               apiKey: googleKey,
             )

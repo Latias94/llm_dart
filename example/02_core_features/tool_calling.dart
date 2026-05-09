@@ -12,7 +12,7 @@ Future<void> main() async {
     return;
   }
 
-  final model = llm.AI.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
+  final model = llm.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
 
   final tools = [
     core.FunctionToolDefinition(

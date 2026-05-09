@@ -31,7 +31,7 @@ Future<void> main() async {
 core.LanguageModel? _resolveChatModel() {
   final groqKey = Platform.environment['GROQ_API_KEY'];
   if (groqKey != null && groqKey.isNotEmpty) {
-    return llm.AI
+    return llm
         .groq(
           apiKey: groqKey,
         )
@@ -40,7 +40,7 @@ core.LanguageModel? _resolveChatModel() {
 
   final openaiKey = Platform.environment['OPENAI_API_KEY'];
   if (openaiKey != null && openaiKey.isNotEmpty) {
-    return llm.AI
+    return llm
         .openai(
           apiKey: openaiKey,
         )

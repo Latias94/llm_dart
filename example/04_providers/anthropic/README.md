@@ -5,9 +5,9 @@ invocation options for extended thinking, MCP servers, and native tools.
 
 For new code, prefer:
 
-- `AI.anthropic(...).chatModel(...)`
+- `anthropic(...).chatModel(...)`
 - `AnthropicGenerateTextOptions` for extended-thinking and MCP controls
-- `AI.anthropic(...).files()` for stable file upload, listing, metadata,
+- `anthropic(...).files()` for stable file upload, listing, metadata,
   download, and deletion
 
 ## Example Status
@@ -42,7 +42,7 @@ import 'package:llm_dart/anthropic.dart' as anthropic;
 import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/llm_dart.dart' as llm;
 
-final model = llm.AI.anthropic(apiKey: 'your-key').chatModel('claude-sonnet-4-5');
+final model = llm.anthropic(apiKey: 'your-key').chatModel('claude-sonnet-4-5');
 
 final result = await core.generateTextCall(
   model: model,
@@ -68,7 +68,7 @@ import 'package:llm_dart/anthropic.dart' as anthropic;
 import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/llm_dart.dart' as llm;
 
-final model = llm.AI.anthropic(apiKey: 'your-key').chatModel('claude-sonnet-4-5');
+final model = llm.anthropic(apiKey: 'your-key').chatModel('claude-sonnet-4-5');
 
 final result = await core.generateTextCall(
   model: model,
@@ -97,7 +97,7 @@ print(result.text);
 import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/llm_dart.dart' as llm;
 
-final model = llm.AI.anthropic(apiKey: 'your-key').chatModel('claude-sonnet-4-5');
+final model = llm.anthropic(apiKey: 'your-key').chatModel('claude-sonnet-4-5');
 
 final stream = core.streamTextCall(
   model: model,
@@ -137,7 +137,7 @@ await for (final event in stream) {
 ```dart
 import 'package:llm_dart/llm_dart.dart' as llm;
 
-final files = llm.AI.anthropic(apiKey: 'your-key').files();
+final files = llm.anthropic(apiKey: 'your-key').files();
 
 final uploaded = await files.uploadBytes(
   [72, 101, 108, 108, 111],
@@ -160,7 +160,7 @@ print(deleted.deleted);
 - Extended thinking must stay provider owned. Do not move `extendedThinking` or
   `thinkingBudgetTokens` into shared `GenerateTextOptions`.
 - Anthropic's stable files client now covers upload, list, metadata, download,
-  and delete through `AI.anthropic(...).files()`.
+  and delete through `anthropic(...).files()`.
   `file_handling.dart` remains a compatibility appendix; the modern end-to-end
   files example lives in `example/02_core_features/file_management.dart`.
 - Anthropic streaming tool activity should stay on shared `TextStreamEvent`
