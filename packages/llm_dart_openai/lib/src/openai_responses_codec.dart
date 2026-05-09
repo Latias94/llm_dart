@@ -1007,10 +1007,6 @@ final class OpenAIResponsesCodec {
     return jsonEncode(value);
   }
 
-  Object? _normalizeJsonValue(Object? value) {
-    return normalizeJsonValue(value);
-  }
-
   List<Map<String, Object?>> _encodeTools({
     required List<FunctionToolDefinition> tools,
     required List<OpenAIBuiltInTool>? builtInTools,
@@ -1117,7 +1113,7 @@ final class OpenAIResponsesCodec {
         },
       JsonToolOutputContentPart(:final value) => {
           'type': 'input_text',
-          'text': jsonEncode(_normalizeJsonValue(value)),
+          'text': jsonEncode(normalizeJsonValue(value)),
         },
       FileToolOutputContentPart(
         :final mediaType,
@@ -1134,7 +1130,7 @@ final class OpenAIResponsesCodec {
       CustomToolOutputContentPart(:final kind, :final data) => {
           'type': 'input_text',
           'text': jsonEncode(
-            _normalizeJsonValue({
+            normalizeJsonValue({
               'type': 'custom',
               'kind': kind,
               if (data != null) 'data': data,

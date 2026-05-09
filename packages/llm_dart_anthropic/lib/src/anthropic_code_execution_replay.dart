@@ -656,7 +656,7 @@ Map<String, Object?> _normalizeJsonObject(
   Object? value, {
   required String path,
 }) {
-  final normalized = _normalizeJsonValue(value, path: path);
+  final normalized = normalizeJsonValue(value, path: path);
   if (normalized is Map<String, Object?>) {
     return normalized;
   }
@@ -664,18 +664,11 @@ Map<String, Object?> _normalizeJsonObject(
   throw FormatException('Expected a JSON object at $path.');
 }
 
-Object? _normalizeJsonValue(
-  Object? value, {
-  required String path,
-}) {
-  return normalizeJsonValue(value, path: path);
-}
-
 Map<String, Object?> _requiredObject(
   Object? value, {
   required String path,
 }) {
-  final normalized = _normalizeJsonValue(value, path: path);
+  final normalized = normalizeJsonValue(value, path: path);
   if (normalized is Map<String, Object?>) {
     return normalized;
   }
@@ -687,7 +680,7 @@ List<Object?> _requiredList(
   Object? value, {
   required String path,
 }) {
-  final normalized = _normalizeJsonValue(value, path: path);
+  final normalized = normalizeJsonValue(value, path: path);
   if (normalized is List<Object?>) {
     return normalized;
   }

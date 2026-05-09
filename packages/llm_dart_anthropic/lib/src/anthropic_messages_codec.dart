@@ -600,7 +600,7 @@ final class AnthropicMessagesCodec {
         }
 
         if (part is ToolCallPromptPart) {
-          final input = _normalizeJsonValue(
+          final input = normalizeJsonValue(
                 part.input,
                 path: 'assistant.toolCall(${part.toolCallId}).input',
               ) ??
@@ -774,7 +774,7 @@ final class AnthropicMessagesCodec {
         yield {
           'type': 'mcp_tool_result',
           'tool_use_id': part.toolCallId,
-          'content': _normalizeJsonValue(
+          'content': normalizeJsonValue(
                 part.toolOutput.value,
                 path: 'toolResult(${part.toolCallId}).output',
               ) ??
@@ -1121,7 +1121,7 @@ final class AnthropicMessagesCodec {
     Map<String, Object?> value, {
     required String path,
   }) {
-    final normalized = _normalizeJsonValue(value, path: path);
+    final normalized = normalizeJsonValue(value, path: path);
     if (normalized case final Map<String, Object?> map) {
       return map;
     }
@@ -1133,19 +1133,12 @@ final class AnthropicMessagesCodec {
     Object? value, {
     required String path,
   }) {
-    final normalized = _normalizeJsonValue(value, path: path);
+    final normalized = normalizeJsonValue(value, path: path);
     if (normalized case final Map<String, Object?> map) {
       return map;
     }
 
     throw UnsupportedError('Expected a JSON object at $path.');
-  }
-
-  Object? _normalizeJsonValue(
-    Object? value, {
-    required String path,
-  }) {
-    return normalizeJsonValue(value, path: path);
   }
 
   Object? _encodeToolOutput(
@@ -1173,7 +1166,7 @@ final class AnthropicMessagesCodec {
     }
 
     return jsonEncode(
-      _normalizeJsonValue(value, path: path),
+      normalizeJsonValue(value, path: path),
     );
   }
 
@@ -1203,7 +1196,7 @@ final class AnthropicMessagesCodec {
         ),
       JsonToolOutputContentPart(:final value, :final providerMetadata) =>
         _encodeToolOutputTextBlock(
-          jsonEncode(_normalizeJsonValue(value, path: '$path.value')),
+          jsonEncode(normalizeJsonValue(value, path: '$path.value')),
           providerMetadata: providerMetadata,
           path: path,
         ),
@@ -1227,7 +1220,7 @@ final class AnthropicMessagesCodec {
       ) =>
         _encodeToolOutputTextBlock(
           jsonEncode(
-            _normalizeJsonValue(
+            normalizeJsonValue(
               {
                 'type': 'custom',
                 'kind': kind,
@@ -1425,7 +1418,7 @@ final class AnthropicMessagesCodec {
     Map<String, Object?>? cacheControl;
     for (var index = 0; index < contentBlocks.length; index++) {
       final block = contentBlocks[index];
-      final normalizedBlock = _normalizeJsonValue(
+      final normalizedBlock = normalizeJsonValue(
         block,
         path: '$path.anthropic.contentBlocks[$index]',
       );
@@ -1482,7 +1475,7 @@ final class AnthropicMessagesCodec {
     Object? value, {
     required String path,
   }) {
-    final normalized = _normalizeJsonValue(
+    final normalized = normalizeJsonValue(
       value,
       path: path,
     );

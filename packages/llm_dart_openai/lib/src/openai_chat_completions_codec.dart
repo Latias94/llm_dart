@@ -1141,7 +1141,7 @@ final class OpenAIChatCompletionsCodec {
         },
       JsonToolOutputContentPart(:final value, :final providerMetadata) => {
           'type': 'json',
-          'value': _normalizeJsonValue(value),
+          'value': normalizeJsonValue(value),
           if (providerMetadata != null)
             'providerMetadata': providerMetadata.toJsonMap(),
         },
@@ -1167,7 +1167,7 @@ final class OpenAIChatCompletionsCodec {
         {
           'type': 'custom',
           'kind': kind,
-          if (data != null) 'data': _normalizeJsonValue(data),
+          if (data != null) 'data': normalizeJsonValue(data),
           if (providerMetadata != null)
             'providerMetadata': providerMetadata.toJsonMap(),
         },
@@ -1196,10 +1196,6 @@ final class OpenAIChatCompletionsCodec {
           'providerReference': providerReference.toJsonMap(),
         },
     };
-  }
-
-  Object? _normalizeJsonValue(Object? value) {
-    return normalizeJsonValue(value);
   }
 
   Map<String, Object?>? _asMap(Object? value) {

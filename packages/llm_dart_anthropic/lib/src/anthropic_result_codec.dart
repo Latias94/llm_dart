@@ -87,7 +87,7 @@ final class AnthropicMessagesResultCodec {
             ToolCallContent(
               toolCallId: toolCallId,
               toolName: toolName,
-              input: _normalizeJsonValue(part['input']),
+              input: normalizeJsonValue(part['input']),
             ),
             providerMetadata: metadata,
           ),
@@ -118,7 +118,7 @@ final class AnthropicMessagesResultCodec {
             ToolCallContent(
               toolCallId: toolCallId,
               toolName: toolName,
-              input: _normalizeJsonValue(part['input']),
+              input: normalizeJsonValue(part['input']),
               providerExecuted: true,
               isDynamic: true,
             ),
@@ -151,7 +151,7 @@ final class AnthropicMessagesResultCodec {
             ToolCallContent(
               toolCallId: toolCallId,
               toolName: toolName,
-              input: _normalizeJsonValue(part['input']),
+              input: normalizeJsonValue(part['input']),
               providerExecuted: true,
               isDynamic: true,
               title: _asString(part['server_name']),
@@ -323,7 +323,7 @@ final class AnthropicMessagesResultCodec {
       if (_asString(container['expires_at']) != null)
         'expiresAt': _asString(container['expires_at']),
       if (container['skills'] != null)
-        'skills': _normalizeJsonValue(container['skills']),
+        'skills': normalizeJsonValue(container['skills']),
     };
   }
 
@@ -434,10 +434,10 @@ final class AnthropicMessagesResultCodec {
 
   Object? _toolResultOutput(String partType, Map<String, Object?> part) {
     if (partType == 'mcp_tool_result') {
-      return _normalizeJsonValue(part['content']);
+      return normalizeJsonValue(part['content']);
     }
 
-    return _normalizeJsonValue(part['content']);
+    return normalizeJsonValue(part['content']);
   }
 
   String? _toolResultCustomKind(String partType) {
@@ -473,7 +473,7 @@ final class AnthropicMessagesResultCodec {
       'toolCallId': toolCallId,
       'toolName': replayToolName,
       if (_isExecutionToolResultBlock(blockType)) 'blockType': blockType,
-      'block': _normalizeJsonValue(block),
+      'block': normalizeJsonValue(block),
     };
   }
 
@@ -481,10 +481,6 @@ final class AnthropicMessagesResultCodec {
     return blockType == 'code_execution_tool_result' ||
         blockType == 'bash_code_execution_tool_result' ||
         blockType == 'text_editor_code_execution_tool_result';
-  }
-
-  Object? _normalizeJsonValue(Object? value) {
-    return normalizeJsonValue(value);
   }
 
   Map<String, Object?>? _asMap(Object? value) {

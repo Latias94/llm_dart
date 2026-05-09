@@ -359,7 +359,7 @@ final class AnthropicStreamCodec {
     }
 
     final input =
-        _normalizeJsonValue(part['input']) ?? const <String, Object?>{};
+        normalizeJsonValue(part['input']) ?? const <String, Object?>{};
     final encodedInput = jsonEncode(input);
     final providerMetadata = _providerMetadata({
       'caller': part['caller'],
@@ -410,7 +410,7 @@ final class AnthropicStreamCodec {
   }) sync* {
     final providerMetadata = _providerMetadata(metadataValues);
     final initialInputValue =
-        _normalizeJsonValue(initialInput) ?? const <String, Object?>{};
+        normalizeJsonValue(initialInput) ?? const <String, Object?>{};
     final encodedInitialInput =
         initialInput == null ? '' : jsonEncode(initialInputValue);
 
@@ -631,7 +631,7 @@ final class AnthropicStreamCodec {
       if (_asString(container['expires_at']) != null)
         'expiresAt': _asString(container['expires_at']),
       if (container['skills'] != null)
-        'skills': _normalizeJsonValue(container['skills']),
+        'skills': normalizeJsonValue(container['skills']),
     };
   }
 
@@ -742,10 +742,6 @@ final class AnthropicStreamCodec {
     };
   }
 
-  Object? _normalizeJsonValue(Object? value) {
-    return normalizeJsonValue(value);
-  }
-
   Map<String, Object?>? _asMap(Object? value) {
     if (value is Map<String, Object?>) {
       return value;
@@ -846,10 +842,10 @@ final class AnthropicStreamCodec {
     Map<String, Object?> contentBlock,
   ) {
     if (blockType == 'mcp_tool_result') {
-      return _normalizeJsonValue(contentBlock['content']);
+      return normalizeJsonValue(contentBlock['content']);
     }
 
-    return _normalizeJsonValue(contentBlock['content']);
+    return normalizeJsonValue(contentBlock['content']);
   }
 
   String? _toolResultCustomKind(String blockType) {
@@ -885,7 +881,7 @@ final class AnthropicStreamCodec {
       'toolCallId': toolCallId,
       'toolName': replayToolName,
       if (_isExecutionToolResultBlock(blockType)) 'blockType': blockType,
-      'block': _normalizeJsonValue(block),
+      'block': normalizeJsonValue(block),
     };
   }
 
