@@ -1,10 +1,16 @@
-part of 'anthropic_chat_stream_support.dart';
+import 'dart:convert';
 
-final class _AnthropicChatStreamContentBlockEvents {
+import 'package:llm_dart_transport/llm_dart_transport.dart' show Logger;
+
+import '../../../../core/capability.dart';
+import '../../../../models/chat_models.dart';
+import 'anthropic_tool_call_stream_state.dart';
+
+final class AnthropicChatStreamContentBlockEvents {
   final Logger logger;
   final Map<int, AnthropicToolCallStreamState> _activeToolCalls = {};
 
-  _AnthropicChatStreamContentBlockEvents({
+  AnthropicChatStreamContentBlockEvents({
     required this.logger,
   });
 

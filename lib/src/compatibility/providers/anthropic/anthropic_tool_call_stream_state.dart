@@ -1,5 +1,3 @@
-part of 'anthropic_chat_stream_support.dart';
-
 final class AnthropicToolCallStreamState {
   String? id;
   String? name;

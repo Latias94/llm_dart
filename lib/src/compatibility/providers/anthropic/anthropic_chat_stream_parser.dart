@@ -2,7 +2,8 @@ import 'dart:convert';
 
 import '../../../../core/capability.dart';
 import 'anthropic_chat_response.dart';
-import 'anthropic_chat_stream_support.dart';
+import 'anthropic_chat_stream_event_support.dart';
+import 'anthropic_sse_frame_buffer.dart';
 import 'client.dart';
 
 /// Stateful SSE parser for the Anthropic compatibility chat shell.

@@ -1,5 +1,3 @@
-part of 'anthropic_chat_stream_support.dart';
-
 /// A completed SSE line payload extracted from the Anthropic stream.
 final class AnthropicSseFrame {
   final String? eventType;

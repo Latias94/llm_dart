@@ -1,9 +1,12 @@
-part of 'anthropic_chat_stream_support.dart';
+import 'package:llm_dart_transport/llm_dart_transport.dart' show Logger;
 
-final class _AnthropicChatStreamMessageEvents {
+import '../../../../core/capability.dart';
+import 'anthropic_chat_response.dart';
+
+final class AnthropicChatStreamMessageEvents {
   final Logger logger;
 
-  _AnthropicChatStreamMessageEvents({
+  AnthropicChatStreamMessageEvents({
     required this.logger,
   });
 

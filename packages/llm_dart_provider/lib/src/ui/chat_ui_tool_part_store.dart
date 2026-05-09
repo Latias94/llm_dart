@@ -1,15 +1,44 @@
-part of 'chat_ui_accumulator.dart';
+import 'dart:convert';
 
-extension _ChatUiAccumulatorToolSupport on ChatUiAccumulator {
-  void _applyToolInputStartEvent(ToolInputStartEvent event) {
-    _partialToolInputs[event.toolCallId] = _PartialToolInput(
+import '../common/provider_metadata.dart';
+import '../stream/text_stream_event.dart';
+import 'chat_ui_message.dart';
+
+final class ChatUiToolPartStore {
+  final List<ChatUiPart> _parts;
+  final Map<String, int> _partIndexes = {};
+  final Map<String, _PartialToolInput> _partialInputs = {};
+
+  ChatUiToolPartStore(this._parts);
+
+  void hydrate(ToolUiPart part, int index) {
+    _partIndexes[part.toolCallId] = index;
+    if (part.state != ToolUiPartState.inputStreaming) {
+      return;
+    }
+
+    _partialInputs[part.toolCallId] = _PartialToolInput(
+      toolName: part.toolName,
+      providerExecuted: part.providerExecuted,
+      isDynamic: part.isDynamic,
+      title: part.title,
+      initialText: part.inputText ?? _stringifyValue(part.input) ?? '',
+    );
+  }
+
+  void clearStreamingInputs() {
+    _partialInputs.clear();
+  }
+
+  void applyInputStart(ToolInputStartEvent event) {
+    _partialInputs[event.toolCallId] = _PartialToolInput(
       toolName: event.toolName,
       providerExecuted: event.providerExecuted,
       isDynamic: event.isDynamic,
       title: event.title,
     );
-    _upsertToolPart(
-      _buildToolPart(
+    _upsert(
+      _buildPart(
         toolCallId: event.toolCallId,
         toolName: event.toolName,
         state: ToolUiPartState.inputStreaming,
@@ -30,11 +59,11 @@ extension _ChatUiAccumulatorToolSupport on ChatUiAccumulator {
     );
   }
 
-  void _applyToolInputDeltaEvent(ToolInputDeltaEvent event) {
-    final partial = _requirePartialToolInput(event.toolCallId);
+  void applyInputDelta(ToolInputDeltaEvent event) {
+    final partial = _requirePartialInput(event.toolCallId);
     partial.append(event.delta);
-    _upsertToolPart(
-      _buildToolPart(
+    _upsert(
+      _buildPart(
         toolCallId: event.toolCallId,
         state: ToolUiPartState.inputStreaming,
         setInput: true,
@@ -46,10 +75,10 @@ extension _ChatUiAccumulatorToolSupport on ChatUiAccumulator {
     );
   }
 
-  void _applyToolInputEndEvent(ToolInputEndEvent event) {
-    final partial = _requirePartialToolInput(event.toolCallId);
-    _upsertToolPart(
-      _buildToolPart(
+  void applyInputEnd(ToolInputEndEvent event) {
+    final partial = _requirePartialInput(event.toolCallId);
+    _upsert(
+      _buildPart(
         toolCallId: event.toolCallId,
         state: ToolUiPartState.inputAvailable,
         setInput: true,
@@ -59,16 +88,16 @@ extension _ChatUiAccumulatorToolSupport on ChatUiAccumulator {
         callProviderMetadata: event.providerMetadata,
       ),
     );
-    _partialToolInputs.remove(event.toolCallId);
+    _partialInputs.remove(event.toolCallId);
   }
 
-  void _applyToolInputErrorEvent(ToolInputErrorEvent event) {
-    final partial = _partialToolInputs.remove(event.toolCallId);
+  void applyInputError(ToolInputErrorEvent event) {
+    final partial = _partialInputs.remove(event.toolCallId);
     final input = event.input ??
         (partial == null ? null : _decodeToolInputValue(partial.text));
     final inputText = partial?.text ?? _stringifyValue(input);
-    _upsertToolPart(
-      _buildToolPart(
+    _upsert(
+      _buildPart(
         toolCallId: event.toolCallId,
         toolName: event.toolName,
         state: ToolUiPartState.outputError,
@@ -89,10 +118,10 @@ extension _ChatUiAccumulatorToolSupport on ChatUiAccumulator {
     );
   }
 
-  void _applyToolCallEvent(ToolCallEvent event) {
-    _partialToolInputs.remove(event.toolCall.toolCallId);
-    _upsertToolPart(
-      _buildToolPart(
+  void applyCall(ToolCallEvent event) {
+    _partialInputs.remove(event.toolCall.toolCallId);
+    _upsert(
+      _buildPart(
         toolCallId: event.toolCall.toolCallId,
         toolName: event.toolCall.toolName,
         state: ToolUiPartState.inputAvailable,
@@ -107,9 +136,9 @@ extension _ChatUiAccumulatorToolSupport on ChatUiAccumulator {
     );
   }
 
-  void _applyToolApprovalRequestEvent(ToolApprovalRequestEvent event) {
-    _upsertToolPart(
-      _buildToolPart(
+  void applyApprovalRequest(ToolApprovalRequestEvent event) {
+    _upsert(
+      _buildPart(
         toolCallId: event.toolCallId,
         state: ToolUiPartState.approvalRequested,
         setApproval: true,
@@ -121,10 +150,10 @@ extension _ChatUiAccumulatorToolSupport on ChatUiAccumulator {
     );
   }
 
-  void _applyToolResultEvent(ToolResultEvent event) {
-    _partialToolInputs.remove(event.toolResult.toolCallId);
-    _upsertToolPart(
-      _buildToolPart(
+  void applyResult(ToolResultEvent event) {
+    _partialInputs.remove(event.toolResult.toolCallId);
+    _upsert(
+      _buildPart(
         toolCallId: event.toolResult.toolCallId,
         toolName: event.toolResult.toolName,
         state: event.toolResult.isError
@@ -143,9 +172,9 @@ extension _ChatUiAccumulatorToolSupport on ChatUiAccumulator {
     );
   }
 
-  void _applyToolOutputDeniedEvent(ToolOutputDeniedEvent event) {
-    _upsertToolPart(
-      _buildToolPart(
+  void applyOutputDenied(ToolOutputDeniedEvent event) {
+    _upsert(
+      _buildPart(
         toolCallId: event.toolCallId,
         state: ToolUiPartState.outputDenied,
         resultProviderMetadata: event.providerMetadata,
@@ -153,8 +182,8 @@ extension _ChatUiAccumulatorToolSupport on ChatUiAccumulator {
     );
   }
 
-  ToolUiPart? _toolPart(String toolCallId) {
-    final index = _toolPartIndexes[toolCallId];
+  ToolUiPart? _part(String toolCallId) {
+    final index = _partIndexes[toolCallId];
     if (index == null) {
       return null;
     }
@@ -162,17 +191,22 @@ extension _ChatUiAccumulatorToolSupport on ChatUiAccumulator {
     return _parts[index] as ToolUiPart;
   }
 
-  void _upsertToolPart(ToolUiPart part) {
-    final index = _toolPartIndexes[part.toolCallId];
+  void _upsert(ToolUiPart part) {
+    final index = _partIndexes[part.toolCallId];
     if (index == null) {
-      _toolPartIndexes[part.toolCallId] = _appendPart(part);
+      _partIndexes[part.toolCallId] = _append(part);
       return;
     }
 
     _parts[index] = part;
   }
 
-  ToolUiPart _buildToolPart({
+  int _append(ToolUiPart part) {
+    _parts.add(part);
+    return _parts.length - 1;
+  }
+
+  ToolUiPart _buildPart({
     required String toolCallId,
     String? toolName,
     ToolUiPartState? state,
@@ -194,8 +228,8 @@ extension _ChatUiAccumulatorToolSupport on ChatUiAccumulator {
     ProviderMetadata? callProviderMetadata,
     ProviderMetadata? resultProviderMetadata,
   }) {
-    final current = _toolPart(toolCallId);
-    final partial = _partialToolInputs[toolCallId];
+    final current = _part(toolCallId);
+    final partial = _partialInputs[toolCallId];
     final resolvedToolName = toolName ?? current?.toolName ?? partial?.toolName;
 
     if (resolvedToolName == null) {
@@ -233,8 +267,8 @@ extension _ChatUiAccumulatorToolSupport on ChatUiAccumulator {
     );
   }
 
-  _PartialToolInput _requirePartialToolInput(String toolCallId) {
-    final value = _partialToolInputs[toolCallId];
+  _PartialToolInput _requirePartialInput(String toolCallId) {
+    final value = _partialInputs[toolCallId];
     if (value != null) {
       return value;
     }

@@ -125,7 +125,7 @@ Representative files:
 - `src/ui/chat_ui_accumulator_metadata_support.dart`
 - `src/ui/chat_ui_accumulator_output_support.dart`
 - `src/ui/chat_ui_accumulator_text_support.dart`
-- `src/ui/chat_ui_accumulator_tool_support.dart`
+- `src/ui/chat_ui_tool_part_store.dart`
 - `src/ui/chat_ui_stream_accumulator.dart`
 
 This layer is shared, but it is not a license to move provider-owned rendering

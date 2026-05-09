@@ -1,4 +1,9 @@
-part of 'anthropic_chat_stream_support.dart';
+import 'package:llm_dart_transport/llm_dart_transport.dart' show Logger;
+
+import '../../../../core/capability.dart';
+import 'anthropic_chat_stream_content_block_events.dart';
+import 'anthropic_chat_stream_error_events.dart';
+import 'anthropic_chat_stream_message_events.dart';
 
 /// Stateful Anthropic stream event decoder.
 ///
@@ -7,17 +12,17 @@ part of 'anthropic_chat_stream_support.dart';
 /// and Anthropic error payload mapping.
 final class AnthropicChatStreamEventSupport {
   final Logger logger;
-  final _AnthropicChatStreamMessageEvents _messageEvents;
-  final _AnthropicChatStreamContentBlockEvents _contentBlockEvents;
-  final _AnthropicChatStreamErrorEvents _errorEvents;
+  final AnthropicChatStreamMessageEvents _messageEvents;
+  final AnthropicChatStreamContentBlockEvents _contentBlockEvents;
+  final AnthropicChatStreamErrorEvents _errorEvents;
 
   AnthropicChatStreamEventSupport({
     required this.logger,
-  })  : _messageEvents = _AnthropicChatStreamMessageEvents(logger: logger),
-        _contentBlockEvents = _AnthropicChatStreamContentBlockEvents(
+  })  : _messageEvents = AnthropicChatStreamMessageEvents(logger: logger),
+        _contentBlockEvents = AnthropicChatStreamContentBlockEvents(
           logger: logger,
         ),
-        _errorEvents = const _AnthropicChatStreamErrorEvents();
+        _errorEvents = const AnthropicChatStreamErrorEvents();
 
   void reset() {
     _contentBlockEvents.reset();

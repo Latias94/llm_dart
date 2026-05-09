@@ -1,17 +1,15 @@
-import 'dart:convert';
-
 import '../common/model_error.dart';
 import '../common/provider_metadata.dart';
 import '../model/finish_reason.dart';
 import '../stream/text_stream_event.dart';
 import 'chat_ui_message.dart';
+import 'chat_ui_tool_part_store.dart';
 
 part 'chat_ui_accumulator_data_support.dart';
 part 'chat_ui_accumulator_hydration_support.dart';
 part 'chat_ui_accumulator_metadata_support.dart';
 part 'chat_ui_accumulator_output_support.dart';
 part 'chat_ui_accumulator_text_support.dart';
-part 'chat_ui_accumulator_tool_support.dart';
 
 final class ChatUiAccumulatorOptions {
   final bool includeRawChunksInMetadata;
@@ -30,9 +28,8 @@ final class ChatUiAccumulator {
   final Map<String, Object?> _metadata;
   final Map<String, int> _activeTextPartIndexes = {};
   final Map<String, int> _activeReasoningPartIndexes = {};
-  final Map<String, int> _toolPartIndexes = {};
   final Map<String, int> _dataPartIndexes = {};
-  final Map<String, _PartialToolInput> _partialToolInputs = {};
+  final ChatUiToolPartStore _toolParts;
   int _nextStepIndex = 0;
 
   factory ChatUiAccumulator({
@@ -61,7 +58,8 @@ final class ChatUiAccumulator {
     required this.options,
   })  : _messageId = messageId,
         _parts = parts,
-        _metadata = metadata;
+        _metadata = metadata,
+        _toolParts = ChatUiToolPartStore(parts);
 
   ChatUiMessage get message => ChatUiMessage(
         id: _messageId,
@@ -91,21 +89,21 @@ final class ChatUiAccumulator {
       case ReasoningFileEvent():
         _applyReasoningFileEvent(event);
       case ToolInputStartEvent():
-        _applyToolInputStartEvent(event);
+        _toolParts.applyInputStart(event);
       case ToolInputDeltaEvent():
-        _applyToolInputDeltaEvent(event);
+        _toolParts.applyInputDelta(event);
       case ToolInputEndEvent():
-        _applyToolInputEndEvent(event);
+        _toolParts.applyInputEnd(event);
       case ToolInputErrorEvent():
-        _applyToolInputErrorEvent(event);
+        _toolParts.applyInputError(event);
       case ToolCallEvent():
-        _applyToolCallEvent(event);
+        _toolParts.applyCall(event);
       case ToolApprovalRequestEvent():
-        _applyToolApprovalRequestEvent(event);
+        _toolParts.applyApprovalRequest(event);
       case ToolResultEvent():
-        _applyToolResultEvent(event);
+        _toolParts.applyResult(event);
       case ToolOutputDeniedEvent():
-        _applyToolOutputDeniedEvent(event);
+        _toolParts.applyOutputDenied(event);
       case SourceEvent():
         _applySourceEvent(event);
       case FileEvent():

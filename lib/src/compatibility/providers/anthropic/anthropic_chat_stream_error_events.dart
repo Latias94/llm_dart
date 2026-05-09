@@ -1,7 +1,8 @@
-part of 'anthropic_chat_stream_support.dart';
+import '../../../../core/capability.dart';
+import '../../../../core/llm_error.dart';
 
-final class _AnthropicChatStreamErrorEvents {
-  const _AnthropicChatStreamErrorEvents();
+final class AnthropicChatStreamErrorEvents {
+  const AnthropicChatStreamErrorEvents();
 
   ChatStreamEvent? parseError(Map<String, dynamic> json) {
     final error = json['error'] as Map<String, dynamic>?;

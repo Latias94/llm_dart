@@ -108,6 +108,6 @@ extension _ChatUiAccumulatorTextSupport on ChatUiAccumulator {
   void _applyStepFinishEvent() {
     _activeTextPartIndexes.clear();
     _activeReasoningPartIndexes.clear();
-    _partialToolInputs.clear();
+    _toolParts.clearStreamingInputs();
   }
 }

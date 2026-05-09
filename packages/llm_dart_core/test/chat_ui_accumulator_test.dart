@@ -566,6 +566,49 @@ void main() {
       expect(message.parts.whereType<TextUiPart>().single.text, 'Done');
     });
 
+    test('continues streaming tool input from a seed message', () {
+      final accumulator = ChatUiAccumulator(
+        messageId: 'assistant-new',
+        seedMessage: ChatUiMessage(
+          id: 'assistant-existing',
+          role: ChatUiRole.assistant,
+          parts: const [
+            ToolUiPart(
+              toolCallId: 'tool-1',
+              toolName: 'weather',
+              state: ToolUiPartState.inputStreaming,
+              input: '{"city":"',
+              inputText: '{"city":"',
+              providerExecuted: true,
+              isDynamic: true,
+              title: 'Weather lookup',
+            ),
+          ],
+        ),
+      );
+
+      accumulator.apply(
+        const ToolInputDeltaEvent(
+          toolCallId: 'tool-1',
+          delta: 'London"}',
+        ),
+      );
+      final message = accumulator.apply(
+        const ToolInputEndEvent(
+          toolCallId: 'tool-1',
+        ),
+      );
+
+      final toolPart = message.parts.whereType<ToolUiPart>().single;
+      expect(message.id, 'assistant-existing');
+      expect(toolPart.state, ToolUiPartState.inputAvailable);
+      expect(toolPart.inputText, '{"city":"London"}');
+      expect((toolPart.input as Map<String, Object?>)['city'], 'London');
+      expect(toolPart.providerExecuted, isTrue);
+      expect(toolPart.isDynamic, isTrue);
+      expect(toolPart.title, 'Weather lookup');
+    });
+
     test('upserts data parts by key and id while preserving append-only data',
         () {
       final accumulator = ChatUiAccumulator(messageId: 'assistant-1');
