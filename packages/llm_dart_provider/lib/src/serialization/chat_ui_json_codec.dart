@@ -499,23 +499,16 @@ ToolOutput? _toolOutputForJson({
   }
 
   return switch (state) {
-    ToolUiPartState.outputAvailable =>
-      output is String ? TextToolOutput(output) : JsonToolOutput(output),
+    ToolUiPartState.outputAvailable => ToolOutput.fromValue(output),
     ToolUiPartState.outputError => output != null
-        ? (output is String
-            ? ErrorTextToolOutput(output)
-            : ErrorJsonToolOutput(output))
+        ? ToolOutput.fromValue(output, isError: true)
         : errorText == null
             ? null
-            : ErrorTextToolOutput(errorText),
+            : ToolOutput.fromValue(errorText, isError: true),
     ToolUiPartState.outputDenied => output is String
         ? ExecutionDeniedToolOutput(output)
         : const ExecutionDeniedToolOutput(),
-    _ => output == null
-        ? null
-        : output is String
-            ? TextToolOutput(output)
-            : JsonToolOutput(output),
+    _ => output == null ? null : ToolOutput.fromValue(output),
   };
 }
 
@@ -540,22 +533,15 @@ ToolOutput? _decodeToolOutputForUiPart(
 
   final output = map['output'];
   return switch (state) {
-    ToolUiPartState.outputAvailable =>
-      output is String ? TextToolOutput(output) : JsonToolOutput(output),
+    ToolUiPartState.outputAvailable => ToolOutput.fromValue(output),
     ToolUiPartState.outputError => output != null
-        ? (output is String
-            ? ErrorTextToolOutput(output)
-            : ErrorJsonToolOutput(output))
+        ? ToolOutput.fromValue(output, isError: true)
         : errorText == null
             ? null
-            : ErrorTextToolOutput(errorText),
+            : ToolOutput.fromValue(errorText, isError: true),
     ToolUiPartState.outputDenied => output is String
         ? ExecutionDeniedToolOutput(output)
         : const ExecutionDeniedToolOutput(),
-    _ => output == null
-        ? null
-        : output is String
-            ? TextToolOutput(output)
-            : JsonToolOutput(output),
+    _ => output == null ? null : ToolOutput.fromValue(output),
   };
 }

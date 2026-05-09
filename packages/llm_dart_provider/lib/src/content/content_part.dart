@@ -78,14 +78,8 @@ final class ToolResultContent {
     bool isError = false,
     this.preliminary = false,
     this.isDynamic = false,
-  }) : toolOutput = toolOutput ??
-            (isError
-                ? (output is String
-                    ? ErrorTextToolOutput(output)
-                    : ErrorJsonToolOutput(output))
-                : (output is String
-                    ? TextToolOutput(output)
-                    : JsonToolOutput(output)));
+  }) : toolOutput =
+            toolOutput ?? ToolOutput.fromValue(output, isError: isError);
 
   Object? get output => toolOutput.value;
 

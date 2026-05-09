@@ -136,6 +136,15 @@ void main() {
       expect(failed.isError, isTrue);
       expect(denied.toolOutput.denied, isTrue);
       expect(denied.output, 'requires approval');
+
+      final json = ToolOutput.fromValue({'ok': true});
+      final jsonError =
+          ToolOutput.fromValue({'error': 'timeout'}, isError: true);
+
+      expect(json, isA<JsonToolOutput>());
+      expect(json.value, {'ok': true});
+      expect(jsonError, isA<ErrorJsonToolOutput>());
+      expect(jsonError.isError, isTrue);
     });
 
     test('supports provider metadata and multimodal content output parts', () {

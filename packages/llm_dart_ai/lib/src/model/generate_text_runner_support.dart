@@ -56,14 +56,7 @@ final class GenerateTextToolExecutionResult {
         _toolOutput = toolOutput;
 
   ToolOutput get toolOutput =>
-      _toolOutput ??
-      (_isError
-          ? (_output is String
-              ? ErrorTextToolOutput(_output)
-              : ErrorJsonToolOutput(_output))
-          : (_output is String
-              ? TextToolOutput(_output)
-              : JsonToolOutput(_output)));
+      _toolOutput ?? ToolOutput.fromValue(_output, isError: _isError);
 
   Object? get output => toolOutput.value;
 

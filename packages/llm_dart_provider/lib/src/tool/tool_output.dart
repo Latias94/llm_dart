@@ -5,6 +5,34 @@ import '../content/file_data.dart';
 sealed class ToolOutput {
   const ToolOutput();
 
+  factory ToolOutput.fromValue(
+    Object? value, {
+    bool isError = false,
+    ProviderMetadata? providerMetadata,
+  }) {
+    if (isError) {
+      return value is String
+          ? ErrorTextToolOutput(
+              value,
+              providerMetadata: providerMetadata,
+            )
+          : ErrorJsonToolOutput(
+              value,
+              providerMetadata: providerMetadata,
+            );
+    }
+
+    return value is String
+        ? TextToolOutput(
+            value,
+            providerMetadata: providerMetadata,
+          )
+        : JsonToolOutput(
+            value,
+            providerMetadata: providerMetadata,
+          );
+  }
+
   Object? get value;
 
   ProviderMetadata? get providerMetadata;
