@@ -5,6 +5,19 @@ import 'anthropic_files.dart';
 import 'anthropic_language_model.dart';
 import 'anthropic_options.dart';
 
+/// Creates an Anthropic provider facade.
+Anthropic anthropic({
+  required String apiKey,
+  TransportClient? transport,
+  String? baseUrl,
+}) {
+  return Anthropic(
+    apiKey: apiKey,
+    transport: transport,
+    baseUrl: baseUrl,
+  );
+}
+
 final class Anthropic {
   static const String defaultBaseUrl = anthropicDefaultBaseUrl;
 

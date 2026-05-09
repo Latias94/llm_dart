@@ -25,6 +25,9 @@ Older builder-era code should migrate through `package:llm_dart/legacy.dart`.
 - Added short root provider factories such as `openai(...)`,
   `anthropic(...)`, and `google(...)` as ergonomic equivalents to the grouped
   `AI.<provider>(...)` facade.
+- Added the same short factories to the focused OpenAI-family, Google, and
+  Anthropic packages so split-package users can use the model-first path
+  without depending on the root facade.
 - Added focused root entrypoints for xAI, DeepSeek, OpenRouter, Groq, and
   Phind so OpenAI-family profiles can be imported from provider-shaped paths
   instead of the broad OpenAI-family entrypoint.

@@ -335,7 +335,8 @@ export 'src/facade/ai.dart' show AI, anthropic, deepSeek, google, groq, openRout
     '''
 library;
 
-export 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
+export 'package:llm_dart_anthropic/llm_dart_anthropic.dart'
+    hide anthropic;
 export 'src/facade/ai.dart' show AI, anthropic;
 ''',
   );
@@ -346,7 +347,7 @@ export 'src/facade/ai.dart' show AI, anthropic;
     '''
 library;
 
-export 'package:llm_dart_google/llm_dart_google.dart';
+export 'package:llm_dart_google/llm_dart_google.dart' hide google;
 export 'src/facade/ai.dart' show AI, google;
 ''',
   );
@@ -357,7 +358,8 @@ export 'src/facade/ai.dart' show AI, google;
     '''
 library;
 
-export 'package:llm_dart_openai/llm_dart_openai.dart';
+export 'package:llm_dart_openai/llm_dart_openai.dart'
+    hide deepSeek, groq, openRouter, openai, phind, xai;
 export 'src/facade/ai.dart' show AI, openai;
 ''',
   );

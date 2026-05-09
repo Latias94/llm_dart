@@ -4,5 +4,5 @@
 /// factory. Import `core.dart` / `transport.dart` for shared layers.
 library;
 
-export 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
+export 'package:llm_dart_anthropic/llm_dart_anthropic.dart' hide anthropic;
 export 'src/facade/ai.dart' show AI, anthropic;

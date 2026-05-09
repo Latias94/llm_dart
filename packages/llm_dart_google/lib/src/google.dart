@@ -6,6 +6,19 @@ import 'google_language_model.dart';
 import 'google_options.dart';
 import 'google_speech_model.dart';
 
+/// Creates a Google provider facade.
+Google google({
+  required String apiKey,
+  TransportClient? transport,
+  String? baseUrl,
+}) {
+  return Google(
+    apiKey: apiKey,
+    transport: transport,
+    baseUrl: baseUrl,
+  );
+}
+
 final class Google {
   static const String defaultBaseUrl =
       'https://generativelanguage.googleapis.com/v1beta';

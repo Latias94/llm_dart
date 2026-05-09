@@ -29,7 +29,7 @@ package README.
 
 ## Files
 
-`Anthropic(...).files()` is the focused provider-owned file lifecycle surface
+`anthropic(...).files()` is the focused provider-owned file lifecycle surface
 for Anthropic beta files:
 
 - `uploadFile(...)` / `uploadBytes(...)`

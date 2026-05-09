@@ -12,7 +12,7 @@ openai_pkg.OpenAI openai({
   String? baseUrl,
   openai_pkg.OpenAIFamilyProfile? profile,
 }) {
-  return AI.openai(
+  return openai_pkg.openai(
     apiKey: apiKey,
     transport: transport,
     baseUrl: baseUrl,
@@ -28,7 +28,7 @@ openai_pkg.OpenAI openRouter({
   String? appReferer,
   String? appTitle,
 }) {
-  return AI.openRouter(
+  return openai_pkg.openRouter(
     apiKey: apiKey,
     transport: transport,
     baseUrl: baseUrl,
@@ -43,7 +43,7 @@ openai_pkg.OpenAI deepSeek({
   TransportClient? transport,
   String? baseUrl,
 }) {
-  return AI.deepSeek(
+  return openai_pkg.deepSeek(
     apiKey: apiKey,
     transport: transport,
     baseUrl: baseUrl,
@@ -56,7 +56,7 @@ openai_pkg.OpenAI groq({
   TransportClient? transport,
   String? baseUrl,
 }) {
-  return AI.groq(
+  return openai_pkg.groq(
     apiKey: apiKey,
     transport: transport,
     baseUrl: baseUrl,
@@ -69,7 +69,7 @@ openai_pkg.OpenAI xai({
   TransportClient? transport,
   String? baseUrl,
 }) {
-  return AI.xai(
+  return openai_pkg.xai(
     apiKey: apiKey,
     transport: transport,
     baseUrl: baseUrl,
@@ -82,7 +82,7 @@ openai_pkg.OpenAI phind({
   TransportClient? transport,
   String? baseUrl,
 }) {
-  return AI.phind(
+  return openai_pkg.phind(
     apiKey: apiKey,
     transport: transport,
     baseUrl: baseUrl,
@@ -97,7 +97,7 @@ google_pkg.Google google({
   TransportClient? transport,
   String? baseUrl,
 }) {
-  return AI.google(
+  return google_pkg.google(
     apiKey: apiKey,
     transport: transport,
     baseUrl: baseUrl,
@@ -112,7 +112,7 @@ anthropic_pkg.Anthropic anthropic({
   TransportClient? transport,
   String? baseUrl,
 }) {
-  return AI.anthropic(
+  return anthropic_pkg.anthropic(
     apiKey: apiKey,
     transport: transport,
     baseUrl: baseUrl,
@@ -133,7 +133,7 @@ final class AI {
     String? baseUrl,
     openai_pkg.OpenAIFamilyProfile? profile,
   }) {
-    return openai_pkg.OpenAI(
+    return openai_pkg.openai(
       apiKey: apiKey,
       transport: transport,
       baseUrl: baseUrl,
@@ -148,14 +148,12 @@ final class AI {
     String? appReferer,
     String? appTitle,
   }) {
-    return _openaiFamily(
+    return openai_pkg.openRouter(
       apiKey: apiKey,
       transport: transport,
       baseUrl: baseUrl,
-      profile: openai_pkg.OpenRouterProfile(
-        appReferer: appReferer,
-        appTitle: appTitle,
-      ),
+      appReferer: appReferer,
+      appTitle: appTitle,
     );
   }
 
@@ -164,11 +162,10 @@ final class AI {
     TransportClient? transport,
     String? baseUrl,
   }) {
-    return _openaiFamily(
+    return openai_pkg.deepSeek(
       apiKey: apiKey,
       transport: transport,
       baseUrl: baseUrl,
-      profile: const openai_pkg.DeepSeekProfile(),
     );
   }
 
@@ -177,11 +174,10 @@ final class AI {
     TransportClient? transport,
     String? baseUrl,
   }) {
-    return _openaiFamily(
+    return openai_pkg.groq(
       apiKey: apiKey,
       transport: transport,
       baseUrl: baseUrl,
-      profile: const openai_pkg.GroqProfile(),
     );
   }
 
@@ -190,11 +186,10 @@ final class AI {
     TransportClient? transport,
     String? baseUrl,
   }) {
-    return _openaiFamily(
+    return openai_pkg.xai(
       apiKey: apiKey,
       transport: transport,
       baseUrl: baseUrl,
-      profile: const openai_pkg.XAIProfile(),
     );
   }
 
@@ -203,11 +198,10 @@ final class AI {
     TransportClient? transport,
     String? baseUrl,
   }) {
-    return _openaiFamily(
+    return openai_pkg.phind(
       apiKey: apiKey,
       transport: transport,
       baseUrl: baseUrl,
-      profile: const openai_pkg.PhindProfile(),
     );
   }
 
@@ -216,7 +210,7 @@ final class AI {
     TransportClient? transport,
     String? baseUrl,
   }) {
-    return google_pkg.Google(
+    return google_pkg.google(
       apiKey: apiKey,
       transport: transport,
       baseUrl: baseUrl,
@@ -228,24 +222,10 @@ final class AI {
     TransportClient? transport,
     String? baseUrl,
   }) {
-    return anthropic_pkg.Anthropic(
+    return anthropic_pkg.anthropic(
       apiKey: apiKey,
       transport: transport,
       baseUrl: baseUrl,
-    );
-  }
-
-  static openai_pkg.OpenAI _openaiFamily({
-    required String apiKey,
-    required openai_pkg.OpenAIFamilyProfile profile,
-    TransportClient? transport,
-    String? baseUrl,
-  }) {
-    return openai_pkg.OpenAI(
-      apiKey: apiKey,
-      transport: transport,
-      baseUrl: baseUrl,
-      profile: profile,
     );
   }
 }

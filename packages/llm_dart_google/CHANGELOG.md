@@ -5,5 +5,7 @@
 - Alpha release of the Google/Gemini provider package.
 - Use this package directly when you need Google-specific options, image or
   speech models, or lower-level provider APIs.
-- Most app code can still access Gemini through `google(...)` from the root
-  `llm_dart` package or `package:llm_dart/google.dart`.
+- Includes the package-local `google(...)` short factory so apps can use the
+  focused package without depending on the root facade.
+- The root `llm_dart` package and `package:llm_dart/google.dart` re-export the
+  same model-first path for convenience.

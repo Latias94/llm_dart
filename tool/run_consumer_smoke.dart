@@ -626,9 +626,11 @@ void main() {
 
   final models = [
     llm.openai(apiKey: 'test').chatModel('gpt-4.1-mini'),
-    openai.OpenAI(apiKey: 'test').chatModel('gpt-4.1-mini'),
-    google.Google(apiKey: 'test').chatModel('gemini-2.0-flash'),
-    anthropic.Anthropic(apiKey: 'test').chatModel('claude-3-5-haiku-latest'),
+    openai.openai(apiKey: 'test').chatModel('gpt-4.1-mini'),
+    google.google(apiKey: 'test').chatModel('gemini-2.0-flash'),
+    anthropic
+        .anthropic(apiKey: 'test')
+        .chatModel('claude-3-5-haiku-latest'),
     community.Ollama().chatModel('llama3.2'),
     xai.xai(apiKey: 'test').chatModel('grok-3'),
     deepseek.deepSeek(apiKey: 'test').chatModel('deepseek-chat'),
@@ -666,18 +668,14 @@ const openAIOnlyConsumerSmokeProgram = r'''
 import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 void main() {
-  final openAIProvider = openai.OpenAI(apiKey: 'test');
+  final openAIProvider = openai.openai(apiKey: 'test');
   final openAIModel = openAIProvider.chatModel('gpt-4.1-mini');
-  final xaiModel = openai.OpenAI(
-    apiKey: 'test',
-    profile: const openai.XAIProfile(),
-  ).chatModel('grok-3');
+  final xaiModel = openai.xai(apiKey: 'test').chatModel('grok-3');
   const xaiOptions = openai.XAIGenerateTextOptions(
     search: openai.XAILiveSearchOptions.autoWeb(maxSearchResults: 3),
   );
-  final openRouterModel = openai.OpenAI(
+  final openRouterModel = openai.openRouter(
     apiKey: 'test',
-    profile: const openai.OpenRouterProfile(),
   ).chatModel(
     'openai/gpt-4o-mini',
     settings: const openai.OpenRouterChatModelSettings(
@@ -708,11 +706,11 @@ import 'package:llm_dart_transport/llm_dart_transport.dart' as transport;
 
 Future<void> main() async {
   final prompt = ai.UserPromptMessage.text('Say hello.');
-  final openAIModel = openai.OpenAI(apiKey: 'test').chatModel('gpt-4.1-mini');
+  final openAIModel = openai.openai(apiKey: 'test').chatModel('gpt-4.1-mini');
   final anthropicModel =
-      anthropic.Anthropic(apiKey: 'test').chatModel('claude-3-5-haiku-latest');
+      anthropic.anthropic(apiKey: 'test').chatModel('claude-3-5-haiku-latest');
   final googleModel =
-      google.Google(apiKey: 'test').chatModel('gemini-2.0-flash');
+      google.google(apiKey: 'test').chatModel('gemini-2.0-flash');
   final ollamaModel = community.Ollama().chatModel('llama3.2');
   final speechModel =
       community.ElevenLabs(apiKey: 'test').speechModel('eleven_multilingual_v2');
@@ -756,7 +754,7 @@ void main() {
     final controller = ChatController(
       session: DefaultChatSession(
         transport: DirectChatTransport(
-          model: openai.OpenAI(apiKey: 'test').chatModel('gpt-4.1-mini'),
+          model: openai.openai(apiKey: 'test').chatModel('gpt-4.1-mini'),
         ),
       ),
     );

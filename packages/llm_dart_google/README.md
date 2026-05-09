@@ -23,7 +23,7 @@ dependencies:
 
 That includes:
 
-- `Google(...).chatModel(...)`, `embeddingModel(...)`, `imageModel(...)`, and
+- `google(...).chatModel(...)`, `embeddingModel(...)`, `imageModel(...)`, and
   `speechModel(...)`
 - Google-owned options such as `GoogleGenerateTextOptions`,
   `GoogleImageOptions`, `GoogleEmbedOptions`, and `GoogleSpeechOptions`
@@ -50,9 +50,8 @@ import 'package:llm_dart_ai/llm_dart_ai.dart' as ai;
 import 'package:llm_dart_google/llm_dart_google.dart';
 
 Future<void> main() async {
-  final model = Google(
-    apiKey: 'your-google-key',
-  ).imageModel('gemini-2.5-flash-image');
+  final model =
+      google(apiKey: 'your-google-key').imageModel('gemini-2.5-flash-image');
 
   final input = GoogleImageEditInput.bytes(
     await File('input.png').readAsBytes(),

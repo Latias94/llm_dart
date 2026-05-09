@@ -11,6 +11,96 @@ import 'openai_options.dart';
 import 'openai_speech_model.dart';
 import 'openai_transcription_model.dart';
 
+/// Creates an OpenAI provider facade.
+OpenAI openai({
+  required String apiKey,
+  TransportClient? transport,
+  String? baseUrl,
+  OpenAIFamilyProfile? profile,
+}) {
+  return OpenAI(
+    apiKey: apiKey,
+    transport: transport,
+    baseUrl: baseUrl,
+    profile: profile,
+  );
+}
+
+/// Creates an OpenRouter provider facade backed by the OpenAI-family adapter.
+OpenAI openRouter({
+  required String apiKey,
+  TransportClient? transport,
+  String? baseUrl,
+  String? appReferer,
+  String? appTitle,
+}) {
+  return openai(
+    apiKey: apiKey,
+    transport: transport,
+    baseUrl: baseUrl,
+    profile: OpenRouterProfile(
+      appReferer: appReferer,
+      appTitle: appTitle,
+    ),
+  );
+}
+
+/// Creates a DeepSeek provider facade backed by the OpenAI-family adapter.
+OpenAI deepSeek({
+  required String apiKey,
+  TransportClient? transport,
+  String? baseUrl,
+}) {
+  return openai(
+    apiKey: apiKey,
+    transport: transport,
+    baseUrl: baseUrl,
+    profile: const DeepSeekProfile(),
+  );
+}
+
+/// Creates a Groq provider facade backed by the OpenAI-family adapter.
+OpenAI groq({
+  required String apiKey,
+  TransportClient? transport,
+  String? baseUrl,
+}) {
+  return openai(
+    apiKey: apiKey,
+    transport: transport,
+    baseUrl: baseUrl,
+    profile: const GroqProfile(),
+  );
+}
+
+/// Creates an xAI provider facade backed by the OpenAI-family adapter.
+OpenAI xai({
+  required String apiKey,
+  TransportClient? transport,
+  String? baseUrl,
+}) {
+  return openai(
+    apiKey: apiKey,
+    transport: transport,
+    baseUrl: baseUrl,
+    profile: const XAIProfile(),
+  );
+}
+
+/// Creates a Phind provider facade backed by the OpenAI-family adapter.
+OpenAI phind({
+  required String apiKey,
+  TransportClient? transport,
+  String? baseUrl,
+}) {
+  return openai(
+    apiKey: apiKey,
+    transport: transport,
+    baseUrl: baseUrl,
+    profile: const PhindProfile(),
+  );
+}
+
 final class OpenAI {
   final String apiKey;
   final String baseUrl;

@@ -14,9 +14,10 @@ This package owns the modern OpenAI-family boundary for:
 
 Use this package when you want:
 
-- direct `OpenAI(...)` model construction outside the broad root facade
-- provider-owned OpenAI-profile file lifecycle through `OpenAI(...).files()`
-- provider-owned OpenAI-profile moderation through `OpenAI(...).moderation()`
+- direct `openai(...).chatModel(...)` model construction outside the broad
+  root facade
+- provider-owned OpenAI-profile file lifecycle through `openai(...).files()`
+- provider-owned OpenAI-profile moderation through `openai(...).moderation()`
 - OpenAI-family profiles such as `OpenAIProfile`, `OpenRouterProfile`,
   `DeepSeekProfile`, `GroqProfile`, `XAIProfile`, and `PhindProfile`
 - provider-owned settings such as `OpenAIChatModelSettings`,
@@ -51,9 +52,8 @@ provider-owned lifecycle APIs directly.
 
 ## Recommended Layering
 
-1. Create a concrete model with `OpenAI(...).chatModel(...)`, the root
-   `openai(...).chatModel(...)` factory, or the focused
-   `package:llm_dart/openai.dart` entrypoint.
+1. Create a concrete model with `openai(...).chatModel(...)`. The `OpenAI(...)`
+   constructor remains available when you need to pass an explicit profile.
 2. Keep application calls on the shared helpers from `llm_dart_ai` such as
    `generateTextCall(...)`, `streamTextCall(...)`, `embed(...)`,
    `generateImage(...)`, `generateSpeech(...)`, and `transcribe(...)`.
@@ -72,9 +72,7 @@ import 'package:llm_dart_ai/llm_dart_ai.dart' as ai;
 import 'package:llm_dart_openai/llm_dart_openai.dart';
 
 Future<void> main() async {
-  final model = OpenAI(
-    apiKey: 'your-openai-key',
-  ).chatModel('gpt-4.1-mini');
+  final model = openai(apiKey: 'your-openai-key').chatModel('gpt-4.1-mini');
 
   final result = await ai.generateTextCall(
     model: model,
@@ -96,9 +94,7 @@ import 'package:llm_dart_ai/llm_dart_ai.dart' as ai;
 import 'package:llm_dart_openai/llm_dart_openai.dart';
 
 Future<void> main() async {
-  final model = OpenAI(
-    apiKey: 'your-openai-key',
-  ).chatModel(
+  final model = openai(apiKey: 'your-openai-key').chatModel(
     'gpt-5.4',
     settings: const OpenAIChatModelSettings(
       useResponsesApi: true,
@@ -131,33 +127,31 @@ OpenAI-compatible providers with explicit routing defaults:
 ```dart
 import 'package:llm_dart_openai/llm_dart_openai.dart';
 
-final groqModel = OpenAI(
-  apiKey: 'your-groq-key',
-  profile: const GroqProfile(),
-).chatModel('llama-3.3-70b-versatile');
+final groqModel =
+    groq(apiKey: 'your-groq-key').chatModel('llama-3.3-70b-versatile');
 ```
 
-If you prefer the root convenience surface, `groq(...)`, `deepSeek(...)`,
-`openRouter(...)`, and `xai(...)` are the equivalent stable entrypoints.
-The grouped `AI.*` facade remains available when you prefer one namespace.
+The same package also exposes `deepSeek(...)`, `openRouter(...)`, `xai(...)`,
+and `phind(...)` short factories. The grouped root `AI.*` facade remains
+available when you depend on the root `llm_dart` package and prefer one
+namespace.
 
-OpenRouter app attribution headers can live on the profile:
+OpenRouter app attribution headers can be passed through the package-local
+factory:
 
 ```dart
 import 'package:llm_dart_openai/llm_dart_openai.dart';
 
-final openRouterModel = OpenAI(
+final openRouterModel = openRouter(
   apiKey: 'your-openrouter-key',
-  profile: const OpenRouterProfile(
-    appReferer: 'https://example.com',
-    appTitle: 'Example App',
-  ),
+  appReferer: 'https://example.com',
+  appTitle: 'Example App',
 ).chatModel('openai/gpt-4o-mini');
 ```
 
 ## OpenAI Moderation Example
 
-`OpenAI(...).moderation()` is intentionally OpenAI-profile only. Other
+`openai(...).moderation()` is intentionally OpenAI-profile only. Other
 OpenAI-family profiles can share transport compatibility without sharing the
 hosted moderation endpoint contract.
 
@@ -165,9 +159,7 @@ hosted moderation endpoint contract.
 import 'package:llm_dart_openai/llm_dart_openai.dart';
 
 Future<void> main() async {
-  final moderation = OpenAI(
-    apiKey: 'your-openai-key',
-  ).moderation(
+  final moderation = openai(apiKey: 'your-openai-key').moderation(
     settings: const OpenAIModerationSettings(
       defaultModel: 'omni-moderation-latest',
     ),
@@ -184,7 +176,7 @@ Future<void> main() async {
 
 ## OpenAI Files Example
 
-`OpenAI(...).files()` is also intentionally OpenAI-profile only. File purpose
+`openai(...).files()` is also intentionally OpenAI-profile only. File purpose
 values, hosted storage behavior, and download semantics stay provider-owned.
 
 ```dart
@@ -193,9 +185,7 @@ import 'dart:convert';
 import 'package:llm_dart_openai/llm_dart_openai.dart';
 
 Future<void> main() async {
-  final files = OpenAI(
-    apiKey: 'your-openai-key',
-  ).files();
+  final files = openai(apiKey: 'your-openai-key').files();
 
   final uploaded = await files.uploadBytes(
     bytes: utf8.encode('training or assistant resource data'),
@@ -222,9 +212,8 @@ import 'package:llm_dart_ai/llm_dart_ai.dart' as ai;
 import 'package:llm_dart_openai/llm_dart_openai.dart';
 
 Future<void> main() async {
-  final imageModel = OpenAI(
-    apiKey: 'your-openai-key',
-  ).imageModel('gpt-image-1');
+  final imageModel =
+      openai(apiKey: 'your-openai-key').imageModel('gpt-image-1');
 
   final inputBytes = await File('input.png').readAsBytes();
   final result = await imageModel.edit(
