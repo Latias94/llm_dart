@@ -60,9 +60,9 @@ Recommended entry flow for new code:
 - reach for `package:llm_dart/legacy.dart` only when migrating older
   builder-era code
 
-For Ollama and ElevenLabs specifically, the root compatibility shells should now
-be read as broader provider-specific migration surfaces rather than the primary
-shared-capability entrypoint.
+For Ollama and ElevenLabs specifically, the root compatibility shells are now
+migration surfaces. New app code should start from `llm_dart_community`
+instead.
 
 Community-provider capability profiles are now also available through the
 modern `llm_dart_community` package. For app and Flutter gating, treat the
@@ -711,17 +711,10 @@ Future<void> main() async {
 
 ## Legacy Compatibility
 
-The repository still keeps compatibility APIs through `package:llm_dart/legacy.dart`, including:
+Compatibility APIs remain available through `package:llm_dart/legacy.dart` for
+builder-era migration and other explicit bridge code.
 
-- `LLMBuilder()` and the deprecated `ai()` alias
-- old root provider constructors
-- compatibility adapters for legacy chat/config surfaces
-
-These remain temporarily for migration inside the alpha preview line, but new
-code should prefer the stable model API shown above.
-
-If you still need the compatibility-era builder and broad legacy surface, prefer
-the explicit import:
+If you still need the broad legacy surface, prefer the explicit import:
 
 ```dart
 import 'package:llm_dart/legacy.dart';
