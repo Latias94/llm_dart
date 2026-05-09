@@ -15,15 +15,16 @@ For new code, prefer:
   provider-specific projections in one pass
 - provider-owned typed settings and options from provider packages
 
-Current boundary:
+Pick the entrypoint by the surface you need:
 
-- stable today in the root package: OpenAI, OpenRouter, DeepSeek, Groq, xAI,
-  Anthropic, Google
-- stable today in the workspace community package: Ollama shared chat and
-  embeddings, plus ElevenLabs shared speech and direct-audio transcription
-- mixed in this directory: broader ElevenLabs compatibility shells, residual
-  OpenAI-family/provider appendices, and modern Ollama local-runtime examples
-  built on the community package plus provider-owned options
+- root package short factories for stable first-party providers: OpenAI,
+  OpenRouter, DeepSeek, Groq, xAI, Anthropic, and Google
+- `llm_dart_community` short factories for Ollama shared chat/embeddings and
+  ElevenLabs shared speech/transcription/voice catalog
+- provider package options for provider-owned controls such as OpenAI built-in
+  tools, Anthropic extended thinking, Google image settings, and xAI live search
+- compatibility appendices only when a provider-owned lifecycle or residual
+  legacy surface is not yet modeled by the modern package boundary
 
 ## Examples
 
@@ -92,9 +93,10 @@ dart run xai/live_search.dart
 
 ```dart
 import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/openai.dart' as openai;
 
-final imageModel = openai.openai(apiKey: 'your-key').imageModel('dall-e-3');
+final imageModel = llm.openai(apiKey: 'your-key').imageModel('dall-e-3');
 
 final result = await core.generateImage(
   model: imageModel,
@@ -116,8 +118,9 @@ print(result.images.first.uri);
 ```dart
 import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/google.dart' as google;
+import 'package:llm_dart/llm_dart.dart' as llm;
 
-final imageModel = google.google(apiKey: 'your-key')
+final imageModel = llm.google(apiKey: 'your-key')
     .imageModel('gemini-2.5-flash-image');
 
 final result = await core.generateImage(
@@ -138,9 +141,10 @@ print(result.images.first.bytes?.length);
 ```dart
 import 'package:llm_dart/anthropic.dart' as anthropic;
 import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/llm_dart.dart' as llm;
 
 final model =
-    anthropic.anthropic(apiKey: 'your-key').chatModel('claude-sonnet-4-5');
+    llm.anthropic(apiKey: 'your-key').chatModel('claude-sonnet-4-5');
 
 final result = await core.generateTextCall(
   model: model,
@@ -165,10 +169,10 @@ print(result.text);
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/deepseek.dart' as deepseek;
+import 'package:llm_dart/llm_dart.dart' as llm;
 
 final model =
-    deepseek.deepSeek(apiKey: 'your-key').chatModel('deepseek-reasoner');
+    llm.deepSeek(apiKey: 'your-key').chatModel('deepseek-reasoner');
 
 final stream = core.streamTextCall(
   model: model,
@@ -193,9 +197,10 @@ await for (final event in stream) {
 
 ```dart
 import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/xai.dart' as xai;
 
-final model = xai.xai(apiKey: 'your-key').chatModel('grok-3');
+final model = llm.xai(apiKey: 'your-key').chatModel('grok-3');
 
 final result = await core.generateTextCall(
   model: model,

@@ -50,6 +50,12 @@ dart run image_and_file_messages.dart
 dart run audio_capabilities.dart
 dart run gpt5_features.dart
 dart run advanced_features.dart
+```
+
+Run the boundary appendix examples only when you are checking residual
+Responses lifecycle or migration helper behavior:
+
+```bash
 dart run responses_api.dart
 dart run build_openai_responses_demo.dart
 ```

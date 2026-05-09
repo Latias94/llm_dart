@@ -29,8 +29,14 @@ export ANTHROPIC_API_KEY="your-anthropic-api-key"
 
 dart run extended_thinking.dart
 dart run streaming_tool_calling.dart
-dart run file_handling.dart
 dart run mcp_connector.dart
+```
+
+Run the legacy file-handling appendix only when checking old provider-shell
+integration code:
+
+```bash
+dart run file_handling.dart
 ```
 
 ## Stable Usage Examples

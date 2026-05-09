@@ -32,6 +32,12 @@ export GOOGLE_API_KEY="your-google-api-key"
 
 dart run embeddings.dart
 dart run image_generation.dart
+```
+
+Run the TTS appendix when you specifically want streamed PCM or voice-discovery
+behavior that is still outside the stable one-shot speech model:
+
+```bash
 dart run google_tts_example.dart
 ```
 
