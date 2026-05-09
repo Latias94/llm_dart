@@ -1,4 +1,6 @@
-part of 'assistant_models.dart';
+import 'dart:convert';
+
+import 'assistant_models_tools.dart';
 
 /// Represents an assistant that can call the model and use tools.
 class Assistant {

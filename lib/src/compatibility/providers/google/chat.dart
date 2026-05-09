@@ -15,8 +15,6 @@ import 'google_chat_stream_parser.dart';
 export 'google_chat_file_support.dart' show GoogleFile;
 export 'google_chat_response.dart' show GoogleChatResponse;
 
-part 'google_chat_error_support.dart';
-
 /// Google Chat capability implementation.
 ///
 /// This compatibility shell keeps the public legacy surface stable while
@@ -25,7 +23,6 @@ part 'google_chat_error_support.dart';
 class GoogleChat implements ChatCapability {
   final GoogleClient client;
   final GoogleConfig config;
-  final _GoogleChatErrorSupport _errorSupport = const _GoogleChatErrorSupport();
   late final GoogleChatFileSupport _fileSupport;
   late final GoogleChatRequestBuilder _requestBuilder;
   late final GoogleChatStreamParser _streamParser;
@@ -34,7 +31,7 @@ class GoogleChat implements ChatCapability {
     _fileSupport = GoogleChatFileSupport(
       client: client,
       config: config,
-      errorMapper: _errorSupport.handleDioError,
+      errorMapper: _handleDioError,
     );
     _requestBuilder = GoogleChatRequestBuilder(
       client: client,
@@ -62,7 +59,7 @@ class GoogleChat implements ChatCapability {
       requestBody,
       cancelToken: cancelToken,
     );
-    return _errorSupport.parseResponse(responseData);
+    return _parseResponse(responseData);
   }
 
   @override
@@ -139,5 +136,48 @@ class GoogleChat implements ChatCapability {
       mimeType: mimeType,
       displayName: displayName,
     );
+  }
+
+  Future<LLMError> _handleDioError(DioException e) async {
+    if (e.response?.data is Map<String, dynamic>) {
+      final errorData = e.response!.data as Map<String, dynamic>;
+      try {
+        return _handleGoogleApiError(errorData);
+      } catch (googleError) {
+        if (googleError is LLMError) {
+          return googleError;
+        }
+      }
+    }
+
+    return await DioErrorHandler.handleDioError(e, 'Google');
+  }
+
+  LLMError _handleGoogleApiError(Map<String, dynamic> responseData) {
+    if (!responseData.containsKey('error')) {
+      throw ArgumentError('No error found in response data');
+    }
+
+    final error = responseData['error'] as Map<String, dynamic>;
+    final message = error['message'] as String? ?? 'Unknown error';
+    final details = error['details'] as List?;
+
+    if (details != null) {
+      for (final detail in details) {
+        if (detail is Map && detail['reason'] == 'API_KEY_INVALID') {
+          return const AuthError('Invalid Google API key');
+        }
+      }
+    }
+
+    return ProviderError('Google API error: $message');
+  }
+
+  GoogleChatResponse _parseResponse(Map<String, dynamic> responseData) {
+    if (responseData.containsKey('error')) {
+      throw _handleGoogleApiError(responseData);
+    }
+
+    return GoogleChatResponse(responseData);
   }
 }

@@ -1,4 +1,4 @@
-part of 'assistant_models.dart';
+import 'assistant_models_entities.dart';
 
 /// Response for listing assistants
 class ListAssistantsResponse {

@@ -8,21 +8,14 @@ import '../../http/dio_request_executor.dart';
 import '../../http/http_response_handler.dart';
 import 'dio_strategy.dart';
 
-part 'client_http_mixin.dart';
-part 'client_identity_support.dart';
-
 /// Core Google HTTP client shared across all capability modules.
 ///
 /// This class provides the foundational HTTP functionality that all
 /// Google capability implementations can use.
-class GoogleClient with _GoogleClientHttpMixin {
-  @override
+class GoogleClient {
   final GoogleConfig config;
-  @override
   final Logger logger = Logger('GoogleClient');
-  @override
   late final Dio dio;
-  @override
   late final CompatibilityDioRequestExecutor _requestExecutor;
 
   GoogleClient(this.config) {
@@ -36,5 +29,83 @@ class GoogleClient with _GoogleClientHttpMixin {
       logger: logger,
       mapDioException: (error) async => error,
     );
+  }
+
+  Future<Response> post(
+    String endpoint, {
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+    TransportCancellation? cancelToken,
+  }) async {
+    return _requestExecutor.request(
+      'POST',
+      _getEndpointWithAuth(endpoint),
+      data: data,
+      queryParameters: queryParameters,
+      options: options,
+      cancelToken: cancelToken,
+      failureLogMessage: 'HTTP request',
+    );
+  }
+
+  Future<Map<String, dynamic>> postJson(
+    String endpoint,
+    Map<String, dynamic> data, {
+    TransportCancellation? cancelToken,
+  }) async {
+    return HttpResponseHandler.postJson(
+      dio,
+      _getEndpointWithAuth(endpoint),
+      data,
+      providerName: 'Google',
+      logger: logger,
+      cancelToken: cancelToken,
+    );
+  }
+
+  Stream<Response> postStream(
+    String endpoint, {
+    dynamic data,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+  }) async* {
+    yield await _requestExecutor.request(
+      'POST',
+      _getEndpointWithAuth(endpoint),
+      data: data,
+      queryParameters: queryParameters,
+      options: options?.copyWith(responseType: ResponseType.stream) ??
+          Options(responseType: ResponseType.stream),
+      failureLogMessage: 'Stream request',
+    );
+  }
+
+  Stream<String> postStreamRaw(
+    String endpoint,
+    Map<String, dynamic> data, {
+    TransportCancellation? cancelToken,
+  }) async* {
+    final response = await _requestExecutor.request(
+      'POST',
+      _getEndpointWithAuth(endpoint),
+      data: data,
+      cancelToken: cancelToken,
+      options: Options(
+        responseType: ResponseType.stream,
+        headers: {'Accept': 'application/json'},
+      ),
+      failureLogMessage: 'Stream request',
+    );
+
+    yield* decodeDioResponseTextStream(
+      response.data,
+      invalidBodyErrorFactory: Exception.new,
+    );
+  }
+
+  String _getEndpointWithAuth(String endpoint) {
+    final separator = endpoint.contains('?') ? '&' : '?';
+    return '$endpoint${separator}key=${config.apiKey}';
   }
 }

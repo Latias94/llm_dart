@@ -14,10 +14,12 @@ const Set<String> _allowedRootTopLevelFiles = {
   'chat.dart',
   'core.dart',
   'deepseek.dart',
+  'elevenlabs.dart',
   'google.dart',
   'groq.dart',
   'legacy.dart',
   'llm_dart.dart',
+  'ollama.dart',
   'openai.dart',
   'openrouter.dart',
   'phind.dart',
@@ -61,10 +63,12 @@ const List<String> _expectedModernAggregatorEntrypointDirectives = [
   "export 'package:llm_dart_ai/llm_dart_ai.dart';",
   "export 'anthropic.dart';",
   "export 'core.dart';",
+  "export 'elevenlabs.dart';",
   "export 'google.dart';",
+  "export 'ollama.dart';",
   "export 'openai.dart';",
   "export 'transport.dart';",
-  "export 'src/facade/ai.dart' show AI, anthropic, deepSeek, google, groq, openRouter, openai, phind, xai;",
+  "export 'src/facade/ai.dart' show AI, anthropic, deepSeek, elevenLabs, google, groq, ollama, openRouter, openai, phind, xai;",
 ];
 
 const Map<String, List<String>> _expectedFocusedRootEntrypointDirectives = {
@@ -77,6 +81,16 @@ const Map<String, List<String>> _expectedFocusedRootEntrypointDirectives = {
     'library;',
     "export 'package:llm_dart_google/llm_dart_google.dart' hide google;",
     "export 'src/facade/ai.dart' show google;",
+  ],
+  'lib/elevenlabs.dart': [
+    'library;',
+    "export 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart' hide elevenLabs;",
+    "export 'src/facade/ai.dart' show elevenLabs;",
+  ],
+  'lib/ollama.dart': [
+    'library;',
+    "export 'package:llm_dart_ollama/llm_dart_ollama.dart' hide ollama;",
+    "export 'src/facade/ai.dart' show ollama;",
   ],
   'lib/openai.dart': [
     'library;',

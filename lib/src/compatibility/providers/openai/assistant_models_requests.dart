@@ -1,4 +1,4 @@
-part of 'assistant_models.dart';
+import 'assistant_models_tools.dart';
 
 /// Request for creating an assistant
 class CreateAssistantRequest {

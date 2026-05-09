@@ -289,10 +289,12 @@ Future<Directory> _createTempRootLayout() async {
     'lib/chat.dart',
     'lib/core.dart',
     'lib/deepseek.dart',
+    'lib/elevenlabs.dart',
     'lib/google.dart',
     'lib/groq.dart',
     'lib/legacy.dart',
     'lib/llm_dart.dart',
+    'lib/ollama.dart',
     'lib/openai.dart',
     'lib/openrouter.dart',
     'lib/phind.dart',
@@ -322,10 +324,12 @@ export 'package:llm_dart_ai/llm_dart_ai.dart';
 
 export 'anthropic.dart';
 export 'core.dart';
+export 'elevenlabs.dart';
 export 'google.dart';
+export 'ollama.dart';
 export 'openai.dart';
 export 'transport.dart';
-export 'src/facade/ai.dart' show AI, anthropic, deepSeek, google, groq, openRouter, openai, phind, xai;
+export 'src/facade/ai.dart' show AI, anthropic, deepSeek, elevenLabs, google, groq, ollama, openRouter, openai, phind, xai;
 ''',
   );
 
@@ -349,6 +353,28 @@ library;
 
 export 'package:llm_dart_google/llm_dart_google.dart' hide google;
 export 'src/facade/ai.dart' show google;
+''',
+  );
+
+  await _writeFile(
+    repoRoot,
+    'lib/elevenlabs.dart',
+    '''
+library;
+
+export 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart' hide elevenLabs;
+export 'src/facade/ai.dart' show elevenLabs;
+''',
+  );
+
+  await _writeFile(
+    repoRoot,
+    'lib/ollama.dart',
+    '''
+library;
+
+export 'package:llm_dart_ollama/llm_dart_ollama.dart' hide ollama;
+export 'src/facade/ai.dart' show ollama;
 ''',
   );
 

@@ -1,4 +1,4 @@
-part of 'assistant_models.dart';
+import '../../../../models/tool_models.dart';
 
 /// Assistant tool types
 enum AssistantToolType {
