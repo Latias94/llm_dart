@@ -1,5 +1,3 @@
-part of 'google_tts_models.dart';
-
 /// Google voice information.
 class GoogleVoiceInfo {
   /// Voice name.

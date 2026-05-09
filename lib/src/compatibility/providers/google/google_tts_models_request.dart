@@ -1,5 +1,3 @@
-part of 'google_tts_models.dart';
-
 /// Google TTS request configuration.
 class GoogleTTSRequest {
   /// Text content to convert to speech.

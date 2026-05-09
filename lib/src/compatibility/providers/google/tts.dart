@@ -1,17 +1,13 @@
-import 'dart:convert';
-
 import '../../../../core/llm_error.dart';
 import 'client.dart';
 import '../../../../providers/google/config.dart';
 import 'google_tts_capability.dart';
 import 'google_tts_models.dart';
+import 'google_tts_stream_support.dart';
 
 export 'google_tts_capability.dart';
 export 'google_tts_models.dart';
-
-part 'google_tts_request_support.dart';
-part 'google_tts_speech_support.dart';
-part 'google_tts_stream_support.dart';
+export 'google_tts_stream_support.dart';
 
 /// Google TTS implementation.
 ///
@@ -20,20 +16,28 @@ part 'google_tts_stream_support.dart';
 class GoogleTTS implements GoogleTTSCapability {
   final GoogleClient _client;
   final GoogleConfig _config;
-  static const _requestSupport = _GoogleTTSRequestSupport();
-  static const _speechSupport = _GoogleTTSSpeechSupport();
   static const _streamSupport = GoogleTTSStreamSupport();
+  static const _defaultTTSModel = 'gemini-2.5-flash-preview-tts';
 
   GoogleTTS(this._client, this._config);
 
   @override
   Future<GoogleTTSResponse> generateSpeech(GoogleTTSRequest request) async {
-    return _speechSupport.generateSpeech(
-      client: _client,
-      config: _config,
-      requestSupport: _requestSupport,
-      request: request,
-    );
+    try {
+      final requestBody = request.toJson();
+      final model = _resolveModel(request);
+
+      final response = await _client.post(
+        _generateContentEndpoint(model),
+        data: requestBody,
+      );
+
+      return GoogleTTSResponse.fromApiResponse(
+        response.data as Map<String, dynamic>,
+      );
+    } catch (e) {
+      throw GenericError('Google TTS generation failed: $e');
+    }
   }
 
   @override
@@ -41,8 +45,8 @@ class GoogleTTS implements GoogleTTSCapability {
     GoogleTTSRequest request,
   ) async* {
     final requestBody = request.toJson();
-    final model = _requestSupport.resolveModel(request, _config);
-    final endpoint = _requestSupport.streamGenerateContentEndpoint(model);
+    final model = _resolveModel(request);
+    final endpoint = _streamGenerateContentEndpoint(model);
 
     yield* _streamSupport.generateSpeechStream(
       client: _client,
@@ -63,11 +67,11 @@ class GoogleTTS implements GoogleTTSCapability {
 
   /// Check if the current model supports TTS.
   bool get supportsTTS {
-    return _requestSupport.supportsTTS(_config.model);
+    return _supportsTTS(_config.model);
   }
 
   /// Get the default TTS model.
-  String get defaultTTSModel => _requestSupport.defaultTTSModel;
+  String get defaultTTSModel => _defaultTTSModel;
 
   /// Create a simple TTS request.
   GoogleTTSRequest createSimpleRequest({
@@ -75,10 +79,10 @@ class GoogleTTS implements GoogleTTSCapability {
     String voiceName = 'Kore',
     String? model,
   }) {
-    return _requestSupport.createSimpleRequest(
+    return GoogleTTSRequest.singleSpeaker(
       text: text,
       voiceName: voiceName,
-      model: model,
+      model: model ?? _defaultTTSModel,
     );
   }
 
@@ -88,10 +92,35 @@ class GoogleTTS implements GoogleTTSCapability {
     required Map<String, String> speakerVoices,
     String? model,
   }) {
-    return _requestSupport.createMultiSpeakerRequest(
+    final speakers = speakerVoices.entries
+        .map(
+          (entry) => GoogleSpeakerVoiceConfig(
+            speaker: entry.key,
+            voiceConfig: GoogleVoiceConfig.prebuilt(entry.value),
+          ),
+        )
+        .toList();
+
+    return GoogleTTSRequest.multiSpeaker(
       text: text,
-      speakerVoices: speakerVoices,
-      model: model,
+      speakers: speakers,
+      model: model ?? _defaultTTSModel,
     );
+  }
+
+  String _resolveModel(GoogleTTSRequest request) {
+    return request.model ?? _config.model;
+  }
+
+  String _generateContentEndpoint(String model) {
+    return 'models/$model:generateContent';
+  }
+
+  String _streamGenerateContentEndpoint(String model) {
+    return 'models/$model:streamGenerateContent';
+  }
+
+  bool _supportsTTS(String model) {
+    return model.contains('tts') || model.contains('gemini-2.5');
   }
 }

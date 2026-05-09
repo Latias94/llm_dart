@@ -1,4 +1,5 @@
-part of 'google_tts_models.dart';
+import '../../../../models/usage_models.dart';
+import 'google_tts_models_response.dart';
 
 /// Google TTS stream event base type.
 abstract class GoogleTTSStreamEvent {

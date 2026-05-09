@@ -1,4 +1,6 @@
-part of 'google_tts_models.dart';
+import 'dart:convert';
+
+import '../../../../models/usage_models.dart';
 
 /// Google TTS response.
 class GoogleTTSResponse {

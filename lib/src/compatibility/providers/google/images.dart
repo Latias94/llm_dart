@@ -8,11 +8,6 @@ import '../../../../providers/google/config.dart';
 import 'client.dart';
 import 'google_image_support.dart';
 
-part 'google_images_generation_support.dart';
-part 'google_images_inline_image_support.dart';
-part 'google_images_mutation_support.dart';
-part 'google_images_mutation_request_support.dart';
-
 /// Google Images capability implementation
 ///
 /// Supports both Gemini 2.0 Flash Preview Image Generation and Imagen 3 models.
@@ -33,8 +28,6 @@ class GoogleImages implements ImageGenerationCapability {
   final GoogleConfig _config;
   final Logger _logger = Logger('GoogleImages');
   final GoogleImageSupport _support = const GoogleImageSupport();
-  static const _generationSupport = _GoogleImagesGenerationSupport();
-  static const _mutationSupport = _GoogleImagesMutationSupport();
 
   GoogleImages(this._client, this._config);
 
@@ -42,23 +35,46 @@ class GoogleImages implements ImageGenerationCapability {
   Future<ImageGenerationResponse> generateImages(
     ImageGenerationRequest request,
   ) async {
-    return _generationSupport.generateImages(
-      client: _client,
-      config: _config,
-      logger: _logger,
-      support: _support,
-      request: request,
-    );
+    _logger.info('Generating images with prompt: ${request.prompt}');
+
+    final model = request.model ?? _config.model;
+
+    if (_support.isImagenModel(model)) {
+      final endpoint = 'models/$model:predict';
+      final requestData = _support.buildImagenRequest(request);
+
+      try {
+        final response = await _client.postJson(endpoint, requestData);
+        return _support.parseImagenResponse(response, model);
+      } catch (e) {
+        _logger.severe('Imagen generation failed: $e');
+        rethrow;
+      }
+    }
+
+    final endpoint = 'models/$model:generateContent';
+    final requestData = _support.buildGeminiRequest(request, _config);
+
+    try {
+      final response = await _client.postJson(endpoint, requestData);
+      return _support.parseGeminiResponse(response, model);
+    } catch (e) {
+      _logger.severe('Gemini generation failed: $e');
+      rethrow;
+    }
   }
 
   @override
   Future<ImageGenerationResponse> editImage(ImageEditRequest request) async {
-    return _mutationSupport.editImage(
-      client: _client,
-      config: _config,
-      logger: _logger,
-      support: _support,
-      request: request,
+    return _executeMutation(
+      prompt: request.prompt,
+      image: request.image,
+      count: request.count,
+      logLabel: 'Google image editing',
+      missingDataErrorMessage:
+          'Image data is required for Google image editing',
+      urlInputErrorMessage:
+          'Google image editing does not support URL inputs, only direct image data',
     );
   }
 
@@ -66,12 +82,15 @@ class GoogleImages implements ImageGenerationCapability {
   Future<ImageGenerationResponse> createVariation(
     ImageVariationRequest request,
   ) async {
-    return _mutationSupport.createVariation(
-      client: _client,
-      config: _config,
-      logger: _logger,
-      support: _support,
-      request: request,
+    return _executeMutation(
+      prompt: GoogleImageSupport.variationPrompt,
+      image: request.image,
+      count: request.count,
+      logLabel: 'Google image variation',
+      missingDataErrorMessage:
+          'Image data is required for Google image variations',
+      urlInputErrorMessage:
+          'Google image variations do not support URL inputs, only direct image data',
     );
   }
 
@@ -109,20 +128,90 @@ class GoogleImages implements ImageGenerationCapability {
     double? guidanceScale,
     bool? promptEnhancement,
   }) async {
-    return _generationSupport.generateImage(
-      client: _client,
-      config: _config,
-      logger: _logger,
-      support: _support,
-      prompt: prompt,
-      model: model,
-      negativePrompt: negativePrompt,
-      imageSize: imageSize,
-      batchSize: batchSize,
-      seed: seed,
-      numInferenceSteps: numInferenceSteps,
-      guidanceScale: guidanceScale,
-      promptEnhancement: promptEnhancement,
+    final response = await generateImages(
+      ImageGenerationRequest(
+        prompt: prompt,
+        model: model,
+        negativePrompt: negativePrompt,
+        size: imageSize,
+        count: batchSize,
+        seed: seed != null ? int.tryParse(seed) : null,
+        steps: numInferenceSteps,
+        guidanceScale: guidanceScale,
+        enhancePrompt: promptEnhancement,
+      ),
     );
+
+    return response.images
+        .where((image) => image.data != null)
+        .map(
+          (image) =>
+              'data:image/${image.format ?? 'png'};base64,${base64Encode(image.data!)}',
+        )
+        .toList();
   }
+
+  Future<ImageGenerationResponse> _executeMutation({
+    required String prompt,
+    required ImageInput image,
+    required int? count,
+    required String logLabel,
+    required String missingDataErrorMessage,
+    required String urlInputErrorMessage,
+  }) async {
+    final model = _config.model;
+    final endpoint = 'models/$model:generateContent';
+
+    final imageInput = _encodeInlineImage(
+      image,
+      urlInputErrorMessage: urlInputErrorMessage,
+    );
+    if (imageInput == null) {
+      throw ArgumentError(missingDataErrorMessage);
+    }
+
+    final requestData = _support.buildGeminiInlineImageRequest(
+      prompt: prompt,
+      imageBase64: imageInput.base64,
+      mimeType: imageInput.mimeType,
+      config: _config,
+      count: count,
+    );
+
+    try {
+      final response = await _client.postJson(endpoint, requestData);
+      return _support.parseGeminiResponse(response, model);
+    } catch (e) {
+      _logger.severe('$logLabel failed: $e');
+      rethrow;
+    }
+  }
+
+  _GoogleInlineImageInput? _encodeInlineImage(
+    ImageInput image, {
+    required String urlInputErrorMessage,
+  }) {
+    if (image.data != null) {
+      return _GoogleInlineImageInput(
+        base64: base64Encode(image.data!),
+        mimeType: _support.mimeTypeFromFormat(image.format ?? 'png'),
+      );
+    }
+
+    if (image.url != null) {
+      throw UnsupportedError(urlInputErrorMessage);
+    }
+
+    return null;
+  }
+}
+
+final class _GoogleInlineImageInput {
+  final String base64;
+  final String mimeType;
+
+  const _GoogleInlineImageInput({
+    required this.base64,
+    required this.mimeType,
+  });
 }

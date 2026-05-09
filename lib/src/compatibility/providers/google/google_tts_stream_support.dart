@@ -1,4 +1,7 @@
-part of 'tts.dart';
+import 'dart:convert';
+
+import 'client.dart';
+import 'google_tts_models.dart';
 
 final class GoogleTTSStreamSupport {
   const GoogleTTSStreamSupport();
