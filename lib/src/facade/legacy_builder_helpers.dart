@@ -5,8 +5,9 @@ import '../../core/capability.dart';
 ///
 /// This is the compatibility entry point for builder-era provider creation.
 @Deprecated(
-  'ai() is a legacy builder alias. Prefer the stable AI facade for new code, '
-  'or LLMBuilder() when you still need the compatibility builder surface.',
+  'ai() is a legacy builder alias. Prefer short provider factories such as '
+  'openai(...).chatModel(...) for new code, or LLMBuilder() when you still '
+  'need the compatibility builder surface.',
 )
 LLMBuilder ai() => LLMBuilder();
 

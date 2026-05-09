@@ -38,8 +38,8 @@ Minimum Dart consumer smoke:
 
 - depend on the root package and focused workspace packages through local
   `path:` entries or through the published versions being staged
-- construct models through `AI.openai(...)`, `AI.google(...)`, and
-  `AI.anthropic(...)`
+- construct models through `openai(...)`, `google(...)`, and
+  `anthropic(...)`
 - construct focused package APIs from `llm_dart_openai`, `llm_dart_google`,
   `llm_dart_anthropic`, `llm_dart_community`, `llm_dart_transport`, and
   `llm_dart_chat`
