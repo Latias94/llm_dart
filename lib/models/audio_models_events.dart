@@ -1,5 +1,3 @@
-part of 'audio_models.dart';
-
 /// Audio stream event for streaming TTS
 abstract class AudioStreamEvent {
   const AudioStreamEvent();

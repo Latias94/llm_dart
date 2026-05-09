@@ -1,4 +1,10 @@
-part of 'audio_models.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart'
+    show ProviderInvocationOptions, ProviderMetadata;
+
+import 'audio_models_metadata.dart';
+import 'audio_models_primitives.dart';
+import 'audio_models_support.dart';
+import 'usage_models.dart';
 
 /// Speech-to-Text request configuration
 class STTRequest {
@@ -248,6 +254,6 @@ class STTResponse {
         usage: json['usage'] != null
             ? UsageInfo.fromJson(json['usage'] as Map<String, dynamic>)
             : null,
-        providerMetadata: _providerMetadataFromJson(json),
+        providerMetadata: audioProviderMetadataFromJson(json),
       );
 }

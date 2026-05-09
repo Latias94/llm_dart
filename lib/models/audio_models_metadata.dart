@@ -1,5 +1,3 @@
-part of 'audio_models.dart';
-
 /// Word timing information for STT
 class WordTiming {
   /// The word text

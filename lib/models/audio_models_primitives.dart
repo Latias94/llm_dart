@@ -1,5 +1,3 @@
-part of 'audio_models.dart';
-
 /// Audio format enumeration for better type safety
 enum AudioFormat {
   /// MP3 format
