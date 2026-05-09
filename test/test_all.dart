@@ -33,10 +33,28 @@ import 'utils/utf8_stream_decoder_test.dart' as utf8_decoder_tests;
 import 'utils/http_config_utils_test.dart' as http_config_utils_tests;
 import 'utils/timeout_priority_test.dart' as timeout_priority_tests;
 import 'utils/dio/dio_proxy_test.dart' as dio_proxy_tests;
+
+// Tool tests
+import 'tool/bootstrap_workspace_pubspec_overrides_test.dart'
+    as bootstrap_overrides_tool_tests;
+import 'tool/check_core_compatibility_shell_guard_test.dart'
+    as core_compatibility_shell_guard_tool_tests;
+import 'tool/check_example_api_guards_test.dart'
+    as example_api_guard_tool_tests;
+import 'tool/check_pub_version_availability_test.dart'
+    as pub_version_availability_tool_tests;
 import 'tool/check_workspace_dependency_guards_test.dart'
     as dependency_guard_tool_tests;
 import 'tool/check_root_package_boundary_guards_test.dart'
     as root_boundary_guard_tool_tests;
+import 'tool/check_test_legacy_import_guards_test.dart'
+    as test_legacy_import_guard_tool_tests;
+import 'tool/check_transport_boundary_guards_test.dart'
+    as transport_boundary_guard_tool_tests;
+import 'tool/release_readiness_test.dart' as release_readiness_tool_tests;
+import 'tool/run_consumer_smoke_test.dart' as consumer_smoke_tool_tests;
+import 'tool/run_workspace_publish_dry_run_test.dart'
+    as publish_dry_run_tool_tests;
 
 // Integration tests
 import 'integration/thinking_content_extraction_test.dart'
@@ -120,8 +138,20 @@ void main() {
       http_config_utils_tests.main();
       timeout_priority_tests.main();
       dio_proxy_tests.main();
+    });
+
+    group('Tool Tests', () {
+      bootstrap_overrides_tool_tests.main();
+      core_compatibility_shell_guard_tool_tests.main();
+      example_api_guard_tool_tests.main();
+      pub_version_availability_tool_tests.main();
       dependency_guard_tool_tests.main();
       root_boundary_guard_tool_tests.main();
+      test_legacy_import_guard_tool_tests.main();
+      transport_boundary_guard_tool_tests.main();
+      release_readiness_tool_tests.main();
+      consumer_smoke_tool_tests.main();
+      publish_dry_run_tool_tests.main();
     });
 
     group('Integration Tests', () {
