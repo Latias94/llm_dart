@@ -1,5 +1,3 @@
-part of 'capability.dart';
-
 /// Configuration for real-time audio sessions.
 class RealtimeAudioConfig {
   /// Audio input format.

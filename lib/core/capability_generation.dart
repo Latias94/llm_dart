@@ -1,4 +1,5 @@
-part of 'capability.dart';
+import '../models/usage_models.dart';
+import 'cancellation.dart';
 
 /// Completion request for text completion providers
 class CompletionRequest {

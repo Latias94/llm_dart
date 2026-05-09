@@ -1,4 +1,8 @@
-part of 'capability.dart';
+import '../models/chat_models.dart';
+import '../models/tool_models.dart';
+import '../models/usage_models.dart';
+import 'cancellation.dart';
+import 'llm_error.dart';
 
 /// Response from a chat provider
 abstract class ChatResponse {

@@ -1,4 +1,8 @@
-part of 'capability.dart';
+import '../models/chat_models.dart';
+import '../models/file_models.dart';
+import '../models/moderation_models.dart';
+import '../models/tool_models.dart';
+import 'cancellation.dart';
 
 /// Capability interface for model listing
 abstract class ModelListingCapability {

@@ -1,4 +1,7 @@
-part of 'capability.dart';
+import 'capability_audio.dart';
+import 'capability_chat.dart';
+import 'capability_generation.dart';
+import 'capability_management.dart';
 
 /// Enumeration of LLM capabilities that providers can support
 enum LLMCapability {
@@ -49,39 +52,6 @@ enum LLMCapability {
 
   /// Live search capabilities (real-time web search)
   liveSearch,
-}
-
-/// Audio features that providers can support
-enum AudioFeature {
-  /// Basic text-to-speech conversion
-  textToSpeech,
-
-  /// Streaming text-to-speech conversion
-  streamingTTS,
-
-  /// Basic speech-to-text conversion
-  speechToText,
-
-  /// Real-time audio processing
-  realtimeProcessing,
-
-  /// Speaker diarization (identifying different speakers)
-  speakerDiarization,
-
-  /// Character-level timing information
-  characterTiming,
-
-  /// Audio event detection (laughter, applause, etc.)
-  audioEventDetection,
-
-  /// Voice cloning capabilities
-  voiceCloning,
-
-  /// Audio enhancement and noise reduction
-  audioEnhancement,
-
-  /// Multi-modal audio-visual processing
-  multimodalAudio,
 }
 
 /// Provider capability declaration interface

@@ -1,4 +1,4 @@
-part of 'capability.dart';
+import '../models/image_models.dart';
 
 /// Capability interface for image generation
 abstract class ImageGenerationCapability {

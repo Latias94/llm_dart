@@ -1,4 +1,39 @@
-part of 'capability.dart';
+import '../models/audio_models.dart';
+import 'cancellation.dart';
+import 'capability_audio_realtime.dart';
+
+/// Audio features that providers can support
+enum AudioFeature {
+  /// Basic text-to-speech conversion
+  textToSpeech,
+
+  /// Streaming text-to-speech conversion
+  streamingTTS,
+
+  /// Basic speech-to-text conversion
+  speechToText,
+
+  /// Real-time audio processing
+  realtimeProcessing,
+
+  /// Speaker diarization (identifying different speakers)
+  speakerDiarization,
+
+  /// Character-level timing information
+  characterTiming,
+
+  /// Audio event detection (laughter, applause, etc.)
+  audioEventDetection,
+
+  /// Voice cloning capabilities
+  voiceCloning,
+
+  /// Audio enhancement and noise reduction
+  audioEnhancement,
+
+  /// Multi-modal audio-visual processing
+  multimodalAudio,
+}
 
 /// Unified audio processing capability interface
 abstract class AudioCapability {
