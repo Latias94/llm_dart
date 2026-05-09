@@ -93,8 +93,9 @@ example now also treats Ollama installed-model discovery as a provider-owned
 local catalog helper rather than a shared model registry.
 
 ### [message_builder_cache.dart](message_builder_cache.dart)
-Anthropic-specific prompt-caching appendix using `MessageBuilder` with narrow
-typed imports instead of the broad compatibility barrel.
+Modern Anthropic prompt-cache metadata on shared prompt parts, plus typed
+`AnthropicGenerateTextOptions.toolsCacheControl` for provider-owned tool cache
+control.
 
 ### [error_handling.dart](error_handling.dart)
 Stable `ModelError` normalization plus retry, fallback, and circuit-breaker

@@ -1,218 +1,153 @@
-import 'package:llm_dart/models/chat_models.dart';
-import 'package:llm_dart/models/tool_models.dart';
-import 'package:llm_dart/providers/anthropic/models.dart';
+import 'package:llm_dart/anthropic.dart' as anthropic;
+import 'package:llm_dart/core.dart' as core;
 
-/// Example demonstrating MessageBuilder with Anthropic caching
+/// Demonstrates Anthropic prompt caching on the modern model-first API.
 ///
-/// **⚠️ ANTHROPIC ONLY**: This caching feature is currently only supported
-/// by Anthropic providers. Other providers will ignore the caching configuration.
-///
-/// This example shows how to use the MessageBuilder to create messages
-/// with Anthropic-specific caching to reduce costs for repeated content.
-///
-/// Anthropic's caching feature allows you to cache frequently used content
-/// like system prompts or large documents, which can significantly reduce
-/// token costs for repetitive conversations.
-///
-/// **IMPORTANT - New Cache API:**
-/// The new caching API uses `.cache()` followed by `.text()`:
-/// - Call `.anthropicConfig((config) => config.cache())` to prepare caching
-/// - The next `.text()` call will apply the content to the cached block
-/// - Content appears in BOTH message.content AND extensions
-/// - This is intentional for universal provider compatibility
-/// - Each creates separate content blocks in the API request
-/// - Regular content becomes standard text blocks
-/// - Cached content becomes text blocks with cache_control
-///
-/// **Best Practices:**
-/// - Use `.text()` for content that doesn't need caching
-/// - Use `.cache()` followed by `.text()` for content that should be cached
-/// - Each `.cache()` call applies to the next `.text()` call only
-///
-/// To run this example:
-/// ```bash
-/// dart example/02_core_features/message_builder_cache.dart
-/// ```
-void main() async {
-  print('=== MessageBuilder with Anthropic Caching Example ===\n');
+/// Prompt caching is provider-owned behavior. The shared prompt model carries
+/// provider metadata, while the Anthropic package owns the typed request option
+/// for tool cache control.
+void main() {
+  print('=== Anthropic Prompt Cache Metadata Example ===\n');
 
-  // Example 1: Basic message without caching
-  final basicMessage =
-      MessageBuilder.user().text('What is quantum computing?').build();
+  demonstrateCachedSystemPrompt();
+  demonstrateMixedUserContext();
+  demonstrateFileAndImageCacheMetadata();
+  demonstrateToolCacheOptions();
+  explainStrategy();
+}
 
-  print('1. Basic message:');
-  print('   Content: ${basicMessage.content}');
-  print('   Has extensions: ${basicMessage.extensions.isNotEmpty}');
-  print('');
+void demonstrateCachedSystemPrompt() {
+  final systemPrompt = core.SystemPromptMessage(
+    parts: [
+      const core.TextPromptPart('You are a concise research assistant.'),
+      core.TextPromptPart(
+        'Large static reference: quantum computing uses qubits, gates, '
+        'superposition, interference, and error correction.',
+        providerMetadata: _anthropicCacheControl(ttl: '1h'),
+      ),
+    ],
+  );
 
-  // Example 2: System message with cached content
-  final systemMessage = MessageBuilder.system()
-      .text('You are a helpful AI assistant.')
-      .anthropicConfig(
-          (anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.oneHour))
-      .text(
-          'Here is a large document about quantum computing that you should reference:\n'
-          '[LARGE DOCUMENT CONTENT - This would be cached for 1 hour]\n'
-          'Quantum computing is a type of computation that harnesses the phenomena of quantum mechanics...')
-      .build();
+  print('1. System prompt with a cached static reference:');
+  _printPrompt(systemPrompt);
+}
 
-  print('2. System message with cached content:');
-  print('   Content preview: ${systemMessage.content.substring(0, 50)}...');
-  print(
-      '   Has Anthropic extension: ${systemMessage.hasExtension('anthropic')}');
-  print('   Extension data: ${systemMessage.getExtension('anthropic')}');
-  print('');
+void demonstrateMixedUserContext() {
+  final userPrompt = core.UserPromptMessage(
+    parts: [
+      const core.TextPromptPart(
+        'Based on the reusable context, answer the follow-up question.',
+      ),
+      core.TextPromptPart(
+        'Session context: the user is a computer science student with basic '
+        'linear algebra and probability knowledge.',
+        providerMetadata: _anthropicCacheControl(ttl: '5m'),
+      ),
+      const core.TextPromptPart(
+        'What are the practical advantages of quantum algorithms?',
+      ),
+    ],
+  );
 
-  // Example 3: Mixed content with different cache TTLs
-  // IMPORTANT: This creates 3 separate content blocks in the API request:
-  // 1. "Based on the document provided, please answer:" (regular text)
-  // 2. "Current context: ..." (cached text with 5m TTL)
-  // 3. "What are the main advantages of quantum computers?" (regular text)
-  final mixedMessage = MessageBuilder.user()
-      .text('Based on the document provided, please answer:')
-      .anthropicConfig(
-          (anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.fiveMinutes))
-      .text(
-          'Current context: This is a follow-up question in our conversation about quantum computing.')
-      .text('What are the main advantages of quantum computers?')
-      .build();
+  print('2. User prompt with short-lived cached session context:');
+  _printPrompt(userPrompt);
+}
 
-  print('3. Mixed message with short-term cache:');
-  print('   Content: ${mixedMessage.content}');
-  print('   Extensions: ${mixedMessage.extensions}');
-  print('');
+void demonstrateFileAndImageCacheMetadata() {
+  final prompt = core.UserPromptMessage(
+    parts: [
+      const core.TextPromptPart('Compare the cached document and image.'),
+      core.FilePromptPart(
+        mediaType: 'text/plain',
+        filename: 'cached-notes.txt',
+        data: const core.FileTextData(
+          'Reusable notes about a product launch plan.',
+        ),
+        providerMetadata: _anthropicCacheControl(ttl: '1h'),
+      ),
+      core.ImagePromptPart(
+        mediaType: 'image/png',
+        data: const core.FileBytesData.constBytes([137, 80, 78, 71]),
+        providerMetadata: _anthropicCacheControl(ttl: '5m'),
+      ),
+    ],
+  );
 
-  // Example 4: Multiple content blocks via contentBlocks method
-  final complexMessage = MessageBuilder.user()
-      .anthropicConfig((anthropic) => anthropic.contentBlocks([
-            {
-              'type': 'text',
-              'text': 'Long-term cached system prompt that rarely changes',
-              'cache_control': {'type': 'ephemeral', 'ttl': '1h'}
-            },
-            {'type': 'text', 'text': 'Dynamic content that changes frequently'}
-          ]))
-      .text('What should I know about this topic?')
-      .build();
+  print('3. File and image prompt parts with cache metadata:');
+  _printPrompt(prompt);
+}
 
-  print('4. Complex message with multiple content blocks:');
-  print('   Content: ${complexMessage.content}');
-  print(
-      '   Anthropic blocks: ${complexMessage.getExtension<Map>('anthropic')?['contentBlocks']}');
-  print('');
-
-  // Example 5: Building a conversation with caching
-  final conversation = [
-    // System message with long-term cached instructions
-    MessageBuilder.system()
-        .anthropicConfig(
-            (anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.oneHour))
-        .text(
-            'You are an expert quantum computing researcher. Use the provided research papers and documentation to answer questions accurately.')
-        .build(),
-
-    // User message with context that might be reused
-    MessageBuilder.user()
-        .text('I need help understanding quantum algorithms.')
-        .anthropicConfig(
-            (anthropic) => anthropic.cache(ttl: AnthropicCacheTtl.fiveMinutes))
-        .text(
-            'Context: I am a computer science student with basic knowledge of linear algebra and probability.')
-        .build(),
-  ];
-
-  print('5. Conversation with strategic caching:');
-  for (int i = 0; i < conversation.length; i++) {
-    final message = conversation[i];
-    print('   Message ${i + 1} (${message.role}):');
-    print(
-        '     Content: ${message.content.replaceAll('\n', ' ').substring(0, 60)}...');
-    print('     Cached: ${message.hasExtension('anthropic')}');
-  }
-
-  // Example 6: Tool caching (Anthropic only)
-  print('\n6. Tool caching example:');
-  print('   **⚠️ ANTHROPIC ONLY**: Tool caching is provider-specific');
-
-  // Define some example tools
+void demonstrateToolCacheOptions() {
   final tools = [
-    Tool.function(
+    core.FunctionToolDefinition(
       name: 'search_documents',
-      description: 'Search through knowledge base',
-      parameters: ParametersSchema(
-        schemaType: 'object',
+      description: 'Search the product knowledge base.',
+      inputSchema: core.ToolJsonSchema.object(
         properties: {
-          'query': ParameterProperty(
-            propertyType: 'string',
-            description: 'Search query',
-          ),
+          'query': {'type': 'string'},
         },
         required: ['query'],
       ),
     ),
-    Tool.function(
-      name: 'get_weather',
-      description: 'Get current weather',
-      parameters: ParametersSchema(
-        schemaType: 'object',
+    core.FunctionToolDefinition(
+      name: 'get_release_status',
+      description: 'Get the current release status.',
+      inputSchema: core.ToolJsonSchema.object(
         properties: {
-          'location': ParameterProperty(
-            propertyType: 'string',
-            description: 'City name',
-          ),
+          'releaseId': {'type': 'string'},
         },
-        required: ['location'],
+        required: ['releaseId'],
       ),
     ),
   ];
 
-  print('   Tools defined: ${tools.map((t) => t.function.name).join(', ')}');
-  print('   Usage - Message level (unified approach):');
-  print('   ```dart');
-  print('   final message = MessageBuilder.system()');
-  print('       .text("You are a helpful assistant.")');
-  print('       .tools([tool1, tool2, tool3])  // ← Add tools to message');
-  print(
-      '       .anthropicConfig((anthropic) => anthropic.cache()) // ← Cache the tools');
-  print('       .text("Use the provided tools to help users.")');
-  print('       .build();');
-  print('   ```');
-  print(
-      '   Result: Unified caching interface - cache applies to tools AND text');
+  const providerOptions = anthropic.AnthropicGenerateTextOptions(
+    toolsCacheControl: anthropic.AnthropicCacheControl.ephemeral(ttl: '1h'),
+  );
 
-  // Example 7: Demonstrate the new unified approach
-  print('\n7. NEW: Unified message-level tool caching:');
-  final unifiedMessage = MessageBuilder.system()
-      .text('You are a research assistant with access to these tools:')
-      .anthropicConfig((anthropic) => anthropic.cache(
-          ttl: AnthropicCacheTtl.oneHour)) // Cache configuration
-      .tools(tools) // ← These tools will be cached
-      .text('Use these tools to help users with research tasks.')
-      .build();
-
-  print('   Message content: ${unifiedMessage.content}');
-  print('   Extensions: ${unifiedMessage.extensions.keys.join(', ')}');
+  print('4. Tool cache control stays in AnthropicGenerateTextOptions:');
+  print('   tools: ${tools.map((tool) => tool.name).join(', ')}');
   print(
-      '   ✓ Cache configuration applies to subsequent content (tools in this case)');
-  print('   ✓ More intuitive: .cache() applies to what comes after it');
-  print('   ✓ Follows the same pattern as text caching');
-
-  print('\n=== Caching Strategy Tips ===');
-  print('📝 Message Caching:');
-  print(
-      '- Use oneHour TTL for: System prompts, large documents, static context');
-  print('- Use fiveMinutes TTL for: Session context, temporary user state');
-  print('- Regular text() calls are never cached');
-  print('- Use .cache() followed by .text() for cached content');
-  print('- Cached content appears in both content and extensions');
+    '   cacheControl: '
+    '${providerOptions.toolsCacheControl?.toJson()}',
+  );
   print('');
-  print('🔧 Tool Caching:');
+}
+
+void explainStrategy() {
+  print('=== Caching Strategy Tips ===');
+  print('- Put cache metadata on the prompt part that should be cached.');
   print(
-      '- .tools([...]) method works for ALL providers (OpenAI, Anthropic, etc.)');
-  print('- .anthropicConfig().cache() method is ANTHROPIC-ONLY');
+      '- Use 1h TTL for stable instructions, large documents, or tool lists.');
+  print('- Use 5m TTL for session context that changes during a workflow.');
   print(
-      '- Use MessageBuilder.tools().anthropicConfig().cache() for unified caching');
-  print('- Cache applies to tools AND subsequent text content');
-  print('- Use oneHour TTL for stable tool sets');
-  print('- Use fiveMinutes TTL for frequently changing tools');
+      '- Keep cache control provider-owned; shared GenerateTextOptions stays');
+  print('  provider-neutral.');
+  print('- Combine this prompt with anthropic(...).chatModel(...) and');
+  print('  core.generateTextCall(...) when making a live request.');
+}
+
+core.ProviderMetadata _anthropicCacheControl({required String ttl}) {
+  return core.ProviderMetadata({
+    'anthropic': {
+      'cacheControl': {
+        'type': 'ephemeral',
+        'ttl': ttl,
+      },
+    },
+  });
+}
+
+void _printPrompt(core.PromptMessage message) {
+  print('   role: ${message.role.name}');
+  for (var index = 0; index < message.parts.length; index += 1) {
+    final part = message.parts[index];
+    final cache = part.providerMetadata?.namespace('anthropic')?['cacheControl']
+        as Map<String, Object?>?;
+    print('   part ${index + 1}: ${part.runtimeType}');
+    if (cache != null) {
+      print('      cacheControl: $cache');
+    }
+  }
+  print('');
 }
