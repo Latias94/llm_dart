@@ -31,10 +31,106 @@ That includes:
 - provider-owned image editing and variation through
   `GoogleImageModel.edit(...)` and `createVariation(...)`
 
+## Recommended Layering
+
+1. Create concrete models with `google(...).*Model(...)`.
+2. Use `llm_dart_ai` helpers such as `generateTextCall(...)`, `embed(...)`,
+   `generateImage(...)`, and `generateSpeech(...)` for shared app flows.
+3. Put Gemini/Google-specific controls in `GoogleGenerateTextOptions`,
+   `GoogleEmbedOptions`, `GoogleImageOptions`, or `GoogleSpeechOptions`.
+4. Use `GoogleMessageMapper` only when UI code needs Google-specific metadata
+   beyond the shared chat summary.
+5. Keep streamed native TTS helper flows on the root compatibility appendix
+   until they graduate into a focused provider-owned utility.
+
 The root `llm_dart` package re-exports the main focused entrypoint through:
 
 - `package:llm_dart/google.dart`
   - includes the `google(...)` factory plus provider-owned Google types
+
+## Basic Chat Example
+
+```dart
+import 'package:llm_dart_ai/llm_dart_ai.dart' as ai;
+import 'package:llm_dart_google/llm_dart_google.dart';
+
+Future<void> main() async {
+  final model = google(apiKey: 'your-google-key').chatModel(
+    'gemini-2.0-flash',
+  );
+
+  final result = await ai.generateTextCall(
+    model: model,
+    prompt: [
+      ai.UserPromptMessage.text('Summarize Gemini in one paragraph.'),
+    ],
+  );
+
+  print(result.text);
+}
+```
+
+## Provider-Owned Options Example
+
+```dart
+import 'package:llm_dart_ai/llm_dart_ai.dart' as ai;
+import 'package:llm_dart_google/llm_dart_google.dart';
+
+Future<void> main() async {
+  final model = google(apiKey: 'your-google-key').chatModel(
+    'gemini-2.5-pro',
+    settings: const GoogleChatModelSettings(
+      safetySettings: [
+        GoogleSafetySetting(
+          category: GoogleHarmCategory.harassment,
+          threshold: GoogleHarmBlockThreshold.blockOnlyHigh,
+        ),
+      ],
+    ),
+  );
+
+  final result = await ai.generateTextCall(
+    model: model,
+    prompt: [
+      ai.UserPromptMessage.text('Explain why provider options stay typed.'),
+    ],
+    callOptions: const ai.CallOptions(
+      providerOptions: GoogleGenerateTextOptions(
+        thinkingLevel: GoogleThinkingLevel.low,
+        includeThoughts: true,
+      ),
+    ),
+  );
+
+  print(result.reasoningText);
+  print(result.text);
+}
+```
+
+## Embedding Example
+
+```dart
+import 'package:llm_dart_ai/llm_dart_ai.dart' as ai;
+import 'package:llm_dart_google/llm_dart_google.dart';
+
+Future<void> main() async {
+  final model = google(apiKey: 'your-google-key')
+      .embeddingModel('text-embedding-004');
+
+  final result = await ai.embedMany(
+    model: model,
+    values: const ['Dart packages', 'Gemini embeddings'],
+    dimensions: 512,
+    callOptions: const ai.CallOptions(
+      providerOptions: GoogleEmbedOptions(
+        taskType: 'SEMANTIC_SIMILARITY',
+      ),
+    ),
+  );
+
+  print(result.embeddings.length);
+}
+```
 
 ## Image Editing
 

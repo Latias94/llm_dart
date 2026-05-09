@@ -108,6 +108,84 @@ void main() {
       expect(pubspec, contains('llm_dart_transport:'));
     });
 
+    test('builds Google-only consumer pubspec without root package', () {
+      final paths = ConsumerSmokePaths(
+        repoRoot: 'F:/repo/llm_dart',
+        packagePaths: {
+          for (final packageName in const [
+            'llm_dart_google',
+            'llm_dart_provider',
+            'llm_dart_transport',
+          ])
+            packageName: 'F:/repo/llm_dart/packages/$packageName',
+        },
+      );
+
+      final pubspec = buildGoogleOnlyConsumerPubspec(paths);
+
+      expect(pubspec, isNot(contains('llm_dart:\n')));
+      expect(pubspec, contains('llm_dart_google:'));
+      expect(
+        pubspec,
+        contains('path: F:/repo/llm_dart/packages/llm_dart_google'),
+      );
+      expect(pubspec, contains('dependency_overrides:'));
+      expect(pubspec, contains('llm_dart_provider:'));
+      expect(pubspec, contains('llm_dart_transport:'));
+    });
+
+    test('builds Anthropic-only consumer pubspec without root package', () {
+      final paths = ConsumerSmokePaths(
+        repoRoot: 'F:/repo/llm_dart',
+        packagePaths: {
+          for (final packageName in const [
+            'llm_dart_anthropic',
+            'llm_dart_provider',
+            'llm_dart_transport',
+          ])
+            packageName: 'F:/repo/llm_dart/packages/$packageName',
+        },
+      );
+
+      final pubspec = buildAnthropicOnlyConsumerPubspec(paths);
+
+      expect(pubspec, isNot(contains('llm_dart:\n')));
+      expect(pubspec, contains('llm_dart_anthropic:'));
+      expect(
+        pubspec,
+        contains('path: F:/repo/llm_dart/packages/llm_dart_anthropic'),
+      );
+      expect(pubspec, contains('dependency_overrides:'));
+      expect(pubspec, contains('llm_dart_provider:'));
+      expect(pubspec, contains('llm_dart_transport:'));
+    });
+
+    test('builds Community-only consumer pubspec without root package', () {
+      final paths = ConsumerSmokePaths(
+        repoRoot: 'F:/repo/llm_dart',
+        packagePaths: {
+          for (final packageName in const [
+            'llm_dart_community',
+            'llm_dart_provider',
+            'llm_dart_transport',
+          ])
+            packageName: 'F:/repo/llm_dart/packages/$packageName',
+        },
+      );
+
+      final pubspec = buildCommunityOnlyConsumerPubspec(paths);
+
+      expect(pubspec, isNot(contains('llm_dart:\n')));
+      expect(pubspec, contains('llm_dart_community:'));
+      expect(
+        pubspec,
+        contains('path: F:/repo/llm_dart/packages/llm_dart_community'),
+      );
+      expect(pubspec, contains('dependency_overrides:'));
+      expect(pubspec, contains('llm_dart_provider:'));
+      expect(pubspec, contains('llm_dart_transport:'));
+    });
+
     test('builds split package consumer pubspec without root package', () {
       final paths = ConsumerSmokePaths(
         repoRoot: 'F:/repo/llm_dart',

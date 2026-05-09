@@ -138,6 +138,15 @@ Future<ConsumerSmokeRunResult> runConsumerSmoke({
     final openAIOnlyConsumer = Directory.fromUri(tempRoot.uri.resolve(
       'openai_only_consumer/',
     ));
+    final googleOnlyConsumer = Directory.fromUri(tempRoot.uri.resolve(
+      'google_only_consumer/',
+    ));
+    final anthropicOnlyConsumer = Directory.fromUri(tempRoot.uri.resolve(
+      'anthropic_only_consumer/',
+    ));
+    final communityOnlyConsumer = Directory.fromUri(tempRoot.uri.resolve(
+      'community_only_consumer/',
+    ));
     final splitPackageConsumer = Directory.fromUri(tempRoot.uri.resolve(
       'split_package_consumer/',
     ));
@@ -153,6 +162,18 @@ Future<ConsumerSmokeRunResult> runConsumerSmoke({
       repoRoot: repoRoot,
       consumerDirectory: openAIOnlyConsumer,
     );
+    await writeGoogleOnlyConsumer(
+      repoRoot: repoRoot,
+      consumerDirectory: googleOnlyConsumer,
+    );
+    await writeAnthropicOnlyConsumer(
+      repoRoot: repoRoot,
+      consumerDirectory: anthropicOnlyConsumer,
+    );
+    await writeCommunityOnlyConsumer(
+      repoRoot: repoRoot,
+      consumerDirectory: communityOnlyConsumer,
+    );
     await writeSplitPackageConsumer(
       repoRoot: repoRoot,
       consumerDirectory: splitPackageConsumer,
@@ -165,6 +186,9 @@ Future<ConsumerSmokeRunResult> runConsumerSmoke({
     final commands = buildConsumerSmokeCommands(
       dartConsumer: dartConsumer,
       openAIOnlyConsumer: openAIOnlyConsumer,
+      googleOnlyConsumer: googleOnlyConsumer,
+      anthropicOnlyConsumer: anthropicOnlyConsumer,
+      communityOnlyConsumer: communityOnlyConsumer,
       splitPackageConsumer: splitPackageConsumer,
       flutterConsumer: flutterConsumer,
     );
@@ -208,6 +232,9 @@ Future<ConsumerSmokeRunResult> runConsumerSmoke({
 List<ConsumerSmokeCommand> buildConsumerSmokeCommands({
   required Directory dartConsumer,
   required Directory openAIOnlyConsumer,
+  required Directory googleOnlyConsumer,
+  required Directory anthropicOnlyConsumer,
+  required Directory communityOnlyConsumer,
   required Directory splitPackageConsumer,
   required Directory flutterConsumer,
 }) {
@@ -247,6 +274,60 @@ List<ConsumerSmokeCommand> buildConsumerSmokeCommands({
       executable: 'dart',
       arguments: const ['run', 'bin/smoke.dart'],
       workingDirectory: openAIOnlyConsumer,
+    ),
+    ConsumerSmokeCommand(
+      name: 'Google-only consumer pub get',
+      executable: 'dart',
+      arguments: const ['pub', 'get'],
+      workingDirectory: googleOnlyConsumer,
+    ),
+    ConsumerSmokeCommand(
+      name: 'Google-only consumer analysis',
+      executable: 'dart',
+      arguments: const ['analyze'],
+      workingDirectory: googleOnlyConsumer,
+    ),
+    ConsumerSmokeCommand(
+      name: 'Google-only consumer no-key run',
+      executable: 'dart',
+      arguments: const ['run', 'bin/smoke.dart'],
+      workingDirectory: googleOnlyConsumer,
+    ),
+    ConsumerSmokeCommand(
+      name: 'Anthropic-only consumer pub get',
+      executable: 'dart',
+      arguments: const ['pub', 'get'],
+      workingDirectory: anthropicOnlyConsumer,
+    ),
+    ConsumerSmokeCommand(
+      name: 'Anthropic-only consumer analysis',
+      executable: 'dart',
+      arguments: const ['analyze'],
+      workingDirectory: anthropicOnlyConsumer,
+    ),
+    ConsumerSmokeCommand(
+      name: 'Anthropic-only consumer no-key run',
+      executable: 'dart',
+      arguments: const ['run', 'bin/smoke.dart'],
+      workingDirectory: anthropicOnlyConsumer,
+    ),
+    ConsumerSmokeCommand(
+      name: 'Community-only consumer pub get',
+      executable: 'dart',
+      arguments: const ['pub', 'get'],
+      workingDirectory: communityOnlyConsumer,
+    ),
+    ConsumerSmokeCommand(
+      name: 'Community-only consumer analysis',
+      executable: 'dart',
+      arguments: const ['analyze'],
+      workingDirectory: communityOnlyConsumer,
+    ),
+    ConsumerSmokeCommand(
+      name: 'Community-only consumer no-key run',
+      executable: 'dart',
+      arguments: const ['run', 'bin/smoke.dart'],
+      workingDirectory: communityOnlyConsumer,
     ),
     ConsumerSmokeCommand(
       name: 'Split package consumer pub get',
@@ -339,6 +420,51 @@ Future<void> writeOpenAIOnlyConsumer({
   await writeTextFile(
     File.fromUri(consumerDirectory.uri.resolve('bin/smoke.dart')),
     openAIOnlyConsumerSmokeProgram,
+  );
+}
+
+Future<void> writeGoogleOnlyConsumer({
+  required Directory repoRoot,
+  required Directory consumerDirectory,
+}) async {
+  final paths = buildConsumerSmokePaths(repoRoot);
+  await writeTextFile(
+    File.fromUri(consumerDirectory.uri.resolve('pubspec.yaml')),
+    buildGoogleOnlyConsumerPubspec(paths),
+  );
+  await writeTextFile(
+    File.fromUri(consumerDirectory.uri.resolve('bin/smoke.dart')),
+    googleOnlyConsumerSmokeProgram,
+  );
+}
+
+Future<void> writeAnthropicOnlyConsumer({
+  required Directory repoRoot,
+  required Directory consumerDirectory,
+}) async {
+  final paths = buildConsumerSmokePaths(repoRoot);
+  await writeTextFile(
+    File.fromUri(consumerDirectory.uri.resolve('pubspec.yaml')),
+    buildAnthropicOnlyConsumerPubspec(paths),
+  );
+  await writeTextFile(
+    File.fromUri(consumerDirectory.uri.resolve('bin/smoke.dart')),
+    anthropicOnlyConsumerSmokeProgram,
+  );
+}
+
+Future<void> writeCommunityOnlyConsumer({
+  required Directory repoRoot,
+  required Directory consumerDirectory,
+}) async {
+  final paths = buildConsumerSmokePaths(repoRoot);
+  await writeTextFile(
+    File.fromUri(consumerDirectory.uri.resolve('pubspec.yaml')),
+    buildCommunityOnlyConsumerPubspec(paths),
+  );
+  await writeTextFile(
+    File.fromUri(consumerDirectory.uri.resolve('bin/smoke.dart')),
+    communityOnlyConsumerSmokeProgram,
   );
 }
 
@@ -443,6 +569,66 @@ environment:
 dependencies:
   llm_dart_openai:
     path: ${paths.packagePaths['llm_dart_openai']}
+
+dependency_overrides:
+${_pathEntries([
+        'llm_dart_provider',
+        'llm_dart_transport',
+      ], paths.packagePaths)}
+''';
+}
+
+String buildGoogleOnlyConsumerPubspec(ConsumerSmokePaths paths) {
+  return '''
+name: llm_dart_google_only_consumer_smoke
+publish_to: none
+
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+
+dependencies:
+  llm_dart_google:
+    path: ${paths.packagePaths['llm_dart_google']}
+
+dependency_overrides:
+${_pathEntries([
+        'llm_dart_provider',
+        'llm_dart_transport',
+      ], paths.packagePaths)}
+''';
+}
+
+String buildAnthropicOnlyConsumerPubspec(ConsumerSmokePaths paths) {
+  return '''
+name: llm_dart_anthropic_only_consumer_smoke
+publish_to: none
+
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+
+dependencies:
+  llm_dart_anthropic:
+    path: ${paths.packagePaths['llm_dart_anthropic']}
+
+dependency_overrides:
+${_pathEntries([
+        'llm_dart_provider',
+        'llm_dart_transport',
+      ], paths.packagePaths)}
+''';
+}
+
+String buildCommunityOnlyConsumerPubspec(ConsumerSmokePaths paths) {
+  return '''
+name: llm_dart_community_only_consumer_smoke
+publish_to: none
+
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+
+dependencies:
+  llm_dart_community:
+    path: ${paths.packagePaths['llm_dart_community']}
 
 dependency_overrides:
 ${_pathEntries([
@@ -694,6 +880,114 @@ void main() {
 }
 ''';
 
+const googleOnlyConsumerSmokeProgram = r'''
+import 'package:llm_dart_google/llm_dart_google.dart' as google;
+
+void main() {
+  final provider = google.google(apiKey: 'test');
+  final chatModel = provider.chatModel(
+    'gemini-2.0-flash',
+    settings: const google.GoogleChatModelSettings(
+      safetySettings: [
+        google.GoogleSafetySetting(
+          category: google.GoogleHarmCategory.harassment,
+          threshold: google.GoogleHarmBlockThreshold.blockOnlyHigh,
+        ),
+      ],
+    ),
+  );
+  final embeddingModel = provider.embeddingModel('text-embedding-004');
+  final imageModel = provider.imageModel('gemini-2.5-flash-image');
+  final speechModel = provider.speechModel('gemini-2.5-flash-preview-tts');
+  const textOptions = google.GoogleGenerateTextOptions(
+    thinkingLevel: google.GoogleThinkingLevel.low,
+    includeThoughts: true,
+  );
+  const imageOptions = google.GoogleImageOptions(
+    aspectRatio: google.GoogleImageAspectRatio.landscape16x9,
+  );
+
+  if (chatModel.providerId != 'google' ||
+      embeddingModel.providerId != 'google' ||
+      imageModel.providerId != 'google' ||
+      speechModel.providerId != 'google' ||
+      textOptions.thinkingLevel != google.GoogleThinkingLevel.low ||
+      imageOptions.aspectRatio != google.GoogleImageAspectRatio.landscape16x9) {
+    throw StateError('Google-only consumer smoke failed');
+  }
+
+  print('google-only ok');
+}
+''';
+
+const anthropicOnlyConsumerSmokeProgram = r'''
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic;
+
+void main() {
+  final provider = anthropic.anthropic(apiKey: 'test');
+  final model = provider.chatModel(
+    'claude-3-5-haiku-latest',
+    settings: const anthropic.AnthropicChatModelSettings(
+      betaFeatures: ['files-api-2025-04-14'],
+    ),
+  );
+  final files = provider.files(
+    settings: const anthropic.AnthropicFilesSettings(
+      betaFeatures: ['files-api-2025-04-14'],
+    ),
+  );
+  const options = anthropic.AnthropicGenerateTextOptions(
+    extendedThinking: true,
+    thinkingBudgetTokens: 1024,
+  );
+
+  if (model.providerId != 'anthropic' ||
+      files.runtimeType.toString().isEmpty ||
+      options.extendedThinking != true ||
+      options.thinkingBudgetTokens != 1024) {
+    throw StateError('Anthropic-only consumer smoke failed');
+  }
+
+  print('anthropic-only ok');
+}
+''';
+
+const communityOnlyConsumerSmokeProgram = r'''
+import 'package:llm_dart_community/llm_dart_community.dart' as community;
+
+void main() {
+  final ollama = community.ollama(baseUrl: 'http://localhost:11434');
+  final ollamaChat = ollama.chatModel('llama3.2');
+  final ollamaEmbeddings = ollama.embeddingModel('nomic-embed-text');
+  final ollamaCatalog = ollama.catalog();
+  final elevenLabs = community.elevenLabs(apiKey: 'test');
+  final speechModel = elevenLabs.speechModel('eleven_multilingual_v2');
+  final transcriptionModel = elevenLabs.transcriptionModel('scribe_v1');
+  final voices = elevenLabs.voices();
+  const ollamaOptions = community.OllamaGenerateTextOptions(
+    numCtx: 4096,
+    keepAlive: '10m',
+  );
+  const speechOptions = community.ElevenLabsSpeechOptions(
+    outputFormat: 'mp3_44100_128',
+    speed: 1.0,
+  );
+
+  if (ollamaChat.providerId != 'ollama' ||
+      ollamaEmbeddings.providerId != 'ollama' ||
+      ollamaCatalog.runtimeType.toString().isEmpty ||
+      speechModel.providerId != 'elevenlabs' ||
+      transcriptionModel.providerId != 'elevenlabs' ||
+      voices.runtimeType.toString().isEmpty ||
+      ollamaOptions.numCtx != 4096 ||
+      speechOptions.outputFormat != 'mp3_44100_128') {
+    throw StateError('Community-only consumer smoke failed');
+  }
+
+  print('community-only ok');
+}
+''';
+
 const splitPackageConsumerSmokeProgram = r'''
 import 'package:llm_dart_ai/llm_dart_ai.dart' as ai;
 import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic;
@@ -772,8 +1066,9 @@ void main() {
 const consumerSmokeUsage = '''
 Usage: dart run tool/run_consumer_smoke.dart [options]
 
-Creates clean temporary Dart, split-package, and Flutter consumers, validates
-local path dependency resolution, analyzes them, and runs no-key smoke tests.
+Creates clean temporary Dart, provider-only, split-package, and Flutter
+consumers, validates local path dependency resolution, analyzes them, and runs
+no-key smoke tests.
 
 Options:
   --proxy=<url>  Set HTTP_PROXY and HTTPS_PROXY for child commands.
