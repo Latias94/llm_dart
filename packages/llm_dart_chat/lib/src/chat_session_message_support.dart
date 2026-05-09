@@ -1,6 +1,6 @@
-import 'dart:convert';
-
 import 'package:llm_dart_provider/llm_dart_provider.dart';
+
+import 'chat_tool_output_support.dart';
 
 List<ChatUiMessage> visibleMessagesFromPrompt(
   List<PromptMessage> prompt,
@@ -199,12 +199,13 @@ ChatUiMessage promptMessageToChatUiMessage(
           (current) => ToolUiPart(
             toolCallId: toolCallId,
             toolName: toolName,
-            state: _toolOutputState(toolOutput),
+            state: chatToolOutputState(toolOutput),
             input: current?.input,
             inputText: current?.inputText,
             output: output,
             toolOutput: toolOutput,
-            errorText: isError ? _stringifyToolOutputValue(toolOutput) : null,
+            errorText:
+                isError ? chatStringifyToolOutputValue(toolOutput) : null,
             providerExecuted: current?.providerExecuted ?? false,
             isDynamic: current?.isDynamic ?? false,
             preliminary: false,
@@ -507,27 +508,4 @@ Map<String, Object?>? toolReplayPayloadMap(Object? data) {
   }
 
   return null;
-}
-
-ToolUiPartState _toolOutputState(ToolOutput output) {
-  if (output.denied) {
-    return ToolUiPartState.outputDenied;
-  }
-
-  return output.isError
-      ? ToolUiPartState.outputError
-      : ToolUiPartState.outputAvailable;
-}
-
-String _stringifyToolOutputValue(ToolOutput output) {
-  final value = output.value;
-  if (value is String) {
-    return value;
-  }
-
-  try {
-    return jsonEncode(value);
-  } catch (_) {
-    return '$value';
-  }
 }
