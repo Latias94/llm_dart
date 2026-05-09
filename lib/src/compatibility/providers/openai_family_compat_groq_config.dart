@@ -1,6 +1,6 @@
 import '../../../core/config.dart';
 import '../../../providers/groq/config.dart';
-import 'community_provider_config_adapters.dart';
+import 'legacy_dio_client_overrides.dart';
 
 /// Adapts a legacy root `LLMConfig` into a Groq provider config.
 GroqConfig createLegacyGroqConfig(LLMConfig config) {

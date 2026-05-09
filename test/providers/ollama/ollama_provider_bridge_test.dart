@@ -6,7 +6,7 @@ import 'package:test/test.dart';
 
 void main() {
   group('OllamaProvider bridge delegation', () {
-    test('chat delegates replay-safe requests to the community model codec',
+    test('chat delegates replay-safe requests to the Ollama package codec',
         () async {
       RequestOptions? capturedOptions;
       Object? capturedBody;
@@ -143,7 +143,7 @@ void main() {
       );
     });
 
-    test('embed delegates to the community embedding model', () async {
+    test('embed delegates to the Ollama package embedding model', () async {
       RequestOptions? capturedOptions;
       Object? capturedBody;
       final dio = _buildResolvedDio((options) {

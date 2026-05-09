@@ -16,7 +16,7 @@ export 'ollama_chat_response.dart' show OllamaChatResponse;
 /// Compatibility-oriented Ollama chat capability implementation.
 ///
 /// This remains in the root package because it serves the broader legacy shell
-/// rather than the package-owned modern community model surface.
+/// rather than the package-owned modern Ollama model surface.
 class OllamaChat implements ChatCapability {
   final OllamaClient client;
   final OllamaConfig config;

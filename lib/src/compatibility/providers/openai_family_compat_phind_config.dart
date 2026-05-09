@@ -1,6 +1,6 @@
 import '../../../core/config.dart';
 import '../../../providers/phind/config.dart';
-import 'community_provider_config_adapters.dart';
+import 'legacy_dio_client_overrides.dart';
 
 /// Adapts a legacy root `LLMConfig` into a Phind provider config.
 PhindConfig createLegacyPhindConfig(LLMConfig config) {

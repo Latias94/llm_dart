@@ -5,7 +5,7 @@ import '../../../providers/anthropic/config.dart';
 import '../config/legacy_anthropic_options.dart';
 import '../config/legacy_provider_options.dart';
 import '../config/legacy_web_search_options.dart';
-import 'community_provider_config_adapters.dart';
+import 'legacy_dio_client_overrides.dart';
 
 /// Adapts a legacy root `LLMConfig` into an Anthropic provider config.
 AnthropicConfig createLegacyAnthropicConfig(LLMConfig config) {

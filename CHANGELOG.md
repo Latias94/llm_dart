@@ -48,7 +48,7 @@ Older builder-era code should migrate through `package:llm_dart/legacy.dart`.
 
 - The root `llm_dart` package is now the recommended entrypoint for the stable
   model API.
-- Split the previous `llm_dart_community` provider bucket into dedicated
+- Split the previous combined Ollama and ElevenLabs provider bucket into dedicated
   Ollama and ElevenLabs provider packages.
 - Older core imports remain available, but new code should prefer the root
   model API or the focused packages directly.

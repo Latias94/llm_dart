@@ -5,7 +5,7 @@ import '../config/legacy_google_options.dart';
 import '../config/legacy_google_thinking_options.dart';
 import '../config/legacy_provider_options.dart';
 import '../config/legacy_web_search_options.dart';
-import 'community_provider_config_adapters.dart';
+import 'legacy_dio_client_overrides.dart';
 
 /// Adapts a legacy root `LLMConfig` into a Google provider config.
 GoogleConfig createLegacyGoogleConfig(LLMConfig config) {

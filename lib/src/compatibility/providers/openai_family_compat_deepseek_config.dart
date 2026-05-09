@@ -4,7 +4,7 @@ import '../../../core/config.dart';
 import '../../../providers/deepseek/config.dart';
 import '../config/legacy_deepseek_options.dart';
 import '../config/legacy_provider_options.dart';
-import 'community_provider_config_adapters.dart';
+import 'legacy_dio_client_overrides.dart';
 
 /// Adapts a legacy root `LLMConfig` into a DeepSeek provider config.
 DeepSeekConfig createLegacyDeepSeekConfig(LLMConfig config) {

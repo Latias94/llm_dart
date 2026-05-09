@@ -5,7 +5,7 @@ import '../../../core/config.dart';
 import '../config/legacy_config_extensions.dart';
 
 /// Projects legacy HTTP-related `LLMConfig` settings into transport-owned
-/// provider Dio overrides for compatibility-era community providers.
+/// provider Dio overrides for compatibility-era provider adapters.
 DioClientOverrides? createLegacyDioClientOverrides(LLMConfig config) {
   final customTransport = config.legacyTransportClient;
   final customDio = switch (customTransport) {

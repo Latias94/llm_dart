@@ -11,7 +11,7 @@ import 'package:test/test.dart';
 
 void main() {
   group('ElevenLabsProvider bridge delegation', () {
-    test('textToSpeech delegates shared requests to the community speech model',
+    test('textToSpeech delegates shared requests to the ElevenLabs package speech model',
         () async {
       RequestOptions? capturedOptions;
       Object? capturedBody;
@@ -112,7 +112,7 @@ void main() {
       );
     });
 
-    test('speechToText with audio bytes delegates to the community model',
+    test('speechToText with audio bytes delegates to the ElevenLabs package model',
         () async {
       RequestOptions? capturedOptions;
       Object? capturedBody;

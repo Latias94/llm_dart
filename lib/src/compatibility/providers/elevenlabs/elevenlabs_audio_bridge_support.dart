@@ -12,7 +12,7 @@ part 'elevenlabs_transcription_bridge_support.dart';
 
 /// Bridge-local request shaping and response normalization for ElevenLabs.
 ///
-/// This keeps modern-community bridge constraints and codec translation out of
+/// This keeps dedicated-package bridge constraints and codec translation out of
 /// the compatibility shell so the shell can stay focused on bridge-vs-fallback
 /// orchestration.
 final class ElevenLabsAudioBridgeSupport {
