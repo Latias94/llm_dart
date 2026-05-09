@@ -113,12 +113,19 @@ entrypoint.
 `package:llm_dart/chat.dart` is intentionally different:
 
 - it is an app-facing convenience shell
-- it exists specifically to combine chat runtime, core, transport, and `AI`
-  into one pure-Dart chat entrypoint
+- it exists specifically to combine chat runtime, core, transport, and the
+  short stable model factories into one pure-Dart chat entrypoint
 
 That convenience boundary is explicit and still useful.
 
 The provider entrypoints do not have the same justification.
+
+2026-05 update: the later focused-entrypoint cleanup narrowed this exception
+too. `chat.dart` still combines the pure Dart chat runtime with core,
+transport, and short factories such as `openai(...)`, but it no longer exports
+the grouped `AI` namespace. Import `package:llm_dart/llm_dart.dart` or
+`package:llm_dart/ai.dart` when a codebase explicitly wants
+`AI.<provider>(...)`.
 
 ## What Should Change
 

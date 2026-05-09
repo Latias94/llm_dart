@@ -6,7 +6,7 @@ manual decisions before publishing the breaking preview.
 
 ## Latest Validation Record
 
-Recorded on 2026-05-08:
+Recorded on 2026-05-09:
 
 - `dart run tool/check_workspace_dependency_guards.dart` passed.
 - `dart run tool/check_root_package_boundary_guards.dart` passed.
@@ -18,10 +18,19 @@ Recorded on 2026-05-08:
 - `dart test` passed.
 - `dart run tool/run_workspace_publish_dry_run.dart` passed for all 11
   publishable workspace packages.
+- Focused provider and chat entrypoints were narrowed so they expose short
+  factories and provider/runtime-owned APIs without exporting the grouped
+  `AI` namespace. `AI.<provider>(...)` remains available from
+  `package:llm_dart/llm_dart.dart` and `package:llm_dart/ai.dart`.
 - A clean Dart consumer smoke project passed local path dependency resolution,
   analysis, and execution for:
   - the modern root facade
+  - provider-only root consumers for OpenAI, Google, Anthropic, OpenAI-family
+    profiles, and community providers
   - focused provider/runtime/transport/chat packages
+  - split provider package consumers that depend directly on
+    `llm_dart_openai`, `llm_dart_google`, `llm_dart_anthropic`, or
+    `llm_dart_community` without the root `llm_dart` package
   - the `llm_dart_core` compatibility shell
   - the explicit `package:llm_dart/legacy.dart` compatibility surface
 - A clean Flutter consumer smoke project passed local path dependency

@@ -10,13 +10,13 @@ root `llm_dart` package.
 
 Use `llm_dart_community` when you want the modern shared-capability APIs for:
 
+- short factories `ollama(...)` and `elevenLabs(...)`
 - `ollama(...).chatModel(...)`
 - `ollama(...).embeddingModel(...)`
 - `ollama(...).catalog().listModels()`
 - `elevenLabs(...).speechModel(...)`
 - `elevenLabs(...).transcriptionModel(...)`
 - `elevenLabs(...).voices().listVoices()`
-- short factories `ollama(...)` and `elevenLabs(...)` for the same surfaces
 
 ## Intentional Limits
 
