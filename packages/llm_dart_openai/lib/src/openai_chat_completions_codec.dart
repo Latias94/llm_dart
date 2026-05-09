@@ -1108,9 +1108,7 @@ final class OpenAIChatCompletionsCodec {
     }
 
     if (output is ContentToolOutput) {
-      throw UnsupportedError(
-        'OpenAI-family chat-completions tool result replay does not support ContentToolOutput yet.',
-      );
+      return _encodeContentToolOutput(output.parts);
     }
 
     final value = output.value;
@@ -1123,6 +1121,116 @@ final class OpenAIChatCompletionsCodec {
     }
 
     return jsonEncode(value);
+  }
+
+  String _encodeContentToolOutput(List<ToolOutputContentPart> parts) {
+    return jsonEncode([
+      for (final part in parts) _encodeContentToolOutputPart(part),
+    ]);
+  }
+
+  Map<String, Object?> _encodeContentToolOutputPart(
+    ToolOutputContentPart part,
+  ) {
+    return switch (part) {
+      TextToolOutputContentPart(:final text, :final providerMetadata) => {
+          'type': 'text',
+          'text': text,
+          if (providerMetadata != null)
+            'providerMetadata': providerMetadata.toJsonMap(),
+        },
+      JsonToolOutputContentPart(:final value, :final providerMetadata) => {
+          'type': 'json',
+          'value': _normalizeJsonValue(value),
+          if (providerMetadata != null)
+            'providerMetadata': providerMetadata.toJsonMap(),
+        },
+      FileToolOutputContentPart(
+        :final mediaType,
+        :final filename,
+        :final data,
+        :final providerMetadata,
+      ) =>
+        {
+          'type': 'file',
+          'mediaType': mediaType,
+          if (filename != null) 'filename': filename,
+          'data': _encodeFileData(data),
+          if (providerMetadata != null)
+            'providerMetadata': providerMetadata.toJsonMap(),
+        },
+      CustomToolOutputContentPart(
+        :final kind,
+        :final data,
+        :final providerMetadata,
+      ) =>
+        {
+          'type': 'custom',
+          'kind': kind,
+          if (data != null) 'data': _normalizeJsonValue(data),
+          if (providerMetadata != null)
+            'providerMetadata': providerMetadata.toJsonMap(),
+        },
+    };
+  }
+
+  Map<String, Object?> _encodeFileData(FileData data) {
+    return switch (data) {
+      FileBytesData(:final bytes) => {
+          'type': 'bytes',
+          'bytes': {
+            'encoding': 'base64',
+            'data': base64Encode(bytes),
+          },
+        },
+      FileUrlData(:final uri) => {
+          'type': 'url',
+          'uri': uri.toString(),
+        },
+      FileTextData(:final text) => {
+          'type': 'text',
+          'text': text,
+        },
+      FileProviderReferenceData(:final providerReference) => {
+          'type': 'provider-reference',
+          'providerReference': providerReference.toJsonMap(),
+        },
+    };
+  }
+
+  Object? _normalizeJsonValue(Object? value) {
+    if (value == null || value is String || value is num || value is bool) {
+      return value;
+    }
+
+    if (value is Map<String, Object?>) {
+      return value.map(
+        (key, nestedValue) => MapEntry(key, _normalizeJsonValue(nestedValue)),
+      );
+    }
+
+    if (value is Map) {
+      final normalized = <String, Object?>{};
+      for (final entry in value.entries) {
+        final key = entry.key;
+        if (key is! String) {
+          throw UnsupportedError(
+            'Expected a string key in a JSON payload.',
+          );
+        }
+
+        normalized[key] = _normalizeJsonValue(entry.value);
+      }
+      return normalized;
+    }
+
+    if (value is List) {
+      return [for (final item in value) _normalizeJsonValue(item)];
+    }
+
+    throw UnsupportedError(
+      'Expected a JSON-safe value but received ${value.runtimeType}.',
+    );
   }
 
   Map<String, Object?>? _asMap(Object? value) {

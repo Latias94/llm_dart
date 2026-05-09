@@ -415,11 +415,10 @@ final class TextStreamEventJsonCodec {
                 path: '$path.providerExecuted',
               ) ??
               false,
-          isDynamic: asNullableJsonBool(
-                map['isDynamic'],
-                path: '$path.isDynamic',
-              ) ??
-              false,
+          isDynamic: SerializationJsonSupport.decodeDynamicFlag(
+            map,
+            path: path,
+          ),
           title: asNullableJsonString(map['title'], path: '$path.title'),
           providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
             map['providerMetadata'],
@@ -451,11 +450,10 @@ final class TextStreamEventJsonCodec {
                 path: '$path.providerExecuted',
               ) ??
               false,
-          isDynamic: asNullableJsonBool(
-                map['isDynamic'],
-                path: '$path.isDynamic',
-              ) ??
-              false,
+          isDynamic: SerializationJsonSupport.decodeDynamicFlag(
+            map,
+            path: path,
+          ),
           title: asNullableJsonString(map['title'], path: '$path.title'),
           providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
             map['providerMetadata'],
@@ -579,9 +577,10 @@ final class TextStreamEventJsonCodec {
             path: '$path.providerExecuted',
           ) ??
           false,
-      isDynamic:
-          asNullableJsonBool(map['isDynamic'], path: '$path.isDynamic') ??
-              false,
+      isDynamic: SerializationJsonSupport.decodeDynamicFlag(
+        map,
+        path: path,
+      ),
       title: asNullableJsonString(map['title'], path: '$path.title'),
     );
   }
@@ -590,9 +589,8 @@ final class TextStreamEventJsonCodec {
     return {
       'toolCallId': toolResult.toolCallId,
       'toolName': toolResult.toolName,
-      'output':
-          ensureJsonValue(toolResult.output, path: r'$.toolResult.output'),
-      'isError': toolResult.isError,
+      'toolOutput':
+          SerializationJsonSupport.encodeToolOutput(toolResult.toolOutput),
       'preliminary': toolResult.preliminary,
       'isDynamic': toolResult.isDynamic,
     };
@@ -606,17 +604,25 @@ final class TextStreamEventJsonCodec {
     return ToolResultContent(
       toolCallId: asJsonString(map['toolCallId'], path: '$path.toolCallId'),
       toolName: asJsonString(map['toolName'], path: '$path.toolName'),
-      output: map['output'],
-      isError:
-          asNullableJsonBool(map['isError'], path: '$path.isError') ?? false,
+      toolOutput: map.containsKey('toolOutput')
+          ? SerializationJsonSupport.decodeToolOutput(
+              map['toolOutput'],
+              path: '$path.toolOutput',
+            )
+          : null,
+      output: map.containsKey('toolOutput') ? null : map['output'],
+      isError: map.containsKey('toolOutput')
+          ? false
+          : asNullableJsonBool(map['isError'], path: '$path.isError') ?? false,
       preliminary: asNullableJsonBool(
             map['preliminary'],
             path: '$path.preliminary',
           ) ??
           false,
-      isDynamic:
-          asNullableJsonBool(map['isDynamic'], path: '$path.isDynamic') ??
-              false,
+      isDynamic: SerializationJsonSupport.decodeDynamicFlag(
+        map,
+        path: path,
+      ),
     );
   }
 

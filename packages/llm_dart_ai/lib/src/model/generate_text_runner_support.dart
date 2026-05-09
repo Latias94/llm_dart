@@ -36,12 +36,38 @@ final class GenerateTextFunctionToolExecutionRequest {
 }
 
 final class GenerateTextToolExecutionResult {
-  final Object? output;
-  final bool isError;
+  final Object? _output;
+  final bool _isError;
+  final ToolOutput? _toolOutput;
 
-  const GenerateTextToolExecutionResult.output(this.output) : isError = false;
+  const GenerateTextToolExecutionResult.output(Object? output)
+      : _output = output,
+        _isError = false,
+        _toolOutput = null;
 
-  const GenerateTextToolExecutionResult.error(this.output) : isError = true;
+  const GenerateTextToolExecutionResult.error(Object? output)
+      : _output = output,
+        _isError = true,
+        _toolOutput = null;
+
+  const GenerateTextToolExecutionResult.toolOutput(ToolOutput toolOutput)
+      : _output = null,
+        _isError = false,
+        _toolOutput = toolOutput;
+
+  ToolOutput get toolOutput =>
+      _toolOutput ??
+      (_isError
+          ? (_output is String
+              ? ErrorTextToolOutput(_output)
+              : ErrorJsonToolOutput(_output))
+          : (_output is String
+              ? TextToolOutput(_output)
+              : JsonToolOutput(_output)));
+
+  Object? get output => toolOutput.value;
+
+  bool get isError => toolOutput.isError;
 }
 
 final class GenerateTextRunnerSupport {
@@ -111,8 +137,7 @@ final class GenerateTextRunnerSupport {
             ToolResultPromptPart(
               toolCallId: toolCall.toolCallId,
               toolName: toolCall.toolName,
-              output: executionResult.output,
-              isError: executionResult.isError,
+              toolOutput: executionResult.toolOutput,
               providerMetadata: toolCallProviderMetadata(
                 step,
                 toolCall.toolCallId,
@@ -257,8 +282,7 @@ final class GenerateTextRunnerSupport {
                 ToolResultPromptPart(
                   toolCallId: toolResult.toolCallId,
                   toolName: toolResult.toolName,
-                  output: toolResult.output,
-                  isError: toolResult.isError,
+                  toolOutput: toolResult.toolOutput,
                   providerMetadata: providerMetadata,
                 ),
               ],

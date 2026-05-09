@@ -1,5 +1,6 @@
 import '../common/provider_metadata.dart';
 import '../content/content_part.dart';
+import '../tool/tool_output.dart';
 
 enum ChatUiRole {
   system,
@@ -81,7 +82,8 @@ final class ToolUiPart extends ChatUiPart {
   final ToolUiPartState state;
   final Object? input;
   final String? inputText;
-  final Object? output;
+  final Object? _output;
+  final ToolOutput? toolOutput;
   final String? errorText;
   final bool providerExecuted;
   final bool isDynamic;
@@ -97,7 +99,8 @@ final class ToolUiPart extends ChatUiPart {
     required this.state,
     this.input,
     this.inputText,
-    this.output,
+    Object? output,
+    this.toolOutput,
     this.errorText,
     this.providerExecuted = false,
     this.isDynamic = false,
@@ -106,7 +109,9 @@ final class ToolUiPart extends ChatUiPart {
     this.approval,
     this.callProviderMetadata,
     this.resultProviderMetadata,
-  });
+  }) : _output = output;
+
+  Object? get output => toolOutput?.value ?? _output;
 
   ProviderMetadata? get providerMetadata =>
       resultProviderMetadata ?? callProviderMetadata;

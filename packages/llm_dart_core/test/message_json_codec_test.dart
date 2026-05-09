@@ -193,9 +193,16 @@ void main() {
             ToolResultPromptPart(
               toolCallId: 'call_json',
               toolName: 'weather',
-              toolOutput: JsonToolOutput({
-                'temperature': 28,
-              }),
+              toolOutput: JsonToolOutput(
+                {
+                  'temperature': 28,
+                },
+                providerMetadata: const ProviderMetadata({
+                  'openai': {
+                    'itemId': 'tool_result_json',
+                  },
+                }),
+              ),
             ),
             ToolResultPromptPart(
               toolCallId: 'call_denied',
@@ -206,11 +213,40 @@ void main() {
               toolCallId: 'call_content',
               toolName: 'weather',
               toolOutput: ContentToolOutput(
+                providerMetadata: const ProviderMetadata({
+                  'openai': {
+                    'itemId': 'tool_result_content',
+                  },
+                }),
                 parts: [
-                  TextToolOutputContentPart('forecast'),
+                  TextToolOutputContentPart(
+                    'forecast',
+                    providerMetadata: const ProviderMetadata({
+                      'anthropic': {
+                        'blockId': 'text_1',
+                      },
+                    }),
+                  ),
                   JsonToolOutputContentPart({
                     'temperature': 28,
                   }),
+                  const FileToolOutputContentPart(
+                    mediaType: 'image/png',
+                    filename: 'preview.png',
+                    data: FileBytesData.constBytes([4, 5, 6]),
+                    providerMetadata: ProviderMetadata({
+                      'openai': {
+                        'fileId': 'file_123',
+                      },
+                    }),
+                  ),
+                  const CustomToolOutputContentPart(
+                    kind: 'openai.computer_screenshot',
+                    data: {
+                      'width': 1024,
+                      'height': 768,
+                    },
+                  ),
                 ],
               ),
             ),
@@ -244,14 +280,34 @@ void main() {
       expect(jsonResult.output, {
         'temperature': 28,
       });
+      expect(
+        jsonResult.toolOutput.providerMetadata!['openai'],
+        containsPair('itemId', 'tool_result_json'),
+      );
       expect(deniedResult.toolOutput, isA<ExecutionDeniedToolOutput>());
       expect(deniedResult.toolOutput.denied, isTrue);
       expect(deniedResult.output, 'requires approval');
       expect(contentResult.toolOutput, isA<ContentToolOutput>());
+      final contentOutput = contentResult.toolOutput as ContentToolOutput;
+      expect(contentOutput.parts, hasLength(4));
       expect(
-        (contentResult.toolOutput as ContentToolOutput).parts,
-        hasLength(2),
+        contentOutput.providerMetadata!['openai'],
+        containsPair('itemId', 'tool_result_content'),
       );
+      final contentText = contentOutput.parts[0] as TextToolOutputContentPart;
+      expect(
+        contentText.providerMetadata!['anthropic'],
+        containsPair('blockId', 'text_1'),
+      );
+      final contentFile = contentOutput.parts[2] as FileToolOutputContentPart;
+      expect(contentFile.filename, 'preview.png');
+      expect(contentFile.bytes, [4, 5, 6]);
+      expect(
+        contentFile.providerMetadata!['openai'],
+        containsPair('fileId', 'file_123'),
+      );
+      final custom = contentOutput.parts[3] as CustomToolOutputContentPart;
+      expect(custom.kind, 'openai.computer_screenshot');
     });
 
     test('decodes legacy uri and bytes file JSON into FileData', () {
@@ -293,6 +349,37 @@ void main() {
       expect(bytesPart.bytes, [1, 2, 3]);
       expect(urlPart.data, isA<FileUrlData>());
       expect(urlPart.uri, Uri.parse('https://example.com/legacy.png'));
+    });
+
+    test('decodes repo-ref dynamic tool flags in prompt JSON', () {
+      const codec = PromptJsonCodec();
+
+      final decoded = codec.decodeMessages({
+        'schemaVersion': '2026-03-1',
+        'kind': PromptJsonCodec.envelopeKind,
+        'data': {
+          'messages': [
+            {
+              'role': 'assistant',
+              'parts': [
+                {
+                  'type': 'tool-call',
+                  'toolCallId': 'tool-1',
+                  'toolName': 'mcp.open_browser',
+                  'input': {
+                    'url': 'https://example.com',
+                  },
+                  'dynamic': true,
+                },
+              ],
+            },
+          ],
+        },
+      });
+
+      final assistant = decoded.single as AssistantPromptMessage;
+      final toolCall = assistant.parts.single as ToolCallPromptPart;
+      expect(toolCall.isDynamic, isTrue);
     });
   });
 
@@ -446,6 +533,7 @@ void main() {
 
       final tool = message.parts.whereType<ToolUiPart>().single;
       expect(tool.state, ToolUiPartState.approvalResponded);
+      expect(tool.toolOutput, isA<JsonToolOutput>());
       expect(tool.providerExecuted, isTrue);
       expect(tool.isDynamic, isTrue);
       expect(tool.approval?.approvalId, 'approval-1');
@@ -529,6 +617,108 @@ void main() {
       final warnings = decoded.single.metadata[ChatUiMetadataKeys.warnings]
           as List<ModelWarning>;
       expect(warnings, isEmpty);
+    });
+
+    test('round-trips structured tool UI output variants', () {
+      const codec = ChatUiJsonCodec();
+
+      final decoded = codec.decodeMessages(
+        codec.encodeMessages([
+          ChatUiMessage(
+            id: 'assistant-1',
+            role: ChatUiRole.assistant,
+            parts: [
+              ToolUiPart(
+                toolCallId: 'tool-1',
+                toolName: 'render',
+                state: ToolUiPartState.outputAvailable,
+                input: const {
+                  'city': 'London',
+                },
+                toolOutput: ContentToolOutput(
+                  providerMetadata: const ProviderMetadata({
+                    'openai': {
+                      'itemId': 'tool_result_1',
+                    },
+                  }),
+                  parts: [
+                    const TextToolOutputContentPart('forecast'),
+                    JsonToolOutputContentPart({
+                      'temperature': 28,
+                    }),
+                    const FileToolOutputContentPart(
+                      mediaType: 'image/png',
+                      filename: 'preview.png',
+                      data: FileBytesData.constBytes([4, 5, 6]),
+                    ),
+                    const CustomToolOutputContentPart(
+                      kind: 'openai.computer_screenshot',
+                      data: {
+                        'width': 1024,
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const ToolUiPart(
+                toolCallId: 'tool-2',
+                toolName: 'browser',
+                state: ToolUiPartState.outputDenied,
+                toolOutput: ExecutionDeniedToolOutput('requires approval'),
+              ),
+            ],
+          ),
+        ]),
+      );
+
+      final parts = decoded.single.parts.whereType<ToolUiPart>().toList();
+      expect(parts[0].toolOutput, isA<ContentToolOutput>());
+      final contentOutput = parts[0].toolOutput as ContentToolOutput;
+      expect(contentOutput.parts, hasLength(4));
+      expect(
+        contentOutput.providerMetadata!['openai'],
+        containsPair('itemId', 'tool_result_1'),
+      );
+      expect(contentOutput.parts[2], isA<FileToolOutputContentPart>());
+      expect(contentOutput.parts[3], isA<CustomToolOutputContentPart>());
+      expect(parts[1].toolOutput, isA<ExecutionDeniedToolOutput>());
+      expect(parts[1].output, 'requires approval');
+    });
+
+    test('decodes legacy tool UI output fields', () {
+      const codec = ChatUiJsonCodec();
+
+      final decoded = codec.decodeMessages({
+        'schemaVersion': '2026-03-1',
+        'kind': ChatUiJsonCodec.envelopeKind,
+        'data': {
+          'messages': [
+            {
+              'id': 'assistant-1',
+              'role': 'assistant',
+              'parts': [
+                {
+                  'type': 'tool',
+                  'toolCallId': 'tool-1',
+                  'toolName': 'search',
+                  'state': 'outputError',
+                  'input': null,
+                  'output': 'timeout',
+                  'errorText': 'timeout',
+                  'dynamic': true,
+                },
+              ],
+              'metadata': {},
+            },
+          ],
+        },
+      });
+
+      final tool = decoded.single.parts.whereType<ToolUiPart>().single;
+      expect(tool.toolOutput, isA<ErrorTextToolOutput>());
+      expect(tool.output, 'timeout');
+      expect(tool.errorText, 'timeout');
+      expect(tool.isDynamic, isTrue);
     });
   });
 }

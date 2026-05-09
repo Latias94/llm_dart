@@ -2553,6 +2553,129 @@ void main() {
       expect(result.warnings, isEmpty);
     });
 
+    test('chat completions replay stringifies structured common tool results',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'chatcmpl_structured_tool_replay_1',
+                'model': 'gpt-4.1-mini',
+                'created': 1710000104,
+                'choices': [
+                  {
+                    'index': 0,
+                    'finish_reason': 'stop',
+                    'message': {
+                      'role': 'assistant',
+                      'content': 'Replay accepted.',
+                    },
+                  },
+                ],
+                'usage': {
+                  'prompt_tokens': 5,
+                  'completion_tokens': 2,
+                  'total_tokens': 7,
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel(
+        'gpt-4.1-mini',
+        settings: const OpenAIChatModelSettings(
+          useResponsesApi: false,
+        ),
+      );
+
+      final result = await model.generate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage.text('Continue after the tool call.'),
+            AssistantPromptMessage(
+              parts: [
+                ToolCallPromptPart(
+                  toolCallId: 'call_1',
+                  toolName: 'weather',
+                  input: {
+                    'city': 'Hong Kong',
+                  },
+                ),
+              ],
+            ),
+            ToolPromptMessage(
+              toolName: 'weather',
+              parts: [
+                ToolResultPromptPart(
+                  toolCallId: 'call_1',
+                  toolName: 'weather',
+                  toolOutput: ContentToolOutput(
+                    parts: [
+                      const TextToolOutputContentPart('forecast'),
+                      const JsonToolOutputContentPart({
+                        'summary': 'ok',
+                      }),
+                      const FileToolOutputContentPart(
+                        mediaType: 'text/plain',
+                        filename: 'notes.txt',
+                        data: FileTextData('hello'),
+                      ),
+                      const CustomToolOutputContentPart(
+                        kind: 'demo.custom',
+                        data: {
+                          'flag': true,
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(
+        requestBody['messages'],
+        [
+          {
+            'role': 'user',
+            'content': 'Continue after the tool call.',
+          },
+          {
+            'role': 'assistant',
+            'content': '',
+            'tool_calls': [
+              {
+                'id': 'call_1',
+                'type': 'function',
+                'function': {
+                  'name': 'weather',
+                  'arguments': '{"city":"Hong Kong"}',
+                },
+              },
+            ],
+          },
+          {
+            'role': 'tool',
+            'tool_call_id': 'call_1',
+            'content':
+                '[{"type":"text","text":"forecast"},{"type":"json","value":{"summary":"ok"}},{"type":"file","mediaType":"text/plain","filename":"notes.txt","data":{"type":"text","text":"hello"}},{"type":"custom","kind":"demo.custom","data":{"flag":true}}]',
+          },
+        ],
+      );
+      expect(result.text, 'Replay accepted.');
+      expect(result.warnings, isEmpty);
+    });
+
     test(
         'chat completions replay encodes failed common tool results as fallback text',
         () async {

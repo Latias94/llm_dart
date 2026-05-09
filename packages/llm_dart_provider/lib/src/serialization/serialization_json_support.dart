@@ -28,6 +28,15 @@ final class SerializationJsonSupport {
     return ProviderMetadata(asJsonMap(value, path: path));
   }
 
+  static bool decodeDynamicFlag(
+    JsonMap map, {
+    required String path,
+  }) {
+    return asNullableJsonBool(map['isDynamic'], path: '$path.isDynamic') ??
+        asNullableJsonBool(map['dynamic'], path: '$path.dynamic') ??
+        false;
+  }
+
   static JsonMap encodeUsageStats(UsageStats stats) {
     return {
       'inputTokens': stats.inputTokens,
@@ -248,31 +257,43 @@ final class SerializationJsonSupport {
 
   static JsonMap encodeToolOutput(ToolOutput output) {
     return switch (output) {
-      TextToolOutput(:final value) => {
+      TextToolOutput(:final value, :final providerMetadata) => {
           'type': 'text',
           'value': value,
+          if (providerMetadata != null)
+            'providerMetadata': encodeProviderMetadata(providerMetadata),
         },
-      JsonToolOutput(:final value) => {
+      JsonToolOutput(:final value, :final providerMetadata) => {
           'type': 'json',
           'value': ensureJsonValue(value, path: r'$.toolOutput.value'),
+          if (providerMetadata != null)
+            'providerMetadata': encodeProviderMetadata(providerMetadata),
         },
-      ErrorTextToolOutput(:final value) => {
+      ErrorTextToolOutput(:final value, :final providerMetadata) => {
           'type': 'error-text',
           'value': value,
+          if (providerMetadata != null)
+            'providerMetadata': encodeProviderMetadata(providerMetadata),
         },
-      ErrorJsonToolOutput(:final value) => {
+      ErrorJsonToolOutput(:final value, :final providerMetadata) => {
           'type': 'error-json',
           'value': ensureJsonValue(value, path: r'$.toolOutput.value'),
+          if (providerMetadata != null)
+            'providerMetadata': encodeProviderMetadata(providerMetadata),
         },
-      ExecutionDeniedToolOutput(:final reason) => {
+      ExecutionDeniedToolOutput(:final reason, :final providerMetadata) => {
           'type': 'execution-denied',
           if (reason != null) 'reason': reason,
+          if (providerMetadata != null)
+            'providerMetadata': encodeProviderMetadata(providerMetadata),
         },
-      ContentToolOutput(:final parts) => {
+      ContentToolOutput(:final parts, :final providerMetadata) => {
           'type': 'content',
           'parts': [
             for (final part in parts) encodeToolOutputContentPart(part),
           ],
+          if (providerMetadata != null)
+            'providerMetadata': encodeProviderMetadata(providerMetadata),
         },
     };
   }
@@ -285,13 +306,40 @@ final class SerializationJsonSupport {
     final type = asJsonString(map['type'], path: '$path.type');
 
     return switch (type) {
-      'text' => TextToolOutput(asJsonString(map['value'], path: '$path.value')),
-      'json' => JsonToolOutput(map['value']),
-      'error-text' =>
-        ErrorTextToolOutput(asJsonString(map['value'], path: '$path.value')),
-      'error-json' => ErrorJsonToolOutput(map['value']),
-      'execution-denied' => ExecutionDeniedToolOutput(
-          asNullableJsonString(map['reason'], path: '$path.reason'),
+      'text' => TextToolOutput(
+          asJsonString(map['value'], path: '$path.value'),
+          providerMetadata: decodeProviderMetadata(
+            map['providerMetadata'],
+            path: '$path.providerMetadata',
+          ),
+        ),
+      'json' => JsonToolOutput(
+          map['value'],
+          providerMetadata: decodeProviderMetadata(
+            map['providerMetadata'],
+            path: '$path.providerMetadata',
+          ),
+        ),
+      'error-text' => ErrorTextToolOutput(
+          asJsonString(map['value'], path: '$path.value'),
+          providerMetadata: decodeProviderMetadata(
+            map['providerMetadata'],
+            path: '$path.providerMetadata',
+          ),
+        ),
+      'error-json' => ErrorJsonToolOutput(
+          map['value'],
+          providerMetadata: decodeProviderMetadata(
+            map['providerMetadata'],
+            path: '$path.providerMetadata',
+          ),
+        ),
+      'execution-denied' => ExecutionDeniedToolOutput.withMetadata(
+          reason: asNullableJsonString(map['reason'], path: '$path.reason'),
+          providerMetadata: decodeProviderMetadata(
+            map['providerMetadata'],
+            path: '$path.providerMetadata',
+          ),
         ),
       'content' => ContentToolOutput(
           parts: [
@@ -303,6 +351,10 @@ final class SerializationJsonSupport {
                 path: '$path.parts[${entry.key}]',
               ),
           ],
+          providerMetadata: decodeProviderMetadata(
+            map['providerMetadata'],
+            path: '$path.providerMetadata',
+          ),
         ),
       _ =>
         throw FormatException('Unsupported tool output type "$type" at $path.'),
@@ -311,16 +363,49 @@ final class SerializationJsonSupport {
 
   static JsonMap encodeToolOutputContentPart(ToolOutputContentPart part) {
     return switch (part) {
-      TextToolOutputContentPart(:final text) => {
+      TextToolOutputContentPart(:final text, :final providerMetadata) => {
           'type': 'text',
           'text': text,
+          if (providerMetadata != null)
+            'providerMetadata': encodeProviderMetadata(providerMetadata),
         },
-      JsonToolOutputContentPart(:final value) => {
+      JsonToolOutputContentPart(:final value, :final providerMetadata) => {
           'type': 'json',
           'value': ensureJsonValue(
             value,
             path: r'$.toolOutput.parts[].value',
           ),
+          if (providerMetadata != null)
+            'providerMetadata': encodeProviderMetadata(providerMetadata),
+        },
+      FileToolOutputContentPart(
+        :final mediaType,
+        :final filename,
+        :final data,
+        :final providerMetadata,
+      ) =>
+        {
+          'type': 'file',
+          'mediaType': mediaType,
+          if (filename != null) 'filename': filename,
+          'data': encodeFileData(data),
+          if (providerMetadata != null)
+            'providerMetadata': encodeProviderMetadata(providerMetadata),
+        },
+      CustomToolOutputContentPart(
+        :final kind,
+        :final data,
+        :final providerMetadata,
+      ) =>
+        {
+          'type': 'custom',
+          'kind': kind,
+          'data': ensureJsonValue(
+            data,
+            path: r'$.toolOutput.parts[].data',
+          ),
+          if (providerMetadata != null)
+            'providerMetadata': encodeProviderMetadata(providerMetadata),
         },
     };
   }
@@ -335,12 +420,59 @@ final class SerializationJsonSupport {
     return switch (type) {
       'text' => TextToolOutputContentPart(
           asJsonString(map['text'], path: '$path.text'),
+          providerMetadata: decodeProviderMetadata(
+            map['providerMetadata'],
+            path: '$path.providerMetadata',
+          ),
         ),
-      'json' => JsonToolOutputContentPart(map['value']),
+      'json' => JsonToolOutputContentPart(
+          map['value'],
+          providerMetadata: decodeProviderMetadata(
+            map['providerMetadata'],
+            path: '$path.providerMetadata',
+          ),
+        ),
+      'file' => FileToolOutputContentPart(
+          mediaType: asJsonString(map['mediaType'], path: '$path.mediaType'),
+          filename:
+              asNullableJsonString(map['filename'], path: '$path.filename'),
+          data: _decodeRequiredToolOutputFileData(map, path: path),
+          providerMetadata: decodeProviderMetadata(
+            map['providerMetadata'],
+            path: '$path.providerMetadata',
+          ),
+        ),
+      'custom' => CustomToolOutputContentPart(
+          kind: asJsonString(map['kind'], path: '$path.kind'),
+          data: map['data'],
+          providerMetadata: decodeProviderMetadata(
+            map['providerMetadata'],
+            path: '$path.providerMetadata',
+          ),
+        ),
       _ => throw FormatException(
           'Unsupported tool output content part type "$type" at $path.',
         ),
     };
+  }
+
+  static FileData _decodeRequiredToolOutputFileData(
+    JsonMap map, {
+    required String path,
+  }) {
+    final data = decodeFileData(map['data'], path: '$path.data') ??
+        fileDataFromLegacy(
+          uri: decodeUri(map['uri'], path: '$path.uri'),
+          bytes: map.containsKey('data')
+              ? null
+              : decodeBytes(map['bytes'], path: '$path.bytes'),
+        );
+
+    if (data == null) {
+      throw FormatException('Expected file data, uri, or bytes at $path.');
+    }
+
+    return data;
   }
 
   static JsonMap encodeBytes(List<int> bytes) {

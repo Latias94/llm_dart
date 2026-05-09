@@ -11,7 +11,9 @@ Flutter adapters.
 ## What It Provides
 
 - prompt messages and content parts
-- tool definitions and tool outputs
+- tool definitions and explicit `ToolOutput` variants for text, JSON, error,
+  denied, and content-rich tool results
+- provider metadata on shared content and tool payloads
 - language, embedding, image, speech, and transcription model interfaces
 - model results, warnings, errors, usage, metadata, and finish reasons
 - model capability profiles for UI gating and provider discovery
@@ -25,7 +27,13 @@ Use this package directly when you need to:
 - implement a custom `LanguageModel` or other shared model interface
 - build a provider package that should stay independent from the root facade
 - serialize shared prompt, stream, or chat UI payloads
+- encode richer tool results such as multimodal content or provider-native
+  file/custom payloads
 - inspect capability profiles without taking a dependency on app runtimes
+
+`ToolResultPromptPart` and `ToolResultContent` both accept `toolOutput:` so
+provider code can keep tool result structure explicit. The compatibility
+`output:` and `isError:` shorthand remain available for older call sites.
 
 ## When Not To Use It
 

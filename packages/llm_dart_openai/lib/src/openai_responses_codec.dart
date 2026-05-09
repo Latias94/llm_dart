@@ -1007,6 +1007,42 @@ final class OpenAIResponsesCodec {
     return jsonEncode(value);
   }
 
+  Object? _normalizeJsonValue(Object? value) {
+    if (value == null || value is String || value is num || value is bool) {
+      return value;
+    }
+
+    if (value is Map<String, Object?>) {
+      return value.map(
+        (key, nestedValue) => MapEntry(key, _normalizeJsonValue(nestedValue)),
+      );
+    }
+
+    if (value is Map) {
+      final normalized = <String, Object?>{};
+      for (final entry in value.entries) {
+        final key = entry.key;
+        if (key is! String) {
+          throw UnsupportedError(
+            'Expected a string key in a JSON payload.',
+          );
+        }
+
+        normalized[key] = _normalizeJsonValue(entry.value);
+      }
+
+      return normalized;
+    }
+
+    if (value is List) {
+      return [for (final item in value) _normalizeJsonValue(item)];
+    }
+
+    throw UnsupportedError(
+      'Expected a JSON-safe value but received ${value.runtimeType}.',
+    );
+  }
+
   List<Map<String, Object?>> _encodeTools({
     required List<FunctionToolDefinition> tools,
     required List<OpenAIBuiltInTool>? builtInTools,
@@ -1078,15 +1114,13 @@ final class OpenAIResponsesCodec {
     return normalized;
   }
 
-  String _encodeToolOutput(ToolOutput output) {
+  Object? _encodeToolOutput(ToolOutput output) {
     if (output is ExecutionDeniedToolOutput) {
       return output.reason ?? 'Tool execution denied';
     }
 
     if (output is ContentToolOutput) {
-      throw UnsupportedError(
-        'OpenAI Responses tool result replay does not support ContentToolOutput yet.',
-      );
+      return _encodeContentToolOutput(output.parts);
     }
 
     final value = output.value;
@@ -1099,6 +1133,124 @@ final class OpenAIResponsesCodec {
     }
 
     return jsonEncode(value);
+  }
+
+  List<Object?> _encodeContentToolOutput(List<ToolOutputContentPart> parts) {
+    return [
+      for (final part in parts) _encodeContentToolOutputPart(part),
+    ];
+  }
+
+  Object _encodeContentToolOutputPart(ToolOutputContentPart part) {
+    return switch (part) {
+      TextToolOutputContentPart(:final text) => {
+          'type': 'input_text',
+          'text': text,
+        },
+      JsonToolOutputContentPart(:final value) => {
+          'type': 'input_text',
+          'text': jsonEncode(_normalizeJsonValue(value)),
+        },
+      FileToolOutputContentPart(
+        :final mediaType,
+        :final filename,
+        :final data,
+        :final providerMetadata,
+      ) =>
+        _encodeContentToolOutputFilePart(
+          mediaType: mediaType,
+          filename: filename,
+          data: data,
+          providerMetadata: providerMetadata,
+        ),
+      CustomToolOutputContentPart(:final kind, :final data) => {
+          'type': 'input_text',
+          'text': jsonEncode(
+            _normalizeJsonValue({
+              'type': 'custom',
+              'kind': kind,
+              if (data != null) 'data': data,
+            }),
+          ),
+        },
+    };
+  }
+
+  Map<String, Object?> _encodeContentToolOutputFilePart({
+    required String mediaType,
+    required String? filename,
+    required FileData data,
+    required ProviderMetadata? providerMetadata,
+  }) {
+    final openaiMetadata = _providerMetadataValues(
+      providerMetadata,
+      namespace: 'openai',
+    );
+    final imageDetail = _asString(openaiMetadata?['imageDetail']);
+    final isImage = mediaType == 'image/*' || mediaType.startsWith('image/');
+    final reference = data.providerReference;
+
+    if (reference?.containsProvider('openai') == true) {
+      final fileId = reference!.requireProvider(
+        'openai',
+        context: 'OpenAI Responses tool output file part',
+      );
+      return {
+        'type': isImage ? 'input_image' : 'input_file',
+        'file_id': fileId,
+        if (isImage && imageDetail != null) 'detail': imageDetail,
+      };
+    }
+
+    final uri = data.uri;
+    if (uri != null) {
+      return {
+        'type': isImage ? 'input_image' : 'input_file',
+        if (isImage)
+          'image_url': uri.toString()
+        else
+          'file_url': uri.toString(),
+        if (isImage && imageDetail != null) 'detail': imageDetail,
+      };
+    }
+
+    final bytes = data.bytes;
+    if (bytes != null) {
+      final normalizedMediaType =
+          isImage ? _normalizeImageMediaTypeForDataUrl(mediaType) : mediaType;
+      return {
+        'type': isImage ? 'input_image' : 'input_file',
+        if (isImage)
+          'image_url': 'data:$normalizedMediaType;base64,${base64Encode(bytes)}'
+        else
+          'filename': filename ?? 'data',
+        if (!isImage)
+          'file_data':
+              'data:$normalizedMediaType;base64,${base64Encode(bytes)}',
+        if (isImage && imageDetail != null) 'detail': imageDetail,
+      };
+    }
+
+    final text = data.text;
+    if (text != null) {
+      if (isImage) {
+        throw UnsupportedError(
+          'OpenAI Responses tool output image parts require in-memory bytes, a URI, or an OpenAI provider reference.',
+        );
+      }
+
+      final normalizedMediaType = _normalizeImageMediaTypeForDataUrl(mediaType);
+      final encodedText = base64Encode(utf8.encode(text));
+      return {
+        'type': 'input_file',
+        'filename': filename ?? 'data',
+        'file_data': 'data:$normalizedMediaType;base64,$encodedText',
+      };
+    }
+
+    throw UnsupportedError(
+      'OpenAI Responses tool output file part requires in-memory bytes, text, a URI, or an OpenAI provider reference.',
+    );
   }
 
   String? _openAIFileId({

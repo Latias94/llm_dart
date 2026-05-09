@@ -196,6 +196,7 @@ void main() {
       final toolResult = decoded[9] as ToolResultEvent;
       expect(toolResult.toolResult.preliminary, isTrue);
       expect(toolResult.toolResult.isDynamic, isTrue);
+      expect(toolResult.toolResult.toolOutput, isA<JsonToolOutput>());
 
       final sourceEvent = decoded[10] as SourceEvent;
       expect(sourceEvent.source.kind, SourceReferenceKind.url);
@@ -218,6 +219,117 @@ void main() {
 
       final abort = decoded[15] as AbortEvent;
       expect(abort.reason, 'user cancelled');
+    });
+
+    test('round-trips structured tool result output variants', () {
+      const codec = TextStreamEventJsonCodec();
+
+      final decoded = codec.decodeEvents(
+        codec.encodeEvents([
+          ToolResultEvent(
+            toolResult: ToolResultContent(
+              toolCallId: 'tool-1',
+              toolName: 'search',
+              toolOutput: const ExecutionDeniedToolOutput('needs approval'),
+            ),
+          ),
+          ToolResultEvent(
+            toolResult: ToolResultContent(
+              toolCallId: 'tool-2',
+              toolName: 'render',
+              toolOutput: ContentToolOutput(
+                providerMetadata: const ProviderMetadata({
+                  'openai': {
+                    'itemId': 'tool_result_2',
+                  },
+                }),
+                parts: [
+                  const TextToolOutputContentPart('forecast'),
+                  JsonToolOutputContentPart({
+                    'temperature': 28,
+                  }),
+                  const FileToolOutputContentPart(
+                    mediaType: 'image/png',
+                    filename: 'preview.png',
+                    data: FileBytesData.constBytes([4, 5, 6]),
+                  ),
+                  const CustomToolOutputContentPart(
+                    kind: 'openai.computer_screenshot',
+                    data: {
+                      'width': 1024,
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ]),
+      );
+
+      final denied = decoded[0] as ToolResultEvent;
+      expect(denied.toolResult.toolOutput, isA<ExecutionDeniedToolOutput>());
+      expect(denied.toolResult.toolOutput.denied, isTrue);
+      expect(denied.toolResult.output, 'needs approval');
+
+      final content = decoded[1] as ToolResultEvent;
+      expect(content.toolResult.toolOutput, isA<ContentToolOutput>());
+      final contentOutput = content.toolResult.toolOutput as ContentToolOutput;
+      expect(contentOutput.parts, hasLength(4));
+      expect(
+        contentOutput.providerMetadata!['openai'],
+        containsPair('itemId', 'tool_result_2'),
+      );
+      expect(contentOutput.parts[2], isA<FileToolOutputContentPart>());
+      expect(contentOutput.parts[3], isA<CustomToolOutputContentPart>());
+    });
+
+    test('still decodes legacy output/isError tool result stream payloads', () {
+      const codec = TextStreamEventJsonCodec();
+
+      final decoded = codec.decodeEvent({
+        'type': 'tool-result',
+        'toolResult': {
+          'toolCallId': 'tool-1',
+          'toolName': 'search',
+          'output': 'timeout',
+          'isError': true,
+        },
+      }) as ToolResultEvent;
+
+      expect(decoded.toolResult.toolOutput, isA<ErrorTextToolOutput>());
+      expect(decoded.toolResult.isError, isTrue);
+      expect(decoded.toolResult.output, 'timeout');
+    });
+
+    test('decodes repo-ref dynamic tool flags in stream payloads', () {
+      const codec = TextStreamEventJsonCodec();
+
+      final toolCall = codec.decodeEvent({
+        'type': 'tool-call',
+        'toolCall': {
+          'toolCallId': 'tool-1',
+          'toolName': 'mcp.open_browser',
+          'input': {
+            'url': 'https://example.com',
+          },
+          'dynamic': true,
+        },
+      }) as ToolCallEvent;
+      expect(toolCall.toolCall.isDynamic, isTrue);
+
+      final toolResult = codec.decodeEvent({
+        'type': 'tool-result',
+        'toolResult': {
+          'toolCallId': 'tool-1',
+          'toolName': 'mcp.open_browser',
+          'toolOutput': {
+            'type': 'execution-denied',
+            'reason': 'needs approval',
+          },
+          'dynamic': true,
+        },
+      }) as ToolResultEvent;
+      expect(toolResult.toolResult.isDynamic, isTrue);
     });
 
     test('decodes both canonical and legacy step-end event names', () {

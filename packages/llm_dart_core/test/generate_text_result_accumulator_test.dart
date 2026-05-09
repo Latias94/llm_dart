@@ -109,6 +109,39 @@ void main() {
       );
     });
 
+    test('collects denied tool output as a replayable tool result', () async {
+      final result = await collectGenerateTextResult(
+        Stream<TextStreamEvent>.fromIterable([
+          const ToolCallEvent(
+            toolCall: ToolCallContent(
+              toolCallId: 'tool_1',
+              toolName: 'browser',
+              input: {
+                'url': 'https://example.com',
+              },
+              isDynamic: true,
+            ),
+          ),
+          const ToolOutputDeniedEvent(
+            toolCallId: 'tool_1',
+            providerMetadata: ProviderMetadata({
+              'openai': {
+                'approvalPhase': 'denied',
+              },
+            }),
+          ),
+          const FinishEvent(finishReason: FinishReason.stop),
+        ]),
+      );
+
+      final toolResult =
+          result.content.whereType<ToolResultContentPart>().single.toolResult;
+      expect(toolResult.toolOutput, isA<ExecutionDeniedToolOutput>());
+      expect(toolResult.toolOutput.denied, isTrue);
+      expect(toolResult.toolName, 'browser');
+      expect(toolResult.isDynamic, isTrue);
+    });
+
     test('throws when the stream ends before a finish event', () async {
       await expectLater(
         collectGenerateTextResult(

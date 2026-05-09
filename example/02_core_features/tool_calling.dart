@@ -61,10 +61,10 @@ Future<void> main() async {
           core.ToolResultPromptPart(
             toolCallId: toolCall.toolCallId,
             toolName: toolCall.toolName,
-            output: {
+            toolOutput: core.JsonToolOutput({
               'temperature': 28,
               'condition': 'humid',
-            },
+            }),
           ),
         ],
       ),

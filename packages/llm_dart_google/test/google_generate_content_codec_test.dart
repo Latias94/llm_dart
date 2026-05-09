@@ -857,6 +857,89 @@ void main() {
     });
 
     test(
+        'encodes ContentToolOutput as a Google function response with files and serialized structured parts',
+        () {
+      final request = codec.encodeRequest(
+        modelId: 'gemini-3-pro-preview',
+        prompt: [
+          UserPromptMessage.text('Continue the conversation.'),
+          ToolPromptMessage(
+            toolName: 'render_report',
+            parts: [
+              ToolResultPromptPart(
+                toolCallId: 'call_google_5',
+                toolName: 'render_report',
+                toolOutput: ContentToolOutput(
+                  parts: [
+                    const TextToolOutputContentPart('Report ready'),
+                    const JsonToolOutputContentPart({
+                      'summary': 'ok',
+                    }),
+                    const FileToolOutputContentPart(
+                      mediaType: 'image/png',
+                      filename: 'chart.png',
+                      data: FileBytesData.constBytes([1, 2, 3]),
+                    ),
+                    const CustomToolOutputContentPart(
+                      kind: 'demo.custom',
+                      data: {
+                        'flag': true,
+                      },
+                    ),
+                  ],
+                  providerMetadata: const ProviderMetadata({
+                    'google': {
+                      'functionCallId': 'call_google_5',
+                    },
+                  }),
+                ),
+              ),
+            ],
+          ),
+        ],
+        tools: const [],
+        toolChoice: null,
+        options: const GenerateTextOptions(),
+        settings: const GoogleChatModelSettings(),
+        providerOptions: const GoogleGenerateTextOptions(
+          includeServerSideToolInvocations: true,
+        ),
+      );
+
+      final contents = request.body['contents'] as List<Object?>;
+      expect(contents, hasLength(2));
+      expect(
+        contents[1],
+        {
+          'role': 'user',
+          'parts': [
+            {
+              'functionResponse': {
+                'id': 'call_google_5',
+                'name': 'render_report',
+                'response': {
+                  'name': 'render_report',
+                  'content':
+                      'Report ready\n{"type":"json","value":{"summary":"ok"}}\n{"type":"custom","kind":"demo.custom","data":{"flag":true}}',
+                },
+                'parts': [
+                  {
+                    'inlineData': {
+                      'mimeType': 'image/png',
+                      'data': 'AQID',
+                      'displayName': 'chart.png',
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      );
+      expect(request.body.containsKey('toolConfig'), isFalse);
+    });
+
+    test(
         'encodes provider-owned Google server-side tool-call and tool-response replay in assistant history',
         () {
       final toolCallReplay = GoogleToolCallReplay.fromToolCall(

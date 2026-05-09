@@ -117,7 +117,9 @@ Keep the plan walkable and below 180 USD.
             core.ToolResultPromptPart(
               toolCallId: toolCall.toolCallId,
               toolName: toolCall.toolName,
-              output: _mockTripResearchOutput(toolCall),
+              toolOutput: core.JsonToolOutput(
+                _mockTripResearchOutput(toolCall),
+              ),
             ),
           ],
         ),

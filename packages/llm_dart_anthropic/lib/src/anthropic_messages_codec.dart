@@ -1180,7 +1180,7 @@ final class AnthropicMessagesCodec {
     );
   }
 
-  String _encodeToolOutput(
+  Object? _encodeToolOutput(
     ToolOutput output, {
     required String path,
   }) {
@@ -1189,8 +1189,9 @@ final class AnthropicMessagesCodec {
     }
 
     if (output is ContentToolOutput) {
-      throw UnsupportedError(
-        'Anthropic tool result replay does not support ContentToolOutput yet.',
+      return _encodeContentToolOutput(
+        output.parts,
+        path: path,
       );
     }
 
@@ -1206,6 +1207,219 @@ final class AnthropicMessagesCodec {
     return jsonEncode(
       _normalizeJsonValue(value, path: path),
     );
+  }
+
+  List<Object?> _encodeContentToolOutput(
+    List<ToolOutputContentPart> parts, {
+    required String path,
+  }) {
+    return [
+      for (var index = 0; index < parts.length; index++)
+        _encodeContentToolOutputPart(
+          parts[index],
+          path: '$path.parts[$index]',
+        ),
+    ];
+  }
+
+  Object _encodeContentToolOutputPart(
+    ToolOutputContentPart part, {
+    required String path,
+  }) {
+    return switch (part) {
+      TextToolOutputContentPart(:final text, :final providerMetadata) =>
+        _encodeToolOutputTextBlock(
+          text,
+          providerMetadata: providerMetadata,
+          path: path,
+        ),
+      JsonToolOutputContentPart(:final value, :final providerMetadata) =>
+        _encodeToolOutputTextBlock(
+          jsonEncode(_normalizeJsonValue(value, path: '$path.value')),
+          providerMetadata: providerMetadata,
+          path: path,
+        ),
+      FileToolOutputContentPart(
+        :final mediaType,
+        :final filename,
+        :final data,
+        :final providerMetadata,
+      ) =>
+        _encodeToolOutputFileBlock(
+          mediaType: mediaType,
+          filename: filename,
+          data: data,
+          providerMetadata: providerMetadata,
+          path: path,
+        ),
+      CustomToolOutputContentPart(
+        :final kind,
+        :final data,
+        :final providerMetadata,
+      ) =>
+        _encodeToolOutputTextBlock(
+          jsonEncode(
+            _normalizeJsonValue(
+              {
+                'type': 'custom',
+                'kind': kind,
+                if (data != null) 'data': data,
+              },
+              path: '$path.data',
+            ),
+          ),
+          providerMetadata: providerMetadata,
+          path: path,
+        ),
+    };
+  }
+
+  Map<String, Object?> _encodeToolOutputTextBlock(
+    String text, {
+    required ProviderMetadata? providerMetadata,
+    required String path,
+  }) {
+    return _applyCacheControl(
+      {
+        'type': 'text',
+        'text': text,
+      },
+      metadata: providerMetadata,
+      path: path,
+    );
+  }
+
+  Map<String, Object?> _encodeToolOutputFileBlock({
+    required String mediaType,
+    required String? filename,
+    required FileData data,
+    required ProviderMetadata? providerMetadata,
+    required String path,
+  }) {
+    final reference = data.providerReference;
+    final isImage = mediaType == 'image/*' || mediaType.startsWith('image/');
+    final hasAnthropicReference =
+        reference?.containsProvider('anthropic') == true;
+    final isDocument = isImage ||
+        hasAnthropicReference ||
+        _isDocumentToolOutputMediaType(mediaType);
+
+    if (!isDocument) {
+      throw UnsupportedError(
+        'Anthropic tool output file part media type $mediaType is not supported yet.',
+      );
+    }
+
+    if (hasAnthropicReference) {
+      final fileId = reference!.requireProvider(
+        'anthropic',
+        context: 'Anthropic tool output file part',
+      );
+      return _applyCacheControl(
+        {
+          'type': isImage ? 'image' : 'document',
+          'source': {
+            'type': 'file',
+            'file_id': fileId,
+          },
+        },
+        metadata: providerMetadata,
+        path: path,
+      );
+    }
+
+    final uri = data.uri;
+    if (uri != null) {
+      return _applyCacheControl(
+        {
+          'type': isImage ? 'image' : 'document',
+          'source': {
+            'type': 'url',
+            'url': uri.toString(),
+          },
+          if (!isImage && filename != null) 'title': filename,
+        },
+        metadata: providerMetadata,
+        path: path,
+      );
+    }
+
+    final bytes = data.bytes;
+    if (bytes != null) {
+      return _applyCacheControl(
+        {
+          'type': isImage ? 'image' : 'document',
+          'source': isImage
+              ? {
+                  'type': 'base64',
+                  'media_type': _normalizeImageMediaType(mediaType),
+                  'data': base64Encode(bytes),
+                }
+              : {
+                  'type': 'base64',
+                  'media_type': _normalizeDocumentMediaType(mediaType),
+                  'data': base64Encode(bytes),
+                },
+          if (!isImage && filename != null) 'title': filename,
+        },
+        metadata: providerMetadata,
+        path: path,
+      );
+    }
+
+    final text = data.text;
+    if (text != null) {
+      if (isImage) {
+        throw UnsupportedError(
+          'Anthropic tool output image parts require in-memory bytes, a URI, or an Anthropic provider reference.',
+        );
+      }
+
+      return _applyCacheControl(
+        {
+          'type': 'document',
+          'source': {
+            'type': 'text',
+            'media_type': 'text/plain',
+            'data': text,
+          },
+          if (filename != null) 'title': filename,
+        },
+        metadata: providerMetadata,
+        path: path,
+      );
+    }
+
+    throw UnsupportedError(
+      'Anthropic tool output file part requires in-memory bytes, text, a URI, or an Anthropic provider reference.',
+    );
+  }
+
+  bool _isDocumentToolOutputMediaType(String mediaType) {
+    return mediaType == 'application/pdf' ||
+        mediaType == 'text/plain' ||
+        mediaType.startsWith('text/') ||
+        mediaType == 'application/json' ||
+        mediaType.endsWith('+json') ||
+        mediaType == 'application/xml' ||
+        mediaType.endsWith('+xml');
+  }
+
+  String _normalizeDocumentMediaType(String mediaType) {
+    if (_isTextualDocumentMediaType(mediaType)) {
+      return 'text/plain';
+    }
+
+    return mediaType;
+  }
+
+  bool _isTextualDocumentMediaType(String mediaType) {
+    return mediaType == 'text/plain' ||
+        mediaType.startsWith('text/') ||
+        mediaType == 'application/json' ||
+        mediaType.endsWith('+json') ||
+        mediaType == 'application/xml' ||
+        mediaType.endsWith('+xml');
   }
 
   bool _isHttpUri(Uri uri) {

@@ -212,6 +212,19 @@ final class GenerateTextResultAccumulator {
         );
       case ToolOutputDeniedEvent():
         _mergeProviderMetadata(event.providerMetadata);
+        _partialToolCalls.remove(event.toolCallId);
+        final toolCall = _requireToolCallPart(event.toolCallId);
+        _appendPart(
+          ToolResultContentPart(
+            ToolResultContent(
+              toolCallId: event.toolCallId,
+              toolName: toolCall.toolCall.toolName,
+              toolOutput: const ExecutionDeniedToolOutput(),
+              isDynamic: toolCall.toolCall.isDynamic,
+            ),
+            providerMetadata: event.providerMetadata,
+          ),
+        );
       case SourceEvent():
         _appendPart(SourceContentPart(event.source));
         _mergeProviderMetadata(event.source.providerMetadata);
@@ -375,6 +388,18 @@ extension on GenerateTextResultAccumulator {
     }
 
     return _content[index] as ToolCallContentPart;
+  }
+
+  ToolCallContentPart _requireToolCallPart(String toolCallId) {
+    final value = _toolCallPart(toolCallId);
+    if (value != null) {
+      return value;
+    }
+
+    throw StateError(
+      'Received tool-output-denied for missing tool call with ID "$toolCallId". '
+      'Ensure a tool-call or completed tool-input event is applied first.',
+    );
   }
 
   void _upsertToolCallPart(ToolCallContentPart part) {

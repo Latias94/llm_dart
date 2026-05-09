@@ -137,6 +137,62 @@ void main() {
       expect(denied.toolOutput.denied, isTrue);
       expect(denied.output, 'requires approval');
     });
+
+    test('supports provider metadata and multimodal content output parts', () {
+      final output = ContentToolOutput(
+        providerMetadata: const ProviderMetadata({
+          'openai': {
+            'itemId': 'tool_result_1',
+          },
+        }),
+        parts: [
+          const TextToolOutputContentPart(
+            'forecast',
+            providerMetadata: ProviderMetadata({
+              'anthropic': {
+                'blockId': 'text_1',
+              },
+            }),
+          ),
+          const FileToolOutputContentPart(
+            mediaType: 'image/png',
+            filename: 'preview.png',
+            data: FileBytesData.constBytes([1, 2, 3]),
+            providerMetadata: ProviderMetadata({
+              'openai': {
+                'fileId': 'file_123',
+              },
+            }),
+          ),
+          const CustomToolOutputContentPart(
+            kind: 'openai.computer_screenshot',
+            data: {
+              'width': 1024,
+              'height': 768,
+            },
+          ),
+        ],
+      );
+
+      expect(
+        output.providerMetadata!['openai'],
+        containsPair('itemId', 'tool_result_1'),
+      );
+
+      final text = output.parts[0] as TextToolOutputContentPart;
+      expect(
+        text.providerMetadata!['anthropic'],
+        containsPair('blockId', 'text_1'),
+      );
+
+      final file = output.parts[1] as FileToolOutputContentPart;
+      expect(file.bytes, [1, 2, 3]);
+      expect(
+          file.providerMetadata!['openai'], containsPair('fileId', 'file_123'));
+
+      final custom = output.parts[2] as CustomToolOutputContentPart;
+      expect(custom.kind, 'openai.computer_screenshot');
+    });
   });
 
   group('ModelError', () {

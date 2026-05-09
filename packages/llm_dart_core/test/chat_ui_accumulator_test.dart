@@ -232,6 +232,7 @@ void main() {
       toolPart = message.parts.whereType<ToolUiPart>().single;
       expect(toolPart.state, ToolUiPartState.outputAvailable);
       expect(toolPart.preliminary, isTrue);
+      expect(toolPart.toolOutput, isA<JsonToolOutput>());
       expect((toolPart.output as Map<String, Object?>)['forecast'], 'sunny');
       expect(
         toolPart.resultProviderMetadata!['openai'],
@@ -256,10 +257,71 @@ void main() {
       toolPart = message.parts.whereType<ToolUiPart>().single;
       expect(message.parts.whereType<ToolUiPart>(), hasLength(1));
       expect(toolPart.preliminary, isFalse);
+      expect(toolPart.toolOutput, isA<JsonToolOutput>());
       expect(
         (toolPart.output as Map<String, Object?>)['temperatureC'],
         22,
       );
+    });
+
+    test('preserves structured tool outputs in UI projection', () {
+      final accumulator = ChatUiAccumulator(messageId: 'assistant-1');
+
+      accumulator.apply(
+        const ToolCallEvent(
+          toolCall: ToolCallContent(
+            toolCallId: 'tool-1',
+            toolName: 'render',
+            input: {
+              'city': 'London',
+            },
+            isDynamic: true,
+            title: 'Renderer',
+          ),
+        ),
+      );
+
+      var message = accumulator.apply(
+        ToolResultEvent(
+          toolResult: ToolResultContent(
+            toolCallId: 'tool-1',
+            toolName: 'render',
+            toolOutput: ContentToolOutput(
+              parts: [
+                TextToolOutputContentPart('forecast'),
+                JsonToolOutputContentPart({
+                  'temperature': 28,
+                }),
+              ],
+            ),
+            isDynamic: true,
+          ),
+        ),
+      );
+
+      var toolPart = message.parts.whereType<ToolUiPart>().single;
+      expect(toolPart.state, ToolUiPartState.outputAvailable);
+      expect(toolPart.toolOutput, isA<ContentToolOutput>());
+      expect((toolPart.toolOutput as ContentToolOutput).parts, hasLength(2));
+      expect(toolPart.isDynamic, isTrue);
+      expect(toolPart.title, 'Renderer');
+
+      message = accumulator.apply(
+        ToolResultEvent(
+          toolResult: ToolResultContent(
+            toolCallId: 'tool-1',
+            toolName: 'render',
+            toolOutput: const ExecutionDeniedToolOutput('requires approval'),
+            isDynamic: true,
+          ),
+        ),
+      );
+
+      toolPart = message.parts.whereType<ToolUiPart>().single;
+      expect(toolPart.state, ToolUiPartState.outputDenied);
+      expect(toolPart.toolOutput, isA<ExecutionDeniedToolOutput>());
+      expect(toolPart.output, 'requires approval');
+      expect(toolPart.isDynamic, isTrue);
     });
 
     test('projects malformed tool input into the existing tool error path', () {
@@ -372,6 +434,7 @@ void main() {
       expect(toolPart.providerExecuted, isTrue);
       expect(toolPart.isDynamic, isTrue);
       expect(toolPart.title, 'Browser');
+      expect(toolPart.toolOutput, isA<ExecutionDeniedToolOutput>());
       expect(toolPart.approval?.approvalId, 'approval-1');
       expect(toolPart.approval?.approved, isNull);
       expect(

@@ -105,9 +105,16 @@ void main() {
         ],
         functionToolExecutor: (request) async {
           executedCalls.add(request);
-          return const GenerateTextToolExecutionResult.output({
-            'forecast': 'sunny',
-          });
+          return GenerateTextToolExecutionResult.toolOutput(
+            ContentToolOutput(
+              parts: [
+                TextToolOutputContentPart('forecast'),
+                JsonToolOutputContentPart({
+                  'forecast': 'sunny',
+                }),
+              ],
+            ),
+          );
         },
         onStepStart: (event) {
           stepStartEvents.add(event);
@@ -146,9 +153,8 @@ void main() {
       expect(toolMessage.toolName, 'weather');
       final toolResult = toolMessage.parts.single as ToolResultPromptPart;
       expect(toolResult.toolCallId, 'tool-1');
-      expect(toolResult.output, {
-        'forecast': 'sunny',
-      });
+      expect(toolResult.toolOutput, isA<ContentToolOutput>());
+      expect((toolResult.toolOutput as ContentToolOutput).parts, hasLength(2));
       expect(toolResult.isError, isFalse);
       expect(
         toolResult.providerMetadata,

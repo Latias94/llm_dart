@@ -435,7 +435,10 @@ Future<void> main() async {
           core.ToolResultPromptPart(
             toolCallId: toolCall.toolCallId,
             toolName: toolCall.toolName,
-            output: {'temperature': 28, 'condition': 'humid'},
+            toolOutput: core.JsonToolOutput({
+              'temperature': 28,
+              'condition': 'humid',
+            }),
           ),
         ],
       ),
@@ -448,6 +451,14 @@ Future<void> main() async {
 
 Example file:
 [tool_calling.dart](example/02_core_features/tool_calling.dart)
+
+`ToolResultPromptPart` now prefers an explicit `toolOutput:` value. The older
+`output:` / `isError:` shorthand still works for compatibility, but new code
+should usually pick `TextToolOutput`, `JsonToolOutput`,
+`ExecutionDeniedToolOutput`, or `ContentToolOutput` directly.
+
+Use `ContentToolOutput` when a tool result needs multiple structured pieces,
+such as text, JSON, files, or custom provider-native payloads.
 
 ## Reasoning
 

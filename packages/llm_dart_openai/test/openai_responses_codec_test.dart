@@ -248,6 +248,96 @@ void main() {
       );
     });
 
+    test('encodes structured tool outputs on the Responses path', () {
+      const codec = OpenAIResponsesCodec();
+
+      final request = codec.encodeRequest(
+        modelId: 'gpt-5-mini',
+        prompt: [
+          ToolPromptMessage(
+            toolName: 'weather',
+            parts: [
+              ToolResultPromptPart(
+                toolCallId: 'call-weather-1',
+                toolName: 'weather',
+                toolOutput: ContentToolOutput(
+                  parts: [
+                    const TextToolOutputContentPart('forecast'),
+                    const JsonToolOutputContentPart({
+                      'summary': 'ok',
+                    }),
+                    const FileToolOutputContentPart(
+                      mediaType: 'image/png',
+                      filename: 'chart.png',
+                      data: FileBytesData.constBytes([1, 2, 3]),
+                      providerMetadata: ProviderMetadata({
+                        'openai': {
+                          'imageDetail': 'high',
+                        },
+                      }),
+                    ),
+                    const FileToolOutputContentPart(
+                      mediaType: 'application/pdf',
+                      filename: 'report.pdf',
+                      data: FileProviderReferenceData(
+                        ProviderReference({'openai': 'file_pdf_1'}),
+                      ),
+                    ),
+                    const CustomToolOutputContentPart(
+                      kind: 'demo.custom',
+                      data: {
+                        'flag': true,
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+        tools: const [],
+        toolChoice: null,
+        options: const GenerateTextOptions(),
+        providerOptions: const OpenAIGenerateTextOptions(),
+        stream: false,
+      );
+
+      expect(
+        request.body['input'],
+        [
+          {
+            'type': 'function_call_output',
+            'call_id': 'call-weather-1',
+            'output': [
+              {
+                'type': 'input_text',
+                'text': 'forecast',
+              },
+              {
+                'type': 'input_text',
+                'text': '{"summary":"ok"}',
+              },
+              {
+                'type': 'input_image',
+                'image_url': 'data:image/png;base64,AQID',
+                'detail': 'high',
+              },
+              {
+                'type': 'input_file',
+                'file_id': 'file_pdf_1',
+              },
+              {
+                'type': 'input_text',
+                'text':
+                    '{"type":"custom","kind":"demo.custom","data":{"flag":true}}',
+              },
+            ],
+          },
+        ],
+      );
+      expect(request.warnings, isEmpty);
+    });
+
     test('rejects URI-backed non-PDF file prompt parts on the Responses path',
         () {
       const codec = OpenAIResponsesCodec();

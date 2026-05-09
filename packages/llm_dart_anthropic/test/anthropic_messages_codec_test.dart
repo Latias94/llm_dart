@@ -128,6 +128,118 @@ void main() {
       expect(request.warnings, isEmpty);
     });
 
+    test(
+        'encodes structured tool outputs into multimodal anthropic tool results',
+        () {
+      final request = codec.encodeRequest(
+        modelId: 'claude-sonnet-4-5',
+        prompt: [
+          ToolPromptMessage(
+            toolName: 'weather',
+            parts: [
+              ToolResultPromptPart(
+                toolCallId: 'toolu_2',
+                toolName: 'weather',
+                toolOutput: ContentToolOutput(
+                  parts: [
+                    const TextToolOutputContentPart('forecast'),
+                    const JsonToolOutputContentPart({
+                      'summary': 'ok',
+                    }),
+                    const FileToolOutputContentPart(
+                      mediaType: 'image/png',
+                      filename: 'chart.png',
+                      data: FileBytesData.constBytes([1, 2, 3]),
+                    ),
+                    const FileToolOutputContentPart(
+                      mediaType: 'text/plain',
+                      filename: 'notes.txt',
+                      data: FileTextData('hello'),
+                    ),
+                    const FileToolOutputContentPart(
+                      mediaType: 'application/pdf',
+                      filename: 'report.pdf',
+                      data: FileProviderReferenceData(
+                        ProviderReference({'anthropic': 'file_123'}),
+                      ),
+                    ),
+                    const CustomToolOutputContentPart(
+                      kind: 'demo.custom',
+                      data: {
+                        'flag': true,
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
+        tools: const [],
+        toolChoice: null,
+        options: const GenerateTextOptions(),
+        settings: const AnthropicChatModelSettings(),
+        providerOptions: const AnthropicGenerateTextOptions(),
+        stream: false,
+      );
+
+      expect(
+        request.body['messages'],
+        [
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'tool_result',
+                'tool_use_id': 'toolu_2',
+                'content': [
+                  {
+                    'type': 'text',
+                    'text': 'forecast',
+                  },
+                  {
+                    'type': 'text',
+                    'text': '{"summary":"ok"}',
+                  },
+                  {
+                    'type': 'image',
+                    'source': {
+                      'type': 'base64',
+                      'media_type': 'image/png',
+                      'data': 'AQID',
+                    },
+                  },
+                  {
+                    'type': 'document',
+                    'source': {
+                      'type': 'text',
+                      'media_type': 'text/plain',
+                      'data': 'hello',
+                    },
+                    'title': 'notes.txt',
+                  },
+                  {
+                    'type': 'document',
+                    'source': {
+                      'type': 'file',
+                      'file_id': 'file_123',
+                    },
+                  },
+                  {
+                    'type': 'text',
+                    'text':
+                        '{"type":"custom","kind":"demo.custom","data":{"flag":true}}',
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      );
+      expect(request.betaFeatures, contains('files-api-2025-04-14'));
+      expect(request.warnings, isEmpty);
+    });
+
     test('encodes image and document prompt parts for multimodal chat', () {
       final request = codec.encodeRequest(
         modelId: 'claude-sonnet-4-5',

@@ -42,6 +42,33 @@ final class GoogleFunctionResponseReplay {
           ),
         );
 
+  factory GoogleFunctionResponseReplay.fromToolOutput({
+    required String toolCallId,
+    required String toolName,
+    required ToolOutput toolOutput,
+    String? functionCallId,
+    Map<String, Object?> extraFunctionResponseFields = const {},
+    ProviderMetadata? providerMetadata,
+  }) {
+    final encoded = _encodeToolOutputForGoogle(
+      toolName: toolName,
+      toolOutput: toolOutput,
+    );
+
+    return GoogleFunctionResponseReplay(
+      toolCallId: toolCallId,
+      toolName: toolName,
+      response: encoded.response,
+      files: encoded.files,
+      functionCallId: functionCallId,
+      extraFunctionResponseFields: extraFunctionResponseFields,
+      providerMetadata: mergeProviderMetadata(
+        providerMetadata,
+        toolOutput.providerMetadata,
+      ),
+    );
+  }
+
   factory GoogleFunctionResponseReplay.fromJson(
     Map<String, Object?> json, {
     ProviderMetadata? providerMetadata,
@@ -344,12 +371,15 @@ GeneratedFile _normalizeFunctionResponseFile(GeneratedFile file) {
   final hasBytes = file.bytes != null;
   final hasUri = file.uri != null;
   final hasProviderReference = file.providerReference != null;
-  if ([hasBytes, hasUri, hasProviderReference].where((value) => value).length !=
+  final hasText = file.text != null;
+  if ([hasBytes, hasUri, hasProviderReference, hasText]
+          .where((value) => value)
+          .length !=
       1) {
     throw ArgumentError.value(
       file,
       'files',
-      'Google function response files require exactly one of bytes, uri, or providerReference.',
+      'Google function response files require exactly one of bytes, text, uri, or providerReference.',
     );
   }
 
@@ -357,7 +387,11 @@ GeneratedFile _normalizeFunctionResponseFile(GeneratedFile file) {
     mediaType: _requireNonEmptyValue(file.mediaType, name: 'files.mediaType'),
     filename: _normalizeOptionalDisplayName(file.filename),
     data: file.bytes == null
-        ? file.data
+        ? file.text == null
+            ? file.data
+            : FileBytesData(
+                utf8.encode(file.text!),
+              )
         : FileBytesData(List<int>.unmodifiable(file.bytes!)),
   );
 }
@@ -572,4 +606,95 @@ String? _normalizeOptionalDisplayName(String? value) {
   }
 
   return value;
+}
+
+_GoogleFunctionResponseEncoding _encodeToolOutputForGoogle({
+  required String toolName,
+  required ToolOutput toolOutput,
+}) {
+  return switch (toolOutput) {
+    ContentToolOutput(:final parts) => _encodeContentToolOutput(
+        toolName: toolName,
+        parts: parts,
+      ),
+    ExecutionDeniedToolOutput(:final reason) => _GoogleFunctionResponseEncoding(
+        response: {
+          'name': toolName,
+          'content': reason ?? 'Tool execution denied',
+        },
+      ),
+    _ => _GoogleFunctionResponseEncoding(
+        response: {
+          'name': toolName,
+          'content': normalizeJsonValue(toolOutput.value) ?? 'null',
+        },
+      ),
+  };
+}
+
+_GoogleFunctionResponseEncoding _encodeContentToolOutput({
+  required String toolName,
+  required List<ToolOutputContentPart> parts,
+}) {
+  final responseTextParts = <String>[];
+  final files = <GeneratedFile>[];
+
+  for (final part in parts) {
+    switch (part) {
+      case TextToolOutputContentPart(:final text):
+        responseTextParts.add(text);
+      case JsonToolOutputContentPart(:final value):
+        responseTextParts.add(
+          jsonEncode({
+            'type': 'json',
+            'value': normalizeJsonValue(value),
+          }),
+        );
+      case FileToolOutputContentPart(
+          :final mediaType,
+          :final filename,
+          :final data,
+        ):
+        files.add(
+          _normalizeFunctionResponseFile(
+            GeneratedFile(
+              mediaType: mediaType,
+              filename: filename,
+              data: data,
+            ),
+          ),
+        );
+      case CustomToolOutputContentPart(
+          :final kind,
+          :final data,
+        ):
+        responseTextParts.add(
+          jsonEncode({
+            'type': 'custom',
+            'kind': kind,
+            if (data != null) 'data': normalizeJsonValue(data),
+          }),
+        );
+    }
+  }
+
+  return _GoogleFunctionResponseEncoding(
+    response: {
+      'name': toolName,
+      'content': responseTextParts.isEmpty
+          ? 'Tool executed successfully.'
+          : responseTextParts.join('\n'),
+    },
+    files: List<GeneratedFile>.unmodifiable(files),
+  );
+}
+
+final class _GoogleFunctionResponseEncoding {
+  final Object? response;
+  final List<GeneratedFile> files;
+
+  const _GoogleFunctionResponseEncoding({
+    required this.response,
+    this.files = const [],
+  });
 }

@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import '../common/provider_metadata.dart';
 import '../stream/text_stream_event.dart';
+import '../tool/tool_output.dart';
 import 'chat_ui_message.dart';
 
 final class ChatUiToolPartStore {
@@ -48,6 +49,8 @@ final class ChatUiToolPartStore {
         inputText: null,
         setOutput: true,
         output: null,
+        setToolOutput: true,
+        toolOutput: null,
         setErrorText: true,
         errorText: null,
         providerExecuted: event.providerExecuted,
@@ -107,6 +110,8 @@ final class ChatUiToolPartStore {
         inputText: inputText,
         setOutput: true,
         output: null,
+        setToolOutput: true,
+        toolOutput: null,
         setErrorText: true,
         errorText: event.errorText,
         providerExecuted: event.providerExecuted,
@@ -156,11 +161,15 @@ final class ChatUiToolPartStore {
       _buildPart(
         toolCallId: event.toolResult.toolCallId,
         toolName: event.toolResult.toolName,
-        state: event.toolResult.isError
-            ? ToolUiPartState.outputError
-            : ToolUiPartState.outputAvailable,
+        state: event.toolResult.toolOutput.denied
+            ? ToolUiPartState.outputDenied
+            : event.toolResult.isError
+                ? ToolUiPartState.outputError
+                : ToolUiPartState.outputAvailable,
         setOutput: true,
         output: event.toolResult.output,
+        setToolOutput: true,
+        toolOutput: event.toolResult.toolOutput,
         setErrorText: true,
         errorText: event.toolResult.isError
             ? _stringifyValue(event.toolResult.output)
@@ -177,6 +186,10 @@ final class ChatUiToolPartStore {
       _buildPart(
         toolCallId: event.toolCallId,
         state: ToolUiPartState.outputDenied,
+        setOutput: true,
+        output: null,
+        setToolOutput: true,
+        toolOutput: const ExecutionDeniedToolOutput(),
         resultProviderMetadata: event.providerMetadata,
       ),
     );
@@ -216,6 +229,8 @@ final class ChatUiToolPartStore {
     bool setInputText = false,
     Object? output,
     bool setOutput = false,
+    ToolOutput? toolOutput,
+    bool setToolOutput = false,
     String? errorText,
     bool setErrorText = false,
     bool? providerExecuted,
@@ -246,6 +261,7 @@ final class ChatUiToolPartStore {
       input: setInput ? input : current?.input,
       inputText: setInputText ? inputText : current?.inputText,
       output: setOutput ? output : current?.output,
+      toolOutput: setToolOutput ? toolOutput : current?.toolOutput,
       errorText: setErrorText ? errorText : current?.errorText,
       providerExecuted: current?.providerExecuted == true ||
           providerExecuted == true ||

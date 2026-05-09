@@ -291,11 +291,10 @@ final class PromptJsonCodec {
                 path: '$path.providerExecuted',
               ) ??
               false,
-          isDynamic: asNullableJsonBool(
-                map['isDynamic'],
-                path: '$path.isDynamic',
-              ) ??
-              false,
+          isDynamic: SerializationJsonSupport.decodeDynamicFlag(
+            map,
+            path: path,
+          ),
           title: asNullableJsonString(map['title'], path: '$path.title'),
           providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
             map['providerMetadata'],

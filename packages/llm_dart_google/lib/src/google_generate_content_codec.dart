@@ -589,22 +589,26 @@ final class GoogleGenerateContentCodec {
     }
 
     if (part is ToolResultPromptPart) {
-      if (part.toolOutput is ContentToolOutput) {
-        throw UnsupportedError(
-          'Google tool result replay does not support ContentToolOutput yet. Use GoogleFunctionResponseReplay for multimodal function responses.',
-        );
+      final functionCallId = _googleFunctionCallId(
+        part.providerMetadata,
+        part.toolOutput.providerMetadata,
+      );
+      final replay = GoogleFunctionResponseReplay.fromToolOutput(
+        toolCallId: part.toolCallId,
+        toolName: part.toolName,
+        toolOutput: part.toolOutput,
+        functionCallId: functionCallId,
+        providerMetadata: part.providerMetadata,
+      );
+      final functionResponse = replay.toFunctionResponseJson();
+      if (_shouldReplayGoogleFunctionCallId(modelId, functionCallId) &&
+          !functionResponse.containsKey('id')) {
+        functionResponse['id'] = functionCallId;
       }
 
-      final functionCallId = _googleFunctionCallId(part.providerMetadata);
       return {
         'functionResponse': {
-          if (_shouldReplayGoogleFunctionCallId(modelId, functionCallId))
-            'id': functionCallId,
-          'name': part.toolName,
-          'response': {
-            'name': part.toolName,
-            'content': normalizeJsonValue(part.toolOutput.value) ?? 'null',
-          },
+          ...functionResponse,
         },
       };
     }
@@ -732,9 +736,14 @@ final class GoogleGenerateContentCodec {
     );
   }
 
-  String? _googleFunctionCallId(ProviderMetadata? metadata) {
-    final primary = _providerNamespace(metadata, 'google');
-    final fallback = _providerNamespace(metadata, 'vertex');
+  String? _googleFunctionCallId(
+    ProviderMetadata? primaryMetadata, [
+    ProviderMetadata? fallbackMetadata,
+  ]) {
+    final primary = _providerNamespace(primaryMetadata, 'google') ??
+        _providerNamespace(primaryMetadata, 'vertex');
+    final fallback = _providerNamespace(fallbackMetadata, 'google') ??
+        _providerNamespace(fallbackMetadata, 'vertex');
     return asString(primary?['functionCallId']) ??
         asString(fallback?['functionCallId']);
   }
