@@ -68,6 +68,8 @@ Older builder-era code should migrate through `package:llm_dart/legacy.dart`.
 - Preserved structured tool results, including denied and multimodal content
   outputs, across stream replay, UI projection, and JSON codecs while still
   decoding older `output` / `isError` payloads.
+- Preserved denied tool-output reasons across stream JSON, result accumulation,
+  and chat UI replay.
 - Preserved explicit tool outputs through local chat-session tool callbacks and
   Ollama tool-result replay.
 - Extended `ToolOutput` with provider metadata plus richer content parts for

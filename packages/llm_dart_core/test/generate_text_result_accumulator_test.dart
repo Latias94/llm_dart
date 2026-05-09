@@ -124,6 +124,7 @@ void main() {
           ),
           const ToolOutputDeniedEvent(
             toolCallId: 'tool_1',
+            reason: 'The page is not trusted.',
             providerMetadata: ProviderMetadata({
               'openai': {
                 'approvalPhase': 'denied',
@@ -138,6 +139,10 @@ void main() {
           result.content.whereType<ToolResultContentPart>().single.toolResult;
       expect(toolResult.toolOutput, isA<ExecutionDeniedToolOutput>());
       expect(toolResult.toolOutput.denied, isTrue);
+      expect(
+        (toolResult.toolOutput as ExecutionDeniedToolOutput).reason,
+        'The page is not trusted.',
+      );
       expect(toolResult.toolName, 'browser');
       expect(toolResult.isDynamic, isTrue);
     });

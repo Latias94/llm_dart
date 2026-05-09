@@ -54,6 +54,7 @@ void main() {
         ),
         const ToolOutputDeniedEvent(
           toolCallId: 'tool-1',
+          reason: 'User denied approval.',
           providerMetadata: ProviderMetadata({
             'openai': {
               'approvalState': 'denied',
@@ -144,6 +145,10 @@ void main() {
       final envelopeData = encoded['data'] as Map<String, Object?>;
       final encodedEvents = envelopeData['events'] as List<Object?>;
       expect((encodedEvents[2] as Map<String, Object?>)['type'], 'step-start');
+      expect(
+        (encodedEvents[7] as Map<String, Object?>)['reason'],
+        'User denied approval.',
+      );
       expect((encodedEvents[15] as Map<String, Object?>)['type'], 'abort');
 
       final decoded = codec.decodeEvents(encoded);
@@ -174,6 +179,7 @@ void main() {
 
       final denied = decoded[7] as ToolOutputDeniedEvent;
       expect(denied.toolCallId, 'tool-1');
+      expect(denied.reason, 'User denied approval.');
       expect(
         denied.providerMetadata!['openai'],
         containsPair('approvalState', 'denied'),

@@ -249,11 +249,13 @@ final class TextStreamEventJsonCodec {
         },
       ToolOutputDeniedEvent(
         :final toolCallId,
+        :final reason,
         :final providerMetadata,
       ) =>
         {
           'type': 'tool-output-denied',
           'toolCallId': toolCallId,
+          if (reason != null) 'reason': reason,
           if (providerMetadata != null)
             'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
                 providerMetadata),
@@ -490,6 +492,7 @@ final class TextStreamEventJsonCodec {
         ),
       'tool-output-denied' => ToolOutputDeniedEvent(
           toolCallId: asJsonString(map['toolCallId'], path: '$path.toolCallId'),
+          reason: asNullableJsonString(map['reason'], path: '$path.reason'),
           providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',

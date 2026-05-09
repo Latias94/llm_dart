@@ -219,7 +219,7 @@ final class GenerateTextResultAccumulator {
             ToolResultContent(
               toolCallId: event.toolCallId,
               toolName: toolCall.toolCall.toolName,
-              toolOutput: const ExecutionDeniedToolOutput(),
+              toolOutput: ExecutionDeniedToolOutput(event.reason),
               isDynamic: toolCall.toolCall.isDynamic,
             ),
             providerMetadata: event.providerMetadata,

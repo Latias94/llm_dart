@@ -421,6 +421,7 @@ void main() {
       final message = accumulator.apply(
         const ToolOutputDeniedEvent(
           toolCallId: 'tool-1',
+          reason: 'User denied approval.',
           providerMetadata: ProviderMetadata({
             'openai': {
               'approvalPhase': 'denied',
@@ -435,6 +436,10 @@ void main() {
       expect(toolPart.isDynamic, isTrue);
       expect(toolPart.title, 'Browser');
       expect(toolPart.toolOutput, isA<ExecutionDeniedToolOutput>());
+      expect(
+        (toolPart.toolOutput as ExecutionDeniedToolOutput).reason,
+        'User denied approval.',
+      );
       expect(toolPart.approval?.approvalId, 'approval-1');
       expect(toolPart.approval?.approved, isNull);
       expect(

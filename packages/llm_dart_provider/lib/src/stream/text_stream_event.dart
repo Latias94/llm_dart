@@ -201,10 +201,12 @@ final class ToolApprovalRequestEvent extends TextStreamEvent {
 
 final class ToolOutputDeniedEvent extends TextStreamEvent {
   final String toolCallId;
+  final String? reason;
   final ProviderMetadata? providerMetadata;
 
   const ToolOutputDeniedEvent({
     required this.toolCallId,
+    this.reason,
     this.providerMetadata,
   });
 }

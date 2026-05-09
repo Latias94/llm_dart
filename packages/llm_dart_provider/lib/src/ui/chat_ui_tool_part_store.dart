@@ -189,7 +189,7 @@ final class ChatUiToolPartStore {
         setOutput: true,
         output: null,
         setToolOutput: true,
-        toolOutput: const ExecutionDeniedToolOutput(),
+        toolOutput: ExecutionDeniedToolOutput(event.reason),
         resultProviderMetadata: event.providerMetadata,
       ),
     );
