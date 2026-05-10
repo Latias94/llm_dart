@@ -145,6 +145,9 @@ packages, run:
 dart run tool/release_readiness.dart
 ```
 
+This gate requires both Dart and Flutter on PATH because `llm_dart_flutter`
+is validated, and its publish dry-run uses the Flutter CLI.
+
 The publish dry-run step fails on warnings. Before the first split-package
 publish, local path override hints are expected because staged packages must
 resolve unpublished workspace dependencies from this checkout.

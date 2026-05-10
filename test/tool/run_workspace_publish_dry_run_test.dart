@@ -5,6 +5,101 @@ import 'package:test/test.dart';
 import '../../tool/run_workspace_publish_dry_run.dart';
 
 void main() {
+  group('packagePubspecRequiresFlutter', () {
+    test('detects Flutter environment constraints', () {
+      expect(
+        packagePubspecRequiresFlutter(const [
+          'name: llm_dart_flutter',
+          'environment:',
+          "  sdk: '>=3.5.0 <4.0.0'",
+          "  flutter: '>=3.24.0'",
+        ]),
+        isTrue,
+      );
+    });
+
+    test('detects Flutter SDK dependencies', () {
+      expect(
+        packagePubspecRequiresFlutter(const [
+          'name: llm_dart_flutter',
+          'dependencies:',
+          '  flutter:',
+          '    sdk: flutter',
+        ]),
+        isTrue,
+      );
+    });
+
+    test('keeps pure Dart packages on dart pub', () {
+      expect(
+        packagePubspecRequiresFlutter(const [
+          'name: llm_dart_openai',
+          'environment:',
+          "  sdk: '>=3.5.0 <4.0.0'",
+          'dependencies:',
+          '  llm_dart_ai: ^0.11.0-alpha.1',
+        ]),
+        isFalse,
+      );
+    });
+  });
+
+  group('resolvePublishDryRunCommand', () {
+    test('uses flutter pub for Flutter packages', () async {
+      final packageDirectory = await Directory.systemTemp.createTemp(
+        'llm_dart_publish_command_test_',
+      );
+
+      try {
+        await File.fromUri(packageDirectory.uri.resolve('pubspec.yaml'))
+            .writeAsString('''
+name: llm_dart_flutter
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+  flutter: '>=3.24.0'
+dependencies:
+  flutter:
+    sdk: flutter
+''');
+
+        final command = await resolvePublishDryRunCommand(packageDirectory);
+
+        expect(command.executable, 'flutter');
+        expect(command.arguments, ['pub', 'publish', '--dry-run']);
+      } finally {
+        if (packageDirectory.existsSync()) {
+          await packageDirectory.delete(recursive: true);
+        }
+      }
+    });
+
+    test('uses dart pub for pure Dart packages', () async {
+      final packageDirectory = await Directory.systemTemp.createTemp(
+        'llm_dart_publish_command_test_',
+      );
+
+      try {
+        await File.fromUri(packageDirectory.uri.resolve('pubspec.yaml'))
+            .writeAsString('''
+name: llm_dart_openai
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+dependencies:
+  llm_dart_ai: ^0.11.0-alpha.1
+''');
+
+        final command = await resolvePublishDryRunCommand(packageDirectory);
+
+        expect(command.executable, 'dart');
+        expect(command.arguments, ['pub', 'publish', '--dry-run']);
+      } finally {
+        if (packageDirectory.existsSync()) {
+          await packageDirectory.delete(recursive: true);
+        }
+      }
+    });
+  });
+
   group('extractPublishDryRunSummary', () {
     test('parses warnings and hints', () {
       final summary = extractPublishDryRunSummary(

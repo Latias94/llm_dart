@@ -47,9 +47,15 @@ Future<void> main() async {
       packageDirectory: packageDirectory,
     );
     try {
+      final command = await resolvePublishDryRunCommand(packageDirectory);
+      stdout.writeln('command: ${command.commandText}');
+
       ProcessResult result;
       try {
-        result = await runPublishDryRunProcess(workingDirectory);
+        result = await runPublishDryRunProcess(
+          workingDirectory,
+          command: command,
+        );
       } on TimeoutException catch (error) {
         final duration = error.duration ?? publishDryRunTimeout;
         stderr.writeln(
@@ -57,6 +63,19 @@ Future<void> main() async {
           '${duration.inSeconds}s.',
         );
         exitCode = 1;
+        return;
+      } on ProcessException catch (error) {
+        stderr.writeln(
+          'workspace publish dry-run could not start `${command.executable}` '
+          'for `$packageName`: ${error.message}',
+        );
+        if (command.executable == 'flutter') {
+          stderr.writeln(
+            'next action: install Flutter or run this package with '
+            '`flutter pub publish --dry-run`.',
+          );
+        }
+        exitCode = 69;
         return;
       }
 
@@ -134,10 +153,101 @@ Future<void> main() async {
   );
 }
 
-Future<ProcessResult> runPublishDryRunProcess(Directory workingDirectory) {
+final class PublishDryRunCommand {
+  final String executable;
+  final List<String> arguments;
+
+  const PublishDryRunCommand({
+    required this.executable,
+    required this.arguments,
+  });
+
+  String get commandText => [
+        executable,
+        ...arguments,
+      ].join(' ');
+}
+
+const dartPublishDryRunCommand = PublishDryRunCommand(
+  executable: 'dart',
+  arguments: ['pub', 'publish', '--dry-run'],
+);
+
+const flutterPublishDryRunCommand = PublishDryRunCommand(
+  executable: 'flutter',
+  arguments: ['pub', 'publish', '--dry-run'],
+);
+
+Future<PublishDryRunCommand> resolvePublishDryRunCommand(
+  Directory packageDirectory,
+) async {
+  final pubspec = File.fromUri(packageDirectory.uri.resolve('pubspec.yaml'));
+  if (!pubspec.existsSync()) {
+    return dartPublishDryRunCommand;
+  }
+
+  final lines = await pubspec.readAsLines();
+  return packagePubspecRequiresFlutter(lines)
+      ? flutterPublishDryRunCommand
+      : dartPublishDryRunCommand;
+}
+
+bool packagePubspecRequiresFlutter(List<String> lines) {
+  String? currentTopLevelSection;
+  String? currentSdkDependency;
+
+  for (final rawLine in lines) {
+    final line = rawLine.replaceAll('\t', '  ');
+    final trimmed = line.trim();
+
+    if (trimmed.isEmpty || trimmed.startsWith('#')) {
+      continue;
+    }
+
+    if (!line.startsWith(' ')) {
+      final sectionMatch =
+          RegExp(r'^([A-Za-z0-9_]+):(?:\s.*)?$').firstMatch(line);
+      currentTopLevelSection = sectionMatch?.group(1);
+      currentSdkDependency = null;
+      continue;
+    }
+
+    if (currentTopLevelSection == 'environment' &&
+        RegExp(r'^  flutter:\s*.+$').hasMatch(line)) {
+      return true;
+    }
+
+    if (!const {
+      'dependencies',
+      'dev_dependencies',
+      'dependency_overrides',
+    }.contains(currentTopLevelSection)) {
+      continue;
+    }
+
+    final dependencyMatch =
+        RegExp(r'^  ([A-Za-z0-9_]+):(?:\s.*)?$').firstMatch(line);
+    if (dependencyMatch != null) {
+      currentSdkDependency = dependencyMatch.group(1);
+      continue;
+    }
+
+    if (currentSdkDependency != null &&
+        RegExp(r'^\s{4,}sdk:\s*flutter\s*$').hasMatch(line)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+Future<ProcessResult> runPublishDryRunProcess(
+  Directory workingDirectory, {
+  PublishDryRunCommand command = dartPublishDryRunCommand,
+}) {
   return Process.run(
-    'dart',
-    const ['pub', 'publish', '--dry-run'],
+    command.executable,
+    command.arguments,
     workingDirectory: workingDirectory.path,
   ).timeout(
     publishDryRunTimeout,
