@@ -70,7 +70,10 @@ void main() {
       expect(message.id, 'remote-msg');
       expect(message.metadata['serverOwned'], isTrue);
       expect(message.metadata['persisted'], isTrue);
-      expect(message.metadata[ChatUiMetadataKeys.finishReason], FinishReason.stop);
+      expect(
+        message.metadata[ChatUiMetadataKeys.finishReason],
+        FinishReason.stop,
+      );
 
       final textPart = message.parts.whereType<TextUiPart>().single;
       expect(textPart.text, 'Hello');
