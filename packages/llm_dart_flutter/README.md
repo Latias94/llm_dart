@@ -42,7 +42,7 @@ The reusable runtime itself lives in `llm_dart_chat` and owns:
 - `DefaultChatSession`
 - snapshot and session persistence codecs
 
-The shared `ChatMessageMapper` now lives in `llm_dart_provider` and is re-exported
+The shared `ChatMessageMapper` now lives in `llm_dart_ai` and is re-exported
 through both `llm_dart_chat` and `llm_dart_flutter`.
 
 What stays outside both packages:
@@ -57,11 +57,13 @@ What stays outside both packages:
 The recommended architecture is:
 
 1. `llm_dart` selects and configures a provider model.
-2. `llm_dart_provider` defines prompt, stream, result, UI message semantics,
-   and the shared `ChatMessageMapper`.
-3. `llm_dart_chat` owns provider-agnostic session state, transport adaptation,
+2. `llm_dart_provider` defines prompt, stream, result, provider metadata, and
+   provider option semantics.
+3. `llm_dart_ai` defines shared UI message semantics and
+   `ChatMessageMapper`.
+4. `llm_dart_chat` owns provider-agnostic session state, transport adaptation,
    persistence boundaries, and chat runtime orchestration.
-4. `llm_dart_flutter` adds widget-friendly control surfaces such as
+5. `llm_dart_flutter` adds widget-friendly control surfaces such as
    `ChatController`.
 
 This keeps the unified layer focused on stable model semantics while still

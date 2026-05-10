@@ -4,6 +4,11 @@ import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart_provider/llm_dart_provider.dart' as provider;
+
+const _demoCallOptions = core.CallOptions(
+  timeout: Duration(seconds: 20),
+);
 
 /// Compare providers that already have stable root provider factories.
 ///
@@ -43,6 +48,7 @@ Future<void> main() async {
 
   displayComparison(byName);
   provideRecommendations(byName);
+  await runRegistrySelectionExample();
 }
 
 Map<String, core.LanguageModel> createModelsByProvider() {
@@ -106,6 +112,7 @@ Future<ProviderResult> testProviderModel(
         temperature: 0.7,
         maxOutputTokens: 120,
       ),
+      callOptions: _demoCallOptions,
     );
 
     stopwatch.stop();
@@ -202,6 +209,96 @@ void provideRecommendations(Map<String, ProviderResult> results) {
   print(
       '  - run ../02_core_features/web_search.dart for provider-owned search');
   print('  - inspect ../04_providers/ for provider-specific features');
+}
+
+Future<void> runRegistrySelectionExample() async {
+  final registry = provider.ModelRegistry(
+    languageModels: createRegistryFactories(),
+  );
+
+  final defaultProviderId = registry.hasLanguageProvider('openai')
+      ? 'openai'
+      : registry.languageProviderIds.isEmpty
+          ? null
+          : registry.languageProviderIds.first;
+  final selectedProviderId =
+      (Platform.environment['MODEL_PROVIDER'] ?? defaultProviderId ?? '')
+          .trim();
+  final modelId = _modelIdForProvider(selectedProviderId);
+  if (!registry.hasLanguageProvider(selectedProviderId)) {
+    print(
+      'Dynamic model selection example skipped because '
+      'MODEL_PROVIDER="$selectedProviderId" is not available.\n',
+    );
+    return;
+  }
+
+  final question = Platform.environment['MODEL_QUESTION'] ??
+      'Give one short sentence about why runtime model selection is useful.';
+  final model = registry.languageModel('$selectedProviderId:$modelId');
+  try {
+    final result = await core.generateTextCall(
+      model: model,
+      prompt: [
+        core.UserPromptMessage.text(question),
+      ],
+      callOptions: _demoCallOptions,
+    );
+
+    print('Dynamic registry selection');
+    print('  Selected: $selectedProviderId:$modelId');
+    print('  Reply: ${_truncate(result.text)}\n');
+  } catch (error) {
+    print('Dynamic registry selection failed for $selectedProviderId:$modelId');
+    print('  Error: $error\n');
+  }
+}
+
+Map<String, provider.LanguageModelFactory> createRegistryFactories() {
+  final factories = <String, provider.LanguageModelFactory>{};
+
+  final openAIKey = Platform.environment['OPENAI_API_KEY'];
+  if (openAIKey != null && openAIKey.isNotEmpty) {
+    final facade = llm.openai(apiKey: openAIKey);
+    factories['openai'] = facade.chatModel;
+  }
+
+  final anthropicKey = Platform.environment['ANTHROPIC_API_KEY'];
+  if (anthropicKey != null && anthropicKey.isNotEmpty) {
+    final facade = llm.anthropic(apiKey: anthropicKey);
+    factories['anthropic'] = facade.chatModel;
+  }
+
+  final groqKey = Platform.environment['GROQ_API_KEY'];
+  if (groqKey != null && groqKey.isNotEmpty) {
+    final facade = llm.groq(apiKey: groqKey);
+    factories['groq'] = facade.chatModel;
+  }
+
+  final deepSeekKey = Platform.environment['DEEPSEEK_API_KEY'];
+  if (deepSeekKey != null && deepSeekKey.isNotEmpty) {
+    final facade = llm.deepSeek(apiKey: deepSeekKey);
+    factories['deepseek'] = facade.chatModel;
+  }
+
+  final xaiKey = Platform.environment['XAI_API_KEY'];
+  if (xaiKey != null && xaiKey.isNotEmpty) {
+    final facade = llm.xai(apiKey: xaiKey);
+    factories['xai'] = facade.chatModel;
+  }
+
+  return factories;
+}
+
+String _modelIdForProvider(String providerId) {
+  return switch (providerId) {
+    'openai' => 'gpt-4.1-mini',
+    'anthropic' => 'claude-sonnet-4-5',
+    'groq' => 'llama-3.3-70b-versatile',
+    'deepseek' => 'deepseek-chat',
+    'xai' => 'grok-3',
+    _ => 'gpt-4.1-mini',
+  };
 }
 
 final class ProviderResult {

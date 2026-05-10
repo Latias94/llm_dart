@@ -1,5 +1,4 @@
-import 'package:llm_dart_provider/llm_dart_provider.dart';
-
+import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'google_function_response_replay.dart';
 import 'google_server_tool_replay.dart';
 
@@ -90,31 +89,19 @@ sealed class GoogleCustomPart {
   }
 
   static List<GoogleCustomPart> parsePromptParts(Iterable<PromptPart> parts) {
-    return List<GoogleCustomPart>.unmodifiable([
-      for (final part in parts)
-        if (tryParsePromptPart(part) case final parsed?) parsed,
-    ]);
+    return parseTypedParts(parts, tryParsePromptPart);
   }
 
   static List<GoogleCustomPart> parseContentParts(Iterable<ContentPart> parts) {
-    return List<GoogleCustomPart>.unmodifiable([
-      for (final part in parts)
-        if (tryParseContentPart(part) case final parsed?) parsed,
-    ]);
+    return parseTypedParts(parts, tryParseContentPart);
   }
 
   static List<GoogleCustomPart> parseUiParts(Iterable<ChatUiPart> parts) {
-    return List<GoogleCustomPart>.unmodifiable([
-      for (final part in parts)
-        if (tryParseUiPart(part) case final parsed?) parsed,
-    ]);
+    return parseTypedParts(parts, tryParseUiPart);
   }
 
   static List<GoogleCustomPart> parseEvents(Iterable<TextStreamEvent> events) {
-    return List<GoogleCustomPart>.unmodifiable([
-      for (final event in events)
-        if (tryParseEvent(event) case final parsed?) parsed,
-    ]);
+    return parseTypedParts(events, tryParseEvent);
   }
 }
 

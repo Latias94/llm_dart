@@ -62,13 +62,125 @@ void main() {
       expect(start.request.hasBody, isTrue);
       expect(start.request.bodyType, contains('Map'));
       expect(start.request.headerNames, ['authorization', 'x-trace-id']);
+      expect(start.request.headers, isNull);
+      expect(start.request.body, isNull);
 
       final success = events[1];
       expect(success.kind, TransportDiagnosticsEventKind.requestSuccess);
       expect(success.attempt, 1);
       expect(success.response?.statusCode, 200);
       expect(success.response?.headerNames, ['x-request-id']);
+      expect(success.response?.headers, isNull);
+      expect(success.response?.body, isNull);
       expect(success.duration, isNotNull);
+    });
+
+    test('send can include sanitized headers and debug bodies', () async {
+      final events = <TransportDiagnosticsEvent>[];
+      final dio = Dio(
+        BaseOptions(
+          validateStatus: (_) => true,
+        ),
+      );
+      dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) {
+            handler.resolve(
+              Response(
+                requestOptions: options,
+                statusCode: 200,
+                headers: Headers.fromMap({
+                  'authorization': ['Bearer response-secret'],
+                  'x-request-id': ['req_1'],
+                }),
+                data: {
+                  'ok': true,
+                },
+              ),
+            );
+          },
+        ),
+      );
+
+      final client = DioTransportClient(
+        dio: dio,
+        diagnostics: CallbackTransportDiagnostics(events.add),
+        diagnosticsOptions: const TransportDiagnosticsOptions(
+          includeHeaders: true,
+          includeRequestBody: true,
+          includeResponseBody: true,
+        ),
+      );
+
+      final response = await client.send(
+        TransportRequest(
+          uri: Uri.parse('https://example.com/chat'),
+          method: TransportMethod.post,
+          headers: const {
+            'authorization': 'Bearer request-secret',
+            'x-trace-id': 'trace_1',
+          },
+          body: const {
+            'message': 'hello',
+          },
+        ),
+      );
+
+      expect(response.statusCode, 200);
+      expect(events, hasLength(2));
+      expect(events[0].request.headers, {
+        'authorization': '***',
+        'x-trace-id': 'trace_1',
+      });
+      expect(events[0].request.body, {'message': 'hello'});
+      expect(events[1].response?.headers, {
+        'authorization': '***',
+        'x-request-id': 'req_1',
+      });
+      expect(events[1].response?.body, {'ok': true});
+    });
+
+    test('send forwards request timeout to connect, send, and receive timeouts',
+        () async {
+      Duration? connectTimeout;
+      Duration? sendTimeout;
+      Duration? receiveTimeout;
+      final dio = Dio(
+        BaseOptions(
+          validateStatus: (_) => true,
+        ),
+      );
+      dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) {
+            connectTimeout = options.connectTimeout;
+            sendTimeout = options.sendTimeout;
+            receiveTimeout = options.receiveTimeout;
+            handler.resolve(
+              Response(
+                requestOptions: options,
+                statusCode: 200,
+                data: {'ok': true},
+              ),
+            );
+          },
+        ),
+      );
+
+      final client = DioTransportClient(dio: dio);
+
+      final response = await client.send(
+        TransportRequest(
+          uri: Uri.parse('https://example.com/chat'),
+          method: TransportMethod.post,
+          timeout: const Duration(seconds: 7),
+        ),
+      );
+
+      expect(response.statusCode, 200);
+      expect(connectTimeout, const Duration(seconds: 7));
+      expect(sendTimeout, const Duration(seconds: 7));
+      expect(receiveTimeout, const Duration(seconds: 7));
     });
 
     test('sendStream emits start and success events', () async {
@@ -232,6 +344,97 @@ void main() {
 
       expect(response.statusCode, 200);
       expect(attempts, 2);
+    });
+
+    test('request maxRetries enables retries for one call', () async {
+      var attempts = 0;
+      final dio = Dio(
+        BaseOptions(
+          validateStatus: (_) => true,
+        ),
+      );
+      dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) {
+            attempts++;
+            if (attempts == 1) {
+              handler.reject(
+                DioException(
+                  requestOptions: options,
+                  type: DioExceptionType.receiveTimeout,
+                  message: 'timed out',
+                ),
+              );
+              return;
+            }
+
+            handler.resolve(
+              Response(
+                requestOptions: options,
+                statusCode: 200,
+                data: {'ok': true},
+              ),
+            );
+          },
+        ),
+      );
+
+      final client = DioTransportClient(dio: dio);
+
+      final response = await client.send(
+        TransportRequest(
+          uri: Uri.parse('https://example.com/chat'),
+          method: TransportMethod.post,
+          maxRetries: 1,
+        ),
+      );
+
+      expect(response.statusCode, 200);
+      expect(attempts, 2);
+    });
+
+    test('request maxRetries can disable constructor retries', () async {
+      var attempts = 0;
+      final dio = Dio(
+        BaseOptions(
+          validateStatus: (_) => true,
+        ),
+      );
+      dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) {
+            attempts++;
+            handler.reject(
+              DioException(
+                requestOptions: options,
+                type: DioExceptionType.receiveTimeout,
+                message: 'timed out',
+              ),
+            );
+          },
+        ),
+      );
+
+      final client = DioTransportClient(
+        dio: dio,
+        retryPolicy: const TransportRetryPolicy(
+          maxAttempts: 3,
+          baseDelay: Duration.zero,
+        ),
+      );
+
+      await expectLater(
+        client.send(
+          TransportRequest(
+            uri: Uri.parse('https://example.com/chat'),
+            method: TransportMethod.post,
+            maxRetries: 0,
+          ),
+        ),
+        throwsA(isA<TransportTimeoutException>()),
+      );
+
+      expect(attempts, 1);
     });
 
     test('retries retryable HTTP status and records attempt diagnostics',

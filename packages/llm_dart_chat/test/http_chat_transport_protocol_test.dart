@@ -1,10 +1,11 @@
-import 'package:llm_dart_provider/llm_dart_provider.dart';
+import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'package:llm_dart_chat/llm_dart_chat.dart';
 import 'package:test/test.dart';
 
 void main() {
   group('HttpChatTransportRequestJsonCodec', () {
-    test('round-trips prompt, generate options, metadata, and stream protocol',
+    test(
+        'round-trips prompt, generate options, call options, metadata, and stream protocol',
         () {
       const codec = HttpChatTransportRequestJsonCodec();
       final encoded = codec.encodeRequest(
@@ -19,6 +20,16 @@ void main() {
             stopSequences: ['DONE'],
             topP: 0.9,
             topK: 40,
+          ),
+          callOptions: HttpChatTransportCallOptionsPayload(
+            timeout: const Duration(seconds: 5),
+            headers: const {
+              'x-provider-trace': 'trace-1',
+            },
+            maxRetries: 2,
+            providerOptions: const {
+              'reasoningEffort': 'high',
+            },
           ),
           streamProtocol: HttpChatTransportStreamProtocol.uiMessageStreamV2,
           metadata: const {
@@ -37,6 +48,14 @@ void main() {
       expect(decoded.generateOptions.stopSequences, ['DONE']);
       expect(decoded.generateOptions.topP, 0.9);
       expect(decoded.generateOptions.topK, 40);
+      expect(decoded.callOptions.timeout, const Duration(seconds: 5));
+      expect(decoded.callOptions.headers, {
+        'x-provider-trace': 'trace-1',
+      });
+      expect(decoded.callOptions.maxRetries, 2);
+      expect(decoded.callOptions.providerOptions, {
+        'reasoningEffort': 'high',
+      });
       expect(
         decoded.streamProtocol,
         HttpChatTransportStreamProtocol.uiMessageStreamV2,
@@ -73,6 +92,10 @@ void main() {
         HttpChatTransportReconnectRequestPayload(
           chatId: 'chat-1',
           resumeToken: 'resume-2',
+          callOptions: HttpChatTransportCallOptionsPayload(
+            timeout: const Duration(seconds: 7),
+            maxRetries: 1,
+          ),
           streamProtocol: HttpChatTransportStreamProtocol.uiMessageStreamV2,
           metadata: const {
             'attempt': 2,
@@ -88,6 +111,8 @@ void main() {
       final decoded = codec.decodeReconnectRequest(encoded);
       expect(decoded.chatId, 'chat-1');
       expect(decoded.resumeToken, 'resume-2');
+      expect(decoded.callOptions.timeout, const Duration(seconds: 7));
+      expect(decoded.callOptions.maxRetries, 1);
       expect(
         decoded.streamProtocol,
         HttpChatTransportStreamProtocol.uiMessageStreamV2,

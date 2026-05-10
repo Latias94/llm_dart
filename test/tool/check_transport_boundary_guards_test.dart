@@ -81,6 +81,70 @@ export 'src/common/transport_cancellation.dart'
         ),
       );
     });
+
+    test('reports dart:io imports outside explicit IO-only transport files',
+        () async {
+      final repoRoot = await _createTempWorkspace();
+      addTearDown(() async {
+        if (repoRoot.existsSync()) {
+          await repoRoot.delete(recursive: true);
+        }
+      });
+
+      await _writeFile(
+        repoRoot,
+        'packages/llm_dart_transport/lib/src/http/web_safe_client.dart',
+        '''
+import 'dart:io';
+
+void main() {}
+''',
+      );
+
+      final result = await guard.evaluateTransportBoundaryGuards(
+        repoRoot: repoRoot,
+      );
+
+      expect(result.passed, isFalse);
+      expect(
+        result.violations,
+        contains(
+          contains('must not import dart:io or package:dio/io.dart'),
+        ),
+      );
+    });
+
+    test('reports IO-only Dio exports from the public barrel', () async {
+      final repoRoot = await _createTempWorkspace();
+      addTearDown(() async {
+        if (repoRoot.existsSync()) {
+          await repoRoot.delete(recursive: true);
+        }
+      });
+
+      await _writeFile(
+        repoRoot,
+        'packages/llm_dart_transport/lib/llm_dart_transport.dart',
+        '''
+library;
+
+export 'dio_io.dart';
+''',
+      );
+
+      final result = await guard.evaluateTransportBoundaryGuards(
+        repoRoot: repoRoot,
+      );
+
+      expect(result.passed, isFalse);
+      expect(
+        result.violations,
+        contains(
+          contains(
+              'must stay Web-safe and must not export IO-only Dio helpers'),
+        ),
+      );
+    });
   });
 }
 

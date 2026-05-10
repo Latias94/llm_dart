@@ -117,6 +117,7 @@ final class OllamaModelCatalogClient {
 
   Future<List<OllamaInstalledModel>> listModels({
     Duration? timeout,
+    int? maxRetries,
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
@@ -132,6 +133,7 @@ final class OllamaModelCatalogClient {
           },
         ),
         timeout: timeout,
+        maxRetries: maxRetries,
         cancellation: cancellation,
         responseType: TransportResponseType.json,
       ),

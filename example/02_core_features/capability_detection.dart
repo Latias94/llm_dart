@@ -8,6 +8,10 @@ import 'package:llm_dart/core/capability.dart' as compat_core;
 import 'package:llm_dart/core/registry.dart' as compat_registry;
 import 'package:llm_dart/llm_dart.dart' as ai;
 
+const _stableExecutionCallOptions = core.CallOptions(
+  timeout: Duration(seconds: 20),
+);
+
 /// Capability detection through provider declarations.
 ///
 /// This example intentionally separates two layers:
@@ -233,6 +237,7 @@ Future<void> demonstrateStableExecution(
       options: const core.GenerateTextOptions(
         maxOutputTokens: 120,
       ),
+      callOptions: _stableExecutionCallOptions,
     );
 
     print('  Response: ${_truncate(result.text)}');

@@ -1,8 +1,7 @@
 import 'dart:convert';
 
-import '../common/provider_metadata.dart';
-import '../stream/text_stream_event.dart';
-import '../tool/tool_output.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
+
 import 'chat_ui_message.dart';
 
 final class ChatUiToolPartStore {

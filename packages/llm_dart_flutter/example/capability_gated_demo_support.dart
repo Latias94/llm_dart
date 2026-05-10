@@ -1,4 +1,4 @@
-import 'package:llm_dart_provider/llm_dart_provider.dart';
+import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'package:llm_dart_ollama/llm_dart_ollama.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart';
 

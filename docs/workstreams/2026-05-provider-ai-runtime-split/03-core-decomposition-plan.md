@@ -47,6 +47,7 @@ Move app-facing runtime helpers into `llm_dart_ai`:
 - multi-step runners
 - tool execution continuation
 - structured output helpers
+- shared chat UI projection and stream reader
 - result accumulator if it is runtime-facing rather than provider-codec-facing
 
 Acceptance:
@@ -58,10 +59,10 @@ Acceptance:
 
 Choose one of two paths:
 
-- keep UI message and projection in a focused `llm_dart_provider` entrypoint
-  only if it remains a small shared contract
+- keep UI message and projection in `llm_dart_ai` alongside the runtime if it
+  stays coupled to generation helpers and chat orchestration
 - split UI contracts into a separate `llm_dart_ui` package if UI projection
-  keeps growing independently of provider specs
+  keeps growing independently of the runtime layer
 
 Default recommendation:
 
@@ -71,12 +72,12 @@ Default recommendation:
 
 Current decision:
 
-- keep the small shared UI message and message-mapping contracts in
-  `llm_dart_provider` for the first breaking preview
+- keep the shared UI message, mapper, stream chunk, reader, and chat UI JSON
+  contracts in `llm_dart_ai` alongside the runtime helpers
 - keep old `llm_dart_core` UI paths as compatibility re-exports while concrete
   provider packages migrate away from core
 - revisit a dedicated UI package only if UI projection grows independently from
-  provider-facing stream and content contracts
+  the runtime layer
 
 ### Step 4 - Move Serialization With The Owning Contract
 

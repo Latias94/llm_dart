@@ -9,12 +9,14 @@ import '../common/transport_exception.dart';
 import '../common/transport_retry.dart';
 import 'dio_cancellation_adapter.dart';
 import 'dio_response_stream.dart';
+import 'log_sanitizer.dart';
 import 'transport_client.dart';
 
 final class DioTransportClient implements TransportClient {
   final Dio _dio;
   final Logger _logger;
   final TransportDiagnostics? _diagnostics;
+  final TransportDiagnosticsOptions _diagnosticsOptions;
   final TransportRetryPolicy _retryPolicy;
 
   static final Object _retryDelaySentinel = Object();
@@ -23,6 +25,8 @@ final class DioTransportClient implements TransportClient {
     Dio? dio,
     Logger? logger,
     TransportDiagnostics? diagnostics,
+    TransportDiagnosticsOptions diagnosticsOptions =
+        const TransportDiagnosticsOptions(),
     TransportRetryPolicy retryPolicy = const TransportRetryPolicy(),
   })  : _dio = dio ??
             Dio(
@@ -32,6 +36,7 @@ final class DioTransportClient implements TransportClient {
             ),
         _logger = logger ?? Logger('DioTransportClient'),
         _diagnostics = diagnostics,
+        _diagnosticsOptions = diagnosticsOptions,
         _retryPolicy = retryPolicy;
 
   /// Exposes the underlying Dio instance for compatibility adapters.
@@ -51,6 +56,7 @@ final class DioTransportClient implements TransportClient {
             method: _toDioMethod(request.method),
             headers: request.headers,
             responseType: _toDioResponseType(request.responseType),
+            connectTimeout: request.timeout,
             sendTimeout: request.timeout,
             receiveTimeout: request.timeout,
           ),
@@ -101,6 +107,7 @@ final class DioTransportClient implements TransportClient {
             method: _toDioMethod(request.method),
             headers: request.headers,
             responseType: ResponseType.stream,
+            connectTimeout: request.timeout,
             sendTimeout: request.timeout,
             receiveTimeout: request.timeout,
           ),
@@ -135,6 +142,7 @@ final class DioTransportClient implements TransportClient {
             statusCode: result.statusCode,
             headers: result.headers,
             body: responseBody,
+            includeBody: false,
           ),
         );
       },
@@ -148,9 +156,11 @@ final class DioTransportClient implements TransportClient {
       CancelToken? cancelToken,
     ) sendAttempt,
   }) async {
+    final retryPolicy = _effectiveRetryPolicy(request);
     final requestInfo = _createRequestInfo(
       request,
       isStreaming: isStreaming,
+      retryPolicy: retryPolicy,
     );
     for (var attempt = 1; true; attempt++) {
       final startedAt = DateTime.now();
@@ -191,6 +201,7 @@ final class DioTransportClient implements TransportClient {
           attempt: attempt,
           startedAt: startedAt,
           error: mapped,
+          retryPolicy: retryPolicy,
         );
         if (shouldRetry) {
           continue;
@@ -204,6 +215,7 @@ final class DioTransportClient implements TransportClient {
           attempt: attempt,
           startedAt: startedAt,
           error: error,
+          retryPolicy: retryPolicy,
         );
         if (shouldRetry) {
           continue;
@@ -217,6 +229,7 @@ final class DioTransportClient implements TransportClient {
           attempt: attempt,
           startedAt: startedAt,
           error: error,
+          retryPolicy: retryPolicy,
         );
         if (shouldRetry) {
           continue;
@@ -233,6 +246,7 @@ final class DioTransportClient implements TransportClient {
     required int attempt,
     required DateTime startedAt,
     required Object error,
+    required TransportRetryPolicy retryPolicy,
   }) async {
     final finishedAt = DateTime.now();
     _emitDiagnostics(
@@ -253,20 +267,30 @@ final class DioTransportClient implements TransportClient {
       isStreaming: isStreaming,
       error: error,
     );
-    if (!_retryPolicy.shouldRetry(retryContext)) {
+    if (!retryPolicy.shouldRetry(retryContext)) {
       return false;
     }
 
     await _waitForRetryDelay(
-      _retryPolicy.delayFor(retryContext),
+      retryPolicy.delayFor(retryContext),
       request.cancellation,
     );
     return true;
   }
 
+  TransportRetryPolicy _effectiveRetryPolicy(TransportRequest request) {
+    final maxRetries = request.maxRetries;
+    if (maxRetries == null) {
+      return _retryPolicy;
+    }
+
+    return _retryPolicy.withRequestMaxRetries(maxRetries);
+  }
+
   TransportDiagnosticsRequestInfo _createRequestInfo(
     TransportRequest request, {
     required bool isStreaming,
+    required TransportRetryPolicy retryPolicy,
   }) {
     final headerNames = request.headers.keys.toList(growable: false)..sort();
     return TransportDiagnosticsRequestInfo(
@@ -274,10 +298,17 @@ final class DioTransportClient implements TransportClient {
       method: request.method,
       responseType: request.responseType,
       timeout: request.timeout,
+      maxRetries: retryPolicy.maxRetries,
       isStreaming: isStreaming,
       hasBody: request.body != null,
       bodyType: request.body?.runtimeType.toString(),
       headerNames: headerNames,
+      headers: _diagnosticsOptions.includeHeaders
+          ? _sanitizeHeaders(request.headers)
+          : null,
+      body: _diagnosticsOptions.includeRequestBody
+          ? _diagnosticsOptions.sanitizeBody(request.body)
+          : null,
     );
   }
 
@@ -285,12 +316,18 @@ final class DioTransportClient implements TransportClient {
     required int statusCode,
     required Map<String, String> headers,
     required Object? body,
+    bool includeBody = true,
   }) {
     final headerNames = headers.keys.toList(growable: false)..sort();
     return TransportDiagnosticsResponseInfo(
       statusCode: statusCode,
       headerNames: headerNames,
       bodyType: body?.runtimeType.toString(),
+      headers:
+          _diagnosticsOptions.includeHeaders ? _sanitizeHeaders(headers) : null,
+      body: includeBody && _diagnosticsOptions.includeResponseBody
+          ? _diagnosticsOptions.sanitizeBody(body)
+          : null,
     );
   }
 
@@ -308,6 +345,13 @@ final class DioTransportClient implements TransportClient {
 
   void _emitDiagnostics(TransportDiagnosticsEvent event) {
     _diagnostics?.onEvent(event);
+  }
+
+  Map<String, String> _sanitizeHeaders(Map<String, String> headers) {
+    final sanitized = LogSanitizer.sanitizeHeaders(headers);
+    return sanitized.map(
+      (key, value) => MapEntry(key, value?.toString() ?? ''),
+    );
   }
 
   Future<void> _waitForRetryDelay(

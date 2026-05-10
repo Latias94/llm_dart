@@ -5,6 +5,7 @@ import 'dio_http_client_adapter_stub.dart'
     if (dart.library.io) 'dio_http_client_adapter_io.dart'
     if (dart.library.html) 'dio_http_client_adapter_web.dart';
 import 'dio_http_client_config.dart';
+import 'log_sanitizer.dart';
 
 /// Transport-owned factory for reusable Dio client setup.
 class DioHttpClientFactory {
@@ -106,8 +107,8 @@ class DioHttpClientFactory {
         log.warning(
           '⚠️ HTTP proxy configuration is not supported on this platform',
         );
-      } else if (!proxyUrl.startsWith('http')) {
-        log.warning('Proxy URL should start with http:// or https://');
+      } else if (_normalizeProxyHostPort(proxyUrl) == null) {
+        log.warning('Proxy URL is invalid');
       }
     }
 
@@ -139,27 +140,68 @@ class DioHttpClientFactory {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
-          logger.info('→ ${options.method} ${options.uri}');
-          logger.fine('→ Headers: ${options.headers}');
+          logger.info('→ ${options.method} '
+              '${LogSanitizer.sanitizeEndpoint(options.uri.toString())}');
+          logger.fine(
+            '→ Headers: ${LogSanitizer.sanitizeHeaders(options.headers)}',
+          );
           if (options.data != null) {
             logger.fine('→ Data: ${options.data}');
           }
           handler.next(options);
         },
         onResponse: (response, handler) {
-          logger
-              .info('← ${response.statusCode} ${response.requestOptions.uri}');
-          logger.fine('← Headers: ${response.headers}');
+          logger.info(
+            '← ${response.statusCode} ${LogSanitizer.sanitizeEndpoint(
+              response.requestOptions.uri.toString(),
+            )}',
+          );
+          logger.fine(
+            '← Headers: ${LogSanitizer.sanitizeHeaders(
+              response.headers.map.cast<String, dynamic>(),
+            )}',
+          );
           handler.next(response);
         },
         onError: (error, handler) {
           logger.severe(
-            '✗ ${error.requestOptions.method} ${error.requestOptions.uri}',
+            '✗ ${error.requestOptions.method} '
+            '${LogSanitizer.sanitizeEndpoint(
+              error.requestOptions.uri.toString(),
+            )}',
           );
           logger.severe('✗ Error: ${error.message}');
           handler.next(error);
         },
       ),
     );
+  }
+
+  static String? _normalizeProxyHostPort(String proxyUrl) {
+    final trimmed = proxyUrl.trim();
+    if (trimmed.isEmpty) {
+      return null;
+    }
+
+    if (trimmed.contains('://')) {
+      final uri = Uri.tryParse(trimmed);
+      if (uri == null || !uri.hasAuthority || uri.host.isEmpty) {
+        return null;
+      }
+
+      final port = uri.hasPort ? uri.port : _defaultProxyPort(uri.scheme);
+      return '${uri.host}:$port';
+    }
+
+    if (trimmed.startsWith('PROXY ')) {
+      final hostPort = trimmed.substring('PROXY '.length).trim();
+      return hostPort.isEmpty ? null : hostPort;
+    }
+
+    return trimmed;
+  }
+
+  static int _defaultProxyPort(String scheme) {
+    return scheme.toLowerCase() == 'https' ? 443 : 80;
   }
 }

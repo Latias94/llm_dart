@@ -24,17 +24,17 @@ Future<void> runOpenAIObjectExample() async {
   }
 
   final model = llm.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
-  final result = await core.generateTextCall<PersonSummary>(
-    model: model,
-    prompt: [
-      core.SystemPromptMessage.text(
-        'Return structured JSON only.',
-      ),
-      core.UserPromptMessage.text(
-        'Summarize Ada Lovelace as a person profile with name, role, and two strengths.',
-      ),
-    ],
-    outputSpec: core.ObjectOutputSpec<PersonSummary>(
+  try {
+    final result = await core.generateObject<PersonSummary>(
+      model: model,
+      prompt: [
+        core.SystemPromptMessage.text(
+          'Return structured JSON only.',
+        ),
+        core.UserPromptMessage.text(
+          'Summarize Ada Lovelace as a person profile with name, role, and two strengths.',
+        ),
+      ],
       schema: core.JsonSchema.object(
         properties: const {
           'name': {'type': 'string'},
@@ -50,13 +50,15 @@ Future<void> runOpenAIObjectExample() async {
         additionalProperties: false,
       ),
       decode: PersonSummary.fromJson,
-    ),
-  );
+    );
 
-  print('OpenAI object output');
-  print('Name: ${result.output.name}');
-  print('Role: ${result.output.role}');
-  print('Strengths: ${result.output.strengths.join(', ')}\n');
+    print('OpenAI object output');
+    print('Name: ${result.output.name}');
+    print('Role: ${result.output.role}');
+    print('Strengths: ${result.output.strengths.join(', ')}\n');
+  } catch (error) {
+    print('OpenAI object example failed: $error\n');
+  }
 }
 
 Future<void> runOpenAIStreamingObjectExample() async {
@@ -68,15 +70,15 @@ Future<void> runOpenAIStreamingObjectExample() async {
   }
 
   final model = llm.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
-  final streamResult = core.streamTextCall<PersonSummary>(
-    model: model,
-    prompt: [
-      core.SystemPromptMessage.text('Return structured JSON only.'),
-      core.UserPromptMessage.text(
-        'Stream a short profile for Grace Hopper with name, role, and two strengths.',
-      ),
-    ],
-    outputSpec: core.ObjectOutputSpec<PersonSummary>(
+  try {
+    final streamResult = core.streamObject<PersonSummary>(
+      model: model,
+      prompt: [
+        core.SystemPromptMessage.text('Return structured JSON only.'),
+        core.UserPromptMessage.text(
+          'Stream a short profile for Grace Hopper with name, role, and two strengths.',
+        ),
+      ],
       schema: core.JsonSchema.object(
         properties: const {
           'name': {'type': 'string'},
@@ -92,15 +94,22 @@ Future<void> runOpenAIStreamingObjectExample() async {
         additionalProperties: false,
       ),
       decode: PersonSummary.fromJson,
-    ),
-  );
+    );
 
-  print('OpenAI streaming object output');
-  await for (final partialOutput in streamResult.partialOutputStream) {
-    print('Partial: $partialOutput');
+    print('OpenAI streaming object output');
+    await for (final event in streamResult.eventStream) {
+      if (event
+          case core.OutputPartialEvent<PersonSummary>(
+            :final partialOutput,
+          )) {
+        print('Partial: $partialOutput');
+      }
+    }
+    final output = await streamResult.output;
+    print('Final: ${output.name} / ${output.role}\n');
+  } catch (error) {
+    print('OpenAI streaming object example failed: $error\n');
   }
-  final output = await streamResult.output;
-  print('Final: ${output.name} / ${output.role}\n');
 }
 
 Future<void> runOpenAIArrayExample() async {
@@ -111,26 +120,30 @@ Future<void> runOpenAIArrayExample() async {
   }
 
   final model = llm.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
-  final result = await core.generateTextCall<List<String>>(
-    model: model,
-    prompt: [
-      core.UserPromptMessage.text(
-        'Return three short Flutter layout tips as an array of strings.',
+  try {
+    final result = await core.generateTextCall<List<String>>(
+      model: model,
+      prompt: [
+        core.UserPromptMessage.text(
+          'Return three short Flutter layout tips as an array of strings.',
+        ),
+      ],
+      outputSpec: core.ArrayOutputSpec<String>(
+        elementSchema: core.JsonSchema.string(),
+        decodeElement: (json) => json! as String,
+        name: 'layout_tips',
+        description: 'A short list of Flutter layout tips.',
       ),
-    ],
-    outputSpec: core.ArrayOutputSpec<String>(
-      elementSchema: core.JsonSchema.string(),
-      decodeElement: (json) => json! as String,
-      name: 'layout_tips',
-      description: 'A short list of Flutter layout tips.',
-    ),
-  );
+    );
 
-  print('OpenAI array output');
-  for (final item in result.output) {
-    print('- $item');
+    print('OpenAI array output');
+    for (final item in result.output) {
+      print('- $item');
+    }
+    print('');
+  } catch (error) {
+    print('OpenAI array example failed: $error\n');
   }
-  print('');
 }
 
 Future<void> runOpenAIStreamingArrayExample() async {
@@ -142,27 +155,31 @@ Future<void> runOpenAIStreamingArrayExample() async {
   }
 
   final model = llm.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
-  final streamResult = core.streamTextCall<List<String>>(
-    model: model,
-    prompt: [
-      core.UserPromptMessage.text(
-        'Return three short Flutter layout tips as an array of strings.',
+  try {
+    final streamResult = core.streamTextCall<List<String>>(
+      model: model,
+      prompt: [
+        core.UserPromptMessage.text(
+          'Return three short Flutter layout tips as an array of strings.',
+        ),
+      ],
+      outputSpec: core.ArrayOutputSpec<String>(
+        elementSchema: core.JsonSchema.string(),
+        decodeElement: (json) => json! as String,
+        name: 'layout_tips',
+        description: 'A short list of Flutter layout tips.',
       ),
-    ],
-    outputSpec: core.ArrayOutputSpec<String>(
-      elementSchema: core.JsonSchema.string(),
-      decodeElement: (json) => json! as String,
-      name: 'layout_tips',
-      description: 'A short list of Flutter layout tips.',
-    ),
-  );
+    );
 
-  print('OpenAI streaming array output');
-  await for (final element in streamResult.elementStream<String>()) {
-    print('Element: $element');
+    print('OpenAI streaming array output');
+    await for (final element in streamResult.elementStream<String>()) {
+      print('Element: $element');
+    }
+    final output = await streamResult.output;
+    print('Final array length: ${output.length}\n');
+  } catch (error) {
+    print('OpenAI streaming array example failed: $error\n');
   }
-  final output = await streamResult.output;
-  print('Final array length: ${output.length}\n');
 }
 
 Future<void> runGoogleChoiceExample() async {
@@ -174,22 +191,26 @@ Future<void> runGoogleChoiceExample() async {
   }
 
   final model = llm.google(apiKey: apiKey).chatModel('gemini-2.5-flash');
-  final result = await core.generateTextCall<String>(
-    model: model,
-    prompt: [
-      core.UserPromptMessage.text(
-        'Classify this tone as one of: calm, urgent, playful. Text: "We should fix this today before users notice."',
+  try {
+    final result = await core.generateTextCall<String>(
+      model: model,
+      prompt: [
+        core.UserPromptMessage.text(
+          'Classify this tone as one of: calm, urgent, playful. Text: "We should fix this today before users notice."',
+        ),
+      ],
+      outputSpec: core.ChoiceOutputSpec<String>(
+        options: const ['calm', 'urgent', 'playful'],
+        name: 'tone',
+        description: 'Tone classification result.',
       ),
-    ],
-    outputSpec: core.ChoiceOutputSpec<String>(
-      options: const ['calm', 'urgent', 'playful'],
-      name: 'tone',
-      description: 'Tone classification result.',
-    ),
-  );
+    );
 
-  print('Google choice output');
-  print('Tone: ${result.output}\n');
+    print('Google choice output');
+    print('Tone: ${result.output}\n');
+  } catch (error) {
+    print('Google choice example failed: $error\n');
+  }
 }
 
 final class PersonSummary {

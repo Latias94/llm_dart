@@ -88,8 +88,9 @@ Not recommended until migration recipes and release notes are complete.
 
 1. Stop adding new implementation logic to root legacy areas.
 2. Move provider-owned modern code into provider packages first.
-3. Move shared contracts into `llm_dart_provider`.
-4. Move generation orchestration into `llm_dart_ai`.
+3. Move provider-facing shared contracts into `llm_dart_provider`.
+4. Move generation orchestration and shared chat UI projection into
+   `llm_dart_ai`.
 5. Update examples to use focused modern imports.
 6. Keep `legacy.dart` as an explicit bridge.
 7. Remove root dependencies only after root-local implementation code no

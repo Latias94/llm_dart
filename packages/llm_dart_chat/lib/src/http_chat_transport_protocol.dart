@@ -1,6 +1,7 @@
-export 'package:llm_dart_transport/llm_dart_transport.dart'
+export 'http_chat_transport_protocol_impl.dart'
     show
         HttpChatTransportAbortChunk,
+        HttpChatTransportCallOptionsPayload,
         HttpChatTransportCheckpointChunk,
         HttpChatTransportChunk,
         HttpChatTransportChunkJsonCodec,

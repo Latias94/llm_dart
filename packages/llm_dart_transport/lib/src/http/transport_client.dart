@@ -1,5 +1,7 @@
 import '../common/transport_cancellation.dart';
 
+const Object _transportUnset = Object();
+
 enum TransportMethod {
   get,
   post,
@@ -20,6 +22,7 @@ final class TransportRequest {
   final Map<String, String> headers;
   final Object? body;
   final Duration? timeout;
+  final int? maxRetries;
   final TransportCancellation? cancellation;
   final TransportResponseType responseType;
 
@@ -29,9 +32,32 @@ final class TransportRequest {
     this.headers = const {},
     this.body,
     this.timeout,
+    this.maxRetries,
     this.cancellation,
     this.responseType = TransportResponseType.json,
-  });
+  }) : assert(maxRetries == null || maxRetries >= 0);
+
+  TransportRequest copyWith({
+    Uri? uri,
+    TransportMethod? method,
+    Map<String, String>? headers,
+    Object? body = _transportUnset,
+    Duration? timeout,
+    int? maxRetries,
+    TransportCancellation? cancellation,
+    TransportResponseType? responseType,
+  }) {
+    return TransportRequest(
+      uri: uri ?? this.uri,
+      method: method ?? this.method,
+      headers: headers ?? this.headers,
+      body: identical(body, _transportUnset) ? this.body : body,
+      timeout: timeout ?? this.timeout,
+      maxRetries: maxRetries ?? this.maxRetries,
+      cancellation: cancellation ?? this.cancellation,
+      responseType: responseType ?? this.responseType,
+    );
+  }
 }
 
 final class TransportResponse {
@@ -44,6 +70,18 @@ final class TransportResponse {
     this.headers = const {},
     this.body,
   });
+
+  TransportResponse copyWith({
+    int? statusCode,
+    Map<String, String>? headers,
+    Object? body = _transportUnset,
+  }) {
+    return TransportResponse(
+      statusCode: statusCode ?? this.statusCode,
+      headers: headers ?? this.headers,
+      body: identical(body, _transportUnset) ? this.body : body,
+    );
+  }
 }
 
 final class StreamingTransportResponse {
@@ -56,6 +94,18 @@ final class StreamingTransportResponse {
     required this.stream,
     this.headers = const {},
   });
+
+  StreamingTransportResponse copyWith({
+    int? statusCode,
+    Map<String, String>? headers,
+    Stream<List<int>>? stream,
+  }) {
+    return StreamingTransportResponse(
+      statusCode: statusCode ?? this.statusCode,
+      headers: headers ?? this.headers,
+      stream: stream ?? this.stream,
+    );
+  }
 }
 
 abstract interface class TransportClient {

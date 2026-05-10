@@ -42,13 +42,6 @@ ElevenLabs now live in dedicated provider packages:
   `elevenLabs(...).transcriptionModel(...)`, and
   `elevenLabs(...).voices().listVoices()`
 
-The legacy compatibility builder still exists through
-`package:llm_dart/legacy.dart`.
-
-`LLMBuilder()` remains the explicit compatibility builder surface.
-The old `ai()` helper is now a deprecated migration alias rather than the
-recommended main API.
-
 For modern code, prefer `package:llm_dart/llm_dart.dart` as the default import.
 `package:llm_dart/ai.dart` remains the explicit equivalent alias when you want a
 named AI-focused shell.
@@ -63,12 +56,8 @@ Recommended entry flow for new code:
   `package:llm_dart/core.dart` when you want a narrower shared-runtime import
 - add provider-owned option types, metadata inspection, or lifecycle APIs only
   at explicit application boundaries
-- reach for `package:llm_dart/legacy.dart` only when migrating older
-  builder-era code
-
-For Ollama and ElevenLabs specifically, the root compatibility shells are now
-migration surfaces. New app code should start from `llm_dart_ollama` or
-`llm_dart_elevenlabs` instead.
+- use the legacy compatibility import only when migrating older builder-era
+  code
 
 Ollama and ElevenLabs capability profiles are also available through their
 dedicated packages. For app and Flutter gating, treat the current ElevenLabs
@@ -84,8 +73,8 @@ output as potentially `inferred` rather than as hard guarantees.
   - provider-facing prompt, content, tool, model, response, and stream
     contracts
 - `llm_dart_ai`
-  - framework-neutral generation helpers, runners, result accumulation, and
-    structured output utilities
+  - framework-neutral generation helpers, shared chat UI projection, runners,
+    result accumulation, and structured output utilities
 - `llm_dart_core`
   - compatibility package for historical core imports
 - `llm_dart_transport`
@@ -226,6 +215,13 @@ Current text-call layering:
 - `generateText(...)` / `streamText(...)`
   - lower-level raw single-step helpers
 
+Structured object helpers follow the same pattern:
+
+- `generateObject(...)` / `streamObject(...)`
+  - object-first wrappers over the shared structured-output runtime
+- `generateOutput(...)` / `streamOutput(...)`
+  - lower-level custom structured-output helpers for advanced schemas
+
 Other shared capability helpers:
 
 - `embed(...)` / `embedMany(...)`
@@ -256,6 +252,30 @@ Future<void> main() async {
 Example file:
 [quick_start.dart](example/01_getting_started/quick_start.dart)
 
+## Dynamic Model Selection
+
+Use `ModelRegistry` when the provider is chosen at runtime but you still want a
+typed model contract.
+
+```dart
+import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart_provider/llm_dart_provider.dart' as provider;
+
+final registry = provider.ModelRegistry(
+  languageModels: {
+    'openai': (modelId) =>
+        llm.openai(apiKey: 'your-openai-key').chatModel(modelId),
+    'anthropic': (modelId) =>
+        llm.anthropic(apiKey: 'your-anthropic-key').chatModel(modelId),
+  },
+);
+
+final model = registry.languageModel('openai:gpt-4.1-mini');
+```
+
+Use direct provider facades for the simplest path, and use the registry only
+when the choice really is dynamic.
+
 ## Provider-Owned Helper Boundaries
 
 Some useful product features are intentionally not shared abstractions. Use the
@@ -278,7 +298,8 @@ whose request and result semantics differ materially by provider.
 ## Structured Output
 
 Shared structured generation now lives above the main text-call layer through
-`OutputSpec`, `generateTextCall(...)`, and `streamTextCall(...)`.
+`OutputSpec`, `generateTextCall(...)`, `streamTextCall(...)`, `generateObject(...)`,
+and `streamObject(...)`.
 
 ```dart
 import 'package:llm_dart/llm_dart.dart' as llm;
@@ -289,25 +310,27 @@ Future<void> main() async {
     apiKey: 'your-openai-key',
   ).chatModel('gpt-4.1-mini');
 
-  final result = await core.generateTextCall<String>(
+  final result = await core.generateObject<String>(
     model: model,
     prompt: [
       core.UserPromptMessage.text('Return a JSON object with a short title.'),
     ],
-    outputSpec: core.ObjectOutputSpec<String>(
-      schema: core.JsonSchema.object(
-        properties: const {
-          'title': {'type': 'string'},
-        },
-        required: const ['title'],
-      ),
-      decode: (json) => json['title']! as String,
+    schema: core.JsonSchema.object(
+      properties: const {
+        'title': {'type': 'string'},
+      },
+      required: const ['title'],
     ),
+    decode: (json) => json['title']! as String,
   );
 
   print(result.output);
 }
 ```
+
+If you want partial structured output while streaming, use
+`streamObject(...)` and read `result`, `output`, or `text` from the returned
+stream wrapper.
 
 ## Embeddings
 
@@ -382,7 +405,8 @@ Example file:
 
 ## Tool Calling
 
-Tool definitions live in `llm_dart_provider`, and `llm_dart_core` re-exports them while providers map them into provider-owned request codecs.
+Tool definitions live in `llm_dart_provider`, and `package:llm_dart/core.dart`
+re-exports them while providers map them into provider-owned request codecs.
 
 ```dart
 import 'package:llm_dart/llm_dart.dart' as llm;
@@ -506,9 +530,10 @@ This entrypoint re-exports `DefaultChatSession`, `DirectChatTransport`,
 provider factories without pulling Flutter adapters into the root package
 surface.
 
-`ChatMessageMapper` now lives in `package:llm_dart/core.dart` as part of the
-shared UI model layer, and remains available from `package:llm_dart/chat.dart`
-for chat-runtime-oriented imports.
+`ChatMessageMapper` now lives in `package:llm_dart_ai/llm_dart_ai.dart` as
+part of the shared UI/runtime layer, and remains available from
+`package:llm_dart/core.dart`, `package:llm_dart/chat.dart`, and
+`package:llm_dart_flutter/llm_dart_flutter.dart` through re-exports.
 
 Runnable pure Dart runtime example:
 [chat_runtime.dart](packages/llm_dart_chat/example/chat_runtime.dart)
@@ -587,8 +612,8 @@ entrypoints instead of widening the shared chat layer.
 
 The default recommendation is now:
 
-- import `ChatMessageMapper` from `package:llm_dart/core.dart` or any package
-  that re-exports it
+- import `ChatMessageMapper` from `package:llm_dart_ai/llm_dart_ai.dart` or
+  any entrypoint that re-exports it
 - use `OpenAIMessageMapper.mapComposed(...)` or
   `GoogleMessageMapper.mapComposed(...)` when the UI needs both the shared
   baseline and provider-owned metadata in one call
@@ -636,6 +661,47 @@ void renderGoogle(ChatUiMessage message) {
     print(detail.chunkType);
   }
 }
+```
+
+## Request And Transport Controls
+
+`CallOptions` is the request-scoped equivalent of Vercel AI SDK
+`RequestOptions`: use it for timeout, extra HTTP headers, cancellation,
+`maxRetries`, and typed `providerOptions`.
+Runner telemetry stays callback-shaped: `runTextGeneration(...)` and
+`streamTextRun(...)` expose step, chunk, finish, and error callbacks that can be
+bridged into your logger or tracing system.
+
+```dart
+import 'package:llm_dart/core.dart' as core;
+
+final result = await core.generateTextCall(
+  model: model,
+  prompt: [core.UserPromptMessage.text('Keep this request short.')],
+  callOptions: const core.CallOptions(
+    timeout: Duration(seconds: 20),
+    maxRetries: 1,
+    headers: {'x-client-trace-id': 'trace-1'},
+  ),
+);
+```
+
+For custom fetch-style behavior, keep the provider API unchanged and inject a
+transport:
+
+```dart
+import 'package:llm_dart/transport.dart' as transport;
+
+final wrappedTransport = transport.MiddlewareTransportClient(
+  inner: transport.DioTransportClient(dio: myDio),
+  middlewares: [
+    transport.TransportMiddleware(
+      onRequest: (request) => request.copyWith(
+        headers: {...request.headers, 'x-app': 'demo'},
+      ),
+    ),
+  ],
+);
 ```
 
 ## Provider-Specific Options
@@ -751,3 +817,10 @@ If you still need the broad legacy surface, prefer the explicit import:
 ```dart
 import 'package:llm_dart/legacy.dart';
 ```
+
+`LLMBuilder()` remains available only on that compatibility path. The old
+`ai()` helper is a deprecated migration alias rather than the recommended main
+API.
+
+For Ollama and ElevenLabs, new app code should start from `llm_dart_ollama` or
+`llm_dart_elevenlabs`. The root compatibility shells remain for migration code.

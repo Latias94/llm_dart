@@ -1,5 +1,4 @@
-import 'package:llm_dart_provider/llm_dart_provider.dart';
-
+import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'openai_custom_part.dart';
 
 final class OpenAICustomPartSummaryField {
@@ -62,36 +61,24 @@ final class OpenAICustomPartSummary {
   static List<OpenAICustomPartSummary> parsePromptParts(
     Iterable<PromptPart> parts,
   ) {
-    return List<OpenAICustomPartSummary>.unmodifiable([
-      for (final part in parts)
-        if (tryParsePromptPart(part) case final summary?) summary,
-    ]);
+    return parseTypedParts(parts, tryParsePromptPart);
   }
 
   static List<OpenAICustomPartSummary> parseContentParts(
     Iterable<ContentPart> parts,
   ) {
-    return List<OpenAICustomPartSummary>.unmodifiable([
-      for (final part in parts)
-        if (tryParseContentPart(part) case final summary?) summary,
-    ]);
+    return parseTypedParts(parts, tryParseContentPart);
   }
 
   static List<OpenAICustomPartSummary> parseUiParts(
       Iterable<ChatUiPart> parts) {
-    return List<OpenAICustomPartSummary>.unmodifiable([
-      for (final part in parts)
-        if (tryParseUiPart(part) case final summary?) summary,
-    ]);
+    return parseTypedParts(parts, tryParseUiPart);
   }
 
   static List<OpenAICustomPartSummary> parseEvents(
     Iterable<TextStreamEvent> events,
   ) {
-    return List<OpenAICustomPartSummary>.unmodifiable([
-      for (final event in events)
-        if (tryParseEvent(event) case final summary?) summary,
-    ]);
+    return parseTypedParts(events, tryParseEvent);
   }
 }
 

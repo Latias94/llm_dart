@@ -262,11 +262,13 @@ final result = await core.generateTextCall(
   ],
   callOptions: const core.CallOptions(
     timeout: Duration(seconds: 45),
+    maxRetries: 1,
   ),
 );
 
 // Priority:
-// CallOptions.timeout > transport receive/send timeouts > transport timeout
+// CallOptions.timeout > transport receive/send timeouts > transport timeout.
+// CallOptions.maxRetries > DioTransportClient retryPolicy for this request.
 // Connection timeout stays on the transport client.
 ```
 
@@ -295,8 +297,10 @@ final result = await core.generateTextCall(
   on shared models and helpers
 - Keep transport wiring in the transport layer with typed config objects or
   explicit custom transport clients
-- Use `CallOptions` for request-scoped timeout and header overrides instead of
-  smuggling them through provider construction
+- Use `CallOptions` for request-scoped timeout, header, cancellation, and
+  retry overrides instead of smuggling them through provider construction
+- Use `MiddlewareTransportClient` for custom fetch-style hooks that should
+  apply across providers
 - Avoid forcing provider-native transport or realtime features into a fake
   shared abstraction
 
@@ -308,7 +312,8 @@ final result = await core.generateTextCall(
 - Configure appropriate timeouts for your use case
 - Enable logging only in development/debugging
 - Validate proxy and certificate configurations
-- Implement retry logic and error handling in custom interceptors
+- Use transport retry policies or per-call `maxRetries` for transient network
+  failures
 
 ### Timeout Configuration
 - Use transport timeout defaults for shared infrastructure policy

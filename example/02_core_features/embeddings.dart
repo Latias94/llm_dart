@@ -7,6 +7,10 @@ import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart_ollama/llm_dart_ollama.dart' as ollama_pkg;
 
+const _demoCallOptions = core.CallOptions(
+  timeout: Duration(seconds: 20),
+);
+
 /// Stable shared embeddings example across multiple provider families.
 ///
 /// This example demonstrates:
@@ -84,7 +88,12 @@ List<_EmbeddingDemoEntry> _collectEmbeddingModels() {
 Future<void> demonstrateEmbeddingFeatures(core.EmbeddingModel model) async {
   print('  Model: ${model.providerId}/${model.modelId}');
 
-  await demonstrateBasicEmbeddings(model);
+  final available = await demonstrateBasicEmbeddings(model);
+  if (!available) {
+    print('');
+    return;
+  }
+
   await demonstrateBatchEmbeddings(model);
   await demonstrateSimilarityCalculations(model);
   await demonstrateSemanticSearch(model);
@@ -93,13 +102,14 @@ Future<void> demonstrateEmbeddingFeatures(core.EmbeddingModel model) async {
   print('');
 }
 
-Future<void> demonstrateBasicEmbeddings(core.EmbeddingModel model) async {
+Future<bool> demonstrateBasicEmbeddings(core.EmbeddingModel model) async {
   print('  Basic embeddings:');
 
   try {
     final single = await core.embed(
       model: model,
       value: 'Hello, world! This is a test sentence for embedding.',
+      callOptions: _demoCallOptions,
     );
 
     print('    Single embedding: ${single.embedding.length} dimensions');
@@ -112,8 +122,8 @@ Future<void> demonstrateBasicEmbeddings(core.EmbeddingModel model) async {
       values: const [
         'The quick brown fox jumps over the lazy dog.',
         'Machine learning is a subset of artificial intelligence.',
-        'The weather is beautiful today.',
       ],
+      callOptions: _demoCallOptions,
     );
 
     print(
@@ -124,8 +134,10 @@ Future<void> demonstrateBasicEmbeddings(core.EmbeddingModel model) async {
         '      Text ${index + 1}: ${multiple.embeddings[index].length} dimensions',
       );
     }
+    return true;
   } catch (error) {
     print('    Failed: $error');
+    return false;
   }
 }
 
@@ -137,19 +149,13 @@ Future<void> demonstrateBatchEmbeddings(core.EmbeddingModel model) async {
       'Artificial intelligence is transforming industries.',
       'Machine learning algorithms learn from data.',
       'Deep learning uses neural networks.',
-      'Natural language processing handles text.',
-      'Computer vision analyzes images.',
-      'Robotics combines AI with physical systems.',
-      'Data science extracts insights from data.',
-      'Cloud computing provides scalable resources.',
-      'Cybersecurity protects digital assets.',
-      'Blockchain ensures data integrity.',
     ];
 
     final startTime = DateTime.now();
     final batch = await core.embedMany(
       model: model,
       values: batchTexts,
+      callOptions: _demoCallOptions,
     );
     final duration = DateTime.now().difference(startTime);
 
@@ -183,12 +189,12 @@ Future<void> demonstrateSimilarityCalculations(
       'I love programming in Dart.',
       'Dart programming is enjoyable.',
       'Python is a great language.',
-      'The weather is sunny today.',
     ];
 
     final batch = await core.embedMany(
       model: model,
       values: testTexts,
+      callOptions: _demoCallOptions,
     );
     final referenceEmbedding = batch.embeddings.first;
 
@@ -216,38 +222,33 @@ Future<void> demonstrateSemanticSearch(core.EmbeddingModel model) async {
     final documents = const [
       'Machine learning algorithms can learn patterns from data without explicit programming.',
       'Deep learning is a subset of machine learning that uses neural networks with multiple layers.',
-      'Natural language processing enables computers to understand and generate human language.',
-      'Computer vision allows machines to interpret and analyze visual information from images.',
-      'Artificial intelligence aims to create systems that can perform tasks requiring human intelligence.',
-      'Data science combines statistics, programming, and domain expertise to extract insights.',
       'Cloud computing provides on-demand access to computing resources over the internet.',
-      'Cybersecurity focuses on protecting digital systems from threats and attacks.',
-      'The weather forecast predicts rain for tomorrow afternoon.',
       'Cooking pasta requires boiling water and adding salt for flavor.',
     ];
 
     final documentEmbeddings = await core.embedMany(
       model: model,
       values: documents,
+      callOptions: _demoCallOptions,
     );
 
     final queries = const [
       'neural networks and deep learning',
       'understanding human language',
-      'cooking food',
     ];
 
     for (final query in queries) {
       final queryResult = await core.embed(
         model: model,
         value: query,
+        callOptions: _demoCallOptions,
       );
 
       final results = SemanticSearchEngine.search(
         queryResult.embedding,
         documentEmbeddings.embeddings,
         documents,
-        topK: 3,
+        topK: 2,
       );
 
       print('    Query: "$query"');
@@ -271,18 +272,15 @@ Future<void> demonstrateDocumentClustering(core.EmbeddingModel model) async {
     final documents = const [
       'Artificial intelligence is revolutionizing technology.',
       'Machine learning algorithms improve with more data.',
-      'Software development requires careful planning.',
       'Italian cuisine features pasta and pizza.',
       'French cooking emphasizes technique and flavor.',
-      'Asian food includes rice and noodles.',
-      'Football is popular in many countries.',
       'Basketball requires teamwork and skill.',
-      'Tennis is an individual sport.',
     ];
 
     final embeddings = await core.embedMany(
       model: model,
       values: documents,
+      callOptions: _demoCallOptions,
     );
 
     final clusters = DocumentClusterer.clusterBySimilarity(
@@ -296,7 +294,7 @@ Future<void> demonstrateDocumentClustering(core.EmbeddingModel model) async {
       final cluster = clusters[index];
       print('      Cluster ${index + 1} (${cluster.length} documents):');
       for (final document in cluster) {
-        print('        - ${document.substring(0, 40)}...');
+        print('        - ${_truncate(document, maxLength: 40)}');
       }
     }
   } catch (error) {
@@ -445,4 +443,12 @@ class DocumentClusterer {
 
     return clusters;
   }
+}
+
+String _truncate(String value, {int maxLength = 40}) {
+  if (value.length <= maxLength) {
+    return value;
+  }
+
+  return '${value.substring(0, maxLength)}...';
 }

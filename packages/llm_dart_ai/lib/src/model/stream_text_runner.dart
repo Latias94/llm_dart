@@ -62,6 +62,8 @@ final class StreamTextRunner {
   final GenerateTextOnStepStart? onStepStart;
   final GenerateTextOnStepFinish? onStepFinish;
   final GenerateTextOnFinish? onFinish;
+  final StreamTextOnChunk? onChunk;
+  final GenerateTextOnError? onError;
 
   StreamTextRunner({
     required this.model,
@@ -75,6 +77,8 @@ final class StreamTextRunner {
     this.onStepStart,
     this.onStepFinish,
     this.onFinish,
+    this.onChunk,
+    this.onError,
   })  : prompt = List.unmodifiable(prompt),
         tools = List.unmodifiable(tools) {
     if (maxSteps < 1) {
@@ -147,6 +151,7 @@ final class StreamTextRunner {
         await for (final event in model.stream(request)) {
           accumulator.apply(event);
           eventChannel.add(event);
+          await onChunk?.call(event);
         }
 
         final step = GenerateTextStepResult(
@@ -195,11 +200,30 @@ final class StreamTextRunner {
       eventChannel.close();
       stepChannel.close();
     } catch (error, stackTrace) {
+      final (reportedError, reportedStackTrace) =
+          await _notifyError(error, stackTrace);
       if (!resultCompleter.isCompleted) {
-        resultCompleter.completeError(error, stackTrace);
+        resultCompleter.completeError(reportedError, reportedStackTrace);
       }
-      eventChannel.addError(error, stackTrace);
-      stepChannel.addError(error, stackTrace);
+      eventChannel.addError(reportedError, reportedStackTrace);
+      stepChannel.addError(reportedError, reportedStackTrace);
+    }
+  }
+
+  Future<(Object, StackTrace)> _notifyError(
+    Object error,
+    StackTrace stackTrace,
+  ) async {
+    final callback = onError;
+    if (callback == null) {
+      return (error, stackTrace);
+    }
+
+    try {
+      await callback(error, stackTrace);
+      return (error, stackTrace);
+    } catch (callbackError, callbackStackTrace) {
+      return (callbackError, callbackStackTrace);
     }
   }
 }
@@ -216,6 +240,8 @@ StreamTextRunResult streamTextRun({
   GenerateTextOnStepStart? onStepStart,
   GenerateTextOnStepFinish? onStepFinish,
   GenerateTextOnFinish? onFinish,
+  StreamTextOnChunk? onChunk,
+  GenerateTextOnError? onError,
 }) {
   return StreamTextRunner(
     model: model,
@@ -229,5 +255,7 @@ StreamTextRunResult streamTextRun({
     onStepStart: onStepStart,
     onStepFinish: onStepFinish,
     onFinish: onFinish,
+    onChunk: onChunk,
+    onError: onError,
   ).run();
 }

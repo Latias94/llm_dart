@@ -42,6 +42,7 @@ Future<void> main() async {
   await demonstrateTimeoutBaseline(apiKey);
   await demonstrateLoggingConfiguration(apiKey);
   await demonstrateComprehensiveConfiguration(apiKey);
+  await demonstrateRequestHooksAndDiagnostics(apiKey);
 
   print('HTTP configuration demo completed.');
 }
@@ -307,6 +308,79 @@ Future<void> demonstrateComprehensiveConfiguration(String apiKey) async {
   }
 }
 
+Future<void> demonstrateRequestHooksAndDiagnostics(String apiKey) async {
+  print('=== Request Hooks And Diagnostics ===\n');
+
+  final events = <transport.TransportDiagnosticsEvent>[];
+  final baseTransport = _transportFromConfig(
+    const transport.DioHttpClientConfig(
+      baseUrl: _openAIBaseUrl,
+      defaultHeaders: <String, String>{},
+      timeout: Duration(seconds: 30),
+      enableLogging: true,
+    ),
+    loggerName: 'http_configuration.request_hooks',
+    diagnostics: transport.CallbackTransportDiagnostics(events.add),
+    diagnosticsOptions: transport.TransportDiagnosticsOptions(
+      includeHeaders: true,
+      includeRequestBody: true,
+      includeResponseBody: true,
+      bodySanitizer: (body) {
+        if (body is Map) {
+          return {
+            'keys': body.keys.map((key) => key.toString()).toList(),
+          };
+        }
+        return body?.runtimeType.toString();
+      },
+    ),
+  );
+
+  final hookedTransport = transport.MiddlewareTransportClient(
+    inner: baseTransport,
+    middlewares: [
+      transport.TransportMiddleware(
+        onRequest: (request) => request.copyWith(
+          headers: {
+            ...request.headers,
+            'x-demo-hook': 'enabled',
+          },
+        ),
+      ),
+    ],
+  );
+
+  try {
+    final result = await _runPrompt(
+      model: _openAIModel(
+        apiKey,
+        transportClient: hookedTransport,
+      ),
+      prompt: 'Reply with one short sentence.',
+      callOptions: const core.CallOptions(
+        timeout: Duration(seconds: 20),
+        maxRetries: 1,
+        headers: <String, String>{
+          'X-Per-Call-Header': 'hook-demo',
+        },
+      ),
+    );
+
+    final startEvent = events.firstWhere(
+      (event) =>
+          event.kind == transport.TransportDiagnosticsEventKind.requestStart,
+    );
+
+    print('Hooked request maxRetries: ${startEvent.request.maxRetries}');
+    print(
+        'Hooked request headers: ${startEvent.request.headerNames.join(', ')}');
+    print('Hooked request body snapshot: ${startEvent.request.body}');
+    print('Response: ${result.text}\n');
+  } catch (error) {
+    print('Request hook demo failed: $error\n');
+  }
+}
+
 void _configureLogging() {
   transport.Logger.root.level = transport.Level.ALL;
   transport.Logger.root.onRecord.listen((record) {
@@ -330,12 +404,19 @@ core.LanguageModel _openAIModel(
 transport.TransportClient _transportFromConfig(
   transport.DioHttpClientConfig config, {
   required String loggerName,
+  transport.TransportDiagnostics? diagnostics,
+  transport.TransportDiagnosticsOptions diagnosticsOptions =
+      const transport.TransportDiagnosticsOptions(),
 }) {
   final dio = transport.DioHttpClientFactory.createConfiguredDio(
     config: config,
     logger: transport.Logger(loggerName),
   );
-  return transport.DioTransportClient(dio: dio);
+  return transport.DioTransportClient(
+    dio: dio,
+    diagnostics: diagnostics,
+    diagnosticsOptions: diagnosticsOptions,
+  );
 }
 
 Future<core.GenerateTextCallResult<void>> _runPrompt({

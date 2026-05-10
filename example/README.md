@@ -5,11 +5,10 @@ Practical examples for the LLM Dart library, organized by learning path and use 
 For modern examples, the default root import is
 `package:llm_dart/llm_dart.dart`.
 
-When an example still needs the broad compatibility shell, it should import
-`package:llm_dart/legacy.dart` explicitly and be read as
-compatibility-oriented material. Builder-oriented examples should still prefer
-focused imports such as `builder/llm_builder.dart`, model barrels, and
-provider-owned entrypoints when they do not need the whole legacy surface.
+When you need runtime provider selection, use `ModelRegistry` from
+`package:llm_dart_provider/llm_dart_provider.dart`. When you need structured
+JSON as a first-class app result, prefer `generateObject(...)` and
+`streamObject(...)` over the lower-level structured-output helpers.
 
 For shared chat UI projection, keep `ChatMessageMapper` on
 `package:llm_dart/core.dart`. When the UI also needs provider-owned metadata or
@@ -24,6 +23,9 @@ Recommended default route:
 - spend most new app work in the stable examples under `02_core_features/`
 - treat provider directories and older builder examples as explicit appendices
   rather than the default learning path
+
+Compatibility examples are appendix material. When they still need the broad
+compatibility shell, they import `package:llm_dart/legacy.dart` explicitly.
 
 ## Quick Start
 
@@ -67,7 +69,6 @@ provider directories are explicit boundary appendices.
 ### Core Features
 *Essential functionality*
 
-- [capability_factory_methods.dart](02_core_features/capability_factory_methods.dart) - Compatibility-oriented typed `build*()` helpers through focused builder imports
 - [chat_basics.dart](02_core_features/chat_basics.dart) - Basic chat
 - [streaming_chat.dart](02_core_features/streaming_chat.dart) - Real-time streaming
 - [capability_profile_ui_gating.dart](02_core_features/capability_profile_ui_gating.dart) - Model-centric UI affordance and fallback gating
@@ -88,6 +89,8 @@ provider directories are explicit boundary appendices.
 - [message_builder_cache.dart](02_core_features/message_builder_cache.dart) - Modern Anthropic prompt cache metadata and typed tool cache options
 - [capability_detection.dart](02_core_features/capability_detection.dart) - Feature detection
 - [error_handling.dart](02_core_features/error_handling.dart) - Stable `ModelError` normalization and resilience patterns
+- [capability_factory_methods.dart](02_core_features/capability_factory_methods.dart) - Compatibility-oriented typed `build*()` helpers through focused builder imports
+- [provider_specific_builders.dart](02_core_features/provider_specific_builders.dart) - Compatibility-oriented provider callback builders through focused builder imports
 
 ### Advanced Features
 *Specialized capabilities*

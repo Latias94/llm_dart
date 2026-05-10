@@ -2,6 +2,9 @@
 
 Shared provider contracts and provider-neutral data structures for `llm_dart`.
 
+Shared chat UI projection and chat UI JSON helpers live in
+`llm_dart_ai`, not here.
+
 Most applications should use the root `llm_dart` package instead. Depend on
 `llm_dart_provider` directly when you are writing a provider package, a custom
 model implementation, or an integration that needs the shared prompt/result
@@ -17,8 +20,9 @@ Flutter adapters.
 - language, embedding, image, speech, and transcription model interfaces
 - model results, warnings, errors, usage, metadata, and finish reasons
 - model capability profiles for UI gating and provider discovery
-- shared chat UI message/projection types
-- JSON codecs for prompts, text stream events, and chat UI transport
+- JSON codecs for prompts and text stream events
+- shared request controls such as `CallOptions.timeout`, `headers`,
+  `maxRetries`, cancellation, and typed `providerOptions`
 
 ## When To Use It
 
@@ -39,6 +43,10 @@ Use `ExecutionDeniedToolOutput` for denied execution or denied approval
 outcomes that the application should preserve in prompt history, stream JSON,
 or chat UI snapshots. Provider packages still decide how much of that shared
 state can be replayed through their native request formats.
+
+`CallOptions.maxRetries` mirrors the Vercel AI SDK request option shape. The
+transport layer can still apply its own default retry policy, but per-call
+retry counts stay explicit and provider-neutral.
 
 ## When Not To Use It
 

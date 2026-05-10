@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:llm_dart_provider/llm_dart_provider.dart';
+import 'package:llm_dart_ai/llm_dart_ai.dart';
 
-import 'http_chat_transport_protocol.dart';
+import 'http_chat_transport_protocol_impl.dart';
 
 final class HttpChatTransportSseEncoder {
   final HttpChatTransportChunkJsonCodec chunkCodec;

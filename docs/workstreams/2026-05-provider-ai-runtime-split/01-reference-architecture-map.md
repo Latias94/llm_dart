@@ -22,7 +22,7 @@ UI adapters should not compete for the same package identity.
 | --- | --- | --- |
 | provider spec | `llm_dart_core` | `llm_dart_provider` |
 | provider utils | mixed in provider packages, transport, and core helpers | `llm_dart_provider_utils` plus transport-owned HTTP helpers |
-| app-facing AI runtime | `llm_dart_core` model runners and output helpers | `llm_dart_ai` |
+| app-facing AI runtime | `llm_dart_core` model runners and output helpers | `llm_dart_ai`, including shared chat UI projection |
 | transport | `llm_dart_transport` | keep |
 | chat runtime | `llm_dart_chat` | keep |
 | Flutter adapter | `llm_dart_flutter` | keep |

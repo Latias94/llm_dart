@@ -1,7 +1,8 @@
 import 'dart:convert';
 
-import 'package:llm_dart_provider/llm_dart_provider.dart';
+import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'package:llm_dart_flutter/llm_dart_flutter.dart';
+import 'package:llm_dart_chat/llm_dart_chat.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 ChatController createHttpReconnectDemoController({

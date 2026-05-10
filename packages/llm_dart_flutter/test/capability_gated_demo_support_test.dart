@@ -1,4 +1,4 @@
-import 'package:llm_dart_provider/llm_dart_provider.dart';
+import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../example/capability_gated_demo_support.dart';

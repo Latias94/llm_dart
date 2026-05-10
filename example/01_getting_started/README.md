@@ -10,6 +10,10 @@ helpers in `package:llm_dart/core.dart`.
 The grouped `AI.<provider>(...).chatModel(...)` facade remains available from
 the root modern entrypoints when you prefer one namespace.
 
+If the provider choice is data-driven, build a `ModelRegistry` from
+`package:llm_dart_provider/llm_dart_provider.dart` instead of falling back to
+the legacy builder.
+
 This directory stays on the modern model-first path. If you need older
 compatibility builders or broad provider shells, jump to the explicit appendix
 material under `../02_core_features/` or `../04_providers/` instead of

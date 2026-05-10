@@ -431,6 +431,8 @@ final class GenerateOutputResult<T> {
   ProviderMetadata? get providerMetadata => result.providerMetadata;
 }
 
+typedef GenerateObjectResult<T> = GenerateOutputResult<T>;
+
 sealed class OutputStreamEvent<T> {
   const OutputStreamEvent();
 }
@@ -500,6 +502,30 @@ final class StreamOutputResult<T> {
 
   Future<T> get output => result.then((value) => value.output);
 
+  Future<String> get text => result.then((value) => value.text);
+
+  Future<String?> get reasoningText =>
+      result.then((value) => value.reasoningText);
+
+  Future<FinishReason> get finishReason =>
+      result.then((value) => value.finishReason);
+
+  Future<String?> get rawFinishReason =>
+      result.then((value) => value.rawFinishReason);
+
+  Future<String?> get responseId => result.then((value) => value.responseId);
+
+  Future<DateTime?> get responseTimestamp =>
+      result.then((value) => value.responseTimestamp);
+
+  Future<String?> get responseModelId =>
+      result.then((value) => value.responseModelId);
+
+  Future<UsageStats?> get usage => result.then((value) => value.usage);
+
+  Future<ProviderMetadata?> get providerMetadata =>
+      result.then((value) => value.providerMetadata);
+
   void _handleEvent(OutputStreamEvent<T> event) {
     _eventChannel.add(event);
 
@@ -542,6 +568,64 @@ final class StreamOutputResult<T> {
     _partialOutputChannel.close();
     _elementChannel.close();
   }
+}
+
+typedef StreamObjectResult<T> = StreamOutputResult<T>;
+
+Future<GenerateObjectResult<T>> generateObject<T>({
+  required LanguageModel model,
+  required List<PromptMessage> prompt,
+  required JsonSchema schema,
+  JsonObjectDecoder<T>? decode,
+  String? name,
+  String? description,
+  List<FunctionToolDefinition> tools = const [],
+  ToolChoice? toolChoice,
+  GenerateTextOptions options = const GenerateTextOptions(),
+  CallOptions callOptions = const CallOptions(),
+}) {
+  return generateOutput<T>(
+    model: model,
+    prompt: prompt,
+    outputSpec: ObjectOutputSpec<T>(
+      schema: schema,
+      name: name,
+      description: description,
+      decode: decode ?? _identityObjectDecoder<T>,
+    ),
+    tools: tools,
+    toolChoice: toolChoice,
+    options: options,
+    callOptions: callOptions,
+  );
+}
+
+StreamObjectResult<T> streamObject<T>({
+  required LanguageModel model,
+  required List<PromptMessage> prompt,
+  required JsonSchema schema,
+  JsonObjectDecoder<T>? decode,
+  String? name,
+  String? description,
+  List<FunctionToolDefinition> tools = const [],
+  ToolChoice? toolChoice,
+  GenerateTextOptions options = const GenerateTextOptions(),
+  CallOptions callOptions = const CallOptions(),
+}) {
+  return streamOutputResult<T>(
+    model: model,
+    prompt: prompt,
+    outputSpec: ObjectOutputSpec<T>(
+      schema: schema,
+      name: name,
+      description: description,
+      decode: decode ?? _identityObjectDecoder<T>,
+    ),
+    tools: tools,
+    toolChoice: toolChoice,
+    options: options,
+    callOptions: callOptions,
+  );
 }
 
 Future<GenerateOutputResult<T>> generateOutput<T>({
@@ -669,6 +753,10 @@ Stream<OutputStreamEvent<T>> streamOutput<T>({
       context: context,
     ),
   );
+}
+
+T _identityObjectDecoder<T>(Map<String, Object?> json) {
+  return json as T;
 }
 
 StreamOutputResult<T> streamOutputResult<T>({

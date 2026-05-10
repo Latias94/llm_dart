@@ -36,8 +36,12 @@ class DioHttpClientAdapterConfig {
           final client = HttpClient();
 
           if (proxyUrl != null && proxyUrl.isNotEmpty) {
+            final findProxyValue = _normalizeProxyHostPort(proxyUrl);
             client.findProxy = (uri) {
-              return 'PROXY $proxyUrl';
+              if (findProxyValue == null) {
+                return 'DIRECT';
+              }
+              return 'PROXY $findProxyValue';
             };
           }
 
@@ -68,4 +72,27 @@ class DioHttpClientAdapterConfig {
 
   /// Check if advanced HTTP features are supported on this platform.
   static bool get isAdvancedHttpSupported => true;
+}
+
+String? _normalizeProxyHostPort(String proxyUrl) {
+  final trimmed = proxyUrl.trim();
+  if (trimmed.isEmpty) {
+    return null;
+  }
+
+  final uri = trimmed.contains('://') ? Uri.tryParse(trimmed) : null;
+  if (uri != null && uri.hasAuthority && uri.host.isNotEmpty) {
+    final port = uri.hasPort ? uri.port : _defaultProxyPort(uri.scheme);
+    return '${uri.host}:$port';
+  }
+
+  if (trimmed.startsWith('PROXY ')) {
+    return trimmed.substring('PROXY '.length).trim();
+  }
+
+  return trimmed;
+}
+
+int _defaultProxyPort(String scheme) {
+  return scheme.toLowerCase() == 'https' ? 443 : 80;
 }

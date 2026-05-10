@@ -710,6 +710,101 @@ void main() {
     });
   });
 
+  group('generateObject and streamObject', () {
+    test('wrap the structured output helpers with object-first names',
+        () async {
+      final model = _RecordingLanguageModel(
+        generateResult: GenerateTextResult(
+          content: const [
+            TextContentPart('{"value":"ok"}'),
+          ],
+          finishReason: FinishReason.stop,
+          responseId: 'resp_object_1',
+          responseModelId: 'test-model',
+        ),
+      );
+
+      final result = await generateObject<Map<String, Object?>>(
+        model: model,
+        prompt: [
+          UserPromptMessage.text('Return JSON.'),
+        ],
+        schema: JsonSchema.object(
+          properties: const {
+            'value': {'type': 'string'},
+          },
+          required: const ['value'],
+        ),
+        name: 'answer',
+      );
+
+      expect(result.output, {'value': 'ok'});
+      final responseFormat =
+          model.lastRequest?.options.responseFormat as JsonResponseFormat?;
+      expect(responseFormat, isNotNull);
+      expect(responseFormat!.name, 'answer');
+      expect(
+        responseFormat.schema.toJson(),
+        const {
+          'type': 'object',
+          'properties': {
+            'value': {'type': 'string'},
+          },
+          'required': ['value'],
+        },
+      );
+    });
+
+    test('streams object output through the same structured helpers', () async {
+      final model = _RecordingLanguageModel(
+        generateResult: GenerateTextResult(
+          content: const [
+            TextContentPart('unused'),
+          ],
+          finishReason: FinishReason.stop,
+        ),
+        streamEvents: const [
+          ResponseMetadataEvent(
+            responseId: 'resp_stream_object_1',
+          ),
+          TextStartEvent(id: 'text_1'),
+          TextDeltaEvent(
+            id: 'text_1',
+            delta: '{"value":"',
+          ),
+          TextDeltaEvent(
+            id: 'text_1',
+            delta: 'ok"}',
+          ),
+          TextEndEvent(id: 'text_1'),
+          FinishEvent(
+            finishReason: FinishReason.stop,
+          ),
+        ],
+      );
+
+      final stream = streamObject<Map<String, Object?>>(
+        model: model,
+        prompt: [
+          UserPromptMessage.text('Return JSON.'),
+        ],
+        schema: JsonSchema.object(
+          properties: const {
+            'value': {'type': 'string'},
+          },
+          required: const ['value'],
+        ),
+      );
+
+      expect(await stream.text, '{"value":"ok"}');
+      expect(await stream.output, {'value': 'ok'});
+      expect(
+        (await stream.result).responseId,
+        'resp_stream_object_1',
+      );
+    });
+  });
+
   group('output spec validation', () {
     test('object spec rejects non-object schemas', () {
       expect(

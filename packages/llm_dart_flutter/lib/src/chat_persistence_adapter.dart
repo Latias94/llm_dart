@@ -11,11 +11,10 @@ final class ChatPersistenceAdapter {
   final chat.ChatPersistenceStore store;
   final chat.ChatSessionSnapshotJsonCodec codec;
 
-  late final chat.ChatPersistenceAdapter _adapter =
-      chat.ChatPersistenceAdapter(
-        store: store,
-        codec: codec,
-      );
+  late final chat.ChatPersistenceAdapter _adapter = chat.ChatPersistenceAdapter(
+    store: store,
+    codec: codec,
+  );
 
   ChatPersistenceAdapter({
     required this.store,

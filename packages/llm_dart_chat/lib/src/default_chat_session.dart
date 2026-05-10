@@ -1,7 +1,8 @@
 import 'dart:async';
 
-import 'package:llm_dart_provider/llm_dart_provider.dart';
-import 'package:llm_dart_transport/llm_dart_transport.dart';
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_transport/llm_dart_transport.dart'
+    show transportErrorToModelError;
 
 import 'chat_input.dart';
 import 'chat_request_options.dart';
@@ -12,7 +13,6 @@ import 'chat_state.dart';
 import 'chat_session_tool_support.dart';
 import 'chat_tool_output_support.dart';
 import 'chat_transport.dart';
-import 'chat_ui_stream_reader.dart';
 import 'tool_execution_registry.dart';
 
 typedef MessageIdGenerator = String Function();

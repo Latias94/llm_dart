@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:llm_dart_provider/llm_dart_provider.dart';
+import 'package:llm_dart_ai/llm_dart_ai.dart';
 
 sealed class OpenAICustomPart {
   const OpenAICustomPart();
@@ -58,31 +58,19 @@ sealed class OpenAICustomPart {
   }
 
   static List<OpenAICustomPart> parsePromptParts(Iterable<PromptPart> parts) {
-    return List<OpenAICustomPart>.unmodifiable([
-      for (final part in parts)
-        if (tryParsePromptPart(part) case final parsed?) parsed,
-    ]);
+    return parseTypedParts(parts, tryParsePromptPart);
   }
 
   static List<OpenAICustomPart> parseContentParts(Iterable<ContentPart> parts) {
-    return List<OpenAICustomPart>.unmodifiable([
-      for (final part in parts)
-        if (tryParseContentPart(part) case final parsed?) parsed,
-    ]);
+    return parseTypedParts(parts, tryParseContentPart);
   }
 
   static List<OpenAICustomPart> parseUiParts(Iterable<ChatUiPart> parts) {
-    return List<OpenAICustomPart>.unmodifiable([
-      for (final part in parts)
-        if (tryParseUiPart(part) case final parsed?) parsed,
-    ]);
+    return parseTypedParts(parts, tryParseUiPart);
   }
 
   static List<OpenAICustomPart> parseEvents(Iterable<TextStreamEvent> events) {
-    return List<OpenAICustomPart>.unmodifiable([
-      for (final event in events)
-        if (tryParseEvent(event) case final parsed?) parsed,
-    ]);
+    return parseTypedParts(events, tryParseEvent);
   }
 }
 

@@ -65,6 +65,7 @@ final class GoogleSpeechModel implements SpeechModel, CapabilityDescribedModel {
         },
         body: _buildRequestBody(request, options: options),
         timeout: request.callOptions.timeout,
+        maxRetries: request.callOptions.maxRetries,
         cancellation: request.callOptions.cancellation,
         responseType: TransportResponseType.json,
       ),

@@ -236,6 +236,7 @@ final class OpenAIFilesClient {
   Future<OpenAIFileObject> uploadFile(
     OpenAIFileUpload request, {
     Duration? timeout,
+    int? maxRetries,
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
@@ -267,6 +268,7 @@ final class OpenAIFilesClient {
         ),
         body: multipart.bytes,
         timeout: timeout,
+        maxRetries: maxRetries,
         cancellation: cancellation,
         responseType: TransportResponseType.json,
       ),
@@ -286,6 +288,7 @@ final class OpenAIFilesClient {
     required String purpose,
     String mediaType = 'application/octet-stream',
     Duration? timeout,
+    int? maxRetries,
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) {
@@ -297,6 +300,7 @@ final class OpenAIFilesClient {
         mediaType: mediaType,
       ),
       timeout: timeout,
+      maxRetries: maxRetries,
       cancellation: cancellation,
       headers: headers,
     );
@@ -308,6 +312,7 @@ final class OpenAIFilesClient {
     String? order,
     String? after,
     Duration? timeout,
+    int? maxRetries,
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
@@ -330,6 +335,7 @@ final class OpenAIFilesClient {
           extraHeaders: headers,
         ),
         timeout: timeout,
+        maxRetries: maxRetries,
         cancellation: cancellation,
         responseType: TransportResponseType.json,
       ),
@@ -346,6 +352,7 @@ final class OpenAIFilesClient {
   Future<OpenAIFileObject> retrieveFile(
     String fileId, {
     Duration? timeout,
+    int? maxRetries,
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
@@ -358,6 +365,7 @@ final class OpenAIFilesClient {
           extraHeaders: headers,
         ),
         timeout: timeout,
+        maxRetries: maxRetries,
         cancellation: cancellation,
         responseType: TransportResponseType.json,
       ),
@@ -374,6 +382,7 @@ final class OpenAIFilesClient {
   Future<OpenAIFileDeleteResponse> deleteFile(
     String fileId, {
     Duration? timeout,
+    int? maxRetries,
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
@@ -386,6 +395,7 @@ final class OpenAIFilesClient {
           extraHeaders: headers,
         ),
         timeout: timeout,
+        maxRetries: maxRetries,
         cancellation: cancellation,
         responseType: TransportResponseType.json,
       ),
@@ -402,6 +412,7 @@ final class OpenAIFilesClient {
   Future<OpenAIFileDownload> downloadFile(
     String fileId, {
     Duration? timeout,
+    int? maxRetries,
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
@@ -414,6 +425,7 @@ final class OpenAIFilesClient {
           extraHeaders: headers,
         ),
         timeout: timeout,
+        maxRetries: maxRetries,
         cancellation: cancellation,
         responseType: TransportResponseType.bytes,
       ),

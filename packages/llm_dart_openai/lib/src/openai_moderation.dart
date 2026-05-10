@@ -298,6 +298,7 @@ final class OpenAIModerationClient {
     Object input, {
     String? model,
     Duration? timeout,
+    int? maxRetries,
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
@@ -314,6 +315,7 @@ final class OpenAIModerationClient {
             'model': resolvedModel,
         },
         timeout: timeout,
+        maxRetries: maxRetries,
         cancellation: cancellation,
         responseType: TransportResponseType.json,
       ),
@@ -328,6 +330,7 @@ final class OpenAIModerationClient {
     String text, {
     String? model,
     Duration? timeout,
+    int? maxRetries,
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
@@ -335,6 +338,7 @@ final class OpenAIModerationClient {
       text,
       model: model,
       timeout: timeout,
+      maxRetries: maxRetries,
       cancellation: cancellation,
       headers: headers,
     );
@@ -345,6 +349,7 @@ final class OpenAIModerationClient {
     List<String> texts, {
     String? model,
     Duration? timeout,
+    int? maxRetries,
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
@@ -352,6 +357,7 @@ final class OpenAIModerationClient {
       List<String>.unmodifiable(texts),
       model: model,
       timeout: timeout,
+      maxRetries: maxRetries,
       cancellation: cancellation,
       headers: headers,
     );
@@ -362,6 +368,7 @@ final class OpenAIModerationClient {
     String text, {
     String? model,
     Duration? timeout,
+    int? maxRetries,
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
@@ -369,6 +376,7 @@ final class OpenAIModerationClient {
       text,
       model: model,
       timeout: timeout,
+      maxRetries: maxRetries,
       cancellation: cancellation,
       headers: headers,
     );

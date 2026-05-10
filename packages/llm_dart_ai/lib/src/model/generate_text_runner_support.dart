@@ -18,6 +18,15 @@ typedef GenerateTextOnFinish = FutureOr<void> Function(
   GenerateTextRunResult result,
 );
 
+typedef GenerateTextOnError = FutureOr<void> Function(
+  Object error,
+  StackTrace stackTrace,
+);
+
+typedef StreamTextOnChunk = FutureOr<void> Function(
+  TextStreamEvent event,
+);
+
 typedef GenerateTextFunctionToolExecutor
     = FutureOr<GenerateTextToolExecutionResult> Function(
   GenerateTextFunctionToolExecutionRequest request,

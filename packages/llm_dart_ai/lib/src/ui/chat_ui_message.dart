@@ -1,6 +1,4 @@
-import '../common/provider_metadata.dart';
-import '../content/content_part.dart';
-import '../tool/tool_output.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 enum ChatUiRole {
   system,

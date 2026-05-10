@@ -56,12 +56,6 @@ Current status:
   response metadata, and capability profiles
 - `llm_dart_core` re-exports those contracts from their old paths as a
   compatibility layer
-- shared UI message and message-mapping contracts now live in
-  `llm_dart_provider` for the first breaking preview; old `llm_dart_core` UI
-  paths re-export them as compatibility shims
-- runtime helpers such as `generateText`, `embed`, `generateImage`,
-  `generateSpeech`, `transcribe`, runners, and structured output now live in
-  `llm_dart_ai`; `llm_dart_core` keeps old-path compatibility re-exports
 - workspace bootstrap, dependency guards, root boundary guards, focused package
   analysis, and workspace publish dry-run all understand the new provider
   package
@@ -85,8 +79,10 @@ Current status:
 - `llm_dart_ai` exists as a focused runtime package depending only on
   `llm_dart_provider`
 - one-shot helpers, multi-step runners, stream result accumulation, partial JSON
-  repair, replay stream support, and structured output helpers moved to
-  `llm_dart_ai`
+  repair, replay stream support, structured output helpers, and shared chat UI
+  projection moved to `llm_dart_ai`
+- `ChatUiMessage`, `ChatUiPart`, `ChatMessageMapper`, `ChatUiStreamReader`, and
+  chat UI JSON codecs now live in `llm_dart_ai`
 - `llm_dart_core` keeps compatibility re-exports for the old runtime paths
 - the root `package:llm_dart/ai.dart` entrypoint explicitly exports the new
   runtime package while preserving the modern facade surface
@@ -191,8 +187,9 @@ Acceptance criteria:
 
 Current status:
 
-- shared UI stream chunk, accumulator, projection, prompt JSON, text-stream
-  JSON, and chat UI JSON implementations now live in `llm_dart_provider`
+- shared UI stream chunk, accumulator, projection, and chat UI JSON
+  implementations now live in `llm_dart_ai`; prompt JSON and text-stream JSON
+  remain in `llm_dart_provider`
 - `llm_dart_core` preserves old UI and serialization paths as compatibility
   re-exports for migrated contracts
 - `llm_dart_core/lib` is now guarded as a compatibility shell: new
@@ -202,10 +199,10 @@ Current status:
   longer leaks provider legacy aliases through its public barrel
 - `llm_dart_transport` now depends on `llm_dart_provider` directly and no
   longer depends on `llm_dart_core`
-- `llm_dart_chat` now depends on `llm_dart_provider` plus
-  `llm_dart_transport` and no longer depends on `llm_dart_core`
-- `llm_dart_flutter` now depends on `llm_dart_chat` plus
-  `llm_dart_provider` and no longer depends on `llm_dart_core`
+- `llm_dart_chat` now depends on `llm_dart_ai` plus `llm_dart_transport` and
+  no longer depends on `llm_dart_core`
+- `llm_dart_flutter` now depends on `llm_dart_chat` plus `llm_dart_ai` and no
+  longer depends on `llm_dart_core`
 - root no longer has a runtime dependency on `llm_dart_core`; test/dev
   compatibility coverage still exercises the core shell deliberately
 - first-preview root policy is now explicit: keep `legacy.dart` in root as the

@@ -1,9 +1,5 @@
-import '../common/model_error.dart';
-import '../common/model_warning.dart';
-import '../common/provider_metadata.dart';
-import '../common/usage_stats.dart';
-import '../content/content_part.dart';
-import '../model/finish_reason.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
+
 import 'chat_ui_message.dart';
 
 final class ChatMappedDataPart {

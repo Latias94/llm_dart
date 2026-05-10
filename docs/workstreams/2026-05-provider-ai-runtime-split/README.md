@@ -61,7 +61,7 @@ Long-term package ownership should move toward:
 - `llm_dart_ai`
   - high-level generation runtime
   - multi-step text orchestration, tool execution loops, output parsing, stop
-    policy, and stream result facades
+    policy, stream result facades, and shared chat UI projection
 - `llm_dart_transport`
   - HTTP, SSE, retry, cancellation, diagnostics, multipart, and Dio adapters
 - `llm_dart_chat`
@@ -82,6 +82,8 @@ This workstream should:
 - define the breaking target package graph
 - split provider specification contracts away from AI runtime helpers
 - move high-level generation orchestration out of the provider spec layer
+- move shared chat UI projection and chat UI JSON helpers out of the provider
+  spec layer
 - redesign shared file and tool-result data structures where the current shape
   mixes provider detail with shared semantics
 - define how root compatibility code exits or becomes explicitly legacy-owned

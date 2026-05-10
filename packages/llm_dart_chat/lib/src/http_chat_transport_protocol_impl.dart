@@ -1,4 +1,4 @@
-import 'package:llm_dart_provider/llm_dart_provider.dart';
+import 'package:llm_dart_ai/llm_dart_ai.dart';
 
 typedef _JsonMap = Map<String, Object?>;
 typedef _JsonList = List<Object?>;
@@ -27,10 +27,75 @@ enum HttpChatTransportStreamProtocol {
   }
 }
 
+final class HttpChatTransportCallOptionsPayload {
+  static const empty = HttpChatTransportCallOptionsPayload._();
+
+  final Duration? timeout;
+  final Map<String, String> headers;
+  final int? maxRetries;
+  final Map<String, Object?> providerOptions;
+
+  const HttpChatTransportCallOptionsPayload._({
+    this.timeout,
+    this.headers = const {},
+    this.maxRetries,
+    this.providerOptions = const {},
+  }) : assert(maxRetries == null || maxRetries >= 0);
+
+  factory HttpChatTransportCallOptionsPayload({
+    Duration? timeout,
+    Map<String, String> headers = const {},
+    int? maxRetries,
+    Map<String, Object?> providerOptions = const {},
+  }) {
+    if (timeout != null && timeout.isNegative) {
+      throw ArgumentError.value(
+        timeout,
+        'timeout',
+        'Timeout must not be negative.',
+      );
+    }
+    if (maxRetries != null && maxRetries < 0) {
+      throw ArgumentError.value(
+        maxRetries,
+        'maxRetries',
+        'maxRetries must not be negative.',
+      );
+    }
+
+    return HttpChatTransportCallOptionsPayload._(
+      timeout: timeout,
+      headers: Map.unmodifiable(headers),
+      maxRetries: maxRetries,
+      providerOptions: Map.unmodifiable(
+        _ensureJsonMap(providerOptions, path: r'$.callOptions.providerOptions'),
+      ),
+    );
+  }
+
+  bool get isEmpty =>
+      timeout == null &&
+      headers.isEmpty &&
+      maxRetries == null &&
+      providerOptions.isEmpty;
+
+  CallOptions toCallOptions({
+    ProviderInvocationOptions? providerOptions,
+  }) {
+    return CallOptions(
+      timeout: timeout,
+      headers: headers.isEmpty ? null : headers,
+      maxRetries: maxRetries,
+      providerOptions: providerOptions,
+    );
+  }
+}
+
 final class HttpChatTransportRequestPayload {
   final String chatId;
   final List<PromptMessage> prompt;
   final GenerateTextOptions generateOptions;
+  final HttpChatTransportCallOptionsPayload callOptions;
   final HttpChatTransportStreamProtocol streamProtocol;
   final Map<String, Object?> metadata;
 
@@ -38,6 +103,7 @@ final class HttpChatTransportRequestPayload {
     required this.chatId,
     required List<PromptMessage> prompt,
     this.generateOptions = const GenerateTextOptions(),
+    this.callOptions = HttpChatTransportCallOptionsPayload.empty,
     this.streamProtocol = HttpChatTransportStreamProtocol.uiMessageStreamV2,
     Map<String, Object?> metadata = const {},
   })  : prompt = List.unmodifiable(prompt),
@@ -49,12 +115,14 @@ final class HttpChatTransportRequestPayload {
 final class HttpChatTransportReconnectRequestPayload {
   final String chatId;
   final String resumeToken;
+  final HttpChatTransportCallOptionsPayload callOptions;
   final HttpChatTransportStreamProtocol streamProtocol;
   final Map<String, Object?> metadata;
 
   HttpChatTransportReconnectRequestPayload({
     required this.chatId,
     required this.resumeToken,
+    this.callOptions = HttpChatTransportCallOptionsPayload.empty,
     this.streamProtocol = HttpChatTransportStreamProtocol.uiMessageStreamV2,
     Map<String, Object?> metadata = const {},
   }) : metadata = Map.unmodifiable(
@@ -80,6 +148,8 @@ final class HttpChatTransportRequestJsonCodec {
         'chatId': request.chatId,
         'prompt': promptCodec.encodeMessages(request.prompt),
         'generateOptions': _encodeGenerateTextOptions(request.generateOptions),
+        if (!request.callOptions.isEmpty)
+          'callOptions': _encodeCallOptions(request.callOptions),
         'streamProtocol': request.streamProtocol.wireValue,
         if (request.metadata.isNotEmpty) 'metadata': request.metadata,
       },
@@ -102,6 +172,10 @@ final class HttpChatTransportRequestJsonCodec {
       generateOptions: _decodeGenerateTextOptions(
         data['generateOptions'],
         path: r'$.data.generateOptions',
+      ),
+      callOptions: _decodeCallOptions(
+        data['callOptions'],
+        path: r'$.data.callOptions',
       ),
       streamProtocol: switch (_asNullableJsonString(
         data['streamProtocol'],
@@ -128,6 +202,8 @@ final class HttpChatTransportRequestJsonCodec {
       'data': {
         'chatId': request.chatId,
         'resumeToken': request.resumeToken,
+        if (!request.callOptions.isEmpty)
+          'callOptions': _encodeCallOptions(request.callOptions),
         'streamProtocol': request.streamProtocol.wireValue,
         if (request.metadata.isNotEmpty) 'metadata': request.metadata,
       },
@@ -150,6 +226,10 @@ final class HttpChatTransportRequestJsonCodec {
       chatId: _asJsonString(data['chatId'], path: r'$.data.chatId'),
       resumeToken:
           _asJsonString(data['resumeToken'], path: r'$.data.resumeToken'),
+      callOptions: _decodeCallOptions(
+        data['callOptions'],
+        path: r'$.data.callOptions',
+      ),
       streamProtocol: switch (_asNullableJsonString(
         data['streamProtocol'],
         path: r'$.data.streamProtocol',
@@ -207,6 +287,51 @@ final class HttpChatTransportRequestJsonCodec {
               .toList(growable: false),
       topP: _asNullableJsonDouble(map['topP'], path: '$path.topP'),
       topK: _asNullableJsonInt(map['topK'], path: '$path.topK'),
+    );
+  }
+
+  _JsonMap _encodeCallOptions(HttpChatTransportCallOptionsPayload options) {
+    return {
+      if (options.timeout != null)
+        'timeoutMilliseconds': options.timeout!.inMilliseconds,
+      if (options.headers.isNotEmpty) 'headers': options.headers,
+      if (options.maxRetries != null) 'maxRetries': options.maxRetries,
+      if (options.providerOptions.isNotEmpty)
+        'providerOptions': options.providerOptions,
+    };
+  }
+
+  HttpChatTransportCallOptionsPayload _decodeCallOptions(
+    Object? value, {
+    required String path,
+  }) {
+    if (value == null) {
+      return HttpChatTransportCallOptionsPayload.empty;
+    }
+
+    final map = _asJsonMap(value, path: path);
+    final timeoutMilliseconds = _asNullableNonNegativeJsonInt(
+      map['timeoutMilliseconds'],
+      path: '$path.timeoutMilliseconds',
+    );
+
+    return HttpChatTransportCallOptionsPayload(
+      timeout: timeoutMilliseconds == null
+          ? null
+          : Duration(milliseconds: timeoutMilliseconds),
+      headers: map['headers'] == null
+          ? const {}
+          : _asJsonStringMap(map['headers'], path: '$path.headers'),
+      maxRetries: _asNullableNonNegativeJsonInt(
+        map['maxRetries'],
+        path: '$path.maxRetries',
+      ),
+      providerOptions: map['providerOptions'] == null
+          ? const {}
+          : _asJsonMap(
+              map['providerOptions'],
+              path: '$path.providerOptions',
+            ),
     );
   }
 }
@@ -591,6 +716,19 @@ _JsonMap _asJsonMap(
   });
 }
 
+Map<String, String> _asJsonStringMap(
+  Object? value, {
+  required String path,
+}) {
+  final map = _asJsonMap(value, path: path);
+  return map.map(
+    (key, nestedValue) => MapEntry(
+      key,
+      _asJsonString(nestedValue, path: '$path.$key'),
+    ),
+  );
+}
+
 _JsonList _asJsonList(
   Object? value, {
   required String path,
@@ -637,6 +775,18 @@ int? _asNullableJsonInt(
   }
 
   throw FormatException('Expected int at $path.');
+}
+
+int? _asNullableNonNegativeJsonInt(
+  Object? value, {
+  required String path,
+}) {
+  final intValue = _asNullableJsonInt(value, path: path);
+  if (intValue == null || intValue >= 0) {
+    return intValue;
+  }
+
+  throw FormatException('Expected non-negative int at $path.');
 }
 
 double? _asNullableJsonDouble(

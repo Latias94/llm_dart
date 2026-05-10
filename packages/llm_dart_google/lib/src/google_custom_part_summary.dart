@@ -1,5 +1,4 @@
-import 'package:llm_dart_provider/llm_dart_provider.dart';
-
+import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'google_custom_part.dart';
 import 'google_shared.dart';
 
@@ -111,37 +110,25 @@ final class GoogleCustomPartSummary {
   static List<GoogleCustomPartSummary> parsePromptParts(
     Iterable<PromptPart> parts,
   ) {
-    return List<GoogleCustomPartSummary>.unmodifiable([
-      for (final part in parts)
-        if (tryParsePromptPart(part) case final summary?) summary,
-    ]);
+    return parseTypedParts(parts, tryParsePromptPart);
   }
 
   static List<GoogleCustomPartSummary> parseContentParts(
     Iterable<ContentPart> parts,
   ) {
-    return List<GoogleCustomPartSummary>.unmodifiable([
-      for (final part in parts)
-        if (tryParseContentPart(part) case final summary?) summary,
-    ]);
+    return parseTypedParts(parts, tryParseContentPart);
   }
 
   static List<GoogleCustomPartSummary> parseUiParts(
     Iterable<ChatUiPart> parts,
   ) {
-    return List<GoogleCustomPartSummary>.unmodifiable([
-      for (final part in parts)
-        if (tryParseUiPart(part) case final summary?) summary,
-    ]);
+    return parseTypedParts(parts, tryParseUiPart);
   }
 
   static List<GoogleCustomPartSummary> parseEvents(
     Iterable<TextStreamEvent> events,
   ) {
-    return List<GoogleCustomPartSummary>.unmodifiable([
-      for (final event in events)
-        if (tryParseEvent(event) case final summary?) summary,
-    ]);
+    return parseTypedParts(events, tryParseEvent);
   }
 }
 

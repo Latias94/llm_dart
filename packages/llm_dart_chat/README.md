@@ -24,7 +24,7 @@ Flutter-only controller convenience stays in
 
 It depends only on:
 
-- `llm_dart_provider`
+- `llm_dart_ai`
 - `llm_dart_transport`
 
 That makes it suitable for:
@@ -136,9 +136,9 @@ dart run example/http_backend_hint_mapping.dart
 
 ## Message Mapping Layers
 
-`ChatUiMessage` and `ChatUiPart` remain the source of truth. Use
-`ChatMessageMapper` only when a CLI, server-rendered UI, or framework-neutral
-adapter wants stable cross-provider summaries such as:
+`ChatUiMessage` and `ChatUiPart` remain the source of truth and are owned by
+`llm_dart_ai`. Use `ChatMessageMapper` only when a CLI, server-rendered UI, or
+framework-neutral adapter wants stable cross-provider summaries such as:
 
 - `text`
 - `reasoningText`
@@ -148,9 +148,9 @@ adapter wants stable cross-provider summaries such as:
 - `warnings`
 - `errors`
 
-`ChatMessageMapper` now lives in `llm_dart_provider` as part of the shared UI
-model layer and is re-exported here for chat-runtime users that prefer to stay
-on a single package import path.
+`ChatMessageMapper` now lives in `llm_dart_ai` as part of the shared UI/runtime
+layer and is re-exported here for chat-runtime users that prefer to stay on a
+single package import path.
 
 If a pure Dart application also needs provider-owned inspection, compose the
 shared mapper with a provider package instead of widening `llm_dart_chat`

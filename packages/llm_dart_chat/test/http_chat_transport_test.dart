@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:llm_dart_chat/llm_dart_chat.dart';
-import 'package:llm_dart_provider/llm_dart_provider.dart';
+import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'package:llm_dart_test/llm_dart_test.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 import 'package:test/test.dart';
@@ -154,6 +154,110 @@ void main() {
 
       final finishChunk = chunks.last as ChatUiMessageFinishChunk;
       expect(finishChunk.metadata['persisted'], isTrue);
+    });
+
+    test('serializes supported call options and applies transport controls',
+        () async {
+      TransportRequest? capturedRequest;
+      final cancellation = ProviderCancellation();
+
+      final transport = HttpChatTransport(
+        endpoint: Uri.parse('https://example.com/chat'),
+        transport: _FakeTransportClient(
+          onSendStream: (request) async {
+            capturedRequest = request;
+            return StreamingTransportResponse(
+              statusCode: 200,
+              stream: const Stream<List<int>>.empty(),
+            );
+          },
+        ),
+      );
+
+      await transport
+          .sendMessages(
+            ChatTransportRequest(
+              chatId: 'chat-1',
+              prompt: [
+                UserPromptMessage.text('Hello'),
+              ],
+              options: ChatRequestOptions(
+                callOptions: CallOptions(
+                  timeout: const Duration(seconds: 5),
+                  headers: const {
+                    'x-provider-trace': 'trace-1',
+                  },
+                  maxRetries: 2,
+                  cancellation: cancellation,
+                ),
+              ),
+            ),
+          )
+          .toList();
+
+      expect(capturedRequest, isNotNull);
+      expect(capturedRequest!.timeout, const Duration(seconds: 5));
+      expect(capturedRequest!.maxRetries, 2);
+      expect(capturedRequest!.cancellation, same(cancellation));
+      expect(capturedRequest!.headers, isNot(contains('x-provider-trace')));
+
+      final decodedRequest =
+          const HttpChatTransportRequestJsonCodec().decodeRequest(
+        capturedRequest!.body,
+      );
+      expect(decodedRequest.callOptions.timeout, const Duration(seconds: 5));
+      expect(decodedRequest.callOptions.headers, {
+        'x-provider-trace': 'trace-1',
+      });
+      expect(decodedRequest.callOptions.maxRetries, 2);
+    });
+
+    test('serializes provider options through an explicit encoder', () async {
+      TransportRequest? capturedRequest;
+      final providerOptions = _TestProviderOptions('high');
+
+      final transport = HttpChatTransport(
+        endpoint: Uri.parse('https://example.com/chat'),
+        providerOptionsEncoder: (options) {
+          expect(options, same(providerOptions));
+          return {
+            'reasoningEffort': providerOptions.reasoningEffort,
+          };
+        },
+        transport: _FakeTransportClient(
+          onSendStream: (request) async {
+            capturedRequest = request;
+            return StreamingTransportResponse(
+              statusCode: 200,
+              stream: const Stream<List<int>>.empty(),
+            );
+          },
+        ),
+      );
+
+      await transport
+          .sendMessages(
+            ChatTransportRequest(
+              chatId: 'chat-1',
+              prompt: [
+                UserPromptMessage.text('Hello'),
+              ],
+              options: ChatRequestOptions(
+                callOptions: CallOptions(
+                  providerOptions: providerOptions,
+                ),
+              ),
+            ),
+          )
+          .toList();
+
+      final decodedRequest =
+          const HttpChatTransportRequestJsonCodec().decodeRequest(
+        capturedRequest!.body,
+      );
+      expect(decodedRequest.callOptions.providerOptions, {
+        'reasoningEffort': 'high',
+      });
     });
 
     test(
@@ -464,6 +568,12 @@ void main() {
               prompt: [
                 UserPromptMessage.text('Hello'),
               ],
+              options: const ChatRequestOptions(
+                callOptions: CallOptions(
+                  timeout: Duration(seconds: 6),
+                  maxRetries: 1,
+                ),
+              ),
             ),
           )
           .toList();
@@ -495,8 +605,12 @@ void main() {
       final reconnectRequest = requestCodec.decodeReconnectRequest(
         capturedRequests[1].body,
       );
+      expect(capturedRequests[1].timeout, const Duration(seconds: 6));
+      expect(capturedRequests[1].maxRetries, 1);
       expect(reconnectRequest.chatId, 'chat-1');
       expect(reconnectRequest.resumeToken, 'resume-2');
+      expect(reconnectRequest.callOptions.timeout, const Duration(seconds: 6));
+      expect(reconnectRequest.callOptions.maxRetries, 1);
       expect(
         reconnectRequest.streamProtocol,
         HttpChatTransportStreamProtocol.uiMessageStreamV2,
@@ -911,7 +1025,7 @@ void main() {
       expect(transport.reconnect('chat-1'), isNull);
     });
 
-    test('rejects unsupported call options for remote transport', () async {
+    test('rejects provider options without an explicit encoder', () async {
       final transport = HttpChatTransport(
         endpoint: Uri.parse('https://example.com/chat'),
         transport: const _FakeTransportClient(),
@@ -924,9 +1038,9 @@ void main() {
             prompt: [
               UserPromptMessage.text('Hello'),
             ],
-            options: const ChatRequestOptions(
+            options: ChatRequestOptions(
               callOptions: CallOptions(
-                timeout: Duration(seconds: 5),
+                providerOptions: _TestProviderOptions('high'),
               ),
             ),
           ),
@@ -952,6 +1066,12 @@ TextStreamEvent _singleEvent(List<ChatUiStreamChunk> chunks) {
   final events = _eventsFromChunks(chunks);
   expect(events, hasLength(1));
   return events.single;
+}
+
+final class _TestProviderOptions implements ProviderInvocationOptions {
+  final String reasoningEffort;
+
+  const _TestProviderOptions(this.reasoningEffort);
 }
 
 typedef _FakeTransportClient = FakeTransportClient;

@@ -81,6 +81,7 @@ final class ElevenLabsSpeechModel
           options: options,
         ),
         timeout: request.callOptions.timeout,
+        maxRetries: request.callOptions.maxRetries,
         cancellation: request.callOptions.cancellation,
         responseType: TransportResponseType.bytes,
       ),

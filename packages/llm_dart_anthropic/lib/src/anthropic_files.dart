@@ -175,6 +175,7 @@ final class AnthropicFiles {
   Future<AnthropicFileDescriptor> uploadFile(
     AnthropicFileUpload request, {
     Duration? timeout,
+    int? maxRetries,
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
@@ -204,6 +205,7 @@ final class AnthropicFiles {
         ),
         body: multipart.bytes,
         timeout: timeout,
+        maxRetries: maxRetries,
         cancellation: cancellation,
         responseType: TransportResponseType.json,
       ),
@@ -219,6 +221,7 @@ final class AnthropicFiles {
     required String filename,
     String mediaType = 'application/octet-stream',
     Duration? timeout,
+    int? maxRetries,
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) {
@@ -229,6 +232,7 @@ final class AnthropicFiles {
         mediaType: mediaType,
       ),
       timeout: timeout,
+      maxRetries: maxRetries,
       cancellation: cancellation,
       headers: headers,
     );
@@ -239,6 +243,7 @@ final class AnthropicFiles {
     String? afterId,
     int? limit,
     Duration? timeout,
+    int? maxRetries,
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
@@ -260,6 +265,7 @@ final class AnthropicFiles {
           accept: 'application/json',
         ),
         timeout: timeout,
+        maxRetries: maxRetries,
         cancellation: cancellation,
         responseType: TransportResponseType.json,
       ),
@@ -280,6 +286,7 @@ final class AnthropicFiles {
   Future<AnthropicFileDescriptor> getFile(
     String fileId, {
     Duration? timeout,
+    int? maxRetries,
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
@@ -292,6 +299,7 @@ final class AnthropicFiles {
           accept: 'application/json',
         ),
         timeout: timeout,
+        maxRetries: maxRetries,
         cancellation: cancellation,
         responseType: TransportResponseType.json,
       ),
@@ -305,6 +313,7 @@ final class AnthropicFiles {
   Future<AnthropicFileDownload> downloadFile(
     String fileId, {
     Duration? timeout,
+    int? maxRetries,
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
@@ -317,6 +326,7 @@ final class AnthropicFiles {
           extraHeaders: headers,
         ),
         timeout: timeout,
+        maxRetries: maxRetries,
         cancellation: cancellation,
         responseType: TransportResponseType.bytes,
       ),
@@ -335,6 +345,7 @@ final class AnthropicFiles {
   Future<AnthropicFileDeleteResponse> deleteFile(
     String fileId, {
     Duration? timeout,
+    int? maxRetries,
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
@@ -348,6 +359,7 @@ final class AnthropicFiles {
           accept: 'application/json',
         ),
         timeout: timeout,
+        maxRetries: maxRetries,
         cancellation: cancellation,
         responseType: TransportResponseType.plainText,
       ),
@@ -427,12 +439,14 @@ extension AnthropicExecutionFileHandleFilesX on AnthropicExecutionFileHandle {
   Future<AnthropicFileDescriptor> getMetadata(
     AnthropicFiles files, {
     Duration? timeout,
+    int? maxRetries,
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) {
     return files.getFile(
       fileId,
       timeout: timeout,
+      maxRetries: maxRetries,
       cancellation: cancellation,
       headers: headers,
     );
@@ -441,12 +455,14 @@ extension AnthropicExecutionFileHandleFilesX on AnthropicExecutionFileHandle {
   Future<AnthropicFileDownload> download(
     AnthropicFiles files, {
     Duration? timeout,
+    int? maxRetries,
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) {
     return files.downloadFile(
       fileId,
       timeout: timeout,
+      maxRetries: maxRetries,
       cancellation: cancellation,
       headers: headers,
     );

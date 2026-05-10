@@ -617,6 +617,7 @@ dependencies:
 
 dependency_overrides:
 ${_pathEntries([
+        'llm_dart_ai',
         'llm_dart_provider',
         'llm_dart_transport',
       ], paths.packagePaths)}
@@ -637,6 +638,7 @@ dependencies:
 
 dependency_overrides:
 ${_pathEntries([
+        'llm_dart_ai',
         'llm_dart_provider',
         'llm_dart_transport',
       ], paths.packagePaths)}
@@ -657,6 +659,7 @@ dependencies:
 
 dependency_overrides:
 ${_pathEntries([
+        'llm_dart_ai',
         'llm_dart_provider',
         'llm_dart_transport',
       ], paths.packagePaths)}

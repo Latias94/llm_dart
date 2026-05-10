@@ -76,6 +76,7 @@ void main() {
             headers: const {
               'x-test': '1',
             },
+            maxRetries: 2,
             cancellation: cancelToken,
           ),
         ),
@@ -85,6 +86,7 @@ void main() {
       expect(capturedRequest!.method, TransportMethod.post);
       expect(capturedRequest!.responseType, TransportResponseType.json);
       expect(capturedRequest!.timeout, const Duration(seconds: 5));
+      expect(capturedRequest!.maxRetries, 2);
       expect(capturedRequest!.headers['x-test'], '1');
       expect(identical(capturedRequest!.cancellation, cancelToken), isTrue);
 

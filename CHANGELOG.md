@@ -23,6 +23,14 @@ Older builder-era code should migrate through `package:llm_dart/legacy.dart`.
 - Added focused packages for users who want direct access to provider
   contracts, generation helpers, chat sessions, transport, Flutter adapters, or
   provider-specific APIs.
+- Added `ModelRegistry` for runtime model selection across provider facades.
+- Added `generateObject(...)` and `streamObject(...)` as object-first wrappers
+  over the shared structured-output runtime.
+- Added request-scoped `CallOptions.maxRetries`, transport request retries,
+  transport diagnostics body snapshots, and `MiddlewareTransportClient` for
+  custom fetch-style transport hooks.
+- Added runner telemetry callbacks for chunk and error handling in multi-step
+  generation helpers.
 - Added short root provider factories such as `openai(...)`,
   `anthropic(...)`, and `google(...)` as the primary ergonomic root
   construction path.
@@ -50,6 +58,12 @@ Older builder-era code should migrate through `package:llm_dart/legacy.dart`.
   model API.
 - Split the previous combined Ollama and ElevenLabs provider bucket into dedicated
   Ollama and ElevenLabs provider packages.
+- Moved the shared chat UI message, mapper, stream reader, and chat UI JSON
+  helpers into `llm_dart_ai` so provider packages stay on provider contracts
+  only.
+- HTTP chat transport payloads now serialize common `CallOptions` fields such
+  as timeout, headers, and max retries, while typed provider options can be
+  encoded with an explicit transport encoder.
 - Older core imports remain available, but new code should prefer the root
   model API or the focused packages directly.
 - Provider-specific features now use typed provider options, focused provider

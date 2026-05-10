@@ -59,6 +59,7 @@ final class OllamaLanguageModel
         },
         body: preparedRequest.body,
         timeout: request.callOptions.timeout,
+        maxRetries: request.callOptions.maxRetries,
         cancellation: request.callOptions.cancellation,
         responseType: TransportResponseType.json,
       ),
@@ -90,6 +91,7 @@ final class OllamaLanguageModel
           },
           body: preparedRequest.body,
           timeout: request.callOptions.timeout,
+          maxRetries: request.callOptions.maxRetries,
           cancellation: request.callOptions.cancellation,
         ),
       );

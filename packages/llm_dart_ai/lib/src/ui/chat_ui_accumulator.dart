@@ -1,7 +1,5 @@
-import '../common/model_error.dart';
-import '../common/provider_metadata.dart';
-import '../model/finish_reason.dart';
-import '../stream/text_stream_event.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
+
 import 'chat_ui_message.dart';
 import 'chat_ui_tool_part_store.dart';
 

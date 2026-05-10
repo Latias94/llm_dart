@@ -122,6 +122,7 @@ final class OpenAITranscriptionModel
         },
         body: multipart.bytes,
         timeout: request.callOptions.timeout,
+        maxRetries: request.callOptions.maxRetries,
         cancellation: request.callOptions.cancellation,
         responseType: _responseTypeForResponseFormat(responseFormat),
       ),

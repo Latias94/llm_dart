@@ -348,6 +348,30 @@ void main() {
       expect(runResult, same(finishedRun));
       expect(runResult.lastStep, same(finishedStep));
     });
+
+    test('invokes onError when generation fails', () async {
+      final errors = <Object>[];
+      final stackTraces = <StackTrace>[];
+      final model = _RecordingLanguageModel([]);
+
+      await expectLater(
+        GenerateTextRunner(
+          model: model,
+          prompt: [
+            UserPromptMessage.text('Hello'),
+          ],
+          onError: (error, stackTrace) {
+            errors.add(error);
+            stackTraces.add(stackTrace);
+          },
+        ).run(),
+        throwsA(isA<StateError>()),
+      );
+
+      expect(errors, hasLength(1));
+      expect(errors.single, isA<StateError>());
+      expect(stackTraces, hasLength(1));
+    });
   });
 }
 

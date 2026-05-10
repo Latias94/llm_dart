@@ -16,7 +16,7 @@
 - [x] Decide whether `llm_dart_provider_utils` is public in the first breaking
   preview or starts as package-private helper code
 - [x] Decide whether UI contracts remain inside the provider/spec package for
-  the first breaking preview or move to a dedicated UI package later
+  the first breaking preview or move to `llm_dart_ai`
 - [x] Update workspace dependency guard policy for the target graph
 - [x] Update root boundary guard policy for the target graph
 
@@ -44,6 +44,8 @@
 - [x] Move generation helpers into `llm_dart_ai`
 - [x] Move multi-step runners into `llm_dart_ai`
 - [x] Move structured output helpers into `llm_dart_ai`
+- [x] Move shared chat UI projection and chat UI JSON helpers into
+  `llm_dart_ai`
 - [x] Keep provider packages independent from `llm_dart_ai`
 
 ## Data Structure Upgrade

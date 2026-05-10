@@ -1,4 +1,5 @@
-import '../stream/text_stream_event.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
+
 import 'chat_ui_message.dart';
 
 sealed class ChatUiStreamChunk {

@@ -81,6 +81,7 @@ final class OllamaEmbeddingModel
           'input': request.values,
         },
         timeout: request.callOptions.timeout,
+        maxRetries: request.callOptions.maxRetries,
         cancellation: request.callOptions.cancellation,
         responseType: TransportResponseType.json,
       ),

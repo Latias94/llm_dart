@@ -47,6 +47,62 @@ final class TransportRetryPolicy {
         assert(backoffMultiplier > 0),
         retryIf = retryIf ?? defaultRetryIf;
 
+  factory TransportRetryPolicy.withMaxRetries(
+    int maxRetries, {
+    Duration baseDelay = Duration.zero,
+    double backoffMultiplier = 2,
+    Duration? maxDelay,
+    bool respectRetryAfter = true,
+    TransportRetryPredicate? retryIf,
+    TransportRetryDelayCalculator? delayCalculator,
+  }) {
+    RangeError.checkNotNegative(maxRetries, 'maxRetries');
+    return TransportRetryPolicy(
+      maxAttempts: maxRetries + 1,
+      baseDelay: baseDelay,
+      backoffMultiplier: backoffMultiplier,
+      maxDelay: maxDelay,
+      respectRetryAfter: respectRetryAfter,
+      retryIf: retryIf,
+      delayCalculator: delayCalculator,
+    );
+  }
+
+  int get maxRetries => maxAttempts - 1;
+
+  TransportRetryPolicy copyWith({
+    int? maxAttempts,
+    Duration? baseDelay,
+    double? backoffMultiplier,
+    Duration? maxDelay,
+    bool? respectRetryAfter,
+    TransportRetryPredicate? retryIf,
+    TransportRetryDelayCalculator? delayCalculator,
+  }) {
+    final resolvedMaxAttempts = maxAttempts ?? this.maxAttempts;
+    if (resolvedMaxAttempts < 1) {
+      throw RangeError.value(
+        resolvedMaxAttempts,
+        'maxAttempts',
+        'maxAttempts must be >= 1',
+      );
+    }
+    return TransportRetryPolicy(
+      maxAttempts: resolvedMaxAttempts,
+      baseDelay: baseDelay ?? this.baseDelay,
+      backoffMultiplier: backoffMultiplier ?? this.backoffMultiplier,
+      maxDelay: maxDelay ?? this.maxDelay,
+      respectRetryAfter: respectRetryAfter ?? this.respectRetryAfter,
+      retryIf: retryIf ?? this.retryIf,
+      delayCalculator: delayCalculator ?? this.delayCalculator,
+    );
+  }
+
+  TransportRetryPolicy withRequestMaxRetries(int maxRetries) {
+    RangeError.checkNotNegative(maxRetries, 'maxRetries');
+    return copyWith(maxAttempts: maxRetries + 1);
+  }
+
   bool shouldRetry(TransportRetryContext context) {
     if (context.attempt >= maxAttempts) {
       return false;

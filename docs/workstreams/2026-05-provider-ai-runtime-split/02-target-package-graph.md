@@ -13,11 +13,12 @@ llm_dart_ai             -> llm_dart_provider
 provider packages       -> llm_dart_provider
 provider packages       -> llm_dart_transport
 
+llm_dart_chat           -> llm_dart_ai
 llm_dart_chat           -> llm_dart_provider
 llm_dart_chat           -> llm_dart_transport
 
 llm_dart_flutter        -> llm_dart_chat
-llm_dart_flutter        -> llm_dart_provider
+llm_dart_flutter        -> llm_dart_ai
 
 llm_dart -> facade over provider packages, llm_dart_ai, llm_dart_chat,
             llm_dart_transport, and explicit legacy compatibility
@@ -31,10 +32,10 @@ The graph should preserve these rules:
 - `llm_dart_provider_utils` does not own Dio or HTTP transport
 - `llm_dart_ai` depends on provider specs and generic helpers, not concrete
   provider implementations
-- `llm_dart_chat` depends on shared model/UI contracts and transport, not
+- `llm_dart_chat` depends on shared AI/runtime UI contracts and transport, not
   concrete provider packages
-- `llm_dart_flutter` depends on `llm_dart_chat` plus shared
-  `llm_dart_provider` contracts, not `llm_dart_core` or concrete providers
+- `llm_dart_flutter` depends on `llm_dart_chat` plus `llm_dart_ai`, not
+  `llm_dart_core` or concrete providers
 - root `llm_dart` can depend outward as a facade, but should not own new
   implementation logic
 
@@ -89,6 +90,7 @@ Owns app-facing runtime:
 - stream result facades
 - tool execution loop
 - stop policy
+- shared chat UI projection, chat UI stream reader, and chat UI JSON codecs
 - optional `prepareStep`-style hooks if accepted for the breaking line
 
 It must not own provider-native lifecycle APIs.
@@ -125,7 +127,7 @@ Owns framework-neutral chat runtime:
 - `ChatTransport`
 - direct provider transport
 - HTTP chat transport protocol
-- prompt/UI message mapping
+- chat session state and orchestration above the shared AI runtime
 - chat snapshots
 - automatic local tool execution helpers
 

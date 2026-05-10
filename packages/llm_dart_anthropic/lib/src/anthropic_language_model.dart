@@ -77,6 +77,7 @@ final class AnthropicLanguageModel
         ),
         body: preparedRequest.body,
         timeout: request.callOptions.timeout,
+        maxRetries: request.callOptions.maxRetries,
         cancellation: request.callOptions.cancellation,
         responseType: TransportResponseType.json,
       ),
@@ -118,6 +119,7 @@ final class AnthropicLanguageModel
           ),
           body: preparedRequest.body,
           timeout: request.callOptions.timeout,
+          maxRetries: request.callOptions.maxRetries,
           cancellation: request.callOptions.cancellation,
         ),
       );
@@ -162,6 +164,7 @@ final class AnthropicLanguageModel
         ),
         body: preparedRequest.body,
         timeout: request.callOptions.timeout,
+        maxRetries: request.callOptions.maxRetries,
         cancellation: request.callOptions.cancellation,
         responseType: TransportResponseType.json,
       ),

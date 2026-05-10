@@ -5,7 +5,8 @@ Essential functionality for building AI applications with LLM Dart.
 This directory is intentionally split into:
 
 - stable shared-model examples for new app code
-- explicit boundary appendices for provider-owned or older compatibility flows
+- provider-owned advanced flows that stay behind typed provider APIs
+- compatibility appendices for older builder-era code
 
 ## Examples
 
@@ -23,14 +24,6 @@ provider-native panels, and graceful fallback suggestions.
 The example now also includes an Ollama package preset and shows why
 Ollama image-input or reasoning affordances should be treated as inferred
 family hints rather than hard runtime guarantees.
-
-### [capability_factory_methods.dart](capability_factory_methods.dart)
-Compatibility-oriented specialized `build*()` helpers for capability families
-that still live on the older root builder surface.
-
-### [provider_specific_builders.dart](provider_specific_builders.dart)
-Compatibility-oriented provider callback builders that still demonstrate the
-older root builder shell for provider-specific tuning.
 
 ### [assistants.dart](assistants.dart)
 Stable assistant-like chat guidance first, followed by the explicit OpenAI
@@ -101,6 +94,19 @@ control.
 Stable `ModelError` normalization plus retry, fallback, and circuit-breaker
 patterns around shared text-call closures.
 
+## Compatibility Appendices
+
+These examples are retained for migration and older builder-era workflows. New
+app code should start with the stable examples above.
+
+### [capability_factory_methods.dart](capability_factory_methods.dart)
+Compatibility-oriented specialized `build*()` helpers for capability families
+that still live on the older root builder surface.
+
+### [provider_specific_builders.dart](provider_specific_builders.dart)
+Compatibility-oriented provider callback builders that still demonstrate the
+older root builder shell for provider-specific tuning.
+
 ## Setup
 
 ```bash
@@ -159,6 +165,8 @@ helpers:
 
 - `generateTextCall(...)`
 - `streamTextCall(...)`
+- `generateObject(...)`
+- `streamObject(...)`
 - `embed(...)`
 - `embedMany(...)`
 - `generateImage(...)`
@@ -207,7 +215,8 @@ void inspectMessage(core.ChatUiMessage message) {
 
 - **Chat**: Messages, context, response generation, and streaming
 - **Tools**: Function calling and tool-result replay
-- **Structured Output**: Shared `OutputSpec`-driven result shaping
+- **Structured Output**: Shared `OutputSpec`-driven result shaping plus
+  object-first helpers
 - **Embeddings**: Vector representations for semantic search and retrieval
 - **Audio**: Text-to-speech and speech-to-text workflows
 - **Images**: Shared prompt-based generation plus provider-owned edit helpers

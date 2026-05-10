@@ -17,6 +17,7 @@ final class GenerateTextRunner {
   final GenerateTextOnStepStart? onStepStart;
   final GenerateTextOnStepFinish? onStepFinish;
   final GenerateTextOnFinish? onFinish;
+  final GenerateTextOnError? onError;
 
   GenerateTextRunner({
     required this.model,
@@ -30,6 +31,7 @@ final class GenerateTextRunner {
     this.onStepStart,
     this.onStepFinish,
     this.onFinish,
+    this.onError,
   })  : prompt = List.unmodifiable(prompt),
         tools = List.unmodifiable(tools) {
     if (maxSteps < 1) {
@@ -42,79 +44,102 @@ final class GenerateTextRunner {
   }
 
   Future<GenerateTextRunResult> run() async {
-    final previousSteps = <GenerateTextStepResult>[];
-    var promptHistory = List<PromptMessage>.from(prompt);
-    final declaredToolNames = {
-      for (final tool in tools) tool.name,
-    };
+    try {
+      final previousSteps = <GenerateTextStepResult>[];
+      var promptHistory = List<PromptMessage>.from(prompt);
+      final declaredToolNames = {
+        for (final tool in tools) tool.name,
+      };
 
-    while (true) {
-      final stepNumber = previousSteps.length;
-      if (stepNumber >= maxSteps) {
-        throw StateError(
-          'GenerateTextRunner exceeded maxSteps ($maxSteps).',
+      while (true) {
+        final stepNumber = previousSteps.length;
+        if (stepNumber >= maxSteps) {
+          throw StateError(
+            'GenerateTextRunner exceeded maxSteps ($maxSteps).',
+          );
+        }
+
+        final request = GenerateTextRequest(
+          prompt: promptHistory,
+          tools: tools,
+          toolChoice: toolChoice,
+          options: options,
+          callOptions: callOptions,
         );
-      }
 
-      final request = GenerateTextRequest(
-        prompt: promptHistory,
-        tools: tools,
-        toolChoice: toolChoice,
-        options: options,
-        callOptions: callOptions,
-      );
+        final stepStartEvent = GenerateTextStepStartEvent(
+          stepNumber: stepNumber,
+          providerId: model.providerId,
+          modelId: model.modelId,
+          request: request,
+          previousSteps: previousSteps,
+        );
+        await onStepStart?.call(stepStartEvent);
 
-      final stepStartEvent = GenerateTextStepStartEvent(
-        stepNumber: stepNumber,
-        providerId: model.providerId,
-        modelId: model.modelId,
-        request: request,
-        previousSteps: previousSteps,
-      );
-      await onStepStart?.call(stepStartEvent);
+        final result = await model.generate(request);
+        final step = GenerateTextStepResult(
+          stepNumber: stepNumber,
+          providerId: model.providerId,
+          modelId: model.modelId,
+          request: request,
+          result: result,
+        );
+        await onStepFinish?.call(step);
+        previousSteps.add(step);
 
-      final result = await model.generate(request);
-      final step = GenerateTextStepResult(
-        stepNumber: stepNumber,
-        providerId: model.providerId,
-        modelId: model.modelId,
-        request: request,
-        result: result,
-      );
-      await onStepFinish?.call(step);
-      previousSteps.add(step);
+        if (step.finishReason != FinishReason.toolCalls) {
+          break;
+        }
 
-      if (step.finishReason != FinishReason.toolCalls) {
-        break;
-      }
-
-      final toolContinuation =
-          await GenerateTextRunnerSupport.buildFunctionToolContinuation(
-        step,
-        declaredToolNames: declaredToolNames,
-        functionToolExecutor: functionToolExecutor,
-        runnerName: 'GenerateTextRunner',
-      );
-      if (toolContinuation == null) {
-        break;
-      }
-
-      promptHistory = [
-        ...promptHistory,
-        ...GenerateTextRunnerSupport.stepToPromptMessages(
+        final toolContinuation =
+            await GenerateTextRunnerSupport.buildFunctionToolContinuation(
           step,
+          declaredToolNames: declaredToolNames,
+          functionToolExecutor: functionToolExecutor,
           runnerName: 'GenerateTextRunner',
-        ),
-        ...toolContinuation,
-      ];
+        );
+        if (toolContinuation == null) {
+          break;
+        }
+
+        promptHistory = [
+          ...promptHistory,
+          ...GenerateTextRunnerSupport.stepToPromptMessages(
+            step,
+            runnerName: 'GenerateTextRunner',
+          ),
+          ...toolContinuation,
+        ];
+      }
+
+      final runResult = GenerateTextRunResult(
+        steps: previousSteps,
+      );
+      await onFinish?.call(runResult);
+
+      return runResult;
+    } catch (error, stackTrace) {
+      final (reportedError, reportedStackTrace) =
+          await _notifyError(error, stackTrace);
+      Error.throwWithStackTrace(reportedError, reportedStackTrace);
+    }
+  }
+
+  Future<(Object, StackTrace)> _notifyError(
+    Object error,
+    StackTrace stackTrace,
+  ) async {
+    final callback = onError;
+    if (callback == null) {
+      return (error, stackTrace);
     }
 
-    final runResult = GenerateTextRunResult(
-      steps: previousSteps,
-    );
-    await onFinish?.call(runResult);
-
-    return runResult;
+    try {
+      await callback(error, stackTrace);
+      return (error, stackTrace);
+    } catch (callbackError, callbackStackTrace) {
+      return (callbackError, callbackStackTrace);
+    }
   }
 }
 
@@ -130,6 +155,7 @@ Future<GenerateTextRunResult> runTextGeneration({
   GenerateTextOnStepStart? onStepStart,
   GenerateTextOnStepFinish? onStepFinish,
   GenerateTextOnFinish? onFinish,
+  GenerateTextOnError? onError,
 }) {
   return GenerateTextRunner(
     model: model,
@@ -143,5 +169,6 @@ Future<GenerateTextRunResult> runTextGeneration({
     onStepStart: onStepStart,
     onStepFinish: onStepFinish,
     onFinish: onFinish,
+    onError: onError,
   ).run();
 }

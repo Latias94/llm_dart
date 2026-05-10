@@ -85,6 +85,7 @@ final class ElevenLabsVoiceCatalogClient {
 
   Future<List<ElevenLabsVoice>> listVoices({
     Duration? timeout,
+    int? maxRetries,
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
@@ -99,6 +100,7 @@ final class ElevenLabsVoiceCatalogClient {
           if (headers != null) ...headers,
         },
         timeout: timeout,
+        maxRetries: maxRetries,
         cancellation: cancellation,
         responseType: TransportResponseType.json,
       ),

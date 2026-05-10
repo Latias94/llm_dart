@@ -8,6 +8,23 @@ final RegExp _transportPublicProviderLeakPattern = RegExp(
   r'ProviderCancellation|ProviderCancelledException',
 );
 
+final RegExp _dartIoImportPattern = RegExp(
+  r'''^\s*import\s+['"]dart:io['"]''',
+);
+
+final RegExp _dioIoDirectivePattern = RegExp(
+  r'''^\s*(import|export)\s+['"]package:dio/io\.dart['"]''',
+);
+
+final RegExp _transportIoPublicExportPattern = RegExp(
+  r'''^\s*export\s+['"][^'"]*(dio_io|dio_http_client_adapter_io)\.dart['"]''',
+);
+
+const Set<String> _allowedTransportIoOnlyFiles = {
+  'packages/llm_dart_transport/lib/dio_io.dart',
+  'packages/llm_dart_transport/lib/src/http/dio_http_client_adapter_io.dart',
+};
+
 final class TransportBoundaryGuardResult {
   final List<String> violations;
 
@@ -67,6 +84,15 @@ Future<void> _collectImportViolations({
     for (var index = 0; index < lines.length; index += 1) {
       final line = lines[index];
       if (!_rootOrCoreImportPattern.hasMatch(line)) {
+        if (_hasDisallowedIoOnlyDirective(
+            line, _displayPath(repoRoot, entity))) {
+          violations.add(
+            '${_displayPath(repoRoot, entity)}:${index + 1}: transport Web-safe '
+            'libraries must not import dart:io or package:dio/io.dart outside '
+            'explicit IO-only entrypoints. Keep IO-specific code behind '
+            'conditional imports or the dio_io.dart subentry.',
+          );
+        }
         continue;
       }
 
@@ -101,6 +127,15 @@ Future<void> _collectPublicSurfaceViolations({
   for (var index = 0; index < lines.length; index += 1) {
     final line = lines[index];
     if (!_transportPublicProviderLeakPattern.hasMatch(line)) {
+      if (_transportIoPublicExportPattern.hasMatch(line) ||
+          _dioIoDirectivePattern.hasMatch(line)) {
+        violations.add(
+          '${_displayPath(repoRoot, publicBarrel)}:${index + 1}: public transport '
+          'surface must stay Web-safe and must not export IO-only Dio helpers. '
+          'Import package:llm_dart_transport/dio_io.dart explicitly on IO '
+          'platforms instead. Disallowed line: ${_preview(line.trim())}',
+        );
+      }
       continue;
     }
 
@@ -110,6 +145,15 @@ Future<void> _collectPublicSurfaceViolations({
       'aliases. Disallowed line: ${_preview(line.trim())}',
     );
   }
+}
+
+bool _hasDisallowedIoOnlyDirective(String line, String relativePath) {
+  if (!_dartIoImportPattern.hasMatch(line) &&
+      !_dioIoDirectivePattern.hasMatch(line)) {
+    return false;
+  }
+
+  return !_allowedTransportIoOnlyFiles.contains(relativePath);
 }
 
 String _displayPath(Directory repoRoot, File file) {
@@ -135,7 +179,8 @@ Future<void> main() async {
   if (result.passed) {
     stdout.writeln(
       'transport boundary guard passed: transport lib does not leak root/core '
-      'imports and the public barrel stays on transport-owned names.',
+      'imports, keeps IO-only code isolated, and the public barrel stays on '
+      'transport-owned names.',
     );
     return;
   }

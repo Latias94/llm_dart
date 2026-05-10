@@ -71,6 +71,7 @@ final class GoogleImageModel implements ImageModel, CapabilityDescribedModel {
             ? _buildGeminiRequest(request, options: options)
             : _buildImagenRequest(request, options: options),
         timeout: request.callOptions.timeout,
+        maxRetries: request.callOptions.maxRetries,
         cancellation: request.callOptions.cancellation,
         responseType: TransportResponseType.json,
       ),
@@ -103,6 +104,7 @@ final class GoogleImageModel implements ImageModel, CapabilityDescribedModel {
         },
         body: _buildGeminiEditRequest(request, options: options),
         timeout: request.callOptions.timeout,
+        maxRetries: request.callOptions.maxRetries,
         cancellation: request.callOptions.cancellation,
         responseType: TransportResponseType.json,
       ),

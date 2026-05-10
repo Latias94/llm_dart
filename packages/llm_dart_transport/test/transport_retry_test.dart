@@ -3,6 +3,17 @@ import 'package:test/test.dart';
 
 void main() {
   group('TransportRetryPolicy', () {
+    test('maps maxRetries to attempts', () {
+      final policy = TransportRetryPolicy.withMaxRetries(
+        2,
+        baseDelay: const Duration(milliseconds: 10),
+      );
+
+      expect(policy.maxRetries, 2);
+      expect(policy.maxAttempts, 3);
+      expect(policy.baseDelay, const Duration(milliseconds: 10));
+    });
+
     test('uses retry-after header when available', () {
       const policy = TransportRetryPolicy(
         maxAttempts: 2,

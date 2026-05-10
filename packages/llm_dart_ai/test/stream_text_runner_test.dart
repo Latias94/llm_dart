@@ -87,6 +87,63 @@ void main() {
       expect(await run.finishReason, FinishReason.stop);
     });
 
+    test('invokes onChunk for streamed events', () async {
+      final model = _RecordingStreamLanguageModel([
+        const [
+          TextStartEvent(id: 'text-1'),
+          TextDeltaEvent(id: 'text-1', delta: 'Hello'),
+          TextEndEvent(id: 'text-1'),
+          FinishEvent(finishReason: FinishReason.stop),
+        ],
+      ]);
+      final chunks = <TextStreamEvent>[];
+
+      final run = streamTextRun(
+        model: model,
+        prompt: [
+          UserPromptMessage.text('Hello'),
+        ],
+        onChunk: chunks.add,
+      );
+
+      await run.toList();
+      await run.result;
+
+      expect(chunks.map((event) => event.runtimeType), [
+        TextStartEvent,
+        TextDeltaEvent,
+        TextEndEvent,
+        FinishEvent,
+      ]);
+    });
+
+    test('invokes onError when streamed generation fails', () async {
+      final errors = <Object>[];
+      final model = _RecordingStreamLanguageModel([]);
+
+      final run = streamTextRun(
+        model: model,
+        prompt: [
+          UserPromptMessage.text('Hello'),
+        ],
+        onError: (error, stackTrace) {
+          errors.add(error);
+        },
+      );
+
+      await expectLater(
+        run.result,
+        throwsA(isA<StateError>()),
+      );
+      await expectLater(
+        run,
+        emitsError(isA<StateError>()),
+      );
+
+      expect(errors, hasLength(1));
+      expect(errors.single, isA<StateError>());
+    });
+
     test('continues tool-call steps with stitched event and step streams',
         () async {
       final model = _RecordingStreamLanguageModel([

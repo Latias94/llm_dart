@@ -1,9 +1,10 @@
 import 'dart:async';
 
-import 'package:llm_dart_provider/llm_dart_provider.dart';
+import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'chat_transport.dart';
+import 'http_chat_transport_protocol.dart';
 
 typedef PrepareSendMessagesRequest
     = FutureOr<HttpChatTransportPreparedSendMessagesRequest?> Function(
@@ -13,6 +14,10 @@ typedef PrepareSendMessagesRequest
 typedef PrepareReconnectRequest
     = FutureOr<HttpChatTransportPreparedReconnectRequest?> Function(
   HttpChatTransportReconnectRequestContext context,
+);
+
+typedef HttpChatTransportProviderOptionsEncoder = Map<String, Object?> Function(
+  ProviderInvocationOptions providerOptions,
 );
 
 final class HttpChatTransportSendMessagesRequestContext {
@@ -90,6 +95,7 @@ final class HttpChatTransport implements ChatTransport {
   final HttpChatTransportStreamProtocol streamProtocol;
   final Map<String, String> headers;
   final Duration? requestTimeout;
+  final HttpChatTransportProviderOptionsEncoder? providerOptionsEncoder;
   final PrepareSendMessagesRequest? prepareSendMessagesRequest;
   final PrepareReconnectRequest? prepareReconnectRequest;
   final Map<String, _HttpChatTransportResumeState> _resumeStates = {};
@@ -103,15 +109,24 @@ final class HttpChatTransport implements ChatTransport {
     this.streamProtocol = HttpChatTransportStreamProtocol.uiMessageStreamV2,
     this.headers = const {},
     this.requestTimeout,
+    this.providerOptionsEncoder,
     this.prepareSendMessagesRequest,
     this.prepareReconnectRequest,
   });
 
   @override
   Stream<ChatUiStreamChunk> sendMessages(ChatTransportRequest request) async* {
-    _ensureSupportedCallOptions(request.options.callOptions);
-
-    final state = _HttpChatTransportResumeState();
+    final callOptionsPayload = _serializeCallOptions(
+      request.options.callOptions,
+    );
+    final baseRequestTimeout =
+        request.options.callOptions.timeout ?? requestTimeout;
+    final state = _HttpChatTransportResumeState(
+      callOptionsPayload: callOptionsPayload,
+      requestTimeout: baseRequestTimeout,
+      maxRetries: request.options.callOptions.maxRetries,
+      cancellation: request.options.callOptions.cancellation,
+    );
     _resumeStates[request.chatId] = state;
 
     final baseHeaders = _baseHeaders();
@@ -119,6 +134,7 @@ final class HttpChatTransport implements ChatTransport {
       chatId: request.chatId,
       prompt: request.prompt,
       generateOptions: request.options.generateOptions,
+      callOptions: callOptionsPayload,
       streamProtocol: streamProtocol,
       metadata: request.options.metadata,
     );
@@ -127,7 +143,7 @@ final class HttpChatTransport implements ChatTransport {
         request: request,
         endpoint: endpoint,
         headers: Map.unmodifiable(baseHeaders),
-        requestTimeout: requestTimeout,
+        requestTimeout: baseRequestTimeout,
         payload: basePayload,
       ),
     );
@@ -138,7 +154,7 @@ final class HttpChatTransport implements ChatTransport {
     final resolvedRequestTimeout =
         preparedRequest?.overrideRequestTimeout == true
             ? preparedRequest!.requestTimeout
-            : requestTimeout;
+            : baseRequestTimeout;
 
     yield* _sendPayload(
       chatId: request.chatId,
@@ -146,6 +162,8 @@ final class HttpChatTransport implements ChatTransport {
       endpoint: resolvedEndpoint,
       headers: resolvedHeaders,
       requestTimeout: resolvedRequestTimeout,
+      maxRetries: state.maxRetries,
+      cancellation: state.cancellation,
       payload: payload,
     );
   }
@@ -178,6 +196,7 @@ final class HttpChatTransport implements ChatTransport {
     final basePayload = HttpChatTransportReconnectRequestPayload(
       chatId: chatId,
       resumeToken: resumeToken,
+      callOptions: state.callOptionsPayload,
       streamProtocol: streamProtocol,
     );
     final preparedRequest = await prepareReconnectRequest?.call(
@@ -186,7 +205,7 @@ final class HttpChatTransport implements ChatTransport {
         resumeToken: resumeToken,
         endpoint: endpoint,
         headers: Map.unmodifiable(baseHeaders),
-        requestTimeout: requestTimeout,
+        requestTimeout: state.requestTimeout,
         payload: basePayload,
       ),
     );
@@ -197,7 +216,7 @@ final class HttpChatTransport implements ChatTransport {
     final resolvedRequestTimeout =
         preparedRequest?.overrideRequestTimeout == true
             ? preparedRequest!.requestTimeout
-            : requestTimeout;
+            : state.requestTimeout;
 
     yield* Stream<ChatUiStreamChunk>.fromIterable(replayChunks);
     yield* _sendPayload(
@@ -206,6 +225,8 @@ final class HttpChatTransport implements ChatTransport {
       endpoint: resolvedEndpoint,
       headers: resolvedHeaders,
       requestTimeout: resolvedRequestTimeout,
+      maxRetries: state.maxRetries,
+      cancellation: state.cancellation,
       payload: payload,
     );
   }
@@ -216,6 +237,8 @@ final class HttpChatTransport implements ChatTransport {
     required Uri endpoint,
     required Map<String, String> headers,
     required Duration? requestTimeout,
+    required int? maxRetries,
+    required ProviderCancellation? cancellation,
     required Map<String, Object?> payload,
   }) async* {
     try {
@@ -228,6 +251,8 @@ final class HttpChatTransport implements ChatTransport {
           },
           body: payload,
           timeout: requestTimeout,
+          maxRetries: maxRetries,
+          cancellation: cancellation,
           responseType: TransportResponseType.plainText,
         ),
       );
@@ -366,14 +391,28 @@ final class HttpChatTransport implements ChatTransport {
     }
   }
 
-  void _ensureSupportedCallOptions(CallOptions options) {
-    if (options.timeout != null ||
-        options.headers != null ||
-        options.providerOptions != null) {
-      throw UnsupportedError(
-        'HttpChatTransport does not serialize CallOptions yet. Configure backend transport behavior on the transport itself, not through provider invocation options.',
-      );
+  HttpChatTransportCallOptionsPayload _serializeCallOptions(
+    CallOptions options,
+  ) {
+    Map<String, Object?> providerOptions = const {};
+    final typedProviderOptions = options.providerOptions;
+    if (typedProviderOptions != null) {
+      final encoder = providerOptionsEncoder;
+      if (encoder == null) {
+        throw UnsupportedError(
+          'HttpChatTransport needs providerOptionsEncoder to serialize typed providerOptions. Common CallOptions fields are supported without an encoder.',
+        );
+      }
+
+      providerOptions = encoder(typedProviderOptions);
     }
+
+    return HttpChatTransportCallOptionsPayload(
+      timeout: options.timeout,
+      headers: options.headers ?? const {},
+      maxRetries: options.maxRetries,
+      providerOptions: providerOptions,
+    );
   }
 
   Map<String, String> _baseHeaders() {
@@ -396,9 +435,20 @@ final class HttpChatTransport implements ChatTransport {
 }
 
 final class _HttpChatTransportResumeState {
+  final HttpChatTransportCallOptionsPayload callOptionsPayload;
+  final Duration? requestTimeout;
+  final int? maxRetries;
+  final ProviderCancellation? cancellation;
   final List<ChatUiStreamChunk> replayChunks = [];
   String? resumeToken;
   bool isTerminal = false;
+
+  _HttpChatTransportResumeState({
+    required this.callOptionsPayload,
+    required this.requestTimeout,
+    required this.maxRetries,
+    required this.cancellation,
+  });
 
   bool get canReconnect => !isTerminal && resumeToken != null;
 }

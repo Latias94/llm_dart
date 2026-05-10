@@ -39,14 +39,9 @@ Future<void> main() async {
     );
   }
 
-  final ollamaBaseUrl = Platform.environment['OLLAMA_BASE_URL'];
-  if (ollamaBaseUrl != null && ollamaBaseUrl.isNotEmpty) {
-    await demonstrateOllamaLocalCatalogBoundary(ollamaBaseUrl);
-  } else {
-    print(
-      'Skipping Ollama local catalog listing because OLLAMA_BASE_URL is not set.\n',
-    );
-  }
+  final ollamaBaseUrl = Platform.environment['OLLAMA_BASE_URL'] ??
+      ollama_pkg.Ollama.defaultBaseUrl;
+  await demonstrateOllamaLocalCatalogBoundary(ollamaBaseUrl);
 
   explainBoundary();
 
@@ -101,46 +96,58 @@ void demonstrateConcreteModelProfiles() {
 Future<void> demonstrateOpenAIRemoteCatalogBoundary(String apiKey) async {
   print('=== Provider-Owned OpenAI Remote Catalog Boundary ===\n');
 
-  final catalogClient = openai_compat.createOpenAIProvider(
-    apiKey: apiKey,
-    model: 'gpt-4o',
-  );
+  try {
+    final catalogClient = openai_compat.createOpenAIProvider(
+      apiKey: apiKey,
+      model: 'gpt-4o',
+    );
 
-  final models = await catalogClient.models();
-  print('Catalog size: ${models.length}');
-  _printCatalogSummary(models);
+    final models = await catalogClient.models();
+    print('Catalog size: ${models.length}');
+    _printCatalogSummary(models);
+  } catch (error) {
+    print('OpenAI catalog listing failed: $error');
+  }
   print('');
 }
 
 Future<void> demonstrateAnthropicRemoteCatalogBoundary(String apiKey) async {
   print('=== Provider-Owned Anthropic Remote Catalog Boundary ===\n');
 
-  final catalogClient = anthropic_compat.createAnthropicProvider(
-    apiKey: apiKey,
-    model: 'claude-sonnet-4-20250514',
-  );
+  try {
+    final catalogClient = anthropic_compat.createAnthropicProvider(
+      apiKey: apiKey,
+      model: 'claude-sonnet-4-20250514',
+    );
 
-  final models = await catalogClient.models();
-  print('Catalog size: ${models.length}');
-  _printCatalogSummary(models);
+    final models = await catalogClient.models();
+    print('Catalog size: ${models.length}');
+    _printCatalogSummary(models);
+  } catch (error) {
+    print('Anthropic catalog listing failed: $error');
+  }
   print('');
 }
 
 Future<void> demonstrateOllamaLocalCatalogBoundary(String baseUrl) async {
   print('=== Provider-Owned Ollama Local Catalog Boundary ===\n');
 
-  final catalog = ollama_pkg.Ollama(baseUrl: baseUrl).catalog();
-  final models = await catalog.listModels();
-  print('Catalog size: ${models.length}');
+  try {
+    final catalog = ollama_pkg.Ollama(baseUrl: baseUrl).catalog();
+    final models = await catalog.listModels();
+    print('Catalog size: ${models.length}');
 
-  if (models.isEmpty) {
-    print('No local models returned.\n');
-    return;
-  }
+    if (models.isEmpty) {
+      print('No local models returned.\n');
+      return;
+    }
 
-  for (final model in models.take(5)) {
-    final family = model.details?.family ?? 'unknown-family';
-    print('- ${model.name} (family: $family)');
+    for (final model in models.take(5)) {
+      final family = model.details?.family ?? 'unknown-family';
+      print('- ${model.name} (family: $family)');
+    }
+  } catch (error) {
+    print('Ollama catalog listing failed at $baseUrl: $error');
   }
 
   print('');
