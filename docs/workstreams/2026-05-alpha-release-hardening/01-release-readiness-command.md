@@ -58,7 +58,14 @@ The command now runs clean local consumer smoke validation by default:
 - remove the temporary projects after the run
 
 Use `--skip-consumer-smoke` only for short local iterations. After publishing,
-repeat the same idea against pub.dev versions without local path overrides.
+repeat the same checks against pub.dev versions without local path overrides:
+
+```bash
+dart run tool/run_consumer_smoke.dart --published
+```
+
+Use `--version=<version>` with `--published` if the post-publish smoke should
+target a version other than the root `pubspec.yaml` version.
 
 ## Flutter Notes
 

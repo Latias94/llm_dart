@@ -22,6 +22,7 @@
 
 - [x] Run enhanced final release readiness with package tests and pub.dev
   version availability
+- [x] Add a published-package consumer smoke mode for post-publish validation
 - [x] Keep publishing as a manual maintainer-controlled action
 - [x] Keep publish order visible in release readiness output
 - [ ] Publish packages in dependency order

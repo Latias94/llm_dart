@@ -15,9 +15,26 @@ void main() {
       expect(options.showHelp, isFalse);
     });
 
+    test('parses published package flags', () {
+      final options = parseConsumerSmokeOptions([
+        '--published',
+        '--version=0.11.0-alpha.1',
+      ]);
+
+      expect(options.dependencySource, ConsumerSmokeDependencySource.published);
+      expect(options.packageVersion, '0.11.0-alpha.1');
+    });
+
     test('rejects unknown flags', () {
       expect(
         () => parseConsumerSmokeOptions(['--unknown']),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('rejects version without published mode', () {
+      expect(
+        () => parseConsumerSmokeOptions(['--version=0.11.0-alpha.1']),
         throwsA(isA<FormatException>()),
       );
     });
@@ -82,11 +99,39 @@ void main() {
       expect(pubspec, contains('dev_dependencies:'));
     });
 
+    test('builds Dart consumer pubspec with published package versions', () {
+      const paths = ConsumerSmokePaths.published(
+        packageVersion: '0.11.0-alpha.1',
+      );
+
+      final pubspec = buildDartConsumerPubspec(paths);
+
+      expect(pubspec, contains('llm_dart: 0.11.0-alpha.1'));
+      expect(pubspec, contains('llm_dart_provider: 0.11.0-alpha.1'));
+      expect(pubspec, isNot(contains('path:')));
+      expect(pubspec, isNot(contains('dependency_overrides:')));
+    });
+
+    test('builds Flutter consumer pubspec with published package versions', () {
+      const paths = ConsumerSmokePaths.published(
+        packageVersion: '0.11.0-alpha.1',
+      );
+
+      final pubspec = buildFlutterConsumerPubspec(paths);
+
+      expect(pubspec, contains('flutter:\n    sdk: flutter'));
+      expect(pubspec, contains('llm_dart_flutter: 0.11.0-alpha.1'));
+      expect(pubspec, contains('llm_dart_openai: 0.11.0-alpha.1'));
+      expect(pubspec, isNot(contains('path:')));
+      expect(pubspec, isNot(contains('dependency_overrides:')));
+    });
+
     test('builds OpenAI-only consumer pubspec without root package', () {
       final paths = ConsumerSmokePaths(
         repoRoot: 'F:/repo/llm_dart',
         packagePaths: {
           for (final packageName in const [
+            'llm_dart_ai',
             'llm_dart_openai',
             'llm_dart_provider',
             'llm_dart_transport',
@@ -113,6 +158,7 @@ void main() {
         repoRoot: 'F:/repo/llm_dart',
         packagePaths: {
           for (final packageName in const [
+            'llm_dart_ai',
             'llm_dart_google',
             'llm_dart_provider',
             'llm_dart_transport',
@@ -139,6 +185,7 @@ void main() {
         repoRoot: 'F:/repo/llm_dart',
         packagePaths: {
           for (final packageName in const [
+            'llm_dart_ai',
             'llm_dart_anthropic',
             'llm_dart_provider',
             'llm_dart_transport',
@@ -244,14 +291,56 @@ void main() {
     });
   });
 
+  group('resolveConsumerSmokePaths', () {
+    test('defaults published mode to the root pubspec version', () async {
+      final directory = await Directory.systemTemp.createTemp(
+        'llm_dart_consumer_smoke_version_',
+      );
+      addTearDown(() async {
+        if (directory.existsSync()) {
+          await directory.delete(recursive: true);
+        }
+      });
+
+      await File.fromUri(directory.uri.resolve('pubspec.yaml')).writeAsString(
+        '''
+name: llm_dart
+version: 0.11.0-alpha.1
+''',
+      );
+
+      final paths = await resolveConsumerSmokePaths(
+        repoRoot: directory,
+        options: const ConsumerSmokeOptions(
+          dependencySource: ConsumerSmokeDependencySource.published,
+        ),
+      );
+
+      expect(paths.usesPublishedPackages, isTrue);
+      expect(paths.packageVersion, '0.11.0-alpha.1');
+    });
+  });
+
   test('buildConsumerSmokeEnvironment returns proxy overrides', () {
     final environment = buildConsumerSmokeEnvironment(
       const ConsumerSmokeOptions(proxy: 'http://127.0.0.1:10809'),
     );
 
     expect(environment, isNotNull);
-    expect(environment!['HTTP_PROXY'], 'http://127.0.0.1:10809');
+    expect(environment['HTTP_PROXY'], 'http://127.0.0.1:10809');
     expect(environment['HTTPS_PROXY'], 'http://127.0.0.1:10809');
+    expect(environment['DART_SUPPRESS_ANALYTICS'], 'true');
+    expect(environment['FLUTTER_SUPPRESS_ANALYTICS'], 'true');
+  });
+
+  test('buildConsumerSmokeEnvironment suppresses analytics by default', () {
+    final environment = buildConsumerSmokeEnvironment(
+      const ConsumerSmokeOptions(),
+    );
+
+    expect(environment['DART_SUPPRESS_ANALYTICS'], 'true');
+    expect(environment['FLUTTER_SUPPRESS_ANALYTICS'], 'true');
+    expect(environment, isNot(containsPair('HTTP_PROXY', anything)));
   });
 
   test('pathForPubspec normalizes Windows separators', () {

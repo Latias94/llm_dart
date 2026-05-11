@@ -464,7 +464,8 @@ String buildReleaseReadinessReport(ReleaseReadinessRunResult result) {
       ..writeln('## Post-Publish Consumer Smoke')
       ..writeln()
       ..writeln('- Repeat consumer smoke against the published pub.dev '
-          'versions after the packages are released.')
+          'versions after the packages are released with '
+          '`dart run tool/run_consumer_smoke.dart --published`.')
       ..writeln('- Validate clean root Dart, OpenAI-only, split-package, and '
           'Flutter consumers without local path overrides.')
       ..writeln('- Keep `test(...)` for pure controller/import smoke tests; '

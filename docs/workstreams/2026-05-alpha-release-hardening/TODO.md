@@ -34,6 +34,7 @@
 - [x] Document clean Flutter consumer smoke commands in the command output or
   docs
 - [x] Add optional proxy handling for Flutter network checks if automated
+- [x] Add a pub.dev dependency mode for post-publish consumer smoke
 
 ## Publish Execution
 

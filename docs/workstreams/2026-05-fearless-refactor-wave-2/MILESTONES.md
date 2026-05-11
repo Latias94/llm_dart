@@ -13,6 +13,8 @@ Acceptance criteria:
 - final release readiness passes before publishing
 - publish order is available from release readiness output
 - post-publish clean consumer smoke is documented
+- post-publish clean consumer smoke can run with `--published` and no local
+  path overrides
 - actual publishing remains a maintainer-controlled manual action
 
 Current status:

@@ -2,13 +2,22 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+enum ConsumerSmokeDependencySource {
+  localPath,
+  published,
+}
+
 final class ConsumerSmokeOptions {
   final String? proxy;
   final bool showHelp;
+  final ConsumerSmokeDependencySource dependencySource;
+  final String? packageVersion;
 
   const ConsumerSmokeOptions({
     this.proxy,
     this.showHelp = false,
+    this.dependencySource = ConsumerSmokeDependencySource.localPath,
+    this.packageVersion,
   });
 }
 
@@ -56,11 +65,24 @@ final class ConsumerSmokeRunResult {
 final class ConsumerSmokePaths {
   final String repoRoot;
   final Map<String, String> packagePaths;
+  final ConsumerSmokeDependencySource source;
+  final String packageVersion;
 
   const ConsumerSmokePaths({
     required this.repoRoot,
     required this.packagePaths,
+    this.source = ConsumerSmokeDependencySource.localPath,
+    this.packageVersion = '',
   });
+
+  const ConsumerSmokePaths.published({
+    required this.packageVersion,
+  })  : repoRoot = '',
+        packagePaths = const {},
+        source = ConsumerSmokeDependencySource.published;
+
+  bool get usesPublishedPackages =>
+      source == ConsumerSmokeDependencySource.published;
 }
 
 Future<void> main(List<String> arguments) async {
@@ -96,23 +118,38 @@ Future<void> main(List<String> arguments) async {
 ConsumerSmokeOptions parseConsumerSmokeOptions(List<String> arguments) {
   var showHelp = false;
   String? proxy;
+  var dependencySource = ConsumerSmokeDependencySource.localPath;
+  String? packageVersion;
 
   for (final argument in arguments) {
     switch (argument) {
       case '-h' || '--help':
         showHelp = true;
+      case '--published':
+        dependencySource = ConsumerSmokeDependencySource.published;
       default:
         if (argument.startsWith('--proxy=')) {
           proxy = _readFlagValue(argument, '--proxy=');
+          continue;
+        }
+        if (argument.startsWith('--version=')) {
+          packageVersion = _readFlagValue(argument, '--version=');
           continue;
         }
         throw FormatException('unknown option `$argument`');
     }
   }
 
+  if (packageVersion != null &&
+      dependencySource != ConsumerSmokeDependencySource.published) {
+    throw const FormatException('`--version` requires `--published`.');
+  }
+
   return ConsumerSmokeOptions(
     proxy: proxy,
     showHelp: showHelp,
+    dependencySource: dependencySource,
+    packageVersion: packageVersion,
   );
 }
 
@@ -132,6 +169,16 @@ Future<ConsumerSmokeRunResult> runConsumerSmoke({
   }
 
   try {
+    final paths = await resolveConsumerSmokePaths(
+      repoRoot: repoRoot,
+      options: options,
+    );
+    stdout.writeln(
+      paths.usesPublishedPackages
+          ? 'dependency source: pub.dev ${paths.packageVersion}'
+          : 'dependency source: local path workspace',
+    );
+
     final dartConsumer = Directory.fromUri(tempRoot.uri.resolve(
       'dart_consumer/',
     ));
@@ -158,35 +205,35 @@ Future<ConsumerSmokeRunResult> runConsumerSmoke({
     ));
 
     await writeDartConsumer(
-      repoRoot: repoRoot,
+      paths: paths,
       consumerDirectory: dartConsumer,
     );
     await writeOpenAIOnlyConsumer(
-      repoRoot: repoRoot,
+      paths: paths,
       consumerDirectory: openAIOnlyConsumer,
     );
     await writeGoogleOnlyConsumer(
-      repoRoot: repoRoot,
+      paths: paths,
       consumerDirectory: googleOnlyConsumer,
     );
     await writeAnthropicOnlyConsumer(
-      repoRoot: repoRoot,
+      paths: paths,
       consumerDirectory: anthropicOnlyConsumer,
     );
     await writeOllamaOnlyConsumer(
-      repoRoot: repoRoot,
+      paths: paths,
       consumerDirectory: ollamaOnlyConsumer,
     );
     await writeElevenLabsOnlyConsumer(
-      repoRoot: repoRoot,
+      paths: paths,
       consumerDirectory: elevenLabsOnlyConsumer,
     );
     await writeSplitPackageConsumer(
-      repoRoot: repoRoot,
+      paths: paths,
       consumerDirectory: splitPackageConsumer,
     );
     await writeFlutterConsumer(
-      repoRoot: repoRoot,
+      paths: paths,
       consumerDirectory: flutterConsumer,
     );
 
@@ -421,10 +468,9 @@ Future<ConsumerSmokeCommandResult> runConsumerSmokeCommand(
 }
 
 Future<void> writeDartConsumer({
-  required Directory repoRoot,
+  required ConsumerSmokePaths paths,
   required Directory consumerDirectory,
 }) async {
-  final paths = buildConsumerSmokePaths(repoRoot);
   await writeTextFile(
     File.fromUri(consumerDirectory.uri.resolve('pubspec.yaml')),
     buildDartConsumerPubspec(paths),
@@ -436,10 +482,9 @@ Future<void> writeDartConsumer({
 }
 
 Future<void> writeOpenAIOnlyConsumer({
-  required Directory repoRoot,
+  required ConsumerSmokePaths paths,
   required Directory consumerDirectory,
 }) async {
-  final paths = buildConsumerSmokePaths(repoRoot);
   await writeTextFile(
     File.fromUri(consumerDirectory.uri.resolve('pubspec.yaml')),
     buildOpenAIOnlyConsumerPubspec(paths),
@@ -451,10 +496,9 @@ Future<void> writeOpenAIOnlyConsumer({
 }
 
 Future<void> writeGoogleOnlyConsumer({
-  required Directory repoRoot,
+  required ConsumerSmokePaths paths,
   required Directory consumerDirectory,
 }) async {
-  final paths = buildConsumerSmokePaths(repoRoot);
   await writeTextFile(
     File.fromUri(consumerDirectory.uri.resolve('pubspec.yaml')),
     buildGoogleOnlyConsumerPubspec(paths),
@@ -466,10 +510,9 @@ Future<void> writeGoogleOnlyConsumer({
 }
 
 Future<void> writeAnthropicOnlyConsumer({
-  required Directory repoRoot,
+  required ConsumerSmokePaths paths,
   required Directory consumerDirectory,
 }) async {
-  final paths = buildConsumerSmokePaths(repoRoot);
   await writeTextFile(
     File.fromUri(consumerDirectory.uri.resolve('pubspec.yaml')),
     buildAnthropicOnlyConsumerPubspec(paths),
@@ -481,10 +524,9 @@ Future<void> writeAnthropicOnlyConsumer({
 }
 
 Future<void> writeOllamaOnlyConsumer({
-  required Directory repoRoot,
+  required ConsumerSmokePaths paths,
   required Directory consumerDirectory,
 }) async {
-  final paths = buildConsumerSmokePaths(repoRoot);
   await writeTextFile(
     File.fromUri(consumerDirectory.uri.resolve('pubspec.yaml')),
     buildOllamaOnlyConsumerPubspec(paths),
@@ -496,10 +538,9 @@ Future<void> writeOllamaOnlyConsumer({
 }
 
 Future<void> writeElevenLabsOnlyConsumer({
-  required Directory repoRoot,
+  required ConsumerSmokePaths paths,
   required Directory consumerDirectory,
 }) async {
-  final paths = buildConsumerSmokePaths(repoRoot);
   await writeTextFile(
     File.fromUri(consumerDirectory.uri.resolve('pubspec.yaml')),
     buildElevenLabsOnlyConsumerPubspec(paths),
@@ -511,10 +552,9 @@ Future<void> writeElevenLabsOnlyConsumer({
 }
 
 Future<void> writeSplitPackageConsumer({
-  required Directory repoRoot,
+  required ConsumerSmokePaths paths,
   required Directory consumerDirectory,
 }) async {
-  final paths = buildConsumerSmokePaths(repoRoot);
   await writeTextFile(
     File.fromUri(consumerDirectory.uri.resolve('pubspec.yaml')),
     buildSplitPackageConsumerPubspec(paths),
@@ -526,10 +566,9 @@ Future<void> writeSplitPackageConsumer({
 }
 
 Future<void> writeFlutterConsumer({
-  required Directory repoRoot,
+  required ConsumerSmokePaths paths,
   required Directory consumerDirectory,
 }) async {
-  final paths = buildConsumerSmokePaths(repoRoot);
   await writeTextFile(
     File.fromUri(consumerDirectory.uri.resolve('pubspec.yaml')),
     buildFlutterConsumerPubspec(paths),
@@ -564,6 +603,42 @@ ConsumerSmokePaths buildConsumerSmokePaths(Directory repoRoot) {
   );
 }
 
+Future<ConsumerSmokePaths> resolveConsumerSmokePaths({
+  required Directory repoRoot,
+  required ConsumerSmokeOptions options,
+}) async {
+  switch (options.dependencySource) {
+    case ConsumerSmokeDependencySource.localPath:
+      return buildConsumerSmokePaths(repoRoot);
+    case ConsumerSmokeDependencySource.published:
+      return ConsumerSmokePaths.published(
+        packageVersion:
+            options.packageVersion ?? await readRootPackageVersion(repoRoot),
+      );
+  }
+}
+
+Future<String> readRootPackageVersion(Directory repoRoot) async {
+  final pubspec = File.fromUri(repoRoot.uri.resolve('pubspec.yaml'));
+  if (!pubspec.existsSync()) {
+    throw StateError('pubspec.yaml not found at ${pubspec.path}');
+  }
+
+  final lines = await pubspec.readAsLines();
+  for (final rawLine in lines) {
+    final line = rawLine.trim();
+    if (line.startsWith('version:')) {
+      final version = line.substring('version:'.length).trim();
+      if (version.isEmpty) {
+        break;
+      }
+      return version;
+    }
+  }
+
+  throw StateError('pubspec.yaml is missing a top-level version.');
+}
+
 String buildDartConsumerPubspec(ConsumerSmokePaths paths) {
   return '''
 name: llm_dart_dart_consumer_smoke
@@ -573,9 +648,8 @@ environment:
   sdk: '>=3.5.0 <4.0.0'
 
 dependencies:
-  llm_dart:
-    path: ${paths.repoRoot}
-${_pathEntries([
+${_dependencyEntries([
+        'llm_dart',
         'llm_dart_ai',
         'llm_dart_anthropic',
         'llm_dart_chat',
@@ -586,9 +660,7 @@ ${_pathEntries([
         'llm_dart_openai',
         'llm_dart_provider',
         'llm_dart_transport',
-      ], paths.packagePaths)}
-dependency_overrides:
-${_pathEntries([
+      ], paths)}${_dependencyOverrides([
         'llm_dart_ai',
         'llm_dart_anthropic',
         'llm_dart_chat',
@@ -599,7 +671,7 @@ ${_pathEntries([
         'llm_dart_openai',
         'llm_dart_provider',
         'llm_dart_transport',
-      ], paths.packagePaths)}
+      ], paths)}
 ''';
 }
 
@@ -612,15 +684,11 @@ environment:
   sdk: '>=3.5.0 <4.0.0'
 
 dependencies:
-  llm_dart_openai:
-    path: ${paths.packagePaths['llm_dart_openai']}
-
-dependency_overrides:
-${_pathEntries([
+${_dependencyEntries(['llm_dart_openai'], paths)}${_dependencyOverrides([
         'llm_dart_ai',
         'llm_dart_provider',
         'llm_dart_transport',
-      ], paths.packagePaths)}
+      ], paths)}
 ''';
 }
 
@@ -633,15 +701,11 @@ environment:
   sdk: '>=3.5.0 <4.0.0'
 
 dependencies:
-  llm_dart_google:
-    path: ${paths.packagePaths['llm_dart_google']}
-
-dependency_overrides:
-${_pathEntries([
+${_dependencyEntries(['llm_dart_google'], paths)}${_dependencyOverrides([
         'llm_dart_ai',
         'llm_dart_provider',
         'llm_dart_transport',
-      ], paths.packagePaths)}
+      ], paths)}
 ''';
 }
 
@@ -654,15 +718,11 @@ environment:
   sdk: '>=3.5.0 <4.0.0'
 
 dependencies:
-  llm_dart_anthropic:
-    path: ${paths.packagePaths['llm_dart_anthropic']}
-
-dependency_overrides:
-${_pathEntries([
+${_dependencyEntries(['llm_dart_anthropic'], paths)}${_dependencyOverrides([
         'llm_dart_ai',
         'llm_dart_provider',
         'llm_dart_transport',
-      ], paths.packagePaths)}
+      ], paths)}
 ''';
 }
 
@@ -675,14 +735,10 @@ environment:
   sdk: '>=3.5.0 <4.0.0'
 
 dependencies:
-  llm_dart_ollama:
-    path: ${paths.packagePaths['llm_dart_ollama']}
-
-dependency_overrides:
-${_pathEntries([
+${_dependencyEntries(['llm_dart_ollama'], paths)}${_dependencyOverrides([
         'llm_dart_provider',
         'llm_dart_transport',
-      ], paths.packagePaths)}
+      ], paths)}
 ''';
 }
 
@@ -695,14 +751,10 @@ environment:
   sdk: '>=3.5.0 <4.0.0'
 
 dependencies:
-  llm_dart_elevenlabs:
-    path: ${paths.packagePaths['llm_dart_elevenlabs']}
-
-dependency_overrides:
-${_pathEntries([
+${_dependencyEntries(['llm_dart_elevenlabs'], paths)}${_dependencyOverrides([
         'llm_dart_provider',
         'llm_dart_transport',
-      ], paths.packagePaths)}
+      ], paths)}
 ''';
 }
 
@@ -715,7 +767,7 @@ environment:
   sdk: '>=3.5.0 <4.0.0'
 
 dependencies:
-${_pathEntries([
+${_dependencyEntries([
         'llm_dart_ai',
         'llm_dart_anthropic',
         'llm_dart_chat',
@@ -725,9 +777,7 @@ ${_pathEntries([
         'llm_dart_openai',
         'llm_dart_provider',
         'llm_dart_transport',
-      ], paths.packagePaths)}
-dependency_overrides:
-${_pathEntries([
+      ], paths)}${_dependencyOverrides([
         'llm_dart_ai',
         'llm_dart_anthropic',
         'llm_dart_chat',
@@ -737,7 +787,7 @@ ${_pathEntries([
         'llm_dart_openai',
         'llm_dart_provider',
         'llm_dart_transport',
-      ], paths.packagePaths)}
+      ], paths)}
 ''';
 }
 
@@ -753,33 +803,57 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  llm_dart_flutter:
-    path: ${paths.packagePaths['llm_dart_flutter']}
-  llm_dart_openai:
-    path: ${paths.packagePaths['llm_dart_openai']}
-
-dependency_overrides:
-${_pathEntries([
+${_dependencyEntries([
+        'llm_dart_flutter',
+        'llm_dart_openai',
+      ], paths)}${_dependencyOverrides([
         'llm_dart_ai',
         'llm_dart_chat',
         'llm_dart_openai',
         'llm_dart_provider',
         'llm_dart_transport',
-      ], paths.packagePaths)}
+      ], paths)}
 dev_dependencies:
   flutter_test:
     sdk: flutter
 ''';
 }
 
-String _pathEntries(List<String> packageNames, Map<String, String> paths) {
+String _dependencyEntries(
+  List<String> packageNames,
+  ConsumerSmokePaths paths,
+) {
   final buffer = StringBuffer();
   for (final packageName in packageNames) {
-    buffer
-      ..writeln('  $packageName:')
-      ..writeln('    path: ${paths[packageName]}');
+    buffer.write(_dependencyEntry(packageName, paths));
   }
   return buffer.toString();
+}
+
+String _dependencyOverrides(
+  List<String> packageNames,
+  ConsumerSmokePaths paths,
+) {
+  if (paths.usesPublishedPackages) {
+    return '';
+  }
+
+  return '\ndependency_overrides:\n${_dependencyEntries(packageNames, paths)}';
+}
+
+String _dependencyEntry(String packageName, ConsumerSmokePaths paths) {
+  if (paths.usesPublishedPackages) {
+    return '  $packageName: ${paths.packageVersion}\n';
+  }
+
+  final packagePath = packageName == 'llm_dart'
+      ? paths.repoRoot
+      : paths.packagePaths[packageName];
+  if (packagePath == null) {
+    throw StateError('missing local path for `$packageName`.');
+  }
+
+  return '  $packageName:\n    path: $packagePath\n';
 }
 
 Future<void> writeTextFile(File file, String contents) async {
@@ -787,18 +861,20 @@ Future<void> writeTextFile(File file, String contents) async {
   await file.writeAsString(contents);
 }
 
-Map<String, String>? buildConsumerSmokeEnvironment(
+Map<String, String> buildConsumerSmokeEnvironment(
   ConsumerSmokeOptions options,
 ) {
+  final environment = {
+    'DART_SUPPRESS_ANALYTICS': 'true',
+    'FLUTTER_SUPPRESS_ANALYTICS': 'true',
+  };
   final proxy = options.proxy;
-  if (proxy == null) {
-    return null;
+  if (proxy != null) {
+    environment['HTTP_PROXY'] = proxy;
+    environment['HTTPS_PROXY'] = proxy;
   }
 
-  return {
-    'HTTP_PROXY': proxy,
-    'HTTPS_PROXY': proxy,
-  };
+  return Map.unmodifiable(environment);
 }
 
 String pathForPubspec(FileSystemEntity entity) {
@@ -1150,10 +1226,14 @@ const consumerSmokeUsage = '''
 Usage: dart run tool/run_consumer_smoke.dart [options]
 
 Creates clean temporary Dart, provider-only, split-package, and Flutter
-consumers, validates local path dependency resolution, analyzes them, and runs
-no-key smoke tests.
+consumers, validates dependency resolution, analyzes them, and runs no-key
+smoke tests. The default mode uses local path dependencies; --published uses
+pub.dev packages.
 
 Options:
-  --proxy=<url>  Set HTTP_PROXY and HTTPS_PROXY for child commands.
-  -h, --help     Print this help text.
+  --published          Resolve llm_dart packages from pub.dev instead of local
+                       path dependencies. Defaults to the root pubspec version.
+  --version=<version>  Package version to use with --published.
+  --proxy=<url>        Set HTTP_PROXY and HTTPS_PROXY for child commands.
+  -h, --help           Print this help text.
 ''';
