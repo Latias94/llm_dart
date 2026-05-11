@@ -791,6 +791,10 @@ Future<void> main() async {
 
 ## Current Reference Docs
 
+- Alpha release hardening:
+  [docs/workstreams/2026-05-alpha-release-hardening/README.md](docs/workstreams/2026-05-alpha-release-hardening/README.md)
+- Second-wave refactor plan:
+  [docs/workstreams/2026-05-fearless-refactor-wave-2/README.md](docs/workstreams/2026-05-fearless-refactor-wave-2/README.md)
 - Post-closure roadmap:
   [docs/workstreams/2026-04-post-closure-priorities/README.md](docs/workstreams/2026-04-post-closure-priorities/README.md)
 - Ollama provider package guide:

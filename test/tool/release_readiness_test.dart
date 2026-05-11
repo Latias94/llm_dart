@@ -43,6 +43,7 @@ void main() {
         containsAll([
           'Example API guard',
           'Workspace tests',
+          'Workspace package tests',
           'Consumer smoke',
           'Workspace publish dry-run',
           'Pub version availability',
@@ -62,6 +63,10 @@ void main() {
       expect(
         steps.map((step) => step.name),
         isNot(contains('Workspace tests')),
+      );
+      expect(
+        steps.map((step) => step.name),
+        isNot(contains('Workspace package tests')),
       );
       expect(
         steps.map((step) => step.name),

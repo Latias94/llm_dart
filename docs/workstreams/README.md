@@ -17,8 +17,21 @@
     migration away from compatibility-era helpers without dropping provider
     value or breaking users by surprise.
 - [2026-05-provider-ai-runtime-split](2026-05-provider-ai-runtime-split/README.md)
-  - Active breaking-refactor workstream that splits provider specifications
-    from AI runtime orchestration, redesigns shared file/tool data boundaries,
-    and moves the root package toward a thin facade while preserving typed
-    provider options, capability profiles, provider-native helpers, and
-    OpenAI-family profiles.
+  - Architecture-complete breaking-refactor workstream that split provider
+    specifications from AI runtime orchestration, redesigned shared file/tool
+    data boundaries, and moved the root package toward a thin facade while
+    preserving typed provider options, capability profiles, provider-native
+    helpers, and OpenAI-family profiles.
+- [2026-05-alpha-release-hardening](2026-05-alpha-release-hardening/README.md)
+  - Active release-hardening workstream that turns the completed architecture
+    split into a publishable `0.11.0-alpha.x` line through repeatable guards,
+    package tests, clean consumer smoke, publish dry-runs, and publish-order
+    validation.
+- [2026-05-modern-unified-interface](2026-05-modern-unified-interface/README.md)
+  - Closed product-interface workstream that made the model-first API,
+    dynamic model selection, object generation, and modern examples the
+    preferred surface before compatibility builders.
+- [2026-05-fearless-refactor-wave-2](2026-05-fearless-refactor-wave-2/README.md)
+  - Active post-alpha planning workstream that freezes the second-wave order
+    for alpha handoff, release gates, legacy/root/core containment, and
+    evidence-based `llm_dart_provider_utils` extraction.

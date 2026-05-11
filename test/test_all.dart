@@ -53,6 +53,7 @@ import 'tool/check_transport_boundary_guards_test.dart'
     as transport_boundary_guard_tool_tests;
 import 'tool/release_readiness_test.dart' as release_readiness_tool_tests;
 import 'tool/run_consumer_smoke_test.dart' as consumer_smoke_tool_tests;
+import 'tool/run_workspace_package_tests_test.dart' as package_tests_tool_tests;
 import 'tool/run_workspace_publish_dry_run_test.dart'
     as publish_dry_run_tool_tests;
 
@@ -151,6 +152,7 @@ void main() {
       transport_boundary_guard_tool_tests.main();
       release_readiness_tool_tests.main();
       consumer_smoke_tool_tests.main();
+      package_tests_tool_tests.main();
       publish_dry_run_tool_tests.main();
     });
 

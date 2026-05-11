@@ -64,7 +64,10 @@ dependencies:
 
         final command = await resolvePublishDryRunCommand(packageDirectory);
 
-        expect(command.executable, 'flutter');
+        expect(
+          command.executable,
+          Platform.isWindows ? 'flutter.bat' : 'flutter',
+        );
         expect(command.arguments, ['pub', 'publish', '--dry-run']);
       } finally {
         if (packageDirectory.existsSync()) {

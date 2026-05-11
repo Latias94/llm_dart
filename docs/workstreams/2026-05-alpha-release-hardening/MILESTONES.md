@@ -12,6 +12,7 @@ Acceptance criteria:
 
 - the command runs existing guard scripts
 - the command runs analysis and tests
+- the command runs focused package-local tests
 - the command runs workspace publish dry-run unless explicitly skipped
 - command behavior has focused tests where practical
 - documentation explains supported flags and manual follow-up steps
@@ -21,14 +22,18 @@ Current status:
 - `tool/release_readiness.dart` now exists as the single release-readiness
   command
 - the command runs dependency/root/core/transport/test import guards,
-  workspace analysis, workspace tests, and workspace publish dry-run by default
-- `--skip-tests` and `--skip-publish-dry-run` support shorter smoke runs
+  workspace analysis, root tests, focused package tests, and workspace publish
+  dry-run by default
+- `--skip-tests` skips root and focused package tests for shorter smoke runs
+  while `--skip-publish-dry-run` skips publish dry-runs
 - `--proxy=<url>` can pass HTTP proxy settings to child validation steps
 - `--report=<path>` writes a Markdown release report
 - focused tests cover option parsing, step planning, proxy environment
   construction, version reading, and report generation
 - a short readiness smoke run passed with guards plus analysis while skipping
   the longest test and publish dry-run steps
+- `tool/run_workspace_package_tests.dart` now runs the focused Dart package
+  test suites and the Flutter package test suite through Flutter tooling
 
 ## M2 - Package Metadata And Publish Order
 
@@ -101,6 +106,7 @@ Acceptance criteria:
 
 Current status:
 
-- a full local release-readiness run passed on 2026-05-08 with guards,
-  analysis, tests, and workspace publish dry-run for 11 package(s)
+- a full local release-readiness run passed on 2026-05-11 with guards,
+  analysis, root tests, consumer smoke, and workspace publish dry-run for 12
+  package(s)
 - actual publishing has not started

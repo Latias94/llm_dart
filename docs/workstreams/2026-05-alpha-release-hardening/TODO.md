@@ -11,6 +11,7 @@
 - [x] Run existing guard scripts from the release-readiness command
 - [x] Run `dart analyze lib test example tool`
 - [x] Run `dart test`
+- [x] Run focused workspace package tests
 - [x] Run clean Dart and Flutter consumer smoke validation
 - [x] Run `dart run tool/run_workspace_publish_dry_run.dart`
 - [x] Print a concise release report with elapsed time and failed-step context

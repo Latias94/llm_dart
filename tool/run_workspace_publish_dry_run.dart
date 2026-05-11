@@ -69,7 +69,8 @@ Future<void> main() async {
           'workspace publish dry-run could not start `${command.executable}` '
           'for `$packageName`: ${error.message}',
         );
-        if (command.executable == 'flutter') {
+        if (command.executable == 'flutter' ||
+            command.executable == 'flutter.bat') {
           stderr.writeln(
             'next action: install Flutter or run this package with '
             '`flutter pub publish --dry-run`.',
@@ -173,8 +174,8 @@ const dartPublishDryRunCommand = PublishDryRunCommand(
   arguments: ['pub', 'publish', '--dry-run'],
 );
 
-const flutterPublishDryRunCommand = PublishDryRunCommand(
-  executable: 'flutter',
+final flutterPublishDryRunCommand = PublishDryRunCommand(
+  executable: Platform.isWindows ? 'flutter.bat' : 'flutter',
   arguments: ['pub', 'publish', '--dry-run'],
 );
 

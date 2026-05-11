@@ -26,6 +26,7 @@ The first version orchestrates the checks that are already proven:
 - `dart run tool/check_example_api_guards.dart`
 - `dart analyze lib test example tool`
 - `dart test`
+- `dart run tool/run_workspace_package_tests.dart`
 - `dart run tool/run_consumer_smoke.dart`
 - `dart run tool/run_workspace_publish_dry_run.dart`
 - `dart run tool/check_pub_version_availability.dart`
@@ -41,6 +42,9 @@ Implemented flags:
 - `--proxy=http://127.0.0.1:10809`
 - `--report=path/to/report.md`
 - `--no-consumer-smoke-checklist`
+
+`--skip-tests` skips both the root `dart test` step and the focused package
+test matrix. Use it only for short local iterations.
 
 ## Consumer Smoke Checks
 

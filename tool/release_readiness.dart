@@ -335,6 +335,14 @@ List<ReleaseReadinessStep> buildReleaseReadinessSteps(
         failureHint:
             'Fix failing tests or intentionally update expectations before release.',
       ),
+    if (!options.skipTests)
+      const ReleaseReadinessStep(
+        name: 'Workspace package tests',
+        executable: 'dart',
+        arguments: ['run', 'tool/run_workspace_package_tests.dart'],
+        failureHint:
+            'Fix failing focused package tests before release; root tests alone do not cover the split packages.',
+      ),
     if (!options.skipConsumerSmoke)
       ReleaseReadinessStep(
         name: 'Consumer smoke',
@@ -493,6 +501,7 @@ Runs the alpha release readiness gate from the repository root.
 
 Options:
   --skip-tests                 Skip `dart test`.
+                               This also skips focused workspace package tests.
   --skip-consumer-smoke        Skip clean Dart and Flutter consumer smoke.
   --skip-publish-dry-run       Skip workspace publish dry-runs.
   --skip-pub-version-check     Skip pub.dev target-version availability checks.
