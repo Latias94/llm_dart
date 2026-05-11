@@ -96,11 +96,6 @@ jobs:
         with:
           sdk: stable
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-
       - name: Bootstrap workspace overrides
         run: dart tool/bootstrap_workspace_pubspec_overrides.dart
 
@@ -136,6 +131,11 @@ jobs:
         uses: dart-lang/setup-dart@v1
         with:
           sdk: stable
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
 
       - name: Bootstrap workspace overrides
         run: dart tool/bootstrap_workspace_pubspec_overrides.dart
