@@ -35,6 +35,11 @@
   - Active post-alpha planning workstream that freezes the second-wave order
     for alpha handoff, release gates, legacy/root/core containment, and
     evidence-based `llm_dart_provider_utils` extraction.
+- [2026-05-ai-sdk-inspired-architecture-rewrite](2026-05-ai-sdk-inspired-architecture-rewrite/README.md)
+  - Active fearless architecture rewrite workstream that turns the remaining
+    semantic gaps versus `repo-ref/ai` into an implementation plan: user prompt
+    normalization, metadata/options separation, provider utility
+    consolidation, and root legacy exit.
 - [2026-05-sdk-aligned-fearless-refactor](2026-05-sdk-aligned-fearless-refactor/README.md)
   - Closed breaking architecture workstream that turned the mature layering
     lessons from `repo-ref/ai` into enforceable Dart package boundaries while

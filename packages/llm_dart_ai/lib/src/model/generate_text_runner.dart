@@ -1,5 +1,7 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import '../prompt/model_message.dart';
+import '../prompt/prompt_normalization.dart';
 import 'generate_text_run_result.dart';
 import 'generate_text_runner_support.dart';
 import 'generate_text_step_result.dart';
@@ -21,7 +23,8 @@ final class GenerateTextRunner {
 
   GenerateTextRunner({
     required this.model,
-    required List<PromptMessage> prompt,
+    List<PromptMessage>? prompt,
+    List<ModelMessage>? messages,
     List<FunctionToolDefinition> tools = const [],
     this.toolChoice,
     this.options = const GenerateTextOptions(),
@@ -32,7 +35,10 @@ final class GenerateTextRunner {
     this.onStepFinish,
     this.onFinish,
     this.onError,
-  })  : prompt = List.unmodifiable(prompt),
+  })  : prompt = resolveProviderPrompt(
+          prompt: prompt,
+          messages: messages,
+        ),
         tools = List.unmodifiable(tools) {
     if (maxSteps < 1) {
       throw ArgumentError.value(
@@ -145,7 +151,8 @@ final class GenerateTextRunner {
 
 Future<GenerateTextRunResult> runTextGeneration({
   required LanguageModel model,
-  required List<PromptMessage> prompt,
+  List<PromptMessage>? prompt,
+  List<ModelMessage>? messages,
   List<FunctionToolDefinition> tools = const [],
   ToolChoice? toolChoice,
   GenerateTextOptions options = const GenerateTextOptions(),
@@ -160,6 +167,7 @@ Future<GenerateTextRunResult> runTextGeneration({
   return GenerateTextRunner(
     model: model,
     prompt: prompt,
+    messages: messages,
     tools: tools,
     toolChoice: toolChoice,
     options: options,

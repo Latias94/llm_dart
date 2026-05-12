@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import '../common/partial_json.dart';
 import '../common/replay_stream_channel.dart';
+import '../prompt/model_message.dart';
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'generate_text_result_accumulator.dart';
@@ -574,7 +575,8 @@ typedef StreamObjectResult<T> = StreamOutputResult<T>;
 
 Future<GenerateObjectResult<T>> generateObject<T>({
   required LanguageModel model,
-  required List<PromptMessage> prompt,
+  List<PromptMessage>? prompt,
+  List<ModelMessage>? messages,
   required JsonSchema schema,
   JsonObjectDecoder<T>? decode,
   String? name,
@@ -587,6 +589,7 @@ Future<GenerateObjectResult<T>> generateObject<T>({
   return generateOutput<T>(
     model: model,
     prompt: prompt,
+    messages: messages,
     outputSpec: ObjectOutputSpec<T>(
       schema: schema,
       name: name,
@@ -602,7 +605,8 @@ Future<GenerateObjectResult<T>> generateObject<T>({
 
 StreamObjectResult<T> streamObject<T>({
   required LanguageModel model,
-  required List<PromptMessage> prompt,
+  List<PromptMessage>? prompt,
+  List<ModelMessage>? messages,
   required JsonSchema schema,
   JsonObjectDecoder<T>? decode,
   String? name,
@@ -615,6 +619,7 @@ StreamObjectResult<T> streamObject<T>({
   return streamOutputResult<T>(
     model: model,
     prompt: prompt,
+    messages: messages,
     outputSpec: ObjectOutputSpec<T>(
       schema: schema,
       name: name,
@@ -630,7 +635,8 @@ StreamObjectResult<T> streamObject<T>({
 
 Future<GenerateOutputResult<T>> generateOutput<T>({
   required LanguageModel model,
-  required List<PromptMessage> prompt,
+  List<PromptMessage>? prompt,
+  List<ModelMessage>? messages,
   required OutputSpec<T> outputSpec,
   List<FunctionToolDefinition> tools = const [],
   ToolChoice? toolChoice,
@@ -646,6 +652,7 @@ Future<GenerateOutputResult<T>> generateOutput<T>({
   final result = await generateText(
     model: model,
     prompt: prompt,
+    messages: messages,
     tools: tools,
     toolChoice: toolChoice,
     options: _withResponseFormat(
@@ -685,7 +692,8 @@ Future<GenerateOutputResult<T>> generateOutput<T>({
 
 Stream<OutputStreamEvent<T>> streamOutput<T>({
   required LanguageModel model,
-  required List<PromptMessage> prompt,
+  List<PromptMessage>? prompt,
+  List<ModelMessage>? messages,
   required OutputSpec<T> outputSpec,
   List<FunctionToolDefinition> tools = const [],
   ToolChoice? toolChoice,
@@ -702,6 +710,7 @@ Stream<OutputStreamEvent<T>> streamOutput<T>({
   final events = streamText(
     model: model,
     prompt: prompt,
+    messages: messages,
     tools: tools,
     toolChoice: toolChoice,
     options: _withResponseFormat(
@@ -761,7 +770,8 @@ T _identityObjectDecoder<T>(Map<String, Object?> json) {
 
 StreamOutputResult<T> streamOutputResult<T>({
   required LanguageModel model,
-  required List<PromptMessage> prompt,
+  List<PromptMessage>? prompt,
+  List<ModelMessage>? messages,
   required OutputSpec<T> outputSpec,
   List<FunctionToolDefinition> tools = const [],
   ToolChoice? toolChoice,
@@ -772,6 +782,7 @@ StreamOutputResult<T> streamOutputResult<T>({
     streamOutput(
       model: model,
       prompt: prompt,
+      messages: messages,
       outputSpec: outputSpec,
       tools: tools,
       toolChoice: toolChoice,
@@ -791,6 +802,11 @@ GenerateTextOptions _withResponseFormat(
     stopSequences: options.stopSequences,
     topP: options.topP,
     topK: options.topK,
+    presencePenalty: options.presencePenalty,
+    frequencyPenalty: options.frequencyPenalty,
+    seed: options.seed,
+    reasoning: options.reasoning,
+    includeRawChunks: options.includeRawChunks,
     responseFormat: responseFormat,
   );
 }

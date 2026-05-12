@@ -53,6 +53,30 @@ void main() {
       expect(runResult.totalUsage?.totalTokens, 12);
     });
 
+    test('accepts user-facing messages for the initial prompt', () async {
+      final model = _RecordingLanguageModel([
+        GenerateTextResult(
+          content: const [
+            TextContentPart('Message output'),
+          ],
+          finishReason: FinishReason.stop,
+        ),
+      ]);
+
+      final runResult = await runTextGeneration(
+        model: model,
+        messages: [
+          UserModelMessage.text('Hello from messages'),
+        ],
+      );
+
+      expect(runResult.text, 'Message output');
+      expect(model.requests, hasLength(1));
+      final message = model.requests.single.prompt.single as UserPromptMessage;
+      final text = message.parts.single as TextPromptPart;
+      expect(text.text, 'Hello from messages');
+    });
+
     test(
         'continues tool-call steps with a common function tool executor and prompt replay',
         () async {

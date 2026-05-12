@@ -54,6 +54,70 @@ void main() {
       );
     });
 
+    test('accepts messages while preserving shared generation options',
+        () async {
+      const reasoning = GenerateTextReasoningOptions.enabled(
+        effort: ReasoningEffort.low,
+        budgetTokens: 128,
+      );
+      final model = _RecordingLanguageModel(
+        generateResult: GenerateTextResult(
+          content: const [
+            TextContentPart('{"value":"ok"}'),
+          ],
+          finishReason: FinishReason.stop,
+        ),
+      );
+
+      final result = await generateOutput<String>(
+        model: model,
+        messages: [
+          UserModelMessage.text('Return JSON.'),
+        ],
+        options: const GenerateTextOptions(
+          maxOutputTokens: 512,
+          temperature: 0.3,
+          stopSequences: ['END'],
+          topP: 0.9,
+          topK: 40,
+          presencePenalty: 0.1,
+          frequencyPenalty: 0.2,
+          seed: 1234,
+          reasoning: reasoning,
+          includeRawChunks: true,
+        ),
+        outputSpec: JsonOutputSpec<String>(
+          schema: JsonSchema.object(
+            properties: const {
+              'value': {'type': 'string'},
+            },
+            required: const ['value'],
+          ),
+          decode: (json) {
+            final map = json as Map<String, Object?>;
+            return map['value']! as String;
+          },
+        ),
+      );
+
+      expect(result.output, 'ok');
+      final request = model.lastRequest!;
+      final message = request.prompt.single as UserPromptMessage;
+      final text = message.parts.single as TextPromptPart;
+      expect(text.text, 'Return JSON.');
+      expect(request.options.maxOutputTokens, 512);
+      expect(request.options.temperature, 0.3);
+      expect(request.options.stopSequences, ['END']);
+      expect(request.options.topP, 0.9);
+      expect(request.options.topK, 40);
+      expect(request.options.presencePenalty, 0.1);
+      expect(request.options.frequencyPenalty, 0.2);
+      expect(request.options.seed, 1234);
+      expect(request.options.reasoning, same(reasoning));
+      expect(request.options.includeRawChunks, isTrue);
+      expect(request.options.responseFormat, isA<JsonResponseFormat>());
+    });
+
     test('rejects explicit GenerateTextOptions.responseFormat', () async {
       final model = _RecordingLanguageModel(
         generateResult: GenerateTextResult(

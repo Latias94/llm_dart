@@ -32,6 +32,8 @@ export 'src/model/output_spec.dart';
 export 'src/model/stream_text_runner.dart';
 export 'src/model/text_call.dart';
 export 'src/model/transcribe.dart';
+export 'src/prompt/model_message.dart';
+export 'src/prompt/prompt_normalization.dart';
 export 'src/serialization/chat_ui_json_codec.dart';
 export 'src/ui/chat_message_mapper.dart';
 export 'src/ui/chat_ui_accumulator.dart';

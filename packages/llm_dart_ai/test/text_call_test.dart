@@ -32,6 +32,29 @@ void main() {
       );
     });
 
+    test('accepts user-facing messages for raw calls', () async {
+      final model = _RecordingLanguageModel(
+        generateResult: GenerateTextResult(
+          content: const [
+            TextContentPart('from messages'),
+          ],
+          finishReason: FinishReason.stop,
+        ),
+      );
+
+      final result = await generateTextCall(
+        model: model,
+        messages: [
+          UserModelMessage.text('Say hello.'),
+        ],
+      );
+
+      expect(result.text, 'from messages');
+      final message = model.lastRequest!.prompt.single as UserPromptMessage;
+      final text = message.parts.single as TextPromptPart;
+      expect(text.text, 'Say hello.');
+    });
+
     test('parses structured output when outputSpec is provided', () async {
       final model = _RecordingLanguageModel(
         generateResult: GenerateTextResult(
@@ -115,6 +138,35 @@ void main() {
         stream.output,
         throwsStateError,
       );
+    });
+
+    test('accepts user-facing messages for raw streams', () async {
+      final model = _RecordingLanguageModel(
+        generateResult: GenerateTextResult(
+          content: const [
+            TextContentPart('unused'),
+          ],
+          finishReason: FinishReason.stop,
+        ),
+        streamEvents: const [
+          TextStartEvent(id: 'text_1'),
+          TextDeltaEvent(id: 'text_1', delta: 'from messages'),
+          TextEndEvent(id: 'text_1'),
+          FinishEvent(finishReason: FinishReason.stop),
+        ],
+      );
+
+      final stream = streamTextCall(
+        model: model,
+        messages: [
+          UserModelMessage.text('Say hello.'),
+        ],
+      );
+
+      expect(await stream.text, 'from messages');
+      final message = model.lastRequest!.prompt.single as UserPromptMessage;
+      final text = message.parts.single as TextPromptPart;
+      expect(text.text, 'Say hello.');
     });
 
     test(

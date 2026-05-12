@@ -3,6 +3,7 @@ import 'dart:async';
 import '../common/replay_stream_channel.dart';
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import '../prompt/model_message.dart';
 import 'generate_text_result_accumulator.dart';
 import 'language_model.dart';
 import 'output_spec.dart';
@@ -190,7 +191,8 @@ final class StreamTextCallResult<T> extends StreamView<TextStreamEvent> {
 
 Future<GenerateTextCallResult<T>> generateTextCall<T>({
   required LanguageModel model,
-  required List<PromptMessage> prompt,
+  List<PromptMessage>? prompt,
+  List<ModelMessage>? messages,
   OutputSpec<T>? outputSpec,
   List<FunctionToolDefinition> tools = const [],
   ToolChoice? toolChoice,
@@ -201,6 +203,7 @@ Future<GenerateTextCallResult<T>> generateTextCall<T>({
     final outputResult = await generateOutput(
       model: model,
       prompt: prompt,
+      messages: messages,
       outputSpec: spec,
       tools: tools,
       toolChoice: toolChoice,
@@ -217,6 +220,7 @@ Future<GenerateTextCallResult<T>> generateTextCall<T>({
   final result = await generateText(
     model: model,
     prompt: prompt,
+    messages: messages,
     tools: tools,
     toolChoice: toolChoice,
     options: options,
@@ -231,7 +235,8 @@ Future<GenerateTextCallResult<T>> generateTextCall<T>({
 
 StreamTextCallResult<T> streamTextCall<T>({
   required LanguageModel model,
-  required List<PromptMessage> prompt,
+  List<PromptMessage>? prompt,
+  List<ModelMessage>? messages,
   OutputSpec<T>? outputSpec,
   List<FunctionToolDefinition> tools = const [],
   ToolChoice? toolChoice,
@@ -243,6 +248,7 @@ StreamTextCallResult<T> streamTextCall<T>({
       streamOutputResult(
         model: model,
         prompt: prompt,
+        messages: messages,
         outputSpec: spec,
         tools: tools,
         toolChoice: toolChoice,
@@ -256,6 +262,7 @@ StreamTextCallResult<T> streamTextCall<T>({
     streamText(
       model: model,
       prompt: prompt,
+      messages: messages,
       tools: tools,
       toolChoice: toolChoice,
       options: options,

@@ -87,6 +87,30 @@ void main() {
       expect(await run.finishReason, FinishReason.stop);
     });
 
+    test('accepts user-facing messages for the initial prompt', () async {
+      final model = _RecordingStreamLanguageModel([
+        const [
+          TextStartEvent(id: 'text-1'),
+          TextDeltaEvent(id: 'text-1', delta: 'Message output'),
+          TextEndEvent(id: 'text-1'),
+          FinishEvent(finishReason: FinishReason.stop),
+        ],
+      ]);
+
+      final run = streamTextRun(
+        model: model,
+        messages: [
+          UserModelMessage.text('Hello from messages'),
+        ],
+      );
+
+      expect(await run.text, 'Message output');
+      expect(model.requests, hasLength(1));
+      final message = model.requests.single.prompt.single as UserPromptMessage;
+      final text = message.parts.single as TextPromptPart;
+      expect(text.text, 'Hello from messages');
+    });
+
     test('invokes onChunk for streamed events', () async {
       final model = _RecordingStreamLanguageModel([
         const [
