@@ -40,3 +40,8 @@
     lessons from `repo-ref/ai` into enforceable Dart package boundaries while
     preserving `llm_dart` provider-native features, typed options, capability
     profiles, and the unified user-facing runtime.
+- [2026-05-provider-contract-and-prompt-boundary-refactor](2026-05-provider-contract-and-prompt-boundary-refactor/README.md)
+  - Active planning workstream for the next breaking boundary-hardening pass:
+    non-text provider contracts use implementation-facing methods, prompt
+    input customization moves out of `ProviderMetadata`, and root legacy
+    compatibility stops shaping new architecture decisions.
