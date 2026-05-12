@@ -100,9 +100,13 @@ Acceptance criteria:
 
 Current status:
 
-- in progress; duplicated `SerializationJsonSupport` has been removed from
-  `llm_dart_ai`, with `ChatUiJsonCodec` reusing provider-owned serialization
-  helpers while retaining UI-only codec ownership in the AI package.
+- complete for the first utility consolidation pass; duplicated
+  `SerializationJsonSupport` has been removed from `llm_dart_ai`,
+  provider metadata namespace extraction is owned by
+  `ProviderMetadata.namespace()`, OpenAI Responses and Google GenerateContent
+  no longer carry duplicate namespace helpers, and the audit records that
+  `llm_dart_provider_utils` should not be published until a stable
+  provider-agnostic implementation contract is proven.
 
 ## M6 - Root Legacy Exit
 

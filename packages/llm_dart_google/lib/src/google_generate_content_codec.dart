@@ -741,8 +741,8 @@ final class GoogleGenerateContentCodec {
   _GoogleAssistantPartMetadata _resolveAssistantPartMetadata(
     ProviderMetadata? metadata,
   ) {
-    final primary = _providerNamespace(metadata, 'google');
-    final fallback = _providerNamespace(metadata, 'vertex');
+    final primary = metadata?.namespace('google');
+    final fallback = metadata?.namespace('vertex');
     final resolved = primary ?? fallback;
 
     return _GoogleAssistantPartMetadata(
@@ -756,10 +756,10 @@ final class GoogleGenerateContentCodec {
     ProviderMetadata? primaryMetadata, [
     ProviderMetadata? fallbackMetadata,
   ]) {
-    final primary = _providerNamespace(primaryMetadata, 'google') ??
-        _providerNamespace(primaryMetadata, 'vertex');
-    final fallback = _providerNamespace(fallbackMetadata, 'google') ??
-        _providerNamespace(fallbackMetadata, 'vertex');
+    final primary = primaryMetadata?.namespace('google') ??
+        primaryMetadata?.namespace('vertex');
+    final fallback = fallbackMetadata?.namespace('google') ??
+        fallbackMetadata?.namespace('vertex');
     return asString(primary?['functionCallId']) ??
         asString(fallback?['functionCallId']);
   }
@@ -769,22 +769,6 @@ final class GoogleGenerateContentCodec {
     return isGemini3Model(modelId) &&
         functionCallId != null &&
         functionCallId.isNotEmpty;
-  }
-
-  Map<String, Object?>? _providerNamespace(
-    ProviderMetadata? metadata,
-    String namespace,
-  ) {
-    final value = metadata?[namespace];
-    if (value is Map<String, Object?>) {
-      return value;
-    }
-
-    if (value is Map) {
-      return Map<String, Object?>.from(value);
-    }
-
-    return null;
   }
 
   int? _resolveCandidateCount(

@@ -54,9 +54,9 @@
 - [x] Remove duplicated `SerializationJsonSupport` from `llm_dart_ai`
 - [x] Reuse provider-owned serialization helpers where appropriate
 - [x] Keep UI-only serialization in `llm_dart_ai`
-- [ ] Audit repeated provider codec helpers
-- [ ] Decide whether repeated helpers justify `llm_dart_provider_utils`
-- [ ] Document the helper boundary before publishing any new utility package
+- [x] Audit repeated provider codec helpers
+- [x] Decide whether repeated helpers justify `llm_dart_provider_utils`
+- [x] Document the helper boundary before publishing any new utility package
 
 ## Root Legacy Exit
 

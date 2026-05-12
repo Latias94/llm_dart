@@ -122,6 +122,8 @@ The workstream is complete only when:
   - Target semantic layers, package ownership, and deliberate Dart differences.
 - [03-first-slice-plan.md](03-first-slice-plan.md)
   - Suggested first implementation slices and validation gates.
+- [04-provider-utility-audit.md](04-provider-utility-audit.md)
+  - M5 utility ownership audit and provider-utils publication decision.
 - [MILESTONES.md](MILESTONES.md)
   - Milestones, acceptance criteria, and status tracking.
 - [TODO.md](TODO.md)

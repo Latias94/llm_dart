@@ -390,10 +390,7 @@ final class OpenAIResponsesCodec {
 
     for (final part in message.parts) {
       if (part is TextPromptPart) {
-        final metadata = _providerMetadataValues(
-          _promptPartProviderMetadata(part),
-          namespace: 'openai',
-        );
+        final metadata = _promptPartProviderMetadata(part)?.namespace('openai');
         final partItemId = _asString(metadata?['itemId']);
         final partPhase = _asString(metadata?['phase']);
 
@@ -428,10 +425,7 @@ final class OpenAIResponsesCodec {
       if (part is ReasoningPromptPart) {
         flushTextContent();
 
-        final metadata = _providerMetadataValues(
-          _promptPartProviderMetadata(part),
-          namespace: 'openai',
-        );
+        final metadata = _promptPartProviderMetadata(part)?.namespace('openai');
         final reasoningId = _asString(metadata?['itemId']);
         final encryptedContent =
             _asString(metadata?['reasoningEncryptedContent']) ??
@@ -514,10 +508,7 @@ final class OpenAIResponsesCodec {
       flushTextContent();
 
       if (part is ToolCallPromptPart) {
-        final metadata = _providerMetadataValues(
-          _promptPartProviderMetadata(part),
-          namespace: 'openai',
-        );
+        final metadata = _promptPartProviderMetadata(part)?.namespace('openai');
         final itemId = _asString(metadata?['itemId']);
 
         if (hasConversation && itemId != null) {
@@ -568,10 +559,7 @@ final class OpenAIResponsesCodec {
           continue;
         }
 
-        final metadata = _providerMetadataValues(
-          _promptPartProviderMetadata(part),
-          namespace: 'openai',
-        );
+        final metadata = _promptPartProviderMetadata(part)?.namespace('openai');
         final itemId = _asString(metadata?['itemId']) ?? part.toolCallId;
 
         if (store) {
@@ -988,10 +976,7 @@ final class OpenAIResponsesCodec {
     final data = part.data is Map
         ? Map<String, Object?>.from(part.data as Map)
         : const <String, Object?>{};
-    final metadata = _providerMetadataValues(
-      _promptPartProviderMetadata(part),
-      namespace: 'openai',
-    );
+    final metadata = _promptPartProviderMetadata(part)?.namespace('openai');
     final id = _asString(metadata?['itemId']) ?? _asString(data['id']);
     final encryptedContent = _asString(metadata?['encryptedContent']) ??
         _asString(data['encrypted_content']) ??
@@ -1033,22 +1018,6 @@ final class OpenAIResponsesCodec {
       'type': 'item_reference',
       'id': id,
     };
-  }
-
-  Map<String, Object?>? _providerMetadataValues(
-    ProviderMetadata? metadata, {
-    required String namespace,
-  }) {
-    final value = metadata?[namespace];
-    if (value is Map<String, Object?>) {
-      return value;
-    }
-
-    if (value is Map) {
-      return Map<String, Object?>.from(value);
-    }
-
-    return null;
   }
 
   ProviderMetadata? _promptPartProviderMetadata(PromptPart part) {
