@@ -86,7 +86,7 @@ example now also treats Ollama installed-model discovery as a provider-owned
 local catalog helper rather than a shared model registry.
 
 ### [message_builder_cache.dart](message_builder_cache.dart)
-Modern Anthropic prompt-cache metadata on shared prompt parts, plus typed
+Modern Anthropic prompt-cache provider options on shared prompt parts, plus typed
 `AnthropicGenerateTextOptions.toolsCacheControl` for provider-owned tool cache
 control.
 

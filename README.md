@@ -133,7 +133,7 @@ linking before you run package resolution or analysis.
 The supported bootstrap command is:
 
 ```bash
-dart run tool/bootstrap_workspace_pubspec_overrides.dart
+dart tool/bootstrap_workspace_pubspec_overrides.dart
 ```
 
 Those generated `pubspec_overrides.yaml` files are intentionally ignored by git.

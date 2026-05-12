@@ -85,7 +85,7 @@ provider directories are explicit boundary appendices.
 - [web_search.dart](02_core_features/web_search.dart) - Web search integration
 - [content_moderation.dart](02_core_features/content_moderation.dart) - Provider-owned moderation signals mapped into app policy through the focused OpenAI moderation client
 - [model_listing.dart](02_core_features/model_listing.dart) - Stable capability profiles plus provider-owned remote catalog discovery
-- [message_builder_cache.dart](02_core_features/message_builder_cache.dart) - Modern Anthropic prompt cache metadata and typed tool cache options
+- [message_builder_cache.dart](02_core_features/message_builder_cache.dart) - Modern Anthropic prompt cache provider options and typed tool cache options
 - [capability_detection.dart](02_core_features/capability_detection.dart) - Feature detection
 - [error_handling.dart](02_core_features/error_handling.dart) - Stable `ModelError` normalization and resilience patterns
 - [capability_factory_methods.dart](02_core_features/capability_factory_methods.dart) - Compatibility-oriented typed `build*()` helpers through focused builder imports

@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.11.0-alpha.1] - 2026-05-08
+## [0.11.0-alpha.1] - 2026-05-12
 
 - Alpha release of the Anthropic provider package.
 - Use this package directly when you need Anthropic-specific options, files
@@ -9,3 +9,9 @@
   focused package without depending on the root facade.
 - The root `llm_dart` package and `package:llm_dart/anthropic.dart` re-export
   the same model-first path for convenience.
+- Anthropic models now implement the provider-side `doGenerate(...)` and
+  `doStream(...)` contracts; app code should use shared helpers from
+  `llm_dart_ai` or the root package.
+- Prompt cache control on shared prompt parts now uses typed
+  `AnthropicPromptPartOptions`, while tool cache control remains in typed
+  `AnthropicGenerateTextOptions`.

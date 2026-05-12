@@ -7,52 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
-
-- Hardened `LanguageModel` as a provider implementation contract. Direct
-  provider implementations now use `doGenerate(...)` and `doStream(...)`;
-  user-facing generation should flow through `generateText(...)`,
-  `streamText(...)`, `streamTextRun(...)`, or structured-output helpers from
-  `llm_dart_ai`.
-- Added shared generation options for presence penalty, frequency penalty,
-  seed, reasoning configuration, and raw stream chunk inclusion where providers
-  can expose it.
-- Tightened provider package dependencies so concrete provider packages do not
-  depend on AI runtime, chat, Flutter, root, or core compatibility packages at
-  runtime.
-- Clarified the provider options versus provider metadata boundary. Input-side
-  provider features use typed provider options; `ProviderMetadata` is reserved
-  for output observations, raw response details, and replay data.
-- Deferred a public `llm_dart_provider_utils` package until repeated provider
-  helper usage proves a stable cross-provider utility boundary.
-
-### Removed
-
-- Removed the deprecated `ai()` helper from the legacy root compatibility
-  entrypoint. Use `LLMBuilder()` for compatibility builder code or short
-  provider factories such as `openai(...).chatModel(...)` for modern code.
-
-### Migration Notes
-
-- Replace `ai()` with `LLMBuilder()` when staying on the compatibility builder
-  surface.
-- Replace old direct `model.generate(request)` calls with
-  `generateText(model: ..., prompt: ...)` for app code, or
-  `model.doGenerate(request)` only inside provider/adaptor code.
-- Replace old direct `model.stream(request)` calls with
-  `streamText(...)` / `streamTextRun(...).eventStream` for app/runtime code, or
-  `model.doStream(request)` only inside provider/adaptor code.
-- Move request configuration that used provider metadata into typed provider
-  options passed through `CallOptions.providerOptions`.
-- Move provider file identity hints from `ProviderMetadata` to
-  `FileProviderReferenceData(ProviderReference.forProvider(...))`.
-- See
-  `docs/migration/0.11-sdk-aligned.md` for the release-facing migration guide
-  and
-  `docs/workstreams/2026-05-sdk-aligned-fearless-refactor/01-boundaries-and-migration.md`
-  for the architecture boundary record.
-
-## [0.11.0-alpha.1] - 2026-05-08
+## [0.11.0-alpha.1] - 2026-05-12
 
 This alpha moves new application code toward the model-first API:
 `openai(...).chatModel(...)` and other short provider factories plus the shared
@@ -117,6 +72,22 @@ Older builder-era code should migrate through `package:llm_dart/legacy.dart`.
   entrypoints, or provider helper clients instead of broad shared option bags.
 - The MCP examples now use the current `mcp_dart` 2.x package and document the
   run-from-package commands for stdio and HTTP transports.
+- Hardened `LanguageModel` as a provider implementation contract. Direct
+  provider implementations now use `doGenerate(...)` and `doStream(...)`;
+  user-facing generation should flow through `generateText(...)`,
+  `streamText(...)`, `streamTextRun(...)`, or structured-output helpers from
+  `llm_dart_ai`.
+- Added shared generation options for presence penalty, frequency penalty,
+  seed, reasoning configuration, and raw stream chunk inclusion where providers
+  can expose it.
+- Tightened provider package dependencies so concrete provider packages do not
+  depend on AI runtime, chat, Flutter, root, or core compatibility packages at
+  runtime.
+- Clarified the provider options versus provider metadata boundary. Input-side
+  provider features use typed provider options; `ProviderMetadata` is reserved
+  for output observations, raw response details, and replay data.
+- Deferred a public `llm_dart_provider_utils` package until repeated provider
+  helper usage proves a stable cross-provider utility boundary.
 
 ### Fixed
 
@@ -142,6 +113,9 @@ Older builder-era code should migrate through `package:llm_dart/legacy.dart`.
 - Removed deprecated preset helper aliases. Use
   `<provider>(...).chatModel(...)`, `embeddingModel(...)`, `imageModel(...)`,
   `speechModel(...)`, or `transcriptionModel(...)`.
+- Removed the deprecated `ai()` helper from the legacy root compatibility
+  entrypoint. Use `LLMBuilder()` for compatibility builder code or short
+  provider factories such as `openai(...).chatModel(...)` for modern code.
 - Removed deprecated builder web-search helpers. Use provider-owned search
   options such as `OpenAIGenerateTextOptions`, `AnthropicGenerateTextOptions`,
   `XAIGenerateTextOptions`, or `OpenRouterChatModelSettings`.
@@ -166,6 +140,14 @@ Older builder-era code should migrate through `package:llm_dart/legacy.dart`.
 
 - For new chat/text generation, start with `<provider>(...).chatModel(...)`
   plus `generateTextCall(...)` or `streamTextCall(...)`.
+- Replace `ai()` with `LLMBuilder()` when staying on the compatibility builder
+  surface.
+- Replace old direct `model.generate(request)` calls with
+  `generateText(model: ..., prompt: ...)` for app code, or
+  `model.doGenerate(request)` only inside provider/adaptor code.
+- Replace old direct `model.stream(request)` calls with
+  `streamText(...)` / `streamTextRun(...).eventStream` for app/runtime code, or
+  `model.doStream(request)` only inside provider/adaptor code.
 - For embeddings, images, speech, and transcription, use the model-specific
   factories on `<provider>(...)` plus the shared helpers from
   `package:llm_dart/core.dart`.
@@ -173,8 +155,16 @@ Older builder-era code should migrate through `package:llm_dart/legacy.dart`.
   as `package:llm_dart/openai.dart`, `package:llm_dart/xai.dart`,
   `package:llm_dart/openrouter.dart`, `package:llm_dart/google.dart`, or
   `package:llm_dart/anthropic.dart`.
+- Move request configuration that used provider metadata into typed provider
+  options passed through `CallOptions.providerOptions`.
+- Move provider file identity hints from `ProviderMetadata` to
+  `FileProviderReferenceData(ProviderReference.forProvider(...))`.
 - For compatibility builder code, import `package:llm_dart/legacy.dart` or
   the focused builder path explicitly.
+- See `docs/migration/0.11-sdk-aligned.md` for the release-facing migration
+  guide and
+  `docs/workstreams/2026-05-sdk-aligned-fearless-refactor/01-boundaries-and-migration.md`
+  for the architecture boundary record.
 
 ### Still Available
 
@@ -185,8 +175,6 @@ Older builder-era code should migrate through `package:llm_dart/legacy.dart`.
   and `createGoogleProvider(...)` remain available for compatibility code.
 - `AI.<provider>(...)` remains as a supported grouped facade from the root
   modern entrypoints.
-- `ai()` remains as a deprecated migration alias; use short provider factories
-  for new code.
 
 ## [0.10.7] - 2026-03-26
 

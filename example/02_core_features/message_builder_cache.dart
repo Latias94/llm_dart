@@ -73,7 +73,7 @@ void demonstrateFileAndImageCacheMetadata() {
     ],
   );
 
-  print('3. File and image prompt parts with cache metadata:');
+  print('3. File and image prompt parts with cache options:');
   _printPrompt(prompt);
 }
 
