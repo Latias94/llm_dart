@@ -142,7 +142,7 @@ For release validation across the root package plus the publishable workspace
 packages, run:
 
 ```bash
-dart run tool/release_readiness.dart
+dart tool/release_readiness.dart
 ```
 
 This gate requires both Dart and Flutter on PATH because `llm_dart_flutter`

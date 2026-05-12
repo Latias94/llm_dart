@@ -25,6 +25,15 @@ void main() {
       expect(options.packageVersion, '0.11.0-alpha.1');
     });
 
+    test('parses direct package_config flag', () {
+      final options = parseConsumerSmokeOptions([
+        '--direct-package-config',
+      ]);
+
+      expect(options.directPackageConfig, isTrue);
+      expect(options.dependencySource, ConsumerSmokeDependencySource.localPath);
+    });
+
     test('rejects unknown flags', () {
       expect(
         () => parseConsumerSmokeOptions(['--unknown']),
@@ -35,6 +44,16 @@ void main() {
     test('rejects version without published mode', () {
       expect(
         () => parseConsumerSmokeOptions(['--version=0.11.0-alpha.1']),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('rejects direct package_config with published mode', () {
+      expect(
+        () => parseConsumerSmokeOptions([
+          '--direct-package-config',
+          '--published',
+        ]),
         throwsA(isA<FormatException>()),
       );
     });
@@ -343,6 +362,87 @@ version: 0.11.0-alpha.1
     expect(environment, isNot(containsPair('HTTP_PROXY', anything)));
   });
 
+  test('runConsumerSmokeCommand terminates timed-out commands', () async {
+    final directory = await Directory.systemTemp.createTemp(
+      'llm_dart_consumer_smoke_timeout_',
+    );
+    addTearDown(() async {
+      if (directory.existsSync()) {
+        await directory.delete(recursive: true);
+      }
+    });
+
+    final slowScript = File.fromUri(directory.uri.resolve('slow.dart'));
+    await slowScript.writeAsString('''
+import 'dart:async';
+
+Future<void> main() {
+  return Future<void>.delayed(const Duration(seconds: 30));
+}
+''');
+
+    final result = await runConsumerSmokeCommand(
+      ConsumerSmokeCommand(
+        name: 'slow command',
+        executable: Platform.resolvedExecutable,
+        arguments: [slowScript.path],
+        workingDirectory: directory,
+      ),
+      environment: null,
+      commandTimeout: const Duration(milliseconds: 100),
+      terminationTimeout: const Duration(seconds: 2),
+    );
+
+    expect(result.exitCode, 124);
+  });
+
+  test('buildDirectPackageConfigConsumerSmokeCommands uses current SDK',
+      () async {
+    final repoRoot = await Directory.systemTemp.createTemp(
+      'llm_dart_direct_consumer_repo_',
+    );
+    addTearDown(() async {
+      if (repoRoot.existsSync()) {
+        await repoRoot.delete(recursive: true);
+      }
+    });
+
+    final packageConfig = File.fromUri(
+      repoRoot.uri.resolve('.dart_tool/package_config.json'),
+    );
+    await packageConfig.parent.create(recursive: true);
+    await packageConfig.writeAsString('{"configVersion":2,"packages":[]}');
+
+    final consumers = [
+      for (final name in const [
+        'dart',
+        'openai',
+        'google',
+        'anthropic',
+        'ollama',
+        'elevenlabs',
+        'split',
+      ])
+        Directory.fromUri(repoRoot.uri.resolve('$name/'))..createSync(),
+    ];
+
+    final commands = buildDirectPackageConfigConsumerSmokeCommands(
+      repoRoot: repoRoot,
+      dartConsumer: consumers[0],
+      openAIOnlyConsumer: consumers[1],
+      googleOnlyConsumer: consumers[2],
+      anthropicOnlyConsumer: consumers[3],
+      ollamaOnlyConsumer: consumers[4],
+      elevenLabsOnlyConsumer: consumers[5],
+      splitPackageConsumer: consumers[6],
+    );
+
+    expect(commands, hasLength(7));
+    expect(commands.first.executable, Platform.resolvedExecutable);
+    expect(commands.first.arguments.last, 'bin/smoke.dart');
+    expect(commands.first.arguments.first, contains('package_config.json'));
+  });
+
   test('pathForPubspec normalizes Windows separators', () {
     final path = pathForPubspec(Directory(r'F:\repo\llm_dart'));
 
@@ -357,6 +457,16 @@ version: 0.11.0-alpha.1
       expect(executable, 'flutter.bat');
     } else {
       expect(executable, 'flutter');
+    }
+  });
+
+  test('executableForCurrentPlatform resolves Dart to the current runtime', () {
+    final executable = executableForCurrentPlatform('dart');
+
+    if (Platform.isWindows) {
+      expect(executable, Platform.resolvedExecutable);
+    } else {
+      expect(executable, 'dart');
     }
   });
 }

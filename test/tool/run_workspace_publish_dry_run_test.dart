@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:test/test.dart';
@@ -130,6 +131,39 @@ dependencies:
         isNull,
       );
     });
+  });
+
+  test('runPublishDryRunProcess terminates timed-out commands', () async {
+    final directory = await Directory.systemTemp.createTemp(
+      'llm_dart_publish_timeout_',
+    );
+    addTearDown(() async {
+      if (directory.existsSync()) {
+        await directory.delete(recursive: true);
+      }
+    });
+
+    final slowScript = File.fromUri(directory.uri.resolve('slow.dart'));
+    await slowScript.writeAsString('''
+import 'dart:async';
+
+Future<void> main() {
+  return Future<void>.delayed(const Duration(seconds: 30));
+}
+''');
+
+    await expectLater(
+      runPublishDryRunProcess(
+        directory,
+        command: PublishDryRunCommand(
+          executable: Platform.resolvedExecutable,
+          arguments: [slowScript.path],
+        ),
+        timeout: const Duration(milliseconds: 100),
+        terminationTimeout: const Duration(seconds: 2),
+      ),
+      throwsA(isA<TimeoutException>()),
+    );
   });
 
   group('publish dry-run output helpers', () {

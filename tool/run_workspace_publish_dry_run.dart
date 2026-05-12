@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'bootstrap_workspace_pubspec_overrides.dart';
+import 'runtime_executable.dart';
 
 final class PublishDryRunSummary {
   final int warnings;
@@ -14,6 +16,7 @@ final class PublishDryRunSummary {
 }
 
 const publishDryRunTimeout = Duration(minutes: 3);
+const publishDryRunTerminationTimeout = Duration(seconds: 5);
 
 Future<void> main() async {
   final repoRoot = Directory.current.absolute;
@@ -245,18 +248,46 @@ bool packagePubspecRequiresFlutter(List<String> lines) {
 Future<ProcessResult> runPublishDryRunProcess(
   Directory workingDirectory, {
   PublishDryRunCommand command = dartPublishDryRunCommand,
-}) {
-  return Process.run(
-    command.executable,
+  Duration timeout = publishDryRunTimeout,
+  Duration terminationTimeout = publishDryRunTerminationTimeout,
+}) async {
+  final process = await Process.start(
+    resolveToolExecutable(command.executable),
     command.arguments,
     workingDirectory: workingDirectory.path,
-  ).timeout(
-    publishDryRunTimeout,
-    onTimeout: () => throw TimeoutException(
-      'workspace publish dry-run timed out',
-      publishDryRunTimeout,
-    ),
   );
+  final stdoutFuture = process.stdout.transform(utf8.decoder).join();
+  final stderrFuture = process.stderr.transform(utf8.decoder).join();
+
+  try {
+    final processExitCode = await process.exitCode.timeout(
+      timeout,
+    );
+    final output = await Future.wait([stdoutFuture, stderrFuture]);
+    return ProcessResult(
+      process.pid,
+      processExitCode,
+      output[0],
+      output[1],
+    );
+  } on TimeoutException {
+    process.kill();
+    await process.exitCode.timeout(
+      terminationTimeout,
+      onTimeout: () => -1,
+    );
+    final output = await Future.wait([stdoutFuture, stderrFuture]).timeout(
+      terminationTimeout,
+      onTimeout: () => const ['', ''],
+    );
+    if (output[0].isNotEmpty || output[1].isNotEmpty) {
+      writeProcessOutput(stdoutText: output[0], stderrText: output[1]);
+    }
+    throw TimeoutException(
+      'workspace publish dry-run timed out',
+      timeout,
+    );
+  }
 }
 
 Directory _resolvePackageDirectory({

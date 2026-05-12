@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'bootstrap_workspace_pubspec_overrides.dart'
     show publishableWorkspacePackages;
+import 'runtime_executable.dart';
 
 final class ReleaseReadinessOptions {
   final bool skipTests;
@@ -188,7 +189,7 @@ Future<ReleaseReadinessStepResult> runReleaseReadinessStep(
 }) async {
   final stopwatch = Stopwatch()..start();
   final process = await Process.start(
-    step.executable,
+    resolveToolExecutable(step.executable),
     step.arguments,
     workingDirectory: repoRoot.path,
     environment: environment,
@@ -281,42 +282,42 @@ List<ReleaseReadinessStep> buildReleaseReadinessSteps(
     const ReleaseReadinessStep(
       name: 'Workspace dependency guards',
       executable: 'dart',
-      arguments: ['run', 'tool/check_workspace_dependency_guards.dart'],
+      arguments: ['tool/check_workspace_dependency_guards.dart'],
       failureHint:
           'Fix workspace package dependency direction or update the guard policy intentionally.',
     ),
     const ReleaseReadinessStep(
       name: 'Root package boundary guards',
       executable: 'dart',
-      arguments: ['run', 'tool/check_root_package_boundary_guards.dart'],
+      arguments: ['tool/check_root_package_boundary_guards.dart'],
       failureHint:
           'Move implementation ownership out of root compatibility areas or update the boundary guard intentionally.',
     ),
     const ReleaseReadinessStep(
       name: 'Core compatibility shell guard',
       executable: 'dart',
-      arguments: ['run', 'tool/check_core_compatibility_shell_guard.dart'],
+      arguments: ['tool/check_core_compatibility_shell_guard.dart'],
       failureHint:
           'Keep llm_dart_core as a compatibility shell and move new implementation ownership to focused packages.',
     ),
     const ReleaseReadinessStep(
       name: 'Transport boundary guard',
       executable: 'dart',
-      arguments: ['run', 'tool/check_transport_boundary_guards.dart'],
+      arguments: ['tool/check_transport_boundary_guards.dart'],
       failureHint:
           'Keep transport-owned public names and avoid leaking provider legacy aliases through transport barrels.',
     ),
     const ReleaseReadinessStep(
       name: 'Test legacy-import guard',
       executable: 'dart',
-      arguments: ['run', 'tool/check_test_legacy_import_guards.dart'],
+      arguments: ['tool/check_test_legacy_import_guards.dart'],
       failureHint:
           'Move foundational tests to focused imports and keep legacy.dart imports only for explicit compatibility coverage.',
     ),
     const ReleaseReadinessStep(
       name: 'Example API guard',
       executable: 'dart',
-      arguments: ['run', 'tool/check_example_api_guards.dart'],
+      arguments: ['tool/check_example_api_guards.dart'],
       failureHint:
           'Keep default examples on model-first entrypoints and move legacy builder material to explicit compatibility appendices.',
     ),
@@ -339,7 +340,7 @@ List<ReleaseReadinessStep> buildReleaseReadinessSteps(
       const ReleaseReadinessStep(
         name: 'Workspace package tests',
         executable: 'dart',
-        arguments: ['run', 'tool/run_workspace_package_tests.dart'],
+        arguments: ['tool/run_workspace_package_tests.dart'],
         failureHint:
             'Fix failing focused package tests before release; root tests alone do not cover the split packages.',
       ),
@@ -358,7 +359,7 @@ List<ReleaseReadinessStep> buildReleaseReadinessSteps(
       const ReleaseReadinessStep(
         name: 'Workspace publish dry-run',
         executable: 'dart',
-        arguments: ['run', 'tool/run_workspace_publish_dry_run.dart'],
+        arguments: ['tool/run_workspace_publish_dry_run.dart'],
         failureHint:
             'Fix package metadata, dependency resolution, or publish warnings before publishing.',
       ),
@@ -367,7 +368,6 @@ List<ReleaseReadinessStep> buildReleaseReadinessSteps(
         name: 'Pub version availability',
         executable: 'dart',
         arguments: [
-          'run',
           'tool/check_pub_version_availability.dart',
           if (options.proxy != null) '--proxy=${options.proxy}',
         ],
@@ -464,7 +464,7 @@ String buildReleaseReadinessReport(ReleaseReadinessRunResult result) {
       ..writeln()
       ..writeln('- Repeat consumer smoke against the published pub.dev '
           'versions after the packages are released with '
-          '`dart run tool/run_consumer_smoke.dart --published`.')
+          '`dart tool/run_consumer_smoke.dart --published`.')
       ..writeln('- Validate clean root Dart, OpenAI-only, split-package, and '
           'Flutter consumers without local path overrides.')
       ..writeln('- Keep `test(...)` for pure controller/import smoke tests; '
@@ -495,7 +495,7 @@ String _quoteCommandPart(String value) {
 }
 
 const releaseReadinessUsage = '''
-Usage: dart run tool/release_readiness.dart [options]
+Usage: dart tool/release_readiness.dart [options]
 
 Runs the alpha release readiness gate from the repository root.
 

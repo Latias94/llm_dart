@@ -2,20 +2,27 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'runtime_executable.dart';
+
 enum ConsumerSmokeDependencySource {
   localPath,
   published,
 }
 
+const consumerSmokeCommandTimeout = Duration(minutes: 5);
+const consumerSmokeTerminationTimeout = Duration(seconds: 5);
+
 final class ConsumerSmokeOptions {
   final String? proxy;
   final bool showHelp;
+  final bool directPackageConfig;
   final ConsumerSmokeDependencySource dependencySource;
   final String? packageVersion;
 
   const ConsumerSmokeOptions({
     this.proxy,
     this.showHelp = false,
+    this.directPackageConfig = false,
     this.dependencySource = ConsumerSmokeDependencySource.localPath,
     this.packageVersion,
   });
@@ -120,11 +127,14 @@ ConsumerSmokeOptions parseConsumerSmokeOptions(List<String> arguments) {
   String? proxy;
   var dependencySource = ConsumerSmokeDependencySource.localPath;
   String? packageVersion;
+  var directPackageConfig = false;
 
   for (final argument in arguments) {
     switch (argument) {
       case '-h' || '--help':
         showHelp = true;
+      case '--direct-package-config':
+        directPackageConfig = true;
       case '--published':
         dependencySource = ConsumerSmokeDependencySource.published;
       default:
@@ -144,10 +154,18 @@ ConsumerSmokeOptions parseConsumerSmokeOptions(List<String> arguments) {
       dependencySource != ConsumerSmokeDependencySource.published) {
     throw const FormatException('`--version` requires `--published`.');
   }
+  if (directPackageConfig &&
+      dependencySource == ConsumerSmokeDependencySource.published) {
+    throw const FormatException(
+      '`--direct-package-config` uses the local workspace package_config and '
+      'cannot be combined with `--published`.',
+    );
+  }
 
   return ConsumerSmokeOptions(
     proxy: proxy,
     showHelp: showHelp,
+    directPackageConfig: directPackageConfig,
     dependencySource: dependencySource,
     packageVersion: packageVersion,
   );
@@ -178,6 +196,11 @@ Future<ConsumerSmokeRunResult> runConsumerSmoke({
           ? 'dependency source: pub.dev ${paths.packageVersion}'
           : 'dependency source: local path workspace',
     );
+    if (options.directPackageConfig) {
+      stdout.writeln(
+        'consumer mode: direct package_config import/runtime smoke',
+      );
+    }
 
     final dartConsumer = Directory.fromUri(tempRoot.uri.resolve(
       'dart_consumer/',
@@ -237,16 +260,27 @@ Future<ConsumerSmokeRunResult> runConsumerSmoke({
       consumerDirectory: flutterConsumer,
     );
 
-    final commands = buildConsumerSmokeCommands(
-      dartConsumer: dartConsumer,
-      openAIOnlyConsumer: openAIOnlyConsumer,
-      googleOnlyConsumer: googleOnlyConsumer,
-      anthropicOnlyConsumer: anthropicOnlyConsumer,
-      ollamaOnlyConsumer: ollamaOnlyConsumer,
-      elevenLabsOnlyConsumer: elevenLabsOnlyConsumer,
-      splitPackageConsumer: splitPackageConsumer,
-      flutterConsumer: flutterConsumer,
-    );
+    final commands = options.directPackageConfig
+        ? buildDirectPackageConfigConsumerSmokeCommands(
+            repoRoot: repoRoot,
+            dartConsumer: dartConsumer,
+            openAIOnlyConsumer: openAIOnlyConsumer,
+            googleOnlyConsumer: googleOnlyConsumer,
+            anthropicOnlyConsumer: anthropicOnlyConsumer,
+            ollamaOnlyConsumer: ollamaOnlyConsumer,
+            elevenLabsOnlyConsumer: elevenLabsOnlyConsumer,
+            splitPackageConsumer: splitPackageConsumer,
+          )
+        : buildConsumerSmokeCommands(
+            dartConsumer: dartConsumer,
+            openAIOnlyConsumer: openAIOnlyConsumer,
+            googleOnlyConsumer: googleOnlyConsumer,
+            anthropicOnlyConsumer: anthropicOnlyConsumer,
+            ollamaOnlyConsumer: ollamaOnlyConsumer,
+            elevenLabsOnlyConsumer: elevenLabsOnlyConsumer,
+            splitPackageConsumer: splitPackageConsumer,
+            flutterConsumer: flutterConsumer,
+          );
     final environment = buildConsumerSmokeEnvironment(options);
     final results = <ConsumerSmokeCommandResult>[];
 
@@ -445,6 +479,8 @@ List<ConsumerSmokeCommand> buildConsumerSmokeCommands({
 Future<ConsumerSmokeCommandResult> runConsumerSmokeCommand(
   ConsumerSmokeCommand command, {
   required Map<String, String>? environment,
+  Duration commandTimeout = consumerSmokeCommandTimeout,
+  Duration terminationTimeout = consumerSmokeTerminationTimeout,
 }) async {
   final stopwatch = Stopwatch()..start();
   final process = await Process.start(
@@ -456,14 +492,111 @@ Future<ConsumerSmokeCommandResult> runConsumerSmokeCommand(
 
   final stdoutDone = pipeProcessOutput(process.stdout, stdout);
   final stderrDone = pipeProcessOutput(process.stderr, stderr);
-  final processExitCode = await process.exitCode;
-  await Future.wait([stdoutDone, stderrDone]);
-  stopwatch.stop();
+  try {
+    final processExitCode = await process.exitCode.timeout(
+      commandTimeout,
+    );
+    await Future.wait([stdoutDone, stderrDone]);
+    stopwatch.stop();
 
-  return ConsumerSmokeCommandResult(
-    command: command,
-    exitCode: processExitCode,
-    elapsed: stopwatch.elapsed,
+    return ConsumerSmokeCommandResult(
+      command: command,
+      exitCode: processExitCode,
+      elapsed: stopwatch.elapsed,
+    );
+  } on TimeoutException {
+    process.kill();
+    await process.exitCode.timeout(
+      terminationTimeout,
+      onTimeout: () => -1,
+    );
+    await Future.wait([stdoutDone, stderrDone]).timeout(
+      terminationTimeout,
+      onTimeout: () => const <void>[],
+    );
+    stopwatch.stop();
+
+    return ConsumerSmokeCommandResult(
+      command: command,
+      exitCode: 124,
+      elapsed: stopwatch.elapsed,
+    );
+  }
+}
+
+List<ConsumerSmokeCommand> buildDirectPackageConfigConsumerSmokeCommands({
+  required Directory repoRoot,
+  required Directory dartConsumer,
+  required Directory openAIOnlyConsumer,
+  required Directory googleOnlyConsumer,
+  required Directory anthropicOnlyConsumer,
+  required Directory ollamaOnlyConsumer,
+  required Directory elevenLabsOnlyConsumer,
+  required Directory splitPackageConsumer,
+}) {
+  final packageConfig = File.fromUri(
+    repoRoot.uri.resolve('.dart_tool/package_config.json'),
+  );
+  if (!packageConfig.existsSync()) {
+    throw StateError(
+      'direct package_config consumer smoke requires '
+      '${packageConfig.path}. Run dependency bootstrap first.',
+    );
+  }
+  final packageConfigPath = pathForPubspec(packageConfig);
+
+  return [
+    directPackageConfigConsumerSmokeCommand(
+      name: 'Dart consumer direct run',
+      consumerDirectory: dartConsumer,
+      packageConfigPath: packageConfigPath,
+    ),
+    directPackageConfigConsumerSmokeCommand(
+      name: 'OpenAI-only consumer direct run',
+      consumerDirectory: openAIOnlyConsumer,
+      packageConfigPath: packageConfigPath,
+    ),
+    directPackageConfigConsumerSmokeCommand(
+      name: 'Google-only consumer direct run',
+      consumerDirectory: googleOnlyConsumer,
+      packageConfigPath: packageConfigPath,
+    ),
+    directPackageConfigConsumerSmokeCommand(
+      name: 'Anthropic-only consumer direct run',
+      consumerDirectory: anthropicOnlyConsumer,
+      packageConfigPath: packageConfigPath,
+    ),
+    directPackageConfigConsumerSmokeCommand(
+      name: 'Ollama-only consumer direct run',
+      consumerDirectory: ollamaOnlyConsumer,
+      packageConfigPath: packageConfigPath,
+    ),
+    directPackageConfigConsumerSmokeCommand(
+      name: 'ElevenLabs-only consumer direct run',
+      consumerDirectory: elevenLabsOnlyConsumer,
+      packageConfigPath: packageConfigPath,
+    ),
+    directPackageConfigConsumerSmokeCommand(
+      name: 'Split package consumer direct run',
+      consumerDirectory: splitPackageConsumer,
+      packageConfigPath: packageConfigPath,
+    ),
+  ];
+}
+
+ConsumerSmokeCommand directPackageConfigConsumerSmokeCommand({
+  required String name,
+  required Directory consumerDirectory,
+  required String packageConfigPath,
+}) {
+  return ConsumerSmokeCommand(
+    name: name,
+    executable: Platform.resolvedExecutable,
+    arguments: [
+      '--packages=$packageConfigPath',
+      'bin/smoke.dart',
+    ],
+    workingDirectory: consumerDirectory,
   );
 }
 
@@ -911,14 +1044,7 @@ String quoteCommandPart(String value) {
 }
 
 String executableForCurrentPlatform(String executable) {
-  if (!Platform.isWindows) {
-    return executable;
-  }
-
-  return switch (executable) {
-    'flutter' => 'flutter.bat',
-    _ => executable,
-  };
+  return resolveToolExecutable(executable);
 }
 
 String _readFlagValue(String argument, String prefix) {
@@ -1223,7 +1349,7 @@ void main() {
 ''';
 
 const consumerSmokeUsage = '''
-Usage: dart run tool/run_consumer_smoke.dart [options]
+Usage: dart tool/run_consumer_smoke.dart [options]
 
 Creates clean temporary Dart, provider-only, split-package, and Flutter
 consumers, validates dependency resolution, analyzes them, and runs no-key
@@ -1235,5 +1361,9 @@ Options:
                        path dependencies. Defaults to the root pubspec version.
   --version=<version>  Package version to use with --published.
   --proxy=<url>        Set HTTP_PROXY and HTTPS_PROXY for child commands.
+  --direct-package-config
+                       Run Dart import/runtime smoke programs with the current
+                       workspace package_config. Skips pub get, analysis, and
+                       Flutter smoke.
   -h, --help           Print this help text.
 ''';

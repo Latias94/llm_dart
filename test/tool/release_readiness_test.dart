@@ -40,6 +40,12 @@ void main() {
       final consumerSmokeStep = steps.firstWhere(
         (step) => step.name == 'Consumer smoke',
       );
+      final workspaceGuardStep = steps.firstWhere(
+        (step) => step.name == 'Workspace dependency guards',
+      );
+      final publishDryRunStep = steps.firstWhere(
+        (step) => step.name == 'Workspace publish dry-run',
+      );
 
       expect(
         steps.map((step) => step.name),
@@ -55,6 +61,14 @@ void main() {
       expect(
         consumerSmokeStep.commandText,
         'dart tool/run_consumer_smoke.dart',
+      );
+      expect(
+        workspaceGuardStep.commandText,
+        'dart tool/check_workspace_dependency_guards.dart',
+      );
+      expect(
+        publishDryRunStep.commandText,
+        'dart tool/run_workspace_publish_dry_run.dart',
       );
     });
 

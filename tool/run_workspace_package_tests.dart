@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'runtime_executable.dart';
+
 final class WorkspacePackageTestTarget {
   final String name;
   final String relativeDirectory;
@@ -128,7 +130,7 @@ Future<ProcessResult> runWorkspacePackageTestProcess(
   required WorkspacePackageTestTarget target,
 }) {
   return Process.run(
-    target.executable,
+    resolveToolExecutable(target.executable),
     target.arguments,
     workingDirectory: workingDirectory.path,
     stdoutEncoding: utf8,
