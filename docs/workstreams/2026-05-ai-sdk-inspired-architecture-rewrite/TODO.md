@@ -14,9 +14,9 @@
 - [ ] Confirm whether direct `PromptMessage` runtime helpers remain public as
   advanced provider-prompt APIs
 - [ ] Confirm the replay bridge shape for OpenAI, Google, and Anthropic
-- [ ] Confirm whether provider-utils starts as package-private helpers or a new
+- [x] Confirm whether provider-utils starts as package-private helpers or a new
   public package
-- [ ] Confirm the root legacy outcome: delete, relocate, or freeze
+- [x] Confirm the root legacy outcome: delete, relocate, or freeze
 
 ## User Prompt Layer
 
@@ -64,7 +64,7 @@
 - [x] Assign each export a delete, relocate, or freeze decision
 - [x] Update migration docs for each removed or moved API
 - [x] Expand legacy import guards where needed
-- [ ] Remove non-migration example usage of compatibility APIs
+- [x] Remove non-migration example usage of compatibility APIs
 
 ## Validation
 

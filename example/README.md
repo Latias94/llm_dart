@@ -76,7 +76,6 @@ provider directories are explicit boundary appendices.
 - [embeddings_stable.dart](02_core_features/embeddings_stable.dart) - Stable shared embedding helpers
 - [enhanced_tool_calling.dart](02_core_features/enhanced_tool_calling.dart) - Stable advanced tool replay and provider-owned controls
 - [structured_output.dart](02_core_features/structured_output.dart) - Shared structured output
-- [provider_specific_builders.dart](02_core_features/provider_specific_builders.dart) - Compatibility-oriented provider callback builders through focused builder imports
 - [assistants.dart](02_core_features/assistants.dart) - Stable assistant-like chat plus the explicit OpenAI compatibility boundary
 - [embeddings.dart](02_core_features/embeddings.dart) - Stable multi-provider embeddings
 - [audio_processing.dart](02_core_features/audio_processing.dart) - Stable speech and transcription helpers
@@ -88,6 +87,10 @@ provider directories are explicit boundary appendices.
 - [message_builder_cache.dart](02_core_features/message_builder_cache.dart) - Modern Anthropic prompt cache provider options and typed tool cache options
 - [capability_detection.dart](02_core_features/capability_detection.dart) - Feature detection
 - [error_handling.dart](02_core_features/error_handling.dart) - Stable `ModelError` normalization and resilience patterns
+
+### Compatibility Appendices
+*Migration-only examples*
+
 - [capability_factory_methods.dart](02_core_features/capability_factory_methods.dart) - Compatibility-oriented typed `build*()` helpers through focused builder imports
 - [provider_specific_builders.dart](02_core_features/provider_specific_builders.dart) - Compatibility-oriented provider callback builders through focused builder imports
 

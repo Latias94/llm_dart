@@ -119,7 +119,6 @@ export GOOGLE_API_KEY="your-google-key"
 dart run web_search.dart
 dart run capability_detection.dart
 dart run capability_profile_ui_gating.dart
-dart run capability_factory_methods.dart
 dart run assistants.dart
 dart run embeddings.dart
 dart run embeddings_stable.dart
@@ -128,6 +127,13 @@ dart run chat_basics.dart
 dart run streaming_chat.dart
 dart run tool_calling.dart
 dart run enhanced_tool_calling.dart
+```
+
+Run the compatibility appendices separately when migrating builder-era code:
+
+```bash
+dart run capability_factory_methods.dart
+dart run provider_specific_builders.dart
 ```
 
 ## Suggested Reading Order

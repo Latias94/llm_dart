@@ -126,6 +126,8 @@ The workstream is complete only when:
   - M5 utility ownership audit and provider-utils publication decision.
 - [05-root-legacy-export-inventory.md](05-root-legacy-export-inventory.md)
   - M6 legacy barrel export inventory and freeze policy.
+- [06-example-compatibility-audit.md](06-example-compatibility-audit.md)
+  - M6 example compatibility allowlist audit and default-path cleanup.
 - [MILESTONES.md](MILESTONES.md)
   - Milestones, acceptance criteria, and status tracking.
 - [TODO.md](TODO.md)
