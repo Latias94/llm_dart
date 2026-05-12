@@ -10,10 +10,19 @@
 
 ## Decision Freeze
 
-- [ ] Confirm the user-facing prompt type name
-- [ ] Confirm whether direct `PromptMessage` runtime helpers remain public as
+- [x] Confirm the user-facing prompt type name
+  - `ModelMessage` is the user-facing prompt type, matching the reference AI
+    SDK model-message layer.
+- [x] Confirm whether direct `PromptMessage` runtime helpers remain public as
   advanced provider-prompt APIs
-- [ ] Confirm the replay bridge shape for OpenAI, Google, and Anthropic
+  - Keep `prompt:` / `PromptMessage` as low-level provider-facing entrypoints
+    for direct provider integration and replay, while `messages:` /
+    `ModelMessage` stays the common app-facing path.
+- [x] Confirm the replay bridge shape for OpenAI, Google, and Anthropic
+  - Shared replay stays on typed `ProviderReplayPromptPartOptions` and
+    provider-owned replay helpers; OpenAI and Google carry replay metadata
+    through their own codecs, and Anthropic keeps provider-owned custom replay
+    parts for its native continuation shapes.
 - [x] Confirm whether provider-utils starts as package-private helpers or a new
   public package
 - [x] Confirm the root legacy outcome: delete, relocate, or freeze
@@ -27,8 +36,10 @@
 - [x] Add normalization to provider-facing `PromptMessage`
 - [x] Update `generateText`, `streamText`, runners, and structured output
   helpers to accept the user prompt layer
-- [ ] Keep explicit advanced entrypoints for already-normalized provider prompts
+- [x] Keep explicit advanced entrypoints for already-normalized provider prompts
   if needed
+  - The low-level `prompt:` path remains public for advanced/provider-owned use
+    cases.
 
 ## Prompt Validation
 

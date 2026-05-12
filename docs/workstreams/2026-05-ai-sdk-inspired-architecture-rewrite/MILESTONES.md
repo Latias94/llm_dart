@@ -36,9 +36,10 @@ Acceptance criteria:
 
 Current status:
 
-- in progress; user-facing `ModelMessage` data, provider-prompt
-  normalization, runtime helper `messages:` inputs, and prompt normalization
-  tests have landed
+- complete; `ModelMessage` is the user-facing prompt layer, provider-facing
+  `PromptMessage` remains an explicit advanced path, runtime helper
+  `messages:` inputs normalize into provider prompts, and prompt normalization
+  tests have landed.
 
 ## M3 - Runtime Prompt Validation
 
