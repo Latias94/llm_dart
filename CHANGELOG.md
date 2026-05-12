@@ -119,6 +119,10 @@ Older builder-era code should migrate through `package:llm_dart/legacy.dart`.
 - Removed deprecated builder web-search helpers. Use provider-owned search
   options such as `OpenAIGenerateTextOptions`, `AnthropicGenerateTextOptions`,
   `XAIGenerateTextOptions`, or `OpenRouterChatModelSettings`.
+- Removed `CompatWebSearchPresets` from the legacy compatibility surface. Use
+  provider-owned typed search options for modern code, or construct
+  `WebSearchConfig` directly when maintaining old builder-era compatibility
+  code.
 - Removed the raw `extensions` escape hatch from `createProvider(...)`.
   Provider-specific behavior should now use typed provider options or focused
   provider APIs.

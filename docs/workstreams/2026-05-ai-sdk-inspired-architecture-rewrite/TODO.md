@@ -62,7 +62,7 @@
 
 - [x] Inventory `legacy.dart` exports
 - [x] Assign each export a delete, relocate, or freeze decision
-- [ ] Update migration docs for each removed or moved API
+- [x] Update migration docs for each removed or moved API
 - [x] Expand legacy import guards where needed
 - [ ] Remove non-migration example usage of compatibility APIs
 

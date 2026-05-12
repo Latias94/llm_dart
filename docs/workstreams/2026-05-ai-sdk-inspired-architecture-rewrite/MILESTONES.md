@@ -127,7 +127,9 @@ Current status:
 - in progress; `legacy.dart` exports are inventoried with freeze,
   relocate-later, and delete-later decisions, and the root package boundary
   guard now freezes the legacy barrel directives so compatibility exports
-  cannot grow silently.
+  cannot grow silently. The first delete-later leaf,
+  `CompatWebSearchPresets`, has been removed in favor of explicit
+  `WebSearchConfig` compatibility code or provider-owned typed search options.
 
 ## M7 - Release Readiness
 

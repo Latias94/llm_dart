@@ -37,7 +37,6 @@ export 'src/compatibility/openai_compatible_provider_config.dart'
         ModelCapabilityConfig,
         OpenAICompatibleProviderConfig,
         RequestBodyTransformer;
-export 'src/compatibility/web_search_presets.dart' show CompatWebSearchPresets;
 
 export 'core/capability.dart';
 export 'core/cancellation.dart';

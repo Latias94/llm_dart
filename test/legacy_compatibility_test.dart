@@ -898,8 +898,8 @@ void main() {
 
       final systemMessage = request.prompt.first as core.SystemPromptMessage;
       final textPart = systemMessage.parts.single as core.TextPromptPart;
-      final promptOptions =
-          textPart.providerOptions as modern_anthropic.AnthropicPromptPartOptions;
+      final promptOptions = textPart.providerOptions
+          as modern_anthropic.AnthropicPromptPartOptions;
       expect(promptOptions.cacheControl?.type, 'ephemeral');
       expect(promptOptions.cacheControl?.ttl, '1h');
       expect(textPart.providerMetadata, isNull);
@@ -1419,9 +1419,11 @@ void main() {
               );
             },
           ),
-          'webSearchConfig': legacy.CompatWebSearchPresets.openRouter(
+          'webSearchConfig': const legacy.WebSearchConfig(
             maxResults: 5,
             searchPrompt: 'Focus on recent developments.',
+            strategy: legacy.WebSearchStrategy.plugin,
+            searchType: legacy.WebSearchType.web,
           ),
         }),
       );
@@ -1473,10 +1475,11 @@ void main() {
           ),
           legacyProviderOptionsBagKey: {
             LegacyProviderOptionNamespaces.openrouter: {
-              LegacyExtensionKeys.webSearchConfig:
-                  legacy.CompatWebSearchPresets.openRouter(
+              LegacyExtensionKeys.webSearchConfig: const legacy.WebSearchConfig(
                 maxResults: 5,
                 searchPrompt: 'Focus on recent developments.',
+                strategy: legacy.WebSearchStrategy.plugin,
+                searchType: legacy.WebSearchType.web,
               ),
             },
           },

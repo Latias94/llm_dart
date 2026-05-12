@@ -16,13 +16,18 @@ entrypoints remain the default surface.
 | Builder trunk | `legacy_builder_helpers.dart`, `LLMBuilder`, `HttpConfig` | Freeze | Modern model factories and `AI.<provider>(...)`; keep builder only for migration |
 | Legacy provider config adapters | `createLegacy*Config`, `createLegacyDioClientOverrides` | Freeze | Provider-owned typed settings and invocation options |
 | OpenAI-compatible config model | `OpenAICompatibleProviderConfig` and transformer typedefs | Freeze | Provider-owned OpenAI-family profiles for modern code |
-| Compatibility search presets | `CompatWebSearchPresets` | Delete later | Provider-owned typed web/search options |
 | Root core compatibility barrels | `core/*` exports | Relocate later or freeze until root legacy exit | `package:llm_dart/core.dart` and focused provider packages |
 | Root model compatibility barrels | `models/*` exports | Relocate later or delete with legacy builder | Provider-owned contracts and `llm_dart_provider`/`llm_dart_ai` contracts |
 | Root provider compatibility barrels | `providers/*` exports | Relocate later or delete with legacy shell | Focused provider packages such as `llm_dart_openai`, `llm_dart_google`, and root focused entrypoints |
 | Base factory compatibility | `providers/factories/base_factory.dart` | Freeze | Provider facades or explicit runtime-selected factory APIs |
 | Tool-call aggregator | `core/tool_call_aggregator.dart` | Relocate later | Modern utility entrypoint if it remains independently useful |
 | Transport compatibility re-exports | selected `llm_dart_transport` types | Freeze | `package:llm_dart/transport.dart` or `llm_dart_transport` |
+
+## Removed Leaves
+
+| Removed surface | Replacement direction | Notes |
+| --- | --- | --- |
+| `CompatWebSearchPresets` | Use provider-owned typed search options for modern code, or construct `WebSearchConfig` directly while staying on the compatibility builder. | Removed because it preserved a fake cross-provider preset abstraction after builder web-search helpers already moved to the removal path. |
 
 ## Freeze Rule
 

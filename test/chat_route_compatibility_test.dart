@@ -292,9 +292,11 @@ void main() {
 
       final webSearchConfigResult = canUseOpenRouterChatBridge(
         _baseConfig('openai/gpt-4o-mini').withExtensions({
-          'webSearchConfig': legacy.CompatWebSearchPresets.openRouter(
+          'webSearchConfig': const legacy.WebSearchConfig(
             maxResults: 5,
             searchPrompt: 'Focus on recent developments.',
+            strategy: legacy.WebSearchStrategy.plugin,
+            searchType: legacy.WebSearchType.web,
           ),
         }),
         [
@@ -315,10 +317,11 @@ void main() {
         _baseConfig('openai/gpt-4o-mini').withExtensions({
           legacyProviderOptionsBagKey: {
             LegacyProviderOptionNamespaces.openrouter: {
-              LegacyExtensionKeys.webSearchConfig:
-                  legacy.CompatWebSearchPresets.openRouter(
+              LegacyExtensionKeys.webSearchConfig: const legacy.WebSearchConfig(
                 maxResults: 5,
                 searchPrompt: 'Focus on recent developments.',
+                strategy: legacy.WebSearchStrategy.plugin,
+                searchType: legacy.WebSearchType.web,
               ),
               LegacyExtensionKeys.jsonSchema:
                   const legacy.StructuredOutputFormat(

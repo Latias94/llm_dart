@@ -7,7 +7,6 @@ import '../../../providers/openai/builtin_tools.dart';
 import '../../../providers/openai/provider.dart';
 import '../config/legacy_config_keys.dart';
 import '../providers/openai/assistant_capability.dart';
-import '../web_search_presets.dart';
 import 'legacy_builder_provider_options.dart';
 
 /// Compatibility-only OpenAI builder DSL for the legacy root provider surface.
@@ -185,8 +184,10 @@ class OpenAIBuilder {
   }) {
     _providerOptions.set(
       LegacyExtensionKeys.webSearchConfig,
-      CompatWebSearchPresets.openai(
+      WebSearchConfig(
         contextSize: contextSize,
+        strategy: WebSearchStrategy.auto,
+        searchType: WebSearchType.web,
       ),
     );
     return this;
