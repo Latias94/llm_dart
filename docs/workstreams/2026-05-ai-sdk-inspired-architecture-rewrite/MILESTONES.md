@@ -124,7 +124,10 @@ Acceptance criteria:
 
 Current status:
 
-- pending
+- in progress; `legacy.dart` exports are inventoried with freeze,
+  relocate-later, and delete-later decisions, and the root package boundary
+  guard now freezes the legacy barrel directives so compatibility exports
+  cannot grow silently.
 
 ## M7 - Release Readiness
 

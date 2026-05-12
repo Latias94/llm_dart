@@ -146,6 +146,68 @@ const Map<String, List<String>> _expectedFocusedRootEntrypointDirectives = {
   ],
 };
 
+const List<String> _expectedLegacyEntrypointDirectives = [
+  'library;',
+  "export 'src/facade/ai.dart' show AI;",
+  "export 'src/bootstrap/root_registry_bootstrap.dart' show ensureRootRegistryBootstrap;",
+  "export 'src/facade/legacy_builder_helpers.dart';",
+  "export 'src/compatibility/providers/legacy_dio_client_overrides.dart' show createLegacyDioClientOverrides;",
+  "export 'src/compatibility/providers/openai_family_compat_deepseek_config.dart' show createLegacyDeepSeekConfig;",
+  "export 'src/compatibility/providers/openai_family_compat_groq_config.dart' show createLegacyGroqConfig;",
+  "export 'src/compatibility/providers/openai_family_compat_phind_config.dart' show createLegacyPhindConfig;",
+  "export 'src/compatibility/providers/openai_family_compat_support.dart' show createLegacyOpenAIConfig;",
+  "export 'src/compatibility/providers/openai_family_compat_xai_config.dart' show createLegacyXAIConfig;",
+  "export 'src/compatibility/providers/anthropic_config_adapter.dart' show createLegacyAnthropicConfig;",
+  "export 'src/compatibility/providers/google_config_adapter.dart' show createLegacyGoogleConfig;",
+  "export 'src/compatibility/providers/elevenlabs/config_adapter.dart' show createLegacyElevenLabsConfig;",
+  "export 'src/compatibility/providers/ollama/config_adapter.dart' show createLegacyOllamaConfig;",
+  "export 'src/compatibility/openai_compatible_provider_config.dart' show ConfigTransformer, HeadersTransformer, ModelCapabilityConfig, OpenAICompatibleProviderConfig, RequestBodyTransformer;",
+  "export 'src/compatibility/web_search_presets.dart' show CompatWebSearchPresets;",
+  "export 'core/capability.dart';",
+  "export 'core/cancellation.dart';",
+  "export 'core/llm_error.dart';",
+  "export 'core/config.dart';",
+  "export 'core/registry.dart';",
+  "export 'core/openai_compatible_configs.dart';",
+  "export 'core/tool_validator.dart';",
+  "export 'core/web_search.dart';",
+  "export 'package:llm_dart_transport/llm_dart_transport.dart' show StreamingTransportResponse, TransportClient, TransportException, TransportHttpException, TransportMethod, TransportNetworkException, TransportRequest, TransportResponse, TransportResponseFormatException, TransportResponseType, TransportTimeoutException;",
+  "export 'models/chat_models.dart';",
+  "export 'models/tool_models.dart';",
+  "export 'models/audio_models.dart';",
+  "export 'models/image_models.dart';",
+  "export 'models/file_models.dart';",
+  "export 'models/moderation_models.dart';",
+  "export 'providers/openai/openai.dart';",
+  "export 'providers/openai/client.dart';",
+  "export 'providers/openai/chat.dart';",
+  "export 'providers/openai/embeddings.dart';",
+  "export 'providers/openai/audio.dart';",
+  "export 'providers/openai/images.dart';",
+  "export 'providers/openai/files.dart';",
+  "export 'providers/openai/models.dart';",
+  "export 'providers/openai/moderation.dart';",
+  "export 'providers/openai/assistants.dart';",
+  "export 'providers/openai/completion.dart';",
+  "export 'providers/anthropic/anthropic.dart';",
+  "export 'providers/anthropic/models.dart';",
+  "export 'providers/google/google.dart';",
+  "export 'providers/google/client.dart';",
+  "export 'providers/google/chat.dart';",
+  "export 'providers/google/embeddings.dart';",
+  "export 'providers/google/tts.dart';",
+  "export 'providers/deepseek/deepseek.dart';",
+  "export 'providers/ollama/ollama.dart';",
+  "export 'providers/xai/xai.dart';",
+  "export 'providers/phind/phind.dart';",
+  "export 'providers/groq/groq.dart';",
+  "export 'providers/elevenlabs/elevenlabs.dart';",
+  "export 'providers/factories/base_factory.dart';",
+  "export 'builder/llm_builder.dart';",
+  "export 'builder/http_config.dart';",
+  "export 'core/tool_call_aggregator.dart';",
+];
+
 final class RootPackageBoundaryGuardResult {
   final List<String> violations;
 
@@ -189,6 +251,10 @@ Future<RootPackageBoundaryGuardResult> evaluateRootPackageBoundaryGuards({
     violations: violations,
   );
   await _collectFocusedRootEntrypointViolations(
+    repoRoot: resolvedRepoRoot,
+    violations: violations,
+  );
+  await _collectLegacyEntrypointViolations(
     repoRoot: resolvedRepoRoot,
     violations: violations,
   );
@@ -391,6 +457,30 @@ Future<void> _collectFocusedRootEntrypointViolations({
       'Expected directives: ${entry.value.join(' ')}.',
     );
   }
+}
+
+Future<void> _collectLegacyEntrypointViolations({
+  required Directory repoRoot,
+  required List<String> violations,
+}) async {
+  final entrypoint = File.fromUri(repoRoot.uri.resolve('lib/legacy.dart'));
+  if (!entrypoint.existsSync()) {
+    violations.add('lib/legacy.dart: legacy entrypoint is missing.');
+    return;
+  }
+
+  final directives = await _readPublicDirectives(entrypoint);
+  if (_listEquals(directives, _expectedLegacyEntrypointDirectives)) {
+    return;
+  }
+
+  violations.add(
+    'lib/legacy.dart: legacy entrypoint is frozen as an explicit '
+    'compatibility shell. Update the M6 legacy export inventory and this '
+    'guard intentionally before changing exports. Found directives: '
+    '${directives.join(' ')}. Expected directives: '
+    '${_expectedLegacyEntrypointDirectives.join(' ')}.',
+  );
 }
 
 Future<void> _collectPublicEntrypointImplementationViolations({

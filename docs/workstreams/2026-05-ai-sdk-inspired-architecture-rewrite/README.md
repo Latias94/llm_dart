@@ -124,6 +124,8 @@ The workstream is complete only when:
   - Suggested first implementation slices and validation gates.
 - [04-provider-utility-audit.md](04-provider-utility-audit.md)
   - M5 utility ownership audit and provider-utils publication decision.
+- [05-root-legacy-export-inventory.md](05-root-legacy-export-inventory.md)
+  - M6 legacy barrel export inventory and freeze policy.
 - [MILESTONES.md](MILESTONES.md)
   - Milestones, acceptance criteria, and status tracking.
 - [TODO.md](TODO.md)

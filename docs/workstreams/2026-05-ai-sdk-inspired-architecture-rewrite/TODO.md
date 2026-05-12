@@ -60,10 +60,10 @@
 
 ## Root Legacy Exit
 
-- [ ] Inventory `legacy.dart` exports
-- [ ] Assign each export a delete, relocate, or freeze decision
+- [x] Inventory `legacy.dart` exports
+- [x] Assign each export a delete, relocate, or freeze decision
 - [ ] Update migration docs for each removed or moved API
-- [ ] Expand legacy import guards where needed
+- [x] Expand legacy import guards where needed
 - [ ] Remove non-migration example usage of compatibility APIs
 
 ## Validation
