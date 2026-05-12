@@ -440,10 +440,11 @@ final class AnthropicCodeExecutionReplay {
   CustomPromptPart toCustomPromptPart({
     ProviderMetadata? providerMetadata,
   }) {
+    final metadata = providerMetadata ?? this.providerMetadata;
     return CustomPromptPart(
       kind: kind,
       data: toJson(),
-      providerMetadata: providerMetadata ?? this.providerMetadata,
+      providerOptions: ProviderReplayPromptPartOptions.fromMetadata(metadata),
     );
   }
 
@@ -504,7 +505,10 @@ final class AnthropicCodeExecutionReplay {
 
     return tryParseData(
       part.data,
-      providerMetadata: part.providerMetadata,
+      providerMetadata: mergeProviderReplayMetadata(
+        providerMetadata: part.providerMetadata,
+        providerOptions: part.providerOptions,
+      ),
     );
   }
 

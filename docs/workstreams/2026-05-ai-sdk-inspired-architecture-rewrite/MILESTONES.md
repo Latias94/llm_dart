@@ -78,11 +78,12 @@ Acceptance criteria:
 
 Current status:
 
-- in progress; shared replay prompt options are available in the provider
-  foundation, AI runtime continuations now carry replay metadata through those
-  options, and OpenAI Responses plus Google function/tool replay codecs accept
-  both the new replay options and legacy prompt metadata. Anthropic replay and
-  guard coverage remain pending.
+- complete for the first replay-boundary pass; shared replay prompt options are
+  available in the provider foundation, AI runtime continuations now carry
+  replay metadata through those options, OpenAI Responses, Google, and
+  Anthropic code execution replay accept both new replay options and legacy
+  prompt metadata, and guard tooling covers the approved request-side replay
+  helpers.
 
 ## M5 - Provider Utility Consolidation
 

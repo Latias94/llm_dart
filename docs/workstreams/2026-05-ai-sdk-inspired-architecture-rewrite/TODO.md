@@ -45,8 +45,8 @@
   provider-owned replay helpers
 - [x] Update OpenAI Responses replay
 - [x] Update Google function/tool replay
-- [ ] Update Anthropic native tool/code execution replay
-- [ ] Add guard coverage against request-side metadata extraction outside
+- [x] Update Anthropic native tool/code execution replay
+- [x] Add guard coverage against request-side metadata extraction outside
   approved replay helpers
 
 ## Serialization And Utilities

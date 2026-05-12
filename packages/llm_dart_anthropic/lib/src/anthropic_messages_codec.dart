@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import 'anthropic_code_execution_replay.dart';
 import 'anthropic_options.dart';
 import 'anthropic_tools.dart';
 
@@ -991,56 +992,21 @@ final class AnthropicMessagesCodec {
 
         return block;
       case 'anthropic.result.code_execution':
-        final payload = _asJsonObject(
-          part.data,
-          path: 'tool.custom(${part.kind})',
-        );
-        if (payload['schema'] != 'anthropic.execution.result.v1') {
-          throw UnsupportedError(
-            'Anthropic custom tool replay "${part.kind}" requires schema="anthropic.execution.result.v1".',
+        try {
+          final replay = AnthropicCodeExecutionReplay.parseData(
+            part.data,
+            providerMetadata: mergeProviderReplayMetadata(
+              providerMetadata: part.providerMetadata,
+              providerOptions: part.providerOptions,
+            ),
           );
+          return replay.block;
+        } on FormatException catch (error) {
+          throw UnsupportedError(error.message);
         }
-        if (payload['replayRole'] != 'tool') {
-          throw UnsupportedError(
-            'Anthropic custom tool replay "${part.kind}" requires replayRole="tool".',
-          );
-        }
-
-        final blockType = payload['blockType'];
-        if (blockType is! String ||
-            !_isAnthropicExecutionResultBlockType(blockType)) {
-          throw UnsupportedError(
-            'Anthropic custom tool replay "${part.kind}" requires a supported execution result blockType.',
-          );
-        }
-
-        final block = _asJsonObject(
-          payload['block'],
-          path: 'tool.custom(${part.kind}).block',
-        );
-        if (block['type'] != blockType) {
-          throw UnsupportedError(
-            'Anthropic custom tool replay "${part.kind}" requires block.type to match blockType.',
-          );
-        }
-
-        final toolUseId = block['tool_use_id'];
-        if (toolUseId is! String || toolUseId.isEmpty) {
-          throw UnsupportedError(
-            'Anthropic custom tool replay "${part.kind}" requires a non-empty tool_use_id.',
-          );
-        }
-
-        return block;
       default:
         return null;
     }
-  }
-
-  bool _isAnthropicExecutionResultBlockType(String blockType) {
-    return blockType == 'code_execution_tool_result' ||
-        blockType == 'bash_code_execution_tool_result' ||
-        blockType == 'text_editor_code_execution_tool_result';
   }
 
   Map<String, Object?> _encodeTextDocumentSource(FilePromptPart part) {

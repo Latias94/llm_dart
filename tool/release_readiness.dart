@@ -301,6 +301,13 @@ List<ReleaseReadinessStep> buildReleaseReadinessSteps(
           'Keep llm_dart_core as a compatibility shell and move new implementation ownership to focused packages.',
     ),
     const ReleaseReadinessStep(
+      name: 'Provider replay metadata guard',
+      executable: 'dart',
+      arguments: ['tool/check_provider_replay_metadata_guards.dart'],
+      failureHint:
+          'Keep replay continuation metadata in explicit replay prompt options and approved provider replay helpers.',
+    ),
+    const ReleaseReadinessStep(
       name: 'Transport boundary guard',
       executable: 'dart',
       arguments: ['tool/check_transport_boundary_guards.dart'],

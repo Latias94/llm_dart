@@ -1018,6 +1018,43 @@ void main() {
     test(
         'replays Anthropic code-execution tool results from custom prompt parts',
         () {
+      final replay = AnthropicCodeExecutionReplay.fromJson(
+        {
+          'schema': 'anthropic.execution.result.v1',
+          'replayRole': 'tool',
+          'toolCallId': 'srvtoolu_3',
+          'toolName': 'code_execution',
+          'blockType': 'bash_code_execution_tool_result',
+          'block': {
+            'type': 'bash_code_execution_tool_result',
+            'tool_use_id': 'srvtoolu_3',
+            'content': {
+              'type': 'bash_code_execution_result',
+              'stdout': 'hi\n',
+              'stderr': '',
+              'return_code': 0,
+              'content': [
+                {
+                  'type': 'bash_code_execution_output',
+                  'file_id': 'file_123',
+                },
+              ],
+            },
+          },
+        },
+        providerMetadata: const ProviderMetadata({
+          'anthropic': {
+            'blockType': 'bash_code_execution_tool_result',
+          },
+        }),
+      );
+      final replayPromptPart = replay.toCustomPromptPart();
+      expect(replayPromptPart.providerMetadata, isNull);
+      expect(
+        replayPromptPart.providerOptions,
+        isA<ProviderReplayPromptPartOptions>(),
+      );
+
       final request = codec.encodeRequest(
         modelId: 'claude-sonnet-4-5',
         prompt: [
@@ -1037,33 +1074,8 @@ void main() {
           ),
           ToolPromptMessage(
             toolName: 'code_execution',
-            parts: const [
-              CustomPromptPart(
-                kind: 'anthropic.result.code_execution',
-                data: {
-                  'schema': 'anthropic.execution.result.v1',
-                  'replayRole': 'tool',
-                  'toolCallId': 'srvtoolu_3',
-                  'toolName': 'code_execution',
-                  'blockType': 'bash_code_execution_tool_result',
-                  'block': {
-                    'type': 'bash_code_execution_tool_result',
-                    'tool_use_id': 'srvtoolu_3',
-                    'content': {
-                      'type': 'bash_code_execution_result',
-                      'stdout': 'hi\n',
-                      'stderr': '',
-                      'return_code': 0,
-                      'content': [
-                        {
-                          'type': 'bash_code_execution_output',
-                          'file_id': 'file_123',
-                        },
-                      ],
-                    },
-                  },
-                },
-              ),
+            parts: [
+              replayPromptPart,
             ],
           ),
           AssistantPromptMessage.text('Command finished.'),
