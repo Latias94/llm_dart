@@ -147,4 +147,7 @@ Acceptance criteria:
 
 Current status:
 
-- pending
+- complete; the full release readiness gate passed on 2026-05-12, including
+  workspace guards, analysis, workspace tests, package tests, consumer smoke,
+  publish dry-run, and pub version availability checks. See
+  `07-release-readiness-report.md`.

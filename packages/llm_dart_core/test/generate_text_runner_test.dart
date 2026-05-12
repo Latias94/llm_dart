@@ -148,6 +148,19 @@ void main() {
       final replayedToolCall = assistantMessage.parts[1] as ToolCallPromptPart;
       expect(replayedToolCall.toolCallId, 'tool-1');
       expect(replayedToolCall.toolName, 'weather');
+      expect(replayedToolCall.providerMetadata, isNull);
+      expect(
+        replayedToolCall.providerOptions,
+        isA<ProviderReplayPromptPartOptions>().having(
+          (options) => options.metadata,
+          'metadata',
+          const ProviderMetadata({
+            'google': {
+              'functionCallId': 'tool-1',
+            },
+          }),
+        ),
+      );
 
       final toolMessage = continuationPrompt[2] as ToolPromptMessage;
       expect(toolMessage.toolName, 'weather');
@@ -156,13 +169,18 @@ void main() {
       expect(toolResult.toolOutput, isA<ContentToolOutput>());
       expect((toolResult.toolOutput as ContentToolOutput).parts, hasLength(2));
       expect(toolResult.isError, isFalse);
+      expect(toolResult.providerMetadata, isNull);
       expect(
-        toolResult.providerMetadata,
-        const ProviderMetadata({
-          'google': {
-            'functionCallId': 'tool-1',
-          },
-        }),
+        toolResult.providerOptions,
+        isA<ProviderReplayPromptPartOptions>().having(
+          (options) => options.metadata,
+          'metadata',
+          const ProviderMetadata({
+            'google': {
+              'functionCallId': 'tool-1',
+            },
+          }),
+        ),
       );
 
       expect(runResult.steps, hasLength(2));
@@ -177,14 +195,14 @@ void main() {
           ));
     });
 
-    test('rejects provider-executed tool continuations in the shared runner',
+    test('executes only client tool calls when provider-executed calls appear',
         () async {
       final model = _RecordingLanguageModel([
         GenerateTextResult(
           content: const [
             ToolCallContentPart(
               ToolCallContent(
-                toolCallId: 'tool-1',
+                toolCallId: 'server-tool-1',
                 toolName: 'computer',
                 input: {
                   'action': 'click',
@@ -192,28 +210,61 @@ void main() {
                 providerExecuted: true,
               ),
             ),
+            ToolCallContentPart(
+              ToolCallContent(
+                toolCallId: 'client-tool-1',
+                toolName: 'weather',
+                input: {
+                  'city': 'Tokyo',
+                },
+              ),
+            ),
           ],
           finishReason: FinishReason.toolCalls,
         ),
-      ]);
-
-      await expectLater(
-        runTextGeneration(
-          model: model,
-          prompt: [
-            UserPromptMessage.text('Click the button'),
+        GenerateTextResult(
+          content: const [
+            TextContentPart('Done.'),
           ],
-          tools: [
-            FunctionToolDefinition(
-              name: 'computer',
-              inputSchema: ToolJsonSchema.object(),
-            ),
-          ],
-          functionToolExecutor: (_) async =>
-              const GenerateTextToolExecutionResult.output({'ok': true}),
+          finishReason: FinishReason.stop,
         ),
-        throwsA(isA<UnsupportedError>()),
+      ]);
+      final executedCalls = <GenerateTextFunctionToolExecutionRequest>[];
+
+      final runResult = await runTextGeneration(
+        model: model,
+        prompt: [
+          UserPromptMessage.text('Click the button and check weather.'),
+        ],
+        tools: [
+          FunctionToolDefinition(
+            name: 'weather',
+            inputSchema: ToolJsonSchema.object(),
+          ),
+        ],
+        functionToolExecutor: (request) async {
+          executedCalls.add(request);
+          return const GenerateTextToolExecutionResult.output({
+            'forecast': 'sunny',
+          });
+        },
       );
+
+      expect(executedCalls, hasLength(1));
+      expect(executedCalls.single.toolCall.toolCallId, 'client-tool-1');
+      expect(model.requests, hasLength(2));
+
+      final continuationPrompt = model.requests[1].prompt;
+      expect(continuationPrompt, hasLength(3));
+      final assistantMessage = continuationPrompt[1] as AssistantPromptMessage;
+      expect(
+          assistantMessage.parts.whereType<ToolCallPromptPart>(), hasLength(2));
+      final toolMessages = continuationPrompt.whereType<ToolPromptMessage>();
+      expect(toolMessages, hasLength(1));
+      final toolResult =
+          toolMessages.single.parts.single as ToolResultPromptPart;
+      expect(toolResult.toolCallId, 'client-tool-1');
+      expect(runResult.text, 'Done.');
     });
 
     test('stops after a tool-call step when no function executor is provided',

@@ -296,6 +296,17 @@ void main() {
         model: model,
         prompt: [
           UserPromptMessage.text('Handle the failed tool result.'),
+          AssistantPromptMessage(
+            parts: [
+              ToolCallPromptPart(
+                toolCallId: 'tool-1',
+                toolName: 'weather',
+                input: {
+                  'city': 'Tokyo',
+                },
+              ),
+            ],
+          ),
           ToolPromptMessage(
             toolName: 'weather',
             parts: [
@@ -321,6 +332,22 @@ void main() {
             {
               'role': 'user',
               'content': 'Handle the failed tool result.',
+            },
+            {
+              'role': 'assistant',
+              'content': '',
+              'tool_calls': [
+                {
+                  'type': 'function',
+                  'function': {
+                    'index': 0,
+                    'name': 'weather',
+                    'arguments': {
+                      'city': 'Tokyo',
+                    },
+                  },
+                },
+              ],
             },
             {
               'role': 'tool',
@@ -407,6 +434,17 @@ void main() {
         model: model,
         prompt: [
           UserPromptMessage.text('Handle the structured tool result.'),
+          AssistantPromptMessage(
+            parts: [
+              ToolCallPromptPart(
+                toolCallId: 'tool-1',
+                toolName: 'weather',
+                input: {
+                  'city': 'Tokyo',
+                },
+              ),
+            ],
+          ),
           ToolPromptMessage(
             toolName: 'weather',
             parts: [
@@ -440,7 +478,7 @@ void main() {
 
       final body = capturedRequest!.body as Map<String, Object?>;
       final messages = body['messages'] as List<Object?>;
-      final toolMessage = messages[1] as Map<String, Object?>;
+      final toolMessage = messages[2] as Map<String, Object?>;
       expect(
         toolMessage['content'],
         '[{"type":"text","text":"forecast"},'

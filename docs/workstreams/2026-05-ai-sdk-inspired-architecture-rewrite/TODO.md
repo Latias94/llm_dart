@@ -75,7 +75,7 @@
 - [x] Run focused `llm_dart_provider` tests
 - [x] Run focused `llm_dart_ai` tests
 - [x] Run affected provider package tests
-- [ ] Run chat and Flutter tests if UI projection or transport protocols change
+- [x] Run chat and Flutter tests if UI projection or transport protocols change
 - [x] Run package analysis for affected packages
 - [x] Run `git diff --check`
-- [ ] Run publish dry-runs for affected packages before release handoff
+- [x] Run publish dry-runs for affected packages before release handoff
