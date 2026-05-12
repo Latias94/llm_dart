@@ -494,14 +494,11 @@ void main() {
               parts: [
                 TextPromptPart(
                   'Cache this prompt.',
-                  providerMetadata: const ProviderMetadata({
-                    'anthropic': {
-                      'cacheControl': {
-                        'type': 'ephemeral',
-                        'ttl': '1h',
-                      },
-                    },
-                  }),
+                  providerOptions: const AnthropicPromptPartOptions(
+                    cacheControl: AnthropicCacheControl.ephemeral(
+                      ttl: '1h',
+                    ),
+                  ),
                 ),
               ],
             ),

@@ -139,7 +139,7 @@ final class OllamaCompatShellSupport {
     List<String> input, {
     TransportCancellation? cancelToken,
   }) async {
-    final result = await embeddingModel.embed(
+    final result = await embeddingModel.doEmbed(
       core.EmbedRequest(
         values: input,
         callOptions: core.CallOptions(

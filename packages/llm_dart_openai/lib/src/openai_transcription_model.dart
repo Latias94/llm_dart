@@ -54,7 +54,7 @@ final class OpenAITranscriptionModel
       );
 
   @override
-  Future<TranscriptionResult> transcribe(TranscriptionRequest request) async {
+  Future<TranscriptionResult> doGenerate(TranscriptionRequest request) async {
     final options = resolveOpenAIProviderOptions<OpenAITranscriptionOptions>(
       request.callOptions,
       parameterName: 'request.callOptions.providerOptions',

@@ -3,6 +3,7 @@ import 'dart:convert';
 import '../common/model_error.dart';
 import '../common/model_warning.dart';
 import '../common/provider_metadata.dart';
+import '../common/provider_options.dart';
 import '../common/provider_reference.dart';
 import '../common/usage_stats.dart';
 import '../content/content_part.dart';
@@ -255,7 +256,13 @@ final class SerializationJsonSupport {
     };
   }
 
-  static JsonMap encodeToolOutput(ToolOutput output) {
+  static JsonMap encodeToolOutput(
+    ToolOutput output, {
+    JsonMap Function(
+      ProviderPromptPartOptions options, {
+      required String path,
+    })? encodeProviderOptions,
+  }) {
     return switch (output) {
       TextToolOutput(:final value, :final providerMetadata) => {
           'type': 'text',
@@ -290,7 +297,12 @@ final class SerializationJsonSupport {
       ContentToolOutput(:final parts, :final providerMetadata) => {
           'type': 'content',
           'parts': [
-            for (final part in parts) encodeToolOutputContentPart(part),
+            for (final entry in parts.asMap().entries)
+              encodeToolOutputContentPart(
+                entry.value,
+                path: '\$.toolOutput.parts[${entry.key}]',
+                encodeProviderOptions: encodeProviderOptions,
+              ),
           ],
           if (providerMetadata != null)
             'providerMetadata': encodeProviderMetadata(providerMetadata),
@@ -301,6 +313,10 @@ final class SerializationJsonSupport {
   static ToolOutput decodeToolOutput(
     Object? value, {
     required String path,
+    ProviderPromptPartOptions? Function(
+      Object? value, {
+      required String path,
+    })? decodeProviderOptions,
   }) {
     final map = asJsonMap(value, path: path);
     final type = asJsonString(map['type'], path: '$path.type');
@@ -349,6 +365,7 @@ final class SerializationJsonSupport {
               decodeToolOutputContentPart(
                 entry.value,
                 path: '$path.parts[${entry.key}]',
+                decodeProviderOptions: decodeProviderOptions,
               ),
           ],
           providerMetadata: decodeProviderMetadata(
@@ -361,8 +378,15 @@ final class SerializationJsonSupport {
     };
   }
 
-  static JsonMap encodeToolOutputContentPart(ToolOutputContentPart part) {
-    return switch (part) {
+  static JsonMap encodeToolOutputContentPart(
+    ToolOutputContentPart part, {
+    String path = r'$.toolOutput.parts[]',
+    JsonMap Function(
+      ProviderPromptPartOptions options, {
+      required String path,
+    })? encodeProviderOptions,
+  }) {
+    final JsonMap encoded = switch (part) {
       TextToolOutputContentPart(:final text, :final providerMetadata) => {
           'type': 'text',
           'text': text,
@@ -408,14 +432,33 @@ final class SerializationJsonSupport {
             'providerMetadata': encodeProviderMetadata(providerMetadata),
         },
     };
+
+    if (part.providerOptions case final providerOptions?) {
+      encoded['providerOptions'] = _encodeProviderOptions(
+        providerOptions,
+        path: '$path.providerOptions',
+        encodeProviderOptions: encodeProviderOptions,
+      );
+    }
+
+    return encoded;
   }
 
   static ToolOutputContentPart decodeToolOutputContentPart(
     Object? value, {
     required String path,
+    ProviderPromptPartOptions? Function(
+      Object? value, {
+      required String path,
+    })? decodeProviderOptions,
   }) {
     final map = asJsonMap(value, path: path);
     final type = asJsonString(map['type'], path: '$path.type');
+    final providerOptions = _decodeProviderOptions(
+      map['providerOptions'],
+      path: '$path.providerOptions',
+      decodeProviderOptions: decodeProviderOptions,
+    );
 
     return switch (type) {
       'text' => TextToolOutputContentPart(
@@ -424,6 +467,7 @@ final class SerializationJsonSupport {
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
+          providerOptions: providerOptions,
         ),
       'json' => JsonToolOutputContentPart(
           map['value'],
@@ -431,6 +475,7 @@ final class SerializationJsonSupport {
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
+          providerOptions: providerOptions,
         ),
       'file' => FileToolOutputContentPart(
           mediaType: asJsonString(map['mediaType'], path: '$path.mediaType'),
@@ -441,6 +486,7 @@ final class SerializationJsonSupport {
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
+          providerOptions: providerOptions,
         ),
       'custom' => CustomToolOutputContentPart(
           kind: asJsonString(map['kind'], path: '$path.kind'),
@@ -449,11 +495,52 @@ final class SerializationJsonSupport {
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
+          providerOptions: providerOptions,
         ),
       _ => throw FormatException(
           'Unsupported tool output content part type "$type" at $path.',
         ),
     };
+  }
+
+  static JsonMap _encodeProviderOptions(
+    ProviderPromptPartOptions options, {
+    required String path,
+    required JsonMap Function(
+      ProviderPromptPartOptions options, {
+      required String path,
+    })? encodeProviderOptions,
+  }) {
+    if (encodeProviderOptions == null) {
+      throw UnsupportedError(
+        'Cannot serialize providerOptions at $path without a '
+        'provider prompt part options encoder.',
+      );
+    }
+
+    return encodeProviderOptions(options, path: path);
+  }
+
+  static ProviderPromptPartOptions? _decodeProviderOptions(
+    Object? value, {
+    required String path,
+    required ProviderPromptPartOptions? Function(
+      Object? value, {
+      required String path,
+    })? decodeProviderOptions,
+  }) {
+    if (value == null) {
+      return null;
+    }
+
+    if (decodeProviderOptions == null) {
+      throw FormatException(
+        'Cannot decode providerOptions at $path without a provider prompt '
+        'part options decoder.',
+      );
+    }
+
+    return decodeProviderOptions(value, path: path);
   }
 
   static FileData _decodeRequiredToolOutputFileData(

@@ -52,5 +52,5 @@ abstract interface class TranscriptionModel {
 
   String get modelId;
 
-  Future<TranscriptionResult> transcribe(TranscriptionRequest request);
+  Future<TranscriptionResult> doGenerate(TranscriptionRequest request);
 }

@@ -72,11 +72,9 @@ void main() {
                 data: FileProviderReferenceData(
                   ProviderReference({'openai': 'assistant-img-abc123'}),
                 ),
-                providerMetadata: ProviderMetadata({
-                  'openai': {
-                    'imageDetail': 'high',
-                  },
-                }),
+                providerOptions: OpenAIPromptPartOptions(
+                  imageDetail: 'high',
+                ),
               ),
               FilePromptPart(
                 mediaType: 'application/pdf',
@@ -115,6 +113,82 @@ void main() {
       );
     });
 
+    test('serializes OpenAI prompt part options through prompt JSON', () {
+      const promptCodec = PromptJsonCodec(
+        providerPromptPartOptionsCodecs: [
+          openAIPromptPartOptionsJsonCodec,
+        ],
+      );
+
+      final decoded = promptCodec.decodeMessages(
+        promptCodec.encodeMessages([
+          UserPromptMessage(
+            parts: const [
+              ImagePromptPart(
+                mediaType: 'image/png',
+                data: FileProviderReferenceData(
+                  ProviderReference({'openai': 'assistant-img-abc123'}),
+                ),
+                providerOptions: OpenAIPromptPartOptions(
+                  imageDetail: 'high',
+                ),
+              ),
+            ],
+          ),
+        ]),
+      );
+
+      final user = decoded.single as UserPromptMessage;
+      final image = user.parts.single as ImagePromptPart;
+      final options = image.providerOptions as OpenAIPromptPartOptions;
+      expect(options.imageDetail, 'high');
+    });
+
+    test('does not use ProviderMetadata as OpenAI image request options', () {
+      const codec = OpenAIResponsesCodec();
+
+      final request = codec.encodeRequest(
+        modelId: 'gpt-5-mini',
+        prompt: [
+          UserPromptMessage(
+            parts: const [
+              ImagePromptPart(
+                mediaType: 'image/png',
+                data: FileProviderReferenceData(
+                  ProviderReference({'openai': 'assistant-img-abc123'}),
+                ),
+                providerMetadata: ProviderMetadata({
+                  'openai': {
+                    'imageDetail': 'high',
+                  },
+                }),
+              ),
+            ],
+          ),
+        ],
+        tools: const [],
+        toolChoice: null,
+        options: const GenerateTextOptions(),
+        providerOptions: const OpenAIGenerateTextOptions(),
+        stream: false,
+      );
+
+      expect(
+        request.body['input'],
+        [
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'input_image',
+                'file_id': 'assistant-img-abc123',
+              },
+            ],
+          },
+        ],
+      );
+    });
+
     test('encodes OpenAI provider references on the Responses path', () {
       const codec = OpenAIResponsesCodec();
 
@@ -128,11 +202,9 @@ void main() {
                 data: FileProviderReferenceData(
                   ProviderReference({'openai': 'file-img-123'}),
                 ),
-                providerMetadata: ProviderMetadata({
-                  'openai': {
-                    'imageDetail': 'low',
-                  },
-                }),
+                providerOptions: OpenAIPromptPartOptions(
+                  imageDetail: 'low',
+                ),
               ),
               FilePromptPart(
                 mediaType: 'application/pdf',
@@ -270,11 +342,9 @@ void main() {
                       mediaType: 'image/png',
                       filename: 'chart.png',
                       data: FileBytesData.constBytes([1, 2, 3]),
-                      providerMetadata: ProviderMetadata({
-                        'openai': {
-                          'imageDetail': 'high',
-                        },
-                      }),
+                      providerOptions: OpenAIPromptPartOptions(
+                        imageDetail: 'high',
+                      ),
                     ),
                     const FileToolOutputContentPart(
                       mediaType: 'application/pdf',

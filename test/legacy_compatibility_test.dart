@@ -898,11 +898,15 @@ void main() {
 
       final systemMessage = request.prompt.first as core.SystemPromptMessage;
       final textPart = systemMessage.parts.single as core.TextPromptPart;
-      expect(textPart.providerMetadata?.values['anthropic'], isNotNull);
+      final promptOptions =
+          textPart.providerOptions as modern_anthropic.AnthropicPromptPartOptions;
+      expect(promptOptions.cacheControl?.type, 'ephemeral');
+      expect(promptOptions.cacheControl?.ttl, '1h');
+      expect(textPart.providerMetadata, isNull);
     });
 
     test(
-        'Anthropic legacy adapter maps raw text content blocks into prompt parts with cache metadata',
+        'Anthropic legacy adapter maps raw text content blocks into prompt parts with cache options',
         () {
       final adapter = AnthropicLegacyChatCapabilityAdapter(
         model: _FakeLanguageModel(),
@@ -947,17 +951,16 @@ void main() {
 
       final secondPart = userMessage.parts[1] as core.TextPromptPart;
       expect(secondPart.text, 'Cached raw block');
+      final secondPartOptions = secondPart.providerOptions
+          as modern_anthropic.AnthropicPromptPartOptions;
       expect(
-        secondPart.providerMetadata?.values,
+        secondPartOptions.cacheControl?.toJson(),
         {
-          'anthropic': {
-            'cacheControl': {
-              'type': 'ephemeral',
-              'ttl': '1h',
-            },
-          },
+          'type': 'ephemeral',
+          'ttl': '1h',
         },
       );
+      expect(secondPart.providerMetadata, isNull);
 
       final thirdPart = userMessage.parts[2] as core.TextPromptPart;
       expect(thirdPart.text, 'Trailing content');
@@ -1015,17 +1018,16 @@ void main() {
       final imagePart = userMessage.parts[0] as core.ImagePromptPart;
       expect(imagePart.uri, Uri.parse('https://example.com/image.png'));
       expect(imagePart.bytes, isNull);
+      final imagePartOptions = imagePart.providerOptions
+          as modern_anthropic.AnthropicPromptPartOptions;
       expect(
-        imagePart.providerMetadata?.values,
+        imagePartOptions.cacheControl?.toJson(),
         {
-          'anthropic': {
-            'cacheControl': {
-              'type': 'ephemeral',
-              'ttl': '1h',
-            },
-          },
+          'type': 'ephemeral',
+          'ttl': '1h',
         },
       );
+      expect(imagePart.providerMetadata, isNull);
 
       final documentPart = userMessage.parts[1] as core.FilePromptPart;
       expect(documentPart.mediaType, 'text/plain');

@@ -36,7 +36,7 @@ abstract interface class SpeechModel {
 
   String get modelId;
 
-  Future<SpeechGenerationResult> generateSpeech(
+  Future<SpeechGenerationResult> doGenerate(
     SpeechGenerationRequest request,
   );
 }

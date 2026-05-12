@@ -132,6 +132,84 @@ final class BadLanguageModel {
       );
     });
 
+    test('reports user-facing non-text model method names in package lib code',
+        () async {
+      final repoRoot = await _createTempWorkspace();
+      addTearDown(() async {
+        if (repoRoot.existsSync()) {
+          await repoRoot.delete(recursive: true);
+        }
+      });
+
+      await _writeFile(
+        repoRoot,
+        'packages/llm_dart_openai/lib/src/bad_non_text_models.dart',
+        '''
+import 'package:llm_dart_provider/llm_dart_provider.dart';
+
+final class BadEmbeddingModel {
+  Future<EmbedResult> embed(EmbedRequest request) async {
+    throw UnimplementedError();
+  }
+}
+
+final class BadImageModel {
+  Future<ImageGenerationResult> generate(
+    ImageGenerationRequest request,
+  ) async {
+    throw UnimplementedError();
+  }
+}
+
+final class BadSpeechModel {
+  Future<SpeechGenerationResult> generateSpeech(
+    SpeechGenerationRequest request,
+  ) async {
+    throw UnimplementedError();
+  }
+}
+
+final class BadTranscriptionModel {
+  Future<TranscriptionResult> transcribe(
+    TranscriptionRequest request,
+  ) async {
+    throw UnimplementedError();
+  }
+}
+''',
+      );
+
+      final result = await guard.evaluateWorkspaceDependencyGuards(
+        repoRoot: repoRoot,
+      );
+
+      expect(result.passed, isFalse);
+      expect(
+        result.violations,
+        contains(
+          contains('EmbeddingModel provider contracts must use doEmbed'),
+        ),
+      );
+      expect(
+        result.violations,
+        contains(
+          contains('ImageModel provider contracts must use doGenerate'),
+        ),
+      );
+      expect(
+        result.violations,
+        contains(
+          contains('SpeechModel provider contracts must use doGenerate'),
+        ),
+      );
+      expect(
+        result.violations,
+        contains(
+          contains('TranscriptionModel provider contracts must use doGenerate'),
+        ),
+      );
+    });
+
     test('reports chat and UI projection ownership in provider specs',
         () async {
       final repoRoot = await _createTempWorkspace();

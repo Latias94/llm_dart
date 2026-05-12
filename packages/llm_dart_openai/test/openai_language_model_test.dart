@@ -278,11 +278,9 @@ void main() {
                   data: FileProviderReferenceData(
                     ProviderReference({'openai': 'assistant-img-abc123'}),
                   ),
-                  providerMetadata: ProviderMetadata({
-                    'openai': {
-                      'imageDetail': 'high',
-                    },
-                  }),
+                  providerOptions: OpenAIPromptPartOptions(
+                    imageDetail: 'high',
+                  ),
                 ),
                 const FilePromptPart(
                   mediaType: 'application/pdf',

@@ -57,7 +57,9 @@ final class OpenAIImageModel implements ImageModel, CapabilityDescribedModel {
       );
 
   @override
-  Future<ImageGenerationResult> generate(ImageGenerationRequest request) async {
+  Future<ImageGenerationResult> doGenerate(
+    ImageGenerationRequest request,
+  ) async {
     final options = _resolveProviderOptions(
       request.callOptions,
       parameterName: 'request.callOptions.providerOptions',

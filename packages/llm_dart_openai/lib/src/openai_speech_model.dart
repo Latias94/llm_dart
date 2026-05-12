@@ -55,7 +55,7 @@ final class OpenAISpeechModel implements SpeechModel, CapabilityDescribedModel {
       );
 
   @override
-  Future<SpeechGenerationResult> generateSpeech(
+  Future<SpeechGenerationResult> doGenerate(
     SpeechGenerationRequest request,
   ) async {
     final options = resolveOpenAIProviderOptions<OpenAISpeechOptions>(

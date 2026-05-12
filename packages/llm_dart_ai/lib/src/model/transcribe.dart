@@ -14,7 +14,7 @@ Future<TranscriptionResult> transcribe({
     );
   }
 
-  return model.transcribe(
+  return model.doGenerate(
     TranscriptionRequest(
       audioBytes: audioBytes,
       mediaType: mediaType,

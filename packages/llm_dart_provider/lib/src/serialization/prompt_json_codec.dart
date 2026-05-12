@@ -1,5 +1,6 @@
 import '../prompt/prompt_message.dart';
 import '../common/json_codec_common.dart';
+import '../common/provider_options.dart';
 import '../content/file_data.dart';
 import 'serialization_json_support.dart';
 import 'serialization_protocol.dart';
@@ -7,7 +8,12 @@ import 'serialization_protocol.dart';
 final class PromptJsonCodec {
   static const envelopeKind = 'prompt-messages';
 
-  const PromptJsonCodec();
+  final List<ProviderPromptPartOptionsJsonCodec>
+      providerPromptPartOptionsCodecs;
+
+  const PromptJsonCodec({
+    this.providerPromptPartOptionsCodecs = const [],
+  });
 
   JsonMap encodeMessages(List<PromptMessage> messages) {
     return {
@@ -76,7 +82,7 @@ final class PromptJsonCodec {
   }
 
   JsonMap encodePart(PromptPart part) {
-    return switch (part) {
+    final JsonMap encoded = switch (part) {
       TextPromptPart(
         :final text,
         :final providerMetadata,
@@ -199,7 +205,10 @@ final class PromptJsonCodec {
           'type': 'tool-result',
           'toolCallId': toolCallId,
           'toolName': toolName,
-          'toolOutput': SerializationJsonSupport.encodeToolOutput(toolOutput),
+          'toolOutput': SerializationJsonSupport.encodeToolOutput(
+            toolOutput,
+            encodeProviderOptions: _encodeProviderPromptPartOptions,
+          ),
           if (providerMetadata != null)
             'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
                 providerMetadata),
@@ -222,6 +231,15 @@ final class PromptJsonCodec {
                 providerMetadata),
         },
     };
+
+    if (part.providerOptions case final providerOptions?) {
+      encoded['providerOptions'] = _encodeProviderPromptPartOptions(
+        providerOptions,
+        path: r'$.part.providerOptions',
+      );
+    }
+
+    return encoded;
   }
 
   PromptPart decodePart(
@@ -230,6 +248,10 @@ final class PromptJsonCodec {
   }) {
     final map = asJsonMap(value, path: path);
     final type = asJsonString(map['type'], path: '$path.type');
+    final providerOptions = _decodeProviderPromptPartOptions(
+      map['providerOptions'],
+      path: '$path.providerOptions',
+    );
 
     return switch (type) {
       'text' => TextPromptPart(
@@ -238,6 +260,7 @@ final class PromptJsonCodec {
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
+          providerOptions: providerOptions,
         ),
       'file' => FilePromptPart(
           mediaType: asJsonString(map['mediaType'], path: '$path.mediaType'),
@@ -248,6 +271,7 @@ final class PromptJsonCodec {
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
+          providerOptions: providerOptions,
         ),
       'image' => ImagePromptPart(
           mediaType: asJsonString(map['mediaType'], path: '$path.mediaType'),
@@ -256,6 +280,7 @@ final class PromptJsonCodec {
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
+          providerOptions: providerOptions,
         ),
       'reasoning' => ReasoningPromptPart(
           asJsonString(map['text'], path: '$path.text'),
@@ -263,6 +288,7 @@ final class PromptJsonCodec {
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
+          providerOptions: providerOptions,
         ),
       'reasoning-file' => ReasoningFilePromptPart(
           mediaType: asJsonString(map['mediaType'], path: '$path.mediaType'),
@@ -273,6 +299,7 @@ final class PromptJsonCodec {
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
+          providerOptions: providerOptions,
         ),
       'custom' => CustomPromptPart(
           kind: asJsonString(map['kind'], path: '$path.kind'),
@@ -281,6 +308,7 @@ final class PromptJsonCodec {
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
+          providerOptions: providerOptions,
         ),
       'tool-call' => ToolCallPromptPart(
           toolCallId: asJsonString(map['toolCallId'], path: '$path.toolCallId'),
@@ -300,6 +328,7 @@ final class PromptJsonCodec {
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
+          providerOptions: providerOptions,
         ),
       'tool-approval-request' => ToolApprovalRequestPromptPart(
           approvalId: asJsonString(map['approvalId'], path: '$path.approvalId'),
@@ -308,6 +337,7 @@ final class PromptJsonCodec {
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
+          providerOptions: providerOptions,
         ),
       'tool-result' => ToolResultPromptPart(
           toolCallId: asJsonString(map['toolCallId'], path: '$path.toolCallId'),
@@ -316,6 +346,7 @@ final class PromptJsonCodec {
               ? SerializationJsonSupport.decodeToolOutput(
                   map['toolOutput'],
                   path: '$path.toolOutput',
+                  decodeProviderOptions: _decodeProviderPromptPartOptions,
                 )
               : null,
           output: map.containsKey('toolOutput') ? null : map['output'],
@@ -327,6 +358,7 @@ final class PromptJsonCodec {
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
+          providerOptions: providerOptions,
         ),
       'tool-approval-response' => ToolApprovalResponsePromptPart(
           approvalId: asJsonString(map['approvalId'], path: '$path.approvalId'),
@@ -337,6 +369,7 @@ final class PromptJsonCodec {
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
+          providerOptions: providerOptions,
         ),
       _ =>
         throw FormatException('Unsupported prompt part type "$type" at $path.'),
@@ -364,5 +397,52 @@ final class PromptJsonCodec {
                 ),
         ) ??
         (throw FormatException('Expected file data, uri, or bytes at $path.'));
+  }
+
+  JsonMap _encodeProviderPromptPartOptions(
+    ProviderPromptPartOptions options, {
+    required String path,
+  }) {
+    for (final codec in providerPromptPartOptionsCodecs) {
+      if (codec.canEncode(options)) {
+        return {
+          'type': codec.type,
+          'data': ensureJsonValue(
+            codec.encode(options),
+            path: '$path.data',
+          ),
+        };
+      }
+    }
+
+    throw UnsupportedError(
+      'Cannot serialize providerOptions at $path because no '
+      'ProviderPromptPartOptionsJsonCodec was registered for '
+      '${options.runtimeType}. Pass the provider codec to PromptJsonCodec.',
+    );
+  }
+
+  ProviderPromptPartOptions? _decodeProviderPromptPartOptions(
+    Object? value, {
+    required String path,
+  }) {
+    if (value == null) {
+      return null;
+    }
+
+    final map = asJsonMap(value, path: path);
+    final type = asJsonString(map['type'], path: '$path.type');
+    final data = asJsonMap(map['data'], path: '$path.data');
+
+    for (final codec in providerPromptPartOptionsCodecs) {
+      if (codec.type == type) {
+        return codec.decode(data);
+      }
+    }
+
+    throw FormatException(
+      'Unsupported providerOptions type "$type" at $path. Register a '
+      'ProviderPromptPartOptionsJsonCodec for this type.',
+    );
   }
 }

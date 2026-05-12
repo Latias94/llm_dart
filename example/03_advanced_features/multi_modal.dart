@@ -205,18 +205,20 @@ Future<void> demonstrateDocumentProcessing(
 ) async {
   print('Document processing:');
 
-  final core.LanguageModel model =
-      anthropicKey != null && anthropicKey.isNotEmpty
-          ? llm
-              .anthropic(
-                apiKey: anthropicKey,
-              )
-              .chatModel('claude-sonnet-4-5')
-          : llm
-              .openai(
-                apiKey: openAIKey,
-              )
-              .chatModel('gpt-4.1-mini');
+  final core.LanguageModel model;
+  if (anthropicKey != null && anthropicKey.isNotEmpty) {
+    model = llm
+        .anthropic(
+          apiKey: anthropicKey,
+        )
+        .chatModel('claude-sonnet-4-5');
+  } else {
+    model = llm
+        .openai(
+          apiKey: openAIKey,
+        )
+        .chatModel('gpt-4.1-mini');
+  }
 
   const documentContent = '''
 QUARTERLY BUSINESS REPORT - Q3 2024

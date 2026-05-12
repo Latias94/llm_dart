@@ -15,7 +15,7 @@ Future<ImageGenerationResult> generateImage({
     );
   }
 
-  return model.generate(
+  return model.doGenerate(
     ImageGenerationRequest(
       prompt: prompt,
       count: count,

@@ -44,7 +44,7 @@ final class ElevenLabsSpeechModel
       };
 
   @override
-  Future<SpeechGenerationResult> generateSpeech(
+  Future<SpeechGenerationResult> doGenerate(
     SpeechGenerationRequest request,
   ) async {
     final options = resolveProviderInvocationOptions<ElevenLabsSpeechOptions>(

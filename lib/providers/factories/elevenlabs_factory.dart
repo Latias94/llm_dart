@@ -35,8 +35,7 @@ class ElevenLabsProviderFactory extends BaseProviderFactory<ChatCapability> {
       () => createLegacyElevenLabsConfig(config),
       (elevenLabsConfig) {
         final provider = ElevenLabsProvider(elevenLabsConfig);
-        // Return the provider - it should implement the necessary interfaces
-        return provider as ChatCapability;
+        return provider;
       },
     );
   }

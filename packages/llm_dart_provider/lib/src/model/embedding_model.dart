@@ -33,5 +33,5 @@ abstract interface class EmbeddingModel {
 
   String get modelId;
 
-  Future<EmbedResult> embed(EmbedRequest request);
+  Future<EmbedResult> doEmbed(EmbedRequest request);
 }

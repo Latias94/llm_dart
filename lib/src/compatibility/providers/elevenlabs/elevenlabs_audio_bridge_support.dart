@@ -93,7 +93,7 @@ final class _ElevenLabsSpeechBridgeSupport {
       ),
     );
 
-    final result = await model.generateSpeech(
+    final result = await model.doGenerate(
       core.SpeechGenerationRequest(
         text: request.text,
         voice: request.voice,
@@ -236,7 +236,7 @@ final class _ElevenLabsTranscriptionBridgeSupport {
       request.model ?? config.defaultSTTModel,
     );
 
-    final result = await model.transcribe(
+    final result = await model.doGenerate(
       core.TranscriptionRequest(
         audioBytes: request.audioData!,
         mediaType: _resolveTranscriptionMediaType(request, options),

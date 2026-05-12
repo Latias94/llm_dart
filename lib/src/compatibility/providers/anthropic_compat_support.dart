@@ -265,12 +265,12 @@ final class _AnthropicCompatPromptPartConverter {
   }
 
   core.PromptPart convertPromptPart(AnthropicLegacyPromptBlock block) {
-    final metadata = _cacheMetadata(block.cacheControl);
+    final providerOptions = _cacheProviderOptions(block.cacheControl);
 
     return switch (block) {
       AnthropicLegacyTextBlock(:final text) => core.TextPromptPart(
           text,
-          providerMetadata: metadata,
+          providerOptions: providerOptions,
         ),
       AnthropicLegacyImageBlock(
         :final mediaType,
@@ -289,7 +289,7 @@ final class _AnthropicCompatPromptPartConverter {
                         'Anthropic image blocks require bytes or a URI.',
                       )),
                 ),
-          providerMetadata: metadata,
+          providerOptions: providerOptions,
         ),
       AnthropicLegacyDocumentBlock(
         :final mediaType,
@@ -310,7 +310,7 @@ final class _AnthropicCompatPromptPartConverter {
                         'Anthropic document blocks require bytes or a URI.',
                       )),
                 ),
-          providerMetadata: metadata,
+          providerOptions: providerOptions,
         ),
       AnthropicLegacyToolUseBlock() ||
       AnthropicLegacyToolResultBlock() =>
@@ -320,18 +320,19 @@ final class _AnthropicCompatPromptPartConverter {
     };
   }
 
-  core.ProviderMetadata? _cacheMetadata(
+  core.ProviderPromptPartOptions? _cacheProviderOptions(
     AnthropicLegacyCacheControl? cacheControl,
   ) {
     if (cacheControl == null) {
       return null;
     }
 
-    return core.ProviderMetadata({
-      'anthropic': {
-        'cacheControl': cacheControl.toJson(),
-      },
-    });
+    return modern_anthropic.AnthropicPromptPartOptions(
+      cacheControl: modern_anthropic.AnthropicCacheControl(
+        type: cacheControl.type,
+        ttl: cacheControl.ttl,
+      ),
+    );
   }
 }
 

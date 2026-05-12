@@ -41,7 +41,7 @@ final class GoogleSpeechModel implements SpeechModel, CapabilityDescribedModel {
       Uri.parse('${_normalizedBaseUrl()}/models/$modelId:generateContent');
 
   @override
-  Future<SpeechGenerationResult> generateSpeech(
+  Future<SpeechGenerationResult> doGenerate(
     SpeechGenerationRequest request,
   ) async {
     final options = resolveProviderInvocationOptions<GoogleSpeechOptions>(

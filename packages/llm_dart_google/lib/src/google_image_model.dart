@@ -49,7 +49,9 @@ final class GoogleImageModel implements ImageModel, CapabilityDescribedModel {
       Uri.parse('${_normalizedBaseUrl()}/models/$modelId:generateContent');
 
   @override
-  Future<ImageGenerationResult> generate(ImageGenerationRequest request) async {
+  Future<ImageGenerationResult> doGenerate(
+    ImageGenerationRequest request,
+  ) async {
     final options = _resolveProviderOptions(
       request.callOptions,
       parameterName: 'request.callOptions.providerOptions',

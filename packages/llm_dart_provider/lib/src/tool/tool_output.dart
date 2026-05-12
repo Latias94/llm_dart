@@ -1,4 +1,5 @@
 import '../common/provider_metadata.dart';
+import '../common/provider_options.dart';
 import '../common/provider_reference.dart';
 import '../content/file_data.dart';
 
@@ -133,16 +134,21 @@ sealed class ToolOutputContentPart {
   const ToolOutputContentPart();
 
   ProviderMetadata? get providerMetadata;
+
+  ProviderPromptPartOptions? get providerOptions;
 }
 
 final class TextToolOutputContentPart extends ToolOutputContentPart {
   final String text;
   @override
   final ProviderMetadata? providerMetadata;
+  @override
+  final ProviderPromptPartOptions? providerOptions;
 
   const TextToolOutputContentPart(
     this.text, {
     this.providerMetadata,
+    this.providerOptions,
   });
 }
 
@@ -150,10 +156,13 @@ final class JsonToolOutputContentPart extends ToolOutputContentPart {
   final Object? value;
   @override
   final ProviderMetadata? providerMetadata;
+  @override
+  final ProviderPromptPartOptions? providerOptions;
 
   const JsonToolOutputContentPart(
     this.value, {
     this.providerMetadata,
+    this.providerOptions,
   });
 }
 
@@ -163,12 +172,15 @@ final class FileToolOutputContentPart extends ToolOutputContentPart {
   final FileData data;
   @override
   final ProviderMetadata? providerMetadata;
+  @override
+  final ProviderPromptPartOptions? providerOptions;
 
   const FileToolOutputContentPart({
     required this.mediaType,
     this.filename,
     required this.data,
     this.providerMetadata,
+    this.providerOptions,
   });
 
   Uri? get uri => data.uri;
@@ -185,10 +197,13 @@ final class CustomToolOutputContentPart extends ToolOutputContentPart {
   final Object? data;
   @override
   final ProviderMetadata? providerMetadata;
+  @override
+  final ProviderPromptPartOptions? providerOptions;
 
   const CustomToolOutputContentPart({
     required this.kind,
     this.data,
     this.providerMetadata,
+    this.providerOptions,
   });
 }

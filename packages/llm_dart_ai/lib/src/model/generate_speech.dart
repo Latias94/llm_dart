@@ -6,7 +6,7 @@ Future<SpeechGenerationResult> generateSpeech({
   String? voice,
   CallOptions callOptions = const CallOptions(),
 }) {
-  return model.generateSpeech(
+  return model.doGenerate(
     SpeechGenerationRequest(
       text: text,
       voice: voice,

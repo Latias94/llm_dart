@@ -54,7 +54,7 @@ final class OpenAIEmbeddingModel
       );
 
   @override
-  Future<EmbedResult> embed(EmbedRequest request) async {
+  Future<EmbedResult> doEmbed(EmbedRequest request) async {
     final options = resolveOpenAIProviderOptions<OpenAIEmbedOptions>(
       request.callOptions,
       parameterName: 'request.callOptions.providerOptions',

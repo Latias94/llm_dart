@@ -763,7 +763,7 @@ final class AnthropicMessagesCodec {
             path: 'user.image',
           ),
         },
-        metadata: part.providerMetadata,
+        providerOptions: part.providerOptions,
         path: 'user.image',
       );
     }
@@ -789,7 +789,7 @@ final class AnthropicMessagesCodec {
           ),
           if (part.filename != null) 'title': part.filename,
         },
-        metadata: part.providerMetadata,
+        providerOptions: part.providerOptions,
         path: 'user.document',
       );
     }
@@ -801,7 +801,7 @@ final class AnthropicMessagesCodec {
           'source': _encodeTextDocumentSource(part),
           if (part.filename != null) 'title': part.filename,
         },
-        metadata: part.providerMetadata,
+        providerOptions: part.providerOptions,
         path: 'user.document',
       );
     }
@@ -1090,9 +1090,9 @@ final class AnthropicMessagesCodec {
     required String path,
     String? text,
   }) {
-    final cacheControl = _extractCacheControl(
-      part.providerMetadata,
-      path: '$path.providerMetadata',
+    final cacheControl = _extractPromptPartCacheControl(
+      part.providerOptions,
+      path: '$path.providerOptions',
     );
 
     return {
@@ -1104,12 +1104,12 @@ final class AnthropicMessagesCodec {
 
   Map<String, Object?> _applyCacheControl(
     Map<String, Object?> block, {
-    required ProviderMetadata? metadata,
+    required ProviderPromptPartOptions? providerOptions,
     required String path,
   }) {
-    final cacheControl = _extractCacheControl(
-      metadata,
-      path: '$path.providerMetadata',
+    final cacheControl = _extractPromptPartCacheControl(
+      providerOptions,
+      path: '$path.providerOptions',
     );
     if (cacheControl == null) {
       return block;
@@ -1231,35 +1231,41 @@ final class AnthropicMessagesCodec {
     required String path,
   }) {
     return switch (part) {
-      TextToolOutputContentPart(:final text, :final providerMetadata) =>
+      TextToolOutputContentPart(
+        :final text,
+        :final providerOptions,
+      ) =>
         _encodeToolOutputTextBlock(
           text,
-          providerMetadata: providerMetadata,
+          providerOptions: providerOptions,
           path: path,
         ),
-      JsonToolOutputContentPart(:final value, :final providerMetadata) =>
+      JsonToolOutputContentPart(
+        :final value,
+        :final providerOptions,
+      ) =>
         _encodeToolOutputTextBlock(
           jsonEncode(normalizeJsonValue(value, path: '$path.value')),
-          providerMetadata: providerMetadata,
+          providerOptions: providerOptions,
           path: path,
         ),
       FileToolOutputContentPart(
         :final mediaType,
         :final filename,
         :final data,
-        :final providerMetadata,
+        :final providerOptions,
       ) =>
         _encodeToolOutputFileBlock(
           mediaType: mediaType,
           filename: filename,
           data: data,
-          providerMetadata: providerMetadata,
+          providerOptions: providerOptions,
           path: path,
         ),
       CustomToolOutputContentPart(
         :final kind,
         :final data,
-        :final providerMetadata,
+        :final providerOptions,
       ) =>
         _encodeToolOutputTextBlock(
           jsonEncode(
@@ -1272,7 +1278,7 @@ final class AnthropicMessagesCodec {
               path: '$path.data',
             ),
           ),
-          providerMetadata: providerMetadata,
+          providerOptions: providerOptions,
           path: path,
         ),
     };
@@ -1280,7 +1286,7 @@ final class AnthropicMessagesCodec {
 
   Map<String, Object?> _encodeToolOutputTextBlock(
     String text, {
-    required ProviderMetadata? providerMetadata,
+    required ProviderPromptPartOptions? providerOptions,
     required String path,
   }) {
     return _applyCacheControl(
@@ -1288,7 +1294,7 @@ final class AnthropicMessagesCodec {
         'type': 'text',
         'text': text,
       },
-      metadata: providerMetadata,
+      providerOptions: providerOptions,
       path: path,
     );
   }
@@ -1297,7 +1303,7 @@ final class AnthropicMessagesCodec {
     required String mediaType,
     required String? filename,
     required FileData data,
-    required ProviderMetadata? providerMetadata,
+    required ProviderPromptPartOptions? providerOptions,
     required String path,
   }) {
     final reference = data.providerReference;
@@ -1327,7 +1333,7 @@ final class AnthropicMessagesCodec {
             'file_id': fileId,
           },
         },
-        metadata: providerMetadata,
+        providerOptions: providerOptions,
         path: path,
       );
     }
@@ -1343,7 +1349,7 @@ final class AnthropicMessagesCodec {
           },
           if (!isImage && filename != null) 'title': filename,
         },
-        metadata: providerMetadata,
+        providerOptions: providerOptions,
         path: path,
       );
     }
@@ -1366,7 +1372,7 @@ final class AnthropicMessagesCodec {
                 },
           if (!isImage && filename != null) 'title': filename,
         },
-        metadata: providerMetadata,
+        providerOptions: providerOptions,
         path: path,
       );
     }
@@ -1389,7 +1395,7 @@ final class AnthropicMessagesCodec {
           },
           if (filename != null) 'title': filename,
         },
-        metadata: providerMetadata,
+        providerOptions: providerOptions,
         path: path,
       );
     }
@@ -1430,88 +1436,26 @@ final class AnthropicMessagesCodec {
     return uri.scheme == 'http' || uri.scheme == 'https';
   }
 
-  Map<String, Object?>? _extractCacheControl(
-    ProviderMetadata? metadata, {
+  Map<String, Object?>? _extractPromptPartCacheControl(
+    ProviderPromptPartOptions? providerOptions, {
     required String path,
   }) {
-    final anthropicMetadata = _anthropicMetadata(metadata);
-    if (anthropicMetadata == null || anthropicMetadata.isEmpty) {
+    final options =
+        resolveProviderPromptPartOptions<AnthropicPromptPartOptions>(
+      providerOptions,
+      parameterName: path,
+      expectedTypeName: 'AnthropicPromptPartOptions',
+      usageContext: 'Anthropic prompt parts',
+    );
+    final cacheControl = options?.cacheControl;
+    if (cacheControl == null) {
       return null;
     }
 
-    final directValue = anthropicMetadata['cacheControl'];
-    if (directValue != null) {
-      return _normalizeCacheControl(
-        directValue,
-        path: '$path.anthropic.cacheControl',
-      );
-    }
-
-    final contentBlocks = anthropicMetadata['contentBlocks'];
-    if (contentBlocks == null) {
-      return null;
-    }
-
-    if (contentBlocks is! List) {
-      throw UnsupportedError(
-        'Anthropic contentBlocks metadata at $path must be a list.',
-      );
-    }
-
-    Map<String, Object?>? cacheControl;
-    for (var index = 0; index < contentBlocks.length; index++) {
-      final block = contentBlocks[index];
-      final normalizedBlock = normalizeJsonValue(
-        block,
-        path: '$path.anthropic.contentBlocks[$index]',
-      );
-      if (normalizedBlock is! Map<String, Object?>) {
-        throw UnsupportedError(
-          'Anthropic contentBlocks metadata at $path must contain JSON objects.',
-        );
-      }
-
-      if (normalizedBlock['type'] == 'tools') {
-        continue;
-      }
-
-      if (normalizedBlock['text'] == '' &&
-          normalizedBlock['cache_control'] != null) {
-        final parsedCacheControl = _normalizeCacheControl(
-          normalizedBlock['cache_control'],
-          path: '$path.anthropic.contentBlocks[$index].cache_control',
-        );
-
-        if (cacheControl != null &&
-            !_sameCacheControl(cacheControl, parsedCacheControl)) {
-          throw UnsupportedError(
-            'Anthropic prompt metadata at $path contains multiple cache policies.',
-          );
-        }
-
-        cacheControl = parsedCacheControl;
-        continue;
-      }
-
-      throw UnsupportedError(
-        'Anthropic legacy prompt metadata at $path only supports cache markers and tools blocks.',
-      );
-    }
-
-    return cacheControl;
-  }
-
-  Map<String, Object?>? _anthropicMetadata(ProviderMetadata? metadata) {
-    final values = metadata?.values['anthropic'];
-    if (values is Map<String, Object?>) {
-      return values;
-    }
-
-    if (values is Map) {
-      return Map<String, Object?>.from(values);
-    }
-
-    return null;
+    return _normalizeCacheControl(
+      cacheControl.toJson(),
+      path: '$path.cacheControl',
+    );
   }
 
   Map<String, Object?> _normalizeCacheControl(
@@ -1584,13 +1528,6 @@ final class AnthropicMessagesCodec {
     }
 
     return false;
-  }
-
-  bool _sameCacheControl(
-    Map<String, Object?> left,
-    Map<String, Object?> right,
-  ) {
-    return left['type'] == right['type'] && left['ttl'] == right['ttl'];
   }
 }
 

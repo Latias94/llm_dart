@@ -701,6 +701,46 @@ void main() {
       );
     });
 
+    test('resolves typed provider prompt part options', () {
+      final options = _TestPromptPartOptions();
+
+      expect(
+        resolveProviderPromptPartOptions<_TestPromptPartOptions>(
+          options,
+          parameterName: 'part.providerOptions',
+          expectedTypeName: '_TestPromptPartOptions',
+          usageContext: 'test prompt parts',
+        ),
+        same(options),
+      );
+      expect(
+        resolveProviderPromptPartOptions<_TestPromptPartOptions>(
+          null,
+          parameterName: 'part.providerOptions',
+          expectedTypeName: '_TestPromptPartOptions',
+          usageContext: 'test prompt parts',
+        ),
+        isNull,
+      );
+      expect(
+        () => resolveProviderPromptPartOptions<_TestPromptPartOptions>(
+          _OtherPromptPartOptions(),
+          parameterName: 'part.providerOptions',
+          expectedTypeName: '_TestPromptPartOptions',
+          usageContext: 'test prompt parts',
+        ),
+        throwsA(
+          isA<ArgumentError>()
+              .having((error) => error.name, 'name', 'part.providerOptions')
+              .having(
+                (error) => error.message,
+                'message',
+                'Expected _TestPromptPartOptions for test prompt parts.',
+              ),
+        ),
+      );
+    });
+
     test('carries provider invocation options and cancellation', () {
       final cancellation = ProviderCancellation();
       final options = CallOptions(
@@ -745,6 +785,10 @@ final class _OtherProviderOptions implements ProviderInvocationOptions {}
 final class _TestModelOptions implements ProviderModelOptions {}
 
 final class _OtherModelOptions implements ProviderModelOptions {}
+
+final class _TestPromptPartOptions implements ProviderPromptPartOptions {}
+
+final class _OtherPromptPartOptions implements ProviderPromptPartOptions {}
 
 final class _SingleStepLanguageModel implements LanguageModel {
   final GenerateTextResult result;

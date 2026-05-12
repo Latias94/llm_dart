@@ -4,17 +4,43 @@ final RegExp _rootPackageImportPattern = RegExp(
   r'''^\s*(import|export)\s+['"]package:llm_dart/[^'"]+['"]''',
 );
 
-final List<_ForbiddenLanguageModelMethodPattern>
-    _forbiddenLanguageModelMethodPatterns = [
-  _ForbiddenLanguageModelMethodPattern(
+final List<_ForbiddenProviderContractMethodPattern>
+    _forbiddenProviderContractMethodPatterns = [
+  _ForbiddenProviderContractMethodPattern(
     RegExp(r'\bFuture<GenerateTextResult>\s+generate\s*\('),
     'LanguageModel provider contracts must use doGenerate(...) so user-facing '
     'generation flows through llm_dart_ai.',
   ),
-  _ForbiddenLanguageModelMethodPattern(
+  _ForbiddenProviderContractMethodPattern(
     RegExp(r'\bStream<TextStreamEvent>\s+stream\s*\('),
     'LanguageModel provider contracts must use doStream(...) so user-facing '
     'streaming flows through llm_dart_ai.',
+  ),
+  _ForbiddenProviderContractMethodPattern(
+    RegExp(r'\bFuture<EmbedResult>\s+embed\s*\('),
+    'EmbeddingModel provider contracts must use doEmbed(...) so user-facing '
+    'embedding flows through llm_dart_ai.',
+  ),
+  _ForbiddenProviderContractMethodPattern(
+    RegExp(r'\bFuture<ImageGenerationResult>\s+generate\s*\('),
+    'ImageModel provider contracts must use doGenerate(...) so user-facing '
+    'image generation flows through llm_dart_ai.',
+  ),
+  _ForbiddenProviderContractMethodPattern(
+    RegExp(r'\bFuture<SpeechGenerationResult>\s+generateSpeech\s*\('),
+    'SpeechModel provider contracts must use doGenerate(...) so user-facing '
+    'speech generation flows through llm_dart_ai.',
+    allowedPaths: {
+      'packages/llm_dart_ai/lib/src/model/generate_speech.dart',
+    },
+  ),
+  _ForbiddenProviderContractMethodPattern(
+    RegExp(r'\bFuture<TranscriptionResult>\s+transcribe\s*\('),
+    'TranscriptionModel provider contracts must use doGenerate(...) so '
+    'user-facing transcription flows through llm_dart_ai.',
+    allowedPaths: {
+      'packages/llm_dart_ai/lib/src/model/transcribe.dart',
+    },
   ),
 ];
 
@@ -118,7 +144,7 @@ Future<WorkspaceDependencyGuardResult> evaluateWorkspaceDependencyGuards({
     packagesDir: packagesDir,
     violations: violations,
   );
-  await _collectLanguageModelMethodNameViolations(
+  await _collectProviderContractMethodNameViolations(
     repoRoot: resolvedRepoRoot,
     packagesDir: packagesDir,
     violations: violations,
@@ -174,7 +200,7 @@ Future<void> _collectImportViolations({
   }
 }
 
-Future<void> _collectLanguageModelMethodNameViolations({
+Future<void> _collectProviderContractMethodNameViolations({
   required Directory repoRoot,
   required Directory packagesDir,
   required List<String> violations,
@@ -193,16 +219,20 @@ Future<void> _collectLanguageModelMethodNameViolations({
       continue;
     }
 
+    final displayPath = _displayPath(repoRoot, entity).replaceAll('\\', '/');
     final lines = await entity.readAsLines();
     for (var index = 0; index < lines.length; index += 1) {
       final line = lines[index];
-      for (final pattern in _forbiddenLanguageModelMethodPatterns) {
+      for (final pattern in _forbiddenProviderContractMethodPatterns) {
         if (!pattern.regExp.hasMatch(line)) {
+          continue;
+        }
+        if (pattern.allowedPaths.contains(displayPath)) {
           continue;
         }
 
         violations.add(
-          '${_displayPath(repoRoot, entity)}:${index + 1}: '
+          '$displayPath:${index + 1}: '
           '${pattern.message}',
         );
       }
@@ -383,14 +413,16 @@ String _displayPath(Directory repoRoot, File file) {
   return filePath;
 }
 
-final class _ForbiddenLanguageModelMethodPattern {
+final class _ForbiddenProviderContractMethodPattern {
   final RegExp regExp;
   final String message;
+  final Set<String> allowedPaths;
 
-  const _ForbiddenLanguageModelMethodPattern(
+  const _ForbiddenProviderContractMethodPattern(
     this.regExp,
-    this.message,
-  );
+    this.message, {
+    this.allowedPaths = const {},
+  });
 }
 
 Future<void> main() async {
@@ -400,7 +432,7 @@ Future<void> main() async {
     stdout.writeln(
       'workspace dependency guard passed: no package implementation files '
       'import package:llm_dart/... and no workspace pubspec policies were '
-      'violated.',
+      'violated, and provider contract method names are SDK-aligned.',
     );
     return;
   }

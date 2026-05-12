@@ -20,7 +20,7 @@ Future<EmbedValueResult> embed({
   int? dimensions,
   CallOptions callOptions = const CallOptions(),
 }) async {
-  final result = await model.embed(
+  final result = await model.doEmbed(
     EmbedRequest(
       values: [value],
       dimensions: dimensions,
@@ -30,7 +30,7 @@ Future<EmbedValueResult> embed({
 
   if (result.embeddings.length != 1) {
     throw StateError(
-      'EmbeddingModel.embed returned ${result.embeddings.length} embeddings '
+      'EmbeddingModel.doEmbed returned ${result.embeddings.length} embeddings '
       'for a single-value embed(...) call.',
     );
   }
@@ -57,7 +57,7 @@ Future<EmbedResult> embedMany({
     );
   }
 
-  final result = await model.embed(
+  final result = await model.doEmbed(
     EmbedRequest(
       values: values,
       dimensions: dimensions,
@@ -67,7 +67,7 @@ Future<EmbedResult> embedMany({
 
   if (result.embeddings.length != values.length) {
     throw StateError(
-      'EmbeddingModel.embed returned ${result.embeddings.length} embeddings '
+      'EmbeddingModel.doEmbed returned ${result.embeddings.length} embeddings '
       'for ${values.length} input values.',
     );
   }

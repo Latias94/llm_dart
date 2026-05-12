@@ -64,7 +64,7 @@ void main() {
         expect(responses, isA<OpenAIResponsesCapability>());
 
         // Test all OpenAIResponsesCapability methods exist without calling them
-        final capability = responses as OpenAIResponsesCapability;
+        final capability = responses;
         expect(capability.chatWithTools, isA<Function>());
         expect(capability.chatWithToolsBackground, isA<Function>());
         expect(capability.getResponse, isA<Function>());

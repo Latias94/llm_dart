@@ -392,14 +392,14 @@ final class OpenAIChatCompletionsCodec {
             :final mediaType,
             :final uri,
             :final bytes,
-            :final providerMetadata,
+            :final providerOptions,
           ):
           content.add(
             _encodeImageContentPart(
               mediaType: mediaType,
               uri: uri,
               bytes: bytes,
-              metadata: providerMetadata,
+              providerOptions: providerOptions,
             ),
           );
         case FilePromptPart():
@@ -432,11 +432,11 @@ final class OpenAIChatCompletionsCodec {
     required String mediaType,
     Uri? uri,
     List<int>? bytes,
-    ProviderMetadata? metadata,
+    ProviderPromptPartOptions? providerOptions,
   }) {
-    final openaiMetadata = _providerMetadataValues(
-      metadata,
-      namespace: 'openai',
+    final imageDetail = _openAIImageDetail(
+      providerOptions,
+      path: 'image.providerOptions',
     );
     final imageUrl = uri?.toString() ??
         (bytes == null
@@ -453,8 +453,7 @@ final class OpenAIChatCompletionsCodec {
       'type': 'image_url',
       'image_url': {
         'url': imageUrl,
-        if (_asString(openaiMetadata?['imageDetail']) case final imageDetail?)
-          'detail': imageDetail,
+        if (imageDetail != null) 'detail': imageDetail,
       },
     };
   }
@@ -468,7 +467,7 @@ final class OpenAIChatCompletionsCodec {
         mediaType: part.mediaType,
         uri: part.uri,
         bytes: part.bytes,
-        metadata: part.providerMetadata,
+        providerOptions: part.providerOptions,
       );
     }
 
@@ -843,20 +842,17 @@ final class OpenAIChatCompletionsCodec {
     return mediaType;
   }
 
-  Map<String, Object?>? _providerMetadataValues(
-    ProviderMetadata? metadata, {
-    required String namespace,
+  String? _openAIImageDetail(
+    ProviderPromptPartOptions? providerOptions, {
+    required String path,
   }) {
-    final value = metadata?[namespace];
-    if (value is Map<String, Object?>) {
-      return value;
-    }
-
-    if (value is Map) {
-      return Map<String, Object?>.from(value);
-    }
-
-    return null;
+    final options = resolveProviderPromptPartOptions<OpenAIPromptPartOptions>(
+      providerOptions,
+      parameterName: path,
+      expectedTypeName: 'OpenAIPromptPartOptions',
+      usageContext: 'OpenAI-family image prompt parts',
+    );
+    return options?.imageDetail;
   }
 
   String? _openAIFileId({

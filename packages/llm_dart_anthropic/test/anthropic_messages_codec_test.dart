@@ -1327,7 +1327,8 @@ void main() {
       );
     });
 
-    test('encodes cache control from Anthropic metadata and tool cache options',
+    test(
+        'encodes cache control from Anthropic prompt part options and tool cache options',
         () {
       final request = codec.encodeRequest(
         modelId: 'claude-sonnet-4-5',
@@ -1336,24 +1337,11 @@ void main() {
             parts: [
               TextPromptPart(
                 'Reusable instructions',
-                providerMetadata: const ProviderMetadata({
-                  'anthropic': {
-                    'contentBlocks': [
-                      {
-                        'type': 'text',
-                        'text': '',
-                        'cache_control': {
-                          'type': 'ephemeral',
-                          'ttl': '1h',
-                        },
-                      },
-                      {
-                        'type': 'tools',
-                        'tools': [],
-                      },
-                    ],
-                  },
-                }),
+                providerOptions: const AnthropicPromptPartOptions(
+                  cacheControl: AnthropicCacheControl.ephemeral(
+                    ttl: '1h',
+                  ),
+                ),
               ),
             ],
           ),
@@ -1361,14 +1349,11 @@ void main() {
             parts: [
               TextPromptPart(
                 'Hello',
-                providerMetadata: const ProviderMetadata({
-                  'anthropic': {
-                    'cacheControl': {
-                      'type': 'ephemeral',
-                      'ttl': '5m',
-                    },
-                  },
-                }),
+                providerOptions: const AnthropicPromptPartOptions(
+                  cacheControl: AnthropicCacheControl.ephemeral(
+                    ttl: '5m',
+                  ),
+                ),
               ),
             ],
           ),
@@ -1453,27 +1438,21 @@ void main() {
               ImagePromptPart(
                 mediaType: 'image/png',
                 data: FileUrlData(Uri.parse('https://example.com/image.png')),
-                providerMetadata: const ProviderMetadata({
-                  'anthropic': {
-                    'cacheControl': {
-                      'type': 'ephemeral',
-                      'ttl': '1h',
-                    },
-                  },
-                }),
+                providerOptions: const AnthropicPromptPartOptions(
+                  cacheControl: AnthropicCacheControl.ephemeral(
+                    ttl: '1h',
+                  ),
+                ),
               ),
               FilePromptPart(
                 mediaType: 'text/plain',
                 filename: 'notes.txt',
                 data: FileBytesData(utf8.encode('cached document')),
-                providerMetadata: const ProviderMetadata({
-                  'anthropic': {
-                    'cacheControl': {
-                      'type': 'ephemeral',
-                      'ttl': '5m',
-                    },
-                  },
-                }),
+                providerOptions: const AnthropicPromptPartOptions(
+                  cacheControl: AnthropicCacheControl.ephemeral(
+                    ttl: '5m',
+                  ),
+                ),
               ),
             ],
           ),
@@ -1523,6 +1502,84 @@ void main() {
       expect(
         request.betaFeatures,
         contains('extended-cache-ttl-2025-04-11'),
+      );
+    });
+
+    test('serializes Anthropic prompt part options through prompt JSON', () {
+      const promptCodec = PromptJsonCodec(
+        providerPromptPartOptionsCodecs: [
+          anthropicPromptPartOptionsJsonCodec,
+        ],
+      );
+
+      final decoded = promptCodec.decodeMessages(
+        promptCodec.encodeMessages([
+          UserPromptMessage(
+            parts: const [
+              TextPromptPart(
+                'Cached input',
+                providerOptions: AnthropicPromptPartOptions(
+                  cacheControl: AnthropicCacheControl.ephemeral(ttl: '1h'),
+                ),
+              ),
+            ],
+          ),
+        ]),
+      );
+
+      final user = decoded.single as UserPromptMessage;
+      final text = user.parts.single as TextPromptPart;
+      final options = text.providerOptions as AnthropicPromptPartOptions;
+      expect(options.cacheControl?.type, 'ephemeral');
+      expect(options.cacheControl?.ttl, '1h');
+    });
+
+    test('does not use ProviderMetadata as Anthropic request configuration',
+        () {
+      final request = codec.encodeRequest(
+        modelId: 'claude-sonnet-4-5',
+        prompt: [
+          UserPromptMessage(
+            parts: [
+              TextPromptPart(
+                'Metadata is replay data only.',
+                providerMetadata: const ProviderMetadata({
+                  'anthropic': {
+                    'cacheControl': {
+                      'type': 'ephemeral',
+                      'ttl': '1h',
+                    },
+                  },
+                }),
+              ),
+            ],
+          ),
+        ],
+        tools: const [],
+        toolChoice: null,
+        options: const GenerateTextOptions(),
+        settings: const AnthropicChatModelSettings(),
+        providerOptions: const AnthropicGenerateTextOptions(),
+        stream: false,
+      );
+
+      expect(
+        request.body['messages'],
+        [
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'text',
+                'text': 'Metadata is replay data only.',
+              },
+            ],
+          },
+        ],
+      );
+      expect(
+        request.betaFeatures,
+        isNot(contains('extended-cache-ttl-2025-04-11')),
       );
     });
 

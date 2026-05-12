@@ -43,7 +43,7 @@ final class OllamaEmbeddingModel
       );
 
   @override
-  Future<EmbedResult> embed(EmbedRequest request) async {
+  Future<EmbedResult> doEmbed(EmbedRequest request) async {
     if (request.values.isEmpty) {
       throw ArgumentError.value(
         request.values,

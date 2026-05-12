@@ -192,7 +192,7 @@ final class _FakeEmbeddingModel implements EmbeddingModel {
   const _FakeEmbeddingModel(this.providerId, this.modelId);
 
   @override
-  Future<EmbedResult> embed(EmbedRequest request) async {
+  Future<EmbedResult> doEmbed(EmbedRequest request) async {
     return EmbedResult(
       embeddings: [
         List<double>.filled(request.values.length, 0),
@@ -211,7 +211,7 @@ final class _FakeImageModel implements ImageModel {
   const _FakeImageModel(this.providerId, this.modelId);
 
   @override
-  Future<ImageGenerationResult> generate(
+  Future<ImageGenerationResult> doGenerate(
     ImageGenerationRequest request,
   ) async {
     return ImageGenerationResult(
@@ -230,7 +230,7 @@ final class _FakeSpeechModel implements SpeechModel {
   const _FakeSpeechModel(this.providerId, this.modelId);
 
   @override
-  Future<SpeechGenerationResult> generateSpeech(
+  Future<SpeechGenerationResult> doGenerate(
     SpeechGenerationRequest request,
   ) async {
     return const SpeechGenerationResult(audioBytes: [1, 2, 3]);
@@ -247,7 +247,7 @@ final class _FakeTranscriptionModel implements TranscriptionModel {
   const _FakeTranscriptionModel(this.providerId, this.modelId);
 
   @override
-  Future<TranscriptionResult> transcribe(
+  Future<TranscriptionResult> doGenerate(
     TranscriptionRequest request,
   ) async {
     return const TranscriptionResult(text: 'ok');

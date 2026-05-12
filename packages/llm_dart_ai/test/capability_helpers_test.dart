@@ -228,7 +228,7 @@ final class _RecordingEmbeddingModel implements EmbeddingModel {
   String get providerId => 'test';
 
   @override
-  Future<EmbedResult> embed(EmbedRequest request) async {
+  Future<EmbedResult> doEmbed(EmbedRequest request) async {
     lastRequest = request;
     return result;
   }
@@ -249,7 +249,9 @@ final class _RecordingImageModel implements ImageModel {
   String get providerId => 'test';
 
   @override
-  Future<ImageGenerationResult> generate(ImageGenerationRequest request) async {
+  Future<ImageGenerationResult> doGenerate(
+    ImageGenerationRequest request,
+  ) async {
     lastRequest = request;
     return result;
   }
@@ -270,7 +272,7 @@ final class _RecordingSpeechModel implements SpeechModel {
   String get providerId => 'test';
 
   @override
-  Future<SpeechGenerationResult> generateSpeech(
+  Future<SpeechGenerationResult> doGenerate(
     SpeechGenerationRequest request,
   ) async {
     lastRequest = request;
@@ -293,7 +295,7 @@ final class _RecordingTranscriptionModel implements TranscriptionModel {
   String get providerId => 'test';
 
   @override
-  Future<TranscriptionResult> transcribe(TranscriptionRequest request) async {
+  Future<TranscriptionResult> doGenerate(TranscriptionRequest request) async {
     lastRequest = request;
     return result;
   }

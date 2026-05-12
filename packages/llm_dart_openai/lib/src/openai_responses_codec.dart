@@ -670,11 +670,10 @@ final class OpenAIResponsesCodec {
     }
 
     if (part is ImagePromptPart) {
-      final openaiMetadata = _providerMetadataValues(
-        part.providerMetadata,
-        namespace: 'openai',
+      final imageDetail = _openAIImageDetail(
+        part.providerOptions,
+        path: 'user.image.providerOptions',
       );
-      final imageDetail = _asString(openaiMetadata?['imageDetail']);
       if (_openAIFileId(
         data: part.data,
       )
@@ -705,12 +704,11 @@ final class OpenAIResponsesCodec {
     }
 
     if (part is FilePromptPart) {
-      final openaiMetadata = _providerMetadataValues(
-        part.providerMetadata,
-        namespace: 'openai',
-      );
       if (part.mediaType.startsWith('image/')) {
-        final imageDetail = _asString(openaiMetadata?['imageDetail']);
+        final imageDetail = _openAIImageDetail(
+          part.providerOptions,
+          path: 'user.file.providerOptions',
+        );
         if (_openAIFileId(
           data: part.data,
         )
@@ -1053,6 +1051,19 @@ final class OpenAIResponsesCodec {
     return null;
   }
 
+  String? _openAIImageDetail(
+    ProviderPromptPartOptions? providerOptions, {
+    required String path,
+  }) {
+    final options = resolveProviderPromptPartOptions<OpenAIPromptPartOptions>(
+      providerOptions,
+      parameterName: path,
+      expectedTypeName: 'OpenAIPromptPartOptions',
+      usageContext: 'OpenAI-family image prompt parts',
+    );
+    return options?.imageDetail;
+  }
+
   String _encodeJsonString(Object? value) {
     if (value == null) {
       return '{}';
@@ -1164,13 +1175,13 @@ final class OpenAIResponsesCodec {
         :final mediaType,
         :final filename,
         :final data,
-        :final providerMetadata,
+        :final providerOptions,
       ) =>
         _encodeContentToolOutputFilePart(
           mediaType: mediaType,
           filename: filename,
           data: data,
-          providerMetadata: providerMetadata,
+          providerOptions: providerOptions,
         ),
       CustomToolOutputContentPart(:final kind, :final data) => {
           'type': 'input_text',
@@ -1189,13 +1200,12 @@ final class OpenAIResponsesCodec {
     required String mediaType,
     required String? filename,
     required FileData data,
-    required ProviderMetadata? providerMetadata,
+    required ProviderPromptPartOptions? providerOptions,
   }) {
-    final openaiMetadata = _providerMetadataValues(
-      providerMetadata,
-      namespace: 'openai',
+    final imageDetail = _openAIImageDetail(
+      providerOptions,
+      path: 'toolOutput.file.providerOptions',
     );
-    final imageDetail = _asString(openaiMetadata?['imageDetail']);
     final isImage = mediaType == 'image/*' || mediaType.startsWith('image/');
     final reference = data.providerReference;
 

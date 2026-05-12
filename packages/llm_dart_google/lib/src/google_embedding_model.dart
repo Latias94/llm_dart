@@ -41,7 +41,7 @@ final class GoogleEmbeddingModel
       );
 
   @override
-  Future<EmbedResult> embed(EmbedRequest request) async {
+  Future<EmbedResult> doEmbed(EmbedRequest request) async {
     final options = resolveProviderInvocationOptions<GoogleEmbedOptions>(
       request.callOptions.providerOptions,
       parameterName: 'request.callOptions.providerOptions',

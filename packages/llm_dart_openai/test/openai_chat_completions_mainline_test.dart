@@ -1225,7 +1225,7 @@ void main() {
     });
 
     test(
-        'chat completions encode OpenAI-owned PDF file handles through provider metadata',
+        'chat completions encode OpenAI-owned PDF file handles through provider references',
         () async {
       TransportRequest? capturedRequest;
 
@@ -1382,7 +1382,7 @@ void main() {
     });
 
     test(
-        'chat completions encode OpenAI image detail through provider metadata',
+        'chat completions encode OpenAI image detail through prompt part options',
         () async {
       TransportRequest? capturedRequest;
 
@@ -1431,11 +1431,9 @@ void main() {
                 ImagePromptPart(
                   mediaType: 'image/png',
                   data: FileBytesData.constBytes([0, 1, 2, 3]),
-                  providerMetadata: ProviderMetadata({
-                    'openai': {
-                      'imageDetail': 'low',
-                    },
-                  }),
+                  providerOptions: OpenAIPromptPartOptions(
+                    imageDetail: 'low',
+                  ),
                 ),
               ],
             ),

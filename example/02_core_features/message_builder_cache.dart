@@ -4,10 +4,10 @@ import 'package:llm_dart/core.dart' as core;
 /// Demonstrates Anthropic prompt caching on the modern model-first API.
 ///
 /// Prompt caching is provider-owned behavior. The shared prompt model carries
-/// provider metadata, while the Anthropic package owns the typed request option
-/// for tool cache control.
+/// typed provider options for request-side cache control, while provider
+/// metadata remains output-side replay and observation data.
 void main() {
-  print('=== Anthropic Prompt Cache Metadata Example ===\n');
+  print('=== Anthropic Prompt Cache Options Example ===\n');
 
   demonstrateCachedSystemPrompt();
   demonstrateMixedUserContext();
@@ -23,7 +23,7 @@ void demonstrateCachedSystemPrompt() {
       core.TextPromptPart(
         'Large static reference: quantum computing uses qubits, gates, '
         'superposition, interference, and error correction.',
-        providerMetadata: _anthropicCacheControl(ttl: '1h'),
+        providerOptions: _anthropicCacheOptions(ttl: '1h'),
       ),
     ],
   );
@@ -41,7 +41,7 @@ void demonstrateMixedUserContext() {
       core.TextPromptPart(
         'Session context: the user is a computer science student with basic '
         'linear algebra and probability knowledge.',
-        providerMetadata: _anthropicCacheControl(ttl: '5m'),
+        providerOptions: _anthropicCacheOptions(ttl: '5m'),
       ),
       const core.TextPromptPart(
         'What are the practical advantages of quantum algorithms?',
@@ -63,12 +63,12 @@ void demonstrateFileAndImageCacheMetadata() {
         data: const core.FileTextData(
           'Reusable notes about a product launch plan.',
         ),
-        providerMetadata: _anthropicCacheControl(ttl: '1h'),
+        providerOptions: _anthropicCacheOptions(ttl: '1h'),
       ),
       core.ImagePromptPart(
         mediaType: 'image/png',
         data: const core.FileBytesData.constBytes([137, 80, 78, 71]),
-        providerMetadata: _anthropicCacheControl(ttl: '5m'),
+        providerOptions: _anthropicCacheOptions(ttl: '5m'),
       ),
     ],
   );
@@ -116,7 +116,7 @@ void demonstrateToolCacheOptions() {
 
 void explainStrategy() {
   print('=== Caching Strategy Tips ===');
-  print('- Put cache metadata on the prompt part that should be cached.');
+  print('- Put cache options on the prompt part that should be cached.');
   print(
       '- Use 1h TTL for stable instructions, large documents, or tool lists.');
   print('- Use 5m TTL for session context that changes during a workflow.');
@@ -127,23 +127,22 @@ void explainStrategy() {
   print('  core.generateTextCall(...) when making a live request.');
 }
 
-core.ProviderMetadata _anthropicCacheControl({required String ttl}) {
-  return core.ProviderMetadata({
-    'anthropic': {
-      'cacheControl': {
-        'type': 'ephemeral',
-        'ttl': ttl,
-      },
-    },
-  });
+anthropic.AnthropicPromptPartOptions _anthropicCacheOptions({
+  required String ttl,
+}) {
+  return anthropic.AnthropicPromptPartOptions(
+    cacheControl: anthropic.AnthropicCacheControl.ephemeral(ttl: ttl),
+  );
 }
 
 void _printPrompt(core.PromptMessage message) {
   print('   role: ${message.role.name}');
   for (var index = 0; index < message.parts.length; index += 1) {
     final part = message.parts[index];
-    final cache = part.providerMetadata?.namespace('anthropic')?['cacheControl']
-        as Map<String, Object?>?;
+    final providerOptions = part.providerOptions;
+    final cache = providerOptions is anthropic.AnthropicPromptPartOptions
+        ? providerOptions.cacheControl?.toJson()
+        : null;
     print('   part ${index + 1}: ${part.runtimeType}');
     if (cache != null) {
       print('      cacheControl: $cache');

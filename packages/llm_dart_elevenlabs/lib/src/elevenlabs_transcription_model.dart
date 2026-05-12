@@ -42,7 +42,7 @@ final class ElevenLabsTranscriptionModel
       };
 
   @override
-  Future<TranscriptionResult> transcribe(TranscriptionRequest request) async {
+  Future<TranscriptionResult> doGenerate(TranscriptionRequest request) async {
     final options =
         resolveProviderInvocationOptions<ElevenLabsTranscriptionOptions>(
       request.callOptions.providerOptions,

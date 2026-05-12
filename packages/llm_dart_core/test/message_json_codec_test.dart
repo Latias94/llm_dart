@@ -1,4 +1,6 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart'
+    show JsonMap, asJsonString;
 import 'package:test/test.dart';
 
 void main() {
@@ -308,6 +310,88 @@ void main() {
       );
       final custom = contentOutput.parts[3] as CustomToolOutputContentPart;
       expect(custom.kind, 'openai.computer_screenshot');
+    });
+
+    test('round-trips registered provider prompt part options', () {
+      const codec = PromptJsonCodec(
+        providerPromptPartOptionsCodecs: [
+          _TestPromptPartOptionsJsonCodec(),
+        ],
+      );
+
+      final decoded = codec.decodeMessages(
+        codec.encodeMessages([
+          UserPromptMessage(
+            parts: const [
+              TextPromptPart(
+                'Hello',
+                providerOptions: _TestPromptPartOptions('text-mode'),
+              ),
+            ],
+          ),
+          ToolPromptMessage(
+            toolName: 'render',
+            parts: [
+              ToolResultPromptPart(
+                toolCallId: 'call_1',
+                toolName: 'render',
+                toolOutput: ContentToolOutput(
+                  parts: const [
+                    FileToolOutputContentPart(
+                      mediaType: 'image/png',
+                      data: FileBytesData.constBytes([1, 2, 3]),
+                      providerOptions: _TestPromptPartOptions('tool-file-mode'),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ]),
+      );
+
+      final user = decoded[0] as UserPromptMessage;
+      final text = user.parts.single as TextPromptPart;
+      expect(
+        text.providerOptions,
+        isA<_TestPromptPartOptions>().having(
+          (options) => options.mode,
+          'mode',
+          'text-mode',
+        ),
+      );
+
+      final tool = decoded[1] as ToolPromptMessage;
+      final result = tool.parts.single as ToolResultPromptPart;
+      final output = result.toolOutput as ContentToolOutput;
+      final file = output.parts.single as FileToolOutputContentPart;
+      expect(
+        file.providerOptions,
+        isA<_TestPromptPartOptions>().having(
+          (options) => options.mode,
+          'mode',
+          'tool-file-mode',
+        ),
+      );
+    });
+
+    test('fails fast instead of dropping unregistered provider part options',
+        () {
+      const codec = PromptJsonCodec();
+
+      expect(
+        () => codec.encodeMessages([
+          UserPromptMessage(
+            parts: const [
+              TextPromptPart(
+                'Hello',
+                providerOptions: _TestPromptPartOptions('text-mode'),
+              ),
+            ],
+          ),
+        ]),
+        throwsUnsupportedError,
+      );
     });
 
     test('decodes legacy uri and bytes file JSON into FileData', () {
@@ -721,4 +805,37 @@ void main() {
       expect(tool.isDynamic, isTrue);
     });
   });
+}
+
+final class _TestPromptPartOptions implements ProviderPromptPartOptions {
+  final String mode;
+
+  const _TestPromptPartOptions(this.mode);
+}
+
+final class _TestPromptPartOptionsJsonCodec
+    implements ProviderPromptPartOptionsJsonCodec<_TestPromptPartOptions> {
+  static const typeId = 'test.promptPartOptions';
+
+  const _TestPromptPartOptionsJsonCodec();
+
+  @override
+  String get type => typeId;
+
+  @override
+  bool canEncode(ProviderPromptPartOptions options) =>
+      options is _TestPromptPartOptions;
+
+  @override
+  JsonMap encode(ProviderPromptPartOptions options) {
+    final typed = options as _TestPromptPartOptions;
+    return {'mode': typed.mode};
+  }
+
+  @override
+  _TestPromptPartOptions decode(JsonMap json) {
+    return _TestPromptPartOptions(
+      asJsonString(json['mode'], path: r'$.data.mode'),
+    );
+  }
 }

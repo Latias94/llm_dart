@@ -42,5 +42,5 @@ abstract interface class ImageModel {
 
   String get modelId;
 
-  Future<ImageGenerationResult> generate(ImageGenerationRequest request);
+  Future<ImageGenerationResult> doGenerate(ImageGenerationRequest request);
 }
