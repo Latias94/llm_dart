@@ -94,14 +94,14 @@ final class _ToolApprovalDemoLanguageModel implements LanguageModel {
   String get modelId => 'demo-tool-approval';
 
   @override
-  Future<GenerateTextResult> generate(GenerateTextRequest request) {
+  Future<GenerateTextResult> doGenerate(GenerateTextRequest request) {
     throw UnimplementedError(
       'This demo focuses on stream-driven chat sessions.',
     );
   }
 
   @override
-  Stream<TextStreamEvent> stream(GenerateTextRequest request) async* {
+  Stream<TextStreamEvent> doStream(GenerateTextRequest request) async* {
     final approvalResponse = _findApprovalResponse(request.prompt);
     final localToolResult = _findLocalToolResult(request.prompt);
     final latestUserText = _latestUserText(request.prompt);

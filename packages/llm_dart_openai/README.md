@@ -28,8 +28,8 @@ Use this package when you want:
   OpenRouter options, DeepSeek options, and xAI options
 - provider-owned image editing through `OpenAIImageModel.edit(...)` and
   `OpenAIImageEditRequest`
-- provider-native built-in tools, response formats, custom parts, and UI
-  mapping through `OpenAIMessageMapper`
+- provider-native built-in tools, response formats, and custom content/event
+  parts through `OpenAICustomPart`
 - model-centric capability discovery through `describeOpenAIChatModel(...)`
 
 If you prefer the convenience root package, the same focused entrypoint is
@@ -59,8 +59,9 @@ provider-owned lifecycle APIs directly.
    `generateImage(...)`, `generateSpeech(...)`, and `transcribe(...)`.
 3. Add OpenAI-family behavior through model settings or
    `CallOptions.providerOptions`, not by widening the shared request shape.
-4. Use `OpenAIMessageMapper` only when the UI needs OpenAI-specific metadata on
-   top of the shared `ChatMessageMapper`.
+4. Keep UI projection on `llm_dart_ai` / `llm_dart_chat`; use
+   `OpenAICustomPart` and `OpenAICustomPartSummary` on provider content parts
+   or stream events before UI projection.
 5. Drop to the root compatibility surfaces only when you truly need assistant
    lifecycle APIs, raw Responses CRUD/lifecycle APIs, or other legacy
    migration-era flows outside this package's modern boundary.
@@ -240,12 +241,11 @@ Future<void> main() async {
 }
 ```
 
-## UI Mapping And Capability Discovery
+## Custom Parts And Capability Discovery
 
-- `OpenAIMessageMapper` composes provider-owned metadata with the shared UI
-  model.
 - `OpenAICustomPart` and `OpenAICustomPartSummary` help render provider-owned
-  replay payloads without widening shared UI types.
+  replay payloads without widening shared provider contracts or shared UI
+  types.
 - `describeOpenAIChatModel(...)` returns a `ModelCapabilityProfile` for app or
   Flutter capability gating.
 - `describeOpenAIImageModel(...)` does the same for OpenAI-family image models,

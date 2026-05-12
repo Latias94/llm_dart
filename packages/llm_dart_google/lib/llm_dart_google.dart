@@ -9,7 +9,6 @@ export 'src/google_function_response_replay.dart';
 export 'src/google_image_model.dart';
 export 'src/google_image_editing.dart';
 export 'src/google_language_model.dart';
-export 'src/google_message_mapper.dart';
 export 'src/google_model_describer.dart';
 export 'src/google_options.dart';
 export 'src/google_response_format.dart';

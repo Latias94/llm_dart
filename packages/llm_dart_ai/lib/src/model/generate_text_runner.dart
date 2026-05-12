@@ -76,7 +76,7 @@ final class GenerateTextRunner {
         );
         await onStepStart?.call(stepStartEvent);
 
-        final result = await model.generate(request);
+        final result = await model.doGenerate(request);
         final step = GenerateTextStepResult(
           stepNumber: stepNumber,
           providerId: model.providerId,

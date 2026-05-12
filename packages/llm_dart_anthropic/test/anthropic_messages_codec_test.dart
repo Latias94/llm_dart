@@ -435,6 +435,36 @@ void main() {
       );
     });
 
+    test('maps shared reasoning budget to extended thinking', () {
+      final request = codec.encodeRequest(
+        modelId: 'claude-sonnet-4-5',
+        prompt: [
+          UserPromptMessage.text('Think with a budget.'),
+        ],
+        tools: const [],
+        toolChoice: null,
+        options: const GenerateTextOptions(
+          maxOutputTokens: 100,
+          reasoning: GenerateTextReasoningOptions.enabled(
+            budgetTokens: 2048,
+          ),
+        ),
+        settings: const AnthropicChatModelSettings(),
+        providerOptions: const AnthropicGenerateTextOptions(),
+        stream: false,
+      );
+
+      expect(request.body['max_tokens'], 2148);
+      expect(
+        request.body['thinking'],
+        {
+          'type': 'enabled',
+          'budget_tokens': 2048,
+        },
+      );
+      expect(request.warnings, isEmpty);
+    });
+
     test('rejects forced tool choice when extended thinking is enabled', () {
       expect(
         () => codec.encodeRequest(

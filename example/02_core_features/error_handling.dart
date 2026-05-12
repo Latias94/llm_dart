@@ -354,7 +354,7 @@ final class _StaticTextLanguageModel implements core.LanguageModel {
   String get modelId => 'static-text';
 
   @override
-  Future<core.GenerateTextResult> generate(core.GenerateTextRequest request) {
+  Future<core.GenerateTextResult> doGenerate(core.GenerateTextRequest request) {
     return Future.value(
       core.GenerateTextResult(
         content: [
@@ -366,7 +366,7 @@ final class _StaticTextLanguageModel implements core.LanguageModel {
   }
 
   @override
-  Stream<core.TextStreamEvent> stream(core.GenerateTextRequest request) {
+  Stream<core.TextStreamEvent> doStream(core.GenerateTextRequest request) {
     return const Stream.empty();
   }
 }
@@ -391,7 +391,7 @@ final class _FlakyLanguageModel implements core.LanguageModel {
   String get modelId => 'flaky-model';
 
   @override
-  Future<core.GenerateTextResult> generate(core.GenerateTextRequest request) {
+  Future<core.GenerateTextResult> doGenerate(core.GenerateTextRequest request) {
     _attempts += 1;
     if (_attempts <= failuresBeforeSuccess) {
       throw failureFactory();
@@ -408,7 +408,7 @@ final class _FlakyLanguageModel implements core.LanguageModel {
   }
 
   @override
-  Stream<core.TextStreamEvent> stream(core.GenerateTextRequest request) {
+  Stream<core.TextStreamEvent> doStream(core.GenerateTextRequest request) {
     return const Stream.empty();
   }
 }

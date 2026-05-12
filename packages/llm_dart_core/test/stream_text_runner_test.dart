@@ -371,14 +371,14 @@ final class _RecordingStreamLanguageModel implements LanguageModel {
   String get providerId => 'test';
 
   @override
-  Future<GenerateTextResult> generate(GenerateTextRequest request) {
+  Future<GenerateTextResult> doGenerate(GenerateTextRequest request) {
     requests.add(request);
     throw UnimplementedError(
         'generate(...) is not used in stream runner tests.');
   }
 
   @override
-  Stream<TextStreamEvent> stream(GenerateTextRequest request) async* {
+  Stream<TextStreamEvent> doStream(GenerateTextRequest request) async* {
     requests.add(request);
     if (_steps.isEmpty) {
       throw StateError('No more fake step streams configured.');

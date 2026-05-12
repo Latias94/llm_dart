@@ -115,7 +115,7 @@ void main() {}
       );
     });
 
-    test('reports deprecated ai helper usage in default examples', () async {
+    test('reports removed ai helper usage in default examples', () async {
       final repoRoot = await _createTempWorkspace();
       addTearDown(() async {
         if (repoRoot.existsSync()) {
@@ -138,7 +138,7 @@ void main() {
       );
 
       expect(result.passed, isFalse);
-      expect(result.violations, contains(contains('deprecated ai() helper')));
+      expect(result.violations, contains(contains('removed ai() helper')));
     });
 
     test('reports grouped AI facade usage in default examples', () async {

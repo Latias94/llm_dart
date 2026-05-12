@@ -1,5 +1,5 @@
-import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -58,9 +58,9 @@ void main() {
       expect(partial.decodeImageBytes(), [1, 2, 3]);
     });
 
-    test('parses mcp_list_tools ui parts', () {
-      final parsed = OpenAICustomPart.tryParseUiPart(
-        CustomUiPart(
+    test('parses mcp_list_tools content parts', () {
+      final parsed = OpenAICustomPart.tryParseContentPart(
+        CustomContentPart(
           kind: OpenAIMcpListToolsCustomPart.customKind,
           data: {
             'id': 'mcp_tools_1',

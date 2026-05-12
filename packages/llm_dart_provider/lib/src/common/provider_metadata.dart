@@ -1,5 +1,11 @@
 import 'json_codec_common.dart';
 
+/// Provider-owned output metadata.
+///
+/// `ProviderMetadata` is reserved for provider observations, raw response
+/// details, streamed replay hints, and provider continuation data that came
+/// from a model result. Input-side request customization belongs in typed
+/// `ProviderInvocationOptions` passed through `CallOptions.providerOptions`.
 final class ProviderMetadata {
   static final RegExp _namespaceKeyPattern = RegExp(
     r'^[a-z0-9]+(?:[._-][a-z0-9]+)*$',

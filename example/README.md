@@ -11,11 +11,10 @@ JSON as a first-class app result, prefer `generateObject(...)` and
 `streamObject(...)` over the lower-level structured-output helpers.
 
 For shared chat UI projection, keep `ChatMessageMapper` on
-`package:llm_dart/core.dart`. When the UI also needs provider-owned metadata or
-custom-part inspection, prefer provider-owned composed helpers such as
-`OpenAIMessageMapper().mapComposed(...)` and
-`GoogleMessageMapper().mapComposed(...)` instead of stitching two mapper passes
-manually.
+`package:llm_dart/core.dart`. When the UI also needs provider-owned metadata,
+inspect `ProviderMetadata` namespaces in app UI code. Provider custom-part
+helpers such as `OpenAICustomPart` and `GoogleCustomPart` operate on provider
+content parts and stream events rather than UI parts.
 
 Recommended default route:
 

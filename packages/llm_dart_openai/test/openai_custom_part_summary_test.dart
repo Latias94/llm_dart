@@ -1,5 +1,5 @@
-import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -26,8 +26,8 @@ void main() {
     });
 
     test('summarizes MCP tool discovery payloads', () {
-      final summary = OpenAICustomPartSummary.tryParseUiPart(
-        CustomUiPart(
+      final summary = OpenAICustomPartSummary.tryParseContentPart(
+        CustomContentPart(
           kind: OpenAIMcpListToolsCustomPart.customKind,
           data: {
             'server_label': 'zip1',

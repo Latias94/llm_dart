@@ -87,6 +87,84 @@ dependencies:
         ),
       );
     });
+
+    test('reports user-facing language model method names in package lib code',
+        () async {
+      final repoRoot = await _createTempWorkspace();
+      addTearDown(() async {
+        if (repoRoot.existsSync()) {
+          await repoRoot.delete(recursive: true);
+        }
+      });
+
+      await _writeFile(
+        repoRoot,
+        'packages/llm_dart_openai/lib/src/bad_language_model.dart',
+        '''
+import 'package:llm_dart_provider/llm_dart_provider.dart';
+
+final class BadLanguageModel {
+  Future<GenerateTextResult> generate(GenerateTextRequest request) async {
+    throw UnimplementedError();
+  }
+
+  Stream<TextStreamEvent> stream(GenerateTextRequest request) async* {}
+}
+''',
+      );
+
+      final result = await guard.evaluateWorkspaceDependencyGuards(
+        repoRoot: repoRoot,
+      );
+
+      expect(result.passed, isFalse);
+      expect(
+        result.violations,
+        contains(
+          contains('LanguageModel provider contracts must use doGenerate'),
+        ),
+      );
+      expect(
+        result.violations,
+        contains(
+          contains('LanguageModel provider contracts must use doStream'),
+        ),
+      );
+    });
+
+    test('reports chat and UI projection ownership in provider specs',
+        () async {
+      final repoRoot = await _createTempWorkspace();
+      addTearDown(() async {
+        if (repoRoot.existsSync()) {
+          await repoRoot.delete(recursive: true);
+        }
+      });
+
+      await _writeFile(
+        repoRoot,
+        'packages/llm_dart_provider/lib/src/bad_ui_projection.dart',
+        '''
+final class CustomUiPart {}
+
+final class BadMapper {
+  void use(ChatUiMessage message) {}
+}
+''',
+      );
+
+      final result = await guard.evaluateWorkspaceDependencyGuards(
+        repoRoot: repoRoot,
+      );
+
+      expect(result.passed, isFalse);
+      expect(
+        result.violations,
+        contains(
+          contains('llm_dart_provider must not own chat/UI projection'),
+        ),
+      );
+    });
   });
 }
 
@@ -139,6 +217,11 @@ dependencies:
     '''
 name: llm_dart_provider
 ''',
+  );
+  await _writeFile(
+    repoRoot,
+    'packages/llm_dart_provider/lib/llm_dart_provider.dart',
+    'library;\n',
   );
   await _writeFile(
     repoRoot,

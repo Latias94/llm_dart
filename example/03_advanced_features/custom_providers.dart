@@ -236,7 +236,7 @@ final class MockLanguageModel implements core.LanguageModel {
   String get modelId => 'mock-chat-model';
 
   @override
-  Future<core.GenerateTextResult> generate(
+  Future<core.GenerateTextResult> doGenerate(
     core.GenerateTextRequest request,
   ) async {
     await Future<void>.delayed(const Duration(milliseconds: 120));
@@ -257,7 +257,7 @@ final class MockLanguageModel implements core.LanguageModel {
   }
 
   @override
-  Stream<core.TextStreamEvent> stream(
+  Stream<core.TextStreamEvent> doStream(
     core.GenerateTextRequest request,
   ) async* {
     final text = _responseForPrompt(_promptText(request.prompt));
@@ -300,7 +300,7 @@ final class LoggingLanguageModel implements core.LanguageModel {
   String get modelId => _baseModel.modelId;
 
   @override
-  Future<core.GenerateTextResult> generate(
+  Future<core.GenerateTextResult> doGenerate(
     core.GenerateTextRequest request,
   ) async {
     final stopwatch = Stopwatch()..start();
@@ -310,7 +310,7 @@ final class LoggingLanguageModel implements core.LanguageModel {
     );
 
     try {
-      final result = await _baseModel.generate(request);
+      final result = await _baseModel.doGenerate(request);
       stopwatch.stop();
       _logSink(
         '  [log] generate done ${stopwatch.elapsedMilliseconds}ms '
@@ -327,12 +327,12 @@ final class LoggingLanguageModel implements core.LanguageModel {
   }
 
   @override
-  Stream<core.TextStreamEvent> stream(
+  Stream<core.TextStreamEvent> doStream(
     core.GenerateTextRequest request,
   ) async* {
     _logSink('  [log] stream start provider=$providerId model=$modelId');
 
-    await for (final event in _baseModel.stream(request)) {
+    await for (final event in _baseModel.doStream(request)) {
       switch (event) {
         case core.TextDeltaEvent():
           _logSink('  [log] stream text delta');
@@ -366,7 +366,7 @@ final class CachingLanguageModel implements core.LanguageModel {
   String get modelId => _baseModel.modelId;
 
   @override
-  Future<core.GenerateTextResult> generate(
+  Future<core.GenerateTextResult> doGenerate(
     core.GenerateTextRequest request,
   ) async {
     final cacheKey = _cacheKey(request);
@@ -377,13 +377,13 @@ final class CachingLanguageModel implements core.LanguageModel {
     }
 
     _logSink?.call('  [cache] miss for "$cacheKey"');
-    final result = await _baseModel.generate(request);
+    final result = await _baseModel.doGenerate(request);
     _cache[cacheKey] = result;
     return result;
   }
 
   @override
-  Stream<core.TextStreamEvent> stream(
+  Stream<core.TextStreamEvent> doStream(
     core.GenerateTextRequest request,
   ) async* {
     final cacheKey = _cacheKey(request);
@@ -406,7 +406,7 @@ final class CachingLanguageModel implements core.LanguageModel {
       return;
     }
 
-    yield* _baseModel.stream(request);
+    yield* _baseModel.doStream(request);
   }
 
   String _cacheKey(core.GenerateTextRequest request) {
@@ -435,7 +435,7 @@ final class CustomApiLanguageModel implements core.LanguageModel {
   String get providerId => 'custom-api';
 
   @override
-  Future<core.GenerateTextResult> generate(
+  Future<core.GenerateTextResult> doGenerate(
     core.GenerateTextRequest request,
   ) async {
     await Future<void>.delayed(const Duration(milliseconds: 220));
@@ -458,10 +458,10 @@ final class CustomApiLanguageModel implements core.LanguageModel {
   }
 
   @override
-  Stream<core.TextStreamEvent> stream(
+  Stream<core.TextStreamEvent> doStream(
     core.GenerateTextRequest request,
   ) async* {
-    final result = await generate(request);
+    final result = await doGenerate(request);
     yield core.StartEvent();
     yield const core.TextStartEvent(id: 'custom-text');
     yield core.TextDeltaEvent(

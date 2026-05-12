@@ -130,14 +130,14 @@ final class _DemoWeatherLanguageModel implements LanguageModel {
   String get modelId => 'demo-weather';
 
   @override
-  Future<GenerateTextResult> generate(GenerateTextRequest request) {
+  Future<GenerateTextResult> doGenerate(GenerateTextRequest request) {
     throw UnimplementedError(
       'This example focuses on stream-driven chat sessions.',
     );
   }
 
   @override
-  Stream<TextStreamEvent> stream(GenerateTextRequest request) async* {
+  Stream<TextStreamEvent> doStream(GenerateTextRequest request) async* {
     yield StartEvent();
 
     ToolPromptMessage? toolMessage;

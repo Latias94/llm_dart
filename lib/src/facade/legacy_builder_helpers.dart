@@ -1,16 +1,6 @@
 import '../../builder/llm_builder.dart';
 import '../../core/capability.dart';
 
-/// Create a new LLM builder instance.
-///
-/// This is the compatibility entry point for builder-era provider creation.
-@Deprecated(
-  'ai() is a legacy builder alias. Prefer short provider factories such as '
-  'openai(...).chatModel(...) for new code, or LLMBuilder() when you still '
-  'need the compatibility builder surface.',
-)
-LLMBuilder ai() => LLMBuilder();
-
 /// Create a provider with the given configuration.
 ///
 /// This convenience helper remains available for compatibility-oriented code.

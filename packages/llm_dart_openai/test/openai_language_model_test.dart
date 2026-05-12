@@ -65,12 +65,17 @@ void main() {
         ),
       ).chatModel('gpt-4.1-mini');
 
-      final result = await model.generate(
+      final result = await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             SystemPromptMessage.text('You are concise.'),
             UserPromptMessage.text('Say hello.'),
           ],
+          options: const GenerateTextOptions(
+            presencePenalty: 0.1,
+            frequencyPenalty: 0.2,
+            seed: 1234,
+          ),
           callOptions: CallOptions(
             timeout: const Duration(seconds: 5),
             headers: const {
@@ -93,6 +98,9 @@ void main() {
       final requestBody = capturedRequest!.body as Map<String, Object?>;
       expect(requestBody['model'], 'gpt-4.1-mini');
       expect(requestBody['stream'], isFalse);
+      expect(requestBody.containsKey('presence_penalty'), isFalse);
+      expect(requestBody.containsKey('frequency_penalty'), isFalse);
+      expect(requestBody.containsKey('seed'), isFalse);
 
       expect(result.text, 'Hello from OpenAI.');
       expect(result.reasoningText, 'Thinking through the answer.');
@@ -105,6 +113,14 @@ void main() {
         DateTime.fromMillisecondsSinceEpoch(1710000000 * 1000, isUtc: true),
       );
       expect(result.usage?.reasoningTokens, 3);
+      expect(
+        result.warnings.map((warning) => warning.field),
+        containsAll([
+          'options.presencePenalty',
+          'options.frequencyPenalty',
+          'options.seed',
+        ]),
+      );
       expect(
         result.providerMetadata!['openai'],
         allOf(
@@ -159,7 +175,7 @@ void main() {
         ),
       ).chatModel('gpt-4.1-mini');
 
-      await model.generate(
+      await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage(
@@ -252,7 +268,7 @@ void main() {
         ),
       ).chatModel('gpt-4.1-mini');
 
-      await model.generate(
+      await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage(
@@ -359,7 +375,7 @@ void main() {
         ),
       ).chatModel('gpt-4.1-mini');
 
-      await model.generate(
+      await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage.text('Use tools and return JSON.'),
@@ -517,7 +533,7 @@ void main() {
         ),
       );
 
-      await model.generate(
+      await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage.text('Create an image.'),
@@ -596,7 +612,7 @@ void main() {
         ),
       );
 
-      await model.generate(
+      await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage.text('Create an image instead of searching.'),
@@ -693,7 +709,7 @@ void main() {
         ),
       ).chatModel('gpt-4.1-mini');
 
-      await model.generate(
+      await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage.text('Use the MCP short-link server.'),
@@ -810,7 +826,7 @@ void main() {
         ),
       ).chatModel('gpt-4.1-mini');
 
-      await model.generate(
+      await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage.text('Use code interpreter with uploaded files.'),
@@ -890,7 +906,7 @@ void main() {
         ),
       ).chatModel('gpt-4.1-mini');
 
-      await model.generate(
+      final result = await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage.text('Use provider-owned request options.'),
@@ -947,6 +963,11 @@ void main() {
       expect(requestBody['prompt_cache_key'], 'cache_key_123');
       expect(requestBody['prompt_cache_retention'], '24h');
       expect(requestBody['safety_identifier'], 'safe_user_123');
+
+      final responseMetadata = result.providerMetadata!.namespace('openai')!;
+      expect(responseMetadata, containsPair('status', 'completed'));
+      expect(responseMetadata, isNot(containsPair('traceId', 'trace_123')));
+      expect(responseMetadata, isNot(containsPair('metadata', anything)));
     });
 
     test(
@@ -995,7 +1016,7 @@ void main() {
         ),
       ).chatModel('gpt-4.1-mini');
 
-      final result = await model.generate(
+      final result = await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage.text('Continue the conversation.'),
@@ -1072,7 +1093,7 @@ void main() {
         ),
       ).chatModel('gpt-5.4');
 
-      final result = await model.generate(
+      final result = await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             SystemPromptMessage.text('Think carefully.'),
@@ -1149,7 +1170,7 @@ void main() {
         ),
       ).chatModel('gpt-4.1-mini');
 
-      final result = await model.generate(
+      final result = await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             SystemPromptMessage.text('Think carefully.'),
@@ -1237,7 +1258,7 @@ void main() {
         ),
       ).chatModel('o4-mini');
 
-      final result = await model.generate(
+      final result = await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage.text('Say done.'),
@@ -1329,7 +1350,7 @@ void main() {
         ),
       ).chatModel('stealth-reasoning-model');
 
-      final result = await model.generate(
+      final result = await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             SystemPromptMessage.text('Think carefully.'),
@@ -1439,7 +1460,7 @@ void main() {
         ),
       ).chatModel('gpt-5.4');
 
-      final result = await model.generate(
+      final result = await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage.text('Say done.'),
@@ -1515,7 +1536,7 @@ void main() {
         ),
       ).chatModel('gpt-4.1-mini');
 
-      final result = await model.generate(
+      final result = await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage.text('Say done.'),
@@ -1589,7 +1610,7 @@ void main() {
         ),
       ).chatModel('gpt-4o-mini');
 
-      final result = await model.generate(
+      final result = await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage.text('Say done.'),
@@ -1664,7 +1685,7 @@ void main() {
         ),
       ).chatModel('gpt-4.1-mini');
 
-      await model.generate(
+      await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage.text('Return JSON.'),
@@ -1754,7 +1775,7 @@ void main() {
         ),
       ).chatModel('gpt-4.1-mini');
 
-      await model.generate(
+      await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage.text('Return JSON.'),
@@ -1920,7 +1941,7 @@ void main() {
         ),
       ).chatModel('gpt-4.1-mini');
 
-      final result = await model.generate(
+      final result = await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage.text('Say hello.'),
@@ -1973,7 +1994,7 @@ void main() {
       ).chatModel('gpt-4.1-mini');
 
       await expectLater(
-        model.generate(
+        model.doGenerate(
           GenerateTextRequest(
             prompt: [
               UserPromptMessage.text('Return JSON.'),
@@ -2070,7 +2091,7 @@ void main() {
         ),
       ).chatModel('gpt-4.1-mini');
 
-      final result = await model.generate(
+      final result = await model.doGenerate(
         GenerateTextRequest(
           prompt: [UserPromptMessage.text('Summarize the sources.')],
         ),
@@ -2146,7 +2167,7 @@ void main() {
         ),
       ).chatModel('gpt-4.1-mini');
 
-      final result = await model.generate(
+      final result = await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage.text('Say hello.'),
@@ -2195,11 +2216,14 @@ void main() {
       ).chatModel('gpt-4.1-mini');
 
       final events = await model
-          .stream(
+          .doStream(
             GenerateTextRequest(
               prompt: [
                 UserPromptMessage.text('Say hello.'),
               ],
+              options: const GenerateTextOptions(
+                includeRawChunks: true,
+              ),
             ),
           )
           .toList();
@@ -2214,6 +2238,9 @@ void main() {
       expect(events.whereType<TextEndEvent>().single.id, 'msg_1');
       expect(events.whereType<CustomEvent>().single.kind,
           'openai.web_search_call');
+      final rawChunks = events.whereType<RawChunkEvent>().toList();
+      expect(rawChunks, isNotEmpty);
+      expect(rawChunks.first.raw, containsPair('type', 'response.created'));
 
       final finish = events.whereType<FinishEvent>().single;
       expect(finish.finishReason, FinishReason.stop);
@@ -2332,7 +2359,7 @@ void main() {
       ).chatModel('gpt-4.1-mini');
 
       final events = await model
-          .stream(
+          .doStream(
             GenerateTextRequest(
               prompt: [
                 UserPromptMessage.text('Say hello.'),
@@ -2404,7 +2431,7 @@ void main() {
       ).chatModel('gpt-4.1-mini');
 
       final events = await model
-          .stream(
+          .doStream(
             GenerateTextRequest(
               prompt: [
                 UserPromptMessage.text('Summarize the annotated sources.'),
@@ -2472,7 +2499,7 @@ void main() {
       ).chatModel('gpt-4.1-mini');
 
       final events = await model
-          .stream(
+          .doStream(
             GenerateTextRequest(
               prompt: [
                 UserPromptMessage.text('Think before you answer.'),
@@ -2528,7 +2555,7 @@ void main() {
       ).chatModel('gpt-4.1-mini');
 
       final events = await model
-          .stream(
+          .doStream(
             GenerateTextRequest(
               prompt: [
                 UserPromptMessage.text('Open the short URL tool.'),
@@ -2586,7 +2613,7 @@ void main() {
       ).chatModel('gpt-4.1-mini');
 
       final events = await model
-          .stream(
+          .doStream(
             GenerateTextRequest(
               prompt: [
                 UserPromptMessage.text('Call the weather tool.'),
@@ -2636,7 +2663,7 @@ void main() {
       ).chatModel('gpt-4.1-mini');
 
       final events = await model
-          .stream(
+          .doStream(
             GenerateTextRequest(
               prompt: [
                 UserPromptMessage.text('Trigger a failure.'),
@@ -2693,7 +2720,7 @@ void main() {
       ).chatModel('gpt-4.1-mini');
 
       final events = await model
-          .stream(
+          .doStream(
             GenerateTextRequest(
               prompt: [
                 UserPromptMessage.text('Continue after approval.'),
@@ -2758,7 +2785,7 @@ void main() {
         ),
       ).chatModel('gpt-4.1-mini');
 
-      final result = await model.generate(
+      final result = await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage.text('Open the short URL tool.'),
@@ -2826,7 +2853,7 @@ void main() {
         ),
       ).chatModel('gpt-4.1-mini');
 
-      final result = await model.generate(
+      final result = await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage.text('Continue after approval.'),
@@ -2905,7 +2932,7 @@ void main() {
         ),
       ).chatModel('gpt-4.1-mini');
 
-      await model.generate(
+      await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage.text('Approve the MCP tool.'),

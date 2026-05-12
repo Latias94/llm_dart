@@ -47,7 +47,7 @@ final class OllamaLanguageModel
       );
 
   @override
-  Future<GenerateTextResult> generate(GenerateTextRequest request) async {
+  Future<GenerateTextResult> doGenerate(GenerateTextRequest request) async {
     final preparedRequest = await _prepareRequest(request, stream: false);
     final response = await transport.send(
       TransportRequest(
@@ -75,7 +75,7 @@ final class OllamaLanguageModel
   }
 
   @override
-  Stream<TextStreamEvent> stream(GenerateTextRequest request) async* {
+  Stream<TextStreamEvent> doStream(GenerateTextRequest request) async* {
     final preparedRequest = await _prepareRequest(request, stream: true);
     yield StartEvent(warnings: preparedRequest.warnings);
 
@@ -101,14 +101,22 @@ final class OllamaLanguageModel
       await for (final chunk in response.stream) {
         final decoded = utf8Decoder.decode(chunk);
         if (decoded.isEmpty) continue;
-        for (final event in _decodeStreamText(decoded, state)) {
+        for (final event in _decodeStreamText(
+          decoded,
+          state,
+          includeRawChunks: request.options.includeRawChunks,
+        )) {
           yield event;
         }
       }
 
       final remaining = utf8Decoder.flush();
       if (remaining.isNotEmpty) {
-        for (final event in _decodeStreamText('$remaining\n', state)) {
+        for (final event in _decodeStreamText(
+          '$remaining\n',
+          state,
+          includeRawChunks: request.options.includeRawChunks,
+        )) {
           yield event;
         }
       }
@@ -116,13 +124,14 @@ final class OllamaLanguageModel
       final pendingLine = state.buffer.toString().trim();
       if (pendingLine.isNotEmpty) {
         state.buffer.clear();
-        for (final event in _decodeStreamJsonChunk(
-          decodeOllamaJsonObject(
-            pendingLine,
-            responseName: 'stream chunk',
-          ),
-          state,
-        )) {
+        final json = decodeOllamaJsonObject(
+          pendingLine,
+          responseName: 'stream chunk',
+        );
+        if (request.options.includeRawChunks) {
+          yield RawChunkEvent(json);
+        }
+        for (final event in _decodeStreamJsonChunk(json, state)) {
           yield event;
         }
       }
@@ -142,6 +151,25 @@ final class OllamaLanguageModel
 
     final warnings = <ModelWarning>[];
     final providerOptions = _resolveProviderOptions(request);
+    final sharedReasoning = _resolveSharedReasoning(
+      request.options.reasoning,
+      warnings: warnings,
+    );
+    final effectiveReasoning = providerOptions?.reasoning ?? sharedReasoning;
+    if (providerOptions?.reasoning != null && sharedReasoning != null) {
+      warnings.add(
+        const ModelWarning(
+          type: ModelWarningType.compatibility,
+          field: 'options.reasoning',
+          message:
+              'Ollama providerOptions.reasoning overrides shared options.reasoning.',
+        ),
+      );
+    }
+    _warnUnsupportedSharedOptions(
+      request.options,
+      warnings: warnings,
+    );
     final responseFormat = _resolveResponseFormat(
       request.options.responseFormat,
       warnings: warnings,
@@ -171,6 +199,7 @@ final class OllamaLanguageModel
       if (request.options.topK != null) 'top_k': request.options.topK,
       if (request.options.maxOutputTokens != null)
         'num_predict': request.options.maxOutputTokens,
+      if (request.options.seed != null) 'seed': request.options.seed,
       if (request.options.stopSequences case final stopSequences?
           when stopSequences.isNotEmpty)
         'stop': stopSequences,
@@ -194,11 +223,70 @@ final class OllamaLanguageModel
         if (providerOptions?.keepAlive case final keepAlive?)
           'keep_alive': keepAlive,
         if (providerOptions?.raw case final raw?) 'raw': raw,
-        if (providerOptions?.reasoning case final reasoning?)
-          'think': reasoning,
+        if (effectiveReasoning case final reasoning?) 'think': reasoning,
       },
       warnings: warnings,
     );
+  }
+
+  bool? _resolveSharedReasoning(
+    GenerateTextReasoningOptions? reasoning, {
+    required List<ModelWarning> warnings,
+  }) {
+    if (reasoning == null) {
+      return null;
+    }
+
+    if (reasoning.effort != null) {
+      warnings.add(
+        const ModelWarning(
+          type: ModelWarningType.unsupported,
+          field: 'options.reasoning.effort',
+          message:
+              'Ollama reasoning is a provider toggle; shared reasoning.effort is ignored.',
+        ),
+      );
+    }
+
+    if (reasoning.budgetTokens != null) {
+      warnings.add(
+        const ModelWarning(
+          type: ModelWarningType.unsupported,
+          field: 'options.reasoning.budgetTokens',
+          message:
+              'Ollama reasoning is a provider toggle; shared reasoning.budgetTokens is ignored.',
+        ),
+      );
+    }
+
+    return reasoning.enabled;
+  }
+
+  void _warnUnsupportedSharedOptions(
+    GenerateTextOptions options, {
+    required List<ModelWarning> warnings,
+  }) {
+    if (options.frequencyPenalty != null) {
+      warnings.add(
+        const ModelWarning(
+          type: ModelWarningType.unsupported,
+          field: 'options.frequencyPenalty',
+          message:
+              'Ollama does not support shared frequencyPenalty; use provider-native sampling options when needed.',
+        ),
+      );
+    }
+
+    if (options.presencePenalty != null) {
+      warnings.add(
+        const ModelWarning(
+          type: ModelWarningType.unsupported,
+          field: 'options.presencePenalty',
+          message:
+              'Ollama does not support shared presencePenalty; use provider-native sampling options when needed.',
+        ),
+      );
+    }
   }
 
   OllamaGenerateTextOptions? _resolveProviderOptions(
@@ -518,8 +606,9 @@ final class OllamaLanguageModel
 
   Iterable<TextStreamEvent> _decodeStreamText(
     String chunk,
-    _OllamaStreamState state,
-  ) sync* {
+    _OllamaStreamState state, {
+    required bool includeRawChunks,
+  }) sync* {
     state.buffer.write(chunk);
     final buffered = state.buffer.toString();
     final lines = buffered.split('\n');
@@ -530,13 +619,14 @@ final class OllamaLanguageModel
     for (final line in lines) {
       final trimmed = line.trim();
       if (trimmed.isEmpty) continue;
-      yield* _decodeStreamJsonChunk(
-        decodeOllamaJsonObject(
-          trimmed,
-          responseName: 'stream chunk',
-        ),
-        state,
+      final json = decodeOllamaJsonObject(
+        trimmed,
+        responseName: 'stream chunk',
       );
+      if (includeRawChunks) {
+        yield RawChunkEvent(json);
+      }
+      yield* _decodeStreamJsonChunk(json, state);
     }
   }
 

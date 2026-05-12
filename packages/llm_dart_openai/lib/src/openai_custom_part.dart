@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 sealed class OpenAICustomPart {
   const OpenAICustomPart();
@@ -33,18 +33,6 @@ sealed class OpenAICustomPart {
     };
   }
 
-  static OpenAICustomPart? tryParseUiPart(ChatUiPart part) {
-    return switch (part) {
-      CustomUiPart(:final kind, :final data, :final providerMetadata) =>
-        _parseCustomPayload(
-          kind: kind,
-          data: data,
-          providerMetadata: providerMetadata,
-        ),
-      _ => null,
-    };
-  }
-
   static OpenAICustomPart? tryParseEvent(TextStreamEvent event) {
     return switch (event) {
       CustomEvent(:final kind, :final data, :final providerMetadata) =>
@@ -63,10 +51,6 @@ sealed class OpenAICustomPart {
 
   static List<OpenAICustomPart> parseContentParts(Iterable<ContentPart> parts) {
     return parseTypedParts(parts, tryParseContentPart);
-  }
-
-  static List<OpenAICustomPart> parseUiParts(Iterable<ChatUiPart> parts) {
-    return parseTypedParts(parts, tryParseUiPart);
   }
 
   static List<OpenAICustomPart> parseEvents(Iterable<TextStreamEvent> events) {

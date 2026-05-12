@@ -12,7 +12,7 @@ final class DirectChatTransport implements ChatTransport {
   @override
   Stream<ChatUiStreamChunk> sendMessages(ChatTransportRequest request) {
     return model
-        .stream(
+        .doStream(
           GenerateTextRequest(
             prompt: request.prompt,
             options: request.options.generateOptions,

@@ -449,12 +449,12 @@ final class _UnusedLanguageModel implements core.LanguageModel {
   String get modelId => 'unused';
 
   @override
-  Future<core.GenerateTextResult> generate(core.GenerateTextRequest request) {
+  Future<core.GenerateTextResult> doGenerate(core.GenerateTextRequest request) {
     throw StateError('This model should never be called.');
   }
 
   @override
-  Stream<core.TextStreamEvent> stream(core.GenerateTextRequest request) {
+  Stream<core.TextStreamEvent> doStream(core.GenerateTextRequest request) {
     return const Stream.empty();
   }
 }

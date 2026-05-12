@@ -211,13 +211,13 @@ final class _RecordingLanguageModel implements LanguageModel {
   String get providerId => 'test';
 
   @override
-  Future<GenerateTextResult> generate(GenerateTextRequest request) async {
+  Future<GenerateTextResult> doGenerate(GenerateTextRequest request) async {
     lastRequest = request;
     return generateResult;
   }
 
   @override
-  Stream<TextStreamEvent> stream(GenerateTextRequest request) async* {
+  Stream<TextStreamEvent> doStream(GenerateTextRequest request) async* {
     lastRequest = request;
     yield* Stream<TextStreamEvent>.fromIterable(streamEvents);
   }

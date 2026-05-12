@@ -1,10 +1,10 @@
-import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'package:llm_dart_google/llm_dart_google.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:test/test.dart';
 
 void main() {
   group('GoogleCustomPart', () {
-    test('parses Google custom UI parts into typed wrappers', () {
+    test('parses Google custom content parts into typed wrappers', () {
       final toolCall = GoogleToolCallReplay.fromToolCall(
         {
           'id': 'srvtool_1',
@@ -46,11 +46,11 @@ void main() {
         ],
       );
 
-      final parsed = GoogleCustomPart.parseUiParts([
-        toolCall.toCustomUiPart(),
-        toolResponse.toCustomUiPart(),
-        functionResponse.toCustomUiPart(),
-        const CustomUiPart(
+      final parsed = GoogleCustomPart.parseContentParts([
+        toolCall.toCustomContentPart(),
+        toolResponse.toCustomContentPart(),
+        functionResponse.toCustomContentPart(),
+        const CustomContentPart(
           kind: 'openai.compaction',
           data: {
             'id': 'cmp_1',
@@ -142,8 +142,8 @@ void main() {
 
     test('returns null for non-Google custom payloads', () {
       expect(
-        GoogleCustomPart.tryParseUiPart(
-          const CustomUiPart(
+        GoogleCustomPart.tryParseContentPart(
+          const CustomContentPart(
             kind: 'openai.compaction',
             data: {
               'id': 'cmp_1',

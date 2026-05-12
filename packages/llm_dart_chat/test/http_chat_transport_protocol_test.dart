@@ -20,6 +20,15 @@ void main() {
             stopSequences: ['DONE'],
             topP: 0.9,
             topK: 40,
+            presencePenalty: 0.1,
+            frequencyPenalty: 0.2,
+            seed: 1234,
+            reasoning: GenerateTextReasoningOptions(
+              enabled: true,
+              effort: ReasoningEffort.high,
+              budgetTokens: 2048,
+            ),
+            includeRawChunks: true,
           ),
           callOptions: HttpChatTransportCallOptionsPayload(
             timeout: const Duration(seconds: 5),
@@ -48,6 +57,13 @@ void main() {
       expect(decoded.generateOptions.stopSequences, ['DONE']);
       expect(decoded.generateOptions.topP, 0.9);
       expect(decoded.generateOptions.topK, 40);
+      expect(decoded.generateOptions.presencePenalty, 0.1);
+      expect(decoded.generateOptions.frequencyPenalty, 0.2);
+      expect(decoded.generateOptions.seed, 1234);
+      expect(decoded.generateOptions.reasoning?.enabled, isTrue);
+      expect(decoded.generateOptions.reasoning?.effort, ReasoningEffort.high);
+      expect(decoded.generateOptions.reasoning?.budgetTokens, 2048);
+      expect(decoded.generateOptions.includeRawChunks, isTrue);
       expect(decoded.callOptions.timeout, const Duration(seconds: 5));
       expect(decoded.callOptions.headers, {
         'x-provider-trace': 'trace-1',

@@ -112,7 +112,9 @@ final class _EchoLanguageModel implements model.LanguageModel {
   String get providerId => 'test';
 
   @override
-  Future<model.GenerateTextResult> generate(model.GenerateTextRequest request) {
+  Future<model.GenerateTextResult> doGenerate(
+    model.GenerateTextRequest request,
+  ) {
     final promptText = request.prompt
         .whereType<model.UserPromptMessage>()
         .expand((message) => message.parts)
@@ -131,7 +133,7 @@ final class _EchoLanguageModel implements model.LanguageModel {
   }
 
   @override
-  Stream<model.TextStreamEvent> stream(model.GenerateTextRequest request) {
+  Stream<model.TextStreamEvent> doStream(model.GenerateTextRequest request) {
     return Stream<model.TextStreamEvent>.fromIterable([
       const model.TextStartEvent(id: 'text-1'),
       const model.TextDeltaEvent(id: 'text-1', delta: 'echo'),

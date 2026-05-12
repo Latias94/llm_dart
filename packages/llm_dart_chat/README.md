@@ -153,15 +153,15 @@ layer and is re-exported here for chat-runtime users that prefer to stay on a
 single package import path.
 
 If a pure Dart application also needs provider-owned inspection, compose the
-shared mapper with a provider package instead of widening `llm_dart_chat`
-itself:
+shared mapper with app-owned metadata inspection or provider custom-part
+helpers instead of widening `llm_dart_chat` itself:
 
 - `package:llm_dart_openai/llm_dart_openai.dart`
-  - `OpenAIMessageMapper` for response/item/source/tool metadata, custom parts,
-    logprobs-aware part inspection, and `mapComposed(...)`
+  - `OpenAICustomPart` and `OpenAICustomPartSummary` for provider-owned
+    content parts and stream events before UI projection
 - `package:llm_dart_google/llm_dart_google.dart`
-  - `GoogleMessageMapper` for thought signatures, response-part metadata,
-    source metadata, Google custom-part inspection, and `mapComposed(...)`
+  - `GoogleCustomPart` and `GoogleCustomPartSummary` for provider-owned custom
+    prompt/content parts and stream events before UI projection
 
 That keeps the runtime/session layer provider-neutral while still allowing rich
 provider-specific rendering where applications need it.

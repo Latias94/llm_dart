@@ -1,12 +1,11 @@
-import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'google_function_response_replay.dart';
 import 'google_server_tool_replay.dart';
 
 /// Provider-owned typed wrapper for Google custom replay payloads.
 ///
-/// This gives Flutter or other UI layers one parsing entrypoint for the
-/// provider-owned custom parts emitted by `llm_dart_google` without widening
-/// the shared `CustomUiPart` contract.
+/// This gives higher layers one parsing entrypoint for provider-owned custom
+/// parts emitted by `llm_dart_google` without depending on UI/runtime types.
 sealed class GoogleCustomPart {
   const GoogleCustomPart();
 
@@ -56,22 +55,6 @@ sealed class GoogleCustomPart {
     return null;
   }
 
-  static GoogleCustomPart? tryParseUiPart(ChatUiPart part) {
-    if (GoogleToolCallReplay.tryParseUiPart(part) case final replay?) {
-      return GoogleToolCallCustomPart(replay);
-    }
-
-    if (GoogleToolResponseReplay.tryParseUiPart(part) case final replay?) {
-      return GoogleToolResponseCustomPart(replay);
-    }
-
-    if (GoogleFunctionResponseReplay.tryParseUiPart(part) case final replay?) {
-      return GoogleFunctionResponseCustomPart(replay);
-    }
-
-    return null;
-  }
-
   static GoogleCustomPart? tryParseEvent(TextStreamEvent event) {
     if (GoogleToolCallReplay.tryParseEvent(event) case final replay?) {
       return GoogleToolCallCustomPart(replay);
@@ -94,10 +77,6 @@ sealed class GoogleCustomPart {
 
   static List<GoogleCustomPart> parseContentParts(Iterable<ContentPart> parts) {
     return parseTypedParts(parts, tryParseContentPart);
-  }
-
-  static List<GoogleCustomPart> parseUiParts(Iterable<ChatUiPart> parts) {
-    return parseTypedParts(parts, tryParseUiPart);
   }
 
   static List<GoogleCustomPart> parseEvents(Iterable<TextStreamEvent> events) {
@@ -134,12 +113,6 @@ final class GoogleToolCallCustomPart extends GoogleCustomPart {
     ProviderMetadata? providerMetadata,
   }) {
     return replay.toCustomContentPart(providerMetadata: providerMetadata);
-  }
-
-  CustomUiPart toCustomUiPart({
-    ProviderMetadata? providerMetadata,
-  }) {
-    return replay.toCustomUiPart(providerMetadata: providerMetadata);
   }
 
   CustomPromptPart toCustomPromptPart({
@@ -184,12 +157,6 @@ final class GoogleToolResponseCustomPart extends GoogleCustomPart {
     ProviderMetadata? providerMetadata,
   }) {
     return replay.toCustomContentPart(providerMetadata: providerMetadata);
-  }
-
-  CustomUiPart toCustomUiPart({
-    ProviderMetadata? providerMetadata,
-  }) {
-    return replay.toCustomUiPart(providerMetadata: providerMetadata);
   }
 
   CustomPromptPart toCustomPromptPart({
@@ -238,12 +205,6 @@ final class GoogleFunctionResponseCustomPart extends GoogleCustomPart {
     ProviderMetadata? providerMetadata,
   }) {
     return replay.toCustomContentPart(providerMetadata: providerMetadata);
-  }
-
-  CustomUiPart toCustomUiPart({
-    ProviderMetadata? providerMetadata,
-  }) {
-    return replay.toCustomUiPart(providerMetadata: providerMetadata);
   }
 
   CustomPromptPart toCustomPromptPart({

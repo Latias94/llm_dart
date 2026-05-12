@@ -4,6 +4,24 @@ final RegExp _rootPackageImportPattern = RegExp(
   r'''^\s*(import|export)\s+['"]package:llm_dart/[^'"]+['"]''',
 );
 
+final List<_ForbiddenLanguageModelMethodPattern>
+    _forbiddenLanguageModelMethodPatterns = [
+  _ForbiddenLanguageModelMethodPattern(
+    RegExp(r'\bFuture<GenerateTextResult>\s+generate\s*\('),
+    'LanguageModel provider contracts must use doGenerate(...) so user-facing '
+    'generation flows through llm_dart_ai.',
+  ),
+  _ForbiddenLanguageModelMethodPattern(
+    RegExp(r'\bStream<TextStreamEvent>\s+stream\s*\('),
+    'LanguageModel provider contracts must use doStream(...) so user-facing '
+    'streaming flows through llm_dart_ai.',
+  ),
+];
+
+final RegExp _providerSpecificationUiLayerPattern = RegExp(
+  r'\b(ChatUi|CustomUiPart|HttpChatTransport|ChatMessageMapper)\b',
+);
+
 const Map<String, Set<String>> _allowedRuntimeDependenciesByPackage = {
   'llm_dart': {
     'llm_dart_anthropic',
@@ -17,7 +35,6 @@ const Map<String, Set<String>> _allowedRuntimeDependenciesByPackage = {
     'llm_dart_transport',
   },
   'llm_dart_anthropic': {
-    'llm_dart_ai',
     'llm_dart_provider',
     'llm_dart_transport',
   },
@@ -44,7 +61,6 @@ const Map<String, Set<String>> _allowedRuntimeDependenciesByPackage = {
     'llm_dart_provider',
   },
   'llm_dart_google': {
-    'llm_dart_ai',
     'llm_dart_provider',
     'llm_dart_transport',
   },
@@ -53,7 +69,6 @@ const Map<String, Set<String>> _allowedRuntimeDependenciesByPackage = {
     'llm_dart_transport',
   },
   'llm_dart_openai': {
-    'llm_dart_ai',
     'llm_dart_provider',
     'llm_dart_transport',
   },
@@ -103,6 +118,16 @@ Future<WorkspaceDependencyGuardResult> evaluateWorkspaceDependencyGuards({
     packagesDir: packagesDir,
     violations: violations,
   );
+  await _collectLanguageModelMethodNameViolations(
+    repoRoot: resolvedRepoRoot,
+    packagesDir: packagesDir,
+    violations: violations,
+  );
+  await _collectProviderSpecificationUiLayerViolations(
+    repoRoot: resolvedRepoRoot,
+    packagesDir: packagesDir,
+    violations: violations,
+  );
   await _collectPubspecPolicyViolations(
     repoRoot: resolvedRepoRoot,
     packagesDir: packagesDir,
@@ -144,6 +169,85 @@ Future<void> _collectImportViolations({
         '${_displayPath(repoRoot, entity)}:${index + 1}: '
         'package implementation files must not import or export '
         'package:llm_dart/...; depend on the owning workspace package instead.',
+      );
+    }
+  }
+}
+
+Future<void> _collectLanguageModelMethodNameViolations({
+  required Directory repoRoot,
+  required Directory packagesDir,
+  required List<String> violations,
+}) async {
+  await for (final entity in packagesDir.list(recursive: true)) {
+    if (entity is! File) {
+      continue;
+    }
+
+    final normalizedPath = entity.path.replaceAll('\\', '/');
+    if (!normalizedPath.endsWith('.dart')) {
+      continue;
+    }
+
+    if (!normalizedPath.contains('/lib/')) {
+      continue;
+    }
+
+    final lines = await entity.readAsLines();
+    for (var index = 0; index < lines.length; index += 1) {
+      final line = lines[index];
+      for (final pattern in _forbiddenLanguageModelMethodPatterns) {
+        if (!pattern.regExp.hasMatch(line)) {
+          continue;
+        }
+
+        violations.add(
+          '${_displayPath(repoRoot, entity)}:${index + 1}: '
+          '${pattern.message}',
+        );
+      }
+    }
+  }
+}
+
+Future<void> _collectProviderSpecificationUiLayerViolations({
+  required Directory repoRoot,
+  required Directory packagesDir,
+  required List<String> violations,
+}) async {
+  final providerLibDir = Directory.fromUri(
+    packagesDir.uri.resolve('llm_dart_provider/lib/'),
+  );
+  if (!providerLibDir.existsSync()) {
+    violations.add(
+      'workspace guard failed: packages/llm_dart_provider/lib/ not found from '
+      '${repoRoot.path}',
+    );
+    return;
+  }
+
+  await for (final entity in providerLibDir.list(recursive: true)) {
+    if (entity is! File || !entity.path.endsWith('.dart')) {
+      continue;
+    }
+
+    final lines = await entity.readAsLines();
+    for (var index = 0; index < lines.length; index += 1) {
+      final line = lines[index];
+      final trimmed = line.trim();
+      if (trimmed.startsWith('//')) {
+        continue;
+      }
+
+      if (!_providerSpecificationUiLayerPattern.hasMatch(line)) {
+        continue;
+      }
+
+      violations.add(
+        '${_displayPath(repoRoot, entity)}:${index + 1}: '
+        'llm_dart_provider must not own chat/UI projection or transport-chat '
+        'code. Keep ChatUi, CustomUiPart, ChatMessageMapper, and '
+        'HttpChatTransport surfaces in llm_dart_ai or llm_dart_chat.',
       );
     }
   }
@@ -277,6 +381,16 @@ String _displayPath(Directory repoRoot, File file) {
     return filePath.substring(repoPath.length + 1);
   }
   return filePath;
+}
+
+final class _ForbiddenLanguageModelMethodPattern {
+  final RegExp regExp;
+  final String message;
+
+  const _ForbiddenLanguageModelMethodPattern(
+    this.regExp,
+    this.message,
+  );
 }
 
 Future<void> main() async {

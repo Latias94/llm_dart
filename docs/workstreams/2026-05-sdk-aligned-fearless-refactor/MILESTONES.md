@@ -1,0 +1,178 @@
+# Milestones
+
+## M0 - Architecture Decision Freeze
+
+Goals:
+
+- freeze this workstream as the controlling plan for the breaking refactor
+- decide final provider implementation method naming
+- decide provider options versus provider metadata semantics
+- decide which compatibility surfaces are intentionally kept for the breaking
+  line
+
+Acceptance criteria:
+
+- target ownership rules are documented
+- non-goals are explicit
+- related workstreams are linked
+- open decisions have owners or review gates
+
+Exit gate:
+
+- no implementation slice starts until provider/runtime/root boundaries are
+  written down and accepted.
+
+## M1 - Provider Contract Hardening
+
+Goals:
+
+- make provider model contracts clearly implementation-facing
+- prevent provider contracts from being mistaken for user-facing AI functions
+- keep provider specifications free from runtime orchestration
+
+Acceptance criteria:
+
+- `LanguageModel` generation and streaming methods use implementation-facing
+  names
+- all provider packages compile against the hardened contract
+- AI runtime runners call the new provider method names
+- direct provider contract tests cover request/result behavior without tool-loop
+  orchestration
+- migration notes explain old direct-call replacements
+
+Exit gate:
+
+- dependency guards and provider package tests pass after the contract rename.
+
+## M2 - AI Runtime Consolidation
+
+Goals:
+
+- keep user-facing generation helpers in `llm_dart_ai`
+- centralize multi-step tool orchestration and structured output behavior
+- prevent provider packages from depending on runtime or UI helpers
+
+Acceptance criteria:
+
+- `generateText`, `streamText`, object generation, and tool loops live in
+  `llm_dart_ai`
+- provider packages do not have production dependencies on `llm_dart_ai`
+- chat/UI projection helpers are runtime-owned, chat-owned, or provider-owned
+  without reverse dependencies
+- focused runtime tests cover single-step, multi-step, streaming, structured
+  output, and tool continuation flows
+
+Exit gate:
+
+- runtime package tests pass and provider package dependency guards reject
+  runtime/UI dependencies.
+
+## M3 - Provider Options And Metadata Boundary
+
+Goals:
+
+- make input-side customization explicit through provider options
+- reserve provider metadata for output-side observations and replay details
+- preserve typed provider-native options
+
+Acceptance criteria:
+
+- shared provider option contracts are documented
+- typed provider options remain provider-owned where the feature is not shared
+- raw option escape hatches are namespaced
+- `ProviderMetadata` no longer carries request configuration
+- tests cover option mapping, unsupported option warnings, and metadata output
+  shape
+
+Exit gate:
+
+- migration recipes exist for old metadata-driven request configuration.
+
+## M4 - Shared Generation Option Completion
+
+Goals:
+
+- fill durable shared LLM knobs that modern providers commonly expose
+- map unsupported or partially supported options predictably
+- avoid moving provider-specific features into the shared contract too early
+
+Acceptance criteria:
+
+- shared options include presence penalty, frequency penalty, seed, reasoning,
+  and raw chunk inclusion where applicable
+- unsupported shared options produce warnings or clear errors according to the
+  provider contract
+- reasoning configuration has provider-default behavior and explicit effort
+  levels
+- tests cover native support, coercion, and unsupported mappings
+
+Exit gate:
+
+- at least OpenAI, Anthropic, Google, and one OpenAI-compatible profile have
+  audited mappings or documented non-support.
+
+## M5 - Provider Package Decoupling
+
+Goals:
+
+- keep concrete providers as provider contract implementations
+- preserve provider-native product features
+- remove runtime/UI/root dependencies from provider packages
+
+Acceptance criteria:
+
+- OpenAI, Anthropic, Google, Ollama, ElevenLabs, and OpenAI-compatible packages
+  have no production dependency on `llm_dart_ai`, chat, Flutter, root, or core
+  compatibility packages
+- provider-owned helper clients remain available
+- repeated provider helper duplication is either accepted locally or promoted
+  only after the `llm_dart_provider_utils` criteria are met
+- dependency guards enforce the package graph
+
+Exit gate:
+
+- package-local tests and workspace dependency guards pass.
+
+## M6 - Root, Legacy, And Migration Hardening
+
+Goals:
+
+- keep root as a facade and explicit compatibility bridge
+- remove obsolete compatibility APIs when migration paths are documented
+- make the breaking line understandable for existing users
+
+Acceptance criteria:
+
+- root does not own new implementations
+- `llm_dart_core` remains compatibility-only or has a documented removal path
+- examples prefer modern focused entrypoints
+- migration docs include before/after code for provider calls, runtime helpers,
+  provider options, metadata, and imports
+- changelog calls out all breaking changes
+
+Exit gate:
+
+- clean consumer smoke tests pass for focused package imports, modern root
+  facade imports, and any explicitly retained legacy imports.
+
+## M7 - Release Readiness
+
+Goals:
+
+- prove the refactor with repeatable validation
+- make the breaking release line publishable
+- keep future regressions blocked by tooling
+
+Acceptance criteria:
+
+- workspace dependency guards pass
+- root and core boundary guards pass
+- package analysis and tests pass for touched packages
+- Flutter adapter validation passes if runtime/chat contracts changed
+- publish dry-run and consumer smoke instructions are updated
+- release notes explain the migration strategy
+
+Exit gate:
+
+- the breaking line is ready for maintainer release decision with no hidden
+  architecture exceptions.

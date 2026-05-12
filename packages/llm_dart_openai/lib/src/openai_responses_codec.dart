@@ -187,6 +187,27 @@ final class OpenAIResponsesCodec {
       store: store,
     );
     final topLogProbs = _encodeResponsesTopLogProbs(providerOptions.logprobs);
+    final sharedReasoningEffort = mapSharedOpenAIReasoningEffort(
+      options.reasoning,
+      warnings: warnings,
+    );
+    final effectiveReasoningEffort =
+        providerOptions.reasoningEffort ?? sharedReasoningEffort;
+    if (providerOptions.reasoningEffort != null &&
+        sharedReasoningEffort != null) {
+      warnings.add(
+        const ModelWarning(
+          type: ModelWarningType.compatibility,
+          field: 'options.reasoning',
+          message:
+              'OpenAI providerOptions.reasoningEffort overrides shared options.reasoning.',
+        ),
+      );
+    }
+    _warnUnsupportedResponsesSharedOptions(
+      options,
+      warnings: warnings,
+    );
 
     final body = <String, Object?>{
       'model': modelId,
@@ -225,14 +246,14 @@ final class OpenAIResponsesCodec {
       if (providerOptions.safetyIdentifier != null)
         'safety_identifier': providerOptions.safetyIdentifier,
       if (topLogProbs != null) 'top_logprobs': topLogProbs,
-      if (isReasoningModel && providerOptions.reasoningEffort != null)
+      if (isReasoningModel && effectiveReasoningEffort != null)
         'reasoning': <String, Object?>{
-          'effort': providerOptions.reasoningEffort!.value,
+          'effort': effectiveReasoningEffort.value,
         },
     };
 
     _applyOpenAIReasoningCompatibility(
-      providerOptions: providerOptions,
+      reasoningEffort: effectiveReasoningEffort,
       body: body,
       warnings: warnings,
       isReasoningModel: isReasoningModel,
@@ -793,15 +814,51 @@ final class OpenAIResponsesCodec {
     return buffer.join('\n\n');
   }
 
+  void _warnUnsupportedResponsesSharedOptions(
+    GenerateTextOptions options, {
+    required List<ModelWarning> warnings,
+  }) {
+    if (options.frequencyPenalty != null) {
+      warnings.add(
+        const ModelWarning(
+          type: ModelWarningType.unsupported,
+          field: 'options.frequencyPenalty',
+          message:
+              'OpenAI Responses does not support shared frequencyPenalty; use Chat Completions-compatible models when this knob is required.',
+        ),
+      );
+    }
+
+    if (options.presencePenalty != null) {
+      warnings.add(
+        const ModelWarning(
+          type: ModelWarningType.unsupported,
+          field: 'options.presencePenalty',
+          message:
+              'OpenAI Responses does not support shared presencePenalty; use Chat Completions-compatible models when this knob is required.',
+        ),
+      );
+    }
+
+    if (options.seed != null) {
+      warnings.add(
+        const ModelWarning(
+          type: ModelWarningType.unsupported,
+          field: 'options.seed',
+          message:
+              'OpenAI Responses does not support shared seed; use Chat Completions-compatible models when deterministic sampling is required.',
+        ),
+      );
+    }
+  }
+
   void _applyOpenAIReasoningCompatibility({
-    required OpenAIGenerateTextOptions providerOptions,
+    required OpenAIReasoningEffort? reasoningEffort,
     required Map<String, Object?> body,
     required List<ModelWarning> warnings,
     required bool isReasoningModel,
     required OpenAIModelCapabilities capabilities,
   }) {
-    final reasoningEffort = providerOptions.reasoningEffort;
-
     if (isReasoningModel) {
       final supportsNonReasoningParameters =
           reasoningEffort == OpenAIReasoningEffort.none &&

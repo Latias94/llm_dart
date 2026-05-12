@@ -348,7 +348,6 @@ List<ReleaseReadinessStep> buildReleaseReadinessSteps(
         name: 'Consumer smoke',
         executable: 'dart',
         arguments: [
-          'run',
           'tool/run_consumer_smoke.dart',
           if (options.proxy != null) '--proxy=${options.proxy}',
         ],

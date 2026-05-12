@@ -9,12 +9,50 @@ import '../tool/tool_definition.dart';
 import 'finish_reason.dart';
 import 'response_format.dart';
 
+enum ReasoningEffort {
+  minimal('minimal'),
+  low('low'),
+  medium('medium'),
+  high('high');
+
+  final String value;
+
+  const ReasoningEffort(this.value);
+}
+
+final class GenerateTextReasoningOptions {
+  final bool? enabled;
+  final ReasoningEffort? effort;
+  final int? budgetTokens;
+
+  const GenerateTextReasoningOptions({
+    this.enabled,
+    this.effort,
+    this.budgetTokens,
+  });
+
+  const GenerateTextReasoningOptions.enabled({
+    this.effort,
+    this.budgetTokens,
+  }) : enabled = true;
+
+  const GenerateTextReasoningOptions.disabled()
+      : enabled = false,
+        effort = null,
+        budgetTokens = null;
+}
+
 final class GenerateTextOptions {
   final int? maxOutputTokens;
   final double? temperature;
   final List<String>? stopSequences;
   final double? topP;
   final int? topK;
+  final double? presencePenalty;
+  final double? frequencyPenalty;
+  final int? seed;
+  final GenerateTextReasoningOptions? reasoning;
+  final bool includeRawChunks;
   final ResponseFormat? responseFormat;
 
   const GenerateTextOptions({
@@ -23,6 +61,11 @@ final class GenerateTextOptions {
     this.stopSequences,
     this.topP,
     this.topK,
+    this.presencePenalty,
+    this.frequencyPenalty,
+    this.seed,
+    this.reasoning,
+    this.includeRawChunks = false,
     this.responseFormat,
   });
 }
@@ -90,9 +133,9 @@ abstract interface class LanguageModel {
 
   String get modelId;
 
-  Future<GenerateTextResult> generate(GenerateTextRequest request);
+  Future<GenerateTextResult> doGenerate(GenerateTextRequest request);
 
-  Stream<TextStreamEvent> stream(GenerateTextRequest request);
+  Stream<TextStreamEvent> doStream(GenerateTextRequest request);
 }
 
 void _validateToolConfiguration({

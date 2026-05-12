@@ -199,6 +199,106 @@ export 'providers/openai/openai.dart';
       );
     });
 
+    test('reports widened focused core, transport, and chat entrypoints',
+        () async {
+      final repoRoot = await _createTempRootLayout();
+      addTearDown(() async {
+        if (repoRoot.existsSync()) {
+          await repoRoot.delete(recursive: true);
+        }
+      });
+
+      await _writeFile(
+        repoRoot,
+        'lib/core.dart',
+        '''
+library;
+
+export 'package:llm_dart_ai/llm_dart_ai.dart';
+export 'legacy.dart';
+''',
+      );
+      await _writeFile(
+        repoRoot,
+        'lib/transport.dart',
+        '''
+library;
+
+export 'package:llm_dart_transport/llm_dart_transport.dart';
+export 'src/compatibility/providers/openai/client.dart';
+''',
+      );
+      await _writeFile(
+        repoRoot,
+        'lib/chat.dart',
+        '''
+library;
+
+export 'package:llm_dart_chat/llm_dart_chat.dart';
+export 'legacy.dart';
+''',
+      );
+
+      final result = await guard.evaluateRootPackageBoundaryGuards(
+        repoRoot: repoRoot,
+      );
+
+      expect(result.passed, isFalse);
+      expect(
+        result.violations,
+        contains(
+          contains(
+              'lib/core.dart: focused root entrypoint must only export its package-owned surface'),
+        ),
+      );
+      expect(
+        result.violations,
+        contains(
+          contains(
+              'lib/transport.dart: focused root entrypoint must only export its package-owned surface'),
+        ),
+      );
+      expect(
+        result.violations,
+        contains(
+          contains(
+              'lib/chat.dart: focused root entrypoint must only export its package-owned surface'),
+        ),
+      );
+    });
+
+    test('reports implementation declarations in root public entrypoints',
+        () async {
+      final repoRoot = await _createTempRootLayout();
+      addTearDown(() async {
+        if (repoRoot.existsSync()) {
+          await repoRoot.delete(recursive: true);
+        }
+      });
+
+      await _writeFile(
+        repoRoot,
+        'lib/legacy.dart',
+        '''
+library;
+
+final class LegacyImplementation {}
+''',
+      );
+
+      final result = await guard.evaluateRootPackageBoundaryGuards(
+        repoRoot: repoRoot,
+      );
+
+      expect(result.passed, isFalse);
+      expect(
+        result.violations,
+        contains(
+          contains('root public entrypoints must stay as facades'),
+        ),
+      );
+    });
+
     test('reports any root import of llm_dart_flutter', () async {
       final repoRoot = await _createTempRootLayout();
       addTearDown(() async {
@@ -490,9 +590,39 @@ export 'src/facade/ai.dart' show openRouter;
 
   await _writeFile(
     repoRoot,
+    'lib/core.dart',
+    '''
+library;
+
+export 'package:llm_dart_ai/llm_dart_ai.dart';
+
+export 'core/cancellation.dart'
+    show CancellationHelper, TransportCancellation, TransportCancelledException;
+''',
+  );
+
+  await _writeFile(
+    repoRoot,
+    'lib/transport.dart',
+    '''
+library;
+
+export 'core.dart';
+export 'package:llm_dart_transport/llm_dart_transport.dart';
+''',
+  );
+
+  await _writeFile(
+    repoRoot,
     'lib/chat.dart',
     '''
+library;
+
+export 'core.dart';
+export 'transport.dart';
 export 'package:llm_dart_chat/llm_dart_chat.dart';
+export 'src/facade/ai.dart'
+    show anthropic, deepSeek, google, groq, openRouter, openai, phind, xai;
 ''',
   );
 

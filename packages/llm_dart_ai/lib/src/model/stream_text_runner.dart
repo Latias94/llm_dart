@@ -148,7 +148,7 @@ final class StreamTextRunner {
         await onStepStart?.call(stepStartEvent);
 
         final accumulator = GenerateTextResultAccumulator();
-        await for (final event in model.stream(request)) {
+        await for (final event in model.doStream(request)) {
           accumulator.apply(event);
           eventChannel.add(event);
           await onChunk?.call(event);

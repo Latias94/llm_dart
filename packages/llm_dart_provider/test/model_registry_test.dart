@@ -164,7 +164,7 @@ final class _FakeLanguageModel implements LanguageModel {
   const _FakeLanguageModel(this.providerId, this.modelId);
 
   @override
-  Future<GenerateTextResult> generate(GenerateTextRequest request) async {
+  Future<GenerateTextResult> doGenerate(GenerateTextRequest request) async {
     return GenerateTextResult(
       content: const [TextContentPart('ok')],
       finishReason: FinishReason.stop,
@@ -172,7 +172,7 @@ final class _FakeLanguageModel implements LanguageModel {
   }
 
   @override
-  Stream<TextStreamEvent> stream(GenerateTextRequest request) {
+  Stream<TextStreamEvent> doStream(GenerateTextRequest request) {
     return Stream.value(
       const TextDeltaEvent(
         id: 'text-1',

@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'google_provider_metadata_support.dart';
 import 'google_shared.dart';
@@ -218,16 +218,6 @@ final class GoogleFunctionResponseReplay {
     );
   }
 
-  CustomUiPart toCustomUiPart({
-    ProviderMetadata? providerMetadata,
-  }) {
-    return CustomUiPart(
-      kind: kind,
-      data: toJson(),
-      providerMetadata: _resolvedProviderMetadata(providerMetadata),
-    );
-  }
-
   CustomPromptPart toCustomPromptPart({
     ProviderMetadata? providerMetadata,
   }) {
@@ -281,17 +271,6 @@ final class GoogleFunctionResponseReplay {
 
   static GoogleFunctionResponseReplay? tryParseContentPart(ContentPart part) {
     if (part is! CustomContentPart || part.kind != kind) {
-      return null;
-    }
-
-    return tryParseData(
-      part.data,
-      providerMetadata: part.providerMetadata,
-    );
-  }
-
-  static GoogleFunctionResponseReplay? tryParseUiPart(ChatUiPart part) {
-    if (part is! CustomUiPart || part.kind != kind) {
       return null;
     }
 

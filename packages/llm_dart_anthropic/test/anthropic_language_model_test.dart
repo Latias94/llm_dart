@@ -56,7 +56,7 @@ void main() {
         ),
       );
 
-      final result = await model.generate(
+      final result = await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage.text('Think carefully.'),
@@ -413,11 +413,14 @@ void main() {
       ).chatModel('claude-sonnet-4-5');
 
       final events = await model
-          .stream(
+          .doStream(
             GenerateTextRequest(
               prompt: [
                 UserPromptMessage.text('Call the weather tool.'),
               ],
+              options: const GenerateTextOptions(
+                includeRawChunks: true,
+              ),
             ),
           )
           .toList();
@@ -451,6 +454,9 @@ void main() {
       final finish = events.whereType<FinishEvent>().single;
       expect(finish.finishReason, FinishReason.toolCalls);
       expect(finish.usage?.totalTokens, 16);
+      final rawChunks = events.whereType<RawChunkEvent>().toList();
+      expect(rawChunks, isNotEmpty);
+      expect(rawChunks.first.raw, containsPair('type', 'message_start'));
     });
 
     test(
@@ -481,7 +487,7 @@ void main() {
         ),
       ).chatModel('claude-sonnet-4-5');
 
-      await model.generate(
+      await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage(
@@ -531,7 +537,7 @@ void main() {
       ).chatModel('claude-sonnet-4-5');
 
       expect(
-        () => model.generate(
+        () => model.doGenerate(
           GenerateTextRequest(
             prompt: [
               UserPromptMessage.text('Hello'),

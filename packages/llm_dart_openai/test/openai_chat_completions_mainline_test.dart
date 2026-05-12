@@ -65,12 +65,17 @@ void main() {
         ),
       );
 
-      final result = await model.generate(
+      final result = await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             SystemPromptMessage.text('Be concise.'),
             UserPromptMessage.text('Use the weather tool and answer in JSON.'),
           ],
+          options: const GenerateTextOptions(
+            presencePenalty: 0.1,
+            frequencyPenalty: 0.2,
+            seed: 1234,
+          ),
           tools: [
             FunctionToolDefinition(
               name: 'weather',
@@ -156,6 +161,9 @@ void main() {
       expect(requestBody['service_tier'], 'priority');
       expect(requestBody['verbosity'], 'low');
       expect(requestBody['user'], 'user_123');
+      expect(requestBody['presence_penalty'], 0.1);
+      expect(requestBody['frequency_penalty'], 0.2);
+      expect(requestBody['seed'], 1234);
       expect(
         requestBody['response_format'],
         {
@@ -233,12 +241,17 @@ void main() {
         ),
       );
 
-      final result = await model.generate(
+      final result = await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             SystemPromptMessage.text('Think carefully.'),
             UserPromptMessage.text('Say done.'),
           ],
+          options: const GenerateTextOptions(
+            reasoning: GenerateTextReasoningOptions(
+              effort: ReasoningEffort.high,
+            ),
+          ),
         ),
       );
 
@@ -257,6 +270,7 @@ void main() {
           },
         ],
       );
+      expect(requestBody['reasoning_effort'], 'high');
       expect(result.warnings, isEmpty);
     });
 
@@ -303,7 +317,7 @@ void main() {
         ),
       );
 
-      final result = await model.generate(
+      final result = await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage.text('Think first, then answer.'),
@@ -347,7 +361,7 @@ void main() {
         ),
       ).chatModel('deepseek-chat');
 
-      final result = await model.generate(
+      final result = await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage.text('Return JSON.'),
@@ -406,7 +420,7 @@ void main() {
         ),
       ).chatModel('deepseek-reasoner');
 
-      final result = await model.generate(
+      final result = await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage.text('Think first.'),
@@ -480,7 +494,7 @@ void main() {
         ),
       );
 
-      final result = await model.generate(
+      final result = await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             SystemPromptMessage.text('Think carefully.'),
@@ -549,7 +563,7 @@ void main() {
         ),
       );
 
-      await model.generate(
+      await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             SystemPromptMessage.text('Think carefully.'),
@@ -621,7 +635,7 @@ void main() {
         ),
       );
 
-      final result = await model.generate(
+      final result = await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             SystemPromptMessage.text('Be concise.'),
@@ -700,7 +714,7 @@ void main() {
         ),
       );
 
-      final result = await model.generate(
+      final result = await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage.text('Say done.'),
@@ -760,7 +774,7 @@ void main() {
         ),
       );
 
-      final result = await model.generate(
+      final result = await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage.text('Say done.'),
@@ -825,7 +839,7 @@ void main() {
         ),
       );
 
-      final result = await model.generate(
+      final result = await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             SystemPromptMessage.text('Think carefully.'),
@@ -935,7 +949,7 @@ void main() {
         ),
       );
 
-      final result = await model.generate(
+      final result = await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage.text('Say done.'),
@@ -1007,7 +1021,7 @@ void main() {
         ),
       );
 
-      final result = await model.generate(
+      final result = await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage.text('Say done.'),
@@ -1095,7 +1109,7 @@ void main() {
         ),
       );
 
-      final result = await model.generate(
+      final result = await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage.text('Say hello.'),
@@ -1169,7 +1183,7 @@ void main() {
         ),
       );
 
-      await model.generate(
+      await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage(
@@ -1252,7 +1266,7 @@ void main() {
         ),
       );
 
-      await model.generate(
+      await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage(
@@ -1330,7 +1344,7 @@ void main() {
         ),
       );
 
-      await model.generate(
+      await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage(
@@ -1409,7 +1423,7 @@ void main() {
         ),
       );
 
-      await model.generate(
+      await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage(
@@ -1468,7 +1482,7 @@ void main() {
       );
 
       await expectLater(
-        model.generate(
+        model.doGenerate(
           GenerateTextRequest(
             prompt: [
               UserPromptMessage(
@@ -1537,7 +1551,7 @@ void main() {
         ),
       );
 
-      await model.generate(
+      await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage(
@@ -1614,7 +1628,7 @@ void main() {
         ),
       );
 
-      await model.generate(
+      await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage(
@@ -1669,7 +1683,7 @@ void main() {
       );
 
       await expectLater(
-        model.generate(
+        model.doGenerate(
           GenerateTextRequest(
             prompt: [
               UserPromptMessage(
@@ -1693,7 +1707,7 @@ void main() {
       );
 
       await expectLater(
-        model.generate(
+        model.doGenerate(
           GenerateTextRequest(
             prompt: [
               UserPromptMessage.text('hello'),
@@ -1715,7 +1729,7 @@ void main() {
       );
 
       await expectLater(
-        model.generate(
+        model.doGenerate(
           GenerateTextRequest(
             prompt: [
               UserPromptMessage.text('hello'),
@@ -1737,7 +1751,7 @@ void main() {
       );
 
       await expectLater(
-        model.generate(
+        model.doGenerate(
           GenerateTextRequest(
             prompt: [
               UserPromptMessage.text('hello'),
@@ -1761,7 +1775,7 @@ void main() {
       );
 
       await expectLater(
-        model.generate(
+        model.doGenerate(
           GenerateTextRequest(
             prompt: [
               UserPromptMessage.text('hello'),
@@ -1783,7 +1797,7 @@ void main() {
       );
 
       await expectLater(
-        model.generate(
+        model.doGenerate(
           GenerateTextRequest(
             prompt: [
               UserPromptMessage.text('hello'),
@@ -1807,7 +1821,7 @@ void main() {
       );
 
       await expectLater(
-        model.generate(
+        model.doGenerate(
           GenerateTextRequest(
             prompt: [
               UserPromptMessage.text('hello'),
@@ -1829,7 +1843,7 @@ void main() {
       );
 
       await expectLater(
-        model.generate(
+        model.doGenerate(
           GenerateTextRequest(
             prompt: [
               UserPromptMessage.text('hello'),
@@ -1852,7 +1866,7 @@ void main() {
       );
 
       await expectLater(
-        model.generate(
+        model.doGenerate(
           GenerateTextRequest(
             prompt: [
               UserPromptMessage.text('hello'),
@@ -1895,7 +1909,7 @@ void main() {
       );
 
       await expectLater(
-        model.generate(
+        model.doGenerate(
           GenerateTextRequest(
             prompt: [
               UserPromptMessage(
@@ -1958,7 +1972,7 @@ void main() {
       ).chatModel('deepseek-reasoner');
 
       final events = await model
-          .stream(
+          .doStream(
             GenerateTextRequest(
               prompt: [
                 UserPromptMessage.text('Think and call the weather tool.'),
@@ -2101,7 +2115,7 @@ void main() {
       );
 
       final events = await model
-          .stream(
+          .doStream(
             GenerateTextRequest(
               prompt: [
                 UserPromptMessage.text('Say hello.'),
@@ -2166,7 +2180,7 @@ void main() {
       );
 
       await expectLater(
-        model.generate(
+        model.doGenerate(
           GenerateTextRequest(
             prompt: [
               UserPromptMessage.text('hello'),
@@ -2188,7 +2202,7 @@ void main() {
       );
 
       await expectLater(
-        model.generate(
+        model.doGenerate(
           GenerateTextRequest(
             prompt: [
               UserPromptMessage.text('hello'),
@@ -2256,7 +2270,7 @@ void main() {
         ),
       );
 
-      final result = await model.generate(
+      final result = await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage.text('Continue after approval.'),
@@ -2374,7 +2388,7 @@ void main() {
         ),
       );
 
-      final result = await model.generate(
+      final result = await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage.text('Continue the conversation.'),
@@ -2487,7 +2501,7 @@ void main() {
         ),
       );
 
-      final result = await model.generate(
+      final result = await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage.text('Continue after the tool call.'),
@@ -2594,7 +2608,7 @@ void main() {
         ),
       );
 
-      final result = await model.generate(
+      final result = await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage.text('Continue after the tool call.'),
@@ -2718,7 +2732,7 @@ void main() {
         ),
       );
 
-      final result = await model.generate(
+      final result = await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage.text('Continue after the failed tool call.'),
@@ -2827,7 +2841,7 @@ void main() {
         ),
       ).chatModel('grok-3');
 
-      final result = await model.generate(
+      final result = await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage.text('Search the latest xAI news.'),
@@ -2914,7 +2928,7 @@ void main() {
       ).chatModel('grok-3');
 
       final events = await model
-          .stream(
+          .doStream(
             GenerateTextRequest(
               prompt: [
                 UserPromptMessage.text('Search the latest news.'),
@@ -2960,7 +2974,7 @@ void main() {
       ).chatModel('openai/gpt-4o-mini');
 
       await expectLater(
-        model.generate(
+        model.doGenerate(
           GenerateTextRequest(
             prompt: [
               UserPromptMessage.text('hello'),
@@ -3001,7 +3015,7 @@ void main() {
       ).chatModel('openai/gpt-4o-mini');
 
       await expectLater(
-        model.generate(
+        model.doGenerate(
           GenerateTextRequest(
             prompt: [
               UserPromptMessage.text('hello'),

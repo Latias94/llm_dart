@@ -94,6 +94,23 @@ final class OpenAIChatCompletionsCodec {
     final deepseekPresencePenalty = deepseekOptions?.presencePenalty;
     final deepseekResponseFormat = deepseekOptions?.responseFormat;
     final commonLogprobs = providerOptions.common.logprobs;
+    final sharedReasoningEffort = mapSharedOpenAIReasoningEffort(
+      options.reasoning,
+      warnings: warnings,
+    );
+    final effectiveReasoningEffort =
+        providerOptions.common.reasoningEffort ?? sharedReasoningEffort;
+    if (providerOptions.common.reasoningEffort != null &&
+        sharedReasoningEffort != null) {
+      warnings.add(
+        const ModelWarning(
+          type: ModelWarningType.compatibility,
+          field: 'options.reasoning',
+          message:
+              'OpenAI providerOptions.reasoningEffort overrides shared options.reasoning.',
+        ),
+      );
+    }
 
     for (final message in prompt) {
       messages.addAll(
@@ -116,6 +133,11 @@ final class OpenAIChatCompletionsCodec {
         'stop': options.stopSequences,
       if (options.topP != null) 'top_p': options.topP,
       if (options.topK != null) 'top_k': options.topK,
+      if (options.frequencyPenalty != null)
+        'frequency_penalty': options.frequencyPenalty,
+      if (options.presencePenalty != null)
+        'presence_penalty': options.presencePenalty,
+      if (options.seed != null) 'seed': options.seed,
       if (providerOptions.common.parallelToolCalls != null)
         'parallel_tool_calls': providerOptions.common.parallelToolCalls,
       if (providerOptions.common.serviceTier != null)
@@ -124,9 +146,8 @@ final class OpenAIChatCompletionsCodec {
         'verbosity': providerOptions.common.verbosity,
       if (providerOptions.common.user != null)
         'user': providerOptions.common.user,
-      if (providerNamespace == 'openai' &&
-          providerOptions.common.reasoningEffort != null)
-        'reasoning_effort': providerOptions.common.reasoningEffort!.value,
+      if (providerNamespace == 'openai' && effectiveReasoningEffort != null)
+        'reasoning_effort': effectiveReasoningEffort.value,
       if (providerNamespace == 'openai' &&
           providerOptions.common.maxCompletionTokens != null)
         'max_completion_tokens': providerOptions.common.maxCompletionTokens,
@@ -145,7 +166,9 @@ final class OpenAIChatCompletionsCodec {
 
     _applyOpenAICompatibilityRules(
       modelId: modelId,
-      providerOptions: providerOptions.common,
+      providerOptions: providerOptions.common.copyWith(
+        reasoningEffort: effectiveReasoningEffort,
+      ),
       body: body,
       warnings: warnings,
     );

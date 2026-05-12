@@ -177,21 +177,22 @@ helpers:
 
 - Keep `ChatMessageMapper` in the shared `package:llm_dart/core.dart` layer for
   stable cross-provider summaries.
-- Keep provider-owned metadata inspection in provider packages.
-- When the UI needs both layers together, prefer provider-owned composed
-  helpers such as `OpenAIMessageMapper().mapComposed(...)` and
-  `GoogleMessageMapper().mapComposed(...)`.
+- Keep provider-owned metadata inspection in app UI code by reading
+  `ProviderMetadata` namespaces from messages or parts.
+- For provider-specific replay payloads, keep UI projection on
+  `ChatMessageMapper` and use provider custom-part helpers such as
+  `OpenAICustomPart` / `OpenAICustomPartSummary` or
+  `GoogleCustomPart` / `GoogleCustomPartSummary` on provider content parts or
+  stream events before UI projection.
 
 ```dart
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/openai.dart' as openai;
 
 void inspectMessage(core.ChatUiMessage message) {
-  final mapped = const openai.OpenAIMessageMapper().mapComposed(message);
+  final mapped = const core.ChatMessageMapper().map(message);
 
-  print(mapped.shared.text);
-  print(mapped.provider.partDetails.length);
-  print(mapped.provider.hasOpenAIMetadata);
+  print(mapped.text);
+  print(mapped.responseProviderMetadata?.namespace('openai'));
 }
 ```
 

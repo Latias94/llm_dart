@@ -53,6 +53,11 @@ final RegExp _legacyImportPattern = RegExp(
   r'''^\s*(import|export)\s+['"]package:llm_dart/legacy\.dart['"]''',
 );
 
+final RegExp _topLevelImplementationPattern = RegExp(
+  r'^\s*(abstract\s+|base\s+|final\s+|interface\s+|sealed\s+)?'
+  r'(class|mixin|enum|extension|typedef)\s+',
+);
+
 const List<String> _expectedDefaultRootEntrypointDirectives = [
   'library;',
   "export 'ai.dart';",
@@ -72,6 +77,23 @@ const List<String> _expectedModernAggregatorEntrypointDirectives = [
 ];
 
 const Map<String, List<String>> _expectedFocusedRootEntrypointDirectives = {
+  'lib/core.dart': [
+    'library;',
+    "export 'package:llm_dart_ai/llm_dart_ai.dart';",
+    "export 'core/cancellation.dart' show CancellationHelper, TransportCancellation, TransportCancelledException;",
+  ],
+  'lib/transport.dart': [
+    'library;',
+    "export 'core.dart';",
+    "export 'package:llm_dart_transport/llm_dart_transport.dart';",
+  ],
+  'lib/chat.dart': [
+    'library;',
+    "export 'core.dart';",
+    "export 'transport.dart';",
+    "export 'package:llm_dart_chat/llm_dart_chat.dart';",
+    "export 'src/facade/ai.dart' show anthropic, deepSeek, google, groq, openRouter, openai, phind, xai;",
+  ],
   'lib/anthropic.dart': [
     'library;',
     "export 'package:llm_dart_anthropic/llm_dart_anthropic.dart' hide anthropic;",
@@ -168,6 +190,11 @@ Future<RootPackageBoundaryGuardResult> evaluateRootPackageBoundaryGuards({
   );
   await _collectFocusedRootEntrypointViolations(
     repoRoot: resolvedRepoRoot,
+    violations: violations,
+  );
+  await _collectPublicEntrypointImplementationViolations(
+    repoRoot: resolvedRepoRoot,
+    libDir: libDir,
     violations: violations,
   );
   await _collectImportViolations(
@@ -363,6 +390,55 @@ Future<void> _collectFocusedRootEntrypointViolations({
       'package-owned surface. Found directives: ${directives.join(' ')}. '
       'Expected directives: ${entry.value.join(' ')}.',
     );
+  }
+}
+
+Future<void> _collectPublicEntrypointImplementationViolations({
+  required Directory repoRoot,
+  required Directory libDir,
+  required List<String> violations,
+}) async {
+  await for (final entity in libDir.list()) {
+    if (entity is! File || !entity.path.endsWith('.dart')) {
+      continue;
+    }
+
+    final relativePath = _displayPath(repoRoot, entity);
+    final lines = await entity.readAsLines();
+    var inDirective = false;
+
+    for (var index = 0; index < lines.length; index += 1) {
+      final trimmed = lines[index].trim();
+      if (trimmed.isEmpty ||
+          trimmed.startsWith('//') ||
+          trimmed == 'library;') {
+        continue;
+      }
+
+      if (inDirective) {
+        if (trimmed.endsWith(';')) {
+          inDirective = false;
+        }
+        continue;
+      }
+
+      if (trimmed.startsWith('import ') || trimmed.startsWith('export ')) {
+        if (!trimmed.endsWith(';')) {
+          inDirective = true;
+        }
+        continue;
+      }
+
+      if (!_topLevelImplementationPattern.hasMatch(lines[index])) {
+        continue;
+      }
+
+      violations.add(
+        '$relativePath:${index + 1}: root public entrypoints must stay as '
+        'facades or explicit compatibility barrels; move implementation '
+        'declarations to the owning package or root compatibility internals.',
+      );
+    }
   }
 }
 

@@ -102,13 +102,10 @@ Future<void> main() async {
       return;
     }
 
-    final mapped =
-        const openai.OpenAIMessageMapper().mapComposed(state.messages.last);
-    final shared = mapped.shared;
-    final provider = mapped.provider;
+    final shared = const ChatMessageMapper().map(state.messages.last);
     print('status=${state.status}');
     print('assistantText=${shared.text}');
-    print('openaiMetadata=${provider.hasOpenAIMetadata}');
+    print('providerMetadata=${shared.responseProviderMetadata != null}');
   });
 
   await controller.sendMessage(
@@ -200,7 +197,7 @@ import 'package:llm_dart_transport/llm_dart_transport.dart';
 final adapter = HttpChatTransportServerAdapter();
 
 final body = adapter.encodeEventSseStream(
-  eventStream: model.stream(request),
+  eventStream: model.doStream(request),
   requestId: 'req-1',
   messageId: 'assistant-1',
   resumeToken: 'resume-1',
@@ -296,19 +293,21 @@ void renderLatest(ChatController controller) {
 Prefer rendering directly from `message.parts` when the UI already understands
 the richer part model.
 
-Use `ChatMessageMapper` as the shared baseline, then add a provider-owned mapper
-only when the UI needs provider-specific inspection.
+Use `ChatMessageMapper` as the shared baseline, then keep provider-specific
+inspection in app code or provider custom-part helpers outside the Flutter
+adapter.
 
-Provider-owned custom parts can stay provider-owned all the way to the UI. For
-example, Google server-side tool replay can be rendered through the Google
-package without widening `llm_dart_flutter`:
+Provider-owned custom parts can stay provider-owned until the UI decides how to
+render them. For example, Google server-side tool replay can be summarized from
+provider content parts or stream events before UI projection without widening
+`llm_dart_flutter`:
 
 ```dart
-import 'package:llm_dart_flutter/llm_dart_flutter.dart';
 import 'package:llm_dart_google/llm_dart_google.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 
-void renderGoogleCustomParts(ChatUiMessage message) {
-  final summaries = GoogleCustomPartSummary.parseUiParts(message.parts);
+void renderGoogleCustomParts(List<ContentPart> parts) {
+  final summaries = GoogleCustomPartSummary.parseContentParts(parts);
 
   for (final summary in summaries) {
     print(summary.title);
@@ -319,63 +318,39 @@ void renderGoogleCustomParts(ChatUiMessage message) {
 ```
 
 If the UI also needs OpenAI-specific metadata from common parts such as
-response/item IDs, tool/source details, or logprobs, use the provider-owned
-composed mapper helper:
+response/item IDs, tool/source details, or logprobs, inspect the
+provider-metadata namespace on the shared mapped message or individual parts:
 
 ```dart
-import 'package:llm_dart/openai.dart' as openai;
 import 'package:llm_dart_flutter/llm_dart_flutter.dart';
 
 void renderOpenAIMessage(ChatUiMessage message) {
-  final mapped = const openai.OpenAIMessageMapper().mapComposed(message);
-  final shared = mapped.shared;
-  final provider = mapped.provider;
+  final shared = const ChatMessageMapper().map(message);
 
   print(shared.text);
-  print(provider.hasOpenAIMetadata);
-  print(provider.hasLogprobs);
-
-  for (final detail in provider.partDetails) {
-    print('${detail.type}: ${detail.label}');
-    print(detail.itemId);
-    print(detail.toolCallId);
-    print(detail.sourceId);
-  }
+  print(shared.responseProviderMetadata?.namespace('openai'));
 }
 ```
 
 If the UI instead needs Google-specific metadata from common parts such as
-thought signatures, `responsePart`, or Google file IDs, use the Google mapper
-the same way:
+thought signatures, `responsePart`, or Google file IDs, keep the same shared
+projection and read the Google metadata namespace in app UI code:
 
 ```dart
-import 'package:llm_dart/google.dart' as google;
 import 'package:llm_dart_flutter/llm_dart_flutter.dart';
 
 void renderGoogleMessage(ChatUiMessage message) {
-  final mapped = const google.GoogleMessageMapper().mapComposed(message);
-  final shared = mapped.shared;
-  final provider = mapped.provider;
+  final shared = const ChatMessageMapper().map(message);
 
   print(shared.text);
-  print(provider.hasGoogleMetadata);
-  print(provider.hasThoughtSignatures);
-
-  for (final detail in provider.partDetails) {
-    print('${detail.type}: ${detail.label}');
-    print(detail.thoughtSignature);
-    print(detail.responsePart);
-    print(detail.sourceId);
-    print(detail.chunkType);
-  }
+  print(shared.responseProviderMetadata?.namespace('google'));
 }
 ```
 
 This layered composition is the intended extension model:
 
 - shared mapper for stable cross-provider rendering
-- provider mapper for provider-owned metadata inspection
-- composed provider helper when the UI needs both layers together
+- app-owned inspection for provider metadata that appears on shared UI parts
 - provider custom-part helpers for provider-owned replay payload rendering
 
 ## Tool and Approval Flows

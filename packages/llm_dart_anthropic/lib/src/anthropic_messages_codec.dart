@@ -79,7 +79,14 @@ final class AnthropicMessagesCodec {
       );
     }
 
-    final extendedThinking = providerOptions.extendedThinking == true;
+    final sharedReasoning = options.reasoning;
+    final sharedRequestsThinking = sharedReasoning != null &&
+        sharedReasoning.enabled != false &&
+        (sharedReasoning.enabled == true ||
+            sharedReasoning.budgetTokens != null ||
+            sharedReasoning.effort != null);
+    final extendedThinking =
+        providerOptions.extendedThinking ?? sharedRequestsThinking;
     final interleavedThinking = providerOptions.interleavedThinking == true;
     final mcpServers = providerOptions.mcpServers;
     final nativeTools = providerOptions.tools ?? settings.tools;
@@ -94,6 +101,30 @@ final class AnthropicMessagesCodec {
     int? topK = options.topK;
     Map<String, Object?>? thinking;
 
+    if (sharedReasoning?.effort != null) {
+      warnings.add(
+        const ModelWarning(
+          type: ModelWarningType.unsupported,
+          field: 'options.reasoning.effort',
+          message:
+              'Anthropic extended thinking uses a token budget; shared reasoning.effort is ignored.',
+        ),
+      );
+    }
+
+    if (sharedReasoning?.enabled == false &&
+        (sharedReasoning?.budgetTokens != null ||
+            sharedReasoning?.effort != null)) {
+      warnings.add(
+        const ModelWarning(
+          type: ModelWarningType.compatibility,
+          field: 'options.reasoning',
+          message:
+              'options.reasoning.enabled=false disables shared Anthropic thinking; budgetTokens and effort are ignored.',
+        ),
+      );
+    }
+
     if (providerOptions.thinkingBudgetTokens != null && !extendedThinking) {
       warnings.add(
         const ModelWarning(
@@ -106,9 +137,21 @@ final class AnthropicMessagesCodec {
     }
 
     if (extendedThinking) {
-      var thinkingBudget =
-          providerOptions.thinkingBudgetTokens ?? _defaultThinkingBudgetTokens;
-      if (providerOptions.thinkingBudgetTokens == null) {
+      var thinkingBudget = providerOptions.thinkingBudgetTokens ??
+          sharedReasoning?.budgetTokens ??
+          _defaultThinkingBudgetTokens;
+      if (providerOptions.thinkingBudgetTokens != null &&
+          sharedReasoning?.budgetTokens != null) {
+        warnings.add(
+          const ModelWarning(
+            type: ModelWarningType.compatibility,
+            field: 'options.reasoning.budgetTokens',
+            message:
+                'Anthropic providerOptions.thinkingBudgetTokens overrides shared options.reasoning.budgetTokens.',
+          ),
+        );
+      } else if (providerOptions.thinkingBudgetTokens == null &&
+          sharedReasoning?.budgetTokens == null) {
         warnings.add(
           const ModelWarning(
             type: ModelWarningType.compatibility,

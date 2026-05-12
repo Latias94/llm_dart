@@ -16,7 +16,7 @@ Future<GenerateTextResult> generateText({
   GenerateTextOptions options = const GenerateTextOptions(),
   CallOptions callOptions = const CallOptions(),
 }) {
-  return model.generate(
+  return model.doGenerate(
     GenerateTextRequest(
       prompt: prompt,
       tools: tools,
@@ -35,7 +35,7 @@ Stream<TextStreamEvent> streamText({
   GenerateTextOptions options = const GenerateTextOptions(),
   CallOptions callOptions = const CallOptions(),
 }) {
-  return model.stream(
+  return model.doStream(
     GenerateTextRequest(
       prompt: prompt,
       tools: tools,

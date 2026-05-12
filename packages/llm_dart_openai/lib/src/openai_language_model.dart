@@ -65,7 +65,7 @@ final class OpenAILanguageModel
       );
 
   @override
-  Future<GenerateTextResult> generate(GenerateTextRequest request) async {
+  Future<GenerateTextResult> doGenerate(GenerateTextRequest request) async {
     final call = resolveOpenAILanguageModelCall(
       request: request,
       modelId: modelId,
@@ -94,7 +94,7 @@ final class OpenAILanguageModel
   }
 
   @override
-  Stream<TextStreamEvent> stream(GenerateTextRequest request) async* {
+  Stream<TextStreamEvent> doStream(GenerateTextRequest request) async* {
     final call = resolveOpenAILanguageModelCall(
       request: request,
       modelId: modelId,
@@ -122,6 +122,7 @@ final class OpenAILanguageModel
       yield* _decodeStreamEvents(
         route: call.route,
         stream: response.stream,
+        includeRawChunks: request.options.includeRawChunks,
       );
     } catch (error) {
       yield ErrorEvent(transportErrorToModelError(error));
@@ -215,10 +216,14 @@ final class OpenAILanguageModel
   Stream<TextStreamEvent> _decodeStreamEvents({
     required OpenAIRequestRoute route,
     required Stream<List<int>> stream,
+    required bool includeRawChunks,
   }) async* {
     if (route == OpenAIRequestRoute.responses) {
       final streamState = OpenAIResponsesStreamState();
       await for (final chunk in _streamChunkParser.parse(stream)) {
+        if (includeRawChunks) {
+          yield RawChunkEvent(chunk);
+        }
         for (final event in _codec.decodeStreamChunk(chunk, streamState)) {
           yield event;
         }
@@ -228,6 +233,9 @@ final class OpenAILanguageModel
 
     final streamState = OpenAIChatCompletionsStreamState();
     await for (final chunk in _streamChunkParser.parse(stream)) {
+      if (includeRawChunks) {
+        yield RawChunkEvent(chunk);
+      }
       for (final event in _chatCompletionsCodec.decodeStreamChunk(
         chunk,
         streamState,

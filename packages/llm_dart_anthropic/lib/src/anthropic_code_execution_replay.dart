@@ -1,4 +1,4 @@
-import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 enum AnthropicCodeExecutionBlockType {
   codeExecutionToolResult('code_execution_tool_result'),
@@ -437,16 +437,6 @@ final class AnthropicCodeExecutionReplay {
     );
   }
 
-  CustomUiPart toCustomUiPart({
-    ProviderMetadata? providerMetadata,
-  }) {
-    return CustomUiPart(
-      kind: kind,
-      data: toJson(),
-      providerMetadata: providerMetadata ?? this.providerMetadata,
-    );
-  }
-
   CustomPromptPart toCustomPromptPart({
     ProviderMetadata? providerMetadata,
   }) {
@@ -498,17 +488,6 @@ final class AnthropicCodeExecutionReplay {
 
   static AnthropicCodeExecutionReplay? tryParseContentPart(ContentPart part) {
     if (part is! CustomContentPart || part.kind != kind) {
-      return null;
-    }
-
-    return tryParseData(
-      part.data,
-      providerMetadata: part.providerMetadata,
-    );
-  }
-
-  static AnthropicCodeExecutionReplay? tryParseUiPart(ChatUiPart part) {
-    if (part is! CustomUiPart || part.kind != kind) {
       return null;
     }
 

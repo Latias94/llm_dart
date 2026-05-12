@@ -164,8 +164,7 @@ resolve unpublished workspace dependencies from this checkout.
   - focused pure Dart chat runtime entrypoint over `llm_dart_chat`
 - `package:llm_dart/openai.dart`
   - focused OpenAI-family provider entrypoint for `openai(...)`,
-    provider-owned options, native tools, custom parts, and
-    `OpenAIMessageMapper`
+    provider-owned options, native tools, and custom content/event parts
 - `package:llm_dart/xai.dart`
   - focused xAI entrypoint for `xai(...)`, live-search options, and xAI-owned
     source controls
@@ -181,7 +180,7 @@ resolve unpublished workspace dependencies from this checkout.
   - focused Phind entrypoint for `phind(...)` and Phind profile settings
 - `package:llm_dart/google.dart`
   - focused Google provider entrypoint for `google(...)`, provider-owned
-    options, replay helpers, custom parts, and `GoogleMessageMapper`
+    options, replay helpers, and custom content/event parts
 - `package:llm_dart/anthropic.dart`
   - focused Anthropic provider entrypoint for `anthropic(...)` and
     Anthropic-owned types
@@ -192,8 +191,8 @@ resolve unpublished workspace dependencies from this checkout.
   - focused ElevenLabs provider entrypoint for `elevenLabs(...)`, speech,
     transcription, voice catalogs, and audio options
 - `package:llm_dart/legacy.dart`
-  - explicit compatibility shell for `LLMBuilder()`, `ai()`,
-    `createProvider(...)`, legacy models, and builder-era APIs
+  - explicit compatibility shell for `LLMBuilder()`, `createProvider(...)`,
+    legacy models, and builder-era APIs
 - `package:llm_dart_ollama/llm_dart_ollama.dart`
   - direct Ollama provider package without depending on root `llm_dart`
 - `package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart`
@@ -611,58 +610,42 @@ without inventing another transport or provider layer.
 
 Use `ChatMessageMapper` as the stable rendering baseline. When the UI also
 needs provider-owned inspection, compose it with the focused provider
-entrypoints instead of widening the shared chat layer.
+entrypoints or app-owned metadata inspection instead of widening the shared
+chat layer.
 
 The default recommendation is now:
 
 - import `ChatMessageMapper` from `package:llm_dart_ai/llm_dart_ai.dart` or
   any entrypoint that re-exports it
-- use `OpenAIMessageMapper.mapComposed(...)` or
-  `GoogleMessageMapper.mapComposed(...)` when the UI needs both the shared
-  baseline and provider-owned metadata in one call
+- keep provider-specific UI metadata inspection in app code by reading
+  `ProviderMetadata` namespaces from mapped messages or parts
+- use provider custom-part helpers on provider prompt/content parts or stream
+  events before UI projection
 
-Focused provider mapper helpers:
+Focused provider custom-part helpers:
 
 - `package:llm_dart/openai.dart`
-  - `OpenAIMessageMapper` for response/item/source/tool metadata, custom parts,
-    and logprobs-aware part inspection
+  - `OpenAICustomPart` and `OpenAICustomPartSummary` for provider-owned custom
+    content parts and stream events
 - `package:llm_dart/google.dart`
-  - `GoogleMessageMapper` for thought signatures, response-part metadata,
-    source metadata, and Google custom-part inspection
+  - `GoogleCustomPart` and `GoogleCustomPartSummary` for provider-owned custom
+    prompt/content parts and stream events
 
 ```dart
 import 'package:llm_dart_flutter/llm_dart_flutter.dart';
-import 'package:llm_dart/google.dart' as google;
-import 'package:llm_dart/openai.dart' as openai;
 
 void renderOpenAI(ChatUiMessage message) {
-  final mapped = const openai.OpenAIMessageMapper().mapComposed(message);
-  final shared = mapped.shared;
-  final provider = mapped.provider;
+  final shared = const ChatMessageMapper().map(message);
 
   print(shared.text);
-  print(provider.hasOpenAIMetadata);
-  print(provider.hasLogprobs);
-
-  for (final detail in provider.partDetails) {
-    print('${detail.type}: ${detail.label}');
-  }
+  print(shared.responseProviderMetadata?.namespace('openai'));
 }
 
 void renderGoogle(ChatUiMessage message) {
-  final mapped = const google.GoogleMessageMapper().mapComposed(message);
-  final shared = mapped.shared;
-  final provider = mapped.provider;
+  final shared = const ChatMessageMapper().map(message);
 
   print(shared.text);
-  print(provider.hasGoogleMetadata);
-  print(provider.hasThoughtSignatures);
-
-  for (final detail in provider.partDetails) {
-    print('${detail.type}: ${detail.label}');
-    print(detail.sourceId);
-    print(detail.chunkType);
-  }
+  print(shared.responseProviderMetadata?.namespace('google'));
 }
 ```
 
@@ -783,8 +766,8 @@ Future<void> main() async {
 - Prefer approved model IDs, app-owned history, and local attachment state as
   the default product path before introducing provider-managed assistants,
   remote files, or catalog discovery.
-- Treat `LLMBuilder()`, `ai()`, and old root provider surfaces as
-  compatibility APIs, not the target architecture.
+- Treat `LLMBuilder()` and old root provider surfaces as compatibility APIs,
+  not the target architecture.
 - Treat the root Ollama and ElevenLabs surfaces as compatibility-first shells
   when the modern shared-capability path already exists in
   `llm_dart_ollama` or `llm_dart_elevenlabs`.
@@ -826,8 +809,8 @@ import 'package:llm_dart/legacy.dart';
 ```
 
 `LLMBuilder()` remains available only on that compatibility path. The old
-`ai()` helper is a deprecated migration alias rather than the recommended main
-API.
+`ai()` helper has been removed; use `LLMBuilder()` for compatibility builder
+code or short provider factories for modern code.
 
 For Ollama and ElevenLabs, new app code should start from `llm_dart_ollama` or
 `llm_dart_elevenlabs`. The root compatibility shells remain for migration code.

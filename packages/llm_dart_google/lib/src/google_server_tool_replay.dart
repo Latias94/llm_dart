@@ -1,4 +1,4 @@
-import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'google_shared.dart';
 
@@ -138,19 +138,6 @@ final class GoogleToolCallReplay {
     );
   }
 
-  CustomUiPart toCustomUiPart({
-    ProviderMetadata? providerMetadata,
-  }) {
-    return CustomUiPart(
-      kind: kind,
-      data: toJson(),
-      providerMetadata: ProviderMetadata.mergeNullable(
-        this.providerMetadata,
-        providerMetadata,
-      ),
-    );
-  }
-
   CustomPromptPart toCustomPromptPart({
     ProviderMetadata? providerMetadata,
   }) {
@@ -190,17 +177,6 @@ final class GoogleToolCallReplay {
 
   static GoogleToolCallReplay? tryParseContentPart(ContentPart part) {
     if (part is! CustomContentPart || part.kind != kind) {
-      return null;
-    }
-
-    return tryParseData(
-      part.data,
-      providerMetadata: part.providerMetadata,
-    );
-  }
-
-  static GoogleToolCallReplay? tryParseUiPart(ChatUiPart part) {
-    if (part is! CustomUiPart || part.kind != kind) {
       return null;
     }
 
@@ -387,19 +363,6 @@ final class GoogleToolResponseReplay {
     );
   }
 
-  CustomUiPart toCustomUiPart({
-    ProviderMetadata? providerMetadata,
-  }) {
-    return CustomUiPart(
-      kind: kind,
-      data: toJson(),
-      providerMetadata: ProviderMetadata.mergeNullable(
-        this.providerMetadata,
-        providerMetadata,
-      ),
-    );
-  }
-
   CustomPromptPart toCustomPromptPart({
     ProviderMetadata? providerMetadata,
   }) {
@@ -439,17 +402,6 @@ final class GoogleToolResponseReplay {
 
   static GoogleToolResponseReplay? tryParseContentPart(ContentPart part) {
     if (part is! CustomContentPart || part.kind != kind) {
-      return null;
-    }
-
-    return tryParseData(
-      part.data,
-      providerMetadata: part.providerMetadata,
-    );
-  }
-
-  static GoogleToolResponseReplay? tryParseUiPart(ChatUiPart part) {
-    if (part is! CustomUiPart || part.kind != kind) {
       return null;
     }
 

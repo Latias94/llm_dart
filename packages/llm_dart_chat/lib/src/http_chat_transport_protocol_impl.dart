@@ -254,6 +254,14 @@ final class HttpChatTransportRequestJsonCodec {
       if (options.stopSequences != null) 'stopSequences': options.stopSequences,
       if (options.topP != null) 'topP': options.topP,
       if (options.topK != null) 'topK': options.topK,
+      if (options.presencePenalty != null)
+        'presencePenalty': options.presencePenalty,
+      if (options.frequencyPenalty != null)
+        'frequencyPenalty': options.frequencyPenalty,
+      if (options.seed != null) 'seed': options.seed,
+      if (options.reasoning != null)
+        'reasoning': _encodeGenerateTextReasoningOptions(options.reasoning!),
+      if (options.includeRawChunks) 'includeRawChunks': true,
     };
   }
 
@@ -287,6 +295,51 @@ final class HttpChatTransportRequestJsonCodec {
               .toList(growable: false),
       topP: _asNullableJsonDouble(map['topP'], path: '$path.topP'),
       topK: _asNullableJsonInt(map['topK'], path: '$path.topK'),
+      presencePenalty: _asNullableJsonDouble(
+        map['presencePenalty'],
+        path: '$path.presencePenalty',
+      ),
+      frequencyPenalty: _asNullableJsonDouble(
+        map['frequencyPenalty'],
+        path: '$path.frequencyPenalty',
+      ),
+      seed: _asNullableJsonInt(map['seed'], path: '$path.seed'),
+      reasoning: map['reasoning'] == null
+          ? null
+          : _decodeGenerateTextReasoningOptions(
+              map['reasoning'],
+              path: '$path.reasoning',
+            ),
+      includeRawChunks: _asNullableJsonBool(
+            map['includeRawChunks'],
+            path: '$path.includeRawChunks',
+          ) ??
+          false,
+    );
+  }
+
+  _JsonMap _encodeGenerateTextReasoningOptions(
+    GenerateTextReasoningOptions options,
+  ) {
+    return {
+      if (options.enabled != null) 'enabled': options.enabled,
+      if (options.effort != null) 'effort': options.effort!.value,
+      if (options.budgetTokens != null) 'budgetTokens': options.budgetTokens,
+    };
+  }
+
+  GenerateTextReasoningOptions _decodeGenerateTextReasoningOptions(
+    Object? value, {
+    required String path,
+  }) {
+    final map = _asJsonMap(value, path: path);
+    return GenerateTextReasoningOptions(
+      enabled: _asNullableJsonBool(map['enabled'], path: '$path.enabled'),
+      effort: _decodeReasoningEffort(map['effort'], path: '$path.effort'),
+      budgetTokens: _asNullableJsonInt(
+        map['budgetTokens'],
+        path: '$path.budgetTokens',
+      ),
     );
   }
 
@@ -762,6 +815,21 @@ String? _asNullableJsonString(
   return _asJsonString(value, path: path);
 }
 
+bool? _asNullableJsonBool(
+  Object? value, {
+  required String path,
+}) {
+  if (value == null) {
+    return null;
+  }
+
+  if (value is bool) {
+    return value;
+  }
+
+  throw FormatException('Expected bool at $path.');
+}
+
 int? _asNullableJsonInt(
   Object? value, {
   required String path,
@@ -802,4 +870,23 @@ double? _asNullableJsonDouble(
   }
 
   throw FormatException('Expected number at $path.');
+}
+
+ReasoningEffort? _decodeReasoningEffort(
+  Object? value, {
+  required String path,
+}) {
+  final stringValue = _asNullableJsonString(value, path: path);
+  if (stringValue == null) {
+    return null;
+  }
+
+  for (final effort in ReasoningEffort.values) {
+    if (effort.value == stringValue) {
+      return effort;
+    }
+  }
+
+  throw FormatException(
+      'Unsupported reasoning effort "$stringValue" at $path.');
 }

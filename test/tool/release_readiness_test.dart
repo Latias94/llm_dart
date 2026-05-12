@@ -37,6 +37,9 @@ void main() {
       final steps = buildReleaseReadinessSteps(
         const ReleaseReadinessOptions(),
       );
+      final consumerSmokeStep = steps.firstWhere(
+        (step) => step.name == 'Consumer smoke',
+      );
 
       expect(
         steps.map((step) => step.name),
@@ -48,6 +51,10 @@ void main() {
           'Workspace publish dry-run',
           'Pub version availability',
         ]),
+      );
+      expect(
+        consumerSmokeStep.commandText,
+        'dart tool/run_consumer_smoke.dart',
       );
     });
 

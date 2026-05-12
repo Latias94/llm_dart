@@ -53,7 +53,7 @@ final class GoogleLanguageModel
       );
 
   @override
-  Future<GenerateTextResult> generate(GenerateTextRequest request) async {
+  Future<GenerateTextResult> doGenerate(GenerateTextRequest request) async {
     final providerOptions = resolveGoogleProviderOptions(request);
     final preparedRequest = _requestCodec.encodeRequest(
       modelId: modelId,
@@ -90,7 +90,7 @@ final class GoogleLanguageModel
   }
 
   @override
-  Stream<TextStreamEvent> stream(GenerateTextRequest request) async* {
+  Stream<TextStreamEvent> doStream(GenerateTextRequest request) async* {
     final providerOptions = resolveGoogleProviderOptions(request);
     final preparedRequest = _requestCodec.encodeRequest(
       modelId: modelId,
@@ -124,6 +124,9 @@ final class GoogleLanguageModel
 
       final state = GoogleGenerateContentStreamState();
       await for (final chunk in _streamChunkParser.parse(response.stream)) {
+        if (request.options.includeRawChunks) {
+          yield RawChunkEvent(chunk);
+        }
         for (final event in _streamCodec.decodeChunk(
           chunk,
           state,

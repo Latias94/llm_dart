@@ -1,4 +1,4 @@
-import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'openai_custom_part.dart';
 
 final class OpenAICustomPartSummaryField {
@@ -48,11 +48,6 @@ final class OpenAICustomPartSummary {
     return parsed == null ? null : OpenAICustomPartSummary.fromPart(parsed);
   }
 
-  static OpenAICustomPartSummary? tryParseUiPart(ChatUiPart part) {
-    final parsed = OpenAICustomPart.tryParseUiPart(part);
-    return parsed == null ? null : OpenAICustomPartSummary.fromPart(parsed);
-  }
-
   static OpenAICustomPartSummary? tryParseEvent(TextStreamEvent event) {
     final parsed = OpenAICustomPart.tryParseEvent(event);
     return parsed == null ? null : OpenAICustomPartSummary.fromPart(parsed);
@@ -68,11 +63,6 @@ final class OpenAICustomPartSummary {
     Iterable<ContentPart> parts,
   ) {
     return parseTypedParts(parts, tryParseContentPart);
-  }
-
-  static List<OpenAICustomPartSummary> parseUiParts(
-      Iterable<ChatUiPart> parts) {
-    return parseTypedParts(parts, tryParseUiPart);
   }
 
   static List<OpenAICustomPartSummary> parseEvents(

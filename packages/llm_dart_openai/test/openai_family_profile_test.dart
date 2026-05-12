@@ -155,7 +155,7 @@ void main() {
         ),
       );
 
-      await model.generate(
+      await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage.text('hello'),
@@ -205,7 +205,7 @@ void main() {
         ),
       ).chatModel('openai/gpt-4o-mini');
 
-      await model.generate(
+      await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage.text('hello'),
@@ -232,7 +232,7 @@ void main() {
       ).chatModel('deepseek-chat');
 
       await expectLater(
-        model.generate(
+        model.doGenerate(
           GenerateTextRequest(
             prompt: [
               UserPromptMessage.text('hello'),
@@ -315,7 +315,7 @@ void main() {
         ),
       ).chatModel('deepseek-chat');
 
-      final result = await model.generate(
+      final result = await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage.text('hello'),
@@ -366,7 +366,7 @@ void main() {
         ),
       ).chatModel('deepseek-chat');
 
-      await model.generate(
+      await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage.text('What is the weather in Hanoi?'),

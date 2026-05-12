@@ -1,5 +1,5 @@
-import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'package:llm_dart_google/llm_dart_google.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -124,15 +124,15 @@ void main() {
       expect(summary.files.single.filename, 'chart.png');
     });
 
-    test('parses UI parts through one typed summary entrypoint', () {
-      final summaries = GoogleCustomPartSummary.parseUiParts([
+    test('parses content parts through one typed summary entrypoint', () {
+      final summaries = GoogleCustomPartSummary.parseContentParts([
         GoogleToolCallReplay.fromToolCall(
           {
             'id': 'srvtool_1',
             'toolType': 'google_search',
             'query': 'Dart SDK',
           },
-        ).toCustomUiPart(),
+        ).toCustomContentPart(),
         GoogleToolResponseReplay.fromToolResponse(
           {
             'id': 'srvtool_1',
@@ -145,8 +145,8 @@ void main() {
               ],
             },
           },
-        ).toCustomUiPart(),
-        const CustomUiPart(
+        ).toCustomContentPart(),
+        const CustomContentPart(
           kind: 'openai.compaction',
           data: {
             'id': 'cmp_1',

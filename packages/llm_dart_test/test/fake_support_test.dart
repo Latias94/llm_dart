@@ -37,7 +37,7 @@ void main() {
     );
 
     await model
-        .stream(
+        .doStream(
           GenerateTextRequest(
             prompt: [
               UserPromptMessage.text('Hello'),

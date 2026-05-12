@@ -404,6 +404,62 @@ void main() {
       );
     });
 
+    test('direct provider calls stay single-step and orchestration-free',
+        () async {
+      final model = _SingleStepLanguageModel(
+        result: GenerateTextResult(
+          content: const [
+            ToolCallContentPart(
+              ToolCallContent(
+                toolCallId: 'call_1',
+                toolName: 'weather',
+                input: {
+                  'city': 'Tokyo',
+                },
+              ),
+            ),
+          ],
+          finishReason: FinishReason.toolCalls,
+        ),
+        streamEvents: const [
+          ToolCallEvent(
+            toolCall: ToolCallContent(
+              toolCallId: 'call_2',
+              toolName: 'weather',
+              input: {
+                'city': 'Osaka',
+              },
+            ),
+          ),
+          FinishEvent(finishReason: FinishReason.toolCalls),
+        ],
+      );
+      final request = GenerateTextRequest(
+        prompt: [
+          UserPromptMessage.text('Weather?'),
+        ],
+        tools: [
+          FunctionToolDefinition(
+            name: 'weather',
+            inputSchema: ToolJsonSchema.object(),
+          ),
+        ],
+      );
+
+      final result = await model.doGenerate(request);
+      final events = await model.doStream(request).toList();
+
+      expect(model.generateRequests, hasLength(1));
+      expect(model.generateRequests.single, same(request));
+      expect(model.streamRequests, hasLength(1));
+      expect(model.streamRequests.single, same(request));
+      expect(result.finishReason, FinishReason.toolCalls);
+      expect(result.content.single, isA<ToolCallContentPart>());
+      expect(events, hasLength(2));
+      expect(events.first, isA<ToolCallEvent>());
+      expect((events.last as FinishEvent).finishReason, FinishReason.toolCalls);
+    });
+
     test('aggregates text and reasoning content from results', () {
       final result = GenerateTextResult(
         content: [
@@ -689,3 +745,35 @@ final class _OtherProviderOptions implements ProviderInvocationOptions {}
 final class _TestModelOptions implements ProviderModelOptions {}
 
 final class _OtherModelOptions implements ProviderModelOptions {}
+
+final class _SingleStepLanguageModel implements LanguageModel {
+  final GenerateTextResult result;
+  final List<TextStreamEvent> streamEvents;
+  final List<GenerateTextRequest> generateRequests = [];
+  final List<GenerateTextRequest> streamRequests = [];
+
+  _SingleStepLanguageModel({
+    required this.result,
+    required this.streamEvents,
+  });
+
+  @override
+  String get modelId => 'single-step';
+
+  @override
+  String get providerId => 'test';
+
+  @override
+  Future<GenerateTextResult> doGenerate(GenerateTextRequest request) async {
+    generateRequests.add(request);
+    return result;
+  }
+
+  @override
+  Stream<TextStreamEvent> doStream(GenerateTextRequest request) async* {
+    streamRequests.add(request);
+    for (final event in streamEvents) {
+      yield event;
+    }
+  }
+}

@@ -114,6 +114,7 @@ void main() {
           maxOutputTokens: 128,
           topP: 0.8,
           topK: 32,
+          seed: 42,
           stopSequences: const ['STOP'],
           responseFormat: JsonResponseFormat(
             schema: JsonSchema.object(
@@ -193,6 +194,7 @@ void main() {
             'temperature': 0.2,
             'top_p': 0.8,
             'top_k': 32,
+            'seed': 42,
             'num_predict': 128,
             'stop': ['STOP'],
             'num_ctx': 4096,
@@ -340,6 +342,43 @@ void main() {
           ),
         ],
       );
+    });
+
+    test('generate maps shared reasoning toggle to Ollama think', () async {
+      TransportRequest? capturedRequest;
+
+      final model = Ollama(
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return const TransportResponse(
+              statusCode: 200,
+              body: {
+                'model': 'llama3.2',
+                'done': true,
+                'message': {
+                  'content': 'Done',
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel('llama3.2');
+
+      await model.doGenerate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage.text('Say done.'),
+          ],
+          options: const GenerateTextOptions(
+            reasoning: GenerateTextReasoningOptions.enabled(),
+          ),
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      final body = capturedRequest!.body as Map<String, Object?>;
+      expect(body['think'], isTrue);
     });
 
     test('generate encodes explicit content tool output as stable JSON',
@@ -492,6 +531,49 @@ void main() {
           totalTokens: 10,
         ),
       );
+    });
+
+    test('stream emits raw chunks when requested', () async {
+      final model = Ollama(
+        transport: _FakeTransportClient(
+          onSendStream: (request) async {
+            final lines = [
+              jsonEncode({
+                'model': 'llama3.2',
+                'done': false,
+                'message': {
+                  'content': 'Hi',
+                },
+              }),
+              jsonEncode({
+                'model': 'llama3.2',
+                'done': true,
+                'done_reason': 'stop',
+                'message': const <String, Object?>{},
+              }),
+            ].join('\n');
+
+            return StreamingTransportResponse(
+              statusCode: 200,
+              stream: Stream.value(utf8.encode(lines)),
+            );
+          },
+        ),
+      ).chatModel('llama3.2');
+
+      final events = await streamText(
+        model: model,
+        prompt: [
+          UserPromptMessage.text('Say hi.'),
+        ],
+        options: const GenerateTextOptions(
+          includeRawChunks: true,
+        ),
+      ).toList();
+
+      final rawChunks = events.whereType<RawChunkEvent>().toList();
+      expect(rawChunks, hasLength(2));
+      expect(rawChunks.first.raw, containsPair('done', false));
     });
 
     test('language model rejects incompatible provider options', () async {

@@ -83,6 +83,9 @@ void main() {
           topP: 0.7,
           topK: 20,
           stopSequences: ['END'],
+          presencePenalty: 0.1,
+          frequencyPenalty: 0.2,
+          seed: 1234,
         ),
         settings: const GoogleChatModelSettings(
           safetySettings: [
@@ -212,6 +215,9 @@ void main() {
           'topP': 0.7,
           'topK': 20,
           'stopSequences': ['END'],
+          'presencePenalty': 0.1,
+          'frequencyPenalty': 0.2,
+          'seed': 1234,
           'candidateCount': 1,
           'thinkingConfig': {
             'includeThoughts': true,
@@ -277,6 +283,35 @@ void main() {
           },
         ],
       );
+    });
+
+    test('maps shared reasoning effort to Gemini 3 thinking levels', () {
+      final request = codec.encodeRequest(
+        modelId: 'gemini-3-pro-preview',
+        prompt: [
+          UserPromptMessage.text('Think briefly.'),
+        ],
+        tools: const [],
+        toolChoice: null,
+        options: const GenerateTextOptions(
+          reasoning: GenerateTextReasoningOptions.enabled(
+            effort: ReasoningEffort.medium,
+          ),
+        ),
+        settings: const GoogleChatModelSettings(),
+        providerOptions: const GoogleGenerateTextOptions(),
+      );
+
+      expect(
+        request.body['generationConfig'],
+        {
+          'thinkingConfig': {
+            'includeThoughts': true,
+            'thinkingLevel': 'medium',
+          },
+        },
+      );
+      expect(request.warnings, isEmpty);
     });
 
     test('prepends system instructions for gemma models', () {

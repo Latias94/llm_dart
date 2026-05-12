@@ -1,4 +1,4 @@
-import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'google_custom_part.dart';
 import 'google_shared.dart';
 
@@ -97,11 +97,6 @@ final class GoogleCustomPartSummary {
     return parsed == null ? null : GoogleCustomPartSummary.fromPart(parsed);
   }
 
-  static GoogleCustomPartSummary? tryParseUiPart(ChatUiPart part) {
-    final parsed = GoogleCustomPart.tryParseUiPart(part);
-    return parsed == null ? null : GoogleCustomPartSummary.fromPart(parsed);
-  }
-
   static GoogleCustomPartSummary? tryParseEvent(TextStreamEvent event) {
     final parsed = GoogleCustomPart.tryParseEvent(event);
     return parsed == null ? null : GoogleCustomPartSummary.fromPart(parsed);
@@ -117,12 +112,6 @@ final class GoogleCustomPartSummary {
     Iterable<ContentPart> parts,
   ) {
     return parseTypedParts(parts, tryParseContentPart);
-  }
-
-  static List<GoogleCustomPartSummary> parseUiParts(
-    Iterable<ChatUiPart> parts,
-  ) {
-    return parseTypedParts(parts, tryParseUiPart);
   }
 
   static List<GoogleCustomPartSummary> parseEvents(

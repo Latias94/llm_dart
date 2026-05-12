@@ -1,5 +1,5 @@
-import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -41,11 +41,6 @@ void main() {
         data: payload,
         providerMetadata: metadata,
       );
-      final uiPart = const CustomUiPart(
-        kind: AnthropicCodeExecutionReplay.kind,
-        data: payload,
-        providerMetadata: metadata,
-      );
       final promptPart = const CustomPromptPart(
         kind: AnthropicCodeExecutionReplay.kind,
         data: payload,
@@ -59,13 +54,11 @@ void main() {
 
       final fromContent =
           AnthropicCodeExecutionReplay.tryParseContentPart(contentPart);
-      final fromUi = AnthropicCodeExecutionReplay.tryParseUiPart(uiPart);
       final fromPrompt =
           AnthropicCodeExecutionReplay.tryParsePromptPart(promptPart);
       final fromEvent = AnthropicCodeExecutionReplay.tryParseEvent(event);
 
       expect(fromContent, isNotNull);
-      expect(fromUi, isNotNull);
       expect(fromPrompt, isNotNull);
       expect(fromEvent, isNotNull);
 
@@ -84,7 +77,6 @@ void main() {
       expect(result.fileHandles.single.fileId, 'file_123');
       expect(replay.providerMetadata, metadata);
       expect(replay.toJson(), payload);
-      expect(fromUi!.toJson(), payload);
       expect(fromPrompt!.toJson(), payload);
       expect(fromEvent!.toJson(), payload);
     });

@@ -1,0 +1,46 @@
+# Release Readiness Report
+
+- Repository: `F:/SourceCodes/Github/llm_dart`
+- Version: `0.11.0-alpha.1`
+- Started: `2026-05-12T09:15:38.172451`
+- Finished: `2026-05-12T09:18:43.520591`
+- Elapsed: `3m 5s`
+- Result: `passed`
+
+## Steps
+
+| Step | Status | Exit Code | Elapsed |
+| --- | --- | ---: | ---: |
+| Workspace dependency guards | passed | 0 | 1.180s |
+| Root package boundary guards | passed | 0 | 961ms |
+| Core compatibility shell guard | passed | 0 | 907ms |
+| Transport boundary guard | passed | 0 | 932ms |
+| Test legacy-import guard | passed | 0 | 967ms |
+| Example API guard | passed | 0 | 843ms |
+| Workspace analysis | passed | 0 | 2.319s |
+| Workspace tests | passed | 0 | 17.102s |
+| Workspace package tests | passed | 0 | 24.599s |
+| Consumer smoke | passed | 0 | 51.002s |
+| Workspace publish dry-run | passed | 0 | 1m 16s |
+| Pub version availability | passed | 0 | 8.421s |
+
+## Publish Order
+
+- `llm_dart_provider`
+- `llm_dart_ai`
+- `llm_dart_core`
+- `llm_dart_transport`
+- `llm_dart_chat`
+- `llm_dart_openai`
+- `llm_dart_google`
+- `llm_dart_anthropic`
+- `llm_dart_ollama`
+- `llm_dart_elevenlabs`
+- `llm_dart_flutter`
+- `llm_dart`
+
+## Post-Publish Consumer Smoke
+
+- Repeat consumer smoke against the published pub.dev versions after the packages are released with `dart run tool/run_consumer_smoke.dart --published`.
+- Validate clean root Dart, OpenAI-only, split-package, and Flutter consumers without local path overrides.
+- Keep `test(...)` for pure controller/import smoke tests; reserve `testWidgets(...)` for tests that pump widgets.

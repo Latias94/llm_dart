@@ -46,13 +46,10 @@ void printState(ChatState state) {
   }
 
   final latest = state.messages.last;
-  final composed = const openai.OpenAIMessageMapper().mapComposed(latest);
-  final shared = composed.shared;
-  final provider = composed.provider;
+  final shared = const ChatMessageMapper().map(latest);
   print('latest role=${latest.role} parts=${latest.parts.length}');
   print('latest text=${shared.text}');
   print('latest tools=${shared.toolParts.length}');
-  print('openai metadata=${provider.hasOpenAIMetadata}');
-  print('openai logprobs=${provider.hasLogprobs}');
-  print('openai part details=${provider.partDetails.length}');
+  print('provider metadata=${shared.responseProviderMetadata != null}');
+  print('custom parts=${shared.customParts.length}');
 }

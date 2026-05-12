@@ -3,7 +3,7 @@
 Google provider implementations for `llm_dart`.
 
 This package owns the provider-native Google/Gemini model surfaces, typed
-Google options, message mapping helpers, Google-specific replay/runtime
+Google options, Google-specific replay/runtime
 behavior, and additive provider-owned image-editing helpers.
 
 Use this package when you want direct access to the focused Google package
@@ -27,7 +27,9 @@ That includes:
   `speechModel(...)`
 - Google-owned options such as `GoogleGenerateTextOptions`,
   `GoogleImageOptions`, `GoogleEmbedOptions`, and `GoogleSpeechOptions`
-- provider-aware UI helpers such as `GoogleMessageMapper`
+- provider-owned replay helpers such as `GoogleCustomPart`,
+  `GoogleCustomPartSummary`, `GoogleToolCallReplay`,
+  `GoogleToolResponseReplay`, and `GoogleFunctionResponseReplay`
 - provider-owned image editing and variation through
   `GoogleImageModel.edit(...)` and `createVariation(...)`
 
@@ -38,9 +40,11 @@ That includes:
    `generateImage(...)`, and `generateSpeech(...)` for shared app flows.
 3. Put Gemini/Google-specific controls in `GoogleGenerateTextOptions`,
    `GoogleEmbedOptions`, `GoogleImageOptions`, or `GoogleSpeechOptions`.
-4. Use `GoogleMessageMapper` only when UI code needs Google-specific metadata
-   beyond the shared chat summary.
-5. Keep streamed native TTS helper flows on the root compatibility appendix
+4. Keep UI projection on shared runtime/chat helpers. Inspect Google
+   `ProviderMetadata` in app UI code when richer rendering needs it.
+5. Use `GoogleCustomPart` / `GoogleCustomPartSummary` on provider
+   prompt/content parts or stream events for Google replay payloads.
+6. Keep streamed native TTS helper flows on the root compatibility appendix
    until they graduate into a focused provider-owned utility.
 
 The root `llm_dart` package re-exports the main focused entrypoint through:

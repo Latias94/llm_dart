@@ -192,10 +192,9 @@ controller.addListener(() {
     return;
   }
 
-  final mapped =
-      const openai.OpenAIMessageMapper().mapComposed(state.messages.last);
-  print(mapped.shared.text);
-  print(mapped.provider.hasOpenAIMetadata);
+  final mapped = const ChatMessageMapper().map(state.messages.last);
+  print(mapped.text);
+  print(mapped.responseProviderMetadata?.namespace('openai'));
 });
 ```
 

@@ -27,7 +27,7 @@ final class FakeLanguageModel implements LanguageModel {
   String get modelId => _modelId;
 
   @override
-  Future<GenerateTextResult> generate(GenerateTextRequest request) {
+  Future<GenerateTextResult> doGenerate(GenerateTextRequest request) {
     lastRequest = request;
     lastGenerateRequest = request;
 
@@ -39,7 +39,7 @@ final class FakeLanguageModel implements LanguageModel {
   }
 
   @override
-  Stream<TextStreamEvent> stream(GenerateTextRequest request) {
+  Stream<TextStreamEvent> doStream(GenerateTextRequest request) {
     lastRequest = request;
     lastStreamRequest = request;
 

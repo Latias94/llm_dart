@@ -47,7 +47,7 @@ final RegExp _coreSubpathCompatibilityImportPattern = RegExp(
 
 final RegExp _llmBuilderPattern = RegExp(r'\bLLMBuilder\s*\(');
 
-final RegExp _deprecatedAiHelperPattern = RegExp(r'(^|[^\w.])ai\s*\(');
+final RegExp _removedAiHelperPattern = RegExp(r'(^|[^\w.])ai\s*\(');
 
 final RegExp _groupedFacadePattern = RegExp(r'\bllm\s*\.\s*AI\b');
 
@@ -123,8 +123,8 @@ String? _findViolation(String line) {
   if (_llmBuilderPattern.hasMatch(line)) {
     return 'LLMBuilder usage found';
   }
-  if (_deprecatedAiHelperPattern.hasMatch(line)) {
-    return 'deprecated ai() helper usage found';
+  if (_removedAiHelperPattern.hasMatch(line)) {
+    return 'removed ai() helper usage found';
   }
   if (_groupedFacadePattern.hasMatch(line)) {
     return 'grouped AI facade usage found';
@@ -147,7 +147,7 @@ Future<void> main() async {
   if (result.passed) {
     stdout.writeln(
       'example API guard passed: default examples avoid legacy.dart, '
-      'LLMBuilder(), legacy provider/model/core subpaths, the deprecated '
+      'LLMBuilder(), legacy provider/model/core subpaths, the removed '
       'ai() helper, and grouped AI facade usage outside explicit '
       'compatibility appendices.',
     );

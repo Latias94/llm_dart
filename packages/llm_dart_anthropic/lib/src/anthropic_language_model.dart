@@ -51,7 +51,7 @@ final class AnthropicLanguageModel
       resolveAnthropicUri(baseUrl, 'messages/count_tokens');
 
   @override
-  Future<GenerateTextResult> generate(GenerateTextRequest request) async {
+  Future<GenerateTextResult> doGenerate(GenerateTextRequest request) async {
     final providerOptions = _resolveProviderOptions(
       request.callOptions.providerOptions,
     );
@@ -90,7 +90,7 @@ final class AnthropicLanguageModel
   }
 
   @override
-  Stream<TextStreamEvent> stream(GenerateTextRequest request) async* {
+  Stream<TextStreamEvent> doStream(GenerateTextRequest request) async* {
     final providerOptions = _resolveProviderOptions(
       request.callOptions.providerOptions,
     );
@@ -126,6 +126,9 @@ final class AnthropicLanguageModel
 
       final state = AnthropicMessagesStreamState();
       await for (final chunk in _streamChunkParser.parse(response.stream)) {
+        if (request.options.includeRawChunks) {
+          yield RawChunkEvent(chunk);
+        }
         for (final event in _streamCodec.decodeChunk(
           chunk,
           state,

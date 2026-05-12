@@ -5,6 +5,51 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- Hardened `LanguageModel` as a provider implementation contract. Direct
+  provider implementations now use `doGenerate(...)` and `doStream(...)`;
+  user-facing generation should flow through `generateText(...)`,
+  `streamText(...)`, `streamTextRun(...)`, or structured-output helpers from
+  `llm_dart_ai`.
+- Added shared generation options for presence penalty, frequency penalty,
+  seed, reasoning configuration, and raw stream chunk inclusion where providers
+  can expose it.
+- Tightened provider package dependencies so concrete provider packages do not
+  depend on AI runtime, chat, Flutter, root, or core compatibility packages at
+  runtime.
+- Clarified the provider options versus provider metadata boundary. Input-side
+  provider features use typed provider options; `ProviderMetadata` is reserved
+  for output observations, raw response details, and replay data.
+- Deferred a public `llm_dart_provider_utils` package until repeated provider
+  helper usage proves a stable cross-provider utility boundary.
+
+### Removed
+
+- Removed the deprecated `ai()` helper from the legacy root compatibility
+  entrypoint. Use `LLMBuilder()` for compatibility builder code or short
+  provider factories such as `openai(...).chatModel(...)` for modern code.
+
+### Migration Notes
+
+- Replace `ai()` with `LLMBuilder()` when staying on the compatibility builder
+  surface.
+- Replace old direct `model.generate(request)` calls with
+  `generateText(model: ..., prompt: ...)` for app code, or
+  `model.doGenerate(request)` only inside provider/adaptor code.
+- Replace old direct `model.stream(request)` calls with
+  `streamText(...)` / `streamTextRun(...).eventStream` for app/runtime code, or
+  `model.doStream(request)` only inside provider/adaptor code.
+- Move request configuration that used provider metadata into typed provider
+  options passed through `CallOptions.providerOptions`.
+- Move provider file identity hints from `ProviderMetadata` to
+  `FileProviderReferenceData(ProviderReference.forProvider(...))`.
+- See
+  `docs/workstreams/2026-05-sdk-aligned-fearless-refactor/01-boundaries-and-migration.md`
+  for before/after examples.
+
 ## [0.11.0-alpha.1] - 2026-05-08
 
 This alpha moves new application code toward the model-first API:

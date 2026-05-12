@@ -59,7 +59,7 @@ void main() {
         ),
       );
 
-      final result = await model.generate(
+      final result = await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             SystemPromptMessage.text('You are concise.'),
@@ -181,7 +181,7 @@ void main() {
         ),
       ).chatModel('gemini-3-pro-preview');
 
-      final result = await model.generate(
+      final result = await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage.text('Search the web and check the weather.'),
@@ -280,7 +280,7 @@ void main() {
         ),
       ).chatModel('gemini-2.5-flash');
 
-      await model.generate(
+      await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage.text('Return JSON.'),
@@ -351,7 +351,7 @@ void main() {
         ),
       ).chatModel('gemini-2.5-flash');
 
-      await model.generate(
+      await model.doGenerate(
         GenerateTextRequest(
           prompt: [
             UserPromptMessage.text('Return JSON.'),
@@ -404,7 +404,7 @@ void main() {
       ).chatModel('gemini-2.5-flash');
 
       await expectLater(
-        model.generate(
+        model.doGenerate(
           GenerateTextRequest(
             prompt: [
               UserPromptMessage.text('Return JSON.'),
@@ -466,11 +466,14 @@ void main() {
       ).chatModel('gemini-3-pro-preview');
 
       final events = await model
-          .stream(
+          .doStream(
             GenerateTextRequest(
               prompt: [
                 UserPromptMessage.text('Say hello.'),
               ],
+              options: const GenerateTextOptions(
+                includeRawChunks: true,
+              ),
             ),
           )
           .toList();
@@ -492,6 +495,9 @@ void main() {
           'weather');
       expect(events.whereType<FinishEvent>().single.finishReason,
           FinishReason.toolCalls);
+      final rawChunks = events.whereType<RawChunkEvent>().toList();
+      expect(rawChunks, hasLength(2));
+      expect(rawChunks.first.raw, containsPair('responseId', 'resp_1'));
     });
 
     test(
@@ -514,7 +520,7 @@ void main() {
       ).chatModel('gemini-3-pro-preview');
 
       final events = await model
-          .stream(
+          .doStream(
             GenerateTextRequest(
               prompt: [
                 UserPromptMessage.text('Summarize the source.'),
@@ -575,7 +581,7 @@ void main() {
       ).chatModel('gemini-3-pro-preview');
 
       expect(
-        () => model.generate(
+        () => model.doGenerate(
           GenerateTextRequest(
             prompt: [
               UserPromptMessage.text('Hello'),

@@ -43,7 +43,7 @@ class LegacyChatCapabilityAdapter implements ChatCapability {
 
     final request = buildRequest(messages, tools);
     final operation =
-        model.generate(request).then(_LegacyChatResponse.fromResult);
+        model.doGenerate(request).then(_LegacyChatResponse.fromResult);
     return _awaitWithCancellation(operation, cancelToken);
   }
 
@@ -60,7 +60,7 @@ class LegacyChatCapabilityAdapter implements ChatCapability {
     final request = buildRequest(messages, tools);
     final state = _LegacyStreamState();
 
-    await for (final event in model.stream(request)) {
+    await for (final event in model.doStream(request)) {
       if (cancelToken?.isCancelled ?? false) {
         throw const CancelledError();
       }
@@ -138,7 +138,7 @@ final class GoogleLegacyChatCapabilityAdapter
     final request = buildRequest(messages, tools);
     final state = _GoogleLegacyStreamState();
 
-    await for (final event in model.stream(request)) {
+    await for (final event in model.doStream(request)) {
       if (cancelToken?.isCancelled ?? false) {
         throw const CancelledError();
       }

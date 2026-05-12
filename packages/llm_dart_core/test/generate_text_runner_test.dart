@@ -364,7 +364,7 @@ final class _RecordingLanguageModel implements LanguageModel {
   String get providerId => 'test';
 
   @override
-  Future<GenerateTextResult> generate(GenerateTextRequest request) async {
+  Future<GenerateTextResult> doGenerate(GenerateTextRequest request) async {
     requests.add(request);
     if (_results.isEmpty) {
       throw StateError('No more fake results configured.');
@@ -374,7 +374,7 @@ final class _RecordingLanguageModel implements LanguageModel {
   }
 
   @override
-  Stream<TextStreamEvent> stream(GenerateTextRequest request) async* {
+  Stream<TextStreamEvent> doStream(GenerateTextRequest request) async* {
     requests.add(request);
     yield const FinishEvent(
       finishReason: FinishReason.stop,

@@ -115,7 +115,7 @@ final class _RecordingLanguageModel implements LanguageModel {
   String get providerId => 'test';
 
   @override
-  Future<GenerateTextResult> generate(GenerateTextRequest request) async {
+  Future<GenerateTextResult> doGenerate(GenerateTextRequest request) async {
     lastRequest = request;
     return GenerateTextResult(
       content: const [
@@ -126,7 +126,7 @@ final class _RecordingLanguageModel implements LanguageModel {
   }
 
   @override
-  Stream<TextStreamEvent> stream(GenerateTextRequest request) async* {
+  Stream<TextStreamEvent> doStream(GenerateTextRequest request) async* {
     lastRequest = request;
     yield const FinishEvent(
       finishReason: FinishReason.stop,

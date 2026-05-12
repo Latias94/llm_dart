@@ -1,7 +1,16 @@
+/// Provider-owned model construction settings.
+///
+/// These options select or configure a concrete provider model instance. They
+/// are not response metadata.
 abstract interface class ProviderModelOptions {
   const ProviderModelOptions();
 }
 
+/// Provider-owned request customization settings.
+///
+/// Implementations use these typed options for input-side provider features
+/// that do not belong in shared `GenerateTextOptions`. Response observations
+/// and replay details belong in `ProviderMetadata` instead.
 abstract interface class ProviderInvocationOptions {
   const ProviderInvocationOptions();
 }
