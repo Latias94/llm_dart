@@ -56,7 +56,10 @@ Acceptance criteria:
 
 Current status:
 
-- pending
+- core complete; AI runtime validates prompt ordering, missing client tool
+  results, provider-executed tool calls, and tool approval responses before
+  provider calls, with root integration tests proving OpenAI, Google, and
+  Anthropic codecs receive normalized prompts
 
 ## M4 - Metadata/Options Boundary
 

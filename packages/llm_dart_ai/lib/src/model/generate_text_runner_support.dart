@@ -84,27 +84,30 @@ final class GenerateTextRunnerSupport {
       return null;
     }
 
-    if (step.toolApprovalRequests.isNotEmpty) {
-      throw UnsupportedError(
-        '$runnerName does not support tool approval continuation yet.',
-      );
-    }
+    final clientToolCalls = step.toolCalls
+        .where((toolCall) => !toolCall.providerExecuted)
+        .toList(growable: false);
 
-    if (step.toolCalls.isEmpty) {
+    if (step.toolCalls.isEmpty && step.toolApprovalRequests.isEmpty) {
       throw StateError(
         '$runnerName received finishReason.toolCalls without tool calls.',
       );
     }
 
+    if (clientToolCalls.isEmpty) {
+      return null;
+    }
+
+    if (step.toolApprovalRequests.isNotEmpty) {
+      throw UnsupportedError(
+        '$runnerName cannot continue while provider tool approval requests '
+        'are waiting for approval responses.',
+      );
+    }
+
     final toolMessages = <PromptMessage>[];
 
-    for (final toolCall in step.toolCalls) {
-      if (toolCall.providerExecuted) {
-        throw UnsupportedError(
-          '$runnerName only supports client-executed common function tools.',
-        );
-      }
-
+    for (final toolCall in clientToolCalls) {
       if (toolCall.isDynamic) {
         throw UnsupportedError(
           '$runnerName does not support dynamic tool calls yet.',

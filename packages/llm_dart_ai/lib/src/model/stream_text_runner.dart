@@ -5,6 +5,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import '../prompt/model_message.dart';
 import '../prompt/prompt_normalization.dart';
+import '../prompt/prompt_validation.dart';
 import 'generate_text_result_accumulator.dart';
 import 'generate_text_run_result.dart';
 import 'generate_text_runner_support.dart';
@@ -135,6 +136,11 @@ final class StreamTextRunner {
             'StreamTextRunner exceeded maxSteps ($maxSteps).',
           );
         }
+
+        validateProviderPrompt(
+          promptHistory,
+          context: 'StreamTextRunner.prompt',
+        );
 
         final request = GenerateTextRequest(
           prompt: promptHistory,

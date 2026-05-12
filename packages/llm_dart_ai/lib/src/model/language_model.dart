@@ -2,6 +2,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import '../prompt/model_message.dart';
 import '../prompt/prompt_normalization.dart';
+import '../prompt/prompt_validation.dart';
 
 export 'package:llm_dart_provider/llm_dart_provider.dart'
     show
@@ -24,6 +25,7 @@ Future<GenerateTextResult> generateText({
     prompt: prompt,
     messages: messages,
   );
+  validateProviderPrompt(providerPrompt, context: 'generateText.prompt');
 
   return model.doGenerate(
     GenerateTextRequest(
@@ -49,6 +51,7 @@ Stream<TextStreamEvent> streamText({
     prompt: prompt,
     messages: messages,
   );
+  validateProviderPrompt(providerPrompt, context: 'streamText.prompt');
 
   return model.doStream(
     GenerateTextRequest(

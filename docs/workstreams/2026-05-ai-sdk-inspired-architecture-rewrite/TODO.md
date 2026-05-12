@@ -32,11 +32,11 @@
 
 ## Prompt Validation
 
-- [ ] Add missing tool-result validation
-- [ ] Add provider-executed tool-call handling rules
-- [ ] Add tool approval response handling rules
-- [ ] Add invalid role transition errors
-- [ ] Add tests proving provider codecs receive normalized prompts
+- [x] Add missing tool-result validation
+- [x] Add provider-executed tool-call handling rules
+- [x] Add tool approval response handling rules
+- [x] Add invalid role transition errors
+- [x] Add tests proving provider codecs receive normalized prompts
 
 ## Metadata/Options Boundary
 

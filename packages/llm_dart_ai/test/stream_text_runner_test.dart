@@ -337,13 +337,13 @@ void main() {
       expect(result.toolCalls.single.toolName, 'weather');
     });
 
-    test('rejects provider-executed tool continuations in the streamed runner',
+    test('executes only client tool calls when provider-executed calls appear',
         () async {
       final model = _RecordingStreamLanguageModel([
         const [
           ToolCallEvent(
             toolCall: ToolCallContent(
-              toolCallId: 'tool-1',
+              toolCallId: 'server-tool-1',
               toolName: 'computer',
               input: {
                 'action': 'click',
@@ -351,44 +351,65 @@ void main() {
               providerExecuted: true,
             ),
           ),
+          ToolCallEvent(
+            toolCall: ToolCallContent(
+              toolCallId: 'client-tool-1',
+              toolName: 'weather',
+              input: {
+                'city': 'Tokyo',
+              },
+            ),
+          ),
           FinishEvent(finishReason: FinishReason.toolCalls),
         ],
+        const [
+          TextStartEvent(id: 'text-1'),
+          TextDeltaEvent(id: 'text-1', delta: 'Done.'),
+          TextEndEvent(id: 'text-1'),
+          FinishEvent(finishReason: FinishReason.stop),
+        ],
       ]);
-      final emittedSteps = <GenerateTextStepResult>[];
-      Object? stepError;
+      final executedCalls = <GenerateTextFunctionToolExecutionRequest>[];
 
       final run = streamTextRun(
         model: model,
         prompt: [
-          UserPromptMessage.text('Click the button'),
+          UserPromptMessage.text('Click the button and check weather.'),
         ],
         tools: [
           FunctionToolDefinition(
-            name: 'computer',
+            name: 'weather',
             inputSchema: ToolJsonSchema.object(),
           ),
         ],
-        functionToolExecutor: (_) async =>
-            const GenerateTextToolExecutionResult.output({'ok': true}),
-      );
-
-      final subscription = run.stepStream.listen(
-        emittedSteps.add,
-        onError: (Object error, StackTrace _) {
-          stepError = error;
+        functionToolExecutor: (request) async {
+          executedCalls.add(request);
+          return const GenerateTextToolExecutionResult.output({
+            'forecast': 'sunny',
+          });
         },
       );
 
-      await expectLater(
-        run.result,
-        throwsA(isA<UnsupportedError>()),
-      );
-      await Future<void>.delayed(Duration.zero);
-      await subscription.cancel();
+      expect(await run.text, 'Done.');
+      final steps = await run.stepStream.toList();
 
-      expect(model.requests, hasLength(1));
-      expect(emittedSteps, hasLength(1));
-      expect(stepError, isA<UnsupportedError>());
+      expect(executedCalls, hasLength(1));
+      expect(executedCalls.single.toolCall.toolCallId, 'client-tool-1');
+      expect(model.requests, hasLength(2));
+
+      final continuationPrompt = model.requests[1].prompt;
+      expect(continuationPrompt, hasLength(3));
+      final assistantMessage = continuationPrompt[1] as AssistantPromptMessage;
+      expect(
+        assistantMessage.parts.whereType<ToolCallPromptPart>(),
+        hasLength(2),
+      );
+      final toolMessages = continuationPrompt.whereType<ToolPromptMessage>();
+      expect(toolMessages, hasLength(1));
+      final toolResult =
+          toolMessages.single.parts.single as ToolResultPromptPart;
+      expect(toolResult.toolCallId, 'client-tool-1');
+      expect(steps, hasLength(2));
     });
 
     test('throws when streamed continuation exceeds maxSteps', () async {
