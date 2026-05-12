@@ -1,5 +1,9 @@
 # Migration Guide
 
+> Historical note: this guide records the 2026-03 architecture workstream state.
+> For the current SDK-aligned breaking line, use
+> `docs/migration/0.11-sdk-aligned.md`.
+
 ## Goal
 
 This guide explains how to move from the old root-package compatibility surface

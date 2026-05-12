@@ -550,4 +550,4 @@ This package does not try to provide:
 - Flutter architecture notes:
   `../../docs/workstreams/2026-03-architecture-refactor/04-flutter-chat-integration.md`
 - Migration guide:
-  `../../docs/workstreams/2026-03-architecture-refactor/38-migration-guide.md`
+  `../../docs/migration/0.11-sdk-aligned.md`

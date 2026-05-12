@@ -785,7 +785,9 @@ Future<void> main() async {
 - ElevenLabs provider package guide:
   [packages/llm_dart_elevenlabs/README.md](packages/llm_dart_elevenlabs/README.md)
 - Migration guide:
-  [38-migration-guide.md](docs/workstreams/2026-03-architecture-refactor/38-migration-guide.md)
+  [docs/migration/0.11-sdk-aligned.md](docs/migration/0.11-sdk-aligned.md)
+- SDK-aligned boundary design:
+  [docs/workstreams/2026-05-sdk-aligned-fearless-refactor/01-boundaries-and-migration.md](docs/workstreams/2026-05-sdk-aligned-fearless-refactor/01-boundaries-and-migration.md)
 - Architecture workstream index:
   [docs/workstreams/2026-03-architecture-refactor/README.md](docs/workstreams/2026-03-architecture-refactor/README.md)
 - Provider UI extension contract:

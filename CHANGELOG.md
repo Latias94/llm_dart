@@ -47,8 +47,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Move provider file identity hints from `ProviderMetadata` to
   `FileProviderReferenceData(ProviderReference.forProvider(...))`.
 - See
+  `docs/migration/0.11-sdk-aligned.md` for the release-facing migration guide
+  and
   `docs/workstreams/2026-05-sdk-aligned-fearless-refactor/01-boundaries-and-migration.md`
-  for before/after examples.
+  for the architecture boundary record.
 
 ## [0.11.0-alpha.1] - 2026-05-08
 
