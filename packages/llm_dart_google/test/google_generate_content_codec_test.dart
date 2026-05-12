@@ -791,6 +791,98 @@ void main() {
       );
     });
 
+    test('replays Gemini 3 function-call ids from provider replay options', () {
+      final request = codec.encodeRequest(
+        modelId: 'gemini-3-pro-preview',
+        prompt: [
+          UserPromptMessage.text('Continue the conversation.'),
+          AssistantPromptMessage(
+            parts: const [
+              ToolCallPromptPart(
+                toolCallId: 'call_google_1',
+                toolName: 'weather',
+                input: {
+                  'city': 'Hong Kong',
+                },
+                providerOptions: ProviderReplayPromptPartOptions(
+                  ProviderMetadata({
+                    'google': {
+                      'functionCallId': 'call_google_1',
+                    },
+                  }),
+                ),
+              ),
+            ],
+          ),
+          ToolPromptMessage(
+            toolName: 'weather',
+            parts: [
+              ToolResultPromptPart(
+                toolCallId: 'call_google_1',
+                toolName: 'weather',
+                output: {
+                  'temperature': 28,
+                },
+                providerOptions: const ProviderReplayPromptPartOptions(
+                  ProviderMetadata({
+                    'google': {
+                      'functionCallId': 'call_google_1',
+                    },
+                  }),
+                ),
+              ),
+            ],
+          ),
+        ],
+        tools: const [],
+        toolChoice: null,
+        options: const GenerateTextOptions(),
+        settings: const GoogleChatModelSettings(),
+        providerOptions: const GoogleGenerateTextOptions(
+          includeServerSideToolInvocations: true,
+        ),
+      );
+
+      final contents = request.body['contents'] as List<Object?>;
+      expect(
+        contents[1],
+        {
+          'role': 'model',
+          'parts': [
+            {
+              'functionCall': {
+                'id': 'call_google_1',
+                'name': 'weather',
+                'args': {
+                  'city': 'Hong Kong',
+                },
+              },
+            },
+          ],
+        },
+      );
+      expect(
+        contents[2],
+        {
+          'role': 'user',
+          'parts': [
+            {
+              'functionResponse': {
+                'id': 'call_google_1',
+                'name': 'weather',
+                'response': {
+                  'name': 'weather',
+                  'content': {
+                    'temperature': 28,
+                  },
+                },
+              },
+            },
+          ],
+        },
+      );
+    });
+
     test(
         'encodes provider-owned Google function-response replay with multimodal files',
         () {

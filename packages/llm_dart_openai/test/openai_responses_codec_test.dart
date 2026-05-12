@@ -598,6 +598,86 @@ void main() {
       );
     });
 
+    test('encodes assistant replay metadata from provider replay options', () {
+      const codec = OpenAIResponsesCodec();
+
+      final request = codec.encodeRequest(
+        modelId: 'gpt-5-mini',
+        prompt: [
+          UserPromptMessage.text('Hi'),
+          AssistantPromptMessage(
+            parts: const [
+              TextPromptPart(
+                'Final answer',
+                providerOptions: ProviderReplayPromptPartOptions(
+                  ProviderMetadata({
+                    'openai': {
+                      'itemId': 'msg_final',
+                      'phase': 'final_answer',
+                    },
+                  }),
+                ),
+              ),
+              ToolCallPromptPart(
+                toolCallId: 'call_1',
+                toolName: 'weather',
+                input: {
+                  'city': 'Hong Kong',
+                },
+                providerOptions: ProviderReplayPromptPartOptions(
+                  ProviderMetadata({
+                    'openai': {
+                      'itemId': 'fc_1',
+                    },
+                  }),
+                ),
+              ),
+            ],
+          ),
+        ],
+        tools: const [],
+        toolChoice: null,
+        options: const GenerateTextOptions(),
+        providerOptions: const OpenAIGenerateTextOptions(
+          store: false,
+        ),
+        stream: false,
+      );
+
+      expect(
+        request.body['input'],
+        [
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'input_text',
+                'text': 'Hi',
+              },
+            ],
+          },
+          {
+            'role': 'assistant',
+            'id': 'msg_final',
+            'phase': 'final_answer',
+            'content': [
+              {
+                'type': 'output_text',
+                'text': 'Final answer',
+              },
+            ],
+          },
+          {
+            'type': 'function_call',
+            'call_id': 'call_1',
+            'id': 'fc_1',
+            'name': 'weather',
+            'arguments': '{"city":"Hong Kong"}',
+          },
+        ],
+      );
+    });
+
     test(
         'uses item references for stored assistant replay items by default on the Responses path',
         () {

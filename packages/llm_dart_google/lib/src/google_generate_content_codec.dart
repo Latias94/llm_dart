@@ -496,7 +496,8 @@ final class GoogleGenerateContentCodec {
     PromptPart part, {
     required String modelId,
   }) {
-    final metadata = _resolveAssistantPartMetadata(part.providerMetadata);
+    final providerMetadata = _promptPartProviderMetadata(part);
+    final metadata = _resolveAssistantPartMetadata(providerMetadata);
 
     if (part is TextPromptPart) {
       if (part.text.isEmpty) {
@@ -558,7 +559,7 @@ final class GoogleGenerateContentCodec {
       if (part.kind == GoogleToolCallReplay.kind) {
         final replay = GoogleToolCallReplay.parseData(
           part.data,
-          providerMetadata: part.providerMetadata,
+          providerMetadata: providerMetadata,
         );
         return {
           'toolCall': replay.toToolCallJson(),
@@ -569,7 +570,7 @@ final class GoogleGenerateContentCodec {
       if (part.kind == GoogleToolResponseReplay.kind) {
         final replay = GoogleToolResponseReplay.parseData(
           part.data,
-          providerMetadata: part.providerMetadata,
+          providerMetadata: providerMetadata,
         );
         return {
           'toolResponse': replay.toToolResponseJson(),
@@ -595,8 +596,9 @@ final class GoogleGenerateContentCodec {
     }
 
     if (part is ToolResultPromptPart) {
+      final providerMetadata = _promptPartProviderMetadata(part);
       final functionCallId = _googleFunctionCallId(
-        part.providerMetadata,
+        providerMetadata,
         part.toolOutput.providerMetadata,
       );
       final replay = GoogleFunctionResponseReplay.fromToolOutput(
@@ -604,7 +606,7 @@ final class GoogleGenerateContentCodec {
         toolName: part.toolName,
         toolOutput: part.toolOutput,
         functionCallId: functionCallId,
-        providerMetadata: part.providerMetadata,
+        providerMetadata: providerMetadata,
       );
       final functionResponse = replay.toFunctionResponseJson();
       if (_shouldReplayGoogleFunctionCallId(modelId, functionCallId) &&
@@ -621,13 +623,14 @@ final class GoogleGenerateContentCodec {
 
     if (part is CustomPromptPart) {
       if (part.kind == GoogleFunctionResponseReplay.kind) {
+        final providerMetadata = _promptPartProviderMetadata(part);
         final replay = GoogleFunctionResponseReplay.parseData(
           part.data,
-          providerMetadata: part.providerMetadata,
+          providerMetadata: providerMetadata,
         );
         final functionResponse = replay.toFunctionResponseJson();
-        final functionCallId = replay.functionCallId ??
-            _googleFunctionCallId(part.providerMetadata);
+        final functionCallId =
+            replay.functionCallId ?? _googleFunctionCallId(providerMetadata);
         if (_shouldReplayGoogleFunctionCallId(modelId, functionCallId) &&
             !functionResponse.containsKey('id')) {
           functionResponse['id'] = functionCallId;
@@ -726,6 +729,13 @@ final class GoogleGenerateContentCodec {
       if (metadata.thoughtSignature != null)
         'thoughtSignature': metadata.thoughtSignature,
     };
+  }
+
+  ProviderMetadata? _promptPartProviderMetadata(PromptPart part) {
+    return mergeProviderReplayMetadata(
+      providerMetadata: part.providerMetadata,
+      providerOptions: part.providerOptions,
+    );
   }
 
   _GoogleAssistantPartMetadata _resolveAssistantPartMetadata(

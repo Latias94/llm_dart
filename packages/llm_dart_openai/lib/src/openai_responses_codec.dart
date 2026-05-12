@@ -391,7 +391,7 @@ final class OpenAIResponsesCodec {
     for (final part in message.parts) {
       if (part is TextPromptPart) {
         final metadata = _providerMetadataValues(
-          part.providerMetadata,
+          _promptPartProviderMetadata(part),
           namespace: 'openai',
         );
         final partItemId = _asString(metadata?['itemId']);
@@ -429,7 +429,7 @@ final class OpenAIResponsesCodec {
         flushTextContent();
 
         final metadata = _providerMetadataValues(
-          part.providerMetadata,
+          _promptPartProviderMetadata(part),
           namespace: 'openai',
         );
         final reasoningId = _asString(metadata?['itemId']);
@@ -515,7 +515,7 @@ final class OpenAIResponsesCodec {
 
       if (part is ToolCallPromptPart) {
         final metadata = _providerMetadataValues(
-          part.providerMetadata,
+          _promptPartProviderMetadata(part),
           namespace: 'openai',
         );
         final itemId = _asString(metadata?['itemId']);
@@ -569,7 +569,7 @@ final class OpenAIResponsesCodec {
         }
 
         final metadata = _providerMetadataValues(
-          part.providerMetadata,
+          _promptPartProviderMetadata(part),
           namespace: 'openai',
         );
         final itemId = _asString(metadata?['itemId']) ?? part.toolCallId;
@@ -989,7 +989,7 @@ final class OpenAIResponsesCodec {
         ? Map<String, Object?>.from(part.data as Map)
         : const <String, Object?>{};
     final metadata = _providerMetadataValues(
-      part.providerMetadata,
+      _promptPartProviderMetadata(part),
       namespace: 'openai',
     );
     final id = _asString(metadata?['itemId']) ?? _asString(data['id']);
@@ -1049,6 +1049,13 @@ final class OpenAIResponsesCodec {
     }
 
     return null;
+  }
+
+  ProviderMetadata? _promptPartProviderMetadata(PromptPart part) {
+    return mergeProviderReplayMetadata(
+      providerMetadata: part.providerMetadata,
+      providerOptions: part.providerOptions,
+    );
   }
 
   String? _openAIImageDetail(

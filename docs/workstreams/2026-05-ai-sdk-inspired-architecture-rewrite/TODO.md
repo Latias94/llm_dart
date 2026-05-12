@@ -40,11 +40,11 @@
 
 ## Metadata/Options Boundary
 
-- [ ] Remove ordinary user prompt `providerMetadata` inputs
-- [ ] Move provider replay continuation into typed provider prompt options or
+- [x] Remove ordinary user prompt `providerMetadata` inputs
+- [x] Move provider replay continuation into typed provider prompt options or
   provider-owned replay helpers
-- [ ] Update OpenAI Responses replay
-- [ ] Update Google function/tool replay
+- [x] Update OpenAI Responses replay
+- [x] Update Google function/tool replay
 - [ ] Update Anthropic native tool/code execution replay
 - [ ] Add guard coverage against request-side metadata extraction outside
   approved replay helpers
@@ -72,9 +72,9 @@
 - [x] Run root boundary guards
 - [x] Run core compatibility shell guard
 - [x] Run test legacy-import guard
-- [ ] Run focused `llm_dart_provider` tests
+- [x] Run focused `llm_dart_provider` tests
 - [x] Run focused `llm_dart_ai` tests
-- [ ] Run affected provider package tests
+- [x] Run affected provider package tests
 - [ ] Run chat and Flutter tests if UI projection or transport protocols change
 - [x] Run package analysis for affected packages
 - [x] Run `git diff --check`

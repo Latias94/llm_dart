@@ -1,4 +1,5 @@
 import 'json_codec_common.dart';
+import 'provider_metadata.dart';
 
 /// Provider-owned model construction settings.
 ///
@@ -20,9 +21,92 @@ abstract interface class ProviderInvocationOptions {
 /// Provider-owned prompt part customization settings.
 ///
 /// These options configure how a single input prompt part is encoded by a
-/// concrete provider. They are not response metadata.
+/// concrete provider. Shared replay options are also modeled here so runtime
+/// continuations can carry prior output metadata explicitly without writing it
+/// back into newly-created prompt parts.
 abstract interface class ProviderPromptPartOptions {
   const ProviderPromptPartOptions();
+}
+
+/// Provider-agnostic replay data for a provider-facing prompt part.
+///
+/// This wrapper is used when a model output part is replayed as prompt history.
+/// The metadata still represents provider observations from an earlier output,
+/// but the continuation prompt carries it through an explicit input option
+/// instead of treating it as freshly-authored request metadata.
+final class ProviderReplayPromptPartOptions
+    implements ProviderPromptPartOptions {
+  final ProviderMetadata metadata;
+
+  const ProviderReplayPromptPartOptions(this.metadata);
+
+  static ProviderReplayPromptPartOptions? fromMetadata(
+    ProviderMetadata? metadata,
+  ) {
+    if (metadata == null || metadata.isEmpty) {
+      return null;
+    }
+
+    return ProviderReplayPromptPartOptions(metadata);
+  }
+}
+
+/// JSON codec for provider-agnostic replay prompt options.
+final class ProviderReplayPromptPartOptionsJsonCodec
+    implements
+        ProviderPromptPartOptionsJsonCodec<ProviderReplayPromptPartOptions> {
+  static const typeId = 'provider.replayPromptPartOptions';
+
+  const ProviderReplayPromptPartOptionsJsonCodec();
+
+  @override
+  String get type => typeId;
+
+  @override
+  bool canEncode(ProviderPromptPartOptions options) =>
+      options is ProviderReplayPromptPartOptions;
+
+  @override
+  JsonMap encode(ProviderPromptPartOptions options) {
+    final typed = options as ProviderReplayPromptPartOptions;
+    return {
+      'metadata': typed.metadata.toJsonMap(path: r'$.data.metadata'),
+    };
+  }
+
+  @override
+  ProviderReplayPromptPartOptions decode(JsonMap json) {
+    return ProviderReplayPromptPartOptions(
+      ProviderMetadata(
+        asJsonMap(json['metadata'], path: r'$.data.metadata'),
+      ),
+    );
+  }
+}
+
+const providerReplayPromptPartOptionsJsonCodec =
+    ProviderReplayPromptPartOptionsJsonCodec();
+
+/// Extracts replay metadata from shared prompt part options.
+ProviderMetadata? providerReplayMetadataFromOptions(
+  ProviderPromptPartOptions? options,
+) {
+  if (options is ProviderReplayPromptPartOptions) {
+    return options.metadata;
+  }
+
+  return null;
+}
+
+/// Merges legacy prompt metadata with replay metadata carried by options.
+ProviderMetadata? mergeProviderReplayMetadata({
+  ProviderMetadata? providerMetadata,
+  ProviderPromptPartOptions? providerOptions,
+}) {
+  return ProviderMetadata.mergeNullable(
+    providerMetadata,
+    providerReplayMetadataFromOptions(providerOptions),
+  );
 }
 
 /// JSON codec for provider-owned prompt part options.
@@ -106,6 +190,10 @@ T? resolveProviderPromptPartOptions<T extends ProviderPromptPartOptions>(
 
   if (options is T) {
     return options;
+  }
+
+  if (options is ProviderReplayPromptPartOptions) {
+    return null;
   }
 
   throw ArgumentError.value(

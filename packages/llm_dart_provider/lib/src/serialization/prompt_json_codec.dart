@@ -403,7 +403,7 @@ final class PromptJsonCodec {
     ProviderPromptPartOptions options, {
     required String path,
   }) {
-    for (final codec in providerPromptPartOptionsCodecs) {
+    for (final codec in _allProviderPromptPartOptionsCodecs()) {
       if (codec.canEncode(options)) {
         return {
           'type': codec.type,
@@ -434,7 +434,7 @@ final class PromptJsonCodec {
     final type = asJsonString(map['type'], path: '$path.type');
     final data = asJsonMap(map['data'], path: '$path.data');
 
-    for (final codec in providerPromptPartOptionsCodecs) {
+    for (final codec in _allProviderPromptPartOptionsCodecs()) {
       if (codec.type == type) {
         return codec.decode(data);
       }
@@ -444,5 +444,11 @@ final class PromptJsonCodec {
       'Unsupported providerOptions type "$type" at $path. Register a '
       'ProviderPromptPartOptionsJsonCodec for this type.',
     );
+  }
+
+  Iterable<ProviderPromptPartOptionsJsonCodec>
+      _allProviderPromptPartOptionsCodecs() sync* {
+    yield providerReplayPromptPartOptionsJsonCodec;
+    yield* providerPromptPartOptionsCodecs;
   }
 }

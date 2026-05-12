@@ -722,6 +722,30 @@ void main() {
         ),
         isNull,
       );
+      const replayOptions = ProviderReplayPromptPartOptions(
+        ProviderMetadata({
+          'test': {
+            'itemId': 'item_1',
+          },
+        }),
+      );
+      expect(
+        resolveProviderPromptPartOptions<_TestPromptPartOptions>(
+          replayOptions,
+          parameterName: 'part.providerOptions',
+          expectedTypeName: '_TestPromptPartOptions',
+          usageContext: 'test prompt parts',
+        ),
+        isNull,
+      );
+      expect(
+        resolveProviderPromptPartOptions<ProviderReplayPromptPartOptions>(
+          replayOptions,
+          parameterName: 'part.providerOptions',
+          expectedTypeName: 'ProviderReplayPromptPartOptions',
+        ),
+        same(replayOptions),
+      );
       expect(
         () => resolveProviderPromptPartOptions<_TestPromptPartOptions>(
           _OtherPromptPartOptions(),

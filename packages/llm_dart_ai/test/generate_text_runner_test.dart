@@ -172,6 +172,19 @@ void main() {
       final replayedToolCall = assistantMessage.parts[1] as ToolCallPromptPart;
       expect(replayedToolCall.toolCallId, 'tool-1');
       expect(replayedToolCall.toolName, 'weather');
+      expect(replayedToolCall.providerMetadata, isNull);
+      expect(
+        replayedToolCall.providerOptions,
+        isA<ProviderReplayPromptPartOptions>().having(
+          (options) => options.metadata,
+          'metadata',
+          const ProviderMetadata({
+            'google': {
+              'functionCallId': 'tool-1',
+            },
+          }),
+        ),
+      );
 
       final toolMessage = continuationPrompt[2] as ToolPromptMessage;
       expect(toolMessage.toolName, 'weather');
@@ -180,13 +193,18 @@ void main() {
       expect(toolResult.toolOutput, isA<ContentToolOutput>());
       expect((toolResult.toolOutput as ContentToolOutput).parts, hasLength(2));
       expect(toolResult.isError, isFalse);
+      expect(toolResult.providerMetadata, isNull);
       expect(
-        toolResult.providerMetadata,
-        const ProviderMetadata({
-          'google': {
-            'functionCallId': 'tool-1',
-          },
-        }),
+        toolResult.providerOptions,
+        isA<ProviderReplayPromptPartOptions>().having(
+          (options) => options.metadata,
+          'metadata',
+          const ProviderMetadata({
+            'google': {
+              'functionCallId': 'tool-1',
+            },
+          }),
+        ),
       );
 
       expect(runResult.steps, hasLength(2));

@@ -143,9 +143,11 @@ final class GenerateTextRunnerSupport {
               toolCallId: toolCall.toolCallId,
               toolName: toolCall.toolName,
               toolOutput: executionResult.toolOutput,
-              providerMetadata: toolCallProviderMetadata(
-                step,
-                toolCall.toolCallId,
+              providerOptions: replayProviderOptions(
+                toolCallProviderMetadata(
+                  step,
+                  toolCall.toolCallId,
+                ),
               ),
             ),
           ],
@@ -167,6 +169,12 @@ final class GenerateTextRunnerSupport {
     }
 
     return null;
+  }
+
+  static ProviderReplayPromptPartOptions? replayProviderOptions(
+    ProviderMetadata? metadata,
+  ) {
+    return ProviderReplayPromptPartOptions.fromMetadata(metadata);
   }
 
   static List<PromptMessage> stepToPromptMessages(
@@ -199,7 +207,7 @@ final class GenerateTextRunnerSupport {
           assistantParts.add(
             TextPromptPart(
               text,
-              providerMetadata: providerMetadata,
+              providerOptions: replayProviderOptions(providerMetadata),
             ),
           );
         case ReasoningContentPart(
@@ -210,7 +218,7 @@ final class GenerateTextRunnerSupport {
           assistantParts.add(
             ReasoningPromptPart(
               text,
-              providerMetadata: providerMetadata,
+              providerOptions: replayProviderOptions(providerMetadata),
             ),
           );
         case FileContentPart(
@@ -222,7 +230,7 @@ final class GenerateTextRunnerSupport {
               mediaType: file.mediaType,
               filename: file.filename,
               data: file.data,
-              providerMetadata: providerMetadata,
+              providerOptions: replayProviderOptions(providerMetadata),
             ),
           );
         case ReasoningFileContentPart(
@@ -234,7 +242,7 @@ final class GenerateTextRunnerSupport {
               mediaType: file.mediaType,
               filename: file.filename,
               data: file.data,
-              providerMetadata: providerMetadata,
+              providerOptions: replayProviderOptions(providerMetadata),
             ),
           );
         case CustomContentPart(
@@ -246,7 +254,7 @@ final class GenerateTextRunnerSupport {
             CustomPromptPart(
               kind: kind,
               data: data,
-              providerMetadata: providerMetadata,
+              providerOptions: replayProviderOptions(providerMetadata),
             ),
           );
         case ToolCallContentPart(
@@ -261,7 +269,7 @@ final class GenerateTextRunnerSupport {
               providerExecuted: toolCall.providerExecuted,
               isDynamic: toolCall.isDynamic,
               title: toolCall.title,
-              providerMetadata: providerMetadata,
+              providerOptions: replayProviderOptions(providerMetadata),
             ),
           );
         case ToolApprovalRequestContentPart(
@@ -272,7 +280,7 @@ final class GenerateTextRunnerSupport {
             ToolApprovalRequestPromptPart(
               approvalId: approvalRequest.approvalId,
               toolCallId: approvalRequest.toolCallId,
-              providerMetadata: providerMetadata,
+              providerOptions: replayProviderOptions(providerMetadata),
             ),
           );
         case ToolResultContentPart(
@@ -288,7 +296,7 @@ final class GenerateTextRunnerSupport {
                   toolCallId: toolResult.toolCallId,
                   toolName: toolResult.toolName,
                   toolOutput: toolResult.toolOutput,
-                  providerMetadata: providerMetadata,
+                  providerOptions: replayProviderOptions(providerMetadata),
                 ),
               ],
             ),

@@ -375,6 +375,46 @@ void main() {
       );
     });
 
+    test('round-trips built-in replay provider prompt part options', () {
+      const codec = PromptJsonCodec();
+
+      final decoded = codec.decodeMessages(
+        codec.encodeMessages([
+          AssistantPromptMessage(
+            parts: const [
+              ToolCallPromptPart(
+                toolCallId: 'call_1',
+                toolName: 'weather',
+                providerOptions: ProviderReplayPromptPartOptions(
+                  ProviderMetadata({
+                    'google': {
+                      'functionCallId': 'call_1',
+                    },
+                  }),
+                ),
+              ),
+            ],
+          ),
+        ]),
+      );
+
+      final assistant = decoded.single as AssistantPromptMessage;
+      final toolCall = assistant.parts.single as ToolCallPromptPart;
+      expect(toolCall.providerMetadata, isNull);
+      expect(
+        toolCall.providerOptions,
+        isA<ProviderReplayPromptPartOptions>().having(
+          (options) => options.metadata,
+          'metadata',
+          const ProviderMetadata({
+            'google': {
+              'functionCallId': 'call_1',
+            },
+          }),
+        ),
+      );
+    });
+
     test('fails fast instead of dropping unregistered provider part options',
         () {
       const codec = PromptJsonCodec();
