@@ -1,7 +1,6 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import '../ui/chat_ui_message.dart';
-import 'serialization_json_support.dart';
 
 final class ChatUiJsonCodec {
   static const envelopeKind = 'chat-ui-messages';

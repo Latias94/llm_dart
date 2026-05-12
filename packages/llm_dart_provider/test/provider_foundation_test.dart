@@ -51,4 +51,32 @@ void main() {
       );
     });
   });
+
+  group('SerializationJsonSupport', () {
+    test('encodes provider-owned shared data structures', () {
+      final encoded = SerializationJsonSupport.encodeGeneratedFile(
+        const GeneratedFile(
+          mediaType: 'text/plain',
+          filename: 'note.txt',
+          data: FileTextData('hello'),
+        ),
+      );
+
+      expect(encoded, {
+        'mediaType': 'text/plain',
+        'filename': 'note.txt',
+        'data': {
+          'type': 'text',
+          'text': 'hello',
+        },
+      });
+      expect(
+        SerializationJsonSupport.decodeGeneratedFile(
+          encoded,
+          path: r'$.file',
+        ).text,
+        'hello',
+      );
+    });
+  });
 }

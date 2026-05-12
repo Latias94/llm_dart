@@ -51,9 +51,9 @@
 
 ## Serialization And Utilities
 
-- [ ] Remove duplicated `SerializationJsonSupport` from `llm_dart_ai`
-- [ ] Reuse provider-owned serialization helpers where appropriate
-- [ ] Keep UI-only serialization in `llm_dart_ai`
+- [x] Remove duplicated `SerializationJsonSupport` from `llm_dart_ai`
+- [x] Reuse provider-owned serialization helpers where appropriate
+- [x] Keep UI-only serialization in `llm_dart_ai`
 - [ ] Audit repeated provider codec helpers
 - [ ] Decide whether repeated helpers justify `llm_dart_provider_utils`
 - [ ] Document the helper boundary before publishing any new utility package

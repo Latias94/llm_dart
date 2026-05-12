@@ -100,7 +100,9 @@ Acceptance criteria:
 
 Current status:
 
-- pending
+- in progress; duplicated `SerializationJsonSupport` has been removed from
+  `llm_dart_ai`, with `ChatUiJsonCodec` reusing provider-owned serialization
+  helpers while retaining UI-only codec ownership in the AI package.
 
 ## M6 - Root Legacy Exit
 
