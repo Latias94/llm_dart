@@ -15,7 +15,11 @@ void main() {
         model: _FakeLanguageModel(
           onStream: (request) {
             capturedRequest = request;
-            return const Stream<LanguageModelStreamEvent>.empty();
+            return Stream<LanguageModelStreamEvent>.fromIterable([
+              textStreamEventToProvider(
+                const FinishEvent(finishReason: FinishReason.stop),
+              ),
+            ]);
           },
         ),
       );

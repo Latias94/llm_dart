@@ -153,6 +153,10 @@ final class StreamTextRunner {
           messages: messages,
         ),
         tools = List.unmodifiable(tools) {
+    validateProviderPrompt(
+      this.prompt,
+      context: 'StreamTextRunner.prompt',
+    );
     if (maxSteps < 1) {
       throw ArgumentError.value(
         maxSteps,

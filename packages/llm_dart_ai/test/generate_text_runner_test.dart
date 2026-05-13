@@ -54,6 +54,54 @@ void main() {
       expect(runResult.totalUsage?.totalTokens, 12);
     });
 
+    test('generateText uses the multi-step runner path', () async {
+      final model = _RecordingLanguageModel([
+        GenerateTextResult(
+          content: const [
+            ToolCallContentPart(
+              ToolCallContent(
+                toolCallId: 'tool-1',
+                toolName: 'weather',
+                input: {
+                  'city': 'Tokyo',
+                },
+              ),
+            ),
+          ],
+          finishReason: FinishReason.toolCalls,
+        ),
+        GenerateTextResult(
+          content: const [
+            TextContentPart('It is sunny in Tokyo.'),
+          ],
+          finishReason: FinishReason.stop,
+        ),
+      ]);
+
+      final result = await generateText(
+        model: model,
+        prompt: [
+          UserPromptMessage.text('Weather in Tokyo?'),
+        ],
+        tools: [
+          FunctionToolDefinition(
+            name: 'weather',
+            inputSchema: ToolJsonSchema.object(),
+          ),
+        ],
+        functionToolExecutor: (request) {
+          expect(request.stepNumber, 0);
+          return const GenerateTextToolExecutionResult.output({
+            'forecast': 'sunny',
+          });
+        },
+      );
+
+      expect(model.requests, hasLength(2));
+      expect(result.text, 'It is sunny in Tokyo.');
+      expect(result.finishReason, FinishReason.stop);
+    });
+
     test('accepts user-facing messages for the initial prompt', () async {
       final model = _RecordingLanguageModel([
         GenerateTextResult(

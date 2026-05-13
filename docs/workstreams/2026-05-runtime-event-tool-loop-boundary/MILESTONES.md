@@ -124,6 +124,10 @@ Progress:
 - 2026-05-13: updated the provider/runtime bridge to use
   `LanguageModelStreamEvent` at the provider boundary and reject runtime-only
   AI events when converting back to provider model-call streams.
+- 2026-05-13: made `generateText(...)` and `streamText(...)` the primary
+  runtime entrypoints by routing them through `GenerateTextRunner` and
+  `StreamTextRunner` while preserving `GenerateTextResult` and
+  `Stream<TextStreamEvent>` return types.
 
 ## M4: Tool Loop Runtime
 

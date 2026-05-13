@@ -74,8 +74,8 @@ Decision notes:
 
 ## Result Surface Consolidation
 
-- [ ] Make `generateText(...)` the app-facing non-streaming multi-step helper
-- [ ] Make `streamText(...)` the app-facing streaming multi-step helper
+- [x] Make `generateText(...)` the app-facing non-streaming multi-step helper
+- [x] Make `streamText(...)` the app-facing streaming multi-step helper
 - [ ] Keep `generateTextCall(...)` and `streamTextCall(...)` as the structured
   text/result facades
 - [ ] Replace duplicate `StreamTextRunResult`, `StreamTextCallResult`, and

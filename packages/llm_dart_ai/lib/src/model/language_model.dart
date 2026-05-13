@@ -1,10 +1,10 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import '../prompt/model_message.dart';
-import '../prompt/prompt_normalization.dart';
-import '../prompt/prompt_validation.dart';
 import '../stream/text_stream_event.dart';
-import 'language_model_stream_adapter.dart';
+import 'generate_text_runner.dart';
+import 'generate_text_runner_support.dart';
+import 'stream_text_runner.dart';
 
 export 'package:llm_dart_provider/llm_dart_provider.dart'
     show
@@ -22,22 +22,30 @@ Future<GenerateTextResult> generateText({
   ToolChoice? toolChoice,
   GenerateTextOptions options = const GenerateTextOptions(),
   CallOptions callOptions = const CallOptions(),
-}) {
-  final providerPrompt = resolveProviderPrompt(
+  GenerateTextFunctionToolExecutor? functionToolExecutor,
+  int maxSteps = 8,
+  GenerateTextOnStepStart? onStepStart,
+  GenerateTextOnStepFinish? onStepFinish,
+  GenerateTextOnFinish? onFinish,
+  GenerateTextOnError? onError,
+}) async {
+  final runResult = await runTextGeneration(
+    model: model,
     prompt: prompt,
     messages: messages,
+    tools: tools,
+    toolChoice: toolChoice,
+    options: options,
+    callOptions: callOptions,
+    functionToolExecutor: functionToolExecutor,
+    maxSteps: maxSteps,
+    onStepStart: onStepStart,
+    onStepFinish: onStepFinish,
+    onFinish: onFinish,
+    onError: onError,
   );
-  validateProviderPrompt(providerPrompt, context: 'generateText.prompt');
 
-  return model.doGenerate(
-    GenerateTextRequest(
-      prompt: providerPrompt,
-      tools: tools,
-      toolChoice: toolChoice,
-      options: options,
-      callOptions: callOptions,
-    ),
-  );
+  return runResult.lastStep.result;
 }
 
 Stream<TextStreamEvent> streamText({
@@ -48,23 +56,28 @@ Stream<TextStreamEvent> streamText({
   ToolChoice? toolChoice,
   GenerateTextOptions options = const GenerateTextOptions(),
   CallOptions callOptions = const CallOptions(),
+  GenerateTextFunctionToolExecutor? functionToolExecutor,
+  int maxSteps = 8,
+  GenerateTextOnStepStart? onStepStart,
+  GenerateTextOnStepFinish? onStepFinish,
+  GenerateTextOnFinish? onFinish,
+  StreamTextOnChunk? onChunk,
+  GenerateTextOnError? onError,
 }) {
-  final providerPrompt = resolveProviderPrompt(
+  return streamTextRun(
+    model: model,
     prompt: prompt,
     messages: messages,
-  );
-  validateProviderPrompt(providerPrompt, context: 'streamText.prompt');
-
-  return adaptLanguageModelStreamEvents(
-    model.doStream(
-      GenerateTextRequest(
-        prompt: providerPrompt,
-        tools: tools,
-        toolChoice: toolChoice,
-        options: options,
-        callOptions: callOptions,
-      ),
-    ),
-    context: 'streamText.modelStream',
-  );
+    tools: tools,
+    toolChoice: toolChoice,
+    options: options,
+    callOptions: callOptions,
+    functionToolExecutor: functionToolExecutor,
+    maxSteps: maxSteps,
+    onStepStart: onStepStart,
+    onStepFinish: onStepFinish,
+    onFinish: onFinish,
+    onChunk: onChunk,
+    onError: onError,
+  ).eventStream;
 }

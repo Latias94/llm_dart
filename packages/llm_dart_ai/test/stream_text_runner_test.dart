@@ -124,6 +124,54 @@ void main() {
       expect(await run.finishReason, FinishReason.stop);
     });
 
+    test('streamText uses the multi-step runner path', () async {
+      final model = _RecordingStreamLanguageModel([
+        const [
+          ToolCallEvent(
+            toolCall: ToolCallContent(
+              toolCallId: 'tool-1',
+              toolName: 'weather',
+              input: {
+                'city': 'Tokyo',
+              },
+            ),
+          ),
+          FinishEvent(finishReason: FinishReason.toolCalls),
+        ],
+        const [
+          TextStartEvent(id: 'text-1'),
+          TextDeltaEvent(id: 'text-1', delta: 'It is sunny in Tokyo.'),
+          TextEndEvent(id: 'text-1'),
+          FinishEvent(finishReason: FinishReason.stop),
+        ],
+      ]);
+
+      final events = await streamText(
+        model: model,
+        prompt: [
+          UserPromptMessage.text('Weather in Tokyo?'),
+        ],
+        tools: [
+          FunctionToolDefinition(
+            name: 'weather',
+            inputSchema: ToolJsonSchema.object(),
+          ),
+        ],
+        functionToolExecutor: (request) {
+          expect(request.stepNumber, 0);
+          return const GenerateTextToolExecutionResult.output({
+            'forecast': 'sunny',
+          });
+        },
+      ).toList();
+
+      expect(model.requests, hasLength(2));
+      expect(events.whereType<TextDeltaEvent>().single.delta,
+          'It is sunny in Tokyo.');
+      expect(
+          events.whereType<FinishEvent>().last.finishReason, FinishReason.stop);
+    });
+
     test('accepts user-facing messages for the initial prompt', () async {
       final model = _RecordingStreamLanguageModel([
         const [

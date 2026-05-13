@@ -154,3 +154,6 @@ This workstream should not:
   - `llm_dart_provider` now owns a real provider-only
     `LanguageModelStreamEvent` sealed class and no longer contains the legacy
     full-stream event file or codec.
+- [20-primary-runtime-entrypoints.md](20-primary-runtime-entrypoints.md)
+  - `generateText(...)` and `streamText(...)` now use the AI runtime runner
+    path while preserving their existing return types.
