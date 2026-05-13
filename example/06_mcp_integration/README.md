@@ -7,8 +7,8 @@ This standalone example package now follows a stable-first integration shape:
 1. create a model with `openai(...).chatModel(...)`
 2. discover MCP tools through `mcp_dart`
 3. convert them into shared `FunctionToolDefinition`s
-4. let `core.runTextGeneration(...)` or `core.streamTextRun(...)` handle the
-   tool continuation loop
+4. let `core.generateText(...)` or `core.streamText(...)` handle the tool
+   continuation loop
 
 MCP-specific schema conversion and result normalization now live in a dedicated
 bridge instead of being reimplemented inside every example.
@@ -43,10 +43,10 @@ dart run http_examples/simple_stream_client.dart
 | `mcp_concept_demo.dart` | Concept walkthrough and architecture notes | ❌ |
 | `shared/mcp_tool_bridge.dart` | Shared bridge from MCP tools/results to `llm_dart/core.dart` | ❌ |
 | `stdio_examples/client.dart` | Direct stdio MCP client without an LLM | ❌ |
-| `stdio_examples/llm_client.dart` | Stable `runTextGeneration(...)` + MCP stdio tools | ✅ |
+| `stdio_examples/llm_client.dart` | Primary `generateText(...)` + MCP stdio tools | ✅ |
 | `http_examples/client.dart` | Direct HTTP MCP client without an LLM | ❌ |
-| `http_examples/llm_client.dart` | Stable `runTextGeneration(...)` + HTTP MCP tools | ✅ |
-| `http_examples/simple_stream_client.dart` | Stable `streamTextRun(...)` with MCP tool events | ✅ |
+| `http_examples/llm_client.dart` | Primary `generateText(...)` + HTTP MCP tools | ✅ |
+| `http_examples/simple_stream_client.dart` | Primary `streamText(...)` with MCP tool events | ✅ |
 
 ## Stable Integration Shape
 
@@ -55,7 +55,7 @@ provider factory / LanguageModel
         │
         ▼
 llm_dart core runners
-runTextGeneration / streamTextRun
+generateText / streamText
         │
         ▼
 shared/mcp_tool_bridge.dart
@@ -75,7 +75,7 @@ MCP server tools
   - parses model-emitted tool input into MCP call arguments
   - normalizes `CallToolResult` into shared tool outputs
 - `stdio_examples/llm_client.dart`
-  - shows non-streaming tool continuation on `core.runTextGeneration(...)`
+  - shows non-streaming tool continuation on `core.generateText(...)`
 - `http_examples/llm_client.dart`
   - keeps HTTP session handling and SSE notifications transport-owned
 - `http_examples/simple_stream_client.dart`

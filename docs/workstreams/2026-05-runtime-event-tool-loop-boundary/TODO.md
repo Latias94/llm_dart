@@ -94,7 +94,7 @@ Decision notes:
 - [x] Centralize local function tool execution in `llm_dart_ai`
 - [x] Add tool execution start/end callbacks
 - [x] Add tool input streaming callbacks or document why they are deferred
-- [ ] Add tool context and runtime context if they fit Dart ergonomics
+- [x] Add tool context and runtime context if they fit Dart ergonomics
 - [x] Add stop conditions beyond `maxSteps`
 - [x] Add approval request/response continuation semantics
 - [x] Add dynamic tool semantics
@@ -109,7 +109,7 @@ Decision notes:
   own it
 - [x] Keep chat responsible for chat state, persistence, transport, and manual
   tool output submission
-- [ ] Keep UI stream protocol stable or provide migration notes if chunk names
+- [x] Keep UI stream protocol stable or provide migration notes if chunk names
   change
 - [x] Ensure chat automatic tool execution delegates to the runtime tool
   execution model or has a documented adapter boundary
@@ -118,8 +118,8 @@ Decision notes:
 
 - [x] Update `llm_dart_ai` README with the frozen runtime surface
 - [x] Update `llm_dart_chat` README with the new direct transport story
-- [ ] Update examples to use the primary runtime helpers
-- [ ] Add migration notes for old stream events and runner helpers
+- [x] Update examples to use the primary runtime helpers
+- [x] Add migration notes for old stream events and runner helpers
 - [x] Add architecture docs that explain provider model-call stream versus AI
   runtime full stream
 
@@ -128,7 +128,7 @@ Decision notes:
 - [x] Run workspace dependency guards
 - [x] Run provider boundary guards
 - [x] Run root package boundary guards
-- [ ] Run focused provider tests affected by event changes
+- [x] Run focused provider tests affected by event changes
 - [x] Run `llm_dart_provider` stream serialization tests
 - [x] Run `llm_dart_core` prompt replay and runner compatibility tests
 - [x] Run `llm_dart_ai` stream serialization ownership tests
@@ -136,6 +136,6 @@ Decision notes:
 - [x] Run `llm_dart_ai` runtime, output, prompt, and UI projection tests
 - [x] Run `llm_dart_chat` direct transport and tool execution tests
 - [x] Run examples analysis
-- [ ] Run consumer smoke
-- [ ] Run publish dry-runs
+- [x] Run consumer smoke
+- [x] Run publish dry-runs
 - [x] Run `git diff --check`

@@ -75,7 +75,7 @@ Future<void> demonstrateStreamingToolUse(String apiKey) async {
     print('      "${_lastUserText(prompt)}"');
     print('\n   🤖 LLM Processing...');
 
-    final stream = core.streamTextRun(
+    final stream = core.streamText(
       model: model,
       prompt: prompt,
       tools: tools,
@@ -123,10 +123,8 @@ Future<void> demonstrateStreamingToolUse(String apiKey) async {
       },
     );
 
-    await _consumeStreamingEvents(stream);
-
-    final runResult = await stream.result;
-    print('\n   📝 Final Response: ${runResult.text}');
+    final result = await _consumeStreamingEvents(stream);
+    print('\n   📝 Final Response: ${result.text}');
     print('\n   ✅ Streaming tool use demonstration successful\n');
   } catch (e) {
     print('   ❌ Streaming tool use failed: $e\n');
@@ -138,12 +136,16 @@ Future<void> demonstrateStreamingToolUse(String apiKey) async {
   }
 }
 
-Future<void> _consumeStreamingEvents(core.StreamTextRunResult stream) async {
+Future<core.GenerateTextResult> _consumeStreamingEvents(
+  Stream<core.TextStreamEvent> stream,
+) async {
+  final accumulator = core.GenerateTextResultAccumulator();
   var activeText = false;
   var activeReasoning = false;
   final toolNamesByCallId = <String, String>{};
 
   await for (final event in stream) {
+    accumulator.apply(event);
     switch (event) {
       case core.TextStartEvent():
         _flushActiveStreams(
@@ -246,6 +248,8 @@ Future<void> _consumeStreamingEvents(core.StreamTextRunResult stream) async {
         activeReasoning = false;
         print('   ❌ Streaming error: ${error.message}');
 
+      case core.RunStartEvent():
+      case core.RunFinishEvent():
       case core.StartEvent():
       case core.ResponseMetadataEvent():
       case core.ReasoningFileEvent():
@@ -262,6 +266,8 @@ Future<void> _consumeStreamingEvents(core.StreamTextRunResult stream) async {
         break;
     }
   }
+
+  return accumulator.build();
 }
 
 void _flushActiveStreams({

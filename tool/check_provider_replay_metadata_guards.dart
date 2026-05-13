@@ -73,19 +73,60 @@ Future<void> _collectRuntimeContinuationViolations({
     return;
   }
 
-  final lines = await file.readAsLines();
-  for (var index = 0; index < lines.length; index += 1) {
-    final line = lines[index];
-    if (!line.contains('providerMetadata:')) {
+  _collectProviderMetadataPromptPartViolations(
+    path: _runtimeContinuationPath,
+    source: await file.readAsString(),
+    violations: violations,
+  );
+}
+
+void _collectProviderMetadataPromptPartViolations({
+  required String path,
+  required String source,
+  required List<String> violations,
+}) {
+  final constructors = [
+    'TextPromptPart',
+    'FilePromptPart',
+    'ImagePromptPart',
+    'ReasoningPromptPart',
+    'ReasoningFilePromptPart',
+    'CustomPromptPart',
+    'ToolCallPromptPart',
+    'ToolApprovalRequestPromptPart',
+    'ToolResultPromptPart',
+    'ToolApprovalResponsePromptPart',
+  ];
+  final constructorPattern = constructors.map(RegExp.escape).join('|');
+  final pattern = RegExp(
+    r'\b(' + constructorPattern + r')\s*\(([\s\S]*?)\)',
+    multiLine: true,
+  );
+
+  for (final match in pattern.allMatches(source)) {
+    final constructorName = match.group(1)!;
+    final invocation = match.group(0)!;
+    if (!invocation.contains('providerMetadata:')) {
       continue;
     }
 
+    final line = _lineNumber(source, match.start);
     violations.add(
-      '$_runtimeContinuationPath:${index + 1}: runtime continuation prompt '
-      'parts must carry replay data through ProviderReplayPromptPartOptions, '
-      'not providerMetadata constructor arguments.',
+      '$path:$line: runtime continuation prompt part $constructorName must '
+      'carry replay data through ProviderReplayPromptPartOptions, not '
+      'providerMetadata constructor arguments.',
     );
   }
+}
+
+int _lineNumber(String source, int offset) {
+  var line = 1;
+  for (var index = 0; index < offset; index += 1) {
+    if (source.codeUnitAt(index) == 10) {
+      line += 1;
+    }
+  }
+  return line;
 }
 
 Future<void> _collectProviderRequestCodecViolations({

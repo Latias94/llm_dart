@@ -194,6 +194,10 @@ Progress:
 - 2026-05-14: froze approval continuation ownership: runtime steps with
   pending provider approval requests now stop as observable state instead of
   throwing, while `llm_dart_chat` owns approval responses and continuation.
+- 2026-05-14: deferred public runtime/tool context after comparing
+  `repo-ref/ai` context semantics with Dart ergonomics; the current runtime
+  exposes explicit request, step, tool-call, callback, and cancellation
+  context until a shared `prepareStep`-style API proves necessary.
 
 ## M5: Chat Runtime Integration
 
@@ -216,10 +220,12 @@ Progress:
   options and made `DirectChatTransport` forward them into `streamText(...)`;
   `HttpChatTransport` now rejects non-serializable local runtime hooks instead
   of silently dropping them.
+- 2026-05-14: froze `ChatUiStreamChunk` as the in-process chat/session stream
+  protocol and documented the split from `HttpChatTransportChunk` wire frames.
 
 ## M6: Release Readiness
 
-Status: pending
+Status: in progress
 
 Acceptance criteria:
 
@@ -228,3 +234,13 @@ Acceptance criteria:
 - affected package tests pass
 - consumer smoke passes
 - publish dry-runs pass
+
+Progress:
+
+- 2026-05-14: migrated MCP examples from runner-named helpers to the primary
+  `generateText(...)` and `streamText(...)` runtime helpers, while keeping
+  runner helpers documented as advanced run/step facades.
+- 2026-05-14: release readiness gates passed for focused provider stream
+  tests, AI/core/chat runtime tests, example analysis, dependency/boundary
+  guards, provider replay metadata guards, direct consumer smoke, workspace
+  publish dry-runs, and `git diff --check`.

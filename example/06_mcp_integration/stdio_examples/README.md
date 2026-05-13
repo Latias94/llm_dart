@@ -6,7 +6,7 @@ The examples now keep a clean separation between:
 
 - stdio process transport in `mcp_dart`
 - MCP schema/result adaptation in `../shared/mcp_tool_bridge.dart`
-- shared tool continuation in `core.runTextGeneration(...)`
+- shared tool continuation in `core.generateText(...)`
 
 ## Files
 
@@ -15,8 +15,7 @@ The examples now keep a clean separation between:
 - `client.dart`
   - direct stdio MCP client without an LLM
 - `llm_client.dart`
-  - stable `runTextGeneration(...)` example with automatic MCP tool
-    continuation
+  - primary `generateText(...)` example with automatic MCP tool continuation
 
 ## Quick Start
 
@@ -53,7 +52,7 @@ itself.
 OpenAI chat model
         │
         ▼
-runTextGeneration
+generateText
         │
         ▼
 MCP bridge
@@ -85,7 +84,7 @@ The current version instead:
 - discovers MCP tools once
 - exposes them as shared `FunctionToolDefinition`s
 - lets `GenerateTextFunctionToolExecutor` call back into MCP
-- lets `runTextGeneration(...)` own the replay/continuation flow
+- lets `generateText(...)` own the replay/continuation flow
 
 That keeps the example closer to the real stable library boundary and avoids
 duplicating orchestration logic in every transport sample.

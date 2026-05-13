@@ -6,7 +6,7 @@ The important boundary is now explicit:
 
 - HTTP transport and session lifecycle stay in `mcp_dart`
 - MCP tool schema/result adaptation lives in `../shared/mcp_tool_bridge.dart`
-- model orchestration lives on the stable `llm_dart/core.dart` runners
+- model orchestration lives on the primary `llm_dart/core.dart` runtime helpers
 
 ## Files
 
@@ -15,9 +15,9 @@ The important boundary is now explicit:
 - `client.dart`
   - direct HTTP MCP client for transport-level validation
 - `llm_client.dart`
-  - stable `core.runTextGeneration(...)` example with HTTP MCP tools
+  - primary `core.generateText(...)` example with HTTP MCP tools
 - `simple_stream_client.dart`
-  - stable `core.streamTextRun(...)` example showing tool-input and tool-call
+  - primary `core.streamText(...)` example showing tool-input and tool-call
     events
 
 ## Quick Start
@@ -57,7 +57,7 @@ dart run http_examples/simple_stream_client.dart
 OpenAI chat model
         │
         ▼
-runTextGeneration / streamTextRun
+generateText / streamText
         │
         ▼
 MCP bridge

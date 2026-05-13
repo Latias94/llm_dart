@@ -205,3 +205,12 @@ This workstream should not:
   - Runtime steps with pending provider approval requests now stop as
     observable state instead of throwing; chat owns approval response
     collection and continuation.
+- [36-runtime-context-deferral.md](36-runtime-context-deferral.md)
+  - Defers public runtime/tool context until a Dart-native shape proves useful
+    across step preparation, approval, tool execution, and telemetry.
+- [37-chat-ui-stream-migration.md](37-chat-ui-stream-migration.md)
+  - Freezes `ChatUiStreamChunk` as the in-process chat/session stream protocol
+    and documents the split from HTTP wire chunks.
+- [38-examples-and-release-readiness.md](38-examples-and-release-readiness.md)
+  - Records the MCP example migration to primary runtime helpers and the
+    remaining release-readiness gates.

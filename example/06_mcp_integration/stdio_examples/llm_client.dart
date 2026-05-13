@@ -12,7 +12,7 @@ import '../shared/mcp_tool_bridge.dart';
 /// This example demonstrates the stable llm_dart tool-running flow:
 /// - discover MCP tools
 /// - expose them as shared `FunctionToolDefinition`s
-/// - let `core.runTextGeneration(...)` orchestrate tool continuation
+/// - let `core.generateText(...)` orchestrate tool continuation
 /// - keep MCP-specific schema/result handling inside the bridge layer
 void main() async {
   silenceMcpLogs();
@@ -171,14 +171,14 @@ Future<void> demonstrateStdioMultiToolWorkflow(String apiKey) async {
   }
 }
 
-Future<core.GenerateTextRunResult> _runToolEnabledPrompt({
+Future<core.GenerateTextResult> _runToolEnabledPrompt({
   required core.LanguageModel model,
   required List<core.PromptMessage> prompt,
   required List<core.FunctionToolDefinition> tools,
   required McpClient mcpClient,
   required core.GenerateTextOptions options,
 }) {
-  return core.runTextGeneration(
+  return core.generateText(
     model: model,
     prompt: prompt,
     tools: tools,

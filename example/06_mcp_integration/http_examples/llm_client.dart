@@ -200,7 +200,7 @@ Future<void> demonstrateHttpSessionManagement(String apiKey) async {
   }
 }
 
-Future<core.GenerateTextRunResult> _runToolEnabledPrompt({
+Future<core.GenerateTextResult> _runToolEnabledPrompt({
   required core.LanguageModel model,
   required List<core.PromptMessage> prompt,
   required List<core.FunctionToolDefinition> tools,
@@ -208,7 +208,7 @@ Future<core.GenerateTextRunResult> _runToolEnabledPrompt({
   required core.GenerateTextOptions options,
   required String? sessionId,
 }) {
-  return core.runTextGeneration(
+  return core.generateText(
     model: model,
     prompt: prompt,
     tools: tools,

@@ -17,5 +17,64 @@ void main() {
         reason: result.violations.join('\n'),
       );
     });
+
+    test('allows response metadata while guarding prompt replay metadata',
+        () async {
+      final temp = await Directory.systemTemp.createTemp(
+        'provider_replay_guard_',
+      );
+      addTearDown(() async {
+        if (temp.existsSync()) {
+          await temp.delete(recursive: true);
+        }
+      });
+
+      await _writeFile(
+        temp,
+        'packages/llm_dart_ai/lib/src/model/generate_text_runner_support.dart',
+        '''
+final resultPart = ToolResultContentPart(
+  toolResult,
+  providerMetadata: execution.providerMetadata,
+);
+final promptPart = TextPromptPart(
+  'replay',
+  providerMetadata: metadata,
+);
+''',
+      );
+      for (final path in [
+        'packages/llm_dart_openai/lib/src/openai_responses_codec.dart',
+        'packages/llm_dart_google/lib/src/google_generate_content_codec.dart',
+        'packages/llm_dart_anthropic/lib/src/anthropic_messages_codec.dart',
+      ]) {
+        await _writeFile(temp, path, 'final ok = part.providerOptions;');
+      }
+      await _writeFile(
+        temp,
+        'packages/llm_dart_anthropic/lib/src/anthropic_code_execution_replay.dart',
+        '''
+final options = ProviderReplayPromptPartOptions.fromMetadata(metadata);
+final replay = providerOptions: part.providerOptions;
+''',
+      );
+
+      final result = await guard.evaluateProviderReplayMetadataGuards(
+        repoRoot: temp,
+      );
+
+      expect(result.violations, hasLength(1));
+      expect(result.violations.single, contains('TextPromptPart'));
+    });
   });
+}
+
+Future<void> _writeFile(
+  Directory root,
+  String path,
+  String contents,
+) async {
+  final file = File.fromUri(root.uri.resolve(path));
+  await file.parent.create(recursive: true);
+  await file.writeAsString(contents);
 }
