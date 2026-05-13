@@ -16,20 +16,24 @@ import 'generate_text_runner_support.dart';
 import 'generate_text_step_result.dart';
 import 'generate_text_step_start_event.dart';
 import 'language_model_stream_adapter.dart';
+import 'stream_result_foundation.dart';
 
 final class StreamTextRunResult extends StreamView<TextStreamEvent> {
-  final Future<GenerateTextRunResult> result;
+  final StreamResultHandle<TextStreamEvent, GenerateTextRunResult> _foundation;
   final Stream<GenerateTextStepResult> stepStream;
 
   StreamTextRunResult._({
-    required Stream<TextStreamEvent> stream,
-    required this.result,
+    required StreamResultHandle<TextStreamEvent, GenerateTextRunResult>
+        foundation,
     required this.stepStream,
-  }) : super(stream);
+  })  : _foundation = foundation,
+        super(foundation.eventStream);
 
   Stream<TextStreamEvent> get eventStream => this;
 
   Stream<TextStreamEvent> get textStream => eventStream;
+
+  Future<GenerateTextRunResult> get result => _foundation.result;
 
   Stream<ChatUiStreamChunk> chatUiStream({
     String? messageId,
@@ -171,29 +175,27 @@ final class StreamTextRunner {
   }
 
   StreamTextRunResult run() {
-    final eventChannel = ReplayStreamChannel<TextStreamEvent>();
+    final streamResult =
+        StreamResultController<TextStreamEvent, GenerateTextRunResult>();
     final stepChannel = ReplayStreamChannel<GenerateTextStepResult>();
-    final resultCompleter = Completer<GenerateTextRunResult>();
 
     unawaited(
       _runLoop(
-        eventChannel: eventChannel,
+        streamResult: streamResult,
         stepChannel: stepChannel,
-        resultCompleter: resultCompleter,
       ),
     );
 
     return StreamTextRunResult._(
-      stream: eventChannel.stream,
-      result: resultCompleter.future,
+      foundation: streamResult.handle,
       stepStream: stepChannel.stream,
     );
   }
 
   Future<void> _runLoop({
-    required ReplayStreamChannel<TextStreamEvent> eventChannel,
+    required StreamResultController<TextStreamEvent, GenerateTextRunResult>
+        streamResult,
     required ReplayStreamChannel<GenerateTextStepResult> stepChannel,
-    required Completer<GenerateTextRunResult> resultCompleter,
   }) async {
     final previousSteps = <GenerateTextStepResult>[];
     var promptHistory = List<PromptMessage>.from(prompt);
@@ -207,7 +209,7 @@ final class StreamTextRunner {
     var activeStepOpen = false;
 
     try {
-      await _addEvent(eventChannel, const RunStartEvent());
+      await _addEvent(streamResult, const RunStartEvent());
       while (true) {
         final stepNumber = previousSteps.length;
         if (stepNumber >= maxSteps) {
@@ -241,7 +243,7 @@ final class StreamTextRunner {
         );
         await onStepStart?.call(stepStartEvent);
         await _addEvent(
-          eventChannel,
+          streamResult,
           StepStartEvent(stepId: _stepId(stepNumber)),
         );
         activeStepOpen = true;
@@ -257,7 +259,7 @@ final class StreamTextRunner {
         );
         await for (final event in events) {
           accumulator.apply(event);
-          await _addEvent(eventChannel, event);
+          await _addEvent(streamResult, event);
         }
         _throwIfCancelled();
 
@@ -273,7 +275,7 @@ final class StreamTextRunner {
         if (step.finishReason != FinishReason.toolCalls) {
           await onStepFinish?.call(step);
           await _addEvent(
-            eventChannel,
+            streamResult,
             StepFinishEvent(stepId: _stepId(stepNumber)),
           );
           stepChannel.add(step);
@@ -298,7 +300,7 @@ final class StreamTextRunner {
         if (toolExecutions == null) {
           await onStepFinish?.call(step);
           await _addEvent(
-            eventChannel,
+            streamResult,
             StepFinishEvent(stepId: _stepId(stepNumber)),
           );
           stepChannel.add(step);
@@ -312,7 +314,7 @@ final class StreamTextRunner {
         for (final execution in toolExecutions) {
           final event = execution.toTextStreamEvent();
           accumulator.apply(event);
-          await _addEvent(eventChannel, event);
+          await _addEvent(streamResult, event);
         }
         step = GenerateTextStepResult(
           stepNumber: step.stepNumber,
@@ -324,7 +326,7 @@ final class StreamTextRunner {
         previousSteps[previousSteps.length - 1] = step;
         await onStepFinish?.call(step);
         await _addEvent(
-          eventChannel,
+          streamResult,
           StepFinishEvent(stepId: _stepId(stepNumber)),
         );
         stepChannel.add(step);
@@ -347,25 +349,22 @@ final class StreamTextRunner {
       );
       await onFinish?.call(runResult);
       await _addEvent(
-        eventChannel,
+        streamResult,
         RunFinishEvent(
           finishReason: runResult.finishReason,
           rawFinishReason: runResult.rawFinishReason,
           usage: runResult.totalUsage,
         ),
       );
-      if (!resultCompleter.isCompleted) {
-        resultCompleter.complete(runResult);
-      }
-      eventChannel.close();
+      streamResult.completeResult(runResult);
+      streamResult.close();
       streamClosed = true;
       stepChannel.close();
     } catch (error, stackTrace) {
       if (_isCancelled(error)) {
         await _finishAbortedRun(
-          eventChannel: eventChannel,
+          streamResult: streamResult,
           stepChannel: stepChannel,
-          resultCompleter: resultCompleter,
           previousSteps: previousSteps,
           activeRequest: activeRequest,
           activeAccumulator: activeAccumulator,
@@ -378,33 +377,31 @@ final class StreamTextRunner {
 
       final (reportedError, reportedStackTrace) =
           await _notifyError(error, stackTrace);
-      if (!resultCompleter.isCompleted) {
-        resultCompleter.completeError(reportedError, reportedStackTrace);
-      }
+      streamResult.completeError(reportedError, reportedStackTrace);
       if (!streamClosed) {
         await _addEvent(
-          eventChannel,
+          streamResult,
           ErrorEvent(
             ModelError.fromUnknown(reportedError),
           ),
         );
         await _addEvent(
-          eventChannel,
+          streamResult,
           RunFinishEvent(
             finishReason: FinishReason.error,
             rawFinishReason: '$reportedError',
           ),
         );
-        eventChannel.addError(reportedError, reportedStackTrace);
+        streamResult.fail(reportedError, reportedStackTrace);
       }
       stepChannel.addError(reportedError, reportedStackTrace);
     }
   }
 
   Future<void> _finishAbortedRun({
-    required ReplayStreamChannel<TextStreamEvent> eventChannel,
+    required StreamResultController<TextStreamEvent, GenerateTextRunResult>
+        streamResult,
     required ReplayStreamChannel<GenerateTextStepResult> stepChannel,
-    required Completer<GenerateTextRunResult> resultCompleter,
     required List<GenerateTextStepResult> previousSteps,
     required GenerateTextRequest? activeRequest,
     required GenerateTextResultAccumulator? activeAccumulator,
@@ -434,16 +431,16 @@ final class StreamTextRunner {
         previousSteps[activeStepNumber] = abortedStep;
       }
       await onStepFinish?.call(abortedStep);
-      await _addEvent(eventChannel, AbortEvent(reason: reason));
+      await _addEvent(streamResult, AbortEvent(reason: reason));
       if (activeStepOpen) {
         await _addEvent(
-          eventChannel,
+          streamResult,
           StepFinishEvent(stepId: _stepId(activeStepNumber)),
         );
       }
       stepChannel.add(abortedStep);
     } else {
-      await _addEvent(eventChannel, AbortEvent(reason: reason));
+      await _addEvent(streamResult, AbortEvent(reason: reason));
     }
 
     final runResult = GenerateTextRunResult(
@@ -451,25 +448,23 @@ final class StreamTextRunner {
     );
     await onFinish?.call(runResult);
     await _addEvent(
-      eventChannel,
+      streamResult,
       RunFinishEvent(
         finishReason: FinishReason.aborted,
         rawFinishReason: reason,
         usage: runResult.totalUsage,
       ),
     );
-    if (!resultCompleter.isCompleted) {
-      resultCompleter.complete(runResult);
-    }
-    eventChannel.close();
+    streamResult.completeResult(runResult);
+    streamResult.close();
     stepChannel.close();
   }
 
   Future<void> _addEvent(
-    ReplayStreamChannel<TextStreamEvent> eventChannel,
+    StreamResultController<TextStreamEvent, GenerateTextRunResult> streamResult,
     TextStreamEvent event,
   ) async {
-    eventChannel.add(event);
+    streamResult.addEvent(event);
     await onChunk?.call(event);
   }
 

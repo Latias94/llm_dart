@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 
 import '../common/partial_json.dart';
-import '../common/replay_stream_channel.dart';
 import '../prompt/model_message.dart';
 import '../stream/text_stream_event.dart';
 import '../ui/chat_ui_message.dart';
@@ -13,6 +12,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart'
 
 import 'generate_text_result_accumulator.dart';
 import 'language_model.dart';
+import 'stream_result_foundation.dart';
 
 typedef JsonOutputDecoder<T> = T Function(Object? json);
 typedef JsonObjectDecoder<T> = T Function(Map<String, Object?> json);
@@ -468,16 +468,15 @@ final class OutputResultEvent<T> extends OutputStreamEvent<T> {
 }
 
 final class StreamOutputResult<T> {
-  final ReplayStreamChannel<OutputStreamEvent<T>> _eventChannel =
-      ReplayStreamChannel<OutputStreamEvent<T>>();
-  final ReplayStreamChannel<Object?> _partialOutputChannel =
-      ReplayStreamChannel<Object?>();
-  final ReplayStreamChannel<Object?> _elementChannel =
-      ReplayStreamChannel<Object?>();
-  final Completer<GenerateOutputResult<T>> _resultCompleter =
-      Completer<GenerateOutputResult<T>>();
+  final StreamResultController<OutputStreamEvent<T>, GenerateOutputResult<T>>
+      _foundation =
+      StreamResultController<OutputStreamEvent<T>, GenerateOutputResult<T>>();
+  late final StreamSideChannel<Object?> _partialOutputChannel;
+  late final StreamSideChannel<Object?> _elementChannel;
 
   StreamOutputResult._(Stream<OutputStreamEvent<T>> source) {
+    _partialOutputChannel = _foundation.createSideChannel<Object?>();
+    _elementChannel = _foundation.createSideChannel<Object?>();
     source.listen(
       _handleEvent,
       onError: _handleError,
@@ -486,7 +485,7 @@ final class StreamOutputResult<T> {
     );
   }
 
-  Stream<OutputStreamEvent<T>> get eventStream => _eventChannel.stream;
+  Stream<OutputStreamEvent<T>> get eventStream => _foundation.eventStream;
 
   Stream<TextStreamEvent> get textStream =>
       eventStream.transform<TextStreamEvent>(
@@ -519,7 +518,7 @@ final class StreamOutputResult<T> {
     );
   }
 
-  Future<GenerateOutputResult<T>> get result => _resultCompleter.future;
+  Future<GenerateOutputResult<T>> get result => _foundation.result;
 
   Future<T> get output => result.then((value) => value.output);
 
@@ -548,7 +547,7 @@ final class StreamOutputResult<T> {
       result.then((value) => value.providerMetadata);
 
   void _handleEvent(OutputStreamEvent<T> event) {
-    _eventChannel.add(event);
+    _foundation.addEvent(event);
 
     switch (event) {
       case OutputTextStreamEvent<T>():
@@ -558,24 +557,16 @@ final class StreamOutputResult<T> {
       case OutputElementEvent(:final element):
         _elementChannel.add(element);
       case OutputResultEvent<T>(:final result):
-        if (!_resultCompleter.isCompleted) {
-          _resultCompleter.complete(result);
-        }
+        _foundation.completeResult(result);
     }
   }
 
   void _handleError(Object error, StackTrace stackTrace) {
-    if (!_resultCompleter.isCompleted) {
-      _resultCompleter.completeError(error, stackTrace);
-    }
-
-    _eventChannel.addError(error, stackTrace);
-    _partialOutputChannel.addError(error, stackTrace);
-    _elementChannel.addError(error, stackTrace);
+    _foundation.fail(error, stackTrace);
   }
 
   void _handleDone() {
-    if (!_resultCompleter.isCompleted) {
+    if (!_foundation.isResultCompleted) {
       _handleError(
         StateError(
           'streamOutputResult completed without emitting an OutputResultEvent.',
@@ -585,9 +576,7 @@ final class StreamOutputResult<T> {
       return;
     }
 
-    _eventChannel.close();
-    _partialOutputChannel.close();
-    _elementChannel.close();
+    _foundation.close();
   }
 }
 

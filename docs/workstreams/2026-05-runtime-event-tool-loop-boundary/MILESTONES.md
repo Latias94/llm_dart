@@ -148,6 +148,10 @@ Progress:
 - 2026-05-13: documented the three stream layers
   (`LanguageModelStreamEvent`, `TextStreamEvent`, and `ChatUiStreamChunk`) in
   package READMEs and workstream migration notes.
+- 2026-05-13: introduced an internal stream result foundation that unifies
+  replayable event streams, final result completion, error propagation, and
+  side-channel lifecycle handling for streaming run, text-call, and
+  structured-output result facades while preserving their public API names.
 
 ## M4: Tool Loop Runtime
 

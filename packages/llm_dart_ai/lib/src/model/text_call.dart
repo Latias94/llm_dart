@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import '../common/replay_stream_channel.dart';
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import '../prompt/model_message.dart';
@@ -11,6 +10,7 @@ import '../ui/chat_ui_stream_projection.dart';
 import 'generate_text_result_accumulator.dart';
 import 'language_model.dart';
 import 'output_spec.dart';
+import 'stream_result_foundation.dart';
 
 final class GenerateTextCallResult<T> {
   final GenerateTextResult result;
@@ -60,71 +60,54 @@ final class GenerateTextCallResult<T> {
 }
 
 final class StreamTextCallResult<T> extends StreamView<TextStreamEvent> {
-  final Future<GenerateTextResult> result;
+  final StreamResultHandle<TextStreamEvent, GenerateTextResult> _foundation;
   final bool hasOutput;
   final Stream<Object?> partialOutputStream;
   final Stream<Object?> _elementStream;
   final Future<T>? _output;
 
   StreamTextCallResult._({
-    required Stream<TextStreamEvent> stream,
-    required this.result,
+    required StreamResultHandle<TextStreamEvent, GenerateTextResult> foundation,
     required this.hasOutput,
     required this.partialOutputStream,
     required Stream<Object?> elementStream,
     required Future<T>? output,
   })  : _elementStream = elementStream,
         _output = output,
-        super(stream);
+        _foundation = foundation,
+        super(foundation.eventStream);
 
   factory StreamTextCallResult.raw(
     Stream<TextStreamEvent> source,
   ) {
-    final eventChannel = ReplayStreamChannel<TextStreamEvent>();
-    final partialOutputChannel = ReplayStreamChannel<Object?>();
-    final elementChannel = ReplayStreamChannel<Object?>();
-    final resultCompleter = Completer<GenerateTextResult>();
+    final streamResult =
+        StreamResultController<TextStreamEvent, GenerateTextResult>();
+    final partialOutputChannel = streamResult.createSideChannel<Object?>();
+    final elementChannel = streamResult.createSideChannel<Object?>();
     final accumulator = GenerateTextResultAccumulator();
 
     source.listen(
       (event) {
         accumulator.apply(event);
-        eventChannel.add(event);
+        streamResult.addEvent(event);
       },
       onError: (Object error, StackTrace stackTrace) {
-        if (!resultCompleter.isCompleted) {
-          resultCompleter.completeError(error, stackTrace);
-        }
-
-        eventChannel.addError(error, stackTrace);
-        partialOutputChannel.addError(error, stackTrace);
-        elementChannel.addError(error, stackTrace);
+        streamResult.fail(error, stackTrace);
       },
       onDone: () {
         try {
           final result = accumulator.build();
-          if (!resultCompleter.isCompleted) {
-            resultCompleter.complete(result);
-          }
-          eventChannel.close();
-          partialOutputChannel.close();
-          elementChannel.close();
+          streamResult.completeResult(result);
+          streamResult.close();
         } catch (error, stackTrace) {
-          if (!resultCompleter.isCompleted) {
-            resultCompleter.completeError(error, stackTrace);
-          }
-
-          eventChannel.addError(error, stackTrace);
-          partialOutputChannel.addError(error, stackTrace);
-          elementChannel.addError(error, stackTrace);
+          streamResult.fail(error, stackTrace);
         }
       },
       cancelOnError: true,
     );
 
     return StreamTextCallResult._(
-      stream: eventChannel.stream,
-      result: resultCompleter.future,
+      foundation: streamResult.handle,
       hasOutput: false,
       partialOutputStream: partialOutputChannel.stream,
       elementStream: elementChannel.stream,
@@ -136,8 +119,10 @@ final class StreamTextCallResult<T> extends StreamView<TextStreamEvent> {
     StreamOutputResult<T> outputResult,
   ) {
     return StreamTextCallResult._(
-      stream: outputResult.textStream,
-      result: outputResult.result.then((value) => value.result),
+      foundation: StreamResultHandle<TextStreamEvent, GenerateTextResult>(
+        eventStream: outputResult.textStream,
+        result: outputResult.result.then((value) => value.result),
+      ),
       hasOutput: true,
       partialOutputStream: outputResult.partialOutputStream,
       elementStream: outputResult.elementStream<Object?>(),
@@ -148,6 +133,8 @@ final class StreamTextCallResult<T> extends StreamView<TextStreamEvent> {
   Stream<TextStreamEvent> get eventStream => this;
 
   Stream<TextStreamEvent> get textStream => eventStream;
+
+  Future<GenerateTextResult> get result => _foundation.result;
 
   Stream<ChatUiStreamChunk> chatUiStream({
     String? messageId,

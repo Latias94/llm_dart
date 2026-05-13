@@ -7,7 +7,7 @@
 - [x] Record the initial reference and gap audit
 - [x] Draft the target runtime surface
 - [x] Link first implementation slice as it landed
-- [ ] Link later implementation commits as they land
+- [x] Link later implementation commits as they land
 
 ## Decision Freeze
 
@@ -81,11 +81,11 @@ Decision notes:
 
 - [x] Make `generateText(...)` the app-facing non-streaming multi-step helper
 - [x] Make `streamText(...)` the app-facing streaming multi-step helper
-- [ ] Keep `generateTextCall(...)` and `streamTextCall(...)` as the structured
+- [x] Keep `generateTextCall(...)` and `streamTextCall(...)` as the structured
   text/result facades
-- [ ] Replace duplicate `StreamTextRunResult`, `StreamTextCallResult`, and
+- [x] Replace duplicate `StreamTextRunResult`, `StreamTextCallResult`, and
   `StreamOutputResult` plumbing with one consistent result foundation
-- [ ] Preserve `partialOutputStream` and `elementStream`
+- [x] Preserve `partialOutputStream` and `elementStream`
 - [x] Add `textStream` and UI projection accessors to the streaming result
 - [ ] Decide migration path for `runTextGeneration(...)` and `streamTextRun(...)`
 

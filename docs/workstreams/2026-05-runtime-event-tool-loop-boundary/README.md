@@ -179,3 +179,6 @@ This workstream should not:
 - [27-stream-boundary-architecture-docs.md](27-stream-boundary-architecture-docs.md)
   - Documents the provider model-call stream, AI runtime full stream, and
     chat/UI stream ownership boundaries plus migration notes.
+- [28-stream-result-foundation.md](28-stream-result-foundation.md)
+  - Introduces the internal runtime result foundation shared by streaming run,
+    text-call, and structured-output result facades.
