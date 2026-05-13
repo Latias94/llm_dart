@@ -28,3 +28,9 @@ provider prompt state.
 - `dart analyze packages/llm_dart_chat`
 - `dart test packages/llm_dart_chat/test/default_chat_session_test.dart`
 - `dart test packages/llm_dart_chat/test/chat_session_message_support_test.dart packages/llm_dart_chat/test/chat_persistence_adapter_test.dart`
+- `dart run tool/check_workspace_dependency_guards.dart`
+
+The workspace dependency guard now rejects provider-facing
+`PromptMessage`/`PromptPart` types in app-facing chat input surfaces while
+allowing transport, snapshot, replay, and advanced runtime layers to keep using
+provider prompts.

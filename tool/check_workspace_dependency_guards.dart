@@ -48,6 +48,17 @@ final RegExp _providerSpecificationUiLayerPattern = RegExp(
   r'\b(ChatUi|CustomUiPart|HttpChatTransport|ChatMessageMapper)\b',
 );
 
+final RegExp _providerPromptSurfacePattern = RegExp(
+  r'\b(SystemPromptMessage|UserPromptMessage|AssistantPromptMessage|'
+  r'ToolPromptMessage|PromptMessage|PromptPart)\b',
+);
+
+const Set<String> _appFacingUserInputBoundaryPaths = {
+  'packages/llm_dart_chat/lib/src/chat_input.dart',
+  'packages/llm_dart_chat/lib/src/chat_session.dart',
+  'packages/llm_dart_flutter/lib/src/chat_controller.dart',
+};
+
 const Map<String, Set<String>> _allowedRuntimeDependenciesByPackage = {
   'llm_dart': {
     'llm_dart_anthropic',
@@ -149,6 +160,10 @@ Future<WorkspaceDependencyGuardResult> evaluateWorkspaceDependencyGuards({
     packagesDir: packagesDir,
     violations: violations,
   );
+  await _collectAppFacingPromptBoundaryViolations(
+    repoRoot: resolvedRepoRoot,
+    violations: violations,
+  );
   await _collectProviderSpecificationUiLayerViolations(
     repoRoot: resolvedRepoRoot,
     packagesDir: packagesDir,
@@ -236,6 +251,38 @@ Future<void> _collectProviderContractMethodNameViolations({
           '${pattern.message}',
         );
       }
+    }
+  }
+}
+
+Future<void> _collectAppFacingPromptBoundaryViolations({
+  required Directory repoRoot,
+  required List<String> violations,
+}) async {
+  for (final relativePath in _appFacingUserInputBoundaryPaths) {
+    final file = File.fromUri(repoRoot.uri.resolve(relativePath));
+    if (!file.existsSync()) {
+      continue;
+    }
+
+    final lines = await file.readAsLines();
+    for (var index = 0; index < lines.length; index += 1) {
+      final line = lines[index];
+      final trimmed = line.trim();
+      if (trimmed.startsWith('//') || trimmed.startsWith('///')) {
+        continue;
+      }
+
+      if (!_providerPromptSurfacePattern.hasMatch(line)) {
+        continue;
+      }
+
+      violations.add(
+        '$relativePath:${index + 1}: app-facing chat input surfaces must use '
+        'ModelMessage/ModelPart, not provider-facing PromptMessage/PromptPart. '
+        'Keep provider prompt contracts in transport, snapshot, replay, and '
+        'advanced runtime layers.',
+      );
     }
   }
 }
@@ -432,7 +479,8 @@ Future<void> main() async {
     stdout.writeln(
       'workspace dependency guard passed: no package implementation files '
       'import package:llm_dart/... and no workspace pubspec policies were '
-      'violated, and provider contract method names are SDK-aligned.',
+      'violated, provider contract method names are SDK-aligned, and '
+      'app-facing chat input surfaces stay on ModelMessage.',
     );
     return;
   }

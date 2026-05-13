@@ -243,6 +243,42 @@ final class BadMapper {
         ),
       );
     });
+
+    test('reports provider prompts leaking into app-facing chat input',
+        () async {
+      final repoRoot = await _createTempWorkspace();
+      addTearDown(() async {
+        if (repoRoot.existsSync()) {
+          await repoRoot.delete(recursive: true);
+        }
+      });
+
+      await _writeFile(
+        repoRoot,
+        'packages/llm_dart_chat/lib/src/chat_input.dart',
+        '''
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+
+final class ChatInput {
+  final PromptMessage message;
+
+  const ChatInput.message(this.message);
+}
+''',
+      );
+
+      final result = await guard.evaluateWorkspaceDependencyGuards(
+        repoRoot: repoRoot,
+      );
+
+      expect(result.passed, isFalse);
+      expect(
+        result.violations,
+        contains(
+          contains('app-facing chat input surfaces must use ModelMessage'),
+        ),
+      );
+    });
   });
 }
 
@@ -313,6 +349,55 @@ dependencies:
     path: ../llm_dart_chat
   llm_dart_provider:
     path: ../llm_dart_provider
+''',
+  );
+  await _writeFile(
+    repoRoot,
+    'packages/llm_dart_chat/pubspec.yaml',
+    '''
+name: llm_dart_chat
+dependencies:
+  llm_dart_ai:
+    path: ../llm_dart_ai
+  llm_dart_provider:
+    path: ../llm_dart_provider
+  llm_dart_transport:
+    path: ../llm_dart_transport
+''',
+  );
+  await _writeFile(
+    repoRoot,
+    'packages/llm_dart_chat/lib/src/chat_input.dart',
+    '''
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+
+final class ChatInput {
+  final UserModelMessage message;
+
+  const ChatInput.message(this.message);
+}
+''',
+  );
+  await _writeFile(
+    repoRoot,
+    'packages/llm_dart_chat/lib/src/chat_session.dart',
+    '''
+import 'chat_input.dart';
+
+abstract interface class ChatSession {
+  Future<void> sendMessage(ChatInput input);
+}
+''',
+  );
+  await _writeFile(
+    repoRoot,
+    'packages/llm_dart_flutter/lib/src/chat_controller.dart',
+    '''
+import 'package:llm_dart_chat/llm_dart_chat.dart';
+
+final class ChatController {
+  Future<void> sendMessage(ChatInput input) async {}
+}
 ''',
   );
   await _writeFile(
