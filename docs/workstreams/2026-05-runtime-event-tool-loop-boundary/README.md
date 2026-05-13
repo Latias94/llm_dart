@@ -176,3 +176,6 @@ This workstream should not:
 - [26-non-streaming-runtime-cancellation.md](26-non-streaming-runtime-cancellation.md)
   - `GenerateTextRunner` and `runTextGeneration(...)` now return aborted run
     results for runtime cancellation instead of treating user stop as `onError`.
+- [27-stream-boundary-architecture-docs.md](27-stream-boundary-architecture-docs.md)
+  - Documents the provider model-call stream, AI runtime full stream, and
+    chat/UI stream ownership boundaries plus migration notes.

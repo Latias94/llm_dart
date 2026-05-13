@@ -115,11 +115,11 @@ Decision notes:
 
 ## Documentation And Migration
 
-- [ ] Update `llm_dart_ai` README with the frozen runtime surface
-- [ ] Update `llm_dart_chat` README with the new direct transport story
+- [x] Update `llm_dart_ai` README with the frozen runtime surface
+- [x] Update `llm_dart_chat` README with the new direct transport story
 - [ ] Update examples to use the primary runtime helpers
 - [ ] Add migration notes for old stream events and runner helpers
-- [ ] Add architecture docs that explain provider model-call stream versus AI
+- [x] Add architecture docs that explain provider model-call stream versus AI
   runtime full stream
 
 ## Validation

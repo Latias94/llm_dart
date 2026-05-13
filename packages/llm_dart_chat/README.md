@@ -19,6 +19,24 @@ The persistence helper in this package is intentionally session-oriented:
 - `ChatPersistenceAdapter.saveSession(...)`
 - `ChatPersistenceAdapter.restoreSession(...)`
 
+## Runtime Boundary
+
+`llm_dart_chat` does not own provider model-call semantics. Direct chat
+transport sends prompts through `llm_dart_ai.streamText(...)`, then projects the
+AI runtime full stream into `ChatUiStreamChunk` values.
+
+The layers are:
+
+- providers emit `LanguageModelStreamEvent` for one model call
+- `llm_dart_ai` emits `TextStreamEvent` for a full run, including run/step
+  lifecycle, local tools, aborts, and errors
+- `llm_dart_chat` consumes `ChatUiStreamChunk` and owns chat state,
+  persistence, transport protocols, and manual tool output submission
+
+Use `DirectChatTransport` when the client can call a model directly. Use
+`HttpChatTransport` when routing, credentials, audit policy, or tool execution
+should stay backend-owned.
+
 Flutter-only controller convenience stays in
 `package:llm_dart_flutter/llm_dart_flutter.dart`.
 

@@ -18,16 +18,41 @@ This package owns app-facing orchestration built on top of provider contracts:
   - object-first convenience wrappers for common JSON-schema workflows
 - shared chat UI message, mapping, and stream JSON helpers
 
+## Stream Boundaries
+
+`llm_dart_ai` owns the app-facing full stream, `TextStreamEvent`.
+Provider packages own the lower-level model-call stream,
+`LanguageModelStreamEvent`.
+
+The distinction matters:
+
+- provider model-call events describe one provider invocation
+- runtime full-stream events add `RunStartEvent`, `RunFinishEvent`,
+  `StepStartEvent`, `StepFinishEvent`, local tool execution results, aborts,
+  and runtime errors around provider events
+- chat UI streams are a higher layer built from `TextStreamEvent` and expose
+  `ChatUiStreamChunk` / `ChatUiMessage`
+
+Use `streamText(...)` when you want the runtime full stream. Use
+`LanguageModel.doStream(...)` only when implementing or testing provider-level
+model-call behavior.
+
 ## Prompt And Result Surfaces
 
 Use `messages:` with `ModelMessage` for app-facing prompt construction.
 Use `prompt:` with `PromptMessage` only when working at the provider-contract
 layer or replaying already-normalized provider prompts.
 
+Use `generateText(...)` and `streamText(...)` for the primary text runtime.
 For structured output, `generateTextCall(...)` and `streamTextCall(...)` are
 the combined text and parsed-output result facades. `generateObject(...)` and
 `streamObject(...)` remain convenience wrappers for common JSON-schema
 workflows.
+
+Use `runTextGeneration(...)`, `streamTextRun(...)`, `GenerateTextRunner`, and
+`StreamTextRunner` when you need step streams or callback telemetry directly.
+They are advanced runtime shapes while the result foundation continues to
+consolidate.
 
 Provider-specific input behavior should stay in typed provider options or
 provider-owned prompt part options. Provider metadata is response-side

@@ -145,6 +145,9 @@ Progress:
 - 2026-05-13: aligned non-streaming `GenerateTextRunner` cancellation with the
   streaming runtime path so `runTextGeneration(...)` returns an aborted run
   result, preserves available partial data, and skips `onError` for user stop.
+- 2026-05-13: documented the three stream layers
+  (`LanguageModelStreamEvent`, `TextStreamEvent`, and `ChatUiStreamChunk`) in
+  package READMEs and workstream migration notes.
 
 ## M4: Tool Loop Runtime
 
