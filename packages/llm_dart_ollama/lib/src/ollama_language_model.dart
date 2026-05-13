@@ -75,7 +75,8 @@ final class OllamaLanguageModel
   }
 
   @override
-  Stream<TextStreamEvent> doStream(GenerateTextRequest request) async* {
+  Stream<LanguageModelStreamEvent> doStream(
+      GenerateTextRequest request) async* {
     final preparedRequest = await _prepareRequest(request, stream: true);
     yield StartEvent(warnings: preparedRequest.warnings);
 
@@ -604,7 +605,7 @@ final class OllamaLanguageModel
     );
   }
 
-  Iterable<TextStreamEvent> _decodeStreamText(
+  Iterable<LanguageModelStreamEvent> _decodeStreamText(
     String chunk,
     _OllamaStreamState state, {
     required bool includeRawChunks,
@@ -630,7 +631,7 @@ final class OllamaLanguageModel
     }
   }
 
-  Iterable<TextStreamEvent> _decodeStreamJsonChunk(
+  Iterable<LanguageModelStreamEvent> _decodeStreamJsonChunk(
     Map<String, Object?> json,
     _OllamaStreamState state,
   ) sync* {

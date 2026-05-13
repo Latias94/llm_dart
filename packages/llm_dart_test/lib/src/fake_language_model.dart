@@ -6,7 +6,8 @@ final class FakeLanguageModel implements LanguageModel {
   final String _modelId;
   final Future<GenerateTextResult> Function(GenerateTextRequest request)?
       onGenerate;
-  final Stream<TextStreamEvent> Function(GenerateTextRequest request)? onStream;
+  final Stream<LanguageModelStreamEvent> Function(GenerateTextRequest request)?
+      onStream;
 
   GenerateTextRequest? lastRequest;
   GenerateTextRequest? lastGenerateRequest;
@@ -39,7 +40,7 @@ final class FakeLanguageModel implements LanguageModel {
   }
 
   @override
-  Stream<TextStreamEvent> doStream(GenerateTextRequest request) {
+  Stream<LanguageModelStreamEvent> doStream(GenerateTextRequest request) {
     lastRequest = request;
     lastStreamRequest = request;
 

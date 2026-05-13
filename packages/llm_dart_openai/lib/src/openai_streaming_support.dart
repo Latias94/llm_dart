@@ -352,7 +352,7 @@ ResponseMetadataEvent? maybeCreateOpenAIResponseMetadataEvent({
   );
 }
 
-Iterable<TextStreamEvent> decodeOpenAITextDeltaEvents({
+Iterable<LanguageModelStreamEvent> decodeOpenAITextDeltaEvents({
   required OpenAIStreamPartState state,
   required String id,
   required String? delta,
@@ -414,7 +414,7 @@ TextEndEvent? maybeCreateOpenAITextEndEvent({
   );
 }
 
-Iterable<TextStreamEvent> decodeOpenAIReasoningDeltaEvents({
+Iterable<LanguageModelStreamEvent> decodeOpenAIReasoningDeltaEvents({
   required OpenAIStreamPartState state,
   required String id,
   required String? delta,

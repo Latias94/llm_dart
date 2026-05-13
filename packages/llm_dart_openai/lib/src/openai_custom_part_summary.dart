@@ -48,7 +48,8 @@ final class OpenAICustomPartSummary {
     return parsed == null ? null : OpenAICustomPartSummary.fromPart(parsed);
   }
 
-  static OpenAICustomPartSummary? tryParseEvent(TextStreamEvent event) {
+  static OpenAICustomPartSummary? tryParseEvent(
+      LanguageModelStreamEvent event) {
     final parsed = OpenAICustomPart.tryParseEvent(event);
     return parsed == null ? null : OpenAICustomPartSummary.fromPart(parsed);
   }
@@ -66,7 +67,7 @@ final class OpenAICustomPartSummary {
   }
 
   static List<OpenAICustomPartSummary> parseEvents(
-    Iterable<TextStreamEvent> events,
+    Iterable<LanguageModelStreamEvent> events,
   ) {
     return parseTypedParts(events, tryParseEvent);
   }

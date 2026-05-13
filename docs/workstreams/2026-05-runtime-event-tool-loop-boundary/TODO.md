@@ -46,6 +46,8 @@ Decision notes:
   model-call parts
 - [x] Add provider-side guards/tests that reject runtime-only events
 - [x] Add an AI-runtime adapter seam for provider model-call streams
+- [x] Migrate focused provider production code to the
+  `LanguageModelStreamEvent` name
 - [ ] Remove runtime `StepStartEvent` / `StepFinishEvent` ownership from the
   provider contract or mark them as runtime-only
 - [ ] Ensure provider codecs never need to emit chat/UI lifecycle chunks

@@ -511,7 +511,8 @@ final class AnthropicCodeExecutionReplay {
     );
   }
 
-  static AnthropicCodeExecutionReplay? tryParseEvent(TextStreamEvent event) {
+  static AnthropicCodeExecutionReplay? tryParseEvent(
+      LanguageModelStreamEvent event) {
     if (event is! CustomEvent || event.kind != kind) {
       return null;
     }

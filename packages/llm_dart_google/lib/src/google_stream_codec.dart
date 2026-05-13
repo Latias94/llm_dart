@@ -33,7 +33,7 @@ final class GoogleGenerateContentStreamState {
 final class GoogleGenerateContentStreamCodec {
   const GoogleGenerateContentStreamCodec();
 
-  Iterable<TextStreamEvent> decodeChunk(
+  Iterable<LanguageModelStreamEvent> decodeChunk(
     Map<String, Object?> chunk,
     GoogleGenerateContentStreamState state,
   ) sync* {
@@ -331,7 +331,7 @@ final class GoogleGenerateContentStreamCodec {
     }
   }
 
-  Iterable<TextStreamEvent> finish(
+  Iterable<LanguageModelStreamEvent> finish(
     GoogleGenerateContentStreamState state,
   ) sync* {
     if (state.finished) {
@@ -354,7 +354,7 @@ final class GoogleGenerateContentStreamCodec {
     }
   }
 
-  Iterable<TextStreamEvent> _emitFinish(
+  Iterable<LanguageModelStreamEvent> _emitFinish(
     GoogleGenerateContentStreamState state,
   ) sync* {
     if (state.finished) {
@@ -381,7 +381,7 @@ final class GoogleGenerateContentStreamCodec {
     );
   }
 
-  Iterable<TextStreamEvent> _closeOpenBlocks(
+  Iterable<LanguageModelStreamEvent> _closeOpenBlocks(
     GoogleGenerateContentStreamState state,
   ) sync* {
     if (state.currentTextBlockId != null) {

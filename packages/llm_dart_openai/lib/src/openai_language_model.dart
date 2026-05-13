@@ -94,7 +94,8 @@ final class OpenAILanguageModel
   }
 
   @override
-  Stream<TextStreamEvent> doStream(GenerateTextRequest request) async* {
+  Stream<LanguageModelStreamEvent> doStream(
+      GenerateTextRequest request) async* {
     final call = resolveOpenAILanguageModelCall(
       request: request,
       modelId: modelId,
@@ -213,7 +214,7 @@ final class OpenAILanguageModel
     );
   }
 
-  Stream<TextStreamEvent> _decodeStreamEvents({
+  Stream<LanguageModelStreamEvent> _decodeStreamEvents({
     required OpenAIRequestRoute route,
     required Stream<List<int>> stream,
     required bool includeRawChunks,

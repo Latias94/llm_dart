@@ -33,7 +33,7 @@ sealed class OpenAICustomPart {
     };
   }
 
-  static OpenAICustomPart? tryParseEvent(TextStreamEvent event) {
+  static OpenAICustomPart? tryParseEvent(LanguageModelStreamEvent event) {
     return switch (event) {
       CustomEvent(:final kind, :final data, :final providerMetadata) =>
         _parseCustomPayload(
@@ -53,7 +53,8 @@ sealed class OpenAICustomPart {
     return parseTypedParts(parts, tryParseContentPart);
   }
 
-  static List<OpenAICustomPart> parseEvents(Iterable<TextStreamEvent> events) {
+  static List<OpenAICustomPart> parseEvents(
+      Iterable<LanguageModelStreamEvent> events) {
     return parseTypedParts(events, tryParseEvent);
   }
 }

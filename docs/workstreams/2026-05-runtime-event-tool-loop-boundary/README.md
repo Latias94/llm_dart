@@ -107,3 +107,6 @@ This workstream should not:
 - [04-provider-event-vocabulary-first-slice.md](04-provider-event-vocabulary-first-slice.md)
   - First implemented code seam for `LanguageModelStreamEvent`, provider event
     validation, and AI runtime stream adaptation.
+- [05-focused-provider-stream-naming-migration.md](05-focused-provider-stream-naming-migration.md)
+  - Production provider-facing stream APIs, codecs, replay helpers, and test
+    fakes migrated to `LanguageModelStreamEvent` naming.

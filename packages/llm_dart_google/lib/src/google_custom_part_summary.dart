@@ -97,7 +97,8 @@ final class GoogleCustomPartSummary {
     return parsed == null ? null : GoogleCustomPartSummary.fromPart(parsed);
   }
 
-  static GoogleCustomPartSummary? tryParseEvent(TextStreamEvent event) {
+  static GoogleCustomPartSummary? tryParseEvent(
+      LanguageModelStreamEvent event) {
     final parsed = GoogleCustomPart.tryParseEvent(event);
     return parsed == null ? null : GoogleCustomPartSummary.fromPart(parsed);
   }
@@ -115,7 +116,7 @@ final class GoogleCustomPartSummary {
   }
 
   static List<GoogleCustomPartSummary> parseEvents(
-    Iterable<TextStreamEvent> events,
+    Iterable<LanguageModelStreamEvent> events,
   ) {
     return parseTypedParts(events, tryParseEvent);
   }

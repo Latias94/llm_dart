@@ -185,7 +185,7 @@ final class GoogleToolCallReplay {
     );
   }
 
-  static GoogleToolCallReplay? tryParseEvent(TextStreamEvent event) {
+  static GoogleToolCallReplay? tryParseEvent(LanguageModelStreamEvent event) {
     if (event is! CustomEvent || event.kind != kind) {
       return null;
     }
@@ -409,7 +409,8 @@ final class GoogleToolResponseReplay {
     );
   }
 
-  static GoogleToolResponseReplay? tryParseEvent(TextStreamEvent event) {
+  static GoogleToolResponseReplay? tryParseEvent(
+      LanguageModelStreamEvent event) {
     if (event is! CustomEvent || event.kind != kind) {
       return null;
     }

@@ -57,6 +57,10 @@ Progress:
   `streamText(...)` plus `StreamTextRunner` provider-call boundaries. Existing
   focused provider implementations still compile through the compatibility
   typedef.
+- 2026-05-13: migrated production focused provider stream implementations,
+  stream codecs, provider-native replay/custom helpers, and `llm_dart_test`
+  fake model to `LanguageModelStreamEvent` naming while leaving runtime/chat/UI
+  surfaces on `TextStreamEvent`.
 
 ## M3: Unified Runtime Result Surface
 

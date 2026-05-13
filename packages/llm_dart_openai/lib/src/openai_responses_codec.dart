@@ -54,7 +54,7 @@ final class OpenAIResponsesCodec {
   }) =>
       _decodeGenerateResponse(response, warnings: warnings);
 
-  Iterable<TextStreamEvent> decodeStreamChunk(
+  Iterable<LanguageModelStreamEvent> decodeStreamChunk(
     Map<String, Object?> chunk,
     OpenAIResponsesStreamState state,
   ) sync* {
@@ -1415,7 +1415,7 @@ final class OpenAIResponsesCodec {
     return _asString(incompleteDetails?['reason']);
   }
 
-  Iterable<TextStreamEvent> _handleResponseCreatedChunk(
+  Iterable<LanguageModelStreamEvent> _handleResponseCreatedChunk(
     Map<String, Object?> chunk,
     OpenAIResponsesStreamState state,
     _ResponsesStreamMetadataAdapter metadata,
@@ -1441,7 +1441,7 @@ final class OpenAIResponsesCodec {
     }
   }
 
-  Iterable<TextStreamEvent> _handleOutputItemAddedChunk(
+  Iterable<LanguageModelStreamEvent> _handleOutputItemAddedChunk(
     Map<String, Object?> chunk,
     OpenAIResponsesStreamState state,
     _ResponsesStreamMetadataAdapter metadata,
@@ -1494,7 +1494,7 @@ final class OpenAIResponsesCodec {
     }
   }
 
-  Iterable<TextStreamEvent> _handleOutputTextDeltaChunk(
+  Iterable<LanguageModelStreamEvent> _handleOutputTextDeltaChunk(
     Map<String, Object?> chunk,
     OpenAIResponsesStreamState state,
     _ResponsesStreamMetadataAdapter metadata,
@@ -1511,7 +1511,7 @@ final class OpenAIResponsesCodec {
     );
   }
 
-  Iterable<TextStreamEvent> _handleOutputTextDoneChunk(
+  Iterable<LanguageModelStreamEvent> _handleOutputTextDoneChunk(
     Map<String, Object?> chunk,
     OpenAIResponsesStreamState state,
     _ResponsesStreamMetadataAdapter metadata,
@@ -1527,7 +1527,7 @@ final class OpenAIResponsesCodec {
     }
   }
 
-  Iterable<TextStreamEvent> _handleReasoningSummaryPartAddedChunk(
+  Iterable<LanguageModelStreamEvent> _handleReasoningSummaryPartAddedChunk(
     Map<String, Object?> chunk,
     OpenAIResponsesStreamState state,
     _ResponsesStreamMetadataAdapter metadata,
@@ -1542,7 +1542,7 @@ final class OpenAIResponsesCodec {
     }
   }
 
-  Iterable<TextStreamEvent> _handleReasoningSummaryTextDeltaChunk(
+  Iterable<LanguageModelStreamEvent> _handleReasoningSummaryTextDeltaChunk(
     Map<String, Object?> chunk,
     OpenAIResponsesStreamState state,
     _ResponsesStreamMetadataAdapter metadata,
@@ -1556,7 +1556,7 @@ final class OpenAIResponsesCodec {
     );
   }
 
-  Iterable<TextStreamEvent> _handleReasoningSummaryPartDoneChunk(
+  Iterable<LanguageModelStreamEvent> _handleReasoningSummaryPartDoneChunk(
     Map<String, Object?> chunk,
     OpenAIResponsesStreamState state,
     _ResponsesStreamMetadataAdapter metadata,
@@ -1571,7 +1571,7 @@ final class OpenAIResponsesCodec {
     }
   }
 
-  Iterable<TextStreamEvent> _handleFunctionCallArgumentsDeltaChunk(
+  Iterable<LanguageModelStreamEvent> _handleFunctionCallArgumentsDeltaChunk(
     Map<String, Object?> chunk,
     OpenAIResponsesStreamState state,
     _ResponsesStreamMetadataAdapter metadata,
@@ -1609,7 +1609,7 @@ final class OpenAIResponsesCodec {
     }
   }
 
-  Iterable<TextStreamEvent> _handleOutputTextAnnotationAddedChunk(
+  Iterable<LanguageModelStreamEvent> _handleOutputTextAnnotationAddedChunk(
     Map<String, Object?> chunk,
     OpenAIResponsesStreamState state,
   ) sync* {
@@ -1623,7 +1623,7 @@ final class OpenAIResponsesCodec {
     }
   }
 
-  Iterable<TextStreamEvent> _handleContentPartDoneChunk(
+  Iterable<LanguageModelStreamEvent> _handleContentPartDoneChunk(
     Map<String, Object?> chunk,
     OpenAIResponsesStreamState state,
     _ResponsesStreamMetadataAdapter metadata,
@@ -1661,7 +1661,7 @@ final class OpenAIResponsesCodec {
     }
   }
 
-  Iterable<TextStreamEvent> _handlePartialImageChunk(
+  Iterable<LanguageModelStreamEvent> _handlePartialImageChunk(
     Map<String, Object?> chunk,
     OpenAIResponsesStreamState state,
     _ResponsesStreamMetadataAdapter metadata,
@@ -1683,7 +1683,7 @@ final class OpenAIResponsesCodec {
     );
   }
 
-  Iterable<TextStreamEvent> _handleOutputItemDoneChunk(
+  Iterable<LanguageModelStreamEvent> _handleOutputItemDoneChunk(
     Map<String, Object?> chunk,
     OpenAIResponsesStreamState state,
     _ResponsesStreamMetadataAdapter metadata,
@@ -1895,7 +1895,7 @@ final class OpenAIResponsesCodec {
     }
   }
 
-  Iterable<TextStreamEvent> _handleErrorChunk(
+  Iterable<LanguageModelStreamEvent> _handleErrorChunk(
     Map<String, Object?> chunk,
   ) sync* {
     yield ErrorEvent(
@@ -1906,7 +1906,7 @@ final class OpenAIResponsesCodec {
     );
   }
 
-  Iterable<TextStreamEvent> _handleTerminalResponseChunk(
+  Iterable<LanguageModelStreamEvent> _handleTerminalResponseChunk(
     String chunkType,
     Map<String, Object?> chunk,
     OpenAIResponsesStreamState state,

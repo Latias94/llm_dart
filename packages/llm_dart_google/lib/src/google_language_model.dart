@@ -90,7 +90,8 @@ final class GoogleLanguageModel
   }
 
   @override
-  Stream<TextStreamEvent> doStream(GenerateTextRequest request) async* {
+  Stream<LanguageModelStreamEvent> doStream(
+      GenerateTextRequest request) async* {
     final providerOptions = resolveGoogleProviderOptions(request);
     final preparedRequest = _requestCodec.encodeRequest(
       modelId: modelId,

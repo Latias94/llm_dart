@@ -90,7 +90,8 @@ final class AnthropicLanguageModel
   }
 
   @override
-  Stream<TextStreamEvent> doStream(GenerateTextRequest request) async* {
+  Stream<LanguageModelStreamEvent> doStream(
+      GenerateTextRequest request) async* {
     final providerOptions = _resolveProviderOptions(
       request.callOptions.providerOptions,
     );

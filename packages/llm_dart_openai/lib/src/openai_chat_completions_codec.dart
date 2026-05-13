@@ -62,7 +62,7 @@ final class OpenAIChatCompletionsCodec {
   }) =>
       _decodeGenerateResponse(response, warnings: warnings);
 
-  Iterable<TextStreamEvent> decodeStreamChunk(
+  Iterable<LanguageModelStreamEvent> decodeStreamChunk(
     Map<String, Object?> chunk,
     OpenAIChatCompletionsStreamState state,
   ) sync* {
@@ -1047,7 +1047,7 @@ final class OpenAIChatCompletionsCodec {
     );
   }
 
-  Iterable<TextStreamEvent> _finalizeToolCalls(
+  Iterable<LanguageModelStreamEvent> _finalizeToolCalls(
     OpenAIChatCompletionsStreamState state,
     _ChatCompletionsStreamMetadataAdapter metadata,
   ) sync* {
@@ -1194,7 +1194,7 @@ final class OpenAIChatCompletionsCodec {
   static const String _reasoningId = 'reasoning_0';
 }
 
-Iterable<TextStreamEvent> _decodeOpenAIChatCompletionsStreamChunk(
+Iterable<LanguageModelStreamEvent> _decodeOpenAIChatCompletionsStreamChunk(
   OpenAIChatCompletionsCodec codec,
   Map<String, Object?> chunk,
   OpenAIChatCompletionsStreamState state,

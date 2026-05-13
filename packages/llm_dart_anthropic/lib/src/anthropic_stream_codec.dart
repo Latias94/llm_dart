@@ -19,7 +19,7 @@ final class AnthropicMessagesStreamState {
 final class AnthropicStreamCodec {
   const AnthropicStreamCodec();
 
-  Iterable<TextStreamEvent> decodeChunk(
+  Iterable<LanguageModelStreamEvent> decodeChunk(
     Map<String, Object?> chunk,
     AnthropicMessagesStreamState state,
   ) sync* {
@@ -253,7 +253,7 @@ final class AnthropicStreamCodec {
     }
   }
 
-  Iterable<TextStreamEvent> _decodeContentBlockDelta(
+  Iterable<LanguageModelStreamEvent> _decodeContentBlockDelta(
     Map<String, Object?> chunk,
     AnthropicMessagesStreamState state,
   ) sync* {
@@ -348,7 +348,7 @@ final class AnthropicStreamCodec {
     }
   }
 
-  Iterable<TextStreamEvent> _emitPrepopulatedToolCall(
+  Iterable<LanguageModelStreamEvent> _emitPrepopulatedToolCall(
     Map<String, Object?> part,
     AnthropicMessagesStreamState state,
   ) sync* {
@@ -397,7 +397,7 @@ final class AnthropicStreamCodec {
     );
   }
 
-  Iterable<TextStreamEvent> _startToolBlock({
+  Iterable<LanguageModelStreamEvent> _startToolBlock({
     required int index,
     required String toolCallId,
     required String toolName,
@@ -454,7 +454,7 @@ final class AnthropicStreamCodec {
     }
   }
 
-  Iterable<TextStreamEvent> _finishToolBlock(
+  Iterable<LanguageModelStreamEvent> _finishToolBlock(
     _AnthropicToolBlockState contentBlock,
     AnthropicMessagesStreamState state,
   ) sync* {
@@ -506,7 +506,7 @@ final class AnthropicStreamCodec {
     );
   }
 
-  Iterable<TextStreamEvent> _emitImmediateToolResult({
+  Iterable<LanguageModelStreamEvent> _emitImmediateToolResult({
     required String blockType,
     required Map<String, Object?> contentBlock,
     required AnthropicMessagesStreamState state,

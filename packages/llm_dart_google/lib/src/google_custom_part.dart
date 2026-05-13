@@ -55,7 +55,7 @@ sealed class GoogleCustomPart {
     return null;
   }
 
-  static GoogleCustomPart? tryParseEvent(TextStreamEvent event) {
+  static GoogleCustomPart? tryParseEvent(LanguageModelStreamEvent event) {
     if (GoogleToolCallReplay.tryParseEvent(event) case final replay?) {
       return GoogleToolCallCustomPart(replay);
     }
@@ -79,7 +79,8 @@ sealed class GoogleCustomPart {
     return parseTypedParts(parts, tryParseContentPart);
   }
 
-  static List<GoogleCustomPart> parseEvents(Iterable<TextStreamEvent> events) {
+  static List<GoogleCustomPart> parseEvents(
+      Iterable<LanguageModelStreamEvent> events) {
     return parseTypedParts(events, tryParseEvent);
   }
 }

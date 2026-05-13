@@ -293,7 +293,8 @@ final class GoogleFunctionResponseReplay {
     );
   }
 
-  static GoogleFunctionResponseReplay? tryParseEvent(TextStreamEvent event) {
+  static GoogleFunctionResponseReplay? tryParseEvent(
+      LanguageModelStreamEvent event) {
     if (event is! CustomEvent || event.kind != kind) {
       return null;
     }
