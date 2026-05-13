@@ -116,6 +116,7 @@ Decision notes:
 ## Validation
 
 - [ ] Run workspace dependency guards
+- [x] Run workspace dependency guards
 - [x] Run provider boundary guards
 - [x] Run root package boundary guards
 - [ ] Run focused provider tests affected by event changes

@@ -74,6 +74,9 @@ Progress:
 - 2026-05-13: moved app-facing `TextStreamEvent` event-name exports to
   `llm_dart_ai` compatibility aliases and pointed `llm_dart_core` stream event
   exports at the runtime package.
+- 2026-05-13: expanded provider boundary guards so provider-facing packages
+  cannot runtime-depend on or import root, AI runtime, chat, or Flutter layers;
+  also isolated the temporary AI legacy stream codec bridge to one wrapper.
 
 ## M3: Unified Runtime Result Surface
 
