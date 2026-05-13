@@ -202,6 +202,10 @@ Progress:
 - 2026-05-13: changed `DirectChatTransport` to call `streamText(...)` and
   project through the AI runtime UI stream path instead of calling
   `LanguageModel.doStream(...)` directly.
+- 2026-05-13: extended `ChatRequestOptions` with local runtime tool-loop
+  options and made `DirectChatTransport` forward them into `streamText(...)`;
+  `HttpChatTransport` now rejects non-serializable local runtime hooks instead
+  of silently dropping them.
 
 ## M6: Release Readiness
 

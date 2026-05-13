@@ -37,6 +37,13 @@ Use `DirectChatTransport` when the client can call a model directly. Use
 `HttpChatTransport` when routing, credentials, audit policy, or tool execution
 should stay backend-owned.
 
+`ChatRequestOptions` forwards local runtime options such as declared function
+tools, `toolChoice`, `functionToolExecutor`, `maxSteps`, `stopWhen`, and
+runtime callbacks through `DirectChatTransport` into `streamText(...)`.
+`HttpChatTransport` rejects those local-only fields for now because the HTTP
+protocol does not serialize Dart callbacks or a remote tool registry. Put that
+tool loop on the server side when using HTTP transport.
+
 Flutter-only controller convenience stays in
 `package:llm_dart_flutter/llm_dart_flutter.dart`.
 

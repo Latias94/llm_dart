@@ -1048,6 +1048,82 @@ void main() {
         emitsError(isA<UnsupportedError>()),
       );
     });
+
+    test('rejects local runtime tool loop options', () async {
+      final transport = HttpChatTransport(
+        endpoint: Uri.parse('https://example.com/chat'),
+        transport: const _FakeTransportClient(),
+      );
+
+      await expectLater(
+        transport.sendMessages(
+          ChatTransportRequest(
+            chatId: 'chat-1',
+            prompt: [
+              UserPromptMessage.text('Hello'),
+            ],
+            options: ChatRequestOptions(
+              tools: [
+                FunctionToolDefinition(
+                  name: 'weather',
+                  inputSchema: ToolJsonSchema.object(),
+                ),
+              ],
+            ),
+          ),
+        ),
+        emitsError(
+          isA<UnsupportedError>().having(
+            (error) => error.message,
+            'message',
+            contains('tools or toolChoice'),
+          ),
+        ),
+      );
+
+      await expectLater(
+        transport.sendMessages(
+          ChatTransportRequest(
+            chatId: 'chat-1',
+            prompt: [
+              UserPromptMessage.text('Hello'),
+            ],
+            options: ChatRequestOptions(
+              functionToolExecutor: (_) =>
+                  const GenerateTextToolExecutionResult.output(null),
+            ),
+          ),
+        ),
+        emitsError(
+          isA<UnsupportedError>().having(
+            (error) => error.message,
+            'message',
+            contains('local runtime callbacks'),
+          ),
+        ),
+      );
+
+      await expectLater(
+        transport.sendMessages(
+          ChatTransportRequest(
+            chatId: 'chat-1',
+            prompt: [
+              UserPromptMessage.text('Hello'),
+            ],
+            options: const ChatRequestOptions(
+              maxSteps: 3,
+            ),
+          ),
+        ),
+        emitsError(
+          isA<UnsupportedError>().having(
+            (error) => error.message,
+            'message',
+            contains('maxSteps'),
+          ),
+        ),
+      );
+    });
   });
 }
 

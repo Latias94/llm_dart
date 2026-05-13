@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
+import 'chat_request_options.dart';
 import 'chat_transport.dart';
 import 'http_chat_transport_protocol.dart';
 
@@ -116,6 +117,8 @@ final class HttpChatTransport implements ChatTransport {
 
   @override
   Stream<ChatUiStreamChunk> sendMessages(ChatTransportRequest request) async* {
+    _validateSerializableRequestOptions(request.options);
+
     final callOptionsPayload = _serializeCallOptions(
       request.options.callOptions,
     );
@@ -166,6 +169,31 @@ final class HttpChatTransport implements ChatTransport {
       cancellation: state.cancellation,
       payload: payload,
     );
+  }
+
+  void _validateSerializableRequestOptions(ChatRequestOptions options) {
+    if (options.tools.isNotEmpty || options.toolChoice != null) {
+      throw UnsupportedError(
+        'HttpChatTransport cannot serialize ChatRequestOptions.tools or '
+        'toolChoice yet. Declare tools on the server side or add an explicit '
+        'HTTP chat tool protocol.',
+      );
+    }
+
+    if (options.hasLocalRuntimeHooks) {
+      throw UnsupportedError(
+        'HttpChatTransport cannot serialize local runtime callbacks, '
+        'functionToolExecutor, or stopWhen. Use DirectChatTransport for local '
+        'runtime tool execution, or implement the tool loop on the server.',
+      );
+    }
+
+    if (options.maxSteps != 8) {
+      throw UnsupportedError(
+        'HttpChatTransport cannot serialize ChatRequestOptions.maxSteps yet. '
+        'Configure maxSteps on the server side.',
+      );
+    }
   }
 
   @override

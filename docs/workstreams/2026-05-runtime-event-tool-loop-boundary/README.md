@@ -191,3 +191,7 @@ This workstream should not:
 - [31-tool-input-callback-deferral.md](31-tool-input-callback-deferral.md)
   - Defers dedicated tool-input callbacks because tool input streaming already
     lives in `TextStreamEvent` and can be observed through `onChunk`.
+- [32-chat-runtime-tool-loop-options.md](32-chat-runtime-tool-loop-options.md)
+  - `ChatRequestOptions` now carries local runtime tool-loop options for
+    `DirectChatTransport`, while `HttpChatTransport` rejects non-serializable
+    local runtime hooks instead of dropping them.

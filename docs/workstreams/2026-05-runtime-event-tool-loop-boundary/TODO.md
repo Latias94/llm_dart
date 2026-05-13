@@ -104,13 +104,13 @@ Decision notes:
 ## Chat Boundary
 
 - [x] Make direct chat transport consume the AI runtime or an agent wrapper
-- [ ] Remove duplicate provider stream accumulation from chat where runtime can
+- [x] Remove duplicate provider stream accumulation from chat where runtime can
   own it
-- [ ] Keep chat responsible for chat state, persistence, transport, and manual
+- [x] Keep chat responsible for chat state, persistence, transport, and manual
   tool output submission
 - [ ] Keep UI stream protocol stable or provide migration notes if chunk names
   change
-- [ ] Ensure chat automatic tool execution delegates to the runtime tool
+- [x] Ensure chat automatic tool execution delegates to the runtime tool
   execution model or has a documented adapter boundary
 
 ## Documentation And Migration

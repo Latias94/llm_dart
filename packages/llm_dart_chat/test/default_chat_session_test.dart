@@ -97,6 +97,133 @@ void main() {
       expect(eventChunks[eventChunks.length - 2].event, isA<StepFinishEvent>());
       expect(eventChunks.last.event, isA<RunFinishEvent>());
     });
+
+    test('forwards runtime tool loop options to streamText', () async {
+      final streamedEvents = <TextStreamEvent>[];
+      final toolStarts = <GenerateTextToolExecutionStartEvent>[];
+      final toolFinishes = <GenerateTextToolExecutionFinishEvent>[];
+      final stepFinishes = <GenerateTextStepResult>[];
+      GenerateTextRunResult? runResult;
+
+      final transport = DirectChatTransport(
+        model: _FakeLanguageModel(
+          onStream: (request) {
+            switch (request.prompt.length) {
+              case 1:
+                expect(request.tools.single.name, 'weather');
+                expect(request.toolChoice, isA<RequiredToolChoice>());
+                expect(request.options.temperature, 0.2);
+                expect(
+                  request.callOptions.timeout,
+                  const Duration(seconds: 3),
+                );
+                return Stream<LanguageModelStreamEvent>.fromIterable([
+                  textStreamEventToProvider(
+                    const ToolCallEvent(
+                      toolCall: ToolCallContent(
+                        toolCallId: 'tool-1',
+                        toolName: 'weather',
+                        input: {
+                          'location': 'Tokyo',
+                        },
+                      ),
+                    ),
+                  ),
+                  textStreamEventToProvider(
+                    const FinishEvent(finishReason: FinishReason.toolCalls),
+                  ),
+                ]);
+              case 3:
+                final toolMessage = request.prompt[2] as ToolPromptMessage;
+                final toolResult =
+                    toolMessage.parts.single as ToolResultPromptPart;
+                expect(toolResult.toolCallId, 'tool-1');
+                expect(toolResult.output, {
+                  'temperature': 24,
+                });
+                return Stream<LanguageModelStreamEvent>.fromIterable([
+                  textStreamEventToProvider(
+                    const TextStartEvent(id: 'text-2'),
+                  ),
+                  textStreamEventToProvider(
+                    const TextDeltaEvent(
+                      id: 'text-2',
+                      delta: 'It is 24C in Tokyo.',
+                    ),
+                  ),
+                  textStreamEventToProvider(
+                    const TextEndEvent(id: 'text-2'),
+                  ),
+                  textStreamEventToProvider(
+                    const FinishEvent(finishReason: FinishReason.stop),
+                  ),
+                ]);
+              default:
+                throw StateError(
+                  'Unexpected prompt length ${request.prompt.length}.',
+                );
+            }
+          },
+        ),
+      );
+
+      final chunks = await transport
+          .sendMessages(
+            ChatTransportRequest(
+              chatId: 'chat-1',
+              prompt: [
+                UserPromptMessage.text('Weather in Tokyo?'),
+              ],
+              options: ChatRequestOptions(
+                tools: [
+                  FunctionToolDefinition(
+                    name: 'weather',
+                    inputSchema: ToolJsonSchema.object(),
+                  ),
+                ],
+                toolChoice: const RequiredToolChoice(),
+                generateOptions: const GenerateTextOptions(
+                  temperature: 0.2,
+                ),
+                callOptions: const CallOptions(
+                  timeout: Duration(seconds: 3),
+                ),
+                functionToolExecutor: (request) {
+                  expect(request.stepNumber, 0);
+                  expect(request.toolCall.toolName, 'weather');
+                  return const GenerateTextToolExecutionResult.output({
+                    'temperature': 24,
+                  });
+                },
+                maxSteps: 4,
+                stopWhen: [isLoopFinished()],
+                onToolStart: toolStarts.add,
+                onToolFinish: toolFinishes.add,
+                onStepFinish: stepFinishes.add,
+                onFinish: (result) {
+                  runResult = result;
+                },
+                onChunk: streamedEvents.add,
+              ),
+            ),
+          )
+          .toList();
+
+      final events = chunks.whereType<ChatUiEventChunk>().map(
+            (chunk) => chunk.event,
+          );
+      expect(events.whereType<ToolResultEvent>(), hasLength(1));
+      expect(
+        events.whereType<TextDeltaEvent>().single.delta,
+        'It is 24C in Tokyo.',
+      );
+      expect(streamedEvents.whereType<RunStartEvent>(), hasLength(1));
+      expect(streamedEvents.whereType<RunFinishEvent>(), hasLength(1));
+      expect(toolStarts, hasLength(1));
+      expect(toolFinishes, hasLength(1));
+      expect(stepFinishes, hasLength(2));
+      expect(runResult?.text, 'It is 24C in Tokyo.');
+    });
   });
 
   group('ChatSessionSnapshotJsonCodec', () {
