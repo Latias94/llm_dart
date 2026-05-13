@@ -131,6 +131,10 @@ Progress:
   runtime entrypoints by routing them through `GenerateTextRunner` and
   `StreamTextRunner` while preserving `GenerateTextResult` and
   `Stream<TextStreamEvent>` return types.
+- 2026-05-13: made `streamText(...)` / `streamTextRun(...)` emit runtime
+  `StepStartEvent`, local `ToolResultEvent`, `StepFinishEvent`, and
+  `ErrorEvent` semantics around provider model-call events, aligning full
+  stream accumulation with step results.
 
 ## M4: Tool Loop Runtime
 
@@ -149,6 +153,9 @@ Progress:
 - 2026-05-13: added local function tool execution start and finish callbacks
   to the primary and advanced text runtime helpers, implemented centrally in
   `llm_dart_ai`.
+- 2026-05-13: normalized local function tool execution into
+  `GenerateTextToolExecution` so streaming tool result events, step results,
+  and continuation prompt replay use the same runtime-owned execution result.
 
 ## M5: Chat Runtime Integration
 

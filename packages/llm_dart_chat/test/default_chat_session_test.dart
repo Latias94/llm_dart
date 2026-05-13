@@ -90,7 +90,10 @@ void main() {
 
       final start = chunks.first as ChatUiMessageStartChunk;
       expect(start.metadata['source'], 'direct');
-      expect(chunks.whereType<ChatUiEventChunk>(), hasLength(4));
+      final eventChunks = chunks.whereType<ChatUiEventChunk>().toList();
+      expect(eventChunks, hasLength(6));
+      expect(eventChunks.first.event, isA<StepStartEvent>());
+      expect(eventChunks.last.event, isA<StepFinishEvent>());
     });
   });
 

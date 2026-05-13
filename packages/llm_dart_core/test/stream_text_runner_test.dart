@@ -75,7 +75,9 @@ void main() {
         const Duration(seconds: 30),
       );
 
-      expect(events, hasLength(4));
+      expect(events, hasLength(6));
+      expect(events.first, isA<StepStartEvent>());
+      expect(events.last, isA<StepFinishEvent>());
       expect(events.whereType<TextDeltaEvent>().single.delta, 'Runner output');
 
       expect(steps, hasLength(1));
@@ -206,18 +208,26 @@ void main() {
       expect(
         events.map((event) => event.runtimeType).toList(),
         [
+          StepStartEvent,
           ToolCallEvent,
           FinishEvent,
+          ToolResultEvent,
+          StepFinishEvent,
+          StepStartEvent,
           TextStartEvent,
           TextDeltaEvent,
           TextEndEvent,
           FinishEvent,
+          StepFinishEvent,
         ],
       );
 
       expect(steps, hasLength(2));
       expect(steps[0].finishReason, FinishReason.toolCalls);
       expect(steps[0].toolCalls.single.toolName, 'weather');
+      expect(steps[0].toolResults.single.output, {
+        'forecast': 'sunny',
+      });
       expect(steps[1].text, 'It is sunny in Tokyo.');
 
       expect(result.steps, hasLength(2));

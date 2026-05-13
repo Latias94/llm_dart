@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:llm_dart_provider/llm_dart_provider.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart' hide ToolResultEvent;
 
 import '../stream/text_stream_event.dart';
 import 'generate_text_run_result.dart';
@@ -79,6 +79,46 @@ final class GenerateTextToolExecutionFinishEvent {
   });
 }
 
+final class GenerateTextToolExecution {
+  final ToolCallContent toolCall;
+  final GenerateTextToolExecutionResult result;
+  final ProviderMetadata? providerMetadata;
+
+  const GenerateTextToolExecution({
+    required this.toolCall,
+    required this.result,
+    this.providerMetadata,
+  });
+
+  ToolPromptMessage toPromptMessage() {
+    return ToolPromptMessage(
+      toolName: toolCall.toolName,
+      parts: [
+        ToolResultPromptPart(
+          toolCallId: toolCall.toolCallId,
+          toolName: toolCall.toolName,
+          toolOutput: result.toolOutput,
+          providerOptions: GenerateTextRunnerSupport.replayProviderOptions(
+            providerMetadata,
+          ),
+        ),
+      ],
+    );
+  }
+
+  ToolResultEvent toTextStreamEvent() {
+    return ToolResultEvent(
+      toolResult: ToolResultContent(
+        toolCallId: toolCall.toolCallId,
+        toolName: toolCall.toolName,
+        toolOutput: result.toolOutput,
+        isDynamic: toolCall.isDynamic,
+      ),
+      providerMetadata: providerMetadata,
+    );
+  }
+}
+
 final class GenerateTextToolExecutionResult {
   final Object? _output;
   final bool _isError;
@@ -108,7 +148,7 @@ final class GenerateTextToolExecutionResult {
 }
 
 final class GenerateTextRunnerSupport {
-  static Future<List<PromptMessage>?> buildFunctionToolContinuation(
+  static Future<List<GenerateTextToolExecution>?> executeFunctionTools(
     GenerateTextStepResult step, {
     required Set<String> declaredToolNames,
     required GenerateTextFunctionToolExecutor? functionToolExecutor,
@@ -142,7 +182,7 @@ final class GenerateTextRunnerSupport {
       );
     }
 
-    final toolMessages = <PromptMessage>[];
+    final executions = <GenerateTextToolExecution>[];
 
     for (final toolCall in clientToolCalls) {
       if (toolCall.isDynamic) {
@@ -187,27 +227,40 @@ final class GenerateTextRunnerSupport {
         ),
       );
 
-      toolMessages.add(
-        ToolPromptMessage(
-          toolName: toolCall.toolName,
-          parts: [
-            ToolResultPromptPart(
-              toolCallId: toolCall.toolCallId,
-              toolName: toolCall.toolName,
-              toolOutput: executionResult.toolOutput,
-              providerOptions: replayProviderOptions(
-                toolCallProviderMetadata(
-                  step,
-                  toolCall.toolCallId,
-                ),
-              ),
-            ),
-          ],
+      executions.add(
+        GenerateTextToolExecution(
+          toolCall: toolCall,
+          result: executionResult,
+          providerMetadata: toolCallProviderMetadata(
+            step,
+            toolCall.toolCallId,
+          ),
         ),
       );
     }
 
-    return toolMessages;
+    return executions;
+  }
+
+  static Future<List<PromptMessage>?> buildFunctionToolContinuation(
+    GenerateTextStepResult step, {
+    required Set<String> declaredToolNames,
+    required GenerateTextFunctionToolExecutor? functionToolExecutor,
+    GenerateTextOnToolStart? onToolStart,
+    GenerateTextOnToolFinish? onToolFinish,
+    required String runnerName,
+  }) async {
+    final executions = await executeFunctionTools(
+      step,
+      declaredToolNames: declaredToolNames,
+      functionToolExecutor: functionToolExecutor,
+      onToolStart: onToolStart,
+      onToolFinish: onToolFinish,
+      runnerName: runnerName,
+    );
+    return executions
+        ?.map((execution) => execution.toPromptMessage())
+        .toList(growable: false);
   }
 
   static ProviderMetadata? toolCallProviderMetadata(

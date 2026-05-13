@@ -24,11 +24,13 @@ void main() {
       await expectLater(
         stream,
         emitsInOrder([
+          isA<StepStartEvent>(),
           isA<StartEvent>(),
           isA<TextStartEvent>(),
           isA<TextDeltaEvent>(),
           isA<TextEndEvent>(),
           isA<FinishEvent>(),
+          isA<StepFinishEvent>(),
           emitsDone,
         ]),
       );
@@ -54,11 +56,13 @@ void main() {
       await expectLater(
         result.eventStream,
         emitsInOrder([
+          isA<StepStartEvent>(),
           isA<StartEvent>(),
           isA<TextStartEvent>(),
           isA<TextDeltaEvent>(),
           isA<TextEndEvent>(),
           isA<FinishEvent>(),
+          isA<StepFinishEvent>(),
           emitsDone,
         ]),
       );

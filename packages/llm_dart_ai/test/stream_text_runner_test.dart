@@ -84,9 +84,11 @@ void main() {
         const Duration(seconds: 30),
       );
 
-      expect(events, hasLength(5));
+      expect(events, hasLength(7));
+      expect(events.first, isA<StepStartEvent>());
+      expect(events.last, isA<StepFinishEvent>());
       expect(events.whereType<TextDeltaEvent>().single.delta, 'Runner output');
-      expect(await run.textStream.toList(), hasLength(5));
+      expect(await run.textStream.toList(), hasLength(7));
 
       final uiChunks = await run.chatUiStream(
         messageId: 'assistant-1',
@@ -95,7 +97,7 @@ void main() {
         },
       ).toList();
       expect(uiChunks.first, isA<ChatUiMessageStartChunk>());
-      expect(uiChunks.whereType<ChatUiEventChunk>(), hasLength(5));
+      expect(uiChunks.whereType<ChatUiEventChunk>(), hasLength(7));
       expect(uiChunks.last, isA<ChatUiMessageFinishChunk>());
 
       expect(steps, hasLength(1));
@@ -219,10 +221,12 @@ void main() {
       await run.result;
 
       expect(chunks.map((event) => event.runtimeType), [
+        StepStartEvent,
         TextStartEvent,
         TextDeltaEvent,
         TextEndEvent,
         FinishEvent,
+        StepFinishEvent,
       ]);
     });
 
@@ -246,7 +250,11 @@ void main() {
       );
       await expectLater(
         run,
-        emitsError(isA<StateError>()),
+        emitsInOrder([
+          isA<StepStartEvent>(),
+          isA<ErrorEvent>(),
+          emitsError(isA<StateError>()),
+        ]),
       );
 
       expect(errors, hasLength(1));
@@ -288,6 +296,7 @@ void main() {
         ],
       ]);
       final executedCalls = <GenerateTextFunctionToolExecutionRequest>[];
+      final stepFinishes = <GenerateTextStepResult>[];
 
       final run = streamTextRun(
         model: model,
@@ -306,6 +315,7 @@ void main() {
             'forecast': 'sunny',
           });
         },
+        onStepFinish: stepFinishes.add,
       );
 
       final events = await run.toList();
@@ -370,18 +380,30 @@ void main() {
       expect(
         events.map((event) => event.runtimeType).toList(),
         [
+          StepStartEvent,
           ToolCallEvent,
           FinishEvent,
+          ToolResultEvent,
+          StepFinishEvent,
+          StepStartEvent,
           TextStartEvent,
           TextDeltaEvent,
           TextEndEvent,
           FinishEvent,
+          StepFinishEvent,
         ],
       );
 
       expect(steps, hasLength(2));
       expect(steps[0].finishReason, FinishReason.toolCalls);
       expect(steps[0].toolCalls.single.toolName, 'weather');
+      expect(steps[0].toolResults.single.output, {
+        'forecast': 'sunny',
+      });
+      expect(stepFinishes, hasLength(2));
+      expect(stepFinishes[0].toolResults.single.output, {
+        'forecast': 'sunny',
+      });
       expect(steps[1].text, 'It is sunny in Tokyo.');
 
       expect(result.steps, hasLength(2));

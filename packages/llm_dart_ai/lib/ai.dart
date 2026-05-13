@@ -48,6 +48,7 @@ export 'src/model/generate_text_runner_support.dart'
         GenerateTextOnToolFinish,
         GenerateTextOnToolStart,
         GenerateTextRunnerSupport,
+        GenerateTextToolExecution,
         GenerateTextToolExecutionFinishEvent,
         GenerateTextToolExecutionResult,
         GenerateTextToolExecutionStartEvent,

@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import '../common/replay_stream_channel.dart';
-import 'package:llm_dart_provider/llm_dart_provider.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart' hide ErrorEvent;
 
 import '../prompt/model_message.dart';
 import '../prompt/prompt_normalization.dart';
@@ -200,6 +200,7 @@ final class StreamTextRunner {
     final declaredToolNames = {
       for (final tool in tools) tool.name,
     };
+    var streamClosed = false;
 
     try {
       while (true) {
@@ -231,6 +232,10 @@ final class StreamTextRunner {
           previousSteps: previousSteps,
         );
         await onStepStart?.call(stepStartEvent);
+        await _addEvent(
+          eventChannel,
+          StepStartEvent(stepId: _stepId(stepNumber)),
+        );
 
         final accumulator = GenerateTextResultAccumulator();
         final events = adaptLanguageModelStreamEvents(
@@ -239,27 +244,30 @@ final class StreamTextRunner {
         );
         await for (final event in events) {
           accumulator.apply(event);
-          eventChannel.add(event);
-          await onChunk?.call(event);
+          await _addEvent(eventChannel, event);
         }
 
-        final step = GenerateTextStepResult(
+        var step = GenerateTextStepResult(
           stepNumber: stepNumber,
           providerId: model.providerId,
           modelId: model.modelId,
           request: request,
           result: accumulator.build(),
         );
-        await onStepFinish?.call(step);
         previousSteps.add(step);
-        stepChannel.add(step);
 
         if (step.finishReason != FinishReason.toolCalls) {
+          await onStepFinish?.call(step);
+          await _addEvent(
+            eventChannel,
+            StepFinishEvent(stepId: _stepId(stepNumber)),
+          );
+          stepChannel.add(step);
           break;
         }
 
-        final toolContinuation =
-            await GenerateTextRunnerSupport.buildFunctionToolContinuation(
+        final toolExecutions =
+            await GenerateTextRunnerSupport.executeFunctionTools(
           step,
           declaredToolNames: declaredToolNames,
           functionToolExecutor: functionToolExecutor,
@@ -267,9 +275,35 @@ final class StreamTextRunner {
           onToolFinish: onToolFinish,
           runnerName: 'StreamTextRunner',
         );
-        if (toolContinuation == null) {
+        if (toolExecutions == null) {
+          await onStepFinish?.call(step);
+          await _addEvent(
+            eventChannel,
+            StepFinishEvent(stepId: _stepId(stepNumber)),
+          );
+          stepChannel.add(step);
           break;
         }
+
+        for (final execution in toolExecutions) {
+          final event = execution.toTextStreamEvent();
+          accumulator.apply(event);
+          await _addEvent(eventChannel, event);
+        }
+        step = GenerateTextStepResult(
+          stepNumber: step.stepNumber,
+          providerId: step.providerId,
+          modelId: step.modelId,
+          request: step.request,
+          result: accumulator.build(),
+        );
+        previousSteps[previousSteps.length - 1] = step;
+        await onStepFinish?.call(step);
+        await _addEvent(
+          eventChannel,
+          StepFinishEvent(stepId: _stepId(stepNumber)),
+        );
+        stepChannel.add(step);
 
         promptHistory = [
           ...promptHistory,
@@ -277,7 +311,6 @@ final class StreamTextRunner {
             step,
             runnerName: 'StreamTextRunner',
           ),
-          ...toolContinuation,
         ];
       }
 
@@ -289,6 +322,7 @@ final class StreamTextRunner {
         resultCompleter.complete(runResult);
       }
       eventChannel.close();
+      streamClosed = true;
       stepChannel.close();
     } catch (error, stackTrace) {
       final (reportedError, reportedStackTrace) =
@@ -296,10 +330,28 @@ final class StreamTextRunner {
       if (!resultCompleter.isCompleted) {
         resultCompleter.completeError(reportedError, reportedStackTrace);
       }
-      eventChannel.addError(reportedError, reportedStackTrace);
+      if (!streamClosed) {
+        await _addEvent(
+          eventChannel,
+          ErrorEvent(
+            ModelError.fromUnknown(reportedError),
+          ),
+        );
+        eventChannel.addError(reportedError, reportedStackTrace);
+      }
       stepChannel.addError(reportedError, reportedStackTrace);
     }
   }
+
+  Future<void> _addEvent(
+    ReplayStreamChannel<TextStreamEvent> eventChannel,
+    TextStreamEvent event,
+  ) async {
+    eventChannel.add(event);
+    await onChunk?.call(event);
+  }
+
+  String _stepId(int stepNumber) => 'step-$stepNumber';
 
   Future<(Object, StackTrace)> _notifyError(
     Object error,

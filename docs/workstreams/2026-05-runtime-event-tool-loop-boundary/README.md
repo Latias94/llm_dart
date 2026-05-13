@@ -163,3 +163,7 @@ This workstream should not:
 - [22-tool-execution-lifecycle-callbacks.md](22-tool-execution-lifecycle-callbacks.md)
   - AI runtime local function tool execution now has start and finish
     callbacks on the primary and advanced text runtime helpers.
+- [23-runtime-full-stream-step-tool-events.md](23-runtime-full-stream-step-tool-events.md)
+  - `streamText(...)` and `streamTextRun(...)` now emit runtime step boundaries,
+    local tool result events, and runtime error events as part of the
+    full-stream contract.

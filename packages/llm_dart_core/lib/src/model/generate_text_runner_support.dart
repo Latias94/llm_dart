@@ -5,5 +5,10 @@ export 'package:llm_dart_ai/llm_dart_ai.dart'
         GenerateTextOnFinish,
         GenerateTextOnStepFinish,
         GenerateTextOnStepStart,
+        GenerateTextOnToolFinish,
+        GenerateTextOnToolStart,
         GenerateTextRunnerSupport,
-        GenerateTextToolExecutionResult;
+        GenerateTextToolExecution,
+        GenerateTextToolExecutionFinishEvent,
+        GenerateTextToolExecutionResult,
+        GenerateTextToolExecutionStartEvent;

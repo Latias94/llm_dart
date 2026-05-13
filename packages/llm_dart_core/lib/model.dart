@@ -21,7 +21,12 @@ export 'src/model/generate_text_runner_support.dart'
         GenerateTextOnFinish,
         GenerateTextOnStepFinish,
         GenerateTextOnStepStart,
-        GenerateTextToolExecutionResult;
+        GenerateTextOnToolFinish,
+        GenerateTextOnToolStart,
+        GenerateTextToolExecution,
+        GenerateTextToolExecutionFinishEvent,
+        GenerateTextToolExecutionResult,
+        GenerateTextToolExecutionStartEvent;
 export 'src/model/generate_text_step_result.dart';
 export 'src/model/generate_text_step_start_event.dart';
 export 'src/model/finish_reason.dart';
