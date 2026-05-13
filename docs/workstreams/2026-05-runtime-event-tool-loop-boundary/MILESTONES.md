@@ -71,6 +71,9 @@ Progress:
 - 2026-05-13: introduced an AI-owned `TextStreamEventJsonCodec` compatibility
   wrapper and changed `llm_dart_core` serialization exports to resolve the
   runtime full-stream codec through `llm_dart_ai`.
+- 2026-05-13: moved app-facing `TextStreamEvent` event-name exports to
+  `llm_dart_ai` compatibility aliases and pointed `llm_dart_core` stream event
+  exports at the runtime package.
 
 ## M3: Unified Runtime Result Surface
 

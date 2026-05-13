@@ -58,6 +58,7 @@ Decision notes:
 ## AI Runtime Full Stream
 
 - [x] Create one full-stream event serialization owner in `llm_dart_ai`
+- [x] Create one full-stream event export owner in `llm_dart_ai`
 - [ ] Create one full-stream event vocabulary in `llm_dart_ai`
 - [ ] Emit explicit run start, step start, provider/model-call parts, tool
   execution parts, step finish, run finish, abort, and error events
@@ -121,6 +122,7 @@ Decision notes:
 - [x] Run `llm_dart_provider` stream serialization tests
 - [x] Run `llm_dart_core` prompt replay and runner compatibility tests
 - [x] Run `llm_dart_ai` stream serialization ownership tests
+- [x] Run `llm_dart_ai` stream event export ownership tests
 - [ ] Run `llm_dart_ai` runtime, output, prompt, and UI projection tests
 - [ ] Run `llm_dart_chat` direct transport and tool execution tests
 - [ ] Run examples analysis

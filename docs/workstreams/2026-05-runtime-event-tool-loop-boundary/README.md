@@ -119,3 +119,6 @@ This workstream should not:
 - [08-ai-runtime-stream-serialization-owner.md](08-ai-runtime-stream-serialization-owner.md)
   - `llm_dart_ai` starts owning the app-facing `TextStreamEventJsonCodec`
     name while preserving the existing wire protocol.
+- [09-ai-runtime-stream-event-export-owner.md](09-ai-runtime-stream-event-export-owner.md)
+  - `llm_dart_ai` starts owning app-facing full-stream event names through
+    compatibility aliases and updates `llm_dart_core` re-exports.

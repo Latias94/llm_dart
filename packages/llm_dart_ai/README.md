@@ -45,6 +45,7 @@ The shared chat UI layer also lives here:
 - `ChatMessageMapper`
 - `ChatUiStreamReader`
 - `ChatUiJsonCodec`
+- `TextStreamEvent`
 - `TextStreamEventJsonCodec`
 
 `llm_dart_chat` and `llm_dart_flutter` re-export those types for chat-oriented

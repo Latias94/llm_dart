@@ -7,7 +7,35 @@
 library;
 
 export 'package:llm_dart_provider/llm_dart_provider.dart'
-    hide TextStreamEventJsonCodec;
+    hide
+        AbortEvent,
+        CustomEvent,
+        ErrorEvent,
+        FileEvent,
+        FinishEvent,
+        RawChunkEvent,
+        ReasoningDeltaEvent,
+        ReasoningEndEvent,
+        ReasoningFileEvent,
+        ReasoningStartEvent,
+        ResponseMetadataEvent,
+        SourceEvent,
+        StartEvent,
+        StepFinishEvent,
+        StepStartEvent,
+        TextDeltaEvent,
+        TextEndEvent,
+        TextStartEvent,
+        TextStreamEvent,
+        TextStreamEventJsonCodec,
+        ToolApprovalRequestEvent,
+        ToolCallEvent,
+        ToolInputDeltaEvent,
+        ToolInputEndEvent,
+        ToolInputErrorEvent,
+        ToolInputStartEvent,
+        ToolOutputDeniedEvent,
+        ToolResultEvent;
 
 export 'src/model/embed.dart';
 export 'src/model/generate_image.dart';
@@ -37,6 +65,7 @@ export 'src/prompt/model_message.dart';
 export 'src/prompt/prompt_normalization.dart';
 export 'src/serialization/chat_ui_json_codec.dart';
 export 'src/serialization/text_stream_event_json_codec.dart';
+export 'src/stream/text_stream_event.dart';
 export 'src/ui/chat_message_mapper.dart';
 export 'src/ui/chat_ui_accumulator.dart';
 export 'src/ui/chat_ui_message.dart';
