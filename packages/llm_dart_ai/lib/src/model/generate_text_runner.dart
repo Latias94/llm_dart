@@ -55,8 +55,13 @@ final class GenerateTextRunner {
   }
 
   Future<GenerateTextRunResult> run() async {
+    final previousSteps = <GenerateTextStepResult>[];
+    GenerateTextRequest? activeRequest;
+    int? activeStepNumber;
+    GenerateTextResult? activeResult;
+    var isCallingOnFinish = false;
+
     try {
-      final previousSteps = <GenerateTextStepResult>[];
       var promptHistory = List<PromptMessage>.from(prompt);
       final declaredToolNames = {
         for (final tool in tools) tool.name,
@@ -82,6 +87,9 @@ final class GenerateTextRunner {
           options: options,
           callOptions: callOptions,
         );
+        activeRequest = request;
+        activeStepNumber = stepNumber;
+        activeResult = null;
 
         final stepStartEvent = GenerateTextStepStartEvent(
           stepNumber: stepNumber,
@@ -91,8 +99,11 @@ final class GenerateTextRunner {
           previousSteps: previousSteps,
         );
         await onStepStart?.call(stepStartEvent);
+        _throwIfCancelled();
 
         final result = await model.doGenerate(request);
+        activeResult = result;
+        _throwIfCancelled();
         final step = GenerateTextStepResult(
           stepNumber: stepNumber,
           providerId: model.providerId,
@@ -102,11 +113,15 @@ final class GenerateTextRunner {
         );
         await onStepFinish?.call(step);
         previousSteps.add(step);
+        activeRequest = null;
+        activeStepNumber = null;
+        activeResult = null;
 
         if (step.finishReason != FinishReason.toolCalls) {
           break;
         }
 
+        _throwIfCancelled();
         final toolContinuation =
             await GenerateTextRunnerSupport.buildFunctionToolContinuation(
           step,
@@ -116,6 +131,7 @@ final class GenerateTextRunner {
           onToolFinish: onToolFinish,
           runnerName: 'GenerateTextRunner',
         );
+        _throwIfCancelled();
         if (toolContinuation == null) {
           break;
         }
@@ -133,14 +149,82 @@ final class GenerateTextRunner {
       final runResult = GenerateTextRunResult(
         steps: previousSteps,
       );
+      isCallingOnFinish = true;
       await onFinish?.call(runResult);
+      isCallingOnFinish = false;
 
       return runResult;
     } catch (error, stackTrace) {
+      if (!isCallingOnFinish && _isCancelled(error)) {
+        return _finishAbortedRun(
+          previousSteps: previousSteps,
+          activeRequest: activeRequest,
+          activeStepNumber: activeStepNumber,
+          activeResult: activeResult,
+          reason: _cancelReason(error),
+        );
+      }
+
       final (reportedError, reportedStackTrace) =
           await _notifyError(error, stackTrace);
       Error.throwWithStackTrace(reportedError, reportedStackTrace);
     }
+  }
+
+  Future<GenerateTextRunResult> _finishAbortedRun({
+    required List<GenerateTextStepResult> previousSteps,
+    required GenerateTextRequest? activeRequest,
+    required int? activeStepNumber,
+    required GenerateTextResult? activeResult,
+    required String? reason,
+  }) async {
+    if (activeRequest != null && activeStepNumber != null) {
+      final abortedStep = GenerateTextStepResult(
+        stepNumber: activeStepNumber,
+        providerId: model.providerId,
+        modelId: model.modelId,
+        request: activeRequest,
+        result: _abortedResult(activeResult, reason),
+      );
+      if (previousSteps.length == activeStepNumber) {
+        previousSteps.add(abortedStep);
+      } else if (previousSteps.length > activeStepNumber) {
+        previousSteps[activeStepNumber] = abortedStep;
+      }
+      await onStepFinish?.call(abortedStep);
+    } else if (previousSteps.isNotEmpty) {
+      final lastStep = previousSteps.last;
+      previousSteps[previousSteps.length - 1] = GenerateTextStepResult(
+        stepNumber: lastStep.stepNumber,
+        providerId: lastStep.providerId,
+        modelId: lastStep.modelId,
+        request: lastStep.request,
+        result: _abortedResult(lastStep.result, reason),
+      );
+    }
+
+    final runResult = GenerateTextRunResult(
+      steps: previousSteps,
+    );
+    await onFinish?.call(runResult);
+    return runResult;
+  }
+
+  GenerateTextResult _abortedResult(
+    GenerateTextResult? result,
+    String? reason,
+  ) {
+    return GenerateTextResult(
+      content: result?.content ?? const [],
+      finishReason: FinishReason.aborted,
+      rawFinishReason: reason,
+      responseId: result?.responseId,
+      responseTimestamp: result?.responseTimestamp,
+      responseModelId: result?.responseModelId,
+      usage: result?.usage,
+      providerMetadata: result?.providerMetadata,
+      warnings: result?.warnings ?? const [],
+    );
   }
 
   Future<(Object, StackTrace)> _notifyError(
@@ -158,6 +242,22 @@ final class GenerateTextRunner {
     } catch (callbackError, callbackStackTrace) {
       return (callbackError, callbackStackTrace);
     }
+  }
+
+  void _throwIfCancelled() {
+    callOptions.cancellation?.throwIfCancelled();
+  }
+
+  bool _isCancelled(Object error) {
+    return ProviderCancellation.isCancel(error);
+  }
+
+  String? _cancelReason(Object error) {
+    if (error is ProviderCancelledException) {
+      return error.reason?.toString();
+    }
+
+    return callOptions.cancellation?.reason?.toString();
   }
 }
 

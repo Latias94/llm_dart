@@ -608,11 +608,94 @@ void main() {
       expect(errors.single, isA<StateError>());
       expect(stackTraces, hasLength(1));
     });
+
+    test('returns an aborted run result when generation is cancelled',
+        () async {
+      final cancellation = ProviderCancellation();
+      final callbackOrder = <String>[];
+      final model = _RecordingLanguageModel([
+        _GeneratedResult(
+          GenerateTextResult(
+            content: const [
+              TextContentPart('Partial'),
+            ],
+            finishReason: FinishReason.stop,
+            responseId: 'resp-cancelled',
+            usage: const UsageStats(
+              inputTokens: 3,
+              outputTokens: 4,
+              totalTokens: 7,
+            ),
+          ),
+          cancelAfterResult: cancellation,
+          cancelReason: 'user stopped',
+        ),
+      ]);
+
+      final runResult = await runTextGeneration(
+        model: model,
+        prompt: [
+          UserPromptMessage.text('Hello'),
+        ],
+        callOptions: CallOptions(cancellation: cancellation),
+        onStepFinish: (step) {
+          callbackOrder.add('step-finish:${step.finishReason.name}');
+        },
+        onFinish: (result) {
+          callbackOrder.add('finish:${result.finishReason.name}');
+        },
+        onError: (error, stackTrace) {
+          callbackOrder.add('error');
+        },
+      );
+
+      expect(callbackOrder, ['step-finish:aborted', 'finish:aborted']);
+      expect(runResult.steps, hasLength(1));
+      expect(runResult.text, 'Partial');
+      expect(runResult.finishReason, FinishReason.aborted);
+      expect(runResult.rawFinishReason, 'user stopped');
+      expect(runResult.responseId, 'resp-cancelled');
+      expect(runResult.totalUsage?.totalTokens, 7);
+      expect(model.requests, hasLength(1));
+    });
+
+    test('returns an empty aborted result when provider throws cancellation',
+        () async {
+      final cancellation = ProviderCancellation();
+      final callbackOrder = <String>[];
+      final model = _RecordingLanguageModel([
+        const _CancellationFailure('provider aborted'),
+      ]);
+
+      final runResult = await runTextGeneration(
+        model: model,
+        prompt: [
+          UserPromptMessage.text('Hello'),
+        ],
+        callOptions: CallOptions(cancellation: cancellation),
+        onStepFinish: (step) {
+          callbackOrder.add('step-finish:${step.finishReason.name}');
+        },
+        onFinish: (result) {
+          callbackOrder.add('finish:${result.finishReason.name}');
+        },
+        onError: (error, stackTrace) {
+          callbackOrder.add('error');
+        },
+      );
+
+      expect(callbackOrder, ['step-finish:aborted', 'finish:aborted']);
+      expect(runResult.steps, hasLength(1));
+      expect(runResult.text, isEmpty);
+      expect(runResult.finishReason, FinishReason.aborted);
+      expect(runResult.rawFinishReason, 'provider aborted');
+      expect(model.requests, hasLength(1));
+    });
   });
 }
 
 final class _RecordingLanguageModel implements LanguageModel {
-  final List<GenerateTextResult> _results;
+  final List<Object> _results;
   final List<GenerateTextRequest> requests = [];
 
   _RecordingLanguageModel(this._results);
@@ -630,7 +713,18 @@ final class _RecordingLanguageModel implements LanguageModel {
       throw StateError('No more fake results configured.');
     }
 
-    return _results.removeAt(0);
+    final item = _results.removeAt(0);
+    switch (item) {
+      case GenerateTextResult result:
+        return result;
+      case _GeneratedResult generated:
+        generated.cancelAfterResult?.cancel(generated.cancelReason);
+        return generated.result;
+      case _CancellationFailure failure:
+        throw ProviderCancelledException(failure.reason);
+      case _:
+        throw StateError('Unsupported fake generate item: $item');
+    }
   }
 
   @override
@@ -642,4 +736,22 @@ final class _RecordingLanguageModel implements LanguageModel {
       finishReason: FinishReason.stop,
     );
   }
+}
+
+final class _GeneratedResult {
+  final GenerateTextResult result;
+  final ProviderCancellation? cancelAfterResult;
+  final Object? cancelReason;
+
+  const _GeneratedResult(
+    this.result, {
+    this.cancelAfterResult,
+    this.cancelReason,
+  });
+}
+
+final class _CancellationFailure {
+  final Object? reason;
+
+  const _CancellationFailure([this.reason]);
 }

@@ -173,3 +173,6 @@ This workstream should not:
 - [25-runtime-abort-lifecycle-events.md](25-runtime-abort-lifecycle-events.md)
   - `CallOptions.cancellation` now maps to runtime `AbortEvent` plus aborted
     step/run finish semantics without treating user stop as a provider error.
+- [26-non-streaming-runtime-cancellation.md](26-non-streaming-runtime-cancellation.md)
+  - `GenerateTextRunner` and `runTextGeneration(...)` now return aborted run
+    results for runtime cancellation instead of treating user stop as `onError`.

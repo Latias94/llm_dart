@@ -142,6 +142,9 @@ Progress:
 - 2026-05-13: mapped `CallOptions.cancellation` into runtime `AbortEvent`,
   aborted step finish, and `RunFinishEvent(finishReason: aborted)` semantics so
   user stop is no longer surfaced as a provider/model error in the full stream.
+- 2026-05-13: aligned non-streaming `GenerateTextRunner` cancellation with the
+  streaming runtime path so `runTextGeneration(...)` returns an aborted run
+  result, preserves available partial data, and skips `onError` for user stop.
 
 ## M4: Tool Loop Runtime
 
