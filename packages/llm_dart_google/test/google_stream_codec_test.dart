@@ -8,7 +8,7 @@ void main() {
   group('GoogleGenerateContentStreamCodec', () {
     test('maps text, reasoning, tool calls, sources, and finish events', () {
       final state = GoogleGenerateContentStreamState();
-      final events = <TextStreamEvent>[];
+      final events = <LanguageModelStreamEvent>[];
 
       for (final chunk in <Map<String, Object?>>[
         {

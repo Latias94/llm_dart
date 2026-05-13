@@ -9,7 +9,7 @@ void main() {
         () {
       const codec = OpenAIResponsesCodec();
       final state = OpenAIResponsesStreamState();
-      final events = <TextStreamEvent>[];
+      final events = <LanguageModelStreamEvent>[];
 
       for (final chunk in <Map<String, Object?>>[
         {
@@ -203,7 +203,7 @@ void main() {
     test('maps approval requests and provider-executed MCP results', () {
       const codec = OpenAIResponsesCodec();
       final state = OpenAIResponsesStreamState();
-      final events = <TextStreamEvent>[];
+      final events = <LanguageModelStreamEvent>[];
 
       for (final chunk in <Map<String, Object?>>[
         {
@@ -297,7 +297,7 @@ void main() {
     test('maps malformed function-call arguments to tool input errors', () {
       const codec = OpenAIResponsesCodec();
       final state = OpenAIResponsesStreamState();
-      final events = <TextStreamEvent>[];
+      final events = <LanguageModelStreamEvent>[];
 
       for (final chunk in <Map<String, Object?>>[
         {
@@ -456,7 +456,7 @@ void main() {
         () {
       const codec = OpenAIResponsesCodec();
       final state = OpenAIResponsesStreamState();
-      final events = <TextStreamEvent>[];
+      final events = <LanguageModelStreamEvent>[];
 
       for (final chunk in <Map<String, Object?>>[
         {

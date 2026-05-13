@@ -1,10 +1,12 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
+import 'package:llm_dart_provider/src/stream/text_stream_event.dart'
+    as provider_legacy;
 import 'package:test/test.dart';
 
 void main() {
   group('LanguageModelStreamEvent', () {
     test('accepts provider model-call events', () {
-      final events = <TextStreamEvent>[
+      final events = <LanguageModelStreamEvent>[
         StartEvent(),
         const ResponseMetadataEvent(responseId: 'response-1'),
         const TextStartEvent(id: 'text-1'),
@@ -27,11 +29,11 @@ void main() {
     });
 
     test('rejects runtime-only events', () {
-      final events = <TextStreamEvent>[
-        const StepStartEvent(stepId: 'step-1'),
-        const StepFinishEvent(stepId: 'step-1'),
-        const ToolOutputDeniedEvent(toolCallId: 'tool-1'),
-        const AbortEvent(reason: 'cancelled'),
+      final events = <LanguageModelStreamEvent>[
+        const provider_legacy.StepStartEvent(stepId: 'step-1'),
+        const provider_legacy.StepFinishEvent(stepId: 'step-1'),
+        const provider_legacy.ToolOutputDeniedEvent(toolCallId: 'tool-1'),
+        const provider_legacy.AbortEvent(reason: 'cancelled'),
       ];
 
       for (final event in events) {
@@ -45,7 +47,7 @@ void main() {
 
     test('validates event streams', () async {
       final stream = validateLanguageModelStreamEvents(
-        Stream<TextStreamEvent>.fromIterable([
+        Stream<LanguageModelStreamEvent>.fromIterable([
           StartEvent(),
           const TextDeltaEvent(id: 'text-1', delta: 'Hello'),
           const FinishEvent(finishReason: FinishReason.stop),

@@ -172,7 +172,7 @@ final class _FakeLanguageModel implements LanguageModel {
   }
 
   @override
-  Stream<TextStreamEvent> doStream(GenerateTextRequest request) {
+  Stream<LanguageModelStreamEvent> doStream(GenerateTextRequest request) {
     return Stream.value(
       const TextDeltaEvent(
         id: 'text-1',

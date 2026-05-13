@@ -4,14 +4,12 @@ import 'text_stream_event.dart';
 
 /// Provider-owned name for events emitted by a single language model call.
 ///
-/// This is currently a compatibility typedef over [TextStreamEvent] while the
-/// runtime event ownership is being split. New provider-facing code should use
-/// [LanguageModelStreamEvent] and validate events with
-/// [validateLanguageModelStreamEvent] so runtime-only events do not leak back
-/// into provider contracts.
+/// Provider-facing code should use [LanguageModelStreamEvent] and validate
+/// events with [validateLanguageModelStreamEvent] so runtime-only events do not
+/// leak back into provider contracts.
 typedef LanguageModelStreamEvent = TextStreamEvent;
 
-bool isLanguageModelStreamEvent(TextStreamEvent event) {
+bool isLanguageModelStreamEvent(LanguageModelStreamEvent event) {
   return switch (event) {
     StepStartEvent() ||
     StepFinishEvent() ||
@@ -23,7 +21,7 @@ bool isLanguageModelStreamEvent(TextStreamEvent event) {
 }
 
 void validateLanguageModelStreamEvent(
-  TextStreamEvent event, {
+  LanguageModelStreamEvent event, {
   String context = 'LanguageModelStreamEvent',
 }) {
   if (isLanguageModelStreamEvent(event)) {
@@ -37,7 +35,7 @@ void validateLanguageModelStreamEvent(
 }
 
 Stream<LanguageModelStreamEvent> validateLanguageModelStreamEvents(
-  Stream<TextStreamEvent> events, {
+  Stream<LanguageModelStreamEvent> events, {
   String context = 'LanguageModelStreamEvent',
 }) async* {
   await for (final event in events) {

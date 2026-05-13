@@ -30,7 +30,7 @@ void main() {
 
   test('FakeLanguageModel records the last request', () async {
     final model = FakeLanguageModel(
-      onStream: (request) => Stream<TextStreamEvent>.fromIterable([
+      onStream: (request) => Stream<LanguageModelStreamEvent>.fromIterable([
         StartEvent(),
         const FinishEvent(finishReason: FinishReason.stop),
       ]),

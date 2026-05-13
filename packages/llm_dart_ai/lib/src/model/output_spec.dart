@@ -9,7 +9,7 @@ import '../ui/chat_ui_message.dart';
 import '../ui/chat_ui_stream_chunk.dart';
 import '../ui/chat_ui_stream_projection.dart';
 import 'package:llm_dart_provider/llm_dart_provider.dart'
-    hide TextDeltaEvent, TextEndEvent, TextStreamEvent;
+    hide TextDeltaEvent, TextEndEvent;
 
 import 'generate_text_result_accumulator.dart';
 import 'language_model.dart';

@@ -24,7 +24,7 @@ The full-stream event vocabulary and event JSON switch now live in
 ## Why This Matters
 
 This removes the last full-stream serialization dependency on provider event
-classes. Provider stream serialization can keep shrinking toward
+classes. Provider stream serialization now stays on
 `LanguageModelStreamEventJsonCodec`, while AI runtime serialization can evolve
 full generation-run events, step lifecycle, aborts, and app-side tool events
 without changing provider contracts.
@@ -38,8 +38,7 @@ without changing provider contracts.
 
 ## Remaining Work
 
-The provider package still exposes legacy full-stream event class names during
-the migration window. The next boundary cleanup should make provider
-`TextStreamEvent` compatibility exports private or deprecated, then update
-provider docs so new provider implementations only use
-`LanguageModelStreamEvent`.
+Provider no longer exposes the legacy full-stream class names from its public
+entrypoint. The remaining compatibility debt is the internal provider event
+file, which still holds legacy runtime-only classes for migration tests until a
+provider-only event vocabulary can replace it completely.

@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import '../common/replay_stream_channel.dart';
-import 'package:llm_dart_provider/llm_dart_provider.dart' hide TextStreamEvent;
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import '../prompt/model_message.dart';
 import '../prompt/prompt_normalization.dart';

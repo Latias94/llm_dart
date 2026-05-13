@@ -1,4 +1,6 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
+import 'package:llm_dart_provider/src/stream/text_stream_event.dart'
+    as provider_legacy;
 import 'package:test/test.dart';
 
 void main() {
@@ -32,13 +34,15 @@ void main() {
       const codec = LanguageModelStreamEventJsonCodec();
 
       expect(
-        () => codec.encodeEvent(const StepStartEvent(stepId: 'step-1')),
+        () => codec.encodeEvent(
+          const provider_legacy.StepStartEvent(stepId: 'step-1'),
+        ),
         throwsA(isA<StateError>()),
       );
       expect(
         () => codec.encodeEvents([
           StartEvent(),
-          const AbortEvent(reason: 'cancelled'),
+          const provider_legacy.AbortEvent(reason: 'cancelled'),
         ]),
         throwsA(isA<StateError>()),
       );

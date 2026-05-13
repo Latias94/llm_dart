@@ -179,6 +179,48 @@ void main() {
 
       expect(violations, isEmpty);
     });
+
+    test('provider public stream exports stay model-call scoped', () {
+      final foundation = File('packages/llm_dart_provider/lib/foundation.dart');
+      final content = foundation.readAsStringSync();
+
+      expect(
+        content,
+        isNot(
+          contains(
+            "export 'src/serialization/text_stream_event_json_codec.dart'",
+          ),
+        ),
+      );
+      expect(
+        content,
+        contains(
+          "export 'src/serialization/"
+          "language_model_stream_event_json_codec.dart'",
+        ),
+      );
+      expect(
+        content,
+        contains("export 'src/stream/language_model_stream_event.dart'"),
+      );
+
+      final hiddenExport = RegExp(
+        r"export 'src/stream/text_stream_event\.dart'\s+hide\s+([^;]+);",
+      ).firstMatch(content);
+      expect(hiddenExport, isNotNull);
+      final hiddenNames = hiddenExport!.group(1)!;
+
+      const hiddenRuntimeNames = [
+        'TextStreamEvent',
+        'StepStartEvent',
+        'StepFinishEvent',
+        'ToolOutputDeniedEvent',
+        'AbortEvent',
+      ];
+      for (final name in hiddenRuntimeNames) {
+        expect(hiddenNames, contains(name));
+      }
+    });
   });
 }
 

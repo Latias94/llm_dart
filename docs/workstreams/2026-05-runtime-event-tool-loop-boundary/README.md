@@ -147,3 +147,6 @@ This workstream should not:
 - [17-ai-native-stream-codec.md](17-ai-native-stream-codec.md)
   - `TextStreamEventJsonCodec` now serializes AI-owned full-stream events
     directly without delegating through the provider event codec.
+- [18-provider-public-stream-export-narrowing.md](18-provider-public-stream-export-narrowing.md)
+  - `llm_dart_provider` no longer publicly exports the legacy full-stream
+    event base, runtime-only events, or the legacy full-stream codec.

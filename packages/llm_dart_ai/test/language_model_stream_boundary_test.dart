@@ -1,5 +1,9 @@
+// ignore_for_file: implementation_imports
+
 import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'package:llm_dart_provider/llm_dart_provider.dart' as provider;
+import 'package:llm_dart_provider/src/stream/text_stream_event.dart'
+    as provider_legacy;
 import 'package:test/test.dart';
 
 void main() {
@@ -8,7 +12,7 @@ void main() {
         () async {
       final stream = streamText(
         model: _StreamModel([
-          const provider.StepStartEvent(stepId: 'step-1'),
+          const provider_legacy.StepStartEvent(stepId: 'step-1'),
         ]),
         messages: [
           UserModelMessage.text('Hello'),
@@ -22,7 +26,7 @@ void main() {
         () async {
       final result = streamTextRun(
         model: _StreamModel([
-          const provider.StepStartEvent(stepId: 'step-1'),
+          const provider_legacy.StepStartEvent(stepId: 'step-1'),
         ]),
         messages: [
           UserModelMessage.text('Hello'),

@@ -8,7 +8,7 @@ void main() {
   group('AnthropicStreamCodec', () {
     test('maps text, reasoning, tool input, and finish events', () {
       final state = AnthropicMessagesStreamState();
-      final events = <TextStreamEvent>[];
+      final events = <LanguageModelStreamEvent>[];
 
       for (final chunk in <Map<String, Object?>>[
         {
@@ -207,7 +207,7 @@ void main() {
 
     test('emits tool input errors for malformed tool input deltas', () {
       final state = AnthropicMessagesStreamState();
-      final events = <TextStreamEvent>[];
+      final events = <LanguageModelStreamEvent>[];
 
       for (final chunk in <Map<String, Object?>>[
         {
@@ -262,7 +262,7 @@ void main() {
         'maps mcp tool use and result blocks as dynamic provider-executed tools',
         () {
       final state = AnthropicMessagesStreamState();
-      final events = <TextStreamEvent>[];
+      final events = <LanguageModelStreamEvent>[];
 
       for (final chunk in <Map<String, Object?>>[
         {
@@ -335,7 +335,7 @@ void main() {
 
     test('emits custom replay events for web-search tool results', () {
       final state = AnthropicMessagesStreamState();
-      final events = <TextStreamEvent>[];
+      final events = <LanguageModelStreamEvent>[];
 
       for (final chunk in <Map<String, Object?>>[
         {
@@ -400,7 +400,7 @@ void main() {
 
     test('emits custom replay events for web-fetch tool results', () {
       final state = AnthropicMessagesStreamState();
-      final events = <TextStreamEvent>[];
+      final events = <LanguageModelStreamEvent>[];
 
       for (final chunk in <Map<String, Object?>>[
         {
@@ -474,7 +474,7 @@ void main() {
 
     test('emits custom replay events for code execution tool results', () {
       final state = AnthropicMessagesStreamState();
-      final events = <TextStreamEvent>[];
+      final events = <LanguageModelStreamEvent>[];
 
       for (final chunk in <Map<String, Object?>>[
         {
@@ -553,7 +553,7 @@ void main() {
 
     test('emits custom replay events for tool-search tool results', () {
       final state = AnthropicMessagesStreamState();
-      final events = <TextStreamEvent>[];
+      final events = <LanguageModelStreamEvent>[];
 
       for (final chunk in <Map<String, Object?>>[
         {

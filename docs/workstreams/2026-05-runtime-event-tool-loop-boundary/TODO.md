@@ -50,6 +50,8 @@ Decision notes:
   `LanguageModelStreamEvent` name
 - [x] Remove runtime `StepStartEvent` / `StepFinishEvent` ownership from the
   provider contract or mark them as runtime-only
+- [x] Remove provider public exports for `TextStreamEvent`,
+  `TextStreamEventJsonCodec`, and runtime-only full-stream events
 - [x] Ensure provider codecs never need to emit chat/UI lifecycle chunks
 - [x] Add serialization guards for provider model-call stream parts
 - [ ] Update focused providers to emit the new model-call stream parts

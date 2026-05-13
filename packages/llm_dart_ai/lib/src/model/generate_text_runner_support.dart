@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:llm_dart_provider/llm_dart_provider.dart' hide TextStreamEvent;
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import '../stream/text_stream_event.dart';
 import 'generate_text_run_result.dart';

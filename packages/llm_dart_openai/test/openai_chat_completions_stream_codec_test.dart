@@ -7,7 +7,7 @@ void main() {
     test('maps reasoning, text, tool calls, and finish events', () {
       const codec = OpenAIChatCompletionsCodec(providerNamespace: 'deepseek');
       final state = OpenAIChatCompletionsStreamState();
-      final events = <TextStreamEvent>[];
+      final events = <LanguageModelStreamEvent>[];
 
       for (final chunk in <Map<String, Object?>>[
         {
@@ -167,7 +167,7 @@ void main() {
         () {
       const codec = OpenAIChatCompletionsCodec(providerNamespace: 'xai');
       final state = OpenAIChatCompletionsStreamState();
-      final events = <TextStreamEvent>[];
+      final events = <LanguageModelStreamEvent>[];
 
       for (final chunk in <Map<String, Object?>>[
         {
@@ -250,7 +250,7 @@ void main() {
     test('maps malformed tool arguments to tool input errors', () {
       const codec = OpenAIChatCompletionsCodec();
       final state = OpenAIChatCompletionsStreamState();
-      final events = <TextStreamEvent>[];
+      final events = <LanguageModelStreamEvent>[];
 
       for (final chunk in <Map<String, Object?>>[
         {

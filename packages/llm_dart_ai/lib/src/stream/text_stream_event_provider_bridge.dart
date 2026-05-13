@@ -2,7 +2,9 @@ import 'package:llm_dart_provider/llm_dart_provider.dart' as provider;
 
 import 'text_stream_event.dart';
 
-TextStreamEvent textStreamEventFromProvider(provider.TextStreamEvent event) {
+TextStreamEvent textStreamEventFromProvider(
+  provider.LanguageModelStreamEvent event,
+) {
   return switch (event) {
     provider.StartEvent(:final warnings) => StartEvent(warnings: warnings),
     provider.ResponseMetadataEvent(
@@ -114,21 +116,9 @@ TextStreamEvent textStreamEventFromProvider(provider.TextStreamEvent event) {
         toolCallId: toolCallId,
         providerMetadata: providerMetadata,
       ),
-    provider.ToolOutputDeniedEvent(
-      :final toolCallId,
-      :final reason,
-      :final providerMetadata,
-    ) =>
-      ToolOutputDeniedEvent(
-        toolCallId: toolCallId,
-        reason: reason,
-        providerMetadata: providerMetadata,
-      ),
     provider.SourceEvent(:final source) => SourceEvent(source),
     provider.FileEvent(:final file, :final providerMetadata) =>
       FileEvent(file, providerMetadata: providerMetadata),
-    provider.StepStartEvent(:final stepId) => StepStartEvent(stepId: stepId),
-    provider.StepFinishEvent(:final stepId) => StepFinishEvent(stepId: stepId),
     provider.FinishEvent(
       :final finishReason,
       :final rawFinishReason,
@@ -141,7 +131,6 @@ TextStreamEvent textStreamEventFromProvider(provider.TextStreamEvent event) {
         usage: usage,
         providerMetadata: providerMetadata,
       ),
-    provider.AbortEvent(:final reason) => AbortEvent(reason: reason),
     provider.CustomEvent(:final kind, :final data, :final providerMetadata) =>
       CustomEvent(
         kind: kind,
@@ -150,10 +139,13 @@ TextStreamEvent textStreamEventFromProvider(provider.TextStreamEvent event) {
       ),
     provider.RawChunkEvent(:final raw) => RawChunkEvent(raw),
     provider.ErrorEvent(:final error) => ErrorEvent(error),
+    _ => _throwUnexpectedProviderRuntimeEvent(event),
   };
 }
 
-provider.TextStreamEvent textStreamEventToProvider(TextStreamEvent event) {
+provider.LanguageModelStreamEvent textStreamEventToProvider(
+  TextStreamEvent event,
+) {
   return switch (event) {
     StartEvent(:final warnings) => provider.StartEvent(warnings: warnings),
     ResponseMetadataEvent(
@@ -265,21 +257,9 @@ provider.TextStreamEvent textStreamEventToProvider(TextStreamEvent event) {
         toolCallId: toolCallId,
         providerMetadata: providerMetadata,
       ),
-    ToolOutputDeniedEvent(
-      :final toolCallId,
-      :final reason,
-      :final providerMetadata,
-    ) =>
-      provider.ToolOutputDeniedEvent(
-        toolCallId: toolCallId,
-        reason: reason,
-        providerMetadata: providerMetadata,
-      ),
     SourceEvent(:final source) => provider.SourceEvent(source),
     FileEvent(:final file, :final providerMetadata) =>
       provider.FileEvent(file, providerMetadata: providerMetadata),
-    StepStartEvent(:final stepId) => provider.StepStartEvent(stepId: stepId),
-    StepFinishEvent(:final stepId) => provider.StepFinishEvent(stepId: stepId),
     FinishEvent(
       :final finishReason,
       :final rawFinishReason,
@@ -292,7 +272,6 @@ provider.TextStreamEvent textStreamEventToProvider(TextStreamEvent event) {
         usage: usage,
         providerMetadata: providerMetadata,
       ),
-    AbortEvent(:final reason) => provider.AbortEvent(reason: reason),
     CustomEvent(:final kind, :final data, :final providerMetadata) =>
       provider.CustomEvent(
         kind: kind,
@@ -301,6 +280,11 @@ provider.TextStreamEvent textStreamEventToProvider(TextStreamEvent event) {
       ),
     RawChunkEvent(:final raw) => provider.RawChunkEvent(raw),
     ErrorEvent(:final error) => provider.ErrorEvent(error),
+    ToolOutputDeniedEvent() ||
+    StepStartEvent() ||
+    StepFinishEvent() ||
+    AbortEvent() =>
+      _throwRuntimeOnlyAiEvent(event),
   };
 }
 
@@ -310,4 +294,18 @@ TextStreamEvent languageModelStreamEventToTextStreamEvent(
 }) {
   provider.validateLanguageModelStreamEvent(event, context: context);
   return textStreamEventFromProvider(event);
+}
+
+Never _throwUnexpectedProviderRuntimeEvent(Object event) {
+  throw StateError(
+    'Provider runtime-only event ${event.runtimeType} cannot be adapted as a '
+    'language model stream event.',
+  );
+}
+
+Never _throwRuntimeOnlyAiEvent(TextStreamEvent event) {
+  throw StateError(
+    'AI runtime-only event ${event.runtimeType} cannot be converted to a '
+    'provider language model stream event.',
+  );
 }

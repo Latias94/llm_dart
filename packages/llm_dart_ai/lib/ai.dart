@@ -8,7 +8,6 @@ library;
 
 export 'package:llm_dart_provider/llm_dart_provider.dart'
     hide
-        AbortEvent,
         CustomEvent,
         ErrorEvent,
         FileEvent,
@@ -21,20 +20,15 @@ export 'package:llm_dart_provider/llm_dart_provider.dart'
         ResponseMetadataEvent,
         SourceEvent,
         StartEvent,
-        StepFinishEvent,
-        StepStartEvent,
         TextDeltaEvent,
         TextEndEvent,
         TextStartEvent,
-        TextStreamEvent,
-        TextStreamEventJsonCodec,
         ToolApprovalRequestEvent,
         ToolCallEvent,
         ToolInputDeltaEvent,
         ToolInputEndEvent,
         ToolInputErrorEvent,
         ToolInputStartEvent,
-        ToolOutputDeniedEvent,
         ToolResultEvent;
 
 export 'src/model/embed.dart';

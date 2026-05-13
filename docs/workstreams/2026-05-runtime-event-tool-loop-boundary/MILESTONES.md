@@ -83,6 +83,10 @@ Progress:
 - 2026-05-13: made `LanguageModelStreamEventJsonCodec` own provider
   model-call serialization directly, keeping the existing wire shape while no
   longer delegating through the full runtime stream codec.
+- 2026-05-13: narrowed the provider public stream exports so
+  `llm_dart_provider` no longer exposes `TextStreamEvent`,
+  `TextStreamEventJsonCodec`, or runtime-only full-stream events from its
+  public entrypoint.
 
 ## M3: Unified Runtime Result Surface
 
@@ -113,6 +117,9 @@ Progress:
 - 2026-05-13: made `TextStreamEventJsonCodec` serialize AI-owned full-stream
   events directly, removing its dependency on the legacy provider full-stream
   codec.
+- 2026-05-13: updated the provider/runtime bridge to use
+  `LanguageModelStreamEvent` at the provider boundary and reject runtime-only
+  AI events when converting back to provider model-call streams.
 
 ## M4: Tool Loop Runtime
 

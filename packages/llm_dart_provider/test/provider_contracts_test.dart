@@ -284,7 +284,7 @@ void main() {
     });
   });
 
-  group('ResponseFormat and TextStreamEvent', () {
+  group('ResponseFormat and LanguageModelStreamEvent', () {
     test('keeps response and stream contracts provider-facing', () {
       final responseFormat = JsonResponseFormat(
         schema: JsonSchema.object(),
@@ -806,7 +806,7 @@ final class _OtherPromptPartOptions implements ProviderPromptPartOptions {}
 
 final class _SingleStepLanguageModel implements LanguageModel {
   final GenerateTextResult result;
-  final List<TextStreamEvent> streamEvents;
+  final List<LanguageModelStreamEvent> streamEvents;
   final List<GenerateTextRequest> generateRequests = [];
   final List<GenerateTextRequest> streamRequests = [];
 
@@ -828,7 +828,9 @@ final class _SingleStepLanguageModel implements LanguageModel {
   }
 
   @override
-  Stream<TextStreamEvent> doStream(GenerateTextRequest request) async* {
+  Stream<LanguageModelStreamEvent> doStream(
+    GenerateTextRequest request,
+  ) async* {
     streamRequests.add(request);
     for (final event in streamEvents) {
       yield event;

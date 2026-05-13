@@ -33,9 +33,14 @@ export 'src/serialization/prompt_json_codec.dart';
 export 'src/serialization/language_model_stream_event_json_codec.dart';
 export 'src/serialization/serialization_json_support.dart';
 export 'src/serialization/serialization_protocol.dart';
-export 'src/serialization/text_stream_event_json_codec.dart';
 export 'src/stream/language_model_stream_event.dart';
-export 'src/stream/text_stream_event.dart';
+export 'src/stream/text_stream_event.dart'
+    hide
+        AbortEvent,
+        StepFinishEvent,
+        StepStartEvent,
+        TextStreamEvent,
+        ToolOutputDeniedEvent;
 export 'src/tool/tool_definition.dart';
 export 'src/tool/tool_output.dart';
 export 'src/tool/tool_output_projection.dart';

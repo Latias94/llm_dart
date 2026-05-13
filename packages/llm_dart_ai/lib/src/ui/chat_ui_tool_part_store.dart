@@ -8,7 +8,6 @@ import 'package:llm_dart_provider/llm_dart_provider.dart'
         ToolInputEndEvent,
         ToolInputErrorEvent,
         ToolInputStartEvent,
-        ToolOutputDeniedEvent,
         ToolResultEvent;
 
 import '../stream/text_stream_event.dart';
