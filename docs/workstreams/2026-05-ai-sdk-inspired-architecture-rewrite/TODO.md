@@ -6,7 +6,9 @@
 - [x] Record the initial gap audit
 - [x] Define target semantic ownership
 - [x] Define first implementation slices
-- [ ] Link follow-up implementation PRs or commits as they land
+- [x] Link follow-up implementation PRs or commits as they land
+  - `5a58bea5 fix: validate normalized model prompts`
+  - `0897abb3 refactor: align chat input with model messages`
 
 ## Decision Freeze
 

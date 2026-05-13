@@ -40,6 +40,9 @@ Current status:
   `PromptMessage` remains an explicit advanced path, runtime helper
   `messages:` inputs normalize into provider prompts, and prompt normalization
   tests have landed.
+- chat input is now aligned with the same boundary: `ChatInput` carries
+  user-authored `UserModelMessage` values, while chat transport payloads and
+  snapshots keep provider-facing `PromptMessage` replay state.
 
 ## M3 - Runtime Prompt Validation
 
