@@ -166,6 +166,59 @@ void main() {
       expect(toolResult.isDynamic, isTrue);
     });
 
+    test('collects tool input errors as replayable tool error results',
+        () async {
+      final result = await collectGenerateTextResult(
+        Stream<TextStreamEvent>.fromIterable([
+          const ToolInputStartEvent(
+            toolCallId: 'tool_1',
+            toolName: 'weather',
+            isDynamic: true,
+          ),
+          const ToolInputDeltaEvent(
+            toolCallId: 'tool_1',
+            delta: '{"city":',
+          ),
+          const ToolInputErrorEvent(
+            toolCallId: 'tool_1',
+            toolName: 'weather',
+            input: '{"city":',
+            errorText: 'Invalid JSON tool input.',
+            isDynamic: true,
+            title: 'Weather',
+            providerMetadata: ProviderMetadata({
+              'test': {
+                'phase': 'input-error',
+              },
+            }),
+          ),
+          const FinishEvent(finishReason: FinishReason.toolCalls),
+        ]),
+      );
+
+      final toolCall =
+          result.content.whereType<ToolCallContentPart>().single.toolCall;
+      expect(toolCall.toolCallId, 'tool_1');
+      expect(toolCall.toolName, 'weather');
+      expect(toolCall.input, '{"city":');
+      expect(toolCall.isDynamic, isTrue);
+      expect(toolCall.title, 'Weather');
+
+      final toolResult =
+          result.content.whereType<ToolResultContentPart>().single.toolResult;
+      expect(toolResult.toolCallId, 'tool_1');
+      expect(toolResult.toolName, 'weather');
+      expect(toolResult.output, 'Invalid JSON tool input.');
+      expect(toolResult.isError, isTrue);
+      expect(toolResult.isDynamic, isTrue);
+
+      final resultMetadata = result.content
+          .whereType<ToolResultContentPart>()
+          .single
+          .providerMetadata;
+      expect(resultMetadata?['test'], containsPair('phase', 'input-error'));
+    });
+
     test('throws when the stream ends before a finish event', () async {
       await expectLater(
         collectGenerateTextResult(

@@ -728,6 +728,64 @@ void main() {
       expect(model.requests, hasLength(2));
     });
 
+    test('does not execute tools after a tool input error event', () async {
+      final model = _RecordingStreamLanguageModel([
+        const [
+          ToolInputErrorEvent(
+            toolCallId: 'tool-1',
+            toolName: 'weather',
+            input: '{"city":',
+            errorText: 'Invalid JSON tool input.',
+            isDynamic: true,
+          ),
+          FinishEvent(finishReason: FinishReason.toolCalls),
+        ],
+        const [
+          TextStartEvent(id: 'text-1'),
+          TextDeltaEvent(id: 'text-1', delta: 'The tool input was invalid.'),
+          TextEndEvent(id: 'text-1'),
+          FinishEvent(finishReason: FinishReason.stop),
+        ],
+      ]);
+      final executedCalls = <GenerateTextFunctionToolExecutionRequest>[];
+
+      final run = streamTextRun(
+        model: model,
+        prompt: [
+          UserPromptMessage.text('Weather in Tokyo?'),
+        ],
+        tools: [
+          FunctionToolDefinition(
+            name: 'weather',
+            inputSchema: ToolJsonSchema.object(),
+          ),
+        ],
+        functionToolExecutor: (request) {
+          executedCalls.add(request);
+          return const GenerateTextToolExecutionResult.output({
+            'forecast': 'sunny',
+          });
+        },
+      );
+
+      final steps = await run.stepStream.toList();
+      final result = await run.result;
+
+      expect(executedCalls, isEmpty);
+      expect(model.requests, hasLength(2));
+      expect(result.finishReason, FinishReason.stop);
+      expect(result.text, 'The tool input was invalid.');
+      expect(result.steps.first.toolCalls.single.input, '{"city":');
+      expect(result.steps.first.toolCalls.single.isDynamic, isTrue);
+      expect(
+        result.steps.first.toolResults.single.output,
+        'Invalid JSON tool input.',
+      );
+      expect(result.steps.first.toolResults.single.isError, isTrue);
+      expect(steps, hasLength(2));
+      expect(steps.first.toolResults.single.isError, isTrue);
+    });
+
     test('throws when streamed continuation exceeds maxSteps', () async {
       final model = _RecordingStreamLanguageModel([
         const [

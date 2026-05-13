@@ -161,8 +161,22 @@ final class GenerateTextRunnerSupport {
       return null;
     }
 
+    final resolvedToolCallIds = {
+      for (final toolResult in step.toolResults) toolResult.toolCallId,
+    };
+    final unresolvedProviderExecutedToolCalls = step.toolCalls
+        .where(
+          (toolCall) =>
+              toolCall.providerExecuted &&
+              !resolvedToolCallIds.contains(toolCall.toolCallId),
+        )
+        .toList(growable: false);
     final clientToolCalls = step.toolCalls
-        .where((toolCall) => !toolCall.providerExecuted)
+        .where(
+          (toolCall) =>
+              !toolCall.providerExecuted &&
+              !resolvedToolCallIds.contains(toolCall.toolCallId),
+        )
         .toList(growable: false);
 
     if (step.toolCalls.isEmpty && step.toolApprovalRequests.isEmpty) {
@@ -172,7 +186,14 @@ final class GenerateTextRunnerSupport {
     }
 
     if (clientToolCalls.isEmpty) {
-      return null;
+      if (step.toolApprovalRequests.isNotEmpty ||
+          unresolvedProviderExecutedToolCalls.isNotEmpty) {
+        return null;
+      }
+
+      return step.toolResults.isEmpty
+          ? null
+          : const <GenerateTextToolExecution>[];
     }
 
     if (step.toolApprovalRequests.isNotEmpty) {

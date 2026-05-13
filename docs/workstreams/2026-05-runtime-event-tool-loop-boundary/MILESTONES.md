@@ -188,6 +188,9 @@ Progress:
   declared dynamic tools can execute locally, provider-executed tools still do
   not call local executors, and non-streaming step results now fold local tool
   results the same way as streaming step results.
+- 2026-05-14: made provider-emitted tool input errors replayable by folding
+  them into step/run results as tool error results and skipping local execution
+  for tool calls that already have results in the same step.
 
 ## M5: Chat Runtime Integration
 

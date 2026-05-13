@@ -198,3 +198,6 @@ This workstream should not:
 - [33-dynamic-tool-step-result-alignment.md](33-dynamic-tool-step-result-alignment.md)
   - Declared dynamic tools can execute locally, and non-streaming step results
     now fold local tool results in the same way as streaming step results.
+- [34-tool-input-error-replay.md](34-tool-input-error-replay.md)
+  - Tool input errors are now folded into step/run results as replayable tool
+    error results and do not trigger local tool execution.

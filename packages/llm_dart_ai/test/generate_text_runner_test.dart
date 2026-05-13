@@ -524,6 +524,72 @@ void main() {
       expect(runResult.text, 'Dynamic tool completed.');
     });
 
+    test('continues tool-call steps that already contain tool error results',
+        () async {
+      final model = _RecordingLanguageModel([
+        GenerateTextResult(
+          content: [
+            const ToolCallContentPart(
+              ToolCallContent(
+                toolCallId: 'tool-1',
+                toolName: 'weather',
+                input: '{"city":',
+                isDynamic: true,
+              ),
+            ),
+            ToolResultContentPart(
+              ToolResultContent(
+                toolCallId: 'tool-1',
+                toolName: 'weather',
+                output: 'Invalid JSON tool input.',
+                isError: true,
+                isDynamic: true,
+              ),
+            ),
+          ],
+          finishReason: FinishReason.toolCalls,
+        ),
+        GenerateTextResult(
+          content: const [
+            TextContentPart('The tool input was invalid.'),
+          ],
+          finishReason: FinishReason.stop,
+        ),
+      ]);
+      final executedCalls = <GenerateTextFunctionToolExecutionRequest>[];
+
+      final runResult = await runTextGeneration(
+        model: model,
+        prompt: [
+          UserPromptMessage.text('Weather in Tokyo?'),
+        ],
+        tools: [
+          FunctionToolDefinition(
+            name: 'weather',
+            inputSchema: ToolJsonSchema.object(),
+          ),
+        ],
+        functionToolExecutor: (request) {
+          executedCalls.add(request);
+          return const GenerateTextToolExecutionResult.output({
+            'forecast': 'sunny',
+          });
+        },
+      );
+
+      expect(executedCalls, isEmpty);
+      expect(model.requests, hasLength(2));
+      expect(runResult.text, 'The tool input was invalid.');
+      expect(runResult.steps.first.toolResults.single.isError, isTrue);
+
+      final continuationPrompt = model.requests[1].prompt;
+      final toolMessage = continuationPrompt[2] as ToolPromptMessage;
+      final toolResult = toolMessage.parts.single as ToolResultPromptPart;
+      expect(toolResult.toolCallId, 'tool-1');
+      expect(toolResult.output, 'Invalid JSON tool input.');
+      expect(toolResult.isError, isTrue);
+    });
+
     test('stops after a tool-call step when no function executor is provided',
         () async {
       final model = _RecordingLanguageModel([

@@ -201,6 +201,31 @@ final class GenerateTextResultAccumulator {
         _partialToolCalls.remove(event.toolCallId);
       case ToolInputErrorEvent():
         _mergeProviderMetadata(event.providerMetadata);
+        _upsertToolCallPart(
+          ToolCallContentPart(
+            ToolCallContent(
+              toolCallId: event.toolCallId,
+              toolName: event.toolName,
+              input: event.input,
+              providerExecuted: event.providerExecuted,
+              isDynamic: event.isDynamic,
+              title: event.title,
+            ),
+            providerMetadata: event.providerMetadata,
+          ),
+        );
+        _appendPart(
+          ToolResultContentPart(
+            ToolResultContent(
+              toolCallId: event.toolCallId,
+              toolName: event.toolName,
+              output: event.errorText,
+              isError: true,
+              isDynamic: event.isDynamic,
+            ),
+            providerMetadata: event.providerMetadata,
+          ),
+        );
         _partialToolCalls.remove(event.toolCallId);
       case ToolCallEvent():
         _mergeProviderMetadata(event.providerMetadata);

@@ -98,7 +98,7 @@ Decision notes:
 - [x] Add stop conditions beyond `maxSteps`
 - [ ] Add approval request/response continuation semantics
 - [x] Add dynamic tool semantics
-- [ ] Add tool input error semantics
+- [x] Add tool input error semantics
 - [x] Preserve provider-executed tools and deferred provider results
 - [x] Preserve replay-safe provider options on prompt continuations
 
