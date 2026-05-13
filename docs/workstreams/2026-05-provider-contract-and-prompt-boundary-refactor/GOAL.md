@@ -23,6 +23,8 @@ This means:
   - `transcribe`
 - prompt message and part customization moves from `ProviderMetadata` to an
   input-side provider options mechanism
+- user-facing prompt inputs use `ModelMessage` and normalize into
+  provider-facing `PromptMessage` before provider calls
 - provider codecs no longer treat `ProviderMetadata` as request configuration
 - output parts, stream events, final results, replay details, and UI mappings
   can still expose `ProviderMetadata`
@@ -54,6 +56,7 @@ The workstream is complete only when:
 - Anthropic cache control and similar input controls use input-side provider
   options
 - provider codecs distinguish input-side options from output-side metadata
+- prompt normalization validates missing tool results before provider calls
 - migration docs provide before/after examples
 - package-local analysis and tests pass for provider, AI runtime, provider
   packages, chat, Flutter, root, and compatibility tests that remain in scope

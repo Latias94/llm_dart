@@ -17,15 +17,17 @@ semantics leak back into provider contracts:
   documented as output-side provider observation
 - some provider codecs still read input request controls from prompt
   `providerMetadata`
-- user prompt ergonomics and provider-facing prompt contracts are still mostly
-  the same data layer
+- the user prompt ergonomics layer and provider-facing prompt contracts are
+  now split, with final audit coverage recorded for the release line
 - the root compatibility surface remains large enough to pull architecture
   decisions back toward legacy builder-era shapes
 
 This workstream is the second boundary-hardening pass. It uses the mature
 lessons from `repo-ref/ai` while keeping `llm_dart`'s Dart-specific strengths:
 typed provider options, capability profiles, provider-native helper clients,
-OpenAI-compatible family profiles, and a unified model-first runtime.
+OpenAI-compatible family profiles, a unified model-first runtime, and the
+`ModelMessage` user-prompt layer that normalizes into provider-facing
+`PromptMessage` values.
 
 ## Goal
 
@@ -110,5 +112,8 @@ The refactor must keep the features that make this package useful:
 - [04-legacy-exit-plan.md](04-legacy-exit-plan.md)
   - Root compatibility and legacy surface exit strategy.
 - [05-completion-audit.md](05-completion-audit.md)
-  - Prompt-to-artifact completion audit, validation evidence, and blocked
-    release-readiness gates.
+  - Prompt-to-artifact completion audit, validation evidence, and release
+    readiness gates.
+- [06-user-prompt-normalization-closure.md](06-user-prompt-normalization-closure.md)
+  - Closure audit for the `ModelMessage` user-prompt layer and prompt
+    normalization/validation boundary.

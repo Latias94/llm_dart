@@ -54,6 +54,12 @@ void main() {
               },
               title: 'Weather',
             ),
+            ToolCallModelPart(
+              toolCallId: 'call-2',
+              toolName: 'shell',
+              providerExecuted: true,
+              isDynamic: true,
+            ),
             ToolApprovalRequestModelPart(
               approvalId: 'approval-1',
               toolCallId: 'call-2',
@@ -112,7 +118,7 @@ void main() {
       expect(imagePart.providerOptions, same(userOptions));
 
       final assistantMessage = prompt[2] as AssistantPromptMessage;
-      expect(assistantMessage.parts, hasLength(5));
+      expect(assistantMessage.parts, hasLength(6));
       expect(assistantMessage.parts[0], isA<TextPromptPart>());
       final reasoningPart = assistantMessage.parts[1] as ReasoningPromptPart;
       expect(reasoningPart.text, 'reasoning text');
@@ -129,8 +135,14 @@ void main() {
         'city': 'Tokyo',
       });
       expect(toolCallPart.title, 'Weather');
+      final providerToolCallPart =
+          assistantMessage.parts[4] as ToolCallPromptPart;
+      expect(providerToolCallPart.toolCallId, 'call-2');
+      expect(providerToolCallPart.toolName, 'shell');
+      expect(providerToolCallPart.providerExecuted, isTrue);
+      expect(providerToolCallPart.isDynamic, isTrue);
       final approvalRequest =
-          assistantMessage.parts[4] as ToolApprovalRequestPromptPart;
+          assistantMessage.parts[5] as ToolApprovalRequestPromptPart;
       expect(approvalRequest.approvalId, 'approval-1');
       expect(approvalRequest.toolCallId, 'call-2');
 
@@ -172,6 +184,11 @@ void main() {
               filename: 'reasoning.txt',
               data: fileData,
             ),
+            const ToolCallModelPart(
+              toolCallId: 'call-1',
+              toolName: 'search',
+              providerExecuted: true,
+            ),
             ToolResultModelPart(
               toolCallId: 'call-1',
               toolName: 'search',
@@ -189,10 +206,36 @@ void main() {
         (message.parts[1] as ReasoningFilePromptPart).data,
         same(fileData),
       );
-      final toolResult = message.parts[2] as ToolResultPromptPart;
+      final toolCall = message.parts[2] as ToolCallPromptPart;
+      expect(toolCall.toolCallId, 'call-1');
+      expect(toolCall.toolName, 'search');
+      expect(toolCall.providerExecuted, isTrue);
+      final toolResult = message.parts[3] as ToolResultPromptPart;
       expect(toolResult.toolCallId, 'call-1');
       expect(toolResult.toolName, 'search');
       expect(toolResult.output, 'done');
+    });
+
+    test('validates missing tool results during normalization', () {
+      expect(
+        () => normalizeModelMessages([
+          AssistantModelMessage(
+            parts: const [
+              ToolCallModelPart(
+                toolCallId: 'call-1',
+                toolName: 'weather',
+              ),
+            ],
+          ),
+        ]),
+        throwsA(
+          isA<ArgumentError>().having(
+            (error) => error.message,
+            'message',
+            contains('missing a tool result'),
+          ),
+        ),
+      );
     });
 
     test('rejects unsupported part types for each message role', () {

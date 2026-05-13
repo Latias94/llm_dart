@@ -60,10 +60,10 @@
 - [x] Do not introduce `ModelMessage` in this workstream; keep it as a
   follow-up after the provider prompt boundary is stable
 - [x] Keep provider-facing prompt contracts in `llm_dart_provider`
-- [ ] Follow-up: define the user prompt shape in `llm_dart_ai`
-- [ ] Follow-up: add normalization from user prompt shape to provider prompt
+- [x] Follow-up: define the user prompt shape in `llm_dart_ai`
+- [x] Follow-up: add normalization from user prompt shape to provider prompt
   shape
-- [ ] Follow-up: add validation for missing tool results during normalization
+- [x] Follow-up: add validation for missing tool results during normalization
 
 ## Legacy Surface
 
@@ -71,8 +71,8 @@
 - [x] Remove non-migration examples that import `legacy.dart`
 - [x] Add or update guards against new root provider implementation files
 - [x] Decide whether legacy is deleted, moved, or frozen for this line
-- [ ] Follow-up: draft breaking changelog notes for removed legacy surfaces
-- [ ] Follow-up: delete legacy or move it out of root in the next intentional
+- [x] Follow-up: draft breaking changelog notes for removed legacy surfaces
+- [x] Follow-up: delete legacy or move it out of root in the next intentional
   breaking line
 
 ## Validation

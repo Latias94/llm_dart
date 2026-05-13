@@ -1,6 +1,7 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'model_message.dart';
+import 'prompt_validation.dart';
 
 List<PromptMessage> normalizeModelMessages(List<ModelMessage> messages) {
   final prompt = <PromptMessage>[];
@@ -18,7 +19,12 @@ List<PromptMessage> normalizeModelMessages(List<ModelMessage> messages) {
     }
   }
 
-  return List<PromptMessage>.unmodifiable(prompt);
+  final normalized = List<PromptMessage>.unmodifiable(prompt);
+  validateProviderPrompt(
+    normalized,
+    context: 'normalizeModelMessages.messages',
+  );
+  return normalized;
 }
 
 List<PromptMessage> resolveProviderPrompt({

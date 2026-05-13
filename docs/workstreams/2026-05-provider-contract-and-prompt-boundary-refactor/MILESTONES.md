@@ -99,3 +99,19 @@ Suggested validation command:
 ```powershell
 dart tool/release_readiness.dart --report=docs/workstreams/2026-05-provider-contract-and-prompt-boundary-refactor/release-readiness-report.txt
 ```
+
+## Milestone 7 - User Prompt Normalization Closure
+
+Acceptance criteria:
+
+- `ModelMessage` is the documented user-facing prompt layer
+- normalization from `ModelMessage` to provider-facing `PromptMessage` exists
+- normalization validates missing tool results and invalid prompt transitions
+- migration docs reflect the split between user-facing and provider-facing
+  prompt contracts
+
+Validation:
+
+- `dart test packages/llm_dart_ai/test/prompt_normalization_test.dart`
+- `dart test packages/llm_dart_ai/test/prompt_validation_test.dart`
+- `dart analyze packages/llm_dart_ai`
