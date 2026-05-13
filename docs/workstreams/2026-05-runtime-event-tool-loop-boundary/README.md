@@ -131,3 +131,6 @@ This workstream should not:
 - [12-streaming-result-projection-accessors.md](12-streaming-result-projection-accessors.md)
   - Streaming text, text-call, and structured-output results expose consistent
     text stream and chat UI projection accessors.
+- [13-direct-chat-transport-runtime-path.md](13-direct-chat-transport-runtime-path.md)
+  - Direct chat transport now streams through the AI runtime path before
+    projecting to chat UI chunks.

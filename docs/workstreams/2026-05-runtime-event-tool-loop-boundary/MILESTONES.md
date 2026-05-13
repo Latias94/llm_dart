@@ -116,7 +116,7 @@ Acceptance criteria:
 
 ## M5: Chat Runtime Integration
 
-Status: pending
+Status: in progress
 
 Acceptance criteria:
 
@@ -125,6 +125,12 @@ Acceptance criteria:
 - chat consumes runtime UI projection or an agent wrapper
 - chat state remains transport/persistence/UI focused
 - manual tool outputs and approval responses keep ergonomic APIs
+
+Progress:
+
+- 2026-05-13: changed `DirectChatTransport` to call `streamText(...)` and
+  project through the AI runtime UI stream path instead of calling
+  `LanguageModel.doStream(...)` directly.
 
 ## M6: Release Readiness
 

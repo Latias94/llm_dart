@@ -47,6 +47,42 @@ void main() {
         'x-chat': '1',
       });
     });
+
+    test('streams through AI runtime projection with message metadata',
+        () async {
+      final transport = DirectChatTransport(
+        model: _FakeLanguageModel(
+          onStream: (_) => Stream<LanguageModelStreamEvent>.fromIterable(
+            const [
+              TextStartEvent(id: 'text-1'),
+              TextDeltaEvent(id: 'text-1', delta: 'Hello'),
+              TextEndEvent(id: 'text-1'),
+              FinishEvent(finishReason: FinishReason.stop),
+            ],
+          ),
+        ),
+      );
+
+      final chunks = await transport
+          .sendMessages(
+            ChatTransportRequest(
+              chatId: 'chat-1',
+              prompt: [
+                UserPromptMessage.text('Hello'),
+              ],
+              options: const ChatRequestOptions(
+                metadata: {
+                  'source': 'direct',
+                },
+              ),
+            ),
+          )
+          .toList();
+
+      final start = chunks.first as ChatUiMessageStartChunk;
+      expect(start.metadata['source'], 'direct');
+      expect(chunks.whereType<ChatUiEventChunk>(), hasLength(4));
+    });
   });
 
   group('ChatSessionSnapshotJsonCodec', () {

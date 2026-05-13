@@ -94,7 +94,7 @@ Decision notes:
 
 ## Chat Boundary
 
-- [ ] Make direct chat transport consume the AI runtime or an agent wrapper
+- [x] Make direct chat transport consume the AI runtime or an agent wrapper
 - [ ] Remove duplicate provider stream accumulation from chat where runtime can
   own it
 - [ ] Keep chat responsible for chat state, persistence, transport, and manual
@@ -125,7 +125,7 @@ Decision notes:
 - [x] Run `llm_dart_ai` stream serialization ownership tests
 - [x] Run `llm_dart_ai` stream event export ownership tests
 - [x] Run `llm_dart_ai` runtime, output, prompt, and UI projection tests
-- [ ] Run `llm_dart_chat` direct transport and tool execution tests
+- [x] Run `llm_dart_chat` direct transport and tool execution tests
 - [ ] Run examples analysis
 - [ ] Run consumer smoke
 - [ ] Run publish dry-runs

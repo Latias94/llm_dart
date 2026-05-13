@@ -37,7 +37,8 @@ That makes it suitable for:
 Recommended adoption order:
 
 - start with `DefaultChatSession` plus `DirectChatTransport` when the app can
-  call a concrete model directly
+  call a concrete model directly; direct transport still streams through
+  `llm_dart_ai.streamText(...)` before projecting to chat UI chunks
 - switch to `HttpChatTransport` when routing, keys, audit policy, or tool
   execution should stay backend-owned
 - use `ChatPersistenceAdapter` when you need durable session snapshots
