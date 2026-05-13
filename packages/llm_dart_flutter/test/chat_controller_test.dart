@@ -160,14 +160,12 @@ final class _FakeChatSession implements ChatSession {
     ChatRequestOptions options = const ChatRequestOptions(),
   }) async {
     final message = input.message;
-    if (message is UserPromptMessage) {
-      sentMessages.add(
-        message.parts
-            .whereType<TextPromptPart>()
-            .map((part) => part.text)
-            .join(),
-      );
-    }
+    sentMessages.add(
+      message.parts
+          .whereType<TextModelPart>()
+          .map((part) => part.text)
+          .join(),
+    );
   }
 
   @override

@@ -112,11 +112,13 @@ final class DefaultChatSession implements ChatSession {
     _ensureUsable();
     _ensureIdle('sendMessage');
 
+    final promptMessages = normalizeModelMessages([input.message]);
+    final promptMessage = promptMessages.single;
     final userMessage = promptMessageToChatUiMessage(
-      input.message,
+      promptMessage,
       id: _messageIdGenerator(),
     );
-    _promptHistory.add(input.message);
+    _promptHistory.add(promptMessage);
     _emitState(
       _state.copyWith(
         messages: [..._state.messages, userMessage],

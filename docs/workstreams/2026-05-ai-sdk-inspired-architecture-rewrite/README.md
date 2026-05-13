@@ -128,6 +128,10 @@ The workstream is complete only when:
   - M6 legacy barrel export inventory and freeze policy.
 - [06-example-compatibility-audit.md](06-example-compatibility-audit.md)
   - M6 example compatibility allowlist audit and default-path cleanup.
+- [07-chat-input-boundary.md](07-chat-input-boundary.md)
+  - Chat input closure note: new user input uses `UserModelMessage`, while
+    chat history, transport payloads, and snapshots retain provider-facing
+    `PromptMessage` replay state.
 - [MILESTONES.md](MILESTONES.md)
   - Milestones, acceptance criteria, and status tracking.
 - [TODO.md](TODO.md)

@@ -389,6 +389,58 @@ void main() {
       await session.dispose();
     });
 
+    test('normalizes user-facing chat input before transport replay',
+        () async {
+      final fileData = FileTextData('notes');
+      ChatTransportRequest? capturedRequest;
+      final session = DefaultChatSession(
+        transport: _FakeChatTransport(
+          onSendMessages: (request) {
+            capturedRequest = request;
+            return Stream<TextStreamEvent>.fromIterable([
+              const FinishEvent(finishReason: FinishReason.stop),
+            ]);
+          },
+        ),
+      );
+
+      await session.sendMessage(
+        ChatInput.parts(
+          [
+            const TextModelPart('Read this'),
+            FileModelPart(
+              mediaType: 'text/plain',
+              filename: 'notes.txt',
+              data: fileData,
+            ),
+          ],
+        ),
+      );
+
+      final prompt = capturedRequest!.prompt;
+      expect(prompt, hasLength(1));
+      final userPrompt = prompt.single as UserPromptMessage;
+      expect(userPrompt.parts, hasLength(2));
+      expect((userPrompt.parts[0] as TextPromptPart).text, 'Read this');
+      final filePart = userPrompt.parts[1] as FilePromptPart;
+      expect(filePart.mediaType, 'text/plain');
+      expect(filePart.filename, 'notes.txt');
+      expect(filePart.data, same(fileData));
+
+      final userMessage = session.state.messages.first;
+      expect(userMessage.role, ChatUiRole.user);
+      expect(
+        userMessage.parts.whereType<TextUiPart>().single.text,
+        'Read this',
+      );
+      expect(
+        userMessage.parts.whereType<FileUiPart>().single.file.data,
+        same(fileData),
+      );
+
+      await session.dispose();
+    });
+
     test('stop marks the active assistant turn as aborted', () async {
       final controller = StreamController<TextStreamEvent>();
       final session = DefaultChatSession(
