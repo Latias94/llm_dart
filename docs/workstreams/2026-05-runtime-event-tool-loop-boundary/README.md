@@ -188,3 +188,6 @@ This workstream should not:
 - [30-runtime-stop-conditions.md](30-runtime-stop-conditions.md)
   - Adds composable `stopWhen` runtime stop conditions while keeping
     `maxSteps` as the hard safety guard.
+- [31-tool-input-callback-deferral.md](31-tool-input-callback-deferral.md)
+  - Defers dedicated tool-input callbacks because tool input streaming already
+    lives in `TextStreamEvent` and can be observed through `onChunk`.

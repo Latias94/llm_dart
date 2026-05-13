@@ -181,6 +181,9 @@ Progress:
   (`isStepCount`, `isLoopFinished`, `hasToolCall`, and custom predicates) to
   the primary text runtime, advanced runners, and structured-output facades,
   leaving `maxSteps` as the hard safety guard.
+- 2026-05-13: deferred dedicated tool-input streaming callbacks because tool
+  input chunks are already first-class `TextStreamEvent` values observable via
+  `streamText(...)`, `streamTextRun(...)`, and `onChunk`.
 
 ## M5: Chat Runtime Integration
 
