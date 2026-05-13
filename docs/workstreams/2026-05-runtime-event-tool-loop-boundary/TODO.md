@@ -87,7 +87,7 @@ Decision notes:
   `StreamOutputResult` plumbing with one consistent result foundation
 - [x] Preserve `partialOutputStream` and `elementStream`
 - [x] Add `textStream` and UI projection accessors to the streaming result
-- [ ] Decide migration path for `runTextGeneration(...)` and `streamTextRun(...)`
+- [x] Decide migration path for `runTextGeneration(...)` and `streamTextRun(...)`
 
 ## Tool Loop
 

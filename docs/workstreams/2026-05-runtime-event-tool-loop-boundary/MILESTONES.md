@@ -152,6 +152,10 @@ Progress:
   replayable event streams, final result completion, error propagation, and
   side-channel lifecycle handling for streaming run, text-call, and
   structured-output result facades while preserving their public API names.
+- 2026-05-13: froze `runTextGeneration(...)` and `streamTextRun(...)` as
+  advanced runtime result facades for step/run observation, while keeping
+  `generateText(...)`, `streamText(...)`, `generateTextCall(...)`, and
+  `streamTextCall(...)` as the primary app-facing runtime path.
 
 ## M4: Tool Loop Runtime
 

@@ -210,9 +210,12 @@ provider-owned options, remote lifecycle APIs, or compatibility-only flows.
 Current text-call layering:
 
 - `generateTextCall(...)` / `streamTextCall(...)`
-  - recommended app-facing text generation helpers
+  - recommended app-facing text/result helpers, with optional structured output
 - `generateText(...)` / `streamText(...)`
-  - lower-level raw single-step helpers
+  - primary runtime helpers that return raw final results or raw full-stream
+    events
+- `runTextGeneration(...)` / `streamTextRun(...)`
+  - advanced runtime helpers for direct step/run observation and telemetry
 
 Structured object helpers follow the same pattern:
 
@@ -751,8 +754,9 @@ Future<void> main() async {
 
 - Keep the shared API focused on common model semantics.
 - Prefer `generateTextCall(...)` / `streamTextCall(...)` for app-facing text
-  generation, and keep `generateText(...)` / `streamText(...)` for lower-level
-  raw access.
+  generation. Use `generateText(...)` / `streamText(...)` when you want raw
+  runtime result or event shapes, and use runner helpers only when you need
+  direct step/run observation.
 - Keep provider-native request features in typed provider options or custom
   parts; reserve provider metadata for outputs and replay observations.
 - Keep UI/session concerns above `TextStreamEvent`.

@@ -4,7 +4,7 @@ Framework-neutral AI runtime helpers for `llm_dart`.
 
 This package owns app-facing orchestration built on top of provider contracts:
 
-- one-shot helpers such as `generateText(...)`, `streamText(...)`,
+- runtime helpers such as `generateText(...)`, `streamText(...)`,
   `generateTextCall(...)`, `streamTextCall(...)`, `embed(...)`,
   `generateImage(...)`, `generateSpeech(...)`, `transcribe(...)`,
   `generateObject(...)`, and `streamObject(...)`
@@ -51,8 +51,8 @@ workflows.
 
 Use `runTextGeneration(...)`, `streamTextRun(...)`, `GenerateTextRunner`, and
 `StreamTextRunner` when you need step streams or callback telemetry directly.
-They are advanced runtime shapes while the result foundation continues to
-consolidate.
+They are advanced runtime result facades, not the primary teaching path for
+normal text generation.
 
 Provider-specific input behavior should stay in typed provider options or
 provider-owned prompt part options. Provider metadata is response-side

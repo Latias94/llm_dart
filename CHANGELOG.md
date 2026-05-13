@@ -75,8 +75,8 @@ Older builder-era code should migrate through `package:llm_dart/legacy.dart`.
 - Hardened `LanguageModel` as a provider implementation contract. Direct
   provider implementations now use `doGenerate(...)` and `doStream(...)`;
   user-facing generation should flow through `generateText(...)`,
-  `streamText(...)`, `streamTextRun(...)`, or structured-output helpers from
-  `llm_dart_ai`.
+  `streamText(...)`, `generateTextCall(...)`, `streamTextCall(...)`, or
+  advanced runner helpers from `llm_dart_ai`.
 - Added shared generation options for presence penalty, frequency penalty,
   seed, reasoning configuration, and raw stream chunk inclusion where providers
   can expose it.
@@ -150,7 +150,8 @@ Older builder-era code should migrate through `package:llm_dart/legacy.dart`.
   `generateText(model: ..., prompt: ...)` for app code, or
   `model.doGenerate(request)` only inside provider/adaptor code.
 - Replace old direct `model.stream(request)` calls with
-  `streamText(...)` / `streamTextRun(...).eventStream` for app/runtime code, or
+  `streamText(...)` for app/runtime code, `streamTextRun(...).eventStream`
+  when step/run observation is needed, or
   `model.doStream(request)` only inside provider/adaptor code.
 - For embeddings, images, speech, and transcription, use the model-specific
   factories on `<provider>(...)` plus the shared helpers from

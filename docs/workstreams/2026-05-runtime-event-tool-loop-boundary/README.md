@@ -182,3 +182,6 @@ This workstream should not:
 - [28-stream-result-foundation.md](28-stream-result-foundation.md)
   - Introduces the internal runtime result foundation shared by streaming run,
     text-call, and structured-output result facades.
+- [29-runner-helper-migration-path.md](29-runner-helper-migration-path.md)
+  - Freezes `runTextGeneration(...)` / `streamTextRun(...)` as advanced
+    runtime result facades rather than primary app-facing helpers.
