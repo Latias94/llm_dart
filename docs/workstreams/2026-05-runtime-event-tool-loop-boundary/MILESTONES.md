@@ -13,27 +13,30 @@ Acceptance criteria:
 
 ## M1: Boundary Decision Freeze
 
-Status: pending
+Status: complete
 
 Acceptance criteria:
 
-- final provider model-call event name is chosen
-- final AI runtime full-stream event name is chosen
+- final provider model-call event name is chosen: `LanguageModelStreamEvent`
+- final AI runtime full-stream event name is chosen: `TextStreamEvent`
 - event ownership rules are documented
 - public migration story for `TextStreamEvent` is documented
 - first implementation slice is selected
 
-Recommended decision:
+Frozen decision:
 
 - provider owns model-call stream events
 - AI runtime owns full generation-run events
 - providers must not emit runtime step events
 - `generateText(...)` and `streamText(...)` become the primary app-facing
   multi-step runtime helpers
+- no public `Agent` / `ToolLoopAgent` abstraction in the first code slice
+- first code slice introduces provider event vocabulary, runtime adapters, and
+  boundary tests before migrating every provider codec
 
 ## M2: Provider Model-Call Stream
 
-Status: pending
+Status: in progress
 
 Acceptance criteria:
 
@@ -42,6 +45,18 @@ Acceptance criteria:
 - provider serialization tests cover the new vocabulary
 - provider packages still do not depend on runtime, chat, Flutter, root, or
   legacy code
+
+Progress:
+
+- 2026-05-13: added `LanguageModelStreamEvent` as the provider-owned stream
+  name, provider-side runtime-only event validation, AI runtime adapter seam,
+  and focused tests. This is a compatibility first slice; full provider
+  signature and codec migration is still pending.
+- 2026-05-13: changed `LanguageModel.doStream(...)` to advertise
+  `Stream<LanguageModelStreamEvent>` and connected the adapter at
+  `streamText(...)` plus `StreamTextRunner` provider-call boundaries. Existing
+  focused provider implementations still compile through the compatibility
+  typedef.
 
 ## M3: Unified Runtime Result Surface
 

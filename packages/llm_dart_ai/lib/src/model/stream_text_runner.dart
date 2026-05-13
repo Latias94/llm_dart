@@ -11,6 +11,7 @@ import 'generate_text_run_result.dart';
 import 'generate_text_runner_support.dart';
 import 'generate_text_step_result.dart';
 import 'generate_text_step_start_event.dart';
+import 'language_model_stream_adapter.dart';
 
 final class StreamTextRunResult extends StreamView<TextStreamEvent> {
   final Future<GenerateTextRunResult> result;
@@ -160,7 +161,11 @@ final class StreamTextRunner {
         await onStepStart?.call(stepStartEvent);
 
         final accumulator = GenerateTextResultAccumulator();
-        await for (final event in model.doStream(request)) {
+        final events = adaptLanguageModelStreamEvents(
+          model.doStream(request),
+          context: 'StreamTextRunner.modelStream',
+        );
+        await for (final event in events) {
           accumulator.apply(event);
           eventChannel.add(event);
           await onChunk?.call(event);

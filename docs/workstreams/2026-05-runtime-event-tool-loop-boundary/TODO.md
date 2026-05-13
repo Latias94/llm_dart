@@ -6,28 +6,46 @@
 - [x] Define the canonical goal text
 - [x] Record the initial reference and gap audit
 - [x] Draft the target runtime surface
-- [ ] Link implementation commits as they land
+- [x] Link first implementation slice as it landed
+- [ ] Link later implementation commits as they land
 
 ## Decision Freeze
 
-- [ ] Choose final names for provider model-call stream events
-- [ ] Choose final names for runtime full-stream events
-- [ ] Decide whether old `TextStreamEvent` remains provider-facing during a
+- [x] Choose final names for provider model-call stream events
+- [x] Choose final names for runtime full-stream events
+- [x] Decide whether old `TextStreamEvent` remains provider-facing during a
   transition or moves fully into `llm_dart_ai`
-- [ ] Decide whether single-call provider helpers need explicit public names
+- [x] Decide whether single-call provider helpers need explicit public names
   or remain available through `LanguageModel.doGenerate(...)` and
   `LanguageModel.doStream(...)`
-- [ ] Freeze whether an `Agent` / `ToolLoopAgent` abstraction is public in this
+- [x] Freeze whether an `Agent` / `ToolLoopAgent` abstraction is public in this
   line or kept internal behind chat direct transport
-- [ ] Freeze `prepareStep`, stop-condition, runtime-context, and tools-context
+- [x] Freeze `prepareStep`, stop-condition, runtime-context, and tools-context
   scope for the first implementation slice
-- [ ] Freeze callback vocabulary for run, step, model call, tool execution,
+- [x] Freeze callback vocabulary for run, step, model call, tool execution,
   chunk, finish, abort, and error events
+
+Decision notes:
+
+- provider model-call stream base name is `LanguageModelStreamEvent`
+- runtime full-stream base name is `TextStreamEvent`
+- `TextStreamEvent` moves to `llm_dart_ai` ownership and must not remain
+  provider-facing after the migration window
+- `generateText(...)` and `streamText(...)` become app-facing runtime helpers
+- provider single-call behavior remains available through
+  `LanguageModel.doGenerate(...)` and `LanguageModel.doStream(...)`
+- no public `Agent` / `ToolLoopAgent` abstraction in the first code slice
+- keep `maxSteps` initially; add composable stop conditions after the unified
+  runtime result foundation exists
+- first implementation slice introduces provider event vocabulary, runtime
+  adapters, and provider boundary tests before migrating every provider codec
 
 ## Provider Model-Call Boundary
 
-- [ ] Introduce a provider/model-call stream vocabulary that contains only
+- [x] Introduce a provider/model-call stream vocabulary that contains only
   model-call parts
+- [x] Add provider-side guards/tests that reject runtime-only events
+- [x] Add an AI-runtime adapter seam for provider model-call streams
 - [ ] Remove runtime `StepStartEvent` / `StepFinishEvent` ownership from the
   provider contract or mark them as runtime-only
 - [ ] Ensure provider codecs never need to emit chat/UI lifecycle chunks

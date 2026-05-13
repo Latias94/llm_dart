@@ -101,3 +101,9 @@ This workstream should not:
 - [02-target-runtime-surface.md](02-target-runtime-surface.md)
   - Proposed v2 runtime surface, event vocabulary, tool loop, and chat
     boundary.
+- [03-m1-boundary-decision-freeze.md](03-m1-boundary-decision-freeze.md)
+  - Frozen M1 names, ownership rules, migration story, callback vocabulary, and
+    first implementation slice.
+- [04-provider-event-vocabulary-first-slice.md](04-provider-event-vocabulary-first-slice.md)
+  - First implemented code seam for `LanguageModelStreamEvent`, provider event
+    validation, and AI runtime stream adaptation.

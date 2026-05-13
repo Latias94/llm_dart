@@ -4,7 +4,7 @@ import '../common/provider_metadata.dart';
 import '../common/usage_stats.dart';
 import '../content/content_part.dart';
 import '../prompt/prompt_message.dart';
-import '../stream/text_stream_event.dart';
+import '../stream/language_model_stream_event.dart';
 import '../tool/tool_definition.dart';
 import 'finish_reason.dart';
 import 'response_format.dart';
@@ -135,7 +135,7 @@ abstract interface class LanguageModel {
 
   Future<GenerateTextResult> doGenerate(GenerateTextRequest request);
 
-  Stream<TextStreamEvent> doStream(GenerateTextRequest request);
+  Stream<LanguageModelStreamEvent> doStream(GenerateTextRequest request);
 }
 
 void _validateToolConfiguration({

@@ -3,6 +3,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 import '../prompt/model_message.dart';
 import '../prompt/prompt_normalization.dart';
 import '../prompt/prompt_validation.dart';
+import 'language_model_stream_adapter.dart';
 
 export 'package:llm_dart_provider/llm_dart_provider.dart'
     show
@@ -53,13 +54,16 @@ Stream<TextStreamEvent> streamText({
   );
   validateProviderPrompt(providerPrompt, context: 'streamText.prompt');
 
-  return model.doStream(
-    GenerateTextRequest(
-      prompt: providerPrompt,
-      tools: tools,
-      toolChoice: toolChoice,
-      options: options,
-      callOptions: callOptions,
+  return adaptLanguageModelStreamEvents(
+    model.doStream(
+      GenerateTextRequest(
+        prompt: providerPrompt,
+        tools: tools,
+        toolChoice: toolChoice,
+        options: options,
+        callOptions: callOptions,
+      ),
     ),
+    context: 'streamText.modelStream',
   );
 }

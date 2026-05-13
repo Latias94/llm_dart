@@ -60,7 +60,7 @@ owner of model-call accumulation or provider stream semantics.
 
 ### Provider Model-Call Events
 
-Working name: `LanguageModelStreamEvent`.
+Final base name: `LanguageModelStreamEvent`.
 
 These events describe one provider/model invocation:
 
@@ -89,7 +89,7 @@ Rules:
 
 ### AI Runtime Full-Stream Events
 
-Working name: `TextStreamEvent` or `GenerateTextStreamEvent`.
+Final base name: `TextStreamEvent`.
 
 These events describe the whole generation run:
 
