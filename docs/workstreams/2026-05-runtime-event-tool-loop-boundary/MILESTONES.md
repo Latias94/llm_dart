@@ -77,6 +77,9 @@ Progress:
 - 2026-05-13: expanded provider boundary guards so provider-facing packages
   cannot runtime-depend on or import root, AI runtime, chat, or Flutter layers;
   also isolated the temporary AI legacy stream codec bridge to one wrapper.
+- 2026-05-13: marked `StepStartEvent`, `StepFinishEvent`,
+  `ToolOutputDeniedEvent`, and `AbortEvent` as runtime-only in provider
+  compatibility code and added focused provider guards against emitting them.
 
 ## M3: Unified Runtime Result Surface
 

@@ -48,7 +48,7 @@ Decision notes:
 - [x] Add an AI-runtime adapter seam for provider model-call streams
 - [x] Migrate focused provider production code to the
   `LanguageModelStreamEvent` name
-- [ ] Remove runtime `StepStartEvent` / `StepFinishEvent` ownership from the
+- [x] Remove runtime `StepStartEvent` / `StepFinishEvent` ownership from the
   provider contract or mark them as runtime-only
 - [ ] Ensure provider codecs never need to emit chat/UI lifecycle chunks
 - [x] Add serialization guards for provider model-call stream parts
@@ -66,7 +66,7 @@ Decision notes:
 - [ ] Ensure result accumulation is step-scoped and final-run scoped
 - [ ] Add step request/response metadata inclusion policy to avoid storing
   large payloads by default
-- [ ] Add guards so runtime step events cannot be emitted by provider packages
+- [x] Add guards so runtime step events cannot be emitted by provider packages
 
 ## Result Surface Consolidation
 

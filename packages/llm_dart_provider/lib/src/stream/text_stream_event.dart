@@ -199,6 +199,10 @@ final class ToolApprovalRequestEvent extends TextStreamEvent {
   });
 }
 
+/// Runtime-only event emitted when app code denies a pending tool output.
+///
+/// Provider model streams must not emit this event. It remains here only during
+/// the provider/runtime stream migration window.
 final class ToolOutputDeniedEvent extends TextStreamEvent {
   final String toolCallId;
   final String? reason;
@@ -227,6 +231,10 @@ final class FileEvent extends TextStreamEvent {
   });
 }
 
+/// Runtime-only event emitted by the multi-step AI runtime.
+///
+/// Provider model streams must not emit this event. It remains here only during
+/// the provider/runtime stream migration window.
 final class StepStartEvent extends TextStreamEvent {
   final String? stepId;
 
@@ -235,6 +243,10 @@ final class StepStartEvent extends TextStreamEvent {
   });
 }
 
+/// Runtime-only event emitted by the multi-step AI runtime.
+///
+/// Provider model streams must not emit this event. It remains here only during
+/// the provider/runtime stream migration window.
 final class StepFinishEvent extends TextStreamEvent {
   final String? stepId;
 
@@ -257,6 +269,10 @@ final class FinishEvent extends TextStreamEvent {
   });
 }
 
+/// Runtime-only event emitted when the app runtime aborts a stream.
+///
+/// Provider model streams must not emit this event. It remains here only during
+/// the provider/runtime stream migration window.
 final class AbortEvent extends TextStreamEvent {
   final String? reason;
 

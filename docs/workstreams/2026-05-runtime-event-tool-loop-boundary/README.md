@@ -125,3 +125,6 @@ This workstream should not:
 - [10-provider-runtime-dependency-guards.md](10-provider-runtime-dependency-guards.md)
   - Source and dependency guards that keep provider packages independent from
     AI runtime, chat, Flutter, and root app layers.
+- [11-runtime-only-provider-event-guard.md](11-runtime-only-provider-event-guard.md)
+  - Runtime-only event classes are marked in provider compatibility code and
+    focused provider packages are guarded from emitting them.

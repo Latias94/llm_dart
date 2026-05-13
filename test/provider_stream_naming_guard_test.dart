@@ -43,6 +43,47 @@ void main() {
       expect(violations, isEmpty);
     });
 
+    test('focused provider packages do not emit runtime-only events', () {
+      const roots = [
+        'packages/llm_dart_openai/lib',
+        'packages/llm_dart_anthropic/lib',
+        'packages/llm_dart_google/lib',
+        'packages/llm_dart_ollama/lib',
+        'packages/llm_dart_elevenlabs/lib',
+        'packages/llm_dart_test/lib',
+      ];
+      const forbiddenTokens = [
+        'StepStartEvent',
+        'StepFinishEvent',
+        'ToolOutputDeniedEvent',
+        'AbortEvent',
+      ];
+
+      final violations = <String>[];
+      for (final root in roots) {
+        final directory = Directory(root);
+        if (!directory.existsSync()) {
+          continue;
+        }
+
+        final dartFiles = directory
+            .listSync(recursive: true)
+            .whereType<File>()
+            .where((file) => file.path.endsWith('.dart'));
+
+        for (final file in dartFiles) {
+          final content = file.readAsStringSync();
+          for (final token in forbiddenTokens) {
+            if (content.contains(token)) {
+              violations.add('${file.path}: $token');
+            }
+          }
+        }
+      }
+
+      expect(violations, isEmpty);
+    });
+
     test('provider packages do not runtime-depend on app/runtime layers', () {
       const packageRoots = [
         'packages/llm_dart_provider',
