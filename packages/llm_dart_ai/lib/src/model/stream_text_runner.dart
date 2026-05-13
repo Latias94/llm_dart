@@ -57,6 +57,12 @@ final class StreamTextRunResult extends StreamView<TextStreamEvent> {
         (value) => value.totalUsage,
       );
 
+  Future<UsageStats?> get usage => totalUsage;
+
+  Future<List<ContentPart>> get content => result.then(
+        (value) => value.content,
+      );
+
   Future<String> get text => result.then(
         (value) => value.text,
       );
@@ -71,6 +77,43 @@ final class StreamTextRunResult extends StreamView<TextStreamEvent> {
 
   Future<String?> get rawFinishReason => result.then(
         (value) => value.rawFinishReason,
+      );
+
+  Future<List<SourceReference>> get sources => result.then(
+        (value) => value.sources,
+      );
+
+  Future<List<GeneratedFile>> get files => result.then(
+        (value) => value.files,
+      );
+
+  Future<List<ToolCallContent>> get toolCalls => result.then(
+        (value) => value.toolCalls,
+      );
+
+  Future<List<ToolResultContent>> get toolResults => result.then(
+        (value) => value.toolResults,
+      );
+
+  Future<List<ToolApprovalRequestContent>> get toolApprovalRequests =>
+      result.then(
+        (value) => value.toolApprovalRequests,
+      );
+
+  Future<String?> get responseId => result.then(
+        (value) => value.responseId,
+      );
+
+  Future<DateTime?> get responseTimestamp => result.then(
+        (value) => value.responseTimestamp,
+      );
+
+  Future<String?> get responseModelId => result.then(
+        (value) => value.responseModelId,
+      );
+
+  Future<ProviderMetadata?> get providerMetadata => result.then(
+        (value) => value.providerMetadata,
       );
 }
 

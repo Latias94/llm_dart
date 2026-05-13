@@ -101,6 +101,9 @@ Progress:
   accessors across `StreamTextRunResult`, `StreamTextCallResult`, and
   `StreamOutputResult` while preserving existing result types and structured
   output side channels.
+- 2026-05-13: expanded `StreamTextRunResult` final-result convenience
+  accessors so streaming run callers can inspect content, usage, metadata,
+  source, file, and tool data without manually awaiting `result`.
 
 ## M4: Tool Loop Runtime
 

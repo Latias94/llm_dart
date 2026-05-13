@@ -134,3 +134,6 @@ This workstream should not:
 - [13-direct-chat-transport-runtime-path.md](13-direct-chat-transport-runtime-path.md)
   - Direct chat transport now streams through the AI runtime path before
     projecting to chat UI chunks.
+- [14-stream-text-run-result-accessors.md](14-stream-text-run-result-accessors.md)
+  - `StreamTextRunResult` exposes final content, usage, metadata, source, file,
+    and tool convenience accessors.

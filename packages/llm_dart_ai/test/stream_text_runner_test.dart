@@ -8,6 +8,15 @@ void main() {
     test('streams a single generation step and returns a run result', () async {
       final model = _RecordingStreamLanguageModel([
         const [
+          ResponseMetadataEvent(
+            responseId: 'resp-1',
+            modelId: 'test-model',
+            providerMetadata: ProviderMetadata({
+              'test': {
+                'traceId': 'trace-1',
+              },
+            }),
+          ),
           TextStartEvent(id: 'text-1'),
           TextDeltaEvent(id: 'text-1', delta: 'Runner output'),
           TextEndEvent(id: 'text-1'),
@@ -73,9 +82,9 @@ void main() {
         const Duration(seconds: 30),
       );
 
-      expect(events, hasLength(4));
+      expect(events, hasLength(5));
       expect(events.whereType<TextDeltaEvent>().single.delta, 'Runner output');
-      expect(await run.textStream.toList(), hasLength(4));
+      expect(await run.textStream.toList(), hasLength(5));
 
       final uiChunks = await run.chatUiStream(
         messageId: 'assistant-1',
@@ -84,7 +93,7 @@ void main() {
         },
       ).toList();
       expect(uiChunks.first, isA<ChatUiMessageStartChunk>());
-      expect(uiChunks.whereType<ChatUiEventChunk>(), hasLength(4));
+      expect(uiChunks.whereType<ChatUiEventChunk>(), hasLength(5));
       expect(uiChunks.last, isA<ChatUiMessageFinishChunk>());
 
       expect(steps, hasLength(1));
@@ -94,6 +103,21 @@ void main() {
       expect(result.steps, hasLength(1));
       expect(result.text, 'Runner output');
       expect(result.totalUsage?.totalTokens, 12);
+      expect((await run.content).single, isA<TextContentPart>());
+      expect(
+        await run.usage,
+        const UsageStats(
+          inputTokens: 5,
+          outputTokens: 7,
+          totalTokens: 12,
+        ),
+      );
+      expect(await run.responseId, 'resp-1');
+      expect(await run.responseModelId, 'test-model');
+      expect(
+        (await run.providerMetadata)!['test'],
+        containsPair('traceId', 'trace-1'),
+      );
       expect(await run.text, 'Runner output');
       expect(await run.finishReason, FinishReason.stop);
     });
