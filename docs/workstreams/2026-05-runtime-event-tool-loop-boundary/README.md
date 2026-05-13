@@ -195,3 +195,6 @@ This workstream should not:
   - `ChatRequestOptions` now carries local runtime tool-loop options for
     `DirectChatTransport`, while `HttpChatTransport` rejects non-serializable
     local runtime hooks instead of dropping them.
+- [33-dynamic-tool-step-result-alignment.md](33-dynamic-tool-step-result-alignment.md)
+  - Declared dynamic tools can execute locally, and non-streaming step results
+    now fold local tool results in the same way as streaming step results.

@@ -97,9 +97,10 @@ Decision notes:
 - [ ] Add tool context and runtime context if they fit Dart ergonomics
 - [x] Add stop conditions beyond `maxSteps`
 - [ ] Add approval request/response continuation semantics
-- [ ] Add dynamic tool and tool input error semantics
-- [ ] Preserve provider-executed tools and deferred provider results
-- [ ] Preserve replay-safe provider options on prompt continuations
+- [x] Add dynamic tool semantics
+- [ ] Add tool input error semantics
+- [x] Preserve provider-executed tools and deferred provider results
+- [x] Preserve replay-safe provider options on prompt continuations
 
 ## Chat Boundary
 

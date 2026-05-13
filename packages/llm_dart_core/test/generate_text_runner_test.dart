@@ -92,6 +92,7 @@ void main() {
       ]);
       final executedCalls = <GenerateTextFunctionToolExecutionRequest>[];
       final stepStartEvents = <GenerateTextStepStartEvent>[];
+      final stepFinishEvents = <GenerateTextStepResult>[];
 
       final runResult = await runTextGeneration(
         model: model,
@@ -120,6 +121,7 @@ void main() {
         onStepStart: (event) {
           stepStartEvents.add(event);
         },
+        onStepFinish: stepFinishEvents.add,
       );
 
       expect(stepStartEvents, hasLength(2));
@@ -183,6 +185,8 @@ void main() {
       );
 
       expect(runResult.steps, hasLength(2));
+      expect(runResult.steps.first.toolResults, hasLength(1));
+      expect(stepFinishEvents.first.toolResults, hasLength(1));
       expect(runResult.text, 'It is sunny in Tokyo.');
       expect(runResult.finishReason, FinishReason.stop);
       expect(

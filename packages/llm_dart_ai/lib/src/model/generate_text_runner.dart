@@ -108,26 +108,26 @@ final class GenerateTextRunner {
         final result = await model.doGenerate(request);
         activeResult = result;
         _throwIfCancelled();
-        final step = GenerateTextStepResult(
+        var step = GenerateTextStepResult(
           stepNumber: stepNumber,
           providerId: model.providerId,
           modelId: model.modelId,
           request: request,
           result: result,
         );
-        await onStepFinish?.call(step);
-        previousSteps.add(step);
-        activeRequest = null;
-        activeStepNumber = null;
-        activeResult = null;
 
         if (step.finishReason != FinishReason.toolCalls) {
+          await onStepFinish?.call(step);
+          previousSteps.add(step);
+          activeRequest = null;
+          activeStepNumber = null;
+          activeResult = null;
           break;
         }
 
         _throwIfCancelled();
-        final toolContinuation =
-            await GenerateTextRunnerSupport.buildFunctionToolContinuation(
+        final toolExecutions =
+            await GenerateTextRunnerSupport.executeFunctionTools(
           step,
           declaredToolNames: declaredToolNames,
           functionToolExecutor: functionToolExecutor,
@@ -136,11 +136,29 @@ final class GenerateTextRunner {
           runnerName: 'GenerateTextRunner',
         );
         _throwIfCancelled();
-        if (toolContinuation == null ||
-            await isStopConditionMet(
-              stopConditions: stopWhen,
-              steps: previousSteps,
-            )) {
+        if (toolExecutions == null) {
+          await onStepFinish?.call(step);
+          previousSteps.add(step);
+          activeRequest = null;
+          activeStepNumber = null;
+          activeResult = null;
+          break;
+        }
+
+        step = GenerateTextRunnerSupport.addToolExecutionsToStep(
+          step,
+          toolExecutions,
+        );
+        await onStepFinish?.call(step);
+        previousSteps.add(step);
+        activeRequest = null;
+        activeStepNumber = null;
+        activeResult = null;
+
+        if (await isStopConditionMet(
+          stopConditions: stopWhen,
+          steps: previousSteps,
+        )) {
           break;
         }
 
@@ -150,7 +168,6 @@ final class GenerateTextRunner {
             step,
             runnerName: 'GenerateTextRunner',
           ),
-          ...toolContinuation,
         ];
       }
 

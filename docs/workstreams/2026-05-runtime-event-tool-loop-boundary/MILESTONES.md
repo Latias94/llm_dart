@@ -184,6 +184,10 @@ Progress:
 - 2026-05-13: deferred dedicated tool-input streaming callbacks because tool
   input chunks are already first-class `TextStreamEvent` values observable via
   `streamText(...)`, `streamTextRun(...)`, and `onChunk`.
+- 2026-05-13: aligned dynamic tool handling with the runtime boundary:
+  declared dynamic tools can execute locally, provider-executed tools still do
+  not call local executors, and non-streaming step results now fold local tool
+  results the same way as streaming step results.
 
 ## M5: Chat Runtime Integration
 

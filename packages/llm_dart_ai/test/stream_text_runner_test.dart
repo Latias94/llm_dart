@@ -669,6 +669,65 @@ void main() {
       expect(steps, hasLength(2));
     });
 
+    test('executes declared dynamic tools and preserves dynamic stream result',
+        () async {
+      final model = _RecordingStreamLanguageModel([
+        const [
+          ToolCallEvent(
+            toolCall: ToolCallContent(
+              toolCallId: 'dynamic-tool-1',
+              toolName: 'weather',
+              input: {
+                'city': 'Tokyo',
+              },
+              isDynamic: true,
+            ),
+          ),
+          FinishEvent(finishReason: FinishReason.toolCalls),
+        ],
+        const [
+          TextStartEvent(id: 'text-1'),
+          TextDeltaEvent(id: 'text-1', delta: 'Dynamic tool completed.'),
+          TextEndEvent(id: 'text-1'),
+          FinishEvent(finishReason: FinishReason.stop),
+        ],
+      ]);
+      final executedCalls = <GenerateTextFunctionToolExecutionRequest>[];
+
+      final run = streamTextRun(
+        model: model,
+        prompt: [
+          UserPromptMessage.text('Use the selected weather tool.'),
+        ],
+        tools: [
+          FunctionToolDefinition(
+            name: 'weather',
+            inputSchema: ToolJsonSchema.object(),
+          ),
+        ],
+        functionToolExecutor: (request) {
+          executedCalls.add(request);
+          return const GenerateTextToolExecutionResult.output({
+            'forecast': 'sunny',
+          });
+        },
+      );
+
+      final events = await run.toList();
+      final steps = await run.stepStream.toList();
+      final result = await run.result;
+
+      expect(executedCalls, hasLength(1));
+      expect(executedCalls.single.toolCall.isDynamic, isTrue);
+      expect(
+        events.whereType<ToolResultEvent>().single.toolResult.isDynamic,
+        isTrue,
+      );
+      expect(steps.first.toolResults.single.isDynamic, isTrue);
+      expect(result.text, 'Dynamic tool completed.');
+      expect(model.requests, hasLength(2));
+    });
+
     test('throws when streamed continuation exceeds maxSteps', () async {
       final model = _RecordingStreamLanguageModel([
         const [

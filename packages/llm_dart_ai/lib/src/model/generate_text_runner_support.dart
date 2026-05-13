@@ -185,12 +185,6 @@ final class GenerateTextRunnerSupport {
     final executions = <GenerateTextToolExecution>[];
 
     for (final toolCall in clientToolCalls) {
-      if (toolCall.isDynamic) {
-        throw UnsupportedError(
-          '$runnerName does not support dynamic tool calls yet.',
-        );
-      }
-
       if (!declaredToolNames.contains(toolCall.toolName)) {
         throw StateError(
           'Tool "${toolCall.toolName}" was not declared in $runnerName.tools.',
@@ -261,6 +255,45 @@ final class GenerateTextRunnerSupport {
     return executions
         ?.map((execution) => execution.toPromptMessage())
         .toList(growable: false);
+  }
+
+  static GenerateTextStepResult addToolExecutionsToStep(
+    GenerateTextStepResult step,
+    List<GenerateTextToolExecution> executions,
+  ) {
+    if (executions.isEmpty) {
+      return step;
+    }
+
+    return GenerateTextStepResult(
+      stepNumber: step.stepNumber,
+      providerId: step.providerId,
+      modelId: step.modelId,
+      request: step.request,
+      result: GenerateTextResult(
+        content: [
+          ...step.content,
+          for (final execution in executions)
+            ToolResultContentPart(
+              ToolResultContent(
+                toolCallId: execution.toolCall.toolCallId,
+                toolName: execution.toolCall.toolName,
+                toolOutput: execution.result.toolOutput,
+                isDynamic: execution.toolCall.isDynamic,
+              ),
+              providerMetadata: execution.providerMetadata,
+            ),
+        ],
+        finishReason: step.finishReason,
+        rawFinishReason: step.rawFinishReason,
+        responseId: step.responseId,
+        responseTimestamp: step.responseTimestamp,
+        responseModelId: step.responseModelId,
+        usage: step.usage,
+        providerMetadata: step.providerMetadata,
+        warnings: step.warnings,
+      ),
+    );
   }
 
   static ProviderMetadata? toolCallProviderMetadata(

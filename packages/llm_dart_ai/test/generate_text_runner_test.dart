@@ -164,6 +164,7 @@ void main() {
       ]);
       final executedCalls = <GenerateTextFunctionToolExecutionRequest>[];
       final stepStartEvents = <GenerateTextStepStartEvent>[];
+      final stepFinishEvents = <GenerateTextStepResult>[];
 
       final runResult = await runTextGeneration(
         model: model,
@@ -192,6 +193,7 @@ void main() {
         onStepStart: (event) {
           stepStartEvents.add(event);
         },
+        onStepFinish: stepFinishEvents.add,
       );
 
       expect(stepStartEvents, hasLength(2));
@@ -255,6 +257,8 @@ void main() {
       );
 
       expect(runResult.steps, hasLength(2));
+      expect(runResult.steps.first.toolResults, hasLength(1));
+      expect(stepFinishEvents.first.toolResults, hasLength(1));
       expect(runResult.text, 'It is sunny in Tokyo.');
       expect(runResult.finishReason, FinishReason.stop);
       expect(
@@ -450,6 +454,74 @@ void main() {
           toolMessages.single.parts.single as ToolResultPromptPart;
       expect(toolResult.toolCallId, 'client-tool-1');
       expect(runResult.text, 'Done.');
+    });
+
+    test('executes declared dynamic tools and preserves dynamic result flag',
+        () async {
+      final model = _RecordingLanguageModel([
+        GenerateTextResult(
+          content: const [
+            ToolCallContentPart(
+              ToolCallContent(
+                toolCallId: 'dynamic-tool-1',
+                toolName: 'weather',
+                input: {
+                  'city': 'Tokyo',
+                },
+                isDynamic: true,
+              ),
+            ),
+          ],
+          finishReason: FinishReason.toolCalls,
+        ),
+        GenerateTextResult(
+          content: const [
+            TextContentPart('Dynamic tool completed.'),
+          ],
+          finishReason: FinishReason.stop,
+        ),
+      ]);
+      final executedCalls = <GenerateTextFunctionToolExecutionRequest>[];
+
+      final runResult = await runTextGeneration(
+        model: model,
+        prompt: [
+          UserPromptMessage.text('Use the selected weather tool.'),
+        ],
+        tools: [
+          FunctionToolDefinition(
+            name: 'weather',
+            inputSchema: ToolJsonSchema.object(),
+          ),
+        ],
+        functionToolExecutor: (request) {
+          executedCalls.add(request);
+          return const GenerateTextToolExecutionResult.output({
+            'forecast': 'sunny',
+          });
+        },
+      );
+
+      expect(executedCalls, hasLength(1));
+      expect(executedCalls.single.toolCall.isDynamic, isTrue);
+
+      final firstStep = runResult.steps.first;
+      expect(firstStep.toolResults, hasLength(1));
+      expect(firstStep.toolResults.single.isDynamic, isTrue);
+
+      final continuationPrompt = model.requests[1].prompt;
+      final assistantMessage = continuationPrompt[1] as AssistantPromptMessage;
+      final replayedCall =
+          assistantMessage.parts.whereType<ToolCallPromptPart>().single;
+      expect(replayedCall.isDynamic, isTrue);
+
+      final toolMessage = continuationPrompt[2] as ToolPromptMessage;
+      final toolResult = toolMessage.parts.single as ToolResultPromptPart;
+      expect(toolResult.toolCallId, 'dynamic-tool-1');
+      expect(toolResult.output, {
+        'forecast': 'sunny',
+      });
+      expect(runResult.text, 'Dynamic tool completed.');
     });
 
     test('stops after a tool-call step when no function executor is provided',
