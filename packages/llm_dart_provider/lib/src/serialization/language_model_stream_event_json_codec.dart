@@ -2,7 +2,6 @@ import '../common/json_codec_common.dart';
 import '../content/content_part.dart';
 import '../model/finish_reason.dart';
 import '../stream/language_model_stream_event.dart';
-import '../stream/text_stream_event.dart';
 import 'serialization_json_support.dart';
 import 'serialization_protocol.dart';
 
@@ -281,10 +280,6 @@ final class LanguageModelStreamEventJsonCodec {
           'type': 'error',
           'error': SerializationJsonSupport.encodeModelError(error),
         },
-      _ => _throwRuntimeOnlyEvent(
-          event,
-          context: 'LanguageModelStreamEventJsonCodec.encodeEvent',
-        ),
     };
   }
 
@@ -618,16 +613,6 @@ final class LanguageModelStreamEventJsonCodec {
     }
 
     return value;
-  }
-
-  Never _throwRuntimeOnlyEvent(
-    Object event, {
-    required String context,
-  }) {
-    throw StateError(
-      '$context cannot contain runtime-only event ${event.runtimeType}. '
-      'Provider stream serialization may emit only model-call events.',
-    );
   }
 
   Never _throwRuntimeOnlyType(

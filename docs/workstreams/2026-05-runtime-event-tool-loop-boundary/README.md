@@ -150,3 +150,7 @@ This workstream should not:
 - [18-provider-public-stream-export-narrowing.md](18-provider-public-stream-export-narrowing.md)
   - `llm_dart_provider` no longer publicly exports the legacy full-stream
     event base, runtime-only events, or the legacy full-stream codec.
+- [19-provider-native-stream-event-vocabulary.md](19-provider-native-stream-event-vocabulary.md)
+  - `llm_dart_provider` now owns a real provider-only
+    `LanguageModelStreamEvent` sealed class and no longer contains the legacy
+    full-stream event file or codec.

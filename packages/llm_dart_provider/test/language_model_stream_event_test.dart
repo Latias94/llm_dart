@@ -1,6 +1,4 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
-import 'package:llm_dart_provider/src/stream/text_stream_event.dart'
-    as provider_legacy;
 import 'package:test/test.dart';
 
 void main() {
@@ -24,23 +22,6 @@ void main() {
         expect(
           () => validateLanguageModelStreamEvent(event),
           returnsNormally,
-        );
-      }
-    });
-
-    test('rejects runtime-only events', () {
-      final events = <LanguageModelStreamEvent>[
-        const provider_legacy.StepStartEvent(stepId: 'step-1'),
-        const provider_legacy.StepFinishEvent(stepId: 'step-1'),
-        const provider_legacy.ToolOutputDeniedEvent(toolCallId: 'tool-1'),
-        const provider_legacy.AbortEvent(reason: 'cancelled'),
-      ];
-
-      for (final event in events) {
-        expect(isLanguageModelStreamEvent(event), isFalse);
-        expect(
-          () => validateLanguageModelStreamEvent(event),
-          throwsA(isA<StateError>()),
         );
       }
     });

@@ -139,7 +139,6 @@ TextStreamEvent textStreamEventFromProvider(
       ),
     provider.RawChunkEvent(:final raw) => RawChunkEvent(raw),
     provider.ErrorEvent(:final error) => ErrorEvent(error),
-    _ => _throwUnexpectedProviderRuntimeEvent(event),
   };
 }
 
@@ -294,13 +293,6 @@ TextStreamEvent languageModelStreamEventToTextStreamEvent(
 }) {
   provider.validateLanguageModelStreamEvent(event, context: context);
   return textStreamEventFromProvider(event);
-}
-
-Never _throwUnexpectedProviderRuntimeEvent(Object event) {
-  throw StateError(
-    'Provider runtime-only event ${event.runtimeType} cannot be adapted as a '
-    'language model stream event.',
-  );
 }
 
 Never _throwRuntimeOnlyAiEvent(TextStreamEvent event) {

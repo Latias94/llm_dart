@@ -38,7 +38,6 @@ without changing provider contracts.
 
 ## Remaining Work
 
-Provider no longer exposes the legacy full-stream class names from its public
-entrypoint. The remaining compatibility debt is the internal provider event
-file, which still holds legacy runtime-only classes for migration tests until a
-provider-only event vocabulary can replace it completely.
+Provider no longer exposes or internally owns the legacy full-stream class
+names. Remaining work is now in higher-level runtime result and tool-loop
+consolidation rather than provider stream compatibility.

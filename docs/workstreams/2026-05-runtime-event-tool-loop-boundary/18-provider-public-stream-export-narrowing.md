@@ -47,7 +47,6 @@ debt visible instead of public.
 
 ## Remaining Work
 
-The internal provider compatibility event file should eventually be split into
-a provider-only event vocabulary or removed once no package needs it for
-migration tests. That can happen after focused provider codecs and public docs
-no longer rely on the old file shape.
+The internal provider compatibility event file has now been removed in the
+next slice. Remaining work moves to naming ergonomics and broader runtime tool
+loop consolidation rather than provider full-stream compatibility.

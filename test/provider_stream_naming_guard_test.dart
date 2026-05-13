@@ -194,6 +194,10 @@ void main() {
       );
       expect(
         content,
+        isNot(contains("export 'src/stream/text_stream_event.dart'")),
+      );
+      expect(
+        content,
         contains(
           "export 'src/serialization/"
           "language_model_stream_event_json_codec.dart'",
@@ -203,23 +207,35 @@ void main() {
         content,
         contains("export 'src/stream/language_model_stream_event.dart'"),
       );
+    });
 
-      final hiddenExport = RegExp(
-        r"export 'src/stream/text_stream_event\.dart'\s+hide\s+([^;]+);",
-      ).firstMatch(content);
-      expect(hiddenExport, isNotNull);
-      final hiddenNames = hiddenExport!.group(1)!;
+    test('provider internals no longer own full-stream runtime events', () {
+      final providerLib = Directory('packages/llm_dart_provider/lib');
 
-      const hiddenRuntimeNames = [
+      const forbiddenTokens = [
         'TextStreamEvent',
+        'TextStreamEventJsonCodec',
         'StepStartEvent',
         'StepFinishEvent',
         'ToolOutputDeniedEvent',
         'AbortEvent',
       ];
-      for (final name in hiddenRuntimeNames) {
-        expect(hiddenNames, contains(name));
+
+      final violations = <String>[];
+      final dartFiles = providerLib
+          .listSync(recursive: true)
+          .whereType<File>()
+          .where((file) => file.path.endsWith('.dart'));
+      for (final file in dartFiles) {
+        final content = file.readAsStringSync();
+        for (final token in forbiddenTokens) {
+          if (content.contains(token)) {
+            violations.add('${file.path}: $token');
+          }
+        }
       }
+
+      expect(violations, isEmpty);
     });
   });
 }

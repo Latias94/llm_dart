@@ -1,6 +1,4 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
-import 'package:llm_dart_provider/src/stream/text_stream_event.dart'
-    as provider_legacy;
 import 'package:test/test.dart';
 
 void main() {
@@ -28,24 +26,6 @@ void main() {
       expect(decoded[1], isA<ResponseMetadataEvent>());
       expect(decoded[3], isA<TextDeltaEvent>());
       expect(decoded.last, isA<FinishEvent>());
-    });
-
-    test('rejects runtime-only events during encoding', () {
-      const codec = LanguageModelStreamEventJsonCodec();
-
-      expect(
-        () => codec.encodeEvent(
-          const provider_legacy.StepStartEvent(stepId: 'step-1'),
-        ),
-        throwsA(isA<StateError>()),
-      );
-      expect(
-        () => codec.encodeEvents([
-          StartEvent(),
-          const provider_legacy.AbortEvent(reason: 'cancelled'),
-        ]),
-        throwsA(isA<StateError>()),
-      );
     });
 
     test('rejects runtime-only events during decoding', () {

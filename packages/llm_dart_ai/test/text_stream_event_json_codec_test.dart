@@ -1,10 +1,5 @@
-// ignore_for_file: implementation_imports
-
 import 'package:llm_dart_ai/llm_dart_ai.dart' as ai;
-import 'package:llm_dart_provider/src/serialization/text_stream_event_json_codec.dart'
-    as provider_codec;
-import 'package:llm_dart_provider/src/stream/text_stream_event.dart'
-    as provider_stream;
+import 'package:llm_dart_provider/llm_dart_provider.dart' as provider;
 import 'package:test/test.dart';
 
 void main() {
@@ -13,15 +8,14 @@ void main() {
       const codec = ai.TextStreamEventJsonCodec();
 
       expect(codec, isA<ai.TextStreamEventJsonCodec>());
-      expect(codec, isNot(isA<provider_codec.TextStreamEventJsonCodec>()));
     });
 
     test('owns event implementations separately from provider events', () {
       final event = ai.StartEvent();
 
       expect(event, isA<ai.TextStreamEvent>());
-      expect(event, isNot(isA<provider_stream.TextStreamEvent>()));
-      expect(event, isNot(isA<provider_stream.StartEvent>()));
+      expect(event, isNot(isA<provider.LanguageModelStreamEvent>()));
+      expect(event, isNot(isA<provider.StartEvent>()));
     });
 
     test('keeps the existing full-stream wire shape', () {

@@ -52,9 +52,11 @@ Decision notes:
   provider contract or mark them as runtime-only
 - [x] Remove provider public exports for `TextStreamEvent`,
   `TextStreamEventJsonCodec`, and runtime-only full-stream events
+- [x] Remove provider internal legacy `TextStreamEvent` ownership and make
+  `LanguageModelStreamEvent` the real provider model-call base
 - [x] Ensure provider codecs never need to emit chat/UI lifecycle chunks
 - [x] Add serialization guards for provider model-call stream parts
-- [ ] Update focused providers to emit the new model-call stream parts
+- [x] Update focused providers to emit the new model-call stream parts
 - [ ] Keep provider metadata response-side and replay-only
 
 ## AI Runtime Full Stream

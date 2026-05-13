@@ -1,42 +1,68 @@
-// ignore_for_file: implementation_imports
-
 import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'package:llm_dart_provider/llm_dart_provider.dart' as provider;
-import 'package:llm_dart_provider/src/stream/text_stream_event.dart'
-    as provider_legacy;
 import 'package:test/test.dart';
 
 void main() {
   group('language model stream boundary', () {
-    test('streamText rejects runtime-only events from provider streams',
+    test('streamText maps provider model-call events to runtime events',
         () async {
       final stream = streamText(
         model: _StreamModel([
-          const provider_legacy.StepStartEvent(stepId: 'step-1'),
+          provider.StartEvent(),
+          const provider.TextStartEvent(id: 'text-1'),
+          const provider.TextDeltaEvent(id: 'text-1', delta: 'Hello'),
+          const provider.TextEndEvent(id: 'text-1'),
+          const provider.FinishEvent(
+            finishReason: provider.FinishReason.stop,
+          ),
         ]),
         messages: [
           UserModelMessage.text('Hello'),
         ],
       );
 
-      await expectLater(stream, emitsError(isA<StateError>()));
+      await expectLater(
+        stream,
+        emitsInOrder([
+          isA<StartEvent>(),
+          isA<TextStartEvent>(),
+          isA<TextDeltaEvent>(),
+          isA<TextEndEvent>(),
+          isA<FinishEvent>(),
+          emitsDone,
+        ]),
+      );
     });
 
-    test('streamTextRun rejects runtime-only events from provider streams',
+    test('streamTextRun maps provider model-call events and final result',
         () async {
       final result = streamTextRun(
         model: _StreamModel([
-          const provider_legacy.StepStartEvent(stepId: 'step-1'),
+          provider.StartEvent(),
+          const provider.TextStartEvent(id: 'text-1'),
+          const provider.TextDeltaEvent(id: 'text-1', delta: 'Hello'),
+          const provider.TextEndEvent(id: 'text-1'),
+          const provider.FinishEvent(
+            finishReason: provider.FinishReason.stop,
+          ),
         ]),
         messages: [
           UserModelMessage.text('Hello'),
         ],
       );
 
-      await Future.wait([
-        expectLater(result.eventStream, emitsError(isA<StateError>())),
-        expectLater(result.result, throwsA(isA<StateError>())),
-      ]);
+      await expectLater(
+        result.eventStream,
+        emitsInOrder([
+          isA<StartEvent>(),
+          isA<TextStartEvent>(),
+          isA<TextDeltaEvent>(),
+          isA<TextEndEvent>(),
+          isA<FinishEvent>(),
+          emitsDone,
+        ]),
+      );
+      expect((await result.result).text, 'Hello');
     });
   });
 }

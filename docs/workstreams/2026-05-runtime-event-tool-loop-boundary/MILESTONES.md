@@ -87,6 +87,10 @@ Progress:
   `llm_dart_provider` no longer exposes `TextStreamEvent`,
   `TextStreamEventJsonCodec`, or runtime-only full-stream events from its
   public entrypoint.
+- 2026-05-13: replaced the provider internal compatibility typedef with a real
+  `LanguageModelStreamEvent` sealed class, removed the provider legacy
+  full-stream event file and codec, and made provider event classes extend the
+  provider model-call base directly.
 
 ## M3: Unified Runtime Result Surface
 
