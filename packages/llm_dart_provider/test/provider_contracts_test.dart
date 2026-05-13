@@ -157,21 +157,13 @@ void main() {
         parts: [
           const TextToolOutputContentPart(
             'forecast',
-            providerMetadata: ProviderMetadata({
-              'anthropic': {
-                'blockId': 'text_1',
-              },
-            }),
+            providerOptions: _TestPromptPartOptions(),
           ),
           const FileToolOutputContentPart(
             mediaType: 'image/png',
             filename: 'preview.png',
             data: FileBytesData.constBytes([1, 2, 3]),
-            providerMetadata: ProviderMetadata({
-              'openai': {
-                'fileId': 'file_123',
-              },
-            }),
+            providerOptions: _TestPromptPartOptions(),
           ),
           const CustomToolOutputContentPart(
             kind: 'openai.computer_screenshot',
@@ -189,15 +181,11 @@ void main() {
       );
 
       final text = output.parts[0] as TextToolOutputContentPart;
-      expect(
-        text.providerMetadata!['anthropic'],
-        containsPair('blockId', 'text_1'),
-      );
+      expect(text.providerOptions, isA<_TestPromptPartOptions>());
 
       final file = output.parts[1] as FileToolOutputContentPart;
       expect(file.bytes, [1, 2, 3]);
-      expect(
-          file.providerMetadata!['openai'], containsPair('fileId', 'file_123'));
+      expect(file.providerOptions, isA<_TestPromptPartOptions>());
 
       final custom = output.parts[2] as CustomToolOutputContentPart;
       expect(custom.kind, 'openai.computer_screenshot');
@@ -810,7 +798,9 @@ final class _TestModelOptions implements ProviderModelOptions {}
 
 final class _OtherModelOptions implements ProviderModelOptions {}
 
-final class _TestPromptPartOptions implements ProviderPromptPartOptions {}
+final class _TestPromptPartOptions implements ProviderPromptPartOptions {
+  const _TestPromptPartOptions();
+}
 
 final class _OtherPromptPartOptions implements ProviderPromptPartOptions {}
 

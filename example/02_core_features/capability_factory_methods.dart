@@ -1,345 +1,129 @@
-import 'dart:io';
+// ignore_for_file: avoid_print
 
-import 'package:llm_dart/builder/llm_builder.dart';
-import 'package:llm_dart/models/audio_models.dart';
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/elevenlabs.dart' as elevenlabs;
+import 'package:llm_dart/google.dart' as google;
+import 'package:llm_dart/ollama.dart' as ollama;
+import 'package:llm_dart/openai.dart' as openai;
 
-/// Compatibility builder methods for provider capability families.
+/// Focused model and lifecycle factories.
 ///
-/// These helpers provide stronger typing than `build()` plus manual casts when
-/// you still need the older root builder surface:
-/// - buildAudio() - Returns AudioCapability directly
-/// - buildImageGeneration() - Returns ImageGenerationCapability directly
-/// - buildEmbedding() - Returns EmbeddingCapability directly
-/// - buildFileManagement() - Returns FileManagementCapability directly
-/// - buildModeration() - Returns ModerationCapability directly
-/// - buildAssistant() - Returns OpenAI AssistantCapability directly
-/// - buildModelListing() - Returns ModelListingCapability directly
-///
-/// This is not the new primary app architecture.
-///
-/// For new app-facing code, prefer stable short factories when they exist:
-/// - `<provider>(...).chatModel(...)`
-/// - `<provider>(...).embeddingModel(...)`
-/// - `<provider>(...).imageModel(...)`
-/// - `<provider>(...).speechModel(...)`
-/// - `<provider>(...).transcriptionModel(...)`
-///
-/// Keep `build*()` mainly for migration and for capability families that still
-/// remain provider-owned on the root package.
-///
-/// Benefits inside the compatibility layer:
-/// - Compile-time type safety
-/// - No runtime type casting needed
-/// - Clear error messages for unsupported capabilities
-/// - Cleaner, more readable code
-///
-/// Before running, set your API keys:
-/// export OPENAI_API_KEY="your-key"
-/// export ELEVENLABS_API_KEY="your-key"
-void main() async {
-  print('Compatibility Builder Methods for Provider Capabilities\n');
+/// Older versions used root builder helpers to discover or cast provider
+/// capabilities. The modern shape is intentionally simpler:
+/// - construct the provider facade you actually want
+/// - ask it for a concrete model or provider-owned client
+/// - inspect `CapabilityDescribedModel` when app UI needs feature gates
+void main() {
+  print('Focused Factory Methods\n');
 
-  // Position these helpers relative to the stable short factories.
-  demonstrateStableFirstPositioning();
-
-  // Compare raw build() + cast with typed compatibility builders.
-  await demonstrateCastVsCompatibilityBuild();
-
-  // Show typed compatibility capability building.
-  await demonstrateTypedCompatibilityBuilding();
-
-  // Show error handling for unsupported capabilities.
-  await demonstrateErrorHandling();
-
-  // Show practical migration usage examples.
-  await demonstratePracticalUsage();
-
-  print('\nCompatibility builder demo completed.');
-  print(
-      'Use short provider factories first when stable model factories exist.');
+  demonstrateOpenAIFactories();
+  demonstrateGoogleFactories();
+  demonstrateElevenLabsFactories();
+  demonstrateOllamaFactories();
+  explainMigrationRule();
 }
 
-void demonstrateStableFirstPositioning() {
-  print('Stable-first positioning:\n');
+void demonstrateOpenAIFactories() {
+  print('--- OpenAI ---');
 
-  print('   New app code should usually start here:');
-  print('   ```dart');
-  print(
-      "   final chatModel = openai(apiKey: apiKey).chatModel('gpt-4.1-mini');");
-  print(
-      "   final embeddingModel = openai(apiKey: apiKey).embeddingModel('text-embedding-3-small');");
-  print("   final imageModel = openai(apiKey: apiKey).imageModel('dall-e-3');");
-  print('   ```');
-  print('');
+  final provider = openai.openai(apiKey: 'demo-key');
+  final chat = provider.chatModel(
+    'gpt-4.1-mini',
+    settings: const openai.OpenAIChatModelSettings(useResponsesApi: true),
+  );
+  final embeddings = provider.embeddingModel('text-embedding-3-small');
+  final image = provider.imageModel('gpt-image-1');
+  final speech = provider.speechModel('gpt-4o-mini-tts');
+  final transcription = provider.transcriptionModel('gpt-4o-mini-transcribe');
+  final moderation = provider.moderation();
+  final files = provider.files();
+  final assistants = provider.assistants();
+  final responses = provider.responsesLifecycle();
 
-  print(
-      '   Use `build*()` mainly when you still need the root builder surface:');
-  print('      • migration from `build()` plus runtime casts');
-  print('      • provider-owned capability families');
-  print('      • typed access before a stable shared facade exists');
+  _printProfile('chat', chat);
+  _printProfile('embeddings', embeddings);
+  _printProfile('image', image);
+  _printProfile('speech', speech);
+  _printProfile('transcription', transcription);
+  print('  moderation client: ${moderation.runtimeType}');
+  print('  files client: ${files.runtimeType}');
+  print('  assistants client: ${assistants.runtimeType}');
+  print('  responses lifecycle client: ${responses.runtimeType}');
   print('');
 }
 
-/// Compare raw build() + cast against typed compatibility builders.
-Future<void> demonstrateCastVsCompatibilityBuild() async {
-  print('Raw build() + cast vs typed compatibility builders:\n');
+void demonstrateGoogleFactories() {
+  print('--- Google ---');
 
-  // final apiKey = Platform.environment['OPENAI_API_KEY'] ?? 'sk-TESTKEY';
-
-  print('   Raw compatibility approach (runtime type casting):');
-  print('   ```dart');
-  print(
-      '   final provider = await LLMBuilder().openai().apiKey(apiKey).build();');
-  print('   if (provider is! AudioCapability) {');
-  print('     throw Exception("Not supported");');
-  print('   }');
-  print(
-      '   final audioProvider = provider as AudioCapability; // Runtime cast!');
-  print('   final voices = await audioProvider.getVoices();');
-  print('   ```');
-  print('');
-
-  print('   Typed compatibility approach:');
-  print('   ```dart');
-  print(
-      '   final audioProvider = await LLMBuilder().openai().apiKey(apiKey).buildAudio();');
-  print('   final voices = await audioProvider.getVoices(); // Direct usage!');
-  print('   ```');
-  print('');
-
-  print('   Stable-first reminder:');
-  print(
-      '      • Prefer short provider model factories for new app-facing code');
-  print(
-      '      • Use `build*()` when you are still on the compatibility surface');
-  print(
-      '      • Keep provider-specific lifecycle APIs behind clear boundaries');
+  final provider = google.google(apiKey: 'demo-key');
+  _printProfile('chat', provider.chatModel('gemini-2.5-flash'));
+  _printProfile('embeddings', provider.embeddingModel('text-embedding-004'));
+  _printProfile('image', provider.imageModel('imagen-4.0-generate-001'));
+  _printProfile(
+    'speech',
+    provider.speechModel(
+      'gemini-2.5-flash-preview-tts',
+      settings: const google.GoogleSpeechModelSettings(defaultVoice: 'Kore'),
+    ),
+  );
   print('');
 }
 
-/// Demonstrate typed compatibility capability building.
-Future<void> demonstrateTypedCompatibilityBuilding() async {
-  print('Typed compatibility builder examples:\n');
+void demonstrateElevenLabsFactories() {
+  print('--- ElevenLabs ---');
 
-  final openaiKey = Platform.environment['OPENAI_API_KEY'];
-  final elevenlabsKey = Platform.environment['ELEVENLABS_API_KEY'];
-
-  if (openaiKey != null) {
-    print('   OpenAI compatibility builders:');
-
-    try {
-      // Audio capability
-      print('      Building audio capability...');
-      final audioProvider =
-          await LLMBuilder().openai().apiKey(openaiKey).buildAudio();
-
-      print('         Audio provider built successfully');
-      print('         Type: ${audioProvider.runtimeType}');
-
-      // Test audio functionality
-      final voices = await audioProvider.getVoices();
-      print('         Available voices: ${voices.length} voices');
-
-      // Image generation capability
-      print('      Building image generation capability...');
-      final imageProvider = await LLMBuilder()
-          .openai()
-          .apiKey(openaiKey)
-          .model('dall-e-3')
-          .buildImageGeneration();
-
-      print('         Image generation provider built successfully');
-      print('         Type: ${imageProvider.runtimeType}');
-
-      // Test image generation functionality
-      final formats = imageProvider.getSupportedFormats();
-      print('         Supported formats: ${formats.join(', ')}');
-
-      // Embedding capability
-      print('      Building embedding capability...');
-      final embeddingProvider = await LLMBuilder()
-          .openai()
-          .apiKey(openaiKey)
-          .model('text-embedding-3-small')
-          .buildEmbedding();
-
-      print('         Embedding provider built successfully');
-      print('         Type: ${embeddingProvider.runtimeType}');
-
-      // Test embedding functionality
-      final embeddings = await embeddingProvider.embed(['Hello world']);
-      print('         Generated embeddings: ${embeddings.length} vectors');
-
-      // Model listing capability
-      print('      Building model listing capability...');
-      final modelProvider =
-          await LLMBuilder().openai().apiKey(openaiKey).buildModelListing();
-
-      print('         Model listing provider built successfully');
-      print('         Type: ${modelProvider.runtimeType}');
-
-      // Test model listing functionality
-      final models = await modelProvider.models();
-      print('         Available models: ${models.length} models');
-    } catch (e) {
-      print('      OpenAI capability building failed: $e');
-    }
-    print('');
-  }
-
-  if (elevenlabsKey != null) {
-    print('   ElevenLabs compatibility builders:');
-
-    try {
-      // Audio capability (ElevenLabs specializes in audio)
-      print('      Building audio capability...');
-      final audioProvider = await LLMBuilder()
-          .elevenlabs(
-              (elevenlabs) => elevenlabs.voiceId('JBFqnCBsd6RMkjVDRZzb'))
-          .apiKey(elevenlabsKey)
-          .buildAudio();
-
-      print('         Audio provider built successfully');
-      print('         Type: ${audioProvider.runtimeType}');
-
-      // Test audio functionality
-      final voices = await audioProvider.getVoices();
-      print('         Available voices: ${voices.length} voices');
-      if (voices.isNotEmpty) {
-        print(
-            '         Sample voices: ${voices.take(3).map((v) => v.name).join(', ')}');
-      }
-    } catch (e) {
-      print('      ElevenLabs capability building failed: $e');
-    }
-    print('');
-  }
-
-  if (openaiKey == null && elevenlabsKey == null) {
-    print('   No API keys available for demonstration.');
-    print('   Set OPENAI_API_KEY or ELEVENLABS_API_KEY to see live examples.');
-    print('');
-  }
+  final provider = elevenlabs.elevenLabs(apiKey: 'demo-key');
+  _printProfile(
+    'speech',
+    provider.speechModel(
+      'eleven_multilingual_v2',
+      settings: const elevenlabs.ElevenLabsSpeechModelSettings(
+        defaultVoiceId: elevenlabs.elevenLabsDefaultVoiceId,
+      ),
+    ),
+  );
+  _printProfile('transcription', provider.transcriptionModel('scribe_v1'));
+  print('  voice catalog client: ${provider.voices().runtimeType}');
+  print('');
 }
 
-/// Demonstrate error handling for unsupported capabilities
-Future<void> demonstrateErrorHandling() async {
-  print('Error handling for unsupported capabilities:\n');
+void demonstrateOllamaFactories() {
+  print('--- Ollama ---');
 
-  final elevenlabsKey = Platform.environment['ELEVENLABS_API_KEY'];
-
-  if (elevenlabsKey != null) {
-    print('   Testing unsupported capabilities with ElevenLabs:');
-
-    // Try to build image generation with ElevenLabs (should fail)
-    try {
-      print('      Attempting to build image generation...');
-      await LLMBuilder()
-          .elevenlabs()
-          .apiKey(elevenlabsKey)
-          .buildImageGeneration();
-
-      print('         This should not succeed.');
-    } catch (e) {
-      print('         Correctly caught error: ${e.runtimeType}');
-      print('         Error message: $e');
-    }
-
-    // Try to build embedding with ElevenLabs (should fail)
-    try {
-      print('      Attempting to build embedding...');
-      await LLMBuilder().elevenlabs().apiKey(elevenlabsKey).buildEmbedding();
-
-      print('         This should not succeed.');
-    } catch (e) {
-      print('         Correctly caught error: ${e.runtimeType}');
-      print('         Error message: $e');
-    }
-
-    print('');
-  } else {
-    print('   Set ELEVENLABS_API_KEY to see error handling examples.');
-    print('');
-  }
+  final provider = ollama.ollama();
+  _printProfile('chat', provider.chatModel('llama3.2'));
+  _printProfile('embeddings', provider.embeddingModel('nomic-embed-text'));
+  print('  local model catalog client: ${provider.catalog().runtimeType}');
+  print('');
 }
 
-/// Demonstrate practical usage examples
-Future<void> demonstratePracticalUsage() async {
-  print('Practical migration usage examples:\n');
+void explainMigrationRule() {
+  print('--- Migration Rule ---');
+  print('  Delete root builder casts instead of wrapping them.');
+  print('  Use focused factories for app-facing work.');
+  print(
+      '  Keep provider-native lifecycle clients isolated behind provider modules.');
+  print(
+      '  Put per-request provider behavior in typed provider options, for example:');
+  print('    CallOptions(providerOptions: OpenAIGenerateTextOptions(...))');
+  print('    CallOptions(providerOptions: GoogleGenerateTextOptions(...))');
+  print('    CallOptions(providerOptions: ElevenLabsSpeechOptions(...))');
+}
 
-  final openaiKey = Platform.environment['OPENAI_API_KEY'];
+void _printProfile(String label, Object model) {
+  final profile = switch (model) {
+    core.CapabilityDescribedModel(:final capabilityProfile) =>
+      capabilityProfile,
+    _ => null,
+  };
 
-  if (openaiKey != null) {
-    print('   Real-world compatibility patterns:');
-
-    // Example 1: Audio processing pipeline
-    print('      Audio processing pipeline:');
-    try {
-      final audioProvider =
-          await LLMBuilder().openai().apiKey(openaiKey).buildAudio();
-
-      // Direct usage without type casting
-      final ttsResponse = await audioProvider.textToSpeech(TTSRequest(
-        text: 'Hello from the typed compatibility builder methods!',
-        voice: 'alloy',
-        format: 'mp3',
-      ));
-
-      print('         Generated speech: ${ttsResponse.audioData.length} bytes');
-    } catch (e) {
-      print('         Audio processing failed: $e');
-    }
-
-    // Example 2: Embedding similarity search
-    print('      Embedding similarity search:');
-    try {
-      final embeddingProvider = await LLMBuilder()
-          .openai()
-          .apiKey(openaiKey)
-          .model('text-embedding-3-small')
-          .buildEmbedding();
-
-      // Direct usage without type casting
-      final embeddings = await embeddingProvider.embed([
-        'The typed compatibility builder methods are helpful',
-        'Type safety is important in software development',
-        'Cats are cute animals',
-      ]);
-
-      print('         Generated ${embeddings.length} embeddings');
-      print('         Vector dimensions: ${embeddings.first.length}');
-    } catch (e) {
-      print('         Embedding generation failed: $e');
-    }
-
-    // Example 3: Model discovery
-    print('      Model discovery:');
-    try {
-      final modelProvider =
-          await LLMBuilder().openai().apiKey(openaiKey).buildModelListing();
-
-      // Direct usage without type casting
-      final models = await modelProvider.models();
-      final gptModels = models.where((m) => m.id.contains('gpt')).toList();
-
-      print('         Found ${models.length} total models');
-      print('         GPT models: ${gptModels.length}');
-      if (gptModels.isNotEmpty) {
-        print(
-            '         Sample: ${gptModels.take(3).map((m) => m.id).join(', ')}');
-      }
-    } catch (e) {
-      print('         Model listing failed: $e');
-    }
-
-    print('');
-  } else {
-    print('   Set OPENAI_API_KEY to see practical usage examples.');
-    print('');
+  if (profile == null) {
+    print('  $label: ${model.runtimeType}');
+    return;
   }
 
-  print('   What this example demonstrates:');
-  print('      • better typing inside the legacy root builder surface');
-  print('      • safer migration than raw `build()` plus runtime casts');
-  print('      • clearer boundaries between stable and compatibility APIs');
+  print(
+    '  $label: ${profile.providerId}/${profile.modelId} '
+    '(${profile.kind.name})',
+  );
 }

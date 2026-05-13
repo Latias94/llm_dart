@@ -29,8 +29,8 @@ Future<void> main() async {
 
   final firstTurn = await core.generateTextCall(
     model: model,
-    prompt: [
-      core.UserPromptMessage.text('What is the weather in Hong Kong?'),
+    messages: [
+      core.UserModelMessage.text('What is the weather in Hong Kong?'),
     ],
     tools: tools,
     toolChoice: const core.RequiredToolChoice(),
@@ -44,29 +44,24 @@ Future<void> main() async {
 
   final secondTurn = await core.generateTextCall(
     model: model,
-    prompt: [
-      core.UserPromptMessage.text('What is the weather in Hong Kong?'),
-      core.AssistantPromptMessage(
+    messages: [
+      core.UserModelMessage.text('What is the weather in Hong Kong?'),
+      core.AssistantModelMessage(
         parts: [
-          core.ToolCallPromptPart(
+          core.ToolCallModelPart(
             toolCallId: toolCall.toolCallId,
             toolName: toolCall.toolName,
             input: toolCall.input,
           ),
         ],
       ),
-      core.ToolPromptMessage(
+      core.ToolModelMessage.result(
+        toolCallId: toolCall.toolCallId,
         toolName: toolCall.toolName,
-        parts: [
-          core.ToolResultPromptPart(
-            toolCallId: toolCall.toolCallId,
-            toolName: toolCall.toolName,
-            toolOutput: core.JsonToolOutput({
-              'temperature': 28,
-              'condition': 'humid',
-            }),
-          ),
-        ],
+        toolOutput: core.JsonToolOutput({
+          'temperature': 28,
+          'condition': 'humid',
+        }),
       ),
     ],
   );

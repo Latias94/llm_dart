@@ -79,7 +79,7 @@ void main() {}
       );
     });
 
-    test('reports legacy imports in guarded Anthropic structure tests',
+    test('reports legacy imports in explicitly guarded provider tests',
         () async {
       final repoRoot = await _createTempWorkspace();
       addTearDown(() async {
@@ -90,7 +90,7 @@ void main() {}
 
       await _writeFile(
         repoRoot,
-        'test/providers/anthropic/anthropic_caching_test.dart',
+        'test/providers/openai/openai_provider_test.dart',
         '''
 import 'package:llm_dart/legacy.dart';
 
@@ -108,6 +108,47 @@ void main() {}
         contains(
           contains('targeted provider tests must import focused entrypoints'),
         ),
+      );
+    });
+
+    test('reports root legacy subpath imports by default', () async {
+      final repoRoot = await _createTempWorkspace();
+      addTearDown(() async {
+        if (repoRoot.existsSync()) {
+          await repoRoot.delete(recursive: true);
+        }
+      });
+
+      await _writeFile(
+        repoRoot,
+        'test/core/example_test.dart',
+        '''
+import 'package:llm_dart/models/chat_models.dart';
+
+void main() {}
+''',
+      );
+
+      final defaultResult = await guard.evaluateTestLegacyImportGuards(
+        repoRoot: repoRoot,
+      );
+      final lenientResult = await guard.evaluateTestLegacyImportGuards(
+        repoRoot: repoRoot,
+        strictRootLegacySubpaths: false,
+      );
+
+      expect(defaultResult.passed, isFalse);
+      expect(
+        defaultResult.violations,
+        contains(
+          contains(
+              'must import focused entrypoints instead of root legacy subpaths'),
+        ),
+      );
+      expect(
+        lenientResult.violations,
+        isEmpty,
+        reason: lenientResult.violations.join('\n'),
       );
     });
 
@@ -152,7 +193,7 @@ Future<Directory> _createTempWorkspace() async {
     repoRoot,
     'test/core/focused_test.dart',
     '''
-import 'package:llm_dart/core/config.dart';
+import 'package:llm_dart/core.dart';
 
 void main() {}
 ''',

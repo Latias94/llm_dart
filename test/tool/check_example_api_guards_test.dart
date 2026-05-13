@@ -169,7 +169,8 @@ void main() {
       expect(result.violations, contains(contains('grouped AI facade')));
     });
 
-    test('allows explicitly allowlisted compatibility examples', () async {
+    test('reports legacy imports even from old compatibility example paths',
+        () async {
       final repoRoot = await _createTempWorkspace();
       addTearDown(() async {
         if (repoRoot.existsSync()) {
@@ -193,11 +194,9 @@ void main() {
         repoRoot: repoRoot,
       );
 
-      expect(
-        result.violations,
-        isEmpty,
-        reason: result.violations.join('\n'),
-      );
+      expect(result.passed, isFalse);
+      expect(result.violations, contains(contains('legacy builder import')));
+      expect(result.violations, contains(contains('LLMBuilder usage')));
     });
   });
 }

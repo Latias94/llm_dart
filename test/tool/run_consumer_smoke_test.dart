@@ -310,6 +310,20 @@ void main() {
     });
   });
 
+  group('consumer smoke programs', () {
+    test('Dart root smoke uses modern prompt and avoids legacy root API', () {
+      expect(
+        dartConsumerSmokeProgram,
+        isNot(contains("package:llm_dart/legacy.dart")),
+      );
+      expect(dartConsumerSmokeProgram, isNot(contains('LLMBuilder')));
+      expect(dartConsumerSmokeProgram, isNot(contains('PromptMessage')));
+      expect(dartConsumerSmokeProgram, contains('ModelMessage'));
+      expect(dartConsumerSmokeProgram, contains('SystemModelMessage'));
+      expect(dartConsumerSmokeProgram, contains('UserModelMessage'));
+    });
+  });
+
   group('resolveConsumerSmokePaths', () {
     test('defaults published mode to the root pubspec version', () async {
       final directory = await Directory.systemTemp.createTemp(

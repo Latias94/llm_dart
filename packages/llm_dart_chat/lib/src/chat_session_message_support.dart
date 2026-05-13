@@ -42,31 +42,29 @@ ChatUiMessage promptMessageToChatUiMessage(
 
   for (final part in message.parts) {
     switch (part) {
-      case TextPromptPart(
-          :final text,
-          :final providerMetadata,
-        ):
+      case TextPromptPart(:final text, :final providerOptions):
         parts.add(
           TextUiPart(
             text: text,
-            providerMetadata: providerMetadata,
+            providerMetadata: providerReplayMetadataFromOptions(
+              providerOptions,
+            ),
           ),
         );
-      case ReasoningPromptPart(
-          :final text,
-          :final providerMetadata,
-        ):
+      case ReasoningPromptPart(:final text, :final providerOptions):
         parts.add(
           ReasoningUiPart(
             text: text,
-            providerMetadata: providerMetadata,
+            providerMetadata: providerReplayMetadataFromOptions(
+              providerOptions,
+            ),
           ),
         );
       case FilePromptPart(
           :final mediaType,
           :final filename,
           :final data,
-          :final providerMetadata,
+          :final providerOptions,
         ):
         parts.add(
           FileUiPart(
@@ -75,14 +73,16 @@ ChatUiMessage promptMessageToChatUiMessage(
               filename: filename,
               data: data,
             ),
-            providerMetadata: providerMetadata,
+            providerMetadata: providerReplayMetadataFromOptions(
+              providerOptions,
+            ),
           ),
         );
       case ReasoningFilePromptPart(
           :final mediaType,
           :final filename,
           :final data,
-          :final providerMetadata,
+          :final providerOptions,
         ):
         parts.add(
           ReasoningFileUiPart(
@@ -91,13 +91,15 @@ ChatUiMessage promptMessageToChatUiMessage(
               filename: filename,
               data: data,
             ),
-            providerMetadata: providerMetadata,
+            providerMetadata: providerReplayMetadataFromOptions(
+              providerOptions,
+            ),
           ),
         );
       case ImagePromptPart(
           :final mediaType,
           :final data,
-          :final providerMetadata,
+          :final providerOptions,
         ):
         parts.add(
           FileUiPart(
@@ -105,19 +107,23 @@ ChatUiMessage promptMessageToChatUiMessage(
               mediaType: mediaType,
               data: data,
             ),
-            providerMetadata: providerMetadata,
+            providerMetadata: providerReplayMetadataFromOptions(
+              providerOptions,
+            ),
           ),
         );
       case CustomPromptPart(
           :final kind,
           :final data,
-          :final providerMetadata,
+          :final providerOptions,
         ):
         parts.add(
           CustomUiPart(
             kind: kind,
             data: data,
-            providerMetadata: providerMetadata,
+            providerMetadata: providerReplayMetadataFromOptions(
+              providerOptions,
+            ),
           ),
         );
       case ToolCallPromptPart(
@@ -127,7 +133,7 @@ ChatUiMessage promptMessageToChatUiMessage(
           :final providerExecuted,
           :final isDynamic,
           :final title,
-          :final providerMetadata,
+          :final providerOptions,
         ):
         upsertToolPart(
           toolCallId,
@@ -150,7 +156,7 @@ ChatUiMessage promptMessageToChatUiMessage(
             approval: current?.approval,
             callProviderMetadata: ProviderMetadata.mergeNullable(
               current?.callProviderMetadata,
-              providerMetadata,
+              providerReplayMetadataFromOptions(providerOptions),
             ),
             resultProviderMetadata: current?.resultProviderMetadata,
           ),
@@ -158,7 +164,7 @@ ChatUiMessage promptMessageToChatUiMessage(
       case ToolApprovalRequestPromptPart(
           :final approvalId,
           :final toolCallId,
-          :final providerMetadata,
+          :final providerOptions,
         ):
         upsertToolPart(
           toolCallId,
@@ -181,7 +187,7 @@ ChatUiMessage promptMessageToChatUiMessage(
             ),
             callProviderMetadata: ProviderMetadata.mergeNullable(
               current?.callProviderMetadata,
-              providerMetadata,
+              providerReplayMetadataFromOptions(providerOptions),
             ),
             resultProviderMetadata: current?.resultProviderMetadata,
           ),
@@ -192,7 +198,7 @@ ChatUiMessage promptMessageToChatUiMessage(
           :final output,
           :final isError,
           :final toolOutput,
-          :final providerMetadata,
+          :final providerOptions,
         ):
         upsertToolPart(
           toolCallId,
@@ -214,7 +220,7 @@ ChatUiMessage promptMessageToChatUiMessage(
             callProviderMetadata: current?.callProviderMetadata,
             resultProviderMetadata: ProviderMetadata.mergeNullable(
               current?.resultProviderMetadata,
-              providerMetadata,
+              providerReplayMetadataFromOptions(providerOptions),
             ),
           ),
         );
@@ -223,7 +229,7 @@ ChatUiMessage promptMessageToChatUiMessage(
           :final toolCallId,
           :final approved,
           :final reason,
-          :final providerMetadata,
+          :final providerOptions,
         ):
         upsertToolPart(
           toolCallId,
@@ -252,7 +258,7 @@ ChatUiMessage promptMessageToChatUiMessage(
             ),
             callProviderMetadata: ProviderMetadata.mergeNullable(
               current?.callProviderMetadata,
-              providerMetadata,
+              providerReplayMetadataFromOptions(providerOptions),
             ),
             resultProviderMetadata: current?.resultProviderMetadata,
           ),
@@ -308,7 +314,7 @@ List<PromptMessage> assistantPromptMessagesFromChatUiMessage(
         assistantParts.add(
           TextPromptPart(
             text,
-            providerMetadata: providerMetadata,
+            providerOptions: replayProviderOptions(providerMetadata),
           ),
         );
       case ReasoningUiPart(
@@ -319,7 +325,7 @@ List<PromptMessage> assistantPromptMessagesFromChatUiMessage(
         assistantParts.add(
           ReasoningPromptPart(
             text,
-            providerMetadata: providerMetadata,
+            providerOptions: replayProviderOptions(providerMetadata),
           ),
         );
       case FileUiPart(
@@ -331,7 +337,7 @@ List<PromptMessage> assistantPromptMessagesFromChatUiMessage(
             mediaType: file.mediaType,
             filename: file.filename,
             data: file.data,
-            providerMetadata: providerMetadata,
+            providerOptions: replayProviderOptions(providerMetadata),
           ),
         );
       case ReasoningFileUiPart(
@@ -343,7 +349,7 @@ List<PromptMessage> assistantPromptMessagesFromChatUiMessage(
             mediaType: file.mediaType,
             filename: file.filename,
             data: file.data,
-            providerMetadata: providerMetadata,
+            providerOptions: replayProviderOptions(providerMetadata),
           ),
         );
       case CustomUiPart(
@@ -360,7 +366,7 @@ List<PromptMessage> assistantPromptMessagesFromChatUiMessage(
               CustomPromptPart(
                 kind: kind,
                 data: data,
-                providerMetadata: providerMetadata,
+                providerOptions: replayProviderOptions(providerMetadata),
               ),
             ],
           ),
@@ -374,7 +380,7 @@ List<PromptMessage> assistantPromptMessagesFromChatUiMessage(
           CustomPromptPart(
             kind: kind,
             data: data,
-            providerMetadata: providerMetadata,
+            providerOptions: replayProviderOptions(providerMetadata),
           ),
         );
       case ToolUiPart(
@@ -399,7 +405,7 @@ List<PromptMessage> assistantPromptMessagesFromChatUiMessage(
             providerExecuted: providerExecuted,
             isDynamic: isDynamic,
             title: title,
-            providerMetadata: callProviderMetadata,
+            providerOptions: replayProviderOptions(callProviderMetadata),
           ),
         );
         if (approval != null) {
@@ -407,7 +413,7 @@ List<PromptMessage> assistantPromptMessagesFromChatUiMessage(
             ToolApprovalRequestPromptPart(
               approvalId: approval.approvalId,
               toolCallId: toolCallId,
-              providerMetadata: callProviderMetadata,
+              providerOptions: replayProviderOptions(callProviderMetadata),
             ),
           );
         }
@@ -438,7 +444,7 @@ List<PromptMessage> assistantPromptMessagesFromChatUiMessage(
             providerExecuted: providerExecuted,
             isDynamic: isDynamic,
             title: title,
-            providerMetadata: callProviderMetadata,
+            providerOptions: replayProviderOptions(callProviderMetadata),
           ),
         );
         flushAssistantParts();
@@ -457,7 +463,7 @@ List<PromptMessage> assistantPromptMessagesFromChatUiMessage(
                 output: output,
                 toolOutput: toolOutput,
                 isError: state == ToolUiPartState.outputError,
-                providerMetadata: resultProviderMetadata,
+                providerOptions: replayProviderOptions(resultProviderMetadata),
               ),
             ],
           ),
@@ -510,4 +516,10 @@ Map<String, Object?>? toolReplayPayloadMap(Object? data) {
   }
 
   return null;
+}
+
+ProviderReplayPromptPartOptions? replayProviderOptions(
+  ProviderMetadata? metadata,
+) {
+  return ProviderReplayPromptPartOptions.fromMetadata(metadata);
 }

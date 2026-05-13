@@ -1022,7 +1022,6 @@ final class OpenAIResponsesCodec {
 
   ProviderMetadata? _promptPartProviderMetadata(PromptPart part) {
     return mergeProviderReplayMetadata(
-      providerMetadata: part.providerMetadata,
       providerOptions: part.providerOptions,
     );
   }

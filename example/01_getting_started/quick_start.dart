@@ -22,9 +22,9 @@ Future<void> runOpenAIExample() async {
   final model = llm.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
   final result = await llm.generateTextCall(
     model: model,
-    prompt: [
-      llm.SystemPromptMessage.text('You are concise.'),
-      llm.UserPromptMessage.text('Explain Dart in one sentence.'),
+    messages: [
+      llm.SystemModelMessage.text('You are concise.'),
+      llm.UserModelMessage.text('Explain Dart in one sentence.'),
     ],
   );
 
@@ -43,8 +43,8 @@ Future<void> runAnthropicExample() async {
   final model = llm.anthropic(apiKey: apiKey).chatModel('claude-sonnet-4-5');
   final result = await llm.generateTextCall(
     model: model,
-    prompt: [
-      llm.UserPromptMessage.text('Summarize why strong typing helps APIs.'),
+    messages: [
+      llm.UserModelMessage.text('Summarize why strong typing helps APIs.'),
     ],
   );
 
@@ -63,8 +63,8 @@ Future<void> runGoogleExample() async {
   final model = llm.google(apiKey: apiKey).chatModel('gemini-2.5-flash');
   final result = await llm.generateTextCall(
     model: model,
-    prompt: [
-      llm.UserPromptMessage.text('Give one sentence about Flutter layouts.'),
+    messages: [
+      llm.UserModelMessage.text('Give one sentence about Flutter layouts.'),
     ],
   );
 

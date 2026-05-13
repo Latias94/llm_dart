@@ -18,6 +18,10 @@ Use this package when you want:
   root facade
 - provider-owned OpenAI-profile file lifecycle through `openai(...).files()`
 - provider-owned OpenAI-profile moderation through `openai(...).moderation()`
+- provider-owned OpenAI-profile assistant lifecycle through
+  `openai(...).assistants()`
+- provider-owned raw Responses lifecycle through
+  `openai(...).responsesLifecycle()`
 - OpenAI-family profiles such as `OpenAIProfile`, `OpenRouterProfile`,
   `DeepSeekProfile`, `GroqProfile`, `XAIProfile`, and `PhindProfile`
 - provider-owned settings such as `OpenAIChatModelSettings`,
@@ -62,9 +66,9 @@ provider-owned lifecycle APIs directly.
 4. Keep UI projection on `llm_dart_ai` / `llm_dart_chat`; use
    `OpenAICustomPart` and `OpenAICustomPartSummary` on provider content parts
    or stream events before UI projection.
-5. Drop to the root compatibility surfaces only when you truly need assistant
-   lifecycle APIs, raw Responses CRUD/lifecycle APIs, or other legacy
-   migration-era flows outside this package's modern boundary.
+5. Use `openai(...).assistants()` and `openai(...).responsesLifecycle()` for
+   OpenAI-native lifecycle operations that should not widen the shared
+   `llm_dart_ai` request/runtime contract.
 
 ## Basic Example
 
@@ -200,6 +204,63 @@ Future<void> main() async {
 }
 ```
 
+## OpenAI Assistants Example
+
+`openai(...).assistants()` owns Assistants CRUD and assistant-specific DTOs in
+this package. Function tools use the shared provider `FunctionToolDefinition`
+instead of the old root tool models.
+
+```dart
+import 'package:llm_dart_openai/llm_dart_openai.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
+
+Future<void> main() async {
+  final assistants = openai(apiKey: 'your-openai-key').assistants();
+
+  final assistant = await assistants.createAssistant(
+    OpenAICreateAssistantRequest(
+      model: 'gpt-4.1-mini',
+      name: 'Support Assistant',
+      instructions: 'Answer customer support questions.',
+      tools: [
+        OpenAIAssistantFunctionTool(
+          function: FunctionToolDefinition(
+            name: 'lookup_ticket',
+            inputSchema: ToolJsonSchema.object(),
+          ),
+        ),
+      ],
+    ),
+  );
+
+  print(assistant.id);
+}
+```
+
+## OpenAI Responses Lifecycle Example
+
+Shared text generation should still use `OpenAILanguageModel` plus
+`llm_dart_ai`. Use `openai(...).responsesLifecycle()` only when the application
+needs OpenAI-native raw response storage, cancellation, continuation, deletion,
+or input-item inspection.
+
+```dart
+import 'package:llm_dart_openai/llm_dart_openai.dart';
+
+Future<void> main() async {
+  final responses = openai(apiKey: 'your-openai-key').responsesLifecycle();
+
+  final created = await responses.createResponse({
+    'model': 'gpt-4.1-mini',
+    'input': 'Create a short incident summary.',
+    'background': true,
+  });
+
+  final items = await responses.listInputItems(created.id!);
+  print(items.data.length);
+}
+```
+
 ## OpenAI Image Editing Example
 
 Prompt-based image generation uses the shared `generateImage(...)` helper.
@@ -254,14 +315,19 @@ Future<void> main() async {
   imply a shared remote file-management contract.
 - `OpenAIModerationClient` is a narrow OpenAI-profile safety client and does
   not imply a shared moderation abstraction or OpenAI-family-wide feature.
+- `OpenAIAssistantsClient` is a narrow OpenAI-profile assistant lifecycle
+  client and does not imply a shared assistant abstraction.
+- `OpenAIResponsesLifecycleClient` is a narrow OpenAI-profile raw lifecycle
+  client; normal prompt execution remains on `OpenAILanguageModel`.
 
 ## Boundary Notes
 
 - Shared model calls are the default path.
 - Provider-owned options extend the shared call contract; they do not replace
   it.
-- Root compatibility APIs remain the explicit migration and appendix path for
-  assistants, raw Responses lifecycle, and other residual compatibility flows.
+- Root compatibility APIs are not the ownership path for OpenAI-native
+  lifecycle operations; focused package APIs own those provider-specific
+  features.
 - OpenAI-family profiles let one package host provider-specific request routing
   without pretending every family member shares the same hosted feature set.
 

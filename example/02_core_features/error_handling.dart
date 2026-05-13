@@ -35,8 +35,8 @@ Future<void> demonstrateLocalValidationError() async {
   try {
     await core.generateTextCall(
       model: const _StaticTextLanguageModel('unused'),
-      prompt: [
-        core.UserPromptMessage.text('Hello'),
+      messages: [
+        core.UserModelMessage.text('Hello'),
       ],
       tools: [
         _weatherTool(),
@@ -62,8 +62,8 @@ Future<void> demonstrateStructuredOutputValidationError() async {
   try {
     await core.generateTextCall<IncidentPlan>(
       model: model,
-      prompt: [
-        core.UserPromptMessage.text('Return a remediation plan as JSON.'),
+      messages: [
+        core.UserModelMessage.text('Return a remediation plan as JSON.'),
       ],
       outputSpec: core.ObjectOutputSpec<IncidentPlan>(
         schema: core.JsonSchema.object(
@@ -97,8 +97,8 @@ Future<void> demonstrateAuthenticationFailure() async {
     final model = llm.openai(apiKey: 'invalid-key').chatModel('gpt-4.1-mini');
     await core.generateTextCall(
       model: model,
-      prompt: [
-        core.UserPromptMessage.text('Hello'),
+      messages: [
+        core.UserModelMessage.text('Hello'),
       ],
       callOptions: const core.CallOptions(
         timeout: Duration(seconds: 20),
@@ -126,8 +126,8 @@ Future<void> demonstrateNetworkFailure() async {
 
     await core.generateTextCall(
       model: model,
-      prompt: [
-        core.UserPromptMessage.text('Hello'),
+      messages: [
+        core.UserModelMessage.text('Hello'),
       ],
       callOptions: const core.CallOptions(
         timeout: Duration(seconds: 3),
@@ -156,8 +156,8 @@ Future<void> demonstrateTimeoutFailure() async {
 
     await core.generateTextCall(
       model: model,
-      prompt: [
-        core.UserPromptMessage.text('Say hello in one short sentence.'),
+      messages: [
+        core.UserModelMessage.text('Say hello in one short sentence.'),
       ],
       callOptions: const core.CallOptions(
         timeout: Duration(milliseconds: 1),
@@ -191,8 +191,8 @@ Future<void> demonstrateRetryPattern() async {
   final result = await retryExecutor.execute(
     () => core.generateTextCall(
       model: model,
-      prompt: [
-        core.UserPromptMessage.text('Summarize the current status.'),
+      messages: [
+        core.UserModelMessage.text('Summarize the current status.'),
       ],
     ),
   );
@@ -221,14 +221,14 @@ Future<void> demonstrateFallbackPattern() async {
     [
       () => core.generateTextCall(
             model: primaryModel,
-            prompt: [
-              core.UserPromptMessage.text('Generate the release summary.'),
+            messages: [
+              core.UserModelMessage.text('Generate the release summary.'),
             ],
           ),
       () => core.generateTextCall(
             model: fallbackModel,
-            prompt: [
-              core.UserPromptMessage.text('Generate the release summary.'),
+            messages: [
+              core.UserModelMessage.text('Generate the release summary.'),
             ],
           ),
     ],
@@ -263,8 +263,8 @@ Future<void> demonstrateCircuitBreakerPattern() async {
       final result = await breaker.execute(
         () => core.generateTextCall(
           model: model,
-          prompt: [
-            core.UserPromptMessage.text('Ping the service.'),
+          messages: [
+            core.UserModelMessage.text('Ping the service.'),
           ],
         ),
       );

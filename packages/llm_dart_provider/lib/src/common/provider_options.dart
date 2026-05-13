@@ -22,8 +22,8 @@ abstract interface class ProviderInvocationOptions {
 ///
 /// These options configure how a single input prompt part is encoded by a
 /// concrete provider. Shared replay options are also modeled here so runtime
-/// continuations can carry prior output metadata explicitly without writing it
-/// back into newly-created prompt parts.
+/// continuations can carry prior output metadata explicitly through typed
+/// input options instead of writing it back into prompt-part fields.
 abstract interface class ProviderPromptPartOptions {
   const ProviderPromptPartOptions();
 }
@@ -98,15 +98,11 @@ ProviderMetadata? providerReplayMetadataFromOptions(
   return null;
 }
 
-/// Merges legacy prompt metadata with replay metadata carried by options.
+/// Extracts replay metadata carried by typed prompt-part options.
 ProviderMetadata? mergeProviderReplayMetadata({
-  ProviderMetadata? providerMetadata,
   ProviderPromptPartOptions? providerOptions,
 }) {
-  return ProviderMetadata.mergeNullable(
-    providerMetadata,
-    providerReplayMetadataFromOptions(providerOptions),
-  );
+  return providerReplayMetadataFromOptions(providerOptions);
 }
 
 /// JSON codec for provider-owned prompt part options.

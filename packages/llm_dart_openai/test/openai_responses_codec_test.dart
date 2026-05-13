@@ -157,11 +157,13 @@ void main() {
                 data: FileProviderReferenceData(
                   ProviderReference({'openai': 'assistant-img-abc123'}),
                 ),
-                providerMetadata: ProviderMetadata({
-                  'openai': {
-                    'imageDetail': 'high',
-                  },
-                }),
+                providerOptions: ProviderReplayPromptPartOptions(
+                  ProviderMetadata({
+                    'openai': {
+                      'imageDetail': 'high',
+                    },
+                  }),
+                ),
               ),
             ],
           ),
@@ -255,11 +257,13 @@ void main() {
                 FilePromptPart(
                   mediaType: 'application/pdf',
                   data: FileTextData('legacy-metadata-only'),
-                  providerMetadata: ProviderMetadata({
-                    'openai': {
-                      'fileId': 'file-pdf-123',
-                    },
-                  }),
+                  providerOptions: ProviderReplayPromptPartOptions(
+                    ProviderMetadata({
+                      'openai': {
+                        'fileId': 'file-pdf-123',
+                      },
+                    }),
+                  ),
                 ),
               ],
             ),
@@ -456,39 +460,47 @@ void main() {
             parts: const [
               TextPromptPart(
                 'Commentary',
-                providerMetadata: ProviderMetadata({
-                  'openai': {
-                    'itemId': 'msg_commentary',
-                    'phase': 'commentary',
-                  },
-                }),
+                providerOptions: ProviderReplayPromptPartOptions(
+                  ProviderMetadata({
+                    'openai': {
+                      'itemId': 'msg_commentary',
+                      'phase': 'commentary',
+                    },
+                  }),
+                ),
               ),
               TextPromptPart(
                 'Final answer',
-                providerMetadata: ProviderMetadata({
-                  'openai': {
-                    'itemId': 'msg_final',
-                    'phase': 'final_answer',
-                  },
-                }),
+                providerOptions: ProviderReplayPromptPartOptions(
+                  ProviderMetadata({
+                    'openai': {
+                      'itemId': 'msg_final',
+                      'phase': 'final_answer',
+                    },
+                  }),
+                ),
               ),
               ReasoningPromptPart(
                 'Thinking step 1',
-                providerMetadata: ProviderMetadata({
-                  'openai': {
-                    'itemId': 'rs_1',
-                    'encryptedContent': 'enc_1',
-                  },
-                }),
+                providerOptions: ProviderReplayPromptPartOptions(
+                  ProviderMetadata({
+                    'openai': {
+                      'itemId': 'rs_1',
+                      'encryptedContent': 'enc_1',
+                    },
+                  }),
+                ),
               ),
               ReasoningPromptPart(
                 'Thinking step 2',
-                providerMetadata: ProviderMetadata({
-                  'openai': {
-                    'itemId': 'rs_1',
-                    'reasoningEncryptedContent': 'enc_2',
-                  },
-                }),
+                providerOptions: ProviderReplayPromptPartOptions(
+                  ProviderMetadata({
+                    'openai': {
+                      'itemId': 'rs_1',
+                      'reasoningEncryptedContent': 'enc_2',
+                    },
+                  }),
+                ),
               ),
               ToolCallPromptPart(
                 toolCallId: 'call_1',
@@ -496,11 +508,13 @@ void main() {
                 input: {
                   'city': 'Hong Kong',
                 },
-                providerMetadata: ProviderMetadata({
-                  'openai': {
-                    'itemId': 'fc_1',
-                  },
-                }),
+                providerOptions: ProviderReplayPromptPartOptions(
+                  ProviderMetadata({
+                    'openai': {
+                      'itemId': 'fc_1',
+                    },
+                  }),
+                ),
               ),
               CustomPromptPart(
                 kind: 'openai.compaction',
@@ -508,11 +522,13 @@ void main() {
                   'encryptedContent': 'enc_comp',
                   'compact_threshold': 50000,
                 },
-                providerMetadata: ProviderMetadata({
-                  'openai': {
-                    'itemId': 'cmp_1',
-                  },
-                }),
+                providerOptions: ProviderReplayPromptPartOptions(
+                  ProviderMetadata({
+                    'openai': {
+                      'itemId': 'cmp_1',
+                    },
+                  }),
+                ),
               ),
             ],
           ),
@@ -691,39 +707,47 @@ void main() {
             parts: const [
               TextPromptPart(
                 'Commentary',
-                providerMetadata: ProviderMetadata({
-                  'openai': {
-                    'itemId': 'msg_commentary',
-                    'phase': 'commentary',
-                  },
-                }),
+                providerOptions: ProviderReplayPromptPartOptions(
+                  ProviderMetadata({
+                    'openai': {
+                      'itemId': 'msg_commentary',
+                      'phase': 'commentary',
+                    },
+                  }),
+                ),
               ),
               TextPromptPart(
                 'Final answer',
-                providerMetadata: ProviderMetadata({
-                  'openai': {
-                    'itemId': 'msg_final',
-                    'phase': 'final_answer',
-                  },
-                }),
+                providerOptions: ProviderReplayPromptPartOptions(
+                  ProviderMetadata({
+                    'openai': {
+                      'itemId': 'msg_final',
+                      'phase': 'final_answer',
+                    },
+                  }),
+                ),
               ),
               ReasoningPromptPart(
                 'Thinking step 1',
-                providerMetadata: ProviderMetadata({
-                  'openai': {
-                    'itemId': 'rs_1',
-                    'encryptedContent': 'enc_1',
-                  },
-                }),
+                providerOptions: ProviderReplayPromptPartOptions(
+                  ProviderMetadata({
+                    'openai': {
+                      'itemId': 'rs_1',
+                      'encryptedContent': 'enc_1',
+                    },
+                  }),
+                ),
               ),
               ReasoningPromptPart(
                 'Thinking step 2',
-                providerMetadata: ProviderMetadata({
-                  'openai': {
-                    'itemId': 'rs_1',
-                    'reasoningEncryptedContent': 'enc_2',
-                  },
-                }),
+                providerOptions: ProviderReplayPromptPartOptions(
+                  ProviderMetadata({
+                    'openai': {
+                      'itemId': 'rs_1',
+                      'reasoningEncryptedContent': 'enc_2',
+                    },
+                  }),
+                ),
               ),
               ToolCallPromptPart(
                 toolCallId: 'call_1',
@@ -731,11 +755,13 @@ void main() {
                 input: {
                   'city': 'Hong Kong',
                 },
-                providerMetadata: ProviderMetadata({
-                  'openai': {
-                    'itemId': 'fc_1',
-                  },
-                }),
+                providerOptions: ProviderReplayPromptPartOptions(
+                  ProviderMetadata({
+                    'openai': {
+                      'itemId': 'fc_1',
+                    },
+                  }),
+                ),
               ),
               CustomPromptPart(
                 kind: 'openai.compaction',
@@ -743,11 +769,13 @@ void main() {
                   'encryptedContent': 'enc_comp',
                   'compact_threshold': 50000,
                 },
-                providerMetadata: ProviderMetadata({
-                  'openai': {
-                    'itemId': 'cmp_1',
-                  },
-                }),
+                providerOptions: ProviderReplayPromptPartOptions(
+                  ProviderMetadata({
+                    'openai': {
+                      'itemId': 'cmp_1',
+                    },
+                  }),
+                ),
               ),
             ],
           ),
@@ -807,22 +835,26 @@ void main() {
             parts: const [
               TextPromptPart(
                 'Existing answer',
-                providerMetadata: ProviderMetadata({
-                  'openai': {
-                    'itemId': 'msg_existing',
-                    'phase': 'final_answer',
-                  },
-                }),
+                providerOptions: ProviderReplayPromptPartOptions(
+                  ProviderMetadata({
+                    'openai': {
+                      'itemId': 'msg_existing',
+                      'phase': 'final_answer',
+                    },
+                  }),
+                ),
               ),
               TextPromptPart('New answer fragment'),
               ReasoningPromptPart(
                 'Existing reasoning',
-                providerMetadata: ProviderMetadata({
-                  'openai': {
-                    'itemId': 'rs_existing',
-                    'encryptedContent': 'enc_existing',
-                  },
-                }),
+                providerOptions: ProviderReplayPromptPartOptions(
+                  ProviderMetadata({
+                    'openai': {
+                      'itemId': 'rs_existing',
+                      'encryptedContent': 'enc_existing',
+                    },
+                  }),
+                ),
               ),
               ToolCallPromptPart(
                 toolCallId: 'call_existing',
@@ -830,22 +862,26 @@ void main() {
                 input: {
                   'city': 'Hong Kong',
                 },
-                providerMetadata: ProviderMetadata({
-                  'openai': {
-                    'itemId': 'fc_existing',
-                  },
-                }),
+                providerOptions: ProviderReplayPromptPartOptions(
+                  ProviderMetadata({
+                    'openai': {
+                      'itemId': 'fc_existing',
+                    },
+                  }),
+                ),
               ),
               CustomPromptPart(
                 kind: 'openai.compaction',
                 data: {
                   'encryptedContent': 'enc_comp',
                 },
-                providerMetadata: ProviderMetadata({
-                  'openai': {
-                    'itemId': 'cmp_existing',
-                  },
-                }),
+                providerOptions: ProviderReplayPromptPartOptions(
+                  ProviderMetadata({
+                    'openai': {
+                      'itemId': 'cmp_existing',
+                    },
+                  }),
+                ),
               ),
             ],
           ),

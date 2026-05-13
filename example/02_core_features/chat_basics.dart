@@ -29,8 +29,8 @@ Future<void> demonstrateBasicChat(core.LanguageModel model) async {
   try {
     final result = await core.generateTextCall(
       model: model,
-      prompt: [
-        core.UserPromptMessage.text('What is the capital of Japan?'),
+      messages: [
+        core.UserModelMessage.text('What is the capital of Japan?'),
       ],
     );
 
@@ -47,18 +47,18 @@ Future<void> demonstrateMessageTypes(core.LanguageModel model) async {
   try {
     final result = await core.generateTextCall(
       model: model,
-      prompt: [
-        core.SystemPromptMessage.text(
+      messages: [
+        core.SystemModelMessage.text(
           'You are a patient algebra tutor. Explain ideas simply and clearly.',
         ),
-        core.UserPromptMessage.text(
+        core.UserModelMessage.text(
           'I keep hearing about variables in algebra. What are they?',
         ),
-        core.AssistantPromptMessage.text(
+        core.AssistantModelMessage.text(
           'Variables are placeholders for values that may change or still need '
           'to be discovered.',
         ),
-        core.UserPromptMessage.text(
+        core.UserModelMessage.text(
           'Give me a short example with x.',
         ),
       ],
@@ -77,38 +77,38 @@ Future<void> demonstrateConversationHistory(core.LanguageModel model) async {
   print('3. Conversation history');
 
   try {
-    final conversation = <core.PromptMessage>[];
+    final conversation = <core.ModelMessage>[];
 
     conversation.add(
-      core.UserPromptMessage.text('Hi. What did I just ask you to remember?'),
+      core.UserModelMessage.text('Hi. What did I just ask you to remember?'),
     );
     var result = await core.generateTextCall(
       model: model,
-      prompt: conversation,
+      messages: conversation,
     );
-    conversation.add(core.AssistantPromptMessage.text(result.text));
+    conversation.add(core.AssistantModelMessage.text(result.text));
     print('Turn 1: ${result.text}');
 
     conversation.add(
-      core.UserPromptMessage.text(
+      core.UserModelMessage.text(
         'Remember that my favorite language is Dart. Repeat it back.',
       ),
     );
     result = await core.generateTextCall(
       model: model,
-      prompt: conversation,
+      messages: conversation,
     );
-    conversation.add(core.AssistantPromptMessage.text(result.text));
+    conversation.add(core.AssistantModelMessage.text(result.text));
     print('Turn 2: ${result.text}');
 
     conversation.add(
-      core.UserPromptMessage.text(
+      core.UserModelMessage.text(
         'Now summarize this conversation in one sentence.',
       ),
     );
     result = await core.generateTextCall(
       model: model,
-      prompt: conversation,
+      messages: conversation,
     );
     print('Turn 3: ${result.text}\n');
   } catch (error) {
@@ -122,8 +122,8 @@ Future<void> demonstrateResponseMetadata(core.LanguageModel model) async {
   try {
     final result = await core.generateTextCall(
       model: model,
-      prompt: [
-        core.UserPromptMessage.text(
+      messages: [
+        core.UserModelMessage.text(
           'Explain quantum computing in about 80 words.',
         ),
       ],
@@ -161,53 +161,53 @@ Future<void> demonstrateContextManagement(core.LanguageModel model) async {
   try {
     final shortContext = await core.generateTextCall(
       model: model,
-      prompt: [
-        core.UserPromptMessage.text('What is AI?'),
+      messages: [
+        core.UserModelMessage.text('What is AI?'),
       ],
     );
 
     final richContext = await core.generateTextCall(
       model: model,
-      prompt: [
-        core.SystemPromptMessage.text(
+      messages: [
+        core.SystemModelMessage.text(
           'You are helping a computer-science student prepare for an exam.',
         ),
-        core.UserPromptMessage.text(
+        core.UserModelMessage.text(
           'I need a concise but exam-ready definition of AI.',
         ),
-        core.AssistantPromptMessage.text(
+        core.AssistantModelMessage.text(
           'Sure. I can answer briefly or expand with examples.',
         ),
-        core.UserPromptMessage.text(
+        core.UserModelMessage.text(
           'Give me the exam-ready version with one example.',
         ),
       ],
     );
 
-    final longConversation = <core.PromptMessage>[
-      core.SystemPromptMessage.text(
+    final longConversation = <core.ModelMessage>[
+      core.SystemModelMessage.text(
         'You summarize prior discussion accurately before answering.',
       ),
     ];
 
     for (var index = 1; index <= 4; index += 1) {
       longConversation.add(
-        core.UserPromptMessage.text(
+        core.UserModelMessage.text(
             'We discussed topic $index. Keep track of it.'),
       );
       longConversation.add(
-        core.AssistantPromptMessage.text(
+        core.AssistantModelMessage.text(
             'Recorded topic $index for later recall.'),
       );
     }
 
     longConversation.add(
-      core.UserPromptMessage.text('List every topic we discussed so far.'),
+      core.UserModelMessage.text('List every topic we discussed so far.'),
     );
 
     final summary = await core.generateTextCall(
       model: model,
-      prompt: longConversation,
+      messages: longConversation,
     );
 
     print('Short context response length: ${shortContext.text.length}');

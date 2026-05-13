@@ -60,13 +60,13 @@ Release Notes Draft
 
     final result = await core.generateTextCall(
       model: model,
-      prompt: [
-        core.UserPromptMessage(
+      messages: [
+        core.UserModelMessage(
           parts: [
-            const core.TextPromptPart(
+            const core.TextModelPart(
               'Summarize this release note file into three short bullets.',
             ),
-            core.FilePromptPart(
+            core.FileModelPart(
               mediaType: 'text/plain',
               filename: 'stable_file_prompt_example.txt',
               data: core.FileBytesData(fileBytes),

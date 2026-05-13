@@ -733,7 +733,6 @@ final class GoogleGenerateContentCodec {
 
   ProviderMetadata? _promptPartProviderMetadata(PromptPart part) {
     return mergeProviderReplayMetadata(
-      providerMetadata: part.providerMetadata,
       providerOptions: part.providerOptions,
     );
   }

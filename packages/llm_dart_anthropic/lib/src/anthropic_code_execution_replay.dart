@@ -506,7 +506,6 @@ final class AnthropicCodeExecutionReplay {
     return tryParseData(
       part.data,
       providerMetadata: mergeProviderReplayMetadata(
-        providerMetadata: part.providerMetadata,
         providerOptions: part.providerOptions,
       ),
     );

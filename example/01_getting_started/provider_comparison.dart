@@ -105,8 +105,8 @@ Future<ProviderResult> testProviderModel(
   try {
     final result = await core.generateTextCall(
       model: model,
-      prompt: [
-        core.UserPromptMessage.text(question),
+      messages: [
+        core.UserModelMessage.text(question),
       ],
       options: const core.GenerateTextOptions(
         temperature: 0.7,
@@ -239,8 +239,8 @@ Future<void> runRegistrySelectionExample() async {
   try {
     final result = await core.generateTextCall(
       model: model,
-      prompt: [
-        core.UserPromptMessage.text(question),
+      messages: [
+        core.UserModelMessage.text(question),
       ],
       callOptions: _demoCallOptions,
     );

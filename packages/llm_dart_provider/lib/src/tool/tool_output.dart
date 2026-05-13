@@ -133,21 +133,16 @@ final class ContentToolOutput extends ToolOutput {
 sealed class ToolOutputContentPart {
   const ToolOutputContentPart();
 
-  ProviderMetadata? get providerMetadata;
-
   ProviderPromptPartOptions? get providerOptions;
 }
 
 final class TextToolOutputContentPart extends ToolOutputContentPart {
   final String text;
   @override
-  final ProviderMetadata? providerMetadata;
-  @override
   final ProviderPromptPartOptions? providerOptions;
 
   const TextToolOutputContentPart(
     this.text, {
-    this.providerMetadata,
     this.providerOptions,
   });
 }
@@ -155,13 +150,10 @@ final class TextToolOutputContentPart extends ToolOutputContentPart {
 final class JsonToolOutputContentPart extends ToolOutputContentPart {
   final Object? value;
   @override
-  final ProviderMetadata? providerMetadata;
-  @override
   final ProviderPromptPartOptions? providerOptions;
 
   const JsonToolOutputContentPart(
     this.value, {
-    this.providerMetadata,
     this.providerOptions,
   });
 }
@@ -171,15 +163,12 @@ final class FileToolOutputContentPart extends ToolOutputContentPart {
   final String? filename;
   final FileData data;
   @override
-  final ProviderMetadata? providerMetadata;
-  @override
   final ProviderPromptPartOptions? providerOptions;
 
   const FileToolOutputContentPart({
     required this.mediaType,
     this.filename,
     required this.data,
-    this.providerMetadata,
     this.providerOptions,
   });
 
@@ -196,14 +185,11 @@ final class CustomToolOutputContentPart extends ToolOutputContentPart {
   final String kind;
   final Object? data;
   @override
-  final ProviderMetadata? providerMetadata;
-  @override
   final ProviderPromptPartOptions? providerOptions;
 
   const CustomToolOutputContentPart({
     required this.kind,
     this.data,
-    this.providerMetadata,
     this.providerOptions,
   });
 }

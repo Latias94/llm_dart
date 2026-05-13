@@ -1049,7 +1049,6 @@ void main() {
         }),
       );
       final replayPromptPart = replay.toCustomPromptPart();
-      expect(replayPromptPart.providerMetadata, isNull);
       expect(
         replayPromptPart.providerOptions,
         isA<ProviderReplayPromptPartOptions>(),
@@ -1555,14 +1554,16 @@ void main() {
             parts: [
               TextPromptPart(
                 'Metadata is replay data only.',
-                providerMetadata: const ProviderMetadata({
-                  'anthropic': {
-                    'cacheControl': {
-                      'type': 'ephemeral',
-                      'ttl': '1h',
+                providerOptions: ProviderReplayPromptPartOptions(
+                  const ProviderMetadata({
+                    'anthropic': {
+                      'cacheControl': {
+                        'type': 'ephemeral',
+                        'ttl': '1h',
+                      },
                     },
-                  },
-                }),
+                  }),
+                ),
               ),
             ],
           ),

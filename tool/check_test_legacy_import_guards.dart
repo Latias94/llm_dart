@@ -21,52 +21,19 @@ const List<String> _guardedProviderTestFileSuffixes = [
 
 const Set<String> _guardedProviderTestFiles = {
   'test/compat_transport_test.dart',
-  'test/integration/dio_end_to_end_test.dart',
-  'test/integration/http_configuration_integration_test.dart',
   'test/integration/memorial_on_dispatching_troops_streaming_test.dart',
   'test/integration/thinking_content_extraction_test.dart',
   'test/integration/thinking_tags_streaming_test.dart',
   'test/integration/utf8_streaming_test.dart',
-  'test/providers/factories/base_factory_test.dart',
-  'test/providers/openai/builtin_tools_test.dart',
-  'test/providers/xai/live_search_test.dart',
-  'test/providers/anthropic/anthropic_api_request_structure_test.dart',
-  'test/providers/anthropic/anthropic_caching_test.dart',
-  'test/providers/anthropic/anthropic_cache_invalidation_test.dart',
-  'test/providers/anthropic/anthropic_cache_position_test.dart',
-  'test/providers/anthropic/anthropic_chat_stream_support_test.dart',
-  'test/providers/anthropic/anthropic_json_request_body_test.dart',
-  'test/providers/anthropic/anthropic_messagebuilder_tools_fix_test.dart',
-  'test/providers/anthropic/anthropic_prompt_caching_comprehensive_test.dart',
-  'test/providers/anthropic/anthropic_tools_api_structure_test.dart',
-  'test/providers/anthropic/anthropic_tools_duplication_fix_test.dart',
-  'test/providers/anthropic/anthropic_tool_caching_unified_test.dart',
-  'test/providers/anthropic/anthropic_compat_support_test.dart',
-  'test/providers/elevenlabs/elevenlabs_provider_bridge_test.dart',
-  'test/providers/elevenlabs/elevenlabs_shell_support_test.dart',
-  'test/providers/google/google_streaming_endpoint_test.dart',
-  'test/providers/ollama/ollama_provider_bridge_test.dart',
-  'test/providers/openai/openai_config_layering_test.dart',
-  'test/providers/openai/gpt5_test.dart',
-  'test/providers/openai/message_conversion_test.dart',
-  'test/providers/openai/openai_advanced_test.dart',
-  'test/providers/openai/openai_provider_bridge_test.dart',
-  'test/providers/openai/openai_provider_support_test.dart',
-  'test/providers/openai/openai_request_body_support_test.dart',
-  'test/providers/openai/openai_responses_support_test.dart',
-  'test/providers/openai/openai_responses_tool_call_streaming_test.dart',
-  'test/providers/openai/openai_stream_parsing_support_test.dart',
-  'test/providers/openai/responses_comprehensive_test.dart',
-  'test/providers/openai/responses_error_handling_test.dart',
-  'test/providers/openai/responses_functionality_test.dart',
-  'test/providers/openai/responses_stateful_test.dart',
-  'test/providers/openai/responses_test.dart',
-  'test/providers/openrouter/openrouter_builder_test.dart',
   'test/user_message_tool_caching_test.dart',
 };
 
 final RegExp _legacyImportPattern = RegExp(
   r'''^\s*import\s+['"]package:llm_dart/legacy\.dart['"]''',
+);
+
+final RegExp _legacySubpathImportPattern = RegExp(
+  r'''^\s*import\s+['"]package:llm_dart/(builder|models|providers|core)/''',
 );
 
 final class TestLegacyImportGuardResult {
@@ -81,6 +48,7 @@ final class TestLegacyImportGuardResult {
 
 Future<TestLegacyImportGuardResult> evaluateTestLegacyImportGuards({
   Directory? repoRoot,
+  bool strictRootLegacySubpaths = true,
 }) async {
   final resolvedRepoRoot = repoRoot ?? Directory.current;
   final violations = <String>[];
@@ -97,6 +65,7 @@ Future<TestLegacyImportGuardResult> evaluateTestLegacyImportGuards({
       dir: dir,
       violations: violations,
       category: 'foundational tests',
+      strictRootLegacySubpaths: strictRootLegacySubpaths,
     );
   }
 
@@ -108,6 +77,7 @@ Future<TestLegacyImportGuardResult> evaluateTestLegacyImportGuards({
       dir: providerDir,
       violations: violations,
       category: 'targeted provider tests',
+      strictRootLegacySubpaths: strictRootLegacySubpaths,
       includeFile: (file) => _isGuardedProviderTestFile(
         repoRoot: resolvedRepoRoot,
         file: file,
@@ -127,6 +97,7 @@ Future<void> _collectLegacyImportViolations({
   required Directory dir,
   required List<String> violations,
   required String category,
+  required bool strictRootLegacySubpaths,
   _FileFilter? includeFile,
 }) async {
   await for (final entity in dir.list(recursive: true)) {
@@ -141,6 +112,18 @@ Future<void> _collectLegacyImportViolations({
     for (var index = 0; index < lines.length; index += 1) {
       final line = lines[index];
       if (!_legacyImportPattern.hasMatch(line)) {
+        if (!strictRootLegacySubpaths ||
+            !_legacySubpathImportPattern.hasMatch(line)) {
+          continue;
+        }
+
+        violations.add(
+          '${_displayPath(repoRoot, entity)}:${index + 1}: $category '
+          'must import focused entrypoints instead of root legacy subpaths '
+          '`builder`, `models`, `providers`, or legacy `core`. Keep remaining '
+          'root subpath imports limited to explicit migration inventory until '
+          'the root legacy implementation is deleted.',
+        );
         continue;
       }
 
@@ -172,13 +155,34 @@ String _displayPath(Directory repoRoot, File file) {
   return filePath;
 }
 
-Future<void> main() async {
-  final result = await evaluateTestLegacyImportGuards();
+Future<void> main(List<String> arguments) async {
+  var strictRootLegacySubpaths = true;
+  for (final argument in arguments) {
+    switch (argument) {
+      case '--strict-root-legacy-subpaths':
+        strictRootLegacySubpaths = true;
+      case '--allow-root-legacy-subpaths':
+        strictRootLegacySubpaths = false;
+      default:
+        stderr.writeln('unknown option `$argument`');
+        stderr.writeln(
+          'usage: dart tool/check_test_legacy_import_guards.dart '
+          '[--strict-root-legacy-subpaths|--allow-root-legacy-subpaths]',
+        );
+        exitCode = 64;
+        return;
+    }
+  }
+
+  final result = await evaluateTestLegacyImportGuards(
+    strictRootLegacySubpaths: strictRootLegacySubpaths,
+  );
 
   if (result.passed) {
     stdout.writeln(
       'test legacy import guard passed: guarded foundational and provider '
-      'tests use focused entrypoints instead of the legacy barrel.',
+      'tests use focused entrypoints instead of the legacy barrel'
+      '${strictRootLegacySubpaths ? ' and root legacy subpaths' : ''}.',
     );
     return;
   }

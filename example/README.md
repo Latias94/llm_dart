@@ -20,11 +20,10 @@ Recommended default route:
 
 - start in `01_getting_started/` for model-first setup
 - spend most new app work in the stable examples under `02_core_features/`
-- treat provider directories and older builder examples as explicit appendices
-  rather than the default learning path
-
-Compatibility examples are appendix material. When they still need the broad
-compatibility shell, they import `package:llm_dart/legacy.dart` explicitly.
+- treat provider directories as focused provider-native appendices rather than
+  the default learning path
+- do not use the removed root legacy barrel, builder, model, provider, or
+  legacy core subpaths in new examples
 
 ## Quick Start
 

@@ -1,251 +1,180 @@
+// ignore_for_file: avoid_print
+
 import 'dart:io';
 
-import 'package:llm_dart/builder/llm_builder.dart';
-import 'package:llm_dart/models/chat_models.dart';
+import 'package:llm_dart/anthropic.dart' as anthropic;
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/google.dart' as google;
+import 'package:llm_dart/ollama.dart' as ollama;
+import 'package:llm_dart/openai.dart' as openai;
 
-/// Demonstrates the compatibility provider-specific builder pattern.
+/// Provider-specific request customization without root builders.
 ///
-/// This example shows callback-style configuration for provider-specific
-/// parameters on the older `LLMBuilder` surface. Keep this as migration
-/// material; new app code should start from `<provider>(...).chatModel(...)` and
-/// provider-owned typed options when a modern model factory exists.
+/// The modern rule is:
+/// - provider/model identity goes in the focused provider facade
+/// - provider request behavior goes in typed provider options
+/// - shared generation controls stay in `GenerateTextOptions`
 Future<void> main() async {
-  print('🏗️  Provider-Specific Builders Demo\n');
+  print('Provider-Specific Typed Options Demo\n');
 
-  // Get API keys from environment
-  final openaiKey = Platform.environment['OPENAI_API_KEY'];
-  final anthropicKey = Platform.environment['ANTHROPIC_API_KEY'];
-  final ollamaBaseUrl =
-      Platform.environment['OLLAMA_BASE_URL'] ?? 'http://localhost:11434';
-  final elevenlabsKey = Platform.environment['ELEVENLABS_API_KEY'];
-  final openrouterKey = Platform.environment['OPENROUTER_API_KEY'];
-
-  // Demo OpenAI-specific configuration
-  await demoOpenAIBuilder(openaiKey);
-
-  // Demo Anthropic-specific configuration
-  await demoAnthropicBuilder(anthropicKey);
-
-  // Demo Ollama-specific configuration
-  await demoOllamaBuilder(ollamaBaseUrl);
-
-  // Demo ElevenLabs-specific configuration
-  await demoElevenLabsBuilder(elevenlabsKey);
-
-  // Demo OpenRouter-specific configuration
-  await demoOpenRouterBuilder(openrouterKey);
-
-  // Demo mixed configurations
-  await demoMixedConfigurations();
-
-  print('✅ Provider-specific builders demo completed!');
+  await demoOpenAIOptions();
+  await demoAnthropicOptions();
+  await demoGoogleOptions();
+  await demoOllamaOptions();
+  explainBoundary();
 }
 
-/// Demonstrate OpenAI-specific builder configuration
-Future<void> demoOpenAIBuilder(String? apiKey) async {
-  print('🤖 OpenAI Builder Configuration');
-  print('=' * 40);
+Future<void> demoOpenAIOptions() async {
+  print('--- OpenAI ---');
 
-  if (apiKey == null) {
-    print('   ⚠️  OPENAI_API_KEY not set, skipping OpenAI demo\n');
+  final apiKey = Platform.environment['OPENAI_API_KEY'];
+  if (apiKey == null || apiKey.isEmpty) {
+    print('  OPENAI_API_KEY not set, skipping live call.\n');
     return;
   }
 
-  try {
-    // OpenAI with provider-specific parameters
-    final provider = await LLMBuilder()
-        .openai((openai) => openai
-            .frequencyPenalty(0.5)
-            .presencePenalty(0.3)
-            .seed(12345)
-            .parallelToolCalls(true)
-            .logprobs(true)
-            .topLogprobs(5)
-            .forCreativeWriting()) // Convenience method
-        .apiKey(apiKey)
-        .model('gpt-4')
-        .temperature(0.7)
-        .maxTokens(100)
-        .build();
+  final model = openai.openai(apiKey: apiKey).chatModel(
+        'gpt-4.1-mini',
+        settings: const openai.OpenAIChatModelSettings(
+          useResponsesApi: true,
+          builtInTools: [
+            openai.OpenAIWebSearchTool(),
+          ],
+        ),
+      );
 
-    final response = await provider.chat([
-      ChatMessage.user(
-          'Write a creative short story opening about a mysterious door.')
-    ]);
+  final result = await core.generateTextCall(
+    model: model,
+    messages: [
+      core.UserModelMessage.text(
+        'Give one practical reason to keep provider options typed.',
+      ),
+    ],
+    options: const core.GenerateTextOptions(maxOutputTokens: 120),
+    callOptions: const core.CallOptions(
+      providerOptions: openai.OpenAIGenerateTextOptions(
+        verbosity: 'low',
+        parallelToolCalls: true,
+        store: false,
+      ),
+    ),
+  );
 
-    print('   📝 Creative writing response:');
-    print('   ${response.text?.substring(0, 150)}...\n');
-  } catch (e) {
-    print('   ❌ Error: $e\n');
-  }
+  print('  ${result.text}\n');
 }
 
-/// Demonstrate Anthropic-specific builder configuration
-Future<void> demoAnthropicBuilder(String? apiKey) async {
-  print('🧠 Anthropic Builder Configuration');
-  print('=' * 40);
+Future<void> demoAnthropicOptions() async {
+  print('--- Anthropic ---');
 
-  if (apiKey == null) {
-    print('   ⚠️  ANTHROPIC_API_KEY not set, skipping Anthropic demo\n');
+  final apiKey = Platform.environment['ANTHROPIC_API_KEY'];
+  if (apiKey == null || apiKey.isEmpty) {
+    print('  ANTHROPIC_API_KEY not set, skipping live call.\n');
     return;
   }
 
-  try {
-    // Anthropic with metadata and container configuration
-    final provider = await LLMBuilder()
-        .anthropic((anthropic) => anthropic.metadata({
-              'user_id': 'demo_user_123',
-              'session_id': 'session_456',
-              'application': 'llm_dart_demo',
-              'environment': 'development',
-            }).forProduction(
-              userId: 'demo_user_123',
-              sessionId: 'session_456',
-              applicationName: 'llm_dart_demo',
-            )) // Convenience method
-        .apiKey(apiKey)
-        .model('claude-sonnet-4-20250514')
-        .temperature(0.5)
-        .maxTokens(100)
-        .build();
+  final model = anthropic.anthropic(apiKey: apiKey).chatModel(
+        'claude-sonnet-4-5',
+        settings: const anthropic.AnthropicChatModelSettings(
+          betaFeatures: ['interleaved-thinking-2025-05-14'],
+        ),
+      );
 
-    final response = await provider.chat(
-        [ChatMessage.user('Explain the concept of metadata in AI systems.')]);
+  final result = await core.generateTextCall(
+    model: model,
+    messages: [
+      core.UserModelMessage.text(
+        'Explain provider-native metadata in one short sentence.',
+      ),
+    ],
+    options: const core.GenerateTextOptions(maxOutputTokens: 120),
+    callOptions: const core.CallOptions(
+      providerOptions: anthropic.AnthropicGenerateTextOptions(
+        serviceTier: 'auto',
+        metadata: {
+          'example': 'provider_specific_options',
+        },
+      ),
+    ),
+  );
 
-    print('   🔍 Metadata-tracked response:');
-    print('   ${response.text?.substring(0, 150)}...\n');
-  } catch (e) {
-    print('   ❌ Error: $e\n');
-  }
+  print('  ${result.text}\n');
 }
 
-/// Demonstrate Ollama-specific builder configuration
-Future<void> demoOllamaBuilder(String baseUrl) async {
-  print('🦙 Ollama Builder Configuration');
-  print('=' * 40);
+Future<void> demoGoogleOptions() async {
+  print('--- Google ---');
 
-  try {
-    // Ollama with performance optimization
-    final provider = await LLMBuilder()
-        .ollama((ollama) => ollama
-            .numCtx(4096)
-            .numGpu(-1) // Use all GPU layers
-            .numThread(8)
-            .numa(true)
-            .numBatch(512)
-            .keepAlive('10m')
-            .forMaxPerformance()) // Convenience method
-        .baseUrl(baseUrl)
-        .model('llama3.2')
-        .temperature(0.7)
-        .maxTokens(100)
-        .build();
-
-    final response = await provider.chat([
-      ChatMessage.user('Explain how GPU acceleration works in language models.')
-    ]);
-
-    print('   ⚡ High-performance response:');
-    print('   ${response.text?.substring(0, 150)}...\n');
-  } catch (e) {
-    print('   ❌ Error: $e\n');
-  }
-}
-
-/// Demonstrate ElevenLabs-specific builder configuration
-Future<void> demoElevenLabsBuilder(String? apiKey) async {
-  print('🎵 ElevenLabs Builder Configuration');
-  print('=' * 40);
-
-  if (apiKey == null) {
-    print('   ⚠️  ELEVENLABS_API_KEY not set, skipping ElevenLabs demo\n');
+  final apiKey = Platform.environment['GOOGLE_API_KEY'];
+  if (apiKey == null || apiKey.isEmpty) {
+    print('  GOOGLE_API_KEY not set, skipping live call.\n');
     return;
   }
 
+  final model = google.google(apiKey: apiKey).chatModel(
+        'gemini-2.5-flash',
+        settings: const google.GoogleChatModelSettings(
+          safetySettings: [
+            google.GoogleSafetySetting(
+              category: google.GoogleHarmCategory.dangerousContent,
+              threshold: google.GoogleHarmBlockThreshold.blockOnlyHigh,
+            ),
+          ],
+        ),
+      );
+
+  final result = await core.generateTextCall(
+    model: model,
+    messages: [
+      core.UserModelMessage.text(
+        'Name one SDK design benefit of typed provider options.',
+      ),
+    ],
+    options: const core.GenerateTextOptions(maxOutputTokens: 120),
+    callOptions: const core.CallOptions(
+      providerOptions: google.GoogleGenerateTextOptions(
+        thinkingLevel: google.GoogleThinkingLevel.low,
+        includeThoughts: false,
+      ),
+    ),
+  );
+
+  print('  ${result.text}\n');
+}
+
+Future<void> demoOllamaOptions() async {
+  print('--- Ollama ---');
+
+  final baseUrl =
+      Platform.environment['OLLAMA_BASE_URL'] ?? ollama.ollamaDefaultBaseUrl;
+  final model = ollama.ollama(baseUrl: baseUrl).chatModel('llama3.2');
+
   try {
-    // ElevenLabs with voice customization
-    final audioProvider = await LLMBuilder()
-        .elevenlabs((elevenlabs) => elevenlabs
-            .voiceId('JBFqnCBsd6RMkjVDRZzb')
-            .stability(0.75)
-            .similarityBoost(0.8)
-            .style(0.2)
-            .useSpeakerBoost(true)
-            .forHighQuality()) // Convenience method
-        .apiKey(apiKey)
-        .buildAudio();
+    final result = await core.generateTextCall(
+      model: model,
+      messages: [
+        core.UserModelMessage.text(
+          'Explain why local runtime tuning should be provider-owned.',
+        ),
+      ],
+      options: const core.GenerateTextOptions(maxOutputTokens: 120),
+      callOptions: const core.CallOptions(
+        providerOptions: ollama.OllamaGenerateTextOptions(
+          numCtx: 4096,
+          numThread: 8,
+          keepAlive: '10m',
+        ),
+      ),
+    );
 
-    // Generate speech
-    final audioData = await audioProvider.speech(
-        'Welcome to the new provider-specific builder pattern in LLM Dart!');
-
-    print('   🔊 Generated audio: ${audioData.length} bytes');
-    print('   💾 Audio saved to: elevenlabs_builder_demo.mp3\n');
-
-    // Save audio file
-    await File('elevenlabs_builder_demo.mp3').writeAsBytes(audioData);
-  } catch (e) {
-    print('   ❌ Error: $e\n');
+    print('  ${result.text}\n');
+  } catch (error) {
+    print('  Ollama call failed at $baseUrl: $error\n');
   }
 }
 
-/// Demonstrate OpenRouter-specific builder configuration
-Future<void> demoOpenRouterBuilder(String? apiKey) async {
-  print('🌐 OpenRouter Builder Configuration');
-  print('=' * 40);
-
-  if (apiKey == null) {
-    print('   ⚠️  OPENROUTER_API_KEY not set, skipping OpenRouter demo\n');
-    return;
-  }
-
-  try {
-    // OpenRouter with audited online-search intent
-    final provider = await LLMBuilder()
-        .openRouter((openrouter) => openrouter.onlineSearch())
-        .apiKey(apiKey)
-        .model('anthropic/claude-3.5-sonnet')
-        .temperature(0.3)
-        .maxTokens(150)
-        .build();
-
-    final response = await provider.chat([
-      ChatMessage.user(
-          'What are the latest developments in large language models?')
-    ]);
-
-    print('   🔍 Web-enhanced response:');
-    print('   ${response.text?.substring(0, 200)}...\n');
-  } catch (e) {
-    print('   ❌ Error: $e\n');
-  }
-}
-
-/// Demonstrate mixed configurations and backward compatibility
-Future<void> demoMixedConfigurations() async {
-  print('🔄 Mixed Configurations & Backward Compatibility');
-  print('=' * 50);
-
-  // Show that providers work without callback configuration (backward compatible)
-  print('   ✅ Backward compatibility - no callbacks:');
-  final simpleBuilder =
-      LLMBuilder().openai().anthropic().ollama().elevenlabs().openRouter();
-  print('      Builder created successfully without provider-specific config');
-  print('      Builder type: ${simpleBuilder.runtimeType}');
-
-  // Show mixed configuration with both generic and provider-specific parameters
-  print('   ✅ Mixed configuration:');
-  final mixedBuilder = LLMBuilder()
-      .openai((openai) => openai.seed(42).parallelToolCalls(false))
-      .apiKey('test-key')
-      .model('gpt-4')
-      .temperature(0.8)
-      .maxTokens(500)
-      .systemPrompt('You are a helpful assistant')
-      .timeout(Duration(seconds: 30));
-  print('      Mixed generic + provider-specific config successful');
-  print('      Builder configured with model: gpt-4, temperature: 0.8');
-  print('      Builder type: ${mixedBuilder.runtimeType}');
-
-  print('');
+void explainBoundary() {
+  print('--- Boundary Rule ---');
+  print('  Root no longer owns a provider builder DSL.');
+  print('  Use shared options for cross-provider behavior.');
+  print('  Use typed provider options for native request behavior.');
+  print('  Read ProviderMetadata only from results and stream events.');
 }

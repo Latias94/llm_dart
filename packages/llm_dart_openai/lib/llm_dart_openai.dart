@@ -1,6 +1,7 @@
 library;
 
 export 'src/openai.dart';
+export 'src/openai_assistants.dart';
 export 'src/openai_custom_part.dart';
 export 'src/openai_custom_part_summary.dart';
 export 'src/deepseek_options.dart';
@@ -15,6 +16,7 @@ export 'src/openai_model_describer.dart';
 export 'src/openai_speech_model.dart';
 export 'src/openai_native_tools.dart';
 export 'src/openai_options.dart';
+export 'src/openai_responses_lifecycle.dart';
 export 'src/openrouter_options.dart';
 export 'src/openai_response_format.dart';
 export 'src/openai_transcription_model.dart';

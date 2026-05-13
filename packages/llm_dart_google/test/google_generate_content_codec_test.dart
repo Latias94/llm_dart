@@ -600,31 +600,37 @@ void main() {
             parts: [
               ReasoningPromptPart(
                 'Thinking...',
-                providerMetadata: ProviderMetadata({
-                  'google': {
-                    'thoughtSignature': 'sig_reasoning',
-                  },
-                }),
+                providerOptions: ProviderReplayPromptPartOptions(
+                  ProviderMetadata({
+                    'google': {
+                      'thoughtSignature': 'sig_reasoning',
+                    },
+                  }),
+                ),
               ),
               ReasoningFilePromptPart(
                 mediaType: 'image/png',
                 filename: 'thought.png',
                 data: FileBytesData([1, 2, 3]),
-                providerMetadata: ProviderMetadata({
-                  'google': {
-                    'thoughtSignature': 'sig_reasoning_file',
-                  },
-                }),
+                providerOptions: ProviderReplayPromptPartOptions(
+                  ProviderMetadata({
+                    'google': {
+                      'thoughtSignature': 'sig_reasoning_file',
+                    },
+                  }),
+                ),
               ),
               FilePromptPart(
                 mediaType: 'image/jpeg',
                 data: FileBytesData([4, 5, 6]),
-                providerMetadata: ProviderMetadata({
-                  'google': {
-                    'thought': true,
-                    'thoughtSignature': 'sig_file',
-                  },
-                }),
+                providerOptions: ProviderReplayPromptPartOptions(
+                  ProviderMetadata({
+                    'google': {
+                      'thought': true,
+                      'thoughtSignature': 'sig_file',
+                    },
+                  }),
+                ),
               ),
               ToolCallPromptPart(
                 toolCallId: 'tool_1',
@@ -632,19 +638,23 @@ void main() {
                 input: {
                   'city': 'Hong Kong',
                 },
-                providerMetadata: ProviderMetadata({
-                  'google': {
-                    'thoughtSignature': 'sig_tool',
-                  },
-                }),
+                providerOptions: ProviderReplayPromptPartOptions(
+                  ProviderMetadata({
+                    'google': {
+                      'thoughtSignature': 'sig_tool',
+                    },
+                  }),
+                ),
               ),
               TextPromptPart(
                 'Visible answer.',
-                providerMetadata: ProviderMetadata({
-                  'google': {
-                    'thoughtSignature': 'sig_text',
-                  },
-                }),
+                providerOptions: ProviderReplayPromptPartOptions(
+                  ProviderMetadata({
+                    'google': {
+                      'thoughtSignature': 'sig_text',
+                    },
+                  }),
+                ),
               ),
             ],
           ),
@@ -716,11 +726,13 @@ void main() {
                 input: {
                   'city': 'Hong Kong',
                 },
-                providerMetadata: ProviderMetadata({
-                  'google': {
-                    'functionCallId': 'call_google_1',
-                  },
-                }),
+                providerOptions: ProviderReplayPromptPartOptions(
+                  ProviderMetadata({
+                    'google': {
+                      'functionCallId': 'call_google_1',
+                    },
+                  }),
+                ),
               ),
             ],
           ),
@@ -733,11 +745,13 @@ void main() {
                 output: {
                   'temperature': 28,
                 },
-                providerMetadata: ProviderMetadata({
-                  'google': {
-                    'functionCallId': 'call_google_1',
-                  },
-                }),
+                providerOptions: ProviderReplayPromptPartOptions(
+                  ProviderMetadata({
+                    'google': {
+                      'functionCallId': 'call_google_1',
+                    },
+                  }),
+                ),
               ),
             ],
           ),
@@ -922,11 +936,13 @@ void main() {
                 input: {
                   'metric': 'sales',
                 },
-                providerMetadata: ProviderMetadata({
-                  'google': {
-                    'functionCallId': 'call_google_2',
-                  },
-                }),
+                providerOptions: ProviderReplayPromptPartOptions(
+                  ProviderMetadata({
+                    'google': {
+                      'functionCallId': 'call_google_2',
+                    },
+                  }),
+                ),
               ),
             ],
           ),

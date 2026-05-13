@@ -11,11 +11,11 @@ sealed class OpenAICustomPart {
 
   static OpenAICustomPart? tryParsePromptPart(PromptPart part) {
     return switch (part) {
-      CustomPromptPart(:final kind, :final data, :final providerMetadata) =>
+      CustomPromptPart(:final kind, :final data, :final providerOptions) =>
         _parseCustomPayload(
           kind: kind,
           data: data,
-          providerMetadata: providerMetadata,
+          providerMetadata: providerReplayMetadataFromOptions(providerOptions),
         ),
       _ => null,
     };

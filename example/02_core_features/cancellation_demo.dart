@@ -5,7 +5,7 @@ import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/llm_dart.dart' as llm;
-import 'package:llm_dart/providers/openai/openai.dart' as openai_compat;
+import 'package:llm_dart/transport.dart' as transport;
 
 Future<void> main() async {
   final apiKey = Platform.environment['OPENAI_API_KEY'];
@@ -22,13 +22,12 @@ Future<void> main() async {
   await demonstrateGenerateCancellation(model);
   await demonstrateSharedCancellation(model);
   await demonstratePreCancelledRequest(model);
-  await demonstrateModelListingBoundary(apiKey);
 }
 
 Future<void> demonstrateStreamingCancellation(core.LanguageModel model) async {
   print('1. streamTextCall(...) cancellation');
 
-  final cancelToken = core.TransportCancellation();
+  final cancelToken = transport.TransportCancellation();
   var sawVisibleText = false;
   var sawAbortEvent = false;
   var sawCancellationError = false;
@@ -44,8 +43,8 @@ Future<void> demonstrateStreamingCancellation(core.LanguageModel model) async {
 
   final stream = core.streamTextCall(
     model: model,
-    prompt: [
-      core.UserPromptMessage.text(
+    messages: [
+      core.UserModelMessage.text(
         'Write a long multi-section essay about the history of computing, '
         'starting before electronic computers and continuing into modern AI.',
       ),
@@ -108,13 +107,13 @@ Future<void> demonstrateStreamingCancellation(core.LanguageModel model) async {
 Future<void> demonstrateGenerateCancellation(core.LanguageModel model) async {
   print('2. generateTextCall(...) cancellation');
 
-  final cancelToken = core.TransportCancellation();
+  final cancelToken = transport.TransportCancellation();
 
   try {
     final future = core.generateTextCall(
       model: model,
-      prompt: [
-        core.UserPromptMessage.text(
+      messages: [
+        core.UserModelMessage.text(
           'Write a detailed tutorial about event loops, isolates, futures, '
           'streams, and cancellation in Dart with many sections.',
         ),
@@ -129,17 +128,12 @@ Future<void> demonstrateGenerateCancellation(core.LanguageModel model) async {
 
     final result = await future;
     print('[warning] request completed before cancellation: ${result.text}\n');
-  } on core.TransportCancelledException catch (error) {
+  } on transport.TransportCancelledException catch (error) {
     print('Caught TransportCancelledException');
-    print(
-      'Reason: ${core.CancellationHelper.getCancellationReason(error)}\n',
-    );
+    print('Reason: ${error.reason ?? error.message}\n');
   } catch (error) {
-    if (core.CancellationHelper.isCancelled(error)) {
-      print(
-        'Cancelled via helper: '
-        '${core.CancellationHelper.getCancellationReason(error)}\n',
-      );
+    if (_isCancellation(error)) {
+      print('Cancelled: ${_cancellationReason(error) ?? error}\n');
     } else {
       print('Generate cancellation demo failed: $error\n');
     }
@@ -149,7 +143,7 @@ Future<void> demonstrateGenerateCancellation(core.LanguageModel model) async {
 Future<void> demonstrateSharedCancellation(core.LanguageModel model) async {
   print('3. Shared cancellation token');
 
-  final sharedToken = core.TransportCancellation();
+  final sharedToken = transport.TransportCancellation();
   final prompts = [
     'Write a long explanation of how Flutter builds widgets.',
     'Write a long explanation of how Dart futures are scheduled.',
@@ -161,8 +155,8 @@ Future<void> demonstrateSharedCancellation(core.LanguageModel model) async {
         .map(
           (prompt) => core.generateTextCall(
             model: model,
-            prompt: [
-              core.UserPromptMessage.text(prompt),
+            messages: [
+              core.UserModelMessage.text(prompt),
             ],
             callOptions: core.CallOptions(
               cancellation: sharedToken,
@@ -182,7 +176,7 @@ Future<void> demonstrateSharedCancellation(core.LanguageModel model) async {
         await request;
         completedCount += 1;
       } catch (error) {
-        if (core.CancellationHelper.isCancelled(error)) {
+        if (_isCancellation(error)) {
           cancelledCount += 1;
         } else {
           rethrow;
@@ -200,14 +194,14 @@ Future<void> demonstrateSharedCancellation(core.LanguageModel model) async {
 Future<void> demonstratePreCancelledRequest(core.LanguageModel model) async {
   print('4. Pre-cancelled request');
 
-  final cancelToken = core.TransportCancellation();
+  final cancelToken = transport.TransportCancellation();
   cancelToken.cancel('The request owner was already disposed');
 
   try {
     await core.generateTextCall(
       model: model,
-      prompt: [
-        core.UserPromptMessage.text(
+      messages: [
+        core.UserModelMessage.text(
           'This request should never reach the provider.',
         ),
       ],
@@ -218,10 +212,10 @@ Future<void> demonstratePreCancelledRequest(core.LanguageModel model) async {
 
     print('[warning] request unexpectedly ran despite pre-cancellation\n');
   } catch (error) {
-    if (core.CancellationHelper.isCancelled(error)) {
+    if (_isCancellation(error)) {
       print(
         'Pre-cancelled request rejected: '
-        '${core.CancellationHelper.getCancellationReason(error)}\n',
+        '${_cancellationReason(error) ?? error}\n',
       );
     } else {
       print('Pre-cancelled request demo failed: $error\n');
@@ -229,38 +223,19 @@ Future<void> demonstratePreCancelledRequest(core.LanguageModel model) async {
   }
 }
 
-Future<void> demonstrateModelListingBoundary(String apiKey) async {
-  print('5. Compatibility boundary: model listing');
-
-  try {
-    final provider = openai_compat.createOpenAIProvider(
-      apiKey: apiKey,
-      model: 'gpt-4o',
-    );
-    final cancelToken = core.TransportCancellation();
-    final future = provider.models(cancelToken: cancelToken);
-
-    await Future.delayed(const Duration(milliseconds: 10));
-    cancelToken.cancel('Boundary request cancelled by caller');
-
-    final models = await future;
-    print(
-      '[warning] model listing completed before cancellation '
-      '(${models.length} models)\n',
-    );
-  } catch (error) {
-    if (core.CancellationHelper.isCancelled(error)) {
-      print(
-        'Boundary cancellation handled by the compatibility layer: '
-        '${core.CancellationHelper.getCancellationReason(error)}',
-      );
-      print('Remote model listing still lives on a provider-owned boundary.\n');
-    } else {
-      print('Model listing boundary demo failed: $error\n');
-    }
-  }
-}
-
 bool _isTransportCancelled(core.ModelError error) {
   return error.code == 'transport-cancelled';
+}
+
+bool _isCancellation(Object error) {
+  return error is transport.TransportCancelledException ||
+      (error is core.ModelError && _isTransportCancelled(error));
+}
+
+Object? _cancellationReason(Object error) {
+  return switch (error) {
+    transport.TransportCancelledException(:final reason) => reason,
+    core.ModelError(:final message) => message,
+    _ => null,
+  };
 }

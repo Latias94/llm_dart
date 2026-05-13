@@ -533,7 +533,7 @@ void main() {
       final reasoningPart = assistantPrompt.parts[0] as ReasoningPromptPart;
       expect(reasoningPart.text, 'Plan first.');
       expect(
-        reasoningPart.providerMetadata!['google'],
+        _promptReplayMetadata(reasoningPart)!['google'],
         containsPair('thoughtSignature', 'sig_reasoning'),
       );
 
@@ -542,14 +542,14 @@ void main() {
       expect(reasoningFilePart.filename, 'thought.png');
       expect(reasoningFilePart.bytes, [1, 2, 3]);
       expect(
-        reasoningFilePart.providerMetadata!['google'],
+        _promptReplayMetadata(reasoningFilePart)!['google'],
         containsPair('thoughtSignature', 'sig_reasoning_file'),
       );
 
       final textPart = assistantPrompt.parts[2] as TextPromptPart;
       expect(textPart.text, 'Here is the answer.');
       expect(
-        textPart.providerMetadata!['openai'],
+        _promptReplayMetadata(textPart)!['openai'],
         containsPair('itemId', 'msg_1'),
       );
 
@@ -561,7 +561,7 @@ void main() {
         'encrypted_content': 'enc_1',
       });
       expect(
-        customPart.providerMetadata!['openai'],
+        _promptReplayMetadata(customPart)!['openai'],
         containsPair('itemId', 'cmp_1'),
       );
 
@@ -642,7 +642,7 @@ void main() {
       expect(replayedFilePart.uri, isNull);
       expect(replayedFilePart.bytes, [4, 5, 6]);
       expect(
-        replayedFilePart.providerMetadata!['google'],
+        _promptReplayMetadata(replayedFilePart)!['google'],
         containsPair('fileId', 'file_pdf_1'),
       );
 
@@ -930,7 +930,7 @@ void main() {
         },
       });
       expect(
-        replayedToolCall.providerMetadata!['google'],
+        _promptReplayMetadata(replayedToolCall)!['google'],
         containsPair('thoughtSignature', 'sig_srvtool_1'),
       );
 
@@ -2367,7 +2367,7 @@ void main() {
       final reasoningPart = assistantPrompt.parts[0] as ReasoningPromptPart;
       expect(reasoningPart.text, 'Plan first.');
       expect(
-        reasoningPart.providerMetadata!['google'],
+        _promptReplayMetadata(reasoningPart)!['google'],
         containsPair('thoughtSignature', 'sig_reasoning'),
       );
 
@@ -2376,14 +2376,14 @@ void main() {
       expect(reasoningFilePart.filename, 'thought.png');
       expect(reasoningFilePart.bytes, [1, 2, 3]);
       expect(
-        reasoningFilePart.providerMetadata!['google'],
+        _promptReplayMetadata(reasoningFilePart)!['google'],
         containsPair('thoughtSignature', 'sig_reasoning_file'),
       );
 
       final textPart = assistantPrompt.parts[2] as TextPromptPart;
       expect(textPart.text, 'Visible answer.');
       expect(
-        textPart.providerMetadata!['google'],
+        _promptReplayMetadata(textPart)!['google'],
         containsPair('thoughtSignature', 'sig_text'),
       );
 
@@ -2476,14 +2476,14 @@ void main() {
       expect(replayedFilePart.uri, isNull);
       expect(replayedFilePart.bytes, [4, 5, 6]);
       expect(
-        replayedFilePart.providerMetadata!['google'],
+        _promptReplayMetadata(replayedFilePart)!['google'],
         containsPair('fileId', 'file_pdf_1'),
       );
 
       final replayedTextPart = assistantPrompt.parts[1] as TextPromptPart;
       expect(replayedTextPart.text, 'Attached the report.');
       expect(
-        replayedTextPart.providerMetadata!['google'],
+        _promptReplayMetadata(replayedTextPart)!['google'],
         containsPair('responsePart', 'visible_text'),
       );
 
@@ -2608,7 +2608,7 @@ void main() {
         },
       });
       expect(
-        replayedToolCall.providerMetadata!['google'],
+        _promptReplayMetadata(replayedToolCall)!['google'],
         containsPair('thoughtSignature', 'sig_srvtool_1'),
       );
 
@@ -3229,6 +3229,10 @@ Future<void> _flushAsyncWork([int turns = 8]) async {
   for (var index = 0; index < turns; index++) {
     await Future<void>.delayed(Duration.zero);
   }
+}
+
+ProviderMetadata? _promptReplayMetadata(PromptPart part) {
+  return providerReplayMetadataFromOptions(part.providerOptions);
 }
 
 final class _FakeChatTransport implements ChatTransport {

@@ -224,7 +224,9 @@ final class GoogleFunctionResponseReplay {
     return CustomPromptPart(
       kind: kind,
       data: toJson(),
-      providerMetadata: _resolvedProviderMetadata(providerMetadata),
+      providerOptions: ProviderReplayPromptPartOptions.fromMetadata(
+        _resolvedProviderMetadata(providerMetadata),
+      ),
     );
   }
 
@@ -287,7 +289,7 @@ final class GoogleFunctionResponseReplay {
 
     return tryParseData(
       part.data,
-      providerMetadata: part.providerMetadata,
+      providerMetadata: providerReplayMetadataFromOptions(part.providerOptions),
     );
   }
 

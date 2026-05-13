@@ -2,168 +2,116 @@
 
 import 'dart:io';
 
-import 'package:llm_dart/builder/llm_builder.dart' as compat_builder;
+import 'package:llm_dart/anthropic.dart' as anthropic;
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/core/capability.dart' as compat_core;
-import 'package:llm_dart/core/registry.dart' as compat_registry;
-import 'package:llm_dart/llm_dart.dart' as ai;
+import 'package:llm_dart/google.dart' as google;
+import 'package:llm_dart/openai.dart' as openai;
 
 const _stableExecutionCallOptions = core.CallOptions(
   timeout: Duration(seconds: 20),
 );
 
-/// Capability detection through provider declarations.
+/// Capability detection through concrete model profiles.
 ///
-/// This example intentionally separates two layers:
-/// 1. registry-level capability metadata for provider selection
-/// 2. stable `<provider>(...).chatModel(...)` creation for actual execution
-///
-/// Capability metadata is useful for:
-/// - shortlisting providers before choosing API keys and models
-/// - documentation and migration planning
-/// - understanding provider-family boundaries
-///
-/// Capability metadata is not a strict runtime contract:
-/// - support can vary by model
-/// - some features stay provider-owned compatibility boundaries
-/// - successful app calls still require graceful error handling
-///
-/// No credentials are required for the declaration-inspection sections.
-/// To run the optional stable execution demo, set one of:
-/// - OPENAI_API_KEY
-/// - ANTHROPIC_API_KEY
-/// - GOOGLE_API_KEY
-/// - GROQ_API_KEY
-/// - DEEPSEEK_API_KEY
-/// - XAI_API_KEY
-/// - OPENROUTER_API_KEY
+/// The current architecture follows the Vercel AI SDK style more closely:
+/// choose a concrete provider facade, create a model, then inspect the model's
+/// app-facing capability profile. Provider-specific native features stay in
+/// typed model settings or typed invocation options.
 Future<void> main() async {
-  print('Capability Detection and Provider Selection\n');
+  print('Capability Detection With Model Profiles\n');
 
-  _ensureProviderDeclarationsRegistered();
-  final providers = loadExampleProviderInfo();
-
-  if (providers.isEmpty) {
-    print('No provider declarations are currently registered.');
-    return;
-  }
-
-  printProviderOverview(providers);
-  printScenarioRecommendations(providers);
+  final profiles = loadExampleModelProfiles();
+  printModelOverview(profiles);
+  printScenarioRecommendations(profiles);
   printBoundaryGuidance();
-  await demonstrateStableExecution(providers);
+  await demonstrateStableExecution(profiles);
 
   print(
-      'Capability detection remains advisory; stable calls remain model-first.');
+      'Capability detection remains advisory; provider codecs still validate');
+  print('the final request shape at runtime.');
 }
 
-List<compat_registry.ProviderInfo> loadExampleProviderInfo() {
-  const providerOrder = [
-    'openai',
-    'anthropic',
-    'google',
-    'groq',
-    'deepseek',
-    'xai',
-    'openrouter',
-    'phind',
-    'ollama',
-    'elevenlabs',
+List<core.ModelCapabilityProfile> loadExampleModelProfiles() {
+  final models = <core.LanguageModel>[
+    openai.openai(apiKey: 'demo-key').chatModel('gpt-4.1-mini'),
+    openai.openai(apiKey: 'demo-key').chatModel('gpt-4o'),
+    openai.openai(apiKey: 'demo-key').chatModel('o3-mini'),
+    google.google(apiKey: 'demo-key').chatModel('gemini-2.5-flash'),
+    anthropic.anthropic(apiKey: 'demo-key').chatModel('claude-sonnet-4-5'),
   ];
-
-  final allProviders = {
-    for (final provider
-        in compat_registry.LLMProviderRegistry.getAllProviderInfo())
-      provider.id: provider,
-  };
 
   return [
-    for (final providerId in providerOrder)
-      if (allProviders.containsKey(providerId)) allProviders[providerId]!,
+    for (final model in models)
+      if (model case core.CapabilityDescribedModel(:final capabilityProfile))
+        capabilityProfile,
   ];
 }
 
-void printProviderOverview(List<compat_registry.ProviderInfo> providers) {
-  print('--- Provider Declarations ---');
+void printModelOverview(List<core.ModelCapabilityProfile> profiles) {
+  print('--- Concrete Model Profiles ---');
 
-  final byCoverage = [...providers]..sort(
-      (left, right) => right.supportedCapabilities.length
-          .compareTo(left.supportedCapabilities.length),
-    );
-
-  for (final provider in byCoverage) {
-    final capabilities = _highSignalCapabilities
-        .where(provider.supports)
-        .map(_capabilityLabel)
+  for (final profile in profiles) {
+    final features = _highSignalFeatures
+        .where(profile.supports)
+        .map(_featureLabel)
         .join(', ');
 
     print(
-      '  ${_providerLabel(provider.id).padRight(12)} '
-      '(${provider.supportedCapabilities.length} declared): '
-      '${capabilities.isEmpty ? 'none' : capabilities}',
+      '  ${profile.providerId.padRight(10)} ${profile.modelId.padRight(22)} '
+      '${features.isEmpty ? 'no shared high-signal features' : features}',
     );
   }
 
   print('');
 }
 
-void printScenarioRecommendations(
-    List<compat_registry.ProviderInfo> providers) {
+void printScenarioRecommendations(List<core.ModelCapabilityProfile> profiles) {
   print('--- Scenario Recommendations ---');
 
   const scenarios = [
     _CapabilityScenario(
-      label: 'Flutter chat baseline',
+      label: 'streaming chat',
       required: {
-        compat_core.LLMCapability.chat,
-        compat_core.LLMCapability.streaming,
-        compat_core.LLMCapability.toolCalling,
+        core.ModelCapabilityFeatureIds.languageTextInput,
+        core.ModelCapabilityFeatureIds.languageStreaming,
       },
     ),
     _CapabilityScenario(
-      label: 'Vision-enabled chat',
+      label: 'tool-using workflow',
       required: {
-        compat_core.LLMCapability.chat,
-        compat_core.LLMCapability.vision,
+        core.ModelCapabilityFeatureIds.languageFunctionTools,
+        core.ModelCapabilityFeatureIds.languageToolChoice,
       },
     ),
     _CapabilityScenario(
-      label: 'Reasoning-heavy workflows',
+      label: 'structured output',
       required: {
-        compat_core.LLMCapability.chat,
-        compat_core.LLMCapability.reasoning,
+        core.ModelCapabilityFeatureIds.languageStructuredOutput,
       },
     ),
     _CapabilityScenario(
-      label: 'Semantic search / RAG indexing',
+      label: 'vision input',
       required: {
-        compat_core.LLMCapability.embedding,
+        core.ModelCapabilityFeatureIds.languageImageInput,
       },
     ),
     _CapabilityScenario(
-      label: 'Speech input and output',
+      label: 'reasoning output',
       required: {
-        compat_core.LLMCapability.textToSpeech,
-        compat_core.LLMCapability.speechToText,
-      },
-    ),
-    _CapabilityScenario(
-      label: 'Image generation',
-      required: {
-        compat_core.LLMCapability.imageGeneration,
+        core.ModelCapabilityFeatureIds.languageReasoningOutput,
       },
     ),
   ];
 
   for (final scenario in scenarios) {
-    final matches = _providersSupportingAll(providers, scenario.required);
-    final requiredLabels = scenario.required.map(_capabilityLabel).join(', ');
-
+    final matches = profiles.where(
+      (profile) => profile.supportsAll(scenario.required),
+    );
     print('  ${scenario.label}');
-    print('    Required: $requiredLabels');
+    print('    Required: ${scenario.required.map(_featureLabel).join(', ')}');
     print(
       '    Candidates: '
-      '${matches.isEmpty ? 'none declared' : matches.map((provider) => _providerLabel(provider.id)).join(', ')}',
+      '${matches.isEmpty ? 'none declared' : matches.map(_modelLabel).join(', ')}',
     );
   }
 
@@ -172,236 +120,114 @@ void printScenarioRecommendations(
 
 void printBoundaryGuidance() {
   print('--- Boundary Guidance ---');
-
-  print(
-    '  Raw OpenAI response lifecycle is provider-owned, not a shared capability.',
-  );
-  print(
-    '  Check `OpenAIProvider.supportsResponsesApi` or `provider.responses`',
-  );
-  print(
-    '  when you explicitly need fetching, continuing, or deleting raw responses.',
-  );
-  print(
-    '  For normal Flutter chat flows, keep using `openai(...).chatModel(...)`',
-  );
-  print(
-    '  plus shared `generateTextCall(...)` or `streamTextCall(...)` helpers.',
-  );
-  print(
-    '  Some declared providers also remain compatibility-oriented until they',
-  );
-  print(
-    '  receive a stable facade, so declaration coverage and stable app-facing',
-  );
-  print(
-    '  surface coverage are related but not identical.',
-  );
+  print('  Capability profiles are model descriptions, not a global registry.');
+  print('  Use them for UI gating, docs, and selection heuristics.');
+  print('  Keep provider-native behavior in typed settings/options such as:');
+  print('    - OpenAIChatModelSettings / OpenAIGenerateTextOptions');
+  print('    - GoogleChatModelSettings / GoogleGenerateTextOptions');
+  print('    - AnthropicChatModelSettings / AnthropicGenerateTextOptions');
+  print('  Do not reintroduce a root provider registry or builder just to ask');
+  print('  whether a concrete model supports a feature.');
   print('');
 }
 
 Future<void> demonstrateStableExecution(
-    List<compat_registry.ProviderInfo> providers) async {
-  print('--- Stable Execution After Selection ---');
+  List<core.ModelCapabilityProfile> profiles,
+) async {
+  print('--- Optional Stable Execution ---');
 
-  final candidates = _providersSupportingAll(
-    providers,
-    const {
-      compat_core.LLMCapability.chat,
-      compat_core.LLMCapability.streaming,
-    },
-  );
-
-  final selected = _selectStableModelFromEnvironment(candidates);
+  final selected = _selectStableModelFromEnvironment(profiles);
   if (selected == null) {
-    print('  No matching API key was found for the stable execution demo.');
-    print('  Capability inspection still works without credentials.');
-    print('');
+    print('  No matching API key was found for the execution demo.');
+    print('  Capability inspection above works without credentials.\n');
     return;
   }
 
-  print('  Selected provider: ${_providerLabel(selected.providerId)}');
-  print('  Stable model: ${selected.modelLabel}');
+  print('  Selected model: ${selected.modelLabel}');
 
   try {
     final result = await core.generateTextCall(
       model: selected.model,
-      prompt: [
-        core.SystemPromptMessage.text(
-          'You are a concise architecture assistant. Respond in one short paragraph.',
+      messages: [
+        core.SystemModelMessage.text(
+          'You are a concise architecture assistant. Respond in one paragraph.',
         ),
-        core.UserPromptMessage.text(
-          'Explain why provider capability metadata helps selection but cannot replace runtime validation.',
+        core.UserModelMessage.text(
+          'Explain why capability metadata helps selection but cannot replace runtime validation.',
         ),
       ],
-      options: const core.GenerateTextOptions(
-        maxOutputTokens: 120,
-      ),
+      options: const core.GenerateTextOptions(maxOutputTokens: 120),
       callOptions: _stableExecutionCallOptions,
     );
 
     print('  Response: ${_truncate(result.text)}');
   } catch (error) {
     print('  Stable call failed: $error');
-    print(
-      '  This is why capability declarations stay advisory rather than becoming a strict runtime guarantee.',
-    );
+    print('  This is why capability profiles stay advisory.');
   }
 
   print('');
 }
 
-List<compat_registry.ProviderInfo> _providersSupportingAll(
-  List<compat_registry.ProviderInfo> providers,
-  Set<compat_core.LLMCapability> required,
-) {
-  return providers
-      .where((provider) => required.every(provider.supports))
-      .toList(growable: false);
-}
-
 _SelectedModel? _selectStableModelFromEnvironment(
-  List<compat_registry.ProviderInfo> candidates,
+  List<core.ModelCapabilityProfile> profiles,
 ) {
-  for (final provider in candidates) {
-    final selected = _stableModelForProvider(provider.id);
-    if (selected != null) {
-      return selected;
+  for (final profile in profiles) {
+    if (!profile.supports(core.ModelCapabilityFeatureIds.languageTextInput)) {
+      continue;
+    }
+
+    switch (profile.providerId) {
+      case 'openai':
+        final apiKey = Platform.environment['OPENAI_API_KEY'];
+        if (apiKey != null && apiKey.isNotEmpty) {
+          return _SelectedModel(
+            modelLabel: _modelLabel(profile),
+            model: openai.openai(apiKey: apiKey).chatModel(profile.modelId),
+          );
+        }
+      case 'anthropic':
+        final apiKey = Platform.environment['ANTHROPIC_API_KEY'];
+        if (apiKey != null && apiKey.isNotEmpty) {
+          return _SelectedModel(
+            modelLabel: _modelLabel(profile),
+            model:
+                anthropic.anthropic(apiKey: apiKey).chatModel(profile.modelId),
+          );
+        }
+      case 'google':
+        final apiKey = Platform.environment['GOOGLE_API_KEY'];
+        if (apiKey != null && apiKey.isNotEmpty) {
+          return _SelectedModel(
+            modelLabel: _modelLabel(profile),
+            model: google.google(apiKey: apiKey).chatModel(profile.modelId),
+          );
+        }
     }
   }
 
   return null;
 }
 
-_SelectedModel? _stableModelForProvider(String providerId) {
-  switch (providerId) {
-    case 'openai':
-      final apiKey = Platform.environment['OPENAI_API_KEY'];
-      if (apiKey == null || apiKey.isEmpty) {
-        return null;
-      }
-      return _SelectedModel(
-        providerId: providerId,
-        modelLabel: 'OpenAI / gpt-4.1-mini',
-        model: ai.openai(apiKey: apiKey).chatModel('gpt-4.1-mini'),
-      );
-    case 'anthropic':
-      final apiKey = Platform.environment['ANTHROPIC_API_KEY'];
-      if (apiKey == null || apiKey.isEmpty) {
-        return null;
-      }
-      return _SelectedModel(
-        providerId: providerId,
-        modelLabel: 'Anthropic / claude-sonnet-4-5',
-        model: ai.anthropic(apiKey: apiKey).chatModel('claude-sonnet-4-5'),
-      );
-    case 'google':
-      final apiKey = Platform.environment['GOOGLE_API_KEY'];
-      if (apiKey == null || apiKey.isEmpty) {
-        return null;
-      }
-      return _SelectedModel(
-        providerId: providerId,
-        modelLabel: 'Google / gemini-2.5-flash',
-        model: ai.google(apiKey: apiKey).chatModel('gemini-2.5-flash'),
-      );
-    case 'groq':
-      final apiKey = Platform.environment['GROQ_API_KEY'];
-      if (apiKey == null || apiKey.isEmpty) {
-        return null;
-      }
-      return _SelectedModel(
-        providerId: providerId,
-        modelLabel: 'Groq / llama-3.3-70b-versatile',
-        model: ai.groq(apiKey: apiKey).chatModel('llama-3.3-70b-versatile'),
-      );
-    case 'deepseek':
-      final apiKey = Platform.environment['DEEPSEEK_API_KEY'];
-      if (apiKey == null || apiKey.isEmpty) {
-        return null;
-      }
-      return _SelectedModel(
-        providerId: providerId,
-        modelLabel: 'DeepSeek / deepseek-chat',
-        model: ai.deepSeek(apiKey: apiKey).chatModel('deepseek-chat'),
-      );
-    case 'xai':
-      final apiKey = Platform.environment['XAI_API_KEY'];
-      if (apiKey == null || apiKey.isEmpty) {
-        return null;
-      }
-      return _SelectedModel(
-        providerId: providerId,
-        modelLabel: 'xAI / grok-3',
-        model: ai.xai(apiKey: apiKey).chatModel('grok-3'),
-      );
-    case 'openrouter':
-      final apiKey = Platform.environment['OPENROUTER_API_KEY'];
-      if (apiKey == null || apiKey.isEmpty) {
-        return null;
-      }
-      return _SelectedModel(
-        providerId: providerId,
-        modelLabel: 'OpenRouter / openai/gpt-4.1-mini',
-        model: ai.openRouter(apiKey: apiKey).chatModel('openai/gpt-4.1-mini'),
-      );
-    default:
-      return null;
-  }
+String _modelLabel(core.ModelCapabilityProfile profile) {
+  return '${profile.providerId}/${profile.modelId}';
 }
 
-String _providerLabel(String providerId) {
-  switch (providerId) {
-    case 'openai':
-      return 'OpenAI';
-    case 'anthropic':
-      return 'Anthropic';
-    case 'google':
-      return 'Google';
-    case 'groq':
-      return 'Groq';
-    case 'deepseek':
-      return 'DeepSeek';
-    case 'xai':
-      return 'xAI';
-    case 'openrouter':
-      return 'OpenRouter';
-    case 'phind':
-      return 'Phind';
-    case 'ollama':
-      return 'Ollama';
-    case 'elevenlabs':
-      return 'ElevenLabs';
-    default:
-      return providerId;
-  }
-}
-
-String _capabilityLabel(compat_core.LLMCapability capability) {
-  switch (capability) {
-    case compat_core.LLMCapability.chat:
-      return 'chat';
-    case compat_core.LLMCapability.streaming:
-      return 'streaming';
-    case compat_core.LLMCapability.toolCalling:
-      return 'tool calling';
-    case compat_core.LLMCapability.vision:
-      return 'vision';
-    case compat_core.LLMCapability.reasoning:
-      return 'reasoning';
-    case compat_core.LLMCapability.embedding:
-      return 'embeddings';
-    case compat_core.LLMCapability.textToSpeech:
-      return 'text to speech';
-    case compat_core.LLMCapability.speechToText:
-      return 'speech to text';
-    case compat_core.LLMCapability.imageGeneration:
-      return 'image generation';
-    case compat_core.LLMCapability.modelListing:
-      return 'model listing';
-    default:
-      return capability.name;
-  }
+String _featureLabel(String featureId) {
+  return switch (featureId) {
+    core.ModelCapabilityFeatureIds.languageStreaming => 'streaming',
+    core.ModelCapabilityFeatureIds.languageFunctionTools => 'function tools',
+    core.ModelCapabilityFeatureIds.languageToolChoice => 'tool choice',
+    core.ModelCapabilityFeatureIds.languageStructuredOutput =>
+      'structured output',
+    core.ModelCapabilityFeatureIds.languageReasoningOutput =>
+      'reasoning output',
+    core.ModelCapabilityFeatureIds.languageTextInput => 'text input',
+    core.ModelCapabilityFeatureIds.languageImageInput => 'image input',
+    core.ModelCapabilityFeatureIds.languageFileInput => 'file input',
+    core.ModelCapabilityFeatureIds.languageSourceOutput => 'source output',
+    _ => featureId,
+  };
 }
 
 String _truncate(String text, {int maxLength = 220}) {
@@ -413,22 +239,20 @@ String _truncate(String text, {int maxLength = 220}) {
   return '${normalized.substring(0, maxLength)}...';
 }
 
-const _highSignalCapabilities = [
-  compat_core.LLMCapability.chat,
-  compat_core.LLMCapability.streaming,
-  compat_core.LLMCapability.toolCalling,
-  compat_core.LLMCapability.vision,
-  compat_core.LLMCapability.reasoning,
-  compat_core.LLMCapability.embedding,
-  compat_core.LLMCapability.imageGeneration,
-  compat_core.LLMCapability.textToSpeech,
-  compat_core.LLMCapability.speechToText,
-  compat_core.LLMCapability.modelListing,
+const _highSignalFeatures = [
+  core.ModelCapabilityFeatureIds.languageStreaming,
+  core.ModelCapabilityFeatureIds.languageFunctionTools,
+  core.ModelCapabilityFeatureIds.languageToolChoice,
+  core.ModelCapabilityFeatureIds.languageStructuredOutput,
+  core.ModelCapabilityFeatureIds.languageReasoningOutput,
+  core.ModelCapabilityFeatureIds.languageImageInput,
+  core.ModelCapabilityFeatureIds.languageFileInput,
+  core.ModelCapabilityFeatureIds.languageSourceOutput,
 ];
 
 final class _CapabilityScenario {
   final String label;
-  final Set<compat_core.LLMCapability> required;
+  final Set<String> required;
 
   const _CapabilityScenario({
     required this.label,
@@ -436,17 +260,11 @@ final class _CapabilityScenario {
   });
 }
 
-void _ensureProviderDeclarationsRegistered() {
-  compat_builder.LLMBuilder();
-}
-
 final class _SelectedModel {
-  final String providerId;
   final String modelLabel;
   final core.LanguageModel model;
 
   const _SelectedModel({
-    required this.providerId,
     required this.modelLabel,
     required this.model,
   });

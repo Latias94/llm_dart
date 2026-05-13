@@ -996,7 +996,6 @@ final class AnthropicMessagesCodec {
           final replay = AnthropicCodeExecutionReplay.parseData(
             part.data,
             providerMetadata: mergeProviderReplayMetadata(
-              providerMetadata: part.providerMetadata,
               providerOptions: part.providerOptions,
             ),
           );

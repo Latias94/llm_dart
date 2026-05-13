@@ -40,8 +40,8 @@ Future<void> demonstrateLocalToolChoiceValidation() async {
   try {
     await core.generateTextCall(
       model: const _UnusedLanguageModel(),
-      prompt: [
-        core.UserPromptMessage.text('Plan a calm evening in Kyoto.'),
+      messages: [
+        core.UserModelMessage.text('Plan a calm evening in Kyoto.'),
       ],
       tools: [
         _tripResearchTool(),
@@ -68,8 +68,8 @@ Keep the plan walkable and below 180 USD.
 
   final firstTurn = await core.generateTextCall(
     model: model,
-    prompt: [
-      core.UserPromptMessage.text(question),
+    messages: [
+      core.UserModelMessage.text(question),
     ],
     tools: [
       _tripResearchTool(),
@@ -100,28 +100,23 @@ Keep the plan walkable and below 180 USD.
 
   final finalTurn = await core.generateTextCall<ItinerarySummary>(
     model: model,
-    prompt: [
-      core.SystemPromptMessage.text(
+    messages: [
+      core.SystemModelMessage.text(
         'Return JSON only. Build the final answer strictly from the provided '
         'tool results.',
       ),
-      core.UserPromptMessage.text(question),
+      core.UserModelMessage.text(question),
       _assistantReplayMessage(
         text: firstTurn.text,
         toolCalls: toolCalls,
       ),
       for (final toolCall in toolCalls)
-        core.ToolPromptMessage(
+        core.ToolModelMessage.result(
+          toolCallId: toolCall.toolCallId,
           toolName: toolCall.toolName,
-          parts: [
-            core.ToolResultPromptPart(
-              toolCallId: toolCall.toolCallId,
-              toolName: toolCall.toolName,
-              toolOutput: core.JsonToolOutput(
-                _mockTripResearchOutput(toolCall),
-              ),
-            ),
-          ],
+          toolOutput: core.JsonToolOutput(
+            _mockTripResearchOutput(toolCall),
+          ),
         ),
     ],
     outputSpec: core.ObjectOutputSpec<ItinerarySummary>(
@@ -178,8 +173,8 @@ Use both get_weather and shortlist_venues if helpful before you answer.
 
   final firstTurn = await core.generateTextCall(
     model: model,
-    prompt: [
-      core.UserPromptMessage.text(question),
+    messages: [
+      core.UserModelMessage.text(question),
     ],
     tools: [
       _weatherTool(),
@@ -318,15 +313,15 @@ core.FunctionToolDefinition _venueTool() {
   );
 }
 
-core.AssistantPromptMessage _assistantReplayMessage({
+core.AssistantModelMessage _assistantReplayMessage({
   required String text,
   required List<core.ToolCallContent> toolCalls,
 }) {
-  return core.AssistantPromptMessage(
+  return core.AssistantModelMessage(
     parts: [
-      if (text.trim().isNotEmpty) core.TextPromptPart(text),
+      if (text.trim().isNotEmpty) core.TextModelPart(text),
       for (final toolCall in toolCalls)
-        core.ToolCallPromptPart(
+        core.ToolCallModelPart(
           toolCallId: toolCall.toolCallId,
           toolName: toolCall.toolName,
           input: toolCall.input,

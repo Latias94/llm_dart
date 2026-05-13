@@ -27,43 +27,30 @@ JsonMap projectToolOutputContentPartToJson(
   String path = r'$.toolOutput.parts[]',
 }) {
   return switch (part) {
-    TextToolOutputContentPart(:final text, :final providerMetadata) => {
+    TextToolOutputContentPart(:final text) => {
         'type': 'text',
         'text': text,
-        if (providerMetadata != null)
-          'providerMetadata': providerMetadata.toJsonMap(),
       },
-    JsonToolOutputContentPart(:final value, :final providerMetadata) => {
+    JsonToolOutputContentPart(:final value) => {
         'type': 'json',
         'value': normalizeJsonValue(value, path: '$path.value'),
-        if (providerMetadata != null)
-          'providerMetadata': providerMetadata.toJsonMap(),
       },
     FileToolOutputContentPart(
       :final mediaType,
       :final filename,
       :final data,
-      :final providerMetadata,
     ) =>
       {
         'type': 'file',
         'mediaType': mediaType,
         if (filename != null) 'filename': filename,
         'data': projectFileDataToJson(data),
-        if (providerMetadata != null)
-          'providerMetadata': providerMetadata.toJsonMap(),
       },
-    CustomToolOutputContentPart(
-      :final kind,
-      :final data,
-      :final providerMetadata,
-    ) =>
+    CustomToolOutputContentPart(:final kind, :final data) =>
       {
         'type': 'custom',
         'kind': kind,
         if (data != null) 'data': normalizeJsonValue(data, path: '$path.data'),
-        if (providerMetadata != null)
-          'providerMetadata': providerMetadata.toJsonMap(),
       },
   };
 }

@@ -287,8 +287,7 @@ elevenlabs_pkg.ElevenLabs _createElevenLabs({
 /// New examples and docs should prefer the short root factories such as
 /// `openai(...)`, `google(...)`, and `anthropic(...)` because they make the
 /// concrete provider choice visible without an extra namespace hop.
-/// The legacy builder surface remains available through
-/// `package:llm_dart/legacy.dart`.
+/// Builder-era root compatibility APIs have been removed from this package.
 final class AI {
   const AI._();
 

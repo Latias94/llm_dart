@@ -3,22 +3,14 @@
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/core/capability.dart' as compat_core;
-import 'package:llm_dart/llm_dart.dart' as llm;
-import 'package:llm_dart/models/chat_models.dart' as compat_chat;
 import 'package:llm_dart/openai.dart' as openai;
-import 'package:llm_dart/providers/openai/openai.dart' as openai_compat;
 
-/// Migration-boundary demo for the old `buildOpenAIResponses()` helper.
+/// Migration-boundary demo for the removed `buildOpenAIResponses()` helper.
 ///
-/// This file keeps the old name so users searching for that helper land on the
-/// right migration guidance:
-/// - new app-facing code should stay on `openai(...).chatModel(...)`
-/// - raw response lifecycle APIs belong to the narrower OpenAI provider-owned
-///   compatibility surface
-///
-/// If migration code still uses `buildOpenAIResponses()`, treat it as a frozen
-/// convenience alias for the direct provider configuration shown below.
+/// The replacement is not another root builder. Use:
+/// - `openai(...).chatModel(..., settings: OpenAIChatModelSettings(...))`
+///   for normal app-facing generation
+/// - `openai(...).responsesLifecycle()` for raw response lifecycle CRUD
 Future<void> main() async {
   print('OpenAI Responses Boundary Demo\n');
 
@@ -29,21 +21,17 @@ Future<void> main() async {
   }
 
   await demonstrateStableFirstAlternative(apiKey);
-  await demonstrateDirectCompatibilityEquivalent(apiKey);
-  await demonstrateGuardrails(apiKey);
+  await demonstrateDirectLifecycleEquivalent(apiKey);
+  demonstrateGuardrails(apiKey);
 
-  print('OpenAI Responses boundary demo completed!');
+  print('OpenAI Responses boundary demo completed.');
 }
 
 Future<void> demonstrateStableFirstAlternative(String apiKey) async {
   print('--- Stable-First Alternative ---');
 
   try {
-    final model = llm
-        .openai(
-          apiKey: apiKey,
-        )
-        .chatModel(
+    final model = openai.openai(apiKey: apiKey).chatModel(
           'gpt-4o',
           settings: const openai.OpenAIChatModelSettings(
             useResponsesApi: true,
@@ -57,60 +45,49 @@ Future<void> demonstrateStableFirstAlternative(String apiKey) async {
       model: model,
       prompt: [
         core.UserPromptMessage.text(
-          'Give me a short update on recent AI model releases.',
+          'Give me a short update on why SDKs split app APIs from provider lifecycle APIs.',
         ),
       ],
-      options: const core.GenerateTextOptions(
-        maxOutputTokens: 300,
-      ),
+      options: const core.GenerateTextOptions(maxOutputTokens: 300),
     );
 
     print('Stable response: ${result.text}');
     print('Stable response ID: ${result.responseId ?? 'unknown'}');
-    print('If this is enough, do not drop to the raw compatibility provider.');
+    print('If this is enough, do not drop to the raw lifecycle client.');
     print('');
   } catch (error) {
     print('Error in stable-first example: $error\n');
   }
 }
 
-Future<void> demonstrateDirectCompatibilityEquivalent(String apiKey) async {
-  print('--- Direct Compatibility Equivalent ---');
+Future<void> demonstrateDirectLifecycleEquivalent(String apiKey) async {
+  print('--- Direct Lifecycle Equivalent ---');
 
   try {
-    final provider = _createResponsesProvider(
-      apiKey,
-      model: 'gpt-4o',
-      builtInTools: const [
-        openai_compat.OpenAIWebSearchTool(),
-      ],
+    final responses = openai.openai(apiKey: apiKey).responsesLifecycle();
+
+    print(
+      'This is the provider-owned replacement for the old builder convenience helper.',
+    );
+
+    final response = await responses.createResponse(
+      const {
+        'model': 'gpt-4o',
+        'input': 'Summarize the benefits of renewable energy.',
+      },
     );
 
     print(
-      'This is the provider-owned equivalent of the old builder convenience helper.',
-    );
-    print(
-      'Provider supports Responses API: ${provider.supportsResponsesApi}',
-    );
+        'Lifecycle response: ${_truncate(response.outputText ?? '<no text>')}');
 
-    final responses = provider.responses!;
-    final response = await responses.chat([
-      compat_chat.ChatMessage.user(
-        'Summarize the benefits of renewable energy.',
-      ),
-    ]);
-
-    print('Lifecycle response: ${_truncate(response.text ?? '<no text>')}');
-
-    final responseId = _responseIdOf(response);
+    final responseId = response.id;
     if (responseId != null) {
       final fetched = await responses.getResponse(responseId);
-      print('Fetched by ID: ${_truncate(fetched.text ?? '<no text>')}');
+      print('Fetched by ID: ${_truncate(fetched.outputText ?? '<no text>')}');
     }
 
     print(
-      'This path is for provider-specific response lifecycle management, '
-      'not normal Flutter chat flows.',
+      'This path is for provider-specific response lifecycle management, not normal app chat flows.',
     );
     print('');
   } catch (error) {
@@ -118,66 +95,22 @@ Future<void> demonstrateDirectCompatibilityEquivalent(String apiKey) async {
   }
 }
 
-Future<void> demonstrateGuardrails(String apiKey) async {
+void demonstrateGuardrails(String apiKey) {
   print('--- Guardrails ---');
 
-  try {
-    final standardProvider = openai_compat.createOpenAIProvider(
-      apiKey: apiKey,
-      model: 'gpt-4o-mini',
-    );
-    final responsesProvider = _createResponsesProvider(
-      apiKey,
-      model: 'gpt-4o',
-    );
+  final provider = openai.openai(apiKey: apiKey);
+  final stableModel = provider.chatModel(
+    'gpt-4o-mini',
+    settings: const openai.OpenAIChatModelSettings(useResponsesApi: true),
+  );
+  final responses = provider.responsesLifecycle();
 
-    print(
-      'Standard OpenAIProvider exposes Responses API: '
-      '${standardProvider.supportsResponsesApi}',
-    );
-    print(
-      'Responses-enabled OpenAIProvider exposes Responses API: '
-      '${responsesProvider.supportsResponsesApi}',
-    );
-    print(
-        'Standard provider.responses == null: ${standardProvider.responses == null}');
-    print(
-      'Responses-enabled provider.responses != null: '
-      '${responsesProvider.responses != null}',
-    );
-  } catch (error) {
-    print('Capability comparison failed: $error');
-  }
-
+  print('Stable model type: ${stableModel.runtimeType}');
+  print('Responses lifecycle client type: ${responses.runtimeType}');
   print(
-    'Guardrail: the stable `LanguageModel` path intentionally does not expose '
-    'raw response lifecycle CRUD. Use it only when you need normal app-facing '
-    'generation and streaming.',
+    'Guardrail: the stable LanguageModel path intentionally does not expose raw response lifecycle CRUD.',
   );
   print('');
-}
-
-openai_compat.OpenAIProvider _createResponsesProvider(
-  String apiKey, {
-  required String model,
-  List<openai_compat.OpenAIBuiltInTool> builtInTools = const [],
-}) {
-  return openai_compat.OpenAIProvider(
-    openai_compat.OpenAIConfig(
-      apiKey: apiKey,
-      model: model,
-      useResponsesAPI: true,
-      builtInTools: builtInTools,
-    ),
-  );
-}
-
-String? _responseIdOf(compat_core.ChatResponse response) {
-  if (response is openai_compat.OpenAIResponsesResponse) {
-    return response.responseId;
-  }
-
-  return null;
 }
 
 String _truncate(String text, {int maxLength = 120}) {

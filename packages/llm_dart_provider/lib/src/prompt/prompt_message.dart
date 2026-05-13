@@ -1,4 +1,3 @@
-import '../common/provider_metadata.dart';
 import '../common/provider_options.dart';
 import '../common/provider_reference.dart';
 import '../content/file_data.dart';
@@ -14,21 +13,16 @@ enum PromptRole {
 sealed class PromptPart {
   const PromptPart();
 
-  ProviderMetadata? get providerMetadata => null;
-
   ProviderPromptPartOptions? get providerOptions => null;
 }
 
 final class TextPromptPart extends PromptPart {
   final String text;
   @override
-  final ProviderMetadata? providerMetadata;
-  @override
   final ProviderPromptPartOptions? providerOptions;
 
   const TextPromptPart(
     this.text, {
-    this.providerMetadata,
     this.providerOptions,
   });
 }
@@ -38,15 +32,12 @@ final class FilePromptPart extends PromptPart {
   final String? filename;
   final FileData data;
   @override
-  final ProviderMetadata? providerMetadata;
-  @override
   final ProviderPromptPartOptions? providerOptions;
 
   const FilePromptPart({
     required this.mediaType,
     this.filename,
     required this.data,
-    this.providerMetadata,
     this.providerOptions,
   });
 
@@ -63,14 +54,11 @@ final class ImagePromptPart extends PromptPart {
   final String mediaType;
   final FileData data;
   @override
-  final ProviderMetadata? providerMetadata;
-  @override
   final ProviderPromptPartOptions? providerOptions;
 
   const ImagePromptPart({
     required this.mediaType,
     required this.data,
-    this.providerMetadata,
     this.providerOptions,
   });
 
@@ -86,13 +74,10 @@ final class ImagePromptPart extends PromptPart {
 final class ReasoningPromptPart extends PromptPart {
   final String text;
   @override
-  final ProviderMetadata? providerMetadata;
-  @override
   final ProviderPromptPartOptions? providerOptions;
 
   const ReasoningPromptPart(
     this.text, {
-    this.providerMetadata,
     this.providerOptions,
   });
 }
@@ -102,15 +87,12 @@ final class ReasoningFilePromptPart extends PromptPart {
   final String? filename;
   final FileData data;
   @override
-  final ProviderMetadata? providerMetadata;
-  @override
   final ProviderPromptPartOptions? providerOptions;
 
   const ReasoningFilePromptPart({
     required this.mediaType,
     this.filename,
     required this.data,
-    this.providerMetadata,
     this.providerOptions,
   });
 
@@ -127,14 +109,11 @@ final class CustomPromptPart extends PromptPart {
   final String kind;
   final Object? data;
   @override
-  final ProviderMetadata? providerMetadata;
-  @override
   final ProviderPromptPartOptions? providerOptions;
 
   const CustomPromptPart({
     required this.kind,
     this.data,
-    this.providerMetadata,
     this.providerOptions,
   });
 }
@@ -147,8 +126,6 @@ final class ToolCallPromptPart extends PromptPart {
   final bool isDynamic;
   final String? title;
   @override
-  final ProviderMetadata? providerMetadata;
-  @override
   final ProviderPromptPartOptions? providerOptions;
 
   const ToolCallPromptPart({
@@ -158,7 +135,6 @@ final class ToolCallPromptPart extends PromptPart {
     this.providerExecuted = false,
     this.isDynamic = false,
     this.title,
-    this.providerMetadata,
     this.providerOptions,
   });
 }
@@ -167,14 +143,11 @@ final class ToolApprovalRequestPromptPart extends PromptPart {
   final String approvalId;
   final String toolCallId;
   @override
-  final ProviderMetadata? providerMetadata;
-  @override
   final ProviderPromptPartOptions? providerOptions;
 
   const ToolApprovalRequestPromptPart({
     required this.approvalId,
     required this.toolCallId,
-    this.providerMetadata,
     this.providerOptions,
   });
 }
@@ -184,8 +157,6 @@ final class ToolResultPromptPart extends PromptPart {
   final String toolName;
   final ToolOutput toolOutput;
   @override
-  final ProviderMetadata? providerMetadata;
-  @override
   final ProviderPromptPartOptions? providerOptions;
 
   ToolResultPromptPart({
@@ -194,7 +165,6 @@ final class ToolResultPromptPart extends PromptPart {
     Object? output,
     ToolOutput? toolOutput,
     bool isError = false,
-    this.providerMetadata,
     this.providerOptions,
   }) : toolOutput =
             toolOutput ?? ToolOutput.fromValue(output, isError: isError);
@@ -210,8 +180,6 @@ final class ToolApprovalResponsePromptPart extends PromptPart {
   final bool approved;
   final String? reason;
   @override
-  final ProviderMetadata? providerMetadata;
-  @override
   final ProviderPromptPartOptions? providerOptions;
 
   const ToolApprovalResponsePromptPart({
@@ -219,7 +187,6 @@ final class ToolApprovalResponsePromptPart extends PromptPart {
     required this.toolCallId,
     required this.approved,
     this.reason,
-    this.providerMetadata,
     this.providerOptions,
   });
 }

@@ -27,11 +27,11 @@ Future<void> runOpenAIObjectExample() async {
   try {
     final result = await core.generateObject<PersonSummary>(
       model: model,
-      prompt: [
-        core.SystemPromptMessage.text(
+      messages: [
+        core.SystemModelMessage.text(
           'Return structured JSON only.',
         ),
-        core.UserPromptMessage.text(
+        core.UserModelMessage.text(
           'Summarize Ada Lovelace as a person profile with name, role, and two strengths.',
         ),
       ],
@@ -73,9 +73,9 @@ Future<void> runOpenAIStreamingObjectExample() async {
   try {
     final streamResult = core.streamObject<PersonSummary>(
       model: model,
-      prompt: [
-        core.SystemPromptMessage.text('Return structured JSON only.'),
-        core.UserPromptMessage.text(
+      messages: [
+        core.SystemModelMessage.text('Return structured JSON only.'),
+        core.UserModelMessage.text(
           'Stream a short profile for Grace Hopper with name, role, and two strengths.',
         ),
       ],
@@ -123,8 +123,8 @@ Future<void> runOpenAIArrayExample() async {
   try {
     final result = await core.generateTextCall<List<String>>(
       model: model,
-      prompt: [
-        core.UserPromptMessage.text(
+      messages: [
+        core.UserModelMessage.text(
           'Return three short Flutter layout tips as an array of strings.',
         ),
       ],
@@ -158,8 +158,8 @@ Future<void> runOpenAIStreamingArrayExample() async {
   try {
     final streamResult = core.streamTextCall<List<String>>(
       model: model,
-      prompt: [
-        core.UserPromptMessage.text(
+      messages: [
+        core.UserModelMessage.text(
           'Return three short Flutter layout tips as an array of strings.',
         ),
       ],
@@ -194,8 +194,8 @@ Future<void> runGoogleChoiceExample() async {
   try {
     final result = await core.generateTextCall<String>(
       model: model,
-      prompt: [
-        core.UserPromptMessage.text(
+      messages: [
+        core.UserModelMessage.text(
           'Classify this tone as one of: calm, urgent, playful. Text: "We should fix this today before users notice."',
         ),
       ],

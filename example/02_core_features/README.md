@@ -247,8 +247,8 @@ final model = llm.openai(apiKey: 'your-key').chatModel('gpt-4.1-mini');
 
 final result = await core.generateTextCall(
   model: model,
-  prompt: [
-    core.UserPromptMessage.text('Hello, how are you?'),
+  messages: [
+    core.UserModelMessage.text('Hello, how are you?'),
   ],
 );
 

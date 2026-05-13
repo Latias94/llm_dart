@@ -4,7 +4,7 @@ import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/llm_dart.dart' as llm;
-import 'package:llm_dart/providers/openai/openai.dart' as openai_compat;
+import 'package:llm_dart/openai.dart' as openai;
 
 /// Assistants remain a provider-owned lifecycle boundary.
 ///
@@ -37,11 +37,11 @@ Future<void> demonstrateStableAssistantLikePath(String apiKey) async {
   final model = llm.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
   final result = await core.generateTextCall(
     model: model,
-    prompt: [
-      core.SystemPromptMessage.text(
+    messages: [
+      core.SystemModelMessage.text(
         'You are a release copilot. Keep answers brief, structured, and action-oriented.',
       ),
-      core.UserPromptMessage.text(
+      core.UserModelMessage.text(
         'Summarize today\'s release checklist for a Flutter chat app. '
         'Include testing, rollout, and rollback notes.',
       ),
@@ -59,24 +59,21 @@ Future<void> demonstrateStableAssistantLikePath(String apiKey) async {
 Future<void> demonstrateOpenAIAssistantBoundary(String apiKey) async {
   print('=== Provider-Owned OpenAI Assistant Lifecycle Boundary ===\n');
 
-  final assistantClient = openai_compat.createOpenAIProvider(
-    apiKey: apiKey,
-    model: 'gpt-4o',
-  );
+  final assistantClient = openai.openai(apiKey: apiKey).assistants();
 
-  openai_compat.Assistant? assistant;
+  openai.OpenAIAssistant? assistant;
 
   try {
     assistant = await assistantClient.createAssistant(
-      const openai_compat.CreateAssistantRequest(
+      const openai.OpenAICreateAssistantRequest(
         model: 'gpt-4o',
         name: 'Release Ops Copilot',
         description: 'Temporary example assistant for release coordination.',
         instructions:
             'Help the team review rollout, verification, and rollback tasks.',
         tools: [
-          openai_compat.CodeInterpreterTool(),
-          openai_compat.FileSearchTool(maxNumResults: 3),
+          openai.OpenAIAssistantCodeInterpreterTool(),
+          openai.OpenAIAssistantFileSearchTool(maxNumResults: 3),
         ],
         metadata: {
           'example': 'core_features_assistants',
@@ -91,7 +88,7 @@ Future<void> demonstrateOpenAIAssistantBoundary(String apiKey) async {
     print('Tools: ${_toolList(assistant.tools)}');
 
     final listResponse = await assistantClient.listAssistants(
-      const openai_compat.ListAssistantsQuery(
+      query: const openai.OpenAIListAssistantsQuery(
         limit: 5,
         order: 'desc',
       ),
@@ -103,7 +100,7 @@ Future<void> demonstrateOpenAIAssistantBoundary(String apiKey) async {
 
     final updated = await assistantClient.modifyAssistant(
       assistant.id,
-      const openai_compat.ModifyAssistantRequest(
+      const openai.OpenAIModifyAssistantRequest(
         name: 'Release Ops Copilot (updated)',
         metadata: {
           'example': 'core_features_assistants',
@@ -144,7 +141,7 @@ void explainBoundary() {
   );
 }
 
-String _toolList(List<openai_compat.AssistantTool> tools) {
+String _toolList(List<openai.OpenAIAssistantTool> tools) {
   if (tools.isEmpty) {
     return '<none>';
   }

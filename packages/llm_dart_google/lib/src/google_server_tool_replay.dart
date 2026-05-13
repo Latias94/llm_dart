@@ -144,9 +144,8 @@ final class GoogleToolCallReplay {
     return CustomPromptPart(
       kind: kind,
       data: toJson(),
-      providerMetadata: ProviderMetadata.mergeNullable(
-        this.providerMetadata,
-        providerMetadata,
+      providerOptions: ProviderReplayPromptPartOptions.fromMetadata(
+        ProviderMetadata.mergeNullable(this.providerMetadata, providerMetadata),
       ),
     );
   }
@@ -171,7 +170,7 @@ final class GoogleToolCallReplay {
 
     return tryParseData(
       part.data,
-      providerMetadata: part.providerMetadata,
+      providerMetadata: providerReplayMetadataFromOptions(part.providerOptions),
     );
   }
 
@@ -369,9 +368,8 @@ final class GoogleToolResponseReplay {
     return CustomPromptPart(
       kind: kind,
       data: toJson(),
-      providerMetadata: ProviderMetadata.mergeNullable(
-        this.providerMetadata,
-        providerMetadata,
+      providerOptions: ProviderReplayPromptPartOptions.fromMetadata(
+        ProviderMetadata.mergeNullable(this.providerMetadata, providerMetadata),
       ),
     );
   }
@@ -396,7 +394,7 @@ final class GoogleToolResponseReplay {
 
     return tryParseData(
       part.data,
-      providerMetadata: part.providerMetadata,
+      providerMetadata: providerReplayMetadataFromOptions(part.providerOptions),
     );
   }
 

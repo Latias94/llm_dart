@@ -1,153 +1,96 @@
+// ignore_for_file: avoid_print
+
 import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 
-import 'package:llm_dart/core/capability.dart' as compat;
-import 'package:llm_dart/providers/elevenlabs/elevenlabs.dart'
-    as elevenlabs_compat;
-import 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart' as elevenlabs_pkg;
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/elevenlabs.dart' as elevenlabs;
 
-/// Provider-owned realtime audio appendix.
+/// App-owned realtime audio orchestration.
 ///
-/// This example intentionally does not pretend realtime audio already has a
-/// shared modern facade. The current boundary is:
-///
-/// - shared speech/transcription models live in `llm_dart_elevenlabs`
-/// - realtime sessions remain provider-owned compatibility surface
-///
-/// The example therefore demonstrates:
-/// - how to inspect the ElevenLabs compatibility audio surface honestly
-/// - how to configure realtime session intent with `RealtimeAudioConfig`
-/// - how app-owned event/session orchestration can already be structured
-///   without faking a cross-provider realtime abstraction
+/// The stable library surface currently exposes normal speech and
+/// transcription models. A cross-provider realtime session contract is not
+/// frozen, so realtime wiring should stay in application code or a provider
+/// package until the event model is mature enough to standardize.
 Future<void> main() async {
-  print('Realtime audio compatibility appendix\n');
+  print('Realtime audio orchestration pattern\n');
 
   final apiKey = Platform.environment['ELEVENLABS_API_KEY'];
   if (apiKey == null || apiKey.isEmpty) {
     print(
-        'Set ELEVENLABS_API_KEY to inspect the provider-owned realtime surface.');
+        'Set ELEVENLABS_API_KEY to inspect stable ElevenLabs model surfaces.');
     return;
   }
 
-  await _demonstrateSharedAudioBoundary(apiKey);
+  await _demonstrateStableAudioBoundary(apiKey);
 
-  final provider = elevenlabs_compat.createElevenLabsProvider(
-    apiKey: apiKey,
-    voiceId: 'JBFqnCBsd6RMkjVDRZzb',
-    model: 'eleven_multilingual_v2',
-  );
-
-  _printProviderFeatureBoundary(provider);
-
-  final config = compat.RealtimeAudioConfig(
+  final config = const RealtimeAudioSessionConfig(
     inputFormat: 'pcm16',
     outputFormat: 'pcm16',
     sampleRate: 16000,
-    enableVAD: true,
+    enableVad: true,
     enableEchoCancellation: true,
     enableNoiseSuppression: true,
-    timeoutSeconds: 30,
-    customParams: const {
+    timeout: Duration(seconds: 30),
+    customParams: {
       'conversation_mode': true,
       'response_delay_ms': 500,
     },
   );
 
   _printRealtimeConfig(config);
-  await _demonstrateProviderSessionBoundary(
-    provider: provider,
-    config: config,
-  );
   await _demonstrateLocalSessionOrchestration(config);
 
-  print('Completed realtime audio appendix.');
-  print('Keep realtime as a provider-owned boundary until a true shared');
-  print('cross-provider session contract exists.');
+  print('Completed realtime audio orchestration example.');
 }
 
-Future<void> _demonstrateSharedAudioBoundary(String apiKey) async {
-  print('Shared audio boundary:');
+Future<void> _demonstrateStableAudioBoundary(String apiKey) async {
+  print('Stable audio boundary:');
 
-  final speechModel = elevenlabs_pkg.ElevenLabs(
-    apiKey: apiKey,
-  ).speechModel('eleven_multilingual_v2');
-  final transcriptionModel = elevenlabs_pkg.ElevenLabs(
-    apiKey: apiKey,
-  ).transcriptionModel('scribe_v1');
+  final provider = elevenlabs.elevenLabs(apiKey: apiKey);
+  final speechModel = provider.speechModel('eleven_multilingual_v2');
+  final transcriptionModel = provider.transcriptionModel('scribe_v1');
 
   print(
-    '  Shared speech model: ${speechModel.providerId}/${speechModel.modelId}',
+    '  Speech model: ${speechModel.providerId}/${speechModel.modelId}',
   );
   print(
-    '  Shared transcription model: '
+    '  Transcription model: '
     '${transcriptionModel.providerId}/${transcriptionModel.modelId}',
   );
+
+  final speechProfile = speechModel.capabilityProfile;
+  final transcriptionProfile = transcriptionModel.capabilityProfile;
   print(
-    '  These shared models are the stable path for normal TTS/STT app code.',
+    '  Speech output format control: '
+    '${speechProfile.supports(core.ModelCapabilityFeatureIds.speechOutputFormat)}',
   );
   print(
-    '  Realtime sessions are still provider-owned and do not yet have a',
+    '  Transcription timestamps: '
+    '${transcriptionProfile.supports(core.ModelCapabilityFeatureIds.transcriptionTimestamps)}',
   );
-  print('  shared modern contract.\n');
-}
-
-void _printProviderFeatureBoundary(compat.AudioCapability provider) {
-  print('ElevenLabs provider-owned feature surface:');
-
-  for (final feature in compat.AudioFeature.values) {
-    final supported = provider.supportedFeatures.contains(feature);
-    print('  ${supported ? 'YES' : 'NO '} ${feature.name}');
-  }
-
-  print('  Formats: ${provider.getSupportedAudioFormats().join(', ')}');
+  print(
+    '  Realtime session events are intentionally not part of the shared model contract yet.',
+  );
   print('');
 }
 
-void _printRealtimeConfig(compat.RealtimeAudioConfig config) {
+void _printRealtimeConfig(RealtimeAudioSessionConfig config) {
   print('Realtime session intent config:');
   print('  ${config.toJson()}');
   print('');
 }
 
-Future<void> _demonstrateProviderSessionBoundary({
-  required compat.AudioCapability provider,
-  required compat.RealtimeAudioConfig config,
-}) async {
-  print('Provider boundary: realtime session startup');
-
-  if (!provider.supportedFeatures
-      .contains(compat.AudioFeature.realtimeProcessing)) {
-    print('  Provider does not advertise realtime processing on this surface.');
-    print('');
-    return;
-  }
-
-  try {
-    final session = await provider.startRealtimeSession(config);
-    print('  Session unexpectedly started: ${session.sessionId}');
-    await session.close();
-  } on UnsupportedError catch (error) {
-    print('  Compatibility shell reached the provider boundary.');
-    print('  Current implementation status: $error');
-    print(
-      '  This is exactly why realtime is still documented as provider-owned',
-    );
-    print('  appendix material instead of stable shared API.\n');
-  } catch (error) {
-    print('  Session startup failed: $error\n');
-  }
-}
-
 Future<void> _demonstrateLocalSessionOrchestration(
-  compat.RealtimeAudioConfig config,
+  RealtimeAudioSessionConfig config,
 ) async {
   print('App-owned session orchestration pattern:');
 
-  final session = _SimulatedRealtimeAudioSession(config: config);
+  final session = SimulatedRealtimeAudioSession(config: config);
   final subscription = session.events.listen(_handleRealtimeEvent);
-  final manager = _RealtimeSessionManager(session);
-  final simulator = _AudioChunkSimulator();
+  final manager = RealtimeSessionManager(session);
+  final simulator = AudioChunkSimulator();
 
   try {
     await manager.start();
@@ -172,14 +115,11 @@ Future<void> _demonstrateLocalSessionOrchestration(
   print('');
 }
 
-void _handleRealtimeEvent(compat.RealtimeAudioEvent event) {
+void _handleRealtimeEvent(RealtimeAudioEvent event) {
   switch (event) {
-    case compat.RealtimeSessionStatusEvent(
-        :final status,
-        :final details,
-      ):
+    case RealtimeSessionStatusEvent(:final status, :final details):
       print('  [status] $status ${details ?? const {}}');
-    case compat.RealtimeTranscriptionEvent(
+    case RealtimeTranscriptionEvent(
         :final text,
         :final isFinal,
         :final confidence,
@@ -189,20 +129,106 @@ void _handleRealtimeEvent(compat.RealtimeAudioEvent event) {
         '  [transcription/$kind] $text '
         '(confidence=${confidence?.toStringAsFixed(2) ?? 'n/a'})',
       );
-    case compat.RealtimeAudioResponseEvent(
-        :final audioData,
-        :final isFinal,
-      ):
+    case RealtimeAudioResponseEvent(:final audioData, :final isFinal):
       print(
         '  [audio-response] ${audioData.length} bytes '
         'final=$isFinal',
       );
-    case compat.RealtimeErrorEvent(:final message, :final code):
+    case RealtimeErrorEvent(:final message, :final code):
       print('  [error] ${code ?? 'unknown'}: $message');
   }
 }
 
-final class _AudioChunkSimulator {
+final class RealtimeAudioSessionConfig {
+  final String inputFormat;
+  final String outputFormat;
+  final int sampleRate;
+  final bool enableVad;
+  final bool enableEchoCancellation;
+  final bool enableNoiseSuppression;
+  final Duration timeout;
+  final Map<String, Object?> customParams;
+
+  const RealtimeAudioSessionConfig({
+    required this.inputFormat,
+    required this.outputFormat,
+    required this.sampleRate,
+    this.enableVad = false,
+    this.enableEchoCancellation = false,
+    this.enableNoiseSuppression = false,
+    this.timeout = const Duration(seconds: 30),
+    this.customParams = const {},
+  });
+
+  Map<String, Object?> toJson() {
+    return {
+      'inputFormat': inputFormat,
+      'outputFormat': outputFormat,
+      'sampleRate': sampleRate,
+      'enableVad': enableVad,
+      'enableEchoCancellation': enableEchoCancellation,
+      'enableNoiseSuppression': enableNoiseSuppression,
+      'timeoutSeconds': timeout.inSeconds,
+      if (customParams.isNotEmpty) 'customParams': customParams,
+    };
+  }
+}
+
+sealed class RealtimeAudioEvent {
+  final DateTime timestamp;
+
+  const RealtimeAudioEvent({
+    required this.timestamp,
+  });
+}
+
+final class RealtimeSessionStatusEvent extends RealtimeAudioEvent {
+  final String status;
+  final Map<String, Object?>? details;
+
+  const RealtimeSessionStatusEvent({
+    required super.timestamp,
+    required this.status,
+    this.details,
+  });
+}
+
+final class RealtimeTranscriptionEvent extends RealtimeAudioEvent {
+  final String text;
+  final bool isFinal;
+  final double? confidence;
+
+  const RealtimeTranscriptionEvent({
+    required super.timestamp,
+    required this.text,
+    required this.isFinal,
+    this.confidence,
+  });
+}
+
+final class RealtimeAudioResponseEvent extends RealtimeAudioEvent {
+  final List<int> audioData;
+  final bool isFinal;
+
+  const RealtimeAudioResponseEvent({
+    required super.timestamp,
+    required this.audioData,
+    required this.isFinal,
+  });
+}
+
+final class RealtimeErrorEvent extends RealtimeAudioEvent {
+  final String message;
+  final String? code;
+
+  const RealtimeErrorEvent({
+    required super.timestamp,
+    required this.message,
+    this.code,
+  });
+}
+
+final class AudioChunkSimulator {
   List<int> generateSpeechChunk() {
     return List<int>.generate(
       512,
@@ -215,33 +241,28 @@ final class _AudioChunkSimulator {
   }
 }
 
-final class _SimulatedRealtimeAudioSession extends compat.RealtimeAudioSession {
-  final compat.RealtimeAudioConfig config;
-  final StreamController<compat.RealtimeAudioEvent> _events =
-      StreamController<compat.RealtimeAudioEvent>.broadcast();
-  final String _sessionId =
+final class SimulatedRealtimeAudioSession {
+  final RealtimeAudioSessionConfig config;
+  final StreamController<RealtimeAudioEvent> _events =
+      StreamController<RealtimeAudioEvent>.broadcast();
+  final String sessionId =
       'sim-${DateTime.now().millisecondsSinceEpoch.toRadixString(36)}';
 
   bool _isActive = false;
   int _chunkCount = 0;
 
-  _SimulatedRealtimeAudioSession({
+  SimulatedRealtimeAudioSession({
     required this.config,
   });
 
-  @override
-  Stream<compat.RealtimeAudioEvent> get events => _events.stream;
+  Stream<RealtimeAudioEvent> get events => _events.stream;
 
-  @override
   bool get isActive => _isActive;
-
-  @override
-  String get sessionId => _sessionId;
 
   Future<void> start() async {
     _isActive = true;
     _events.add(
-      compat.RealtimeSessionStatusEvent(
+      RealtimeSessionStatusEvent(
         timestamp: DateTime.now(),
         status: 'started',
         details: config.toJson(),
@@ -249,11 +270,10 @@ final class _SimulatedRealtimeAudioSession extends compat.RealtimeAudioSession {
     );
   }
 
-  @override
   void sendAudio(List<int> audioData) {
     if (!_isActive) {
       _events.add(
-        compat.RealtimeErrorEvent(
+        RealtimeErrorEvent(
           timestamp: DateTime.now(),
           message: 'Attempted to send audio to an inactive session.',
           code: 'inactive-session',
@@ -265,7 +285,7 @@ final class _SimulatedRealtimeAudioSession extends compat.RealtimeAudioSession {
     _chunkCount++;
     final energy = _estimateEnergy(audioData);
     _events.add(
-      compat.RealtimeSessionStatusEvent(
+      RealtimeSessionStatusEvent(
         timestamp: DateTime.now(),
         status: 'audio-received',
         details: {
@@ -277,19 +297,17 @@ final class _SimulatedRealtimeAudioSession extends compat.RealtimeAudioSession {
 
     if (energy < 0.02) {
       _events.add(
-        compat.RealtimeSessionStatusEvent(
+        RealtimeSessionStatusEvent(
           timestamp: DateTime.now(),
           status: 'vad-silence',
-          details: {
-            'chunk': _chunkCount,
-          },
+          details: {'chunk': _chunkCount},
         ),
       );
       return;
     }
 
     _events.add(
-      compat.RealtimeTranscriptionEvent(
+      RealtimeTranscriptionEvent(
         timestamp: DateTime.now(),
         text: 'detected speech chunk $_chunkCount',
         isFinal: false,
@@ -299,7 +317,7 @@ final class _SimulatedRealtimeAudioSession extends compat.RealtimeAudioSession {
 
     if (_chunkCount.isEven) {
       _events.add(
-        compat.RealtimeTranscriptionEvent(
+        RealtimeTranscriptionEvent(
           timestamp: DateTime.now(),
           text: 'final user utterance after chunk $_chunkCount',
           isFinal: true,
@@ -307,7 +325,7 @@ final class _SimulatedRealtimeAudioSession extends compat.RealtimeAudioSession {
         ),
       );
       _events.add(
-        compat.RealtimeAudioResponseEvent(
+        RealtimeAudioResponseEvent(
           timestamp: DateTime.now(),
           audioData: List<int>.filled(256, 42),
           isFinal: true,
@@ -316,7 +334,6 @@ final class _SimulatedRealtimeAudioSession extends compat.RealtimeAudioSession {
     }
   }
 
-  @override
   Future<void> close() async {
     if (!_isActive) {
       return;
@@ -324,7 +341,7 @@ final class _SimulatedRealtimeAudioSession extends compat.RealtimeAudioSession {
 
     _isActive = false;
     _events.add(
-      compat.RealtimeSessionStatusEvent(
+      RealtimeSessionStatusEvent(
         timestamp: DateTime.now(),
         status: 'closed',
       ),
@@ -339,7 +356,7 @@ final class _SimulatedRealtimeAudioSession extends compat.RealtimeAudioSession {
 
     _isActive = false;
     _events.add(
-      compat.RealtimeSessionStatusEvent(
+      RealtimeSessionStatusEvent(
         timestamp: DateTime.now(),
         status: 'disconnected',
       ),
@@ -353,7 +370,7 @@ final class _SimulatedRealtimeAudioSession extends compat.RealtimeAudioSession {
 
     _isActive = true;
     _events.add(
-      compat.RealtimeSessionStatusEvent(
+      RealtimeSessionStatusEvent(
         timestamp: DateTime.now(),
         status: 'reconnected',
       ),
@@ -373,10 +390,10 @@ final class _SimulatedRealtimeAudioSession extends compat.RealtimeAudioSession {
   }
 }
 
-final class _RealtimeSessionManager {
-  final _SimulatedRealtimeAudioSession _session;
+final class RealtimeSessionManager {
+  final SimulatedRealtimeAudioSession _session;
 
-  _RealtimeSessionManager(this._session);
+  RealtimeSessionManager(this._session);
 
   Future<void> start() => _session.start();
 

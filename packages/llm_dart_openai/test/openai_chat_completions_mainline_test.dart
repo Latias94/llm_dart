@@ -1488,11 +1488,13 @@ void main() {
                   FilePromptPart(
                     mediaType: 'application/pdf',
                     data: FileTextData('legacy-metadata-only'),
-                    providerMetadata: ProviderMetadata({
-                      'openai': {
-                        'fileId': 'file-pdf-123',
-                      },
-                    }),
+                    providerOptions: ProviderReplayPromptPartOptions(
+                      ProviderMetadata({
+                        'openai': {
+                          'fileId': 'file-pdf-123',
+                        },
+                      }),
+                    ),
                   ),
                 ],
               ),

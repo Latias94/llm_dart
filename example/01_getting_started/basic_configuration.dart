@@ -43,8 +43,8 @@ Future<void> demonstrateTemperatureSettings(String apiKey) async {
     try {
       final result = await core.generateTextCall(
         model: model,
-        prompt: [
-          core.UserPromptMessage.text(question),
+        messages: [
+          core.UserModelMessage.text(question),
         ],
         options: core.GenerateTextOptions(
           temperature: temperature,
@@ -75,8 +75,8 @@ Future<void> demonstrateTokenLimits(String apiKey) async {
     try {
       final result = await core.generateTextCall(
         model: model,
-        prompt: [
-          core.UserPromptMessage.text(question),
+        messages: [
+          core.UserModelMessage.text(question),
         ],
         options: core.GenerateTextOptions(
           temperature: 0.7,
@@ -113,14 +113,14 @@ Future<void> demonstrateSystemPrompts(String apiKey) async {
 
   for (final systemPrompt in systemPrompts) {
     try {
-      final prompt = <core.PromptMessage>[
-        if (systemPrompt != null) core.SystemPromptMessage.text(systemPrompt),
-        core.UserPromptMessage.text(question),
+      final messages = <core.ModelMessage>[
+        if (systemPrompt != null) core.SystemModelMessage.text(systemPrompt),
+        core.UserModelMessage.text(question),
       ];
 
       final result = await core.generateTextCall(
         model: model,
-        prompt: prompt,
+        messages: messages,
         options: const core.GenerateTextOptions(
           temperature: 0.7,
           maxOutputTokens: 100,
@@ -158,8 +158,8 @@ Future<void> testInvalidApiKey() async {
     final model = _openAIModel('invalid-key');
     await core.generateTextCall(
       model: model,
-      prompt: [
-        core.UserPromptMessage.text('Hello'),
+      messages: [
+        core.UserModelMessage.text('Hello'),
       ],
     );
     print('Invalid API Key: unexpected success');
@@ -176,8 +176,8 @@ Future<void> testInvalidModel(String apiKey) async {
     final model = llm.openai(apiKey: apiKey).chatModel('invalid-model-name');
     await core.generateTextCall(
       model: model,
-      prompt: [
-        core.UserPromptMessage.text('Hello'),
+      messages: [
+        core.UserModelMessage.text('Hello'),
       ],
     );
     print('Invalid Model: unexpected success');
@@ -194,8 +194,8 @@ Future<void> testNetworkTimeout(String apiKey) async {
     final model = _openAIModel(apiKey);
     await core.generateTextCall(
       model: model,
-      prompt: [
-        core.UserPromptMessage.text('Hello'),
+      messages: [
+        core.UserModelMessage.text('Hello'),
       ],
       callOptions: const core.CallOptions(
         timeout: Duration(milliseconds: 1),
@@ -226,8 +226,8 @@ Future<void> demonstrateTimeoutSettings(String apiKey) async {
       final stopwatch = Stopwatch()..start();
       await core.generateTextCall(
         model: model,
-        prompt: [
-          core.UserPromptMessage.text(
+        messages: [
+          core.UserModelMessage.text(
             'Explain quantum computing briefly.',
           ),
         ],

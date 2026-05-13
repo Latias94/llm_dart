@@ -3,11 +3,13 @@ import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'openai_embedding_model.dart';
 import 'openai_family_profile.dart';
+import 'openai_assistants.dart';
 import 'openai_files.dart';
 import 'openai_image_model.dart';
 import 'openai_language_model.dart';
 import 'openai_moderation.dart';
 import 'openai_options.dart';
+import 'openai_responses_lifecycle.dart';
 import 'openai_speech_model.dart';
 import 'openai_transcription_model.dart';
 
@@ -202,6 +204,31 @@ final class OpenAI {
     OpenAIFilesSettings settings = const OpenAIFilesSettings(),
   }) {
     return OpenAIFilesClient(
+      apiKey: apiKey,
+      transport: transport,
+      profile: profile,
+      baseUrl: baseUrl,
+      settings: settings,
+    );
+  }
+
+  OpenAIAssistantsClient assistants({
+    OpenAIAssistantsSettings settings = const OpenAIAssistantsSettings(),
+  }) {
+    return OpenAIAssistantsClient(
+      apiKey: apiKey,
+      transport: transport,
+      profile: profile,
+      baseUrl: baseUrl,
+      settings: settings,
+    );
+  }
+
+  OpenAIResponsesLifecycleClient responsesLifecycle({
+    OpenAIResponsesLifecycleSettings settings =
+        const OpenAIResponsesLifecycleSettings(),
+  }) {
+    return OpenAIResponsesLifecycleClient(
       apiKey: apiKey,
       transport: transport,
       profile: profile,

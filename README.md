@@ -190,9 +190,6 @@ resolve unpublished workspace dependencies from this checkout.
 - `package:llm_dart/elevenlabs.dart`
   - focused ElevenLabs provider entrypoint for `elevenLabs(...)`, speech,
     transcription, voice catalogs, and audio options
-- `package:llm_dart/legacy.dart`
-  - explicit compatibility shell for `LLMBuilder()`, `createProvider(...)`,
-    legacy models, and builder-era APIs
 - `package:llm_dart_ollama/llm_dart_ollama.dart`
   - direct Ollama provider package without depending on root `llm_dart`
 - `package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart`
@@ -241,9 +238,9 @@ Future<void> main() async {
 
   final result = await llm.generateTextCall(
     model: model,
-    prompt: [
-      llm.SystemPromptMessage.text('You are concise.'),
-      llm.UserPromptMessage.text('Explain Dart in one sentence.'),
+    messages: [
+      llm.SystemModelMessage.text('You are concise.'),
+      llm.UserModelMessage.text('Explain Dart in one sentence.'),
     ],
   );
 
@@ -314,8 +311,8 @@ Future<void> main() async {
 
   final result = await core.generateObject<String>(
     model: model,
-    prompt: [
-      core.UserPromptMessage.text('Return a JSON object with a short title.'),
+    messages: [
+      core.UserModelMessage.text('Return a JSON object with a short title.'),
     ],
     schema: core.JsonSchema.object(
       properties: const {
@@ -378,8 +375,8 @@ Future<void> main() async {
 
   final stream = core.streamTextCall(
     model: model,
-    prompt: [
-      core.UserPromptMessage.text('Solve 15 * 27 and show your reasoning.'),
+    messages: [
+      core.UserModelMessage.text('Solve 15 * 27 and show your reasoning.'),
     ],
   );
 
@@ -434,8 +431,8 @@ Future<void> main() async {
 
   final firstTurn = await core.generateTextCall(
     model: model,
-    prompt: [
-      core.UserPromptMessage.text('What is the weather in Hong Kong?'),
+    messages: [
+      core.UserModelMessage.text('What is the weather in Hong Kong?'),
     ],
     tools: tools,
     toolChoice: const core.RequiredToolChoice(),
@@ -446,27 +443,22 @@ Future<void> main() async {
 
   final secondTurn = await core.generateTextCall(
     model: model,
-    prompt: [
-      core.UserPromptMessage.text('What is the weather in Hong Kong?'),
-      core.AssistantPromptMessage(
-        parts: [core.ToolCallPromptPart(
+    messages: [
+      core.UserModelMessage.text('What is the weather in Hong Kong?'),
+      core.AssistantModelMessage(
+        parts: [core.ToolCallModelPart(
           toolCallId: toolCall.toolCallId,
           toolName: toolCall.toolName,
           input: toolCall.input,
         )],
       ),
-      core.ToolPromptMessage(
+      core.ToolModelMessage.result(
+        toolCallId: toolCall.toolCallId,
         toolName: toolCall.toolName,
-        parts: [
-          core.ToolResultPromptPart(
-            toolCallId: toolCall.toolCallId,
-            toolName: toolCall.toolName,
-            toolOutput: core.JsonToolOutput({
-              'temperature': 28,
-              'condition': 'humid',
-            }),
-          ),
-        ],
+        toolOutput: core.JsonToolOutput({
+          'temperature': 28,
+          'condition': 'humid',
+        }),
       ),
     ],
   );
@@ -478,9 +470,9 @@ Future<void> main() async {
 Example file:
 [tool_calling.dart](example/02_core_features/tool_calling.dart)
 
-`ToolResultPromptPart` now prefers an explicit `toolOutput:` value. The older
-`output:` / `isError:` shorthand still works for compatibility, but new code
-should usually pick `TextToolOutput`, `JsonToolOutput`,
+`ToolModelMessage.result(...)` prefers an explicit `toolOutput:` value. The
+older `output:` / `isError:` shorthand still works for compatibility, but new
+code should usually pick `TextToolOutput`, `JsonToolOutput`,
 `ExecutionDeniedToolOutput`, or `ContentToolOutput` directly.
 
 Use `ContentToolOutput` when a tool result needs multiple structured pieces,
@@ -506,8 +498,8 @@ Future<void> main() async {
 
   final result = await core.generateTextCall(
     model: model,
-    prompt: [
-      core.UserPromptMessage.text('Solve 15% of 240 step by step.'),
+    messages: [
+      core.UserModelMessage.text('Solve 15% of 240 step by step.'),
     ],
   );
 
@@ -663,7 +655,7 @@ import 'package:llm_dart/core.dart' as core;
 
 final result = await core.generateTextCall(
   model: model,
-  prompt: [core.UserPromptMessage.text('Keep this request short.')],
+  messages: [core.UserModelMessage.text('Keep this request short.')],
   callOptions: const core.CallOptions(
     timeout: Duration(seconds: 20),
     maxRetries: 1,
@@ -714,8 +706,8 @@ Future<void> main() async {
 
   final result = await core.generateTextCall(
     model: model,
-    prompt: [
-      core.UserPromptMessage.text('Search for recent Dart SDK news.'),
+    messages: [
+      core.UserModelMessage.text('Search for recent Dart SDK news.'),
     ],
     callOptions: const core.CallOptions(
       providerOptions: openai.OpenAIGenerateTextOptions(
@@ -741,8 +733,8 @@ Future<void> main() async {
 
   final result = await core.generateTextCall(
     model: model,
-    prompt: [
-      core.UserPromptMessage.text('Find the latest Grok announcements.'),
+    messages: [
+      core.UserModelMessage.text('Find the latest Grok announcements.'),
     ],
     callOptions: const core.CallOptions(
       providerOptions: xai.XAIGenerateTextOptions(
@@ -761,16 +753,16 @@ Future<void> main() async {
 - Prefer `generateTextCall(...)` / `streamTextCall(...)` for app-facing text
   generation, and keep `generateText(...)` / `streamText(...)` for lower-level
   raw access.
-- Keep provider-native features in typed provider options, provider metadata, or custom parts.
+- Keep provider-native request features in typed provider options or custom
+  parts; reserve provider metadata for outputs and replay observations.
 - Keep UI/session concerns above `TextStreamEvent`.
 - Prefer approved model IDs, app-owned history, and local attachment state as
   the default product path before introducing provider-managed assistants,
   remote files, or catalog discovery.
-- Treat `LLMBuilder()` and old root provider surfaces as compatibility APIs,
-  not the target architecture.
-- Treat the root Ollama and ElevenLabs surfaces as compatibility-first shells
-  when the modern shared-capability path already exists in
-  `llm_dart_ollama` or `llm_dart_elevenlabs`.
+- Treat `LLMBuilder()`, `createProvider(...)`, and old root provider/model
+  subpaths as removed APIs.
+- Use focused root entrypoints or direct provider packages for provider-native
+  helpers such as Ollama local catalogs and ElevenLabs voice catalogs.
 
 ## Current Reference Docs
 
@@ -799,20 +791,28 @@ Future<void> main() async {
 - Stream coverage matrix:
   [36-provider-stream-coverage-matrix.md](docs/workstreams/2026-03-architecture-refactor/36-provider-stream-coverage-matrix.md)
 
-## Legacy Compatibility
+## Removed Root Legacy Surface
 
-Compatibility APIs remain available through `package:llm_dart/legacy.dart` for
-builder-era migration and other explicit bridge code.
+The root builder-era compatibility surface has been removed. Do not import
+`package:llm_dart/legacy.dart`, `package:llm_dart/builder/...`,
+`package:llm_dart/models/...`, `package:llm_dart/providers/...`, or legacy
+`package:llm_dart/core/...` subpaths.
 
-If you still need the broad legacy surface, prefer the explicit import:
+Use short provider factories and focused provider entrypoints instead:
 
 ```dart
-import 'package:llm_dart/legacy.dart';
+import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/core.dart' as core;
+
+final model = llm.openai(apiKey: openAIKey).chatModel('gpt-4.1-mini');
+final result = await core.generateTextCall(
+  model: model,
+  messages: [
+    core.UserModelMessage.text('Explain Dart in one sentence.'),
+  ],
+);
 ```
 
-`LLMBuilder()` remains available only on that compatibility path. The old
-`ai()` helper has been removed; use `LLMBuilder()` for compatibility builder
-code or short provider factories for modern code.
-
-For Ollama and ElevenLabs, new app code should start from `llm_dart_ollama` or
-`llm_dart_elevenlabs`. The root compatibility shells remain for migration code.
+Provider-native features remain available through focused packages, typed
+provider options, and provider-owned lifecycle clients such as
+`openai(...).assistants()` and `openai(...).responsesLifecycle()`.

@@ -387,40 +387,29 @@ final class SerializationJsonSupport {
     })? encodeProviderOptions,
   }) {
     final JsonMap encoded = switch (part) {
-      TextToolOutputContentPart(:final text, :final providerMetadata) => {
+      TextToolOutputContentPart(:final text) => {
           'type': 'text',
           'text': text,
-          if (providerMetadata != null)
-            'providerMetadata': encodeProviderMetadata(providerMetadata),
         },
-      JsonToolOutputContentPart(:final value, :final providerMetadata) => {
+      JsonToolOutputContentPart(:final value) => {
           'type': 'json',
           'value': ensureJsonValue(
             value,
             path: r'$.toolOutput.parts[].value',
           ),
-          if (providerMetadata != null)
-            'providerMetadata': encodeProviderMetadata(providerMetadata),
         },
       FileToolOutputContentPart(
         :final mediaType,
         :final filename,
         :final data,
-        :final providerMetadata,
       ) =>
         {
           'type': 'file',
           'mediaType': mediaType,
           if (filename != null) 'filename': filename,
           'data': encodeFileData(data),
-          if (providerMetadata != null)
-            'providerMetadata': encodeProviderMetadata(providerMetadata),
         },
-      CustomToolOutputContentPart(
-        :final kind,
-        :final data,
-        :final providerMetadata,
-      ) =>
+      CustomToolOutputContentPart(:final kind, :final data) =>
         {
           'type': 'custom',
           'kind': kind,
@@ -428,8 +417,6 @@ final class SerializationJsonSupport {
             data,
             path: r'$.toolOutput.parts[].data',
           ),
-          if (providerMetadata != null)
-            'providerMetadata': encodeProviderMetadata(providerMetadata),
         },
     };
 
@@ -459,22 +446,20 @@ final class SerializationJsonSupport {
       path: '$path.providerOptions',
       decodeProviderOptions: decodeProviderOptions,
     );
+    if (map.containsKey('providerMetadata')) {
+      throw FormatException(
+        'Legacy prompt replay metadata is no longer supported at $path.providerMetadata. '
+        'Use ProviderReplayPromptPartOptions instead.',
+      );
+    }
 
     return switch (type) {
       'text' => TextToolOutputContentPart(
           asJsonString(map['text'], path: '$path.text'),
-          providerMetadata: decodeProviderMetadata(
-            map['providerMetadata'],
-            path: '$path.providerMetadata',
-          ),
           providerOptions: providerOptions,
         ),
       'json' => JsonToolOutputContentPart(
           map['value'],
-          providerMetadata: decodeProviderMetadata(
-            map['providerMetadata'],
-            path: '$path.providerMetadata',
-          ),
           providerOptions: providerOptions,
         ),
       'file' => FileToolOutputContentPart(
@@ -482,19 +467,11 @@ final class SerializationJsonSupport {
           filename:
               asNullableJsonString(map['filename'], path: '$path.filename'),
           data: _decodeRequiredToolOutputFileData(map, path: path),
-          providerMetadata: decodeProviderMetadata(
-            map['providerMetadata'],
-            path: '$path.providerMetadata',
-          ),
           providerOptions: providerOptions,
         ),
       'custom' => CustomToolOutputContentPart(
           kind: asJsonString(map['kind'], path: '$path.kind'),
           data: map['data'],
-          providerMetadata: decodeProviderMetadata(
-            map['providerMetadata'],
-            path: '$path.providerMetadata',
-          ),
           providerOptions: providerOptions,
         ),
       _ => throw FormatException(

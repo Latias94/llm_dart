@@ -3,21 +3,16 @@
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/core/capability.dart' as compat_core;
-import 'package:llm_dart/llm_dart.dart' as llm;
-import 'package:llm_dart/models/chat_models.dart' as compat_chat;
 import 'package:llm_dart/openai.dart' as openai;
-import 'package:llm_dart/providers/openai/openai.dart' as openai_compat;
 
 /// OpenAI Responses examples with a stable-first split.
 ///
-/// 1. Most app-facing usage should stay on `openai(...).chatModel(...)`
-///    plus shared `core.generateTextCall(...)` / `core.streamTextCall(...)`.
-/// 2. Only raw response lifecycle APIs such as `getResponse()` and
-///    `continueConversation()` should fall back to the narrower OpenAI
-///    provider-owned compatibility surface.
+/// Most app-facing usage should stay on `openai(...).chatModel(...)` plus the
+/// shared `generateTextCall(...)` and `streamTextCall(...)` helpers. Raw
+/// response lifecycle APIs such as retrieve, continue, cancel, and input-item
+/// listing belong to the focused OpenAI lifecycle client.
 Future<void> main() async {
-  print('=== OpenAI Responses API Examples ===\n');
+  print('OpenAI Responses API Examples\n');
 
   final apiKey = Platform.environment['OPENAI_API_KEY'];
   if (apiKey == null || apiKey.isEmpty) {
@@ -38,22 +33,15 @@ Future<void> stableBasicResponsesBackedExample(String apiKey) async {
   print('--- Stable Example 1: Responses-Backed Text Generation ---');
 
   try {
-    final model = _responsesModel(
-      apiKey,
-      'gpt-4.1',
-    );
-
+    final model = _responsesModel(apiKey, 'gpt-4.1');
     final result = await core.generateTextCall(
       model: model,
       prompt: [
         core.UserPromptMessage.text(
-          'Explain the difference between Responses-backed OpenAI chat '
-          'transport and the older Chat Completions mental model.',
+          'Explain the difference between the shared model API and raw OpenAI Responses lifecycle APIs.',
         ),
       ],
-      options: const core.GenerateTextOptions(
-        maxOutputTokens: 500,
-      ),
+      options: const core.GenerateTextOptions(maxOutputTokens: 500),
       callOptions: const core.CallOptions(
         providerOptions: openai.OpenAIGenerateTextOptions(
           verbosity: 'medium',
@@ -86,12 +74,10 @@ Future<void> stableBuiltInWebSearchExample(String apiKey) async {
       model: model,
       prompt: [
         core.UserPromptMessage.text(
-          'What are the latest developments in AI this week?',
+          'Summarize one current AI platform trend in a few sentences.',
         ),
       ],
-      options: const core.GenerateTextOptions(
-        maxOutputTokens: 500,
-      ),
+      options: const core.GenerateTextOptions(maxOutputTokens: 500),
     );
 
     print('Web-search response: ${result.text}');
@@ -125,9 +111,7 @@ Future<void> stableFileSearchExample(String apiKey) async {
           'Search for information about machine learning in the uploaded documents.',
         ),
       ],
-      options: const core.GenerateTextOptions(
-        maxOutputTokens: 400,
-      ),
+      options: const core.GenerateTextOptions(maxOutputTokens: 400),
     );
 
     print('File-search response: ${result.text}');
@@ -146,22 +130,15 @@ Future<void> stableReasoningExample(String apiKey) async {
   print('--- Stable Example 4: Reasoning with Typed Provider Options ---');
 
   try {
-    final model = _responsesModel(
-      apiKey,
-      'o3-mini',
-    );
-
+    final model = _responsesModel(apiKey, 'o3-mini');
     final result = await core.generateTextCall(
       model: model,
       prompt: [
         core.UserPromptMessage.text(
-          'How much wood would a woodchuck chuck if a woodchuck could chuck '
-          'wood? Think step by step, then answer plainly.',
+          'Reason briefly about whether typed provider options reduce SDK coupling, then answer plainly.',
         ),
       ],
-      options: const core.GenerateTextOptions(
-        maxOutputTokens: 1200,
-      ),
+      options: const core.GenerateTextOptions(maxOutputTokens: 1200),
       callOptions: const core.CallOptions(
         providerOptions: openai.OpenAIGenerateTextOptions(
           reasoningEffort: openai.OpenAIReasoningEffort.high,
@@ -172,8 +149,7 @@ Future<void> stableReasoningExample(String apiKey) async {
 
     print('Response: ${result.text}');
     print(
-      'Reasoning text: ${_truncate(result.reasoningText ?? '<not exposed>')}',
-    );
+        'Reasoning text: ${_truncate(result.reasoningText ?? '<not exposed>')}');
     _printUsage(result);
     print('');
   } catch (error) {
@@ -198,12 +174,10 @@ Future<void> stableStreamingExample(String apiKey) async {
       model: model,
       prompt: [
         core.UserPromptMessage.text(
-          'Tell me about the latest AI research papers.',
+          'Tell me how shared stream events differ from raw provider events.',
         ),
       ],
-      options: const core.GenerateTextOptions(
-        maxOutputTokens: 500,
-      ),
+      options: const core.GenerateTextOptions(maxOutputTokens: 500),
     );
 
     await for (final event in stream) {
@@ -235,27 +209,20 @@ Future<void> providerLifecycleBoundaryExample(String apiKey) async {
   print('--- Boundary Example 6: Raw Response Lifecycle ---');
 
   try {
-    print('ℹ️  This section is OpenAI-specific and intentionally not part of');
-    print('    the shared stable model contract.');
+    print('This section is OpenAI-specific and intentionally outside');
+    print('the shared stable model contract.');
 
-    final provider = _createResponsesProvider(
-      apiKey,
-      model: 'gpt-4o',
-      builtInTools: const [
-        openai_compat.OpenAIWebSearchTool(),
-      ],
+    final responses = openai.openai(apiKey: apiKey).responsesLifecycle();
+    final response1 = await responses.createResponse(
+      const {
+        'model': 'gpt-4o',
+        'input': 'My name is Alice. Explain quantum computing simply.',
+      },
     );
 
-    final responses = provider.responses!;
-    final response1 = await responses.chat([
-      compat_chat.ChatMessage.user(
-        'My name is Alice. Tell me about quantum computing.',
-      ),
-    ]);
+    print('First response: ${_truncate(response1.outputText ?? '<no text>')}');
 
-    print('First response: ${_truncate(response1.text ?? '<no text>')}');
-
-    final responseId = _responseIdOf(response1);
+    final responseId = response1.id;
     if (responseId == null) {
       print('No response ID returned; lifecycle demo skipped.\n');
       return;
@@ -265,16 +232,16 @@ Future<void> providerLifecycleBoundaryExample(String apiKey) async {
 
     final continued = await responses.continueConversation(
       responseId,
-      [
-        compat_chat.ChatMessage.user(
-          'Remember my name and explain it in simpler terms.',
-        ),
-      ],
+      const {
+        'model': 'gpt-4o',
+        'input': 'Remember my name and explain it in even simpler terms.',
+      },
     );
-    print('Continued response: ${_truncate(continued.text ?? '<no text>')}');
+    print(
+        'Continued response: ${_truncate(continued.outputText ?? '<no text>')}');
 
     final fetched = await responses.getResponse(responseId);
-    print('Fetched by ID: ${_truncate(fetched.text ?? '<no text>')}');
+    print('Fetched by ID: ${_truncate(fetched.outputText ?? '<no text>')}');
 
     final inputItems = await responses.listInputItems(responseId);
     print('Input item count: ${inputItems.data.length}');
@@ -288,28 +255,18 @@ Future<void> providerBackgroundBoundaryExample(String apiKey) async {
   print('--- Boundary Example 7: Background Processing ---');
 
   try {
-    print(
-        'ℹ️  Background response jobs are also OpenAI-specific lifecycle APIs.');
+    print('Background response jobs are OpenAI-specific lifecycle APIs.');
 
-    final provider = _createResponsesProvider(
-      apiKey,
-      model: 'gpt-4o',
-      builtInTools: const [
-        openai_compat.OpenAIWebSearchTool(),
-      ],
+    final responses = openai.openai(apiKey: apiKey).responsesLifecycle();
+    final background = await responses.createResponse(
+      const {
+        'model': 'gpt-4o',
+        'input': 'Write a detailed analysis of renewable energy trends.',
+        'background': true,
+      },
     );
 
-    final responses = provider.responses!;
-    final background = await responses.chatWithToolsBackground(
-      [
-        compat_chat.ChatMessage.user(
-          'Write a detailed analysis of renewable energy trends.',
-        ),
-      ],
-      null,
-    );
-
-    final responseId = _responseIdOf(background);
+    final responseId = background.id;
     print('Background response ID: ${responseId ?? 'unknown'}');
 
     if (responseId == null) {
@@ -321,12 +278,12 @@ Future<void> providerBackgroundBoundaryExample(String apiKey) async {
 
     try {
       final polled = await responses.getResponse(responseId);
-      print('Polled response: ${_truncate(polled.text ?? '<no text>')}');
+      print('Polled response: ${_truncate(polled.outputText ?? '<no text>')}');
     } catch (pollError) {
       print('Polling did not complete yet: $pollError');
       try {
-        await responses.cancelResponse(responseId);
-        print('Background response cancelled.');
+        final cancelled = await responses.cancelResponse(responseId);
+        print('Background response status after cancel: ${cancelled.status}');
       } catch (cancelError) {
         print('Could not cancel background response: $cancelError');
       }
@@ -343,40 +300,13 @@ core.LanguageModel _responsesModel(
   String modelId, {
   List<openai.OpenAIBuiltInTool> builtInTools = const [],
 }) {
-  return llm
-      .openai(
-        apiKey: apiKey,
-      )
-      .chatModel(
+  return openai.openai(apiKey: apiKey).chatModel(
         modelId,
         settings: openai.OpenAIChatModelSettings(
           useResponsesApi: true,
           builtInTools: builtInTools,
         ),
       );
-}
-
-openai_compat.OpenAIProvider _createResponsesProvider(
-  String apiKey, {
-  required String model,
-  List<openai_compat.OpenAIBuiltInTool> builtInTools = const [],
-}) {
-  return openai_compat.OpenAIProvider(
-    openai_compat.OpenAIConfig(
-      apiKey: apiKey,
-      model: model,
-      useResponsesAPI: true,
-      builtInTools: builtInTools,
-    ),
-  );
-}
-
-String? _responseIdOf(compat_core.ChatResponse response) {
-  if (response is openai_compat.OpenAIResponsesResponse) {
-    return response.responseId;
-  }
-
-  return null;
 }
 
 void _printUsage(core.GenerateTextCallResult<dynamic> result) {

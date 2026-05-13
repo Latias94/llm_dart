@@ -1,104 +1,8 @@
 import 'dart:io';
 
-import '../../tool/check_root_package_boundary_guards.dart' as guard;
 import 'package:test/test.dart';
 
-const _legacyEntrypointContent = r'''
-library;
-
-export 'src/facade/ai.dart' show AI;
-export 'src/bootstrap/root_registry_bootstrap.dart'
-    show ensureRootRegistryBootstrap;
-export 'src/facade/legacy_builder_helpers.dart';
-export 'src/compatibility/providers/legacy_dio_client_overrides.dart'
-    show createLegacyDioClientOverrides;
-export 'src/compatibility/providers/openai_family_compat_deepseek_config.dart'
-    show createLegacyDeepSeekConfig;
-export 'src/compatibility/providers/openai_family_compat_groq_config.dart'
-    show createLegacyGroqConfig;
-export 'src/compatibility/providers/openai_family_compat_phind_config.dart'
-    show createLegacyPhindConfig;
-export 'src/compatibility/providers/openai_family_compat_support.dart'
-    show createLegacyOpenAIConfig;
-export 'src/compatibility/providers/openai_family_compat_xai_config.dart'
-    show createLegacyXAIConfig;
-export 'src/compatibility/providers/anthropic_config_adapter.dart'
-    show createLegacyAnthropicConfig;
-export 'src/compatibility/providers/google_config_adapter.dart'
-    show createLegacyGoogleConfig;
-export 'src/compatibility/providers/elevenlabs/config_adapter.dart'
-    show createLegacyElevenLabsConfig;
-export 'src/compatibility/providers/ollama/config_adapter.dart'
-    show createLegacyOllamaConfig;
-export 'src/compatibility/openai_compatible_provider_config.dart'
-    show
-        ConfigTransformer,
-        HeadersTransformer,
-        ModelCapabilityConfig,
-        OpenAICompatibleProviderConfig,
-        RequestBodyTransformer;
-
-export 'core/capability.dart';
-export 'core/cancellation.dart';
-export 'core/llm_error.dart';
-export 'core/config.dart';
-export 'core/registry.dart';
-export 'core/openai_compatible_configs.dart';
-export 'core/tool_validator.dart';
-export 'core/web_search.dart';
-export 'package:llm_dart_transport/llm_dart_transport.dart'
-    show
-        StreamingTransportResponse,
-        TransportClient,
-        TransportException,
-        TransportHttpException,
-        TransportMethod,
-        TransportNetworkException,
-        TransportRequest,
-        TransportResponse,
-        TransportResponseFormatException,
-        TransportResponseType,
-        TransportTimeoutException;
-
-export 'models/chat_models.dart';
-export 'models/tool_models.dart';
-export 'models/audio_models.dart';
-export 'models/image_models.dart';
-export 'models/file_models.dart';
-export 'models/moderation_models.dart';
-
-export 'providers/openai/openai.dart';
-export 'providers/openai/client.dart';
-export 'providers/openai/chat.dart';
-export 'providers/openai/embeddings.dart';
-export 'providers/openai/audio.dart';
-export 'providers/openai/images.dart';
-export 'providers/openai/files.dart';
-export 'providers/openai/models.dart';
-export 'providers/openai/moderation.dart';
-export 'providers/openai/assistants.dart';
-export 'providers/openai/completion.dart';
-export 'providers/anthropic/anthropic.dart';
-export 'providers/anthropic/models.dart';
-export 'providers/google/google.dart';
-export 'providers/google/client.dart';
-export 'providers/google/chat.dart';
-export 'providers/google/embeddings.dart';
-export 'providers/google/tts.dart';
-export 'providers/deepseek/deepseek.dart';
-export 'providers/ollama/ollama.dart';
-export 'providers/xai/xai.dart';
-export 'providers/phind/phind.dart';
-export 'providers/groq/groq.dart';
-export 'providers/elevenlabs/elevenlabs.dart';
-
-export 'providers/factories/base_factory.dart';
-
-export 'builder/llm_builder.dart';
-export 'builder/http_config.dart';
-
-export 'core/tool_call_aggregator.dart';
-''';
+import '../../tool/check_root_package_boundary_guards.dart' as guard;
 
 void main() {
   group('check_root_package_boundary_guards', () {
@@ -114,7 +18,26 @@ void main() {
       );
     });
 
-    test('reports unexpected root public entry files and directories',
+    test('passes when root is only the modern facade shell', () async {
+      final repoRoot = await _createTempRootLayout();
+      addTearDown(() async {
+        if (repoRoot.existsSync()) {
+          await repoRoot.delete(recursive: true);
+        }
+      });
+
+      final result = await guard.evaluateRootPackageBoundaryGuards(
+        repoRoot: repoRoot,
+      );
+
+      expect(
+        result.violations,
+        isEmpty,
+        reason: result.violations.join('\n'),
+      );
+    });
+
+    test('reports legacy root implementation ownership if it returns',
         () async {
       final repoRoot = await _createTempRootLayout();
       addTearDown(() async {
@@ -123,22 +46,20 @@ void main() {
         }
       });
 
-      await _writeFile(
-        repoRoot,
-        'lib/flutter.dart',
-        'library;\n',
-      );
-      await Directory(
-        '${repoRoot.path}${Platform.pathSeparator}lib${Platform.pathSeparator}src${Platform.pathSeparator}runtime',
-      ).create(recursive: true);
-      await Directory(
-        '${repoRoot.path}${Platform.pathSeparator}lib${Platform.pathSeparator}utils',
-      ).create(recursive: true);
-      await _writeFile(
-        repoRoot,
-        'lib/models/assistant_models.dart',
-        'library;\n',
-      );
+      await _writeFile(repoRoot, 'lib/legacy.dart', 'library;\n');
+      for (final directory in const [
+        'lib/builder',
+        'lib/core',
+        'lib/models',
+        'lib/providers',
+        'lib/src/bootstrap',
+        'lib/src/compatibility',
+        'lib/src/config',
+      ]) {
+        await Directory(
+          '${repoRoot.path}${Platform.pathSeparator}$directory',
+        ).create(recursive: true);
+      }
 
       final result = await guard.evaluateRootPackageBoundaryGuards(
         repoRoot: repoRoot,
@@ -148,7 +69,53 @@ void main() {
       expect(
         result.violations,
         contains(
-            contains('unexpected top-level public entry files: flutter.dart')),
+          contains(
+            'unexpected top-level directories: builder, core, models, providers',
+          ),
+        ),
+      );
+      expect(
+        result.violations,
+        contains(
+            contains('unexpected top-level public entry files: legacy.dart')),
+      );
+      expect(
+        result.violations,
+        contains(
+          contains(
+            'lib/src/: unexpected top-level directories: bootstrap, compatibility, config',
+          ),
+        ),
+      );
+    });
+
+    test('reports unexpected root public entry files and directories',
+        () async {
+      final repoRoot = await _createTempRootLayout();
+      addTearDown(() async {
+        if (repoRoot.existsSync()) {
+          await repoRoot.delete(recursive: true);
+        }
+      });
+
+      await _writeFile(repoRoot, 'lib/flutter.dart', 'library;\n');
+      await Directory(
+        '${repoRoot.path}${Platform.pathSeparator}lib${Platform.pathSeparator}utils',
+      ).create(recursive: true);
+      await Directory(
+        '${repoRoot.path}${Platform.pathSeparator}lib${Platform.pathSeparator}src${Platform.pathSeparator}runtime',
+      ).create(recursive: true);
+
+      final result = await guard.evaluateRootPackageBoundaryGuards(
+        repoRoot: repoRoot,
+      );
+
+      expect(result.passed, isFalse);
+      expect(
+        result.violations,
+        contains(
+          contains('unexpected top-level public entry files: flutter.dart'),
+        ),
       );
       expect(
         result.violations,
@@ -157,15 +124,8 @@ void main() {
       expect(
         result.violations,
         contains(
-          contains(
-            'provider-specific model files must stay with their provider: assistant_models.dart',
-          ),
+          contains('lib/src/: unexpected top-level directories: runtime'),
         ),
-      );
-      expect(
-        result.violations,
-        contains(
-            contains('lib/src/: unexpected top-level directories: runtime')),
       );
     });
 
@@ -179,8 +139,10 @@ void main() {
 
       await _writeFile(
         repoRoot,
-        'lib/ai.dart',
+        'lib/openai.dart',
         '''
+library;
+
 export 'package:llm_dart_chat/llm_dart_chat.dart';
 ''',
       );
@@ -194,7 +156,8 @@ export 'package:llm_dart_chat/llm_dart_chat.dart';
         result.violations,
         contains(
           contains(
-              'only lib/chat.dart may import or export package:llm_dart_chat/...'),
+            'only lib/chat.dart may import or export package:llm_dart_chat/...',
+          ),
         ),
       );
     });
@@ -214,7 +177,7 @@ export 'package:llm_dart_chat/llm_dart_chat.dart';
 library;
 
 export 'ai.dart';
-export 'legacy.dart';
+export 'openai.dart';
 ''',
       );
 
@@ -246,7 +209,7 @@ export 'legacy.dart';
 library;
 
 export 'package:llm_dart_ai/llm_dart_ai.dart';
-export 'builder/llm_builder.dart';
+export 'package:llm_dart_chat/llm_dart_chat.dart';
 ''',
       );
 
@@ -278,7 +241,6 @@ export 'builder/llm_builder.dart';
 library;
 
 export 'package:llm_dart_openai/llm_dart_openai.dart';
-export 'providers/openai/openai.dart';
 ''',
       );
 
@@ -291,7 +253,8 @@ export 'providers/openai/openai.dart';
         result.violations,
         contains(
           contains(
-              'focused root entrypoint must only export its package-owned surface'),
+            'focused root entrypoint must only export its package-owned surface',
+          ),
         ),
       );
     });
@@ -312,7 +275,7 @@ export 'providers/openai/openai.dart';
 library;
 
 export 'package:llm_dart_ai/llm_dart_ai.dart';
-export 'legacy.dart';
+export 'transport.dart';
 ''',
       );
       await _writeFile(
@@ -322,7 +285,6 @@ export 'legacy.dart';
 library;
 
 export 'package:llm_dart_transport/llm_dart_transport.dart';
-export 'src/compatibility/providers/openai/client.dart';
 ''',
       );
       await _writeFile(
@@ -332,7 +294,6 @@ export 'src/compatibility/providers/openai/client.dart';
 library;
 
 export 'package:llm_dart_chat/llm_dart_chat.dart';
-export 'legacy.dart';
 ''',
       );
 
@@ -345,53 +306,24 @@ export 'legacy.dart';
         result.violations,
         contains(
           contains(
-              'lib/core.dart: focused root entrypoint must only export its package-owned surface'),
+            'lib/core.dart: focused root entrypoint must only export its package-owned surface',
+          ),
         ),
       );
       expect(
         result.violations,
         contains(
           contains(
-              'lib/transport.dart: focused root entrypoint must only export its package-owned surface'),
+            'lib/transport.dart: focused root entrypoint must only export its package-owned surface',
+          ),
         ),
       );
       expect(
         result.violations,
         contains(
           contains(
-              'lib/chat.dart: focused root entrypoint must only export its package-owned surface'),
-        ),
-      );
-    });
-
-    test('reports widened legacy compatibility entrypoint', () async {
-      final repoRoot = await _createTempRootLayout();
-      addTearDown(() async {
-        if (repoRoot.existsSync()) {
-          await repoRoot.delete(recursive: true);
-        }
-      });
-
-      await _writeFile(
-        repoRoot,
-        'lib/legacy.dart',
-        '''
-$_legacyEntrypointContent
-
-export 'src/compatibility/new_legacy_surface.dart';
-''',
-      );
-
-      final result = await guard.evaluateRootPackageBoundaryGuards(
-        repoRoot: repoRoot,
-      );
-
-      expect(result.passed, isFalse);
-      expect(
-        result.violations,
-        contains(
-          contains(
-              'legacy entrypoint is frozen as an explicit compatibility shell'),
+            'lib/chat.dart: focused root entrypoint must only export its package-owned surface',
+          ),
         ),
       );
     });
@@ -407,11 +339,11 @@ export 'src/compatibility/new_legacy_surface.dart';
 
       await _writeFile(
         repoRoot,
-        'lib/legacy.dart',
+        'lib/openai.dart',
         '''
 library;
 
-final class LegacyImplementation {}
+final class RootImplementation {}
 ''',
       );
 
@@ -438,8 +370,10 @@ final class LegacyImplementation {}
 
       await _writeFile(
         repoRoot,
-        'lib/legacy.dart',
+        'lib/openai.dart',
         '''
+library;
+
 export 'package:llm_dart_flutter/llm_dart_flutter.dart';
 ''',
       );
@@ -453,12 +387,13 @@ export 'package:llm_dart_flutter/llm_dart_flutter.dart';
         result.violations,
         contains(
           contains(
-              'root package must not import or export package:llm_dart_flutter/...'),
+            'root package must not import or export package:llm_dart_flutter/...',
+          ),
         ),
       );
     });
 
-    test('reports legacy imports from examples', () async {
+    test('reports legacy root subpath imports from examples', () async {
       final repoRoot = await _createTempRootLayout();
       addTearDown(() async {
         if (repoRoot.existsSync()) {
@@ -471,6 +406,10 @@ export 'package:llm_dart_flutter/llm_dart_flutter.dart';
         'example/02_core_features/legacy_builder_demo.dart',
         '''
 import 'package:llm_dart/legacy.dart';
+import 'package:llm_dart/builder/llm_builder.dart';
+import 'package:llm_dart/core/capability.dart';
+import 'package:llm_dart/models/chat_models.dart';
+import 'package:llm_dart/providers/openai/openai.dart';
 
 void main() {}
 ''',
@@ -483,10 +422,13 @@ void main() {}
       expect(result.passed, isFalse);
       expect(
         result.violations,
-        contains(
-          contains('examples must use focused stable'),
-        ),
+        contains(contains('examples must use focused stable')),
       );
+      expect(result.violations, contains(contains('legacy.dart')));
+      expect(result.violations, contains(contains('builder/')));
+      expect(result.violations, contains(contains('core/')));
+      expect(result.violations, contains(contains('models/')));
+      expect(result.violations, contains(contains('providers/')));
     });
   });
 }
@@ -496,42 +438,9 @@ Future<Directory> _createTempRootLayout() async {
     'llm_dart_root_boundary_guards_',
   );
 
-  for (final directory in const [
-    'lib/builder',
-    'lib/core',
-    'lib/models',
-    'lib/providers',
-    'lib/src',
-    'lib/src/bootstrap',
-    'lib/src/compatibility',
-    'lib/src/config',
-    'lib/src/facade',
-  ]) {
-    await Directory(
-      '${repoRoot.path}${Platform.pathSeparator}$directory',
-    ).create(recursive: true);
-  }
-
-  for (final file in const [
-    'lib/ai.dart',
-    'lib/anthropic.dart',
-    'lib/chat.dart',
-    'lib/core.dart',
-    'lib/deepseek.dart',
-    'lib/elevenlabs.dart',
-    'lib/google.dart',
-    'lib/groq.dart',
-    'lib/legacy.dart',
-    'lib/llm_dart.dart',
-    'lib/ollama.dart',
-    'lib/openai.dart',
-    'lib/openrouter.dart',
-    'lib/phind.dart',
-    'lib/transport.dart',
-    'lib/xai.dart',
-  ]) {
-    await _writeFile(repoRoot, file, 'library;\n');
-  }
+  await Directory(
+    '${repoRoot.path}${Platform.pathSeparator}lib${Platform.pathSeparator}src${Platform.pathSeparator}facade',
+  ).create(recursive: true);
 
   await _writeFile(
     repoRoot,
@@ -542,8 +451,6 @@ library;
 export 'ai.dart';
 ''',
   );
-
-  await _writeFile(repoRoot, 'lib/legacy.dart', _legacyEntrypointContent);
 
   await _writeFile(
     repoRoot,
@@ -566,12 +473,51 @@ export 'src/facade/ai.dart' show AI, anthropic, deepSeek, elevenLabs, google, gr
 
   await _writeFile(
     repoRoot,
+    'lib/core.dart',
+    '''
+library;
+
+export 'package:llm_dart_ai/llm_dart_ai.dart';
+''',
+  );
+
+  await _writeFile(
+    repoRoot,
+    'lib/transport.dart',
+    '''
+library;
+
+export 'core.dart';
+export 'package:llm_dart_transport/llm_dart_transport.dart';
+''',
+  );
+
+  await _writeFile(
+    repoRoot,
+    'lib/chat.dart',
+    '''
+library;
+
+export 'core.dart';
+export 'transport.dart';
+export 'package:llm_dart_chat/llm_dart_chat.dart';
+export 'src/facade/ai.dart' show anthropic, deepSeek, google, groq, openRouter, openai, phind, xai;
+''',
+  );
+
+  await _writeFocusedProviderEntrypoints(repoRoot);
+
+  return repoRoot;
+}
+
+Future<void> _writeFocusedProviderEntrypoints(Directory repoRoot) async {
+  await _writeFile(
+    repoRoot,
     'lib/anthropic.dart',
     '''
 library;
 
-export 'package:llm_dart_anthropic/llm_dart_anthropic.dart'
-    hide anthropic;
+export 'package:llm_dart_anthropic/llm_dart_anthropic.dart' hide anthropic;
 export 'src/facade/ai.dart' show anthropic;
 ''',
   );
@@ -615,8 +561,7 @@ export 'src/facade/ai.dart' show ollama;
     '''
 library;
 
-export 'package:llm_dart_openai/llm_dart_openai.dart'
-    hide deepSeek, groq, openRouter, openai, phind, xai;
+export 'package:llm_dart_openai/llm_dart_openai.dart' hide deepSeek, groq, openRouter, openai, phind, xai;
 export 'src/facade/ai.dart' show openai;
 ''',
   );
@@ -627,13 +572,7 @@ export 'src/facade/ai.dart' show openai;
     '''
 library;
 
-export 'package:llm_dart_openai/llm_dart_openai.dart'
-    show
-        GroqProfile,
-        OpenAI,
-        OpenAIChatModelSettings,
-        OpenAIGenerateTextOptions,
-        OpenAILanguageModel;
+export 'package:llm_dart_openai/llm_dart_openai.dart' show GroqProfile, OpenAI, OpenAIChatModelSettings, OpenAIGenerateTextOptions, OpenAILanguageModel;
 export 'src/facade/ai.dart' show groq;
 ''',
   );
@@ -644,13 +583,7 @@ export 'src/facade/ai.dart' show groq;
     '''
 library;
 
-export 'package:llm_dart_openai/llm_dart_openai.dart'
-    show
-        OpenAI,
-        OpenAIChatModelSettings,
-        OpenAIGenerateTextOptions,
-        OpenAILanguageModel,
-        PhindProfile;
+export 'package:llm_dart_openai/llm_dart_openai.dart' show OpenAI, OpenAIChatModelSettings, OpenAIGenerateTextOptions, OpenAILanguageModel, PhindProfile;
 export 'src/facade/ai.dart' show phind;
 ''',
   );
@@ -661,21 +594,7 @@ export 'src/facade/ai.dart' show phind;
     '''
 library;
 
-export 'package:llm_dart_openai/llm_dart_openai.dart'
-    show
-        OpenAI,
-        OpenAIChatModelSettings,
-        OpenAIGenerateTextOptions,
-        OpenAILanguageModel,
-        XAIProfile,
-        XAIGenerateTextOptions,
-        XAILiveSearchOptions,
-        XAINewsSearchSource,
-        XAIRssSearchSource,
-        XAISearchMode,
-        XAISearchSource,
-        XAIWebSearchSource,
-        XAIXSearchSource;
+export 'package:llm_dart_openai/llm_dart_openai.dart' show OpenAI, OpenAIChatModelSettings, OpenAIGenerateTextOptions, OpenAILanguageModel, XAIProfile, XAIGenerateTextOptions, XAILiveSearchOptions, XAINewsSearchSource, XAIRssSearchSource, XAISearchMode, XAISearchSource, XAIWebSearchSource, XAIXSearchSource;
 export 'src/facade/ai.dart' show xai;
 ''',
   );
@@ -686,14 +605,7 @@ export 'src/facade/ai.dart' show xai;
     '''
 library;
 
-export 'package:llm_dart_openai/llm_dart_openai.dart'
-    show
-        DeepSeekGenerateTextOptions,
-        DeepSeekProfile,
-        OpenAI,
-        OpenAIChatModelSettings,
-        OpenAIGenerateTextOptions,
-        OpenAILanguageModel;
+export 'package:llm_dart_openai/llm_dart_openai.dart' show DeepSeekGenerateTextOptions, DeepSeekProfile, OpenAI, OpenAIChatModelSettings, OpenAIGenerateTextOptions, OpenAILanguageModel;
 export 'src/facade/ai.dart' show deepSeek;
 ''',
   );
@@ -704,60 +616,10 @@ export 'src/facade/ai.dart' show deepSeek;
     '''
 library;
 
-export 'package:llm_dart_openai/llm_dart_openai.dart'
-    show
-        OpenAI,
-        OpenAIChatModelSettings,
-        OpenAIGenerateTextOptions,
-        OpenAILanguageModel,
-        OpenRouterChatModelSettings,
-        OpenRouterGenerateTextOptions,
-        OpenRouterProfile,
-        OpenRouterSearchMode,
-        OpenRouterSearchOptions;
+export 'package:llm_dart_openai/llm_dart_openai.dart' show OpenAI, OpenAIChatModelSettings, OpenAIGenerateTextOptions, OpenAILanguageModel, OpenRouterChatModelSettings, OpenRouterGenerateTextOptions, OpenRouterProfile, OpenRouterSearchMode, OpenRouterSearchOptions;
 export 'src/facade/ai.dart' show openRouter;
 ''',
   );
-
-  await _writeFile(
-    repoRoot,
-    'lib/core.dart',
-    '''
-library;
-
-export 'package:llm_dart_ai/llm_dart_ai.dart';
-
-export 'core/cancellation.dart'
-    show CancellationHelper, TransportCancellation, TransportCancelledException;
-''',
-  );
-
-  await _writeFile(
-    repoRoot,
-    'lib/transport.dart',
-    '''
-library;
-
-export 'core.dart';
-export 'package:llm_dart_transport/llm_dart_transport.dart';
-''',
-  );
-
-  await _writeFile(
-    repoRoot,
-    'lib/chat.dart',
-    '''
-library;
-
-export 'core.dart';
-export 'transport.dart';
-export 'package:llm_dart_chat/llm_dart_chat.dart';
-export 'src/facade/ai.dart'
-    show anthropic, deepSeek, google, groq, openRouter, openai, phind, xai;
-''',
-  );
-
-  return repoRoot;
 }
 
 Future<void> _writeFile(

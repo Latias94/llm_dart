@@ -3,7 +3,7 @@ import 'package:llm_dart/core.dart' as core;
 
 /// Demonstrates Anthropic prompt caching on the modern model-first API.
 ///
-/// Prompt caching is provider-owned behavior. The shared prompt model carries
+/// Prompt caching is provider-owned behavior. App-facing model messages carry
 /// typed provider options for request-side cache control, while provider
 /// metadata remains output-side replay and observation data.
 void main() {
@@ -17,47 +17,51 @@ void main() {
 }
 
 void demonstrateCachedSystemPrompt() {
-  final systemPrompt = core.SystemPromptMessage(
-    parts: [
-      const core.TextPromptPart('You are a concise research assistant.'),
-      core.TextPromptPart(
-        'Large static reference: quantum computing uses qubits, gates, '
-        'superposition, interference, and error correction.',
-        providerOptions: _anthropicCacheOptions(ttl: '1h'),
-      ),
-    ],
-  );
+  final systemMessages = [
+    const core.SystemModelMessage.text(
+      'You are a concise research assistant.',
+    ),
+    core.SystemModelMessage.text(
+      'Large static reference: quantum computing uses qubits, gates, '
+      'superposition, interference, and error correction.',
+      providerOptions: _anthropicCacheOptions(ttl: '1h'),
+    ),
+  ];
 
   print('1. System prompt with a cached static reference:');
-  _printPrompt(systemPrompt);
+  for (final message in systemMessages) {
+    _printMessage(message);
+  }
+  print('');
 }
 
 void demonstrateMixedUserContext() {
-  final userPrompt = core.UserPromptMessage(
+  final userMessage = core.UserModelMessage(
     parts: [
-      const core.TextPromptPart(
+      const core.TextModelPart(
         'Based on the reusable context, answer the follow-up question.',
       ),
-      core.TextPromptPart(
+      core.TextModelPart(
         'Session context: the user is a computer science student with basic '
         'linear algebra and probability knowledge.',
         providerOptions: _anthropicCacheOptions(ttl: '5m'),
       ),
-      const core.TextPromptPart(
+      const core.TextModelPart(
         'What are the practical advantages of quantum algorithms?',
       ),
     ],
   );
 
   print('2. User prompt with short-lived cached session context:');
-  _printPrompt(userPrompt);
+  _printMessage(userMessage);
+  print('');
 }
 
 void demonstrateFileAndImageCacheMetadata() {
-  final prompt = core.UserPromptMessage(
+  final message = core.UserModelMessage(
     parts: [
-      const core.TextPromptPart('Compare the cached document and image.'),
-      core.FilePromptPart(
+      const core.TextModelPart('Compare the cached document and image.'),
+      core.FileModelPart(
         mediaType: 'text/plain',
         filename: 'cached-notes.txt',
         data: const core.FileTextData(
@@ -65,7 +69,7 @@ void demonstrateFileAndImageCacheMetadata() {
         ),
         providerOptions: _anthropicCacheOptions(ttl: '1h'),
       ),
-      core.ImagePromptPart(
+      core.ImageModelPart(
         mediaType: 'image/png',
         data: const core.FileBytesData.constBytes([137, 80, 78, 71]),
         providerOptions: _anthropicCacheOptions(ttl: '5m'),
@@ -74,7 +78,8 @@ void demonstrateFileAndImageCacheMetadata() {
   );
 
   print('3. File and image prompt parts with cache options:');
-  _printPrompt(prompt);
+  _printMessage(message);
+  print('');
 }
 
 void demonstrateToolCacheOptions() {
@@ -135,18 +140,49 @@ anthropic.AnthropicPromptPartOptions _anthropicCacheOptions({
   );
 }
 
-void _printPrompt(core.PromptMessage message) {
+void _printMessage(core.ModelMessage message) {
   print('   role: ${message.role.name}');
-  for (var index = 0; index < message.parts.length; index += 1) {
-    final part = message.parts[index];
-    final providerOptions = part.providerOptions;
-    final cache = providerOptions is anthropic.AnthropicPromptPartOptions
-        ? providerOptions.cacheControl?.toJson()
-        : null;
-    print('   part ${index + 1}: ${part.runtimeType}');
+  final parts = switch (message) {
+    core.SystemModelMessage(:final providerOptions) => [
+        _PrintablePart('TextModelPart', providerOptions),
+      ],
+    core.UserModelMessage(:final parts) => [
+        for (final part in parts)
+          _PrintablePart(part.runtimeType.toString(), part.providerOptions),
+      ],
+    core.AssistantModelMessage(:final parts) => [
+        for (final part in parts)
+          _PrintablePart(part.runtimeType.toString(), part.providerOptions),
+      ],
+    core.ToolModelMessage(:final parts) => [
+        for (final part in parts)
+          _PrintablePart(part.runtimeType.toString(), part.providerOptions),
+      ],
+  };
+
+  for (var index = 0; index < parts.length; index += 1) {
+    final part = parts[index];
+    final cache = part.cacheControlJson;
+    print('   part ${index + 1}: ${part.typeName}');
     if (cache != null) {
       print('      cacheControl: $cache');
     }
   }
-  print('');
+}
+
+final class _PrintablePart {
+  final String typeName;
+  final core.ProviderPromptPartOptions? providerOptions;
+
+  const _PrintablePart(this.typeName, this.providerOptions);
+
+  Map<String, Object?>? get cacheControlJson {
+    final options = providerOptions;
+    return options is anthropic.AnthropicPromptPartOptions
+        ? options.cacheControl?.toJson()
+        : null;
+  }
+
+  @override
+  String toString() => typeName;
 }

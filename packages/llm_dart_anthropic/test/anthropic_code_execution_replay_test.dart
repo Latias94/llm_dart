@@ -44,11 +44,6 @@ void main() {
       final promptPart = const CustomPromptPart(
         kind: AnthropicCodeExecutionReplay.kind,
         data: payload,
-        providerMetadata: metadata,
-      );
-      final promptPartWithOptions = const CustomPromptPart(
-        kind: AnthropicCodeExecutionReplay.kind,
-        data: payload,
         providerOptions: ProviderReplayPromptPartOptions(metadata),
       );
       final event = const CustomEvent(
@@ -61,13 +56,10 @@ void main() {
           AnthropicCodeExecutionReplay.tryParseContentPart(contentPart);
       final fromPrompt =
           AnthropicCodeExecutionReplay.tryParsePromptPart(promptPart);
-      final fromPromptOptions = AnthropicCodeExecutionReplay.tryParsePromptPart(
-          promptPartWithOptions);
       final fromEvent = AnthropicCodeExecutionReplay.tryParseEvent(event);
 
       expect(fromContent, isNotNull);
       expect(fromPrompt, isNotNull);
-      expect(fromPromptOptions, isNotNull);
       expect(fromEvent, isNotNull);
 
       final replay = fromContent!;
@@ -86,9 +78,7 @@ void main() {
       expect(replay.providerMetadata, metadata);
       expect(replay.toJson(), payload);
       expect(fromPrompt!.toJson(), payload);
-      expect(fromPromptOptions!.providerMetadata, metadata);
       final replayPromptPart = replay.toCustomPromptPart();
-      expect(replayPromptPart.providerMetadata, isNull);
       expect(
         replayPromptPart.providerOptions,
         isA<ProviderReplayPromptPartOptions>().having(

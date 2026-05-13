@@ -18,8 +18,8 @@ Future<void> main() async {
 
   final stream = core.streamTextCall(
     model: model,
-    prompt: [
-      core.UserPromptMessage.text('Solve 15 * 27 and show your reasoning.'),
+    messages: [
+      core.UserModelMessage.text('Solve 15 * 27 and show your reasoning.'),
     ],
   );
 

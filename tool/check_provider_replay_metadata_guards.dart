@@ -106,21 +106,10 @@ Future<void> _collectProviderRequestCodecViolations({
         continue;
       }
 
-      final nearbyLines = lines.sublist(
-        index - 2 < 0 ? 0 : index - 2,
-        index + 3 > lines.length ? lines.length : index + 3,
-      );
-      final usesReplayMerge = nearbyLines.any(
-        (nearbyLine) => nearbyLine.contains('mergeProviderReplayMetadata'),
-      );
-      if (usesReplayMerge) {
-        continue;
-      }
-
       violations.add(
-        '$path:${index + 1}: request-side replay metadata must be read through '
-        'mergeProviderReplayMetadata so ProviderReplayPromptPartOptions and '
-        'legacy providerMetadata stay compatible.',
+        '$path:${index + 1}: request-side replay metadata must flow through '
+        'ProviderReplayPromptPartOptions and providerOptions, not '
+        'part.providerMetadata.',
       );
     }
   }
@@ -147,10 +136,10 @@ Future<void> _collectAnthropicCodeExecutionReplayViolations({
       'ProviderReplayPromptPartOptions.',
     );
   }
-  if (!source.contains('mergeProviderReplayMetadata')) {
+  if (!source.contains('providerOptions: part.providerOptions')) {
     violations.add(
       '$_anthropicCodeExecutionReplayPath: Anthropic code execution prompt '
-      'replay parsing must accept both replay options and legacy metadata.',
+      'replay parsing must read replay metadata from providerOptions.',
     );
   }
 }

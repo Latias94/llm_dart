@@ -40,6 +40,11 @@
     semantic gaps versus `repo-ref/ai` into an implementation plan: user prompt
     normalization, metadata/options separation, provider utility
     consolidation, and root legacy exit.
+- [2026-05-root-legacy-prompt-options-breaking-line](2026-05-root-legacy-prompt-options-breaking-line/README.md)
+  - Active next breaking-line workstream for deleting or relocating root legacy
+    implementation ownership, converging app-facing prompts on `llm_dart_ai`,
+    removing ordinary request-side metadata inputs, and freezing provider
+    options plus structured-result direction before a stable public line.
 - [2026-05-sdk-aligned-fearless-refactor](2026-05-sdk-aligned-fearless-refactor/README.md)
   - Closed breaking architecture workstream that turned the mature layering
     lessons from `repo-ref/ai` into enforceable Dart package boundaries while

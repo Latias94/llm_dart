@@ -167,11 +167,11 @@ Future<void> runSearchCase({
   try {
     final result = await core.generateTextCall(
       model: model,
-      prompt: [
-        core.SystemPromptMessage.text(
+      messages: [
+        core.SystemModelMessage.text(
           'You are a concise research assistant. Summarize the answer and keep only high-signal details.',
         ),
-        core.UserPromptMessage.text(prompt),
+        core.UserModelMessage.text(prompt),
       ],
       callOptions: callOptions,
     );

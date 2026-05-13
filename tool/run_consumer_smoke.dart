@@ -1058,7 +1058,6 @@ String _readFlagValue(String argument, String prefix) {
 
 const dartConsumerSmokeProgram = r'''
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/legacy.dart' as legacy;
 import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart_ai/llm_dart_ai.dart' as ai;
 import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic;
@@ -1077,9 +1076,9 @@ import 'package:llm_dart_transport/llm_dart_transport.dart' as transport;
 import 'package:llm_dart/xai.dart' as xai;
 
 void main() {
-  final prompts = <provider.PromptMessage>[
-    core.SystemPromptMessage.text('You are concise.'),
-    ai.UserPromptMessage.text('Say hello.'),
+  final prompts = <ai.ModelMessage>[
+    const core.SystemModelMessage.text('You are concise.'),
+    ai.UserModelMessage.text('Say hello.'),
   ];
 
   final models = [
@@ -1101,7 +1100,6 @@ void main() {
       elevenlabs.elevenLabs(apiKey: 'test').speechModel('eleven_multilingual_v2');
   final chatInput = chat.ChatInput.text('hello');
   final cancellation = transport.TransportCancellation()..cancel('smoke');
-  final legacyBuilder = legacy.LLMBuilder();
   final mapped = const compat_core.ChatMessageMapper();
   final callOptions = const provider.CallOptions();
 
@@ -1115,7 +1113,6 @@ void main() {
 
   print([
     speechModel.runtimeType,
-    legacyBuilder.runtimeType,
     mapped.runtimeType,
     'ok',
   ].join(' '));

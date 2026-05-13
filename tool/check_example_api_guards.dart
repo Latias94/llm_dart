@@ -1,30 +1,5 @@
 import 'dart:io';
 
-const Map<String, String> _allowedCompatibilityExamples = {
-  'example/02_core_features/assistants.dart':
-      'OpenAI assistant lifecycle remains a provider-owned compatibility boundary',
-  'example/02_core_features/cancellation_demo.dart':
-      'model listing cancellation remains on a provider-owned compatibility boundary',
-  'example/02_core_features/capability_detection.dart':
-      'registry metadata still uses the compatibility provider registry',
-  'example/02_core_features/capability_factory_methods.dart':
-      'documents typed build* migration helpers for the legacy builder',
-  'example/02_core_features/model_listing.dart':
-      'remote catalog listing remains provider-owned compatibility material',
-  'example/02_core_features/provider_specific_builders.dart':
-      'documents provider callback migration helpers for the legacy builder',
-  'example/03_advanced_features/realtime_audio.dart':
-      'realtime audio remains a provider-owned compatibility appendix',
-  'example/04_providers/elevenlabs/audio_capabilities.dart':
-      'streaming and realtime audio remain on the ElevenLabs compatibility shell',
-  'example/04_providers/google/google_tts_example.dart':
-      'streamed PCM output and voice discovery remain Google compatibility appendices',
-  'example/04_providers/openai/build_openai_responses_demo.dart':
-      'raw OpenAI response lifecycle APIs remain compatibility material',
-  'example/04_providers/openai/responses_api.dart':
-      'raw OpenAI response lifecycle APIs remain compatibility material',
-};
-
 final RegExp _legacyImportPattern = RegExp(
   r'''^\s*import\s+['"]package:llm_dart/legacy\.dart['"]''',
 );
@@ -79,10 +54,6 @@ Future<ExampleApiGuardResult> evaluateExampleApiGuards({
     }
 
     final path = _displayPath(resolvedRepoRoot, entity);
-    if (_allowedCompatibilityExamples.containsKey(path)) {
-      continue;
-    }
-
     final lines = await entity.readAsLines();
     for (var index = 0; index < lines.length; index += 1) {
       final violation = _findViolation(lines[index]);
@@ -93,8 +64,8 @@ Future<ExampleApiGuardResult> evaluateExampleApiGuards({
       violations.add(
         '$path:${index + 1}: $violation. '
         'Default examples should teach model-first entrypoints and focused '
-        'modern barrels; move compatibility material to an explicitly '
-        'allowlisted appendix or update this guard with a reason.',
+        'modern barrels; move provider-native material to focused provider '
+        'entrypoints instead of legacy root subpaths.',
       );
     }
   }
@@ -148,8 +119,7 @@ Future<void> main() async {
     stdout.writeln(
       'example API guard passed: default examples avoid legacy.dart, '
       'LLMBuilder(), legacy provider/model/core subpaths, the removed '
-      'ai() helper, and grouped AI facade usage outside explicit '
-      'compatibility appendices.',
+      'ai() helper, and grouped AI facade usage.',
     );
     return;
   }
