@@ -51,7 +51,7 @@ Decision notes:
 - [ ] Remove runtime `StepStartEvent` / `StepFinishEvent` ownership from the
   provider contract or mark them as runtime-only
 - [ ] Ensure provider codecs never need to emit chat/UI lifecycle chunks
-- [ ] Add serialization guards for provider model-call stream parts
+- [x] Add serialization guards for provider model-call stream parts
 - [ ] Update focused providers to emit the new model-call stream parts
 - [ ] Keep provider metadata response-side and replay-only
 
@@ -114,10 +114,10 @@ Decision notes:
 ## Validation
 
 - [ ] Run workspace dependency guards
-- [ ] Run provider boundary guards
-- [ ] Run root package boundary guards
+- [x] Run provider boundary guards
+- [x] Run root package boundary guards
 - [ ] Run focused provider tests affected by event changes
-- [ ] Run `llm_dart_provider` stream serialization tests
+- [x] Run `llm_dart_provider` stream serialization tests
 - [ ] Run `llm_dart_ai` runtime, output, prompt, and UI projection tests
 - [ ] Run `llm_dart_chat` direct transport and tool execution tests
 - [ ] Run examples analysis

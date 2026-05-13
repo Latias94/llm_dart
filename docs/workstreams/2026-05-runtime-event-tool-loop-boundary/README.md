@@ -110,3 +110,6 @@ This workstream should not:
 - [05-focused-provider-stream-naming-migration.md](05-focused-provider-stream-naming-migration.md)
   - Production provider-facing stream APIs, codecs, replay helpers, and test
     fakes migrated to `LanguageModelStreamEvent` naming.
+- [06-provider-stream-serialization-guard.md](06-provider-stream-serialization-guard.md)
+  - Provider-owned stream JSON codec plus source guards that prevent focused
+    providers from coupling back to runtime stream names.

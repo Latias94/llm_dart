@@ -61,6 +61,10 @@ Progress:
   stream codecs, provider-native replay/custom helpers, and `llm_dart_test`
   fake model to `LanguageModelStreamEvent` naming while leaving runtime/chat/UI
   surfaces on `TextStreamEvent`.
+- 2026-05-13: added `LanguageModelStreamEventJsonCodec` as the provider-owned
+  serialization name, kept the existing envelope wire shape for compatibility,
+  and added guards so provider serialization and focused provider libs reject
+  runtime-only stream semantics.
 
 ## M3: Unified Runtime Result Surface
 
