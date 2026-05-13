@@ -201,6 +201,10 @@ final class StreamTextRunner {
       for (final tool in tools) tool.name,
     };
     var streamClosed = false;
+    GenerateTextRequest? activeRequest;
+    GenerateTextResultAccumulator? activeAccumulator;
+    int? activeStepNumber;
+    var activeStepOpen = false;
 
     try {
       await _addEvent(eventChannel, const RunStartEvent());
@@ -224,6 +228,9 @@ final class StreamTextRunner {
           options: options,
           callOptions: callOptions,
         );
+        activeRequest = request;
+        activeStepNumber = stepNumber;
+        activeAccumulator = GenerateTextResultAccumulator();
 
         final stepStartEvent = GenerateTextStepStartEvent(
           stepNumber: stepNumber,
@@ -237,16 +244,22 @@ final class StreamTextRunner {
           eventChannel,
           StepStartEvent(stepId: _stepId(stepNumber)),
         );
+        activeStepOpen = true;
+        _throwIfCancelled();
 
-        final accumulator = GenerateTextResultAccumulator();
+        final accumulator = activeAccumulator;
         final events = adaptLanguageModelStreamEvents(
-          model.doStream(request),
+          _cancelOnProviderCancellation(
+            model.doStream(request),
+            callOptions.cancellation,
+          ),
           context: 'StreamTextRunner.modelStream',
         );
         await for (final event in events) {
           accumulator.apply(event);
           await _addEvent(eventChannel, event);
         }
+        _throwIfCancelled();
 
         var step = GenerateTextStepResult(
           stepNumber: stepNumber,
@@ -264,9 +277,14 @@ final class StreamTextRunner {
             StepFinishEvent(stepId: _stepId(stepNumber)),
           );
           stepChannel.add(step);
+          activeStepOpen = false;
+          activeRequest = null;
+          activeStepNumber = null;
+          activeAccumulator = null;
           break;
         }
 
+        _throwIfCancelled();
         final toolExecutions =
             await GenerateTextRunnerSupport.executeFunctionTools(
           step,
@@ -276,6 +294,7 @@ final class StreamTextRunner {
           onToolFinish: onToolFinish,
           runnerName: 'StreamTextRunner',
         );
+        _throwIfCancelled();
         if (toolExecutions == null) {
           await onStepFinish?.call(step);
           await _addEvent(
@@ -283,6 +302,10 @@ final class StreamTextRunner {
             StepFinishEvent(stepId: _stepId(stepNumber)),
           );
           stepChannel.add(step);
+          activeStepOpen = false;
+          activeRequest = null;
+          activeStepNumber = null;
+          activeAccumulator = null;
           break;
         }
 
@@ -305,6 +328,10 @@ final class StreamTextRunner {
           StepFinishEvent(stepId: _stepId(stepNumber)),
         );
         stepChannel.add(step);
+        activeStepOpen = false;
+        activeRequest = null;
+        activeStepNumber = null;
+        activeAccumulator = null;
 
         promptHistory = [
           ...promptHistory,
@@ -334,6 +361,21 @@ final class StreamTextRunner {
       streamClosed = true;
       stepChannel.close();
     } catch (error, stackTrace) {
+      if (_isCancelled(error)) {
+        await _finishAbortedRun(
+          eventChannel: eventChannel,
+          stepChannel: stepChannel,
+          resultCompleter: resultCompleter,
+          previousSteps: previousSteps,
+          activeRequest: activeRequest,
+          activeAccumulator: activeAccumulator,
+          activeStepNumber: activeStepNumber,
+          activeStepOpen: activeStepOpen,
+          reason: _cancelReason(error),
+        );
+        return;
+      }
+
       final (reportedError, reportedStackTrace) =
           await _notifyError(error, stackTrace);
       if (!resultCompleter.isCompleted) {
@@ -357,6 +399,70 @@ final class StreamTextRunner {
       }
       stepChannel.addError(reportedError, reportedStackTrace);
     }
+  }
+
+  Future<void> _finishAbortedRun({
+    required ReplayStreamChannel<TextStreamEvent> eventChannel,
+    required ReplayStreamChannel<GenerateTextStepResult> stepChannel,
+    required Completer<GenerateTextRunResult> resultCompleter,
+    required List<GenerateTextStepResult> previousSteps,
+    required GenerateTextRequest? activeRequest,
+    required GenerateTextResultAccumulator? activeAccumulator,
+    required int? activeStepNumber,
+    required bool activeStepOpen,
+    required String? reason,
+  }) async {
+    if (activeRequest != null &&
+        activeAccumulator != null &&
+        activeStepNumber != null) {
+      activeAccumulator.apply(
+        RunFinishEvent(
+          finishReason: FinishReason.aborted,
+          rawFinishReason: reason,
+        ),
+      );
+      final abortedStep = GenerateTextStepResult(
+        stepNumber: activeStepNumber,
+        providerId: model.providerId,
+        modelId: model.modelId,
+        request: activeRequest,
+        result: activeAccumulator.build(),
+      );
+      if (previousSteps.length == activeStepNumber) {
+        previousSteps.add(abortedStep);
+      } else if (previousSteps.length > activeStepNumber) {
+        previousSteps[activeStepNumber] = abortedStep;
+      }
+      await onStepFinish?.call(abortedStep);
+      await _addEvent(eventChannel, AbortEvent(reason: reason));
+      if (activeStepOpen) {
+        await _addEvent(
+          eventChannel,
+          StepFinishEvent(stepId: _stepId(activeStepNumber)),
+        );
+      }
+      stepChannel.add(abortedStep);
+    } else {
+      await _addEvent(eventChannel, AbortEvent(reason: reason));
+    }
+
+    final runResult = GenerateTextRunResult(
+      steps: previousSteps,
+    );
+    await onFinish?.call(runResult);
+    await _addEvent(
+      eventChannel,
+      RunFinishEvent(
+        finishReason: FinishReason.aborted,
+        rawFinishReason: reason,
+        usage: runResult.totalUsage,
+      ),
+    );
+    if (!resultCompleter.isCompleted) {
+      resultCompleter.complete(runResult);
+    }
+    eventChannel.close();
+    stepChannel.close();
   }
 
   Future<void> _addEvent(
@@ -385,6 +491,108 @@ final class StreamTextRunner {
       return (callbackError, callbackStackTrace);
     }
   }
+
+  void _throwIfCancelled() {
+    callOptions.cancellation?.throwIfCancelled();
+  }
+
+  bool _isCancelled(Object error) {
+    return ProviderCancellation.isCancel(error);
+  }
+
+  String? _cancelReason(Object error) {
+    if (error is ProviderCancelledException) {
+      return error.reason?.toString();
+    }
+
+    return callOptions.cancellation?.reason?.toString();
+  }
+}
+
+Stream<T> _cancelOnProviderCancellation<T>(
+  Stream<T> source,
+  ProviderCancellation? cancellation,
+) {
+  if (cancellation == null) {
+    return source;
+  }
+
+  StreamSubscription<T>? subscription;
+  late StreamController<T> controller;
+  var completed = false;
+
+  void failWithCancellation(Object? reason) {
+    if (completed) {
+      return;
+    }
+    completed = true;
+
+    final error = ProviderCancelledException(reason);
+    final stackTrace = StackTrace.current;
+
+    Future<void> emitError() async {
+      if (!controller.isClosed) {
+        controller.addError(error, stackTrace);
+        await controller.close();
+      }
+    }
+
+    final cancelFuture = subscription?.cancel();
+    if (cancelFuture == null) {
+      unawaited(emitError());
+    } else {
+      unawaited(cancelFuture.whenComplete(emitError));
+    }
+  }
+
+  controller = StreamController<T>(
+    onListen: () {
+      if (cancellation.isCancelled) {
+        failWithCancellation(cancellation.reason);
+        return;
+      }
+
+      subscription = source.listen(
+        (event) {
+          if (cancellation.isCancelled) {
+            failWithCancellation(cancellation.reason);
+            return;
+          }
+
+          if (!completed) {
+            controller.add(event);
+          }
+        },
+        onError: (Object error, StackTrace stackTrace) {
+          if (completed) {
+            return;
+          }
+          completed = true;
+          controller.addError(error, stackTrace);
+          unawaited(controller.close());
+        },
+        onDone: () {
+          if (completed) {
+            return;
+          }
+          completed = true;
+          unawaited(controller.close());
+        },
+      );
+
+      unawaited(
+        cancellation.whenCancelled.then(failWithCancellation),
+      );
+    },
+    onPause: () => subscription?.pause(),
+    onResume: () => subscription?.resume(),
+    onCancel: () async {
+      completed = true;
+      await subscription?.cancel();
+    },
+  );
+
+  return controller.stream;
 }
 
 StreamTextRunResult streamTextRun({

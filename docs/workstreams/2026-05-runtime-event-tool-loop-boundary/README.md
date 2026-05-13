@@ -170,3 +170,6 @@ This workstream should not:
 - [24-runtime-run-lifecycle-events.md](24-runtime-run-lifecycle-events.md)
   - `RunStartEvent` and `RunFinishEvent` now describe the outer AI runtime run
     without overloading provider model-call `StartEvent` / `FinishEvent`.
+- [25-runtime-abort-lifecycle-events.md](25-runtime-abort-lifecycle-events.md)
+  - `CallOptions.cancellation` now maps to runtime `AbortEvent` plus aborted
+    step/run finish semantics without treating user stop as a provider error.

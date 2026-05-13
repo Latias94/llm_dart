@@ -300,14 +300,10 @@ void main() {
         ),
       ).toList();
 
-      expect(events[0], isA<OutputTextStreamEvent<String>>());
-      expect(events[1], isA<OutputTextStreamEvent<String>>());
-      expect(events[2], isA<OutputTextStreamEvent<String>>());
-      expect(events[3], isA<OutputPartialEvent<String>>());
-      expect(events[4], isA<OutputTextStreamEvent<String>>());
-      expect(events[5], isA<OutputTextStreamEvent<String>>());
+      expect(events.whereType<OutputTextStreamEvent<String>>(), hasLength(9));
+      expect(events.whereType<OutputPartialEvent<String>>(), hasLength(1));
       expect(
-        (events[3] as OutputPartialEvent<String>).partialOutput,
+        events.whereType<OutputPartialEvent<String>>().single.partialOutput,
         {
           'value': 'ok',
         },
@@ -635,7 +631,7 @@ void main() {
       final textEvents = await streamResult.textStream.toList();
       expect(
         textEvents,
-        hasLength(6),
+        hasLength(10),
       );
       expect(textEvents.whereType<TextDeltaEvent>().length, 2);
 

@@ -242,6 +242,13 @@ final class ChatUiAccumulator {
     if (event.usage != null) {
       _metadata[ChatUiMetadataKeys.runUsage] = event.usage;
     }
+    if (event.finishReason == FinishReason.aborted) {
+      _metadata[ChatUiMetadataKeys.isAborted] = true;
+      _setMetadataIfNotNull(
+        ChatUiMetadataKeys.abortReason,
+        event.rawFinishReason,
+      );
+    }
   }
 
   void _applyResponseMetadataEvent(ResponseMetadataEvent event) {

@@ -262,12 +262,15 @@ final class GenerateTextResultAccumulator {
           ),
         );
       case RunStartEvent() ||
-            RunFinishEvent() ||
             StepStartEvent() ||
             StepFinishEvent() ||
             AbortEvent() ||
             RawChunkEvent():
         break;
+      case RunFinishEvent():
+        _finishReason = event.finishReason;
+        _rawFinishReason = event.rawFinishReason;
+        _usage = event.usage ?? _usage;
       case FinishEvent():
         _finishReason = event.finishReason;
         _rawFinishReason = event.rawFinishReason;

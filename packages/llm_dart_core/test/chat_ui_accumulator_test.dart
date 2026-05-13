@@ -593,6 +593,27 @@ void main() {
       );
     });
 
+    test('captures aborted run finish metadata', () {
+      final accumulator = ChatUiAccumulator(messageId: 'assistant-1');
+
+      final message = accumulator.apply(
+        const RunFinishEvent(
+          finishReason: FinishReason.aborted,
+          rawFinishReason: 'user stopped',
+        ),
+      );
+
+      expect(
+        message.metadata[ChatUiMetadataKeys.runFinishReason],
+        FinishReason.aborted,
+      );
+      expect(message.metadata[ChatUiMetadataKeys.isAborted], isTrue);
+      expect(
+        message.metadata[ChatUiMetadataKeys.abortReason],
+        'user stopped',
+      );
+    });
+
     test('continues an existing assistant message across steps', () {
       final seedMessage = ChatUiMessage(
         id: 'assistant-existing',

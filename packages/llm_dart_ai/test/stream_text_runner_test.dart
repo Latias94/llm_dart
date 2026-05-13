@@ -267,6 +267,69 @@ void main() {
       expect(errors.single, isA<StateError>());
     });
 
+    test('emits abort lifecycle when provider cancellation is triggered',
+        () async {
+      final cancellation = ProviderCancellation();
+      final model = _RecordingStreamLanguageModel([
+        [
+          const TextStartEvent(id: 'text-1'),
+          const TextDeltaEvent(id: 'text-1', delta: 'Partial'),
+          _CancelAfterEvent(cancellation, 'user stopped'),
+        ],
+      ]);
+      final callbackOrder = <String>[];
+      final chunks = <TextStreamEvent>[];
+
+      final run = streamTextRun(
+        model: model,
+        prompt: [
+          UserPromptMessage.text('Hello'),
+        ],
+        callOptions: CallOptions(cancellation: cancellation),
+        onStepFinish: (step) {
+          callbackOrder.add('step-finish:${step.finishReason.name}');
+        },
+        onFinish: (result) {
+          callbackOrder.add('finish:${result.finishReason.name}');
+        },
+        onError: (error, stackTrace) {
+          callbackOrder.add('error');
+        },
+        onChunk: chunks.add,
+      );
+
+      final events = await run.toList();
+      final steps = await run.stepStream.toList();
+      final result = await run.result;
+
+      expect(callbackOrder, ['step-finish:aborted', 'finish:aborted']);
+      expect(events.map((event) => event.runtimeType), [
+        RunStartEvent,
+        StepStartEvent,
+        TextStartEvent,
+        TextDeltaEvent,
+        AbortEvent,
+        StepFinishEvent,
+        RunFinishEvent,
+      ]);
+      expect(chunks, hasLength(events.length));
+      expect(events.whereType<AbortEvent>().single.reason, 'user stopped');
+      final runFinish = events.whereType<RunFinishEvent>().single;
+      expect(runFinish.finishReason, FinishReason.aborted);
+      expect(runFinish.rawFinishReason, 'user stopped');
+      expect(events.whereType<ErrorEvent>(), isEmpty);
+
+      expect(steps, hasLength(1));
+      expect(steps.single.text, 'Partial');
+      expect(steps.single.finishReason, FinishReason.aborted);
+      expect(steps.single.rawFinishReason, 'user stopped');
+      expect(result.text, 'Partial');
+      expect(result.finishReason, FinishReason.aborted);
+      expect(result.rawFinishReason, 'user stopped');
+      expect(await run.text, 'Partial');
+      expect(await run.finishReason, FinishReason.aborted);
+    });
+
     test('continues tool-call steps with stitched event and step streams',
         () async {
       final model = _RecordingStreamLanguageModel([
@@ -655,7 +718,7 @@ void main() {
 }
 
 final class _RecordingStreamLanguageModel implements LanguageModel {
-  final List<List<TextStreamEvent>> _steps;
+  final List<List<Object>> _steps;
   final List<GenerateTextRequest> requests = [];
 
   _RecordingStreamLanguageModel(this._steps);
@@ -682,8 +745,23 @@ final class _RecordingStreamLanguageModel implements LanguageModel {
       throw StateError('No more fake step streams configured.');
     }
 
-    for (final event in _steps.removeAt(0)) {
-      yield textStreamEventToProvider(event);
+    for (final item in _steps.removeAt(0)) {
+      switch (item) {
+        case TextStreamEvent event:
+          yield textStreamEventToProvider(event);
+        case _CancelAfterEvent action:
+          action.cancellation.cancel(action.reason);
+          await Future<void>.delayed(const Duration(milliseconds: 1));
+        case _:
+          throw StateError('Unsupported fake stream item: $item');
+      }
     }
   }
+}
+
+final class _CancelAfterEvent {
+  final ProviderCancellation cancellation;
+  final Object? reason;
+
+  const _CancelAfterEvent(this.cancellation, [this.reason]);
 }

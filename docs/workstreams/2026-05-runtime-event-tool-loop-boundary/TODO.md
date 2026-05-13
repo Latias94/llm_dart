@@ -64,11 +64,12 @@ Decision notes:
 - [x] Create one full-stream event serialization owner in `llm_dart_ai`
 - [x] Create one full-stream event export owner in `llm_dart_ai`
 - [x] Create one full-stream event vocabulary in `llm_dart_ai`
-- [ ] Emit explicit run start, step start, provider/model-call parts, tool
+- [x] Emit explicit run start, step start, provider/model-call parts, tool
   execution parts, step finish, run finish, abort, and error events
 - [x] Emit runtime step start, provider/model-call parts, local tool result
   parts, step finish, and error events from `streamText(...)`
 - [x] Emit runtime run start and run finish events from `streamText(...)`
+- [x] Map runtime cancellation to abort events and aborted run finish
 - [x] Ensure stream accumulation uses the full-stream event semantics
 - [x] Ensure result accumulation is step-scoped and final-run scoped
 - [x] Add step request/response metadata inclusion policy to avoid storing

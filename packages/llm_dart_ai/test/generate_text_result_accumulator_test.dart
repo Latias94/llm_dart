@@ -109,6 +109,25 @@ void main() {
       );
     });
 
+    test('uses run finish as the final result signal for aborted streams',
+        () async {
+      final result = await collectGenerateTextResult(
+        Stream<TextStreamEvent>.fromIterable([
+          const TextStartEvent(id: 'text_1'),
+          const TextDeltaEvent(id: 'text_1', delta: 'partial'),
+          const AbortEvent(reason: 'user stopped'),
+          const RunFinishEvent(
+            finishReason: FinishReason.aborted,
+            rawFinishReason: 'user stopped',
+          ),
+        ]),
+      );
+
+      expect(result.text, 'partial');
+      expect(result.finishReason, FinishReason.aborted);
+      expect(result.rawFinishReason, 'user stopped');
+    });
+
     test('collects denied tool output as a replayable tool result', () async {
       final result = await collectGenerateTextResult(
         Stream<TextStreamEvent>.fromIterable([

@@ -139,6 +139,9 @@ Progress:
   lifecycle events so runtime runs are distinct from provider model-call
   `StartEvent` / `FinishEvent` semantics without storing large request or
   prompt payloads in the stream by default.
+- 2026-05-13: mapped `CallOptions.cancellation` into runtime `AbortEvent`,
+  aborted step finish, and `RunFinishEvent(finishReason: aborted)` semantics so
+  user stop is no longer surfaced as a provider/model error in the full stream.
 
 ## M4: Tool Loop Runtime
 
