@@ -160,3 +160,6 @@ This workstream should not:
 - [21-provider-metadata-boundary-guard.md](21-provider-metadata-boundary-guard.md)
   - Provider metadata is guarded as response-side and replay-only data; input
     customization stays on typed provider options.
+- [22-tool-execution-lifecycle-callbacks.md](22-tool-execution-lifecycle-callbacks.md)
+  - AI runtime local function tool execution now has start and finish
+    callbacks on the primary and advanced text runtime helpers.

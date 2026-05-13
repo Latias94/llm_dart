@@ -397,6 +397,69 @@ void main() {
       );
     });
 
+    test('invokes tool execution lifecycle callbacks on streaming path',
+        () async {
+      final model = _RecordingStreamLanguageModel([
+        const [
+          ToolCallEvent(
+            toolCall: ToolCallContent(
+              toolCallId: 'tool-1',
+              toolName: 'weather',
+              input: {
+                'city': 'Tokyo',
+              },
+            ),
+          ),
+          FinishEvent(finishReason: FinishReason.toolCalls),
+        ],
+        const [
+          TextStartEvent(id: 'text-1'),
+          TextDeltaEvent(id: 'text-1', delta: 'Done.'),
+          TextEndEvent(id: 'text-1'),
+          FinishEvent(finishReason: FinishReason.stop),
+        ],
+      ]);
+      final callbackOrder = <String>[];
+      final startEvents = <GenerateTextToolExecutionStartEvent>[];
+      final finishEvents = <GenerateTextToolExecutionFinishEvent>[];
+
+      final run = streamText(
+        model: model,
+        prompt: [
+          UserPromptMessage.text('Weather in Tokyo?'),
+        ],
+        tools: [
+          FunctionToolDefinition(
+            name: 'weather',
+            inputSchema: ToolJsonSchema.object(),
+          ),
+        ],
+        functionToolExecutor: (request) {
+          callbackOrder.add('execute');
+          return const GenerateTextToolExecutionResult.output({
+            'forecast': 'sunny',
+          });
+        },
+        onToolStart: (event) {
+          callbackOrder.add('tool-start');
+          startEvents.add(event);
+        },
+        onToolFinish: (event) {
+          callbackOrder.add('tool-finish');
+          finishEvents.add(event);
+        },
+      );
+
+      await run.drain<void>();
+
+      expect(callbackOrder, ['tool-start', 'execute', 'tool-finish']);
+      expect(startEvents.single.toolCall.toolCallId, 'tool-1');
+      expect(finishEvents.single.result.output, {
+        'forecast': 'sunny',
+      });
+      expect(finishEvents.single.result.isError, isFalse);
+    });
+
     test('stops after a tool-call step when no function executor is provided',
         () async {
       final model = _RecordingStreamLanguageModel([

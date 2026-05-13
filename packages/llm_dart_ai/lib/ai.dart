@@ -45,8 +45,12 @@ export 'src/model/generate_text_runner_support.dart'
         GenerateTextOnFinish,
         GenerateTextOnStepFinish,
         GenerateTextOnStepStart,
+        GenerateTextOnToolFinish,
+        GenerateTextOnToolStart,
         GenerateTextRunnerSupport,
+        GenerateTextToolExecutionFinishEvent,
         GenerateTextToolExecutionResult,
+        GenerateTextToolExecutionStartEvent,
         StreamTextOnChunk;
 export 'src/model/generate_text_step_result.dart';
 export 'src/model/generate_text_step_start_event.dart';

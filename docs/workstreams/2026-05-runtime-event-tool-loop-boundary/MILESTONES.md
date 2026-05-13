@@ -134,7 +134,7 @@ Progress:
 
 ## M4: Tool Loop Runtime
 
-Status: pending
+Status: in progress
 
 Acceptance criteria:
 
@@ -143,6 +143,12 @@ Acceptance criteria:
 - approval, denial, dynamic tool, provider-executed tool, input error, and
   preliminary output semantics are covered by tests
 - prompt continuation remains replay-safe
+
+Progress:
+
+- 2026-05-13: added local function tool execution start and finish callbacks
+  to the primary and advanced text runtime helpers, implemented centrally in
+  `llm_dart_ai`.
 
 ## M5: Chat Runtime Integration
 

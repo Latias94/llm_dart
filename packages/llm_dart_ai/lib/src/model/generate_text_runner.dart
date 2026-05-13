@@ -19,6 +19,8 @@ final class GenerateTextRunner {
   final int maxSteps;
   final GenerateTextOnStepStart? onStepStart;
   final GenerateTextOnStepFinish? onStepFinish;
+  final GenerateTextOnToolStart? onToolStart;
+  final GenerateTextOnToolFinish? onToolFinish;
   final GenerateTextOnFinish? onFinish;
   final GenerateTextOnError? onError;
 
@@ -34,6 +36,8 @@ final class GenerateTextRunner {
     this.maxSteps = 8,
     this.onStepStart,
     this.onStepFinish,
+    this.onToolStart,
+    this.onToolFinish,
     this.onFinish,
     this.onError,
   })  : prompt = resolveProviderPrompt(
@@ -108,6 +112,8 @@ final class GenerateTextRunner {
           step,
           declaredToolNames: declaredToolNames,
           functionToolExecutor: functionToolExecutor,
+          onToolStart: onToolStart,
+          onToolFinish: onToolFinish,
           runnerName: 'GenerateTextRunner',
         );
         if (toolContinuation == null) {
@@ -167,6 +173,8 @@ Future<GenerateTextRunResult> runTextGeneration({
   int maxSteps = 8,
   GenerateTextOnStepStart? onStepStart,
   GenerateTextOnStepFinish? onStepFinish,
+  GenerateTextOnToolStart? onToolStart,
+  GenerateTextOnToolFinish? onToolFinish,
   GenerateTextOnFinish? onFinish,
   GenerateTextOnError? onError,
 }) {
@@ -182,6 +190,8 @@ Future<GenerateTextRunResult> runTextGeneration({
     maxSteps: maxSteps,
     onStepStart: onStepStart,
     onStepFinish: onStepFinish,
+    onToolStart: onToolStart,
+    onToolFinish: onToolFinish,
     onFinish: onFinish,
     onError: onError,
   ).run();

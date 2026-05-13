@@ -266,6 +266,120 @@ void main() {
           ));
     });
 
+    test('invokes tool execution lifecycle callbacks around local tools',
+        () async {
+      final model = _RecordingLanguageModel([
+        GenerateTextResult(
+          content: const [
+            ToolCallContentPart(
+              ToolCallContent(
+                toolCallId: 'tool-1',
+                toolName: 'weather',
+                input: {
+                  'city': 'Tokyo',
+                },
+              ),
+            ),
+          ],
+          finishReason: FinishReason.toolCalls,
+        ),
+        GenerateTextResult(
+          content: const [
+            TextContentPart('Done.'),
+          ],
+          finishReason: FinishReason.stop,
+        ),
+      ]);
+      final callbackOrder = <String>[];
+      final startEvents = <GenerateTextToolExecutionStartEvent>[];
+      final finishEvents = <GenerateTextToolExecutionFinishEvent>[];
+
+      await generateText(
+        model: model,
+        prompt: [
+          UserPromptMessage.text('Weather in Tokyo?'),
+        ],
+        tools: [
+          FunctionToolDefinition(
+            name: 'weather',
+            inputSchema: ToolJsonSchema.object(),
+          ),
+        ],
+        functionToolExecutor: (request) {
+          callbackOrder.add('execute');
+          return const GenerateTextToolExecutionResult.output({
+            'forecast': 'sunny',
+          });
+        },
+        onToolStart: (event) {
+          callbackOrder.add('tool-start');
+          startEvents.add(event);
+        },
+        onToolFinish: (event) {
+          callbackOrder.add('tool-finish');
+          finishEvents.add(event);
+        },
+      );
+
+      expect(callbackOrder, ['tool-start', 'execute', 'tool-finish']);
+      expect(startEvents.single.stepNumber, 0);
+      expect(startEvents.single.toolCall.toolCallId, 'tool-1');
+      expect(finishEvents.single.stepNumber, 0);
+      expect(finishEvents.single.toolCall, same(startEvents.single.toolCall));
+      expect(finishEvents.single.result.output, {
+        'forecast': 'sunny',
+      });
+      expect(finishEvents.single.result.isError, isFalse);
+    });
+
+    test('reports failed local tool execution through finish callback',
+        () async {
+      final model = _RecordingLanguageModel([
+        GenerateTextResult(
+          content: const [
+            ToolCallContentPart(
+              ToolCallContent(
+                toolCallId: 'tool-1',
+                toolName: 'weather',
+              ),
+            ),
+          ],
+          finishReason: FinishReason.toolCalls,
+        ),
+        GenerateTextResult(
+          content: const [
+            TextContentPart('Recovered.'),
+          ],
+          finishReason: FinishReason.stop,
+        ),
+      ]);
+      final finishEvents = <GenerateTextToolExecutionFinishEvent>[];
+
+      await runTextGeneration(
+        model: model,
+        prompt: [
+          UserPromptMessage.text('Weather in Tokyo?'),
+        ],
+        tools: [
+          FunctionToolDefinition(
+            name: 'weather',
+            inputSchema: ToolJsonSchema.object(),
+          ),
+        ],
+        functionToolExecutor: (request) {
+          throw StateError('offline');
+        },
+        onToolFinish: finishEvents.add,
+      );
+
+      expect(finishEvents, hasLength(1));
+      expect(finishEvents.single.result.isError, isTrue);
+      expect(
+        finishEvents.single.result.output,
+        contains('Function tool "weather" execution failed'),
+      );
+    });
+
     test('executes only client tool calls when provider-executed calls appear',
         () async {
       final model = _RecordingLanguageModel([

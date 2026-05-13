@@ -86,8 +86,8 @@ Decision notes:
 
 ## Tool Loop
 
-- [ ] Centralize local function tool execution in `llm_dart_ai`
-- [ ] Add tool execution start/end callbacks
+- [x] Centralize local function tool execution in `llm_dart_ai`
+- [x] Add tool execution start/end callbacks
 - [ ] Add tool input streaming callbacks or document why they are deferred
 - [ ] Add tool context and runtime context if they fit Dart ergonomics
 - [ ] Add stop conditions beyond `maxSteps`

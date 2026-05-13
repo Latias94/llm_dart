@@ -129,6 +129,8 @@ final class StreamTextRunner {
   final int maxSteps;
   final GenerateTextOnStepStart? onStepStart;
   final GenerateTextOnStepFinish? onStepFinish;
+  final GenerateTextOnToolStart? onToolStart;
+  final GenerateTextOnToolFinish? onToolFinish;
   final GenerateTextOnFinish? onFinish;
   final StreamTextOnChunk? onChunk;
   final GenerateTextOnError? onError;
@@ -145,6 +147,8 @@ final class StreamTextRunner {
     this.maxSteps = 8,
     this.onStepStart,
     this.onStepFinish,
+    this.onToolStart,
+    this.onToolFinish,
     this.onFinish,
     this.onChunk,
     this.onError,
@@ -259,6 +263,8 @@ final class StreamTextRunner {
           step,
           declaredToolNames: declaredToolNames,
           functionToolExecutor: functionToolExecutor,
+          onToolStart: onToolStart,
+          onToolFinish: onToolFinish,
           runnerName: 'StreamTextRunner',
         );
         if (toolContinuation == null) {
@@ -325,6 +331,8 @@ StreamTextRunResult streamTextRun({
   int maxSteps = 8,
   GenerateTextOnStepStart? onStepStart,
   GenerateTextOnStepFinish? onStepFinish,
+  GenerateTextOnToolStart? onToolStart,
+  GenerateTextOnToolFinish? onToolFinish,
   GenerateTextOnFinish? onFinish,
   StreamTextOnChunk? onChunk,
   GenerateTextOnError? onError,
@@ -341,6 +349,8 @@ StreamTextRunResult streamTextRun({
     maxSteps: maxSteps,
     onStepStart: onStepStart,
     onStepFinish: onStepFinish,
+    onToolStart: onToolStart,
+    onToolFinish: onToolFinish,
     onFinish: onFinish,
     onChunk: onChunk,
     onError: onError,

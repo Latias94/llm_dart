@@ -33,6 +33,14 @@ typedef GenerateTextFunctionToolExecutor
   GenerateTextFunctionToolExecutionRequest request,
 );
 
+typedef GenerateTextOnToolStart = FutureOr<void> Function(
+  GenerateTextToolExecutionStartEvent event,
+);
+
+typedef GenerateTextOnToolFinish = FutureOr<void> Function(
+  GenerateTextToolExecutionFinishEvent event,
+);
+
 final class GenerateTextFunctionToolExecutionRequest {
   final int stepNumber;
   final GenerateTextStepResult step;
@@ -42,6 +50,32 @@ final class GenerateTextFunctionToolExecutionRequest {
     required this.stepNumber,
     required this.step,
     required this.toolCall,
+  });
+}
+
+final class GenerateTextToolExecutionStartEvent {
+  final int stepNumber;
+  final GenerateTextStepResult step;
+  final ToolCallContent toolCall;
+
+  const GenerateTextToolExecutionStartEvent({
+    required this.stepNumber,
+    required this.step,
+    required this.toolCall,
+  });
+}
+
+final class GenerateTextToolExecutionFinishEvent {
+  final int stepNumber;
+  final GenerateTextStepResult step;
+  final ToolCallContent toolCall;
+  final GenerateTextToolExecutionResult result;
+
+  const GenerateTextToolExecutionFinishEvent({
+    required this.stepNumber,
+    required this.step,
+    required this.toolCall,
+    required this.result,
   });
 }
 
@@ -78,6 +112,8 @@ final class GenerateTextRunnerSupport {
     GenerateTextStepResult step, {
     required Set<String> declaredToolNames,
     required GenerateTextFunctionToolExecutor? functionToolExecutor,
+    GenerateTextOnToolStart? onToolStart,
+    GenerateTextOnToolFinish? onToolFinish,
     required String runnerName,
   }) async {
     final executor = functionToolExecutor;
@@ -121,6 +157,13 @@ final class GenerateTextRunnerSupport {
         );
       }
 
+      final startEvent = GenerateTextToolExecutionStartEvent(
+        stepNumber: step.stepNumber,
+        step: step,
+        toolCall: toolCall,
+      );
+      await onToolStart?.call(startEvent);
+
       GenerateTextToolExecutionResult executionResult;
       try {
         executionResult = await executor(
@@ -135,6 +178,14 @@ final class GenerateTextRunnerSupport {
           'Function tool "${toolCall.toolName}" execution failed: $error',
         );
       }
+      await onToolFinish?.call(
+        GenerateTextToolExecutionFinishEvent(
+          stepNumber: step.stepNumber,
+          step: step,
+          toolCall: toolCall,
+          result: executionResult,
+        ),
+      );
 
       toolMessages.add(
         ToolPromptMessage(
