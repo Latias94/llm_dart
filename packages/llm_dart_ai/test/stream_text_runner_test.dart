@@ -84,11 +84,13 @@ void main() {
         const Duration(seconds: 30),
       );
 
-      expect(events, hasLength(7));
-      expect(events.first, isA<StepStartEvent>());
-      expect(events.last, isA<StepFinishEvent>());
+      expect(events, hasLength(9));
+      expect(events.first, isA<RunStartEvent>());
+      expect(events.last, isA<RunFinishEvent>());
+      expect(events.whereType<StepStartEvent>(), hasLength(1));
+      expect(events.whereType<StepFinishEvent>(), hasLength(1));
       expect(events.whereType<TextDeltaEvent>().single.delta, 'Runner output');
-      expect(await run.textStream.toList(), hasLength(7));
+      expect(await run.textStream.toList(), hasLength(9));
 
       final uiChunks = await run.chatUiStream(
         messageId: 'assistant-1',
@@ -97,7 +99,7 @@ void main() {
         },
       ).toList();
       expect(uiChunks.first, isA<ChatUiMessageStartChunk>());
-      expect(uiChunks.whereType<ChatUiEventChunk>(), hasLength(7));
+      expect(uiChunks.whereType<ChatUiEventChunk>(), hasLength(9));
       expect(uiChunks.last, isA<ChatUiMessageFinishChunk>());
 
       expect(steps, hasLength(1));
@@ -221,12 +223,14 @@ void main() {
       await run.result;
 
       expect(chunks.map((event) => event.runtimeType), [
+        RunStartEvent,
         StepStartEvent,
         TextStartEvent,
         TextDeltaEvent,
         TextEndEvent,
         FinishEvent,
         StepFinishEvent,
+        RunFinishEvent,
       ]);
     });
 
@@ -251,8 +255,10 @@ void main() {
       await expectLater(
         run,
         emitsInOrder([
+          isA<RunStartEvent>(),
           isA<StepStartEvent>(),
           isA<ErrorEvent>(),
+          isA<RunFinishEvent>(),
           emitsError(isA<StateError>()),
         ]),
       );
@@ -380,6 +386,7 @@ void main() {
       expect(
         events.map((event) => event.runtimeType).toList(),
         [
+          RunStartEvent,
           StepStartEvent,
           ToolCallEvent,
           FinishEvent,
@@ -391,6 +398,7 @@ void main() {
           TextEndEvent,
           FinishEvent,
           StepFinishEvent,
+          RunFinishEvent,
         ],
       );
 

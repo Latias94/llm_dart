@@ -167,3 +167,6 @@ This workstream should not:
   - `streamText(...)` and `streamTextRun(...)` now emit runtime step boundaries,
     local tool result events, and runtime error events as part of the
     full-stream contract.
+- [24-runtime-run-lifecycle-events.md](24-runtime-run-lifecycle-events.md)
+  - `RunStartEvent` and `RunFinishEvent` now describe the outer AI runtime run
+    without overloading provider model-call `StartEvent` / `FinishEvent`.

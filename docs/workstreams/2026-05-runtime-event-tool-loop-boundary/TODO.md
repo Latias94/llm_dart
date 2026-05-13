@@ -68,9 +68,10 @@ Decision notes:
   execution parts, step finish, run finish, abort, and error events
 - [x] Emit runtime step start, provider/model-call parts, local tool result
   parts, step finish, and error events from `streamText(...)`
+- [x] Emit runtime run start and run finish events from `streamText(...)`
 - [x] Ensure stream accumulation uses the full-stream event semantics
 - [x] Ensure result accumulation is step-scoped and final-run scoped
-- [ ] Add step request/response metadata inclusion policy to avoid storing
+- [x] Add step request/response metadata inclusion policy to avoid storing
   large payloads by default
 - [x] Add guards so runtime step events cannot be emitted by provider packages
 

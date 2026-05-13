@@ -17,6 +17,7 @@ enum ToolUiPartState {
 }
 
 final class ChatUiMetadataKeys {
+  static const runId = 'runId';
   static const warnings = 'warnings';
   static const responseId = 'responseId';
   static const responseTimestamp = 'responseTimestamp';
@@ -28,6 +29,9 @@ final class ChatUiMetadataKeys {
   static const abortReason = 'abortReason';
   static const usage = 'usage';
   static const finishProviderMetadata = 'finishProviderMetadata';
+  static const runFinishReason = 'runFinishReason';
+  static const runRawFinishReason = 'runRawFinishReason';
+  static const runUsage = 'runUsage';
   static const errors = 'errors';
   static const rawChunks = 'rawChunks';
 

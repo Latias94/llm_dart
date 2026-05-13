@@ -261,7 +261,9 @@ final class GenerateTextResultAccumulator {
             providerMetadata: event.providerMetadata,
           ),
         );
-      case StepStartEvent() ||
+      case RunStartEvent() ||
+            RunFinishEvent() ||
+            StepStartEvent() ||
             StepFinishEvent() ||
             AbortEvent() ||
             RawChunkEvent():

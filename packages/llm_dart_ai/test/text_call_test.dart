@@ -131,14 +131,16 @@ void main() {
       );
 
       final events = await stream.toList();
-      expect(events, hasLength(8));
-      expect(events.first, isA<StepStartEvent>());
-      expect(events.last, isA<StepFinishEvent>());
-      expect(await stream.textStream.toList(), hasLength(8));
+      expect(events, hasLength(10));
+      expect(events.first, isA<RunStartEvent>());
+      expect(events.last, isA<RunFinishEvent>());
+      expect(await stream.textStream.toList(), hasLength(10));
       expect(
         await stream.chatUiStream(messageId: 'assistant-1').toList(),
         [
           isA<ChatUiMessageStartChunk>(),
+          isA<ChatUiEventChunk>(),
+          isA<ChatUiEventChunk>(),
           isA<ChatUiEventChunk>(),
           isA<ChatUiEventChunk>(),
           isA<ChatUiEventChunk>(),

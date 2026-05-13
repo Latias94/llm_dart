@@ -75,9 +75,11 @@ void main() {
         const Duration(seconds: 30),
       );
 
-      expect(events, hasLength(6));
-      expect(events.first, isA<StepStartEvent>());
-      expect(events.last, isA<StepFinishEvent>());
+      expect(events, hasLength(8));
+      expect(events.first, isA<RunStartEvent>());
+      expect(events.last, isA<RunFinishEvent>());
+      expect(events.whereType<StepStartEvent>(), hasLength(1));
+      expect(events.whereType<StepFinishEvent>(), hasLength(1));
       expect(events.whereType<TextDeltaEvent>().single.delta, 'Runner output');
 
       expect(steps, hasLength(1));
@@ -208,6 +210,7 @@ void main() {
       expect(
         events.map((event) => event.runtimeType).toList(),
         [
+          RunStartEvent,
           StepStartEvent,
           ToolCallEvent,
           FinishEvent,
@@ -219,6 +222,7 @@ void main() {
           TextEndEvent,
           FinishEvent,
           StepFinishEvent,
+          RunFinishEvent,
         ],
       );
 

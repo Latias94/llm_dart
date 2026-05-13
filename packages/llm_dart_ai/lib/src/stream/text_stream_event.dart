@@ -10,6 +10,28 @@ sealed class TextStreamEvent {
   const TextStreamEvent();
 }
 
+final class RunStartEvent extends TextStreamEvent {
+  final String? runId;
+
+  const RunStartEvent({
+    this.runId,
+  });
+}
+
+final class RunFinishEvent extends TextStreamEvent {
+  final String? runId;
+  final provider.FinishReason finishReason;
+  final String? rawFinishReason;
+  final provider.UsageStats? usage;
+
+  const RunFinishEvent({
+    this.runId,
+    required this.finishReason,
+    this.rawFinishReason,
+    this.usage,
+  });
+}
+
 final class StartEvent extends TextStreamEvent {
   final List<provider.ModelWarning> warnings;
 

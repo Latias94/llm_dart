@@ -86,6 +86,10 @@ final class ChatUiAccumulator {
 
   ChatUiMessage apply(TextStreamEvent event) {
     switch (event) {
+      case RunStartEvent():
+        _applyRunStartEvent(event);
+      case RunFinishEvent():
+        _applyRunFinishEvent(event);
       case StartEvent():
         _applyStartEvent(event);
       case ResponseMetadataEvent():
@@ -222,6 +226,22 @@ final class ChatUiAccumulator {
 
   void _applyStartEvent(StartEvent event) {
     _metadata[ChatUiMetadataKeys.warnings] = List.unmodifiable(event.warnings);
+  }
+
+  void _applyRunStartEvent(RunStartEvent event) {
+    _setMetadataIfNotNull(ChatUiMetadataKeys.runId, event.runId);
+  }
+
+  void _applyRunFinishEvent(RunFinishEvent event) {
+    _setMetadataIfNotNull(ChatUiMetadataKeys.runId, event.runId);
+    _metadata[ChatUiMetadataKeys.runFinishReason] = event.finishReason;
+    _setMetadataIfNotNull(
+      ChatUiMetadataKeys.runRawFinishReason,
+      event.rawFinishReason,
+    );
+    if (event.usage != null) {
+      _metadata[ChatUiMetadataKeys.runUsage] = event.usage;
+    }
   }
 
   void _applyResponseMetadataEvent(ResponseMetadataEvent event) {

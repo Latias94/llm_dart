@@ -135,6 +135,10 @@ Progress:
   `StepStartEvent`, local `ToolResultEvent`, `StepFinishEvent`, and
   `ErrorEvent` semantics around provider model-call events, aligning full
   stream accumulation with step results.
+- 2026-05-13: added AI-owned `RunStartEvent` and `RunFinishEvent` full-stream
+  lifecycle events so runtime runs are distinct from provider model-call
+  `StartEvent` / `FinishEvent` semantics without storing large request or
+  prompt payloads in the stream by default.
 
 ## M4: Tool Loop Runtime
 

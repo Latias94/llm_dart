@@ -126,6 +126,8 @@ class Chatbot {
           case core.ErrorEvent(:final error):
             throw Exception('Stream error: $error');
           case core.ReasoningDeltaEvent():
+          case core.RunStartEvent():
+          case core.RunFinishEvent():
           case core.StepStartEvent():
           case core.StepFinishEvent():
           case core.StartEvent():

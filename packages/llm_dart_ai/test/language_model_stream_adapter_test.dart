@@ -33,6 +33,12 @@ void main() {
         ),
         throwsA(isA<StateError>()),
       );
+      expect(
+        () => textStreamEventToProvider(
+          const ai.RunStartEvent(runId: 'run-1'),
+        ),
+        throwsA(isA<StateError>()),
+      );
     });
   });
 }

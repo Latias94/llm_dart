@@ -91,9 +91,11 @@ void main() {
       final start = chunks.first as ChatUiMessageStartChunk;
       expect(start.metadata['source'], 'direct');
       final eventChunks = chunks.whereType<ChatUiEventChunk>().toList();
-      expect(eventChunks, hasLength(6));
-      expect(eventChunks.first.event, isA<StepStartEvent>());
-      expect(eventChunks.last.event, isA<StepFinishEvent>());
+      expect(eventChunks, hasLength(8));
+      expect(eventChunks.first.event, isA<RunStartEvent>());
+      expect(eventChunks[1].event, isA<StepStartEvent>());
+      expect(eventChunks[eventChunks.length - 2].event, isA<StepFinishEvent>());
+      expect(eventChunks.last.event, isA<RunFinishEvent>());
     });
   });
 

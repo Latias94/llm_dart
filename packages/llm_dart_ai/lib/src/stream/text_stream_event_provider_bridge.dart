@@ -279,6 +279,8 @@ provider.LanguageModelStreamEvent textStreamEventToProvider(
       ),
     RawChunkEvent(:final raw) => provider.RawChunkEvent(raw),
     ErrorEvent(:final error) => provider.ErrorEvent(error),
+    RunStartEvent() ||
+    RunFinishEvent() ||
     ToolOutputDeniedEvent() ||
     StepStartEvent() ||
     StepFinishEvent() ||

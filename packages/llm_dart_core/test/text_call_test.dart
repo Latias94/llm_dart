@@ -108,9 +108,9 @@ void main() {
       );
 
       final events = await stream.toList();
-      expect(events, hasLength(8));
-      expect(events.first, isA<StepStartEvent>());
-      expect(events.last, isA<StepFinishEvent>());
+      expect(events, hasLength(10));
+      expect(events.first, isA<RunStartEvent>());
+      expect(events.last, isA<RunFinishEvent>());
       expect(await stream.text, 'plain text');
       expect((await stream.result).responseId, 'resp_stream_text_call');
       expect(stream.hasOutput, isFalse);

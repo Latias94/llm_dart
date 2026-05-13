@@ -203,6 +203,7 @@ final class StreamTextRunner {
     var streamClosed = false;
 
     try {
+      await _addEvent(eventChannel, const RunStartEvent());
       while (true) {
         final stepNumber = previousSteps.length;
         if (stepNumber >= maxSteps) {
@@ -318,6 +319,14 @@ final class StreamTextRunner {
         steps: previousSteps,
       );
       await onFinish?.call(runResult);
+      await _addEvent(
+        eventChannel,
+        RunFinishEvent(
+          finishReason: runResult.finishReason,
+          rawFinishReason: runResult.rawFinishReason,
+          usage: runResult.totalUsage,
+        ),
+      );
       if (!resultCompleter.isCompleted) {
         resultCompleter.complete(runResult);
       }
@@ -335,6 +344,13 @@ final class StreamTextRunner {
           eventChannel,
           ErrorEvent(
             ModelError.fromUnknown(reportedError),
+          ),
+        );
+        await _addEvent(
+          eventChannel,
+          RunFinishEvent(
+            finishReason: FinishReason.error,
+            rawFinishReason: '$reportedError',
           ),
         );
         eventChannel.addError(reportedError, reportedStackTrace);

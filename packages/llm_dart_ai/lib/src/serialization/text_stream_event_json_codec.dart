@@ -47,6 +47,24 @@ final class TextStreamEventJsonCodec {
 
   provider.JsonMap encodeEvent(TextStreamEvent event) {
     return switch (event) {
+      RunStartEvent(:final runId) => {
+          'type': 'run-start',
+          if (runId != null) 'runId': runId,
+        },
+      RunFinishEvent(
+        :final runId,
+        :final finishReason,
+        :final rawFinishReason,
+        :final usage,
+      ) =>
+        {
+          'type': 'run-finish',
+          if (runId != null) 'runId': runId,
+          'finishReason': finishReason.name,
+          if (rawFinishReason != null) 'rawFinishReason': rawFinishReason,
+          if (usage != null)
+            'usage': provider.SerializationJsonSupport.encodeUsageStats(usage),
+        },
       StartEvent(:final warnings) => {
           'type': 'start',
           'warnings': warnings
@@ -335,6 +353,32 @@ final class TextStreamEventJsonCodec {
     final type = provider.asJsonString(map['type'], path: '$path.type');
 
     return switch (type) {
+      'run-start' => RunStartEvent(
+          runId: provider.asNullableJsonString(
+            map['runId'],
+            path: '$path.runId',
+          ),
+        ),
+      'run-finish' || 'run-end' => RunFinishEvent(
+          runId: provider.asNullableJsonString(
+            map['runId'],
+            path: '$path.runId',
+          ),
+          finishReason: provider.FinishReason.values.byName(
+            provider.asJsonString(
+              map['finishReason'],
+              path: '$path.finishReason',
+            ),
+          ),
+          rawFinishReason: provider.asNullableJsonString(
+            map['rawFinishReason'],
+            path: '$path.rawFinishReason',
+          ),
+          usage: provider.SerializationJsonSupport.decodeUsageStats(
+            map['usage'],
+            path: '$path.usage',
+          ),
+        ),
       'start' => StartEvent(
           warnings: provider
               .asJsonList(map['warnings'], path: '$path.warnings')
