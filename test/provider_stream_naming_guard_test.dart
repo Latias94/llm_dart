@@ -237,6 +237,60 @@ void main() {
 
       expect(violations, isEmpty);
     });
+
+    test('provider input contracts do not accept raw ProviderMetadata', () {
+      const inputContractFiles = [
+        'packages/llm_dart_provider/lib/src/common/call_options.dart',
+        'packages/llm_dart_provider/lib/src/prompt/prompt_message.dart',
+      ];
+
+      final violations = <String>[];
+      for (final path in inputContractFiles) {
+        final content = File(path).readAsStringSync();
+        if (content.contains('ProviderMetadata')) {
+          violations.add(path);
+        }
+      }
+
+      final languageModel = File(
+        'packages/llm_dart_provider/lib/src/model/language_model.dart',
+      ).readAsStringSync();
+      final languageModelInputContracts = _sliceBefore(
+        languageModel,
+        'final class GenerateTextResult',
+      );
+      if (languageModelInputContracts.contains('ProviderMetadata')) {
+        violations.add(
+          'packages/llm_dart_provider/lib/src/model/language_model.dart',
+        );
+      }
+
+      expect(violations, isEmpty);
+    });
+
+    test('provider replay metadata is explicit typed prompt options only', () {
+      final options = File(
+        'packages/llm_dart_provider/lib/src/common/provider_options.dart',
+      ).readAsStringSync();
+      final promptCodec = File(
+        'packages/llm_dart_provider/lib/src/serialization/prompt_json_codec.dart',
+      ).readAsStringSync();
+      final serializationSupport = File(
+        'packages/llm_dart_provider/lib/src/serialization/'
+        'serialization_json_support.dart',
+      ).readAsStringSync();
+
+      expect(options, contains('ProviderReplayPromptPartOptions'));
+      expect(options, contains('ProviderMetadata metadata'));
+      expect(
+        promptCodec,
+        contains('Legacy prompt replay metadata is no longer supported'),
+      );
+      expect(
+        serializationSupport,
+        contains('Legacy prompt replay metadata is no longer supported'),
+      );
+    });
   });
 }
 
@@ -264,4 +318,13 @@ String _topLevelYamlSection(String yaml, String sectionName) {
   }
 
   return section.join('\n');
+}
+
+String _sliceBefore(String content, String marker) {
+  final index = content.indexOf(marker);
+  if (index < 0) {
+    return content;
+  }
+
+  return content.substring(0, index);
 }

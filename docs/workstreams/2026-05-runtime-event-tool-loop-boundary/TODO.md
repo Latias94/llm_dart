@@ -57,7 +57,7 @@ Decision notes:
 - [x] Ensure provider codecs never need to emit chat/UI lifecycle chunks
 - [x] Add serialization guards for provider model-call stream parts
 - [x] Update focused providers to emit the new model-call stream parts
-- [ ] Keep provider metadata response-side and replay-only
+- [x] Keep provider metadata response-side and replay-only
 
 ## AI Runtime Full Stream
 

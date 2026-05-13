@@ -157,3 +157,6 @@ This workstream should not:
 - [20-primary-runtime-entrypoints.md](20-primary-runtime-entrypoints.md)
   - `generateText(...)` and `streamText(...)` now use the AI runtime runner
     path while preserving their existing return types.
+- [21-provider-metadata-boundary-guard.md](21-provider-metadata-boundary-guard.md)
+  - Provider metadata is guarded as response-side and replay-only data; input
+    customization stays on typed provider options.

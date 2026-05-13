@@ -91,6 +91,9 @@ Progress:
   `LanguageModelStreamEvent` sealed class, removed the provider legacy
   full-stream event file and codec, and made provider event classes extend the
   provider model-call base directly.
+- 2026-05-13: added a provider metadata boundary guard so ordinary provider
+  input contracts cannot accept raw `ProviderMetadata`; replay continues
+  through explicit `ProviderReplayPromptPartOptions`.
 
 ## M3: Unified Runtime Result Surface
 
