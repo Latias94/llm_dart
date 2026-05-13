@@ -164,6 +164,28 @@ void main() {
 
       expect(violations, isEmpty);
     });
+
+    test('provider language stream codec stays model-call scoped', () {
+      final file = File(
+        'packages/llm_dart_provider/lib/src/serialization/'
+        'language_model_stream_event_json_codec.dart',
+      );
+      final content = file.readAsStringSync();
+      const forbiddenTokens = [
+        'TextStreamEventJsonCodec',
+        'StepStartEvent',
+        'StepFinishEvent',
+        'ToolOutputDeniedEvent',
+        'AbortEvent',
+      ];
+
+      final violations = [
+        for (final token in forbiddenTokens)
+          if (content.contains(token)) token,
+      ];
+
+      expect(violations, isEmpty);
+    });
   });
 }
 

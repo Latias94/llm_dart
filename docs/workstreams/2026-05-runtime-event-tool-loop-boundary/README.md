@@ -137,3 +137,7 @@ This workstream should not:
 - [14-stream-text-run-result-accessors.md](14-stream-text-run-result-accessors.md)
   - `StreamTextRunResult` exposes final content, usage, metadata, source, file,
     and tool convenience accessors.
+- [15-provider-stream-codec-owned-path.md](15-provider-stream-codec-owned-path.md)
+  - `LanguageModelStreamEventJsonCodec` owns provider model-call
+    serialization directly instead of delegating through the full runtime
+    stream codec.

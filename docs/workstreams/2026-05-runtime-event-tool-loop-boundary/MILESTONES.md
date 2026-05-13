@@ -80,6 +80,9 @@ Progress:
 - 2026-05-13: marked `StepStartEvent`, `StepFinishEvent`,
   `ToolOutputDeniedEvent`, and `AbortEvent` as runtime-only in provider
   compatibility code and added focused provider guards against emitting them.
+- 2026-05-13: made `LanguageModelStreamEventJsonCodec` own provider
+  model-call serialization directly, keeping the existing wire shape while no
+  longer delegating through the full runtime stream codec.
 
 ## M3: Unified Runtime Result Surface
 
