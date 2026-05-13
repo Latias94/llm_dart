@@ -2,6 +2,7 @@
 
 import 'package:llm_dart_chat/llm_dart_chat.dart';
 import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_ai/internal.dart';
 
 Future<void> main() async {
   final store = _MemoryPersistenceStore();
@@ -137,8 +138,10 @@ final class _DemoWeatherLanguageModel implements LanguageModel {
   }
 
   @override
-  Stream<TextStreamEvent> doStream(GenerateTextRequest request) async* {
-    yield StartEvent();
+  Stream<LanguageModelStreamEvent> doStream(
+    GenerateTextRequest request,
+  ) async* {
+    yield textStreamEventToProvider(StartEvent());
 
     ToolPromptMessage? toolMessage;
     for (final message in request.prompt) {
@@ -148,17 +151,21 @@ final class _DemoWeatherLanguageModel implements LanguageModel {
     }
 
     if (toolMessage == null) {
-      yield const ToolCallEvent(
-        toolCall: ToolCallContent(
-          toolCallId: 'tool-weather-1',
-          toolName: 'weather',
-          input: {
-            'location': 'Hong Kong',
-          },
+      yield textStreamEventToProvider(
+        const ToolCallEvent(
+          toolCall: ToolCallContent(
+            toolCallId: 'tool-weather-1',
+            toolName: 'weather',
+            input: {
+              'location': 'Hong Kong',
+            },
+          ),
         ),
       );
-      yield const FinishEvent(
-        finishReason: FinishReason.toolCalls,
+      yield textStreamEventToProvider(
+        const FinishEvent(
+          finishReason: FinishReason.toolCalls,
+        ),
       );
       return;
     }
@@ -169,14 +176,18 @@ final class _DemoWeatherLanguageModel implements LanguageModel {
     final temperatureC = output['temperatureC'];
     final condition = output['condition'] as String? ?? 'unknown';
 
-    yield const TextStartEvent(id: 'text-1');
-    yield TextDeltaEvent(
-      id: 'text-1',
-      delta: 'The weather in $location is $temperatureC C and $condition.',
+    yield textStreamEventToProvider(const TextStartEvent(id: 'text-1'));
+    yield textStreamEventToProvider(
+      TextDeltaEvent(
+        id: 'text-1',
+        delta: 'The weather in $location is $temperatureC C and $condition.',
+      ),
     );
-    yield const TextEndEvent(id: 'text-1');
-    yield const FinishEvent(
-      finishReason: FinishReason.stop,
+    yield textStreamEventToProvider(const TextEndEvent(id: 'text-1'));
+    yield textStreamEventToProvider(
+      const FinishEvent(
+        finishReason: FinishReason.stop,
+      ),
     );
   }
 }

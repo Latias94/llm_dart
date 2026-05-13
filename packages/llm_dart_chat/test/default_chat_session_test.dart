@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:llm_dart_chat/llm_dart_chat.dart';
 import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_ai/internal.dart';
 import 'package:llm_dart_test/llm_dart_test.dart';
 import 'package:test/test.dart';
 
@@ -14,7 +15,7 @@ void main() {
         model: _FakeLanguageModel(
           onStream: (request) {
             capturedRequest = request;
-            return const Stream<TextStreamEvent>.empty();
+            return const Stream<LanguageModelStreamEvent>.empty();
           },
         ),
       );
@@ -53,11 +54,15 @@ void main() {
       final transport = DirectChatTransport(
         model: _FakeLanguageModel(
           onStream: (_) => Stream<LanguageModelStreamEvent>.fromIterable(
-            const [
-              TextStartEvent(id: 'text-1'),
-              TextDeltaEvent(id: 'text-1', delta: 'Hello'),
-              TextEndEvent(id: 'text-1'),
-              FinishEvent(finishReason: FinishReason.stop),
+            [
+              textStreamEventToProvider(const TextStartEvent(id: 'text-1')),
+              textStreamEventToProvider(
+                const TextDeltaEvent(id: 'text-1', delta: 'Hello'),
+              ),
+              textStreamEventToProvider(const TextEndEvent(id: 'text-1')),
+              textStreamEventToProvider(
+                const FinishEvent(finishReason: FinishReason.stop),
+              ),
             ],
           ),
         ),

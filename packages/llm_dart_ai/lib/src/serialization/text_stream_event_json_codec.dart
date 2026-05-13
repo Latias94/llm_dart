@@ -1,6 +1,7 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart' as provider;
 
 import '../stream/text_stream_event.dart';
+import '../stream/text_stream_event_provider_bridge.dart';
 
 /// JSON codec for AI runtime full-stream events.
 ///
@@ -16,21 +17,28 @@ final class TextStreamEventJsonCodec {
   const TextStreamEventJsonCodec();
 
   provider.JsonMap encodeEvents(List<TextStreamEvent> events) {
-    return _legacyCodec.encodeEvents(events);
+    return _legacyCodec.encodeEvents(
+      events.map(textStreamEventToProvider).toList(growable: false),
+    );
   }
 
   List<TextStreamEvent> decodeEvents(Object? envelope) {
-    return _legacyCodec.decodeEvents(envelope);
+    return _legacyCodec
+        .decodeEvents(envelope)
+        .map(textStreamEventFromProvider)
+        .toList(growable: false);
   }
 
   provider.JsonMap encodeEvent(TextStreamEvent event) {
-    return _legacyCodec.encodeEvent(event);
+    return _legacyCodec.encodeEvent(textStreamEventToProvider(event));
   }
 
   TextStreamEvent decodeEvent(
     Object? value, {
     String path = r'$',
   }) {
-    return _legacyCodec.decodeEvent(value, path: path);
+    return textStreamEventFromProvider(
+      _legacyCodec.decodeEvent(value, path: path),
+    );
   }
 }

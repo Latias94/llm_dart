@@ -1,5 +1,6 @@
 import 'package:llm_dart_ai/internal.dart';
-import 'package:llm_dart_provider/llm_dart_provider.dart';
+import 'package:llm_dart_ai/llm_dart_ai.dart' as ai;
+import 'package:llm_dart_provider/llm_dart_provider.dart' as provider;
 import 'package:test/test.dart';
 
 void main() {
@@ -7,19 +8,19 @@ void main() {
     test('forwards provider model-call events as runtime text events',
         () async {
       final events = adaptLanguageModelStreamEvents(
-        Stream<LanguageModelStreamEvent>.fromIterable([
-          StartEvent(),
-          const TextDeltaEvent(id: 'text-1', delta: 'Hello'),
-          const FinishEvent(finishReason: FinishReason.stop),
+        Stream<provider.LanguageModelStreamEvent>.fromIterable([
+          provider.StartEvent(),
+          const provider.TextDeltaEvent(id: 'text-1', delta: 'Hello'),
+          const provider.FinishEvent(finishReason: ai.FinishReason.stop),
         ]),
       );
 
       await expectLater(
         events,
         emitsInOrder([
-          isA<StartEvent>(),
-          isA<TextDeltaEvent>(),
-          isA<FinishEvent>(),
+          isA<ai.StartEvent>(),
+          isA<ai.TextDeltaEvent>(),
+          isA<ai.FinishEvent>(),
           emitsDone,
         ]),
       );
@@ -27,8 +28,8 @@ void main() {
 
     test('rejects runtime-only events from provider streams', () async {
       final events = adaptLanguageModelStreamEvents(
-        Stream<LanguageModelStreamEvent>.fromIterable([
-          const StepStartEvent(stepId: 'step-1'),
+        Stream<provider.LanguageModelStreamEvent>.fromIterable([
+          const provider.StepStartEvent(stepId: 'step-1'),
         ]),
       );
 

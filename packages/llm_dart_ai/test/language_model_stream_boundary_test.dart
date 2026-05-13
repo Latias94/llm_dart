@@ -1,4 +1,5 @@
 import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart' as provider;
 import 'package:test/test.dart';
 
 void main() {
@@ -7,7 +8,7 @@ void main() {
         () async {
       final stream = streamText(
         model: _StreamModel([
-          const StepStartEvent(stepId: 'step-1'),
+          const provider.StepStartEvent(stepId: 'step-1'),
         ]),
         messages: [
           UserModelMessage.text('Hello'),
@@ -21,7 +22,7 @@ void main() {
         () async {
       final result = streamTextRun(
         model: _StreamModel([
-          const StepStartEvent(stepId: 'step-1'),
+          const provider.StepStartEvent(stepId: 'step-1'),
         ]),
         messages: [
           UserModelMessage.text('Hello'),
@@ -37,7 +38,7 @@ void main() {
 }
 
 final class _StreamModel implements LanguageModel {
-  final List<TextStreamEvent> events;
+  final List<provider.LanguageModelStreamEvent> events;
 
   const _StreamModel(this.events);
 
@@ -56,7 +57,9 @@ final class _StreamModel implements LanguageModel {
   }
 
   @override
-  Stream<TextStreamEvent> doStream(GenerateTextRequest request) {
-    return Stream<TextStreamEvent>.fromIterable(events);
+  Stream<provider.LanguageModelStreamEvent> doStream(
+    GenerateTextRequest request,
+  ) {
+    return Stream<provider.LanguageModelStreamEvent>.fromIterable(events);
   }
 }

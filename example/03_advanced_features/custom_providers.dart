@@ -4,6 +4,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart_provider/llm_dart_provider.dart' as provider;
 
 /// Custom language-model examples built on the stable `LanguageModel` contract.
 ///
@@ -257,23 +258,23 @@ final class MockLanguageModel implements core.LanguageModel {
   }
 
   @override
-  Stream<core.TextStreamEvent> doStream(
+  Stream<provider.LanguageModelStreamEvent> doStream(
     core.GenerateTextRequest request,
   ) async* {
     final text = _responseForPrompt(_promptText(request.prompt));
-    yield core.StartEvent();
-    yield const core.TextStartEvent(id: 'text-1');
+    yield provider.StartEvent();
+    yield const provider.TextStartEvent(id: 'text-1');
 
     for (final token in text.split(' ')) {
       await Future<void>.delayed(const Duration(milliseconds: 35));
-      yield core.TextDeltaEvent(
+      yield provider.TextDeltaEvent(
         id: 'text-1',
         delta: '$token ',
       );
     }
 
-    yield const core.TextEndEvent(id: 'text-1');
-    yield core.FinishEvent(
+    yield const provider.TextEndEvent(id: 'text-1');
+    yield provider.FinishEvent(
       finishReason: core.FinishReason.stop,
       usage: core.UsageStats(
         inputTokens: 24,
@@ -327,16 +328,16 @@ final class LoggingLanguageModel implements core.LanguageModel {
   }
 
   @override
-  Stream<core.TextStreamEvent> doStream(
+  Stream<provider.LanguageModelStreamEvent> doStream(
     core.GenerateTextRequest request,
   ) async* {
     _logSink('  [log] stream start provider=$providerId model=$modelId');
 
     await for (final event in _baseModel.doStream(request)) {
       switch (event) {
-        case core.TextDeltaEvent():
+        case provider.TextDeltaEvent():
           _logSink('  [log] stream text delta');
-        case core.FinishEvent(:final usage):
+        case provider.FinishEvent(:final usage):
           _logSink(
             '  [log] stream finish tokens=${usage?.totalTokens ?? 'unknown'}',
           );
@@ -383,21 +384,21 @@ final class CachingLanguageModel implements core.LanguageModel {
   }
 
   @override
-  Stream<core.TextStreamEvent> doStream(
+  Stream<provider.LanguageModelStreamEvent> doStream(
     core.GenerateTextRequest request,
   ) async* {
     final cacheKey = _cacheKey(request);
     final cached = _cache[cacheKey];
     if (cached != null) {
       _logSink?.call('  [cache] stream replay for "$cacheKey"');
-      yield core.StartEvent();
-      yield const core.TextStartEvent(id: 'cached-text');
-      yield core.TextDeltaEvent(
+      yield provider.StartEvent();
+      yield const provider.TextStartEvent(id: 'cached-text');
+      yield provider.TextDeltaEvent(
         id: 'cached-text',
         delta: cached.text,
       );
-      yield const core.TextEndEvent(id: 'cached-text');
-      yield core.FinishEvent(
+      yield const provider.TextEndEvent(id: 'cached-text');
+      yield provider.FinishEvent(
         finishReason: cached.finishReason,
         rawFinishReason: cached.rawFinishReason,
         usage: cached.usage,
@@ -458,18 +459,18 @@ final class CustomApiLanguageModel implements core.LanguageModel {
   }
 
   @override
-  Stream<core.TextStreamEvent> doStream(
+  Stream<provider.LanguageModelStreamEvent> doStream(
     core.GenerateTextRequest request,
   ) async* {
     final result = await doGenerate(request);
-    yield core.StartEvent();
-    yield const core.TextStartEvent(id: 'custom-text');
-    yield core.TextDeltaEvent(
+    yield provider.StartEvent();
+    yield const provider.TextStartEvent(id: 'custom-text');
+    yield provider.TextDeltaEvent(
       id: 'custom-text',
       delta: result.text,
     );
-    yield const core.TextEndEvent(id: 'custom-text');
-    yield core.FinishEvent(
+    yield const provider.TextEndEvent(id: 'custom-text');
+    yield provider.FinishEvent(
       finishReason: result.finishReason,
       usage: result.usage,
     );

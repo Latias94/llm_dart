@@ -1,6 +1,36 @@
 import 'dart:convert';
 
-import 'package:llm_dart_provider/llm_dart_provider.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart'
+    hide
+        AbortEvent,
+        CustomEvent,
+        ErrorEvent,
+        FileEvent,
+        FinishEvent,
+        RawChunkEvent,
+        ReasoningDeltaEvent,
+        ReasoningEndEvent,
+        ReasoningFileEvent,
+        ReasoningStartEvent,
+        ResponseMetadataEvent,
+        SourceEvent,
+        StartEvent,
+        StepFinishEvent,
+        StepStartEvent,
+        TextDeltaEvent,
+        TextEndEvent,
+        TextStartEvent,
+        TextStreamEvent,
+        ToolApprovalRequestEvent,
+        ToolCallEvent,
+        ToolInputDeltaEvent,
+        ToolInputEndEvent,
+        ToolInputErrorEvent,
+        ToolInputStartEvent,
+        ToolOutputDeniedEvent,
+        ToolResultEvent;
+
+import '../stream/text_stream_event.dart';
 
 final class GenerateTextResultAccumulator {
   final List<ContentPart> _content = <ContentPart>[];

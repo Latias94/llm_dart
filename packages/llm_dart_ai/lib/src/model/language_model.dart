@@ -1,8 +1,9 @@
-import 'package:llm_dart_provider/llm_dart_provider.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart' hide TextStreamEvent;
 
 import '../prompt/model_message.dart';
 import '../prompt/prompt_normalization.dart';
 import '../prompt/prompt_validation.dart';
+import '../stream/text_stream_event.dart';
 import 'language_model_stream_adapter.dart';
 
 export 'package:llm_dart_provider/llm_dart_provider.dart'

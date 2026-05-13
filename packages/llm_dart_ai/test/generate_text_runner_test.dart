@@ -1,4 +1,5 @@
 import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart' as provider;
 import 'package:test/test.dart';
 
 void main() {
@@ -471,9 +472,11 @@ final class _RecordingLanguageModel implements LanguageModel {
   }
 
   @override
-  Stream<TextStreamEvent> doStream(GenerateTextRequest request) async* {
+  Stream<provider.LanguageModelStreamEvent> doStream(
+    GenerateTextRequest request,
+  ) async* {
     requests.add(request);
-    yield const FinishEvent(
+    yield const provider.FinishEvent(
       finishReason: FinishReason.stop,
     );
   }

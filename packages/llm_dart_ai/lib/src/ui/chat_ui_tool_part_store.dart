@@ -1,7 +1,17 @@
 import 'dart:convert';
 
-import 'package:llm_dart_provider/llm_dart_provider.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart'
+    hide
+        ToolApprovalRequestEvent,
+        ToolCallEvent,
+        ToolInputDeltaEvent,
+        ToolInputEndEvent,
+        ToolInputErrorEvent,
+        ToolInputStartEvent,
+        ToolOutputDeniedEvent,
+        ToolResultEvent;
 
+import '../stream/text_stream_event.dart';
 import 'chat_ui_message.dart';
 
 final class ChatUiToolPartStore {

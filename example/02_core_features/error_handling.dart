@@ -6,6 +6,7 @@ import 'dart:io';
 import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/transport.dart' as transport;
+import 'package:llm_dart_provider/llm_dart_provider.dart' as provider;
 
 /// Stable-first error handling examples centered on `ModelError`.
 ///
@@ -366,7 +367,9 @@ final class _StaticTextLanguageModel implements core.LanguageModel {
   }
 
   @override
-  Stream<core.TextStreamEvent> doStream(core.GenerateTextRequest request) {
+  Stream<provider.LanguageModelStreamEvent> doStream(
+    core.GenerateTextRequest request,
+  ) {
     return const Stream.empty();
   }
 }
@@ -408,7 +411,9 @@ final class _FlakyLanguageModel implements core.LanguageModel {
   }
 
   @override
-  Stream<core.TextStreamEvent> doStream(core.GenerateTextRequest request) {
+  Stream<provider.LanguageModelStreamEvent> doStream(
+    core.GenerateTextRequest request,
+  ) {
     return const Stream.empty();
   }
 }

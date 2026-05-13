@@ -1,4 +1,6 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_ai/internal.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart' as provider;
 import 'package:test/test.dart';
 
 void main() {
@@ -762,8 +764,12 @@ final class _RecordingLanguageModel implements LanguageModel {
   }
 
   @override
-  Stream<TextStreamEvent> doStream(GenerateTextRequest request) async* {
+  Stream<provider.LanguageModelStreamEvent> doStream(
+    GenerateTextRequest request,
+  ) async* {
     lastRequest = request;
-    yield* Stream<TextStreamEvent>.fromIterable(streamEvents);
+    for (final event in streamEvents) {
+      yield textStreamEventToProvider(event);
+    }
   }
 }

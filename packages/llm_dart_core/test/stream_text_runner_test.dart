@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_ai/internal.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart' as provider;
 import 'package:test/test.dart';
 
 void main() {
@@ -415,14 +417,16 @@ final class _RecordingStreamLanguageModel implements LanguageModel {
   }
 
   @override
-  Stream<TextStreamEvent> doStream(GenerateTextRequest request) async* {
+  Stream<provider.LanguageModelStreamEvent> doStream(
+    GenerateTextRequest request,
+  ) async* {
     requests.add(request);
     if (_steps.isEmpty) {
       throw StateError('No more fake step streams configured.');
     }
 
     for (final event in _steps.removeAt(0)) {
-      yield event;
+      yield textStreamEventToProvider(event);
     }
   }
 }

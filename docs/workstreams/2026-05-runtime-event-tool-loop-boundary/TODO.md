@@ -59,7 +59,7 @@ Decision notes:
 
 - [x] Create one full-stream event serialization owner in `llm_dart_ai`
 - [x] Create one full-stream event export owner in `llm_dart_ai`
-- [ ] Create one full-stream event vocabulary in `llm_dart_ai`
+- [x] Create one full-stream event vocabulary in `llm_dart_ai`
 - [ ] Emit explicit run start, step start, provider/model-call parts, tool
   execution parts, step finish, run finish, abort, and error events
 - [ ] Ensure stream accumulation uses the full-stream event semantics
@@ -125,7 +125,7 @@ Decision notes:
 - [x] Run `llm_dart_ai` stream event export ownership tests
 - [x] Run `llm_dart_ai` runtime, output, prompt, and UI projection tests
 - [x] Run `llm_dart_chat` direct transport and tool execution tests
-- [ ] Run examples analysis
+- [x] Run examples analysis
 - [ ] Run consumer smoke
 - [ ] Run publish dry-runs
-- [ ] Run `git diff --check`
+- [x] Run `git diff --check`

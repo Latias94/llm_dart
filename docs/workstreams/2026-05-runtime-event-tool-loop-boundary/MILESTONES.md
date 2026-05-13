@@ -107,6 +107,9 @@ Progress:
 - 2026-05-13: expanded `StreamTextRunResult` final-result convenience
   accessors so streaming run callers can inspect content, usage, metadata,
   source, file, and tool data without manually awaiting `result`.
+- 2026-05-13: moved concrete full-stream event classes into `llm_dart_ai` and
+  added provider/runtime bridge mapping so runtime, UI, chat, and result code
+  consume AI-owned `TextStreamEvent` values.
 
 ## M4: Tool Loop Runtime
 

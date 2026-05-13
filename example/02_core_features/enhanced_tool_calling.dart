@@ -6,6 +6,7 @@ import 'dart:io';
 import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/openai.dart' as openai;
+import 'package:llm_dart_provider/llm_dart_provider.dart' as provider;
 
 /// Stable-first advanced tool calling examples.
 ///
@@ -449,7 +450,9 @@ final class _UnusedLanguageModel implements core.LanguageModel {
   }
 
   @override
-  Stream<core.TextStreamEvent> doStream(core.GenerateTextRequest request) {
+  Stream<provider.LanguageModelStreamEvent> doStream(
+    core.GenerateTextRequest request,
+  ) {
     return const Stream.empty();
   }
 }

@@ -11,6 +11,14 @@ void main() {
       expect(codec, isNot(isA<provider.TextStreamEventJsonCodec>()));
     });
 
+    test('owns event implementations separately from provider events', () {
+      final event = ai.StartEvent();
+
+      expect(event, isA<ai.TextStreamEvent>());
+      expect(event, isNot(isA<provider.TextStreamEvent>()));
+      expect(event, isNot(isA<provider.StartEvent>()));
+    });
+
     test('keeps the existing full-stream wire shape', () {
       const codec = ai.TextStreamEventJsonCodec();
 

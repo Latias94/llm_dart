@@ -133,12 +133,14 @@ final class _EchoLanguageModel implements model.LanguageModel {
   }
 
   @override
-  Stream<model.TextStreamEvent> doStream(model.GenerateTextRequest request) {
-    return Stream<model.TextStreamEvent>.fromIterable([
-      const model.TextStartEvent(id: 'text-1'),
-      const model.TextDeltaEvent(id: 'text-1', delta: 'echo'),
-      const model.TextEndEvent(id: 'text-1'),
-      const model.FinishEvent(finishReason: model.FinishReason.stop),
+  Stream<provider.LanguageModelStreamEvent> doStream(
+    model.GenerateTextRequest request,
+  ) {
+    return Stream<provider.LanguageModelStreamEvent>.fromIterable([
+      const provider.TextStartEvent(id: 'text-1'),
+      const provider.TextDeltaEvent(id: 'text-1', delta: 'echo'),
+      const provider.TextEndEvent(id: 'text-1'),
+      const provider.FinishEvent(finishReason: model.FinishReason.stop),
     ]);
   }
 }

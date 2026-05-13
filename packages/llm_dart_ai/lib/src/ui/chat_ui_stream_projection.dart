@@ -1,5 +1,4 @@
-import 'package:llm_dart_provider/llm_dart_provider.dart';
-
+import '../stream/text_stream_event.dart';
 import 'chat_ui_message.dart';
 import 'chat_ui_stream_chunk.dart';
 

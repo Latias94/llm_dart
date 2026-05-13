@@ -1,9 +1,10 @@
 import 'dart:async';
 
 import '../common/replay_stream_channel.dart';
-import 'package:llm_dart_provider/llm_dart_provider.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart' hide TextStreamEvent;
 
 import '../prompt/model_message.dart';
+import '../stream/text_stream_event.dart';
 import '../ui/chat_ui_message.dart';
 import '../ui/chat_ui_stream_chunk.dart';
 import '../ui/chat_ui_stream_projection.dart';
