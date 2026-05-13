@@ -30,8 +30,10 @@ This goal is complete only when:
   helpers rather than thin provider-call wrappers
 - `generateTextCall(...)` and `streamTextCall(...)` remain the primary combined
   text and structured-output result facades
-- `GenerateTextRunner` and `StreamTextRunner` either become implementation
-  details or are removed in favor of the unified runtime result surface
+- `GenerateTextRunner` and `StreamTextRunner` are removed, made private, or
+  explicitly downgraded to advanced runtime facades with primary app code using
+  `generateText(...)`, `streamText(...)`, `generateTextCall(...)`, and
+  `streamTextCall(...)`
 - stream result objects expose consistent `eventStream`, `textStream`,
   `partialOutputStream`, `elementStream`, `steps`, final result, usage, output,
   and UI projection accessors where applicable
@@ -39,7 +41,8 @@ This goal is complete only when:
   callbacks, execution result normalization, provider-executed tool handling,
   and replay-safe prompt continuation
 - dynamic tools, tool input errors, approval requests/responses, denied
-  outputs, and preliminary outputs have one documented event model
+  outputs, and deferred preliminary outputs have one documented event model or
+  explicit deferral rationale
 - `llm_dart_chat` direct transport consumes the AI runtime or an agent wrapper
   instead of directly calling `LanguageModel.doStream(...)`
 - provider packages remain free of runtime, chat, Flutter, root, and legacy

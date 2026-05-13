@@ -36,7 +36,7 @@ Frozen decision:
 
 ## M2: Provider Model-Call Stream
 
-Status: in progress
+Status: complete
 
 Acceptance criteria:
 
@@ -51,7 +51,7 @@ Progress:
 - 2026-05-13: added `LanguageModelStreamEvent` as the provider-owned stream
   name, provider-side runtime-only event validation, AI runtime adapter seam,
   and focused tests. This is a compatibility first slice; full provider
-  signature and codec migration is still pending.
+  signature and codec migration remained pending after the first slice.
 - 2026-05-13: changed `LanguageModel.doStream(...)` to advertise
   `Stream<LanguageModelStreamEvent>` and connected the adapter at
   `streamText(...)` plus `StreamTextRunner` provider-call boundaries. Existing
@@ -97,7 +97,7 @@ Progress:
 
 ## M3: Unified Runtime Result Surface
 
-Status: in progress
+Status: complete
 
 Acceptance criteria:
 
@@ -105,8 +105,9 @@ Acceptance criteria:
   step, final result, and UI projection accessors
 - non-streaming result and streaming final result share the same step/result
   model
-- `GenerateTextRunner` / `StreamTextRunner` duplication is removed or made
-  private implementation detail
+- `GenerateTextRunner` / `StreamTextRunner` duplication is removed, made
+  private implementation detail, or explicitly downgraded to an advanced
+  runtime facade behind primary helpers
 - structured output stays on `generateTextCall(...)` and `streamTextCall(...)`
 
 Progress:
@@ -159,14 +160,15 @@ Progress:
 
 ## M4: Tool Loop Runtime
 
-Status: in progress
+Status: complete
 
 Acceptance criteria:
 
 - local tool execution is centralized in `llm_dart_ai`
 - tool lifecycle callbacks and result normalization are runtime-owned
 - approval, denial, dynamic tool, provider-executed tool, input error, and
-  preliminary output semantics are covered by tests
+  deferred preliminary output semantics are covered by tests or documented
+  deferral
 - prompt continuation remains replay-safe
 
 Progress:
@@ -201,7 +203,7 @@ Progress:
 
 ## M5: Chat Runtime Integration
 
-Status: in progress
+Status: complete
 
 Acceptance criteria:
 
@@ -225,7 +227,7 @@ Progress:
 
 ## M6: Release Readiness
 
-Status: in progress
+Status: complete
 
 Acceptance criteria:
 

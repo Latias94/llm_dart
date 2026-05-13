@@ -1,6 +1,6 @@
 # Runtime Event And Tool Loop Boundary
 
-Status: active
+Status: complete
 Opened: 2026-05-13
 
 ## Why This Workstream Exists
@@ -214,3 +214,6 @@ This workstream should not:
 - [38-examples-and-release-readiness.md](38-examples-and-release-readiness.md)
   - Records the MCP example migration to primary runtime helpers and the
     remaining release-readiness gates.
+- [39-closure-audit.md](39-closure-audit.md)
+  - Final prompt-to-artifact audit for the provider/runtime/chat architecture
+    line and the documented deferrals that are not release blockers.
