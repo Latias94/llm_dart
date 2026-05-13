@@ -4,6 +4,7 @@ import '../prompt/model_message.dart';
 import '../stream/text_stream_event.dart';
 import 'generate_text_runner.dart';
 import 'generate_text_runner_support.dart';
+import 'generate_text_stop_condition.dart';
 import 'stream_text_runner.dart';
 
 export 'package:llm_dart_provider/llm_dart_provider.dart'
@@ -24,6 +25,7 @@ Future<GenerateTextResult> generateText({
   CallOptions callOptions = const CallOptions(),
   GenerateTextFunctionToolExecutor? functionToolExecutor,
   int maxSteps = 8,
+  Iterable<GenerateTextStopCondition> stopWhen = const [],
   GenerateTextOnStepStart? onStepStart,
   GenerateTextOnStepFinish? onStepFinish,
   GenerateTextOnToolStart? onToolStart,
@@ -41,6 +43,7 @@ Future<GenerateTextResult> generateText({
     callOptions: callOptions,
     functionToolExecutor: functionToolExecutor,
     maxSteps: maxSteps,
+    stopWhen: stopWhen,
     onStepStart: onStepStart,
     onStepFinish: onStepFinish,
     onToolStart: onToolStart,
@@ -62,6 +65,7 @@ Stream<TextStreamEvent> streamText({
   CallOptions callOptions = const CallOptions(),
   GenerateTextFunctionToolExecutor? functionToolExecutor,
   int maxSteps = 8,
+  Iterable<GenerateTextStopCondition> stopWhen = const [],
   GenerateTextOnStepStart? onStepStart,
   GenerateTextOnStepFinish? onStepFinish,
   GenerateTextOnToolStart? onToolStart,
@@ -80,6 +84,7 @@ Stream<TextStreamEvent> streamText({
     callOptions: callOptions,
     functionToolExecutor: functionToolExecutor,
     maxSteps: maxSteps,
+    stopWhen: stopWhen,
     onStepStart: onStepStart,
     onStepFinish: onStepFinish,
     onToolStart: onToolStart,

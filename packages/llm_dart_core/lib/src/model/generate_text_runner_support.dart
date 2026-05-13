@@ -7,8 +7,14 @@ export 'package:llm_dart_ai/llm_dart_ai.dart'
         GenerateTextOnStepStart,
         GenerateTextOnToolFinish,
         GenerateTextOnToolStart,
+        GenerateTextStopCondition,
+        GenerateTextStopConditionContext,
         GenerateTextRunnerSupport,
         GenerateTextToolExecution,
         GenerateTextToolExecutionFinishEvent,
         GenerateTextToolExecutionResult,
-        GenerateTextToolExecutionStartEvent;
+        GenerateTextToolExecutionStartEvent,
+        hasToolCall,
+        isLoopFinished,
+        isStepCount,
+        isStopConditionMet;

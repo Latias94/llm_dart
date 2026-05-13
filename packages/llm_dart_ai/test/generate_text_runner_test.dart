@@ -537,6 +537,50 @@ void main() {
       expect(executedCalls, hasLength(1));
     });
 
+    test('stops continuation when a stop condition is met', () async {
+      final model = _RecordingLanguageModel([
+        GenerateTextResult(
+          content: const [
+            ToolCallContentPart(
+              ToolCallContent(
+                toolCallId: 'tool-1',
+                toolName: 'weather',
+              ),
+            ),
+          ],
+          finishReason: FinishReason.toolCalls,
+        ),
+      ]);
+      final executedCalls = <GenerateTextFunctionToolExecutionRequest>[];
+
+      final runResult = await runTextGeneration(
+        model: model,
+        prompt: [
+          UserPromptMessage.text('Weather in Tokyo?'),
+        ],
+        tools: [
+          FunctionToolDefinition(
+            name: 'weather',
+            inputSchema: ToolJsonSchema.object(),
+          ),
+        ],
+        functionToolExecutor: (request) {
+          executedCalls.add(request);
+          return const GenerateTextToolExecutionResult.output({
+            'forecast': 'sunny',
+          });
+        },
+        stopWhen: [
+          isStepCount(1),
+        ],
+      );
+
+      expect(model.requests, hasLength(1));
+      expect(executedCalls, hasLength(1));
+      expect(runResult.steps, hasLength(1));
+      expect(runResult.finishReason, FinishReason.toolCalls);
+    });
+
     test('invokes lifecycle callbacks in order with shared step context',
         () async {
       final callbackOrder = <String>[];

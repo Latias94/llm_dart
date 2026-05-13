@@ -5,6 +5,7 @@ import '../prompt/prompt_normalization.dart';
 import '../prompt/prompt_validation.dart';
 import 'generate_text_run_result.dart';
 import 'generate_text_runner_support.dart';
+import 'generate_text_stop_condition.dart';
 import 'generate_text_step_result.dart';
 import 'generate_text_step_start_event.dart';
 
@@ -17,6 +18,7 @@ final class GenerateTextRunner {
   final CallOptions callOptions;
   final GenerateTextFunctionToolExecutor? functionToolExecutor;
   final int maxSteps;
+  final List<GenerateTextStopCondition> stopWhen;
   final GenerateTextOnStepStart? onStepStart;
   final GenerateTextOnStepFinish? onStepFinish;
   final GenerateTextOnToolStart? onToolStart;
@@ -34,13 +36,15 @@ final class GenerateTextRunner {
     this.callOptions = const CallOptions(),
     this.functionToolExecutor,
     this.maxSteps = 8,
+    Iterable<GenerateTextStopCondition> stopWhen = const [],
     this.onStepStart,
     this.onStepFinish,
     this.onToolStart,
     this.onToolFinish,
     this.onFinish,
     this.onError,
-  })  : prompt = resolveProviderPrompt(
+  })  : stopWhen = List.unmodifiable(stopWhen),
+        prompt = resolveProviderPrompt(
           prompt: prompt,
           messages: messages,
         ),
@@ -132,7 +136,11 @@ final class GenerateTextRunner {
           runnerName: 'GenerateTextRunner',
         );
         _throwIfCancelled();
-        if (toolContinuation == null) {
+        if (toolContinuation == null ||
+            await isStopConditionMet(
+              stopConditions: stopWhen,
+              steps: previousSteps,
+            )) {
           break;
         }
 
@@ -271,6 +279,7 @@ Future<GenerateTextRunResult> runTextGeneration({
   CallOptions callOptions = const CallOptions(),
   GenerateTextFunctionToolExecutor? functionToolExecutor,
   int maxSteps = 8,
+  Iterable<GenerateTextStopCondition> stopWhen = const [],
   GenerateTextOnStepStart? onStepStart,
   GenerateTextOnStepFinish? onStepFinish,
   GenerateTextOnToolStart? onToolStart,
@@ -288,6 +297,7 @@ Future<GenerateTextRunResult> runTextGeneration({
     callOptions: callOptions,
     functionToolExecutor: functionToolExecutor,
     maxSteps: maxSteps,
+    stopWhen: stopWhen,
     onStepStart: onStepStart,
     onStepFinish: onStepFinish,
     onToolStart: onToolStart,

@@ -13,6 +13,7 @@ import '../ui/chat_ui_stream_projection.dart';
 import 'generate_text_result_accumulator.dart';
 import 'generate_text_run_result.dart';
 import 'generate_text_runner_support.dart';
+import 'generate_text_stop_condition.dart';
 import 'generate_text_step_result.dart';
 import 'generate_text_step_start_event.dart';
 import 'language_model_stream_adapter.dart';
@@ -131,6 +132,7 @@ final class StreamTextRunner {
   final CallOptions callOptions;
   final GenerateTextFunctionToolExecutor? functionToolExecutor;
   final int maxSteps;
+  final List<GenerateTextStopCondition> stopWhen;
   final GenerateTextOnStepStart? onStepStart;
   final GenerateTextOnStepFinish? onStepFinish;
   final GenerateTextOnToolStart? onToolStart;
@@ -149,6 +151,7 @@ final class StreamTextRunner {
     this.callOptions = const CallOptions(),
     this.functionToolExecutor,
     this.maxSteps = 8,
+    Iterable<GenerateTextStopCondition> stopWhen = const [],
     this.onStepStart,
     this.onStepFinish,
     this.onToolStart,
@@ -156,7 +159,8 @@ final class StreamTextRunner {
     this.onFinish,
     this.onChunk,
     this.onError,
-  })  : prompt = resolveProviderPrompt(
+  })  : stopWhen = List.unmodifiable(stopWhen),
+        prompt = resolveProviderPrompt(
           prompt: prompt,
           messages: messages,
         ),
@@ -334,6 +338,13 @@ final class StreamTextRunner {
         activeRequest = null;
         activeStepNumber = null;
         activeAccumulator = null;
+
+        if (await isStopConditionMet(
+          stopConditions: stopWhen,
+          steps: previousSteps,
+        )) {
+          break;
+        }
 
         promptHistory = [
           ...promptHistory,
@@ -600,6 +611,7 @@ StreamTextRunResult streamTextRun({
   CallOptions callOptions = const CallOptions(),
   GenerateTextFunctionToolExecutor? functionToolExecutor,
   int maxSteps = 8,
+  Iterable<GenerateTextStopCondition> stopWhen = const [],
   GenerateTextOnStepStart? onStepStart,
   GenerateTextOnStepFinish? onStepFinish,
   GenerateTextOnToolStart? onToolStart,
@@ -618,6 +630,7 @@ StreamTextRunResult streamTextRun({
     callOptions: callOptions,
     functionToolExecutor: functionToolExecutor,
     maxSteps: maxSteps,
+    stopWhen: stopWhen,
     onStepStart: onStepStart,
     onStepFinish: onStepFinish,
     onToolStart: onToolStart,

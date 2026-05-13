@@ -35,8 +35,8 @@ Decision notes:
 - provider single-call behavior remains available through
   `LanguageModel.doGenerate(...)` and `LanguageModel.doStream(...)`
 - no public `Agent` / `ToolLoopAgent` abstraction in the first code slice
-- keep `maxSteps` initially; add composable stop conditions after the unified
-  runtime result foundation exists
+- keep `maxSteps` as the hard safety guard; use composable `stopWhen`
+  conditions for runtime loop policy
 - first implementation slice introduces provider event vocabulary, runtime
   adapters, and provider boundary tests before migrating every provider codec
 
@@ -95,7 +95,7 @@ Decision notes:
 - [x] Add tool execution start/end callbacks
 - [ ] Add tool input streaming callbacks or document why they are deferred
 - [ ] Add tool context and runtime context if they fit Dart ergonomics
-- [ ] Add stop conditions beyond `maxSteps`
+- [x] Add stop conditions beyond `maxSteps`
 - [ ] Add approval request/response continuation semantics
 - [ ] Add dynamic tool and tool input error semantics
 - [ ] Preserve provider-executed tools and deferred provider results

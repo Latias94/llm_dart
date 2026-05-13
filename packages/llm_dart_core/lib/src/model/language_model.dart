@@ -4,6 +4,7 @@ export 'package:llm_dart_ai/llm_dart_ai.dart'
         GenerateTextOptions,
         GenerateTextRequest,
         GenerateTextResult,
+        GenerateTextStopCondition,
         LanguageModel,
         generateText,
         streamText;

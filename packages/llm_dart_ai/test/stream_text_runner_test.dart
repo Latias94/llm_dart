@@ -714,6 +714,53 @@ void main() {
       expect(model.requests, hasLength(1));
       expect(executedCalls, hasLength(1));
     });
+
+    test('stops streamed continuation when a stop condition is met', () async {
+      final model = _RecordingStreamLanguageModel([
+        const [
+          ToolCallEvent(
+            toolCall: ToolCallContent(
+              toolCallId: 'tool-1',
+              toolName: 'weather',
+            ),
+          ),
+          FinishEvent(finishReason: FinishReason.toolCalls),
+        ],
+      ]);
+      final executedCalls = <GenerateTextFunctionToolExecutionRequest>[];
+
+      final run = streamTextRun(
+        model: model,
+        prompt: [
+          UserPromptMessage.text('Weather in Tokyo?'),
+        ],
+        tools: [
+          FunctionToolDefinition(
+            name: 'weather',
+            inputSchema: ToolJsonSchema.object(),
+          ),
+        ],
+        functionToolExecutor: (request) {
+          executedCalls.add(request);
+          return const GenerateTextToolExecutionResult.output({
+            'forecast': 'sunny',
+          });
+        },
+        stopWhen: [
+          isStepCount(1),
+        ],
+      );
+
+      final events = await run.toList();
+      final result = await run.result;
+
+      expect(model.requests, hasLength(1));
+      expect(executedCalls, hasLength(1));
+      expect(result.steps, hasLength(1));
+      expect(result.finishReason, FinishReason.toolCalls);
+      expect(events.whereType<ToolResultEvent>(), hasLength(1));
+      expect(events.last, isA<RunFinishEvent>());
+    });
   });
 }
 

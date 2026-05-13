@@ -53,6 +53,7 @@ export 'src/model/generate_text_runner_support.dart'
         GenerateTextToolExecutionResult,
         GenerateTextToolExecutionStartEvent,
         StreamTextOnChunk;
+export 'src/model/generate_text_stop_condition.dart';
 export 'src/model/generate_text_step_result.dart';
 export 'src/model/generate_text_step_start_event.dart';
 export 'src/model/language_model.dart' show generateText, streamText;

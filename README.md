@@ -653,6 +653,10 @@ Runner telemetry stays callback-shaped: `runTextGeneration(...)` and
 `streamTextRun(...)` expose step, chunk, finish, and error callbacks that can be
 bridged into your logger or tracing system.
 
+For tool-loop policy, use `stopWhen` with `isStepCount(...)`,
+`isLoopFinished()`, `hasToolCall(...)`, or a custom
+`GenerateTextStopCondition`. Keep `maxSteps` as a hard runaway-loop guard.
+
 ```dart
 import 'package:llm_dart/core.dart' as core;
 

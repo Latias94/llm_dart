@@ -177,6 +177,10 @@ Progress:
 - 2026-05-13: normalized local function tool execution into
   `GenerateTextToolExecution` so streaming tool result events, step results,
   and continuation prompt replay use the same runtime-owned execution result.
+- 2026-05-13: added composable runtime `stopWhen` conditions
+  (`isStepCount`, `isLoopFinished`, `hasToolCall`, and custom predicates) to
+  the primary text runtime, advanced runners, and structured-output facades,
+  leaving `maxSteps` as the hard safety guard.
 
 ## M5: Chat Runtime Integration
 

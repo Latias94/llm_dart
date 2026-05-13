@@ -8,6 +8,8 @@ import '../ui/chat_ui_message.dart';
 import '../ui/chat_ui_stream_chunk.dart';
 import '../ui/chat_ui_stream_projection.dart';
 import 'generate_text_result_accumulator.dart';
+import 'generate_text_runner_support.dart';
+import 'generate_text_stop_condition.dart';
 import 'language_model.dart';
 import 'output_spec.dart';
 import 'stream_result_foundation.dart';
@@ -206,6 +208,9 @@ Future<GenerateTextCallResult<T>> generateTextCall<T>({
   ToolChoice? toolChoice,
   GenerateTextOptions options = const GenerateTextOptions(),
   CallOptions callOptions = const CallOptions(),
+  GenerateTextFunctionToolExecutor? functionToolExecutor,
+  int maxSteps = 8,
+  Iterable<GenerateTextStopCondition> stopWhen = const [],
 }) async {
   if (outputSpec case final spec?) {
     final outputResult = await generateOutput(
@@ -217,6 +222,9 @@ Future<GenerateTextCallResult<T>> generateTextCall<T>({
       toolChoice: toolChoice,
       options: options,
       callOptions: callOptions,
+      functionToolExecutor: functionToolExecutor,
+      maxSteps: maxSteps,
+      stopWhen: stopWhen,
     );
     return GenerateTextCallResult<T>._(
       result: outputResult.result,
@@ -233,6 +241,9 @@ Future<GenerateTextCallResult<T>> generateTextCall<T>({
     toolChoice: toolChoice,
     options: options,
     callOptions: callOptions,
+    functionToolExecutor: functionToolExecutor,
+    maxSteps: maxSteps,
+    stopWhen: stopWhen,
   );
 
   return GenerateTextCallResult<T>._(
@@ -250,6 +261,9 @@ StreamTextCallResult<T> streamTextCall<T>({
   ToolChoice? toolChoice,
   GenerateTextOptions options = const GenerateTextOptions(),
   CallOptions callOptions = const CallOptions(),
+  GenerateTextFunctionToolExecutor? functionToolExecutor,
+  int maxSteps = 8,
+  Iterable<GenerateTextStopCondition> stopWhen = const [],
 }) {
   if (outputSpec case final spec?) {
     return StreamTextCallResult<T>.structured(
@@ -262,6 +276,9 @@ StreamTextCallResult<T> streamTextCall<T>({
         toolChoice: toolChoice,
         options: options,
         callOptions: callOptions,
+        functionToolExecutor: functionToolExecutor,
+        maxSteps: maxSteps,
+        stopWhen: stopWhen,
       ),
     );
   }
@@ -275,6 +292,9 @@ StreamTextCallResult<T> streamTextCall<T>({
       toolChoice: toolChoice,
       options: options,
       callOptions: callOptions,
+      functionToolExecutor: functionToolExecutor,
+      maxSteps: maxSteps,
+      stopWhen: stopWhen,
     ),
   );
 }

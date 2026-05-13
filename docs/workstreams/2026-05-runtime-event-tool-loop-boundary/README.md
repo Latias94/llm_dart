@@ -185,3 +185,6 @@ This workstream should not:
 - [29-runner-helper-migration-path.md](29-runner-helper-migration-path.md)
   - Freezes `runTextGeneration(...)` / `streamTextRun(...)` as advanced
     runtime result facades rather than primary app-facing helpers.
+- [30-runtime-stop-conditions.md](30-runtime-stop-conditions.md)
+  - Adds composable `stopWhen` runtime stop conditions while keeping
+    `maxSteps` as the hard safety guard.

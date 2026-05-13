@@ -98,6 +98,67 @@ void main() {
         },
       );
     });
+
+    test('structured output can run through the runtime tool loop', () async {
+      final model = _RecordingLanguageModel(
+        generateResults: [
+          GenerateTextResult(
+            content: const [
+              ToolCallContentPart(
+                ToolCallContent(
+                  toolCallId: 'tool-1',
+                  toolName: 'weather',
+                  input: {
+                    'city': 'Tokyo',
+                  },
+                ),
+              ),
+            ],
+            finishReason: FinishReason.toolCalls,
+          ),
+          GenerateTextResult(
+            content: const [
+              TextContentPart('{"value":"sunny"}'),
+            ],
+            finishReason: FinishReason.stop,
+          ),
+        ],
+      );
+
+      final result = await generateTextCall<String>(
+        model: model,
+        prompt: [
+          UserPromptMessage.text('Return weather JSON.'),
+        ],
+        tools: [
+          FunctionToolDefinition(
+            name: 'weather',
+            inputSchema: ToolJsonSchema.object(),
+          ),
+        ],
+        functionToolExecutor: (_) {
+          return const GenerateTextToolExecutionResult.output({
+            'forecast': 'sunny',
+          });
+        },
+        outputSpec: ObjectOutputSpec<String>(
+          schema: JsonSchema.object(
+            properties: const {
+              'value': {'type': 'string'},
+            },
+            required: const ['value'],
+          ),
+          decode: (json) => json['value']! as String,
+        ),
+        stopWhen: [
+          isLoopFinished(),
+        ],
+      );
+
+      expect(model.requests, hasLength(2));
+      expect(result.output, 'sunny');
+      expect(result.text, '{"value":"sunny"}');
+    });
   });
 
   group('streamTextCall', () {
@@ -264,18 +325,31 @@ void main() {
 }
 
 final class _RecordingLanguageModel implements LanguageModel {
-  final GenerateTextResult generateResult;
+  final List<GenerateTextResult> _generateResults;
   final List<TextStreamEvent> streamEvents;
+  final List<GenerateTextRequest> requests = [];
   GenerateTextRequest? lastRequest;
 
   _RecordingLanguageModel({
-    required this.generateResult,
+    GenerateTextResult? generateResult,
+    List<GenerateTextResult>? generateResults,
     this.streamEvents = const [
       FinishEvent(
         finishReason: FinishReason.stop,
       ),
     ],
-  });
+  }) : _generateResults = List<GenerateTextResult>.from(
+          generateResults ??
+              [
+                if (generateResult != null)
+                  generateResult
+                else
+                  GenerateTextResult(
+                    content: const [],
+                    finishReason: FinishReason.stop,
+                  ),
+              ],
+        );
 
   @override
   String get modelId => 'test-model';
@@ -286,7 +360,12 @@ final class _RecordingLanguageModel implements LanguageModel {
   @override
   Future<GenerateTextResult> doGenerate(GenerateTextRequest request) async {
     lastRequest = request;
-    return generateResult;
+    requests.add(request);
+    if (_generateResults.isEmpty) {
+      throw StateError('No more fake generate results configured.');
+    }
+
+    return _generateResults.removeAt(0);
   }
 
   @override
@@ -294,6 +373,7 @@ final class _RecordingLanguageModel implements LanguageModel {
     GenerateTextRequest request,
   ) async* {
     lastRequest = request;
+    requests.add(request);
     for (final event in streamEvents) {
       yield textStreamEventToProvider(event);
     }

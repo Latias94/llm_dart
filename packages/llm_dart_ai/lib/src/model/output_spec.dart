@@ -11,6 +11,8 @@ import 'package:llm_dart_provider/llm_dart_provider.dart'
     hide TextDeltaEvent, TextEndEvent;
 
 import 'generate_text_result_accumulator.dart';
+import 'generate_text_runner_support.dart';
+import 'generate_text_stop_condition.dart';
 import 'language_model.dart';
 import 'stream_result_foundation.dart';
 
@@ -594,6 +596,9 @@ Future<GenerateObjectResult<T>> generateObject<T>({
   ToolChoice? toolChoice,
   GenerateTextOptions options = const GenerateTextOptions(),
   CallOptions callOptions = const CallOptions(),
+  GenerateTextFunctionToolExecutor? functionToolExecutor,
+  int maxSteps = 8,
+  Iterable<GenerateTextStopCondition> stopWhen = const [],
 }) {
   return generateOutput<T>(
     model: model,
@@ -609,6 +614,9 @@ Future<GenerateObjectResult<T>> generateObject<T>({
     toolChoice: toolChoice,
     options: options,
     callOptions: callOptions,
+    functionToolExecutor: functionToolExecutor,
+    maxSteps: maxSteps,
+    stopWhen: stopWhen,
   );
 }
 
@@ -624,6 +632,9 @@ StreamObjectResult<T> streamObject<T>({
   ToolChoice? toolChoice,
   GenerateTextOptions options = const GenerateTextOptions(),
   CallOptions callOptions = const CallOptions(),
+  GenerateTextFunctionToolExecutor? functionToolExecutor,
+  int maxSteps = 8,
+  Iterable<GenerateTextStopCondition> stopWhen = const [],
 }) {
   return streamOutputResult<T>(
     model: model,
@@ -639,6 +650,9 @@ StreamObjectResult<T> streamObject<T>({
     toolChoice: toolChoice,
     options: options,
     callOptions: callOptions,
+    functionToolExecutor: functionToolExecutor,
+    maxSteps: maxSteps,
+    stopWhen: stopWhen,
   );
 }
 
@@ -651,6 +665,9 @@ Future<GenerateOutputResult<T>> generateOutput<T>({
   ToolChoice? toolChoice,
   GenerateTextOptions options = const GenerateTextOptions(),
   CallOptions callOptions = const CallOptions(),
+  GenerateTextFunctionToolExecutor? functionToolExecutor,
+  int maxSteps = 8,
+  Iterable<GenerateTextStopCondition> stopWhen = const [],
 }) async {
   if (options.responseFormat != null) {
     throw ArgumentError(
@@ -669,6 +686,9 @@ Future<GenerateOutputResult<T>> generateOutput<T>({
       outputSpec.responseFormat,
     ),
     callOptions: callOptions,
+    functionToolExecutor: functionToolExecutor,
+    maxSteps: maxSteps,
+    stopWhen: stopWhen,
   );
 
   final context = StructuredOutputContext(
@@ -708,6 +728,9 @@ Stream<OutputStreamEvent<T>> streamOutput<T>({
   ToolChoice? toolChoice,
   GenerateTextOptions options = const GenerateTextOptions(),
   CallOptions callOptions = const CallOptions(),
+  GenerateTextFunctionToolExecutor? functionToolExecutor,
+  int maxSteps = 8,
+  Iterable<GenerateTextStopCondition> stopWhen = const [],
 }) async* {
   if (options.responseFormat != null) {
     throw ArgumentError(
@@ -727,6 +750,9 @@ Stream<OutputStreamEvent<T>> streamOutput<T>({
       outputSpec.responseFormat,
     ),
     callOptions: callOptions,
+    functionToolExecutor: functionToolExecutor,
+    maxSteps: maxSteps,
+    stopWhen: stopWhen,
   );
 
   Object? lastPartialOutput;
@@ -786,6 +812,9 @@ StreamOutputResult<T> streamOutputResult<T>({
   ToolChoice? toolChoice,
   GenerateTextOptions options = const GenerateTextOptions(),
   CallOptions callOptions = const CallOptions(),
+  GenerateTextFunctionToolExecutor? functionToolExecutor,
+  int maxSteps = 8,
+  Iterable<GenerateTextStopCondition> stopWhen = const [],
 }) {
   return StreamOutputResult<T>._(
     streamOutput(
@@ -797,6 +826,9 @@ StreamOutputResult<T> streamOutputResult<T>({
       toolChoice: toolChoice,
       options: options,
       callOptions: callOptions,
+      functionToolExecutor: functionToolExecutor,
+      maxSteps: maxSteps,
+      stopWhen: stopWhen,
     ),
   );
 }

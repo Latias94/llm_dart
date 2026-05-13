@@ -54,6 +54,10 @@ Use `runTextGeneration(...)`, `streamTextRun(...)`, `GenerateTextRunner`, and
 They are advanced runtime result facades, not the primary teaching path for
 normal text generation.
 
+Use `stopWhen` with `isStepCount(...)`, `isLoopFinished()`,
+`hasToolCall(...)`, or a custom `GenerateTextStopCondition` when a tool loop
+needs application-level stop policy. Keep `maxSteps` as the hard safety guard.
+
 Provider-specific input behavior should stay in typed provider options or
 provider-owned prompt part options. Provider metadata is response-side
 observation and replay data, not ordinary request customization.
