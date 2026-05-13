@@ -164,13 +164,6 @@ final class GenerateTextRunnerSupport {
     final resolvedToolCallIds = {
       for (final toolResult in step.toolResults) toolResult.toolCallId,
     };
-    final unresolvedProviderExecutedToolCalls = step.toolCalls
-        .where(
-          (toolCall) =>
-              toolCall.providerExecuted &&
-              !resolvedToolCallIds.contains(toolCall.toolCallId),
-        )
-        .toList(growable: false);
     final clientToolCalls = step.toolCalls
         .where(
           (toolCall) =>
@@ -185,22 +178,14 @@ final class GenerateTextRunnerSupport {
       );
     }
 
-    if (clientToolCalls.isEmpty) {
-      if (step.toolApprovalRequests.isNotEmpty ||
-          unresolvedProviderExecutedToolCalls.isNotEmpty) {
-        return null;
-      }
+    if (step.toolApprovalRequests.isNotEmpty) {
+      return null;
+    }
 
+    if (clientToolCalls.isEmpty) {
       return step.toolResults.isEmpty
           ? null
           : const <GenerateTextToolExecution>[];
-    }
-
-    if (step.toolApprovalRequests.isNotEmpty) {
-      throw UnsupportedError(
-        '$runnerName cannot continue while provider tool approval requests '
-        'are waiting for approval responses.',
-      );
     }
 
     final executions = <GenerateTextToolExecution>[];

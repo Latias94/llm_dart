@@ -590,6 +590,69 @@ void main() {
       expect(toolResult.isError, isTrue);
     });
 
+    test('stops when provider approval is waiting even with client tools',
+        () async {
+      final model = _RecordingLanguageModel([
+        GenerateTextResult(
+          content: const [
+            ToolCallContentPart(
+              ToolCallContent(
+                toolCallId: 'server-tool-1',
+                toolName: 'computer',
+                input: {
+                  'action': 'click',
+                },
+                providerExecuted: true,
+              ),
+            ),
+            ToolApprovalRequestContentPart(
+              ToolApprovalRequestContent(
+                approvalId: 'approval-1',
+                toolCallId: 'server-tool-1',
+              ),
+            ),
+            ToolCallContentPart(
+              ToolCallContent(
+                toolCallId: 'client-tool-1',
+                toolName: 'weather',
+                input: {
+                  'city': 'Tokyo',
+                },
+              ),
+            ),
+          ],
+          finishReason: FinishReason.toolCalls,
+        ),
+      ]);
+      final executedCalls = <GenerateTextFunctionToolExecutionRequest>[];
+
+      final runResult = await runTextGeneration(
+        model: model,
+        prompt: [
+          UserPromptMessage.text('Approve browser and check weather.'),
+        ],
+        tools: [
+          FunctionToolDefinition(
+            name: 'weather',
+            inputSchema: ToolJsonSchema.object(),
+          ),
+        ],
+        functionToolExecutor: (request) {
+          executedCalls.add(request);
+          return const GenerateTextToolExecutionResult.output({
+            'forecast': 'sunny',
+          });
+        },
+      );
+
+      expect(executedCalls, isEmpty);
+      expect(model.requests, hasLength(1));
+      expect(runResult.finishReason, FinishReason.toolCalls);
+      expect(runResult.toolApprovalRequests.single.approvalId, 'approval-1');
+      expect(runResult.toolCalls, hasLength(2));
+      expect(runResult.toolResults, isEmpty);
+    });
+
     test('stops after a tool-call step when no function executor is provided',
         () async {
       final model = _RecordingLanguageModel([

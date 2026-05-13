@@ -786,6 +786,71 @@ void main() {
       expect(steps.first.toolResults.single.isError, isTrue);
     });
 
+    test('stops when provider approval is waiting even with client tools',
+        () async {
+      final model = _RecordingStreamLanguageModel([
+        const [
+          ToolCallEvent(
+            toolCall: ToolCallContent(
+              toolCallId: 'server-tool-1',
+              toolName: 'computer',
+              input: {
+                'action': 'click',
+              },
+              providerExecuted: true,
+            ),
+          ),
+          ToolApprovalRequestEvent(
+            approvalId: 'approval-1',
+            toolCallId: 'server-tool-1',
+          ),
+          ToolCallEvent(
+            toolCall: ToolCallContent(
+              toolCallId: 'client-tool-1',
+              toolName: 'weather',
+              input: {
+                'city': 'Tokyo',
+              },
+            ),
+          ),
+          FinishEvent(finishReason: FinishReason.toolCalls),
+        ],
+      ]);
+      final executedCalls = <GenerateTextFunctionToolExecutionRequest>[];
+
+      final run = streamTextRun(
+        model: model,
+        prompt: [
+          UserPromptMessage.text('Approve browser and check weather.'),
+        ],
+        tools: [
+          FunctionToolDefinition(
+            name: 'weather',
+            inputSchema: ToolJsonSchema.object(),
+          ),
+        ],
+        functionToolExecutor: (request) {
+          executedCalls.add(request);
+          return const GenerateTextToolExecutionResult.output({
+            'forecast': 'sunny',
+          });
+        },
+      );
+
+      final events = await run.toList();
+      final steps = await run.stepStream.toList();
+      final result = await run.result;
+
+      expect(executedCalls, isEmpty);
+      expect(model.requests, hasLength(1));
+      expect(result.finishReason, FinishReason.toolCalls);
+      expect(result.toolApprovalRequests.single.approvalId, 'approval-1');
+      expect(result.toolCalls, hasLength(2));
+      expect(result.toolResults, isEmpty);
+      expect(steps, hasLength(1));
+      expect(events.whereType<ToolResultEvent>(), isEmpty);
+    });
+
     test('throws when streamed continuation exceeds maxSteps', () async {
       final model = _RecordingStreamLanguageModel([
         const [

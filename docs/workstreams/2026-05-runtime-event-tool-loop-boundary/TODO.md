@@ -96,7 +96,7 @@ Decision notes:
 - [x] Add tool input streaming callbacks or document why they are deferred
 - [ ] Add tool context and runtime context if they fit Dart ergonomics
 - [x] Add stop conditions beyond `maxSteps`
-- [ ] Add approval request/response continuation semantics
+- [x] Add approval request/response continuation semantics
 - [x] Add dynamic tool semantics
 - [x] Add tool input error semantics
 - [x] Preserve provider-executed tools and deferred provider results

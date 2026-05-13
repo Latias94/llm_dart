@@ -191,6 +191,9 @@ Progress:
 - 2026-05-14: made provider-emitted tool input errors replayable by folding
   them into step/run results as tool error results and skipping local execution
   for tool calls that already have results in the same step.
+- 2026-05-14: froze approval continuation ownership: runtime steps with
+  pending provider approval requests now stop as observable state instead of
+  throwing, while `llm_dart_chat` owns approval responses and continuation.
 
 ## M5: Chat Runtime Integration
 
