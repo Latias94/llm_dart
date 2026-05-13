@@ -118,6 +118,7 @@ Decision notes:
 - [x] Run root package boundary guards
 - [ ] Run focused provider tests affected by event changes
 - [x] Run `llm_dart_provider` stream serialization tests
+- [x] Run `llm_dart_core` prompt replay and runner compatibility tests
 - [ ] Run `llm_dart_ai` runtime, output, prompt, and UI projection tests
 - [ ] Run `llm_dart_chat` direct transport and tool execution tests
 - [ ] Run examples analysis

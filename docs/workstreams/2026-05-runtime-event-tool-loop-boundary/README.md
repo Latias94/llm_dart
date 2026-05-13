@@ -113,3 +113,6 @@ This workstream should not:
 - [06-provider-stream-serialization-guard.md](06-provider-stream-serialization-guard.md)
   - Provider-owned stream JSON codec plus source guards that prevent focused
     providers from coupling back to runtime stream names.
+- [07-core-prompt-replay-test-alignment.md](07-core-prompt-replay-test-alignment.md)
+  - Core compatibility tests aligned with typed replay options instead of
+    removed prompt-side `providerMetadata` fields.

@@ -90,7 +90,7 @@ void main() {
       expect(toolMessage.parts[1], isA<ToolResultPromptPart>());
     });
 
-    test('round-trips replayable prompt parts and part-level metadata', () {
+    test('round-trips replayable prompt parts and typed replay options', () {
       const codec = PromptJsonCodec();
 
       final encoded = codec.encodeMessages([
@@ -98,21 +98,25 @@ void main() {
           parts: const [
             ReasoningPromptPart(
               'Planning the answer.',
-              providerMetadata: ProviderMetadata({
-                'google': {
-                  'thoughtSignature': 'sig_reasoning',
-                },
-              }),
+              providerOptions: ProviderReplayPromptPartOptions(
+                ProviderMetadata({
+                  'google': {
+                    'thoughtSignature': 'sig_reasoning',
+                  },
+                }),
+              ),
             ),
             ReasoningFilePromptPart(
               mediaType: 'image/png',
               filename: 'thought.png',
               data: FileBytesData.constBytes([1, 2, 3]),
-              providerMetadata: ProviderMetadata({
-                'google': {
-                  'thoughtSignature': 'sig_reasoning_file',
-                },
-              }),
+              providerOptions: ProviderReplayPromptPartOptions(
+                ProviderMetadata({
+                  'google': {
+                    'thoughtSignature': 'sig_reasoning_file',
+                  },
+                }),
+              ),
             ),
             CustomPromptPart(
               kind: 'openai.compaction',
@@ -120,11 +124,13 @@ void main() {
                 'type': 'compaction',
                 'id': 'cmp_1',
               },
-              providerMetadata: ProviderMetadata({
-                'openai': {
-                  'itemId': 'cmp_1',
-                },
-              }),
+              providerOptions: ProviderReplayPromptPartOptions(
+                ProviderMetadata({
+                  'openai': {
+                    'itemId': 'cmp_1',
+                  },
+                }),
+              ),
             ),
           ],
         ),
@@ -137,7 +143,8 @@ void main() {
       final reasoningPart = decoded.parts[0] as ReasoningPromptPart;
       expect(reasoningPart.text, 'Planning the answer.');
       expect(
-        reasoningPart.providerMetadata!['google'],
+        providerReplayMetadataFromOptions(
+            reasoningPart.providerOptions)!['google'],
         containsPair('thoughtSignature', 'sig_reasoning'),
       );
 
@@ -146,7 +153,8 @@ void main() {
       expect(reasoningFilePart.filename, 'thought.png');
       expect(reasoningFilePart.bytes, [1, 2, 3]);
       expect(
-        reasoningFilePart.providerMetadata!['google'],
+        providerReplayMetadataFromOptions(
+            reasoningFilePart.providerOptions)!['google'],
         containsPair('thoughtSignature', 'sig_reasoning_file'),
       );
 
@@ -157,7 +165,8 @@ void main() {
         'id': 'cmp_1',
       });
       expect(
-        customPart.providerMetadata!['openai'],
+        providerReplayMetadataFromOptions(
+            customPart.providerOptions)!['openai'],
         containsPair('itemId', 'cmp_1'),
       );
     });
@@ -223,11 +232,13 @@ void main() {
                 parts: [
                   TextToolOutputContentPart(
                     'forecast',
-                    providerMetadata: const ProviderMetadata({
-                      'anthropic': {
-                        'blockId': 'text_1',
-                      },
-                    }),
+                    providerOptions: const ProviderReplayPromptPartOptions(
+                      ProviderMetadata({
+                        'anthropic': {
+                          'blockId': 'text_1',
+                        },
+                      }),
+                    ),
                   ),
                   JsonToolOutputContentPart({
                     'temperature': 28,
@@ -236,11 +247,13 @@ void main() {
                     mediaType: 'image/png',
                     filename: 'preview.png',
                     data: FileBytesData.constBytes([4, 5, 6]),
-                    providerMetadata: ProviderMetadata({
-                      'openai': {
-                        'fileId': 'file_123',
-                      },
-                    }),
+                    providerOptions: ProviderReplayPromptPartOptions(
+                      ProviderMetadata({
+                        'openai': {
+                          'fileId': 'file_123',
+                        },
+                      }),
+                    ),
                   ),
                   const CustomToolOutputContentPart(
                     kind: 'openai.computer_screenshot',
@@ -298,14 +311,16 @@ void main() {
       );
       final contentText = contentOutput.parts[0] as TextToolOutputContentPart;
       expect(
-        contentText.providerMetadata!['anthropic'],
+        providerReplayMetadataFromOptions(
+            contentText.providerOptions)!['anthropic'],
         containsPair('blockId', 'text_1'),
       );
       final contentFile = contentOutput.parts[2] as FileToolOutputContentPart;
       expect(contentFile.filename, 'preview.png');
       expect(contentFile.bytes, [4, 5, 6]);
       expect(
-        contentFile.providerMetadata!['openai'],
+        providerReplayMetadataFromOptions(
+            contentFile.providerOptions)!['openai'],
         containsPair('fileId', 'file_123'),
       );
       final custom = contentOutput.parts[3] as CustomToolOutputContentPart;
@@ -400,7 +415,6 @@ void main() {
 
       final assistant = decoded.single as AssistantPromptMessage;
       final toolCall = assistant.parts.single as ToolCallPromptPart;
-      expect(toolCall.providerMetadata, isNull);
       expect(
         toolCall.providerOptions,
         isA<ProviderReplayPromptPartOptions>().having(

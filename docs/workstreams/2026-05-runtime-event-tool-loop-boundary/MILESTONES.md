@@ -65,6 +65,9 @@ Progress:
   serialization name, kept the existing envelope wire shape for compatibility,
   and added guards so provider serialization and focused provider libs reject
   runtime-only stream semantics.
+- 2026-05-13: aligned `llm_dart_core` prompt serialization and runner
+  compatibility tests with typed replay options, removing stale prompt-side
+  `providerMetadata` expectations from the architecture line.
 
 ## M3: Unified Runtime Result Surface
 

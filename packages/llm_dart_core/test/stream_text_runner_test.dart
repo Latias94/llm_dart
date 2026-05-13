@@ -167,7 +167,6 @@ void main() {
           assistantMessage.parts.single as ToolCallPromptPart;
       expect(replayedToolCall.toolCallId, 'tool-1');
       expect(replayedToolCall.toolName, 'weather');
-      expect(replayedToolCall.providerMetadata, isNull);
       expect(
         replayedToolCall.providerOptions,
         isA<ProviderReplayPromptPartOptions>().having(
@@ -189,7 +188,6 @@ void main() {
         'forecast': 'sunny',
       });
       expect(toolResult.isError, isFalse);
-      expect(toolResult.providerMetadata, isNull);
       expect(
         toolResult.providerOptions,
         isA<ProviderReplayPromptPartOptions>().having(
