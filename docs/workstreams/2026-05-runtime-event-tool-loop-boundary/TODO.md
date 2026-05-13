@@ -77,7 +77,7 @@ Decision notes:
 - [ ] Replace duplicate `StreamTextRunResult`, `StreamTextCallResult`, and
   `StreamOutputResult` plumbing with one consistent result foundation
 - [ ] Preserve `partialOutputStream` and `elementStream`
-- [ ] Add `textStream` and UI projection accessors to the streaming result
+- [x] Add `textStream` and UI projection accessors to the streaming result
 - [ ] Decide migration path for `runTextGeneration(...)` and `streamTextRun(...)`
 
 ## Tool Loop
@@ -124,7 +124,7 @@ Decision notes:
 - [x] Run `llm_dart_core` prompt replay and runner compatibility tests
 - [x] Run `llm_dart_ai` stream serialization ownership tests
 - [x] Run `llm_dart_ai` stream event export ownership tests
-- [ ] Run `llm_dart_ai` runtime, output, prompt, and UI projection tests
+- [x] Run `llm_dart_ai` runtime, output, prompt, and UI projection tests
 - [ ] Run `llm_dart_chat` direct transport and tool execution tests
 - [ ] Run examples analysis
 - [ ] Run consumer smoke

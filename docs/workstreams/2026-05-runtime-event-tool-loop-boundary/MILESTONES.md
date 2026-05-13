@@ -83,7 +83,7 @@ Progress:
 
 ## M3: Unified Runtime Result Surface
 
-Status: pending
+Status: in progress
 
 Acceptance criteria:
 
@@ -94,6 +94,13 @@ Acceptance criteria:
 - `GenerateTextRunner` / `StreamTextRunner` duplication is removed or made
   private implementation detail
 - structured output stays on `generateTextCall(...)` and `streamTextCall(...)`
+
+Progress:
+
+- 2026-05-13: added consistent `textStream` / `chatUiStream(...)` projection
+  accessors across `StreamTextRunResult`, `StreamTextCallResult`, and
+  `StreamOutputResult` while preserving existing result types and structured
+  output side channels.
 
 ## M4: Tool Loop Runtime
 

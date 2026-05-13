@@ -4,6 +4,9 @@ import '../common/replay_stream_channel.dart';
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import '../prompt/model_message.dart';
+import '../ui/chat_ui_message.dart';
+import '../ui/chat_ui_stream_chunk.dart';
+import '../ui/chat_ui_stream_projection.dart';
 import 'generate_text_result_accumulator.dart';
 import 'language_model.dart';
 import 'output_spec.dart';
@@ -142,6 +145,23 @@ final class StreamTextCallResult<T> extends StreamView<TextStreamEvent> {
   }
 
   Stream<TextStreamEvent> get eventStream => this;
+
+  Stream<TextStreamEvent> get textStream => eventStream;
+
+  Stream<ChatUiStreamChunk> chatUiStream({
+    String? messageId,
+    Map<String, Object?> messageMetadata = const {},
+    Iterable<DataUiPart<Object?>> leadingDataParts = const [],
+    Map<String, Object?> finalMessageMetadata = const {},
+  }) {
+    return projectTextStreamEventStream(
+      eventStream,
+      messageId: messageId,
+      messageMetadata: messageMetadata,
+      leadingDataParts: leadingDataParts,
+      finalMessageMetadata: finalMessageMetadata,
+    );
+  }
 
   Stream<TElement> elementStream<TElement>() => _elementStream.cast<TElement>();
 

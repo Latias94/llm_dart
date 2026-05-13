@@ -701,6 +701,11 @@ void main() {
       );
       expect(textEvents.whereType<TextDeltaEvent>().length, 2);
 
+      final uiChunks =
+          await streamResult.chatUiStream(messageId: 'assistant-1').toList();
+      expect(uiChunks.first, isA<ChatUiMessageStartChunk>());
+      expect(uiChunks.whereType<ChatUiEventChunk>(), hasLength(6));
+
       final outputEvents = await streamResult.eventStream.toList();
       expect(
           outputEvents.whereType<OutputPartialEvent<List<String>>>().length, 2);

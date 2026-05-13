@@ -130,6 +130,19 @@ void main() {
 
       final events = await stream.toList();
       expect(events, hasLength(6));
+      expect(await stream.textStream.toList(), hasLength(6));
+      expect(
+        await stream.chatUiStream(messageId: 'assistant-1').toList(),
+        [
+          isA<ChatUiMessageStartChunk>(),
+          isA<ChatUiEventChunk>(),
+          isA<ChatUiEventChunk>(),
+          isA<ChatUiEventChunk>(),
+          isA<ChatUiEventChunk>(),
+          isA<ChatUiEventChunk>(),
+          isA<ChatUiEventChunk>(),
+        ],
+      );
       expect(await stream.text, 'plain text');
       expect((await stream.result).responseId, 'resp_stream_text_call');
       expect(stream.hasOutput, isFalse);

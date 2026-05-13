@@ -6,6 +6,9 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 import '../prompt/model_message.dart';
 import '../prompt/prompt_normalization.dart';
 import '../prompt/prompt_validation.dart';
+import '../ui/chat_ui_message.dart';
+import '../ui/chat_ui_stream_chunk.dart';
+import '../ui/chat_ui_stream_projection.dart';
 import 'generate_text_result_accumulator.dart';
 import 'generate_text_run_result.dart';
 import 'generate_text_runner_support.dart';
@@ -24,6 +27,23 @@ final class StreamTextRunResult extends StreamView<TextStreamEvent> {
   }) : super(stream);
 
   Stream<TextStreamEvent> get eventStream => this;
+
+  Stream<TextStreamEvent> get textStream => eventStream;
+
+  Stream<ChatUiStreamChunk> chatUiStream({
+    String? messageId,
+    Map<String, Object?> messageMetadata = const {},
+    Iterable<DataUiPart<Object?>> leadingDataParts = const [],
+    Map<String, Object?> finalMessageMetadata = const {},
+  }) {
+    return projectTextStreamEventStream(
+      eventStream,
+      messageId: messageId,
+      messageMetadata: messageMetadata,
+      leadingDataParts: leadingDataParts,
+      finalMessageMetadata: finalMessageMetadata,
+    );
+  }
 
   Future<List<GenerateTextStepResult>> get steps => result.then(
         (value) => value.steps,

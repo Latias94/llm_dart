@@ -4,6 +4,9 @@ import 'dart:convert';
 import '../common/partial_json.dart';
 import '../common/replay_stream_channel.dart';
 import '../prompt/model_message.dart';
+import '../ui/chat_ui_message.dart';
+import '../ui/chat_ui_stream_chunk.dart';
+import '../ui/chat_ui_stream_projection.dart';
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'generate_text_result_accumulator.dart';
@@ -498,6 +501,21 @@ final class StreamOutputResult<T> {
 
   Stream<TElement> elementStream<TElement>() =>
       _elementChannel.stream.cast<TElement>();
+
+  Stream<ChatUiStreamChunk> chatUiStream({
+    String? messageId,
+    Map<String, Object?> messageMetadata = const {},
+    Iterable<DataUiPart<Object?>> leadingDataParts = const [],
+    Map<String, Object?> finalMessageMetadata = const {},
+  }) {
+    return projectTextStreamEventStream(
+      textStream,
+      messageId: messageId,
+      messageMetadata: messageMetadata,
+      leadingDataParts: leadingDataParts,
+      finalMessageMetadata: finalMessageMetadata,
+    );
+  }
 
   Future<GenerateOutputResult<T>> get result => _resultCompleter.future;
 

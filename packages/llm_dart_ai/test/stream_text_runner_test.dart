@@ -75,6 +75,17 @@ void main() {
 
       expect(events, hasLength(4));
       expect(events.whereType<TextDeltaEvent>().single.delta, 'Runner output');
+      expect(await run.textStream.toList(), hasLength(4));
+
+      final uiChunks = await run.chatUiStream(
+        messageId: 'assistant-1',
+        finalMessageMetadata: const {
+          'done': true,
+        },
+      ).toList();
+      expect(uiChunks.first, isA<ChatUiMessageStartChunk>());
+      expect(uiChunks.whereType<ChatUiEventChunk>(), hasLength(4));
+      expect(uiChunks.last, isA<ChatUiMessageFinishChunk>());
 
       expect(steps, hasLength(1));
       expect(steps.single.text, 'Runner output');

@@ -128,3 +128,6 @@ This workstream should not:
 - [11-runtime-only-provider-event-guard.md](11-runtime-only-provider-event-guard.md)
   - Runtime-only event classes are marked in provider compatibility code and
     focused provider packages are guarded from emitting them.
+- [12-streaming-result-projection-accessors.md](12-streaming-result-projection-accessors.md)
+  - Streaming text, text-call, and structured-output results expose consistent
+    text stream and chat UI projection accessors.
