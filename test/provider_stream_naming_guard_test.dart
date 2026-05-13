@@ -140,10 +140,8 @@ void main() {
       expect(violations, isEmpty);
     });
 
-    test('AI runtime legacy stream codec usage stays isolated', () {
+    test('AI runtime does not use the legacy provider stream codec', () {
       final aiLib = Directory('packages/llm_dart_ai/lib');
-      const allowedLegacyCodecPath =
-          'packages/llm_dart_ai/lib/src/serialization/text_stream_event_json_codec.dart';
 
       final violations = <String>[];
       final dartFiles = aiLib
@@ -151,11 +149,6 @@ void main() {
           .whereType<File>()
           .where((file) => file.path.endsWith('.dart'));
       for (final file in dartFiles) {
-        final path = file.path.replaceAll(r'\', '/');
-        if (path == allowedLegacyCodecPath) {
-          continue;
-        }
-
         final content = file.readAsStringSync();
         if (content.contains('provider.TextStreamEventJsonCodec')) {
           violations.add(file.path);

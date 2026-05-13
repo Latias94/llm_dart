@@ -110,6 +110,9 @@ Progress:
 - 2026-05-13: moved concrete full-stream event classes into `llm_dart_ai` and
   added provider/runtime bridge mapping so runtime, UI, chat, and result code
   consume AI-owned `TextStreamEvent` values.
+- 2026-05-13: made `TextStreamEventJsonCodec` serialize AI-owned full-stream
+  events directly, removing its dependency on the legacy provider full-stream
+  codec.
 
 ## M4: Tool Loop Runtime
 

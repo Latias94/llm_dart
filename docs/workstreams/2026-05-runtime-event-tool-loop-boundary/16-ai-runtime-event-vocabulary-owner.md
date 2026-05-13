@@ -29,9 +29,9 @@ Provider code can continue to focus on single model-call parts, while
 `llm_dart_ai` can evolve full generation-run events without forcing provider
 packages to understand runtime lifecycle events.
 
-The bridge is intentionally temporary. Once provider compatibility exports are
-narrowed, the AI codec can stop round-tripping through the legacy provider
-full-stream codec and own serialization directly.
+The provider event bridge is intentionally temporary. Once provider
+compatibility exports are narrowed, it should only need to map provider
+model-call events into the runtime event vocabulary.
 
 ## Validation
 
@@ -46,5 +46,4 @@ full-stream codec and own serialization directly.
 
 Provider still exposes legacy full-stream class names during the migration
 window. The next cleanup should narrow provider `TextStreamEvent` exports to a
-compatibility layer, then replace the AI codec bridge with native AI
-serialization.
+compatibility layer.

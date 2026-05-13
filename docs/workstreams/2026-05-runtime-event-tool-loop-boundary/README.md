@@ -144,3 +144,6 @@ This workstream should not:
 - [16-ai-runtime-event-vocabulary-owner.md](16-ai-runtime-event-vocabulary-owner.md)
   - `llm_dart_ai` owns concrete full-stream event classes and bridges provider
     model-call events into the runtime vocabulary.
+- [17-ai-native-stream-codec.md](17-ai-native-stream-codec.md)
+  - `TextStreamEventJsonCodec` now serializes AI-owned full-stream events
+    directly without delegating through the provider event codec.
