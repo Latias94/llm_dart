@@ -12,6 +12,7 @@ This package owns app-facing orchestration built on top of provider contracts:
 - callback-style runner telemetry (`onStepStart`, `onStepFinish`, `onFinish`,
   `onChunk`, and `onError`)
 - text stream result accumulation
+- runtime full-stream JSON serialization
 - structured output specs and streaming structured output helpers
   - object-first convenience wrappers for common JSON-schema workflows
 - shared chat UI message, mapping, and stream JSON helpers
@@ -44,6 +45,7 @@ The shared chat UI layer also lives here:
 - `ChatMessageMapper`
 - `ChatUiStreamReader`
 - `ChatUiJsonCodec`
+- `TextStreamEventJsonCodec`
 
 `llm_dart_chat` and `llm_dart_flutter` re-export those types for chat-oriented
 imports, but `llm_dart_ai` is the owning package.

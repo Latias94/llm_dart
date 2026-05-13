@@ -68,6 +68,9 @@ Progress:
 - 2026-05-13: aligned `llm_dart_core` prompt serialization and runner
   compatibility tests with typed replay options, removing stale prompt-side
   `providerMetadata` expectations from the architecture line.
+- 2026-05-13: introduced an AI-owned `TextStreamEventJsonCodec` compatibility
+  wrapper and changed `llm_dart_core` serialization exports to resolve the
+  runtime full-stream codec through `llm_dart_ai`.
 
 ## M3: Unified Runtime Result Surface
 

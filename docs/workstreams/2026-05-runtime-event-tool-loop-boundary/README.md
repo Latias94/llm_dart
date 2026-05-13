@@ -116,3 +116,6 @@ This workstream should not:
 - [07-core-prompt-replay-test-alignment.md](07-core-prompt-replay-test-alignment.md)
   - Core compatibility tests aligned with typed replay options instead of
     removed prompt-side `providerMetadata` fields.
+- [08-ai-runtime-stream-serialization-owner.md](08-ai-runtime-stream-serialization-owner.md)
+  - `llm_dart_ai` starts owning the app-facing `TextStreamEventJsonCodec`
+    name while preserving the existing wire protocol.
