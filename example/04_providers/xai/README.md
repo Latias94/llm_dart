@@ -50,8 +50,8 @@ final model = xai.xai(apiKey: 'your-key').chatModel('grok-3');
 
 final result = await core.generateTextCall(
   model: model,
-  prompt: [
-    core.UserPromptMessage.text('What are the latest AI developments this week?'),
+  messages: [
+    core.UserModelMessage.text('What are the latest AI developments this week?'),
   ],
   callOptions: const core.CallOptions(
     providerOptions: xai.XAIGenerateTextOptions(
@@ -72,8 +72,8 @@ final model = xai.xai(apiKey: 'your-key').chatModel('grok-3');
 
 final result = await core.generateTextCall(
   model: model,
-  prompt: [
-    core.UserPromptMessage.text('Current Bitcoin price and market trends'),
+  messages: [
+    core.UserModelMessage.text('Current Bitcoin price and market trends'),
   ],
   callOptions: const core.CallOptions(
     providerOptions: xai.XAIGenerateTextOptions(

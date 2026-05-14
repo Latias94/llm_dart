@@ -305,6 +305,66 @@ final result = await core.generateTextCall(
       );
     });
 
+    test('reports prompt argument in provider README text calls', () async {
+      final repoRoot = await _createTempWorkspace();
+      addTearDown(() async {
+        if (repoRoot.existsSync()) {
+          await repoRoot.delete(recursive: true);
+        }
+      });
+
+      await _writeFile(
+        repoRoot,
+        'example/04_providers/openai/README.md',
+        '''
+```dart
+final result = await core.generateTextCall(
+  model: model,
+  prompt: const [],
+);
+```
+''',
+      );
+
+      final result = await guard.evaluateExampleApiGuards(
+        repoRoot: repoRoot,
+      );
+
+      expect(result.passed, isFalse);
+      expect(
+        result.violations,
+        contains(contains('text-call prompt argument found')),
+      );
+    });
+
+    test('allows image prompt arguments in provider README snippets', () async {
+      final repoRoot = await _createTempWorkspace();
+      addTearDown(() async {
+        if (repoRoot.existsSync()) {
+          await repoRoot.delete(recursive: true);
+        }
+      });
+
+      await _writeFile(
+        repoRoot,
+        'example/04_providers/openai/README.md',
+        '''
+```dart
+final result = await core.generateImage(
+  model: imageModel,
+  prompt: 'A clean product image',
+);
+```
+''',
+      );
+
+      final result = await guard.evaluateExampleApiGuards(
+        repoRoot: repoRoot,
+      );
+
+      expect(result.violations, isEmpty);
+    });
+
     test('reports legacy imports even from old compatibility example paths',
         () async {
       final repoRoot = await _createTempWorkspace();

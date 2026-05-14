@@ -49,8 +49,8 @@ final model = llm.anthropic(apiKey: 'your-key').chatModel('claude-sonnet-4-5');
 
 final result = await core.generateTextCall(
   model: model,
-  prompt: [
-    core.UserPromptMessage.text('Solve this logic puzzle step by step.'),
+  messages: [
+    core.UserModelMessage.text('Solve this logic puzzle step by step.'),
   ],
   callOptions: const core.CallOptions(
     providerOptions: anthropic.AnthropicGenerateTextOptions(
@@ -75,8 +75,8 @@ final model = llm.anthropic(apiKey: 'your-key').chatModel('claude-sonnet-4-5');
 
 final result = await core.generateTextCall(
   model: model,
-  prompt: [
-    core.UserPromptMessage.text('Use the file server to read my documents.'),
+  messages: [
+    core.UserModelMessage.text('Use the file server to read my documents.'),
   ],
   callOptions: const core.CallOptions(
     providerOptions: anthropic.AnthropicGenerateTextOptions(
@@ -104,8 +104,8 @@ final model = llm.anthropic(apiKey: 'your-key').chatModel('claude-sonnet-4-5');
 
 final stream = core.streamTextCall(
   model: model,
-  prompt: [
-    core.UserPromptMessage.text('Find the weather in Tokyo.'),
+  messages: [
+    core.UserModelMessage.text('Find the weather in Tokyo.'),
   ],
   tools: [
     core.FunctionToolDefinition(

@@ -67,6 +67,8 @@ Future<ExampleApiGuardResult> evaluateExampleApiGuards({
     final path = _displayPath(resolvedRepoRoot, entity);
     final lines = await entity.readAsLines();
     final isDefaultTeachingFile = _isDefaultTeachingFile(path);
+    final checksTextCallPromptBoundary =
+        isDefaultTeachingFile || _isProviderReadmeFile(path);
     final shouldCheckLegacyApi =
         path.endsWith('.dart') || isDefaultTeachingFile;
 
@@ -99,7 +101,7 @@ Future<ExampleApiGuardResult> evaluateExampleApiGuards({
       );
     }
 
-    if (isDefaultTeachingFile) {
+    if (checksTextCallPromptBoundary) {
       for (final violation in _findTextCallPromptArgumentViolations(lines)) {
         violations.add(
           '$path:${violation.lineNumber}: ${violation.message}. '
@@ -208,6 +210,11 @@ bool _isDefaultTeachingFile(String path) {
   return path.startsWith('example/01_getting_started/') ||
       path.startsWith('example/02_core_features/') ||
       path.startsWith('example/05_use_cases/');
+}
+
+bool _isProviderReadmeFile(String path) {
+  return path.startsWith('example/04_providers/') &&
+      path.endsWith('/README.md');
 }
 
 String _displayPath(Directory repoRoot, File file) {

@@ -59,8 +59,8 @@ for (final model in providers) {
   try {
     final response = await core.generateTextCall(
       model: model,
-      prompt: [
-        core.UserPromptMessage.text('Test'),
+      messages: [
+        core.UserModelMessage.text('Test'),
       ],
       options: const core.GenerateTextOptions(
         maxOutputTokens: 120,
@@ -93,8 +93,8 @@ final model = openai.openai(
 
 final result = await core.generateTextCall(
   model: model,
-  prompt: [
-    core.UserPromptMessage.text('Explain why explicit compatible endpoints matter.'),
+  messages: [
+    core.UserModelMessage.text('Explain why explicit compatible endpoints matter.'),
   ],
 );
 

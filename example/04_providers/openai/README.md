@@ -73,8 +73,8 @@ final model = llm.openai(apiKey: 'your-key').chatModel('gpt-5-mini');
 
 final result = await core.generateTextCall(
   model: model,
-  prompt: [
-    core.UserPromptMessage.text('Search for recent AI developments.'),
+  messages: [
+    core.UserModelMessage.text('Search for recent AI developments.'),
   ],
   callOptions: const core.CallOptions(
     providerOptions: openai.OpenAIGenerateTextOptions(
@@ -195,8 +195,8 @@ final model = llm.openai(apiKey: 'your-key').chatModel('gpt-5.1');
 
 final result = await core.generateTextCall(
   model: model,
-  prompt: [
-    core.UserPromptMessage.text('Explain how photosynthesis works.'),
+  messages: [
+    core.UserModelMessage.text('Explain how photosynthesis works.'),
   ],
   callOptions: const core.CallOptions(
     providerOptions: openai.OpenAIGenerateTextOptions(
@@ -220,13 +220,13 @@ final model = llm.openai(apiKey: 'your-key').chatModel('gpt-4o');
 
 final result = await core.generateTextCall(
   model: model,
-  prompt: [
-    core.UserPromptMessage(
+  messages: [
+    core.UserModelMessage(
       parts: [
-        const core.TextPromptPart('Describe this image in one sentence.'),
-        core.ImagePromptPart(
+        const core.TextModelPart('Describe this image in one sentence.'),
+        core.ImageModelPart(
           mediaType: 'image/jpeg',
-          uri: Uri.parse('https://example.com/cat.jpg'),
+          data: core.FileUrlData(Uri.parse('https://example.com/cat.jpg')),
         ),
       ],
     ),
@@ -265,7 +265,7 @@ void inspectOpenAIMessage(core.ChatUiMessage message) {
 - transcription through `OpenAITranscriptionOptions`
 - GPT-5 verbosity and reasoning-effort controls through
   `OpenAIGenerateTextOptions`
-- multimodal prompt parts through shared `ImagePromptPart` and `FilePromptPart`
+- multimodal prompt parts through shared `ImageModelPart` and `FileModelPart`
 
 ### Still Compatibility-Oriented
 

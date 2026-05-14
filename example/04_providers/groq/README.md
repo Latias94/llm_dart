@@ -35,8 +35,8 @@ final stopwatch = Stopwatch()..start();
 
 final stream = core.streamTextCall(
   model: model,
-  prompt: [
-    core.UserPromptMessage.text('Generate a quick story.'),
+  messages: [
+    core.UserModelMessage.text('Generate a quick story.'),
   ],
   options: const core.GenerateTextOptions(
     temperature: 0.7,

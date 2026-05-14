@@ -147,8 +147,8 @@ final model =
 
 final result = await core.generateTextCall(
   model: model,
-  prompt: [
-    core.UserPromptMessage.text('Solve this logic puzzle step by step.'),
+  messages: [
+    core.UserModelMessage.text('Solve this logic puzzle step by step.'),
   ],
   callOptions: const core.CallOptions(
     providerOptions: anthropic.AnthropicGenerateTextOptions(
@@ -175,8 +175,8 @@ final model =
 
 final stream = core.streamTextCall(
   model: model,
-  prompt: [
-    core.UserPromptMessage.text('Analyze this complex problem step by step.'),
+  messages: [
+    core.UserModelMessage.text('Analyze this complex problem step by step.'),
   ],
 );
 
@@ -203,8 +203,8 @@ final model = llm.xai(apiKey: 'your-key').chatModel('grok-3');
 
 final result = await core.generateTextCall(
   model: model,
-  prompt: [
-    core.UserPromptMessage.text('What are the latest AI developments this week?'),
+  messages: [
+    core.UserModelMessage.text('What are the latest AI developments this week?'),
   ],
   callOptions: const core.CallOptions(
     providerOptions: xai.XAIGenerateTextOptions(

@@ -36,8 +36,8 @@ final model = ollama_pkg.ollama(
 
 final result = await core.generateTextCall(
   model: model,
-  prompt: [
-    core.UserPromptMessage.text('Summarize why local models are useful.'),
+  messages: [
+    core.UserModelMessage.text('Summarize why local models are useful.'),
   ],
 );
 ```
