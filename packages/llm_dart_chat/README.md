@@ -26,10 +26,14 @@ transport sends prompts through `llm_dart_ai.streamText(...)`, then projects the
 AI runtime full stream into `ChatUiStreamChunk` values.
 
 New user input enters the session through `ChatInput`, which holds a
-user-facing `UserModelMessage`. `DefaultChatSession` normalizes that input into
-provider-facing `PromptMessage` values before appending prompt history. Existing
-prompt history, transport payloads, and snapshots intentionally stay on
-`PromptMessage` because they are replay state, not ordinary app input.
+user-facing `UserModelMessage`. Ordinary `DefaultChatSession(...)`
+construction also accepts app-facing `initialMessages` as `ModelMessage`
+values. The session normalizes those inputs into provider-facing
+`PromptMessage` values before appending prompt history. Existing prompt
+history, transport payloads, and snapshots intentionally stay on
+`PromptMessage` because they are replay state, not ordinary app input. Use
+`DefaultChatSession.withPromptHistory(...)` only when you already have
+provider-normalized replay prompt history.
 
 The layers are:
 

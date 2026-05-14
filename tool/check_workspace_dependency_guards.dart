@@ -56,6 +56,7 @@ final RegExp _providerPromptSurfacePattern = RegExp(
 const Set<String> _appFacingUserInputBoundaryPaths = {
   'packages/llm_dart_chat/lib/src/chat_input.dart',
   'packages/llm_dart_chat/lib/src/chat_session.dart',
+  'packages/llm_dart_chat/lib/src/default_chat_session.dart',
   'packages/llm_dart_flutter/lib/src/chat_controller.dart',
 };
 
@@ -277,6 +278,12 @@ Future<void> _collectAppFacingPromptBoundaryViolations({
         continue;
       }
 
+      if (relativePath ==
+              'packages/llm_dart_chat/lib/src/default_chat_session.dart' &&
+          !_isDefaultChatSessionAppFacingConstructorLine(lines, index)) {
+        continue;
+      }
+
       violations.add(
         '$relativePath:${index + 1}: app-facing chat input surfaces must use '
         'ModelMessage/ModelPart, not provider-facing PromptMessage/PromptPart. '
@@ -285,6 +292,25 @@ Future<void> _collectAppFacingPromptBoundaryViolations({
       );
     }
   }
+}
+
+bool _isDefaultChatSessionAppFacingConstructorLine(
+  List<String> lines,
+  int index,
+) {
+  for (var current = index; current >= 0; current -= 1) {
+    final line = lines[current];
+    if (line.contains('DefaultChatSession.withPromptHistory') ||
+        line.contains('DefaultChatSession.fromSnapshot') ||
+        line.contains('DefaultChatSession._')) {
+      return false;
+    }
+    if (line.contains('DefaultChatSession({')) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 Future<void> _collectProviderSpecificationUiLayerViolations({

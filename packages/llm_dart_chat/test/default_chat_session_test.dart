@@ -389,8 +389,7 @@ void main() {
       await session.dispose();
     });
 
-    test('normalizes user-facing chat input before transport replay',
-        () async {
+    test('normalizes user-facing chat input before transport replay', () async {
       final fileData = FileTextData('notes');
       ChatTransportRequest? capturedRequest;
       final session = DefaultChatSession(
@@ -437,6 +436,74 @@ void main() {
         userMessage.parts.whereType<FileUiPart>().single.file.data,
         same(fileData),
       );
+
+      await session.dispose();
+    });
+
+    test('normalizes app-facing initial messages before transport replay',
+        () async {
+      ChatTransportRequest? capturedRequest;
+      final session = DefaultChatSession(
+        transport: _FakeChatTransport(
+          onSendMessages: (request) {
+            capturedRequest = request;
+            return Stream<TextStreamEvent>.fromIterable([
+              const FinishEvent(finishReason: FinishReason.stop),
+            ]);
+          },
+        ),
+        initialMessages: [
+          SystemModelMessage.text('You are concise.'),
+          UserModelMessage.text('Seed question'),
+          AssistantModelMessage.text('Seed answer'),
+        ],
+      );
+
+      expect(session.state.messages, hasLength(3));
+      expect(session.state.messages[0].role, ChatUiRole.system);
+      expect(session.state.messages[1].role, ChatUiRole.user);
+      expect(session.state.messages[2].role, ChatUiRole.assistant);
+
+      await session.sendMessage(ChatInput.text('Follow up'));
+
+      final prompt = capturedRequest!.prompt;
+      expect(prompt, hasLength(4));
+      expect(prompt[0], isA<SystemPromptMessage>());
+      expect(prompt[1], isA<UserPromptMessage>());
+      expect(prompt[2], isA<AssistantPromptMessage>());
+      expect(prompt[3], isA<UserPromptMessage>());
+      expect((prompt[3].parts.single as TextPromptPart).text, 'Follow up');
+
+      await session.dispose();
+    });
+
+    test('keeps provider prompt history behind explicit advanced constructor',
+        () async {
+      ChatTransportRequest? capturedRequest;
+      final session = DefaultChatSession.withPromptHistory(
+        transport: _FakeChatTransport(
+          onSendMessages: (request) {
+            capturedRequest = request;
+            return Stream<TextStreamEvent>.fromIterable([
+              const FinishEvent(finishReason: FinishReason.stop),
+            ]);
+          },
+        ),
+        initialPrompt: [
+          UserPromptMessage.text('Seed prompt'),
+          AssistantPromptMessage.text('Seed answer'),
+        ],
+      );
+
+      expect(session.state.messages, hasLength(2));
+
+      await session.sendMessage(ChatInput.text('Follow up'));
+
+      final prompt = capturedRequest!.prompt;
+      expect(prompt, hasLength(3));
+      expect((prompt[0].parts.single as TextPromptPart).text, 'Seed prompt');
+      expect((prompt[1].parts.single as TextPromptPart).text, 'Seed answer');
+      expect((prompt[2].parts.single as TextPromptPart).text, 'Follow up');
 
       await session.dispose();
     });

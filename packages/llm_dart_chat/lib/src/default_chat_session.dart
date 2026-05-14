@@ -36,6 +36,29 @@ final class DefaultChatSession implements ChatSession {
   DefaultChatSession({
     required ChatTransport transport,
     String? chatId,
+    List<ModelMessage> initialMessages = const [],
+    MessageIdGenerator? messageIdGenerator,
+    ChatOnToolCall? onToolCall,
+    ToolExecutionRegistry? toolExecutionRegistry,
+  }) : this._(
+          transport: transport,
+          onToolCall: _resolveToolExecutionCallback(
+            onToolCall: onToolCall,
+            toolExecutionRegistry: toolExecutionRegistry,
+          ),
+          initialState: ChatState(
+            chatId: chatId ?? 'chat-${DateTime.now().microsecondsSinceEpoch}',
+            messages: visibleMessagesFromPrompt(
+              normalizeModelMessages(initialMessages),
+            ),
+          ),
+          initialPrompt: normalizeModelMessages(initialMessages),
+          messageIdGenerator: messageIdGenerator,
+        );
+
+  DefaultChatSession.withPromptHistory({
+    required ChatTransport transport,
+    String? chatId,
     List<PromptMessage> initialPrompt = const [],
     MessageIdGenerator? messageIdGenerator,
     ChatOnToolCall? onToolCall,
@@ -50,7 +73,7 @@ final class DefaultChatSession implements ChatSession {
             chatId: chatId ?? 'chat-${DateTime.now().microsecondsSinceEpoch}',
             messages: visibleMessagesFromPrompt(initialPrompt),
           ),
-          initialPrompt: initialPrompt,
+          initialPrompt: List.unmodifiable(initialPrompt),
           messageIdGenerator: messageIdGenerator,
         );
 

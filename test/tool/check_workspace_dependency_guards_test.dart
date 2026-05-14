@@ -279,6 +279,57 @@ final class ChatInput {
         ),
       );
     });
+
+    test(
+        'reports provider prompts in DefaultChatSession app-facing constructor',
+        () async {
+      final repoRoot = await _createTempWorkspace();
+      addTearDown(() async {
+        if (repoRoot.existsSync()) {
+          await repoRoot.delete(recursive: true);
+        }
+      });
+
+      await _writeFile(
+        repoRoot,
+        'packages/llm_dart_chat/lib/src/default_chat_session.dart',
+        '''
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+
+final class DefaultChatSession {
+  DefaultChatSession({
+    List<PromptMessage> initialPrompt = const [],
+  });
+
+  DefaultChatSession.withPromptHistory({
+    List<PromptMessage> initialPrompt = const [],
+  });
+}
+''',
+      );
+
+      final result = await guard.evaluateWorkspaceDependencyGuards(
+        repoRoot: repoRoot,
+      );
+
+      expect(result.passed, isFalse);
+      expect(
+        result.violations,
+        contains(
+          contains('app-facing chat input surfaces must use ModelMessage'),
+        ),
+      );
+      expect(
+        result.violations
+            .where(
+              (violation) => violation.contains(
+                'packages/llm_dart_chat/lib/src/default_chat_session.dart',
+              ),
+            )
+            .toList(),
+        hasLength(1),
+      );
+    });
   });
 }
 
@@ -386,6 +437,23 @@ import 'chat_input.dart';
 
 abstract interface class ChatSession {
   Future<void> sendMessage(ChatInput input);
+}
+''',
+  );
+  await _writeFile(
+    repoRoot,
+    'packages/llm_dart_chat/lib/src/default_chat_session.dart',
+    '''
+import 'package:llm_dart_ai/llm_dart_ai.dart';
+
+final class DefaultChatSession {
+  DefaultChatSession({
+    List<ModelMessage> initialMessages = const [],
+  });
+
+  DefaultChatSession.withPromptHistory({
+    List<PromptMessage> initialPrompt = const [],
+  });
 }
 ''',
   );
