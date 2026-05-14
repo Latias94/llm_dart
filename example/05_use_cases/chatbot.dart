@@ -86,7 +86,7 @@ class Chatbot {
   final ChatbotPersonality personality;
   final int maxContextLength;
 
-  final List<core.PromptMessage> _conversationHistory = [];
+  final List<core.ModelMessage> _conversationHistory = [];
   int _messageCount = 0;
 
   Chatbot({
@@ -104,11 +104,11 @@ class Chatbot {
 
   Future<void> respondToUser(String userInput) async {
     try {
-      _addToHistory(core.UserPromptMessage.text(userInput));
+      _addToHistory(core.UserModelMessage.text(userInput));
 
       final stream = core.streamTextCall(
         model: model,
-        prompt: _getContextMessages(),
+        messages: _getContextMessages(),
         options: _requestOptions(maxOutputTokens: 500),
       );
 
@@ -158,7 +158,7 @@ class Chatbot {
       final assistantText =
           finalText.isEmpty ? responseBuffer.toString().trim() : finalText;
       if (assistantText.isNotEmpty) {
-        _addToHistory(core.AssistantPromptMessage.text(assistantText));
+        _addToHistory(core.AssistantModelMessage.text(assistantText));
       }
 
       _messageCount++;
@@ -173,16 +173,15 @@ class Chatbot {
     try {
       final result = await core.generateTextCall(
         model: model,
-        prompt: [
-          core.SystemPromptMessage.text(_getSystemPromptForPersonality()),
-          core.UserPromptMessage.text(userInput),
+        messages: [
+          core.SystemModelMessage.text(_getSystemPromptForPersonality()),
+          core.UserModelMessage.text(userInput),
         ],
         options: _requestOptions(maxOutputTokens: 260),
       );
 
       print(result.text);
-      _addToHistory(core.UserPromptMessage.text(userInput));
-      _addToHistory(core.AssistantPromptMessage.text(result.text));
+      _addToHistory(core.AssistantModelMessage.text(result.text));
     } catch (_) {
       print(
         'I apologize, but I\'m having technical difficulties right now. '
@@ -191,12 +190,12 @@ class Chatbot {
     }
   }
 
-  void _addToHistory(core.PromptMessage message) {
+  void _addToHistory(core.ModelMessage message) {
     _conversationHistory.add(message);
 
     while (_conversationHistory.length > maxContextLength) {
       for (var i = 0; i < _conversationHistory.length; i++) {
-        if (_conversationHistory[i].role != core.PromptRole.system) {
+        if (_conversationHistory[i].role != core.ModelMessageRole.system) {
           _conversationHistory.removeAt(i);
           break;
         }
@@ -204,13 +203,13 @@ class Chatbot {
     }
   }
 
-  List<core.PromptMessage> _getContextMessages() {
-    final messages = <core.PromptMessage>[];
+  List<core.ModelMessage> _getContextMessages() {
+    final messages = <core.ModelMessage>[];
 
     if (_conversationHistory.isEmpty ||
-        _conversationHistory.first.role != core.PromptRole.system) {
+        _conversationHistory.first.role != core.ModelMessageRole.system) {
       messages.add(
-        core.SystemPromptMessage.text(_getSystemPromptForPersonality()),
+        core.SystemModelMessage.text(_getSystemPromptForPersonality()),
       );
     }
 
@@ -265,12 +264,12 @@ class Chatbot {
     try {
       final result = await core.generateTextCall(
         model: model,
-        prompt: [
-          core.SystemPromptMessage.text(
+        messages: [
+          core.SystemModelMessage.text(
             'Summarize the following conversation in 2-3 sentences:',
           ),
           ..._conversationHistory.where(
-            (message) => message.role != core.PromptRole.system,
+            (message) => message.role != core.ModelMessageRole.system,
           ),
         ],
         options: const core.GenerateTextOptions(
@@ -292,10 +291,10 @@ class Chatbot {
 
   Map<String, dynamic> getStats() {
     final userMessages = _conversationHistory
-        .where((message) => message.role == core.PromptRole.user)
+        .where((message) => message.role == core.ModelMessageRole.user)
         .length;
     final assistantMessages = _conversationHistory
-        .where((message) => message.role == core.PromptRole.assistant)
+        .where((message) => message.role == core.ModelMessageRole.assistant)
         .length;
 
     return {

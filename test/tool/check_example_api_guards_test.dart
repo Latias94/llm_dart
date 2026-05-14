@@ -169,6 +169,142 @@ void main() {
       expect(result.violations, contains(contains('grouped AI facade')));
     });
 
+    test('reports provider prompt message types in default examples', () async {
+      final repoRoot = await _createTempWorkspace();
+      addTearDown(() async {
+        if (repoRoot.existsSync()) {
+          await repoRoot.delete(recursive: true);
+        }
+      });
+
+      await _writeFile(
+        repoRoot,
+        'example/05_use_cases/chatbot.dart',
+        '''
+import 'package:llm_dart/core.dart' as core;
+
+void main() {
+  final history = <core.PromptMessage>[
+    core.UserPromptMessage.text('hello'),
+  ];
+  print(history);
+}
+''',
+      );
+
+      final result = await guard.evaluateExampleApiGuards(
+        repoRoot: repoRoot,
+      );
+
+      expect(result.passed, isFalse);
+      expect(
+        result.violations,
+        contains(contains('provider prompt message type found')),
+      );
+    });
+
+    test('reports prompt argument in default text calls', () async {
+      final repoRoot = await _createTempWorkspace();
+      addTearDown(() async {
+        if (repoRoot.existsSync()) {
+          await repoRoot.delete(recursive: true);
+        }
+      });
+
+      await _writeFile(
+        repoRoot,
+        'example/02_core_features/chat_basics.dart',
+        '''
+import 'package:llm_dart/core.dart' as core;
+
+Future<void> run(core.LanguageModel model) async {
+  await core.generateTextCall(
+    model: model,
+    prompt: const [],
+  );
+}
+''',
+      );
+
+      final result = await guard.evaluateExampleApiGuards(
+        repoRoot: repoRoot,
+      );
+
+      expect(result.passed, isFalse);
+      expect(
+        result.violations,
+        contains(contains('text-call prompt argument found')),
+      );
+    });
+
+    test('allows non-text-call prompt arguments in default examples', () async {
+      final repoRoot = await _createTempWorkspace();
+      addTearDown(() async {
+        if (repoRoot.existsSync()) {
+          await repoRoot.delete(recursive: true);
+        }
+      });
+
+      await _writeFile(
+        repoRoot,
+        'example/02_core_features/image_generation.dart',
+        '''
+import 'package:llm_dart/core.dart' as core;
+
+Future<void> run(core.ImageModel model) async {
+  await core.generateImage(
+    model: model,
+    prompt: 'A clean product image',
+  );
+}
+''',
+      );
+
+      final result = await guard.evaluateExampleApiGuards(
+        repoRoot: repoRoot,
+      );
+
+      expect(result.violations, isEmpty);
+    });
+
+    test('reports provider prompt usage in default README snippets', () async {
+      final repoRoot = await _createTempWorkspace();
+      addTearDown(() async {
+        if (repoRoot.existsSync()) {
+          await repoRoot.delete(recursive: true);
+        }
+      });
+
+      await _writeFile(
+        repoRoot,
+        'example/05_use_cases/README.md',
+        '''
+```dart
+final result = await core.generateTextCall(
+  model: model,
+  prompt: [
+    core.UserPromptMessage.text('hello'),
+  ],
+);
+```
+''',
+      );
+
+      final result = await guard.evaluateExampleApiGuards(
+        repoRoot: repoRoot,
+      );
+
+      expect(result.passed, isFalse);
+      expect(
+        result.violations,
+        contains(contains('provider prompt message type found')),
+      );
+      expect(
+        result.violations,
+        contains(contains('text-call prompt argument found')),
+      );
+    });
+
     test('reports legacy imports even from old compatibility example paths',
         () async {
       final repoRoot = await _createTempWorkspace();

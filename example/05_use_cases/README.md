@@ -123,8 +123,8 @@ final model = llm.openai(apiKey: 'your-key').chatModel('gpt-4.1-mini');
 
 final result = await core.generateTextCall(
   model: model,
-  prompt: [
-    core.UserPromptMessage.text('Introduce yourself like a helpful chatbot.'),
+  messages: [
+    core.UserModelMessage.text('Introduce yourself like a helpful chatbot.'),
   ],
 );
 
@@ -143,8 +143,8 @@ final models = <String, core.LanguageModel>{
 
 final result = await core.generateTextCall(
   model: models['openai']!,
-  prompt: [
-    core.UserPromptMessage.text('Explain what this CLI command should do.'),
+  messages: [
+    core.UserModelMessage.text('Explain what this CLI command should do.'),
   ],
 );
 
@@ -162,8 +162,8 @@ final model =
 Future<Map<String, Object?>> handleChat(String message) async {
   final result = await core.generateTextCall(
     model: model,
-    prompt: [
-      core.UserPromptMessage.text(message),
+    messages: [
+      core.UserModelMessage.text(message),
     ],
   );
 

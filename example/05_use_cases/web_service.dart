@@ -131,14 +131,14 @@ class AIWebService {
         '📨 Chat request: ${message.substring(0, message.length > 50 ? 50 : message.length)}...',
       );
 
-      final prompt = <core.PromptMessage>[
-        if (systemPrompt != null) core.SystemPromptMessage.text(systemPrompt),
-        core.UserPromptMessage.text(message),
+      final messages = <core.ModelMessage>[
+        if (systemPrompt != null) core.SystemModelMessage.text(systemPrompt),
+        core.UserModelMessage.text(message),
       ];
 
       final stopwatch = Stopwatch()..start();
       final result = await _generate(
-        prompt,
+        messages,
         maxOutputTokens: 500,
       );
       stopwatch.stop();
@@ -197,8 +197,8 @@ class AIWebService {
 
       final result = await _generate(
         [
-          core.SystemPromptMessage.text(_contentSystemPrompt(type)),
-          core.UserPromptMessage.text(prompt),
+          core.SystemModelMessage.text(_contentSystemPrompt(type)),
+          core.UserModelMessage.text(prompt),
         ],
         maxOutputTokens: 800,
       );
@@ -234,7 +234,7 @@ class AIWebService {
     try {
       final result = await _generate(
         [
-          core.UserPromptMessage.text('Health check - respond with OK'),
+          core.UserModelMessage.text('Health check - respond with OK'),
         ],
         maxOutputTokens: 12,
       );
@@ -294,12 +294,12 @@ class AIWebService {
   }
 
   Future<core.GenerateTextCallResult<Object?>> _generate(
-    List<core.PromptMessage> prompt, {
+    List<core.ModelMessage> messages, {
     required int maxOutputTokens,
   }) {
     return core.generateTextCall(
       model: _model,
-      prompt: prompt,
+      messages: messages,
       options: core.GenerateTextOptions(
         temperature: 0.7,
         maxOutputTokens: maxOutputTokens,

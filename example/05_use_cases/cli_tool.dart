@@ -178,7 +178,7 @@ ENVIRONMENT VARIABLES:
   ) async {
     print('🤖 Starting chat session. Type "quit" or "exit" to end.\n');
 
-    final conversation = <core.PromptMessage>[];
+    final conversation = <core.ModelMessage>[];
     await processMessage(model, conversation, initialPrompt);
 
     while (true) {
@@ -205,7 +205,7 @@ ENVIRONMENT VARIABLES:
       print('❓ Asking: $prompt\n');
     }
 
-    await processMessage(model, <core.PromptMessage>[], prompt);
+    await processMessage(model, <core.ModelMessage>[], prompt);
   }
 
   Future<void> handleGenerateCommand(
@@ -217,25 +217,25 @@ ENVIRONMENT VARIABLES:
     }
 
     await processMessages(model, [
-      core.SystemPromptMessage.text(
+      core.SystemModelMessage.text(
         'You are a creative content generator. Provide high-quality, engaging content.',
       ),
-      core.UserPromptMessage.text(prompt),
+      core.UserModelMessage.text(prompt),
     ]);
   }
 
   Future<void> processMessage(
     core.LanguageModel model,
-    List<core.PromptMessage> conversation,
+    List<core.ModelMessage> conversation,
     String prompt,
   ) async {
-    conversation.add(core.UserPromptMessage.text(prompt));
+    conversation.add(core.UserModelMessage.text(prompt));
     await processMessages(model, conversation);
   }
 
   Future<void> processMessages(
     core.LanguageModel model,
-    List<core.PromptMessage> messages,
+    List<core.ModelMessage> messages,
   ) async {
     try {
       if (_streaming) {
@@ -250,7 +250,7 @@ ENVIRONMENT VARIABLES:
 
   Future<void> handleRegularResponse(
     core.LanguageModel model,
-    List<core.PromptMessage> messages,
+    List<core.ModelMessage> messages,
   ) async {
     if (_verbose) {
       stdout.write('🤔 Thinking...');
@@ -259,7 +259,7 @@ ENVIRONMENT VARIABLES:
     final stopwatch = Stopwatch()..start();
     final result = await core.generateTextCall(
       model: model,
-      prompt: messages,
+      messages: messages,
       options: _buildOptions(),
     );
     stopwatch.stop();
@@ -280,21 +280,21 @@ ENVIRONMENT VARIABLES:
     }
 
     if (messages.isNotEmpty &&
-        messages.last.role == core.PromptRole.user &&
+        messages.last.role == core.ModelMessageRole.user &&
         result.text.isNotEmpty) {
-      messages.add(core.AssistantPromptMessage.text(result.text));
+      messages.add(core.AssistantModelMessage.text(result.text));
     }
   }
 
   Future<void> handleStreamingResponse(
     core.LanguageModel model,
-    List<core.PromptMessage> messages,
+    List<core.ModelMessage> messages,
   ) async {
     print('🤖 AI: ');
 
     final stream = core.streamTextCall(
       model: model,
-      prompt: messages,
+      messages: messages,
       options: _buildOptions(),
     );
 
@@ -340,9 +340,9 @@ ENVIRONMENT VARIABLES:
 
     final finalText = (await stream.text).trim();
     if (messages.isNotEmpty &&
-        messages.last.role == core.PromptRole.user &&
+        messages.last.role == core.ModelMessageRole.user &&
         finalText.isNotEmpty) {
-      messages.add(core.AssistantPromptMessage.text(finalText));
+      messages.add(core.AssistantModelMessage.text(finalText));
     }
   }
 

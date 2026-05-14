@@ -502,9 +502,9 @@ EXAMPLES:
   }) async {
     final result = await core.generateTextCall(
       model: _chatModel,
-      prompt: [
-        core.SystemPromptMessage.text(system),
-        core.UserPromptMessage.text(user),
+      messages: [
+        core.SystemModelMessage.text(system),
+        core.UserModelMessage.text(user),
       ],
       options: core.GenerateTextOptions(
         temperature: 0.7,

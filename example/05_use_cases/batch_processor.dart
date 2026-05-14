@@ -303,9 +303,9 @@ class DataProcessor {
   Future<String> processWithAI(String text) async {
     final result = await core.generateTextCall(
       model: model,
-      prompt: [
-        core.SystemPromptMessage.text(getSystemPromptForOperation(operation)),
-        core.UserPromptMessage.text(text),
+      messages: [
+        core.SystemModelMessage.text(getSystemPromptForOperation(operation)),
+        core.UserModelMessage.text(text),
       ],
       options: const core.GenerateTextOptions(
         temperature: 0.3,
