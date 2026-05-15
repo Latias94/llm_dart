@@ -66,7 +66,6 @@ void main() {
             outputFormat: 'wav',
             instructions: 'Speak calmly.',
             speed: 1.1,
-            language: 'en',
           ),
         ),
       );
@@ -99,7 +98,6 @@ void main() {
           'response_format': 'wav',
           'instructions': 'Speak calmly.',
           'speed': 1.1,
-          'language': 'en',
         },
       );
       expect(result.audioBytes, [1, 2, 3, 4]);
@@ -111,6 +109,155 @@ void main() {
       expect(
         result.responseMetadata!.headers,
         containsPair('x-request-id', 'req_speech_1'),
+      );
+    });
+
+    test('generateSpeech defaults voice and output format for OpenAI',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return const TransportResponse(
+              statusCode: 200,
+              body: [1, 2, 3],
+            );
+          },
+        ),
+      ).speechModel('tts-1');
+
+      final result = await generateSpeech(
+        model: model,
+        text: 'Hello world.',
+      );
+
+      expect(capturedRequest, isNotNull);
+      expect(
+        capturedRequest!.body,
+        {
+          'model': 'tts-1',
+          'input': 'Hello world.',
+          'voice': 'alloy',
+          'response_format': 'mp3',
+        },
+      );
+      expect(result.mediaType, 'audio/mpeg');
+      expect(result.warnings, isEmpty);
+    });
+
+    test('generateSpeech warning-drops unsupported language option', () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return const TransportResponse(
+              statusCode: 200,
+              body: [1, 2, 3],
+            );
+          },
+        ),
+      ).speechModel('gpt-4o-mini-tts');
+
+      final result = await generateSpeech(
+        model: model,
+        text: 'Hello world.',
+        callOptions: const CallOptions(
+          providerOptions: OpenAISpeechOptions(
+            language: 'en',
+          ),
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      expect(capturedRequest!.body, isNot(containsPair('language', 'en')));
+      expect(
+        result.warnings,
+        [
+          const ModelWarning(
+            type: ModelWarningType.unsupported,
+            field: 'providerOptions.language',
+            message:
+                'OpenAI speech models do not support language selection. Language parameter "en" was ignored.',
+          ),
+        ],
+      );
+    });
+
+    test('generateSpeech falls back to mp3 for unsupported output format',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return const TransportResponse(
+              statusCode: 200,
+              body: [1, 2, 3],
+            );
+          },
+        ),
+      ).speechModel('gpt-4o-mini-tts');
+
+      final result = await generateSpeech(
+        model: model,
+        text: 'Hello world.',
+        callOptions: const CallOptions(
+          providerOptions: OpenAISpeechOptions(
+            outputFormat: 'webm',
+          ),
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      expect(
+        capturedRequest!.body,
+        containsPair('response_format', 'mp3'),
+      );
+      expect(result.mediaType, 'audio/mpeg');
+      expect(
+        result.warnings,
+        [
+          const ModelWarning(
+            type: ModelWarningType.unsupported,
+            field: 'providerOptions.outputFormat',
+            message:
+                'Unsupported OpenAI speech output format: webm. Using mp3 instead.',
+          ),
+        ],
+      );
+    });
+
+    test('generateSpeech rejects speed outside OpenAI range', () async {
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: const _FakeTransportClient(),
+      ).speechModel('gpt-4o-mini-tts');
+
+      await expectLater(
+        () => generateSpeech(
+          model: model,
+          text: 'Hello world.',
+          callOptions: const CallOptions(
+            providerOptions: OpenAISpeechOptions(
+              speed: 4.1,
+            ),
+          ),
+        ),
+        throwsA(
+          isA<ArgumentError>().having(
+            (error) => error.name,
+            'name',
+            'providerOptions.speed',
+          ),
+        ),
       );
     });
 

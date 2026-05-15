@@ -1,6 +1,6 @@
-import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'dart:convert';
 
+import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart';
 import 'package:llm_dart_test/llm_dart_test.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
@@ -83,6 +83,7 @@ void main() {
           },
           cancellation: cancelToken,
           providerOptions: const OpenAITranscriptionOptions(
+            include: ['logprobs'],
             language: 'en',
             prompt: 'Prefer short output.',
             temperature: 0.2,
@@ -121,6 +122,8 @@ void main() {
       expect(bodyText, contains('Content-Type: audio/wav'));
       expect(bodyText, contains('name="model"'));
       expect(bodyText, contains('whisper-1'));
+      expect(bodyText, contains('name="include[]"'));
+      expect(bodyText, contains('logprobs'));
       expect(bodyText, contains('name="language"'));
       expect(bodyText, contains('Prefer short output.'));
       expect(bodyText, contains('name="response_format"'));
@@ -168,6 +171,106 @@ void main() {
       );
     });
 
+    test('transcribe uses JSON timestamp format for gpt-4o transcribe models',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return const TransportResponse(
+              statusCode: 200,
+              body: {
+                'text': 'hello world',
+              },
+            );
+          },
+        ),
+      ).transcriptionModel('gpt-4o-transcribe');
+
+      final result = await transcribe(
+        model: model,
+        audioBytes: utf8.encode('abc'),
+        mediaType: 'audio/wav',
+        callOptions: const CallOptions(
+          providerOptions: OpenAITranscriptionOptions(
+            timestampGranularities: [
+              OpenAITranscriptionTimestampGranularity.word,
+            ],
+          ),
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      expect(capturedRequest!.responseType, TransportResponseType.json);
+      final bodyText = utf8.decode(capturedRequest!.body! as List<int>);
+      expect(bodyText, contains('name="response_format"'));
+      expect(bodyText, contains('json'));
+      expect(bodyText, isNot(contains('verbose_json')));
+      expect(bodyText, contains('name="temperature"'));
+      expect(bodyText, contains('0'));
+      expect(bodyText, contains('name="timestamp_granularities[]"'));
+      expect(bodyText, contains('word'));
+      expect(result.text, 'hello world');
+      expect(result.segments, isEmpty);
+    });
+
+    test('transcribe falls back to words when segments are absent', () async {
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            return const TransportResponse(
+              statusCode: 200,
+              body: {
+                'text': 'hello world',
+                'language': 'english',
+                'duration': 2.0,
+                'words': [
+                  {
+                    'word': 'hello',
+                    'start': 0.0,
+                    'end': 1.0,
+                  },
+                  {
+                    'word': 'world',
+                    'start': 1.0,
+                    'end': 2.0,
+                  },
+                ],
+              },
+            );
+          },
+        ),
+      ).transcriptionModel('whisper-1');
+
+      final result = await transcribe(
+        model: model,
+        audioBytes: utf8.encode('abc'),
+        mediaType: 'audio/wav',
+        callOptions: const CallOptions(
+          providerOptions: OpenAITranscriptionOptions(
+            timestampGranularities: [
+              OpenAITranscriptionTimestampGranularity.word,
+            ],
+          ),
+        ),
+      );
+
+      expect(result.text, 'hello world');
+      expect(result.language, 'en');
+      expect(result.durationSeconds, 2.0);
+      expect(result.segments, hasLength(2));
+      expect(result.segments.first.text, 'hello');
+      expect(result.segments.first.startSeconds, 0.0);
+      expect(result.segments.first.endSeconds, 1.0);
+      expect(result.segments.last.text, 'world');
+      expect(result.segments.last.startSeconds, 1.0);
+      expect(result.segments.last.endSeconds, 2.0);
+    });
+
     test('transcribe supports plain text response formats', () async {
       TransportRequest? capturedRequest;
 
@@ -213,8 +316,7 @@ void main() {
       );
     });
 
-    test(
-        'transcription model rejects timestamp granularities without verbose JSON',
+    test('transcription model rejects whisper timestamps without verbose JSON',
         () async {
       final model = OpenAI(
         apiKey: 'test-key',
@@ -235,6 +337,32 @@ void main() {
           ),
         ),
         throwsArgumentError,
+      );
+    });
+
+    test('transcription model rejects invalid temperature', () async {
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: const _FakeTransportClient(),
+      ).transcriptionModel('whisper-1');
+
+      await expectLater(
+        () => transcribe(
+          model: model,
+          audioBytes: utf8.encode('abc'),
+          callOptions: const CallOptions(
+            providerOptions: OpenAITranscriptionOptions(
+              temperature: 1.1,
+            ),
+          ),
+        ),
+        throwsA(
+          isA<ArgumentError>().having(
+            (error) => error.name,
+            'name',
+            'providerOptions.temperature',
+          ),
+        ),
       );
     });
 

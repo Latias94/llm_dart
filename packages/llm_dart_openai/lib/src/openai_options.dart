@@ -180,6 +180,7 @@ enum OpenAITranscriptionTimestampGranularity {
 }
 
 final class OpenAITranscriptionOptions implements ProviderInvocationOptions {
+  final List<String> include;
   final String? language;
   final String? prompt;
   final double? temperature;
@@ -187,6 +188,7 @@ final class OpenAITranscriptionOptions implements ProviderInvocationOptions {
   final List<OpenAITranscriptionTimestampGranularity> timestampGranularities;
 
   const OpenAITranscriptionOptions({
+    this.include = const [],
     this.language,
     this.prompt,
     this.temperature,

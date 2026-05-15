@@ -61,15 +61,16 @@ final class OpenAITranscriptionModel
       expectedTypeName:
           'OpenAITranscriptionOptions for OpenAI-family transcription models',
     );
-    final responseFormat =
-        options?.responseFormat ?? OpenAITranscriptionResponseFormat.json;
-    if (options != null &&
-        options.timestampGranularities.isNotEmpty &&
-        responseFormat != OpenAITranscriptionResponseFormat.verboseJson) {
-      throw ArgumentError(
-        'OpenAITranscriptionOptions.timestampGranularities require responseFormat=verboseJson.',
-      );
-    }
+    _validateTranscriptionOptions(options);
+    final responseFormat = _resolveResponseFormat(
+      modelId: modelId,
+      options: options,
+    );
+    _validateTimestampResponseFormat(
+      modelId: modelId,
+      responseFormat: responseFormat,
+      options: options,
+    );
 
     final multipart = buildTransportMultipartBody(
       fields: [
@@ -83,6 +84,11 @@ final class OpenAITranscriptionModel
           name: 'model',
           value: modelId,
         ),
+        for (final include in options?.include ?? const <String>[])
+          TransportMultipartField.text(
+            name: 'include[]',
+            value: include,
+          ),
         if (options?.language case final language?)
           TransportMultipartField.text(
             name: 'language',
@@ -93,10 +99,10 @@ final class OpenAITranscriptionModel
             name: 'prompt',
             value: prompt,
           ),
-        if (options?.temperature case final temperature?)
+        if (options != null)
           TransportMultipartField.text(
             name: 'temperature',
-            value: temperature.toString(),
+            value: (options.temperature ?? 0).toString(),
           ),
         TransportMultipartField.text(
           name: 'response_format',
@@ -169,7 +175,7 @@ final class OpenAITranscriptionModel
       );
     }
 
-    final segments = _decodeSegments(json['segments']);
+    final segments = _decodeSegmentsOrWords(json);
 
     final providerMetadata = ProviderMetadata.forNamespace(
       'openai',
@@ -185,7 +191,7 @@ final class OpenAITranscriptionModel
     return TranscriptionResult(
       text: text,
       segments: segments,
-      language: openAIStringOrNull(json['language']),
+      language: _normalizeLanguage(openAIStringOrNull(json['language'])),
       durationSeconds: openAIDoubleOrNull(json['duration']),
       responseMetadata: ModelResponseMetadata(
         timestamp: DateTime.now().toUtc(),
@@ -223,7 +229,167 @@ final class OpenAITranscriptionModel
         )
         .toList(growable: false);
   }
+
+  List<TranscriptionSegment> _decodeSegmentsOrWords(
+    Map<String, Object?> json,
+  ) {
+    if (json.containsKey('segments')) {
+      return _decodeSegments(json['segments']);
+    }
+
+    return _decodeWords(json['words']);
+  }
+
+  List<TranscriptionSegment> _decodeWords(Object? value) {
+    if (value is! List || value.isEmpty) {
+      return const [];
+    }
+
+    return value
+        .whereType<Map>()
+        .map((item) => Map<String, Object?>.from(item))
+        .map(
+          (item) => TranscriptionSegment(
+            text: openAIStringOrNull(item['word']) ?? '',
+            startSeconds: openAIDoubleOrNull(item['start']) ?? 0,
+            endSeconds: openAIDoubleOrNull(item['end']) ?? 0,
+          ),
+        )
+        .toList(growable: false);
+  }
 }
+
+void _validateTranscriptionOptions(OpenAITranscriptionOptions? options) {
+  if (options == null || options.temperature == null) {
+    return;
+  }
+
+  final temperature = options.temperature!;
+  if (temperature < 0 || temperature > 1) {
+    throw ArgumentError.value(
+      temperature,
+      'providerOptions.temperature',
+      'OpenAI transcription temperature must be between 0 and 1.',
+    );
+  }
+}
+
+OpenAITranscriptionResponseFormat _resolveResponseFormat({
+  required String modelId,
+  required OpenAITranscriptionOptions? options,
+}) {
+  if (options?.responseFormat case final responseFormat?) {
+    return responseFormat;
+  }
+
+  if (options == null || options.timestampGranularities.isEmpty) {
+    return OpenAITranscriptionResponseFormat.json;
+  }
+
+  if (_usesJsonTimestampTranscriptionFormat(modelId)) {
+    return OpenAITranscriptionResponseFormat.json;
+  }
+
+  return OpenAITranscriptionResponseFormat.verboseJson;
+}
+
+void _validateTimestampResponseFormat({
+  required String modelId,
+  required OpenAITranscriptionResponseFormat responseFormat,
+  required OpenAITranscriptionOptions? options,
+}) {
+  if (options == null || options.timestampGranularities.isEmpty) {
+    return;
+  }
+
+  if (responseFormat == OpenAITranscriptionResponseFormat.verboseJson) {
+    return;
+  }
+
+  if (_usesJsonTimestampTranscriptionFormat(modelId) &&
+      responseFormat == OpenAITranscriptionResponseFormat.json) {
+    return;
+  }
+
+  final expected = _usesJsonTimestampTranscriptionFormat(modelId)
+      ? 'json or verboseJson'
+      : 'verboseJson';
+  throw ArgumentError(
+    'OpenAITranscriptionOptions.timestampGranularities require responseFormat=$expected for $modelId.',
+  );
+}
+
+bool _usesJsonTimestampTranscriptionFormat(String modelId) {
+  return modelId == 'gpt-4o-transcribe' || modelId == 'gpt-4o-mini-transcribe';
+}
+
+String? _normalizeLanguage(String? language) {
+  if (language == null || language.isEmpty) {
+    return language;
+  }
+
+  return _languageMap[language.toLowerCase()] ?? language;
+}
+
+const Map<String, String> _languageMap = {
+  'afrikaans': 'af',
+  'arabic': 'ar',
+  'armenian': 'hy',
+  'azerbaijani': 'az',
+  'belarusian': 'be',
+  'bosnian': 'bs',
+  'bulgarian': 'bg',
+  'catalan': 'ca',
+  'chinese': 'zh',
+  'croatian': 'hr',
+  'czech': 'cs',
+  'danish': 'da',
+  'dutch': 'nl',
+  'english': 'en',
+  'estonian': 'et',
+  'finnish': 'fi',
+  'french': 'fr',
+  'galician': 'gl',
+  'german': 'de',
+  'greek': 'el',
+  'hebrew': 'he',
+  'hindi': 'hi',
+  'hungarian': 'hu',
+  'icelandic': 'is',
+  'indonesian': 'id',
+  'italian': 'it',
+  'japanese': 'ja',
+  'kannada': 'kn',
+  'kazakh': 'kk',
+  'korean': 'ko',
+  'latvian': 'lv',
+  'lithuanian': 'lt',
+  'macedonian': 'mk',
+  'malay': 'ms',
+  'marathi': 'mr',
+  'maori': 'mi',
+  'nepali': 'ne',
+  'norwegian': 'no',
+  'persian': 'fa',
+  'polish': 'pl',
+  'portuguese': 'pt',
+  'romanian': 'ro',
+  'russian': 'ru',
+  'serbian': 'sr',
+  'slovak': 'sk',
+  'slovenian': 'sl',
+  'spanish': 'es',
+  'swahili': 'sw',
+  'swedish': 'sv',
+  'tagalog': 'tl',
+  'tamil': 'ta',
+  'thai': 'th',
+  'turkish': 'tr',
+  'ukrainian': 'uk',
+  'urdu': 'ur',
+  'vietnamese': 'vi',
+  'welsh': 'cy',
+};
 
 String _buildFilename(String? mediaType) {
   final normalized = mediaType?.split(';').first.trim().toLowerCase();

@@ -255,7 +255,6 @@ void main() {
             'outputFormat',
             'instructions',
             'speed',
-            'language',
           ],
         },
       );
@@ -282,6 +281,7 @@ void main() {
             ?.detail,
         {
           'supportedOptions': [
+            'include',
             'language',
             'prompt',
             'temperature',

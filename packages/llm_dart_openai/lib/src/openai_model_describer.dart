@@ -293,7 +293,6 @@ ModelCapabilityProfile describeOpenAISpeechModel(
             'outputFormat',
             'instructions',
             'speed',
-            'language',
           ],
         },
         confidence: confidence,
@@ -327,6 +326,7 @@ ModelCapabilityProfile describeOpenAITranscriptionModel(
         featureId: 'transcription.providerOptions',
         detail: {
           'supportedOptions': [
+            'include',
             'language',
             'prompt',
             'temperature',
