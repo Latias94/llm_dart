@@ -93,6 +93,11 @@ final class OllamaEmbeddingModel
     );
     return EmbedResult(
       embeddings: _decodeEmbeddings(json),
+      responseMetadata: ModelResponseMetadata(
+        timestamp: DateTime.now().toUtc(),
+        modelId: modelId,
+        headers: response.headers,
+      ),
       providerMetadata: ProviderMetadata.forNamespace(
         'ollama',
         {

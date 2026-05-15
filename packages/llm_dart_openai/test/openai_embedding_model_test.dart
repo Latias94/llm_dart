@@ -33,6 +33,9 @@ void main() {
             capturedRequest = request;
             return TransportResponse(
               statusCode: 200,
+              headers: const {
+                'x-request-id': 'req_embed_1',
+              },
               body: {
                 'data': [
                   {
@@ -75,6 +78,7 @@ void main() {
           cancellation: cancelToken,
           providerOptions: const OpenAIEmbedOptions(
             encodingFormat: 'float',
+            user: 'user_123',
           ),
         ),
       );
@@ -104,6 +108,7 @@ void main() {
           'input': ['hello', 'world'],
           'dimensions': 256,
           'encoding_format': 'float',
+          'user': 'user_123',
         },
       );
 
@@ -115,6 +120,73 @@ void main() {
         ],
       );
       expect(result.usage, const UsageStats(inputTokens: 5, totalTokens: 5));
+      expect(result.warnings, isEmpty);
+      expect(result.responseMetadata, isNotNull);
+      expect(result.responseMetadata!.modelId, 'text-embedding-3-small');
+      expect(
+        result.responseMetadata!.headers,
+        containsPair('x-request-id', 'req_embed_1'),
+      );
+    });
+
+    test('embedMany defaults encoding format to float', () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return const TransportResponse(
+              statusCode: 200,
+              body: {
+                'data': [
+                  {
+                    'index': 0,
+                    'embedding': [0.1],
+                  },
+                ],
+              },
+            );
+          },
+        ),
+      ).embeddingModel('text-embedding-3-small');
+
+      await embed(
+        model: model,
+        value: 'hello',
+      );
+
+      expect(capturedRequest, isNotNull);
+      expect(
+        capturedRequest!.body,
+        {
+          'model': 'text-embedding-3-small',
+          'input': ['hello'],
+          'encoding_format': 'float',
+        },
+      );
+    });
+
+    test('embedding model rejects more than 2048 values per call', () async {
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: const _FakeTransportClient(),
+      ).embeddingModel('text-embedding-3-small');
+
+      await expectLater(
+        () => embedMany(
+          model: model,
+          values: List<String>.filled(2049, 'hello'),
+        ),
+        throwsA(
+          isA<ArgumentError>().having(
+            (error) => error.message,
+            'message',
+            contains('at most 2048 values per call'),
+          ),
+        ),
+      );
     });
 
     test('embedding model rejects incompatible provider options', () async {

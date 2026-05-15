@@ -191,6 +191,14 @@ void main() {
         ada.supports(ModelCapabilityFeatureIds.embeddingDimensions),
         isFalse,
       );
+      expect(
+        textEmbedding3
+            .providerFeature('openai', 'embedding.providerOptions')
+            ?.detail,
+        {
+          'supportedOptions': ['encodingFormat', 'user'],
+        },
+      );
     });
 
     test('describeOpenAIImageModel exposes gpt-image edit support', () {

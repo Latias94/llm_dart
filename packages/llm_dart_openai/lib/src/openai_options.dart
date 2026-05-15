@@ -74,9 +74,11 @@ final class OpenAITranscriptionModelSettings implements ProviderModelOptions {
 
 final class OpenAIEmbedOptions implements ProviderInvocationOptions {
   final String? encodingFormat;
+  final String? user;
 
   const OpenAIEmbedOptions({
     this.encodingFormat,
+    this.user,
   });
 }
 

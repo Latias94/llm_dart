@@ -199,7 +199,7 @@ ModelCapabilityProfile describeOpenAIEmbeddingModel(
         providerId: profile.providerId,
         featureId: 'embedding.providerOptions',
         detail: {
-          'supportedOptions': ['encodingFormat'],
+          'supportedOptions': ['encodingFormat', 'user'],
         },
         confidence: confidence,
       ),

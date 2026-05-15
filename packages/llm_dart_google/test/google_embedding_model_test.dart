@@ -27,6 +27,9 @@ void main() {
             capturedRequest = request;
             return const TransportResponse(
               statusCode: 200,
+              headers: {
+                'x-request-id': 'google_embed_1',
+              },
               body: {
                 'embedding': {
                   'values': [0.1, 0.2, 0.3],
@@ -93,6 +96,12 @@ void main() {
       );
       expect(result.embedding, [0.1, 0.2, 0.3]);
       expect(result.usage, const UsageStats(inputTokens: 4, totalTokens: 4));
+      expect(result.responseMetadata, isNotNull);
+      expect(result.responseMetadata!.modelId, 'text-embedding-004');
+      expect(
+        result.responseMetadata!.headers,
+        containsPair('x-request-id', 'google_embed_1'),
+      );
     });
 
     test('embedMany sends the batch embedding request shape', () async {

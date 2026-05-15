@@ -13,6 +13,20 @@ void main() {
             inputTokens: 3,
             totalTokens: 3,
           ),
+          warnings: const [
+            ModelWarning(
+              type: ModelWarningType.unsupported,
+              field: 'user',
+              message: 'user is ignored.',
+            ),
+          ],
+          responseMetadata: ModelResponseMetadata(
+            timestamp: DateTime.utc(2026, 5, 15),
+            modelId: 'embed-model',
+            headers: const {
+              'x-request-id': 'req_embed_1',
+            },
+          ),
         ),
       );
 
@@ -28,6 +42,8 @@ void main() {
       expect(result.value, 'hello');
       expect(result.embedding, [0.1, 0.2, 0.3]);
       expect(result.usage, const UsageStats(inputTokens: 3, totalTokens: 3));
+      expect(result.warnings.single.field, 'user');
+      expect(result.responseMetadata!.modelId, 'embed-model');
       expect(model.lastRequest?.values, ['hello']);
       expect(model.lastRequest?.dimensions, 256);
       expect(

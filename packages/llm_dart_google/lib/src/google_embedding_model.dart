@@ -86,6 +86,11 @@ final class GoogleEmbeddingModel
             ]
           : _decodeBatchEmbeddings(json),
       usage: _decodeUsage(json['usageMetadata']),
+      responseMetadata: ModelResponseMetadata(
+        timestamp: DateTime.now().toUtc(),
+        modelId: modelId,
+        headers: response.headers,
+      ),
     );
   }
 

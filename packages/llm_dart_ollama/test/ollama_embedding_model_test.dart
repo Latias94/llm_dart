@@ -27,6 +27,9 @@ void main() {
             capturedRequest = request;
             return const TransportResponse(
               statusCode: 200,
+              headers: {
+                'x-request-id': 'ollama_embed_1',
+              },
               body: {
                 'embeddings': [
                   [0.1, 0.2, 0.3],
@@ -79,6 +82,12 @@ void main() {
         },
       );
       expect(result.embedding, [0.1, 0.2, 0.3]);
+      expect(result.responseMetadata, isNotNull);
+      expect(result.responseMetadata!.modelId, 'nomic-embed-text');
+      expect(
+        result.responseMetadata!.headers,
+        containsPair('x-request-id', 'ollama_embed_1'),
+      );
       expect(
         result.providerMetadata?.values['ollama'],
         {

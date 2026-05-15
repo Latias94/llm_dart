@@ -4,14 +4,19 @@ final class EmbedValueResult {
   final String value;
   final List<double> embedding;
   final UsageStats? usage;
+  final List<ModelWarning> warnings;
+  final ModelResponseMetadata? responseMetadata;
   final ProviderMetadata? providerMetadata;
 
   EmbedValueResult({
     required this.value,
     required List<double> embedding,
     this.usage,
+    List<ModelWarning> warnings = const [],
+    this.responseMetadata,
     this.providerMetadata,
-  }) : embedding = List<double>.unmodifiable(embedding);
+  })  : embedding = List<double>.unmodifiable(embedding),
+        warnings = List<ModelWarning>.unmodifiable(warnings);
 }
 
 Future<EmbedValueResult> embed({
@@ -39,6 +44,8 @@ Future<EmbedValueResult> embed({
     value: value,
     embedding: result.embeddings.single,
     usage: result.usage,
+    warnings: result.warnings,
+    responseMetadata: result.responseMetadata,
     providerMetadata: result.providerMetadata,
   );
 }

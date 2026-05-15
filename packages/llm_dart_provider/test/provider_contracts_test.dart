@@ -483,6 +483,20 @@ void main() {
           [0.3, 0.4],
         ],
         usage: const UsageStats(inputTokens: 2, totalTokens: 2),
+        warnings: const [
+          ModelWarning(
+            type: ModelWarningType.unsupported,
+            field: 'encodingFormat',
+            message: 'encodingFormat is ignored.',
+          ),
+        ],
+        responseMetadata: ModelResponseMetadata(
+          timestamp: DateTime.utc(2026, 5, 15),
+          modelId: 'text-embedding-3-small',
+          headers: const {
+            'x-request-id': 'req_embed_1',
+          },
+        ),
       );
 
       expect(request.values, ['a', 'b']);
@@ -493,9 +507,20 @@ void main() {
       );
       expect(result.embeddings.first, [0.1, 0.2]);
       expect(result.usage!.totalTokens, 2);
+      expect(result.responseMetadata!.modelId, 'text-embedding-3-small');
+      expect(result.warnings.single.field, 'encodingFormat');
       expect(() => request.values.add('c'), throwsUnsupportedError);
       expect(() => result.embeddings.add(const []), throwsUnsupportedError);
       expect(() => result.embeddings.first.add(0.5), throwsUnsupportedError);
+      expect(
+        () => result.warnings.add(
+          const ModelWarning(
+            type: ModelWarningType.other,
+            message: 'Nope',
+          ),
+        ),
+        throwsUnsupportedError,
+      );
     });
 
     test('carries image generation outputs and provider metadata', () {

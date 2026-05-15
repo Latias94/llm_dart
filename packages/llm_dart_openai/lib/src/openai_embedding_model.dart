@@ -43,6 +43,8 @@ final class OpenAIEmbeddingModel
     );
   }
 
+  int get maxEmbeddingsPerCall => 2048;
+
   Uri get embeddingsUri => Uri.parse('$baseUrl/embeddings');
 
   Map<String, String> get defaultHeaders => buildOpenAIFamilyDefaultHeaders(
@@ -60,6 +62,14 @@ final class OpenAIEmbeddingModel
       parameterName: 'request.callOptions.providerOptions',
       expectedTypeName: 'OpenAIEmbedOptions for OpenAI-family embedding models',
     );
+    if (request.values.length > maxEmbeddingsPerCall) {
+      throw ArgumentError.value(
+        request.values.length,
+        'request.values.length',
+        'OpenAI embedding models support at most $maxEmbeddingsPerCall values per call.',
+      );
+    }
+
     final response = await transport.send(
       TransportRequest(
         uri: embeddingsUri,
@@ -74,8 +84,8 @@ final class OpenAIEmbeddingModel
           'model': modelId,
           'input': request.values,
           if (request.dimensions != null) 'dimensions': request.dimensions,
-          if (options?.encodingFormat case final encodingFormat?)
-            'encoding_format': encodingFormat,
+          'encoding_format': options?.encodingFormat ?? 'float',
+          if (options?.user case final user?) 'user': user,
         },
         timeout: request.callOptions.timeout,
         maxRetries: request.callOptions.maxRetries,
@@ -84,10 +94,16 @@ final class OpenAIEmbeddingModel
       ),
     );
 
-    return _decodeResponse(response.body);
+    return _decodeResponse(
+      response.body,
+      headers: response.headers,
+    );
   }
 
-  EmbedResult _decodeResponse(Object? body) {
+  EmbedResult _decodeResponse(
+    Object? body, {
+    required Map<String, String> headers,
+  }) {
     final json = decodeOpenAIJsonObject(
       body,
       responseName: 'embeddings response',
@@ -140,6 +156,11 @@ final class OpenAIEmbeddingModel
     return EmbedResult(
       embeddings: indexedEmbeddings.map((entry) => entry.embedding).toList(),
       usage: _decodeUsage(json['usage']),
+      responseMetadata: ModelResponseMetadata(
+        timestamp: DateTime.now().toUtc(),
+        modelId: modelId,
+        headers: headers,
+      ),
     );
   }
 
