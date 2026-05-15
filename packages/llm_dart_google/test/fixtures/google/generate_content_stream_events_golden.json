@@ -1,0 +1,300 @@
+{
+  "schemaVersion": "2026-03-1",
+  "kind": "text-stream-events",
+  "data": {
+    "events": [
+      {
+        "type": "response-metadata",
+        "responseId": "resp_google_fixture",
+        "modelId": "gemini-3-pro-preview"
+      },
+      {
+        "type": "text-start",
+        "id": "0"
+      },
+      {
+        "type": "text-delta",
+        "id": "0",
+        "delta": "Hello "
+      },
+      {
+        "type": "text-end",
+        "id": "0"
+      },
+      {
+        "type": "reasoning-start",
+        "id": "1",
+        "providerMetadata": {
+          "google": {
+            "thoughtSignature": "sig_stream_reasoning",
+            "thought": true
+          }
+        }
+      },
+      {
+        "type": "reasoning-delta",
+        "id": "1",
+        "delta": "Plan",
+        "providerMetadata": {
+          "google": {
+            "thoughtSignature": "sig_stream_reasoning",
+            "thought": true
+          }
+        }
+      },
+      {
+        "type": "reasoning-end",
+        "id": "1"
+      },
+      {
+        "type": "reasoning-file",
+        "file": {
+          "mediaType": "image/png",
+          "data": {
+            "type": "bytes",
+            "bytes": {
+              "encoding": "base64",
+              "data": "AQID"
+            }
+          }
+        },
+        "providerMetadata": {
+          "google": {
+            "thoughtSignature": "sig_stream_reasoning_file",
+            "thought": true
+          }
+        }
+      },
+      {
+        "type": "source",
+        "source": {
+          "kind": "url",
+          "sourceId": "https://dart.dev",
+          "uri": "https://dart.dev",
+          "title": "Dart",
+          "providerMetadata": {
+            "google": {
+              "chunkType": "web"
+            }
+          }
+        }
+      },
+      {
+        "type": "tool-input-start",
+        "toolCallId": "call_google_weather",
+        "toolName": "weather",
+        "providerExecuted": false,
+        "isDynamic": false,
+        "providerMetadata": {
+          "google": {
+            "thoughtSignature": "sig_stream_tool",
+            "functionCallId": "call_google_weather"
+          }
+        }
+      },
+      {
+        "type": "tool-input-delta",
+        "toolCallId": "call_google_weather",
+        "delta": "{\"city\":\"Hong Kong\"}",
+        "providerMetadata": {
+          "google": {
+            "thoughtSignature": "sig_stream_tool",
+            "functionCallId": "call_google_weather"
+          }
+        }
+      },
+      {
+        "type": "tool-input-end",
+        "toolCallId": "call_google_weather",
+        "providerMetadata": {
+          "google": {
+            "thoughtSignature": "sig_stream_tool",
+            "functionCallId": "call_google_weather"
+          }
+        }
+      },
+      {
+        "type": "tool-call",
+        "toolCall": {
+          "toolCallId": "call_google_weather",
+          "toolName": "weather",
+          "input": {
+            "city": "Hong Kong"
+          },
+          "providerExecuted": false,
+          "isDynamic": false
+        },
+        "providerMetadata": {
+          "google": {
+            "thoughtSignature": "sig_stream_tool",
+            "functionCallId": "call_google_weather"
+          }
+        }
+      },
+      {
+        "type": "tool-input-start",
+        "toolCallId": "code-execution-0",
+        "toolName": "code_execution",
+        "providerExecuted": true,
+        "isDynamic": true
+      },
+      {
+        "type": "tool-input-delta",
+        "toolCallId": "code-execution-0",
+        "delta": "{\"language\":\"PYTHON\",\"code\":\"print(\\\"hi\\\")\"}"
+      },
+      {
+        "type": "tool-input-end",
+        "toolCallId": "code-execution-0"
+      },
+      {
+        "type": "tool-call",
+        "toolCall": {
+          "toolCallId": "code-execution-0",
+          "toolName": "code_execution",
+          "input": {
+            "language": "PYTHON",
+            "code": "print(\"hi\")"
+          },
+          "providerExecuted": true,
+          "isDynamic": true
+        }
+      },
+      {
+        "type": "tool-result",
+        "toolResult": {
+          "toolCallId": "code-execution-0",
+          "toolName": "code_execution",
+          "toolOutput": {
+            "type": "json",
+            "value": {
+              "outcome": "OUTCOME_OK",
+              "output": "hi"
+            }
+          },
+          "preliminary": false,
+          "isDynamic": true
+        }
+      },
+      {
+        "type": "custom",
+        "kind": "google.result.tool_call",
+        "data": {
+          "schema": "google.tool_call.v1",
+          "replayRole": "assistant",
+          "toolCallId": "srvtool_google_search",
+          "toolName": "google_search",
+          "toolCall": {
+            "id": "srvtool_google_search",
+            "toolType": "google_search",
+            "query": "Dart SDK"
+          }
+        },
+        "providerMetadata": {
+          "google": {
+            "thoughtSignature": "sig_stream_server_tool",
+            "serverToolPart": "toolCall",
+            "toolCallId": "srvtool_google_search",
+            "toolType": "google_search"
+          }
+        }
+      },
+      {
+        "type": "custom",
+        "kind": "google.result.tool_response",
+        "data": {
+          "schema": "google.tool_response.v1",
+          "replayRole": "assistant",
+          "toolCallId": "srvtool_google_search",
+          "toolName": "google_search",
+          "toolResponse": {
+            "id": "srvtool_google_search",
+            "toolType": "google_search",
+            "result": {
+              "items": [
+                {
+                  "uri": "https://dart.dev",
+                  "title": "Dart"
+                }
+              ]
+            }
+          }
+        },
+        "providerMetadata": {
+          "google": {
+            "serverToolPart": "toolResponse",
+            "toolCallId": "srvtool_google_search",
+            "toolType": "google_search"
+          }
+        }
+      },
+      {
+        "type": "file",
+        "file": {
+          "mediaType": "application/pdf",
+          "data": {
+            "type": "bytes",
+            "bytes": {
+              "encoding": "base64",
+              "data": "BAUG"
+            }
+          }
+        }
+      },
+      {
+        "type": "finish",
+        "finishReason": "toolCalls",
+        "rawFinishReason": "STOP",
+        "usage": {
+          "inputTokens": 10,
+          "outputTokens": 11,
+          "totalTokens": 21,
+          "reasoningTokens": 3
+        },
+        "providerMetadata": {
+          "google": {
+            "promptFeedback": {
+              "safetyRatings": [
+                {
+                  "category": "HARM_CATEGORY_HARASSMENT",
+                  "probability": "NEGLIGIBLE"
+                }
+              ]
+            },
+            "groundingMetadata": {
+              "groundingChunks": [
+                {
+                  "web": {
+                    "uri": "https://dart.dev",
+                    "title": "Dart"
+                  }
+                }
+              ]
+            },
+            "urlContextMetadata": {
+              "urlMetadata": [
+                {
+                  "retrievedUrl": "https://dart.dev",
+                  "urlRetrievalStatus": "URL_RETRIEVAL_STATUS_SUCCESS"
+                }
+              ]
+            },
+            "safetyRatings": [
+              {
+                "category": "HARM_CATEGORY_HARASSMENT",
+                "probability": "NEGLIGIBLE"
+              }
+            ],
+            "usageMetadata": {
+              "promptTokenCount": 10,
+              "candidatesTokenCount": 8,
+              "thoughtsTokenCount": 3,
+              "totalTokenCount": 21
+            },
+            "finishMessage": "Fixture complete."
+          }
+        }
+      }
+    ]
+  }
+}

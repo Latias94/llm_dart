@@ -1,8 +1,8 @@
-import 'dart:convert';
-
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import 'google_function_response_replay_support.dart';
 import 'google_provider_metadata_support.dart';
+import 'google_replay_json.dart';
 import 'google_shared.dart';
 
 final class GoogleFunctionResponseReplay {
@@ -24,9 +24,15 @@ final class GoogleFunctionResponseReplay {
     Map<String, Object?> extraFunctionResponseFields = const {},
     ProviderMetadata? providerMetadata,
   }) : this._(
-          toolCallId: _requireNonEmptyValue(toolCallId, name: 'toolCallId'),
-          toolName: _requireNonEmptyValue(toolName, name: 'toolName'),
-          functionResponse: _buildFunctionResponse(
+          toolCallId: requireGoogleReplayNonEmptyValue(
+            toolCallId,
+            name: 'toolCallId',
+          ),
+          toolName: requireGoogleReplayNonEmptyValue(
+            toolName,
+            name: 'toolName',
+          ),
+          functionResponse: buildGoogleFunctionResponse(
             toolName: toolName,
             response: response,
             files: files,
@@ -34,7 +40,7 @@ final class GoogleFunctionResponseReplay {
             extraFunctionResponseFields: extraFunctionResponseFields,
           ),
           files: List<GeneratedFile>.unmodifiable(
-            files.map(_normalizeFunctionResponseFile),
+            files.map(normalizeGoogleFunctionResponseFile),
           ),
           providerMetadata: mergeProviderMetadata(
             providerMetadata,
@@ -50,7 +56,7 @@ final class GoogleFunctionResponseReplay {
     Map<String, Object?> extraFunctionResponseFields = const {},
     ProviderMetadata? providerMetadata,
   }) {
-    final encoded = _encodeToolOutputForGoogle(
+    final encoded = encodeGoogleToolOutputForFunctionResponse(
       toolName: toolName,
       toolOutput: toolOutput,
     );
@@ -73,11 +79,11 @@ final class GoogleFunctionResponseReplay {
     Map<String, Object?> json, {
     ProviderMetadata? providerMetadata,
   }) {
-    final normalized = _normalizeJsonObject(
+    final normalized = normalizeGoogleReplayJsonObject(
       json,
       path: 'replay',
     );
-    final replayRole = _requiredNonEmptyString(
+    final replayRole = requireGoogleReplayNonEmptyString(
       normalized['replayRole'],
       path: 'replay.replayRole',
     );
@@ -87,7 +93,7 @@ final class GoogleFunctionResponseReplay {
       );
     }
 
-    final schemaValue = _requiredNonEmptyString(
+    final schemaValue = requireGoogleReplayNonEmptyString(
       normalized['schema'],
       path: 'replay.schema',
     );
@@ -97,24 +103,24 @@ final class GoogleFunctionResponseReplay {
       );
     }
 
-    final toolCallId = _requiredNonEmptyString(
+    final toolCallId = requireGoogleReplayNonEmptyString(
       normalized['toolCallId'],
       path: 'replay.toolCallId',
     );
-    final toolName = _requiredNonEmptyString(
+    final toolName = requireGoogleReplayNonEmptyString(
       normalized['toolName'],
       path: 'replay.toolName',
     );
-    final topLevelFunctionCallId = _optionalNonEmptyString(
+    final topLevelFunctionCallId = optionalGoogleReplayNonEmptyString(
       normalized['functionCallId'],
       path: 'replay.functionCallId',
     );
 
-    final functionResponse = _requiredObject(
+    final functionResponse = requireGoogleReplayObject(
       normalized['functionResponse'],
       path: 'replay.functionResponse',
     );
-    final functionResponseName = _requiredNonEmptyString(
+    final functionResponseName = requireGoogleReplayNonEmptyString(
       functionResponse['name'],
       path: 'replay.functionResponse.name',
     );
@@ -129,7 +135,7 @@ final class GoogleFunctionResponseReplay {
       );
     }
 
-    final nestedFunctionCallId = _optionalNonEmptyString(
+    final nestedFunctionCallId = optionalGoogleReplayNonEmptyString(
       functionResponse['id'],
       path: 'replay.functionResponse.id',
     );
@@ -144,7 +150,7 @@ final class GoogleFunctionResponseReplay {
     final resolvedFunctionCallId =
         topLevelFunctionCallId ?? nestedFunctionCallId;
     final normalizedFunctionResponse = Map<String, Object?>.from(
-      _normalizeJsonObject(
+      normalizeGoogleReplayJsonObject(
         functionResponse,
         path: 'replay.functionResponse',
       ),
@@ -156,7 +162,7 @@ final class GoogleFunctionResponseReplay {
       normalizedFunctionResponse['id'] = resolvedFunctionCallId;
     }
 
-    final files = _parseFunctionResponseFiles(
+    final files = parseGoogleFunctionResponseFiles(
       normalizedFunctionResponse['parts'],
       path: 'replay.functionResponse.parts',
     );
@@ -183,7 +189,7 @@ final class GoogleFunctionResponseReplay {
         files = List<GeneratedFile>.unmodifiable(files);
 
   String? get functionCallId {
-    return _optionalNonEmptyString(
+    return optionalGoogleReplayNonEmptyString(
       functionResponse['id'],
       path: 'functionResponse.id',
     );
@@ -263,7 +269,7 @@ final class GoogleFunctionResponseReplay {
     ProviderMetadata? providerMetadata,
   }) {
     return GoogleFunctionResponseReplay.fromJson(
-      _requiredObject(
+      requireGoogleReplayObject(
         data,
         path: 'replay',
       ),
@@ -310,373 +316,4 @@ final class GoogleFunctionResponseReplay {
   ) {
     return mergeProviderMetadata(this.providerMetadata, providerMetadata);
   }
-}
-
-Map<String, Object?> _buildFunctionResponse({
-  required String toolName,
-  required Object? response,
-  required List<GeneratedFile> files,
-  required String? functionCallId,
-  required Map<String, Object?> extraFunctionResponseFields,
-}) {
-  final normalizedExtraFields = _normalizeJsonObject(
-    extraFunctionResponseFields,
-    path: 'extraFunctionResponseFields',
-  );
-  for (final reservedKey in const {'id', 'name', 'response', 'parts'}) {
-    if (normalizedExtraFields.containsKey(reservedKey)) {
-      throw ArgumentError.value(
-        extraFunctionResponseFields,
-        'extraFunctionResponseFields',
-        'extraFunctionResponseFields must not contain "$reservedKey".',
-      );
-    }
-  }
-
-  return {
-    ...normalizedExtraFields,
-    if (functionCallId != null && functionCallId.isNotEmpty)
-      'id': functionCallId,
-    'name': toolName,
-    'response': normalizeJsonValue(response),
-    if (files.isNotEmpty)
-      'parts': [
-        for (final file in files)
-          _encodeFunctionResponseFile(
-            _normalizeFunctionResponseFile(file),
-          ),
-      ],
-  };
-}
-
-GeneratedFile _normalizeFunctionResponseFile(GeneratedFile file) {
-  final hasBytes = file.bytes != null;
-  final hasUri = file.uri != null;
-  final hasProviderReference = file.providerReference != null;
-  final hasText = file.text != null;
-  if ([hasBytes, hasUri, hasProviderReference, hasText]
-          .where((value) => value)
-          .length !=
-      1) {
-    throw ArgumentError.value(
-      file,
-      'files',
-      'Google function response files require exactly one of bytes, text, uri, or providerReference.',
-    );
-  }
-
-  return GeneratedFile(
-    mediaType: _requireNonEmptyValue(file.mediaType, name: 'files.mediaType'),
-    filename: _normalizeOptionalDisplayName(file.filename),
-    data: file.bytes == null
-        ? file.text == null
-            ? file.data
-            : FileBytesData(
-                utf8.encode(file.text!),
-              )
-        : FileBytesData(List<int>.unmodifiable(file.bytes!)),
-  );
-}
-
-Map<String, Object?> _encodeFunctionResponseFile(GeneratedFile file) {
-  if (file.bytes != null) {
-    return {
-      'inlineData': {
-        'mimeType': file.mediaType,
-        'data': base64Encode(file.bytes!),
-        if (file.filename != null) 'displayName': file.filename,
-      },
-    };
-  }
-
-  if (file.uri != null) {
-    return {
-      'fileData': {
-        'mimeType': file.mediaType,
-        'fileUri': file.uri.toString(),
-        if (file.filename != null) 'displayName': file.filename,
-      },
-    };
-  }
-
-  if (_googleFileUri(file.providerReference) case final fileUri?) {
-    return {
-      'fileData': {
-        'mimeType': file.mediaType,
-        'fileUri': fileUri,
-        if (file.filename != null) 'displayName': file.filename,
-      },
-    };
-  }
-
-  throw ArgumentError.value(
-    file,
-    'file',
-    'Google function response files require bytes, uri, or providerReference.',
-  );
-}
-
-String? _googleFileUri(ProviderReference? reference) {
-  if (reference == null) {
-    return null;
-  }
-
-  return reference['google'] ??
-      reference['vertex'] ??
-      reference.requireProvider(
-        'google',
-        context: 'Google function response file',
-      );
-}
-
-List<GeneratedFile> _parseFunctionResponseFiles(
-  Object? value, {
-  required String path,
-}) {
-  if (value == null) {
-    return const [];
-  }
-
-  final list = value is List ? value : null;
-  if (list == null) {
-    throw FormatException('Expected $path to be a list.');
-  }
-
-  return List<GeneratedFile>.unmodifiable([
-    for (var index = 0; index < list.length; index++)
-      _parseFunctionResponseFile(
-        list[index],
-        path: '$path[$index]',
-      ),
-  ]);
-}
-
-GeneratedFile _parseFunctionResponseFile(
-  Object? value, {
-  required String path,
-}) {
-  final map = _requiredObject(value, path: path);
-  final inlineData = asMap(map['inlineData']);
-  final fileData = asMap(map['fileData']);
-
-  if (inlineData != null && fileData != null) {
-    throw FormatException(
-      'Expected $path to contain either inlineData or fileData, not both.',
-    );
-  }
-
-  if (inlineData != null) {
-    final displayName = _optionalNonEmptyString(
-      inlineData['displayName'],
-      path: '$path.inlineData.displayName',
-    );
-    return GeneratedFile(
-      mediaType: _requiredNonEmptyString(
-        inlineData['mimeType'],
-        path: '$path.inlineData.mimeType',
-      ),
-      filename: displayName,
-      data: FileBytesData(
-        decodeBase64(
-              _requiredNonEmptyString(
-                inlineData['data'],
-                path: '$path.inlineData.data',
-              ),
-            ) ??
-            (throw FormatException(
-              'Expected $path.inlineData.data to be base64.',
-            )),
-      ),
-    );
-  }
-
-  if (fileData != null) {
-    final displayName = _optionalNonEmptyString(
-      fileData['displayName'],
-      path: '$path.fileData.displayName',
-    );
-    final uriString = _requiredNonEmptyString(
-      fileData['fileUri'],
-      path: '$path.fileData.fileUri',
-    );
-    final uri = Uri.tryParse(uriString);
-    if (uri == null) {
-      throw FormatException('Expected $path.fileData.fileUri to be a URI.');
-    }
-
-    return GeneratedFile(
-      mediaType: _requiredNonEmptyString(
-        fileData['mimeType'],
-        path: '$path.fileData.mimeType',
-      ),
-      filename: displayName,
-      data: FileUrlData(uri),
-    );
-  }
-
-  throw FormatException(
-    'Expected $path to contain inlineData or fileData.',
-  );
-}
-
-Map<String, Object?> _normalizeJsonObject(
-  Map<String, Object?> json, {
-  required String path,
-}) {
-  final normalized = normalizeJsonValue(json);
-  if (normalized is Map<String, Object?>) {
-    return normalized;
-  }
-
-  if (normalized is Map) {
-    return Map<String, Object?>.from(normalized);
-  }
-
-  throw FormatException('Expected $path to be a JSON object.');
-}
-
-Map<String, Object?> _requiredObject(
-  Object? value, {
-  required String path,
-}) {
-  final object = asMap(value);
-  if (object == null) {
-    throw FormatException('Expected $path to be an object.');
-  }
-
-  return object;
-}
-
-String _requiredNonEmptyString(
-  Object? value, {
-  required String path,
-}) {
-  final stringValue = value is String ? value : null;
-  if (stringValue == null || stringValue.isEmpty) {
-    throw FormatException('Expected $path to be a non-empty string.');
-  }
-
-  return stringValue;
-}
-
-String? _optionalNonEmptyString(
-  Object? value, {
-  required String path,
-}) {
-  if (value == null) {
-    return null;
-  }
-
-  if (value is! String) {
-    throw FormatException('Expected $path to be a string.');
-  }
-
-  return value.isEmpty ? null : value;
-}
-
-String _requireNonEmptyValue(String value, {required String name}) {
-  if (value.isEmpty) {
-    throw ArgumentError.value(value, name, '$name must not be empty.');
-  }
-
-  return value;
-}
-
-String? _normalizeOptionalDisplayName(String? value) {
-  if (value == null || value.isEmpty) {
-    return null;
-  }
-
-  return value;
-}
-
-_GoogleFunctionResponseEncoding _encodeToolOutputForGoogle({
-  required String toolName,
-  required ToolOutput toolOutput,
-}) {
-  return switch (toolOutput) {
-    ContentToolOutput(:final parts) => _encodeContentToolOutput(
-        toolName: toolName,
-        parts: parts,
-      ),
-    ExecutionDeniedToolOutput(:final reason) => _GoogleFunctionResponseEncoding(
-        response: {
-          'name': toolName,
-          'content': reason ?? 'Tool execution denied',
-        },
-      ),
-    _ => _GoogleFunctionResponseEncoding(
-        response: {
-          'name': toolName,
-          'content': normalizeJsonValue(toolOutput.value) ?? 'null',
-        },
-      ),
-  };
-}
-
-_GoogleFunctionResponseEncoding _encodeContentToolOutput({
-  required String toolName,
-  required List<ToolOutputContentPart> parts,
-}) {
-  final responseTextParts = <String>[];
-  final files = <GeneratedFile>[];
-
-  for (final part in parts) {
-    switch (part) {
-      case TextToolOutputContentPart(:final text):
-        responseTextParts.add(text);
-      case JsonToolOutputContentPart(:final value):
-        responseTextParts.add(
-          jsonEncode({
-            'type': 'json',
-            'value': normalizeJsonValue(value),
-          }),
-        );
-      case FileToolOutputContentPart(
-          :final mediaType,
-          :final filename,
-          :final data,
-        ):
-        files.add(
-          _normalizeFunctionResponseFile(
-            GeneratedFile(
-              mediaType: mediaType,
-              filename: filename,
-              data: data,
-            ),
-          ),
-        );
-      case CustomToolOutputContentPart(
-          :final kind,
-          :final data,
-        ):
-        responseTextParts.add(
-          jsonEncode({
-            'type': 'custom',
-            'kind': kind,
-            if (data != null) 'data': normalizeJsonValue(data),
-          }),
-        );
-    }
-  }
-
-  return _GoogleFunctionResponseEncoding(
-    response: {
-      'name': toolName,
-      'content': responseTextParts.isEmpty
-          ? 'Tool executed successfully.'
-          : responseTextParts.join('\n'),
-    },
-    files: List<GeneratedFile>.unmodifiable(files),
-  );
-}
-
-final class _GoogleFunctionResponseEncoding {
-  final Object? response;
-  final List<GeneratedFile> files;
-
-  const _GoogleFunctionResponseEncoding({
-    required this.response,
-    this.files = const [],
-  });
 }

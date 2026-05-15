@@ -1,0 +1,168 @@
+{
+  "contents": [
+    {
+      "role": "user",
+      "parts": [
+        {
+          "text": "Summarize the Google fixture inputs."
+        },
+        {
+          "inlineData": {
+            "mimeType": "image/png",
+            "data": "AQID"
+          }
+        },
+        {
+          "fileData": {
+            "mimeType": "application/pdf",
+            "fileUri": "https://generativelanguage.googleapis.com/v1beta/files/brief"
+          }
+        }
+      ]
+    },
+    {
+      "role": "model",
+      "parts": [
+        {
+          "text": "Plan the answer.",
+          "thought": true,
+          "thoughtSignature": "sig_reasoning"
+        },
+        {
+          "functionCall": {
+            "id": "call_google_weather",
+            "name": "weather",
+            "args": {
+              "city": "Hong Kong"
+            }
+          }
+        },
+        {
+          "toolCall": {
+            "id": "srvtool_google_search",
+            "toolType": "google_search",
+            "query": "Dart SDK"
+          },
+          "thoughtSignature": "sig_server_tool_call"
+        },
+        {
+          "toolResponse": {
+            "id": "srvtool_google_search",
+            "toolType": "google_search",
+            "result": {
+              "items": [
+                {
+                  "uri": "https://dart.dev",
+                  "title": "Dart"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "text": "Search complete."
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "parts": [
+        {
+          "functionResponse": {
+            "id": "call_google_weather",
+            "name": "weather",
+            "response": {
+              "name": "weather",
+              "content": "Forecast ready.\n{\"type\":\"json\",\"value\":{\"temperatureC\":26,\"condition\":\"Cloudy\"}}"
+            },
+            "parts": [
+              {
+                "inlineData": {
+                  "mimeType": "image/png",
+                  "data": "BAUG",
+                  "displayName": "chart.png"
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "systemInstruction": {
+    "parts": [
+      {
+        "text": "Use concise Google answers."
+      }
+    ]
+  },
+  "generationConfig": {
+    "maxOutputTokens": 128,
+    "temperature": 0.2,
+    "topP": 0.8,
+    "topK": 40,
+    "stopSequences": [
+      "END"
+    ],
+    "candidateCount": 1,
+    "thinkingConfig": {
+      "includeThoughts": true,
+      "thinkingLevel": "medium"
+    },
+    "responseModalities": [
+      "TEXT"
+    ],
+    "responseMimeType": "application/json",
+    "responseSchema": {
+      "type": "object",
+      "properties": {
+        "summary": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "summary"
+      ]
+    }
+  },
+  "safetySettings": [
+    {
+      "category": "HARM_CATEGORY_HARASSMENT",
+      "threshold": "BLOCK_ONLY_HIGH"
+    }
+  ],
+  "tools": [
+    {
+      "googleSearch": {}
+    },
+    {
+      "functionDeclarations": [
+        {
+          "name": "weather",
+          "description": "Get current weather.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "city": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "city"
+            ],
+            "additionalProperties": false
+          }
+        }
+      ]
+    }
+  ],
+  "toolConfig": {
+    "includeServerSideToolInvocations": true,
+    "functionCallingConfig": {
+      "mode": "VALIDATED",
+      "allowedFunctionNames": [
+        "weather"
+      ]
+    }
+  }
+}

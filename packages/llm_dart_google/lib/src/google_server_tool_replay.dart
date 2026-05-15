@@ -1,6 +1,7 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
-import 'google_shared.dart';
+import 'google_replay_json.dart';
+import 'google_server_tool_replay_support.dart';
 
 final class GoogleToolCallReplay {
   static const kind = 'google.result.tool_call';
@@ -15,15 +16,15 @@ final class GoogleToolCallReplay {
     Map<String, Object?> toolCall, {
     ProviderMetadata? providerMetadata,
   }) {
-    final normalizedToolCall = _normalizeGoogleServerToolObject(
+    final normalizedToolCall = normalizeGoogleServerToolObject(
       toolCall,
       path: 'toolCall',
     );
-    final toolCallId = _requiredNonEmptyString(
+    final toolCallId = requireGoogleReplayNonEmptyString(
       normalizedToolCall['id'],
       path: 'toolCall.id',
     );
-    final toolName = _requiredNonEmptyString(
+    final toolName = requireGoogleReplayNonEmptyString(
       normalizedToolCall['toolType'],
       path: 'toolCall.toolType',
     );
@@ -32,7 +33,7 @@ final class GoogleToolCallReplay {
       toolCallId: toolCallId,
       toolName: toolName,
       toolCall: normalizedToolCall,
-      providerMetadata: _mergeGoogleServerToolMetadata(
+      providerMetadata: mergeGoogleServerToolMetadata(
         providerMetadata,
         toolCallId: toolCallId,
         toolName: toolName,
@@ -45,11 +46,11 @@ final class GoogleToolCallReplay {
     Map<String, Object?> json, {
     ProviderMetadata? providerMetadata,
   }) {
-    final normalized = _normalizeGoogleServerToolObject(
+    final normalized = normalizeGoogleServerToolObject(
       json,
       path: 'replay',
     );
-    final replayRole = _requiredNonEmptyString(
+    final replayRole = requireGoogleReplayNonEmptyString(
       normalized['replayRole'],
       path: 'replay.replayRole',
     );
@@ -59,7 +60,7 @@ final class GoogleToolCallReplay {
       );
     }
 
-    final schemaValue = _requiredNonEmptyString(
+    final schemaValue = requireGoogleReplayNonEmptyString(
       normalized['schema'],
       path: 'replay.schema',
     );
@@ -69,22 +70,22 @@ final class GoogleToolCallReplay {
       );
     }
 
-    final toolCallId = _requiredNonEmptyString(
+    final toolCallId = requireGoogleReplayNonEmptyString(
       normalized['toolCallId'],
       path: 'replay.toolCallId',
     );
-    final toolName = _requiredNonEmptyString(
+    final toolName = requireGoogleReplayNonEmptyString(
       normalized['toolName'],
       path: 'replay.toolName',
     );
-    final toolCall = _normalizeGoogleServerToolObject(
-      _requiredObject(
+    final toolCall = normalizeGoogleServerToolObject(
+      requireGoogleReplayObject(
         normalized['toolCall'],
         path: 'replay.toolCall',
       ),
       path: 'replay.toolCall',
     );
-    _validateGoogleServerToolShape(
+    validateGoogleServerToolShape(
       part: toolCall,
       expectedId: toolCallId,
       expectedToolName: toolName,
@@ -95,7 +96,7 @@ final class GoogleToolCallReplay {
       toolCallId: toolCallId,
       toolName: toolName,
       toolCall: toolCall,
-      providerMetadata: _mergeGoogleServerToolMetadata(
+      providerMetadata: mergeGoogleServerToolMetadata(
         providerMetadata,
         toolCallId: toolCallId,
         toolName: toolName,
@@ -201,7 +202,7 @@ final class GoogleToolCallReplay {
     ProviderMetadata? providerMetadata,
   }) {
     return GoogleToolCallReplay.fromJson(
-      _requiredObject(
+      requireGoogleReplayObject(
         data,
         path: 'replay',
       ),
@@ -239,15 +240,15 @@ final class GoogleToolResponseReplay {
     Map<String, Object?> toolResponse, {
     ProviderMetadata? providerMetadata,
   }) {
-    final normalizedToolResponse = _normalizeGoogleServerToolObject(
+    final normalizedToolResponse = normalizeGoogleServerToolObject(
       toolResponse,
       path: 'toolResponse',
     );
-    final toolCallId = _requiredNonEmptyString(
+    final toolCallId = requireGoogleReplayNonEmptyString(
       normalizedToolResponse['id'],
       path: 'toolResponse.id',
     );
-    final toolName = _requiredNonEmptyString(
+    final toolName = requireGoogleReplayNonEmptyString(
       normalizedToolResponse['toolType'],
       path: 'toolResponse.toolType',
     );
@@ -256,7 +257,7 @@ final class GoogleToolResponseReplay {
       toolCallId: toolCallId,
       toolName: toolName,
       toolResponse: normalizedToolResponse,
-      providerMetadata: _mergeGoogleServerToolMetadata(
+      providerMetadata: mergeGoogleServerToolMetadata(
         providerMetadata,
         toolCallId: toolCallId,
         toolName: toolName,
@@ -269,11 +270,11 @@ final class GoogleToolResponseReplay {
     Map<String, Object?> json, {
     ProviderMetadata? providerMetadata,
   }) {
-    final normalized = _normalizeGoogleServerToolObject(
+    final normalized = normalizeGoogleServerToolObject(
       json,
       path: 'replay',
     );
-    final replayRole = _requiredNonEmptyString(
+    final replayRole = requireGoogleReplayNonEmptyString(
       normalized['replayRole'],
       path: 'replay.replayRole',
     );
@@ -283,7 +284,7 @@ final class GoogleToolResponseReplay {
       );
     }
 
-    final schemaValue = _requiredNonEmptyString(
+    final schemaValue = requireGoogleReplayNonEmptyString(
       normalized['schema'],
       path: 'replay.schema',
     );
@@ -293,22 +294,22 @@ final class GoogleToolResponseReplay {
       );
     }
 
-    final toolCallId = _requiredNonEmptyString(
+    final toolCallId = requireGoogleReplayNonEmptyString(
       normalized['toolCallId'],
       path: 'replay.toolCallId',
     );
-    final toolName = _requiredNonEmptyString(
+    final toolName = requireGoogleReplayNonEmptyString(
       normalized['toolName'],
       path: 'replay.toolName',
     );
-    final toolResponse = _normalizeGoogleServerToolObject(
-      _requiredObject(
+    final toolResponse = normalizeGoogleServerToolObject(
+      requireGoogleReplayObject(
         normalized['toolResponse'],
         path: 'replay.toolResponse',
       ),
       path: 'replay.toolResponse',
     );
-    _validateGoogleServerToolShape(
+    validateGoogleServerToolShape(
       part: toolResponse,
       expectedId: toolCallId,
       expectedToolName: toolName,
@@ -319,7 +320,7 @@ final class GoogleToolResponseReplay {
       toolCallId: toolCallId,
       toolName: toolName,
       toolResponse: toolResponse,
-      providerMetadata: _mergeGoogleServerToolMetadata(
+      providerMetadata: mergeGoogleServerToolMetadata(
         providerMetadata,
         toolCallId: toolCallId,
         toolName: toolName,
@@ -426,7 +427,7 @@ final class GoogleToolResponseReplay {
     ProviderMetadata? providerMetadata,
   }) {
     return GoogleToolResponseReplay.fromJson(
-      _requiredObject(
+      requireGoogleReplayObject(
         data,
         path: 'replay',
       ),
@@ -449,84 +450,4 @@ final class GoogleToolResponseReplay {
       return null;
     }
   }
-}
-
-ProviderMetadata? _mergeGoogleServerToolMetadata(
-  ProviderMetadata? metadata, {
-  required String toolCallId,
-  required String toolName,
-  required String partType,
-}) {
-  return ProviderMetadata.mergeNullable(
-    metadata,
-    googleProviderMetadata({
-      'serverToolPart': partType,
-      'toolCallId': toolCallId,
-      'toolType': toolName,
-    }),
-  );
-}
-
-Map<String, Object?> _normalizeGoogleServerToolObject(
-  Map<String, Object?> value, {
-  required String path,
-}) {
-  final normalized = normalizeJsonValue(value);
-  if (normalized is Map<String, Object?>) {
-    return normalized;
-  }
-
-  if (normalized is Map) {
-    return Map<String, Object?>.from(normalized);
-  }
-
-  throw FormatException('Expected $path to be a JSON object.');
-}
-
-void _validateGoogleServerToolShape({
-  required Map<String, Object?> part,
-  required String expectedId,
-  required String expectedToolName,
-  required String path,
-}) {
-  final actualId = _requiredNonEmptyString(
-    part['id'],
-    path: '$path.id',
-  );
-  if (actualId != expectedId) {
-    throw FormatException('Expected $path.id to equal $expectedId.');
-  }
-
-  final actualToolName = _requiredNonEmptyString(
-    part['toolType'],
-    path: '$path.toolType',
-  );
-  if (actualToolName != expectedToolName) {
-    throw FormatException(
-        'Expected $path.toolType to equal $expectedToolName.');
-  }
-}
-
-Map<String, Object?> _requiredObject(
-  Object? value, {
-  required String path,
-}) {
-  final object = asMap(value);
-  if (object == null) {
-    throw FormatException('Expected $path to be an object.');
-  }
-
-  return object;
-}
-
-String _requiredNonEmptyString(
-  Object? value, {
-  required String path,
-}) {
-  final stringValue = asString(value);
-  if (stringValue == null || stringValue.isEmpty) {
-    throw FormatException('Expected $path to be a non-empty string.');
-  }
-
-  return stringValue;
 }
