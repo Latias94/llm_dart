@@ -238,3 +238,56 @@ Current status:
   `openai_chat_completions_stream_util.dart`.
 - Focused OpenAI package analysis and focused OpenAI Chat Completions stream
   tests pass for this follow-up slice.
+
+## M8 - OpenAI Request Encoding Boundary Follow-Up
+
+Goals:
+
+- finish the remaining OpenAI request-encoding boundaries after the stream
+  splits
+- keep `OpenAIResponsesCodec`, `OpenAIResponsesRequestCodec`, and
+  `OpenAIChatCompletionsCodec` as stable provider-local facades
+- preserve Responses replay, custom parts, MCP, built-in tools, structured
+  outputs, media/file handling, and OpenAI-compatible chat-completions behavior
+- keep helper extraction provider-local
+
+Acceptance criteria:
+
+- Responses prompt projection is outside `openai_responses_request_codec.dart`
+- Responses tool declaration/tool-choice/tool-output encoding is outside
+  `openai_responses_request_codec.dart`
+- Responses request compatibility/include/logprobs rules are outside
+  `openai_responses_request_codec.dart`
+- Chat Completions prompt projection is outside
+  `openai_chat_completions_codec.dart`
+- Chat Completions tool declaration/tool-choice/tool-result encoding is outside
+  `openai_chat_completions_codec.dart`
+- Chat Completions provider-option validation and compatibility rules are
+  outside `openai_chat_completions_codec.dart`
+- response-format encoding is shared inside the OpenAI package only
+- focused OpenAI request/stream/language-model tests pass
+- `dart analyze packages/llm_dart_openai` passes
+- workspace dependency guards pass
+
+Current status:
+
+- OpenAI Responses prompt projection moved to
+  `openai_responses_request_prompt_codec.dart`.
+- OpenAI Responses tool declaration, tool choice, and tool-output projection
+  moved to `openai_responses_request_tool_codec.dart`.
+- OpenAI Responses include/logprobs/reasoning/service-tier compatibility rules
+  moved to `openai_responses_request_options_codec.dart`.
+- OpenAI Chat Completions prompt projection moved to
+  `openai_chat_completions_request_prompt_codec.dart`.
+- OpenAI Chat Completions tool declaration, tool choice, and tool-result
+  stringification moved to
+  `openai_chat_completions_request_tool_codec.dart`.
+- OpenAI Chat Completions provider-option validation, system message mode
+  resolution, reasoning compatibility, DeepSeek compatibility, service tier,
+  and top-logprobs encoding moved to
+  `openai_chat_completions_request_options_codec.dart`.
+- Shared OpenAI-family request helpers moved to
+  `openai_request_encoding_util.dart` and
+  `openai_request_format_codec.dart`.
+- Focused OpenAI request, stream, language-model tests, package analysis, and
+  workspace dependency guards pass for this follow-up slice.

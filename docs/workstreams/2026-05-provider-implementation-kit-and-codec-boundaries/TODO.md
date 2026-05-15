@@ -122,6 +122,27 @@
 - [x] Run workspace dependency guards after the docs update
 - [x] Document why this still does not justify public provider utilities
 
+## OpenAI Request Encoding Follow-Up Slice
+
+- [x] Compare OpenAI request boundaries against `repo-ref/ai`
+      `convert-to-openai-chat-messages.ts`,
+      `openai-chat-language-model.ts`, and
+      `openai-responses-language-model.ts`
+- [x] Extract shared OpenAI-family request response-format and low-level
+      request encoding helpers into provider-local modules
+- [x] Extract OpenAI Responses prompt, tool, and request-option encoding into
+      provider-local modules
+- [x] Extract OpenAI Chat Completions prompt, tool, and request-option encoding
+      into provider-local modules
+- [x] Keep `OpenAILanguageModel`, `OpenAIResponsesCodec`,
+      `OpenAIResponsesRequestCodec`, and `OpenAIChatCompletionsCodec` stable
+- [x] Keep Responses replay, custom parts, MCP, built-in tools, and
+      OpenAI-compatible chat-completions behavior unchanged
+- [x] Run focused OpenAI request, stream, language-model tests and package
+      analysis
+- [x] Run workspace dependency guards after the docs update
+- [x] Document why this still does not justify public provider utilities
+
 ## Provider Implementation Kit
 
 - [x] Inventory duplicated helpers after the OpenAI and Anthropic slices

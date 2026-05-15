@@ -133,6 +133,9 @@ The workstream is complete when:
 - [12-openai-chat-completions-stream-codec-boundary.md](12-openai-chat-completions-stream-codec-boundary.md)
   - Follow-up OpenAI Chat Completions stream state, event, tool-call, result,
     and metadata codec extraction record.
+- [13-openai-request-encoding-boundary.md](13-openai-request-encoding-boundary.md)
+  - Follow-up OpenAI Responses and Chat Completions request prompt, tool,
+    option, media/file, and response-format codec extraction record.
 - [MILESTONES.md](MILESTONES.md)
   - Milestones and acceptance criteria.
 - [TODO.md](TODO.md)

@@ -8,6 +8,14 @@ Do not add a new internal shared helper module yet. The extracted helpers should
 remain provider-local:
 
 - `packages/llm_dart_openai/lib/src/openai_responses_request_codec.dart`
+- `packages/llm_dart_openai/lib/src/openai_request_encoding_util.dart`
+- `packages/llm_dart_openai/lib/src/openai_request_format_codec.dart`
+- `packages/llm_dart_openai/lib/src/openai_responses_request_prompt_codec.dart`
+- `packages/llm_dart_openai/lib/src/openai_responses_request_tool_codec.dart`
+- `packages/llm_dart_openai/lib/src/openai_responses_request_options_codec.dart`
+- `packages/llm_dart_openai/lib/src/openai_chat_completions_request_prompt_codec.dart`
+- `packages/llm_dart_openai/lib/src/openai_chat_completions_request_tool_codec.dart`
+- `packages/llm_dart_openai/lib/src/openai_chat_completions_request_options_codec.dart`
 - `packages/llm_dart_openai/lib/src/openai_responses_stream_state.dart`
 - `packages/llm_dart_openai/lib/src/openai_responses_stream_event_codec.dart`
 - `packages/llm_dart_openai/lib/src/openai_responses_stream_tool_codec.dart`
@@ -146,6 +154,34 @@ Those behaviors resemble Vercel AI SDK's OpenAI chat-local stream transform
 and streaming tool-call tracker, but they do not match Responses output items,
 Anthropic content-block state, Ollama NDJSON stream state, or Google content
 projection contracts closely enough to justify a shared package.
+
+The OpenAI request encoding follow-up slice adds eight provider-local helpers:
+
+- Shared OpenAI-family request utilities are limited to JSON argument
+  serialization, OpenAI image-detail option resolution, OpenAI-family file id
+  resolution, request map/string projection, warning-backed body-field removal,
+  and OpenAI JSON schema response-format encoding.
+- Responses prompt projection is driven by Responses `input` item shapes,
+  item-reference replay, store/conversation behavior, reasoning encrypted
+  content, compaction custom parts, MCP approval continuations, and Responses
+  media/file request shapes.
+- Responses tool projection is driven by function tools, OpenAI built-in tools,
+  Responses tool-choice shape, and Responses content tool-output item shapes.
+- Responses request options are driven by include expansion, logprobs,
+  reasoning-model compatibility, and service-tier support.
+- Chat Completions prompt projection is driven by OpenAI-compatible `messages`,
+  text-only collapse, multimodal content arrays, audio/PDF limitations,
+  assistant replay warnings, and OpenAI-compatible provider namespaces.
+- Chat Completions tool projection is driven by chat-completions function
+  declaration shape, tool-choice values, and tool-result stringification.
+- Chat Completions request options are driven by the OpenAI-compatible subset,
+  OpenAI reasoning compatibility, DeepSeek reasoner compatibility, xAI search
+  passthrough in the facade, and service-tier support.
+
+Those behaviors resemble Vercel AI SDK's OpenAI request conversion and tool
+preparation modules, but they are still OpenAI-family contracts rather than
+workspace-wide provider utility contracts. The small helpers shared by
+Responses and Chat Completions stay inside `llm_dart_openai`.
 
 ## Repeated Helper Candidates
 
