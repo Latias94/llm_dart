@@ -136,6 +136,10 @@ The workstream is complete when:
 - [13-openai-request-encoding-boundary.md](13-openai-request-encoding-boundary.md)
   - Follow-up OpenAI Responses and Chat Completions request prompt, tool,
     option, media/file, and response-format codec extraction record.
+- [14-provider-architecture-completion-audit.md](14-provider-architecture-completion-audit.md)
+  - Current-state completion audit for OpenAI, Anthropic, Google, and Ollama
+    provider codec boundaries, fixture contracts, public barrels, remaining
+    large files, dependency guards, and recommended next goals.
 - [MILESTONES.md](MILESTONES.md)
   - Milestones and acceptance criteria.
 - [TODO.md](TODO.md)
