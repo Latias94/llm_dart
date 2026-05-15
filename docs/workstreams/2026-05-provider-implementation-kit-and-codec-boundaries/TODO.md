@@ -86,6 +86,24 @@
       analysis, and workspace dependency guards
 - [x] Document why this still does not justify public provider utilities
 
+## OpenAI Responses Stream Follow-Up Slice
+
+- [x] Compare OpenAI Responses stream boundaries against `repo-ref/ai`
+      Responses language-model and streaming tool-call tracker boundaries
+- [x] Extract OpenAI Responses stream state into a provider-local module
+- [x] Extract OpenAI Responses stream chunk dispatch and event projection into
+      a provider-local module
+- [x] Extract OpenAI Responses function-call delta tracking into a
+      provider-local module
+- [x] Extract OpenAI Responses finish, usage, error, and response metadata
+      mapping into a provider-local module
+- [x] Keep `OpenAIResponsesCodec` as the stable provider-local facade
+- [x] Keep Responses replay, custom parts, MCP, built-in tools, logprobs,
+      source annotations, and provider metadata behavior unchanged
+- [x] Run focused OpenAI Responses stream tests and package analysis
+- [x] Run workspace dependency guards after the docs update
+- [x] Document why this still does not justify public provider utilities
+
 ## Provider Implementation Kit
 
 - [x] Inventory duplicated helpers after the OpenAI and Anthropic slices

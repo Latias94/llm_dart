@@ -127,6 +127,9 @@ The workstream is complete when:
 - [10-anthropic-stream-codec-boundary.md](10-anthropic-stream-codec-boundary.md)
   - Follow-up Anthropic Messages stream state, content-block, tool, and result
     codec extraction record.
+- [11-openai-responses-stream-codec-boundary.md](11-openai-responses-stream-codec-boundary.md)
+  - Follow-up OpenAI Responses stream state, event, tool-call, result, and
+    metadata codec extraction record.
 - [MILESTONES.md](MILESTONES.md)
   - Milestones and acceptance criteria.
 - [TODO.md](TODO.md)

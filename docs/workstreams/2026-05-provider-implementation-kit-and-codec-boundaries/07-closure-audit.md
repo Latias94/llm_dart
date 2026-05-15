@@ -26,8 +26,8 @@ The concrete completion line is:
 | Preserve the public unified API and OpenAI facade. | `OpenAILanguageModel` still calls `OpenAIResponsesCodec.encodeRequest(...)`; the facade delegates internally to `OpenAIResponsesRequestCodec`. |
 | Preserve provider-native features. | Existing OpenAI Responses tests still cover replay metadata, item references, MCP continuations, built-in tools, reasoning, logprobs, custom outputs, image/file inputs, and stream behavior. Anthropic tests still cover native tools, tool-search deferred loading, extended thinking compatibility, cache control, files, and custom replay. |
 | Split OpenAI Responses request encoding. | `packages/llm_dart_openai/lib/src/openai_responses_request_codec.dart` owns request body assembly, prompt/replay encoding, request compatibility policy, tools, response format, and file/image request helpers. |
-| Keep `openai_responses_codec.dart` out of request/body details. | `packages/llm_dart_openai/lib/src/openai_responses_codec.dart` contains the facade, non-stream result decoding, and stream decoding; `rg` shows request encoding in `openai_responses_request_codec.dart` and only facade delegation in `openai_responses_codec.dart`. |
-| Assess OpenAI result/stream split. | `03-openai-responses-codec-boundary-audit.md` and `04-openai-responses-request-codec-extraction.md` document that result/stream decoding remains in the facade for this slice because the stream parser is stateful and higher risk. Stream tests passed unchanged. |
+| Keep `openai_responses_codec.dart` out of request/body details. | `packages/llm_dart_openai/lib/src/openai_responses_codec.dart` contains facade delegation only. Request encoding lives in `openai_responses_request_codec.dart`; non-stream result decoding lives in `openai_responses_stream_result_codec.dart`; stream chunk decoding lives in `openai_responses_stream_event_codec.dart`. |
+| Split OpenAI Responses result/stream boundaries. | The follow-up slice moved stream state, event dispatch, function-call delta tracking, finish/usage/error mapping, and response metadata mapping into `openai_responses_stream_state.dart`, `openai_responses_stream_event_codec.dart`, `openai_responses_stream_tool_codec.dart`, `openai_responses_stream_result_codec.dart`, and `openai_responses_stream_util.dart`. |
 | Complete at least one non-OpenAI contrast split. | `packages/llm_dart_anthropic/lib/src/anthropic_tool_configuration.dart` owns Anthropic common/native tool encoding, tool choice mapping, deferred loading, cache-control projection, and thinking/tool-choice validation. |
 | Keep extracted modules single-purpose. | OpenAI request codec changes when Responses request shapes change. Anthropic tool configuration changes when Anthropic tool configuration rules change. Response parsing, stream parsing, and transport remain outside those modules. |
 | Keep provider packages dependency-clean. | `dart run tool/check_workspace_dependency_guards.dart` passed before and inside release readiness. |
@@ -100,6 +100,13 @@ content-block mapping, tool-use/tool-result mapping, and finish/usage/metadata
 mapping into provider-local modules while keeping `AnthropicStreamCodec` as the
 top-level chunk facade.
 
-Do not treat the Google, Ollama, or Anthropic stream follow-up slices as a
-reason to publish shared utilities. They add evidence for provider-local
-boundaries, not evidence for one stable public helper contract.
+OpenAI Responses stream was later completed as a follow-up slice and recorded
+in `11-openai-responses-stream-codec-boundary.md`. The slice split Responses
+stream state, chunk dispatch, text/reasoning/source/custom event projection,
+function-call delta tracking, and finish/usage/error/metadata mapping into
+provider-local modules while keeping `OpenAIResponsesCodec` as the stable
+provider-local facade.
+
+Do not treat the Google, Ollama, Anthropic stream, or OpenAI Responses stream
+follow-up slices as a reason to publish shared utilities. They add evidence for
+provider-local boundaries, not evidence for one stable public helper contract.

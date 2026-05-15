@@ -163,3 +163,40 @@ Current status:
   evidence.
 - No public behavior migration notes are required because the changes are
   provider-internal and keep existing package-private facades stable.
+
+## M6 - OpenAI Responses Stream Boundary Follow-Up
+
+Goals:
+
+- finish the high-risk stream half of the OpenAI Responses codec boundary
+- keep `OpenAIResponsesCodec` as a stable facade
+- preserve unified stream events, Responses custom parts, MCP behavior,
+  built-in tools, source annotations, logprobs, and provider metadata
+- keep helper extraction provider-local
+
+Acceptance criteria:
+
+- stream state is outside `openai_responses_codec.dart`
+- chunk dispatch is outside `openai_responses_codec.dart`
+- function-call delta tracking is outside `openai_responses_codec.dart`
+- finish, usage, error, and response metadata mapping are outside
+  `openai_responses_codec.dart`
+- focused OpenAI Responses stream tests pass
+- `dart analyze packages/llm_dart_openai` passes
+- workspace dependency guards pass
+
+Current status:
+
+- `openai_responses_codec.dart` now owns facade delegation only.
+- OpenAI Responses stream state moved to
+  `openai_responses_stream_state.dart`.
+- Stream event dispatch and text/reasoning/source/custom item projection moved
+  to `openai_responses_stream_event_codec.dart`.
+- Function-call stream tracking moved to
+  `openai_responses_stream_tool_codec.dart`.
+- Non-stream result decoding plus stream finish/usage/error/metadata mapping
+  moved to `openai_responses_stream_result_codec.dart`.
+- Provider-local stream projection helpers and metadata adapter moved to
+  `openai_responses_stream_util.dart`.
+- Focused OpenAI package analysis and focused OpenAI Responses stream tests
+  pass for this follow-up slice.
