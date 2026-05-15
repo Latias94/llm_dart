@@ -112,6 +112,12 @@ The workstream is complete when:
 - [05-anthropic-tool-configuration-extraction.md](05-anthropic-tool-configuration-extraction.md)
   - Implementation record for the completed Anthropic tool configuration
     extraction.
+- [06-provider-utils-decision.md](06-provider-utils-decision.md)
+  - Post-slice helper inventory and decision to keep provider utilities
+    provider-local for now.
+- [07-closure-audit.md](07-closure-audit.md)
+  - Final prompt-to-artifact checklist and release readiness evidence for this
+    workstream.
 - [MILESTONES.md](MILESTONES.md)
   - Milestones and acceptance criteria.
 - [TODO.md](TODO.md)

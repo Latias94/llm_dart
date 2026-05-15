@@ -77,6 +77,8 @@ Current status:
 - Focused Anthropic messages tests, language-model integration tests, package
   analysis, workspace dependency guards, root boundary guard, and core
   compatibility guard pass for this slice.
+- Google and Ollama remain future candidates for the next architecture slice
+  and are intentionally deferred in this closure.
 
 ## M4 - Provider Implementation Kit Decision
 
@@ -94,7 +96,12 @@ Acceptance criteria:
 
 Current status:
 
-- pending
+- Helper duplication after the OpenAI and Anthropic slices is documented.
+- No public `llm_dart_provider_utils` package is justified for this workstream.
+- No new internal shared helper module is justified yet; extracted helpers stay
+  provider-local.
+- The repeated helper candidates are either already owned by
+  `llm_dart_provider` contracts or differ by provider wire semantics.
 
 ## M5 - Release Readiness And Closure
 
@@ -112,4 +119,9 @@ Acceptance criteria:
 
 Current status:
 
-- pending
+- Full `dart run tool/release_readiness.dart` passed on
+  2026-05-15T10:13:40 local time.
+- Closure audit maps each required deliverable to code, docs, and validation
+  evidence.
+- No public behavior migration notes are required because the changes are
+  provider-internal and keep existing package-private facades stable.

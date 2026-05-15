@@ -15,9 +15,12 @@
   responsibility
 - [x] Audit OpenAI Responses codec responsibilities in detail
 - [x] Audit Anthropic messages tool-configuration boundary in detail
-- [ ] Audit Google GenerateContent codec responsibilities in detail
-- [ ] Audit Ollama language model request/stream responsibilities in detail
 - [x] Decide first implementation slice after publish handoff status is clear
+
+## Future Candidates
+
+- Google GenerateContent detailed codec audit
+- Ollama language-model request/stream detailed audit
 
 ## OpenAI Responses Slice
 
@@ -36,11 +39,11 @@
 
 ## Provider Implementation Kit
 
-- [ ] Inventory duplicated helpers after the OpenAI and Anthropic slices
-- [ ] Keep one-provider helpers provider-local
-- [ ] Decide whether any helper belongs in an internal shared helper module
-- [ ] Decide whether public `llm_dart_provider_utils` is justified
-- [ ] Document the decision before creating any new package
+- [x] Inventory duplicated helpers after the OpenAI and Anthropic slices
+- [x] Keep one-provider helpers provider-local
+- [x] Decide whether any helper belongs in an internal shared helper module
+- [x] Decide whether public `llm_dart_provider_utils` is justified
+- [x] Document the decision before creating any new package
 
 ## Validation
 
@@ -48,4 +51,4 @@
 - [x] Run root and core boundary guards after provider implementation slices
 - [x] Run focused tests for touched provider packages after implementation slices
 - [x] Run affected package analysis after implementation slices
-- [ ] Run `dart run tool/release_readiness.dart` before claiming closure
+- [x] Run `dart run tool/release_readiness.dart` before claiming closure
