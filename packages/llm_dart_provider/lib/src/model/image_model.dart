@@ -1,5 +1,8 @@
 import '../common/call_options.dart';
+import '../common/model_warning.dart';
 import '../common/provider_metadata.dart';
+import '../common/usage_stats.dart';
+import 'model_response_metadata.dart';
 
 final class ImageGenerationRequest {
   final String prompt;
@@ -29,12 +32,19 @@ final class GeneratedImage {
 
 final class ImageGenerationResult {
   final List<GeneratedImage> images;
+  final UsageStats? usage;
+  final List<ModelWarning> warnings;
+  final ModelResponseMetadata? responseMetadata;
   final ProviderMetadata? providerMetadata;
 
   ImageGenerationResult({
     required List<GeneratedImage> images,
+    this.usage,
+    List<ModelWarning> warnings = const [],
+    this.responseMetadata,
     this.providerMetadata,
-  }) : images = List.unmodifiable(images);
+  })  : images = List.unmodifiable(images),
+        warnings = List.unmodifiable(warnings);
 }
 
 abstract interface class ImageModel {

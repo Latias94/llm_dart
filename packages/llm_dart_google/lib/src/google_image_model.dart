@@ -81,8 +81,8 @@ final class GoogleImageModel implements ImageModel, CapabilityDescribedModel {
 
     final json = _decodeJsonObject(response.body);
     return isGeminiImageModel
-        ? _decodeGeminiResponse(json)
-        : _decodeImagenResponse(json);
+        ? _decodeGeminiResponse(json, headers: response.headers)
+        : _decodeImagenResponse(json, headers: response.headers);
   }
 
   Future<ImageGenerationResult> edit(GoogleImageEditRequest request) async {
@@ -112,7 +112,10 @@ final class GoogleImageModel implements ImageModel, CapabilityDescribedModel {
       ),
     );
 
-    return _decodeGeminiResponse(_decodeJsonObject(response.body));
+    return _decodeGeminiResponse(
+      _decodeJsonObject(response.body),
+      headers: response.headers,
+    );
   }
 
   Future<ImageGenerationResult> createVariation(
@@ -350,7 +353,10 @@ final class GoogleImageModel implements ImageModel, CapabilityDescribedModel {
     );
   }
 
-  ImageGenerationResult _decodeImagenResponse(Map<String, Object?> json) {
+  ImageGenerationResult _decodeImagenResponse(
+    Map<String, Object?> json, {
+    required Map<String, String> headers,
+  }) {
     final predictions = asList(json['predictions']);
     if (predictions.isEmpty) {
       throw StateError(
@@ -378,6 +384,11 @@ final class GoogleImageModel implements ImageModel, CapabilityDescribedModel {
 
     return ImageGenerationResult(
       images: images,
+      responseMetadata: ModelResponseMetadata(
+        timestamp: DateTime.now().toUtc(),
+        modelId: modelId,
+        headers: headers,
+      ),
       providerMetadata: googleProviderMetadata(
         {
           'generationApi': 'predict',
@@ -386,7 +397,10 @@ final class GoogleImageModel implements ImageModel, CapabilityDescribedModel {
     );
   }
 
-  ImageGenerationResult _decodeGeminiResponse(Map<String, Object?> json) {
+  ImageGenerationResult _decodeGeminiResponse(
+    Map<String, Object?> json, {
+    required Map<String, String> headers,
+  }) {
     final candidates = asList(json['candidates']);
     if (candidates.isEmpty) {
       throw StateError(
@@ -453,6 +467,12 @@ final class GoogleImageModel implements ImageModel, CapabilityDescribedModel {
 
     return ImageGenerationResult(
       images: images,
+      usage: decodeGoogleUsage(asMap(json['usageMetadata'])),
+      responseMetadata: ModelResponseMetadata(
+        timestamp: DateTime.now().toUtc(),
+        modelId: modelId,
+        headers: headers,
+      ),
       providerMetadata: googleProviderMetadata(
         {
           'generationApi': 'generateContent',

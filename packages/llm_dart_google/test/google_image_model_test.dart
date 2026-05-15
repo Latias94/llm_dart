@@ -31,6 +31,9 @@ void main() {
             capturedRequest = request;
             return TransportResponse(
               statusCode: 200,
+              headers: const {
+                'x-request-id': 'google_image_1',
+              },
               body: {
                 'predictions': [
                   {
@@ -102,6 +105,13 @@ void main() {
       expect(result.images, hasLength(2));
       expect(result.images.first.bytes, [1, 2, 3]);
       expect(result.images.first.mediaType, 'image/png');
+      expect(result.usage, isNull);
+      expect(result.responseMetadata, isNotNull);
+      expect(result.responseMetadata!.modelId, 'imagen-3.0-generate-002');
+      expect(
+        result.responseMetadata!.headers,
+        containsPair('x-request-id', 'google_image_1'),
+      );
       expect(
         result.providerMetadata?.namespace('google'),
         {
@@ -121,10 +131,14 @@ void main() {
             capturedRequest = request;
             return TransportResponse(
               statusCode: 200,
+              headers: const {
+                'x-request-id': 'google_image_2',
+              },
               body: {
                 'modelVersion': 'gemini-2.5-flash-image',
                 'usageMetadata': {
                   'promptTokenCount': 12,
+                  'candidatesTokenCount': 4,
                   'totalTokenCount': 16,
                 },
                 'candidates': [
@@ -188,6 +202,15 @@ void main() {
       );
       expect(result.images, hasLength(1));
       expect(result.images.single.bytes, [7, 8, 9]);
+      expect(result.usage!.inputTokens, 12);
+      expect(result.usage!.outputTokens, 4);
+      expect(result.usage!.totalTokens, 16);
+      expect(result.responseMetadata, isNotNull);
+      expect(result.responseMetadata!.modelId, 'gemini-2.5-flash-image');
+      expect(
+        result.responseMetadata!.headers,
+        containsPair('x-request-id', 'google_image_2'),
+      );
       expect(
         result.providerMetadata?.namespace('google'),
         {
@@ -195,6 +218,7 @@ void main() {
           'modelVersion': 'gemini-2.5-flash-image',
           'usage': {
             'promptTokenCount': 12,
+            'candidatesTokenCount': 4,
             'totalTokenCount': 16,
           },
           'revisedPrompts': ['A refined cat prompt.'],

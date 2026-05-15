@@ -506,6 +506,21 @@ void main() {
             mediaType: 'image/png',
           ),
         ],
+        usage: const UsageStats(inputTokens: 3, totalTokens: 5),
+        warnings: const [
+          ModelWarning(
+            type: ModelWarningType.unsupported,
+            field: 'seed',
+            message: 'seed is not supported.',
+          ),
+        ],
+        responseMetadata: ModelResponseMetadata(
+          timestamp: DateTime.utc(2026, 5, 15),
+          modelId: 'gpt-image-2',
+          headers: const {
+            'x-request-id': 'req_img_1',
+          },
+        ),
         providerMetadata: ProviderMetadata.forNamespace('openai', {
           'imageId': 'img_1',
         }),
@@ -514,9 +529,21 @@ void main() {
       expect(result.images.single.uri.toString(),
           'https://example.test/image.png');
       expect(result.images.single.mediaType, 'image/png');
+      expect(result.usage!.inputTokens, 3);
+      expect(result.responseMetadata!.modelId, 'gpt-image-2');
+      expect(result.warnings.single.field, 'seed');
       expect(result.providerMetadata!.containsNamespace('openai'), isTrue);
       expect(
         () => result.images.add(const GeneratedImage()),
+        throwsUnsupportedError,
+      );
+      expect(
+        () => result.warnings.add(
+          const ModelWarning(
+            type: ModelWarningType.other,
+            message: 'Nope',
+          ),
+        ),
         throwsUnsupportedError,
       );
     });

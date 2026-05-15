@@ -47,12 +47,24 @@ void main() {
             capturedRequest = request;
             return TransportResponse(
               statusCode: 200,
+              headers: const {
+                'x-request-id': 'req_image_1',
+              },
               body: {
                 'created': 1710000000,
                 'size': '1024x1024',
                 'quality': 'hd',
                 'background': 'transparent',
                 'output_format': 'webp',
+                'usage': {
+                  'input_tokens': 12,
+                  'output_tokens': 4,
+                  'total_tokens': 16,
+                  'input_tokens_details': {
+                    'image_tokens': 7,
+                    'text_tokens': 5,
+                  },
+                },
                 'data': [
                   {
                     'b64_json': base64Encode([1, 2, 3, 4]),
@@ -132,9 +144,32 @@ void main() {
       expect(result.images, hasLength(1));
       expect(result.images.single.bytes, [1, 2, 3, 4]);
       expect(result.images.single.mediaType, 'image/webp');
+      expect(result.usage!.inputTokens, 12);
+      expect(result.usage!.outputTokens, 4);
+      expect(result.usage!.totalTokens, 16);
+      expect(result.warnings, isEmpty);
+      expect(result.responseMetadata, isNotNull);
+      expect(result.responseMetadata!.modelId, 'dall-e-3');
+      expect(result.responseMetadata!.timestamp, isA<DateTime>());
+      expect(
+        result.responseMetadata!.headers,
+        containsPair('x-request-id', 'req_image_1'),
+      );
       expect(
         result.providerMetadata?.namespace('openai'),
         {
+          'images': [
+            {
+              'revisedPrompt': 'A more polished cat prompt.',
+              'created': 1710000000,
+              'size': '1024x1024',
+              'quality': 'hd',
+              'background': 'transparent',
+              'outputFormat': 'webp',
+              'imageTokens': 7,
+              'textTokens': 5,
+            },
+          ],
           'created': 1710000000,
           'size': '1024x1024',
           'quality': 'hd',
@@ -142,6 +177,15 @@ void main() {
           'outputFormat': 'webp',
           'responseFormat': 'b64_json',
           'revisedPrompts': ['A more polished cat prompt.'],
+          'usage': {
+            'input_tokens': 12,
+            'output_tokens': 4,
+            'total_tokens': 16,
+            'input_tokens_details': {
+              'image_tokens': 7,
+              'text_tokens': 5,
+            },
+          },
         },
       );
     });
@@ -248,7 +292,67 @@ void main() {
       expect(result.images.single.mediaType, 'image/webp');
       expect(
         result.providerMetadata?.namespace('openai'),
-        {'outputFormat': 'webp'},
+        {
+          'images': [
+            {
+              'outputFormat': 'webp',
+            },
+          ],
+          'outputFormat': 'webp',
+        },
+      );
+    });
+
+    test('image response metadata distributes token details across images',
+        () async {
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'usage': {
+                  'input_tokens': 8,
+                  'input_tokens_details': {
+                    'image_tokens': 5,
+                    'text_tokens': 3,
+                  },
+                },
+                'data': [
+                  {
+                    'b64_json': base64Encode([1]),
+                  },
+                  {
+                    'b64_json': base64Encode([2]),
+                  },
+                ],
+              },
+            );
+          },
+        ),
+      ).imageModel('dall-e-2');
+
+      final result = await generateImage(
+        model: model,
+        prompt: 'Draw two cats.',
+        count: 2,
+      );
+
+      expect(result.images, hasLength(2));
+      expect(result.usage!.inputTokens, 8);
+      expect(
+        result.providerMetadata?.namespace('openai')?['images'],
+        [
+          {
+            'imageTokens': 2,
+            'textTokens': 1,
+          },
+          {
+            'imageTokens': 3,
+            'textTokens': 2,
+          },
+        ],
       );
     });
 
@@ -444,9 +548,19 @@ void main() {
       expect(result.images, hasLength(1));
       expect(result.images.single.bytes, utf8.encode('edited-image'));
       expect(result.images.single.mediaType, 'image/webp');
+      expect(result.usage!.inputTokens, 12);
+      expect(result.responseMetadata, isNotNull);
+      expect(result.responseMetadata!.modelId, 'gpt-image-1');
       expect(
         result.providerMetadata?.namespace('openai'),
         {
+          'images': [
+            {
+              'revisedPrompt': 'A more polished edited cat prompt.',
+              'created': 1710000001,
+              'outputFormat': 'webp',
+            },
+          ],
           'created': 1710000001,
           'outputFormat': 'webp',
           'responseFormat': 'b64_json',

@@ -77,6 +77,7 @@ final class OpenAIImageModel implements ImageModel, CapabilityDescribedModel {
 
     return _decodeResponse(
       response.body,
+      headers: response.headers,
       requestedResponseFormat: _shouldIncludeResponseFormat(modelId)
           ? (options?.responseFormat ?? OpenAIImageResponseFormat.base64Json)
           : null,
@@ -99,6 +100,7 @@ final class OpenAIImageModel implements ImageModel, CapabilityDescribedModel {
 
     return _decodeResponse(
       response.body,
+      headers: response.headers,
       requestedResponseFormat: options?.responseFormat,
     );
   }
@@ -245,6 +247,7 @@ final class OpenAIImageModel implements ImageModel, CapabilityDescribedModel {
 
   ImageGenerationResult _decodeResponse(
     Object? body, {
+    required Map<String, String> headers,
     required OpenAIImageResponseFormat? requestedResponseFormat,
   }) {
     final json = decodeOpenAIJsonObject(
@@ -261,6 +264,9 @@ final class OpenAIImageModel implements ImageModel, CapabilityDescribedModel {
     final outputFormat = openAIStringOrNull(json['output_format']);
     final revisedPrompts = <String>[];
     final images = <GeneratedImage>[];
+    final imageMetadata = <Map<String, Object?>>[];
+    final usage = _decodeUsage(json['usage']);
+    final usageDetails = _usageDetails(json['usage']);
 
     for (var index = 0; index < data.length; index += 1) {
       final item = data[index];
@@ -275,6 +281,16 @@ final class OpenAIImageModel implements ImageModel, CapabilityDescribedModel {
       if (revisedPrompt != null && revisedPrompt.isNotEmpty) {
         revisedPrompts.add(revisedPrompt);
       }
+      imageMetadata.add(
+        _imageMetadata(
+          json,
+          item: map,
+          outputFormat: outputFormat,
+          tokenDetails: usageDetails,
+          index: index,
+          total: data.length,
+        ),
+      );
 
       final b64Json = openAIStringOrNull(map['b64_json']);
       final url = openAIStringOrNull(map['url']);
@@ -300,9 +316,16 @@ final class OpenAIImageModel implements ImageModel, CapabilityDescribedModel {
 
     return ImageGenerationResult(
       images: images,
+      usage: usage,
+      responseMetadata: ModelResponseMetadata(
+        timestamp: DateTime.now().toUtc(),
+        modelId: modelId,
+        headers: headers,
+      ),
       providerMetadata: ProviderMetadata.forNamespace(
         'openai',
         {
+          'images': imageMetadata,
           if (json['created'] != null) 'created': json['created'],
           if (json['size'] != null) 'size': json['size'],
           if (json['quality'] != null) 'quality': json['quality'],
@@ -460,6 +483,104 @@ final class OpenAIImageModel implements ImageModel, CapabilityDescribedModel {
       );
     }
   }
+}
+
+UsageStats? _decodeUsage(Object? value) {
+  final map = _asOpenAIMap(value);
+  if (map == null) {
+    return null;
+  }
+
+  final usage = UsageStats(
+    inputTokens: openAIIntOrNull(map['input_tokens']),
+    outputTokens: openAIIntOrNull(map['output_tokens']),
+    totalTokens: openAIIntOrNull(map['total_tokens']),
+  );
+
+  return usage.isEmpty ? null : usage;
+}
+
+Map<String, Object?>? _usageDetails(Object? value) {
+  final map = _asOpenAIMap(value);
+  return _asOpenAIMap(map?['input_tokens_details']);
+}
+
+Map<String, Object?> _imageMetadata(
+  Map<String, Object?> response, {
+  required Map<String, Object?> item,
+  required String? outputFormat,
+  required Map<String, Object?>? tokenDetails,
+  required int index,
+  required int total,
+}) {
+  return {
+    if (openAIStringOrNull(item['revised_prompt']) case final revisedPrompt?
+        when revisedPrompt.isNotEmpty)
+      'revisedPrompt': revisedPrompt,
+    if (response['created'] != null) 'created': response['created'],
+    if (response['size'] != null) 'size': response['size'],
+    if (response['quality'] != null) 'quality': response['quality'],
+    if (response['background'] != null) 'background': response['background'],
+    if (outputFormat != null) 'outputFormat': outputFormat,
+    ..._distributeTokenDetails(
+      tokenDetails,
+      index: index,
+      total: total,
+    ),
+  };
+}
+
+Map<String, Object?> _distributeTokenDetails(
+  Map<String, Object?>? details, {
+  required int index,
+  required int total,
+}) {
+  if (details == null || total < 1) {
+    return const {};
+  }
+
+  final result = <String, Object?>{};
+  final imageTokens = openAIIntOrNull(details['image_tokens']);
+  if (imageTokens != null) {
+    result['imageTokens'] = _distributedTokenCount(
+      imageTokens,
+      index: index,
+      total: total,
+    );
+  }
+
+  final textTokens = openAIIntOrNull(details['text_tokens']);
+  if (textTokens != null) {
+    result['textTokens'] = _distributedTokenCount(
+      textTokens,
+      index: index,
+      total: total,
+    );
+  }
+
+  return result;
+}
+
+int _distributedTokenCount(
+  int value, {
+  required int index,
+  required int total,
+}) {
+  final base = value ~/ total;
+  final remainder = value - base * (total - 1);
+  return index == total - 1 ? remainder : base;
+}
+
+Map<String, Object?>? _asOpenAIMap(Object? value) {
+  if (value is Map<String, Object?>) {
+    return value;
+  }
+
+  if (value is Map) {
+    return Map<String, Object?>.from(value);
+  }
+
+  return null;
 }
 
 void _validateOutputCompression(int outputCompression, String parameterName) {
