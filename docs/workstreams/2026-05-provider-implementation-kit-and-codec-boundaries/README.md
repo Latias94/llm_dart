@@ -124,6 +124,9 @@ The workstream is complete when:
 - [09-ollama-chat-codec-boundary.md](09-ollama-chat-codec-boundary.md)
   - Follow-up Ollama chat request, response, stream, and tool codec extraction
     record.
+- [10-anthropic-stream-codec-boundary.md](10-anthropic-stream-codec-boundary.md)
+  - Follow-up Anthropic Messages stream state, content-block, tool, and result
+    codec extraction record.
 - [MILESTONES.md](MILESTONES.md)
   - Milestones and acceptance criteria.
 - [TODO.md](TODO.md)

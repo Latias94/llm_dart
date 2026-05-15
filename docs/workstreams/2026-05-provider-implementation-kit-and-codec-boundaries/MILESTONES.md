@@ -95,6 +95,17 @@ Current status:
 - `OllamaLanguageModel` now owns facade and transport orchestration only.
 - Focused Ollama tests, package analysis, and workspace dependency guards pass
   for the follow-up slice.
+- Anthropic stream was added as a follow-up stream-boundary contrast slice after
+  Ollama.
+- Anthropic Messages stream state, content-block mapping, tool input/result
+  mapping, and finish/usage/metadata mapping have moved into provider-local
+  `anthropic_stream_state.dart`, `anthropic_stream_content_codec.dart`,
+  `anthropic_stream_tool_codec.dart`, `anthropic_stream_result_codec.dart`, and
+  `anthropic_stream_util.dart`.
+- `AnthropicStreamCodec` now owns top-level chunk dispatch, ping filtering, and
+  provider error chunk conversion only.
+- Focused Anthropic stream tests, full Anthropic package tests, package
+  analysis, and workspace dependency guards pass for the follow-up slice.
 
 ## M4 - Provider Implementation Kit Decision
 
@@ -125,6 +136,10 @@ Current status:
   options, image-only multimodal request shape, NDJSON stream parser, and
   automatic-only tool-choice warnings are provider-local rather than stable
   shared helper contracts.
+- The Anthropic stream follow-up slice reinforces this decision because its
+  content-block index state, incremental tool-input JSON accumulation,
+  immediate provider tool results, custom replay payloads, and finish metadata
+  are Anthropic stream semantics rather than stable shared helper contracts.
 
 ## M5 - Release Readiness And Closure
 

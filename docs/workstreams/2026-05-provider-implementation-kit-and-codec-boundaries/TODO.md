@@ -22,6 +22,7 @@
 - [x] Google GenerateContent detailed codec audit and extraction
 - [x] Ollama language-model request/response/stream/tool detailed audit and
       extraction
+- [x] Anthropic stream state/content/tool/result detailed audit and extraction
 
 ## OpenAI Responses Slice
 
@@ -65,6 +66,24 @@
       embedding, and capability behavior provider-owned
 - [x] Run focused Ollama tests, package analysis, and workspace dependency
       guards
+- [x] Document why this still does not justify public provider utilities
+
+## Anthropic Stream Follow-Up Slice
+
+- [x] Compare Anthropic stream boundaries against `repo-ref/ai`
+      `anthropic-language-model.ts`, `convert-anthropic-usage.ts`,
+      `map-anthropic-stop-reason.ts`, and `anthropic-message-metadata.ts`
+- [x] Extract Anthropic stream state accumulation into a provider-local module
+- [x] Extract Anthropic content-block start/delta/stop projection into a
+      provider-local module
+- [x] Extract Anthropic tool-use, tool-input delta, immediate tool-result, and
+      custom replay event mapping into a provider-local module
+- [x] Extract Anthropic message start/delta/stop finish, usage, and metadata
+      mapping into a provider-local module
+- [x] Keep native tool, thinking, cache, file, code-execution replay, and
+      capability behavior provider-owned
+- [x] Run focused Anthropic stream tests, full Anthropic tests, package
+      analysis, and workspace dependency guards
 - [x] Document why this still does not justify public provider utilities
 
 ## Provider Implementation Kit

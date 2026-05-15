@@ -94,6 +94,12 @@ non-stream response decoding, NDJSON stream parsing, and tool encoding/decoding
 into provider-local modules while keeping `OllamaLanguageModel` as the facade
 and transport owner.
 
-Do not treat the Google or Ollama follow-up slices as a reason to publish shared
-utilities. They add evidence for provider-local boundaries, not evidence for one
-stable public helper contract.
+Anthropic stream was later completed as a follow-up slice and recorded in
+`10-anthropic-stream-codec-boundary.md`. The slice split stream state,
+content-block mapping, tool-use/tool-result mapping, and finish/usage/metadata
+mapping into provider-local modules while keeping `AnthropicStreamCodec` as the
+top-level chunk facade.
+
+Do not treat the Google, Ollama, or Anthropic stream follow-up slices as a
+reason to publish shared utilities. They add evidence for provider-local
+boundaries, not evidence for one stable public helper contract.

@@ -9,6 +9,11 @@ remain provider-local:
 
 - `packages/llm_dart_openai/lib/src/openai_responses_request_codec.dart`
 - `packages/llm_dart_anthropic/lib/src/anthropic_tool_configuration.dart`
+- `packages/llm_dart_anthropic/lib/src/anthropic_stream_state.dart`
+- `packages/llm_dart_anthropic/lib/src/anthropic_stream_content_codec.dart`
+- `packages/llm_dart_anthropic/lib/src/anthropic_stream_tool_codec.dart`
+- `packages/llm_dart_anthropic/lib/src/anthropic_stream_result_codec.dart`
+- `packages/llm_dart_anthropic/lib/src/anthropic_stream_util.dart`
 - `packages/llm_dart_google/lib/src/google_content_projection.dart`
 - `packages/llm_dart_google/lib/src/google_tool_configuration.dart`
 - `packages/llm_dart_ollama/lib/src/ollama_chat_request_codec.dart`
@@ -68,6 +73,25 @@ Those behaviors resemble Vercel AI SDK's provider-local conversion and tool
 preparation modules, but they do not match the OpenAI, Anthropic, or Google
 helper contracts closely enough to justify a shared package.
 
+The Anthropic stream follow-up slice adds five more provider-local helpers:
+
+- Stream state is keyed by Anthropic content-block indexes and tool-use ids.
+- Content projection is driven by Anthropic `text`, `compaction`, `thinking`,
+  `redacted_thinking`, citation, and tool-input delta events.
+- Tool projection is driven by Anthropic common, server-side, and MCP tool-use
+  blocks, incremental JSON tool input, immediate provider tool results, and
+  custom replay payloads.
+- Result projection is driven by Anthropic `message_start`, `message_delta`,
+  `message_stop`, raw usage, stop sequence, container, and context-management
+  metadata.
+- Stream utilities are limited to JSON/object projection and Anthropic metadata
+  helpers used by those stream modules.
+
+Those behaviors resemble Vercel AI SDK's Anthropic-local stream transform,
+usage conversion, stop-reason mapping, and message metadata helpers, but they
+do not match the Ollama, Google, OpenAI, or Anthropic request-helper contracts
+closely enough to justify a shared package.
+
 ## Repeated Helper Candidates
 
 | Candidate | Current evidence | Decision |
@@ -76,7 +100,7 @@ helper contracts closely enough to justify a shared package.
 | Provider reference resolution | Providers already call `ProviderReference.requireProvider(...)`; mapping the resolved ID into OpenAI `file_id`, Anthropic `file` source, or Google `fileData` remains provider-specific. | Keep mapping provider-local. |
 | Tool choice encoding | OpenAI, Anthropic, and Google have different wire values and validation rules. `RequiredToolChoice` maps differently, Anthropic rejects forced tool use with thinking, and Google strict tools use `VALIDATED`. | Keep provider-local. |
 | Media and file encoding | Base64/data URL/file-source code repeats mechanically, but accepted media types, URI rules, text documents, hosted file references, Google `fileData` provider references, and Ollama image-only chat payloads differ by provider. | Keep provider-local until a stable file-data helper contract emerges. |
-| Stream tool-call tracking | OpenAI already has OpenAI-family stream helpers; Anthropic, Google, and Ollama stream vocabularies still differ. Ollama now has a provider-local NDJSON parser and tool-call dedupe state. | Revisit only after two non-OpenAI providers need the same stream helper contract. |
+| Stream tool-call tracking | OpenAI already has OpenAI-family stream helpers; Anthropic, Google, and Ollama stream vocabularies still differ. Ollama has a provider-local NDJSON parser and tool-call dedupe state. Anthropic has provider-local content-block index state, incremental JSON tool-input accumulation, immediate tool-result mapping, and custom replay event construction. | Revisit only after two non-OpenAI providers need the same stream helper contract. |
 | Fixture/test helpers | Existing focused tests cover provider behavior directly. A public runtime package should not expose test-only helper shape. | Keep test utilities local. |
 
 ## Package Evidence
