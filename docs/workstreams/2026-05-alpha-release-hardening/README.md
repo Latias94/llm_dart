@@ -107,6 +107,10 @@ record any alpha feedback as targeted follow-up work.
   - Ordered release-hardening priorities and stop conditions.
 - [01-release-readiness-command.md](01-release-readiness-command.md)
   - Desired behavior for the release-readiness automation.
+- [03-release-readiness-audit-2026-05-15.md](03-release-readiness-audit-2026-05-15.md)
+  - Current branch release-readiness audit, fixture-path fix record, final
+    13-step release gate evidence, publish dry-run evidence, pub.dev version
+    availability, and publish-order confirmation.
 - [MILESTONES.md](MILESTONES.md)
   - Milestones and acceptance criteria.
 - [TODO.md](TODO.md)

@@ -547,6 +547,15 @@ void expectJsonFixture(String relativePath, Object? actual) {
 }
 
 Object? readJsonFixture(String relativePath) {
-  final file = File('packages/llm_dart_anthropic/test/fixtures/$relativePath');
-  return jsonDecode(file.readAsStringSync()) as Object?;
+  for (final basePath in const [
+    'packages/llm_dart_anthropic/test/fixtures',
+    'test/fixtures',
+  ]) {
+    final file = File('$basePath/$relativePath');
+    if (file.existsSync()) {
+      return jsonDecode(file.readAsStringSync()) as Object?;
+    }
+  }
+
+  throw FileSystemException('Fixture not found.', relativePath);
 }

@@ -109,4 +109,10 @@ Current status:
 - a full local release-readiness run passed on 2026-05-11 with guards,
   analysis, root tests, consumer smoke, and workspace publish dry-run for 12
   package(s)
+- a full local release-readiness run passed again on 2026-05-15 after the
+  provider fixture-contract refactors; the run covered all 13 release steps,
+  including workspace package tests, consumer smoke, publish dry-runs for 12
+  package(s), and pub.dev version availability
+- the 2026-05-15 audit fixed package-root fixture lookup for OpenAI,
+  Anthropic, and Google fixture contract tests before the final green run
 - actual publishing has not started
