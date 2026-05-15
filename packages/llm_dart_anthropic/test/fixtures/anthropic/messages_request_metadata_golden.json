@@ -1,0 +1,30 @@
+{
+  "betaFeatures": [
+    "extended-cache-ttl-2025-04-11",
+    "files-api-2025-04-14",
+    "interleaved-thinking-2025-05-14",
+    "mcp-client-2025-04-04"
+  ],
+  "warnings": [
+    {
+      "type": "compatibility",
+      "message": "Anthropic providerOptions.thinkingBudgetTokens overrides shared options.reasoning.budgetTokens.",
+      "field": "options.reasoning.budgetTokens"
+    },
+    {
+      "type": "unsupported",
+      "message": "temperature is not supported when thinking is enabled.",
+      "field": "temperature"
+    },
+    {
+      "type": "unsupported",
+      "message": "topP is not supported when thinking is enabled.",
+      "field": "topP"
+    },
+    {
+      "type": "unsupported",
+      "message": "topK is not supported when thinking is enabled.",
+      "field": "topK"
+    }
+  ]
+}

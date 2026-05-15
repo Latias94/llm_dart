@@ -1,0 +1,116 @@
+{
+  "model": "claude-sonnet-4-5",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "Use the available tools."
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "tool_use",
+          "id": "toolu_weather",
+          "name": "weather",
+          "input": {
+            "city": "Hong Kong"
+          }
+        },
+        {
+          "type": "mcp_tool_use",
+          "id": "mcptoolu_browser",
+          "name": "open_browser",
+          "server_name": "workspace",
+          "input": {
+            "url": "https://example.com"
+          }
+        },
+        {
+          "type": "server_tool_use",
+          "id": "srvtoolu_search",
+          "name": "web_search",
+          "input": {
+            "query": "dart sdk"
+          }
+        },
+        {
+          "type": "server_tool_use",
+          "id": "srvtoolu_code",
+          "name": "bash_code_execution",
+          "input": {
+            "command": "echo hi"
+          }
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "tool_result",
+          "tool_use_id": "toolu_weather",
+          "content": [
+            {
+              "type": "text",
+              "text": "forecast"
+            },
+            {
+              "type": "text",
+              "text": "{\"condition\":\"Cloudy\",\"temperatureC\":26}"
+            }
+          ]
+        },
+        {
+          "type": "mcp_tool_result",
+          "tool_use_id": "mcptoolu_browser",
+          "content": {
+            "status": "opened"
+          }
+        },
+        {
+          "type": "web_search_tool_result",
+          "tool_use_id": "srvtoolu_search",
+          "content": [
+            {
+              "url": "https://dart.dev",
+              "title": "Dart",
+              "type": "web_search_result"
+            }
+          ]
+        },
+        {
+          "type": "bash_code_execution_tool_result",
+          "tool_use_id": "srvtoolu_code",
+          "content": {
+            "type": "bash_code_execution_result",
+            "stdout": "hi\n",
+            "stderr": "",
+            "return_code": 0,
+            "content": [
+              {
+                "type": "bash_code_execution_output",
+                "file_id": "file_123"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "text",
+          "text": "Tool replay complete."
+        }
+      ]
+    }
+  ],
+  "max_tokens": 1024,
+  "stream": false
+}

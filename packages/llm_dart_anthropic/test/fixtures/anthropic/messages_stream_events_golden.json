@@ -1,0 +1,513 @@
+{
+  "schemaVersion": "2026-03-1",
+  "kind": "text-stream-events",
+  "data": {
+    "events": [
+      {
+        "type": "response-metadata",
+        "responseId": "msg_fixture",
+        "modelId": "claude-sonnet-4-5"
+      },
+      {
+        "type": "text-start",
+        "id": "0",
+        "providerMetadata": {
+          "anthropic": {
+            "blockIndex": 0,
+            "blockType": "text"
+          }
+        }
+      },
+      {
+        "type": "text-delta",
+        "id": "0",
+        "delta": "Hello",
+        "providerMetadata": {
+          "anthropic": {
+            "blockIndex": 0,
+            "blockType": "text"
+          }
+        }
+      },
+      {
+        "type": "source",
+        "source": {
+          "kind": "url",
+          "sourceId": "https://dart.dev",
+          "uri": "https://dart.dev",
+          "title": "Dart",
+          "providerMetadata": {
+            "anthropic": {
+              "citationType": "web_search_result_location",
+              "citedText": "Dart",
+              "encryptedIndex": "enc_citation_1"
+            }
+          }
+        }
+      },
+      {
+        "type": "text-end",
+        "id": "0",
+        "providerMetadata": {
+          "anthropic": {
+            "blockIndex": 0,
+            "blockType": "text"
+          }
+        }
+      },
+      {
+        "type": "reasoning-start",
+        "id": "1",
+        "providerMetadata": {
+          "anthropic": {
+            "blockIndex": 1,
+            "blockType": "thinking"
+          }
+        }
+      },
+      {
+        "type": "reasoning-delta",
+        "id": "1",
+        "delta": "Plan",
+        "providerMetadata": {
+          "anthropic": {
+            "blockIndex": 1,
+            "blockType": "thinking"
+          }
+        }
+      },
+      {
+        "type": "reasoning-delta",
+        "id": "1",
+        "delta": "",
+        "providerMetadata": {
+          "anthropic": {
+            "blockIndex": 1,
+            "blockType": "thinking",
+            "signature": "sig_fixture"
+          }
+        }
+      },
+      {
+        "type": "reasoning-end",
+        "id": "1",
+        "providerMetadata": {
+          "anthropic": {
+            "blockIndex": 1,
+            "blockType": "thinking"
+          }
+        }
+      },
+      {
+        "type": "tool-input-start",
+        "toolCallId": "toolu_weather",
+        "toolName": "weather",
+        "providerExecuted": false,
+        "isDynamic": false,
+        "providerMetadata": {
+          "anthropic": {
+            "blockIndex": 2,
+            "blockType": "tool_use"
+          }
+        }
+      },
+      {
+        "type": "tool-input-delta",
+        "toolCallId": "toolu_weather",
+        "delta": "{\"city\":\"Hong Kong\"}",
+        "providerMetadata": {
+          "anthropic": {
+            "blockIndex": 2,
+            "blockType": "tool_use"
+          }
+        }
+      },
+      {
+        "type": "tool-input-end",
+        "toolCallId": "toolu_weather",
+        "providerMetadata": {
+          "anthropic": {
+            "blockIndex": 2,
+            "blockType": "tool_use"
+          }
+        }
+      },
+      {
+        "type": "tool-call",
+        "toolCall": {
+          "toolCallId": "toolu_weather",
+          "toolName": "weather",
+          "input": {
+            "city": "Hong Kong"
+          },
+          "providerExecuted": false,
+          "isDynamic": false
+        },
+        "providerMetadata": {
+          "anthropic": {
+            "blockIndex": 2,
+            "blockType": "tool_use"
+          }
+        }
+      },
+      {
+        "type": "tool-input-start",
+        "toolCallId": "mcptoolu_browser",
+        "toolName": "mcp.open_browser",
+        "providerExecuted": true,
+        "isDynamic": true,
+        "title": "workspace",
+        "providerMetadata": {
+          "anthropic": {
+            "blockIndex": 3,
+            "blockType": "mcp_tool_use",
+            "serverName": "workspace"
+          }
+        }
+      },
+      {
+        "type": "tool-input-delta",
+        "toolCallId": "mcptoolu_browser",
+        "delta": "{\"url\":\"https://example.com\"}",
+        "providerMetadata": {
+          "anthropic": {
+            "blockIndex": 3,
+            "blockType": "mcp_tool_use",
+            "serverName": "workspace"
+          }
+        }
+      },
+      {
+        "type": "tool-input-end",
+        "toolCallId": "mcptoolu_browser",
+        "providerMetadata": {
+          "anthropic": {
+            "blockIndex": 3,
+            "blockType": "mcp_tool_use",
+            "serverName": "workspace"
+          }
+        }
+      },
+      {
+        "type": "tool-call",
+        "toolCall": {
+          "toolCallId": "mcptoolu_browser",
+          "toolName": "mcp.open_browser",
+          "input": {
+            "url": "https://example.com"
+          },
+          "providerExecuted": true,
+          "isDynamic": true,
+          "title": "workspace"
+        },
+        "providerMetadata": {
+          "anthropic": {
+            "blockIndex": 3,
+            "blockType": "mcp_tool_use",
+            "serverName": "workspace"
+          }
+        }
+      },
+      {
+        "type": "tool-result",
+        "toolResult": {
+          "toolCallId": "mcptoolu_browser",
+          "toolName": "mcp.open_browser",
+          "toolOutput": {
+            "type": "json",
+            "value": [
+              {
+                "type": "text",
+                "text": "opened"
+              }
+            ]
+          },
+          "preliminary": false,
+          "isDynamic": true
+        },
+        "providerMetadata": {
+          "anthropic": {
+            "blockIndex": 3,
+            "blockType": "mcp_tool_result",
+            "serverName": "workspace"
+          }
+        }
+      },
+      {
+        "type": "tool-input-start",
+        "toolCallId": "srvtoolu_search",
+        "toolName": "web_search",
+        "providerExecuted": true,
+        "isDynamic": true,
+        "providerMetadata": {
+          "anthropic": {
+            "blockIndex": 5,
+            "blockType": "server_tool_use",
+            "providerToolName": "web_search"
+          }
+        }
+      },
+      {
+        "type": "tool-input-delta",
+        "toolCallId": "srvtoolu_search",
+        "delta": "{\"query\":\"dart sdk\"}",
+        "providerMetadata": {
+          "anthropic": {
+            "blockIndex": 5,
+            "blockType": "server_tool_use",
+            "providerToolName": "web_search"
+          }
+        }
+      },
+      {
+        "type": "tool-input-end",
+        "toolCallId": "srvtoolu_search",
+        "providerMetadata": {
+          "anthropic": {
+            "blockIndex": 5,
+            "blockType": "server_tool_use",
+            "providerToolName": "web_search"
+          }
+        }
+      },
+      {
+        "type": "tool-call",
+        "toolCall": {
+          "toolCallId": "srvtoolu_search",
+          "toolName": "web_search",
+          "input": {
+            "query": "dart sdk"
+          },
+          "providerExecuted": true,
+          "isDynamic": true
+        },
+        "providerMetadata": {
+          "anthropic": {
+            "blockIndex": 5,
+            "blockType": "server_tool_use",
+            "providerToolName": "web_search"
+          }
+        }
+      },
+      {
+        "type": "tool-result",
+        "toolResult": {
+          "toolCallId": "srvtoolu_search",
+          "toolName": "web_search",
+          "toolOutput": {
+            "type": "json",
+            "value": [
+              {
+                "url": "https://dart.dev",
+                "title": "Dart",
+                "page_age": "1d",
+                "encrypted_content": "enc_search_1",
+                "type": "web_search_result"
+              }
+            ]
+          },
+          "preliminary": false,
+          "isDynamic": true
+        },
+        "providerMetadata": {
+          "anthropic": {
+            "blockIndex": 5,
+            "blockType": "web_search_tool_result",
+            "providerToolName": "web_search"
+          }
+        }
+      },
+      {
+        "type": "custom",
+        "kind": "anthropic.result.web_search",
+        "data": {
+          "replayRole": "tool",
+          "toolCallId": "srvtoolu_search",
+          "toolName": "web_search",
+          "block": {
+            "type": "web_search_tool_result",
+            "tool_use_id": "srvtoolu_search",
+            "content": [
+              {
+                "url": "https://dart.dev",
+                "title": "Dart",
+                "page_age": "1d",
+                "encrypted_content": "enc_search_1",
+                "type": "web_search_result"
+              }
+            ]
+          }
+        },
+        "providerMetadata": {
+          "anthropic": {
+            "blockIndex": 5,
+            "blockType": "web_search_tool_result",
+            "providerToolName": "web_search"
+          }
+        }
+      },
+      {
+        "type": "source",
+        "source": {
+          "kind": "url",
+          "sourceId": "https://dart.dev",
+          "uri": "https://dart.dev",
+          "title": "Dart",
+          "providerMetadata": {
+            "anthropic": {
+              "pageAge": "1d",
+              "resultType": "web_search_result"
+            }
+          }
+        }
+      },
+      {
+        "type": "tool-input-start",
+        "toolCallId": "srvtoolu_code",
+        "toolName": "bash_code_execution",
+        "providerExecuted": true,
+        "isDynamic": true,
+        "providerMetadata": {
+          "anthropic": {
+            "blockIndex": 7,
+            "blockType": "server_tool_use",
+            "providerToolName": "bash_code_execution"
+          }
+        }
+      },
+      {
+        "type": "tool-input-delta",
+        "toolCallId": "srvtoolu_code",
+        "delta": "{\"command\":\"echo hi\"}",
+        "providerMetadata": {
+          "anthropic": {
+            "blockIndex": 7,
+            "blockType": "server_tool_use",
+            "providerToolName": "bash_code_execution"
+          }
+        }
+      },
+      {
+        "type": "tool-input-end",
+        "toolCallId": "srvtoolu_code",
+        "providerMetadata": {
+          "anthropic": {
+            "blockIndex": 7,
+            "blockType": "server_tool_use",
+            "providerToolName": "bash_code_execution"
+          }
+        }
+      },
+      {
+        "type": "tool-call",
+        "toolCall": {
+          "toolCallId": "srvtoolu_code",
+          "toolName": "bash_code_execution",
+          "input": {
+            "command": "echo hi"
+          },
+          "providerExecuted": true,
+          "isDynamic": true
+        },
+        "providerMetadata": {
+          "anthropic": {
+            "blockIndex": 7,
+            "blockType": "server_tool_use",
+            "providerToolName": "bash_code_execution"
+          }
+        }
+      },
+      {
+        "type": "tool-result",
+        "toolResult": {
+          "toolCallId": "srvtoolu_code",
+          "toolName": "bash_code_execution",
+          "toolOutput": {
+            "type": "json",
+            "value": {
+              "type": "bash_code_execution_result",
+              "stdout": "hi\n",
+              "stderr": "",
+              "return_code": 0,
+              "content": [
+                {
+                  "type": "bash_code_execution_output",
+                  "file_id": "file_123"
+                }
+              ]
+            }
+          },
+          "preliminary": false,
+          "isDynamic": true
+        },
+        "providerMetadata": {
+          "anthropic": {
+            "blockIndex": 7,
+            "blockType": "bash_code_execution_tool_result",
+            "providerToolName": "bash_code_execution"
+          }
+        }
+      },
+      {
+        "type": "custom",
+        "kind": "anthropic.result.code_execution",
+        "data": {
+          "schema": "anthropic.execution.result.v1",
+          "replayRole": "tool",
+          "toolCallId": "srvtoolu_code",
+          "toolName": "code_execution",
+          "blockType": "bash_code_execution_tool_result",
+          "block": {
+            "type": "bash_code_execution_tool_result",
+            "tool_use_id": "srvtoolu_code",
+            "content": {
+              "type": "bash_code_execution_result",
+              "stdout": "hi\n",
+              "stderr": "",
+              "return_code": 0,
+              "content": [
+                {
+                  "type": "bash_code_execution_output",
+                  "file_id": "file_123"
+                }
+              ]
+            }
+          }
+        },
+        "providerMetadata": {
+          "anthropic": {
+            "blockIndex": 7,
+            "blockType": "bash_code_execution_tool_result",
+            "providerToolName": "bash_code_execution"
+          }
+        }
+      },
+      {
+        "type": "finish",
+        "finishReason": "toolCalls",
+        "rawFinishReason": "tool_use",
+        "usage": {
+          "inputTokens": 18,
+          "outputTokens": 42,
+          "totalTokens": 60,
+          "reasoningTokens": null
+        },
+        "providerMetadata": {
+          "anthropic": {
+            "usage": {
+              "input_tokens": 18,
+              "output_tokens": 42
+            },
+            "container": {
+              "id": "container_fixture",
+              "expiresAt": "2026-03-27T12:00:00Z"
+            },
+            "contextManagement": {
+              "clear_function_results": false
+            }
+          }
+        }
+      }
+    ]
+  }
+}

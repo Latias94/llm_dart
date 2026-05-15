@@ -1,0 +1,153 @@
+{
+  "model": "claude-sonnet-4-5",
+  "messages": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "Summarize the attachments and use tools when needed.",
+          "cache_control": {
+            "type": "ephemeral",
+            "ttl": "5m"
+          }
+        },
+        {
+          "type": "image",
+          "source": {
+            "type": "base64",
+            "media_type": "image/png",
+            "data": "AQID"
+          }
+        },
+        {
+          "type": "document",
+          "source": {
+            "type": "file",
+            "file_id": "file_pdf_123"
+          },
+          "title": "source.pdf"
+        },
+        {
+          "type": "document",
+          "source": {
+            "type": "text",
+            "media_type": "text/plain",
+            "data": "cached notes"
+          },
+          "title": "notes.txt",
+          "cache_control": {
+            "type": "ephemeral",
+            "ttl": "5m"
+          }
+        }
+      ]
+    }
+  ],
+  "max_tokens": 1792,
+  "stream": false,
+  "system": [
+    {
+      "type": "text",
+      "text": "Reusable instructions.",
+      "cache_control": {
+        "type": "ephemeral",
+        "ttl": "1h"
+      }
+    }
+  ],
+  "stop_sequences": [
+    "END"
+  ],
+  "thinking": {
+    "type": "enabled",
+    "budget_tokens": 1536
+  },
+  "service_tier": "auto",
+  "metadata": {
+    "suite": "fixture-contract"
+  },
+  "container": "container_fixture",
+  "mcp_servers": [
+    {
+      "name": "workspace",
+      "type": "url",
+      "url": "https://mcp.example.com",
+      "tool_configuration": {
+        "enabled": true,
+        "allowed_tools": [
+          "open_browser"
+        ]
+      }
+    }
+  ],
+  "tools": [
+    {
+      "name": "weather",
+      "description": "Get current weather.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "city": {
+            "type": "string"
+          },
+          "units": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "city"
+        ],
+        "additionalProperties": false
+      },
+      "strict": true,
+      "defer_loading": true
+    },
+    {
+      "name": "get_forecast",
+      "description": "Get forecast details.",
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "city": {
+            "type": "string"
+          },
+          "days": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "city"
+        ]
+      }
+    },
+    {
+      "type": "web_search_20250305",
+      "name": "web_search",
+      "max_uses": 2,
+      "allowed_domains": [
+        "dart.dev"
+      ],
+      "user_location": {
+        "type": "approximate",
+        "city": "Hong Kong",
+        "country": "HK"
+      }
+    },
+    {
+      "type": "code_execution_20260120",
+      "name": "code_execution"
+    },
+    {
+      "type": "tool_search_tool_regex_20251119",
+      "name": "tool_search_tool_regex",
+      "cache_control": {
+        "type": "ephemeral",
+        "ttl": "1h"
+      }
+    }
+  ],
+  "tool_choice": {
+    "type": "auto"
+  }
+}
