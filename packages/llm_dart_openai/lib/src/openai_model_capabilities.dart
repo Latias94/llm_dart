@@ -37,7 +37,8 @@ OpenAIModelCapabilities getOpenAIModelCapabilities(String modelId) {
   final supportsNonReasoningParameters = modelId.startsWith('gpt-5.1') ||
       modelId.startsWith('gpt-5.2') ||
       modelId.startsWith('gpt-5.3') ||
-      modelId.startsWith('gpt-5.4');
+      modelId.startsWith('gpt-5.4') ||
+      modelId.startsWith('gpt-5.5');
 
   return OpenAIModelCapabilities(
     isReasoningModel: isReasoningModel,
@@ -51,5 +52,5 @@ OpenAIModelCapabilities getOpenAIModelCapabilities(String modelId) {
 }
 
 bool isOpenAIChatOptimizedModel(String modelId) {
-  return modelId.startsWith('gpt-5') && modelId.contains('-chat');
+  return modelId.startsWith('gpt-5-chat');
 }

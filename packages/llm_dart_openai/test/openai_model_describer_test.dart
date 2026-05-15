@@ -52,6 +52,43 @@ void main() {
       );
     });
 
+    test('describeOpenAIChatModel aligns GPT-5 family predicates', () {
+      final gpt55 = describeOpenAIChatModel('gpt-5.5');
+      final gpt5Chat = describeOpenAIChatModel('gpt-5-chat-latest');
+      final gpt51Chat = describeOpenAIChatModel('gpt-5.1-chat-latest');
+
+      expect(
+        gpt55.providerFeature('openai', 'modelCapabilities')?.detail,
+        {
+          'isReasoningModel': true,
+          'systemMessageMode': 'developer',
+          'supportsFlexProcessing': true,
+          'supportsPriorityProcessing': true,
+          'supportsNonReasoningParameters': true,
+        },
+      );
+      expect(
+        gpt5Chat.providerFeature('openai', 'modelCapabilities')?.detail,
+        {
+          'isReasoningModel': false,
+          'systemMessageMode': 'system',
+          'supportsFlexProcessing': false,
+          'supportsPriorityProcessing': false,
+          'supportsNonReasoningParameters': false,
+        },
+      );
+      expect(
+        gpt51Chat.providerFeature('openai', 'modelCapabilities')?.detail,
+        {
+          'isReasoningModel': true,
+          'systemMessageMode': 'developer',
+          'supportsFlexProcessing': true,
+          'supportsPriorityProcessing': true,
+          'supportsNonReasoningParameters': true,
+        },
+      );
+    });
+
     test('describeOpenAIChatModel reflects chat-completions-only defaults', () {
       final profile = describeOpenAIChatModel(
         'deepseek-reasoner',

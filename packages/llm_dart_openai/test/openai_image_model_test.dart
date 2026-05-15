@@ -23,6 +23,18 @@ void main() {
       );
     });
 
+    test('image models expose Vercel-aligned max images per call', () {
+      final provider = OpenAI(
+        apiKey: 'test-key',
+        transport: const _FakeTransportClient(),
+      );
+
+      expect(provider.imageModel('dall-e-3').maxImagesPerCall, 1);
+      expect(provider.imageModel('dall-e-2').maxImagesPerCall, 10);
+      expect(provider.imageModel('gpt-image-2').maxImagesPerCall, 10);
+      expect(provider.imageModel('unknown-image-model').maxImagesPerCall, 1);
+    });
+
     test('generateImage sends a request and decodes base64 image output',
         () async {
       TransportRequest? capturedRequest;
@@ -285,6 +297,28 @@ void main() {
             (error) => error.message,
             'message',
             contains('between 0 and 100'),
+          ),
+        ),
+      );
+    });
+
+    test('image generation rejects counts above the model limit', () async {
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: const _FakeTransportClient(),
+      ).imageModel('dall-e-3');
+
+      await expectLater(
+        () => generateImage(
+          model: model,
+          prompt: 'Draw two cats.',
+          count: 2,
+        ),
+        throwsA(
+          isA<ArgumentError>().having(
+            (error) => error.message,
+            'message',
+            contains('at most 1 generated images per call'),
           ),
         ),
       );

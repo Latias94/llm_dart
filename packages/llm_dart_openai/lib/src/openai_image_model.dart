@@ -45,6 +45,8 @@ final class OpenAIImageModel implements ImageModel, CapabilityDescribedModel {
     );
   }
 
+  int get maxImagesPerCall => _maxImagesPerCall(modelId);
+
   Uri get imageGenerationUri => Uri.parse('$baseUrl/images/generations');
   Uri get imageEditUri => Uri.parse('$baseUrl/images/edits');
 
@@ -64,7 +66,7 @@ final class OpenAIImageModel implements ImageModel, CapabilityDescribedModel {
       request.callOptions,
       parameterName: 'request.callOptions.providerOptions',
     );
-    _validateGenerationOptions(options);
+    _validateGenerationRequest(request, options);
 
     final response = await transport.send(
       _buildGenerationTransportRequest(
@@ -327,7 +329,27 @@ final class OpenAIImageModel implements ImageModel, CapabilityDescribedModel {
     );
   }
 
-  void _validateGenerationOptions(OpenAIImageOptions? options) {
+  void _validateGenerationRequest(
+    ImageGenerationRequest request,
+    OpenAIImageOptions? options,
+  ) {
+    if (request.count < 1) {
+      throw ArgumentError.value(
+        request.count,
+        'request.count',
+        'OpenAI image generation requires count >= 1.',
+      );
+    }
+
+    final maxImagesPerCall = this.maxImagesPerCall;
+    if (request.count > maxImagesPerCall) {
+      throw ArgumentError.value(
+        request.count,
+        'request.count',
+        'OpenAI image model $modelId supports at most $maxImagesPerCall generated images per call.',
+      );
+    }
+
     if (options?.outputCompression case final outputCompression?) {
       _validateOutputCompression(
         outputCompression,
@@ -464,6 +486,19 @@ bool _hasDefaultResponseFormat(String modelId) {
   ];
 
   return defaultResponseFormatPrefixes.any(modelId.startsWith);
+}
+
+int _maxImagesPerCall(String modelId) {
+  return switch (modelId) {
+    'dall-e-2' => 10,
+    'dall-e-3' => 1,
+    'chatgpt-image-latest' => 10,
+    'gpt-image-1' => 10,
+    'gpt-image-1-mini' => 10,
+    'gpt-image-1.5' => 10,
+    'gpt-image-2' => 10,
+    _ => 1,
+  };
 }
 
 String _mediaTypeForOutputFormat(String? outputFormat) {
