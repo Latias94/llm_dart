@@ -1,15 +1,8 @@
-import 'dart:convert';
-
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
-import 'anthropic_code_execution_replay.dart';
 import 'anthropic_options.dart';
-import 'anthropic_tool_configuration.dart';
-
-part 'anthropic_content_encoder.dart';
-part 'anthropic_prompt_blocks.dart';
-part 'anthropic_request_options_encoder.dart';
-part 'anthropic_tool_replay_encoder.dart';
+import 'anthropic_prompt_blocks.dart';
+import 'anthropic_request_options_encoder.dart';
 
 final class AnthropicMessagesRequest {
   final Map<String, Object?> body;
@@ -26,6 +19,11 @@ final class AnthropicMessagesRequest {
 }
 
 final class AnthropicMessagesCodec {
+  static const AnthropicPromptBlockEncoder _promptEncoder =
+      AnthropicPromptBlockEncoder();
+  static const AnthropicRequestOptionsEncoder _requestOptionsEncoder =
+      AnthropicRequestOptionsEncoder();
+
   const AnthropicMessagesCodec();
 
   AnthropicMessagesRequest encodeRequest({
@@ -39,12 +37,12 @@ final class AnthropicMessagesCodec {
     required bool stream,
   }) {
     final warnings = <ModelWarning>[];
-    final encodedPrompt = _encodeAnthropicPrompt(
+    final encodedPrompt = _promptEncoder.encode(
       prompt,
       warnings: warnings,
     );
 
-    return _buildAnthropicMessagesRequest(
+    final encodedRequest = _requestOptionsEncoder.buildMessagesRequest(
       modelId: modelId,
       prompt: encodedPrompt,
       tools: tools,
@@ -54,6 +52,12 @@ final class AnthropicMessagesCodec {
       providerOptions: providerOptions,
       stream: stream,
       warnings: warnings,
+    );
+
+    return AnthropicMessagesRequest(
+      body: encodedRequest.body,
+      betaFeatures: encodedRequest.betaFeatures,
+      warnings: encodedRequest.warnings,
     );
   }
 
@@ -65,14 +69,27 @@ final class AnthropicMessagesCodec {
     required AnthropicChatModelSettings settings,
     required AnthropicGenerateTextOptions providerOptions,
   }) {
-    return _buildAnthropicTokenCountRequest(
-      codec: this,
+    final baseRequest = encodeRequest(
       modelId: modelId,
       prompt: prompt,
       tools: tools,
       toolChoice: toolChoice,
+      options: const GenerateTextOptions(),
       settings: settings,
       providerOptions: providerOptions,
+      stream: false,
+    );
+    final encodedRequest = _requestOptionsEncoder.buildTokenCountRequest(
+      baseBody: baseRequest.body,
+      baseBetaFeatures: baseRequest.betaFeatures,
+      baseWarnings: baseRequest.warnings,
+      providerOptions: providerOptions,
+    );
+
+    return AnthropicMessagesRequest(
+      body: encodedRequest.body,
+      betaFeatures: encodedRequest.betaFeatures,
+      warnings: encodedRequest.warnings,
     );
   }
 }
