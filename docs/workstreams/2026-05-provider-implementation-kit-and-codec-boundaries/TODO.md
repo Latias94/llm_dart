@@ -104,6 +104,24 @@
 - [x] Run workspace dependency guards after the docs update
 - [x] Document why this still does not justify public provider utilities
 
+## OpenAI Chat Completions Stream Follow-Up Slice
+
+- [x] Compare OpenAI Chat Completions stream boundaries against `repo-ref/ai`
+      chat language-model and streaming tool-call tracker boundaries
+- [x] Extract OpenAI Chat Completions stream state into a provider-local module
+- [x] Extract OpenAI Chat Completions stream chunk decoding and event
+      projection into a provider-local module
+- [x] Extract OpenAI Chat Completions tool-call delta tracking into a
+      provider-local module
+- [x] Extract OpenAI Chat Completions result, finish, usage, error, logprobs,
+      timestamp, and response metadata mapping into a provider-local module
+- [x] Keep `OpenAIChatCompletionsCodec` as the stable provider-local facade
+- [x] Keep OpenAI-compatible family stream events, xAI citations, malformed
+      tool input behavior, and provider metadata unchanged
+- [x] Run focused OpenAI Chat Completions stream tests and package analysis
+- [x] Run workspace dependency guards after the docs update
+- [x] Document why this still does not justify public provider utilities
+
 ## Provider Implementation Kit
 
 - [x] Inventory duplicated helpers after the OpenAI and Anthropic slices

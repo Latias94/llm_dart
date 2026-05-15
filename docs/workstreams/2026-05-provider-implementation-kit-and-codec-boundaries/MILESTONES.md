@@ -200,3 +200,41 @@ Current status:
   `openai_responses_stream_util.dart`.
 - Focused OpenAI package analysis and focused OpenAI Responses stream tests
   pass for this follow-up slice.
+
+## M7 - OpenAI Chat Completions Stream Boundary Follow-Up
+
+Goals:
+
+- split the remaining stream/result half of the OpenAI Chat Completions codec
+- keep `OpenAIChatCompletionsCodec` as a stable provider-local facade
+- preserve OpenAI-compatible family stream events, xAI citations, malformed
+  tool input behavior, logprobs, finish usage, and provider metadata
+- keep helper extraction provider-local
+
+Acceptance criteria:
+
+- stream state is outside `openai_chat_completions_codec.dart`
+- chunk decoding is outside `openai_chat_completions_codec.dart`
+- tool-call delta tracking is outside `openai_chat_completions_codec.dart`
+- non-stream result, finish, usage, error, logprobs, timestamp, and metadata
+  mapping are outside `openai_chat_completions_codec.dart`
+- focused OpenAI Chat Completions stream tests pass
+- `dart analyze packages/llm_dart_openai` passes
+- workspace dependency guards pass
+
+Current status:
+
+- `openai_chat_completions_codec.dart` now owns request encoding plus facade
+  delegation.
+- OpenAI Chat Completions stream state moved to
+  `openai_chat_completions_stream_state.dart`.
+- Stream event projection moved to
+  `openai_chat_completions_stream_event_codec.dart`.
+- Tool-call stream tracking moved to
+  `openai_chat_completions_stream_tool_codec.dart`.
+- Non-stream result decoding plus finish/usage/error/logprobs/timestamp
+  mapping moved to `openai_chat_completions_stream_result_codec.dart`.
+- Provider-local stream projection helpers and metadata adapter moved to
+  `openai_chat_completions_stream_util.dart`.
+- Focused OpenAI package analysis and focused OpenAI Chat Completions stream
+  tests pass for this follow-up slice.

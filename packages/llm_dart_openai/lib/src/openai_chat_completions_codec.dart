@@ -2,13 +2,17 @@ import 'dart:convert';
 
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import 'openai_chat_completions_stream_event_codec.dart';
+import 'openai_chat_completions_stream_result_codec.dart';
+import 'openai_chat_completions_stream_state.dart';
 import 'openai_chat_completions_support.dart';
 import 'openai_model_capabilities.dart';
 import 'openai_options.dart';
 import 'openai_response_format.dart';
-import 'openai_streaming_support.dart';
 import 'openai_tool_output_encoding.dart';
 import 'resolved_openai_options.dart';
+
+export 'openai_chat_completions_stream_state.dart';
 
 final class OpenAIChatCompletionsRequest {
   final Map<String, Object?> body;
@@ -19,10 +23,6 @@ final class OpenAIChatCompletionsRequest {
     List<ModelWarning> warnings = const [],
   })  : body = Map.unmodifiable(body),
         warnings = List.unmodifiable(warnings);
-}
-
-final class OpenAIChatCompletionsStreamState extends OpenAIStreamState {
-  final Set<String> emittedSourceIds = {};
 }
 
 final class OpenAIChatCompletionsCodec {
@@ -60,14 +60,17 @@ final class OpenAIChatCompletionsCodec {
     Map<String, Object?> response, {
     List<ModelWarning> warnings = const [],
   }) =>
-      _decodeGenerateResponse(response, warnings: warnings);
+      decodeOpenAIChatCompletionsGenerateResponse(
+        response,
+        support: _support,
+        warnings: warnings,
+      );
 
   Iterable<LanguageModelStreamEvent> decodeStreamChunk(
     Map<String, Object?> chunk,
     OpenAIChatCompletionsStreamState state,
-  ) sync* {
-    yield* _decodeOpenAIChatCompletionsStreamChunk(this, chunk, state);
-  }
+  ) =>
+      decodeOpenAIChatCompletionsStreamChunk(_support, chunk, state);
 
   OpenAIChatCompletionsRequest _encodeRequest({
     required String modelId,
@@ -926,188 +929,8 @@ final class OpenAIChatCompletionsCodec {
     return normalized;
   }
 
-  GenerateTextResult _decodeGenerateResponse(
-    Map<String, Object?> response, {
-    List<ModelWarning> warnings = const [],
-  }) {
-    _throwIfError(response);
-
-    final choice = _firstChoice(response);
-    final message = _asMap(choice?['message']) ?? const <String, Object?>{};
-    final content = <ContentPart>[];
-    final textLogprobs = _decodeChatLogprobs(choice?['logprobs']);
-    final rawFinishReason = _asString(choice?['finish_reason']);
-
-    final decodedText = _support.decodeAssistantText(message);
-    if (decodedText.reasoning case final reasoning? when reasoning.isNotEmpty) {
-      content.add(
-        ReasoningContentPart(
-          reasoning,
-          providerMetadata: _support.providerMetadata({
-            'finishReason': rawFinishReason,
-          }),
-        ),
-      );
-    }
-
-    if (decodedText.text.isNotEmpty) {
-      content.add(
-        TextContentPart(
-          decodedText.text,
-          providerMetadata: _support.providerMetadata({
-            'finishReason': rawFinishReason,
-            'logprobs': textLogprobs,
-          }),
-        ),
-      );
-    }
-
-    final toolCalls = _support.decodeToolCalls(
-      _asList(message['tool_calls']),
-    );
-    content.addAll(toolCalls);
-    content.addAll(_support.decodeTopLevelSources(response));
-
-    return GenerateTextResult(
-      content: content,
-      finishReason: _mapFinishReason(rawFinishReason),
-      rawFinishReason: rawFinishReason,
-      responseId: _asString(response['id']),
-      responseTimestamp: _decodeResponseTimestamp(response),
-      responseModelId: _asString(response['model']),
-      usage: _decodeUsage(_asMap(response['usage'])),
-      providerMetadata: _support.responseMetadata(
-        response,
-        choice,
-        logprobs: textLogprobs,
-      ),
-      warnings: warnings,
-    );
-  }
-
-  List<Object?>? _decodeChatLogprobs(Object? value) {
-    final logprobs = _asMap(value);
-    return _jsonListOrNull(logprobs?['content']);
-  }
-
-  UsageStats? _decodeUsage(Map<String, Object?>? usage) {
-    if (usage == null) {
-      return null;
-    }
-
-    final inputTokens = _asInt(usage['prompt_tokens']);
-    final outputTokens = _asInt(usage['completion_tokens']);
-    final totalTokens = _asInt(usage['total_tokens']) ??
-        ((inputTokens != null && outputTokens != null)
-            ? inputTokens + outputTokens
-            : null);
-    final completionDetails = _asMap(usage['completion_tokens_details']);
-
-    return UsageStats(
-      inputTokens: inputTokens,
-      outputTokens: outputTokens,
-      totalTokens: totalTokens,
-      reasoningTokens: _asInt(completionDetails?['reasoning_tokens']),
-    );
-  }
-
-  FinishReason _mapFinishReason(String? rawReason) {
-    return switch (rawReason) {
-      null || 'stop' => FinishReason.stop,
-      'length' => FinishReason.maxTokens,
-      'tool_calls' => FinishReason.toolCalls,
-      'content_filter' => FinishReason.contentFilter,
-      'cancelled' => FinishReason.aborted,
-      _ => FinishReason.other,
-    };
-  }
-
-  Map<String, Object?>? _firstChoice(Map<String, Object?> response) {
-    final choices = _asList(response['choices']);
-    if (choices.isEmpty) {
-      return null;
-    }
-
-    return _asMap(choices.first);
-  }
-
-  void _throwIfError(Map<String, Object?> response) {
-    final error = _asMap(response['error']);
-    if (error == null) {
-      return;
-    }
-
-    final message = _asString(error['message']) ?? 'OpenAI response error';
-    final type = _asString(error['type']);
-    final code = error['code'];
-    throw StateError(
-      'OpenAI chat-completions error: $message'
-      '${type == null ? '' : ' (type: $type)'}'
-      '${code == null ? '' : ' (code: $code)'}',
-    );
-  }
-
-  Iterable<LanguageModelStreamEvent> _finalizeToolCalls(
-    OpenAIChatCompletionsStreamState state,
-    _ChatCompletionsStreamMetadataAdapter metadata,
-  ) sync* {
-    for (final entry in state.toolCalls.sortedEntries()) {
-      final toolState = entry.value;
-      final startEvent = maybeCreateOpenAIToolInputStartEvent(
-        toolState: toolState,
-        fallbackToolCallId: 'tool_${entry.key}',
-        metadata: () => metadata.tool(entry.key),
-      );
-      if (startEvent != null) {
-        yield startEvent;
-      }
-
-      final resolvedInput = resolveOpenAIStreamToolInput(
-        toolState: toolState,
-        fallbackToolCallId: 'tool_${entry.key}',
-      );
-      if (resolvedInput.decodeError != null) {
-        yield createOpenAIToolInputErrorEvent(
-          input: resolvedInput,
-          metadata: () => metadata.tool(entry.key),
-        );
-        continue;
-      }
-
-      final endEvent = maybeCreateOpenAIToolInputEndEvent(
-        toolState: toolState,
-        fallbackToolCallId: 'tool_${entry.key}',
-        metadata: () => metadata.tool(entry.key),
-      );
-      if (endEvent != null) {
-        yield endEvent;
-      }
-      yield ToolCallEvent(
-        toolCall: ToolCallContent(
-          toolCallId: resolvedInput.toolCallId,
-          toolName: resolvedInput.toolName,
-          input: resolvedInput.decodedInput,
-        ),
-        providerMetadata: metadata.tool(entry.key),
-      );
-    }
-    state.toolCalls.clear();
-  }
-
   int _encodeChatTopLogProbs(OpenAILogProbs logprobs) {
     return logprobs.topLogProbs ?? 0;
-  }
-
-  String? _extractContentDelta(Map<String, Object?> delta) {
-    return _asString(delta['content']);
-  }
-
-  String? _extractReasoningDelta(Map<String, Object?> delta) {
-    return firstOpenAINonEmptyString([
-      _asString(delta['reasoning_content']),
-      _asString(delta['reasoning']),
-      _asString(delta['thinking']),
-    ]);
   }
 
   String _encodeJsonString(Object? value) {
@@ -1125,262 +948,4 @@ final class OpenAIChatCompletionsCodec {
   String _encodeToolOutput(ToolOutput output) {
     return encodeOpenAIToolOutputAsText(output);
   }
-
-  Map<String, Object?>? _asMap(Object? value) {
-    if (value is Map<String, Object?>) {
-      return value;
-    }
-
-    if (value is Map) {
-      return Map<String, Object?>.from(value);
-    }
-
-    return null;
-  }
-
-  List<Object?> _asList(Object? value) {
-    if (value is List<Object?>) {
-      return value;
-    }
-
-    if (value is List) {
-      return List<Object?>.from(value);
-    }
-
-    return const [];
-  }
-
-  List<Object?>? _jsonListOrNull(Object? value) {
-    if (value is List<Object?>) {
-      return value;
-    }
-
-    if (value is List) {
-      return List<Object?>.from(value);
-    }
-
-    return null;
-  }
-
-  String? _asString(Object? value) {
-    return value is String ? value : null;
-  }
-
-  int? _asInt(Object? value) {
-    if (value is int) {
-      return value;
-    }
-
-    if (value is num) {
-      return value.toInt();
-    }
-
-    return null;
-  }
-
-  DateTime? _decodeResponseTimestamp(Map<String, Object?> response) {
-    final created = _asInt(response['created']);
-    if (created == null) {
-      return null;
-    }
-
-    return DateTime.fromMillisecondsSinceEpoch(
-      created * 1000,
-      isUtc: true,
-    );
-  }
-
-  static const String _textId = 'text_0';
-  static const String _reasoningId = 'reasoning_0';
-}
-
-Iterable<LanguageModelStreamEvent> _decodeOpenAIChatCompletionsStreamChunk(
-  OpenAIChatCompletionsCodec codec,
-  Map<String, Object?> chunk,
-  OpenAIChatCompletionsStreamState state,
-) sync* {
-  final metadata = _ChatCompletionsStreamMetadataAdapter(
-    support: codec._support,
-    state: state,
-    chunk: chunk,
-  );
-  captureOpenAIResponseMetadata(
-    state: state,
-    responseId: codec._asString(chunk['id']),
-    responseModelId: codec._asString(chunk['model']),
-    responseTimestamp: codec._decodeResponseTimestamp(chunk),
-  );
-  final metadataEvent = maybeCreateOpenAIResponseMetadataEvent(
-    state: state,
-    metadata: metadata.response,
-  );
-  if (metadataEvent != null) {
-    yield metadataEvent;
-  }
-
-  final choice = codec._firstChoice(chunk);
-  if (choice == null) {
-    if (codec._asMap(chunk['error']) case final error?) {
-      yield ErrorEvent(
-        ModelError.fromUnknown(
-          error,
-          kind: ModelErrorKind.provider,
-        ),
-      );
-    }
-    return;
-  }
-
-  final delta = codec._asMap(choice['delta']) ?? const <String, Object?>{};
-  final textLogprobs = codec._decodeChatLogprobs(choice['logprobs']);
-  captureOpenAIResponseMetadata(
-    state: state,
-    usage: codec._decodeUsage(codec._asMap(chunk['usage'])),
-  );
-
-  yield* codec._support.decodeChunkSources(
-    chunk,
-    responseId: state.responseId,
-    emittedSourceIds: state.emittedSourceIds,
-  );
-
-  final reasoningDelta = codec._extractReasoningDelta(delta);
-  yield* decodeOpenAIReasoningDeltaEvents(
-    state: state.reasoningParts,
-    id: OpenAIChatCompletionsCodec._reasoningId,
-    delta: reasoningDelta,
-    startMetadata: metadata.reasoning,
-    deltaMetadata: metadata.reasoning,
-  );
-
-  final contentDelta = codec._extractContentDelta(delta);
-  yield* decodeOpenAITextDeltaEvents(
-    state: state.textParts,
-    id: OpenAIChatCompletionsCodec._textId,
-    delta: contentDelta,
-    aggregateLogprobs: state.logprobs,
-    deltaLogprobs: textLogprobs,
-    startMetadata: () => metadata.text(textLogprobs),
-    deltaMetadata: () => metadata.text(textLogprobs),
-  );
-
-  for (final rawToolCall in codec._asList(delta['tool_calls'])) {
-    final toolCall = codec._asMap(rawToolCall);
-    if (toolCall == null) {
-      continue;
-    }
-
-    final rawIndex = codec._asInt(toolCall['index']);
-    final index = rawIndex ?? state.toolCalls.length;
-    final function =
-        codec._asMap(toolCall['function']) ?? const <String, Object?>{};
-    final deltaResult = consumeOpenAIToolCallDelta(
-      state: state,
-      index: rawIndex,
-      fallbackIndex: index,
-      fallbackToolCallId: 'tool_$index',
-      toolCallId: codec._asString(toolCall['id']),
-      toolName: codec._asString(function['name']),
-      argumentsDelta: codec._asString(function['arguments']),
-    );
-    final toolState = deltaResult.toolState;
-    if (toolState.toolCallId == null || toolState.toolName == null) {
-      continue;
-    }
-
-    final startEvent = maybeCreateOpenAIToolInputStartEvent(
-      toolState: toolState,
-      fallbackToolCallId: 'tool_$index',
-      metadata: () => metadata.tool(index),
-    );
-    if (startEvent != null) {
-      yield startEvent;
-    }
-
-    final deltaEvent = maybeCreateOpenAIToolInputDeltaEvent(
-      toolState: toolState,
-      fallbackToolCallId: 'tool_$index',
-      delta: deltaResult.argumentsDelta,
-      metadata: () => metadata.tool(index),
-    );
-    if (deltaEvent != null) {
-      yield deltaEvent;
-    }
-  }
-
-  final rawFinishReason = codec._asString(choice['finish_reason']);
-  if (rawFinishReason == null) {
-    return;
-  }
-
-  captureOpenAIResponseMetadata(
-    state: state,
-    rawFinishReason: rawFinishReason,
-  );
-
-  final textEndEvent = maybeCreateOpenAITextEndEvent(
-    state: state.textParts,
-    id: OpenAIChatCompletionsCodec._textId,
-    metadata: () => metadata.text(textLogprobs),
-  );
-  if (textEndEvent != null) {
-    yield textEndEvent;
-  }
-
-  final reasoningEndEvent = maybeCreateOpenAIReasoningEndEvent(
-    state: state.reasoningParts,
-    id: OpenAIChatCompletionsCodec._reasoningId,
-    metadata: metadata.reasoning,
-  );
-  if (reasoningEndEvent != null) {
-    yield reasoningEndEvent;
-  }
-
-  yield* codec._finalizeToolCalls(state, metadata);
-
-  yield FinishEvent(
-    finishReason: codec._mapFinishReason(rawFinishReason),
-    rawFinishReason: rawFinishReason,
-    usage: state.usage,
-    providerMetadata: metadata.finish(),
-  );
-}
-
-final class _ChatCompletionsStreamMetadataAdapter {
-  final OpenAIChatCompletionsSupport support;
-  final OpenAIChatCompletionsStreamState state;
-  final Map<String, Object?> chunk;
-
-  const _ChatCompletionsStreamMetadataAdapter({
-    required this.support,
-    required this.state,
-    required this.chunk,
-  });
-
-  ProviderMetadata? response() => support.providerMetadata({
-        'responseId': state.responseId,
-      });
-
-  ProviderMetadata? reasoning() => support.providerMetadata({
-        'responseId': state.responseId,
-      });
-
-  ProviderMetadata? text(List<Object?>? logprobs) => support.providerMetadata({
-        'responseId': state.responseId,
-        'logprobs': logprobs,
-      });
-
-  ProviderMetadata? tool(int index) => support.providerMetadata({
-        'responseId': state.responseId,
-        'toolIndex': index,
-      });
-
-  ProviderMetadata? finish() => support.providerMetadata({
-        'responseId': state.responseId,
-        'systemFingerprint': chunk['system_fingerprint'] is String
-            ? chunk['system_fingerprint'] as String
-            : null,
-        if (state.logprobs.isNotEmpty)
-          'logprobs': List<Object?>.unmodifiable(state.logprobs),
-      });
 }

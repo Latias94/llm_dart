@@ -13,6 +13,11 @@ remain provider-local:
 - `packages/llm_dart_openai/lib/src/openai_responses_stream_tool_codec.dart`
 - `packages/llm_dart_openai/lib/src/openai_responses_stream_result_codec.dart`
 - `packages/llm_dart_openai/lib/src/openai_responses_stream_util.dart`
+- `packages/llm_dart_openai/lib/src/openai_chat_completions_stream_state.dart`
+- `packages/llm_dart_openai/lib/src/openai_chat_completions_stream_event_codec.dart`
+- `packages/llm_dart_openai/lib/src/openai_chat_completions_stream_tool_codec.dart`
+- `packages/llm_dart_openai/lib/src/openai_chat_completions_stream_result_codec.dart`
+- `packages/llm_dart_openai/lib/src/openai_chat_completions_stream_util.dart`
 - `packages/llm_dart_anthropic/lib/src/anthropic_tool_configuration.dart`
 - `packages/llm_dart_anthropic/lib/src/anthropic_stream_state.dart`
 - `packages/llm_dart_anthropic/lib/src/anthropic_stream_content_codec.dart`
@@ -120,6 +125,28 @@ transform and streaming tool-call tracker, but they do not match the Anthropic
 content-block state, Ollama NDJSON stream state, or Google content projection
 contracts closely enough to justify a shared package.
 
+The OpenAI Chat Completions stream follow-up slice adds five more
+provider-local helpers:
+
+- Stream state extends the OpenAI-family accumulator with xAI/open-compatible
+  source de-duplication.
+- Event projection is driven by `choices[].delta`, fixed text/reasoning ids,
+  top-level error payloads, and xAI citation arrays.
+- Tool projection is driven by `tool_calls[].index`, function name/id deltas,
+  argument fragment accumulation, malformed JSON input handling, and final
+  chat-completions `ToolCallEvent` construction.
+- Result projection is driven by chat-completions choices, assistant message
+  content, tool calls, citations, finish reasons, usage, logprobs, timestamps,
+  and provider-scoped metadata.
+- Stream utilities are limited to chat-completions JSON/object projection,
+  first-choice/logprobs/timestamp/usage helpers, delta extraction, and metadata
+  adaptation.
+
+Those behaviors resemble Vercel AI SDK's OpenAI chat-local stream transform
+and streaming tool-call tracker, but they do not match Responses output items,
+Anthropic content-block state, Ollama NDJSON stream state, or Google content
+projection contracts closely enough to justify a shared package.
+
 ## Repeated Helper Candidates
 
 | Candidate | Current evidence | Decision |
@@ -128,7 +155,7 @@ contracts closely enough to justify a shared package.
 | Provider reference resolution | Providers already call `ProviderReference.requireProvider(...)`; mapping the resolved ID into OpenAI `file_id`, Anthropic `file` source, or Google `fileData` remains provider-specific. | Keep mapping provider-local. |
 | Tool choice encoding | OpenAI, Anthropic, and Google have different wire values and validation rules. `RequiredToolChoice` maps differently, Anthropic rejects forced tool use with thinking, and Google strict tools use `VALIDATED`. | Keep provider-local. |
 | Media and file encoding | Base64/data URL/file-source code repeats mechanically, but accepted media types, URI rules, text documents, hosted file references, Google `fileData` provider references, and Ollama image-only chat payloads differ by provider. | Keep provider-local until a stable file-data helper contract emerges. |
-| Stream tool-call tracking | OpenAI already has OpenAI-family stream helpers and now keeps Responses-specific event dispatch, metadata, source annotation, MCP, partial-image, and terminal response behavior provider-local. Anthropic, Google, and Ollama stream vocabularies still differ. Ollama has a provider-local NDJSON parser and tool-call dedupe state. Anthropic has provider-local content-block index state, incremental JSON tool-input accumulation, immediate tool-result mapping, and custom replay event construction. | Revisit only after two non-OpenAI providers need the same stream helper contract. |
+| Stream tool-call tracking | OpenAI already has OpenAI-family stream helpers and now keeps Responses-specific and chat-completions-specific event dispatch, metadata, source/citation, MCP, partial-image, terminal response, and compatible-provider namespace behavior provider-local. Anthropic, Google, and Ollama stream vocabularies still differ. Ollama has a provider-local NDJSON parser and tool-call dedupe state. Anthropic has provider-local content-block index state, incremental JSON tool-input accumulation, immediate tool-result mapping, and custom replay event construction. | Revisit only after two non-OpenAI providers need the same stream helper contract. |
 | Fixture/test helpers | Existing focused tests cover provider behavior directly. A public runtime package should not expose test-only helper shape. | Keep test utilities local. |
 
 ## Package Evidence
