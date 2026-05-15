@@ -56,6 +56,8 @@ packages/llm_dart_openai/test/fixtures/openai/responses_request_body_golden.json
 packages/llm_dart_openai/test/fixtures/openai/chat_completions_request_body_golden.json
 packages/llm_dart_openai/test/fixtures/openai/responses_stream_events_golden.json
 packages/llm_dart_openai/test/fixtures/openai/chat_completions_stream_events_golden.json
+packages/llm_dart_google/test/fixtures/google/generate_content_request_body_golden.json
+packages/llm_dart_google/test/fixtures/google/generate_content_stream_events_golden.json
 ```
 
 ## Contract Rules
@@ -92,12 +94,37 @@ The first OpenAI slice locks:
 - Chat Completions stream chunks mapped to unified events with provider
   metadata, reasoning, text, tool input/call, xAI citations, and finish usage
 
+## Google Slice
+
+The first Google slice now locks:
+
+- GenerateContent request body encoding for system/user/assistant/tool prompt
+  history, media inputs, file references, function-call id replay, server-side
+  tool replay, structured output, safety settings, reasoning, native tools, and
+  multimodal tool results
+- GenerateContent stream chunks mapped to provider model-call events with
+  response metadata, usage, reasoning text, reasoning files, function calls,
+  executable code, code execution results, server-side tool calls/responses,
+  file output, grounding sources, URL context, safety ratings, and finish
+  metadata
+
+This slice keeps the fixture convention provider-local. It does not introduce a
+shared fixture package or a public provider utility package.
+
 ## Validation
 
-Each slice should run:
+OpenAI fixture slices should run:
 
 ```powershell
 dart test packages\llm_dart_openai\test\openai_fixture_contract_test.dart
 dart analyze packages\llm_dart_openai
+dart run tool\check_workspace_dependency_guards.dart
+```
+
+Google fixture slices should run:
+
+```powershell
+dart test packages\llm_dart_google\test\google_fixture_contract_test.dart
+dart analyze packages\llm_dart_google
 dart run tool\check_workspace_dependency_guards.dart
 ```
