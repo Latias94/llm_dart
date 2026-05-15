@@ -1,0 +1,128 @@
+{
+  "model": "gpt-5-mini",
+  "input": [
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "input_text",
+          "text": "Summarize the attached inputs."
+        },
+        {
+          "type": "input_image",
+          "file_id": "file-img-123",
+          "detail": "high"
+        },
+        {
+          "type": "input_file",
+          "file_url": "https://example.com/report.pdf"
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "id": "msg_prev",
+      "phase": "final_answer",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "Earlier answer."
+        }
+      ]
+    },
+    {
+      "type": "reasoning",
+      "id": "rs_prev",
+      "encrypted_content": "enc_reason",
+      "summary": [
+        {
+          "type": "summary_text",
+          "text": "Prior reasoning."
+        }
+      ]
+    },
+    {
+      "type": "function_call",
+      "call_id": "call_weather",
+      "id": "fc_weather",
+      "name": "weather",
+      "arguments": "{\"city\":\"Hong Kong\"}"
+    },
+    {
+      "type": "compaction",
+      "id": "cmp_prev",
+      "encrypted_content": "enc_compaction",
+      "compact_threshold": 50000
+    },
+    {
+      "type": "mcp_approval_response",
+      "approval_request_id": "approval-1",
+      "approve": true
+    }
+  ],
+  "stream": false,
+  "max_output_tokens": 128,
+  "store": false,
+  "service_tier": "priority",
+  "metadata": {
+    "suite": "fixture-contract"
+  },
+  "include": [
+    "message.output_text.logprobs",
+    "reasoning.encrypted_content"
+  ],
+  "top_logprobs": 20,
+  "reasoning": {
+    "effort": "high"
+  },
+  "tools": [
+    {
+      "type": "function",
+      "name": "weather",
+      "description": "Get current weather.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "city": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "city"
+        ]
+      },
+      "strict": true
+    },
+    {
+      "type": "mcp",
+      "server_label": "zip1",
+      "allowed_tools": {
+        "read_only": true
+      },
+      "require_approval": "never",
+      "server_url": "https://mcp.example.com"
+    }
+  ],
+  "tool_choice": {
+    "type": "function",
+    "function": {
+      "name": "weather"
+    }
+  },
+  "response_format": {
+    "type": "json_schema",
+    "json_schema": {
+      "name": "summary",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "summary": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "strict": true
+    }
+  }
+}

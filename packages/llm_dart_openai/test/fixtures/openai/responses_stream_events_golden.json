@@ -1,0 +1,274 @@
+{
+  "schemaVersion": "2026-03-1",
+  "kind": "text-stream-events",
+  "data": {
+    "events": [
+      {
+        "type": "response-metadata",
+        "responseId": "resp_fixture",
+        "timestamp": "2024-03-09T16:00:00.000Z",
+        "modelId": "gpt-4.1-mini",
+        "providerMetadata": {
+          "openai": {
+            "serviceTier": "default"
+          }
+        }
+      },
+      {
+        "type": "reasoning-start",
+        "id": "rs_1:0",
+        "providerMetadata": {
+          "openai": {
+            "responseId": "resp_fixture",
+            "itemId": "rs_1",
+            "outputIndex": 0,
+            "summaryIndex": 0,
+            "serviceTier": "default"
+          }
+        }
+      },
+      {
+        "type": "reasoning-delta",
+        "id": "rs_1:0",
+        "delta": "Plan",
+        "providerMetadata": {
+          "openai": {
+            "responseId": "resp_fixture",
+            "itemId": "rs_1",
+            "outputIndex": 0,
+            "summaryIndex": 0,
+            "serviceTier": "default"
+          }
+        }
+      },
+      {
+        "type": "text-start",
+        "id": "msg_1",
+        "providerMetadata": {
+          "openai": {
+            "responseId": "resp_fixture",
+            "itemId": "msg_1",
+            "itemType": "message",
+            "outputIndex": 1,
+            "serviceTier": "default"
+          }
+        }
+      },
+      {
+        "type": "text-delta",
+        "id": "msg_1",
+        "delta": "Hello",
+        "providerMetadata": {
+          "openai": {
+            "responseId": "resp_fixture",
+            "itemId": "msg_1",
+            "outputIndex": 1,
+            "contentIndex": 0,
+            "serviceTier": "default"
+          }
+        }
+      },
+      {
+        "type": "tool-input-start",
+        "toolCallId": "call_weather",
+        "toolName": "weather",
+        "providerExecuted": false,
+        "isDynamic": false,
+        "providerMetadata": {
+          "openai": {
+            "responseId": "resp_fixture",
+            "itemId": "fc_1",
+            "itemType": "function_call",
+            "outputIndex": 2,
+            "serviceTier": "default"
+          }
+        }
+      },
+      {
+        "type": "tool-input-delta",
+        "toolCallId": "call_weather",
+        "delta": "{\"city\":\"Hong Kong\"}",
+        "providerMetadata": {
+          "openai": {
+            "responseId": "resp_fixture",
+            "outputIndex": 2,
+            "serviceTier": "default"
+          }
+        }
+      },
+      {
+        "type": "tool-input-end",
+        "toolCallId": "call_weather",
+        "providerMetadata": {
+          "openai": {
+            "responseId": "resp_fixture",
+            "itemId": "fc_1",
+            "itemType": "function_call",
+            "outputIndex": 2,
+            "serviceTier": "default"
+          }
+        }
+      },
+      {
+        "type": "tool-call",
+        "toolCall": {
+          "toolCallId": "call_weather",
+          "toolName": "weather",
+          "input": {
+            "city": "Hong Kong"
+          },
+          "providerExecuted": false,
+          "isDynamic": false
+        },
+        "providerMetadata": {
+          "openai": {
+            "itemId": "fc_1",
+            "itemType": "function_call",
+            "status": "completed",
+            "callId": "call_weather"
+          }
+        }
+      },
+      {
+        "type": "source",
+        "source": {
+          "kind": "url",
+          "sourceId": "https://example.com",
+          "uri": "https://example.com",
+          "title": "Example URL",
+          "providerMetadata": {
+            "openai": {
+              "annotationType": "url_citation",
+              "startIndex": 0,
+              "endIndex": 5
+            }
+          }
+        }
+      },
+      {
+        "type": "tool-call",
+        "toolCall": {
+          "toolCallId": "approval-1",
+          "toolName": "mcp.create_short_url",
+          "input": {
+            "url": "https://ai-sdk.dev"
+          },
+          "providerExecuted": true,
+          "isDynamic": true,
+          "title": "zip1"
+        },
+        "providerMetadata": {
+          "openai": {
+            "itemId": "approval-1",
+            "itemType": "mcp_approval_request",
+            "approvalRequestId": "approval-1",
+            "serverLabel": "zip1"
+          }
+        }
+      },
+      {
+        "type": "tool-approval-request",
+        "approvalId": "approval-1",
+        "toolCallId": "approval-1",
+        "providerMetadata": {
+          "openai": {
+            "itemId": "approval-1",
+            "itemType": "mcp_approval_request",
+            "approvalRequestId": "approval-1",
+            "serverLabel": "zip1"
+          }
+        }
+      },
+      {
+        "type": "tool-call",
+        "toolCall": {
+          "toolCallId": "approval-1",
+          "toolName": "mcp.create_short_url",
+          "input": {
+            "url": "https://ai-sdk.dev"
+          },
+          "providerExecuted": true,
+          "isDynamic": true,
+          "title": "zip1"
+        },
+        "providerMetadata": {
+          "openai": {
+            "itemId": "mcp-call-1",
+            "itemType": "mcp_call",
+            "approvalRequestId": "approval-1",
+            "serverLabel": "zip1"
+          }
+        }
+      },
+      {
+        "type": "tool-result",
+        "toolResult": {
+          "toolCallId": "approval-1",
+          "toolName": "mcp.create_short_url",
+          "toolOutput": {
+            "type": "json",
+            "value": {
+              "type": "mcp_call",
+              "serverLabel": "zip1",
+              "name": "create_short_url",
+              "arguments": {
+                "url": "https://ai-sdk.dev"
+              },
+              "output": {
+                "shortUrl": "https://zip1.dev/abc123"
+              }
+            }
+          },
+          "preliminary": false,
+          "isDynamic": true
+        },
+        "providerMetadata": {
+          "openai": {
+            "itemId": "mcp-call-1",
+            "itemType": "mcp_call",
+            "approvalRequestId": "approval-1",
+            "serverLabel": "zip1"
+          }
+        }
+      },
+      {
+        "type": "custom",
+        "kind": "openai.web_search_call",
+        "data": {
+          "id": "ws_1",
+          "type": "web_search_call",
+          "status": "completed",
+          "action": {
+            "type": "search",
+            "query": "hello"
+          }
+        },
+        "providerMetadata": {
+          "openai": {
+            "responseId": "resp_fixture",
+            "itemId": "ws_1",
+            "itemType": "web_search_call",
+            "outputIndex": 5,
+            "serviceTier": "default"
+          }
+        }
+      },
+      {
+        "type": "finish",
+        "finishReason": "toolCalls",
+        "usage": {
+          "inputTokens": 10,
+          "outputTokens": 8,
+          "totalTokens": 18,
+          "reasoningTokens": 3
+        },
+        "providerMetadata": {
+          "openai": {
+            "status": "completed",
+            "serviceTier": "default"
+          }
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,104 @@
+{
+  "model": "gpt-4.1-mini",
+  "messages": [
+    {
+      "role": "system",
+      "content": "Be precise."
+    },
+    {
+      "role": "user",
+      "content": [
+        {
+          "type": "text",
+          "text": "Use the weather tool."
+        },
+        {
+          "type": "image_url",
+          "image_url": {
+            "url": "data:image/jpeg;base64,AAECAw==",
+            "detail": "low"
+          }
+        },
+        {
+          "type": "file",
+          "file": {
+            "filename": "brief.pdf",
+            "file_data": "data:application/pdf;base64,AQIDBA=="
+          }
+        }
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call_weather",
+          "type": "function",
+          "function": {
+            "name": "weather",
+            "arguments": "{\"city\":\"Hong Kong\"}"
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_call_id": "call_weather",
+      "content": "[{\"type\":\"text\",\"text\":\"forecast\"},{\"type\":\"json\",\"value\":{\"condition\":\"Cloudy\",\"temperatureC\":26}}]"
+    }
+  ],
+  "stream": false,
+  "max_tokens": 96,
+  "temperature": 0.3,
+  "frequency_penalty": 0.2,
+  "presence_penalty": 0.1,
+  "seed": 1234,
+  "parallel_tool_calls": true,
+  "service_tier": "priority",
+  "verbosity": "low",
+  "user": "user_123",
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "weather",
+        "description": "Get current weather.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "city": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "city"
+          ]
+        },
+        "strict": true
+      }
+    }
+  ],
+  "tool_choice": {
+    "type": "function",
+    "function": {
+      "name": "weather"
+    }
+  },
+  "response_format": {
+    "type": "json_schema",
+    "json_schema": {
+      "name": "weather_answer",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "answer": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "strict": true
+    }
+  }
+}

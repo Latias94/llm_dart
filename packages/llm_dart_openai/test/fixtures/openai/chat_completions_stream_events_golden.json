@@ -1,0 +1,170 @@
+{
+  "schemaVersion": "2026-03-1",
+  "kind": "text-stream-events",
+  "data": {
+    "events": [
+      {
+        "type": "response-metadata",
+        "responseId": "chatcmpl_fixture",
+        "timestamp": "2024-03-09T16:03:20.000Z",
+        "modelId": "grok-3",
+        "providerMetadata": {
+          "xai": {
+            "responseId": "chatcmpl_fixture"
+          }
+        }
+      },
+      {
+        "type": "reasoning-start",
+        "id": "reasoning_0",
+        "providerMetadata": {
+          "xai": {
+            "responseId": "chatcmpl_fixture"
+          }
+        }
+      },
+      {
+        "type": "reasoning-delta",
+        "id": "reasoning_0",
+        "delta": "Plan",
+        "providerMetadata": {
+          "xai": {
+            "responseId": "chatcmpl_fixture"
+          }
+        }
+      },
+      {
+        "type": "text-start",
+        "id": "text_0",
+        "providerMetadata": {
+          "xai": {
+            "responseId": "chatcmpl_fixture"
+          }
+        }
+      },
+      {
+        "type": "text-delta",
+        "id": "text_0",
+        "delta": "Hello",
+        "providerMetadata": {
+          "xai": {
+            "responseId": "chatcmpl_fixture"
+          }
+        }
+      },
+      {
+        "type": "tool-input-start",
+        "toolCallId": "call_weather",
+        "toolName": "weather",
+        "providerExecuted": false,
+        "isDynamic": false,
+        "providerMetadata": {
+          "xai": {
+            "responseId": "chatcmpl_fixture",
+            "toolIndex": 0
+          }
+        }
+      },
+      {
+        "type": "tool-input-delta",
+        "toolCallId": "call_weather",
+        "delta": "{\"city\":\"Hong",
+        "providerMetadata": {
+          "xai": {
+            "responseId": "chatcmpl_fixture",
+            "toolIndex": 0
+          }
+        }
+      },
+      {
+        "type": "source",
+        "source": {
+          "kind": "url",
+          "sourceId": "https://example.com/news",
+          "uri": "https://example.com/news",
+          "title": "https://example.com/news",
+          "providerMetadata": {
+            "xai": {
+              "responseId": "chatcmpl_fixture",
+              "citationIndex": 0
+            }
+          }
+        }
+      },
+      {
+        "type": "tool-input-delta",
+        "toolCallId": "call_weather",
+        "delta": " Kong\"}",
+        "providerMetadata": {
+          "xai": {
+            "responseId": "chatcmpl_fixture",
+            "toolIndex": 0
+          }
+        }
+      },
+      {
+        "type": "text-end",
+        "id": "text_0",
+        "providerMetadata": {
+          "xai": {
+            "responseId": "chatcmpl_fixture"
+          }
+        }
+      },
+      {
+        "type": "reasoning-end",
+        "id": "reasoning_0",
+        "providerMetadata": {
+          "xai": {
+            "responseId": "chatcmpl_fixture"
+          }
+        }
+      },
+      {
+        "type": "tool-input-end",
+        "toolCallId": "call_weather",
+        "providerMetadata": {
+          "xai": {
+            "responseId": "chatcmpl_fixture",
+            "toolIndex": 0
+          }
+        }
+      },
+      {
+        "type": "tool-call",
+        "toolCall": {
+          "toolCallId": "call_weather",
+          "toolName": "weather",
+          "input": {
+            "city": "Hong Kong"
+          },
+          "providerExecuted": false,
+          "isDynamic": false
+        },
+        "providerMetadata": {
+          "xai": {
+            "responseId": "chatcmpl_fixture",
+            "toolIndex": 0
+          }
+        }
+      },
+      {
+        "type": "finish",
+        "finishReason": "toolCalls",
+        "rawFinishReason": "tool_calls",
+        "usage": {
+          "inputTokens": 12,
+          "outputTokens": 8,
+          "totalTokens": 20,
+          "reasoningTokens": 2
+        },
+        "providerMetadata": {
+          "xai": {
+            "responseId": "chatcmpl_fixture",
+            "systemFingerprint": "fp_fixture"
+          }
+        }
+      }
+    ]
+  }
+}
