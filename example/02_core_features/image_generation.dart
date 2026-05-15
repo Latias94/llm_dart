@@ -112,6 +112,27 @@ Future<void> _demonstrateImageGeneration(_ImageDemoEntry entry) async {
       print('    ${index + 1}. $description');
     }
 
+    final usage = result.usage;
+    if (usage != null && usage.isNotEmpty) {
+      print(
+        '  Usage: input=${usage.inputTokens ?? '-'}, '
+        'output=${usage.outputTokens ?? '-'}, '
+        'total=${usage.totalTokens ?? '-'}',
+      );
+    }
+
+    final responseMetadata = result.responseMetadata;
+    if (responseMetadata != null) {
+      final requestId = _lookupHeader(
+        responseMetadata.headers,
+        'x-request-id',
+      );
+      print('  Response model: ${responseMetadata.modelId}');
+      if (requestId != null && requestId.isNotEmpty) {
+        print('  Request ID: $requestId');
+      }
+    }
+
     final metadata = result.providerMetadata?.namespace(entry.model.providerId);
     if (metadata != null && metadata.isNotEmpty) {
       print('  Provider metadata keys: ${metadata.keys.join(', ')}');
@@ -144,6 +165,16 @@ Future<String> _describeImage({
   }
 
   return 'empty image payload';
+}
+
+String? _lookupHeader(Map<String, String> headers, String name) {
+  for (final entry in headers.entries) {
+    if (entry.key.toLowerCase() == name.toLowerCase()) {
+      return entry.value;
+    }
+  }
+
+  return null;
 }
 
 String _fileExtensionForMediaType(String? mediaType) {

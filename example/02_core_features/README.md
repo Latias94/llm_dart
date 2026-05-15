@@ -72,7 +72,8 @@ Stable speech and transcription example using shared `generateSpeech(...)` and
 
 ### [image_generation.dart](image_generation.dart)
 Stable multi-provider image generation example using shared `generateImage(...)`
-plus provider-native image options for OpenAI and Google.
+plus provider-native image options for OpenAI and Google, including shared
+usage and response metadata when providers return it.
 
 ### [content_moderation.dart](content_moderation.dart)
 Provider-owned moderation signals translated into app-owned policy decisions
