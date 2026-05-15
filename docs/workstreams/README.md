@@ -35,6 +35,11 @@
   - Active post-alpha planning workstream that freezes the second-wave order
     for alpha handoff, release gates, legacy/root/core containment, and
     evidence-based `llm_dart_provider_utils` extraction.
+- [2026-05-provider-implementation-kit-and-codec-boundaries](2026-05-provider-implementation-kit-and-codec-boundaries/README.md)
+  - Active provider-internal architecture workstream that reduces large codec,
+    request-builder, stream-parser, replay, and native-helper hotspots while
+    keeping provider-native features provider-owned and delaying any public
+    provider utility package until repeated stable duplication proves it.
 - [2026-05-ai-sdk-inspired-architecture-rewrite](2026-05-ai-sdk-inspired-architecture-rewrite/README.md)
   - Active fearless architecture rewrite workstream that turns the remaining
     semantic gaps versus `repo-ref/ai` into an implementation plan: user prompt
