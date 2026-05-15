@@ -316,8 +316,10 @@ final class ChatUiJsonCodec {
           value,
           path: r'$.metadata.errors',
         ),
-      ChatUiMetadataKeys.finishReason => (value as FinishReason?)?.name,
-      ChatUiMetadataKeys.usage => value == null
+      ChatUiMetadataKeys.finishReason ||
+      ChatUiMetadataKeys.runFinishReason =>
+        (value as FinishReason?)?.name,
+      ChatUiMetadataKeys.usage || ChatUiMetadataKeys.runUsage => value == null
           ? null
           : SerializationJsonSupport.encodeUsageStats(value as UsageStats),
       _ => ensureJsonValue(value, path: r'$.metadata'),
@@ -397,10 +399,13 @@ final class ChatUiJsonCodec {
             ),
           )
           .toList(growable: false),
-      ChatUiMetadataKeys.finishReason => value == null
-          ? null
-          : FinishReason.values.byName(asJsonString(value, path: path)),
-      ChatUiMetadataKeys.usage =>
+      ChatUiMetadataKeys.finishReason ||
+      ChatUiMetadataKeys.runFinishReason =>
+        value == null
+            ? null
+            : FinishReason.values.byName(asJsonString(value, path: path)),
+      ChatUiMetadataKeys.usage ||
+      ChatUiMetadataKeys.runUsage =>
         SerializationJsonSupport.decodeUsageStats(value, path: path),
       _ => value,
     };

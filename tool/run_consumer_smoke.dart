@@ -1105,7 +1105,7 @@ void main() {
 
   if (prompts.length != 2 ||
       models.length != 10 ||
-      chatInput.message.role != provider.PromptRole.user ||
+      chatInput.message.role != ai.ModelMessageRole.user ||
       !cancellation.isCancelled ||
       callOptions.timeout != null) {
     throw StateError('consumer smoke failed');

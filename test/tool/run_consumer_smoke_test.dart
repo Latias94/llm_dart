@@ -321,6 +321,14 @@ void main() {
       expect(dartConsumerSmokeProgram, contains('ModelMessage'));
       expect(dartConsumerSmokeProgram, contains('SystemModelMessage'));
       expect(dartConsumerSmokeProgram, contains('UserModelMessage'));
+      expect(
+        dartConsumerSmokeProgram,
+        contains('chatInput.message.role != ai.ModelMessageRole.user'),
+      );
+      expect(
+        dartConsumerSmokeProgram,
+        isNot(contains('chatInput.message.role != provider.PromptRole.user')),
+      );
     });
   });
 

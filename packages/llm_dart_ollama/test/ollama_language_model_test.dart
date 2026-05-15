@@ -542,24 +542,28 @@ void main() {
         ],
       ).toList();
 
-      expect(events[0], isA<StartEvent>());
-      expect(events[1], isA<ResponseMetadataEvent>());
-      expect(events[2], isA<ReasoningStartEvent>());
-      expect(events[3], isA<ReasoningDeltaEvent>());
-      expect(events[4], isA<TextStartEvent>());
-      expect(events[5], isA<TextDeltaEvent>());
-      expect(events[6], isA<ToolCallEvent>());
-      expect(events[7], isA<ReasoningEndEvent>());
-      expect(events[8], isA<TextEndEvent>());
-      expect(events[9], isA<FinishEvent>());
+      expect(events[0], isA<RunStartEvent>());
+      expect(events[1], isA<StepStartEvent>());
+      expect(events[2], isA<StartEvent>());
+      expect(events[3], isA<ResponseMetadataEvent>());
+      expect(events[4], isA<ReasoningStartEvent>());
+      expect(events[5], isA<ReasoningDeltaEvent>());
+      expect(events[6], isA<TextStartEvent>());
+      expect(events[7], isA<TextDeltaEvent>());
+      expect(events[8], isA<ToolCallEvent>());
+      expect(events[9], isA<ReasoningEndEvent>());
+      expect(events[10], isA<TextEndEvent>());
+      expect(events[11], isA<FinishEvent>());
+      expect(events[12], isA<StepFinishEvent>());
+      expect(events[13], isA<RunFinishEvent>());
 
-      final toolCall = (events[6] as ToolCallEvent).toolCall;
+      final toolCall = (events[8] as ToolCallEvent).toolCall;
       expect(toolCall.toolName, 'weather');
       expect(toolCall.input, {
         'city': 'Shanghai',
       });
 
-      final finish = events[9] as FinishEvent;
+      final finish = events[11] as FinishEvent;
       expect(finish.finishReason, FinishReason.toolCalls);
       expect(
         finish.usage,

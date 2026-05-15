@@ -301,6 +301,12 @@ void main() {
             ],
             metadata: {
               ChatUiMetadataKeys.finishReason: FinishReason.toolCalls,
+              ChatUiMetadataKeys.runFinishReason: FinishReason.toolCalls,
+              ChatUiMetadataKeys.runUsage: const UsageStats(
+                inputTokens: 3,
+                outputTokens: 5,
+                totalTokens: 8,
+              ),
             },
           ),
         ],
@@ -335,6 +341,19 @@ void main() {
       expect(dataPart.key, 'client');
       expect((dataPart.data as Map<String, Object?>)['screen'],
           'browser-approval');
+
+      final metadata = decoded.messages[1].metadata;
+      expect(metadata[ChatUiMetadataKeys.finishReason], FinishReason.toolCalls);
+      expect(
+          metadata[ChatUiMetadataKeys.runFinishReason], FinishReason.toolCalls);
+      expect(
+        metadata[ChatUiMetadataKeys.runUsage],
+        const UsageStats(
+          inputTokens: 3,
+          outputTokens: 5,
+          totalTokens: 8,
+        ),
+      );
 
       final decodedError = decoded.error!;
       expect(decodedError.kind, ModelErrorKind.stream);

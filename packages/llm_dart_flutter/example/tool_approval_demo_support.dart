@@ -1,4 +1,5 @@
 import 'package:llm_dart_ai/llm_dart_ai.dart';
+import 'package:llm_dart_ai/internal.dart' show textStreamEventToProvider;
 import 'package:llm_dart_flutter/llm_dart_flutter.dart';
 
 const String demoProviderToolCallId = 'tool-browser-1';
@@ -101,53 +102,66 @@ final class _ToolApprovalDemoLanguageModel implements LanguageModel {
   }
 
   @override
-  Stream<TextStreamEvent> doStream(GenerateTextRequest request) async* {
+  Stream<LanguageModelStreamEvent> doStream(
+      GenerateTextRequest request) async* {
     final approvalResponse = _findApprovalResponse(request.prompt);
     final localToolResult = _findLocalToolResult(request.prompt);
     final latestUserText = _latestUserText(request.prompt);
 
-    yield StartEvent();
-    yield ResponseMetadataEvent(
-      responseId: 'demo-tool-turn-${request.prompt.length}',
-      modelId: modelId,
+    yield textStreamEventToProvider(StartEvent());
+    yield textStreamEventToProvider(
+      ResponseMetadataEvent(
+        responseId: 'demo-tool-turn-${request.prompt.length}',
+        modelId: modelId,
+      ),
     );
 
     if (approvalResponse == null && localToolResult == null) {
-      yield const TextStartEvent(id: 'text-1');
-      yield const TextDeltaEvent(
-        id: 'text-1',
-        delta:
-            'I need one provider approval and one local tool result before I can finish this answer. ',
+      yield textStreamEventToProvider(const TextStartEvent(id: 'text-1'));
+      yield textStreamEventToProvider(
+        const TextDeltaEvent(
+          id: 'text-1',
+          delta:
+              'I need one provider approval and one local tool result before I can finish this answer. ',
+        ),
       );
-      yield const TextEndEvent(id: 'text-1');
-      yield const ToolCallEvent(
-        toolCall: ToolCallContent(
+      yield textStreamEventToProvider(const TextEndEvent(id: 'text-1'));
+      yield textStreamEventToProvider(
+        const ToolCallEvent(
+          toolCall: ToolCallContent(
+            toolCallId: demoProviderToolCallId,
+            toolName: 'computer',
+            input: {
+              'action': 'click',
+              'target': 'Publish button',
+            },
+            providerExecuted: true,
+            isDynamic: true,
+            title: 'Browser',
+          ),
+        ),
+      );
+      yield textStreamEventToProvider(
+        const ToolApprovalRequestEvent(
+          approvalId: demoProviderApprovalId,
           toolCallId: demoProviderToolCallId,
-          toolName: 'computer',
-          input: {
-            'action': 'click',
-            'target': 'Publish button',
-          },
-          providerExecuted: true,
-          isDynamic: true,
-          title: 'Browser',
         ),
       );
-      yield const ToolApprovalRequestEvent(
-        approvalId: demoProviderApprovalId,
-        toolCallId: demoProviderToolCallId,
-      );
-      yield const ToolCallEvent(
-        toolCall: ToolCallContent(
-          toolCallId: demoLocalToolCallId,
-          toolName: 'weather',
-          input: {
-            'location': 'Tokyo',
-          },
+      yield textStreamEventToProvider(
+        const ToolCallEvent(
+          toolCall: ToolCallContent(
+            toolCallId: demoLocalToolCallId,
+            toolName: 'weather',
+            input: {
+              'location': 'Tokyo',
+            },
+          ),
         ),
       );
-      yield const FinishEvent(
-        finishReason: FinishReason.toolCalls,
+      yield textStreamEventToProvider(
+        const FinishEvent(
+          finishReason: FinishReason.toolCalls,
+        ),
       );
       return;
     }
@@ -160,23 +174,31 @@ final class _ToolApprovalDemoLanguageModel implements LanguageModel {
         ? ''
         : ' Reason: ${approvalResponse!.reason}.';
 
-    yield const TextStartEvent(id: 'text-1');
-    yield TextDeltaEvent(
-      id: 'text-1',
-      delta: 'Tool orchestration completed for "$latestUserText". ',
+    yield textStreamEventToProvider(const TextStartEvent(id: 'text-1'));
+    yield textStreamEventToProvider(
+      TextDeltaEvent(
+        id: 'text-1',
+        delta: 'Tool orchestration completed for "$latestUserText". ',
+      ),
     );
-    yield TextDeltaEvent(
-      id: 'text-1',
-      delta: '$approvalStatus$approvalReason ',
+    yield textStreamEventToProvider(
+      TextDeltaEvent(
+        id: 'text-1',
+        delta: '$approvalStatus$approvalReason ',
+      ),
     );
-    yield TextDeltaEvent(
-      id: 'text-1',
-      delta:
-          'Local weather returned ${localOutput['location']}, ${localOutput['temperatureC']} C, ${localOutput['condition']}.',
+    yield textStreamEventToProvider(
+      TextDeltaEvent(
+        id: 'text-1',
+        delta:
+            'Local weather returned ${localOutput['location']}, ${localOutput['temperatureC']} C, ${localOutput['condition']}.',
+      ),
     );
-    yield const TextEndEvent(id: 'text-1');
-    yield const FinishEvent(
-      finishReason: FinishReason.stop,
+    yield textStreamEventToProvider(const TextEndEvent(id: 'text-1'));
+    yield textStreamEventToProvider(
+      const FinishEvent(
+        finishReason: FinishReason.stop,
+      ),
     );
   }
 
