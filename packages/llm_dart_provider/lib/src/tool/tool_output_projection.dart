@@ -46,8 +46,7 @@ JsonMap projectToolOutputContentPartToJson(
         if (filename != null) 'filename': filename,
         'data': projectFileDataToJson(data),
       },
-    CustomToolOutputContentPart(:final kind, :final data) =>
-      {
+    CustomToolOutputContentPart(:final kind, :final data) => {
         'type': 'custom',
         'kind': kind,
         if (data != null) 'data': normalizeJsonValue(data, path: '$path.data'),

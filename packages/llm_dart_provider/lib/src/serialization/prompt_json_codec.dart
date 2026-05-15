@@ -83,8 +83,7 @@ final class PromptJsonCodec {
 
   JsonMap encodePart(PromptPart part) {
     final JsonMap encoded = switch (part) {
-      TextPromptPart(:final text) =>
-        {
+      TextPromptPart(:final text) => {
           'type': 'text',
           'text': text,
         },
@@ -108,8 +107,7 @@ final class PromptJsonCodec {
           'mediaType': mediaType,
           'data': SerializationJsonSupport.encodeFileData(data),
         },
-      ReasoningPromptPart(:final text) =>
-        {
+      ReasoningPromptPart(:final text) => {
           'type': 'reasoning',
           'text': text,
         },
@@ -124,8 +122,7 @@ final class PromptJsonCodec {
           if (filename != null) 'filename': filename,
           'data': SerializationJsonSupport.encodeFileData(data),
         },
-      CustomPromptPart(:final kind, :final data) =>
-        {
+      CustomPromptPart(:final kind, :final data) => {
           'type': 'custom',
           'kind': kind,
           'data': ensureJsonValue(data, path: r'$.custom.data'),
@@ -147,8 +144,7 @@ final class PromptJsonCodec {
           'isDynamic': isDynamic,
           if (title != null) 'title': title,
         },
-      ToolApprovalRequestPromptPart(:final approvalId, :final toolCallId) =>
-        {
+      ToolApprovalRequestPromptPart(:final approvalId, :final toolCallId) => {
           'type': 'tool-approval-request',
           'approvalId': approvalId,
           'toolCallId': toolCallId,

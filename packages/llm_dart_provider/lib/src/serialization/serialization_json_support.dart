@@ -409,8 +409,7 @@ final class SerializationJsonSupport {
           if (filename != null) 'filename': filename,
           'data': encodeFileData(data),
         },
-      CustomToolOutputContentPart(:final kind, :final data) =>
-        {
+      CustomToolOutputContentPart(:final kind, :final data) => {
           'type': 'custom',
           'kind': kind,
           'data': ensureJsonValue(

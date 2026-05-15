@@ -161,10 +161,7 @@ final class _FakeChatSession implements ChatSession {
   }) async {
     final message = input.message;
     sentMessages.add(
-      message.parts
-          .whereType<TextModelPart>()
-          .map((part) => part.text)
-          .join(),
+      message.parts.whereType<TextModelPart>().map((part) => part.text).join(),
     );
   }
 
