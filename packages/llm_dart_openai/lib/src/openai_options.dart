@@ -84,7 +84,9 @@ final class OpenAIImageOptions implements ProviderInvocationOptions {
   final OpenAIImageStyle? style;
   final OpenAIImageQuality? quality;
   final OpenAIImageBackground? background;
+  final OpenAIImageModeration? moderation;
   final OpenAIImageOutputFormat? outputFormat;
+  final int? outputCompression;
   final OpenAIImageResponseFormat? responseFormat;
   final String? user;
 
@@ -92,7 +94,9 @@ final class OpenAIImageOptions implements ProviderInvocationOptions {
     this.style,
     this.quality,
     this.background,
+    this.moderation,
     this.outputFormat,
+    this.outputCompression,
     this.responseFormat,
     this.user,
   });

@@ -173,6 +173,73 @@ void main() {
       expect(result.images.single.bytes, isNull);
     });
 
+    test('gpt-image-2 omits response_format and maps generation options',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'output_format': 'webp',
+                'data': [
+                  {
+                    'b64_json': base64Encode([9, 8, 7]),
+                  },
+                ],
+              },
+            );
+          },
+        ),
+      ).imageModel('gpt-image-2');
+
+      final result = await generateImage(
+        model: model,
+        prompt: 'Draw a cat.',
+        callOptions: const CallOptions(
+          providerOptions: OpenAIImageOptions(
+            quality: OpenAIImageQuality.high,
+            background: OpenAIImageBackground.transparent,
+            moderation: OpenAIImageModeration.low,
+            outputFormat: OpenAIImageOutputFormat.webp,
+            outputCompression: 75,
+            user: 'user_123',
+          ),
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      expect(
+        capturedRequest!.body,
+        {
+          'model': 'gpt-image-2',
+          'prompt': 'Draw a cat.',
+          'n': 1,
+          'quality': 'high',
+          'background': 'transparent',
+          'moderation': 'low',
+          'output_format': 'webp',
+          'output_compression': 75,
+          'user': 'user_123',
+        },
+      );
+      expect(
+        (capturedRequest!.body as Map<String, Object?>)
+            .containsKey('response_format'),
+        isFalse,
+      );
+      expect(result.images.single.bytes, [9, 8, 7]);
+      expect(result.images.single.mediaType, 'image/webp');
+      expect(
+        result.providerMetadata?.namespace('openai'),
+        {'outputFormat': 'webp'},
+      );
+    });
+
     test('image model rejects incompatible provider options', () async {
       final model = OpenAI(
         apiKey: 'test-key',
@@ -192,6 +259,32 @@ void main() {
             (error) => error.message,
             'message',
             contains('Expected OpenAIImageOptions'),
+          ),
+        ),
+      );
+    });
+
+    test('image generation rejects invalid output compression', () async {
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: const _FakeTransportClient(),
+      ).imageModel('gpt-image-2');
+
+      await expectLater(
+        () => generateImage(
+          model: model,
+          prompt: 'Draw a cat.',
+          callOptions: const CallOptions(
+            providerOptions: OpenAIImageOptions(
+              outputCompression: 101,
+            ),
+          ),
+        ),
+        throwsA(
+          isA<ArgumentError>().having(
+            (error) => error.message,
+            'message',
+            contains('between 0 and 100'),
           ),
         ),
       );

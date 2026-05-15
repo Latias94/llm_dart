@@ -30,6 +30,15 @@ enum OpenAIImageBackground {
   final String value;
 }
 
+enum OpenAIImageModeration {
+  auto('auto'),
+  low('low');
+
+  const OpenAIImageModeration(this.value);
+
+  final String value;
+}
+
 enum OpenAIImageOutputFormat {
   png('png'),
   jpeg('jpeg'),

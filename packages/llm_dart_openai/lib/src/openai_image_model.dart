@@ -64,6 +64,8 @@ final class OpenAIImageModel implements ImageModel, CapabilityDescribedModel {
       request.callOptions,
       parameterName: 'request.callOptions.providerOptions',
     );
+    _validateGenerationOptions(options);
+
     final response = await transport.send(
       _buildGenerationTransportRequest(
         request,
@@ -121,8 +123,12 @@ final class OpenAIImageModel implements ImageModel, CapabilityDescribedModel {
         if (options?.quality case final quality?) 'quality': quality.value,
         if (options?.background case final background?)
           'background': background.value,
+        if (options?.moderation case final moderation?)
+          'moderation': moderation.value,
         if (options?.outputFormat case final outputFormat?)
           'output_format': outputFormat.value,
+        if (options?.outputCompression case final outputCompression?)
+          'output_compression': outputCompression,
         if (options?.user case final user?) 'user': user,
         if (_shouldIncludeResponseFormat(modelId))
           'response_format':
@@ -140,6 +146,8 @@ final class OpenAIImageModel implements ImageModel, CapabilityDescribedModel {
     OpenAIImageEditRequest request, {
     required OpenAIImageOptions? options,
   }) {
+    final outputCompression =
+        request.outputCompression ?? options?.outputCompression;
     final multipart = buildTransportMultipartBody(
       fields: [
         TransportMultipartField.text(
@@ -193,7 +201,7 @@ final class OpenAIImageModel implements ImageModel, CapabilityDescribedModel {
             name: 'quality',
             value: quality.value,
           ),
-        if (request.outputCompression case final outputCompression?)
+        if (outputCompression != null)
           TransportMultipartField.text(
             name: 'output_compression',
             value: outputCompression.toString(),
@@ -319,6 +327,15 @@ final class OpenAIImageModel implements ImageModel, CapabilityDescribedModel {
     );
   }
 
+  void _validateGenerationOptions(OpenAIImageOptions? options) {
+    if (options?.outputCompression case final outputCompression?) {
+      _validateOutputCompression(
+        outputCompression,
+        'request.callOptions.providerOptions.outputCompression',
+      );
+    }
+  }
+
   void _validateEditRequest(
     OpenAIImageEditRequest request,
     OpenAIImageOptions? options,
@@ -356,12 +373,10 @@ final class OpenAIImageModel implements ImageModel, CapabilityDescribedModel {
       );
     }
 
-    if (request.outputCompression case final outputCompression?
-        when outputCompression < 0 || outputCompression > 100) {
-      throw ArgumentError.value(
+    if (request.outputCompression case final outputCompression?) {
+      _validateOutputCompression(
         outputCompression,
         'request.outputCompression',
-        'OpenAI image editing outputCompression must be between 0 and 100.',
       );
     }
 
@@ -370,6 +385,21 @@ final class OpenAIImageModel implements ImageModel, CapabilityDescribedModel {
         options?.style,
         'request.callOptions.providerOptions.style',
         'OpenAIImageOptions.style is only supported for image generation, not image editing.',
+      );
+    }
+
+    if (options?.moderation != null) {
+      throw ArgumentError.value(
+        options?.moderation,
+        'request.callOptions.providerOptions.moderation',
+        'OpenAIImageOptions.moderation is only supported for image generation, not image editing.',
+      );
+    }
+
+    if (options?.outputCompression case final outputCompression?) {
+      _validateOutputCompression(
+        outputCompression,
+        'request.callOptions.providerOptions.outputCompression',
       );
     }
 
@@ -410,6 +440,16 @@ final class OpenAIImageModel implements ImageModel, CapabilityDescribedModel {
   }
 }
 
+void _validateOutputCompression(int outputCompression, String parameterName) {
+  if (outputCompression < 0 || outputCompression > 100) {
+    throw ArgumentError.value(
+      outputCompression,
+      parameterName,
+      'OpenAI image outputCompression must be between 0 and 100.',
+    );
+  }
+}
+
 bool _shouldIncludeResponseFormat(String modelId) {
   return !_hasDefaultResponseFormat(modelId);
 }
@@ -420,6 +460,7 @@ bool _hasDefaultResponseFormat(String modelId) {
     'gpt-image-1-mini',
     'gpt-image-1.5',
     'gpt-image-1',
+    'gpt-image-2',
   ];
 
   return defaultResponseFormatPrefixes.any(modelId.startsWith);

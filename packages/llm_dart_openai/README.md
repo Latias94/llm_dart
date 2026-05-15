@@ -264,6 +264,8 @@ Future<void> main() async {
 ## OpenAI Image Editing Example
 
 Prompt-based image generation uses the shared `generateImage(...)` helper.
+Current OpenAI image models such as `gpt-image-2` can use provider-owned
+options like `moderation`, `outputFormat`, and `outputCompression`.
 File-based editing is a provider-owned helper because input images, masks,
 fidelity, partial images, and output options are OpenAI-specific.
 

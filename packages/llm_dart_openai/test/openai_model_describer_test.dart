@@ -177,6 +177,23 @@ void main() {
         },
       );
       expect(
+        gptImage.providerFeature('openai', 'image.providerOptions')?.detail,
+        {
+          'requestOptions': [
+            'count',
+            'size',
+            'style',
+            'quality',
+            'background',
+            'moderation',
+            'outputFormat',
+            'outputCompression',
+            'responseFormat',
+            'user',
+          ],
+        },
+      );
+      expect(
         dalle.supports(ModelCapabilityFeatureIds.imageEditing),
         isFalse,
       );
