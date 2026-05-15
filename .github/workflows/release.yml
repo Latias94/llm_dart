@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Dart
         uses: dart-lang/setup-dart@v1
@@ -74,12 +74,12 @@ jobs:
       contents: write        # required for creating a release
     steps:
       - name: Checkout source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # Extract the release notes for the current version from CHANGELOG.md.
       - name: Extract release notes
         id: notes
-        uses: ffurrer2/extract-release-notes@v2
+        uses: ffurrer2/extract-release-notes@v3
         # No inputs needed: the action looks for the section that follows
         # "## [Unreleased]" (Keep a Changelog convention).
 
