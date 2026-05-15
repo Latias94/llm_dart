@@ -19,7 +19,7 @@
 
 ## Future Candidates
 
-- Google GenerateContent detailed codec audit
+- [x] Google GenerateContent detailed codec audit and extraction
 - Ollama language-model request/stream detailed audit
 
 ## OpenAI Responses Slice
@@ -36,6 +36,19 @@
 - [x] Extract one provider-local helper boundary
 - [x] Verify fixture-based tests cover the extracted boundary
 - [x] Run focused provider tests and analysis
+
+## Google Follow-Up Slice
+
+- [x] Compare Google GenerateContent boundaries against `repo-ref/ai`
+      `convert-to-google-messages.ts` and `google-prepare-tools.ts`
+- [x] Extract Google prompt/content/file/replay projection into a provider-local
+      module
+- [x] Extract Google common/native tool configuration into a provider-local
+      module
+- [x] Keep Gemini and Vertex semantics provider-local
+- [x] Run focused Google tests, package analysis, and workspace dependency
+      guards
+- [x] Document why this still does not justify public provider utilities
 
 ## Provider Implementation Kit
 

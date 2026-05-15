@@ -83,10 +83,13 @@ Result: passed
 
 ## Explicitly Deferred
 
-Google GenerateContent and Ollama language model remain future candidates.
-They were not required for this workstream closure because the completion
-standard required OpenAI Responses plus at least one non-OpenAI contrast split.
+Ollama language model remains a future candidate.
+
+Google GenerateContent was originally deferred because initial closure required
+OpenAI Responses plus at least one non-OpenAI contrast split. It was later
+completed as a follow-up slice and recorded in
+`08-google-generate-content-codec-boundary.md`.
 
 Do not treat that as a reason to publish shared utilities. The follow-up path
-is to split Google or Ollama only when a provider-specific feature change or
-audit requires it.
+is to split Ollama only when a provider-specific feature change or audit
+requires it.

@@ -71,14 +71,24 @@ Current status:
 - Anthropic was selected as the non-OpenAI contrast provider.
 - Anthropic tool configuration has moved into provider-local
   `anthropic_tool_configuration.dart`.
+- Google was added as a follow-up contrast slice after initial closure.
+- Google GenerateContent prompt/content projection and tool configuration have
+  moved into provider-local `google_content_projection.dart` and
+  `google_tool_configuration.dart`.
 - `AnthropicMessagesCodec` still owns message body assembly, prompt block
   projection, tool result replay, files, cache-control scanning, and beta
   discovery.
+- `GoogleGenerateContentCodec` still owns top-level request assembly,
+  generation config, response format, safety settings, cached content,
+  candidate count warnings, and thinking config.
 - Focused Anthropic messages tests, language-model integration tests, package
   analysis, workspace dependency guards, root boundary guard, and core
   compatibility guard pass for this slice.
-- Google and Ollama remain future candidates for the next architecture slice
-  and are intentionally deferred in this closure.
+- Focused Google GenerateContent, language-model, replay, result, and stream
+  tests, package analysis, and workspace dependency guards pass for the
+  follow-up slice.
+- Ollama remains a future candidate for the next architecture slice and is
+  intentionally deferred in this workstream.
 
 ## M4 - Provider Implementation Kit Decision
 
@@ -102,6 +112,9 @@ Current status:
   provider-local.
 - The repeated helper candidates are either already owned by
   `llm_dart_provider` contracts or differ by provider wire semantics.
+- The Google follow-up slice reinforces this decision because its content,
+  provider-reference, native-tool, and Gemini 3 replay behavior is
+  provider-local rather than a stable shared helper contract.
 
 ## M5 - Release Readiness And Closure
 

@@ -9,6 +9,8 @@ remain provider-local:
 
 - `packages/llm_dart_openai/lib/src/openai_responses_request_codec.dart`
 - `packages/llm_dart_anthropic/lib/src/anthropic_tool_configuration.dart`
+- `packages/llm_dart_google/lib/src/google_content_projection.dart`
+- `packages/llm_dart_google/lib/src/google_tool_configuration.dart`
 
 ## Evidence After Two Slices
 
@@ -33,14 +35,27 @@ semantics:
 These are both provider-local codec boundaries, but they are not the same
 contract.
 
+The Google follow-up slice adds two more provider-local helpers:
+
+- GenerateContent content projection is driven by Google `contents` parts,
+  Gemma system prompt folding, Gemini 3 function-call id replay, Google
+  server-side tool replay, and Google/Vertex metadata fallback.
+- Google tool configuration is driven by `functionDeclarations`, native Google
+  tool support, Gemini 3 mixed-tool rules, and
+  `includeServerSideToolInvocations`.
+
+Those behaviors resemble Vercel AI SDK's Google-local message conversion and
+tool preparation modules, but they do not match the OpenAI or Anthropic helper
+contracts closely enough to justify a shared package.
+
 ## Repeated Helper Candidates
 
 | Candidate | Current evidence | Decision |
 | --- | --- | --- |
 | JSON normalization | `normalizeJsonValue` already lives in `llm_dart_provider`; provider codecs only choose provider-specific warning text and target fields. | Keep using the existing provider contract helper. |
 | Provider reference resolution | Providers already call `ProviderReference.requireProvider(...)`; mapping the resolved ID into OpenAI `file_id`, Anthropic `file` source, or Google `fileData` remains provider-specific. | Keep mapping provider-local. |
-| Tool choice encoding | OpenAI and Anthropic have different wire values and validation rules. `RequiredToolChoice` maps differently, and Anthropic rejects forced tool use with thinking. | Keep provider-local. |
-| Media and file encoding | Base64/data URL/file-source code repeats mechanically, but accepted media types, URI rules, text documents, and hosted file references differ by provider. | Keep provider-local until a stable file-data helper contract emerges. |
+| Tool choice encoding | OpenAI, Anthropic, and Google have different wire values and validation rules. `RequiredToolChoice` maps differently, Anthropic rejects forced tool use with thinking, and Google strict tools use `VALIDATED`. | Keep provider-local. |
+| Media and file encoding | Base64/data URL/file-source code repeats mechanically, but accepted media types, URI rules, text documents, hosted file references, and Google `fileData` provider references differ by provider. | Keep provider-local until a stable file-data helper contract emerges. |
 | Stream tool-call tracking | OpenAI already has OpenAI-family stream helpers; Anthropic and Google stream vocabularies still differ. | Revisit only after a stream-specific split. |
 | Fixture/test helpers | Existing focused tests cover provider behavior directly. A public runtime package should not expose test-only helper shape. | Keep test utilities local. |
 

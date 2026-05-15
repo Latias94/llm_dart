@@ -118,6 +118,9 @@ The workstream is complete when:
 - [07-closure-audit.md](07-closure-audit.md)
   - Final prompt-to-artifact checklist and release readiness evidence for this
     workstream.
+- [08-google-generate-content-codec-boundary.md](08-google-generate-content-codec-boundary.md)
+  - Follow-up Google GenerateContent prompt/content projection and tool
+    configuration extraction record.
 - [MILESTONES.md](MILESTONES.md)
   - Milestones and acceptance criteria.
 - [TODO.md](TODO.md)
