@@ -39,7 +39,13 @@ Acceptance criteria:
 
 Current status:
 
-- pending
+- OpenAI Responses codec boundary audit is documented.
+- Request encoding has moved into provider-local
+  `openai_responses_request_codec.dart`.
+- `OpenAIResponsesCodec` remains the package-private facade used by
+  `OpenAILanguageModel`.
+- Focused OpenAI request, stream, language-model integration tests, package
+  analysis, and workspace dependency guards pass for this slice.
 
 ## M3 - Second Provider Contrast Slice
 

@@ -103,6 +103,12 @@ The workstream is complete when:
   - First audit of provider implementation hotspots and reference lessons.
 - [02-provider-implementation-kit-design.md](02-provider-implementation-kit-design.md)
   - Candidate helper boundaries and publication criteria.
+- [03-openai-responses-codec-boundary-audit.md](03-openai-responses-codec-boundary-audit.md)
+  - Detailed OpenAI Responses codec responsibility map and first-slice
+    extraction recommendation.
+- [04-openai-responses-request-codec-extraction.md](04-openai-responses-request-codec-extraction.md)
+  - Implementation record for the completed OpenAI Responses request codec
+    extraction.
 - [MILESTONES.md](MILESTONES.md)
   - Milestones and acceptance criteria.
 - [TODO.md](TODO.md)

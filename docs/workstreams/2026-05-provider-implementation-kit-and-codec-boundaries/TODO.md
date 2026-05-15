@@ -13,19 +13,19 @@
 
 - [x] Capture first-pass provider implementation hotspots by file size and
   responsibility
-- [ ] Audit OpenAI Responses codec responsibilities in detail
+- [x] Audit OpenAI Responses codec responsibilities in detail
 - [ ] Audit Anthropic messages and stream codec responsibilities in detail
 - [ ] Audit Google GenerateContent codec responsibilities in detail
 - [ ] Audit Ollama language model request/stream responsibilities in detail
-- [ ] Decide first implementation slice after publish handoff status is clear
+- [x] Decide first implementation slice after publish handoff status is clear
 
 ## OpenAI Responses Slice
 
-- [ ] Freeze target extracted module names
-- [ ] Identify request/response/stream/replay fixture coverage
-- [ ] Extract the first low-risk helper
-- [ ] Keep public OpenAI facade stable
-- [ ] Run focused OpenAI tests and analysis
+- [x] Freeze target extracted module names
+- [x] Identify request/response/stream/replay fixture coverage
+- [x] Extract the first low-risk helper
+- [x] Keep public OpenAI facade stable
+- [x] Run focused OpenAI tests and analysis
 
 ## Second Provider Slice
 
@@ -44,8 +44,8 @@
 
 ## Validation
 
-- [ ] Run workspace dependency guards after provider implementation slices
+- [x] Run workspace dependency guards after the OpenAI implementation slice
 - [ ] Run root and core boundary guards after provider implementation slices
-- [ ] Run focused tests for touched provider packages
-- [ ] Run affected package analysis
+- [x] Run focused tests for touched provider packages after the OpenAI slice
+- [x] Run affected package analysis after the OpenAI slice
 - [ ] Run `dart run tool/release_readiness.dart` before claiming closure
