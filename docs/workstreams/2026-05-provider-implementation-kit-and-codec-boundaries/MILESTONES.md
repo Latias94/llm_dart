@@ -68,7 +68,15 @@ Acceptance criteria:
 
 Current status:
 
-- pending
+- Anthropic was selected as the non-OpenAI contrast provider.
+- Anthropic tool configuration has moved into provider-local
+  `anthropic_tool_configuration.dart`.
+- `AnthropicMessagesCodec` still owns message body assembly, prompt block
+  projection, tool result replay, files, cache-control scanning, and beta
+  discovery.
+- Focused Anthropic messages tests, language-model integration tests, package
+  analysis, workspace dependency guards, root boundary guard, and core
+  compatibility guard pass for this slice.
 
 ## M4 - Provider Implementation Kit Decision
 

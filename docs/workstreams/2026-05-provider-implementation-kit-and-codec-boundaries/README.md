@@ -109,6 +109,9 @@ The workstream is complete when:
 - [04-openai-responses-request-codec-extraction.md](04-openai-responses-request-codec-extraction.md)
   - Implementation record for the completed OpenAI Responses request codec
     extraction.
+- [05-anthropic-tool-configuration-extraction.md](05-anthropic-tool-configuration-extraction.md)
+  - Implementation record for the completed Anthropic tool configuration
+    extraction.
 - [MILESTONES.md](MILESTONES.md)
   - Milestones and acceptance criteria.
 - [TODO.md](TODO.md)
