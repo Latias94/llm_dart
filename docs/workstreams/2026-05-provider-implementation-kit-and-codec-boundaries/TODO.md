@@ -20,7 +20,8 @@
 ## Future Candidates
 
 - [x] Google GenerateContent detailed codec audit and extraction
-- Ollama language-model request/stream detailed audit
+- [x] Ollama language-model request/response/stream/tool detailed audit and
+      extraction
 
 ## OpenAI Responses Slice
 
@@ -47,6 +48,22 @@
       module
 - [x] Keep Gemini and Vertex semantics provider-local
 - [x] Run focused Google tests, package analysis, and workspace dependency
+      guards
+- [x] Document why this still does not justify public provider utilities
+
+## Ollama Follow-Up Slice
+
+- [x] Compare Ollama chat boundaries against `repo-ref/ai`
+      `openai-compatible` provider-local chat conversion and tool-preparation
+      boundaries
+- [x] Extract Ollama chat request body construction into a provider-local module
+- [x] Extract Ollama non-stream response decoding into a provider-local module
+- [x] Extract Ollama NDJSON stream parsing into a provider-local module
+- [x] Extract Ollama tool declaration, replay, and decode behavior into a
+      provider-local module
+- [x] Keep local runtime options, image-only multimodal support, model catalog,
+      embedding, and capability behavior provider-owned
+- [x] Run focused Ollama tests, package analysis, and workspace dependency
       guards
 - [x] Document why this still does not justify public provider utilities
 

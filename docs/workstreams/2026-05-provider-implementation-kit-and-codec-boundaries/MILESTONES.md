@@ -87,8 +87,14 @@ Current status:
 - Focused Google GenerateContent, language-model, replay, result, and stream
   tests, package analysis, and workspace dependency guards pass for the
   follow-up slice.
-- Ollama remains a future candidate for the next architecture slice and is
-  intentionally deferred in this workstream.
+- Ollama was added as a follow-up contrast slice after Google.
+- Ollama chat request construction, non-stream response decoding, NDJSON stream
+  parsing, and tool encoding/decoding have moved into provider-local
+  `ollama_chat_request_codec.dart`, `ollama_chat_response_codec.dart`,
+  `ollama_chat_stream_codec.dart`, and `ollama_tool_codec.dart`.
+- `OllamaLanguageModel` now owns facade and transport orchestration only.
+- Focused Ollama tests, package analysis, and workspace dependency guards pass
+  for the follow-up slice.
 
 ## M4 - Provider Implementation Kit Decision
 
@@ -115,6 +121,10 @@ Current status:
 - The Google follow-up slice reinforces this decision because its content,
   provider-reference, native-tool, and Gemini 3 replay behavior is
   provider-local rather than a stable shared helper contract.
+- The Ollama follow-up slice reinforces this decision because its local runtime
+  options, image-only multimodal request shape, NDJSON stream parser, and
+  automatic-only tool-choice warnings are provider-local rather than stable
+  shared helper contracts.
 
 ## M5 - Release Readiness And Closure
 

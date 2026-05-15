@@ -81,15 +81,19 @@ Elapsed: 2m 45s
 Result: passed
 ```
 
-## Explicitly Deferred
-
-Ollama language model remains a future candidate.
+## Follow-Up Slices
 
 Google GenerateContent was originally deferred because initial closure required
 OpenAI Responses plus at least one non-OpenAI contrast split. It was later
 completed as a follow-up slice and recorded in
 `08-google-generate-content-codec-boundary.md`.
 
-Do not treat that as a reason to publish shared utilities. The follow-up path
-is to split Ollama only when a provider-specific feature change or audit
-requires it.
+Ollama chat was later completed as a follow-up slice and recorded in
+`09-ollama-chat-codec-boundary.md`. The slice split request construction,
+non-stream response decoding, NDJSON stream parsing, and tool encoding/decoding
+into provider-local modules while keeping `OllamaLanguageModel` as the facade
+and transport owner.
+
+Do not treat the Google or Ollama follow-up slices as a reason to publish shared
+utilities. They add evidence for provider-local boundaries, not evidence for one
+stable public helper contract.

@@ -121,6 +121,9 @@ The workstream is complete when:
 - [08-google-generate-content-codec-boundary.md](08-google-generate-content-codec-boundary.md)
   - Follow-up Google GenerateContent prompt/content projection and tool
     configuration extraction record.
+- [09-ollama-chat-codec-boundary.md](09-ollama-chat-codec-boundary.md)
+  - Follow-up Ollama chat request, response, stream, and tool codec extraction
+    record.
 - [MILESTONES.md](MILESTONES.md)
   - Milestones and acceptance criteria.
 - [TODO.md](TODO.md)
