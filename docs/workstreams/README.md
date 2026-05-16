@@ -48,10 +48,11 @@
     golden contract convention to Anthropic request encoding, replay, stream
     projection, reasoning, beta features, and provider metadata.
 - [2026-05-ai-sdk-inspired-architecture-rewrite](2026-05-ai-sdk-inspired-architecture-rewrite/README.md)
-  - Active fearless architecture rewrite workstream that turns the remaining
-    semantic gaps versus `repo-ref/ai` into an implementation plan: user prompt
-    normalization, metadata/options separation, provider utility
-    consolidation, and root legacy exit.
+  - Active fearless architecture rewrite workstream. Earlier phases completed
+    user prompt normalization, metadata/options separation, provider utility
+    consolidation, and root legacy exit; the reopened phase now tracks the
+    provider-object registry, OpenAI-family decoupling, typed option policy,
+    and `llm_dart_core` posture.
 - [2026-05-root-legacy-prompt-options-breaking-line](2026-05-root-legacy-prompt-options-breaking-line/README.md)
   - Closed breaking-line workstream that removed root legacy implementation
     ownership, converged app-facing prompts on `llm_dart_ai`, removed ordinary

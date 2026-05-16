@@ -4,7 +4,6 @@ import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/llm_dart.dart' as llm;
-import 'package:llm_dart_provider/llm_dart_provider.dart' as provider;
 
 const _demoCallOptions = core.CallOptions(
   timeout: Duration(seconds: 20),
@@ -212,8 +211,8 @@ void provideRecommendations(Map<String, ProviderResult> results) {
 }
 
 Future<void> runRegistrySelectionExample() async {
-  final registry = provider.ModelRegistry(
-    languageModels: createRegistryFactories(),
+  final registry = llm.ProviderRegistry(
+    providers: createRegistryProviders(),
   );
 
   final defaultProviderId = registry.hasLanguageProvider('openai')
@@ -254,40 +253,35 @@ Future<void> runRegistrySelectionExample() async {
   }
 }
 
-Map<String, provider.LanguageModelFactory> createRegistryFactories() {
-  final factories = <String, provider.LanguageModelFactory>{};
+Map<String, llm.Provider> createRegistryProviders() {
+  final providers = <String, llm.Provider>{};
 
   final openAIKey = Platform.environment['OPENAI_API_KEY'];
   if (openAIKey != null && openAIKey.isNotEmpty) {
-    final facade = llm.openai(apiKey: openAIKey);
-    factories['openai'] = facade.chatModel;
+    providers['openai'] = llm.openai(apiKey: openAIKey);
   }
 
   final anthropicKey = Platform.environment['ANTHROPIC_API_KEY'];
   if (anthropicKey != null && anthropicKey.isNotEmpty) {
-    final facade = llm.anthropic(apiKey: anthropicKey);
-    factories['anthropic'] = facade.chatModel;
+    providers['anthropic'] = llm.anthropic(apiKey: anthropicKey);
   }
 
   final groqKey = Platform.environment['GROQ_API_KEY'];
   if (groqKey != null && groqKey.isNotEmpty) {
-    final facade = llm.groq(apiKey: groqKey);
-    factories['groq'] = facade.chatModel;
+    providers['groq'] = llm.groq(apiKey: groqKey);
   }
 
   final deepSeekKey = Platform.environment['DEEPSEEK_API_KEY'];
   if (deepSeekKey != null && deepSeekKey.isNotEmpty) {
-    final facade = llm.deepSeek(apiKey: deepSeekKey);
-    factories['deepseek'] = facade.chatModel;
+    providers['deepseek'] = llm.deepSeek(apiKey: deepSeekKey);
   }
 
   final xaiKey = Platform.environment['XAI_API_KEY'];
   if (xaiKey != null && xaiKey.isNotEmpty) {
-    final facade = llm.xai(apiKey: xaiKey);
-    factories['xai'] = facade.chatModel;
+    providers['xai'] = llm.xai(apiKey: xaiKey);
   }
 
-  return factories;
+  return providers;
 }
 
 String _modelIdForProvider(String providerId) {

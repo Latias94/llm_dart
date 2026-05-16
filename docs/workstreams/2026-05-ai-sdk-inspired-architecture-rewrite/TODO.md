@@ -92,3 +92,27 @@
 - [x] Run package analysis for affected packages
 - [x] Run `git diff --check`
 - [x] Run publish dry-runs for affected packages before release handoff
+
+## Provider/Registry Rebaseline
+
+- [x] Reopen this workstream for the Provider/Registry fearless refactor line
+- [x] Record the provider-object, registry, OpenAI-family, typed-options, and
+  core-compatibility rebaseline
+- [x] Design the public provider object contracts in `llm_dart_provider`
+- [x] Decide whether `ModelRegistry` becomes a compatibility adapter, a
+  deprecated alias, or a removed API in the next breaking line
+- [x] Add the provider-object registry and focused registry tests
+- [x] Implement provider facets on OpenAI, Anthropic, Google, Ollama, and other
+  concrete provider facades
+- [x] Refactor OpenAI-family option/profile resolution out of one central
+  provider-id conditional chain
+- [x] Document typed provider option precedence, conflict behavior, and
+  wrong-provider rejection rules
+- [x] Update root facade guidance and examples for dynamic provider lookup
+- [x] Freeze or exit `llm_dart_core` without adding new ownership there
+- [x] Add guards that prevent provider packages from importing runtime, root,
+  chat, Flutter, or compatibility barrels
+- [x] Add focused tests for provider registry errors, provider-specific option
+  rejection, and OpenAI-family route/profile behavior
+- [x] Update migration docs for provider registry changes and any `ModelRegistry`
+  removal or adaptation

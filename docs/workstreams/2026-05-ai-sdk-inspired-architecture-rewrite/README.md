@@ -10,6 +10,9 @@ thin root facade now exist as separate ownership areas.
 The remaining problem is not the package graph. The remaining problem is that
 some semantic boundaries are still transitional:
 
+- provider lookup is still factory-map based instead of provider-object based
+- OpenAI-compatible provider profile policy is still concentrated in shared
+  OpenAI-family resolver code
 - user-facing prompt ergonomics and provider-facing prompt contracts are still
   mostly the same layer
 - prompt input can still carry `ProviderMetadata`, even though metadata is
@@ -114,6 +117,26 @@ The workstream is complete only when:
 - root legacy surfaces have an explicit removal, relocation, or freeze outcome
 - guard tooling prevents the old couplings from returning
 
+## 2026-05 Provider/Registry Rebaseline
+
+This workstream is reopened for the next fearless breaking line after the
+prompt, metadata, utility, and root-legacy passes reached M7.
+
+The new rebaseline keeps the completed package split and focuses on the
+remaining object-model gap:
+
+- add a first-class provider contract in `llm_dart_provider`
+- replace or adapt `ModelRegistry` so dynamic lookup registers provider
+  instances rather than independent per-capability factory maps
+- make OpenAI-compatible provider profiles less centralized while preserving
+  shared wire-code reuse
+- standardize typed provider option composition, conflict detection, and
+  profile-specific rejection
+- keep `llm_dart_core` as a compatibility shell, not a new architecture owner
+
+The detailed rebaseline is tracked in
+[`08-provider-registry-and-openai-family-rebaseline.md`](08-provider-registry-and-openai-family-rebaseline.md).
+
 ## Documents
 
 - [01-initial-gap-audit.md](01-initial-gap-audit.md)
@@ -132,6 +155,13 @@ The workstream is complete only when:
   - Chat input closure note: new user input uses `UserModelMessage`, while
     chat history, transport payloads, and snapshots retain provider-facing
     `PromptMessage` replay state.
+- [08-provider-registry-and-openai-family-rebaseline.md](08-provider-registry-and-openai-family-rebaseline.md)
+  - New fearless rebaseline for first-class provider objects, provider-object
+    registry lookup, OpenAI-family decoupling, typed option composition, and
+    `llm_dart_core` posture.
+- [09-openai-family-option-resolver.md](09-openai-family-option-resolver.md)
+  - M9 implementation note for moving OpenAI-family option policy into a
+    resolver strategy boundary while preserving shared wire-code reuse.
 - [MILESTONES.md](MILESTONES.md)
   - Milestones, acceptance criteria, and status tracking.
 - [TODO.md](TODO.md)

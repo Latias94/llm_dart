@@ -1,3 +1,4 @@
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'ollama_api.dart';
@@ -20,7 +21,7 @@ Ollama ollama({
 }
 
 /// Package-owned Ollama namespace for dedicated provider surfaces.
-final class Ollama {
+final class Ollama implements LanguageModelProvider, EmbeddingModelProvider {
   static const String defaultBaseUrl = ollamaDefaultBaseUrl;
 
   final String baseUrl;
@@ -34,6 +35,18 @@ final class Ollama {
   })  : baseUrl = normalizeOllamaBaseUrl(baseUrl),
         transport = transport ?? DioTransportClient();
 
+  @override
+  String get providerId => 'ollama';
+
+  @override
+  OllamaLanguageModel languageModel(
+    String modelId, {
+    OllamaChatModelSettings settings = const OllamaChatModelSettings(),
+  }) {
+    return chatModel(modelId, settings: settings);
+  }
+
+  @override
   OllamaEmbeddingModel embeddingModel(
     String modelId, {
     OllamaEmbeddingModelSettings settings =

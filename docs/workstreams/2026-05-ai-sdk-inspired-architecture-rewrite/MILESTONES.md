@@ -155,3 +155,82 @@ Current status:
   workspace guards, analysis, workspace tests, package tests, consumer smoke,
   publish dry-run, and pub version availability checks. See
   `07-release-readiness-report.md`.
+
+## M8 - Provider Object Model
+
+Goals:
+
+- add a first-class provider object contract to `llm_dart_provider`
+- keep Dart capability facets explicit instead of copying TypeScript optional
+  methods literally
+- decide the compatibility posture for `ModelRegistry`
+
+Acceptance criteria:
+
+- provider facades can implement shared provider and model-facet contracts
+- dynamic lookup can register provider instances rather than independent
+  per-capability factories
+- unsupported provider and unsupported model-kind errors are precise
+- current model registry behavior is either migrated, adapted, or removed with
+  migration notes
+
+Current status:
+
+- complete for the first provider-object pass; the provider foundation now has
+  shared `Provider` capability interfaces, `ModelReference`, and a
+  provider-object `ProviderRegistry` with focused tests. OpenAI-family,
+  Anthropic, Google, Ollama, and ElevenLabs facades implement the relevant
+  capability facets. `ModelRegistry` is retained as a low-level compatibility
+  factory registry, with migration guidance pointing new dynamic lookup code to
+  `ProviderRegistry`.
+
+## M9 - OpenAI-Family Decoupling
+
+Goals:
+
+- preserve shared OpenAI-compatible transport and codec reuse
+- move profile-specific option and model-id policy out of one central resolver
+- keep OpenRouter, DeepSeek, xAI, and future compatible-provider options typed
+  and provider-owned
+
+Acceptance criteria:
+
+- wrong-provider options fail before request encoding
+- shared OpenAI options are limited to shared wire behavior
+- profile-specific request shaping is owned by profile or provider strategies
+- OpenAI-family route selection remains an implementation detail below the
+  provider registry
+
+Current status:
+
+- complete for the first option-policy pass; OpenAI-family model-settings,
+  invocation-options, shared response-format merging, wrong-provider rejection,
+  and OpenRouter request-model-id shaping now live behind
+  `openAIFamilyOptionResolverFor(profile)`. See
+  `09-openai-family-option-resolver.md` for verification and remaining
+  capability-reporting risk.
+
+## M10 - Compatibility, Guards, And Migration
+
+Goals:
+
+- keep `llm_dart_core` frozen or give it a documented exit path
+- update root facade guidance around provider-object registry usage
+- add guard and test coverage for the new boundaries
+- prepare migration docs for the breaking line
+
+Acceptance criteria:
+
+- no new architecture ownership is added to `llm_dart_core`
+- provider packages remain independent from AI runtime, root, chat, Flutter, and
+  compatibility barrels
+- typed provider option precedence and conflict rules are documented and tested
+- migration docs cover provider registry changes and the final `ModelRegistry`
+  outcome
+
+Current status:
+
+- complete; root provider guidance and examples now teach
+  `ProviderRegistry`, `llm_dart_core` remains a frozen compatibility shell,
+  workspace/root/core boundary guards passed, and focused tests cover provider
+  registry lookup plus OpenAI-family route/profile behavior.

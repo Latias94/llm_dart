@@ -256,19 +256,18 @@ Example file:
 
 ## Dynamic Model Selection
 
-Use `ModelRegistry` when the provider is chosen at runtime but you still want a
-typed model contract.
+Use `ProviderRegistry` when the provider is chosen at runtime but you still want
+a typed model contract. Register provider facades, then resolve
+`provider:modelId` references against the model facet you need.
 
 ```dart
 import 'package:llm_dart/llm_dart.dart' as llm;
-import 'package:llm_dart_provider/llm_dart_provider.dart' as provider;
 
-final registry = provider.ModelRegistry(
-  languageModels: {
-    'openai': (modelId) =>
-        llm.openai(apiKey: 'your-openai-key').chatModel(modelId),
-    'anthropic': (modelId) =>
-        llm.anthropic(apiKey: 'your-anthropic-key').chatModel(modelId),
+final registry = llm.ProviderRegistry(
+  providers: {
+    'openai': llm.openai(apiKey: 'your-openai-key'),
+    'anthropic': llm.anthropic(apiKey: 'your-anthropic-key'),
+    'ollama': llm.ollama(),
   },
 );
 
@@ -276,7 +275,8 @@ final model = registry.languageModel('openai:gpt-4.1-mini');
 ```
 
 Use direct provider facades for the simplest path, and use the registry only
-when the choice really is dynamic.
+when the choice really is dynamic. `ModelRegistry` remains available only for
+low-level adapters that already own independent per-kind model factories.
 
 ## Provider-Owned Helper Boundaries
 

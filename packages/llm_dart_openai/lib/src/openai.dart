@@ -103,7 +103,13 @@ OpenAI phind({
   );
 }
 
-final class OpenAI {
+final class OpenAI
+    implements
+        LanguageModelProvider,
+        EmbeddingModelProvider,
+        ImageModelProvider,
+        SpeechModelProvider,
+        TranscriptionModelProvider {
   final String apiKey;
   final String baseUrl;
   final TransportClient transport;
@@ -117,6 +123,17 @@ final class OpenAI {
   })  : profile = profile ?? const OpenAIProfile(),
         baseUrl = baseUrl ?? (profile ?? const OpenAIProfile()).defaultBaseUrl,
         transport = transport ?? DioTransportClient();
+
+  @override
+  String get providerId => profile.providerId;
+
+  @override
+  OpenAILanguageModel languageModel(
+    String modelId, {
+    ProviderModelOptions settings = const OpenAIChatModelSettings(),
+  }) {
+    return chatModel(modelId, settings: settings);
+  }
 
   OpenAILanguageModel chatModel(
     String modelId, {
@@ -132,6 +149,7 @@ final class OpenAI {
     );
   }
 
+  @override
   OpenAIEmbeddingModel embeddingModel(
     String modelId, {
     ProviderModelOptions settings = const OpenAIEmbeddingModelSettings(),
@@ -146,6 +164,7 @@ final class OpenAI {
     );
   }
 
+  @override
   OpenAIImageModel imageModel(
     String modelId, {
     ProviderModelOptions settings = const OpenAIImageModelSettings(),
@@ -160,6 +179,7 @@ final class OpenAI {
     );
   }
 
+  @override
   OpenAISpeechModel speechModel(
     String modelId, {
     ProviderModelOptions settings = const OpenAISpeechModelSettings(),
@@ -174,6 +194,7 @@ final class OpenAI {
     );
   }
 
+  @override
   OpenAITranscriptionModel transcriptionModel(
     String modelId, {
     ProviderModelOptions settings = const OpenAITranscriptionModelSettings(),

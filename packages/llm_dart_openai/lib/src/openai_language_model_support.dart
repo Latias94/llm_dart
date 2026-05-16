@@ -2,14 +2,11 @@ import 'dart:convert';
 
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
-import 'deepseek_options.dart';
 import 'openai_family_profile.dart';
-import 'openai_options.dart';
+import 'openai_family_option_resolver.dart';
 import 'openai_response_format.dart';
-import 'openrouter_options.dart';
 import 'resolved_openai_chat_settings.dart';
 import 'resolved_openai_options.dart';
-import 'xai_options.dart';
 
 enum OpenAIRequestRoute {
   responses,
@@ -45,7 +42,7 @@ ResolvedOpenAILanguageModelCall resolveOpenAILanguageModelCall({
     modelId: modelId,
     profile: profile,
     settings: settings,
-    requestSearch: providerOptions.openRouterSearch,
+    providerOptions: providerOptions,
   );
 
   return ResolvedOpenAILanguageModelCall(
@@ -62,92 +59,10 @@ ResolvedOpenAIGenerateTextOptions resolveOpenAIProviderOptions({
   required OpenAIFamilyProfile profile,
   required ResolvedOpenAIChatModelSettings settings,
 }) {
-  final options = request.callOptions.providerOptions;
-  final sharedResponseFormat = resolveOpenAISharedResponseFormat(
-    request.options.responseFormat,
-  );
-
-  OpenAIGenerateTextOptions common = const OpenAIGenerateTextOptions();
-  XAILiveSearchOptions? xaiSearch;
-  OpenRouterSearchOptions? openRouterSearch;
-  DeepSeekGenerateTextOptions? deepseekOptions;
-
-  if (options == null) {
-    common = const OpenAIGenerateTextOptions();
-  } else if (options is OpenAIGenerateTextOptions) {
-    common = options;
-  } else if (options is DeepSeekGenerateTextOptions) {
-    if (profile.providerId != 'deepseek') {
-      throw ArgumentError.value(
-        options,
-        'providerOptions',
-        'DeepSeekGenerateTextOptions are only valid for DeepSeek language models.',
-      );
-    }
-
-    common = options.common;
-    deepseekOptions = options;
-  } else if (options is OpenRouterGenerateTextOptions) {
-    if (profile.providerId != 'openrouter') {
-      throw ArgumentError.value(
-        options,
-        'providerOptions',
-        'OpenRouterGenerateTextOptions are only valid for OpenRouter language models.',
-      );
-    }
-
-    common = options.common;
-    openRouterSearch = options.search;
-  } else if (options is XAIGenerateTextOptions) {
-    if (profile.providerId != 'xai') {
-      throw ArgumentError.value(
-        options,
-        'providerOptions',
-        'XAIGenerateTextOptions are only valid for xAI language models.',
-      );
-    }
-
-    common = options.common;
-    xaiSearch = options.search;
-  } else {
-    throw ArgumentError.value(
-      options,
-      'providerOptions',
-      'Expected OpenAIGenerateTextOptions or profile-specific OpenAI-family provider options.',
-    );
-  }
-
-  if (request.options.responseFormat != null && common.responseFormat != null) {
-    throw ArgumentError(
-      'GenerateTextOptions.responseFormat and OpenAIGenerateTextOptions.responseFormat cannot both be set.',
-    );
-  }
-
-  if (deepseekOptions?.responseFormat != null &&
-      (request.options.responseFormat != null ||
-          common.responseFormat != null)) {
-    throw ArgumentError(
-      'DeepSeekGenerateTextOptions.responseFormat cannot be combined with shared or OpenAI JSON-schema responseFormat.',
-    );
-  }
-
-  if (common.builtInTools == null && settings.common.builtInTools.isNotEmpty) {
-    common = common.copyWith(
-      builtInTools: settings.common.builtInTools,
-    );
-  }
-
-  if (sharedResponseFormat != null) {
-    common = common.copyWith(
-      responseFormat: sharedResponseFormat,
-    );
-  }
-
-  return ResolvedOpenAIGenerateTextOptions(
-    common: common,
-    xaiSearch: xaiSearch,
-    openRouterSearch: openRouterSearch,
-    deepseek: deepseekOptions,
+  return openAIFamilyOptionResolverFor(profile).resolveInvocationOptions(
+    options: request.callOptions.providerOptions,
+    sharedResponseFormat: request.options.responseFormat,
+    modelSettings: settings,
   );
 }
 
@@ -155,66 +70,24 @@ ResolvedOpenAIChatModelSettings resolveOpenAIModelSettingsForProfile(
   OpenAIFamilyProfile profile,
   ProviderModelOptions settings,
 ) {
-  if (settings is OpenAIChatModelSettings) {
-    return ResolvedOpenAIChatModelSettings(
-      common: settings,
-    );
-  }
-
-  if (settings is OpenRouterChatModelSettings) {
-    if (profile.providerId != 'openrouter') {
-      throw ArgumentError.value(
-        settings,
-        'settings',
-        'OpenRouterChatModelSettings are only valid for OpenRouter language models.',
-      );
-    }
-
-    return ResolvedOpenAIChatModelSettings(
-      common: settings.common,
-      openRouterSearch: settings.search,
-    );
-  }
-
-  throw ArgumentError.value(
-    settings,
-    'settings',
-    'Expected OpenAIChatModelSettings or profile-specific OpenAI-family model settings.',
-  );
+  return openAIFamilyOptionResolverFor(profile).resolveModelSettings(settings);
 }
 
 String resolveOpenAIRequestModelId({
   required String modelId,
   required OpenAIFamilyProfile profile,
   required ResolvedOpenAIChatModelSettings settings,
-  OpenRouterSearchOptions? requestSearch,
+  required ResolvedOpenAIGenerateTextOptions providerOptions,
 }) {
-  final search = requestSearch ?? settings.openRouterSearch;
-  if (search == null) {
-    return modelId;
-  }
-
-  if (profile.providerId != 'openrouter') {
-    return modelId;
-  }
-
-  return switch (search.mode) {
-    OpenRouterSearchMode.onlineModel => withOpenRouterOnlineModel(modelId),
-  };
+  return openAIFamilyOptionResolverFor(profile).resolveRequestModelId(
+    modelId: modelId,
+    modelSettings: settings,
+    invocationOptions: providerOptions,
+  );
 }
 
 String withOpenRouterOnlineModel(String modelId) {
-  if (modelId.endsWith(':online')) {
-    return modelId;
-  }
-
-  if (modelId.contains('deepseek-r1')) {
-    throw UnsupportedError(
-      'OpenRouter online-model shaping is not supported for DeepSeek R1 traffic.',
-    );
-  }
-
-  return '$modelId:online';
+  return resolveOpenRouterOnlineModelId(modelId);
 }
 
 Map<String, String> buildOpenAIRequestHeaders({
@@ -279,19 +152,5 @@ Map<String, Object?> decodeOpenAIJsonObject(Object? body) {
 OpenAIJsonSchemaResponseFormat? resolveOpenAISharedResponseFormat(
   ResponseFormat? responseFormat,
 ) {
-  return switch (responseFormat) {
-    null || TextResponseFormat() => null,
-    JsonResponseFormat(
-      schema: final schema,
-      name: final name,
-      description: final description,
-      strict: final strict,
-    ) =>
-      OpenAIJsonSchemaResponseFormat(
-        name: name ?? 'structured_output',
-        description: description,
-        schema: schema.toJson(),
-        strict: strict,
-      ),
-  };
+  return resolveOpenAIFamilySharedResponseFormat(responseFormat);
 }

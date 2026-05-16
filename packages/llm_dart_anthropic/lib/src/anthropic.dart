@@ -1,3 +1,4 @@
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'anthropic_api.dart';
@@ -18,7 +19,7 @@ Anthropic anthropic({
   );
 }
 
-final class Anthropic {
+final class Anthropic implements LanguageModelProvider {
   static const String defaultBaseUrl = anthropicDefaultBaseUrl;
 
   final String apiKey;
@@ -31,6 +32,17 @@ final class Anthropic {
     String? baseUrl,
   })  : baseUrl = baseUrl ?? defaultBaseUrl,
         transport = transport ?? DioTransportClient();
+
+  @override
+  String get providerId => 'anthropic';
+
+  @override
+  AnthropicLanguageModel languageModel(
+    String modelId, {
+    AnthropicChatModelSettings settings = const AnthropicChatModelSettings(),
+  }) {
+    return chatModel(modelId, settings: settings);
+  }
 
   AnthropicLanguageModel chatModel(
     String modelId, {

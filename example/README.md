@@ -5,9 +5,10 @@ Practical examples for the LLM Dart library, organized by learning path and use 
 For modern examples, the default root import is
 `package:llm_dart/llm_dart.dart`.
 
-When you need runtime provider selection, use `ModelRegistry` from
-`package:llm_dart_provider/llm_dart_provider.dart`. When you need structured
-JSON as a first-class app result, prefer `generateObject(...)` and
+When you need runtime provider selection, use `ProviderRegistry` with provider
+facades from `package:llm_dart/llm_dart.dart`. `ModelRegistry` remains a
+low-level compatibility factory registry for custom adapters. When you need
+structured JSON as a first-class app result, prefer `generateObject(...)` and
 `streamObject(...)` over the lower-level structured-output helpers.
 
 For shared chat UI projection, keep `ChatMessageMapper` on

@@ -1,3 +1,4 @@
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'elevenlabs_options.dart';
@@ -20,7 +21,8 @@ ElevenLabs elevenLabs({
 }
 
 /// Package-owned ElevenLabs namespace for dedicated provider surfaces.
-final class ElevenLabs {
+final class ElevenLabs
+    implements SpeechModelProvider, TranscriptionModelProvider {
   static const String defaultBaseUrl = elevenLabsDefaultBaseUrl;
 
   final String apiKey;
@@ -34,6 +36,10 @@ final class ElevenLabs {
   })  : baseUrl = normalizeElevenLabsBaseUrl(baseUrl),
         transport = transport ?? DioTransportClient();
 
+  @override
+  String get providerId => 'elevenlabs';
+
+  @override
   ElevenLabsSpeechModel speechModel(
     String modelId, {
     ElevenLabsSpeechModelSettings settings =
@@ -48,6 +54,7 @@ final class ElevenLabs {
     );
   }
 
+  @override
   ElevenLabsTranscriptionModel transcriptionModel(
     String modelId, {
     ElevenLabsTranscriptionModelSettings settings =

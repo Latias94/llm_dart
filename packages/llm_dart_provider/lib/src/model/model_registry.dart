@@ -1,6 +1,7 @@
 import 'embedding_model.dart';
 import 'image_model.dart';
 import 'language_model.dart';
+import 'model_reference.dart';
 import 'speech_model.dart';
 import 'transcription_model.dart';
 
@@ -16,11 +17,13 @@ typedef SpeechModelFactory = ModelFactory<SpeechModel>;
 
 typedef TranscriptionModelFactory = ModelFactory<TranscriptionModel>;
 
+/// Factory-map registry kept for low-level adapters and migration code.
+///
+/// New application and root-facade code should prefer `ProviderRegistry`, which
+/// registers provider objects and discovers their supported model facets. This
+/// registry remains useful when a custom integration already owns independent
+/// per-kind model factories, but it should not shape new provider architecture.
 final class ModelRegistry {
-  static final RegExp _providerIdPattern = RegExp(
-    r'^[a-z0-9]+(?:[._-][a-z0-9]+)*$',
-  );
-
   final Map<String, LanguageModelFactory> _languageModels;
   final Map<String, EmbeddingModelFactory> _embeddingModels;
   final Map<String, ImageModelFactory> _imageModels;
@@ -75,7 +78,7 @@ final class ModelRegistry {
       _transcriptionModels.containsKey(providerId);
 
   LanguageModel languageModel(String reference) {
-    final parsed = _ModelReference.parse(reference);
+    final parsed = ModelReference.parse(reference);
     final factory = _languageModels[parsed.providerId];
     if (factory == null) {
       throw _unsupportedProvider(
@@ -88,7 +91,7 @@ final class ModelRegistry {
   }
 
   EmbeddingModel embeddingModel(String reference) {
-    final parsed = _ModelReference.parse(reference);
+    final parsed = ModelReference.parse(reference);
     final factory = _embeddingModels[parsed.providerId];
     if (factory == null) {
       throw _unsupportedProvider(
@@ -101,7 +104,7 @@ final class ModelRegistry {
   }
 
   ImageModel imageModel(String reference) {
-    final parsed = _ModelReference.parse(reference);
+    final parsed = ModelReference.parse(reference);
     final factory = _imageModels[parsed.providerId];
     if (factory == null) {
       throw _unsupportedProvider(
@@ -114,7 +117,7 @@ final class ModelRegistry {
   }
 
   SpeechModel speechModel(String reference) {
-    final parsed = _ModelReference.parse(reference);
+    final parsed = ModelReference.parse(reference);
     final factory = _speechModels[parsed.providerId];
     if (factory == null) {
       throw _unsupportedProvider(
@@ -127,7 +130,7 @@ final class ModelRegistry {
   }
 
   TranscriptionModel transcriptionModel(String reference) {
-    final parsed = _ModelReference.parse(reference);
+    final parsed = ModelReference.parse(reference);
     final factory = _transcriptionModels[parsed.providerId];
     if (factory == null) {
       throw _unsupportedProvider(
@@ -147,7 +150,10 @@ final class ModelRegistry {
 
     for (final entry in factories.entries) {
       final providerId = entry.key.trim();
-      _validateProviderId(providerId, parameterName: parameterName);
+      ModelReference.validateProviderId(
+        providerId,
+        parameterName: parameterName,
+      );
       normalized[providerId] = entry.value;
     }
 
@@ -158,21 +164,6 @@ final class ModelRegistry {
     Map<String, TFactory> factories,
   ) {
     return List<String>.unmodifiable(factories.keys.toList()..sort());
-  }
-
-  static void _validateProviderId(
-    String providerId, {
-    required String parameterName,
-  }) {
-    if (_providerIdPattern.hasMatch(providerId)) {
-      return;
-    }
-
-    throw ArgumentError.value(
-      providerId,
-      parameterName,
-      'Expected a lowercase provider ID such as "openai" or "anthropic".',
-    );
   }
 
   static UnsupportedError _unsupportedProvider({
@@ -186,46 +177,5 @@ final class ModelRegistry {
       'No $kind provider registered for "$providerId". '
       'Available providers: $available.',
     );
-  }
-}
-
-final class _ModelReference {
-  final String providerId;
-  final String modelId;
-
-  const _ModelReference({
-    required this.providerId,
-    required this.modelId,
-  });
-
-  static _ModelReference parse(String reference) {
-    final trimmed = reference.trim();
-    final separator = trimmed.indexOf(':');
-
-    if (separator <= 0 || separator == trimmed.length - 1) {
-      throw ArgumentError.value(
-        reference,
-        'reference',
-        'Expected model reference in "provider:modelId" form.',
-      );
-    }
-
-    final providerId = trimmed.substring(0, separator).trim();
-    final modelId = trimmed.substring(separator + 1).trim();
-
-    ModelRegistry._validateProviderId(
-      providerId,
-      parameterName: 'reference',
-    );
-
-    if (modelId.isEmpty) {
-      throw ArgumentError.value(
-        reference,
-        'reference',
-        'Expected non-empty model ID in "provider:modelId" form.',
-      );
-    }
-
-    return _ModelReference(providerId: providerId, modelId: modelId);
   }
 }

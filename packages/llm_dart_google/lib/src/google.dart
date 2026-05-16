@@ -1,3 +1,4 @@
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'google_embedding_model.dart';
@@ -19,7 +20,12 @@ Google google({
   );
 }
 
-final class Google {
+final class Google
+    implements
+        LanguageModelProvider,
+        EmbeddingModelProvider,
+        ImageModelProvider,
+        SpeechModelProvider {
   static const String defaultBaseUrl =
       'https://generativelanguage.googleapis.com/v1beta';
 
@@ -34,6 +40,17 @@ final class Google {
   })  : baseUrl = baseUrl ?? defaultBaseUrl,
         transport = transport ?? DioTransportClient();
 
+  @override
+  String get providerId => 'google';
+
+  @override
+  GoogleLanguageModel languageModel(
+    String modelId, {
+    GoogleChatModelSettings settings = const GoogleChatModelSettings(),
+  }) {
+    return chatModel(modelId, settings: settings);
+  }
+
   GoogleLanguageModel chatModel(
     String modelId, {
     GoogleChatModelSettings settings = const GoogleChatModelSettings(),
@@ -47,6 +64,7 @@ final class Google {
     );
   }
 
+  @override
   GoogleEmbeddingModel embeddingModel(
     String modelId, {
     GoogleEmbeddingModelSettings settings =
@@ -61,6 +79,7 @@ final class Google {
     );
   }
 
+  @override
   GoogleImageModel imageModel(
     String modelId, {
     GoogleImageModelSettings settings = const GoogleImageModelSettings(),
@@ -74,6 +93,7 @@ final class Google {
     );
   }
 
+  @override
   GoogleSpeechModel speechModel(
     String modelId, {
     GoogleSpeechModelSettings settings = const GoogleSpeechModelSettings(),
