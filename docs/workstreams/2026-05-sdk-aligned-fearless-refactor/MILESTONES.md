@@ -751,3 +751,40 @@ Exit gate:
 
 - focused Google speech model and model describer tests, package analysis,
   workspace analysis, and whitespace checks pass.
+
+## M28 - Post-Closure ElevenLabs Audio Model Boundary Split
+
+Goals:
+
+- align ElevenLabs speech and transcription provider adapter orchestration with
+  the reference provider adapter and provider-utils HTTP dispatch layers
+- keep `ElevenLabsSpeechModel` and `ElevenLabsTranscriptionModel` as stable
+  provider-facing audio adapters
+- improve locality for provider option validation, request body construction,
+  transport projection, and response/provider metadata decoding
+
+Acceptance criteria:
+
+- speech settings resolution, provider option resolution, voice fallback,
+  option validation, output-format normalization, and request body construction
+  live outside the main speech model adapter
+- speech URI, default/per-call headers, call options, and response type
+  projection live outside the main speech model adapter
+- speech bytes decoding, media-type fallback, response metadata, and
+  ElevenLabs provider metadata live outside the main speech model adapter
+- transcription settings resolution, provider option resolution, option
+  validation, and multipart body construction live outside the main
+  transcription model adapter
+- transcription URI, default/per-call headers, call options, and response type
+  projection live outside the main transcription model adapter
+- transcription JSON response coercion, text validation, segment projection,
+  response metadata, and provider metadata live outside the main transcription
+  model adapter
+- existing ElevenLabs audio request, validation, timeout, retry, cancellation,
+  response metadata, and provider metadata behavior stays unchanged
+
+Exit gate:
+
+- focused ElevenLabs speech model, transcription model, model describer, and
+  entrypoint tests, package analysis, workspace analysis, and whitespace
+  checks pass.

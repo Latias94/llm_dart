@@ -326,6 +326,28 @@
   analysis via direct runner and analyzer API after Dart tool subcommands
   stopped hanging in this workspace
 
+## ElevenLabs Audio Model Boundary Follow-Up
+
+- [x] Compare ElevenLabs speech/transcription model shape against the
+  reference provider adapter, OpenAI audio adapter, and provider-utils HTTP
+  dispatch layers
+- [x] Keep `ElevenLabsSpeechModel` and `ElevenLabsTranscriptionModel` as public
+  provider adapters while moving settings/provider option resolution,
+  validation, request body construction, transport request projection, and
+  response/provider metadata decoding into focused modules
+- [x] Preserve speech default voice fallback, output-format aliases, query
+  parameters, JSON body shape, headers, call options, bytes decoding,
+  media-type fallback, response metadata, provider metadata, and provider
+  option validation behavior
+- [x] Preserve transcription multipart field order, filename inference, query
+  parameters, headers, call options, JSON response decoding, segment
+  projection, body metadata, response metadata, provider metadata, and provider
+  option validation behavior
+- [x] Verify focused ElevenLabs speech, transcription, model describer, and
+  entrypoint tests plus package-level analysis via direct runner and analyzer
+  API
+- [x] Document the ElevenLabs audio model boundary split and changelog note
+
 ## Provider Options And Metadata
 
 - [x] Define the canonical typed provider options shape in

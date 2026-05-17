@@ -251,6 +251,9 @@ The workstream is complete only when:
     response modules.
 - [26-google-speech-model-boundary.md](26-google-speech-model-boundary.md)
   - Google speech model split into request, transport, and response modules.
+- [27-elevenlabs-audio-model-boundary.md](27-elevenlabs-audio-model-boundary.md)
+  - ElevenLabs speech and transcription model split into request, transport,
+    and response modules.
 - [release-readiness-report.txt](release-readiness-report.txt)
   - Full release-readiness gate result, including consumer smoke, publish
     dry-run, and pub.dev version availability.

@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- ElevenLabs speech/transcription orchestration now delegates provider option
+  resolution, request construction, transport request projection, and response
+  metadata decoding to focused internal modules while preserving provider
+  behavior.
+
 ## [0.11.0-alpha.1] - 2026-05-12
 
 - Alpha release of the dedicated ElevenLabs provider package.
