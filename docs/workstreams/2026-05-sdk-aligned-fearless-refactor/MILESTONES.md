@@ -385,3 +385,30 @@ Exit gate:
 - output focused tests, text call tests, generate/stream runner tests, core
   compatibility tests, package analysis, workspace analysis, and whitespace
   checks pass.
+
+## M16 - Post-Closure Output Spec Strategy Split
+
+Goals:
+
+- align concrete output strategy ownership with the reference output strategy
+  layer
+- keep the `OutputSpec` family available through the stable public output spec
+  facade
+- improve locality for text, JSON, object, array, and choice parse behavior
+
+Acceptance criteria:
+
+- the base `OutputSpec<T>` interface lives outside concrete strategy
+  implementations
+- each concrete output strategy lives in an output-type-owned module
+- response format, final parse, partial parse, validation, and element event
+  behavior stay unchanged for each output type
+- `generateOutput`, `streamOutput`, `generateObject`, and `streamObject`
+  behavior stays unchanged through the output runner facade
+- `llm_dart_core` compatibility exports continue to resolve the same output
+  spec names
+
+Exit gate:
+
+- focused output spec tests, text call tests, core compatibility tests, package
+  analysis, workspace analysis, and whitespace checks pass.

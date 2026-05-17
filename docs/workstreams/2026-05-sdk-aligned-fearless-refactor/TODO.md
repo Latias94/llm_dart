@@ -143,6 +143,20 @@
 - [x] Add a focused regression test for duplicate partial output suppression
 - [x] Document the output runner lifecycle split and changelog note
 
+## Output Spec Strategy Follow-Up
+
+- [x] Compare output strategy shape against `repo-ref/ai` output-strategy,
+  generate-object, stream-object, and parse/validate layers
+- [x] Keep `output_spec_strategy.dart` as the public compatibility facade while
+  moving each concrete output strategy into an output-type-owned module
+- [x] Preserve `OutputSpec`, `TextOutputSpec`, `JsonOutputSpec`,
+  `ObjectOutputSpec`, `ArrayOutputSpec`, and `ChoiceOutputSpec` public exports
+- [x] Preserve final parse, partial parse, object schema validation, choice
+  normalization, and array element event behavior
+- [x] Verify focused `llm_dart_ai` and `llm_dart_core` output/text call tests
+  after the split
+- [x] Document the output spec strategy split and changelog note
+
 ## Provider Options And Metadata
 
 - [x] Define the canonical typed provider options shape in

@@ -221,6 +221,9 @@ The workstream is complete only when:
 - [14-output-runner-lifecycle-boundary.md](14-output-runner-lifecycle-boundary.md)
   - Output runner lifecycle split into final parse/error handling and streaming
     partial projection modules.
+- [15-output-spec-strategy-boundary.md](15-output-spec-strategy-boundary.md)
+  - Output spec strategy split into output-type-owned modules while preserving
+    public `OutputSpec` exports and structured output behavior.
 - [release-readiness-report.txt](release-readiness-report.txt)
   - Full release-readiness gate result, including consumer smoke, publish
     dry-run, and pub.dev version availability.

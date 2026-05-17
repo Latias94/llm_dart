@@ -23,6 +23,8 @@
 - Split structured output runner lifecycle support into final parse/error
   handling and streaming partial projection modules while preserving output
   runner behavior.
+- Split output spec strategies into output-type-owned modules while preserving
+  public `OutputSpec` exports and structured output behavior.
 
 ## [0.11.0-alpha.1] - 2026-05-12
 
