@@ -177,6 +177,10 @@ The detailed rebaseline is tracked in
 - [14-google-language-model-policy.md](14-google-language-model-policy.md)
   - M15 implementation note for moving Google language model-family request
     and capability policy behind a provider-owned seam.
+- [15-ollama-chat-request-codec.md](15-ollama-chat-request-codec.md)
+  - M16 implementation note for splitting Ollama chat request encoding into
+    deeper options policy, prompt projection, binary encoding, and request
+    assembly modules.
 - [MILESTONES.md](MILESTONES.md)
   - Milestones, acceptance criteria, and status tracking.
 - [TODO.md](TODO.md)

@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+- Refactored Ollama chat request encoding into internal options policy, prompt
+  projection, binary prompt encoding, and request assembly modules. Public
+  model settings, invocation options, and wire behaviour are unchanged.
+
 ## [0.11.0-alpha.1] - 2026-05-12
 
 - Alpha release of the dedicated Ollama provider package.

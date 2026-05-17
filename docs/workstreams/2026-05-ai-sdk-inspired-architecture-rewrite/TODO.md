@@ -126,3 +126,5 @@
   `OpenAIFamilyProfile` on the language-model path
 - [x] Move Google language model-family request and capability policy behind a
   provider-owned seam
+- [x] Split Ollama chat request encoding into options policy, prompt
+  projection, binary prompt encoding, and request assembly modules

@@ -360,3 +360,28 @@ Current status:
   predicates and routes prompt/system handling, thinking config, tool mixing,
   function-call-id replay, and language capability description. See
   `14-google-language-model-policy.md`.
+
+## M16 - Ollama Chat Request Codec
+
+Goals:
+
+- deepen Ollama chat request encoding without changing public API or wire shape
+- split option policy, prompt projection, binary prompt encoding, and request
+  body assembly into separate provider-owned modules
+- preserve typed `OllamaGenerateTextOptions` and `OllamaChatModelSettings`
+  behaviour
+
+Acceptance criteria:
+
+- `OllamaChatRequestCodec` no longer owns prompt projection, binary byte
+  resolution, response-format policy, and reasoning warning policy inline
+- shared/provider option projection remains covered by focused tests
+- multimodal image resolver precedence remains covered by focused tests
+- migration/change notes document that the refactor is behaviour-preserving
+
+Current status:
+
+- complete; `OllamaChatRequestOptionsPolicy`,
+  `OllamaChatPromptProjectionCodec`, and `OllamaChatBinaryPartEncoder` now own
+  the deeper request behaviours, while `OllamaChatRequestCodec` keeps final
+  request assembly. See `15-ollama-chat-request-codec.md`.
