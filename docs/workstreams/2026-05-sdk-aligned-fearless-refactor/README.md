@@ -197,6 +197,9 @@ The workstream is complete only when:
   - Runtime dependency policy and provider package graph audit.
 - [06-completion-audit.md](06-completion-audit.md)
   - Final goal-to-evidence audit and validation command record.
+- [07-structured-output-module-boundary.md](07-structured-output-module-boundary.md)
+  - Post-closure structured output module split aligned with the reference
+    output strategy and event shape.
 - [release-readiness-report.txt](release-readiness-report.txt)
   - Full release-readiness gate result, including consumer smoke, publish
     dry-run, and pub.dev version availability.

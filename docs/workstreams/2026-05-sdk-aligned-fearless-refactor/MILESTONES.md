@@ -176,3 +176,28 @@ Exit gate:
 
 - the breaking line is ready for maintainer release decision with no hidden
   architecture exceptions.
+
+## M8 - Post-Closure Structured Output Deepening
+
+Goals:
+
+- align `llm_dart_ai` structured output internals with the reference output
+  strategy and stream event shape
+- keep the existing `OutputSpec` public seam stable
+- improve locality for JSON parsing, strategy selection, runner glue, and
+  stream result replay
+
+Acceptance criteria:
+
+- `output_spec.dart` is a facade over focused structured output modules
+- JSON helper functions remain internal rather than becoming public utility
+  contracts
+- `generateOutput`, `streamOutput`, `generateObject`, and `streamObject`
+  keep their current behavior
+- focused tests cover preserved structured output behavior and immutable JSON
+  partial output
+
+Exit gate:
+
+- `llm_dart_ai` focused tests, `llm_dart_core` compatibility tests, package
+  analysis, workspace analysis, and whitespace checks pass after the split.

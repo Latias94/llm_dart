@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+- Refactored structured output into a public facade, output strategy, JSON
+  support, stream result, and runner modules. Public `OutputSpec` APIs and
+  `generateOutput`/`streamOutput` behavior are unchanged.
+
 ## [0.11.0-alpha.1] - 2026-05-12
 
 - Alpha release of the shared AI helper package.

@@ -873,6 +873,19 @@ void main() {
   });
 
   group('output spec validation', () {
+    test('json partial outputs are deeply immutable', () {
+      final spec = JsonOutputSpec.json(schema: JsonSchema.object());
+
+      final partial = spec.parsePartial(
+        text: '{"items":[1,2]}',
+      )! as Map<String, Object?>;
+
+      expect(() => partial['extra'] = true, throwsUnsupportedError);
+
+      final items = partial['items']! as List<Object?>;
+      expect(() => items.add(3), throwsUnsupportedError);
+    });
+
     test('object spec rejects non-object schemas', () {
       expect(
         () => ObjectOutputSpec.json(

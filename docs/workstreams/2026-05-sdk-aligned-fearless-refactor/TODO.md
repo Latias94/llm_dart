@@ -48,6 +48,17 @@
 - [x] Add tests for single-step, multi-step, streaming, tool-result replay, and
   structured output behavior through the AI runtime
 
+## Structured Output Module Boundary Follow-Up
+
+- [x] Compare structured output against `repo-ref/ai` output strategy,
+  structured output event, and object generation runner seams
+- [x] Keep `output_spec.dart` as the public facade while moving strategy,
+  JSON support, runner glue, and stream result replay into focused modules
+- [x] Preserve existing `OutputSpec`, `generateOutput`, `streamOutput`,
+  `generateObject`, and `streamObject` behavior
+- [x] Add a focused regression test for deeply immutable JSON partial output
+- [x] Document the post-closure module boundary and changelog note
+
 ## Provider Options And Metadata
 
 - [x] Define the canonical typed provider options shape in
