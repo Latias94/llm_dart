@@ -6,6 +6,10 @@
   policy, beta feature inference, token-count projection, and request assembly
   modules. Public settings, invocation options, beta headers, token-count
   behaviour, and wire output are unchanged.
+- Refactored Anthropic code execution replay into a thin public facade plus
+  provider-local replay JSON and execution result modules. Public replay API,
+  custom prompt/content/event semantics, file-handle behavior, and wire shape
+  are unchanged.
 
 ## [0.11.0-alpha.1] - 2026-05-12
 

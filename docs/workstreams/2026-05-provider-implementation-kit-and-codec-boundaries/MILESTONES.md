@@ -331,3 +331,34 @@ Current status:
   `anthropic_result_util.dart`.
 - Focused Anthropic result/replay tests, fixture contracts, and package
   analysis pass for this follow-up slice.
+
+## M10 - Anthropic Code Execution Replay Boundary Follow-Up
+
+Goals:
+
+- deepen Anthropic code execution replay without changing its public seam
+- keep `AnthropicCodeExecutionReplay` as the stable public replay facade
+- preserve code-execution block/result wire shape, file-handle behavior, and
+  custom prompt/content/event replay semantics
+- keep helper extraction provider-local
+
+Acceptance criteria:
+
+- replay JSON validation is outside `anthropic_code_execution_replay.dart`
+- execution result typed models are outside `anthropic_code_execution_replay.dart`
+- focused code-execution replay tests pass
+- `dart analyze packages/llm_dart_anthropic` passes
+- fixture contracts remain unchanged
+
+Current status:
+
+- `anthropic_code_execution_replay.dart` now owns the stable public replay
+  facade only.
+- Code-execution replay JSON validation moved to
+  `anthropic_code_execution_replay_codec.dart` and
+  `anthropic_code_execution_replay_json.dart`.
+- Execution result typed models and file-handle parsing moved to
+  `anthropic_code_execution_replay_result.dart`.
+- Public exported replay/result semantics remain unchanged.
+- Focused code-execution replay tests, Anthropic package analysis, and fixture
+  contracts pass for this follow-up slice.

@@ -129,6 +129,91 @@ void main() {
       expect(promptPart.data, replay.toJson());
     });
 
+    test('parses programmatic, encrypted, and error result variants', () {
+      AnthropicCodeExecutionReplay replayFor({
+        required String blockType,
+        required Map<String, Object?> content,
+      }) {
+        return AnthropicCodeExecutionReplay.fromJson({
+          'schema': 'anthropic.execution.result.v1',
+          'replayRole': 'tool',
+          'toolCallId': 'srvtoolu_5',
+          'toolName': 'code_execution',
+          'blockType': blockType,
+          'block': {
+            'type': blockType,
+            'tool_use_id': 'srvtoolu_5',
+            'content': content,
+          },
+        });
+      }
+
+      final programmatic = replayFor(
+        blockType: 'code_execution_tool_result',
+        content: {
+          'type': 'code_execution_result',
+          'stdout': 'ok\n',
+          'stderr': '',
+          'return_code': 0,
+          'content': [
+            {
+              'type': 'code_execution_output',
+              'file_id': 'file_programmatic',
+            },
+          ],
+        },
+      );
+      expect(
+        programmatic.result,
+        isA<AnthropicProgrammaticCodeExecutionResult>(),
+      );
+      expect(programmatic.fileHandles.single.fileId, 'file_programmatic');
+
+      final encrypted = replayFor(
+        blockType: 'code_execution_tool_result',
+        content: {
+          'type': 'encrypted_code_execution_result',
+          'encrypted_stdout': 'ciphertext',
+          'stderr': '',
+          'return_code': 0,
+          'content': [
+            {
+              'type': 'code_execution_output',
+              'file_id': 'file_encrypted',
+            },
+          ],
+        },
+      );
+      expect(encrypted.result, isA<AnthropicEncryptedCodeExecutionResult>());
+      expect(
+        (encrypted.result as AnthropicEncryptedCodeExecutionResult)
+            .encryptedStdout,
+        'ciphertext',
+      );
+
+      final bashError = replayFor(
+        blockType: 'bash_code_execution_tool_result',
+        content: {
+          'type': 'bash_code_execution_tool_result_error',
+          'error_code': 'timeout',
+        },
+      );
+      expect(bashError.result, isA<AnthropicBashCodeExecutionErrorResult>());
+      expect(bashError.hasFileHandles, isFalse);
+
+      final textEditorError = replayFor(
+        blockType: 'text_editor_code_execution_tool_result',
+        content: {
+          'type': 'text_editor_code_execution_tool_result_error',
+          'error_code': 'invalid_path',
+        },
+      );
+      expect(
+        textEditorError.result,
+        isA<AnthropicTextEditorCodeExecutionErrorResult>(),
+      );
+    });
+
     test('returns null for unrelated custom parts', () {
       final contentPart = const CustomContentPart(
         kind: 'anthropic.result.web_search',

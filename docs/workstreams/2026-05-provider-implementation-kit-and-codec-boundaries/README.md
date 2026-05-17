@@ -143,6 +143,9 @@ The workstream is complete when:
 - [15-anthropic-result-codec-boundary.md](15-anthropic-result-codec-boundary.md)
   - Follow-up Anthropic Messages result content, tool-result replay, finish,
     usage, and metadata codec extraction record.
+- [16-anthropic-code-execution-replay-boundary.md](16-anthropic-code-execution-replay-boundary.md)
+  - Follow-up Anthropic code-execution replay facade, result model, and replay
+    JSON codec extraction record.
 - [MILESTONES.md](MILESTONES.md)
   - Milestones and acceptance criteria.
 - [TODO.md](TODO.md)

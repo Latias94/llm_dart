@@ -103,6 +103,21 @@
 - [x] Run focused Anthropic result/replay tests and package analysis
 - [x] Document why this still does not justify public provider utilities
 
+## Anthropic Code Execution Replay Follow-Up Slice
+
+- [x] Compare Anthropic code-execution replay boundaries against
+      `repo-ref/ai` code-execution and tool-result replay semantics
+- [x] Extract Anthropic code-execution replay JSON validation into
+      provider-local modules
+- [x] Extract Anthropic code-execution result typed models into a
+      provider-local module
+- [x] Keep `AnthropicCodeExecutionReplay` as the stable public replay facade
+- [x] Keep code-execution wire shape, file-handle behavior, and prompt/content
+      replay semantics unchanged
+- [x] Run focused Anthropic code-execution replay tests and package analysis
+- [x] Run Anthropic fixture contracts after the replay split
+- [x] Document why this still does not justify public provider utilities
+
 ## OpenAI Responses Stream Follow-Up Slice
 
 - [x] Compare OpenAI Responses stream boundaries against `repo-ref/ai`
