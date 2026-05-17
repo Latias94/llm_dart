@@ -59,6 +59,17 @@
 - [x] Add a focused regression test for deeply immutable JSON partial output
 - [x] Document the post-closure module boundary and changelog note
 
+## Text Call Result Runner Follow-Up
+
+- [x] Compare text call shape against `repo-ref/ai` generate text result,
+  stream text result, generate text runner, and stream text runner seams
+- [x] Keep `text_call.dart` as the public facade while moving result facades
+  and runner glue into focused modules
+- [x] Preserve existing `GenerateTextCallResult`, `StreamTextCallResult`,
+  `generateTextCall`, and `streamTextCall` behavior
+- [x] Verify raw and structured text call focused tests after the split
+- [x] Document the result/runner module split and changelog note
+
 ## Provider Options And Metadata
 
 - [x] Define the canonical typed provider options shape in

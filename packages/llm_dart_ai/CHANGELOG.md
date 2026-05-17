@@ -5,6 +5,8 @@
 - Refactored structured output into a public facade, output strategy, JSON
   support, stream result, and runner modules. Public `OutputSpec` APIs and
   `generateOutput`/`streamOutput` behavior are unchanged.
+- Split text call result facades from runner glue while keeping
+  `generateTextCall` and `streamTextCall` public behavior unchanged.
 
 ## [0.11.0-alpha.1] - 2026-05-12
 

@@ -201,3 +201,25 @@ Exit gate:
 
 - `llm_dart_ai` focused tests, `llm_dart_core` compatibility tests, package
   analysis, workspace analysis, and whitespace checks pass after the split.
+
+## M9 - Post-Closure Text Call Result Runner Split
+
+Goals:
+
+- align text call internals with the reference generate/stream text
+  result-versus-runner split
+- keep `text_call.dart` as the stable public seam
+- improve locality for result facade behavior and runner dispatch
+
+Acceptance criteria:
+
+- text call result facades live outside the runner glue module
+- `generateTextCall` and `streamTextCall` keep their current public behavior
+- raw stream collection and structured output adaptation remain covered by
+  focused text call tests
+- `llm_dart_core` compatibility exports continue to resolve the same names
+
+Exit gate:
+
+- `llm_dart_ai` text call tests, structured output tests, core compatibility
+  tests, package analysis, workspace analysis, and whitespace checks pass.

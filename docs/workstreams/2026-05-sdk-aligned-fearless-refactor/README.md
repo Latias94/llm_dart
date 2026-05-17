@@ -200,6 +200,9 @@ The workstream is complete only when:
 - [07-structured-output-module-boundary.md](07-structured-output-module-boundary.md)
   - Post-closure structured output module split aligned with the reference
     output strategy and event shape.
+- [08-text-call-result-runner-boundary.md](08-text-call-result-runner-boundary.md)
+  - Text call result facade and runner glue split aligned with the reference
+    text generation result layers.
 - [release-readiness-report.txt](release-readiness-report.txt)
   - Full release-readiness gate result, including consumer smoke, publish
     dry-run, and pub.dev version availability.
