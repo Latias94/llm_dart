@@ -246,6 +246,9 @@ The workstream is complete only when:
   - Google image model split into request, transport, and response modules.
 - [24-openai-image-model-boundary.md](24-openai-image-model-boundary.md)
   - OpenAI image model split into request, transport, and response modules.
+- [25-openai-audio-model-boundary.md](25-openai-audio-model-boundary.md)
+  - OpenAI speech and transcription model split into request, transport, and
+    response modules.
 - [release-readiness-report.txt](release-readiness-report.txt)
   - Full release-readiness gate result, including consumer smoke, publish
     dry-run, and pub.dev version availability.

@@ -679,3 +679,43 @@ Exit gate:
 
 - focused OpenAI image model, model describer, and entrypoint tests, package
   analysis, workspace analysis, and whitespace checks pass.
+
+## M26 - Post-Closure OpenAI Audio Model Boundary Split
+
+Goals:
+
+- align OpenAI speech and transcription provider adapter orchestration with
+  the reference OpenAI speech/transcription models and provider-utils HTTP
+  dispatch layers
+- keep `OpenAISpeechModel` and `OpenAITranscriptionModel` as stable
+  provider-facing audio adapters
+- improve locality for provider option validation, request body construction,
+  transport projection, and response/provider metadata decoding
+
+Acceptance criteria:
+
+- speech settings resolution, provider option resolution, speed validation,
+  output-format fallback, language warnings, and request body construction
+  live outside the main speech model adapter
+- speech URI, default/per-call headers, call options, and response type
+  projection live outside the main speech model adapter
+- speech bytes decoding, media-type fallback, and response metadata
+  construction live outside the main speech model adapter
+- transcription settings resolution, provider option resolution, temperature
+  validation, response-format selection, timestamp validation, multipart body
+  construction, and filename inference live outside the main transcription
+  model adapter
+- transcription URI, default/per-call headers, accept header, call options, and
+  response type projection live outside the main transcription model adapter
+- transcription JSON/plain-text response decoding, segment/word projection,
+  language normalization, response metadata, and OpenAI provider metadata live
+  outside the main transcription model adapter
+- existing OpenAI audio request, warning, validation, timeout, retry,
+  cancellation, response metadata, and provider metadata behavior stays
+  unchanged
+
+Exit gate:
+
+- focused OpenAI speech model, transcription model, model describer, and
+  entrypoint tests, package analysis, workspace analysis, and whitespace
+  checks pass.

@@ -292,6 +292,23 @@
   the split
 - [x] Document the OpenAI image model boundary split and changelog note
 
+## OpenAI Audio Model Boundary Follow-Up
+
+- [x] Compare OpenAI speech/transcription model shape against `repo-ref/ai`
+  OpenAI speech and transcription adapter layers
+- [x] Keep `OpenAISpeechModel` and `OpenAITranscriptionModel` as public
+  provider adapters while moving request validation/body construction,
+  transport request projection, and response/provider metadata decoding into
+  focused modules
+- [x] Preserve speech output-format fallback, language warning, speed
+  validation, bytes response decoding, and media-type fallback behavior
+- [x] Preserve transcription multipart field order, response-format selection,
+  timestamp validation, JSON/plain-text response decoding, segment projection,
+  language normalization, and provider metadata behavior
+- [x] Verify focused OpenAI speech, transcription, model describer, and
+  entrypoint tests after the split
+- [x] Document the OpenAI audio model boundary split and changelog note
+
 ## Provider Options And Metadata
 
 - [x] Define the canonical typed provider options shape in

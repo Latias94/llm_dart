@@ -28,6 +28,10 @@
   JSON and multipart request construction, transport request projection, and
   response/provider metadata decoding to focused internal modules while
   preserving provider behavior.
+- OpenAI speech and transcription model orchestration now delegates provider
+  option validation, request body construction, transport request projection,
+  and response/provider metadata decoding to focused internal modules while
+  preserving provider behavior.
 - OpenAI language-model orchestration now delegates route-aware request
   encoding, transport request construction, generate response decoding, and
   stream chunk decoding to focused internal modules while preserving provider

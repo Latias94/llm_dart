@@ -1,12 +1,12 @@
-import 'dart:typed_data';
-
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'openai_family_profile.dart';
 import 'openai_model_describer.dart';
-import 'openai_non_text_model_support.dart';
+import 'openai_speech_model_request.dart';
+import 'openai_speech_model_response.dart';
 import 'openai_options.dart';
+import 'openai_speech_model_transport.dart';
 
 final class OpenAISpeechModel implements SpeechModel, CapabilityDescribedModel {
   final String apiKey;
@@ -25,12 +25,7 @@ final class OpenAISpeechModel implements SpeechModel, CapabilityDescribedModel {
     required this.profile,
     String? baseUrl,
     ProviderModelOptions settings = const OpenAISpeechModelSettings(),
-  })  : settings = resolveOpenAIModelSettings(
-          settings,
-          parameterName: 'settings',
-          expectedTypeName:
-              'OpenAISpeechModelSettings for OpenAI-family speech models',
-        ),
+  })  : settings = resolveOpenAISpeechModelSettings(settings),
         baseUrl = baseUrl ?? profile.defaultBaseUrl;
 
   @override
@@ -44,181 +39,47 @@ final class OpenAISpeechModel implements SpeechModel, CapabilityDescribedModel {
     );
   }
 
-  Uri get speechUri => Uri.parse('$baseUrl/audio/speech');
+  Uri get speechUri => resolveOpenAISpeechUri(baseUrl: baseUrl);
 
-  Map<String, String> get defaultHeaders => buildOpenAIFamilyDefaultHeaders(
+  Map<String, String> get defaultHeaders => buildOpenAISpeechDefaultHeaders(
         profile: profile,
         apiKey: apiKey,
-        organization: settings.organization,
-        project: settings.project,
-        headers: settings.headers,
+        settings: settings,
       );
 
   @override
   Future<SpeechGenerationResult> doGenerate(
     SpeechGenerationRequest request,
   ) async {
-    final options = resolveOpenAIProviderOptions<OpenAISpeechOptions>(
-      request.callOptions,
-      parameterName: 'request.callOptions.providerOptions',
-      expectedTypeName: 'OpenAISpeechOptions for OpenAI-family speech models',
-    );
-    _validateSpeechOptions(options);
-
+    final options = resolveOpenAISpeechProviderOptions(request.callOptions);
+    validateOpenAISpeechOptions(options);
     final warnings = <ModelWarning>[];
-    final outputFormat = _resolveOutputFormat(
+    final outputFormat = resolveOpenAISpeechOutputFormat(
       options?.outputFormat,
       warnings: warnings,
     );
-    if (options?.language case final language?) {
-      warnings.add(
-        ModelWarning(
-          type: ModelWarningType.unsupported,
-          field: 'providerOptions.language',
-          message:
-              'OpenAI speech models do not support language selection. Language parameter "$language" was ignored.',
-        ),
-      );
-    }
+    warnOpenAISpeechLanguageUnsupported(options, warnings);
 
     final response = await transport.send(
-      TransportRequest(
-        uri: speechUri,
-        method: TransportMethod.post,
-        headers: {
-          ...defaultHeaders,
-          'content-type': 'application/json',
-          'accept': 'application/octet-stream',
-          if (request.callOptions.headers case final headers?) ...headers,
-        },
-        body: {
-          'model': modelId,
-          'input': request.text,
-          'voice': request.voice ?? 'alloy',
-          'response_format': outputFormat,
-          if (options?.instructions case final instructions?)
-            'instructions': instructions,
-          if (options?.speed case final speed?) 'speed': speed,
-        },
-        timeout: request.callOptions.timeout,
-        maxRetries: request.callOptions.maxRetries,
-        cancellation: request.callOptions.cancellation,
-        responseType: TransportResponseType.bytes,
+      buildOpenAISpeechTransportRequest(
+        baseUrl: baseUrl,
+        callOptions: request.callOptions,
+        body: buildOpenAISpeechRequestBody(
+          modelId: modelId,
+          request: request,
+          options: options,
+          outputFormat: outputFormat,
+        ),
+        defaultHeaders: defaultHeaders,
       ),
     );
 
-    final bytes = _decodeBytes(response.body);
-    if (bytes.isEmpty) {
-      throw StateError(
-          'Expected OpenAI speech generation to return audio bytes.');
-    }
-
-    return SpeechGenerationResult(
-      audioBytes: bytes,
-      mediaType: _lookupHeader(response.headers, 'content-type') ??
-          _defaultMediaTypeForOutputFormat(outputFormat),
+    return decodeOpenAISpeechResponse(
+      body: response.body,
+      modelId: modelId,
+      headers: response.headers,
+      outputFormat: outputFormat,
       warnings: warnings,
-      responseMetadata: ModelResponseMetadata(
-        timestamp: DateTime.now().toUtc(),
-        modelId: modelId,
-        headers: response.headers,
-      ),
     );
   }
-}
-
-const Set<String> _supportedOutputFormats = {
-  'mp3',
-  'opus',
-  'aac',
-  'flac',
-  'wav',
-  'pcm',
-};
-
-void _validateSpeechOptions(OpenAISpeechOptions? options) {
-  if (options == null || options.speed == null) {
-    return;
-  }
-
-  final speed = options.speed!;
-  if (speed < 0.25 || speed > 4.0) {
-    throw ArgumentError.value(
-      speed,
-      'providerOptions.speed',
-      'OpenAI speech speed must be between 0.25 and 4.0.',
-    );
-  }
-}
-
-String _resolveOutputFormat(
-  String? outputFormat, {
-  required List<ModelWarning> warnings,
-}) {
-  if (outputFormat == null || outputFormat.isEmpty) {
-    return 'mp3';
-  }
-
-  if (_supportedOutputFormats.contains(outputFormat)) {
-    return outputFormat;
-  }
-
-  warnings.add(
-    ModelWarning(
-      type: ModelWarningType.unsupported,
-      field: 'providerOptions.outputFormat',
-      message:
-          'Unsupported OpenAI speech output format: $outputFormat. Using mp3 instead.',
-    ),
-  );
-  return 'mp3';
-}
-
-Uint8List _decodeBytes(Object? body) {
-  if (body is Uint8List) {
-    return body;
-  }
-
-  if (body is List<int>) {
-    return Uint8List.fromList(body);
-  }
-
-  if (body is List) {
-    return Uint8List.fromList(
-      body.map((value) {
-        if (value is! int) {
-          throw StateError(
-            'Expected speech byte value to be int, got ${value.runtimeType}.',
-          );
-        }
-
-        return value;
-      }).toList(),
-    );
-  }
-
-  throw StateError(
-    'Expected OpenAI speech response bytes but received ${body.runtimeType}.',
-  );
-}
-
-String? _lookupHeader(Map<String, String> headers, String name) {
-  for (final entry in headers.entries) {
-    if (entry.key.toLowerCase() == name.toLowerCase()) {
-      return entry.value;
-    }
-  }
-
-  return null;
-}
-
-String _defaultMediaTypeForOutputFormat(String? outputFormat) {
-  return switch (outputFormat) {
-    'wav' => 'audio/wav',
-    'opus' => 'audio/opus',
-    'aac' => 'audio/aac',
-    'flac' => 'audio/flac',
-    'pcm' => 'audio/pcm',
-    _ => 'audio/mpeg',
-  };
 }
