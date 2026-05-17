@@ -9,6 +9,9 @@
   resolution, single/batch request construction, transport request projection,
   and response decoding to focused internal modules while preserving provider
   behavior.
+- Google image-model orchestration now delegates Imagen/Gemini request
+  validation/body construction, transport request projection, and response
+  decoding to focused internal modules while preserving provider behavior.
 - Google prompt projection now delegates user binary encoding, assistant
   replay projection, tool replay projection, and replay metadata helpers to
   focused internal modules while preserving typed options and wire output.

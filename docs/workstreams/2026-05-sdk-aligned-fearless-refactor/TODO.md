@@ -259,6 +259,22 @@
 - [x] Verify focused Ollama embedding and model describer tests after the split
 - [x] Document the Ollama embedding model boundary split and changelog note
 
+## Google Image Model Boundary Follow-Up
+
+- [x] Compare Google image model shape against `repo-ref/ai` Google image model,
+  image options, and provider-utils HTTP dispatch layers
+- [x] Keep `GoogleImageModel` as the public provider adapter while moving
+  settings/provider option resolution, Imagen/Gemini request validation,
+  generation/edit request body construction, transport request projection, and
+  response decoding into focused modules
+- [x] Preserve `providerId`, `capabilityProfile`, `isGeminiImageModel`,
+  `maxImagesPerCall`, `predictUri`, `generateContentUri`, headers, call
+  options, wire shape, Imagen/Gemini routing, edit/variation helpers, usage
+  metadata, response metadata, provider metadata, and provider option
+  validation behavior
+- [x] Verify focused Google image and model describer tests after the split
+- [x] Document the Google image model boundary split and changelog note
+
 ## Provider Options And Metadata
 
 - [x] Define the canonical typed provider options shape in

@@ -613,3 +613,35 @@ Exit gate:
 
 - focused Ollama embedding model and model describer tests, package analysis,
   workspace analysis, and whitespace checks pass.
+
+## M24 - Post-Closure Google Image Model Boundary Split
+
+Goals:
+
+- align Google image provider adapter orchestration with the reference Google
+  image model and provider-utils HTTP dispatch layers
+- keep `GoogleImageModel` as the stable provider-facing image adapter
+- improve locality for Imagen/Gemini request validation, request body
+  construction, transport projection, and response decoding
+
+Acceptance criteria:
+
+- settings and provider option resolution live outside the main image model
+  adapter
+- Imagen/Gemini image model detection, max image count resolution, and
+  generation/edit validation live outside the main image model adapter
+- Imagen generation and Gemini generation/edit request body construction live
+  outside the main image model adapter
+- `predict` and `generateContent` URI, header, call option, and response type
+  projection live outside the main image model adapter
+- Imagen and Gemini response decoding, usage metadata, response metadata, and
+  Google provider metadata construction live outside the main image model
+  adapter
+- existing Google image provider options, request body, edit/variation helpers,
+  timeout, retry, cancellation, response metadata, usage, provider metadata,
+  and validation behavior stay unchanged
+
+Exit gate:
+
+- focused Google image model and model describer tests, package analysis,
+  workspace analysis, and whitespace checks pass.
