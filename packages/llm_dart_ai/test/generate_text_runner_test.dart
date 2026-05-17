@@ -904,6 +904,38 @@ void main() {
       expect(model.requests, hasLength(1));
     });
 
+    test('returns an empty aborted result when cancelled before generation',
+        () async {
+      final cancellation = ProviderCancellation();
+      cancellation.cancel('already stopped');
+      final callbackOrder = <String>[];
+      final model = _RecordingLanguageModel([]);
+
+      final runResult = await runTextGeneration(
+        model: model,
+        prompt: [
+          UserPromptMessage.text('Hello'),
+        ],
+        callOptions: CallOptions(cancellation: cancellation),
+        onStepFinish: (step) {
+          callbackOrder.add('step-finish:${step.finishReason.name}');
+        },
+        onFinish: (result) {
+          callbackOrder.add('finish:${result.finishReason.name}');
+        },
+        onError: (error, stackTrace) {
+          callbackOrder.add('error');
+        },
+      );
+
+      expect(callbackOrder, ['step-finish:aborted', 'finish:aborted']);
+      expect(runResult.steps, hasLength(1));
+      expect(runResult.text, isEmpty);
+      expect(runResult.finishReason, FinishReason.aborted);
+      expect(runResult.rawFinishReason, 'already stopped');
+      expect(model.requests, isEmpty);
+    });
+
     test('returns an empty aborted result when provider throws cancellation',
         () async {
       final cancellation = ProviderCancellation();

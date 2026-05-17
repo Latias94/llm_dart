@@ -215,6 +215,9 @@ The workstream is complete only when:
 - [12-stream-text-runner-lifecycle-boundary.md](12-stream-text-runner-lifecycle-boundary.md)
   - Stream text runner lifecycle split into event emission, run state, and
     finish/error/abort closure modules.
+- [13-generate-text-runner-lifecycle-boundary.md](13-generate-text-runner-lifecycle-boundary.md)
+  - Generate text runner lifecycle split into active run state and
+    finish/error/abort closure modules.
 - [release-readiness-report.txt](release-readiness-report.txt)
   - Full release-readiness gate result, including consumer smoke, publish
     dry-run, and pub.dev version availability.

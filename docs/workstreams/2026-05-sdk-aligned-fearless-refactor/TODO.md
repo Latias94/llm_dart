@@ -117,6 +117,18 @@
 - [x] Add a focused regression test for cancellation before provider streaming
 - [x] Document the stream runner lifecycle split and changelog note
 
+## Generate Text Runner Lifecycle Follow-Up
+
+- [x] Compare non-streaming runner shape against `repo-ref/ai` generate text
+  lifecycle layers
+- [x] Keep `GenerateTextRunner`, `runTextGeneration`, and `generateText` as the
+  public non-streaming runtime seam while moving active run state and lifecycle
+  closure into focused modules
+- [x] Preserve callback ordering, cancellation, error, tool continuation, and
+  stop policy behavior
+- [x] Add a focused regression test for cancellation before provider generation
+- [x] Document the generate text runner lifecycle split and changelog note
+
 ## Provider Options And Metadata
 
 - [x] Define the canonical typed provider options shape in

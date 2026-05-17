@@ -330,3 +330,30 @@ Exit gate:
 
 - stream runner focused tests, core compatibility stream runner tests, package
   analysis, workspace analysis, and whitespace checks pass.
+
+## M14 - Post-Closure Generate Text Runner Lifecycle Split
+
+Goals:
+
+- align non-streaming runner internals with the reference generate text
+  lifecycle layers
+- keep `GenerateTextRunner` as the stable public non-streaming runtime seam
+- improve locality for active run state, step finish, successful finish,
+  abort finish, and error callback closure
+
+Acceptance criteria:
+
+- active request, active result, active step number, and previous step ledger
+  live outside the main runner loop
+- step finish, successful run finish, abort finish, and error callback wrapping
+  live outside the main runner loop
+- runner callback ordering and result behavior stay unchanged for single-step,
+  tool continuation, cancellation, and error paths
+- `llm_dart_core` compatibility exports continue to resolve the same runner
+  names
+
+Exit gate:
+
+- generate runner focused tests, text call tests, core compatibility generate
+  runner tests, package analysis, workspace analysis, and whitespace checks
+  pass.

@@ -3,7 +3,9 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 import '../prompt/model_message.dart';
 import '../prompt/prompt_normalization.dart';
 import '../prompt/prompt_validation.dart';
+import 'generate_text_run_lifecycle.dart';
 import 'generate_text_run_result.dart';
+import 'generate_text_run_state.dart';
 import 'generate_text_runner_support.dart';
 import 'generate_text_stop_condition.dart';
 import 'generate_text_step_result.dart';
@@ -59,11 +61,14 @@ final class GenerateTextRunner {
   }
 
   Future<GenerateTextRunResult> run() async {
-    final previousSteps = <GenerateTextStepResult>[];
-    GenerateTextRequest? activeRequest;
-    int? activeStepNumber;
-    GenerateTextResult? activeResult;
-    var isCallingOnFinish = false;
+    final state = GenerateTextRunState();
+    final lifecycle = GenerateTextRunLifecycle(
+      onStepFinish: onStepFinish,
+      onFinish: onFinish,
+      onError: onError,
+      providerId: model.providerId,
+      modelId: model.modelId,
+    );
 
     try {
       var promptHistory = List<PromptMessage>.from(prompt);
@@ -72,7 +77,7 @@ final class GenerateTextRunner {
       };
 
       while (true) {
-        final stepNumber = previousSteps.length;
+        final stepNumber = state.nextStepNumber;
         if (stepNumber >= maxSteps) {
           throw StateError(
             'GenerateTextRunner exceeded maxSteps ($maxSteps).',
@@ -91,22 +96,23 @@ final class GenerateTextRunner {
           options: options,
           callOptions: callOptions,
         );
-        activeRequest = request;
-        activeStepNumber = stepNumber;
-        activeResult = null;
+        state.beginStep(
+          stepNumber: stepNumber,
+          request: request,
+        );
 
         final stepStartEvent = GenerateTextStepStartEvent(
           stepNumber: stepNumber,
           providerId: model.providerId,
           modelId: model.modelId,
           request: request,
-          previousSteps: previousSteps,
+          previousSteps: state.previousSteps,
         );
         await onStepStart?.call(stepStartEvent);
         _throwIfCancelled();
 
         final result = await model.doGenerate(request);
-        activeResult = result;
+        state.setActiveResult(result);
         _throwIfCancelled();
         var step = GenerateTextStepResult(
           stepNumber: stepNumber,
@@ -117,11 +123,7 @@ final class GenerateTextRunner {
         );
 
         if (step.finishReason != FinishReason.toolCalls) {
-          await onStepFinish?.call(step);
-          previousSteps.add(step);
-          activeRequest = null;
-          activeStepNumber = null;
-          activeResult = null;
+          await lifecycle.finishStep(state, step);
           break;
         }
 
@@ -137,11 +139,7 @@ final class GenerateTextRunner {
         );
         _throwIfCancelled();
         if (toolExecutions == null) {
-          await onStepFinish?.call(step);
-          previousSteps.add(step);
-          activeRequest = null;
-          activeStepNumber = null;
-          activeResult = null;
+          await lifecycle.finishStep(state, step);
           break;
         }
 
@@ -149,15 +147,11 @@ final class GenerateTextRunner {
           step,
           toolExecutions,
         );
-        await onStepFinish?.call(step);
-        previousSteps.add(step);
-        activeRequest = null;
-        activeStepNumber = null;
-        activeResult = null;
+        await lifecycle.finishStep(state, step);
 
         if (await isStopConditionMet(
           stopConditions: stopWhen,
-          steps: previousSteps,
+          steps: state.previousSteps,
         )) {
           break;
         }
@@ -171,101 +165,18 @@ final class GenerateTextRunner {
         ];
       }
 
-      final runResult = GenerateTextRunResult(
-        steps: previousSteps,
-      );
-      isCallingOnFinish = true;
-      await onFinish?.call(runResult);
-      isCallingOnFinish = false;
-
-      return runResult;
+      return lifecycle.finishSuccessfulRun(state);
     } catch (error, stackTrace) {
-      if (!isCallingOnFinish && _isCancelled(error)) {
-        return _finishAbortedRun(
-          previousSteps: previousSteps,
-          activeRequest: activeRequest,
-          activeStepNumber: activeStepNumber,
-          activeResult: activeResult,
+      if (!lifecycle.isCallingOnFinish && _isCancelled(error)) {
+        return lifecycle.finishAbortedRun(
+          state,
           reason: _cancelReason(error),
         );
       }
 
       final (reportedError, reportedStackTrace) =
-          await _notifyError(error, stackTrace);
+          await lifecycle.notifyError(error, stackTrace);
       Error.throwWithStackTrace(reportedError, reportedStackTrace);
-    }
-  }
-
-  Future<GenerateTextRunResult> _finishAbortedRun({
-    required List<GenerateTextStepResult> previousSteps,
-    required GenerateTextRequest? activeRequest,
-    required int? activeStepNumber,
-    required GenerateTextResult? activeResult,
-    required String? reason,
-  }) async {
-    if (activeRequest != null && activeStepNumber != null) {
-      final abortedStep = GenerateTextStepResult(
-        stepNumber: activeStepNumber,
-        providerId: model.providerId,
-        modelId: model.modelId,
-        request: activeRequest,
-        result: _abortedResult(activeResult, reason),
-      );
-      if (previousSteps.length == activeStepNumber) {
-        previousSteps.add(abortedStep);
-      } else if (previousSteps.length > activeStepNumber) {
-        previousSteps[activeStepNumber] = abortedStep;
-      }
-      await onStepFinish?.call(abortedStep);
-    } else if (previousSteps.isNotEmpty) {
-      final lastStep = previousSteps.last;
-      previousSteps[previousSteps.length - 1] = GenerateTextStepResult(
-        stepNumber: lastStep.stepNumber,
-        providerId: lastStep.providerId,
-        modelId: lastStep.modelId,
-        request: lastStep.request,
-        result: _abortedResult(lastStep.result, reason),
-      );
-    }
-
-    final runResult = GenerateTextRunResult(
-      steps: previousSteps,
-    );
-    await onFinish?.call(runResult);
-    return runResult;
-  }
-
-  GenerateTextResult _abortedResult(
-    GenerateTextResult? result,
-    String? reason,
-  ) {
-    return GenerateTextResult(
-      content: result?.content ?? const [],
-      finishReason: FinishReason.aborted,
-      rawFinishReason: reason,
-      responseId: result?.responseId,
-      responseTimestamp: result?.responseTimestamp,
-      responseModelId: result?.responseModelId,
-      usage: result?.usage,
-      providerMetadata: result?.providerMetadata,
-      warnings: result?.warnings ?? const [],
-    );
-  }
-
-  Future<(Object, StackTrace)> _notifyError(
-    Object error,
-    StackTrace stackTrace,
-  ) async {
-    final callback = onError;
-    if (callback == null) {
-      return (error, stackTrace);
-    }
-
-    try {
-      await callback(error, stackTrace);
-      return (error, stackTrace);
-    } catch (callbackError, callbackStackTrace) {
-      return (callbackError, callbackStackTrace);
     }
   }
 

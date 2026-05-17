@@ -17,6 +17,9 @@
 - Split stream text runner lifecycle support into event emission, active run
   state, and finish/error/abort closure modules while preserving stream
   behavior.
+- Split generate text runner lifecycle support into active run state and
+  finish/error/abort closure modules while preserving non-streaming runner
+  behavior.
 
 ## [0.11.0-alpha.1] - 2026-05-12
 
