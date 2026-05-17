@@ -171,6 +171,9 @@ The detailed rebaseline is tracked in
 - [12-openai-chat-completions-request-policy.md](12-openai-chat-completions-request-policy.md)
   - M13 implementation note for moving OpenAI-family Chat Completions request
     field policy out of the shared codec.
+- [13-openai-chat-completions-profile-policy.md](13-openai-chat-completions-profile-policy.md)
+  - M14 implementation note for resolving Chat Completions request policy from
+    `OpenAIFamilyProfile` on the language-model path.
 - [MILESTONES.md](MILESTONES.md)
   - Milestones, acceptance criteria, and status tracking.
 - [TODO.md](TODO.md)

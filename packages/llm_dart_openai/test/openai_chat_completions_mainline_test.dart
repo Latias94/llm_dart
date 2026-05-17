@@ -274,6 +274,64 @@ void main() {
       expect(result.warnings, isEmpty);
     });
 
+    test(
+        'chat completions request policy follows the OpenAI profile type instead of its provider id',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        profile: const OpenAIProfile(providerId: 'custom-openai'),
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'chatcmpl_custom_openai_profile',
+                'model': 'gpt-5.4',
+                'created': 1710000000,
+                'choices': [
+                  {
+                    'index': 0,
+                    'finish_reason': 'stop',
+                    'message': {
+                      'role': 'assistant',
+                      'content': 'Done.',
+                    },
+                  },
+                ],
+              },
+            );
+          },
+        ),
+      ).chatModel(
+        'gpt-5.4',
+        settings: const OpenAIChatModelSettings(
+          useResponsesApi: false,
+        ),
+      );
+
+      final result = await model.doGenerate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage.text('Say done.'),
+          ],
+          options: const GenerateTextOptions(
+            reasoning: GenerateTextReasoningOptions(
+              effort: ReasoningEffort.low,
+            ),
+          ),
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(requestBody['reasoning_effort'], 'low');
+      expect(requestBody.containsKey('max_tokens'), isFalse);
+      expect(result.providerMetadata?['custom-openai'], isNotNull);
+    });
+
     test('chat completions split think tags into reasoning and visible text',
         () async {
       final model = OpenAI(

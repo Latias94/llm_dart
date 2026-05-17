@@ -122,3 +122,5 @@
   policy seam
 - [x] Move OpenAI-family Chat Completions provider-specific request-field
   policy out of the shared codec
+- [x] Resolve OpenAI-family Chat Completions request policy from
+  `OpenAIFamilyProfile` on the language-model path

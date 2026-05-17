@@ -8,6 +8,7 @@ import 'openai_chat_completions_stream_event_codec.dart';
 import 'openai_chat_completions_stream_result_codec.dart';
 import 'openai_chat_completions_stream_state.dart';
 import 'openai_chat_completions_support.dart';
+import 'openai_family_profile.dart';
 import 'openai_options.dart';
 import 'openai_request_format_codec.dart';
 import 'resolved_openai_options.dart';
@@ -27,17 +28,25 @@ final class OpenAIChatCompletionsRequest {
 
 final class OpenAIChatCompletionsCodec {
   final String providerNamespace;
+  final OpenAIFamilyProfile? profile;
 
   const OpenAIChatCompletionsCodec({
     this.providerNamespace = 'openai',
-  });
+  }) : profile = null;
+
+  OpenAIChatCompletionsCodec.forProfile(OpenAIFamilyProfile this.profile)
+      : providerNamespace = profile.providerId;
 
   OpenAIChatCompletionsSupport get _support => OpenAIChatCompletionsSupport(
         providerNamespace: providerNamespace,
       );
 
-  OpenAIChatCompletionsRequestPolicy get _requestPolicy =>
-      openAIChatCompletionsRequestPolicyFor(providerNamespace);
+  OpenAIChatCompletionsRequestPolicy get _requestPolicy => switch (profile) {
+        final profile? => openAIChatCompletionsRequestPolicyForProfile(
+            profile,
+          ),
+        null => openAIChatCompletionsRequestPolicyFor(providerNamespace),
+      };
 
   OpenAIChatCompletionsRequest encodeRequest({
     required String modelId,

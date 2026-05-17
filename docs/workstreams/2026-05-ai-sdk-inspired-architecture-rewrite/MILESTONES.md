@@ -308,3 +308,29 @@ Current status:
   provider-specific Chat Completions request fields and compatibility cleanup,
   while the shared codec keeps common body assembly and decoding. See
   `12-openai-chat-completions-request-policy.md`.
+
+## M14 - Chat Completions Profile-Owned Request Policy
+
+Goals:
+
+- make the language-model Chat Completions path resolve request policy from
+  `OpenAIFamilyProfile`
+- keep shared Chat Completions wire-code reusable across OpenAI-family profiles
+- preserve the existing `providerNamespace` constructor as a compatibility and
+  focused codec-test entrypoint
+
+Acceptance criteria:
+
+- `OpenAILanguageModel` passes the full `OpenAIFamilyProfile` to
+  `OpenAIChatCompletionsCodec`
+- Chat Completions request policy lookup has a profile-based seam
+- custom OpenAI profile ids still receive OpenAI request-policy behaviour
+- focused tests, migration notes, and workstream documentation cover the change
+
+Current status:
+
+- complete; `OpenAIChatCompletionsCodec.forProfile(profile)` is the
+  language-model path, and `openAIChatCompletionsRequestPolicyForProfile`
+  selects OpenAI/DeepSeek/compatible request policies from profile type rather
+  than only from provider-id strings. See
+  `13-openai-chat-completions-profile-policy.md`.

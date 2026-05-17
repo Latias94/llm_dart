@@ -1,5 +1,6 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import 'openai_family_profile.dart';
 import 'openai_model_capabilities.dart';
 import 'openai_options.dart';
 import 'openai_request_encoding_util.dart';
@@ -51,6 +52,16 @@ OpenAIChatCompletionsRequestPolicy openAIChatCompletionsRequestPolicyFor(
   return switch (providerNamespace) {
     'deepseek' => const _DeepSeekChatCompletionsRequestPolicy(),
     'openai' => const _OpenAIChatCompletionsRequestPolicy(),
+    _ => const _CompatibleChatCompletionsRequestPolicy(),
+  };
+}
+
+OpenAIChatCompletionsRequestPolicy openAIChatCompletionsRequestPolicyForProfile(
+  OpenAIFamilyProfile profile,
+) {
+  return switch (profile) {
+    DeepSeekProfile() => const _DeepSeekChatCompletionsRequestPolicy(),
+    OpenAIProfile() => const _OpenAIChatCompletionsRequestPolicy(),
     _ => const _CompatibleChatCompletionsRequestPolicy(),
   };
 }

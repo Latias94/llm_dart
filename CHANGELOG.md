@@ -24,6 +24,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - OpenAI-family Chat Completions request encoding now delegates OpenAI and
   DeepSeek provider-specific request-field policy to an internal policy seam
   while preserving the public typed options.
+- OpenAI-family Chat Completions now resolve request policy from
+  `OpenAIFamilyProfile` on the language-model path, so profile types remain
+  the source of provider-family behaviour even when a profile customizes its
+  provider id.
 
 ## [0.11.0-alpha.1] - 2026-05-12
 

@@ -14,6 +14,9 @@
 - Chat Completions request encoding now delegates OpenAI/DeepSeek-specific
   request fields and compatibility cleanup to an internal request policy seam
   while preserving existing typed provider option behaviour.
+- The language-model Chat Completions path now resolves request policy from
+  `OpenAIFamilyProfile` rather than only from `providerId`, keeping custom
+  OpenAI profile ids on the OpenAI request-policy path.
 
 ## [0.11.0-alpha.1] - 2026-05-12
 

@@ -20,9 +20,7 @@ final class OpenAILanguageModel
   final TransportClient transport;
   final ResolvedOpenAIChatModelSettings settings;
   late final OpenAIChatCompletionsCodec _chatCompletionsCodec =
-      OpenAIChatCompletionsCodec(
-    providerNamespace: profile.providerId,
-  );
+      OpenAIChatCompletionsCodec.forProfile(profile);
 
   @override
   final String modelId;
