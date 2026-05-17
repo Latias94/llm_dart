@@ -14,6 +14,9 @@
 - Split generate text result accumulation into content buffering, tool
   projection, and lifecycle modules while preserving public result collection
   behavior.
+- Split stream text runner lifecycle support into event emission, active run
+  state, and finish/error/abort closure modules while preserving stream
+  behavior.
 
 ## [0.11.0-alpha.1] - 2026-05-12
 

@@ -303,3 +303,30 @@ Exit gate:
 - accumulator focused tests, text runner tests, text call tests, core
   compatibility tests, package analysis, workspace analysis, and whitespace
   checks pass.
+
+## M13 - Post-Closure Stream Text Runner Lifecycle Split
+
+Goals:
+
+- align stream runner internals with the reference stream text and language
+  model call lifecycle layers
+- keep `StreamTextRunner` as the stable public stream runtime seam
+- improve locality for event emission, active run state, and finish/error/abort
+  closure
+
+Acceptance criteria:
+
+- stream event emission and `onChunk` dispatch live outside the main runner loop
+- active request, active accumulator, active step number, and open-step state
+  live outside the main runner loop
+- step finish, successful run finish, abort finish, and error failure closure
+  live outside the main runner loop
+- stream event order and result behavior stay unchanged for single-step, tool
+  continuation, cancellation, and error paths
+- `llm_dart_core` compatibility exports continue to resolve the same stream
+  runner names
+
+Exit gate:
+
+- stream runner focused tests, core compatibility stream runner tests, package
+  analysis, workspace analysis, and whitespace checks pass.

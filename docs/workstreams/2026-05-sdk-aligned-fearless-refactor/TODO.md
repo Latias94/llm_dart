@@ -105,6 +105,18 @@
   denied output ordering
 - [x] Document the accumulator module split and changelog note
 
+## Stream Text Runner Lifecycle Follow-Up
+
+- [x] Compare stream runner shape against `repo-ref/ai` stream text and
+  language model call lifecycle layers
+- [x] Keep `StreamTextRunner`, `streamTextRun`, and `streamText` as the public
+  stream runtime seam while moving event emission, run state, and lifecycle
+  closure into focused modules
+- [x] Preserve stream event order, `onChunk`, `onStepFinish`, `onFinish`,
+  cancellation, error, and step stream behavior
+- [x] Add a focused regression test for cancellation before provider streaming
+- [x] Document the stream runner lifecycle split and changelog note
+
 ## Provider Options And Metadata
 
 - [x] Define the canonical typed provider options shape in

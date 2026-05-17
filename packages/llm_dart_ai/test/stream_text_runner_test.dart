@@ -330,6 +330,51 @@ void main() {
       expect(await run.finishReason, FinishReason.aborted);
     });
 
+    test(
+        'emits abort lifecycle when cancellation is triggered before streaming',
+        () async {
+      final cancellation = ProviderCancellation();
+      cancellation.cancel('already stopped');
+      final model = _RecordingStreamLanguageModel([]);
+      final callbackOrder = <String>[];
+
+      final run = streamTextRun(
+        model: model,
+        prompt: [
+          UserPromptMessage.text('Hello'),
+        ],
+        callOptions: CallOptions(cancellation: cancellation),
+        onStepFinish: (step) {
+          callbackOrder.add('step-finish:${step.finishReason.name}');
+        },
+        onFinish: (result) {
+          callbackOrder.add('finish:${result.finishReason.name}');
+        },
+        onError: (error, stackTrace) {
+          callbackOrder.add('error');
+        },
+      );
+
+      final result = await run.result;
+      await expectLater(
+        run,
+        emitsInOrder([
+          isA<RunStartEvent>(),
+          isA<StepStartEvent>(),
+          isA<AbortEvent>(),
+          isA<StepFinishEvent>(),
+          isA<RunFinishEvent>(),
+          emitsDone,
+        ]),
+      );
+
+      expect(callbackOrder, ['step-finish:aborted', 'finish:aborted']);
+      expect(result.steps, hasLength(1));
+      expect(result.finishReason, FinishReason.aborted);
+      expect(result.rawFinishReason, 'already stopped');
+      expect(model.requests, isEmpty);
+    });
+
     test('continues tool-call steps with stitched event and step streams',
         () async {
       final model = _RecordingStreamLanguageModel([

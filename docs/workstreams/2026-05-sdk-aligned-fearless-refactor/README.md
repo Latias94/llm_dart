@@ -212,6 +212,9 @@ The workstream is complete only when:
 - [11-generate-text-result-accumulator-boundary.md](11-generate-text-result-accumulator-boundary.md)
   - Generate text result accumulator split into content buffering, tool
     projection, and lifecycle modules.
+- [12-stream-text-runner-lifecycle-boundary.md](12-stream-text-runner-lifecycle-boundary.md)
+  - Stream text runner lifecycle split into event emission, run state, and
+    finish/error/abort closure modules.
 - [release-readiness-report.txt](release-readiness-report.txt)
   - Full release-readiness gate result, including consumer smoke, publish
     dry-run, and pub.dev version availability.
