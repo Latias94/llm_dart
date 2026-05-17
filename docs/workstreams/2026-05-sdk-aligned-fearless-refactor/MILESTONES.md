@@ -719,3 +719,35 @@ Exit gate:
 - focused OpenAI speech model, transcription model, model describer, and
   entrypoint tests, package analysis, workspace analysis, and whitespace
   checks pass.
+
+## M27 - Post-Closure Google Speech Model Boundary Split
+
+Goals:
+
+- align Google speech provider adapter orchestration with the reference Google
+  provider adapter and provider-utils HTTP dispatch layers
+- keep `GoogleSpeechModel` as the stable provider-facing speech adapter
+- improve locality for provider option validation, request body construction,
+  transport projection, and response/provider metadata decoding
+
+Acceptance criteria:
+
+- settings and provider option resolution live outside the main speech model
+  adapter
+- single-speaker versus multi-speaker validation lives outside the main speech
+  model adapter
+- `generateContent` request body construction and speech voice config
+  construction live outside the main speech model adapter
+- `generateContent` URI, headers, call options, and response type projection
+  live outside the main speech model adapter
+- speech JSON response coercion, inline audio aggregation, response metadata,
+  and Google provider metadata construction live outside the main speech model
+  adapter
+- existing Google speech request, default voice, multi-speaker provider
+  options, timeout, retry, cancellation, response metadata, and provider
+  metadata behavior stays unchanged
+
+Exit gate:
+
+- focused Google speech model and model describer tests, package analysis,
+  workspace analysis, and whitespace checks pass.

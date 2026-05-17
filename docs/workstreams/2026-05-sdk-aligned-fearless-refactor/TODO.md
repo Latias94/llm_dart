@@ -309,6 +309,23 @@
   entrypoint tests after the split
 - [x] Document the OpenAI audio model boundary split and changelog note
 
+## Google Speech Model Boundary Follow-Up
+
+- [x] Compare Google speech model shape against `repo-ref/ai` Google provider
+  adapter and provider-utils HTTP dispatch layers
+- [x] Keep `GoogleSpeechModel` as the public provider adapter while moving
+  settings/provider option resolution, single-speaker/multi-speaker
+  validation, request body construction, transport request projection, and
+  response/provider metadata decoding into focused modules
+- [x] Preserve `providerId`, `capabilityProfile`, `generateContentUri`,
+  headers, call options, wire shape, default voice fallback, multi-speaker
+  provider options, audio aggregation, response metadata, provider metadata,
+  and provider option validation behavior
+- [x] Document the Google speech model boundary split and changelog note
+- [x] Verify focused Google speech and model describer tests plus package-level
+  analysis via direct runner and analyzer API after Dart tool subcommands
+  stopped hanging in this workspace
+
 ## Provider Options And Metadata
 
 - [x] Define the canonical typed provider options shape in
