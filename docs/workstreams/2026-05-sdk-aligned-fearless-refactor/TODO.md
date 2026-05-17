@@ -228,6 +228,22 @@
 - [x] Verify focused Google embedding and model describer tests after the split
 - [x] Document the Google embedding model boundary split and changelog note
 
+## OpenAI Embedding Model Boundary Follow-Up
+
+- [x] Compare OpenAI embedding model shape against `repo-ref/ai` OpenAI
+  embedding model and provider-utils HTTP dispatch layers
+- [x] Keep `OpenAIEmbeddingModel` as the public provider adapter while moving
+  settings/provider option resolution, max embeddings validation, request body
+  construction, transport request projection, and response decoding into
+  focused modules
+- [x] Preserve `providerId`, `capabilityProfile`, `maxEmbeddingsPerCall`,
+  `embeddingsUri`, `defaultHeaders`, headers, call options, wire shape,
+  usage metadata, response metadata, index sorting, and provider option
+  validation behavior
+- [x] Verify focused OpenAI embedding, model describer, and entrypoint tests
+  after the split
+- [x] Document the OpenAI embedding model boundary split and changelog note
+
 ## Provider Options And Metadata
 
 - [x] Define the canonical typed provider options shape in

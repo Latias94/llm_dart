@@ -555,3 +555,32 @@ Exit gate:
 
 - focused Google embedding model and model describer tests, package analysis,
   workspace analysis, and whitespace checks pass.
+
+## M22 - Post-Closure OpenAI Embedding Model Boundary Split
+
+Goals:
+
+- align OpenAI embedding provider adapter orchestration with the reference
+  OpenAI embedding model and provider-utils HTTP dispatch layers
+- keep `OpenAIEmbeddingModel` as the stable provider-facing embedding adapter
+- improve locality for settings/provider option resolution, request
+  validation, transport projection, and response decoding
+
+Acceptance criteria:
+
+- settings and provider option resolution live outside the main embedding model
+  adapter
+- max embeddings validation and request body construction live outside the main
+  embedding model adapter
+- embeddings URI, default/per-call headers, call options, and response type
+  projection live outside the main embedding model adapter
+- indexed response sorting, embedding value validation, usage metadata, and
+  response metadata construction live outside the main embedding model adapter
+- existing OpenAI embedding provider options, request body, max embeddings
+  behavior, timeout, retry, cancellation, response metadata, and usage behavior
+  stay unchanged
+
+Exit gate:
+
+- focused OpenAI embedding model, model describer, and entrypoint tests,
+  package analysis, workspace analysis, and whitespace checks pass.
