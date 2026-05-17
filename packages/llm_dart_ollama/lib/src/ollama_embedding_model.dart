@@ -2,6 +2,9 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'ollama_api.dart';
+import 'ollama_embedding_model_request.dart';
+import 'ollama_embedding_model_response.dart';
+import 'ollama_embedding_model_transport.dart';
 import 'ollama_model_describer.dart';
 import 'ollama_options.dart';
 
@@ -24,7 +27,7 @@ final class OllamaEmbeddingModel
     ProviderModelOptions settings = const OllamaEmbeddingModelSettings(),
   })  : apiKey = normalizeOllamaApiKey(apiKey),
         baseUrl = normalizeOllamaBaseUrl(baseUrl),
-        settings = _resolveSettings(settings);
+        settings = resolveOllamaEmbeddingModelSettings(settings);
 
   @override
   String get providerId => 'ollama';
@@ -34,122 +37,33 @@ final class OllamaEmbeddingModel
     return describeOllamaEmbeddingModel(modelId);
   }
 
-  Uri get embedUri => resolveOllamaUri(baseUrl, '/api/embed');
+  Uri get embedUri => resolveOllamaEmbeddingRouteUri(baseUrl: baseUrl);
 
-  Map<String, String> get defaultHeaders => buildOllamaHeaders(
+  Map<String, String> get defaultHeaders => buildOllamaEmbeddingDefaultHeaders(
         apiKey: apiKey,
-        contentType: 'application/json',
-        headers: settings.headers,
+        settings: settings,
       );
 
   @override
   Future<EmbedResult> doEmbed(EmbedRequest request) async {
-    if (request.values.isEmpty) {
-      throw ArgumentError.value(
-        request.values,
-        'request.values',
-        'Ollama embedding requests require at least one value.',
-      );
-    }
-
-    if (request.dimensions != null) {
-      throw ArgumentError.value(
-        request.dimensions,
-        'request.dimensions',
-        'Ollama embeddings do not support overriding output dimensions.',
-      );
-    }
-
-    if (request.callOptions.providerOptions != null) {
-      throw ArgumentError.value(
-        request.callOptions.providerOptions,
-        'request.callOptions.providerOptions',
-        'Ollama embedding models do not define provider invocation options yet.',
-      );
-    }
-
+    validateOllamaEmbeddingRequest(request);
+    final body = buildOllamaEmbeddingRequestBody(
+      modelId: modelId,
+      request: request,
+    );
     final response = await transport.send(
-      TransportRequest(
-        uri: embedUri,
-        method: TransportMethod.post,
-        headers: {
-          ...defaultHeaders,
-          if (request.callOptions.headers case final headers?) ...headers,
-        },
-        body: {
-          'model': modelId,
-          'input': request.values,
-        },
-        timeout: request.callOptions.timeout,
-        maxRetries: request.callOptions.maxRetries,
-        cancellation: request.callOptions.cancellation,
-        responseType: TransportResponseType.json,
+      buildOllamaEmbeddingTransportRequest(
+        baseUrl: baseUrl,
+        request: request,
+        body: body,
+        defaultHeaders: defaultHeaders,
       ),
     );
 
-    final json = decodeOllamaJsonObject(
-      response.body,
-      responseName: 'embedding response',
-    );
-    return EmbedResult(
-      embeddings: _decodeEmbeddings(json),
-      responseMetadata: ModelResponseMetadata(
-        timestamp: DateTime.now().toUtc(),
-        modelId: modelId,
-        headers: response.headers,
-      ),
-      providerMetadata: ProviderMetadata.forNamespace(
-        'ollama',
-        {
-          if (json['total_duration'] != null)
-            'totalDurationNanos': json['total_duration'],
-          if (json['load_duration'] != null)
-            'loadDurationNanos': json['load_duration'],
-          if (json['prompt_eval_count'] != null)
-            'promptEvalCount': json['prompt_eval_count'],
-        },
-      ),
+    return decodeOllamaEmbeddingResponse(
+      body: response.body,
+      modelId: modelId,
+      headers: response.headers,
     );
   }
-
-  static OllamaEmbeddingModelSettings _resolveSettings(
-    ProviderModelOptions settings,
-  ) {
-    return resolveProviderModelOptions<OllamaEmbeddingModelSettings>(
-      settings,
-      parameterName: 'settings',
-      expectedTypeName: 'OllamaEmbeddingModelSettings',
-      usageContext: 'Ollama embedding models',
-    );
-  }
-}
-
-List<List<double>> _decodeEmbeddings(Map<String, Object?> json) {
-  final embeddings = json['embeddings'];
-  if (embeddings is! List) {
-    throw StateError(
-      'Expected Ollama embedding response to contain an embeddings list.',
-    );
-  }
-
-  return embeddings.asMap().entries.map((entry) {
-    final value = entry.value;
-    if (value is! List) {
-      throw StateError(
-        'Expected Ollama embedding item ${entry.key} to be a numeric list.',
-      );
-    }
-
-    return List<double>.unmodifiable(
-      value.map((item) {
-        if (item is! num) {
-          throw StateError(
-            'Expected Ollama embedding value ${entry.key} to be numeric, got ${item.runtimeType}.',
-          );
-        }
-
-        return item.toDouble();
-      }),
-    );
-  }).toList();
 }

@@ -244,6 +244,21 @@
   after the split
 - [x] Document the OpenAI embedding model boundary split and changelog note
 
+## Ollama Embedding Model Boundary Follow-Up
+
+- [x] Compare Ollama embedding model shape against the embedding adapter pattern
+  established from `repo-ref/ai` Google/OpenAI embedding models and
+  provider-utils HTTP dispatch layers
+- [x] Keep `OllamaEmbeddingModel` as the public provider adapter while moving
+  settings resolution, request validation, request body construction, transport
+  request projection, and response/provider metadata decoding into focused
+  modules
+- [x] Preserve `providerId`, `capabilityProfile`, `embedUri`,
+  `defaultHeaders`, headers, call options, wire shape, response metadata,
+  provider metadata, and unsupported dimensions/provider options behavior
+- [x] Verify focused Ollama embedding and model describer tests after the split
+- [x] Document the Ollama embedding model boundary split and changelog note
+
 ## Provider Options And Metadata
 
 - [x] Define the canonical typed provider options shape in

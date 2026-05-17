@@ -584,3 +584,32 @@ Exit gate:
 
 - focused OpenAI embedding model, model describer, and entrypoint tests,
   package analysis, workspace analysis, and whitespace checks pass.
+
+## M23 - Post-Closure Ollama Embedding Model Boundary Split
+
+Goals:
+
+- align Ollama embedding provider adapter orchestration with the embedding
+  adapter pattern established from the reference Google/OpenAI embedding models
+  and provider-utils HTTP dispatch layers
+- keep `OllamaEmbeddingModel` as the stable provider-facing embedding adapter
+- improve locality for settings resolution, request validation, transport
+  projection, response decoding, and provider metadata projection
+
+Acceptance criteria:
+
+- settings resolution lives outside the main embedding model adapter
+- empty input, unsupported dimensions, and unsupported provider options
+  validation live outside the main embedding model adapter
+- request body construction lives outside the main embedding model adapter
+- embedding URI, default/per-call headers, call options, and response type
+  projection live outside the main embedding model adapter
+- embedding response decoding, response metadata, and Ollama provider metadata
+  construction live outside the main embedding model adapter
+- existing Ollama embedding request body, validation ordering, timeout, retry,
+  cancellation, response metadata, and provider metadata behavior stay unchanged
+
+Exit gate:
+
+- focused Ollama embedding model and model describer tests, package analysis,
+  workspace analysis, and whitespace checks pass.

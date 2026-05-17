@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- Ollama embedding-model orchestration now delegates settings resolution,
+  request validation/body construction, transport request projection, and
+  response/provider metadata decoding to focused internal modules while
+  preserving provider behavior.
 - Refactored Ollama chat request encoding into internal options policy, prompt
   projection, binary prompt encoding, and request assembly modules. Public
   model settings, invocation options, and wire behaviour are unchanged.

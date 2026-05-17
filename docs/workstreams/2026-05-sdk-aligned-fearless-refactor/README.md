@@ -240,6 +240,8 @@ The workstream is complete only when:
   - Google embedding model split into request, transport, and response modules.
 - [21-openai-embedding-model-boundary.md](21-openai-embedding-model-boundary.md)
   - OpenAI embedding model split into request, transport, and response modules.
+- [22-ollama-embedding-model-boundary.md](22-ollama-embedding-model-boundary.md)
+  - Ollama embedding model split into request, transport, and response modules.
 - [release-readiness-report.txt](release-readiness-report.txt)
   - Full release-readiness gate result, including consumer smoke, publish
     dry-run, and pub.dev version availability.
