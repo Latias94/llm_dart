@@ -526,3 +526,32 @@ Exit gate:
 - focused Anthropic language model, Messages codec, stream codec, result codec,
   request option policy, fixture contract tests, package analysis, workspace
   analysis, and whitespace checks pass.
+
+## M21 - Post-Closure Google Embedding Model Boundary Split
+
+Goals:
+
+- align Google embedding provider adapter orchestration with the reference
+  Google embedding model and provider-utils HTTP dispatch layers
+- keep `GoogleEmbeddingModel` as the stable provider-facing embedding adapter
+- improve locality for provider option resolution, single/batch request
+  construction, transport projection, and response decoding
+
+Acceptance criteria:
+
+- provider option and settings resolution live outside the main embedding model
+  adapter
+- single and batch embedding request body construction live outside the main
+  embedding model adapter
+- `embedContent` and `batchEmbedContents` URI, header, call option, and
+  response type projection live outside the main embedding model adapter
+- single and batch embedding response decoding, usage metadata, and response
+  metadata construction live outside the main embedding model adapter
+- existing Google embedding provider options, single/batch wire shape,
+  timeout, retry, cancellation, response metadata, and usage behavior stay
+  unchanged
+
+Exit gate:
+
+- focused Google embedding model and model describer tests, package analysis,
+  workspace analysis, and whitespace checks pass.

@@ -236,6 +236,8 @@ The workstream is complete only when:
 - [19-anthropic-language-model-orchestration-boundary.md](19-anthropic-language-model-orchestration-boundary.md)
   - Anthropic language model orchestration split into request, transport,
     response, stream, and token-count modules.
+- [20-google-embedding-model-boundary.md](20-google-embedding-model-boundary.md)
+  - Google embedding model split into request, transport, and response modules.
 - [release-readiness-report.txt](release-readiness-report.txt)
   - Full release-readiness gate result, including consumer smoke, publish
     dry-run, and pub.dev version availability.

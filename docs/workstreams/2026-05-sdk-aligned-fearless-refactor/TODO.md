@@ -215,6 +215,19 @@
 - [x] Document the Anthropic language model orchestration split and changelog
   note
 
+## Google Embedding Model Boundary Follow-Up
+
+- [x] Compare Google embedding model shape against `repo-ref/ai` Google
+  embedding model and provider-utils HTTP dispatch layers
+- [x] Keep `GoogleEmbeddingModel` as the public provider adapter while moving
+  provider option resolution, single/batch request body construction, transport
+  request projection, and response decoding into focused modules
+- [x] Preserve `providerId`, `capabilityProfile`, `embedContentUri`,
+  `batchEmbedContentsUri`, headers, call options, single/batch wire shape,
+  usage metadata, response metadata, and provider option validation behavior
+- [x] Verify focused Google embedding and model describer tests after the split
+- [x] Document the Google embedding model boundary split and changelog note
+
 ## Provider Options And Metadata
 
 - [x] Define the canonical typed provider options shape in

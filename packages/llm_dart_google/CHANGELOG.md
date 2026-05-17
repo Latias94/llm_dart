@@ -5,6 +5,10 @@
 - Google language-model request and capability policy now routes through an
   internal model-family policy seam, keeping Gemini, Gemini 3, and Gemma
   request differences out of shared request assembly.
+- Google embedding-model orchestration now delegates provider option
+  resolution, single/batch request construction, transport request projection,
+  and response decoding to focused internal modules while preserving provider
+  behavior.
 - Google prompt projection now delegates user binary encoding, assistant
   replay projection, tool replay projection, and replay metadata helpers to
   focused internal modules while preserving typed options and wire output.
