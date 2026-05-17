@@ -68,6 +68,28 @@ void main() {
       );
     });
 
+    test('describeGoogleChatModel keeps non-Gemini language features inferred',
+        () {
+      final profile = describeGoogleChatModel('models/custom-language');
+
+      expect(
+        profile.supports(ModelCapabilityFeatureIds.languageStructuredOutput),
+        isFalse,
+      );
+      expect(
+        profile.supports(ModelCapabilityFeatureIds.languageReasoningOutput),
+        isFalse,
+      );
+      expect(
+        profile.providerFeature('google', 'google.serverSideToolInvocations'),
+        isNull,
+      );
+      expect(
+        profile.providerFeature('google', 'google.reasoning')?.confidence,
+        CapabilityConfidence.inferred,
+      );
+    });
+
     test(
         'describeGoogleEmbeddingModel exposes batch and dimensionality support',
         () {

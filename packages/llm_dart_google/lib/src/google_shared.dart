@@ -209,10 +209,6 @@ String inferDocumentMediaType(String? filename) {
   return 'application/octet-stream';
 }
 
-bool isGemini3Model(String modelId) {
-  return modelId.toLowerCase().contains('gemini-3');
-}
-
 Map<String, Object?>? asMap(Object? value) {
   if (value is Map<String, Object?>) {
     return value;

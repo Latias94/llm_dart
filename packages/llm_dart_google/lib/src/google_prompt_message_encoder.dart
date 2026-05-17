@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'google_function_response_replay.dart';
+import 'google_language_model_policy.dart';
 import 'google_server_tool_replay.dart';
 import 'google_shared.dart';
 
@@ -13,6 +14,7 @@ final class GooglePromptMessageEncoder {
     PromptMessage message, {
     required String modelId,
   }) {
+    final policy = GoogleLanguageModelPolicy(modelId);
     if (message case UserPromptMessage(:final parts)) {
       return {
         'role': 'user',
@@ -27,7 +29,7 @@ final class GooglePromptMessageEncoder {
         for (final part in parts)
           if (_encodeAssistantPart(
             part,
-            modelId: modelId,
+            policy: policy,
           )
               case final encodedPart?)
             encodedPart,
@@ -48,7 +50,7 @@ final class GooglePromptMessageEncoder {
           if (_encodeToolPart(
             part,
             toolName: toolName,
-            modelId: modelId,
+            policy: policy,
           )
               case final encodedPart?)
             encodedPart,
@@ -96,7 +98,7 @@ final class GooglePromptMessageEncoder {
 
   Map<String, Object?>? _encodeAssistantPart(
     PromptPart part, {
-    required String modelId,
+    required GoogleLanguageModelPolicy policy,
   }) {
     final providerMetadata = _promptPartProviderMetadata(part);
     final metadata = _resolveAssistantPartMetadata(providerMetadata);
@@ -144,7 +146,7 @@ final class GooglePromptMessageEncoder {
       return {
         'functionCall': {
           if (_shouldReplayGoogleFunctionCallId(
-            modelId,
+            policy,
             metadata.functionCallId,
           ))
             'id': metadata.functionCallId,
@@ -193,7 +195,7 @@ final class GooglePromptMessageEncoder {
   Map<String, Object?>? _encodeToolPart(
     PromptPart part, {
     required String toolName,
-    required String modelId,
+    required GoogleLanguageModelPolicy policy,
   }) {
     if (part is ToolApprovalResponsePromptPart) {
       return null;
@@ -213,7 +215,7 @@ final class GooglePromptMessageEncoder {
         providerMetadata: providerMetadata,
       );
       final functionResponse = replay.toFunctionResponseJson();
-      if (_shouldReplayGoogleFunctionCallId(modelId, functionCallId) &&
+      if (_shouldReplayGoogleFunctionCallId(policy, functionCallId) &&
           !functionResponse.containsKey('id')) {
         functionResponse['id'] = functionCallId;
       }
@@ -235,7 +237,7 @@ final class GooglePromptMessageEncoder {
         final functionResponse = replay.toFunctionResponseJson();
         final functionCallId =
             replay.functionCallId ?? _googleFunctionCallId(providerMetadata);
-        if (_shouldReplayGoogleFunctionCallId(modelId, functionCallId) &&
+        if (_shouldReplayGoogleFunctionCallId(policy, functionCallId) &&
             !functionResponse.containsKey('id')) {
           functionResponse['id'] = functionCallId;
         }
@@ -368,10 +370,10 @@ final class GooglePromptMessageEncoder {
   }
 
   bool _shouldReplayGoogleFunctionCallId(
-    String modelId,
+    GoogleLanguageModelPolicy policy,
     String? functionCallId,
   ) {
-    return isGemini3Model(modelId) &&
+    return policy.supportsFunctionCallIdReplay &&
         functionCallId != null &&
         functionCallId.isNotEmpty;
   }

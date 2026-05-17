@@ -1,5 +1,6 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import 'google_language_model_policy.dart';
 import 'google_prompt_message_encoder.dart';
 import 'google_server_tool_replay.dart';
 import 'google_shared.dart';
@@ -24,6 +25,7 @@ final class GoogleContentProjectionCodec {
     required String modelId,
     required List<PromptMessage> prompt,
   }) {
+    final policy = GoogleLanguageModelPolicy(modelId);
     final systemInstructionParts = <Map<String, Object?>>[];
     final contents = <Map<String, Object?>>[];
     var sawConversationMessage = false;
@@ -66,8 +68,8 @@ final class GoogleContentProjectionCodec {
       );
     }
 
-    final isGemmaModel = modelId.toLowerCase().startsWith('gemma-');
-    if (systemInstructionParts.isNotEmpty && isGemmaModel) {
+    if (systemInstructionParts.isNotEmpty &&
+        !policy.shouldUseSystemInstruction) {
       final firstContent = contents.first;
       if (firstContent['role'] != 'user') {
         throw UnsupportedError(

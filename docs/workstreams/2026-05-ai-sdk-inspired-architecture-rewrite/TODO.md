@@ -124,3 +124,5 @@
   policy out of the shared codec
 - [x] Resolve OpenAI-family Chat Completions request policy from
   `OpenAIFamilyProfile` on the language-model path
+- [x] Move Google language model-family request and capability policy behind a
+  provider-owned seam

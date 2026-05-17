@@ -2,6 +2,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'google_content_projection.dart';
 import 'google_generation_config_encoder.dart';
+import 'google_language_model_policy.dart';
 import 'google_options.dart';
 import 'google_tool_configuration.dart';
 
@@ -28,6 +29,7 @@ final class GoogleGenerateContentCodec {
     required GoogleChatModelSettings settings,
     required GoogleGenerateTextOptions providerOptions,
   }) {
+    final policy = GoogleLanguageModelPolicy(modelId);
     final warnings = <ModelWarning>[];
     const contentProjectionCodec = GoogleContentProjectionCodec();
     final promptProjection = contentProjectionCodec.encodePrompt(
@@ -36,7 +38,6 @@ final class GoogleGenerateContentCodec {
     );
     final systemInstructionParts = promptProjection.systemInstructionParts;
     final contents = promptProjection.contents;
-    final isGemmaModel = modelId.toLowerCase().startsWith('gemma-');
 
     final includeServerSideToolInvocations =
         providerOptions.includeServerSideToolInvocations ??
@@ -67,7 +68,8 @@ final class GoogleGenerateContentCodec {
 
     final body = <String, Object?>{
       'contents': contents,
-      if (systemInstructionParts.isNotEmpty && !isGemmaModel)
+      if (systemInstructionParts.isNotEmpty &&
+          policy.shouldUseSystemInstruction)
         'systemInstruction': {
           'parts': systemInstructionParts,
         },

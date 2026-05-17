@@ -334,3 +334,29 @@ Current status:
   selects OpenAI/DeepSeek/compatible request policies from profile type rather
   than only from provider-id strings. See
   `13-openai-chat-completions-profile-policy.md`.
+
+## M15 - Google Language Model-Family Policy
+
+Goals:
+
+- move Google language model-family request policy behind a dedicated seam
+- keep shared GenerateContent request assembly reusable across Gemini, Gemini 3,
+  Gemma, and inferred-compatible model ids
+- preserve public typed Google settings/options and current wire output
+
+Acceptance criteria:
+
+- Gemma system-prompt placement is selected through
+  `GoogleLanguageModelPolicy`
+- Gemini 3 thinking-level, function-call-id replay, and mixed-tool policy are
+  selected through `GoogleLanguageModelPolicy`
+- Google language capability description reads model-family policy instead of
+  owning model-family predicates inline
+- focused Google tests and migration/change notes cover the seam
+
+Current status:
+
+- complete; `GoogleLanguageModelPolicy` owns Google language model-family
+  predicates and routes prompt/system handling, thinking config, tool mixing,
+  function-call-id replay, and language capability description. See
+  `14-google-language-model-policy.md`.

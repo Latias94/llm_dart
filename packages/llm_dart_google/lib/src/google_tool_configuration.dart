@@ -1,6 +1,6 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
-import 'google_shared.dart';
+import 'google_language_model_policy.dart';
 import 'google_tools.dart';
 
 final class GoogleToolConfiguration {
@@ -25,8 +25,9 @@ final class GoogleToolConfigurationCodec {
     required bool promptRequiresServerToolReplay,
     required List<ModelWarning> warnings,
   }) {
+    final policy = GoogleLanguageModelPolicy(modelId);
     _validateServerSideToolInvocations(
-      modelId: modelId,
+      policy: policy,
       includeServerSideToolInvocations: includeServerSideToolInvocations,
     );
     if (promptRequiresServerToolReplay && !includeServerSideToolInvocations) {
@@ -36,13 +37,12 @@ final class GoogleToolConfigurationCodec {
     }
 
     final encodedNativeTools = _encodeNativeTools(
-      modelId: modelId,
+      policy: policy,
       tools: nativeTools,
       warnings: warnings,
     );
     final useNativeTools = encodedNativeTools.isNotEmpty;
-    final useMixedTools = _supportsMixedToolRequests(
-      modelId: modelId,
+    final useMixedTools = policy.supportsMixedToolRequests(
       includeServerSideToolInvocations: includeServerSideToolInvocations,
       hasNativeTools: useNativeTools,
       hasFunctionTools: tools.isNotEmpty,
@@ -53,7 +53,7 @@ final class GoogleToolConfigurationCodec {
         ModelWarning(
           type: ModelWarningType.unsupported,
           field: 'tools',
-          message: isGemini3Model(modelId)
+          message: policy.isGemini3StyleModel
               ? 'Gemini 3 mixed Google native tools and common function tools require includeServerSideToolInvocations=true. The common function tools have been ignored for this call.'
               : 'Google native tools do not mix cleanly with common function tools yet. The common function tools have been ignored for this call.',
         ),
@@ -65,7 +65,7 @@ final class GoogleToolConfigurationCodec {
         ModelWarning(
           type: ModelWarningType.compatibility,
           field: 'toolChoice',
-          message: isGemini3Model(modelId)
+          message: policy.isGemini3StyleModel
               ? 'toolChoice is ignored when Google native tools are enabled unless includeServerSideToolInvocations=true is set for a Gemini 3 mixed-tool request.'
               : 'toolChoice is ignored when Google native tools are enabled for this call.',
         ),
@@ -119,7 +119,7 @@ final class GoogleToolConfigurationCodec {
   }
 
   List<Object?> _encodeNativeTools({
-    required String modelId,
+    required GoogleLanguageModelPolicy policy,
     required List<GoogleNativeTool> tools,
     required List<ModelWarning> warnings,
   }) {
@@ -128,10 +128,9 @@ final class GoogleToolConfigurationCodec {
     }
 
     final encoded = <Object?>[];
-    final supportsNativeTools = _supportsNativeTools(modelId);
 
     for (final tool in tools) {
-      if (!supportsNativeTools) {
+      if (!policy.supportsNativeTools) {
         warnings.add(
           ModelWarning(
             type: ModelWarningType.unsupported,
@@ -197,38 +196,18 @@ final class GoogleToolConfigurationCodec {
     };
   }
 
-  bool _supportsNativeTools(String modelId) {
-    final normalized = modelId.toLowerCase();
-    return normalized.contains('gemini-2') ||
-        normalized.contains('gemini-3') ||
-        normalized.endsWith('-latest') ||
-        normalized.contains('nano-banana');
-  }
-
   void _validateServerSideToolInvocations({
-    required String modelId,
+    required GoogleLanguageModelPolicy policy,
     required bool includeServerSideToolInvocations,
   }) {
     if (!includeServerSideToolInvocations) {
       return;
     }
 
-    if (!isGemini3Model(modelId)) {
+    if (!policy.supportsServerSideToolInvocations) {
       throw UnsupportedError(
         'Google includeServerSideToolInvocations is currently only supported for Gemini 3 models.',
       );
     }
-  }
-
-  bool _supportsMixedToolRequests({
-    required String modelId,
-    required bool includeServerSideToolInvocations,
-    required bool hasNativeTools,
-    required bool hasFunctionTools,
-  }) {
-    return isGemini3Model(modelId) &&
-        includeServerSideToolInvocations &&
-        hasNativeTools &&
-        hasFunctionTools;
   }
 }

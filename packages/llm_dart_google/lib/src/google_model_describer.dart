@@ -1,29 +1,14 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import 'google_language_model_policy.dart';
 import 'google_options.dart';
-
-const List<String> _googleNativeToolFamilies = [
-  'google_search',
-  'code_execution',
-];
-
-const List<String> _googleThinkingLevels = [
-  'minimal',
-  'low',
-  'medium',
-  'high',
-];
 
 ModelCapabilityProfile describeGoogleChatModel(
   String modelId, {
   GoogleChatModelSettings settings = const GoogleChatModelSettings(),
 }) {
-  final isGeminiModel = _looksLikeGeminiModel(modelId);
-  final familyConfidence = isGeminiModel
-      ? CapabilityConfidence.known
-      : CapabilityConfidence.inferred;
-  final supportsServerSideToolInvocations =
-      _supportsGoogleServerSideToolInvocations(modelId);
+  final policy = GoogleLanguageModelPolicy(modelId);
+  final familyConfidence = policy.familyConfidence;
 
   final sharedFeatures = <CapabilityDescriptor>{
     const CapabilityDescriptor(
@@ -46,7 +31,7 @@ ModelCapabilityProfile describeGoogleChatModel(
     ),
   };
 
-  if (isGeminiModel) {
+  if (policy.isGeminiModel) {
     sharedFeatures.addAll([
       CapabilityDescriptor(
         id: ModelCapabilityFeatureIds.languageStructuredOutput,
@@ -86,7 +71,7 @@ ModelCapabilityProfile describeGoogleChatModel(
         providerId: 'google',
         featureId: 'google.nativeTools',
         detail: {
-          'builtInTools': _googleNativeToolFamilies,
+          'builtInTools': googleNativeToolFamilies,
           'configuredTools': [
             for (final tool in settings.tools) tool.name,
           ],
@@ -97,7 +82,7 @@ ModelCapabilityProfile describeGoogleChatModel(
         featureId: 'google.reasoning',
         detail: {
           'includeThoughts': true,
-          'thinkingLevels': _googleThinkingLevels,
+          'thinkingLevels': googleThinkingLevels,
           'thoughtSignatures': true,
         },
         confidence: familyConfidence,
@@ -116,7 +101,7 @@ ModelCapabilityProfile describeGoogleChatModel(
           'modelDefaults': settings.safetySettings.length,
         },
       ),
-      if (supportsServerSideToolInvocations)
+      if (policy.supportsServerSideToolInvocations)
         ProviderFeatureDescriptor(
           providerId: 'google',
           featureId: 'google.serverSideToolInvocations',
@@ -273,14 +258,6 @@ ModelCapabilityProfile describeGoogleSpeechModel(
       ),
     ],
   );
-}
-
-bool _looksLikeGeminiModel(String modelId) {
-  return modelId.toLowerCase().contains('gemini');
-}
-
-bool _supportsGoogleServerSideToolInvocations(String modelId) {
-  return modelId.toLowerCase().contains('gemini-3');
 }
 
 bool _isGeminiImageModel(String modelId) {

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Google language-model request and capability policy now routes through an
+  internal model-family policy seam, keeping Gemini, Gemini 3, and Gemma
+  request differences out of shared request assembly.
+
 ## [0.11.0-alpha.1] - 2026-05-12
 
 - Alpha release of the Google/Gemini provider package.

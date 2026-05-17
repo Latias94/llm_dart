@@ -28,6 +28,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `OpenAIFamilyProfile` on the language-model path, so profile types remain
   the source of provider-family behaviour even when a profile customizes its
   provider id.
+- Google language-model request and capability policy now routes through an
+  internal model-family policy seam, concentrating Gemini, Gemini 3, and Gemma
+  request differences while preserving the public typed options.
 
 ## [0.11.0-alpha.1] - 2026-05-12
 

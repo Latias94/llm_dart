@@ -174,6 +174,9 @@ The detailed rebaseline is tracked in
 - [13-openai-chat-completions-profile-policy.md](13-openai-chat-completions-profile-policy.md)
   - M14 implementation note for resolving Chat Completions request policy from
     `OpenAIFamilyProfile` on the language-model path.
+- [14-google-language-model-policy.md](14-google-language-model-policy.md)
+  - M15 implementation note for moving Google language model-family request
+    and capability policy behind a provider-owned seam.
 - [MILESTONES.md](MILESTONES.md)
   - Milestones, acceptance criteria, and status tracking.
 - [TODO.md](TODO.md)

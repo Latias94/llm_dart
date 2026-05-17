@@ -1,8 +1,8 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import 'google_language_model_policy.dart';
 import 'google_options.dart';
 import 'google_response_format.dart';
-import 'google_shared.dart';
 
 final class GoogleGenerationConfigEncoder {
   const GoogleGenerationConfigEncoder();
@@ -13,6 +13,7 @@ final class GoogleGenerationConfigEncoder {
     required GoogleGenerateTextOptions providerOptions,
     required List<ModelWarning> warnings,
   }) {
+    final policy = GoogleLanguageModelPolicy(modelId);
     final generationConfig = <String, Object?>{
       if (options.maxOutputTokens != null)
         'maxOutputTokens': options.maxOutputTokens,
@@ -36,8 +37,7 @@ final class GoogleGenerationConfigEncoder {
       generationConfig['candidateCount'] = resolvedCandidateCount;
     }
 
-    final thinkingConfig = _buildThinkingConfig(
-      modelId: modelId,
+    final thinkingConfig = policy.encodeThinkingConfig(
       options: options,
       providerOptions: providerOptions,
       warnings: warnings,
@@ -103,122 +103,4 @@ final class GoogleGenerationConfigEncoder {
 
     return value;
   }
-
-  Map<String, Object?>? _buildThinkingConfig({
-    required String modelId,
-    required GenerateTextOptions options,
-    required GoogleGenerateTextOptions providerOptions,
-    required List<ModelWarning> warnings,
-  }) {
-    final config = <String, Object?>{};
-    final sharedReasoning = options.reasoning;
-
-    if (providerOptions.includeThoughts != null) {
-      config['includeThoughts'] = providerOptions.includeThoughts;
-    } else if (sharedReasoning?.enabled == true) {
-      config['includeThoughts'] = true;
-    }
-
-    if (isGemini3Model(modelId)) {
-      final sharedThinkingLevel = _mapGoogleThinkingLevel(
-        sharedReasoning?.effort,
-      );
-      if (providerOptions.thinkingLevel != null) {
-        config['thinkingLevel'] = providerOptions.thinkingLevel!.value;
-        if (sharedThinkingLevel != null) {
-          warnings.add(
-            const ModelWarning(
-              type: ModelWarningType.compatibility,
-              field: 'options.reasoning.effort',
-              message:
-                  'Google providerOptions.thinkingLevel overrides shared options.reasoning.effort.',
-            ),
-          );
-        }
-      } else if (sharedThinkingLevel != null) {
-        config['thinkingLevel'] = sharedThinkingLevel.value;
-      }
-
-      if (providerOptions.thinkingBudgetTokens != null) {
-        warnings.add(
-          const ModelWarning(
-            type: ModelWarningType.compatibility,
-            field: 'thinkingBudgetTokens',
-            message:
-                'thinkingBudgetTokens is ignored for Gemini 3 style Google models. Use thinkingLevel instead.',
-          ),
-        );
-      }
-      if (sharedReasoning?.budgetTokens != null) {
-        warnings.add(
-          const ModelWarning(
-            type: ModelWarningType.compatibility,
-            field: 'options.reasoning.budgetTokens',
-            message:
-                'options.reasoning.budgetTokens is ignored for Gemini 3 style Google models. Use reasoning.effort instead.',
-          ),
-        );
-      }
-    } else {
-      if (providerOptions.thinkingBudgetTokens != null) {
-        config['thinkingBudget'] = providerOptions.thinkingBudgetTokens;
-        if (sharedReasoning?.budgetTokens != null) {
-          warnings.add(
-            const ModelWarning(
-              type: ModelWarningType.compatibility,
-              field: 'options.reasoning.budgetTokens',
-              message:
-                  'Google providerOptions.thinkingBudgetTokens overrides shared options.reasoning.budgetTokens.',
-            ),
-          );
-        }
-      } else if (sharedReasoning?.budgetTokens != null) {
-        config['thinkingBudget'] = sharedReasoning!.budgetTokens;
-      }
-
-      if (providerOptions.thinkingLevel != null) {
-        warnings.add(
-          const ModelWarning(
-            type: ModelWarningType.compatibility,
-            field: 'thinkingLevel',
-            message:
-                'thinkingLevel is only supported for Gemini 3 style Google models. Use thinkingBudgetTokens instead.',
-          ),
-        );
-      }
-      if (sharedReasoning?.effort != null) {
-        warnings.add(
-          const ModelWarning(
-            type: ModelWarningType.compatibility,
-            field: 'options.reasoning.effort',
-            message:
-                'options.reasoning.effort is only mapped for Gemini 3 style Google models. Use reasoning.budgetTokens for other Google models.',
-          ),
-        );
-      }
-    }
-
-    if (sharedReasoning?.enabled == false &&
-        (providerOptions.includeThoughts == null &&
-            providerOptions.thinkingBudgetTokens == null &&
-            providerOptions.thinkingLevel == null)) {
-      if (isGemini3Model(modelId)) {
-        config['thinkingLevel'] = GoogleThinkingLevel.minimal.value;
-      } else {
-        config['thinkingBudget'] = 0;
-      }
-    }
-
-    return config.isEmpty ? null : config;
-  }
-}
-
-GoogleThinkingLevel? _mapGoogleThinkingLevel(ReasoningEffort? effort) {
-  return switch (effort) {
-    null => null,
-    ReasoningEffort.minimal => GoogleThinkingLevel.minimal,
-    ReasoningEffort.low => GoogleThinkingLevel.low,
-    ReasoningEffort.medium => GoogleThinkingLevel.medium,
-    ReasoningEffort.high => GoogleThinkingLevel.high,
-  };
 }
