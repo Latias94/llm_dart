@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- Ollama language-model orchestration now delegates settings/request codec
+  construction, transport request projection, generate response decoding, and
+  stream lifecycle/error handling to focused internal modules while preserving
+  provider behavior.
 - Ollama embedding-model orchestration now delegates settings resolution,
   request validation/body construction, transport request projection, and
   response/provider metadata decoding to focused internal modules while

@@ -348,6 +348,23 @@
   API
 - [x] Document the ElevenLabs audio model boundary split and changelog note
 
+## Ollama Language Model Boundary Follow-Up
+
+- [x] Compare Ollama language model shape against `repo-ref/ai` language
+  adapter and provider-utils HTTP dispatch layers
+- [x] Keep `OllamaLanguageModel` as the public provider adapter while moving
+  settings resolution, request codec construction, transport request
+  projection, generate response decoding, and stream lifecycle/error handling
+  into focused modules
+- [x] Preserve `providerId`, `capabilityProfile`, `chatUri`, `defaultHeaders`,
+  request encoding, generate JSON response decoding, stream start event,
+  raw-chunk forwarding, transport error projection, headers, call options, and
+  provider option validation behavior
+- [x] Verify focused Ollama language model, chat request codec, model
+  describer, and entrypoint tests plus package-level analysis via direct
+  runner and analyzer API
+- [x] Document the Ollama language model boundary split and changelog note
+
 ## Provider Options And Metadata
 
 - [x] Define the canonical typed provider options shape in

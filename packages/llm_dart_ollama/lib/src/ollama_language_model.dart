@@ -2,9 +2,10 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'ollama_api.dart';
-import 'ollama_chat_request_codec.dart';
-import 'ollama_chat_response_codec.dart';
-import 'ollama_chat_stream_codec.dart';
+import 'ollama_language_model_request.dart';
+import 'ollama_language_model_response.dart';
+import 'ollama_language_model_stream.dart';
+import 'ollama_language_model_transport.dart';
 import 'ollama_model_describer.dart';
 import 'ollama_options.dart';
 
@@ -23,9 +24,10 @@ final class OllamaLanguageModel
     required this.transport,
     String? apiKey,
     String? baseUrl,
-    this.settings = const OllamaChatModelSettings(),
+    ProviderModelOptions settings = const OllamaChatModelSettings(),
   })  : apiKey = normalizeOllamaApiKey(apiKey),
-        baseUrl = normalizeOllamaBaseUrl(baseUrl);
+        baseUrl = normalizeOllamaBaseUrl(baseUrl),
+        settings = resolveOllamaChatModelSettings(settings);
 
   @override
   String get providerId => 'ollama';
@@ -38,92 +40,78 @@ final class OllamaLanguageModel
     );
   }
 
-  Uri get chatUri => resolveOllamaUri(baseUrl, '/api/chat');
+  Uri get chatUri => resolveOllamaChatRouteUri(baseUrl: baseUrl);
 
-  Map<String, String> get defaultHeaders => buildOllamaHeaders(
+  Map<String, String> get defaultHeaders => buildOllamaChatDefaultHeaders(
         apiKey: apiKey,
-        contentType: 'application/json',
-        headers: settings.headers,
+        settings: settings,
       );
 
-  OllamaChatRequestCodec get _requestCodec => OllamaChatRequestCodec(
+  get _requestCodec => buildOllamaChatRequestCodec(
         modelId: modelId,
         settings: settings,
       );
 
-  OllamaChatResponseCodec get _responseCodec => OllamaChatResponseCodec(
+  get _responseCodec => buildOllamaChatResponseCodec(
         modelId: modelId,
       );
 
-  OllamaChatStreamCodec get _streamCodec => OllamaChatStreamCodec(
+  get _streamCodec => buildOllamaChatStreamCodec(
         responseCodec: _responseCodec,
       );
 
   @override
   Future<GenerateTextResult> doGenerate(GenerateTextRequest request) async {
-    final preparedRequest = await _requestCodec.encode(
+    final preparedRequest = await prepareOllamaChatRequest(
+      requestCodec: _requestCodec,
       request: request,
       stream: false,
     );
     final response = await transport.send(
-      TransportRequest(
-        uri: chatUri,
-        method: TransportMethod.post,
-        headers: {
-          ...defaultHeaders,
-          if (request.callOptions.headers case final headers?) ...headers,
-        },
+      buildOllamaChatGenerateTransportRequest(
+        baseUrl: baseUrl,
+        request: request,
         body: preparedRequest.body,
-        timeout: request.callOptions.timeout,
-        maxRetries: request.callOptions.maxRetries,
-        cancellation: request.callOptions.cancellation,
-        responseType: TransportResponseType.json,
+        defaultHeaders: defaultHeaders,
       ),
     );
 
-    return _responseCodec.decodeGenerateResponse(
-      decodeOllamaJsonObject(
-        response.body,
-        responseName: 'chat response',
-      ),
-      warnings: preparedRequest.warnings,
+    return decodeOllamaChatGenerateResponse(
+      body: response.body,
+      responseCodec: _responseCodec,
+      preparedRequest: preparedRequest,
     );
   }
 
   @override
   Stream<LanguageModelStreamEvent> doStream(
       GenerateTextRequest request) async* {
-    final preparedRequest = await _requestCodec.encode(
+    final preparedRequest = await prepareOllamaChatRequest(
+      requestCodec: _requestCodec,
       request: request,
       stream: true,
     );
-    yield StartEvent(warnings: preparedRequest.warnings);
+    yield* startOllamaChatStream(preparedRequest: preparedRequest);
 
     try {
       final response = await transport.sendStream(
-        TransportRequest(
-          uri: chatUri,
-          method: TransportMethod.post,
-          headers: {
-            ...defaultHeaders,
-            'accept': 'application/x-ndjson',
-            if (request.callOptions.headers case final headers?) ...headers,
-          },
+        buildOllamaChatStreamTransportRequest(
+          baseUrl: baseUrl,
+          request: request,
           body: preparedRequest.body,
-          timeout: request.callOptions.timeout,
-          maxRetries: request.callOptions.maxRetries,
-          cancellation: request.callOptions.cancellation,
+          defaultHeaders: defaultHeaders,
         ),
       );
 
-      await for (final event in _streamCodec.decodeByteStream(
-        response.stream,
+      await for (final event in decodeOllamaChatStreamResponse(
+        stream: response.stream,
+        streamCodec: _streamCodec,
         includeRawChunks: request.options.includeRawChunks,
       )) {
         yield event;
       }
     } catch (error) {
-      yield ErrorEvent(transportErrorToModelError(error));
+      yield ollamaChatStreamErrorEvent(error);
     }
   }
 }

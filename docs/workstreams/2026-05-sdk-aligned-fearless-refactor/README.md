@@ -254,6 +254,9 @@ The workstream is complete only when:
 - [27-elevenlabs-audio-model-boundary.md](27-elevenlabs-audio-model-boundary.md)
   - ElevenLabs speech and transcription model split into request, transport,
     and response modules.
+- [28-ollama-language-model-boundary.md](28-ollama-language-model-boundary.md)
+  - Ollama language model split into request, transport, response, and stream
+    modules.
 - [release-readiness-report.txt](release-readiness-report.txt)
   - Full release-readiness gate result, including consumer smoke, publish
     dry-run, and pub.dev version availability.

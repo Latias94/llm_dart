@@ -788,3 +788,34 @@ Exit gate:
 - focused ElevenLabs speech model, transcription model, model describer, and
   entrypoint tests, package analysis, workspace analysis, and whitespace
   checks pass.
+
+## M29 - Post-Closure Ollama Language Model Boundary Split
+
+Goals:
+
+- align Ollama language provider adapter orchestration with the reference
+  language adapter and provider-utils HTTP dispatch layers
+- keep `OllamaLanguageModel` as the stable provider-facing chat adapter
+- improve locality for request preparation, transport projection,
+  non-streaming response decoding, and stream lifecycle handling
+
+Acceptance criteria:
+
+- settings resolution, request codec construction, and generate/stream request
+  preparation live outside the main language model adapter
+- `/api/chat` URI, default/per-call headers, call options, and response type
+  projection live outside the main language model adapter
+- response codec construction and non-streaming response decoding live outside
+  the main language model adapter
+- stream codec construction, start-event emission, byte stream decoding
+  dispatch, and transport error projection live outside the main language
+  model adapter
+- existing Ollama chat request encoding, generate response decoding, stream
+  ordering, raw chunk forwarding, timeout, retry, cancellation, and provider
+  option validation behavior stays unchanged
+
+Exit gate:
+
+- focused Ollama language model, chat request codec, model describer, and
+  entrypoint tests, package analysis, workspace analysis, and whitespace
+  checks pass.
