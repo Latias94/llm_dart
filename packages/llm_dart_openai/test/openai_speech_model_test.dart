@@ -9,12 +9,12 @@ void main() {
     test('OpenAI factory exposes an OpenAI-family speech model', () {
       final model = OpenAI(
         apiKey: 'test-key',
-        profile: const OpenRouterProfile(),
+        profile: const OpenAIProfile(),
         transport: const _FakeTransportClient(),
       ).speechModel('gpt-4o-mini-tts');
 
-      expect(model.providerId, 'openrouter');
-      expect(model.baseUrl, 'https://openrouter.ai/api/v1');
+      expect(model.providerId, 'openai');
+      expect(model.baseUrl, 'https://api.openai.com/v1');
       expect(
         model.defaultHeaders,
         {'authorization': 'Bearer test-key'},

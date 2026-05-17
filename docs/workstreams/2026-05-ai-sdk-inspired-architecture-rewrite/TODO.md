@@ -118,3 +118,5 @@
   removal or adaptation
 - [x] Close OpenAI-family class-level facet reporting by adding
   provider-declared registry facet support
+- [x] Move OpenAI-family capability description details behind a profile-owned
+  policy seam

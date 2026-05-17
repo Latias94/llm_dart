@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - OpenAI-family compatible providers such as OpenRouter, DeepSeek, Groq, xAI,
   and Phind now register as language-model providers only unless their profile
   explicitly supports another model facet.
+- OpenAI-family model capability descriptions now route through a profile-owned
+  capability policy seam instead of keeping profile-specific rules inline in
+  the public describer.
 
 ## [0.11.0-alpha.1] - 2026-05-12
 

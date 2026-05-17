@@ -50,6 +50,10 @@ void main() {
           'supportsNonReasoningParameters': true,
         },
       );
+      expect(
+        profile.providerFeature('openai', 'modelCapabilities')?.confidence,
+        CapabilityConfidence.known,
+      );
     });
 
     test('describeOpenAIChatModel aligns GPT-5 family predicates', () {
@@ -118,6 +122,16 @@ void main() {
         profile.providerFeature('deepseek', 'deepseek.thinkTagReasoning'),
         isNotNull,
       );
+      expect(
+        profile.providerFeature('deepseek', 'modelCapabilities')?.confidence,
+        CapabilityConfidence.inferred,
+      );
+      expect(
+        profile
+            .providerFeature('deepseek', 'deepseek.thinkTagReasoning')
+            ?.confidence,
+        CapabilityConfidence.inferred,
+      );
     });
 
     test(
@@ -136,6 +150,12 @@ void main() {
             .providerFeature('openrouter', 'openrouter.onlineModelRouting')
             ?.detail,
         {'mode': 'onlineModel'},
+      );
+      expect(
+        profile
+            .providerFeature('openrouter', 'openrouter.onlineModelRouting')
+            ?.confidence,
+        CapabilityConfidence.known,
       );
     });
 
@@ -170,6 +190,10 @@ void main() {
       expect(
         profile.providerFeature('xai', 'xai.liveSearch')?.detail,
         {'resultSurface': 'sources'},
+      );
+      expect(
+        profile.providerFeature('xai', 'xai.liveSearch')?.confidence,
+        CapabilityConfidence.known,
       );
     });
 

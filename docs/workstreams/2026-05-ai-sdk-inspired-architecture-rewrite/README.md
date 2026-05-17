@@ -165,6 +165,9 @@ The detailed rebaseline is tracked in
 - [10-openai-family-facet-support.md](10-openai-family-facet-support.md)
   - M11 implementation note for profile-specific OpenAI-family model facet
     reporting in `ProviderRegistry`.
+- [11-openai-family-capability-policy.md](11-openai-family-capability-policy.md)
+  - M12 implementation note for moving OpenAI-family capability description
+    policy behind a profile-owned seam.
 - [MILESTONES.md](MILESTONES.md)
   - Milestones, acceptance criteria, and status tracking.
 - [TODO.md](TODO.md)

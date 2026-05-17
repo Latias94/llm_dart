@@ -11,12 +11,12 @@ void main() {
     test('OpenAI factory exposes an OpenAI-family transcription model', () {
       final model = OpenAI(
         apiKey: 'test-key',
-        profile: const OpenRouterProfile(),
+        profile: const OpenAIProfile(),
         transport: const _FakeTransportClient(),
       ).transcriptionModel('whisper-1');
 
-      expect(model.providerId, 'openrouter');
-      expect(model.baseUrl, 'https://openrouter.ai/api/v1');
+      expect(model.providerId, 'openai');
+      expect(model.baseUrl, 'https://api.openai.com/v1');
       expect(
         model.defaultHeaders,
         {'authorization': 'Bearer test-key'},

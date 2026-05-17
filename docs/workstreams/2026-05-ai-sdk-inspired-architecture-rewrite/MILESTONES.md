@@ -259,3 +259,28 @@ Current status:
   advertises all current OpenAI model facets, and OpenRouter, DeepSeek, Groq,
   xAI, and Phind conservatively advertise language-only support. See
   `10-openai-family-facet-support.md`.
+
+## M12 - OpenAI-Family Capability Policy
+
+Goals:
+
+- move OpenAI-family capability description details behind a profile policy
+- keep the public describer shape stable
+- keep OpenAI-family capability confidence and provider-feature rules in one
+  seam
+
+Acceptance criteria:
+
+- `openai_model_describer.dart` delegates family-specific capability policy
+  instead of owning it inline
+- OpenAI, OpenRouter, DeepSeek, and xAI capability descriptions remain covered
+  by tests
+- capability confidence differences are asserted in tests
+- migration and change notes mention the new policy seam
+
+Current status:
+
+- complete; `openAIFamilyCapabilityPolicyFor(profile)` now owns the
+  family-specific capability decisions for OpenAI, OpenRouter, DeepSeek, and
+  xAI, while `openai_model_describer.dart` stays the public assembly point.
+  See `11-openai-family-capability-policy.md`.

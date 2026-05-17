@@ -8,6 +8,9 @@
   xAI, and Phind conservatively expose language-model lookup only.
 - Direct non-text model factories on unsupported OpenAI-family profiles now
   throw `UnsupportedError` before constructing a misleading model object.
+- OpenAI-family model capability descriptions now route through a profile-owned
+  capability policy seam, which keeps the public describer stable while
+  separating OpenAI, DeepSeek, OpenRouter, and xAI capability differences.
 
 ## [0.11.0-alpha.1] - 2026-05-12
 

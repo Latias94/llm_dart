@@ -1,5 +1,6 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import 'openai_family_capability_policy.dart';
 import 'openai_family_profile.dart';
 import 'openai_language_model_support.dart';
 import 'openai_model_capabilities.dart';
@@ -26,7 +27,14 @@ ModelCapabilityProfile describeOpenAIChatModel(
   final capabilities = getOpenAIModelCapabilities(modelId);
   final usesResponsesApi =
       resolvedSettings.common.useResponsesApi && profile.supportsResponsesApi;
-  final confidence = _familyFeatureConfidence(profile);
+  final capabilityPolicy = openAIFamilyCapabilityPolicyFor(profile);
+  final confidence = capabilityPolicy.sharedFeatureConfidence;
+  final capabilityInput = OpenAIFamilyCapabilityInput(
+    modelId: modelId,
+    modelCapabilities: capabilities,
+    usesResponsesApi: usesResponsesApi,
+    resolvedSettings: resolvedSettings,
+  );
   final sharedFeatures = <CapabilityDescriptor>{
     const CapabilityDescriptor(
       id: ModelCapabilityFeatureIds.languageStreaming,
@@ -55,30 +63,9 @@ ModelCapabilityProfile describeOpenAIChatModel(
       confidence: confidence,
     ),
   };
-
-  if (capabilities.isReasoningModel) {
-    sharedFeatures.add(
-      const CapabilityDescriptor(
-        id: ModelCapabilityFeatureIds.languageReasoningOutput,
-      ),
-    );
-  } else if (_looksLikeDeepSeekReasoningModel(profile, modelId) &&
-      !usesResponsesApi) {
-    sharedFeatures.add(
-      const CapabilityDescriptor(
-        id: ModelCapabilityFeatureIds.languageReasoningOutput,
-        confidence: CapabilityConfidence.inferred,
-      ),
-    );
-  }
-
-  if (profile.providerId == 'xai') {
-    sharedFeatures.add(
-      const CapabilityDescriptor(
-        id: ModelCapabilityFeatureIds.languageSourceOutput,
-      ),
-    );
-  }
+  sharedFeatures.addAll(capabilityPolicy.sharedLanguageFeatures(
+    capabilityInput,
+  ));
 
   final providerFeatures = <ProviderFeatureDescriptor>[
     ProviderFeatureDescriptor(
@@ -126,39 +113,10 @@ ModelCapabilityProfile describeOpenAIChatModel(
     );
   }
 
-  if (resolvedSettings.openRouterSearch != null) {
-    providerFeatures.add(
-      ProviderFeatureDescriptor(
-        providerId: profile.providerId,
-        featureId: 'openrouter.onlineModelRouting',
-        detail: {
-          'mode': resolvedSettings.openRouterSearch!.mode.name,
-        },
-      ),
-    );
-  }
-
-  if (profile.providerId == 'xai') {
-    providerFeatures.add(
-      const ProviderFeatureDescriptor(
-        providerId: 'xai',
-        featureId: 'xai.liveSearch',
-        detail: {
-          'resultSurface': 'sources',
-        },
-      ),
-    );
-  }
-
-  if (_looksLikeDeepSeekReasoningModel(profile, modelId) && !usesResponsesApi) {
-    providerFeatures.add(
-      const ProviderFeatureDescriptor(
-        providerId: 'deepseek',
-        featureId: 'deepseek.thinkTagReasoning',
-        confidence: CapabilityConfidence.inferred,
-      ),
-    );
-  }
+  providerFeatures.addAll(capabilityPolicy.providerLanguageFeatures(
+    providerId: profile.providerId,
+    input: capabilityInput,
+  ));
 
   return ModelCapabilityProfile(
     providerId: profile.providerId,
@@ -340,15 +298,5 @@ ModelCapabilityProfile describeOpenAITranscriptionModel(
   );
 }
 
-CapabilityConfidence _familyFeatureConfidence(OpenAIFamilyProfile profile) {
-  return profile.providerId == 'openai'
-      ? CapabilityConfidence.known
-      : CapabilityConfidence.inferred;
-}
-
-bool _looksLikeDeepSeekReasoningModel(
-  OpenAIFamilyProfile profile,
-  String modelId,
-) {
-  return profile.providerId == 'deepseek' && modelId.contains('reasoner');
-}
+CapabilityConfidence _familyFeatureConfidence(OpenAIFamilyProfile profile) =>
+    openAIFamilyCapabilityPolicyFor(profile).sharedFeatureConfidence;
