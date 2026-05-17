@@ -189,6 +189,10 @@ The detailed rebaseline is tracked in
   - M18 implementation note for splitting OpenAI Responses prompt conversion
     into user media encoding, assistant replay projection, tool message
     projection, and replay policy modules.
+- [18-google-prompt-projection.md](18-google-prompt-projection.md)
+  - M19 implementation note for splitting Google prompt projection into user
+    binary encoding, assistant replay projection, tool replay projection, and
+    replay metadata helpers.
 - [MILESTONES.md](MILESTONES.md)
   - Milestones, acceptance criteria, and status tracking.
 - [TODO.md](TODO.md)

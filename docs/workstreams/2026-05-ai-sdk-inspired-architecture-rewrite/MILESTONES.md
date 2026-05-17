@@ -442,3 +442,29 @@ Current status:
   `OpenAIResponsesReplayPolicy` now own the deeper prompt conversion
   behaviours, while `OpenAIResponsesPromptCodec` keeps message-role dispatch
   and system message handling. See `17-openai-responses-prompt-codec.md`.
+
+## M19 - Google Prompt Projection
+
+Goals:
+
+- deepen Google prompt projection without changing public API or wire shape
+- split user binary encoding, assistant replay projection, tool replay
+  projection, and replay metadata into separate provider-owned modules
+- preserve typed Google options, Gemini/Gemma wire behaviour, and function-call
+  id compatibility
+
+Acceptance criteria:
+
+- `GooglePromptMessageEncoder` no longer owns binary encoding, thought/replay
+  projection, and function response replay inline
+- Google request body behaviour remains covered by existing codec tests
+- focused tests cover the new prompt projection modules
+- migration/change notes document that the refactor is behaviour-preserving
+
+Current status:
+
+- complete; `GoogleBinaryPartEncoder`, `GoogleUserPromptProjection`,
+  `GoogleAssistantPromptProjection`, `GoogleToolPromptProjection`, and
+  `GooglePromptPartMetadata` now own the deeper prompt projection behaviours,
+  while `GooglePromptMessageEncoder` keeps message-role dispatch. See
+  `18-google-prompt-projection.md`.

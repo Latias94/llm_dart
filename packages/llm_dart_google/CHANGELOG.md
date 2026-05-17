@@ -5,6 +5,9 @@
 - Google language-model request and capability policy now routes through an
   internal model-family policy seam, keeping Gemini, Gemini 3, and Gemma
   request differences out of shared request assembly.
+- Google prompt projection now delegates user binary encoding, assistant
+  replay projection, tool replay projection, and replay metadata helpers to
+  focused internal modules while preserving typed options and wire output.
 
 ## [0.11.0-alpha.1] - 2026-05-12
 

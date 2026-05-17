@@ -133,3 +133,5 @@
 - [x] Split OpenAI Responses prompt conversion into user media encoding,
   assistant replay projection, tool message projection, and replay policy
   modules
+- [x] Split Google prompt projection into user binary encoding, assistant
+  replay projection, tool replay projection, and replay metadata helpers
