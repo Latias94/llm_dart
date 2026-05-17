@@ -413,3 +413,32 @@ Current status:
   `AnthropicTokenCountRequestProjector` now own the deeper request option
   behaviours, while `AnthropicRequestOptionsEncoder` keeps final request
   assembly. See `16-anthropic-request-options-policy.md`.
+
+## M18 - OpenAI Responses Prompt Codec
+
+Goals:
+
+- deepen OpenAI Responses prompt conversion without changing public API or wire
+  shape
+- split user media encoding, assistant replay projection, tool message
+  projection, and replay policy into separate provider-owned modules
+- preserve typed `OpenAIPromptPartOptions`, provider replay metadata,
+  item-reference behaviour, reasoning encrypted-content replay, and MCP
+  approval response behaviour
+
+Acceptance criteria:
+
+- `OpenAIResponsesPromptCodec` no longer owns user media encoding, assistant
+  replay, tool replay, and reasoning compatibility inline
+- Responses request body behaviour remains covered by existing codec tests
+- focused tests cover the new prompt projection modules
+- migration/change notes document that the refactor is behaviour-preserving
+
+Current status:
+
+- complete; `OpenAIResponsesUserPartEncoder`,
+  `OpenAIResponsesAssistantPromptProjection`,
+  `OpenAIResponsesToolPromptProjection`, and
+  `OpenAIResponsesReplayPolicy` now own the deeper prompt conversion
+  behaviours, while `OpenAIResponsesPromptCodec` keeps message-role dispatch
+  and system message handling. See `17-openai-responses-prompt-codec.md`.

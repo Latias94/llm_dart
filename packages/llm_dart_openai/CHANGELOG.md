@@ -17,6 +17,9 @@
 - The language-model Chat Completions path now resolves request policy from
   `OpenAIFamilyProfile` rather than only from `providerId`, keeping custom
   OpenAI profile ids on the OpenAI request-policy path.
+- OpenAI Responses prompt conversion now delegates user media encoding,
+  assistant replay projection, tool message projection, and replay policy to
+  focused internal modules while preserving typed options and wire output.
 
 ## [0.11.0-alpha.1] - 2026-05-12
 

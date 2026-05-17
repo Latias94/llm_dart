@@ -130,3 +130,6 @@
   projection, binary prompt encoding, and request assembly modules
 - [x] Split Anthropic Messages request option encoding into thinking policy,
   beta feature inference, token-count projection, and request assembly modules
+- [x] Split OpenAI Responses prompt conversion into user media encoding,
+  assistant replay projection, tool message projection, and replay policy
+  modules

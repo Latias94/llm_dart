@@ -37,6 +37,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Anthropic Messages request option encoding now routes through deeper internal
   thinking policy, beta feature inference, and token-count projection modules
   while preserving the public typed options, beta headers, and wire output.
+- OpenAI Responses prompt conversion now routes through deeper internal user
+  media encoding, assistant replay projection, tool message projection, and
+  replay policy modules while preserving public typed options and wire output.
 
 ## [0.11.0-alpha.1] - 2026-05-12
 

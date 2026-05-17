@@ -185,6 +185,10 @@ The detailed rebaseline is tracked in
   - M17 implementation note for splitting Anthropic Messages request option
     encoding into thinking policy, beta inference, token-count projection, and
     request assembly modules.
+- [17-openai-responses-prompt-codec.md](17-openai-responses-prompt-codec.md)
+  - M18 implementation note for splitting OpenAI Responses prompt conversion
+    into user media encoding, assistant replay projection, tool message
+    projection, and replay policy modules.
 - [MILESTONES.md](MILESTONES.md)
   - Milestones, acceptance criteria, and status tracking.
 - [TODO.md](TODO.md)
