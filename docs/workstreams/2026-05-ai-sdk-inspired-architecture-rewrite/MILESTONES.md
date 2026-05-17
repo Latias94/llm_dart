@@ -468,3 +468,36 @@ Current status:
   `GooglePromptPartMetadata` now own the deeper prompt projection behaviours,
   while `GooglePromptMessageEncoder` keeps message-role dispatch. See
   `18-google-prompt-projection.md`.
+
+## M20 - OpenAI Responses Stream Event Projection
+
+Goals:
+
+- deepen OpenAI Responses stream event decoding without changing public API or
+  stream event wire behaviour
+- keep `decodeOpenAIResponsesStreamChunk` as the stable event-router seam
+- split text/reasoning lifecycle, source annotation, output item, custom event,
+  and MCP stream projection into separate provider-owned modules
+- preserve OpenAI Responses typed options, source de-duplication, MCP approval
+  events, partial-image custom events, logprobs metadata, and finish behaviour
+
+Acceptance criteria:
+
+- `openai_responses_stream_event_codec.dart` no longer owns provider event
+  projection implementation inline
+- existing stream codec and fixture-contract tests remain unchanged in
+  expected behaviour
+- focused tests cover output item completion and content-part logprobs
+  aggregation
+- migration/change notes document that the refactor is behaviour-preserving
+
+Current status:
+
+- complete; `openai_responses_text_reasoning_stream_projection.dart`,
+  `openai_responses_output_item_stream_projection.dart`,
+  `openai_responses_source_annotation_stream_projection.dart`,
+  `openai_responses_custom_stream_projection.dart`, and
+  `openai_responses_mcp_stream_projection.dart` now own the deeper stream
+  projection behaviours, while `openai_responses_stream_event_codec.dart`
+  keeps top-level chunk dispatch. See
+  `19-openai-responses-stream-event-projection.md`.

@@ -451,6 +451,104 @@ void main() {
       );
     });
 
+    test('maps message output item completion to text end without custom event',
+        () {
+      const codec = OpenAIResponsesCodec();
+      final state = OpenAIResponsesStreamState();
+      final events = <LanguageModelStreamEvent>[];
+
+      for (final chunk in <Map<String, Object?>>[
+        {
+          'type': 'response.output_item.added',
+          'output_index': 0,
+          'item': {
+            'id': 'msg_done',
+            'type': 'message',
+            'status': 'in_progress',
+          },
+        },
+        {
+          'type': 'response.output_item.done',
+          'output_index': 0,
+          'item': {
+            'id': 'msg_done',
+            'type': 'message',
+            'status': 'completed',
+          },
+        },
+      ]) {
+        events.addAll(codec.decodeStreamChunk(chunk, state));
+      }
+
+      expect(events.whereType<TextStartEvent>().single.id, 'msg_done');
+      expect(events.whereType<TextEndEvent>().single.id, 'msg_done');
+      expect(events.whereType<CustomEvent>(), isEmpty);
+    });
+
+    test('collects content_part.done logprobs into finish metadata', () {
+      const codec = OpenAIResponsesCodec();
+      final state = OpenAIResponsesStreamState();
+      final events = <LanguageModelStreamEvent>[];
+
+      for (final chunk in <Map<String, Object?>>[
+        {
+          'type': 'response.content_part.done',
+          'item_id': 'msg_logprobs',
+          'output_index': 0,
+          'content_index': 0,
+          'part': {
+            'type': 'output_text',
+            'text': 'Hello',
+            'logprobs': [
+              {
+                'token': 'Hello',
+                'logprob': -0.1,
+              },
+            ],
+          },
+        },
+        {
+          'type': 'response.completed',
+          'response': {
+            'id': 'resp_logprobs',
+            'model': 'gpt-4.1-mini',
+            'created_at': 1710000000,
+            'status': 'completed',
+            'usage': {
+              'input_tokens': 1,
+              'output_tokens': 1,
+              'total_tokens': 2,
+            },
+          },
+        },
+      ]) {
+        events.addAll(codec.decodeStreamChunk(chunk, state));
+      }
+
+      final textEnd = events.whereType<TextEndEvent>().single;
+      expect(textEnd.id, 'msg_logprobs');
+      expect(
+        textEnd.providerMetadata?.namespace('openai'),
+        containsPair('logprobs', [
+          {
+            'token': 'Hello',
+            'logprob': -0.1,
+          },
+        ]),
+      );
+
+      final finish = events.whereType<FinishEvent>().single;
+      expect(
+        finish.providerMetadata?.namespace('openai'),
+        containsPair('logprobs', [
+          {
+            'token': 'Hello',
+            'logprob': -0.1,
+          },
+        ]),
+      );
+    });
+
     test(
         'maps content_part.done annotations without duplicate sources and preserves annotation metadata on text-end',
         () {

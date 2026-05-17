@@ -193,6 +193,10 @@ The detailed rebaseline is tracked in
   - M19 implementation note for splitting Google prompt projection into user
     binary encoding, assistant replay projection, tool replay projection, and
     replay metadata helpers.
+- [19-openai-responses-stream-event-projection.md](19-openai-responses-stream-event-projection.md)
+  - M20 implementation note for splitting OpenAI Responses stream event
+    projection into text/reasoning, output item, source annotation, custom
+    event, and MCP modules.
 - [MILESTONES.md](MILESTONES.md)
   - Milestones, acceptance criteria, and status tracking.
 - [TODO.md](TODO.md)

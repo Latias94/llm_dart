@@ -135,3 +135,5 @@
   modules
 - [x] Split Google prompt projection into user binary encoding, assistant
   replay projection, tool replay projection, and replay metadata helpers
+- [x] Split OpenAI Responses stream event projection into text/reasoning,
+  output item, source annotation, custom event, and MCP projection modules
