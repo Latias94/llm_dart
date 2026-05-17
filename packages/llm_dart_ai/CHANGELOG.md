@@ -20,6 +20,9 @@
 - Split generate text runner lifecycle support into active run state and
   finish/error/abort closure modules while preserving non-streaming runner
   behavior.
+- Split structured output runner lifecycle support into final parse/error
+  handling and streaming partial projection modules while preserving output
+  runner behavior.
 
 ## [0.11.0-alpha.1] - 2026-05-12
 

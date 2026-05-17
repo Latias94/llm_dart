@@ -129,6 +129,20 @@
 - [x] Add a focused regression test for cancellation before provider generation
 - [x] Document the generate text runner lifecycle split and changelog note
 
+## Output Runner Lifecycle Follow-Up
+
+- [x] Compare output runner shape against `repo-ref/ai` generate-object and
+  stream-object lifecycle layers
+- [x] Keep `generateOutput`, `streamOutput`, `streamOutputResult`,
+  `generateObject`, and `streamObject` as the public structured output runtime
+  seam while moving parse lifecycle and stream partial projection into focused
+  modules
+- [x] Preserve response format injection, response format conflict rejection,
+  final parse error wrapping, text event forwarding, partial output
+  suppression, and element event behavior
+- [x] Add a focused regression test for duplicate partial output suppression
+- [x] Document the output runner lifecycle split and changelog note
+
 ## Provider Options And Metadata
 
 - [x] Define the canonical typed provider options shape in

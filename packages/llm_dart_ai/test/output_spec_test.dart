@@ -438,6 +438,56 @@ void main() {
       expect(resultEvent.result.output, 'hello');
     });
 
+    test('suppresses duplicate partial outputs during streaming', () async {
+      final model = _RecordingLanguageModel(
+        generateResult: GenerateTextResult(
+          content: const [
+            TextContentPart('unused'),
+          ],
+          finishReason: FinishReason.stop,
+        ),
+        streamEvents: const [
+          TextStartEvent(id: 'text_1'),
+          TextDeltaEvent(id: 'text_1', delta: '{"answer":"ok"}'),
+          TextDeltaEvent(id: 'text_1', delta: ' '),
+          TextEndEvent(id: 'text_1'),
+          FinishEvent(
+            finishReason: FinishReason.stop,
+          ),
+        ],
+      );
+
+      final events = await streamOutput<String>(
+        model: model,
+        prompt: [
+          UserPromptMessage.text('Return JSON.'),
+        ],
+        outputSpec: ObjectOutputSpec<String>(
+          schema: JsonSchema.object(
+            properties: const {
+              'answer': {'type': 'string'},
+            },
+            required: const ['answer'],
+          ),
+          decode: (json) => json['answer']! as String,
+        ),
+      ).toList();
+
+      final partialEvents = events
+          .whereType<OutputPartialEvent<String>>()
+          .toList(growable: false);
+      expect(partialEvents, hasLength(1));
+      expect(
+        partialEvents.single.partialOutput,
+        {
+          'answer': 'ok',
+        },
+      );
+
+      final resultEvent = events.last as OutputResultEvent<String>;
+      expect(resultEvent.result.output, 'ok');
+    });
+
     test('emits partial array outputs with only completed decoded elements',
         () async {
       final model = _RecordingLanguageModel(

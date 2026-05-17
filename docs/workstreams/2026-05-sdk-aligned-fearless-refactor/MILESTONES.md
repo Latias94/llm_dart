@@ -357,3 +357,31 @@ Exit gate:
 - generate runner focused tests, text call tests, core compatibility generate
   runner tests, package analysis, workspace analysis, and whitespace checks
   pass.
+
+## M15 - Post-Closure Output Runner Lifecycle Split
+
+Goals:
+
+- align structured output runner internals with the reference generate-object
+  and stream-object lifecycle layers
+- keep output runner public entrypoints as the stable structured output runtime
+  seam
+- improve locality for response format injection, final parse/error handling,
+  and streaming partial projection
+
+Acceptance criteria:
+
+- response format conflict validation and injection live outside the public
+  output runner module
+- structured output context construction, final parse result construction, and
+  validation error diagnostics live outside the public output runner module
+- streaming partial parse, duplicate suppression, and element projection live
+  outside the public output runner module
+- `generateOutput`, `streamOutput`, `streamOutputResult`, `generateObject`, and
+  `streamObject` behavior stays unchanged
+
+Exit gate:
+
+- output focused tests, text call tests, generate/stream runner tests, core
+  compatibility tests, package analysis, workspace analysis, and whitespace
+  checks pass.
