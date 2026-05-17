@@ -199,6 +199,22 @@
   codec, and result codec tests
 - [x] Document the Google language model orchestration split and changelog note
 
+## Anthropic Language Model Orchestration Follow-Up
+
+- [x] Compare Anthropic provider model shape against `repo-ref/ai` Anthropic
+  language model, prompt conversion, tool preparation, and HTTP dispatch layers
+- [x] Keep `AnthropicLanguageModel` as the public provider adapter while
+  moving provider option/request encoding, beta/header transport projection,
+  generate response decoding, stream chunk decoding, and token-count response
+  decoding into focused modules
+- [x] Preserve request warnings, messages/count-tokens URI projection,
+  beta/header merging, call options, raw chunk forwarding, token-count result
+  behavior, and streaming error behavior
+- [x] Verify focused Anthropic language model, Messages codec, stream codec,
+  result codec, request option policy, and fixture contract tests
+- [x] Document the Anthropic language model orchestration split and changelog
+  note
+
 ## Provider Options And Metadata
 
 - [x] Define the canonical typed provider options shape in

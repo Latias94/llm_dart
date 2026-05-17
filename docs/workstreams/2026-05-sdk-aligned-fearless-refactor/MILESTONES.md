@@ -496,3 +496,33 @@ Exit gate:
 
 - focused Google language model, GenerateContent codec, stream codec, result
   codec tests, package analysis, workspace analysis, and whitespace checks pass.
+
+## M20 - Post-Closure Anthropic Language Model Orchestration Split
+
+Goals:
+
+- align Anthropic provider adapter orchestration with the reference Anthropic
+  language model, prompt conversion, tool preparation, and HTTP dispatch layers
+- keep `AnthropicLanguageModel` as the stable provider-facing model adapter
+- improve locality for request preparation, beta/header transport projection,
+  non-streaming response decode, stream chunk decode, and token-count decode
+
+Acceptance criteria:
+
+- provider option resolution and Messages request encoding live outside the
+  main model adapter
+- token-count request encoding and token-count response decoding live outside
+  the main model adapter
+- messages/count-tokens route URI, headers, beta features, call options, and
+  response type projection live outside the main model adapter
+- generate response decoding lives outside the main model adapter
+- stream chunk decoding, raw chunk forwarding, and stream state creation live
+  outside the main model adapter
+- existing Anthropic request, warning, beta/header, response, stream,
+  token-count, timeout, retry, cancellation, and error behavior stays unchanged
+
+Exit gate:
+
+- focused Anthropic language model, Messages codec, stream codec, result codec,
+  request option policy, fixture contract tests, package analysis, workspace
+  analysis, and whitespace checks pass.

@@ -233,6 +233,9 @@ The workstream is complete only when:
 - [18-google-language-model-orchestration-boundary.md](18-google-language-model-orchestration-boundary.md)
   - Google language model orchestration split into request, transport,
     response, and stream modules.
+- [19-anthropic-language-model-orchestration-boundary.md](19-anthropic-language-model-orchestration-boundary.md)
+  - Anthropic language model orchestration split into request, transport,
+    response, stream, and token-count modules.
 - [release-readiness-report.txt](release-readiness-report.txt)
   - Full release-readiness gate result, including consumer smoke, publish
     dry-run, and pub.dev version availability.

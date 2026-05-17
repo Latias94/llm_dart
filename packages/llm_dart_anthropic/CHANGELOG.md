@@ -10,6 +10,10 @@
   provider-local replay JSON and execution result modules. Public replay API,
   custom prompt/content/event semantics, file-handle behavior, and wire shape
   are unchanged.
+- Anthropic language-model orchestration now delegates request preparation,
+  beta/header transport projection, generate response decoding, stream chunk
+  decoding, and token-count response decoding to focused internal modules while
+  preserving provider behavior.
 
 ## [0.11.0-alpha.1] - 2026-05-12
 
