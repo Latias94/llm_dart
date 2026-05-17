@@ -181,6 +181,10 @@ The detailed rebaseline is tracked in
   - M16 implementation note for splitting Ollama chat request encoding into
     deeper options policy, prompt projection, binary encoding, and request
     assembly modules.
+- [16-anthropic-request-options-policy.md](16-anthropic-request-options-policy.md)
+  - M17 implementation note for splitting Anthropic Messages request option
+    encoding into thinking policy, beta inference, token-count projection, and
+    request assembly modules.
 - [MILESTONES.md](MILESTONES.md)
   - Milestones, acceptance criteria, and status tracking.
 - [TODO.md](TODO.md)

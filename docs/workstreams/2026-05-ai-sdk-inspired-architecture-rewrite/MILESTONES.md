@@ -385,3 +385,31 @@ Current status:
   `OllamaChatPromptProjectionCodec`, and `OllamaChatBinaryPartEncoder` now own
   the deeper request behaviours, while `OllamaChatRequestCodec` keeps final
   request assembly. See `15-ollama-chat-request-codec.md`.
+
+## M17 - Anthropic Request Options Policy
+
+Goals:
+
+- deepen Anthropic Messages request option encoding without changing public API
+  or wire shape
+- split extended-thinking/sampling policy, beta feature inference, token-count
+  request projection, and request body assembly into separate provider-owned
+  modules
+- preserve typed `AnthropicGenerateTextOptions`,
+  `AnthropicChatModelSettings`, beta headers, and token-count behaviour
+
+Acceptance criteria:
+
+- `AnthropicRequestOptionsEncoder` no longer owns thinking policy, beta
+  feature inference, and token-count projection inline
+- Messages request body and request metadata golden fixtures remain unchanged
+- focused tests cover the new policy seams
+- migration/change notes document that the refactor is behaviour-preserving
+
+Current status:
+
+- complete; `AnthropicThinkingPolicy`,
+  `AnthropicBetaFeatureInference`, and
+  `AnthropicTokenCountRequestProjector` now own the deeper request option
+  behaviours, while `AnthropicRequestOptionsEncoder` keeps final request
+  assembly. See `16-anthropic-request-options-policy.md`.

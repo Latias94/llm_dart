@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+- Refactored Anthropic Messages request option encoding into internal thinking
+  policy, beta feature inference, token-count projection, and request assembly
+  modules. Public settings, invocation options, beta headers, token-count
+  behaviour, and wire output are unchanged.
+
 ## [0.11.0-alpha.1] - 2026-05-12
 
 - Alpha release of the Anthropic provider package.

@@ -128,3 +128,5 @@
   provider-owned seam
 - [x] Split Ollama chat request encoding into options policy, prompt
   projection, binary prompt encoding, and request assembly modules
+- [x] Split Anthropic Messages request option encoding into thinking policy,
+  beta feature inference, token-count projection, and request assembly modules
