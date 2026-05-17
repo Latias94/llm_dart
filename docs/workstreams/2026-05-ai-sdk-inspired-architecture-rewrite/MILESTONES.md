@@ -284,3 +284,27 @@ Current status:
   family-specific capability decisions for OpenAI, OpenRouter, DeepSeek, and
   xAI, while `openai_model_describer.dart` stays the public assembly point.
   See `11-openai-family-capability-policy.md`.
+
+## M13 - Chat Completions Request Policy
+
+Goals:
+
+- move OpenAI/DeepSeek Chat Completions request-field policy out of the shared
+  codec
+- keep shared Chat Completions wire-code reusable across OpenAI-family profiles
+- preserve typed provider options and current wire output
+
+Acceptance criteria:
+
+- `openai_chat_completions_codec.dart` no longer owns OpenAI/DeepSeek
+  provider-specific field conditionals
+- OpenAI reasoning fields and compatibility cleanup remain covered by tests
+- DeepSeek typed options and reasoner cleanup remain covered by tests
+- request policy decision and verification are documented
+
+Current status:
+
+- complete; `openAIChatCompletionsRequestPolicyFor(providerNamespace)` owns
+  provider-specific Chat Completions request fields and compatibility cleanup,
+  while the shared codec keeps common body assembly and decoding. See
+  `12-openai-chat-completions-request-policy.md`.

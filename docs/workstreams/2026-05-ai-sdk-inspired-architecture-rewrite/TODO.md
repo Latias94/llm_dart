@@ -120,3 +120,5 @@
   provider-declared registry facet support
 - [x] Move OpenAI-family capability description details behind a profile-owned
   policy seam
+- [x] Move OpenAI-family Chat Completions provider-specific request-field
+  policy out of the shared codec

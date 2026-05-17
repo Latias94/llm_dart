@@ -11,6 +11,9 @@
 - OpenAI-family model capability descriptions now route through a profile-owned
   capability policy seam, which keeps the public describer stable while
   separating OpenAI, DeepSeek, OpenRouter, and xAI capability differences.
+- Chat Completions request encoding now delegates OpenAI/DeepSeek-specific
+  request fields and compatibility cleanup to an internal request policy seam
+  while preserving existing typed provider option behaviour.
 
 ## [0.11.0-alpha.1] - 2026-05-12
 

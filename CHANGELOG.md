@@ -21,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - OpenAI-family model capability descriptions now route through a profile-owned
   capability policy seam instead of keeping profile-specific rules inline in
   the public describer.
+- OpenAI-family Chat Completions request encoding now delegates OpenAI and
+  DeepSeek provider-specific request-field policy to an internal policy seam
+  while preserving the public typed options.
 
 ## [0.11.0-alpha.1] - 2026-05-12
 

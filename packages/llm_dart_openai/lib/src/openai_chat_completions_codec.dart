@@ -2,6 +2,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'openai_chat_completions_request_options_codec.dart';
 import 'openai_chat_completions_request_prompt_codec.dart';
+import 'openai_chat_completions_request_policy.dart';
 import 'openai_chat_completions_request_tool_codec.dart';
 import 'openai_chat_completions_stream_event_codec.dart';
 import 'openai_chat_completions_stream_result_codec.dart';
@@ -34,6 +35,9 @@ final class OpenAIChatCompletionsCodec {
   OpenAIChatCompletionsSupport get _support => OpenAIChatCompletionsSupport(
         providerNamespace: providerNamespace,
       );
+
+  OpenAIChatCompletionsRequestPolicy get _requestPolicy =>
+      openAIChatCompletionsRequestPolicyFor(providerNamespace);
 
   OpenAIChatCompletionsRequest encodeRequest({
     required String modelId,
@@ -80,13 +84,12 @@ final class OpenAIChatCompletionsCodec {
     required ResolvedOpenAIGenerateTextOptions providerOptions,
     required bool stream,
   }) {
-    final requestOptionsCodec = OpenAIChatCompletionsRequestOptionsCodec(
-      providerNamespace: providerNamespace,
-    );
+    const requestOptionsCodec = OpenAIChatCompletionsRequestOptionsCodec();
     final promptCodec = OpenAIChatCompletionsPromptCodec(
       providerNamespace: providerNamespace,
     );
     const toolCodec = OpenAIChatCompletionsRequestToolCodec();
+    final requestPolicy = _requestPolicy;
 
     requestOptionsCodec.validateUnsupportedProviderOptions(providerOptions);
 
@@ -96,14 +99,6 @@ final class OpenAIChatCompletionsCodec {
       modelId,
       providerOptions.common,
     );
-    final deepseekOptions =
-        providerNamespace == 'deepseek' ? providerOptions.deepseek : null;
-    final deepseekLogprobs = deepseekOptions?.logprobs;
-    final deepseekTopLogprobs = deepseekOptions?.topLogprobs;
-    final deepseekFrequencyPenalty = deepseekOptions?.frequencyPenalty;
-    final deepseekPresencePenalty = deepseekOptions?.presencePenalty;
-    final deepseekResponseFormat = deepseekOptions?.responseFormat;
-    final commonLogprobs = providerOptions.common.logprobs;
     final sharedReasoningEffort = mapSharedOpenAIReasoningEffort(
       options.reasoning,
       warnings: warnings,
@@ -156,27 +151,18 @@ final class OpenAIChatCompletionsCodec {
         'verbosity': providerOptions.common.verbosity,
       if (providerOptions.common.user != null)
         'user': providerOptions.common.user,
-      if (providerNamespace == 'openai' && effectiveReasoningEffort != null)
-        'reasoning_effort': effectiveReasoningEffort.value,
-      if (providerNamespace == 'openai' &&
-          providerOptions.common.maxCompletionTokens != null)
-        'max_completion_tokens': providerOptions.common.maxCompletionTokens,
-      if (deepseekLogprobs != null) 'logprobs': deepseekLogprobs,
-      if (deepseekLogprobs == null && commonLogprobs != null) 'logprobs': true,
-      if (deepseekTopLogprobs != null) 'top_logprobs': deepseekTopLogprobs,
-      if (deepseekTopLogprobs == null && commonLogprobs != null)
-        'top_logprobs': requestOptionsCodec.encodeChatTopLogProbs(
-          commonLogprobs,
-        ),
-      if (providerNamespace == 'deepseek' && deepseekFrequencyPenalty != null)
-        'frequency_penalty': deepseekFrequencyPenalty,
-      if (providerNamespace == 'deepseek' && deepseekPresencePenalty != null)
-        'presence_penalty': deepseekPresencePenalty,
       if (providerOptions.xaiSearch != null)
         'search_parameters': providerOptions.xaiSearch!.toJson(),
     };
 
-    requestOptionsCodec.applyCompatibilityRules(
+    requestPolicy.addProviderRequestFields(
+      modelId: modelId,
+      body: body,
+      providerOptions: providerOptions,
+      effectiveReasoningEffort: effectiveReasoningEffort,
+    );
+
+    requestPolicy.applyCompatibilityRules(
       modelId: modelId,
       commonOptions: providerOptions.common.copyWith(
         reasoningEffort: effectiveReasoningEffort,
@@ -201,9 +187,11 @@ final class OpenAIChatCompletionsCodec {
       body['response_format'] = encodeOpenAIJsonSchemaResponseFormat(
         responseFormat,
       );
-    } else if (providerNamespace == 'deepseek' &&
-        deepseekResponseFormat != null) {
-      body['response_format'] = deepseekResponseFormat;
+    } else {
+      requestPolicy.addProviderResponseFormat(
+        body: body,
+        providerOptions: providerOptions,
+      );
     }
 
     return OpenAIChatCompletionsRequest(

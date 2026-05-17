@@ -168,6 +168,9 @@ The detailed rebaseline is tracked in
 - [11-openai-family-capability-policy.md](11-openai-family-capability-policy.md)
   - M12 implementation note for moving OpenAI-family capability description
     policy behind a profile-owned seam.
+- [12-openai-chat-completions-request-policy.md](12-openai-chat-completions-request-policy.md)
+  - M13 implementation note for moving OpenAI-family Chat Completions request
+    field policy out of the shared codec.
 - [MILESTONES.md](MILESTONES.md)
   - Milestones, acceptance criteria, and status tracking.
 - [TODO.md](TODO.md)
