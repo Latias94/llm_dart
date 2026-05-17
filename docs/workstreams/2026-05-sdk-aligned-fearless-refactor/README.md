@@ -224,6 +224,9 @@ The workstream is complete only when:
 - [15-output-spec-strategy-boundary.md](15-output-spec-strategy-boundary.md)
   - Output spec strategy split into output-type-owned modules while preserving
     public `OutputSpec` exports and structured output behavior.
+- [16-output-foundation-json-boundary.md](16-output-foundation-json-boundary.md)
+  - Output foundation and JSON support split into focused type, parsing,
+    validation, value, and diagnostics modules.
 - [release-readiness-report.txt](release-readiness-report.txt)
   - Full release-readiness gate result, including consumer smoke, publish
     dry-run, and pub.dev version availability.

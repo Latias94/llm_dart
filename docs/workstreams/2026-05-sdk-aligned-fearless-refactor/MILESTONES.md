@@ -412,3 +412,30 @@ Exit gate:
 
 - focused output spec tests, text call tests, core compatibility tests, package
   analysis, workspace analysis, and whitespace checks pass.
+
+## M17 - Post-Closure Output Foundation JSON Split
+
+Goals:
+
+- align structured output support ownership with the reference parse,
+  validation, stream event, and result facade layers
+- keep `output_spec_foundation.dart` and `output_spec_json.dart` as stable
+  compatibility facades
+- improve locality for output support types, JSON parsing, validation, value
+  handling, and diagnostics
+
+Acceptance criteria:
+
+- decoder typedefs, structured output context, output result, and output stream
+  events live in focused modules
+- JSON text decoding, object coercion, JSON value freeze/equality, schema and
+  choice validation, and usage diagnostics live in focused modules
+- the existing public `llm_dart_ai` and `llm_dart_core` output names continue
+  to resolve
+- JSON parse error messages, partial output behavior, diagnostics, and output
+  runner behavior stay unchanged
+
+Exit gate:
+
+- focused output spec tests, text call tests, core compatibility tests, package
+  analysis, workspace analysis, and whitespace checks pass.

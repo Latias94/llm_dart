@@ -157,6 +157,20 @@
   after the split
 - [x] Document the output spec strategy split and changelog note
 
+## Output Foundation JSON Follow-Up
+
+- [x] Compare structured output support shape against `repo-ref/ai`
+  parse/validate, output strategy, stream object, and stream result layers
+- [x] Keep `output_spec_foundation.dart` and `output_spec_json.dart` as
+  compatibility facades while moving support responsibilities into focused
+  modules
+- [x] Preserve decoder typedefs, context/result/event types, JSON text decode,
+  object coercion, JSON freeze/equality, schema validation, choice
+  normalization, and usage diagnostics behavior
+- [x] Verify focused `llm_dart_ai` and `llm_dart_core` output/text call tests
+  after the split
+- [x] Document the output foundation/JSON support split and changelog note
+
 ## Provider Options And Metadata
 
 - [x] Define the canonical typed provider options shape in

@@ -25,6 +25,9 @@
   runner behavior.
 - Split output spec strategies into output-type-owned modules while preserving
   public `OutputSpec` exports and structured output behavior.
+- Split output foundation and JSON support into focused type, parsing,
+  validation, value, and diagnostics modules while preserving public exports and
+  output behavior.
 
 ## [0.11.0-alpha.1] - 2026-05-12
 
