@@ -645,3 +645,37 @@ Exit gate:
 
 - focused Google image model and model describer tests, package analysis,
   workspace analysis, and whitespace checks pass.
+
+## M25 - Post-Closure OpenAI Image Model Boundary Split
+
+Goals:
+
+- align OpenAI image provider adapter orchestration with the reference OpenAI
+  image model and provider-utils HTTP dispatch layers
+- keep `OpenAIImageModel` as the stable provider-facing image adapter
+- improve locality for generation/edit request validation, JSON body
+  construction, multipart body construction, transport projection, and response
+  decoding
+
+Acceptance criteria:
+
+- settings and provider option resolution live outside the main image model
+  adapter
+- max images per call and response-format policy live outside the main image
+  model adapter
+- generation and edit validation live outside the main image model adapter
+- generation JSON request body construction and edit multipart body
+  construction live outside the main image model adapter
+- generation and edit URI, default/per-call headers, call options, and response
+  type projection live outside the main image model adapter
+- image response decoding, usage metadata, per-image token distribution,
+  response metadata, and OpenAI provider metadata construction live outside the
+  main image model adapter
+- existing OpenAI image provider options, generation/edit wire shape, multipart
+  field order, timeout, retry, cancellation, response metadata, usage, provider
+  metadata, and validation behavior stay unchanged
+
+Exit gate:
+
+- focused OpenAI image model, model describer, and entrypoint tests, package
+  analysis, workspace analysis, and whitespace checks pass.

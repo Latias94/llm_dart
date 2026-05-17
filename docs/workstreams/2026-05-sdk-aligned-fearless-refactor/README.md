@@ -244,6 +244,8 @@ The workstream is complete only when:
   - Ollama embedding model split into request, transport, and response modules.
 - [23-google-image-model-boundary.md](23-google-image-model-boundary.md)
   - Google image model split into request, transport, and response modules.
+- [24-openai-image-model-boundary.md](24-openai-image-model-boundary.md)
+  - OpenAI image model split into request, transport, and response modules.
 - [release-readiness-report.txt](release-readiness-report.txt)
   - Full release-readiness gate result, including consumer smoke, publish
     dry-run, and pub.dev version availability.

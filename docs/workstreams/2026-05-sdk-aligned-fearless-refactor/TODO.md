@@ -275,6 +275,23 @@
 - [x] Verify focused Google image and model describer tests after the split
 - [x] Document the Google image model boundary split and changelog note
 
+## OpenAI Image Model Boundary Follow-Up
+
+- [x] Compare OpenAI image model shape against `repo-ref/ai` OpenAI image
+  model, image options, and provider-utils HTTP dispatch layers
+- [x] Keep `OpenAIImageModel` as the public provider adapter while moving
+  settings/provider option resolution, generation/edit request validation,
+  JSON request body construction, multipart edit body construction, transport
+  request projection, and response/provider metadata decoding into focused
+  modules
+- [x] Preserve `providerId`, `capabilityProfile`, `maxImagesPerCall`,
+  `imageGenerationUri`, `imageEditUri`, `defaultHeaders`, headers, call
+  options, generation/edit wire shape, response-format policy, usage metadata,
+  response metadata, provider metadata, and provider option validation behavior
+- [x] Verify focused OpenAI image, model describer, and entrypoint tests after
+  the split
+- [x] Document the OpenAI image model boundary split and changelog note
+
 ## Provider Options And Metadata
 
 - [x] Define the canonical typed provider options shape in

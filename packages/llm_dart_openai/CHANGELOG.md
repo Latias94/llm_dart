@@ -24,6 +24,10 @@
   resolution, request validation/body construction, transport request
   projection, and indexed response decoding to focused internal modules while
   preserving provider behavior.
+- OpenAI image-model orchestration now delegates generation/edit validation,
+  JSON and multipart request construction, transport request projection, and
+  response/provider metadata decoding to focused internal modules while
+  preserving provider behavior.
 - OpenAI language-model orchestration now delegates route-aware request
   encoding, transport request construction, generate response decoding, and
   stream chunk decoding to focused internal modules while preserving provider
