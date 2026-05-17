@@ -48,8 +48,8 @@ Future<void> main() async {
 
   final result = await ai.generateTextCall(
     model: model,
-    prompt: [
-      ai.UserPromptMessage.text('Summarize the design in three bullets.'),
+    messages: [
+      ai.UserModelMessage.text('Summarize the design in three bullets.'),
     ],
   );
 
@@ -73,8 +73,8 @@ Future<void> main() async {
 
   final result = await ai.generateTextCall(
     model: model,
-    prompt: [
-      ai.UserPromptMessage.text('Solve this logic puzzle step by step.'),
+    messages: [
+      ai.UserModelMessage.text('Solve this logic puzzle step by step.'),
     ],
     callOptions: const ai.CallOptions(
       providerOptions: AnthropicGenerateTextOptions(

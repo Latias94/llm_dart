@@ -39,7 +39,7 @@ Future<void> main() async {
 
   final result = await ai.generateTextCall(
     model: model,
-    prompt: [ai.UserPromptMessage.text('Write a short haiku about Dart.')],
+    messages: [ai.UserModelMessage.text('Write a short haiku about Dart.')],
   );
 
   print(result.text);

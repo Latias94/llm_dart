@@ -81,8 +81,8 @@ Future<void> main() async {
 
   final result = await ai.generateTextCall(
     model: model,
-    prompt: [
-      ai.UserPromptMessage.text(
+    messages: [
+      ai.UserModelMessage.text(
         'Summarize the release plan in three short bullets.',
       ),
     ],
@@ -109,8 +109,8 @@ Future<void> main() async {
 
   final result = await ai.generateTextCall(
     model: model,
-    prompt: [
-      ai.UserPromptMessage.text('Find recent Dart release highlights.'),
+    messages: [
+      ai.UserModelMessage.text('Find recent Dart release highlights.'),
     ],
     callOptions: const ai.CallOptions(
       providerOptions: OpenAIGenerateTextOptions(

@@ -34,7 +34,8 @@
 - [2026-05-fearless-refactor-wave-2](2026-05-fearless-refactor-wave-2/README.md)
   - Active post-alpha planning workstream that freezes the second-wave order
     for alpha handoff, release gates, legacy/root/core containment, and
-    evidence-based `llm_dart_provider_utils` extraction.
+    evidence-based `llm_dart_provider_utils` extraction; currently waiting on
+    the maintainer release posture decision for `0.11.0-alpha.1`.
 - [2026-05-provider-implementation-kit-and-codec-boundaries](2026-05-provider-implementation-kit-and-codec-boundaries/README.md)
   - Active provider-internal architecture workstream that reduces large codec,
     request-builder, stream-parser, replay, and native-helper hotspots while

@@ -16,20 +16,7 @@ This workstream turns the next phase into an explicit post-alpha plan:
 
 ## Goal
 
-Prepare the second fearless refactor wave around evidence from the alpha line,
-not package-count parity with `repo-ref/ai`.
-
-The target posture is:
-
-- release gates prove root and focused packages, not just the root test suite
-- `legacy.dart`, `LLMBuilder`, root provider constructors, and `createProvider`
-  stay explicitly classified before any removal work starts
-- root `llm_dart` remains a facade and compatibility host, not a new
-  implementation home
-- `llm_dart_core` remains a compatibility shell unless a later breaking window
-  makes its exit cheaper than keeping it
-- `llm_dart_provider_utils` is extracted only after repeated provider package
-  duplication proves a stable helper contract
+See [GOAL.md](GOAL.md) for the canonical goal text and completion definition.
 
 ## Scope
 
@@ -75,8 +62,33 @@ The workstream is complete when:
 
 ## Documents
 
+- [GOAL.md](GOAL.md)
+  - Canonical goal text, completion definition, non-goals, and decision rules.
 - [00-priority-map.md](00-priority-map.md)
   - Ordered second-wave priorities, stop conditions, and non-goals.
+- [01-architecture-blueprint.md](01-architecture-blueprint.md)
+  - Source-versus-reference blueprint for the next wave after the completed
+    provider/runtime stream boundary.
+- [02-modern-surface-audit.md](02-modern-surface-audit.md)
+  - Audit of docs and examples that still lead with provider-facing or
+    compatibility APIs.
+- [03-root-core-compatibility-inventory.md](03-root-core-compatibility-inventory.md)
+  - Root and `llm_dart_core` compatibility surface classification with
+    blockers and review windows.
+- [04-provider-helper-duplication-inventory.md](04-provider-helper-duplication-inventory.md)
+  - Provider helper duplication inventory and provider-utils extraction
+    decision.
+- [05-goal-completion-audit.md](05-goal-completion-audit.md)
+  - Prompt-to-artifact completion audit for the canonical Wave 2 goal.
+- [06-modern-surface-docs-cleanup.md](06-modern-surface-docs-cleanup.md)
+  - Docs-only cleanup that moves default provider examples to `messages:` while
+    preserving provider-contract `PromptMessage` usage for advanced material.
+- [07-release-posture-decision-gate.md](07-release-posture-decision-gate.md)
+  - Maintainer decision gate that closes the remaining publish versus
+    non-publish evidence gap before scheduling further refactors.
+- [08-consumer-smoke-modern-surface.md](08-consumer-smoke-modern-surface.md)
+  - Small implementation milestone that removes provider-prompt usage from the
+    split-package consumer smoke program.
 - [MILESTONES.md](MILESTONES.md)
   - Milestones and acceptance criteria.
 - [TODO.md](TODO.md)

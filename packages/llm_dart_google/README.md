@@ -65,8 +65,8 @@ Future<void> main() async {
 
   final result = await ai.generateTextCall(
     model: model,
-    prompt: [
-      ai.UserPromptMessage.text('Summarize Gemini in one paragraph.'),
+    messages: [
+      ai.UserModelMessage.text('Summarize Gemini in one paragraph.'),
     ],
   );
 
@@ -95,8 +95,8 @@ Future<void> main() async {
 
   final result = await ai.generateTextCall(
     model: model,
-    prompt: [
-      ai.UserPromptMessage.text('Explain why provider options stay typed.'),
+    messages: [
+      ai.UserModelMessage.text('Explain why provider options stay typed.'),
     ],
     callOptions: const ai.CallOptions(
       providerOptions: GoogleGenerateTextOptions(

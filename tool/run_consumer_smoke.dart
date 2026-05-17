@@ -1281,7 +1281,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart' as provider;
 import 'package:llm_dart_transport/llm_dart_transport.dart' as transport;
 
 Future<void> main() async {
-  final prompt = ai.UserPromptMessage.text('Say hello.');
+  final message = ai.UserModelMessage.text('Say hello.');
   final openAIModel = openai.openai(apiKey: 'test').chatModel('gpt-4.1-mini');
   final anthropicModel =
       anthropic.anthropic(apiKey: 'test').chatModel('claude-3-5-haiku-latest');
@@ -1304,7 +1304,7 @@ Future<void> main() async {
     ];
     const options = provider.GenerateTextOptions(maxOutputTokens: 16);
 
-    if (prompt.role != provider.PromptRole.user ||
+    if (message.role != ai.ModelMessageRole.user ||
         models.map((model) => model.providerId).join(',') !=
             'openai,anthropic,google,ollama' ||
         speechModel.providerId != 'elevenlabs' ||

@@ -330,6 +330,19 @@ void main() {
         isNot(contains('chatInput.message.role != provider.PromptRole.user')),
       );
     });
+
+    test('split package smoke uses modern app-facing messages', () {
+      expect(splitPackageConsumerSmokeProgram, contains('UserModelMessage'));
+      expect(splitPackageConsumerSmokeProgram, contains('ModelMessageRole'));
+      expect(
+        splitPackageConsumerSmokeProgram,
+        isNot(contains('UserPromptMessage')),
+      );
+      expect(
+        splitPackageConsumerSmokeProgram,
+        isNot(contains('PromptRole')),
+      );
+    });
   });
 
   group('resolveConsumerSmokePaths', () {
