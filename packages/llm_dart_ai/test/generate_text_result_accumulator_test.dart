@@ -219,6 +219,121 @@ void main() {
       expect(resultMetadata?['test'], containsPair('phase', 'input-error'));
     });
 
+    test('projects empty streamed tool input as null input', () async {
+      final result = await collectGenerateTextResult(
+        Stream<TextStreamEvent>.fromIterable([
+          const ToolInputStartEvent(
+            toolCallId: 'tool_1',
+            toolName: 'lookup',
+          ),
+          const ToolInputEndEvent(toolCallId: 'tool_1'),
+          const FinishEvent(finishReason: FinishReason.toolCalls),
+        ]),
+      );
+
+      final toolCall =
+          result.content.whereType<ToolCallContentPart>().single.toolCall;
+      expect(toolCall.input, isNull);
+    });
+
+    test('preserves invalid streamed tool input as raw text', () async {
+      final result = await collectGenerateTextResult(
+        Stream<TextStreamEvent>.fromIterable([
+          const ToolInputStartEvent(
+            toolCallId: 'tool_1',
+            toolName: 'lookup',
+          ),
+          const ToolInputDeltaEvent(
+            toolCallId: 'tool_1',
+            delta: '{"city":',
+          ),
+          const ToolInputEndEvent(toolCallId: 'tool_1'),
+          const FinishEvent(finishReason: FinishReason.toolCalls),
+        ]),
+      );
+
+      final toolCall =
+          result.content.whereType<ToolCallContentPart>().single.toolCall;
+      expect(toolCall.input, '{"city":');
+    });
+
+    test('merges provider metadata when tool input is replaced by tool call',
+        () async {
+      final result = await collectGenerateTextResult(
+        Stream<TextStreamEvent>.fromIterable([
+          const ToolInputStartEvent(
+            toolCallId: 'tool_1',
+            toolName: 'lookup',
+            providerMetadata: ProviderMetadata({
+              'test': {
+                'phase': 'input-start',
+                'shared': 'from-start',
+              },
+            }),
+          ),
+          const ToolInputDeltaEvent(
+            toolCallId: 'tool_1',
+            delta: '{"city":"paris"}',
+            providerMetadata: ProviderMetadata({
+              'test': {
+                'delta': true,
+              },
+            }),
+          ),
+          const ToolInputEndEvent(
+            toolCallId: 'tool_1',
+            providerMetadata: ProviderMetadata({
+              'test': {
+                'phase': 'input-end',
+              },
+            }),
+          ),
+          const ToolCallEvent(
+            toolCall: ToolCallContent(
+              toolCallId: 'tool_1',
+              toolName: 'lookup',
+              input: {'city': 'paris'},
+            ),
+            providerMetadata: ProviderMetadata({
+              'test': {
+                'shared': 'from-tool-call',
+                'toolCall': true,
+              },
+            }),
+          ),
+          const FinishEvent(finishReason: FinishReason.toolCalls),
+        ]),
+      );
+
+      final metadata = result.content
+          .whereType<ToolCallContentPart>()
+          .single
+          .providerMetadata;
+      expect(
+        metadata?.toJsonMap(),
+        {
+          'test': {
+            'phase': 'input-end',
+            'shared': 'from-tool-call',
+            'delta': true,
+            'toolCall': true,
+          },
+        },
+      );
+    });
+
+    test('throws when denied tool output arrives before a tool call', () async {
+      await expectLater(
+        collectGenerateTextResult(
+          Stream<TextStreamEvent>.fromIterable([
+            const ToolOutputDeniedEvent(toolCallId: 'tool_1'),
+            const FinishEvent(finishReason: FinishReason.stop),
+          ]),
+        ),
+        throwsStateError,
+      );
+    });
+
     test('throws when the stream ends before a finish event', () async {
       await expectLater(
         collectGenerateTextResult(

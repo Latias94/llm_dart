@@ -209,6 +209,9 @@ The workstream is complete only when:
 - [10-generate-text-runner-support-boundary.md](10-generate-text-runner-support-boundary.md)
   - Generate text runner support split into public facade, tool execution, and
     prompt replay modules.
+- [11-generate-text-result-accumulator-boundary.md](11-generate-text-result-accumulator-boundary.md)
+  - Generate text result accumulator split into content buffering, tool
+    projection, and lifecycle modules.
 - [release-readiness-report.txt](release-readiness-report.txt)
   - Full release-readiness gate result, including consumer smoke, publish
     dry-run, and pub.dev version availability.

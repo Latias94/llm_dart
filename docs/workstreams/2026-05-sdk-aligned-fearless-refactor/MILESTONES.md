@@ -274,3 +274,32 @@ Exit gate:
 
 - non-streaming runner tests, streaming runner tests, core compatibility tests,
   package analysis, workspace analysis, and whitespace checks pass.
+
+## M12 - Post-Closure Generate Text Result Accumulator Split
+
+Goals:
+
+- align stream result projection internals with the reference stream event and
+  result facade layers
+- keep `GenerateTextResultAccumulator` as the stable public result collection
+  seam
+- improve locality for content buffering, tool event projection, and lifecycle
+  result state
+
+Acceptance criteria:
+
+- content buffering lives outside the public accumulator facade
+- streamed tool input state and tool output projection live outside the public
+  accumulator facade
+- warnings, response metadata, finish state, provider metadata, usage, and
+  streamed errors live outside the public accumulator facade
+- `collectGenerateTextResult`, raw stream text calls, object output collection,
+  and stream runners keep their current behavior
+- `llm_dart_core` compatibility exports continue to resolve the same
+  accumulator names
+
+Exit gate:
+
+- accumulator focused tests, text runner tests, text call tests, core
+  compatibility tests, package analysis, workspace analysis, and whitespace
+  checks pass.

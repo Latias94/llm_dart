@@ -93,6 +93,18 @@
 - [x] Verify non-streaming and streaming runner focused tests after the split
 - [x] Document the runner support module split and changelog note
 
+## Generate Text Result Accumulator Follow-Up
+
+- [x] Compare accumulator shape against `repo-ref/ai` stream event and result
+  projection layers
+- [x] Keep `GenerateTextResultAccumulator` as the public facade while moving
+  content buffering, tool projection, and lifecycle state into focused modules
+- [x] Preserve `collectGenerateTextResult`, stream runner, text call, and object
+  output behavior
+- [x] Add focused regression tests for tool input decoding, metadata merge, and
+  denied output ordering
+- [x] Document the accumulator module split and changelog note
+
 ## Provider Options And Metadata
 
 - [x] Define the canonical typed provider options shape in
