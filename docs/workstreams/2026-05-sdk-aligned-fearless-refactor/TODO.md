@@ -171,6 +171,20 @@
   after the split
 - [x] Document the output foundation/JSON support split and changelog note
 
+## OpenAI Language Model Orchestration Follow-Up
+
+- [x] Compare OpenAI provider model shape against `repo-ref/ai` Responses and
+  Chat language model adapter layers
+- [x] Keep `OpenAILanguageModel` as the public provider adapter while moving
+  route-aware request encoding, transport request construction, generate
+  response decoding, and stream chunk decoding into focused modules
+- [x] Preserve route selection, warnings, headers, timeout, retries,
+  cancellation, raw chunk forwarding, generate decoding, and streaming error
+  behavior
+- [x] Verify focused OpenAI language model, Chat Completions mainline,
+  Responses codec, Responses stream codec, and Responses lifecycle tests
+- [x] Document the OpenAI language model orchestration split and changelog note
+
 ## Provider Options And Metadata
 
 - [x] Define the canonical typed provider options shape in

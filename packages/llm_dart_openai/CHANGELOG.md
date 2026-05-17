@@ -20,6 +20,10 @@
 - OpenAI Responses prompt conversion now delegates user media encoding,
   assistant replay projection, tool message projection, and replay policy to
   focused internal modules while preserving typed options and wire output.
+- OpenAI language-model orchestration now delegates route-aware request
+  encoding, transport request construction, generate response decoding, and
+  stream chunk decoding to focused internal modules while preserving provider
+  behavior.
 
 ## [0.11.0-alpha.1] - 2026-05-12
 

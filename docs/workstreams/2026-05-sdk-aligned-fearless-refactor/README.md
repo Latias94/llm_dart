@@ -227,6 +227,9 @@ The workstream is complete only when:
 - [16-output-foundation-json-boundary.md](16-output-foundation-json-boundary.md)
   - Output foundation and JSON support split into focused type, parsing,
     validation, value, and diagnostics modules.
+- [17-openai-language-model-orchestration-boundary.md](17-openai-language-model-orchestration-boundary.md)
+  - OpenAI language model orchestration split into route-aware request,
+    transport, response, and stream modules.
 - [release-readiness-report.txt](release-readiness-report.txt)
   - Full release-readiness gate result, including consumer smoke, publish
     dry-run, and pub.dev version availability.

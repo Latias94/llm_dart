@@ -413,6 +413,34 @@ Exit gate:
 - focused output spec tests, text call tests, core compatibility tests, package
   analysis, workspace analysis, and whitespace checks pass.
 
+## M18 - Post-Closure OpenAI Language Model Orchestration Split
+
+Goals:
+
+- align OpenAI provider adapter orchestration with the reference Responses and
+  Chat language model layers
+- keep `OpenAILanguageModel` as the stable provider-facing model adapter
+- improve locality for request encoding dispatch, transport projection,
+  non-streaming response decode, and stream chunk decode
+
+Acceptance criteria:
+
+- Responses and Chat Completions request encoding dispatch live outside the
+  main model adapter
+- transport request URI, headers, call options, and response type projection
+  live outside the main model adapter
+- route-aware generate response decoding lives outside the main model adapter
+- route-aware stream chunk decoding and raw chunk forwarding live outside the
+  main model adapter
+- existing OpenAI-family route selection, warning, request, response, stream,
+  timeout, retry, cancellation, and error behavior stays unchanged
+
+Exit gate:
+
+- focused OpenAI language model, Chat Completions, Responses codec, Responses
+  stream codec, Responses lifecycle tests, package analysis, workspace
+  analysis, and whitespace checks pass.
+
 ## M17 - Post-Closure Output Foundation JSON Split
 
 Goals:
