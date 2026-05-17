@@ -65,6 +65,24 @@ void main() {
       );
     });
 
+    test('honors provider-declared facet support', () {
+      final registry = ProviderRegistry(
+        providers: {
+          'limited': _LimitedFacetProvider('limited'),
+        },
+      );
+
+      expect(registry.languageProviderIds, ['limited']);
+      expect(registry.embeddingProviderIds, isEmpty);
+      expect(registry.hasLanguageProvider('limited'), isTrue);
+      expect(registry.hasEmbeddingProvider('limited'), isFalse);
+      expect(registry.languageModel('limited:chat').providerId, 'limited');
+      expect(
+        () => registry.embeddingModel('limited:embed'),
+        throwsUnsupportedError,
+      );
+    });
+
     test('returns registered provider objects by id', () {
       final provider = _LanguageOnlyProvider('openai');
       final registry = ProviderRegistry(
@@ -248,6 +266,42 @@ final class _EmbeddingOnlyProvider implements EmbeddingModelProvider {
   final String providerId;
 
   const _EmbeddingOnlyProvider(this.providerId);
+
+  @override
+  EmbeddingModel embeddingModel(String modelId) {
+    return _FakeEmbeddingModel(providerId, modelId);
+  }
+}
+
+final class _LimitedFacetProvider
+    implements
+        ProviderModelFacetSupport,
+        LanguageModelProvider,
+        EmbeddingModelProvider {
+  @override
+  final String providerId;
+
+  const _LimitedFacetProvider(this.providerId);
+
+  @override
+  bool get supportsLanguageModels => true;
+
+  @override
+  bool get supportsEmbeddingModels => false;
+
+  @override
+  bool get supportsImageModels => false;
+
+  @override
+  bool get supportsSpeechModels => false;
+
+  @override
+  bool get supportsTranscriptionModels => false;
+
+  @override
+  LanguageModel languageModel(String modelId) {
+    return _FakeLanguageModel(providerId, modelId);
+  }
 
   @override
   EmbeddingModel embeddingModel(String modelId) {

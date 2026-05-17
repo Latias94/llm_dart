@@ -162,6 +162,9 @@ The detailed rebaseline is tracked in
 - [09-openai-family-option-resolver.md](09-openai-family-option-resolver.md)
   - M9 implementation note for moving OpenAI-family option policy into a
     resolver strategy boundary while preserving shared wire-code reuse.
+- [10-openai-family-facet-support.md](10-openai-family-facet-support.md)
+  - M11 implementation note for profile-specific OpenAI-family model facet
+    reporting in `ProviderRegistry`.
 - [MILESTONES.md](MILESTONES.md)
   - Milestones, acceptance criteria, and status tracking.
 - [TODO.md](TODO.md)

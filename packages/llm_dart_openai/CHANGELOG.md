@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- OpenAI-family facades now report profile-specific model facet support to
+  `ProviderRegistry`: OpenAI exposes the current OpenAI language, embedding,
+  image, speech, and transcription facets, while OpenRouter, DeepSeek, Groq,
+  xAI, and Phind conservatively expose language-model lookup only.
+- Direct non-text model factories on unsupported OpenAI-family profiles now
+  throw `UnsupportedError` before constructing a misleading model object.
+
 ## [0.11.0-alpha.1] - 2026-05-12
 
 - Alpha release of the OpenAI-family provider package.

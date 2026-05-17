@@ -116,3 +116,5 @@
   rejection, and OpenAI-family route/profile behavior
 - [x] Update migration docs for provider registry changes and any `ModelRegistry`
   removal or adaptation
+- [x] Close OpenAI-family class-level facet reporting by adding
+  provider-declared registry facet support

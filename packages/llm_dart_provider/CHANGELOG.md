@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Added `ProviderModelFacetSupport` so provider facades can declare a narrower
+  registry-visible model facet surface than their concrete class methods imply.
+- Updated `ProviderRegistry` to respect provider-declared model facet support
+  when listing providers and resolving dynamic model references.
+
 ## [0.11.0-alpha.1] - 2026-05-12
 
 - Alpha release of the provider contract package.

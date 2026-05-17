@@ -234,3 +234,28 @@ Current status:
   `ProviderRegistry`, `llm_dart_core` remains a frozen compatibility shell,
   workspace/root/core boundary guards passed, and focused tests cover provider
   registry lookup plus OpenAI-family route/profile behavior.
+
+## M11 - Profile-Specific Facet Reporting
+
+Goals:
+
+- close the OpenAI-family class-level capability reporting risk
+- keep shared OpenAI-compatible wire-code reuse
+- make `ProviderRegistry` respect provider-declared model facet support
+
+Acceptance criteria:
+
+- OpenAI-family compatible providers do not appear in unsupported non-text
+  provider lists
+- unsupported profile/model-kind lookups fail before model construction
+- custom providers can declare narrower facet support than their concrete class
+  methods imply
+- migration notes document the more precise provider lists
+
+Current status:
+
+- complete; `ProviderModelFacetSupport` gives provider facades a narrow
+  registry-facing facet declaration, `ProviderRegistry` respects it, OpenAI
+  advertises all current OpenAI model facets, and OpenRouter, DeepSeek, Groq,
+  xAI, and Phind conservatively advertise language-only support. See
+  `10-openai-family-facet-support.md`.

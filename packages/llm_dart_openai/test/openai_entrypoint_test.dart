@@ -21,12 +21,20 @@ void main() {
       expect(openRouterProvider.profile, isA<openai.OpenRouterProfile>());
       expect(openRouterProvider.chatModel('openai/gpt-4o-mini').providerId,
           'openrouter');
+      expect(openRouterProvider.supportsLanguageModels, isTrue);
+      expect(openRouterProvider.supportsEmbeddingModels, isFalse);
+      expect(
+        () => openRouterProvider.embeddingModel('text-embedding-3-small'),
+        throwsUnsupportedError,
+      );
 
       expect(deepSeekProvider.profile, isA<openai.DeepSeekProfile>());
       expect(
         deepSeekProvider.chatModel('deepseek-chat').providerId,
         'deepseek',
       );
+      expect(deepSeekProvider.supportsLanguageModels, isTrue);
+      expect(deepSeekProvider.supportsImageModels, isFalse);
 
       expect(groqProvider.profile, isA<openai.GroqProfile>());
       expect(

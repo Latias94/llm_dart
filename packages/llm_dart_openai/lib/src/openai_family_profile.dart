@@ -11,6 +11,61 @@ abstract interface class OpenAIFamilyProfile {
   });
 }
 
+enum OpenAIFamilyModelFacet {
+  language,
+  embedding,
+  image,
+  speech,
+  transcription,
+}
+
+final class OpenAIFamilyModelFacetSupport {
+  static const openAI = OpenAIFamilyModelFacetSupport(
+    language: true,
+    embedding: true,
+    image: true,
+    speech: true,
+    transcription: true,
+  );
+
+  static const languageOnly = OpenAIFamilyModelFacetSupport(
+    language: true,
+  );
+
+  final bool language;
+  final bool embedding;
+  final bool image;
+  final bool speech;
+  final bool transcription;
+
+  const OpenAIFamilyModelFacetSupport({
+    required this.language,
+    this.embedding = false,
+    this.image = false,
+    this.speech = false,
+    this.transcription = false,
+  });
+
+  bool supports(OpenAIFamilyModelFacet facet) {
+    return switch (facet) {
+      OpenAIFamilyModelFacet.language => language,
+      OpenAIFamilyModelFacet.embedding => embedding,
+      OpenAIFamilyModelFacet.image => image,
+      OpenAIFamilyModelFacet.speech => speech,
+      OpenAIFamilyModelFacet.transcription => transcription,
+    };
+  }
+}
+
+OpenAIFamilyModelFacetSupport modelFacetSupportForOpenAIFamilyProfile(
+  OpenAIFamilyProfile profile,
+) {
+  return switch (profile) {
+    OpenAIProfile() => OpenAIFamilyModelFacetSupport.openAI,
+    _ => OpenAIFamilyModelFacetSupport.languageOnly,
+  };
+}
+
 class _BearerAuthOpenAIFamilyProfile implements OpenAIFamilyProfile {
   @override
   final String providerId;

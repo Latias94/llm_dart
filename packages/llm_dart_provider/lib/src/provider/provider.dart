@@ -8,6 +8,18 @@ abstract interface class Provider {
   String get providerId;
 }
 
+abstract interface class ProviderModelFacetSupport implements Provider {
+  bool get supportsLanguageModels;
+
+  bool get supportsEmbeddingModels;
+
+  bool get supportsImageModels;
+
+  bool get supportsSpeechModels;
+
+  bool get supportsTranscriptionModels;
+}
+
 abstract interface class LanguageModelProvider implements Provider {
   LanguageModel languageModel(String modelId);
 }

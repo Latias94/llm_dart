@@ -15,37 +15,42 @@ final class ProviderRegistry {
 
   List<String> get providerIds => _sortedProviderIds(_providers);
 
-  List<String> get languageProviderIds =>
-      _sortedProviderIds(_providersByKind<LanguageModelProvider>());
+  List<String> get languageProviderIds => _sortedProviderIds(
+        _providersBySupport(_supportsLanguageModels),
+      );
 
-  List<String> get embeddingProviderIds =>
-      _sortedProviderIds(_providersByKind<EmbeddingModelProvider>());
+  List<String> get embeddingProviderIds => _sortedProviderIds(
+        _providersBySupport(_supportsEmbeddingModels),
+      );
 
-  List<String> get imageProviderIds =>
-      _sortedProviderIds(_providersByKind<ImageModelProvider>());
+  List<String> get imageProviderIds => _sortedProviderIds(
+        _providersBySupport(_supportsImageModels),
+      );
 
-  List<String> get speechProviderIds =>
-      _sortedProviderIds(_providersByKind<SpeechModelProvider>());
+  List<String> get speechProviderIds => _sortedProviderIds(
+        _providersBySupport(_supportsSpeechModels),
+      );
 
-  List<String> get transcriptionProviderIds =>
-      _sortedProviderIds(_providersByKind<TranscriptionModelProvider>());
+  List<String> get transcriptionProviderIds => _sortedProviderIds(
+        _providersBySupport(_supportsTranscriptionModels),
+      );
 
   bool hasProvider(String providerId) => _providers.containsKey(providerId);
 
   bool hasLanguageProvider(String providerId) =>
-      _providers[providerId] is LanguageModelProvider;
+      _supportsLanguageModels(_providers[providerId]);
 
   bool hasEmbeddingProvider(String providerId) =>
-      _providers[providerId] is EmbeddingModelProvider;
+      _supportsEmbeddingModels(_providers[providerId]);
 
   bool hasImageProvider(String providerId) =>
-      _providers[providerId] is ImageModelProvider;
+      _supportsImageModels(_providers[providerId]);
 
   bool hasSpeechProvider(String providerId) =>
-      _providers[providerId] is SpeechModelProvider;
+      _supportsSpeechModels(_providers[providerId]);
 
   bool hasTranscriptionProvider(String providerId) =>
-      _providers[providerId] is TranscriptionModelProvider;
+      _supportsTranscriptionModels(_providers[providerId]);
 
   Provider provider(String providerId) {
     ModelReference.validateProviderId(
@@ -67,7 +72,8 @@ final class ProviderRegistry {
   LanguageModel languageModel(String reference) {
     final parsed = ModelReference.parse(reference);
     final provider = _providerForReference(parsed);
-    if (provider is LanguageModelProvider) {
+    if (_supportsLanguageModels(provider) &&
+        provider is LanguageModelProvider) {
       return provider.languageModel(parsed.modelId);
     }
 
@@ -81,7 +87,8 @@ final class ProviderRegistry {
   EmbeddingModel embeddingModel(String reference) {
     final parsed = ModelReference.parse(reference);
     final provider = _providerForReference(parsed);
-    if (provider is EmbeddingModelProvider) {
+    if (_supportsEmbeddingModels(provider) &&
+        provider is EmbeddingModelProvider) {
       return provider.embeddingModel(parsed.modelId);
     }
 
@@ -95,7 +102,7 @@ final class ProviderRegistry {
   ImageModel imageModel(String reference) {
     final parsed = ModelReference.parse(reference);
     final provider = _providerForReference(parsed);
-    if (provider is ImageModelProvider) {
+    if (_supportsImageModels(provider) && provider is ImageModelProvider) {
       return provider.imageModel(parsed.modelId);
     }
 
@@ -109,7 +116,7 @@ final class ProviderRegistry {
   SpeechModel speechModel(String reference) {
     final parsed = ModelReference.parse(reference);
     final provider = _providerForReference(parsed);
-    if (provider is SpeechModelProvider) {
+    if (_supportsSpeechModels(provider) && provider is SpeechModelProvider) {
       return provider.speechModel(parsed.modelId);
     }
 
@@ -123,7 +130,8 @@ final class ProviderRegistry {
   TranscriptionModel transcriptionModel(String reference) {
     final parsed = ModelReference.parse(reference);
     final provider = _providerForReference(parsed);
-    if (provider is TranscriptionModelProvider) {
+    if (_supportsTranscriptionModels(provider) &&
+        provider is TranscriptionModelProvider) {
       return provider.transcriptionModel(parsed.modelId);
     }
 
@@ -175,25 +183,84 @@ final class ProviderRegistry {
     return Map.unmodifiable(normalized);
   }
 
-  static Map<String, TProvider>
-      _filterProvidersByKind<TProvider extends Provider>(
-          Map<String, Provider> providers) {
+  Map<String, Provider> _providersBySupport(
+    bool Function(Provider? provider) supports,
+  ) {
     return Map.unmodifiable(
       Map.fromEntries(
-        providers.entries
-            .where((entry) => entry.value is TProvider)
-            .map((entry) => MapEntry(entry.key, entry.value as TProvider)),
+        _providers.entries.where((entry) => supports(entry.value)),
       ),
     );
   }
-
-  Map<String, TProvider> _providersByKind<TProvider extends Provider>() =>
-      _filterProvidersByKind<TProvider>(_providers);
 
   static List<String> _sortedProviderIds<TProvider extends Provider>(
     Map<String, TProvider> providers,
   ) {
     return List<String>.unmodifiable(providers.keys.toList()..sort());
+  }
+
+  static bool _supportsLanguageModels(Provider? provider) {
+    if (provider is! LanguageModelProvider) {
+      return false;
+    }
+    final facetSupport = _providerModelFacetSupport(provider);
+    if (facetSupport != null) {
+      return facetSupport.supportsLanguageModels;
+    }
+    return true;
+  }
+
+  static bool _supportsEmbeddingModels(Provider? provider) {
+    if (provider is! EmbeddingModelProvider) {
+      return false;
+    }
+    final facetSupport = _providerModelFacetSupport(provider);
+    if (facetSupport != null) {
+      return facetSupport.supportsEmbeddingModels;
+    }
+    return true;
+  }
+
+  static bool _supportsImageModels(Provider? provider) {
+    if (provider is! ImageModelProvider) {
+      return false;
+    }
+    final facetSupport = _providerModelFacetSupport(provider);
+    if (facetSupport != null) {
+      return facetSupport.supportsImageModels;
+    }
+    return true;
+  }
+
+  static bool _supportsSpeechModels(Provider? provider) {
+    if (provider is! SpeechModelProvider) {
+      return false;
+    }
+    final facetSupport = _providerModelFacetSupport(provider);
+    if (facetSupport != null) {
+      return facetSupport.supportsSpeechModels;
+    }
+    return true;
+  }
+
+  static bool _supportsTranscriptionModels(Provider? provider) {
+    if (provider is! TranscriptionModelProvider) {
+      return false;
+    }
+    final facetSupport = _providerModelFacetSupport(provider);
+    if (facetSupport != null) {
+      return facetSupport.supportsTranscriptionModels;
+    }
+    return true;
+  }
+
+  static ProviderModelFacetSupport? _providerModelFacetSupport(
+    Provider provider,
+  ) {
+    if (provider is ProviderModelFacetSupport) {
+      return provider;
+    }
+    return null;
   }
 
   static UnsupportedError _unsupportedProvider({

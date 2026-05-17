@@ -105,6 +105,7 @@ OpenAI phind({
 
 final class OpenAI
     implements
+        ProviderModelFacetSupport,
         LanguageModelProvider,
         EmbeddingModelProvider,
         ImageModelProvider,
@@ -126,6 +127,24 @@ final class OpenAI
 
   @override
   String get providerId => profile.providerId;
+
+  OpenAIFamilyModelFacetSupport get modelFacetSupport =>
+      modelFacetSupportForOpenAIFamilyProfile(profile);
+
+  @override
+  bool get supportsLanguageModels => modelFacetSupport.language;
+
+  @override
+  bool get supportsEmbeddingModels => modelFacetSupport.embedding;
+
+  @override
+  bool get supportsImageModels => modelFacetSupport.image;
+
+  @override
+  bool get supportsSpeechModels => modelFacetSupport.speech;
+
+  @override
+  bool get supportsTranscriptionModels => modelFacetSupport.transcription;
 
   @override
   OpenAILanguageModel languageModel(
@@ -154,6 +173,7 @@ final class OpenAI
     String modelId, {
     ProviderModelOptions settings = const OpenAIEmbeddingModelSettings(),
   }) {
+    _requireModelFacet(OpenAIFamilyModelFacet.embedding);
     return OpenAIEmbeddingModel(
       apiKey: apiKey,
       modelId: modelId,
@@ -169,6 +189,7 @@ final class OpenAI
     String modelId, {
     ProviderModelOptions settings = const OpenAIImageModelSettings(),
   }) {
+    _requireModelFacet(OpenAIFamilyModelFacet.image);
     return OpenAIImageModel(
       apiKey: apiKey,
       modelId: modelId,
@@ -184,6 +205,7 @@ final class OpenAI
     String modelId, {
     ProviderModelOptions settings = const OpenAISpeechModelSettings(),
   }) {
+    _requireModelFacet(OpenAIFamilyModelFacet.speech);
     return OpenAISpeechModel(
       apiKey: apiKey,
       modelId: modelId,
@@ -199,6 +221,7 @@ final class OpenAI
     String modelId, {
     ProviderModelOptions settings = const OpenAITranscriptionModelSettings(),
   }) {
+    _requireModelFacet(OpenAIFamilyModelFacet.transcription);
     return OpenAITranscriptionModel(
       apiKey: apiKey,
       modelId: modelId,
@@ -255,6 +278,18 @@ final class OpenAI
       profile: profile,
       baseUrl: baseUrl,
       settings: settings,
+    );
+  }
+
+  void _requireModelFacet(OpenAIFamilyModelFacet facet) {
+    if (modelFacetSupport.supports(facet)) {
+      return;
+    }
+
+    throw UnsupportedError(
+      '${profile.providerId} does not support ${facet.name} models through '
+      'the OpenAI-family facade. Use chatModel(...) or a provider-owned '
+      'native surface for this profile.',
     );
   }
 }

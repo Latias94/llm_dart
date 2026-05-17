@@ -32,16 +32,16 @@ void main() {
       ]);
       expect(
         registry.embeddingProviderIds,
-        ['google', 'ollama', 'openai', 'openrouter'],
+        ['google', 'ollama', 'openai'],
       );
-      expect(registry.imageProviderIds, ['google', 'openai', 'openrouter']);
+      expect(registry.imageProviderIds, ['google', 'openai']);
       expect(
         registry.speechProviderIds,
-        ['elevenlabs', 'google', 'openai', 'openrouter'],
+        ['elevenlabs', 'google', 'openai'],
       );
       expect(
         registry.transcriptionProviderIds,
-        ['elevenlabs', 'openai', 'openrouter'],
+        ['elevenlabs', 'openai'],
       );
 
       expect(
@@ -55,6 +55,10 @@ void main() {
       expect(
         registry.embeddingModel('google:text-embedding-004').providerId,
         'google',
+      );
+      expect(
+        () => registry.embeddingModel('openrouter:text-embedding-3-small'),
+        throwsUnsupportedError,
       );
       expect(registry.imageModel('openai:gpt-image-1').providerId, 'openai');
       expect(

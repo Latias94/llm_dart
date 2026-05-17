@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added provider-declared model facet support so `ProviderRegistry` can report
+  profile-specific model kinds instead of relying only on concrete provider
+  class interfaces.
+
+### Changed
+
+- OpenAI-family compatible providers such as OpenRouter, DeepSeek, Groq, xAI,
+  and Phind now register as language-model providers only unless their profile
+  explicitly supports another model facet.
+
 ## [0.11.0-alpha.1] - 2026-05-12
 
 This alpha moves new application code toward the model-first API:
