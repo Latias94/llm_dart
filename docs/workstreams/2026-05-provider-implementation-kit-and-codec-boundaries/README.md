@@ -140,6 +140,9 @@ The workstream is complete when:
   - Current-state completion audit for OpenAI, Anthropic, Google, and Ollama
     provider codec boundaries, fixture contracts, public barrels, remaining
     large files, dependency guards, and recommended next goals.
+- [15-anthropic-result-codec-boundary.md](15-anthropic-result-codec-boundary.md)
+  - Follow-up Anthropic Messages result content, tool-result replay, finish,
+    usage, and metadata codec extraction record.
 - [MILESTONES.md](MILESTONES.md)
   - Milestones and acceptance criteria.
 - [TODO.md](TODO.md)

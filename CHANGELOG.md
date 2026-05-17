@@ -43,6 +43,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - OpenAI Responses stream event decoding now routes through deeper internal
   text/reasoning lifecycle, output item, source annotation, custom event, and
   MCP projection modules while preserving public stream event behaviour.
+- Anthropic Messages result decoding now routes through deeper internal
+  content, tool-result replay, and metadata projection modules while
+  preserving public result behaviour.
 - Google prompt projection now routes through deeper internal user binary
   encoding, assistant replay projection, tool replay projection, and replay
   metadata helpers while preserving public typed options and wire output.

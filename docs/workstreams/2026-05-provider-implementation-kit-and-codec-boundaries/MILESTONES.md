@@ -291,3 +291,43 @@ Current status:
   `openai_request_format_codec.dart`.
 - Focused OpenAI request, stream, language-model tests, package analysis, and
   workspace dependency guards pass for this follow-up slice.
+
+## M9 - Anthropic Result Boundary Follow-Up
+
+Goals:
+
+- deepen Anthropic Messages non-stream result decoding without changing public
+  result behaviour
+- keep `AnthropicMessagesResultCodec` as the stable public result facade
+- preserve text/citation, thinking, redacted-thinking, compaction, common tool,
+  server tool, MCP, web-search/fetch, tool-search, code-execution replay,
+  usage, container, and provider metadata semantics
+- keep helper extraction provider-local
+
+Acceptance criteria:
+
+- content text/citation/thinking projection is outside
+  `anthropic_result_codec.dart`
+- tool-use and tool-result replay projection is outside
+  `anthropic_result_codec.dart`
+- finish, usage, container, and response metadata mapping is outside
+  `anthropic_result_codec.dart`
+- focused Anthropic result/replay tests pass
+- `dart analyze packages/llm_dart_anthropic` passes
+- fixture contracts remain unchanged
+
+Current status:
+
+- `anthropic_result_codec.dart` now owns top-level response/content-block
+  routing and `GenerateTextResult` assembly only.
+- Text, citation source, thinking, redacted-thinking, compaction, and fallback
+  custom content projection moved to `anthropic_result_content_codec.dart`.
+- Common tool calls, server tool calls, MCP tool calls, provider-tool results,
+  custom replay payloads, and web-search sources moved to
+  `anthropic_result_tool_codec.dart`.
+- Finish reason, usage, and container mapping moved to
+  `anthropic_result_metadata.dart`.
+- Provider-local JSON/object and metadata helpers moved to
+  `anthropic_result_util.dart`.
+- Focused Anthropic result/replay tests, fixture contracts, and package
+  analysis pass for this follow-up slice.

@@ -86,6 +86,23 @@
       analysis, and workspace dependency guards
 - [x] Document why this still does not justify public provider utilities
 
+## Anthropic Result Follow-Up Slice
+
+- [x] Compare Anthropic result boundaries against `repo-ref/ai`
+      result/tool/citation/metadata projection responsibilities
+- [x] Extract Anthropic non-stream content projection into provider-local
+      modules
+- [x] Extract Anthropic tool-use and provider-tool result projection into a
+      provider-local module
+- [x] Extract Anthropic finish, usage, container, and response metadata mapping
+      into a provider-local module
+- [x] Keep `AnthropicMessagesResultCodec` as the stable public result facade
+- [x] Keep thinking, redacted-thinking, compaction, citations, MCP,
+      web-search/fetch, tool-search, code-execution replay, and provider
+      metadata behavior unchanged
+- [x] Run focused Anthropic result/replay tests and package analysis
+- [x] Document why this still does not justify public provider utilities
+
 ## OpenAI Responses Stream Follow-Up Slice
 
 - [x] Compare OpenAI Responses stream boundaries against `repo-ref/ai`

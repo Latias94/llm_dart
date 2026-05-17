@@ -211,6 +211,72 @@ void main() {
       expect(source.source.title, 'Dart');
     });
 
+    test('decodes compaction content and response metadata', () {
+      final result = codec.decodeResponse({
+        'id': 'msg_compaction',
+        'model': 'claude-sonnet-4-5',
+        'content': [
+          {
+            'type': 'compaction',
+            'content': 'Conversation summary.',
+          },
+        ],
+        'stop_reason': 'compaction',
+        'stop_sequence': null,
+        'container': {
+          'id': 'container_123',
+          'expires_at': '2026-03-27T12:00:00Z',
+          'skills': [
+            {
+              'type': 'web_search',
+            },
+          ],
+        },
+        'context_management': {
+          'clear_function_results': false,
+        },
+        'usage': {
+          'input_tokens': 50,
+          'output_tokens': 10,
+        },
+      });
+
+      expect(result.finishReason, FinishReason.other);
+      expect(result.rawFinishReason, 'compaction');
+      expect(result.usage?.totalTokens, 60);
+
+      final text = result.content.whereType<TextContentPart>().single;
+      expect(text.text, 'Conversation summary.');
+      expect(
+        text.providerMetadata?.values['anthropic'],
+        {
+          'type': 'compaction',
+        },
+      );
+
+      expect(
+        result.providerMetadata?.values['anthropic'],
+        {
+          'usage': {
+            'input_tokens': 50,
+            'output_tokens': 10,
+          },
+          'container': {
+            'id': 'container_123',
+            'expiresAt': '2026-03-27T12:00:00Z',
+            'skills': [
+              {
+                'type': 'web_search',
+              },
+            ],
+          },
+          'contextManagement': {
+            'clear_function_results': false,
+          },
+        },
+      );
+    });
+
     test('decodes web fetch tool results into custom replay parts', () {
       final result = codec.decodeResponse({
         'id': 'msg_4',
