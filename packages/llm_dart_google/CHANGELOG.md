@@ -8,6 +8,9 @@
 - Google prompt projection now delegates user binary encoding, assistant
   replay projection, tool replay projection, and replay metadata helpers to
   focused internal modules while preserving typed options and wire output.
+- Google language-model orchestration now delegates request preparation,
+  transport request construction, generate response decoding, and stream chunk
+  decoding to focused internal modules while preserving provider behavior.
 
 ## [0.11.0-alpha.1] - 2026-05-12
 

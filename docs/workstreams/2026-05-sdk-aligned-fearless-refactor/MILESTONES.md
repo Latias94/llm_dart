@@ -413,6 +413,33 @@ Exit gate:
 - focused output spec tests, text call tests, core compatibility tests, package
   analysis, workspace analysis, and whitespace checks pass.
 
+## M17 - Post-Closure Output Foundation JSON Split
+
+Goals:
+
+- align structured output support ownership with the reference parse,
+  validation, stream event, and result facade layers
+- keep `output_spec_foundation.dart` and `output_spec_json.dart` as stable
+  compatibility facades
+- improve locality for output support types, JSON parsing, validation, value
+  handling, and diagnostics
+
+Acceptance criteria:
+
+- decoder typedefs, structured output context, output result, and output stream
+  events live in focused modules
+- JSON text decoding, object coercion, JSON value freeze/equality, schema and
+  choice validation, and usage diagnostics live in focused modules
+- the existing public `llm_dart_ai` and `llm_dart_core` output names continue
+  to resolve
+- JSON parse error messages, partial output behavior, diagnostics, and output
+  runner behavior stay unchanged
+
+Exit gate:
+
+- focused output spec tests, text call tests, core compatibility tests, package
+  analysis, workspace analysis, and whitespace checks pass.
+
 ## M18 - Post-Closure OpenAI Language Model Orchestration Split
 
 Goals:
@@ -441,29 +468,31 @@ Exit gate:
   stream codec, Responses lifecycle tests, package analysis, workspace
   analysis, and whitespace checks pass.
 
-## M17 - Post-Closure Output Foundation JSON Split
+## M19 - Post-Closure Google Language Model Orchestration Split
 
 Goals:
 
-- align structured output support ownership with the reference parse,
-  validation, stream event, and result facade layers
-- keep `output_spec_foundation.dart` and `output_spec_json.dart` as stable
-  compatibility facades
-- improve locality for output support types, JSON parsing, validation, value
-  handling, and diagnostics
+- align Google provider adapter orchestration with the reference Google
+  language model, message conversion, tool preparation, and HTTP dispatch
+  layers
+- keep `GoogleLanguageModel` as the stable provider-facing model adapter
+- improve locality for request preparation, transport projection,
+  non-streaming response decode, stream chunk decode, and stream finish
+  emission
 
 Acceptance criteria:
 
-- decoder typedefs, structured output context, output result, and output stream
-  events live in focused modules
-- JSON text decoding, object coercion, JSON value freeze/equality, schema and
-  choice validation, and usage diagnostics live in focused modules
-- the existing public `llm_dart_ai` and `llm_dart_core` output names continue
-  to resolve
-- JSON parse error messages, partial output behavior, diagnostics, and output
-  runner behavior stay unchanged
+- provider option resolution and GenerateContent request encoding live outside
+  the main model adapter
+- generate/stream route URI, headers, call options, and response type
+  projection live outside the main model adapter
+- generate response decoding lives outside the main model adapter
+- stream chunk decoding, raw chunk forwarding, stream state creation, and
+  finish event emission live outside the main model adapter
+- existing Google request, warning, response, stream, timeout, retry,
+  cancellation, and error behavior stays unchanged
 
 Exit gate:
 
-- focused output spec tests, text call tests, core compatibility tests, package
-  analysis, workspace analysis, and whitespace checks pass.
+- focused Google language model, GenerateContent codec, stream codec, result
+  codec tests, package analysis, workspace analysis, and whitespace checks pass.

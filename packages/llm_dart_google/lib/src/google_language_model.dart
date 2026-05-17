@@ -1,23 +1,16 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
-import 'google_generate_content_codec.dart';
+import 'google_language_model_request.dart';
+import 'google_language_model_response.dart';
 import 'google_language_model_support.dart';
+import 'google_language_model_stream.dart';
+import 'google_language_model_transport.dart';
 import 'google_model_describer.dart';
 import 'google_options.dart';
-import 'google_result_codec.dart';
-import 'google_stream_codec.dart';
 
 final class GoogleLanguageModel
     implements LanguageModel, CapabilityDescribedModel {
-  static const GoogleGenerateContentCodec _requestCodec =
-      GoogleGenerateContentCodec();
-  static const GoogleGenerateContentResultCodec _resultCodec =
-      GoogleGenerateContentResultCodec();
-  static const GoogleGenerateContentStreamCodec _streamCodec =
-      GoogleGenerateContentStreamCodec();
-  static const SseJsonChunkParser _streamChunkParser = SseJsonChunkParser();
-
   final String apiKey;
   final String baseUrl;
   final TransportClient transport;
@@ -54,37 +47,26 @@ final class GoogleLanguageModel
 
   @override
   Future<GenerateTextResult> doGenerate(GenerateTextRequest request) async {
-    final providerOptions = resolveGoogleProviderOptions(request);
-    final preparedRequest = _requestCodec.encodeRequest(
+    final preparedRequest = encodeGoogleLanguageModelRequest(
       modelId: modelId,
-      prompt: request.prompt,
-      tools: request.tools,
-      toolChoice: request.toolChoice,
-      options: request.options,
+      request: request,
       settings: settings,
-      providerOptions: providerOptions,
     );
 
     final response = await transport.send(
-      TransportRequest(
-        uri: generateContentUri,
-        method: TransportMethod.post,
-        headers: buildGoogleRequestHeaders(
-          apiKey: apiKey,
-          settings: settings,
-          stream: false,
-          extraHeaders: request.callOptions.headers,
-        ),
+      buildGoogleLanguageModelTransportRequest(
+        baseUrl: baseUrl,
+        modelId: modelId,
+        request: request,
+        stream: false,
         body: preparedRequest.body,
-        timeout: request.callOptions.timeout,
-        maxRetries: request.callOptions.maxRetries,
-        cancellation: request.callOptions.cancellation,
-        responseType: TransportResponseType.json,
+        apiKey: apiKey,
+        settings: settings,
       ),
     );
 
-    return _resultCodec.decodeResponse(
-      decodeGoogleJsonObject(response.body),
+    return decodeGoogleLanguageModelGenerateResponse(
+      body: response.body,
       warnings: preparedRequest.warnings,
     );
   }
@@ -92,53 +74,31 @@ final class GoogleLanguageModel
   @override
   Stream<LanguageModelStreamEvent> doStream(
       GenerateTextRequest request) async* {
-    final providerOptions = resolveGoogleProviderOptions(request);
-    final preparedRequest = _requestCodec.encodeRequest(
+    final preparedRequest = encodeGoogleLanguageModelRequest(
       modelId: modelId,
-      prompt: request.prompt,
-      tools: request.tools,
-      toolChoice: request.toolChoice,
-      options: request.options,
+      request: request,
       settings: settings,
-      providerOptions: providerOptions,
     );
 
     yield StartEvent(warnings: preparedRequest.warnings);
 
     try {
       final response = await transport.sendStream(
-        TransportRequest(
-          uri: streamGenerateContentUri,
-          method: TransportMethod.post,
-          headers: buildGoogleRequestHeaders(
-            apiKey: apiKey,
-            settings: settings,
-            stream: true,
-            extraHeaders: request.callOptions.headers,
-          ),
+        buildGoogleLanguageModelTransportRequest(
+          baseUrl: baseUrl,
+          modelId: modelId,
+          request: request,
+          stream: true,
           body: preparedRequest.body,
-          timeout: request.callOptions.timeout,
-          maxRetries: request.callOptions.maxRetries,
-          cancellation: request.callOptions.cancellation,
+          apiKey: apiKey,
+          settings: settings,
         ),
       );
 
-      final state = GoogleGenerateContentStreamState();
-      await for (final chunk in _streamChunkParser.parse(response.stream)) {
-        if (request.options.includeRawChunks) {
-          yield RawChunkEvent(chunk);
-        }
-        for (final event in _streamCodec.decodeChunk(
-          chunk,
-          state,
-        )) {
-          yield event;
-        }
-      }
-
-      for (final event in _streamCodec.finish(state)) {
-        yield event;
-      }
+      yield* decodeGoogleLanguageModelStreamEvents(
+        stream: response.stream,
+        includeRawChunks: request.options.includeRawChunks,
+      );
     } catch (error) {
       yield ErrorEvent(transportErrorToModelError(error));
     }

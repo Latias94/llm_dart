@@ -230,6 +230,9 @@ The workstream is complete only when:
 - [17-openai-language-model-orchestration-boundary.md](17-openai-language-model-orchestration-boundary.md)
   - OpenAI language model orchestration split into route-aware request,
     transport, response, and stream modules.
+- [18-google-language-model-orchestration-boundary.md](18-google-language-model-orchestration-boundary.md)
+  - Google language model orchestration split into request, transport,
+    response, and stream modules.
 - [release-readiness-report.txt](release-readiness-report.txt)
   - Full release-readiness gate result, including consumer smoke, publish
     dry-run, and pub.dev version availability.

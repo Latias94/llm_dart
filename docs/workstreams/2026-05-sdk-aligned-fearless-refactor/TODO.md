@@ -185,6 +185,20 @@
   Responses codec, Responses stream codec, and Responses lifecycle tests
 - [x] Document the OpenAI language model orchestration split and changelog note
 
+## Google Language Model Orchestration Follow-Up
+
+- [x] Compare Google provider model shape against `repo-ref/ai` Google
+  language model, message conversion, tool preparation, and HTTP dispatch
+  layers
+- [x] Keep `GoogleLanguageModel` as the public provider adapter while moving
+  provider option/request encoding, transport request construction, generate
+  response decoding, and stream chunk/finish decoding into focused modules
+- [x] Preserve request warnings, URI/header/call option projection, raw chunk
+  forwarding, stream finish event emission, and streaming error behavior
+- [x] Verify focused Google language model, GenerateContent codec, stream
+  codec, and result codec tests
+- [x] Document the Google language model orchestration split and changelog note
+
 ## Provider Options And Metadata
 
 - [x] Define the canonical typed provider options shape in
