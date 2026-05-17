@@ -206,6 +206,9 @@ The workstream is complete only when:
 - [09-stream-text-result-cancellation-boundary.md](09-stream-text-result-cancellation-boundary.md)
   - Stream text result facade and provider cancellation support split from the
     stream run loop.
+- [10-generate-text-runner-support-boundary.md](10-generate-text-runner-support-boundary.md)
+  - Generate text runner support split into public facade, tool execution, and
+    prompt replay modules.
 - [release-readiness-report.txt](release-readiness-report.txt)
   - Full release-readiness gate result, including consumer smoke, publish
     dry-run, and pub.dev version availability.

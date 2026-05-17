@@ -9,6 +9,8 @@
   `generateTextCall` and `streamTextCall` public behavior unchanged.
 - Split `StreamTextRunResult` and provider cancellation stream support out of
   the stream text runner implementation without changing stream behavior.
+- Split generate text runner support into public facade, tool execution, and
+  prompt replay modules while preserving runner behavior.
 
 ## [0.11.0-alpha.1] - 2026-05-12
 

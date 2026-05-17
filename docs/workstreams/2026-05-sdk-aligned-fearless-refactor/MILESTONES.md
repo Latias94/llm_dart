@@ -249,3 +249,28 @@ Exit gate:
 - stream runner focused tests, language model stream boundary tests, core
   compatibility stream runner tests, package analysis, workspace analysis, and
   whitespace checks pass.
+
+## M11 - Post-Closure Generate Text Runner Support Split
+
+Goals:
+
+- align runner support internals with the reference tool execution and prompt
+  replay layers
+- keep `GenerateTextRunnerSupport` as the stable public support seam
+- improve locality for tool execution lifecycle, tool result projection, and
+  continuation prompt replay
+
+Acceptance criteria:
+
+- public runner support typedefs and tool execution types remain exported
+- tool execution logic lives outside the public support facade
+- prompt replay logic lives outside the public support facade
+- `GenerateTextRunner` and `StreamTextRunner` keep their current tool-loop
+  behavior
+- `llm_dart_core` compatibility exports continue to resolve the same public
+  tool execution types
+
+Exit gate:
+
+- non-streaming runner tests, streaming runner tests, core compatibility tests,
+  package analysis, workspace analysis, and whitespace checks pass.

@@ -82,6 +82,17 @@
   cancellation, errors, result accessors, and UI projection
 - [x] Document the stream result/cancellation module split and changelog note
 
+## Generate Text Runner Support Follow-Up
+
+- [x] Compare runner support shape against `repo-ref/ai` tool execution,
+  tool execution events, and response/prompt replay seams
+- [x] Keep `GenerateTextRunnerSupport` as the public facade while moving tool
+  execution and prompt replay into focused modules
+- [x] Preserve existing public tool execution typedefs, event types, result
+  types, and runner behavior
+- [x] Verify non-streaming and streaming runner focused tests after the split
+- [x] Document the runner support module split and changelog note
+
 ## Provider Options And Metadata
 
 - [x] Define the canonical typed provider options shape in
