@@ -7,9 +7,6 @@ import '../prompt/model_message.dart';
 import '../prompt/prompt_normalization.dart';
 import '../prompt/prompt_validation.dart';
 import '../stream/text_stream_event.dart';
-import '../ui/chat_ui_message.dart';
-import '../ui/chat_ui_stream_chunk.dart';
-import '../ui/chat_ui_stream_projection.dart';
 import 'generate_text_result_accumulator.dart';
 import 'generate_text_run_result.dart';
 import 'generate_text_runner_support.dart';
@@ -18,110 +15,10 @@ import 'generate_text_step_result.dart';
 import 'generate_text_step_start_event.dart';
 import 'language_model_stream_adapter.dart';
 import 'stream_result_foundation.dart';
+import 'stream_text_cancellation.dart';
+import 'stream_text_run_result.dart';
 
-final class StreamTextRunResult extends StreamView<TextStreamEvent> {
-  final StreamResultHandle<TextStreamEvent, GenerateTextRunResult> _foundation;
-  final Stream<GenerateTextStepResult> stepStream;
-
-  StreamTextRunResult._({
-    required StreamResultHandle<TextStreamEvent, GenerateTextRunResult>
-        foundation,
-    required this.stepStream,
-  })  : _foundation = foundation,
-        super(foundation.eventStream);
-
-  Stream<TextStreamEvent> get eventStream => this;
-
-  Stream<TextStreamEvent> get textStream => eventStream;
-
-  Future<GenerateTextRunResult> get result => _foundation.result;
-
-  Stream<ChatUiStreamChunk> chatUiStream({
-    String? messageId,
-    Map<String, Object?> messageMetadata = const {},
-    Iterable<DataUiPart<Object?>> leadingDataParts = const [],
-    Map<String, Object?> finalMessageMetadata = const {},
-  }) {
-    return projectTextStreamEventStream(
-      eventStream,
-      messageId: messageId,
-      messageMetadata: messageMetadata,
-      leadingDataParts: leadingDataParts,
-      finalMessageMetadata: finalMessageMetadata,
-    );
-  }
-
-  Future<List<GenerateTextStepResult>> get steps => result.then(
-        (value) => value.steps,
-      );
-
-  Future<GenerateTextStepResult> get lastStep => result.then(
-        (value) => value.lastStep,
-      );
-
-  Future<UsageStats?> get totalUsage => result.then(
-        (value) => value.totalUsage,
-      );
-
-  Future<UsageStats?> get usage => totalUsage;
-
-  Future<List<ContentPart>> get content => result.then(
-        (value) => value.content,
-      );
-
-  Future<String> get text => result.then(
-        (value) => value.text,
-      );
-
-  Future<String?> get reasoningText => result.then(
-        (value) => value.reasoningText,
-      );
-
-  Future<FinishReason> get finishReason => result.then(
-        (value) => value.finishReason,
-      );
-
-  Future<String?> get rawFinishReason => result.then(
-        (value) => value.rawFinishReason,
-      );
-
-  Future<List<SourceReference>> get sources => result.then(
-        (value) => value.sources,
-      );
-
-  Future<List<GeneratedFile>> get files => result.then(
-        (value) => value.files,
-      );
-
-  Future<List<ToolCallContent>> get toolCalls => result.then(
-        (value) => value.toolCalls,
-      );
-
-  Future<List<ToolResultContent>> get toolResults => result.then(
-        (value) => value.toolResults,
-      );
-
-  Future<List<ToolApprovalRequestContent>> get toolApprovalRequests =>
-      result.then(
-        (value) => value.toolApprovalRequests,
-      );
-
-  Future<String?> get responseId => result.then(
-        (value) => value.responseId,
-      );
-
-  Future<DateTime?> get responseTimestamp => result.then(
-        (value) => value.responseTimestamp,
-      );
-
-  Future<String?> get responseModelId => result.then(
-        (value) => value.responseModelId,
-      );
-
-  Future<ProviderMetadata?> get providerMetadata => result.then(
-        (value) => value.providerMetadata,
-      );
-}
+export 'stream_text_run_result.dart' show StreamTextRunResult;
 
 final class StreamTextRunner {
   final LanguageModel model;
@@ -190,7 +87,7 @@ final class StreamTextRunner {
       ),
     );
 
-    return StreamTextRunResult._(
+    return createStreamTextRunResult(
       foundation: streamResult.handle,
       stepStream: stepChannel.stream,
     );
@@ -255,7 +152,7 @@ final class StreamTextRunner {
 
         final accumulator = activeAccumulator;
         final events = adaptLanguageModelStreamEvents(
-          _cancelOnProviderCancellation(
+          cancelOnProviderCancellation(
             model.doStream(request),
             callOptions.cancellation,
           ),
@@ -372,7 +269,7 @@ final class StreamTextRunner {
       streamClosed = true;
       stepChannel.close();
     } catch (error, stackTrace) {
-      if (_isCancelled(error)) {
+      if (isProviderCancellation(error)) {
         await _finishAbortedRun(
           streamResult: streamResult,
           stepChannel: stepChannel,
@@ -381,7 +278,7 @@ final class StreamTextRunner {
           activeAccumulator: activeAccumulator,
           activeStepNumber: activeStepNumber,
           activeStepOpen: activeStepOpen,
-          reason: _cancelReason(error),
+          reason: providerCancellationReason(callOptions.cancellation, error),
         );
         return;
       }
@@ -501,104 +398,6 @@ final class StreamTextRunner {
   void _throwIfCancelled() {
     callOptions.cancellation?.throwIfCancelled();
   }
-
-  bool _isCancelled(Object error) {
-    return ProviderCancellation.isCancel(error);
-  }
-
-  String? _cancelReason(Object error) {
-    if (error is ProviderCancelledException) {
-      return error.reason?.toString();
-    }
-
-    return callOptions.cancellation?.reason?.toString();
-  }
-}
-
-Stream<T> _cancelOnProviderCancellation<T>(
-  Stream<T> source,
-  ProviderCancellation? cancellation,
-) {
-  if (cancellation == null) {
-    return source;
-  }
-
-  StreamSubscription<T>? subscription;
-  late StreamController<T> controller;
-  var completed = false;
-
-  void failWithCancellation(Object? reason) {
-    if (completed) {
-      return;
-    }
-    completed = true;
-
-    final error = ProviderCancelledException(reason);
-    final stackTrace = StackTrace.current;
-
-    Future<void> emitError() async {
-      if (!controller.isClosed) {
-        controller.addError(error, stackTrace);
-        await controller.close();
-      }
-    }
-
-    final cancelFuture = subscription?.cancel();
-    if (cancelFuture == null) {
-      unawaited(emitError());
-    } else {
-      unawaited(cancelFuture.whenComplete(emitError));
-    }
-  }
-
-  controller = StreamController<T>(
-    onListen: () {
-      if (cancellation.isCancelled) {
-        failWithCancellation(cancellation.reason);
-        return;
-      }
-
-      subscription = source.listen(
-        (event) {
-          if (cancellation.isCancelled) {
-            failWithCancellation(cancellation.reason);
-            return;
-          }
-
-          if (!completed) {
-            controller.add(event);
-          }
-        },
-        onError: (Object error, StackTrace stackTrace) {
-          if (completed) {
-            return;
-          }
-          completed = true;
-          controller.addError(error, stackTrace);
-          unawaited(controller.close());
-        },
-        onDone: () {
-          if (completed) {
-            return;
-          }
-          completed = true;
-          unawaited(controller.close());
-        },
-      );
-
-      unawaited(
-        cancellation.whenCancelled.then(failWithCancellation),
-      );
-    },
-    onPause: () => subscription?.pause(),
-    onResume: () => subscription?.resume(),
-    onCancel: () async {
-      completed = true;
-      await subscription?.cancel();
-    },
-  );
-
-  return controller.stream;
 }
 
 StreamTextRunResult streamTextRun({

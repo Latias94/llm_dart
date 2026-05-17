@@ -70,6 +70,18 @@
 - [x] Verify raw and structured text call focused tests after the split
 - [x] Document the result/runner module split and changelog note
 
+## Stream Text Result Cancellation Follow-Up
+
+- [x] Compare stream text shape against `repo-ref/ai` stream text result,
+  stream text runner, and event lifecycle seams
+- [x] Keep `stream_text_runner.dart` as the public facade while moving the
+  stream result facade and cancellation support into focused modules
+- [x] Preserve existing `StreamTextRunResult`, `StreamTextRunner`, and
+  `streamTextRun` behavior
+- [x] Verify stream runner focused tests covering raw events, tool steps,
+  cancellation, errors, result accessors, and UI projection
+- [x] Document the stream result/cancellation module split and changelog note
+
 ## Provider Options And Metadata
 
 - [x] Define the canonical typed provider options shape in

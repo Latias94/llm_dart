@@ -223,3 +223,29 @@ Exit gate:
 
 - `llm_dart_ai` text call tests, structured output tests, core compatibility
   tests, package analysis, workspace analysis, and whitespace checks pass.
+
+## M10 - Post-Closure Stream Text Result Cancellation Split
+
+Goals:
+
+- align stream text internals with the reference stream result and event
+  lifecycle split
+- keep `stream_text_runner.dart` as the stable public stream run seam
+- improve locality for stream result accessors and provider cancellation
+  plumbing
+
+Acceptance criteria:
+
+- `StreamTextRunResult` lives outside the stream run loop implementation
+- provider cancellation stream support lives outside the stream run loop
+  implementation
+- `streamTextRun` and `streamText` keep their current event ordering and final
+  result behavior
+- `llm_dart_core` compatibility exports continue to resolve the same stream
+  runner names
+
+Exit gate:
+
+- stream runner focused tests, language model stream boundary tests, core
+  compatibility stream runner tests, package analysis, workspace analysis, and
+  whitespace checks pass.

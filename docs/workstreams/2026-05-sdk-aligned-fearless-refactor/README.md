@@ -203,6 +203,9 @@ The workstream is complete only when:
 - [08-text-call-result-runner-boundary.md](08-text-call-result-runner-boundary.md)
   - Text call result facade and runner glue split aligned with the reference
     text generation result layers.
+- [09-stream-text-result-cancellation-boundary.md](09-stream-text-result-cancellation-boundary.md)
+  - Stream text result facade and provider cancellation support split from the
+    stream run loop.
 - [release-readiness-report.txt](release-readiness-report.txt)
   - Full release-readiness gate result, including consumer smoke, publish
     dry-run, and pub.dev version availability.

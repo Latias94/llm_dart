@@ -7,6 +7,8 @@
   `generateOutput`/`streamOutput` behavior are unchanged.
 - Split text call result facades from runner glue while keeping
   `generateTextCall` and `streamTextCall` public behavior unchanged.
+- Split `StreamTextRunResult` and provider cancellation stream support out of
+  the stream text runner implementation without changing stream behavior.
 
 ## [0.11.0-alpha.1] - 2026-05-12
 
