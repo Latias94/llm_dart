@@ -2,6 +2,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import '../prompt/model_message.dart';
 import '../prompt/prompt_normalization.dart';
+import 'generate_text_loop_continuation.dart';
 import 'generate_text_run_lifecycle.dart';
 import 'generate_text_run_result.dart';
 import 'generate_text_run_state.dart';
@@ -109,8 +110,8 @@ final class GenerateTextRunner {
         }
 
         _throwIfCancelled();
-        final toolExecutions =
-            await GenerateTextRunnerSupport.executeFunctionTools(
+        final continuation =
+            await GenerateTextRunnerSupport.resolveFunctionToolContinuation(
           step,
           declaredToolNames: declaredToolNames,
           functionToolExecutor: functionToolExecutor,
@@ -119,31 +120,28 @@ final class GenerateTextRunner {
           runnerName: 'GenerateTextRunner',
         );
         _throwIfCancelled();
-        if (toolExecutions == null) {
+        if (!continuation.shouldContinue) {
           await lifecycle.finishStep(state, step);
           break;
         }
 
         step = GenerateTextRunnerSupport.addToolExecutionsToStep(
           step,
-          toolExecutions,
+          continuation.executions,
         );
         await lifecycle.finishStep(state, step);
 
-        if (await isStopConditionMet(
+        final loopContinuation = await resolveGenerateTextLoopContinuation(
+          promptHistory: promptHistory,
+          step: step,
+          completedSteps: state.previousSteps,
           stopConditions: stopWhen,
-          steps: state.previousSteps,
-        )) {
+          runnerName: 'GenerateTextRunner',
+        );
+        if (!loopContinuation.shouldContinue) {
           break;
         }
-
-        promptHistory = [
-          ...promptHistory,
-          ...GenerateTextRunnerSupport.stepToPromptMessages(
-            step,
-            runnerName: 'GenerateTextRunner',
-          ),
-        ];
+        promptHistory = loopContinuation.promptHistory;
       }
 
       return lifecycle.finishSuccessfulRun(state);

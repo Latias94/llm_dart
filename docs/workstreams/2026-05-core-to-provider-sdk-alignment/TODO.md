@@ -39,7 +39,7 @@
 
 - [x] Compare `generateText` and `streamText` runtime shape against reference
   generate-text layers
-- [ ] Audit tool-loop continuation, missing tool result handling, approval
+- [x] Audit tool-loop continuation, missing tool result handling, approval
   flows, and stop conditions
 - [ ] Audit output parsing, partial output, structured output events, and
   result facades

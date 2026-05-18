@@ -6,6 +6,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart' hide ErrorEvent;
 import '../prompt/model_message.dart';
 import '../prompt/prompt_normalization.dart';
 import '../stream/text_stream_event.dart';
+import 'generate_text_loop_continuation.dart';
 import 'generate_text_result_accumulator.dart';
 import 'generate_text_run_result.dart';
 import 'generate_text_runner_support.dart';
@@ -173,8 +174,8 @@ final class StreamTextRunner {
         }
 
         _throwIfCancelled();
-        final toolExecutions =
-            await GenerateTextRunnerSupport.executeFunctionTools(
+        final continuation =
+            await GenerateTextRunnerSupport.resolveFunctionToolContinuation(
           step,
           declaredToolNames: declaredToolNames,
           functionToolExecutor: functionToolExecutor,
@@ -183,12 +184,12 @@ final class StreamTextRunner {
           runnerName: 'StreamTextRunner',
         );
         _throwIfCancelled();
-        if (toolExecutions == null) {
+        if (!continuation.shouldContinue) {
           await lifecycle.finishStep(state, step);
           break;
         }
 
-        for (final execution in toolExecutions) {
+        for (final execution in continuation.executions) {
           final event = execution.toTextStreamEvent();
           accumulator.apply(event);
           await emitter.add(event);
@@ -202,20 +203,17 @@ final class StreamTextRunner {
         );
         await lifecycle.finishStep(state, step);
 
-        if (await isStopConditionMet(
+        final loopContinuation = await resolveGenerateTextLoopContinuation(
+          promptHistory: promptHistory,
+          step: step,
+          completedSteps: state.previousSteps,
           stopConditions: stopWhen,
-          steps: state.previousSteps,
-        )) {
+          runnerName: 'StreamTextRunner',
+        );
+        if (!loopContinuation.shouldContinue) {
           break;
         }
-
-        promptHistory = [
-          ...promptHistory,
-          ...GenerateTextRunnerSupport.stepToPromptMessages(
-            step,
-            runnerName: 'StreamTextRunner',
-          ),
-        ];
+        promptHistory = loopContinuation.promptHistory;
       }
 
       await lifecycle.finishSuccessfulRun(state);

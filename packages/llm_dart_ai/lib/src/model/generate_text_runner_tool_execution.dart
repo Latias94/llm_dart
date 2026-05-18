@@ -95,6 +95,28 @@ final class GenerateTextToolExecution {
   }
 }
 
+enum GenerateTextToolContinuationKind {
+  stop,
+  continueWithExecutions,
+}
+
+final class GenerateTextToolContinuation {
+  final GenerateTextToolContinuationKind kind;
+  final List<GenerateTextToolExecution> executions;
+
+  const GenerateTextToolContinuation.stop()
+      : kind = GenerateTextToolContinuationKind.stop,
+        executions = const [];
+
+  GenerateTextToolContinuation.continueWithExecutions(
+    List<GenerateTextToolExecution> executions,
+  )   : kind = GenerateTextToolContinuationKind.continueWithExecutions,
+        executions = List.unmodifiable(executions);
+
+  bool get shouldContinue =>
+      kind == GenerateTextToolContinuationKind.continueWithExecutions;
+}
+
 final class GenerateTextToolExecutionResult {
   final Object? _output;
   final bool _isError;
@@ -123,7 +145,7 @@ final class GenerateTextToolExecutionResult {
   bool get isError => toolOutput.isError;
 }
 
-Future<List<GenerateTextToolExecution>?> executeFunctionTools(
+Future<GenerateTextToolContinuation> resolveFunctionToolContinuation(
   GenerateTextStepResult step, {
   required Set<String> declaredToolNames,
   required GenerateTextFunctionToolExecutor? functionToolExecutor,
@@ -133,7 +155,7 @@ Future<List<GenerateTextToolExecution>?> executeFunctionTools(
 }) async {
   final executor = functionToolExecutor;
   if (executor == null) {
-    return null;
+    return const GenerateTextToolContinuation.stop();
   }
 
   final resolvedToolCallIds = {
@@ -154,13 +176,15 @@ Future<List<GenerateTextToolExecution>?> executeFunctionTools(
   }
 
   if (step.toolApprovalRequests.isNotEmpty) {
-    return null;
+    return const GenerateTextToolContinuation.stop();
   }
 
   if (clientToolCalls.isEmpty) {
     return step.toolResults.isEmpty
-        ? null
-        : const <GenerateTextToolExecution>[];
+        ? const GenerateTextToolContinuation.stop()
+        : GenerateTextToolContinuation.continueWithExecutions(
+            const <GenerateTextToolExecution>[],
+          );
   }
 
   final executions = <GenerateTextToolExecution>[];
@@ -214,7 +238,26 @@ Future<List<GenerateTextToolExecution>?> executeFunctionTools(
     );
   }
 
-  return executions;
+  return GenerateTextToolContinuation.continueWithExecutions(executions);
+}
+
+Future<List<GenerateTextToolExecution>?> executeFunctionTools(
+  GenerateTextStepResult step, {
+  required Set<String> declaredToolNames,
+  required GenerateTextFunctionToolExecutor? functionToolExecutor,
+  GenerateTextOnToolStart? onToolStart,
+  GenerateTextOnToolFinish? onToolFinish,
+  required String runnerName,
+}) async {
+  final continuation = await resolveFunctionToolContinuation(
+    step,
+    declaredToolNames: declaredToolNames,
+    functionToolExecutor: functionToolExecutor,
+    onToolStart: onToolStart,
+    onToolFinish: onToolFinish,
+    runnerName: runnerName,
+  );
+  return continuation.shouldContinue ? continuation.executions : null;
 }
 
 Future<List<PromptMessage>?> buildFunctionToolContinuation(

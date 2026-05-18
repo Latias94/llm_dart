@@ -11,6 +11,10 @@
   the stream text runner implementation without changing stream behavior.
 - Split generate text runner support into public facade, tool execution, and
   prompt replay modules while preserving runner behavior.
+- Added an explicit text tool continuation result so generate and stream
+  runners no longer depend on nullable tool execution return values.
+- Added a shared text loop continuation helper so stop-condition evaluation and
+  prompt replay are no longer duplicated across generate and stream runners.
 - Split generate text result accumulation into content buffering, tool
   projection, and lifecycle modules while preserving public result collection
   behavior.

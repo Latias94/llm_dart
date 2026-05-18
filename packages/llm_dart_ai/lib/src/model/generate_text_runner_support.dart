@@ -15,6 +15,8 @@ export 'generate_text_runner_tool_execution.dart'
         GenerateTextFunctionToolExecutor,
         GenerateTextOnToolFinish,
         GenerateTextOnToolStart,
+        GenerateTextToolContinuation,
+        GenerateTextToolContinuationKind,
         GenerateTextToolExecution,
         GenerateTextToolExecutionFinishEvent,
         GenerateTextToolExecutionResult,
@@ -53,6 +55,26 @@ final class GenerateTextRunnerSupport {
     required String runnerName,
   }) {
     return tool_execution.executeFunctionTools(
+      step,
+      declaredToolNames: declaredToolNames,
+      functionToolExecutor: functionToolExecutor,
+      onToolStart: onToolStart,
+      onToolFinish: onToolFinish,
+      runnerName: runnerName,
+    );
+  }
+
+  static Future<tool_execution.GenerateTextToolContinuation>
+      resolveFunctionToolContinuation(
+    GenerateTextStepResult step, {
+    required Set<String> declaredToolNames,
+    required tool_execution.GenerateTextFunctionToolExecutor?
+        functionToolExecutor,
+    tool_execution.GenerateTextOnToolStart? onToolStart,
+    tool_execution.GenerateTextOnToolFinish? onToolFinish,
+    required String runnerName,
+  }) {
+    return tool_execution.resolveFunctionToolContinuation(
       step,
       declaredToolNames: declaredToolNames,
       functionToolExecutor: functionToolExecutor,

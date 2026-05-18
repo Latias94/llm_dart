@@ -103,12 +103,30 @@ Implemented first runtime slice:
 - Preserved public API and callback behavior while creating a seam that can
   grow into Dart's equivalent of reference `prepareStep`.
 
+Implemented tool-loop continuation slice:
+
+- Replaced the runner-facing `null` / empty list / non-empty list convention
+  with explicit `GenerateTextToolContinuation` values.
+- `stop` now represents natural stop conditions: missing executor, provider
+  approval waiting, or no actionable client tool calls.
+- `continueWithExecutions` now represents continuation, including the
+  important case where the model already returned matching tool result parts
+  and no local execution is needed.
+- Kept the legacy support helper behavior for callers that still use
+  `executeFunctionTools`, but moved synchronous and streaming runners onto the
+  explicit continuation seam.
+- Added a shared `GenerateTextLoopContinuation` helper so stop-condition
+  evaluation and prompt replay are one runtime seam instead of duplicated in
+  both runners.
+
 Next runtime candidates:
 
 - Add an explicit `prepareStep` hook if real callers need per-step model,
   tool-choice, active-tools, or options overrides.
 - Promote tool approval policy into a first-class runtime seam instead of
   treating approvals only as a natural stop condition.
+- Split provider approval waiting, automatic denial, and user approval response
+  replay into their own module once the public approval policy is designed.
 - Audit result facades for parity with reference step-level projections:
   static/dynamic tool calls, static/dynamic tool results, warnings, files, and
   response messages.
