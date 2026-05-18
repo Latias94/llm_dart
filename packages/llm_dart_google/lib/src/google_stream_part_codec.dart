@@ -27,32 +27,7 @@ final class GoogleStreamPartCodec {
         providerMetadata: metadata,
       );
 
-      yield ToolInputStartEvent(
-        toolCallId: projectedToolCall.toolCallId,
-        toolName: projectedToolCall.toolName,
-        providerExecuted: projectedToolCall.providerExecuted,
-        isDynamic: projectedToolCall.isDynamic,
-        providerMetadata: projectedToolCall.providerMetadata,
-      );
-      yield ToolInputDeltaEvent(
-        toolCallId: projectedToolCall.toolCallId,
-        delta: projectedToolCall.encodedInput,
-        providerMetadata: projectedToolCall.providerMetadata,
-      );
-      yield ToolInputEndEvent(
-        toolCallId: projectedToolCall.toolCallId,
-        providerMetadata: projectedToolCall.providerMetadata,
-      );
-      yield ToolCallEvent(
-        toolCall: ToolCallContent(
-          toolCallId: projectedToolCall.toolCallId,
-          toolName: projectedToolCall.toolName,
-          input: projectedToolCall.input,
-          providerExecuted: projectedToolCall.providerExecuted,
-          isDynamic: projectedToolCall.isDynamic,
-        ),
-        providerMetadata: projectedToolCall.providerMetadata,
-      );
+      yield* emitGoogleProjectedToolCallEvents(projectedToolCall);
       return;
     }
 
@@ -64,15 +39,7 @@ final class GoogleStreamPartCodec {
         executionResult: executionResult,
         providerMetadata: metadata,
       );
-      yield ToolResultEvent(
-        toolResult: ToolResultContent(
-          toolCallId: projectedToolResult.toolCallId,
-          toolName: projectedToolResult.toolName,
-          toolOutput: projectedToolResult.toolOutput,
-          isDynamic: projectedToolResult.isDynamic,
-        ),
-        providerMetadata: projectedToolResult.providerMetadata,
-      );
+      yield googleProjectedToolResultEvent(projectedToolResult);
       return;
     }
 
@@ -95,28 +62,7 @@ final class GoogleStreamPartCodec {
         state.toolCounter += 1;
       }
 
-      yield ToolInputStartEvent(
-        toolCallId: projectedToolCall.toolCallId,
-        toolName: projectedToolCall.toolName,
-        providerMetadata: projectedToolCall.providerMetadata,
-      );
-      yield ToolInputDeltaEvent(
-        toolCallId: projectedToolCall.toolCallId,
-        delta: projectedToolCall.encodedInput,
-        providerMetadata: projectedToolCall.providerMetadata,
-      );
-      yield ToolInputEndEvent(
-        toolCallId: projectedToolCall.toolCallId,
-        providerMetadata: projectedToolCall.providerMetadata,
-      );
-      yield ToolCallEvent(
-        toolCall: ToolCallContent(
-          toolCallId: projectedToolCall.toolCallId,
-          toolName: projectedToolCall.toolName,
-          input: projectedToolCall.input,
-        ),
-        providerMetadata: projectedToolCall.providerMetadata,
-      );
+      yield* emitGoogleProjectedToolCallEvents(projectedToolCall);
       return;
     }
 

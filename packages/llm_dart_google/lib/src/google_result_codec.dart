@@ -43,18 +43,7 @@ final class GoogleGenerateContentResultCodec {
             executableCode: executableCode,
             providerMetadata: signatureMetadata,
           );
-          content.add(
-            ToolCallContentPart(
-              ToolCallContent(
-                toolCallId: projectedToolCall.toolCallId,
-                toolName: projectedToolCall.toolName,
-                input: projectedToolCall.input,
-                providerExecuted: projectedToolCall.providerExecuted,
-                isDynamic: projectedToolCall.isDynamic,
-              ),
-              providerMetadata: projectedToolCall.providerMetadata,
-            ),
-          );
+          content.add(googleProjectedToolCallContentPart(projectedToolCall));
           continue;
         }
 
@@ -64,17 +53,8 @@ final class GoogleGenerateContentResultCodec {
             executionResult: executionResult,
             providerMetadata: signatureMetadata,
           );
-          content.add(
-            ToolResultContentPart(
-              ToolResultContent(
-                toolCallId: projectedToolResult.toolCallId,
-                toolName: projectedToolResult.toolName,
-                toolOutput: projectedToolResult.toolOutput,
-                isDynamic: projectedToolResult.isDynamic,
-              ),
-              providerMetadata: projectedToolResult.providerMetadata,
-            ),
-          );
+          content
+              .add(googleProjectedToolResultContentPart(projectedToolResult));
           continue;
         }
 
@@ -87,16 +67,7 @@ final class GoogleGenerateContentResultCodec {
           );
           if (projectedToolCall != null) {
             hasClientToolCalls = true;
-            content.add(
-              ToolCallContentPart(
-                ToolCallContent(
-                  toolCallId: projectedToolCall.toolCallId,
-                  toolName: projectedToolCall.toolName,
-                  input: projectedToolCall.input,
-                ),
-                providerMetadata: projectedToolCall.providerMetadata,
-              ),
-            );
+            content.add(googleProjectedToolCallContentPart(projectedToolCall));
           }
           continue;
         }
