@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import 'openai_responses_mcp_projection.dart';
 import 'openai_streaming_support.dart';
 
 List<ContentPart> decodeOpenAIResponsesMessageOutput(
@@ -129,97 +130,38 @@ ToolCallContentPart? decodeOpenAIResponsesFunctionCallOutput(
 List<ContentPart> decodeOpenAIResponsesMcpApprovalRequestOutput(
   Map<String, Object?> item,
 ) {
-  final approvalId =
-      _asString(item['approval_request_id']) ?? _asString(item['id']);
-  final toolName = _asString(item['name']);
-  if (approvalId == null || toolName == null) {
+  final projection = projectOpenAIResponsesMcpApprovalRequest(item);
+  if (projection == null) {
     return const [];
   }
 
-  final providerMetadata = openAIResponsesItemMetadata(
-    item,
-    extra: {
-      'approvalRequestId': approvalId,
-      'serverLabel': _asString(item['server_label']),
-    },
-  );
-  final qualifiedToolName = 'mcp.$toolName';
-
   return [
     ToolCallContentPart(
-      ToolCallContent(
-        toolCallId: approvalId,
-        toolName: qualifiedToolName,
-        input: decodeOpenAIResponsesJsonValue(
-          _asString(item['arguments']) ?? '{}',
-        ),
-        providerExecuted: true,
-        isDynamic: true,
-        title: _asString(item['server_label']),
-      ),
-      providerMetadata: providerMetadata,
+      projection.toToolCall(),
+      providerMetadata: projection.providerMetadata,
     ),
     ToolApprovalRequestContentPart(
-      ToolApprovalRequestContent(
-        approvalId: approvalId,
-        toolCallId: approvalId,
-      ),
-      providerMetadata: providerMetadata,
+      projection.toApprovalRequest(),
+      providerMetadata: projection.providerMetadata,
     ),
   ];
 }
 
 List<ContentPart> decodeOpenAIResponsesMcpCallOutput(
     Map<String, Object?> item) {
-  final toolCallId =
-      _asString(item['approval_request_id']) ?? _asString(item['id']);
-  final toolName = _asString(item['name']);
-  if (toolCallId == null || toolName == null) {
+  final projection = projectOpenAIResponsesMcpCall(item);
+  if (projection == null) {
     return const [];
   }
 
-  final providerMetadata = openAIResponsesItemMetadata(
-    item,
-    extra: {
-      'approvalRequestId': _asString(item['approval_request_id']),
-      'serverLabel': _asString(item['server_label']),
-    },
-  );
-  final qualifiedToolName = 'mcp.$toolName';
-  final arguments = decodeOpenAIResponsesJsonValue(
-    _asString(item['arguments']) ?? '{}',
-  );
-
   return [
     ToolCallContentPart(
-      ToolCallContent(
-        toolCallId: toolCallId,
-        toolName: qualifiedToolName,
-        input: arguments,
-        providerExecuted: true,
-        isDynamic: true,
-        title: _asString(item['server_label']),
-      ),
-      providerMetadata: providerMetadata,
+      projection.toToolCall(),
+      providerMetadata: projection.providerMetadata,
     ),
     ToolResultContentPart(
-      ToolResultContent(
-        toolCallId: toolCallId,
-        toolName: qualifiedToolName,
-        toolOutput: ToolOutput.fromValue(
-          {
-            'type': 'mcp_call',
-            'serverLabel': _asString(item['server_label']),
-            'name': toolName,
-            'arguments': arguments,
-            if (item['output'] != null) 'output': item['output'],
-            if (item['error'] != null) 'error': item['error'],
-          },
-          isError: item['error'] != null,
-        ),
-        isDynamic: true,
-      ),
-      providerMetadata: providerMetadata,
+      projection.toToolResult(),
+      providerMetadata: projection.providerMetadata,
     ),
   ];
 }
