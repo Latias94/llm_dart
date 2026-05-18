@@ -37,7 +37,7 @@
 
 ## AI Runtime Audit
 
-- [ ] Compare `generateText` and `streamText` runtime shape against reference
+- [x] Compare `generateText` and `streamText` runtime shape against reference
   generate-text layers
 - [ ] Audit tool-loop continuation, missing tool result handling, approval
   flows, and stop conditions

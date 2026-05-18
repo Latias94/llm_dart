@@ -17,6 +17,22 @@
 The previous SDK-aligned workstream already split many runtime modules into
 focused implementation seams.
 
+Additional findings from the `generateText` / `streamText` comparison:
+
+- The Dart runtime already matches the reference split between app-facing
+  helpers and lower-level run APIs.
+- Tool execution, prompt replay, result accumulation, lifecycle callbacks, and
+  stream event emission are separate modules instead of one large runner.
+- `GenerateTextRunner` and `StreamTextRunner` still had duplicated step
+  planning logic: max step enforcement, prompt validation, request
+  construction, declared tool-name collection, and step-start event
+  construction.
+- Vercel AI SDK keeps per-step preparation as an explicit runtime concern
+  (`prepareStep`, active tools, step messages, and per-step callbacks). Dart
+  should keep typed provider options and Dart streams, but the same lesson
+  applies: step preparation should be a single runtime seam shared by
+  non-streaming and streaming paths.
+
 ## Reference Comparison Targets
 
 Use these `repo-ref/ai` areas as comparison material:
@@ -77,3 +93,22 @@ After core contract audit, run a runtime event and tool-loop audit:
 - map every runtime event type to its provider or runtime owner
 - document any missing error type or tool-loop invariant
 - add focused tests only for gaps found by the audit
+
+Implemented first runtime slice:
+
+- Added a shared `GenerateTextStepPlanner` for synchronous and streaming text
+  runners.
+- Centralized step request construction, start-event construction, prompt
+  validation context, max-step checks, and declared tool-name discovery.
+- Preserved public API and callback behavior while creating a seam that can
+  grow into Dart's equivalent of reference `prepareStep`.
+
+Next runtime candidates:
+
+- Add an explicit `prepareStep` hook if real callers need per-step model,
+  tool-choice, active-tools, or options overrides.
+- Promote tool approval policy into a first-class runtime seam instead of
+  treating approvals only as a natural stop condition.
+- Audit result facades for parity with reference step-level projections:
+  static/dynamic tool calls, static/dynamic tool results, warnings, files, and
+  response messages.

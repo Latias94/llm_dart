@@ -5,14 +5,13 @@ import 'package:llm_dart_provider/llm_dart_provider.dart' hide ErrorEvent;
 
 import '../prompt/model_message.dart';
 import '../prompt/prompt_normalization.dart';
-import '../prompt/prompt_validation.dart';
 import '../stream/text_stream_event.dart';
 import 'generate_text_result_accumulator.dart';
 import 'generate_text_run_result.dart';
 import 'generate_text_runner_support.dart';
+import 'generate_text_step_planner.dart';
 import 'generate_text_stop_condition.dart';
 import 'generate_text_step_result.dart';
-import 'generate_text_step_start_event.dart';
 import 'language_model_stream_adapter.dart';
 import 'stream_result_foundation.dart';
 import 'stream_text_event_emitter.dart';
@@ -65,17 +64,14 @@ final class StreamTextRunner {
           messages: messages,
         ),
         tools = List.unmodifiable(tools) {
-    validateProviderPrompt(
-      this.prompt,
-      context: 'StreamTextRunner.prompt',
+    GenerateTextStepPlanner.validatePromptForRunner(
+      runnerName: 'StreamTextRunner',
+      prompt: this.prompt,
     );
-    if (maxSteps < 1) {
-      throw ArgumentError.value(
-        maxSteps,
-        'maxSteps',
-        'StreamTextRunner.maxSteps must be at least 1.',
-      );
-    }
+    GenerateTextStepPlanner.validateMaxSteps(
+      runnerName: 'StreamTextRunner',
+      maxSteps: maxSteps,
+    );
   }
 
   StreamTextRunResult run() {
@@ -103,9 +99,16 @@ final class StreamTextRunner {
   }) async {
     final state = StreamTextRunState();
     var promptHistory = List<PromptMessage>.from(prompt);
-    final declaredToolNames = {
-      for (final tool in tools) tool.name,
-    };
+    final planner = GenerateTextStepPlanner(
+      runnerName: 'StreamTextRunner',
+      model: model,
+      tools: tools,
+      toolChoice: toolChoice,
+      options: options,
+      callOptions: callOptions,
+      maxSteps: maxSteps,
+    );
+    final declaredToolNames = planner.declaredToolNames;
     var streamClosed = false;
     final emitter = StreamTextEventEmitter(
       streamResult: streamResult,
@@ -124,49 +127,27 @@ final class StreamTextRunner {
     try {
       await emitter.add(const RunStartEvent());
       while (true) {
-        final stepNumber = state.nextStepNumber;
-        if (stepNumber >= maxSteps) {
-          throw StateError(
-            'StreamTextRunner exceeded maxSteps ($maxSteps).',
-          );
-        }
-
-        validateProviderPrompt(
-          promptHistory,
-          context: 'StreamTextRunner.prompt',
-        );
-
-        final request = GenerateTextRequest(
-          prompt: promptHistory,
-          tools: tools,
-          toolChoice: toolChoice,
-          options: options,
-          callOptions: callOptions,
+        final plan = planner.planNextStep(
+          promptHistory: promptHistory,
+          previousSteps: state.previousSteps,
         );
         final accumulator = GenerateTextResultAccumulator();
         state.beginStep(
-          stepNumber: stepNumber,
-          request: request,
+          stepNumber: plan.stepNumber,
+          request: plan.request,
           accumulator: accumulator,
         );
 
-        final stepStartEvent = GenerateTextStepStartEvent(
-          stepNumber: stepNumber,
-          providerId: model.providerId,
-          modelId: model.modelId,
-          request: request,
-          previousSteps: state.previousSteps,
-        );
-        await onStepStart?.call(stepStartEvent);
+        await onStepStart?.call(plan.startEvent);
         await emitter.add(
-          StepStartEvent(stepId: _stepId(stepNumber)),
+          StepStartEvent(stepId: _stepId(plan.stepNumber)),
         );
         state.markActiveStepOpen();
         _throwIfCancelled();
 
         final events = adaptLanguageModelStreamEvents(
           cancelOnProviderCancellation(
-            model.doStream(request),
+            model.doStream(plan.request),
             callOptions.cancellation,
           ),
           context: 'StreamTextRunner.modelStream',
@@ -178,10 +159,10 @@ final class StreamTextRunner {
         _throwIfCancelled();
 
         var step = GenerateTextStepResult(
-          stepNumber: stepNumber,
+          stepNumber: plan.stepNumber,
           providerId: model.providerId,
           modelId: model.modelId,
-          request: request,
+          request: plan.request,
           result: accumulator.build(),
         );
         state.addOrReplaceStep(step);

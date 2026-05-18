@@ -2,14 +2,13 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import '../prompt/model_message.dart';
 import '../prompt/prompt_normalization.dart';
-import '../prompt/prompt_validation.dart';
 import 'generate_text_run_lifecycle.dart';
 import 'generate_text_run_result.dart';
 import 'generate_text_run_state.dart';
 import 'generate_text_runner_support.dart';
+import 'generate_text_step_planner.dart';
 import 'generate_text_stop_condition.dart';
 import 'generate_text_step_result.dart';
-import 'generate_text_step_start_event.dart';
 
 final class GenerateTextRunner {
   final LanguageModel model;
@@ -51,13 +50,10 @@ final class GenerateTextRunner {
           messages: messages,
         ),
         tools = List.unmodifiable(tools) {
-    if (maxSteps < 1) {
-      throw ArgumentError.value(
-        maxSteps,
-        'maxSteps',
-        'GenerateTextRunner.maxSteps must be at least 1.',
-      );
-    }
+    GenerateTextStepPlanner.validateMaxSteps(
+      runnerName: 'GenerateTextRunner',
+      maxSteps: maxSteps,
+    );
   }
 
   Future<GenerateTextRunResult> run() async {
@@ -72,53 +68,38 @@ final class GenerateTextRunner {
 
     try {
       var promptHistory = List<PromptMessage>.from(prompt);
-      final declaredToolNames = {
-        for (final tool in tools) tool.name,
-      };
+      final planner = GenerateTextStepPlanner(
+        runnerName: 'GenerateTextRunner',
+        model: model,
+        tools: tools,
+        toolChoice: toolChoice,
+        options: options,
+        callOptions: callOptions,
+        maxSteps: maxSteps,
+      );
+      final declaredToolNames = planner.declaredToolNames;
 
       while (true) {
-        final stepNumber = state.nextStepNumber;
-        if (stepNumber >= maxSteps) {
-          throw StateError(
-            'GenerateTextRunner exceeded maxSteps ($maxSteps).',
-          );
-        }
-
-        validateProviderPrompt(
-          promptHistory,
-          context: 'GenerateTextRunner.prompt',
-        );
-
-        final request = GenerateTextRequest(
-          prompt: promptHistory,
-          tools: tools,
-          toolChoice: toolChoice,
-          options: options,
-          callOptions: callOptions,
-        );
-        state.beginStep(
-          stepNumber: stepNumber,
-          request: request,
-        );
-
-        final stepStartEvent = GenerateTextStepStartEvent(
-          stepNumber: stepNumber,
-          providerId: model.providerId,
-          modelId: model.modelId,
-          request: request,
+        final plan = planner.planNextStep(
+          promptHistory: promptHistory,
           previousSteps: state.previousSteps,
         );
-        await onStepStart?.call(stepStartEvent);
+        state.beginStep(
+          stepNumber: plan.stepNumber,
+          request: plan.request,
+        );
+
+        await onStepStart?.call(plan.startEvent);
         _throwIfCancelled();
 
-        final result = await model.doGenerate(request);
+        final result = await model.doGenerate(plan.request);
         state.setActiveResult(result);
         _throwIfCancelled();
         var step = GenerateTextStepResult(
-          stepNumber: stepNumber,
+          stepNumber: plan.stepNumber,
           providerId: model.providerId,
           modelId: model.modelId,
-          request: request,
+          request: plan.request,
           result: result,
         );
 
