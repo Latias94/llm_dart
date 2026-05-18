@@ -73,6 +73,13 @@ void validateElevenLabsSpeechOptions(ElevenLabsSpeechOptions? options) {
   }
 }
 
+void validateElevenLabsSpeechRequest(
+  SpeechGenerationRequest request,
+  ElevenLabsSpeechOptions? options,
+) {
+  validateElevenLabsSpeechOptions(options);
+}
+
 String resolveElevenLabsSpeechVoiceId({
   required String? requestVoice,
   required ElevenLabsSpeechModelSettings settings,
@@ -95,6 +102,9 @@ Map<String, Object?> buildElevenLabsSpeechRequestBody(
   required ElevenLabsSpeechModelSettings settings,
   required ElevenLabsSpeechOptions? options,
 }) {
+  final languageCode = request.language ?? options?.languageCode;
+  final speed = request.speed ?? options?.speed;
+
   final body = <String, Object?>{
     'text': request.text,
     'model_id': modelId,
@@ -112,7 +122,7 @@ Map<String, Object?> buildElevenLabsSpeechRequestBody(
       'similarity_boost': similarityBoost,
     if (_resolveRatio(settings.style, options?.style) case final style?)
       'style': style,
-    if (options?.speed case final speed?) 'speed': speed,
+    if (speed != null) 'speed': speed,
     if (_resolveBool(
       settings.useSpeakerBoost,
       options?.useSpeakerBoost,
@@ -125,20 +135,21 @@ Map<String, Object?> buildElevenLabsSpeechRequestBody(
     body['voice_settings'] = voiceSettings;
   }
 
-  if (options?.languageCode case final languageCode?) {
+  if (languageCode != null) {
     body['language_code'] = languageCode;
   }
 
   if (options != null && options.pronunciationDictionaryLocators.isNotEmpty) {
-    body['pronunciation_dictionary_locators'] = options
-        .pronunciationDictionaryLocators
-        .map(
-          (locator) => {
-            'pronunciation_dictionary_id': locator.pronunciationDictionaryId,
-            if (locator.versionId != null) 'version_id': locator.versionId,
-          },
-        )
-        .toList(growable: false);
+    body['pronunciation_dictionary_locators'] =
+        options.pronunciationDictionaryLocators
+            .map(
+              (locator) => {
+                'pronunciation_dictionary_id':
+                    locator.pronunciationDictionaryId,
+                if (locator.versionId != null) 'version_id': locator.versionId,
+              },
+            )
+            .toList(growable: false);
   }
 
   if (options?.seed case final seed?) {
@@ -167,8 +178,7 @@ Map<String, Object?> buildElevenLabsSpeechRequestBody(
 
   if (options?.applyLanguageTextNormalization
       case final applyLanguageTextNormalization?) {
-    body['apply_language_text_normalization'] =
-        applyLanguageTextNormalization;
+    body['apply_language_text_normalization'] = applyLanguageTextNormalization;
   }
 
   return body;
@@ -186,6 +196,23 @@ String resolveElevenLabsSpeechOutputFormat(String? outputFormat) {
     'ulaw' => 'ulaw_8000',
     _ => outputFormat,
   };
+}
+
+void warnElevenLabsSpeechUnsupportedRequestFields(
+  SpeechGenerationRequest request,
+  List<ModelWarning> warnings,
+) {
+  final instructions = request.instructions;
+  if (instructions != null) {
+    warnings.add(
+      ModelWarning(
+        type: ModelWarningType.unsupported,
+        field: 'instructions',
+        message:
+            'ElevenLabs speech models do not support instructions. Instructions parameter "$instructions" was ignored.',
+      ),
+    );
+  }
 }
 
 void _validateRatio(

@@ -32,6 +32,14 @@ Future<void> main() async {
   final modelId =
       Platform.environment['ELEVENLABS_TRANSCRIPTION_MODEL'] ?? 'scribe_v1';
   final audioBytes = await audioFile.readAsBytes();
+  final mediaType = _detectMediaType(audioFile.path);
+  if (mediaType == null) {
+    stderr.writeln(
+      'Unsupported audio file extension. Use mp3, wav, m4a, ogg, or webm.',
+    );
+    exitCode = 1;
+    return;
+  }
 
   final model = elevenlabs_pkg
       .elevenLabs(
@@ -42,7 +50,7 @@ Future<void> main() async {
   final result = await core.transcribe(
     model: model,
     audioBytes: audioBytes,
-    mediaType: _detectMediaType(audioFile.path),
+    mediaType: mediaType,
   );
 
   print('model=$modelId');

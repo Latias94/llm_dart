@@ -10,6 +10,10 @@
   `maxEmbeddingsPerCall`, `supportsParallelCalls`, and `maxImagesPerCall`.
 - Expanded the shared image request contract with optional prompt support,
   aspect ratio, seed, file inputs, masks, and per-image provider metadata.
+- Expanded `SpeechGenerationRequest` with shared `outputFormat`,
+  `instructions`, `speed`, and `language` fields.
+- Made provider-facing `TranscriptionRequest.mediaType` required so adapters no
+  longer receive ambiguous audio bytes.
 
 ## [0.11.0-alpha.1] - 2026-05-12
 

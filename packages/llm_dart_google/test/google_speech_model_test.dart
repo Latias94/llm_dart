@@ -318,6 +318,55 @@ void main() {
       );
     });
 
+    test('speech model warning-drops unsupported shared speech fields',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = Google(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'candidates': [
+                  {
+                    'content': {
+                      'parts': [
+                        {
+                          'inlineData': {
+                            'mimeType': 'audio/pcm',
+                            'data': base64Encode([1, 2]),
+                          },
+                        },
+                      ],
+                    },
+                  },
+                ],
+              },
+            );
+          },
+        ),
+      ).speechModel('gemini-2.5-flash-preview-tts');
+
+      final result = await generateSpeech(
+        model: model,
+        text: 'Hello world.',
+        outputFormat: 'mp3',
+        instructions: 'Speak clearly.',
+        speed: 1.2,
+        language: 'en',
+      );
+
+      expect(capturedRequest, isNotNull);
+      expect(result.audioBytes, [1, 2]);
+      expect(
+        result.warnings.map((warning) => warning.field),
+        ['outputFormat', 'instructions', 'speed', 'language'],
+      );
+    });
+
     test('speech model rejects incompatible provider options', () async {
       final model = Google(
         apiKey: 'test-key',

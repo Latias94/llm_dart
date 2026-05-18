@@ -54,7 +54,7 @@ TransportMultipartBody buildElevenLabsTranscriptionMultipartBody(
       TransportMultipartField.file(
         name: 'file',
         filename: buildAudioFilename(request.mediaType),
-        mediaType: request.mediaType ?? 'audio/wav',
+        mediaType: request.mediaType,
         bytes: request.audioBytes,
       ),
       TransportMultipartField.text(

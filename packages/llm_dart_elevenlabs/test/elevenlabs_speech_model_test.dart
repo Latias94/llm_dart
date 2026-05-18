@@ -57,6 +57,9 @@ void main() {
       final result = await generateSpeech(
         model: model,
         text: 'Hello world.',
+        outputFormat: 'pcm',
+        language: 'en',
+        speed: 1.1,
         callOptions: CallOptions(
           timeout: const Duration(seconds: 5),
           headers: const {
@@ -64,9 +67,6 @@ void main() {
           },
           cancellation: cancelToken,
           providerOptions: const ElevenLabsSpeechOptions(
-            outputFormat: 'pcm',
-            languageCode: 'en',
-            speed: 1.1,
             pronunciationDictionaryLocators: [
               ElevenLabsPronunciationDictionaryLocator(
                 pronunciationDictionaryId: 'dict_1',
@@ -152,6 +152,44 @@ void main() {
         {
           'requestId': 'req_123',
         },
+      );
+    });
+
+    test('generateSpeech warning-drops unsupported shared instructions',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = ElevenLabs(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return const TransportResponse(
+              statusCode: 200,
+              body: [1, 2, 3],
+            );
+          },
+        ),
+      ).speechModel('eleven_multilingual_v2');
+
+      final result = await generateSpeech(
+        model: model,
+        text: 'Hello world.',
+        instructions: 'Speak slowly.',
+      );
+
+      expect(capturedRequest, isNotNull);
+      expect(capturedRequest!.body, isNot(contains('instructions')));
+      expect(
+        result.warnings,
+        [
+          const ModelWarning(
+            type: ModelWarningType.unsupported,
+            field: 'instructions',
+            message:
+                'ElevenLabs speech models do not support instructions. Instructions parameter "Speak slowly." was ignored.',
+          ),
+        ],
       );
     });
 

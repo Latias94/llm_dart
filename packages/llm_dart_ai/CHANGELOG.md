@@ -28,6 +28,10 @@
 - Split output foundation and JSON support into focused type, parsing,
   validation, value, and diagnostics modules while preserving public exports and
   output behavior.
+- Added shared `generateSpeech(...)` arguments for `outputFormat`,
+  `instructions`, `speed`, and `language`.
+- Made `transcribe(...)` require a non-empty `mediaType` to match the
+  provider-facing transcription contract.
 
 ## [0.11.0-alpha.1] - 2026-05-12
 

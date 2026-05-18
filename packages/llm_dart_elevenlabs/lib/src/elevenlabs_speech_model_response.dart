@@ -9,6 +9,7 @@ SpeechGenerationResult decodeElevenLabsSpeechResponse({
   required String modelId,
   required Map<String, String> headers,
   required String outputFormat,
+  List<ModelWarning> warnings = const [],
 }) {
   final audioBytes = decodeElevenLabsSpeechBytes(body);
   if (audioBytes.isEmpty) {
@@ -21,6 +22,7 @@ SpeechGenerationResult decodeElevenLabsSpeechResponse({
     audioBytes: audioBytes,
     mediaType: lookupHeader(headers, 'content-type') ??
         defaultElevenLabsSpeechMediaTypeForOutputFormat(outputFormat),
+    warnings: warnings,
     responseMetadata: ModelResponseMetadata(
       timestamp: DateTime.now().toUtc(),
       modelId: modelId,

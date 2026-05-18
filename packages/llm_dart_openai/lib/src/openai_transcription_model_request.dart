@@ -99,7 +99,7 @@ TransportMultipartBody buildOpenAITranscriptionMultipartBody({
       TransportMultipartField.file(
         name: 'file',
         filename: buildOpenAITranscriptionFilename(request.mediaType),
-        mediaType: request.mediaType ?? 'audio/wav',
+        mediaType: request.mediaType,
         bytes: request.audioBytes,
       ),
       TransportMultipartField.text(
@@ -143,8 +143,8 @@ bool usesOpenAIJsonTimestampTranscriptionFormat(String modelId) {
   return modelId == 'gpt-4o-transcribe' || modelId == 'gpt-4o-mini-transcribe';
 }
 
-String buildOpenAITranscriptionFilename(String? mediaType) {
-  final normalized = mediaType?.split(';').first.trim().toLowerCase();
+String buildOpenAITranscriptionFilename(String mediaType) {
+  final normalized = mediaType.split(';').first.trim().toLowerCase();
   final extension = switch (normalized) {
     'audio/mpeg' || 'audio/mp3' => 'mp3',
     'audio/wav' => 'wav',

@@ -60,11 +60,20 @@ void main() {
         isA<provider.ImageGenerationRequest>(),
       );
       expect(
-        const model.SpeechGenerationRequest(text: 'Speak this.'),
+        const model.SpeechGenerationRequest(
+          text: 'Speak this.',
+          outputFormat: 'mp3',
+          instructions: 'Say it clearly.',
+          speed: 1.0,
+          language: 'en',
+        ),
         isA<provider.SpeechGenerationRequest>(),
       );
       expect(
-        const model.TranscriptionRequest(audioBytes: [1, 2, 3]),
+        const model.TranscriptionRequest(
+          audioBytes: [1, 2, 3],
+          mediaType: 'audio/wav',
+        ),
         isA<provider.TranscriptionRequest>(),
       );
       expect(

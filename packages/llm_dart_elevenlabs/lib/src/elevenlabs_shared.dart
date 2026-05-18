@@ -38,8 +38,8 @@ ProviderMetadata? elevenLabsResponseMetadata(Map<String, String> headers) {
   );
 }
 
-String buildAudioFilename(String? mediaType) {
-  final normalized = mediaType?.split(';').first.trim().toLowerCase();
+String buildAudioFilename(String mediaType) {
+  final normalized = mediaType.split(';').first.trim().toLowerCase();
   final extension = switch (normalized) {
     'audio/mpeg' || 'audio/mp3' => 'mp3',
     'audio/wav' || 'audio/x-wav' => 'wav',

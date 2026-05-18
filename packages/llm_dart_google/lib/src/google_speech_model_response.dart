@@ -9,6 +9,7 @@ SpeechGenerationResult decodeGoogleSpeechResponse({
   required Object? body,
   required String modelId,
   required Map<String, String> headers,
+  List<ModelWarning> warnings = const [],
 }) {
   final json = decodeGoogleSpeechJsonObject(body);
   final candidates = asList(json['candidates']);
@@ -60,6 +61,7 @@ SpeechGenerationResult decodeGoogleSpeechResponse({
   return SpeechGenerationResult(
     audioBytes: Uint8List.fromList(audioBytes),
     mediaType: mediaType ?? 'audio/pcm',
+    warnings: warnings,
     responseMetadata: ModelResponseMetadata(
       timestamp: DateTime.now().toUtc(),
       modelId: modelId,

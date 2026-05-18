@@ -174,6 +174,7 @@ void main() {
         () => transcribe(
           model: model,
           audioBytes: utf8.encode('abc'),
+          mediaType: 'audio/mpeg',
           callOptions: const CallOptions(
             providerOptions: ElevenLabsSpeechOptions(),
           ),

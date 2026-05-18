@@ -5,12 +5,12 @@ import 'model_response_metadata.dart';
 
 final class TranscriptionRequest {
   final List<int> audioBytes;
-  final String? mediaType;
+  final String mediaType;
   final CallOptions callOptions;
 
   const TranscriptionRequest({
     required this.audioBytes,
-    this.mediaType,
+    required this.mediaType,
     this.callOptions = const CallOptions(),
   });
 }

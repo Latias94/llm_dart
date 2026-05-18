@@ -51,14 +51,16 @@ final class ElevenLabsSpeechModel
     SpeechGenerationRequest request,
   ) async {
     final options = resolveElevenLabsSpeechProviderOptions(request.callOptions);
-    validateElevenLabsSpeechOptions(options);
+    validateElevenLabsSpeechRequest(request, options);
+    final warnings = <ModelWarning>[];
+    warnElevenLabsSpeechUnsupportedRequestFields(request, warnings);
 
     final voiceId = resolveElevenLabsSpeechVoiceId(
       requestVoice: request.voice,
       settings: settings,
     );
     final outputFormat = resolveElevenLabsSpeechOutputFormat(
-      options?.outputFormat,
+      request.outputFormat ?? options?.outputFormat,
     );
     final response = await transport.send(
       buildElevenLabsSpeechTransportRequest(
@@ -83,6 +85,7 @@ final class ElevenLabsSpeechModel
       modelId: modelId,
       headers: response.headers,
       outputFormat: outputFormat,
+      warnings: warnings,
     );
   }
 }

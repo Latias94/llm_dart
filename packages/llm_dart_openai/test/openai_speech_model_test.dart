@@ -56,17 +56,15 @@ void main() {
         model: model,
         text: 'Hello world.',
         voice: 'alloy',
+        outputFormat: 'wav',
+        instructions: 'Speak calmly.',
+        speed: 1.1,
         callOptions: CallOptions(
           timeout: const Duration(seconds: 5),
           headers: const {
             'x-request': 'request-header',
           },
           cancellation: cancelToken,
-          providerOptions: const OpenAISpeechOptions(
-            outputFormat: 'wav',
-            instructions: 'Speak calmly.',
-            speed: 1.1,
-          ),
         ),
       );
 
@@ -167,11 +165,7 @@ void main() {
       final result = await generateSpeech(
         model: model,
         text: 'Hello world.',
-        callOptions: const CallOptions(
-          providerOptions: OpenAISpeechOptions(
-            language: 'en',
-          ),
-        ),
+        language: 'en',
       );
 
       expect(capturedRequest, isNotNull);
@@ -181,7 +175,7 @@ void main() {
         [
           const ModelWarning(
             type: ModelWarningType.unsupported,
-            field: 'providerOptions.language',
+            field: 'language',
             message:
                 'OpenAI speech models do not support language selection. Language parameter "en" was ignored.',
           ),
@@ -209,11 +203,7 @@ void main() {
       final result = await generateSpeech(
         model: model,
         text: 'Hello world.',
-        callOptions: const CallOptions(
-          providerOptions: OpenAISpeechOptions(
-            outputFormat: 'webm',
-          ),
-        ),
+        outputFormat: 'webm',
       );
 
       expect(capturedRequest, isNotNull);
@@ -227,7 +217,7 @@ void main() {
         [
           const ModelWarning(
             type: ModelWarningType.unsupported,
-            field: 'providerOptions.outputFormat',
+            field: 'outputFormat',
             message:
                 'Unsupported OpenAI speech output format: webm. Using mp3 instead.',
           ),
@@ -245,17 +235,13 @@ void main() {
         () => generateSpeech(
           model: model,
           text: 'Hello world.',
-          callOptions: const CallOptions(
-            providerOptions: OpenAISpeechOptions(
-              speed: 4.1,
-            ),
-          ),
+          speed: 4.1,
         ),
         throwsA(
           isA<ArgumentError>().having(
             (error) => error.name,
             'name',
-            'providerOptions.speed',
+            'request.speed',
           ),
         ),
       );

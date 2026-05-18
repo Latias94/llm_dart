@@ -205,11 +205,19 @@ void main() {
         model: model,
         text: 'Hello world.',
         voice: 'alloy',
+        outputFormat: 'mp3',
+        instructions: 'Speak clearly.',
+        speed: 1.1,
+        language: 'en',
       );
 
       expect(result.audioBytes, [1, 2, 3]);
       expect(model.lastRequest?.text, 'Hello world.');
       expect(model.lastRequest?.voice, 'alloy');
+      expect(model.lastRequest?.outputFormat, 'mp3');
+      expect(model.lastRequest?.instructions, 'Speak clearly.');
+      expect(model.lastRequest?.speed, 1.1);
+      expect(model.lastRequest?.language, 'en');
     });
   });
 
@@ -242,6 +250,7 @@ void main() {
         () => transcribe(
           model: model,
           audioBytes: const [],
+          mediaType: 'audio/wav',
         ),
         throwsArgumentError,
       );

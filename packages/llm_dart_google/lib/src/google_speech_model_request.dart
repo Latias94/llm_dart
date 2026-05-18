@@ -28,9 +28,7 @@ void validateGoogleSpeechRequest(
   SpeechGenerationRequest request,
   GoogleSpeechOptions? options,
 ) {
-  if (request.voice != null &&
-      options != null &&
-      options.speakers.isNotEmpty) {
+  if (request.voice != null && options != null && options.speakers.isNotEmpty) {
     throw ArgumentError(
       'Google speech models do not allow request.voice together with GoogleSpeechOptions.speakers.',
     );
@@ -44,6 +42,46 @@ void validateGoogleSpeechRequest(
       'GoogleSpeechOptions.speakers requires non-empty speaker and voice values.',
     );
   }
+}
+
+List<ModelWarning> buildGoogleSpeechRequestWarnings(
+  SpeechGenerationRequest request,
+) {
+  final outputFormat = request.outputFormat;
+  final instructions = request.instructions;
+  final speed = request.speed;
+  final language = request.language;
+
+  return [
+    if (outputFormat != null)
+      ModelWarning(
+        type: ModelWarningType.unsupported,
+        field: 'outputFormat',
+        message:
+            'Google speech models do not support selecting an output format through the shared request field. outputFormat "$outputFormat" was ignored.',
+      ),
+    if (instructions != null)
+      ModelWarning(
+        type: ModelWarningType.unsupported,
+        field: 'instructions',
+        message:
+            'Google speech models do not support speech instructions. instructions was ignored.',
+      ),
+    if (speed != null)
+      ModelWarning(
+        type: ModelWarningType.unsupported,
+        field: 'speed',
+        message:
+            'Google speech models do not support speech speed selection. speed $speed was ignored.',
+      ),
+    if (language != null)
+      ModelWarning(
+        type: ModelWarningType.unsupported,
+        field: 'language',
+        message:
+            'Google speech models do not support language selection through the shared request field. language "$language" was ignored.',
+      ),
+  ];
 }
 
 Map<String, Object?> buildGoogleSpeechRequestBody(

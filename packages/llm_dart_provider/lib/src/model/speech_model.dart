@@ -6,11 +6,19 @@ import 'model_response_metadata.dart';
 final class SpeechGenerationRequest {
   final String text;
   final String? voice;
+  final String? outputFormat;
+  final String? instructions;
+  final double? speed;
+  final String? language;
   final CallOptions callOptions;
 
   const SpeechGenerationRequest({
     required this.text,
     this.voice,
+    this.outputFormat,
+    this.instructions,
+    this.speed,
+    this.language,
     this.callOptions = const CallOptions(),
   });
 }

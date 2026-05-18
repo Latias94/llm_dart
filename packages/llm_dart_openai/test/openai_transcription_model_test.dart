@@ -327,6 +327,7 @@ void main() {
         () => transcribe(
           model: model,
           audioBytes: utf8.encode('abc'),
+          mediaType: 'audio/wav',
           callOptions: const CallOptions(
             providerOptions: OpenAITranscriptionOptions(
               responseFormat: OpenAITranscriptionResponseFormat.json,
@@ -350,6 +351,7 @@ void main() {
         () => transcribe(
           model: model,
           audioBytes: utf8.encode('abc'),
+          mediaType: 'audio/wav',
           callOptions: const CallOptions(
             providerOptions: OpenAITranscriptionOptions(
               temperature: 1.1,
@@ -376,6 +378,7 @@ void main() {
         () => transcribe(
           model: model,
           audioBytes: utf8.encode('abc'),
+          mediaType: 'audio/wav',
           callOptions: const CallOptions(
             providerOptions: OpenAISpeechOptions(),
           ),

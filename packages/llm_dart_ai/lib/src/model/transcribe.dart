@@ -3,7 +3,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 Future<TranscriptionResult> transcribe({
   required TranscriptionModel model,
   required List<int> audioBytes,
-  String? mediaType,
+  required String mediaType,
   CallOptions callOptions = const CallOptions(),
 }) {
   if (audioBytes.isEmpty) {
@@ -11,6 +11,14 @@ Future<TranscriptionResult> transcribe({
       audioBytes,
       'audioBytes',
       'transcribe(...) requires non-empty audio bytes.',
+    );
+  }
+
+  if (mediaType.isEmpty) {
+    throw ArgumentError.value(
+      mediaType,
+      'mediaType',
+      'transcribe(...) requires a non-empty audio media type.',
     );
   }
 

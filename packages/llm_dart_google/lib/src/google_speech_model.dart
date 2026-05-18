@@ -47,6 +47,7 @@ final class GoogleSpeechModel implements SpeechModel, CapabilityDescribedModel {
   ) async {
     final options = resolveGoogleSpeechProviderOptions(request.callOptions);
     validateGoogleSpeechRequest(request, options);
+    final warnings = buildGoogleSpeechRequestWarnings(request);
 
     final response = await transport.send(
       buildGoogleSpeechTransportRequest(
@@ -67,6 +68,7 @@ final class GoogleSpeechModel implements SpeechModel, CapabilityDescribedModel {
       body: response.body,
       modelId: modelId,
       headers: response.headers,
+      warnings: warnings,
     );
   }
 }

@@ -305,6 +305,13 @@ Migration notes:
 
 - OpenAI, Google, and ElevenLabs speech request builders should all resolve the
   shared fields first, then apply typed provider option precedence.
+- Implemented shared `outputFormat`, `instructions`, `speed`, and `language`
+  request fields. OpenAI maps output format, instructions, and speed while
+  warning on language; ElevenLabs maps output format, language, and speed while
+  warning on instructions; Google explicitly warnings on unsupported shared
+  fields instead of silently dropping them.
+- `generateSpeech(...)` now accepts the shared speech fields and constructs the
+  provider-facing request directly.
 - Result codecs should populate media type explicitly instead of relying on
   caller-side fallback rules.
 
@@ -336,6 +343,10 @@ Migration notes:
 - OpenAI and ElevenLabs transcription adapters should be the first migration
   targets because both already return response metadata and support
   provider-specific transcription options.
+- Implemented required provider-facing `TranscriptionRequest.mediaType`.
+  `transcribe(...)` now requires a non-empty media type and OpenAI/ElevenLabs
+  multipart builders pass it through without provider-side `audio/wav`
+  fallback.
 
 ## First Implementation Slices
 
@@ -355,7 +366,7 @@ Do these in order. Each slice should be small enough to test independently.
    - expand `ImageGenerationRequest`
    - add per-image provider metadata
    - adapt OpenAI and Google edit/variation paths behind the common request
-4. Speech and transcription request completion
+4. Speech and transcription request completion - implemented
    - add shared speech request fields
    - require provider-facing transcription media type
    - settle provider option precedence tests

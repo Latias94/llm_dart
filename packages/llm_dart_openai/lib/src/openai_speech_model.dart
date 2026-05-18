@@ -52,13 +52,14 @@ final class OpenAISpeechModel implements SpeechModel, CapabilityDescribedModel {
     SpeechGenerationRequest request,
   ) async {
     final options = resolveOpenAISpeechProviderOptions(request.callOptions);
-    validateOpenAISpeechOptions(options);
+    validateOpenAISpeechRequest(request, options);
     final warnings = <ModelWarning>[];
     final outputFormat = resolveOpenAISpeechOutputFormat(
-      options?.outputFormat,
+      request,
+      options,
       warnings: warnings,
     );
-    warnOpenAISpeechLanguageUnsupported(options, warnings);
+    warnOpenAISpeechLanguageUnsupported(request, options, warnings);
 
     final response = await transport.send(
       buildOpenAISpeechTransportRequest(
