@@ -140,3 +140,48 @@ adapt/de-emphasize, not delete: keep it in `llm_dart_provider` for custom
 factory-map integrations, keep it out of new architectural examples, and only
 consider deprecation after migration docs and consumer smoke prove that
 provider-object lookup fully covers current users.
+
+## Migration Examples Status
+
+The release-facing guide
+`docs/migration/0.11-sdk-aligned.md` now covers the final breaking-line
+before/after paths:
+
+- root `ai()` / `LLMBuilder()` to short provider factories plus
+  `generateTextCall(...)`
+- direct legacy chat/stream calls to `generateTextCall(...)` and
+  `streamTextCall(...)`
+- direct model-contract calls to app-facing runtime helpers or provider
+  `doGenerate(...)` / `doStream(...)` implementations
+- root import and `llm_dart_core` umbrella import migration to focused root,
+  `llm_dart_provider`, or `llm_dart_ai` owner imports
+- `ModelRegistry`-style dynamic lookup to provider-object `ProviderRegistry`
+- metadata-driven request customization to `GenerateTextOptions`,
+  `CallOptions`, and typed provider options
+- file-id request metadata to `FileProviderReferenceData`
+- replay metadata on request prompt parts to
+  `ProviderReplayPromptPartOptions.fromMetadata(...)`
+- provider UI mappers to shared `ChatMessageMapper`
+- provider-native helpers to focused provider packages
+
+## Consumer Smoke Expectations
+
+`tool/run_consumer_smoke.dart` already matches the compatibility policy:
+
+- root smoke imports `package:llm_dart/llm_dart.dart`,
+  `package:llm_dart/core.dart`, all focused root provider entrypoints, direct
+  provider packages, `llm_dart_ai`, `llm_dart_chat`, `llm_dart_provider`, and
+  `llm_dart_transport`
+- direct provider-package smoke covers OpenAI-family, Google, Anthropic,
+  Ollama, and ElevenLabs provider-owned options and helper clients
+- split-package smoke verifies apps can use owner packages without the root
+  facade
+- compatibility smoke keeps `package:llm_dart_core/llm_dart_core.dart` as a
+  historical umbrella import but does not require new implementation ownership
+  there
+- Flutter smoke remains in `llm_dart_flutter` and is kept outside the root
+  package boundary
+
+The consumer smoke expectations do not need a new scenario for
+`ModelRegistry`; the migration target is provider-object `ProviderRegistry`.
+Keeping `ModelRegistry` smoke out of the happy path is intentional.

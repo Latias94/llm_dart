@@ -86,8 +86,8 @@
 - [x] Decide final `ModelRegistry` posture: adapt, deprecate, or remove
 - [x] Decide final `llm_dart_core` posture: freeze, staged removal, or long
   compatibility shell
-- [ ] Write before/after migration examples for the final breaking line
-- [ ] Update example and consumer smoke expectations
+- [x] Write before/after migration examples for the final breaking line
+- [x] Update example and consumer smoke expectations
 
 ## Validation
 
