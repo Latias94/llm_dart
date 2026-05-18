@@ -9,21 +9,25 @@
     {
       "type": "compatibility",
       "message": "Anthropic providerOptions.thinkingBudgetTokens overrides shared options.reasoning.budgetTokens.",
+      "feature": "options.reasoning.budgetTokens",
       "field": "options.reasoning.budgetTokens"
     },
     {
       "type": "unsupported",
       "message": "temperature is not supported when thinking is enabled.",
+      "feature": "temperature",
       "field": "temperature"
     },
     {
       "type": "unsupported",
       "message": "topP is not supported when thinking is enabled.",
+      "feature": "topP",
       "field": "topP"
     },
     {
       "type": "unsupported",
       "message": "topK is not supported when thinking is enabled.",
+      "feature": "topK",
       "field": "topK"
     }
   ]

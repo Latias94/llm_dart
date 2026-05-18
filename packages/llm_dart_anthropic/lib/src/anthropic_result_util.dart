@@ -54,9 +54,7 @@ ProviderMetadata? anthropicResultProviderMetadata(
     return null;
   }
 
-  return ProviderMetadata({
-    'anthropic': anthropicValues,
-  });
+  return ProviderMetadata.forNamespace('anthropic', anthropicValues);
 }
 
 Map<String, Object?> anthropicResultProviderMetadataValues(

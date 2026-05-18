@@ -465,9 +465,7 @@ ProviderMetadata? openAIResponsesProviderMetadata(Map<String, Object?> values) {
     return null;
   }
 
-  return ProviderMetadata({
-    'openai': openaiValues,
-  });
+  return ProviderMetadata.forNamespace('openai', openaiValues);
 }
 
 Object? decodeOpenAIResponsesJsonValue(String value) {

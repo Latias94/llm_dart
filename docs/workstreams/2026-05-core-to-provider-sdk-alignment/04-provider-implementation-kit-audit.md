@@ -96,7 +96,7 @@ away from the provider that owns it.
 | Multipart body construction | OpenAI image/transcription/files, Anthropic files, ElevenLabs transcription | `llm_dart_transport` | Public transport utility | Keep shared builder; provider request modules still own field names and required form policy. |
 | Base64 bytes and data URL encoding | OpenAI prompt/file paths, Google binary parts and image/speech responses, Anthropic content encoder, Ollama image prompts | Provider-local for now | Internal only | Patterns are similar but provider policy differs: media type defaults, accepted file kinds, and data URL shape are provider-owned. Revisit after provider parity rows identify identical contracts. |
 | Header lookup and merge helpers | OpenAI files, Anthropic files, provider-specific API helpers | Provider-local for now | Internal only | Similar helper shape, but merge precedence and beta/header filtering are provider policy. |
-| Provider metadata namespace construction | Google and ElevenLabs have small helpers; other providers embed metadata directly | Candidate internal shared helper | Deferred | Needs a broader provider metadata audit before extraction. |
+| Provider metadata namespace construction | Google, ElevenLabs, OpenAI Chat/Responses, Anthropic result/stream, Ollama embedding/chat | Provider-local helpers around `ProviderMetadata.forNamespace` | Internal only | Keep package-local helper names because field ownership is provider policy, but require every provider implementation to route namespace construction through `ProviderMetadata.forNamespace`. |
 
 ## Implemented First Slice
 
@@ -114,6 +114,17 @@ away from the provider that owns it.
   wrapper pattern used by the other providers.
 - Added transport-level tests for generic maps, non-string keys, and non-object
   JSON responses so the shared helper has its own contract.
+
+## Provider Metadata Namespace Slice
+
+- Migrated OpenAI Chat Completions, OpenAI Responses, Anthropic result, and
+  Anthropic stream metadata helpers from raw `ProviderMetadata({...})`
+  construction to `ProviderMetadata.forNamespace(...)`.
+- Kept provider-local helper names because metadata field selection is still
+  provider policy and should stay near each provider adapter.
+- Added `tool/check_provider_metadata_namespace_guards.dart` and wired it into
+  release readiness so provider implementation packages cannot reintroduce raw
+  `ProviderMetadata` namespace maps.
 
 ## Provider Utils Decision
 

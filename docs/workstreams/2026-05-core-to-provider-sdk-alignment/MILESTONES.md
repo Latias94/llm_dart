@@ -128,6 +128,7 @@ Acceptance criteria:
 - workspace dependency guards pass
 - root and core boundary guards pass
 - provider replay metadata guard passes
+- provider metadata namespace guard passes
 - transport boundary guard passes
 - package-local analysis and focused tests pass for touched packages
 - consumer smoke and release readiness gates pass

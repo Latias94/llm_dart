@@ -308,6 +308,13 @@ List<ReleaseReadinessStep> buildReleaseReadinessSteps(
           'Keep replay continuation metadata in explicit replay prompt options and approved provider replay helpers.',
     ),
     const ReleaseReadinessStep(
+      name: 'Provider metadata namespace guard',
+      executable: 'dart',
+      arguments: ['tool/check_provider_metadata_namespace_guards.dart'],
+      failureHint:
+          'Construct provider metadata through ProviderMetadata.forNamespace or package-local namespace helpers.',
+    ),
+    const ReleaseReadinessStep(
       name: 'Transport boundary guard',
       executable: 'dart',
       arguments: ['tool/check_transport_boundary_guards.dart'],

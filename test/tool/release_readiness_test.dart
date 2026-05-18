@@ -43,6 +43,9 @@ void main() {
       final workspaceGuardStep = steps.firstWhere(
         (step) => step.name == 'Workspace dependency guards',
       );
+      final providerMetadataNamespaceGuardStep = steps.firstWhere(
+        (step) => step.name == 'Provider metadata namespace guard',
+      );
       final publishDryRunStep = steps.firstWhere(
         (step) => step.name == 'Workspace publish dry-run',
       );
@@ -50,6 +53,8 @@ void main() {
       expect(
         steps.map((step) => step.name),
         containsAll([
+          'Provider replay metadata guard',
+          'Provider metadata namespace guard',
           'Example API guard',
           'Workspace tests',
           'Workspace package tests',
@@ -65,6 +70,10 @@ void main() {
       expect(
         workspaceGuardStep.commandText,
         'dart tool/check_workspace_dependency_guards.dart',
+      );
+      expect(
+        providerMetadataNamespaceGuardStep.commandText,
+        'dart tool/check_provider_metadata_namespace_guards.dart',
       );
       expect(
         publishDryRunStep.commandText,

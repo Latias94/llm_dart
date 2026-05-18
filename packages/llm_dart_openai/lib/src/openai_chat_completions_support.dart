@@ -193,9 +193,7 @@ final class OpenAIChatCompletionsSupport {
       return null;
     }
 
-    return ProviderMetadata({
-      providerNamespace: scopedValues,
-    });
+    return ProviderMetadata.forNamespace(providerNamespace, scopedValues);
   }
 
   Map<String, Object?>? _asMap(Object? value) {

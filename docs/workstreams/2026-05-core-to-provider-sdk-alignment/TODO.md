@@ -74,9 +74,10 @@
 
 - [ ] Audit typed provider option precedence rules for every provider
 - [ ] Audit shared-option versus provider-option conflict behavior
-- [ ] Audit provider metadata namespace consistency
+- [x] Audit provider metadata namespace consistency
 - [ ] Audit replay metadata flow from output to prompt-part options
-- [ ] Add guard coverage for any metadata/input regression gaps
+- [x] Add guard coverage for provider metadata namespace regression gaps
+- [ ] Add guard coverage for provider option/replay input regression gaps
 
 ## Compatibility And Migration
 
@@ -94,6 +95,7 @@
 - [ ] Run root boundary guards
 - [ ] Run core compatibility shell guard
 - [ ] Run provider replay metadata guard
+- [ ] Run provider metadata namespace guard
 - [ ] Run transport boundary guard
 - [ ] Run package analysis and focused tests for touched packages
 - [ ] Run consumer smoke
