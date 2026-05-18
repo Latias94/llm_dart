@@ -8,12 +8,14 @@ TextStreamEvent textStreamEventFromProvider(
   return switch (event) {
     provider.StartEvent(:final warnings) => StartEvent(warnings: warnings),
     provider.ResponseMetadataEvent(
+      :final responseMetadata,
       :final responseId,
       :final timestamp,
       :final modelId,
       :final providerMetadata,
     ) =>
       ResponseMetadataEvent(
+        responseMetadata: responseMetadata,
         responseId: responseId,
         timestamp: timestamp,
         modelId: modelId,
@@ -148,12 +150,14 @@ provider.LanguageModelStreamEvent textStreamEventToProvider(
   return switch (event) {
     StartEvent(:final warnings) => provider.StartEvent(warnings: warnings),
     ResponseMetadataEvent(
+      :final responseMetadata,
       :final responseId,
       :final timestamp,
       :final modelId,
       :final providerMetadata,
     ) =>
       provider.ResponseMetadataEvent(
+        responseMetadata: responseMetadata,
         responseId: responseId,
         timestamp: timestamp,
         modelId: modelId,

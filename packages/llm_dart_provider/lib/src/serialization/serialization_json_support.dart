@@ -8,6 +8,7 @@ import '../common/provider_reference.dart';
 import '../common/usage_stats.dart';
 import '../content/content_part.dart';
 import '../content/file_data.dart';
+import '../model/model_response_metadata.dart';
 import '../tool/tool_output.dart';
 import '../common/json_codec_common.dart';
 
@@ -66,6 +67,79 @@ final class SerializationJsonSupport {
       reasoningTokens: asNullableJsonInt(
         map['reasoningTokens'],
         path: '$path.reasoningTokens',
+      ),
+    );
+  }
+
+  static JsonMap encodeModelResponseMetadata(
+    ModelResponseMetadata metadata,
+  ) {
+    return {
+      if (metadata.id != null) 'responseId': metadata.id,
+      if (metadata.timestamp != null)
+        'timestamp': metadata.timestamp!.toIso8601String(),
+      if (metadata.modelId != null) 'modelId': metadata.modelId,
+      if (metadata.headers.isNotEmpty) 'headers': metadata.headers,
+    };
+  }
+
+  static ModelResponseMetadata? decodeModelResponseMetadata(
+    Object? value, {
+    required String path,
+  }) {
+    if (value == null) {
+      return null;
+    }
+
+    final map = asJsonMap(value, path: path);
+    return decodeModelResponseMetadataFields(
+      map,
+      path: path,
+    );
+  }
+
+  static ModelResponseMetadata? decodeModelResponseMetadataFields(
+    JsonMap map, {
+    required String path,
+  }) {
+    final id = asNullableJsonString(
+      map['responseId'],
+      path: '$path.responseId',
+    );
+    final timestampString = asNullableJsonString(
+      map['timestamp'],
+      path: '$path.timestamp',
+    );
+    final modelId = asNullableJsonString(
+      map['modelId'],
+      path: '$path.modelId',
+    );
+    final headers = decodeStringMap(map['headers'], path: '$path.headers');
+
+    return modelResponseMetadataFrom(
+      id: id,
+      timestamp:
+          timestampString == null ? null : DateTime.parse(timestampString),
+      modelId: modelId,
+      headers: headers,
+    );
+  }
+
+  static Map<String, String>? decodeStringMap(
+    Object? value, {
+    required String path,
+  }) {
+    if (value == null) {
+      return null;
+    }
+
+    final map = asJsonMap(value, path: path);
+    return Map.unmodifiable(
+      map.map(
+        (key, nested) => MapEntry(
+          key,
+          asJsonString(nested, path: '$path.$key'),
+        ),
       ),
     );
   }

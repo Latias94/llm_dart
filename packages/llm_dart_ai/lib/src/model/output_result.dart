@@ -17,6 +17,8 @@ final class GenerateOutputResult<T> {
 
   String? get rawFinishReason => result.rawFinishReason;
 
+  ModelResponseMetadata? get responseMetadata => result.responseMetadata;
+
   String? get responseId => result.responseId;
 
   DateTime? get responseTimestamp => result.responseTimestamp;

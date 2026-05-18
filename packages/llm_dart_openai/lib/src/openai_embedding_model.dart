@@ -40,7 +40,11 @@ final class OpenAIEmbeddingModel
     );
   }
 
+  @override
   int get maxEmbeddingsPerCall => openAIMaxEmbeddingsPerCall;
+
+  @override
+  bool get supportsParallelCalls => true;
 
   Uri get embeddingsUri => resolveOpenAIEmbeddingRouteUri(baseUrl: baseUrl);
 

@@ -345,9 +345,11 @@ ResponseMetadataEvent? maybeCreateOpenAIResponseMetadataEvent({
 
   state.hasResponseMetadata = true;
   return ResponseMetadataEvent(
-    responseId: state.responseId,
-    timestamp: state.responseTimestamp,
-    modelId: state.responseModelId,
+    responseMetadata: ModelResponseMetadata(
+      id: state.responseId,
+      timestamp: state.responseTimestamp,
+      modelId: state.responseModelId,
+    ),
     providerMetadata: metadata(),
   );
 }

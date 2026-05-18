@@ -52,5 +52,10 @@ abstract interface class ImageModel {
 
   String get modelId;
 
+  /// Maximum number of images this model can generate in a single call.
+  ///
+  /// A null value means callers should use their own conservative default.
+  int? get maxImagesPerCall;
+
   Future<ImageGenerationResult> doGenerate(ImageGenerationRequest request);
 }

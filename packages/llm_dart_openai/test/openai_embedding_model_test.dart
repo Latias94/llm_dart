@@ -15,6 +15,9 @@ void main() {
 
       expect(model.providerId, 'openai');
       expect(model.baseUrl, 'https://api.openai.com/v1');
+      final EmbeddingModel contract = model;
+      expect(contract.maxEmbeddingsPerCall, 2048);
+      expect(contract.supportsParallelCalls, isTrue);
       expect(
         model.defaultHeaders,
         {'authorization': 'Bearer test-key'},

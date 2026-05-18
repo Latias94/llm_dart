@@ -34,6 +34,12 @@ final class GoogleEmbeddingModel
     return describeGoogleEmbeddingModel(modelId);
   }
 
+  @override
+  int get maxEmbeddingsPerCall => 2048;
+
+  @override
+  bool get supportsParallelCalls => true;
+
   Uri get embedContentUri => resolveGoogleEmbeddingRouteUri(
         baseUrl: baseUrl,
         modelId: modelId,

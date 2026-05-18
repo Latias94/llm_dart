@@ -28,8 +28,10 @@ final class OllamaChatResponseCodec {
         hasToolCalls: content.whereType<ToolCallContentPart>().isNotEmpty,
       ),
       rawFinishReason: asString(json['done_reason']),
-      responseModelId: asString(json['model']) ?? modelId,
-      responseTimestamp: parseTimestamp(json['created_at']),
+      responseMetadata: ModelResponseMetadata(
+        timestamp: parseTimestamp(json['created_at']),
+        modelId: asString(json['model']) ?? modelId,
+      ),
       usage: decodeUsage(json),
       providerMetadata: decodeProviderMetadata(json),
       warnings: warnings,

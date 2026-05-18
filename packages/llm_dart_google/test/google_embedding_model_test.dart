@@ -14,6 +14,9 @@ void main() {
 
       expect(model.providerId, 'google');
       expect(model.baseUrl, Google.defaultBaseUrl);
+      final EmbeddingModel contract = model;
+      expect(contract.maxEmbeddingsPerCall, 2048);
+      expect(contract.supportsParallelCalls, isTrue);
     });
 
     test('embed sends the single embedding request shape', () async {

@@ -192,6 +192,12 @@ final class _FakeEmbeddingModel implements EmbeddingModel {
   const _FakeEmbeddingModel(this.providerId, this.modelId);
 
   @override
+  int? get maxEmbeddingsPerCall => null;
+
+  @override
+  bool get supportsParallelCalls => true;
+
+  @override
   Future<EmbedResult> doEmbed(EmbedRequest request) async {
     return EmbedResult(
       embeddings: [
@@ -209,6 +215,9 @@ final class _FakeImageModel implements ImageModel {
   final String modelId;
 
   const _FakeImageModel(this.providerId, this.modelId);
+
+  @override
+  int? get maxImagesPerCall => null;
 
   @override
   Future<ImageGenerationResult> doGenerate(

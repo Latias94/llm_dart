@@ -97,6 +97,10 @@ final class StreamTextRunResult extends StreamView<TextStreamEvent> {
         (value) => value.toolApprovalRequests,
       );
 
+  Future<ModelResponseMetadata?> get responseMetadata => result.then(
+        (value) => value.responseMetadata,
+      );
+
   Future<String?> get responseId => result.then(
         (value) => value.responseId,
       );

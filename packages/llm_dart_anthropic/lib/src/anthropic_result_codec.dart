@@ -96,8 +96,10 @@ final class AnthropicMessagesResultCodec {
         anthropicResultAsString(response['stop_reason']),
       ),
       rawFinishReason: anthropicResultAsString(response['stop_reason']),
-      responseId: anthropicResultAsString(response['id']),
-      responseModelId: anthropicResultAsString(response['model']),
+      responseMetadata: ModelResponseMetadata(
+        id: anthropicResultAsString(response['id']),
+        modelId: anthropicResultAsString(response['model']),
+      ),
       usage: decodeAnthropicResultUsage(
         anthropicResultAsMap(response['usage']),
       ),

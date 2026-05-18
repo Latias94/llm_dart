@@ -27,8 +27,10 @@ final class GoogleGenerateContentStreamCodec {
         (state.responseId != null || state.modelVersion != null)) {
       state.emittedResponseMetadata = true;
       yield ResponseMetadataEvent(
-        responseId: state.responseId,
-        modelId: state.modelVersion,
+        responseMetadata: ModelResponseMetadata(
+          id: state.responseId,
+          modelId: state.modelVersion,
+        ),
       );
     }
 
@@ -85,8 +87,10 @@ final class GoogleGenerateContentStreamCodec {
         (state.responseId != null || state.modelVersion != null)) {
       state.emittedResponseMetadata = true;
       yield ResponseMetadataEvent(
-        responseId: state.responseId,
-        modelId: state.modelVersion,
+        responseMetadata: ModelResponseMetadata(
+          id: state.responseId,
+          modelId: state.modelVersion,
+        ),
       );
     }
 

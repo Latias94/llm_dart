@@ -7,6 +7,7 @@ import '../prompt/prompt_message.dart';
 import '../stream/language_model_stream_event.dart';
 import '../tool/tool_definition.dart';
 import 'finish_reason.dart';
+import 'model_response_metadata.dart';
 import 'response_format.dart';
 
 enum ReasoningEffort {
@@ -96,9 +97,7 @@ final class GenerateTextResult {
   final List<ContentPart> content;
   final FinishReason finishReason;
   final String? rawFinishReason;
-  final String? responseId;
-  final DateTime? responseTimestamp;
-  final String? responseModelId;
+  final ModelResponseMetadata? responseMetadata;
   final UsageStats? usage;
   final ProviderMetadata? providerMetadata;
   final List<ModelWarning> warnings;
@@ -107,14 +106,27 @@ final class GenerateTextResult {
     required List<ContentPart> content,
     required this.finishReason,
     this.rawFinishReason,
-    this.responseId,
-    this.responseTimestamp,
-    this.responseModelId,
+    ModelResponseMetadata? responseMetadata,
+    String? responseId,
+    DateTime? responseTimestamp,
+    String? responseModelId,
     this.usage,
     this.providerMetadata,
     List<ModelWarning> warnings = const [],
-  })  : content = List.unmodifiable(content),
+  })  : responseMetadata = modelResponseMetadataFrom(
+          metadata: responseMetadata,
+          id: responseId,
+          timestamp: responseTimestamp,
+          modelId: responseModelId,
+        ),
+        content = List.unmodifiable(content),
         warnings = List.unmodifiable(warnings);
+
+  String? get responseId => responseMetadata?.id;
+
+  DateTime? get responseTimestamp => responseMetadata?.timestamp;
+
+  String? get responseModelId => responseMetadata?.modelId;
 
   String get text =>
       content.whereType<TextContentPart>().map((part) => part.text).join();

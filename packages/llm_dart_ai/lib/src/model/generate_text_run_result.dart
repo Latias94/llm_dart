@@ -50,6 +50,8 @@ final class GenerateTextRunResult {
 
   String? get rawFinishReason => lastStep.rawFinishReason;
 
+  ModelResponseMetadata? get responseMetadata => lastStep.responseMetadata;
+
   String? get responseId => lastStep.responseId;
 
   DateTime? get responseTimestamp => lastStep.responseTimestamp;

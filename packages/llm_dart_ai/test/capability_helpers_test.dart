@@ -233,8 +233,16 @@ final class _RecordingEmbeddingModel implements EmbeddingModel {
   final EmbedResult result;
   EmbedRequest? lastRequest;
 
+  @override
+  final int? maxEmbeddingsPerCall;
+
+  @override
+  final bool supportsParallelCalls;
+
   _RecordingEmbeddingModel({
     required this.result,
+    this.maxEmbeddingsPerCall,
+    this.supportsParallelCalls = true,
   });
 
   @override
@@ -254,8 +262,12 @@ final class _RecordingImageModel implements ImageModel {
   final ImageGenerationResult result;
   ImageGenerationRequest? lastRequest;
 
+  @override
+  final int? maxImagesPerCall;
+
   _RecordingImageModel({
     required this.result,
+    this.maxImagesPerCall,
   });
 
   @override

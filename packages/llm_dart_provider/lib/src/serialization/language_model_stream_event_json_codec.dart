@@ -1,6 +1,7 @@
 import '../common/json_codec_common.dart';
 import '../content/content_part.dart';
 import '../model/finish_reason.dart';
+import '../model/model_response_metadata.dart';
 import '../stream/language_model_stream_event.dart';
 import 'serialization_json_support.dart';
 import 'serialization_protocol.dart';
@@ -65,6 +66,7 @@ final class LanguageModelStreamEventJsonCodec {
               .toList(growable: false),
         },
       ResponseMetadataEvent(
+        :final responseMetadata,
         :final responseId,
         :final timestamp,
         :final modelId,
@@ -72,9 +74,15 @@ final class LanguageModelStreamEventJsonCodec {
       ) =>
         {
           'type': 'response-metadata',
-          if (responseId != null) 'responseId': responseId,
-          if (timestamp != null) 'timestamp': timestamp.toIso8601String(),
-          if (modelId != null) 'modelId': modelId,
+          ...SerializationJsonSupport.encodeModelResponseMetadata(
+            modelResponseMetadataFrom(
+                  metadata: responseMetadata,
+                  id: responseId,
+                  timestamp: timestamp,
+                  modelId: modelId,
+                ) ??
+                const ModelResponseMetadata(),
+          ),
           if (providerMetadata != null)
             'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
               providerMetadata,
@@ -304,10 +312,11 @@ final class LanguageModelStreamEventJsonCodec {
               .toList(growable: false),
         ),
       'response-metadata' => ResponseMetadataEvent(
-          responseId:
-              asNullableJsonString(map['responseId'], path: '$path.responseId'),
-          timestamp: _decodeDateTime(map['timestamp'], path: '$path.timestamp'),
-          modelId: asNullableJsonString(map['modelId'], path: '$path.modelId'),
+          responseMetadata:
+              SerializationJsonSupport.decodeModelResponseMetadataFields(
+            map,
+            path: path,
+          ),
           providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',
@@ -594,14 +603,6 @@ final class LanguageModelStreamEventJsonCodec {
         path: path,
       ),
     );
-  }
-
-  DateTime? _decodeDateTime(
-    Object? value, {
-    required String path,
-  }) {
-    final stringValue = asNullableJsonString(value, path: path);
-    return stringValue == null ? null : DateTime.parse(stringValue);
   }
 
   Object _requireValue(

@@ -52,9 +52,11 @@ GenerateTextResult decodeOpenAIChatCompletionsGenerateResponse(
     content: content,
     finishReason: openAIChatCompletionsMapFinishReason(rawFinishReason),
     rawFinishReason: rawFinishReason,
-    responseId: openAIChatCompletionsAsString(response['id']),
-    responseTimestamp: openAIChatCompletionsDecodeResponseTimestamp(response),
-    responseModelId: openAIChatCompletionsAsString(response['model']),
+    responseMetadata: ModelResponseMetadata(
+      id: openAIChatCompletionsAsString(response['id']),
+      timestamp: openAIChatCompletionsDecodeResponseTimestamp(response),
+      modelId: openAIChatCompletionsAsString(response['model']),
+    ),
     usage: openAIChatCompletionsDecodeUsage(
       openAIChatCompletionsAsMap(response['usage']),
     ),

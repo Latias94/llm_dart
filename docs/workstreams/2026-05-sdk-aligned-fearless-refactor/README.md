@@ -176,6 +176,10 @@ The workstream is complete only when:
 - [`../2026-05-fearless-refactor-wave-2/README.md`](../2026-05-fearless-refactor-wave-2/README.md)
   - froze the post-alpha order for release gates, legacy containment, and
     provider utility extraction criteria
+- [`../2026-05-core-to-provider-sdk-alignment/README.md`](../2026-05-core-to-provider-sdk-alignment/README.md)
+  - follow-on top-level alignment matrix for core contracts, AI runtime,
+    provider parity, provider implementation helpers, and compatibility exit
+    planning after the adapter split passes
 
 ## Documents
 

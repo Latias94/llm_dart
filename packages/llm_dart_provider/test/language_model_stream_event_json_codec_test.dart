@@ -28,6 +28,37 @@ void main() {
       expect(decoded.last, isA<FinishEvent>());
     });
 
+    test('round-trips unified response metadata fields', () {
+      const codec = LanguageModelStreamEventJsonCodec();
+      final timestamp = DateTime.utc(2026, 5, 18, 1, 10);
+
+      final encoded = codec.encodeEvent(
+        ResponseMetadataEvent(
+          responseMetadata: ModelResponseMetadata(
+            id: 'resp_1',
+            timestamp: timestamp,
+            modelId: 'gpt-test',
+            headers: const {
+              'x-request-id': 'req_1',
+            },
+          ),
+        ),
+      );
+
+      expect(encoded['responseId'], 'resp_1');
+      expect(encoded['timestamp'], timestamp.toIso8601String());
+      expect(encoded['modelId'], 'gpt-test');
+      expect(encoded['headers'], {'x-request-id': 'req_1'});
+
+      final decoded = codec.decodeEvent(encoded) as ResponseMetadataEvent;
+
+      expect(decoded.responseMetadata!.id, 'resp_1');
+      expect(decoded.responseMetadata!.timestamp, timestamp);
+      expect(decoded.responseMetadata!.modelId, 'gpt-test');
+      expect(decoded.responseMetadata!.headers['x-request-id'], 'req_1');
+      expect(decoded.responseId, 'resp_1');
+    });
+
     test('rejects runtime-only events during decoding', () {
       const codec = LanguageModelStreamEventJsonCodec();
 

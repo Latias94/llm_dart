@@ -45,6 +45,7 @@ final class GenerateTextResultAccumulator {
         _lifecycle.addWarnings(warnings);
       case ResponseMetadataEvent():
         _lifecycle.applyResponseMetadata(
+          responseMetadata: event.responseMetadata,
           responseId: event.responseId,
           timestamp: event.timestamp,
           modelId: event.modelId,

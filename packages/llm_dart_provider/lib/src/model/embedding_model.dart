@@ -40,5 +40,13 @@ abstract interface class EmbeddingModel {
 
   String get modelId;
 
+  /// Maximum number of input values this model accepts in a single call.
+  ///
+  /// A null value means the provider does not publish a hard shared limit.
+  int? get maxEmbeddingsPerCall;
+
+  /// Whether the model can safely handle multiple embedding calls in parallel.
+  bool get supportsParallelCalls;
+
   Future<EmbedResult> doEmbed(EmbedRequest request);
 }

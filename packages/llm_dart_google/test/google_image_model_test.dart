@@ -16,7 +16,8 @@ void main() {
 
       expect(model.providerId, 'google');
       expect(model.baseUrl, Google.defaultBaseUrl);
-      expect(model.maxImagesPerCall, 4);
+      final ImageModel contract = model;
+      expect(contract.maxImagesPerCall, 4);
     });
 
     test('Imagen image model sends a predict request and decodes images',

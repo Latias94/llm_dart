@@ -72,6 +72,7 @@ final class TextStreamEventJsonCodec {
               .toList(growable: false),
         },
       ResponseMetadataEvent(
+        :final responseMetadata,
         :final responseId,
         :final timestamp,
         :final modelId,
@@ -79,9 +80,15 @@ final class TextStreamEventJsonCodec {
       ) =>
         {
           'type': 'response-metadata',
-          if (responseId != null) 'responseId': responseId,
-          if (timestamp != null) 'timestamp': timestamp.toIso8601String(),
-          if (modelId != null) 'modelId': modelId,
+          ...provider.SerializationJsonSupport.encodeModelResponseMetadata(
+            provider.modelResponseMetadataFrom(
+                  metadata: responseMetadata,
+                  id: responseId,
+                  timestamp: timestamp,
+                  modelId: modelId,
+                ) ??
+                const provider.ModelResponseMetadata(),
+          ),
           if (providerMetadata != null)
             'providerMetadata':
                 provider.SerializationJsonSupport.encodeProviderMetadata(
@@ -393,14 +400,10 @@ final class TextStreamEventJsonCodec {
               .toList(growable: false),
         ),
       'response-metadata' => ResponseMetadataEvent(
-          responseId: provider.asNullableJsonString(
-            map['responseId'],
-            path: '$path.responseId',
-          ),
-          timestamp: _decodeDateTime(map['timestamp'], path: '$path.timestamp'),
-          modelId: provider.asNullableJsonString(
-            map['modelId'],
-            path: '$path.modelId',
+          responseMetadata:
+              provider.SerializationJsonSupport.decodeModelResponseMetadataFields(
+            map,
+            path: path,
           ),
           providerMetadata:
               provider.SerializationJsonSupport.decodeProviderMetadata(
@@ -780,14 +783,6 @@ final class TextStreamEventJsonCodec {
         path: path,
       ),
     );
-  }
-
-  DateTime? _decodeDateTime(
-    Object? value, {
-    required String path,
-  }) {
-    final stringValue = provider.asNullableJsonString(value, path: path);
-    return stringValue == null ? null : DateTime.parse(stringValue);
   }
 
   Object _requireValue(

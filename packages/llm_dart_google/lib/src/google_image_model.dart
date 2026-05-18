@@ -39,6 +39,7 @@ final class GoogleImageModel implements ImageModel, CapabilityDescribedModel {
 
   bool get isGeminiImageModel => isGoogleGeminiImageModel(modelId);
 
+  @override
   int get maxImagesPerCall => resolveGoogleImageMaxImagesPerCall(
         modelId: modelId,
         settings: settings,

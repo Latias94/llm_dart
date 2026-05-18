@@ -6,6 +6,7 @@ import '../common/provider_metadata.dart';
 import '../common/usage_stats.dart';
 import '../content/content_part.dart';
 import '../model/finish_reason.dart';
+import '../model/model_response_metadata.dart';
 
 /// Provider-owned event base for one language model call stream.
 ///
@@ -25,17 +26,27 @@ final class StartEvent extends LanguageModelStreamEvent {
 }
 
 final class ResponseMetadataEvent extends LanguageModelStreamEvent {
-  final String? responseId;
-  final DateTime? timestamp;
-  final String? modelId;
+  final ModelResponseMetadata? responseMetadata;
+  final String? _responseId;
+  final DateTime? _timestamp;
+  final String? _modelId;
   final ProviderMetadata? providerMetadata;
 
   const ResponseMetadataEvent({
-    this.responseId,
-    this.timestamp,
-    this.modelId,
+    this.responseMetadata,
+    String? responseId,
+    DateTime? timestamp,
+    String? modelId,
     this.providerMetadata,
-  });
+  })  : _responseId = responseId,
+        _timestamp = timestamp,
+        _modelId = modelId;
+
+  String? get responseId => responseMetadata?.id ?? _responseId;
+
+  DateTime? get timestamp => responseMetadata?.timestamp ?? _timestamp;
+
+  String? get modelId => responseMetadata?.modelId ?? _modelId;
 }
 
 final class TextStartEvent extends LanguageModelStreamEvent {

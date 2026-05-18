@@ -201,8 +201,10 @@ final class GoogleGenerateContentResultCodec {
         hasClientToolCalls: hasClientToolCalls,
       ),
       rawFinishReason: rawFinishReason,
-      responseId: responseId,
-      responseModelId: responseModelId,
+      responseMetadata: ModelResponseMetadata(
+        id: responseId,
+        modelId: responseModelId,
+      ),
       usage: decodeGoogleUsage(usageMetadata),
       providerMetadata: buildGoogleGenerationMetadata(
         promptFeedback: promptFeedback,

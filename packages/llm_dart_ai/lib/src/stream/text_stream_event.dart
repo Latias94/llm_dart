@@ -41,17 +41,27 @@ final class StartEvent extends TextStreamEvent {
 }
 
 final class ResponseMetadataEvent extends TextStreamEvent {
-  final String? responseId;
-  final DateTime? timestamp;
-  final String? modelId;
+  final provider.ModelResponseMetadata? responseMetadata;
+  final String? _responseId;
+  final DateTime? _timestamp;
+  final String? _modelId;
   final provider.ProviderMetadata? providerMetadata;
 
   const ResponseMetadataEvent({
-    this.responseId,
-    this.timestamp,
-    this.modelId,
+    this.responseMetadata,
+    String? responseId,
+    DateTime? timestamp,
+    String? modelId,
     this.providerMetadata,
-  });
+  })  : _responseId = responseId,
+        _timestamp = timestamp,
+        _modelId = modelId;
+
+  String? get responseId => responseMetadata?.id ?? _responseId;
+
+  DateTime? get timestamp => responseMetadata?.timestamp ?? _timestamp;
+
+  String? get modelId => responseMetadata?.modelId ?? _modelId;
 }
 
 final class TextStartEvent extends TextStreamEvent {

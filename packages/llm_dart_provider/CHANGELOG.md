@@ -6,6 +6,8 @@
   registry-visible model facet surface than their concrete class methods imply.
 - Updated `ProviderRegistry` to respect provider-declared model facet support
   when listing providers and resolving dynamic model references.
+- Added direct batching facts to `EmbeddingModel` and `ImageModel` contracts:
+  `maxEmbeddingsPerCall`, `supportsParallelCalls`, and `maxImagesPerCall`.
 
 ## [0.11.0-alpha.1] - 2026-05-12
 

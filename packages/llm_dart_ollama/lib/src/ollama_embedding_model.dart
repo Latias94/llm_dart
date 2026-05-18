@@ -37,6 +37,12 @@ final class OllamaEmbeddingModel
     return describeOllamaEmbeddingModel(modelId);
   }
 
+  @override
+  int? get maxEmbeddingsPerCall => null;
+
+  @override
+  bool get supportsParallelCalls => false;
+
   Uri get embedUri => resolveOllamaEmbeddingRouteUri(baseUrl: baseUrl);
 
   Map<String, String> get defaultHeaders => buildOllamaEmbeddingDefaultHeaders(

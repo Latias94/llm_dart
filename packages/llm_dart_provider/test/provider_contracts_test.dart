@@ -466,6 +466,49 @@ void main() {
       expect(() => result.content.add(const TextContentPart('Nope')),
           throwsUnsupportedError);
     });
+
+    test('uses unified response metadata for language results', () {
+      final timestamp = DateTime.utc(2026, 5, 18, 1, 0);
+      final result = GenerateTextResult(
+        content: const [
+          TextContentPart('Hello'),
+        ],
+        finishReason: FinishReason.stop,
+        responseMetadata: ModelResponseMetadata(
+          id: 'resp_1',
+          timestamp: timestamp,
+          modelId: 'gpt-test',
+          headers: const {
+            'x-request-id': 'req_1',
+          },
+        ),
+      );
+
+      expect(result.responseMetadata!.id, 'resp_1');
+      expect(result.responseMetadata!.timestamp, timestamp);
+      expect(result.responseMetadata!.modelId, 'gpt-test');
+      expect(result.responseMetadata!.headers['x-request-id'], 'req_1');
+      expect(result.responseId, 'resp_1');
+      expect(result.responseTimestamp, timestamp);
+      expect(result.responseModelId, 'gpt-test');
+    });
+
+    test('keeps legacy language response aliases as constructor input', () {
+      final timestamp = DateTime.utc(2026, 5, 18, 1, 5);
+      final result = GenerateTextResult(
+        content: const [
+          TextContentPart('Hello'),
+        ],
+        finishReason: FinishReason.stop,
+        responseId: 'resp_legacy',
+        responseTimestamp: timestamp,
+        responseModelId: 'legacy-model',
+      );
+
+      expect(result.responseMetadata!.id, 'resp_legacy');
+      expect(result.responseMetadata!.timestamp, timestamp);
+      expect(result.responseMetadata!.modelId, 'legacy-model');
+    });
   });
 
   group('Non-text model contracts', () {
@@ -521,6 +564,21 @@ void main() {
         ),
         throwsUnsupportedError,
       );
+    });
+
+    test('exposes direct batching facts through non-text model contracts', () {
+      final embedding = _ContractEmbeddingModel(
+        maxEmbeddingsPerCall: 128,
+        supportsParallelCalls: true,
+      );
+      final image = _ContractImageModel(maxImagesPerCall: 4);
+
+      final EmbeddingModel embeddingContract = embedding;
+      final ImageModel imageContract = image;
+
+      expect(embeddingContract.maxEmbeddingsPerCall, 128);
+      expect(embeddingContract.supportsParallelCalls, isTrue);
+      expect(imageContract.maxImagesPerCall, 4);
     });
 
     test('carries image generation outputs and provider metadata', () {
@@ -840,6 +898,59 @@ void main() {
       );
     });
   });
+}
+
+final class _ContractEmbeddingModel implements EmbeddingModel {
+  @override
+  final int? maxEmbeddingsPerCall;
+
+  @override
+  final bool supportsParallelCalls;
+
+  const _ContractEmbeddingModel({
+    required this.maxEmbeddingsPerCall,
+    required this.supportsParallelCalls,
+  });
+
+  @override
+  String get modelId => 'embedding-contract';
+
+  @override
+  String get providerId => 'test';
+
+  @override
+  Future<EmbedResult> doEmbed(EmbedRequest request) async {
+    return EmbedResult(
+      embeddings: request.values.map((_) => const [0.0]).toList(),
+    );
+  }
+}
+
+final class _ContractImageModel implements ImageModel {
+  @override
+  final int? maxImagesPerCall;
+
+  const _ContractImageModel({
+    required this.maxImagesPerCall,
+  });
+
+  @override
+  String get modelId => 'image-contract';
+
+  @override
+  String get providerId => 'test';
+
+  @override
+  Future<ImageGenerationResult> doGenerate(
+    ImageGenerationRequest request,
+  ) async {
+    return ImageGenerationResult(
+      images: List<GeneratedImage>.filled(
+        request.count,
+        const GeneratedImage(),
+      ),
+    );
+  }
 }
 
 final class _TestProviderOptions implements ProviderInvocationOptions {}

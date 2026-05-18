@@ -3,9 +3,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 final class GenerateTextResultLifecycle {
   final List<ModelWarning> _warnings = <ModelWarning>[];
 
-  String? _responseId;
-  DateTime? _responseTimestamp;
-  String? _responseModelId;
+  ModelResponseMetadata? _responseMetadata;
   FinishReason? _finishReason;
   String? _rawFinishReason;
   UsageStats? _usage;
@@ -19,22 +17,28 @@ final class GenerateTextResultLifecycle {
   }
 
   void applyResponseMetadata({
+    required ModelResponseMetadata? responseMetadata,
     required String? responseId,
     required DateTime? timestamp,
     required String? modelId,
     required ProviderMetadata? providerMetadata,
   }) {
-    _setIfNotNull(
-      responseId,
-      (value) => _responseId = value,
+    final previous = _responseMetadata;
+    final incoming = modelResponseMetadataFrom(
+      metadata: responseMetadata,
+      id: responseId,
+      timestamp: timestamp,
+      modelId: modelId,
     );
-    _setIfNotNull(
-      timestamp,
-      (value) => _responseTimestamp = value,
-    );
-    _setIfNotNull(
-      modelId,
-      (value) => _responseModelId = value,
+
+    _responseMetadata = modelResponseMetadataFrom(
+      metadata: incoming ?? previous,
+      id: previous?.id,
+      timestamp: previous?.timestamp,
+      modelId: previous?.modelId,
+      headers: previous?.headers.isNotEmpty == true
+          ? previous?.headers
+          : null,
     );
     mergeProviderMetadata(providerMetadata);
   }
@@ -89,18 +93,10 @@ final class GenerateTextResultLifecycle {
       content: content,
       finishReason: _finishReason!,
       rawFinishReason: _rawFinishReason,
-      responseId: _responseId,
-      responseTimestamp: _responseTimestamp,
-      responseModelId: _responseModelId,
+      responseMetadata: _responseMetadata,
       usage: _usage,
       providerMetadata: _providerMetadata,
       warnings: _warnings,
     );
-  }
-}
-
-void _setIfNotNull<T>(T? value, void Function(T value) assign) {
-  if (value != null) {
-    assign(value);
   }
 }

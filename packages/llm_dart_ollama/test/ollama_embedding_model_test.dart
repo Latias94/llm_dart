@@ -13,6 +13,9 @@ void main() {
 
       expect(model.providerId, 'ollama');
       expect(model.baseUrl, Ollama.defaultBaseUrl);
+      final EmbeddingModel contract = model;
+      expect(contract.maxEmbeddingsPerCall, isNull);
+      expect(contract.supportsParallelCalls, isFalse);
     });
 
     test('embed sends the Ollama embedding request shape', () async {

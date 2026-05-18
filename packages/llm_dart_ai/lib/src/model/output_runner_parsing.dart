@@ -38,6 +38,7 @@ StructuredOutputContext createStructuredOutputContext(
   GenerateTextResult result,
 ) {
   return StructuredOutputContext(
+    responseMetadata: result.responseMetadata,
     responseId: result.responseId,
     responseTimestamp: result.responseTimestamp,
     responseModelId: result.responseModelId,

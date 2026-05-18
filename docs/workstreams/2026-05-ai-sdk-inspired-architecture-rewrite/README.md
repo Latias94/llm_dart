@@ -137,6 +137,15 @@ remaining object-model gap:
 The detailed rebaseline is tracked in
 [`08-provider-registry-and-openai-family-rebaseline.md`](08-provider-registry-and-openai-family-rebaseline.md).
 
+## Follow-On Alignment Matrix
+
+The core-to-provider SDK alignment workstream continues this architecture line
+as a top-level audit and execution matrix:
+
+- [`../2026-05-core-to-provider-sdk-alignment/README.md`](../2026-05-core-to-provider-sdk-alignment/README.md)
+  - audits core provider contracts, AI runtime semantics, provider parity,
+    implementation helper ownership, and root/core compatibility exit policy.
+
 ## Documents
 
 - [01-initial-gap-audit.md](01-initial-gap-audit.md)

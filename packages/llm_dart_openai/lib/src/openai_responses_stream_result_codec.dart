@@ -68,9 +68,11 @@ GenerateTextResult decodeOpenAIResponsesGenerateResponse(
       status: openAIResponsesAsString(response['status']),
     ),
     rawFinishReason: rawFinishReason,
-    responseId: openAIResponsesAsString(response['id']),
-    responseTimestamp: openAIResponsesDecodeTimestamp(response['created_at']),
-    responseModelId: openAIResponsesAsString(response['model']),
+    responseMetadata: ModelResponseMetadata(
+      id: openAIResponsesAsString(response['id']),
+      timestamp: openAIResponsesDecodeTimestamp(response['created_at']),
+      modelId: openAIResponsesAsString(response['model']),
+    ),
     usage: decodeOpenAIResponsesUsage(
       openAIResponsesAsMap(response['usage']),
     ),

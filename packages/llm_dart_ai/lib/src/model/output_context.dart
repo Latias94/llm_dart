@@ -1,21 +1,32 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 final class StructuredOutputContext {
-  final String? responseId;
-  final DateTime? responseTimestamp;
-  final String? responseModelId;
+  final ModelResponseMetadata? responseMetadata;
+  final String? _responseId;
+  final DateTime? _responseTimestamp;
+  final String? _responseModelId;
   final FinishReason finishReason;
   final String? rawFinishReason;
   final UsageStats? usage;
   final ProviderMetadata? providerMetadata;
 
   const StructuredOutputContext({
-    this.responseId,
-    this.responseTimestamp,
-    this.responseModelId,
+    this.responseMetadata,
+    String? responseId,
+    DateTime? responseTimestamp,
+    String? responseModelId,
     required this.finishReason,
     this.rawFinishReason,
     this.usage,
     this.providerMetadata,
-  });
+  })  : _responseId = responseId,
+        _responseTimestamp = responseTimestamp,
+        _responseModelId = responseModelId;
+
+  String? get responseId => responseMetadata?.id ?? _responseId;
+
+  DateTime? get responseTimestamp =>
+      responseMetadata?.timestamp ?? _responseTimestamp;
+
+  String? get responseModelId => responseMetadata?.modelId ?? _responseModelId;
 }

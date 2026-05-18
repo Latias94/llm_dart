@@ -39,8 +39,10 @@ final class AnthropicStreamResultCodec {
     if (!state.emittedResponseMetadata) {
       state.emittedResponseMetadata = true;
       metadataEvent = ResponseMetadataEvent(
-        responseId: state.responseId,
-        modelId: state.responseModelId,
+        responseMetadata: ModelResponseMetadata(
+          id: state.responseId,
+          modelId: state.responseModelId,
+        ),
       );
     }
 

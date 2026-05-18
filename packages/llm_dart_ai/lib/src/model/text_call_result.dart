@@ -31,6 +31,8 @@ final class GenerateTextCallResult<T> {
 
   String? get rawFinishReason => result.rawFinishReason;
 
+  ModelResponseMetadata? get responseMetadata => result.responseMetadata;
+
   String? get responseId => result.responseId;
 
   DateTime? get responseTimestamp => result.responseTimestamp;
@@ -176,6 +178,9 @@ final class StreamTextCallResult<T> extends StreamView<TextStreamEvent> {
 
   Future<String?> get rawFinishReason =>
       result.then((value) => value.rawFinishReason);
+
+  Future<ModelResponseMetadata?> get responseMetadata =>
+      result.then((value) => value.responseMetadata);
 
   Future<String?> get responseId => result.then((value) => value.responseId);
 

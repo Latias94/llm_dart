@@ -75,6 +75,9 @@ final class StreamOutputResult<T> {
   Future<String?> get rawFinishReason =>
       result.then((value) => value.rawFinishReason);
 
+  Future<ModelResponseMetadata?> get responseMetadata =>
+      result.then((value) => value.responseMetadata);
+
   Future<String?> get responseId => result.then((value) => value.responseId);
 
   Future<DateTime?> get responseTimestamp =>

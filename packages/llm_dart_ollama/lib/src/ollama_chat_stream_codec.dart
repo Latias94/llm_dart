@@ -107,8 +107,11 @@ final class OllamaChatStreamCodec {
     if (!state.metadataEmitted) {
       state.metadataEmitted = true;
       yield ResponseMetadataEvent(
-        modelId: responseCodec.asString(json['model']) ?? responseCodec.modelId,
-        timestamp: responseCodec.parseTimestamp(json['created_at']),
+        responseMetadata: ModelResponseMetadata(
+          timestamp: responseCodec.parseTimestamp(json['created_at']),
+          modelId:
+              responseCodec.asString(json['model']) ?? responseCodec.modelId,
+        ),
         providerMetadata: responseCodec.decodeProviderMetadata(json),
       );
     }

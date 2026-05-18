@@ -40,6 +40,7 @@ final class OpenAIImageModel implements ImageModel, CapabilityDescribedModel {
     );
   }
 
+  @override
   int get maxImagesPerCall => resolveOpenAIImageMaxImagesPerCall(modelId);
 
   Uri get imageGenerationUri => resolveOpenAIImageRouteUri(

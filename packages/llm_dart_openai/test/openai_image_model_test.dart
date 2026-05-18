@@ -17,6 +17,8 @@ void main() {
 
       expect(model.providerId, 'openai');
       expect(model.baseUrl, 'https://api.openai.com/v1');
+      final ImageModel contract = model;
+      expect(contract.maxImagesPerCall, 1);
       expect(
         model.defaultHeaders,
         {'authorization': 'Bearer test-key'},
