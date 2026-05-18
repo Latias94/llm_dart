@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- Aligned structured output stream events with reference object-stream
+  semantics. `streamOutput` now emits explicit finish and error events for
+  final parsing, and `StreamOutputResult` exposes raw text result metadata even
+  when final structured output validation fails.
 - Aligned text run result facades with reference step-level projections:
   generated files, sources, tool calls, tool results, and warnings now
   aggregate across steps, and generate/stream results expose static and dynamic

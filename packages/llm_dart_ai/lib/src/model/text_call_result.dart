@@ -87,7 +87,10 @@ final class StreamTextCallResult<T> extends StreamView<TextStreamEvent> {
   })  : _elementStream = elementStream,
         _output = output,
         _foundation = foundation,
-        super(foundation.eventStream);
+        super(foundation.eventStream) {
+    _foundation.result.ignore();
+    _output?.ignore();
+  }
 
   factory StreamTextCallResult.raw(
     Stream<TextStreamEvent> source,
@@ -133,7 +136,7 @@ final class StreamTextCallResult<T> extends StreamView<TextStreamEvent> {
     return StreamTextCallResult._(
       foundation: StreamResultHandle<TextStreamEvent, GenerateTextResult>(
         eventStream: outputResult.textStream,
-        result: outputResult.result.then((value) => value.result),
+        result: outputResult.textResult,
       ),
       hasOutput: true,
       partialOutputStream: outputResult.partialOutputStream,

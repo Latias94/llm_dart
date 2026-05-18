@@ -6,6 +6,11 @@ import 'package:test/test.dart';
 void main() {
   group('generateOutput', () {
     test('injects shared responseFormat and parses decoded output', () async {
+      const warning = ModelWarning(
+        type: ModelWarningType.unsupported,
+        message: 'Ignored unsupported setting.',
+        feature: 'temperature',
+      );
       final model = _RecordingLanguageModel(
         generateResult: GenerateTextResult(
           content: const [
@@ -14,6 +19,9 @@ void main() {
           finishReason: FinishReason.stop,
           responseId: 'resp_1',
           responseModelId: 'test-model',
+          warnings: const [
+            warning,
+          ],
         ),
       );
 
@@ -39,6 +47,7 @@ void main() {
 
       expect(result.output, 'ok');
       expect(result.responseId, 'resp_1');
+      expect(result.warnings, [warning]);
 
       final responseFormat =
           model.lastRequest?.options.responseFormat as JsonResponseFormat?;
@@ -323,6 +332,11 @@ void main() {
     test(
         'reuses OutputSpec on the streaming path and emits a final parsed result',
         () async {
+      const warning = ModelWarning(
+        type: ModelWarningType.unsupported,
+        message: 'Ignored unsupported setting.',
+        feature: 'temperature',
+      );
       final model = _RecordingLanguageModel(
         generateResult: GenerateTextResult(
           content: const [
@@ -330,7 +344,12 @@ void main() {
           ],
           finishReason: FinishReason.stop,
         ),
-        streamEvents: const [
+        streamEvents: [
+          StartEvent(
+            warnings: [
+              warning,
+            ],
+          ),
           ResponseMetadataEvent(
             responseId: 'resp_stream',
             modelId: 'test-model',
@@ -364,7 +383,7 @@ void main() {
         ),
       ).toList();
 
-      expect(events.whereType<OutputTextStreamEvent<String>>(), hasLength(9));
+      expect(events.whereType<OutputTextStreamEvent<String>>(), hasLength(10));
       expect(events.whereType<OutputPartialEvent<String>>(), hasLength(1));
       expect(
         events.whereType<OutputPartialEvent<String>>().single.partialOutput,
@@ -372,9 +391,13 @@ void main() {
           'value': 'ok',
         },
       );
+      final finishEvent = events.whereType<OutputFinishEvent<String>>().single;
+      expect(finishEvent.responseId, 'resp_stream');
+      expect(finishEvent.warnings, [warning]);
       final resultEvent = events.last as OutputResultEvent<String>;
       expect(resultEvent.result.output, 'ok');
       expect(resultEvent.result.responseId, 'resp_stream');
+      expect(resultEvent.result.warnings, [warning]);
 
       final responseFormat =
           model.lastRequest?.options.responseFormat as JsonResponseFormat?;
@@ -390,7 +413,7 @@ void main() {
           ],
           finishReason: FinishReason.stop,
         ),
-        streamEvents: const [
+        streamEvents: [
           TextStartEvent(id: 'text_1'),
           TextDeltaEvent(id: 'text_1', delta: '{"answer":"hel'),
           TextDeltaEvent(id: 'text_1', delta: 'lo"}'),
@@ -446,7 +469,7 @@ void main() {
           ],
           finishReason: FinishReason.stop,
         ),
-        streamEvents: const [
+        streamEvents: [
           TextStartEvent(id: 'text_1'),
           TextDeltaEvent(id: 'text_1', delta: '{"answer":"ok"}'),
           TextDeltaEvent(id: 'text_1', delta: ' '),
@@ -633,7 +656,8 @@ void main() {
       );
     });
 
-    test('wraps streaming parse failures as validation ModelError', () async {
+    test('emits a structured output error event after the raw stream finishes',
+        () async {
       final model = _RecordingLanguageModel(
         generateResult: GenerateTextResult(
           content: const [
@@ -650,29 +674,35 @@ void main() {
           TextEndEvent(id: 'text_1'),
           FinishEvent(
             finishReason: FinishReason.stop,
+            usage: UsageStats(
+              inputTokens: 1,
+              outputTokens: 2,
+              totalTokens: 3,
+            ),
           ),
         ],
       );
 
-      await expectLater(
-        streamOutput<Object?>(
-          model: model,
-          prompt: [
-            UserPromptMessage.text('Return JSON.'),
-          ],
-          outputSpec: JsonOutputSpec.json(
-            schema: JsonSchema.object(),
-          ),
-        ).drain<void>(),
-        throwsA(
-          isA<ModelError>()
-              .having((error) => error.kind, 'kind', ModelErrorKind.validation)
-              .having(
-                (error) => error.details,
-                'details',
-                containsPair('responseId', 'resp_bad_stream'),
-              ),
+      final events = await streamOutput<Object?>(
+        model: model,
+        prompt: [
+          UserPromptMessage.text('Return JSON.'),
+        ],
+        outputSpec: JsonOutputSpec.json(
+          schema: JsonSchema.object(),
         ),
+      ).toList();
+
+      final finishEvent = events.whereType<OutputFinishEvent<Object?>>().single;
+      expect(finishEvent.responseId, 'resp_bad_stream');
+      expect(finishEvent.text, 'not-json');
+      expect(finishEvent.usage?.totalTokens, 3);
+
+      final errorEvent = events.last as OutputErrorEvent<Object?>;
+      expect(errorEvent.error.kind, ModelErrorKind.validation);
+      expect(
+        errorEvent.error.details,
+        containsPair('responseId', 'resp_bad_stream'),
       );
     });
   });
@@ -758,6 +788,13 @@ void main() {
       expect(
           outputEvents.whereType<OutputPartialEvent<List<String>>>().length, 2);
       expect(
+        outputEvents
+            .whereType<OutputFinishEvent<List<String>>>()
+            .single
+            .responseId,
+        'resp_stream_result',
+      );
+      expect(
         outputEvents.whereType<OutputElementEvent<String>>().length,
         2,
       );
@@ -771,9 +808,13 @@ void main() {
       );
     });
 
-    test(
-        'propagates structured-output errors through result and replay streams',
+    test('keeps raw stream metadata available when final output parsing fails',
         () async {
+      const warning = ModelWarning(
+        type: ModelWarningType.unsupported,
+        message: 'Ignored unsupported setting.',
+        feature: 'temperature',
+      );
       final model = _RecordingLanguageModel(
         generateResult: GenerateTextResult(
           content: const [
@@ -781,12 +822,25 @@ void main() {
           ],
           finishReason: FinishReason.stop,
         ),
-        streamEvents: const [
+        streamEvents: [
+          StartEvent(
+            warnings: [
+              warning,
+            ],
+          ),
+          ResponseMetadataEvent(
+            responseId: 'resp_bad_stream_result',
+          ),
           TextStartEvent(id: 'text_1'),
           TextDeltaEvent(id: 'text_1', delta: 'not-json'),
           TextEndEvent(id: 'text_1'),
           FinishEvent(
             finishReason: FinishReason.stop,
+            usage: UsageStats(
+              inputTokens: 1,
+              outputTokens: 2,
+              totalTokens: 3,
+            ),
           ),
         ],
       );
@@ -801,6 +855,23 @@ void main() {
         ),
       );
 
+      expect(await streamResult.text, 'not-json');
+      expect(await streamResult.responseId, 'resp_bad_stream_result');
+      expect((await streamResult.usage)?.totalTokens, 3);
+      expect(await streamResult.warnings, [warning]);
+      expect((await streamResult.textResult).text, 'not-json');
+      expect(await streamResult.partialOutputStream.toList(), isEmpty);
+
+      final outputEvents = await streamResult.eventStream.toList();
+      expect(
+        outputEvents.whereType<OutputFinishEvent<Object?>>().single.responseId,
+        'resp_bad_stream_result',
+      );
+      expect(
+        outputEvents.whereType<OutputErrorEvent<Object?>>().single.error.kind,
+        ModelErrorKind.validation,
+      );
+
       await expectLater(
         streamResult.output,
         throwsA(
@@ -810,15 +881,7 @@ void main() {
       );
 
       await expectLater(
-        streamResult.eventStream.drain<void>(),
-        throwsA(
-          isA<ModelError>()
-              .having((error) => error.kind, 'kind', ModelErrorKind.validation),
-        ),
-      );
-
-      await expectLater(
-        streamResult.partialOutputStream.drain<void>(),
+        streamResult.result,
         throwsA(
           isA<ModelError>()
               .having((error) => error.kind, 'kind', ModelErrorKind.validation),

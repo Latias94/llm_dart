@@ -28,6 +28,8 @@ final class GenerateOutputResult<T> {
   UsageStats? get usage => result.usage;
 
   ProviderMetadata? get providerMetadata => result.providerMetadata;
+
+  List<ModelWarning> get warnings => result.warnings;
 }
 
 typedef GenerateObjectResult<T> = GenerateOutputResult<T>;

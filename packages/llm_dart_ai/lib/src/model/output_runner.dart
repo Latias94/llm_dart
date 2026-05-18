@@ -175,13 +175,25 @@ Stream<OutputStreamEvent<T>> streamOutput<T>({
   }
 
   final result = accumulator.build();
-  yield OutputResultEvent<T>(
-    await parseGenerateOutputResult(
-      result: result,
-      outputSpec: outputSpec,
-      context: createStructuredOutputContext(result),
-    ),
-  );
+  yield OutputFinishEvent<T>(result);
+
+  try {
+    yield OutputResultEvent<T>(
+      await parseGenerateOutputResult(
+        result: result,
+        outputSpec: outputSpec,
+        context: createStructuredOutputContext(result),
+      ),
+    );
+  } catch (error, stackTrace) {
+    yield OutputErrorEvent<T>(
+      ModelError.fromUnknown(
+        error,
+        kind: ModelErrorKind.validation,
+      ),
+      stackTrace: stackTrace,
+    );
+  }
 }
 
 StreamOutputResult<T> streamOutputResult<T>({

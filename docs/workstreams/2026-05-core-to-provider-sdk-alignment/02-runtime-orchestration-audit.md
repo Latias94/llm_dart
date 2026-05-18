@@ -134,6 +134,22 @@ Implemented result facade parity slice:
 - Kept tool approval requests as a current-step view because they represent
   pending approval state rather than a historical projection.
 
+Implemented structured output stream parity slice:
+
+- Kept `OutputSpec` as the parsing and partial-output strategy seam while
+  aligning the stream event vocabulary with the reference object-stream model:
+  text events, partial output, element output, finish, final parsed result, and
+  final parse error now have explicit events.
+- Split raw text completion from final structured parsing in
+  `StreamOutputResult`. `text`, `finishReason`, `usage`, response metadata,
+  provider metadata, and warnings now resolve from the raw text result even when
+  the final structured output fails validation.
+- Kept `result` and `output` as the schema-validated structured result views;
+  they fail with validation `ModelError` when final parsing or schema decoding
+  fails.
+- Updated `streamTextCall(... outputSpec)` to preserve raw text result
+  compatibility while keeping parsed output on its own future.
+
 Next runtime candidates:
 
 - Add an explicit `prepareStep` hook if real callers need per-step model,

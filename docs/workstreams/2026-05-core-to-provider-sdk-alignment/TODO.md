@@ -42,7 +42,7 @@
 - [x] Audit tool-loop continuation, missing tool result handling, approval
   flows, and stop conditions
 - [x] Audit text result facades for reference step-level projections
-- [ ] Audit output parsing, partial output, and structured output events
+- [x] Audit output parsing, partial output, and structured output events
 - [ ] Audit UI message projection, chat adapters, and serialization ownership
 - [ ] Decide whether runtime needs additional public error types
 - [ ] Add or update focused runtime tests for any discovered gaps

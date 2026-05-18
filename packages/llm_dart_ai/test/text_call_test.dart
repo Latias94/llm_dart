@@ -321,6 +321,50 @@ void main() {
         'resp_structured_stream_call',
       );
     });
+
+    test('keeps raw result available when structured output parsing fails',
+        () async {
+      final model = _RecordingLanguageModel(
+        generateResult: GenerateTextResult(
+          content: const [
+            TextContentPart('unused'),
+          ],
+          finishReason: FinishReason.stop,
+        ),
+        streamEvents: const [
+          ResponseMetadataEvent(
+            responseId: 'resp_structured_error_call',
+          ),
+          TextStartEvent(id: 'text_1'),
+          TextDeltaEvent(id: 'text_1', delta: 'not-json'),
+          TextEndEvent(id: 'text_1'),
+          FinishEvent(
+            finishReason: FinishReason.stop,
+          ),
+        ],
+      );
+
+      final stream = streamTextCall<Object?>(
+        model: model,
+        prompt: [
+          UserPromptMessage.text('Return JSON.'),
+        ],
+        outputSpec: JsonOutputSpec.json(
+          schema: JsonSchema.object(),
+        ),
+      );
+
+      expect(await stream.text, 'not-json');
+      expect((await stream.result).responseId, 'resp_structured_error_call');
+      expect(await stream.partialOutputStream.toList(), isEmpty);
+      await expectLater(
+        stream.output,
+        throwsA(
+          isA<ModelError>()
+              .having((error) => error.kind, 'kind', ModelErrorKind.validation),
+        ),
+      );
+    });
   });
 }
 
