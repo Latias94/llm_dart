@@ -582,11 +582,15 @@ void main() {
     });
 
     test('carries image generation outputs and provider metadata', () {
+      final imageMetadata = ProviderMetadata.forNamespace('openai', {
+        'imageId': 'img_1',
+      });
       final result = ImageGenerationResult(
         images: [
           GeneratedImage(
             uri: Uri.parse('https://example.test/image.png'),
             mediaType: 'image/png',
+            providerMetadata: imageMetadata,
           ),
         ],
         usage: const UsageStats(inputTokens: 3, totalTokens: 5),
@@ -614,6 +618,7 @@ void main() {
       expect(result.images.single.mediaType, 'image/png');
       expect(result.usage!.inputTokens, 3);
       expect(result.responseMetadata!.modelId, 'gpt-image-2');
+      expect(result.images.single.providerMetadata, imageMetadata);
       expect(result.warnings.single.field, 'seed');
       expect(result.providerMetadata!.containsNamespace('openai'), isTrue);
       expect(
@@ -629,6 +634,40 @@ void main() {
         ),
         throwsUnsupportedError,
       );
+    });
+
+    test('supports common image request edit inputs and masks', () {
+      final request = ImageGenerationRequest(
+        prompt: 'Edit this image.',
+        count: 1,
+        size: '1024x1024',
+        aspectRatio: '1:1',
+        seed: 123,
+        files: [
+          const ImageGenerationInput.bytes(
+            [1, 2, 3],
+            mediaType: 'image/png',
+            filename: 'source.png',
+          ),
+        ],
+        mask: const ImageGenerationInput.bytes(
+          [4, 5, 6],
+          mediaType: 'image/png',
+          filename: 'mask.png',
+        ),
+      );
+
+      expect(request.prompt, 'Edit this image.');
+      expect(request.count, 1);
+      expect(request.size, '1024x1024');
+      expect(request.aspectRatio, '1:1');
+      expect(request.seed, 123);
+      expect(request.files.single.bytes, [1, 2, 3]);
+      expect(request.files.single.filename, 'source.png');
+      expect(request.mask!.bytes, [4, 5, 6]);
+      expect(request.mask!.filename, 'mask.png');
+      expect(() => request.files.add(const ImageGenerationInput.bytes([7])),
+          throwsUnsupportedError);
     });
 
     test('carries speech response metadata and warnings', () {

@@ -146,6 +146,19 @@ void main() {
       expect(result.images, hasLength(1));
       expect(result.images.single.bytes, [1, 2, 3, 4]);
       expect(result.images.single.mediaType, 'image/webp');
+      expect(
+        result.images.single.providerMetadata?.namespace('openai'),
+        {
+          'revisedPrompt': 'A more polished cat prompt.',
+          'created': 1710000000,
+          'size': '1024x1024',
+          'quality': 'hd',
+          'background': 'transparent',
+          'outputFormat': 'webp',
+          'imageTokens': 7,
+          'textTokens': 5,
+        },
+      );
       expect(result.usage!.inputTokens, 12);
       expect(result.usage!.outputTokens, 4);
       expect(result.usage!.totalTokens, 16);
@@ -189,6 +202,78 @@ void main() {
             },
           },
         },
+      );
+    });
+
+    test('common image request files route through the edits endpoint',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'data': [
+                  {
+                    'b64_json': base64Encode([1, 2, 3]),
+                    'revised_prompt': 'Edited through common request.',
+                  },
+                ],
+              },
+            );
+          },
+        ),
+      ).imageModel('gpt-image-1');
+
+      final result = await model.doGenerate(
+        ImageGenerationRequest(
+          prompt: 'Edit this image.',
+          files: [
+            const ImageGenerationInput.bytes(
+              [9, 8, 7],
+              mediaType: 'image/png',
+              filename: 'source.png',
+            ),
+          ],
+          mask: const ImageGenerationInput.bytes(
+            [6, 5, 4],
+            mediaType: 'image/png',
+            filename: 'mask.png',
+          ),
+          count: 1,
+          size: '1024x1024',
+          callOptions: CallOptions(
+            providerOptions: OpenAIImageOptions(
+              responseFormat: OpenAIImageResponseFormat.base64Json,
+            ),
+          ),
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      expect(capturedRequest!.uri.toString(),
+          'https://api.openai.com/v1/images/edits');
+      expect(capturedRequest!.method, TransportMethod.post);
+      expect(
+        capturedRequest!.headers['content-type'],
+        startsWith('multipart/form-data; boundary='),
+      );
+
+      final bodyText = utf8.decode(capturedRequest!.body! as List<int>);
+      expect(bodyText, contains('name="prompt"'));
+      expect(bodyText, contains('Edit this image.'));
+      expect(bodyText, contains('name="image"; filename="source.png"'));
+      expect(bodyText, contains('name="mask"; filename="mask.png"'));
+      expect(bodyText, contains('name="size"'));
+      expect(bodyText, contains('1024x1024'));
+      expect(result.images.single.bytes, [1, 2, 3]);
+      expect(
+        result.images.single.providerMetadata?.namespace('openai'),
+        containsPair('revisedPrompt', 'Edited through common request.'),
       );
     });
 

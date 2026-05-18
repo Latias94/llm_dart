@@ -52,6 +52,9 @@ ImageGenerationResult decodeGoogleImagenResponse(
       GeneratedImage(
         bytes: bytes,
         mediaType: 'image/png',
+        providerMetadata: googleProviderMetadata({
+          'generationApi': 'predict',
+        }),
       ),
     );
   }
@@ -86,6 +89,7 @@ ImageGenerationResult decodeGoogleGeminiImageResponse(
   final images = <GeneratedImage>[];
   final revisedPrompts = <String>[];
   final finishReasons = <String>[];
+  final modelVersion = asString(json['modelVersion']);
 
   for (var index = 0; index < candidates.length; index += 1) {
     final candidate = asMap(candidates[index]);
@@ -125,6 +129,11 @@ ImageGenerationResult decodeGoogleGeminiImageResponse(
         GeneratedImage(
           bytes: bytes,
           mediaType: asString(inlineData?['mimeType']) ?? 'image/png',
+          providerMetadata: googleProviderMetadata({
+            'generationApi': 'generateContent',
+            if (modelVersion != null) 'modelVersion': modelVersion,
+            if (finishReason != null) 'finishReason': finishReason,
+          }),
         ),
       );
     }
@@ -151,8 +160,7 @@ ImageGenerationResult decodeGoogleGeminiImageResponse(
     providerMetadata: googleProviderMetadata(
       {
         'generationApi': 'generateContent',
-        if (asString(json['modelVersion']) case final modelVersion?)
-          'modelVersion': modelVersion,
+        if (modelVersion != null) 'modelVersion': modelVersion,
         if (asMap(json['promptFeedback']) case final promptFeedback?)
           'promptFeedback': normalizeJsonValue(promptFeedback),
         if (asMap(json['usageMetadata']) case final usageMetadata?)

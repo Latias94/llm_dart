@@ -8,6 +8,8 @@
   when listing providers and resolving dynamic model references.
 - Added direct batching facts to `EmbeddingModel` and `ImageModel` contracts:
   `maxEmbeddingsPerCall`, `supportsParallelCalls`, and `maxImagesPerCall`.
+- Expanded the shared image request contract with optional prompt support,
+  aspect ratio, seed, file inputs, masks, and per-image provider metadata.
 
 ## [0.11.0-alpha.1] - 2026-05-12
 

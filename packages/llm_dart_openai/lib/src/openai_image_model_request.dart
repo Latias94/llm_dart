@@ -60,6 +60,14 @@ void validateOpenAIImageGenerationRequest({
   required OpenAIImageOptions? options,
   required int maxImagesPerCall,
 }) {
+  if (request.prompt == null || request.prompt!.trim().isEmpty) {
+    throw ArgumentError.value(
+      request.prompt,
+      'request.prompt',
+      'OpenAI image generation requires a non-empty prompt.',
+    );
+  }
+
   if (request.count < 1) {
     throw ArgumentError.value(
       request.count,
@@ -76,6 +84,22 @@ void validateOpenAIImageGenerationRequest({
     );
   }
 
+  if (request.aspectRatio != null) {
+    throw ArgumentError.value(
+      request.aspectRatio,
+      'request.aspectRatio',
+      'OpenAI image models do not support request.aspectRatio. Use request.size instead.',
+    );
+  }
+
+  if (request.seed != null) {
+    throw ArgumentError.value(
+      request.seed,
+      'request.seed',
+      'OpenAI image models do not support request.seed.',
+    );
+  }
+
   if (options?.outputCompression case final outputCompression?) {
     validateOpenAIImageOutputCompression(
       outputCompression,
@@ -86,8 +110,10 @@ void validateOpenAIImageGenerationRequest({
 
 void validateOpenAIImageEditRequest(
   OpenAIImageEditRequest request,
-  OpenAIImageOptions? options,
-) {
+  OpenAIImageOptions? options, {
+  required String modelId,
+  required int maxImagesPerCall,
+}) {
   if (request.prompt.trim().isEmpty) {
     throw ArgumentError.value(
       request.prompt,
@@ -109,6 +135,14 @@ void validateOpenAIImageEditRequest(
       request.count,
       'request.count',
       'OpenAI image editing requires count >= 1.',
+    );
+  }
+
+  if (request.count > maxImagesPerCall) {
+    throw ArgumentError.value(
+      request.count,
+      'request.count',
+      'OpenAI image model $modelId supports at most $maxImagesPerCall generated images per call.',
     );
   }
 
@@ -172,7 +206,7 @@ Map<String, Object?> buildOpenAIImageGenerationRequestBody({
 }) {
   return {
     'model': modelId,
-    'prompt': request.prompt,
+    'prompt': request.prompt!,
     'n': request.count,
     if (request.size != null) 'size': request.size,
     if (options?.style case final style?) 'style': style.value,
@@ -215,14 +249,14 @@ TransportMultipartBody buildOpenAIImageEditRequestBody({
           name: 'image',
           filename: image.filename ?? buildOpenAIImageFilename(image.mediaType),
           mediaType: image.mediaType,
-          bytes: image.bytes,
+          bytes: image.bytes!,
         ),
       if (request.mask case final mask?)
         TransportMultipartField.file(
           name: 'mask',
           filename: mask.filename ?? 'mask.png',
           mediaType: mask.mediaType,
-          bytes: mask.bytes,
+          bytes: mask.bytes!,
         ),
       TransportMultipartField.text(
         name: 'n',
@@ -278,10 +312,19 @@ TransportMultipartBody buildOpenAIImageEditRequestBody({
 }
 
 void validateOpenAIImageEditInput(
-  OpenAIImageEditInput input,
+  ImageGenerationInput input,
   String parameterName,
 ) {
-  if (input.bytes.isEmpty) {
+  if (input.uri != null) {
+    throw ArgumentError.value(
+      input.uri,
+      '$parameterName.uri',
+      'OpenAI image editing inputs must provide image bytes.',
+    );
+  }
+
+  final bytes = input.bytes;
+  if (bytes == null || bytes.isEmpty) {
     throw ArgumentError.value(
       input.bytes,
       '$parameterName.bytes',

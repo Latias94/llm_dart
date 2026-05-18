@@ -42,16 +42,15 @@ ImageGenerationResult decodeOpenAIImageResponse({
     if (revisedPrompt != null && revisedPrompt.isNotEmpty) {
       revisedPrompts.add(revisedPrompt);
     }
-    imageMetadata.add(
-      openAIImageMetadata(
-        json,
-        item: map,
-        outputFormat: outputFormat,
-        tokenDetails: usageDetails,
-        index: index,
-        total: data.length,
-      ),
+    final metadata = openAIImageMetadata(
+      json,
+      item: map,
+      outputFormat: outputFormat,
+      tokenDetails: usageDetails,
+      index: index,
+      total: data.length,
     );
+    imageMetadata.add(metadata);
 
     final b64Json = openAIStringOrNull(map['b64_json']);
     final url = openAIStringOrNull(map['url']);
@@ -68,6 +67,7 @@ ImageGenerationResult decodeOpenAIImageResponse({
         mediaType: b64Json == null
             ? null
             : mediaTypeForOpenAIImageFormat(outputFormat),
+        providerMetadata: ProviderMetadata.forNamespace('openai', metadata),
       ),
     );
   }

@@ -270,6 +270,12 @@ Migration notes:
   first providers to prove the common files/mask request seam.
 - Existing `doGenerate` call sites can migrate mechanically from `prompt`,
   `count`, and `size` to the expanded request object.
+- Implemented common `ImageGenerationRequest.files` and `mask` support through
+  OpenAI edits and Google Gemini image editing while retaining provider-owned
+  `edit` and variation helpers.
+- `GeneratedImage.providerMetadata` now carries per-image provider metadata;
+  call-level `ImageGenerationResult.providerMetadata` remains the aggregated
+  compatibility surface.
 - Provider-specific image options such as style, quality, safety policy, or
   output format remain typed provider invocation options.
 

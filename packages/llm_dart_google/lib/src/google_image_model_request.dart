@@ -46,6 +46,22 @@ void validateGoogleImageGenerationRequest({
   required int maxImagesPerCall,
   required GoogleImageModelSettings settings,
 }) {
+  if (request.prompt == null || request.prompt!.trim().isEmpty) {
+    throw ArgumentError.value(
+      request.prompt,
+      'request.prompt',
+      'Google image generation requires a non-empty prompt.',
+    );
+  }
+
+  if (request.files.isNotEmpty || request.mask != null) {
+    throw ArgumentError.value(
+      request.files.isNotEmpty ? request.files : request.mask,
+      request.files.isNotEmpty ? 'request.files' : 'request.mask',
+      'Google image generation only supports shared request files and masks through Gemini image editing.',
+    );
+  }
+
   if (request.size != null) {
     throw ArgumentError.value(
       request.size,
@@ -67,6 +83,14 @@ void validateGoogleImageGenerationRequest({
       request.count,
       'request.count',
       'Google image models currently support at most $maxImagesPerCall generated images per call.',
+    );
+  }
+
+  if (!isGeminiImageModel && request.seed != null) {
+    throw ArgumentError.value(
+      request.seed,
+      'request.seed',
+      'Google Imagen image models do not support request.seed through this provider.',
     );
   }
 
@@ -171,6 +195,7 @@ Map<String, Object?> buildGoogleImagenRequestBody(
   ImageGenerationRequest request, {
   required GoogleImageOptions? options,
 }) {
+  final aspectRatio = request.aspectRatio ?? options?.aspectRatio?.value;
   return {
     'instances': [
       {
@@ -179,8 +204,7 @@ Map<String, Object?> buildGoogleImagenRequestBody(
     ],
     'parameters': {
       'sampleCount': request.count,
-      if (options?.aspectRatio case final aspectRatio?)
-        'aspectRatio': aspectRatio.value,
+      if (aspectRatio != null) 'aspectRatio': aspectRatio,
       if (options?.personGeneration case final personGeneration?)
         'personGeneration': personGeneration.value,
     },
@@ -197,10 +221,12 @@ Map<String, Object?> buildGoogleGeminiImageRequestBody(
     settings: settings,
   );
   return buildGoogleGeminiImageBody(
-    prompt: request.prompt,
+    prompt: request.prompt!,
     imageParts: const [],
     options: options,
     safetySettings: safetySettings,
+    aspectRatio: request.aspectRatio,
+    seed: request.seed,
   );
 }
 
@@ -220,6 +246,8 @@ Map<String, Object?> buildGoogleGeminiImageEditRequestBody(
     ],
     options: options,
     safetySettings: safetySettings,
+    aspectRatio: request.aspectRatio,
+    seed: request.seed,
   );
 }
 
@@ -228,7 +256,10 @@ Map<String, Object?> buildGoogleGeminiImageBody({
   required List<Map<String, Object?>> imageParts,
   required GoogleImageOptions? options,
   required List<GoogleSafetySetting> safetySettings,
+  String? aspectRatio,
+  int? seed,
 }) {
+  final resolvedAspectRatio = aspectRatio ?? options?.aspectRatio?.value;
   return {
     'contents': [
       {
@@ -245,10 +276,11 @@ Map<String, Object?> buildGoogleGeminiImageBody({
         GoogleResponseModality.text.value,
         GoogleResponseModality.image.value,
       ],
-      if (options?.aspectRatio case final aspectRatio?)
+      if (resolvedAspectRatio != null)
         'imageConfig': {
-          'aspectRatio': aspectRatio.value,
+          'aspectRatio': resolvedAspectRatio,
         },
+      if (seed != null) 'seed': seed,
     },
     if (safetySettings.isNotEmpty)
       'safetySettings': [
@@ -257,7 +289,7 @@ Map<String, Object?> buildGoogleGeminiImageBody({
   };
 }
 
-Map<String, Object?> encodeGoogleImageEditInput(GoogleImageEditInput input) {
+Map<String, Object?> encodeGoogleImageEditInput(ImageGenerationInput input) {
   if (input.bytes case final bytes?) {
     return {
       'inlineData': {

@@ -31,7 +31,7 @@
 - [x] Add provider contract coverage for language response metadata aliases and
   stream serialization
 - [x] Add direct `EmbeddingModel` and `ImageModel` limit facts
-- [ ] Expand the common image request seam
+- [x] Expand the common image request seam
 - [ ] Complete shared speech and transcription request fields
 - [ ] Normalize warning shape
 

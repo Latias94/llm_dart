@@ -4,29 +4,58 @@ import '../common/provider_metadata.dart';
 import '../common/usage_stats.dart';
 import 'model_response_metadata.dart';
 
+class ImageGenerationInput {
+  final List<int>? bytes;
+  final Uri? uri;
+  final String mediaType;
+  final String? filename;
+
+  const ImageGenerationInput.bytes(
+    this.bytes, {
+    this.mediaType = 'image/png',
+    this.filename,
+  }) : uri = null;
+
+  const ImageGenerationInput.uri(
+    this.uri, {
+    this.mediaType = 'image/*',
+    this.filename,
+  }) : bytes = null;
+}
+
 final class ImageGenerationRequest {
-  final String prompt;
+  final String? prompt;
   final int count;
   final String? size;
+  final String? aspectRatio;
+  final int? seed;
+  final List<ImageGenerationInput> files;
+  final ImageGenerationInput? mask;
   final CallOptions callOptions;
 
-  const ImageGenerationRequest({
-    required this.prompt,
+  ImageGenerationRequest({
+    this.prompt,
     this.count = 1,
     this.size,
+    this.aspectRatio,
+    this.seed,
+    List<ImageGenerationInput> files = const [],
+    this.mask,
     this.callOptions = const CallOptions(),
-  });
+  }) : files = List<ImageGenerationInput>.unmodifiable(files);
 }
 
 final class GeneratedImage {
   final Uri? uri;
   final List<int>? bytes;
   final String? mediaType;
+  final ProviderMetadata? providerMetadata;
 
   const GeneratedImage({
     this.uri,
     this.bytes,
     this.mediaType,
+    this.providerMetadata,
   });
 }
 

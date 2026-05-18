@@ -5,6 +5,10 @@ Future<ImageGenerationResult> generateImage({
   required String prompt,
   int count = 1,
   String? size,
+  String? aspectRatio,
+  int? seed,
+  List<ImageGenerationInput> files = const [],
+  ImageGenerationInput? mask,
   CallOptions callOptions = const CallOptions(),
 }) {
   if (count < 1) {
@@ -20,6 +24,10 @@ Future<ImageGenerationResult> generateImage({
       prompt: prompt,
       count: count,
       size: size,
+      aspectRatio: aspectRatio,
+      seed: seed,
+      files: files,
+      mask: mask,
       callOptions: callOptions,
     ),
   );

@@ -56,7 +56,7 @@ void main() {
         isA<provider.EmbedRequest>(),
       );
       expect(
-        const model.ImageGenerationRequest(prompt: 'Draw this.'),
+        model.ImageGenerationRequest(prompt: 'Draw this.'),
         isA<provider.ImageGenerationRequest>(),
       );
       expect(

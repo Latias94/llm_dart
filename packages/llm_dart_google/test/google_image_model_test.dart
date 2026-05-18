@@ -106,6 +106,12 @@ void main() {
       expect(result.images, hasLength(2));
       expect(result.images.first.bytes, [1, 2, 3]);
       expect(result.images.first.mediaType, 'image/png');
+      expect(
+        result.images.first.providerMetadata?.namespace('google'),
+        {
+          'generationApi': 'predict',
+        },
+      );
       expect(result.usage, isNull);
       expect(result.responseMetadata, isNotNull);
       expect(result.responseMetadata!.modelId, 'imagen-3.0-generate-002');
@@ -203,6 +209,14 @@ void main() {
       );
       expect(result.images, hasLength(1));
       expect(result.images.single.bytes, [7, 8, 9]);
+      expect(
+        result.images.single.providerMetadata?.namespace('google'),
+        {
+          'generationApi': 'generateContent',
+          'modelVersion': 'gemini-2.5-flash-image',
+          'finishReason': 'STOP',
+        },
+      );
       expect(result.usage!.inputTokens, 12);
       expect(result.usage!.outputTokens, 4);
       expect(result.usage!.totalTokens, 16);
@@ -226,6 +240,87 @@ void main() {
           'finishReasons': ['STOP'],
         },
       );
+    });
+
+    test('common image request files route through Gemini editing', () async {
+      TransportRequest? capturedRequest;
+
+      final model = Google(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'candidates': [
+                  {
+                    'finishReason': 'STOP',
+                    'content': {
+                      'parts': [
+                        {
+                          'inlineData': {
+                            'mimeType': 'image/png',
+                            'data': base64Encode([1, 2, 3]),
+                          },
+                        },
+                      ],
+                    },
+                  },
+                ],
+              },
+            );
+          },
+        ),
+      ).imageModel('gemini-2.5-flash-image');
+
+      final result = await model.doGenerate(
+        ImageGenerationRequest(
+          prompt: 'Edit this image.',
+          files: [
+            const ImageGenerationInput.bytes(
+              [9, 8, 7],
+              mediaType: 'image/png',
+            ),
+          ],
+          aspectRatio: '3:4',
+          seed: 123,
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      expect(
+        capturedRequest!.uri.toString(),
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent',
+      );
+      expect(
+        capturedRequest!.body,
+        {
+          'contents': [
+            {
+              'parts': [
+                {
+                  'text': 'Edit this image.',
+                },
+                {
+                  'inlineData': {
+                    'mimeType': 'image/png',
+                    'data': base64Encode([9, 8, 7]),
+                  },
+                },
+              ],
+            },
+          ],
+          'generationConfig': {
+            'responseModalities': ['TEXT', 'IMAGE'],
+            'imageConfig': {
+              'aspectRatio': '3:4',
+            },
+            'seed': 123,
+          },
+        },
+      );
+      expect(result.images.single.bytes, [1, 2, 3]);
     });
 
     test('Gemini image model forwards safety settings from typed options',

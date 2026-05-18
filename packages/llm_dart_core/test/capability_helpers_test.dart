@@ -148,12 +148,32 @@ void main() {
         prompt: 'Draw a cat.',
         count: 2,
         size: '1024x1024',
+        aspectRatio: '1:1',
+        seed: 123,
+        files: const [
+          ImageGenerationInput.bytes(
+            [4, 5, 6],
+            mediaType: 'image/png',
+            filename: 'source.png',
+          ),
+        ],
+        mask: const ImageGenerationInput.bytes(
+          [7, 8, 9],
+          mediaType: 'image/png',
+          filename: 'mask.png',
+        ),
       );
 
       expect(result.images, hasLength(1));
       expect(model.lastRequest?.prompt, 'Draw a cat.');
       expect(model.lastRequest?.count, 2);
       expect(model.lastRequest?.size, '1024x1024');
+      expect(model.lastRequest?.aspectRatio, '1:1');
+      expect(model.lastRequest?.seed, 123);
+      expect(model.lastRequest?.files.single.bytes, [4, 5, 6]);
+      expect(model.lastRequest?.files.single.filename, 'source.png');
+      expect(model.lastRequest?.mask?.bytes, [7, 8, 9]);
+      expect(model.lastRequest?.mask?.filename, 'mask.png');
     });
 
     test('rejects non-positive image counts', () async {
@@ -241,9 +261,8 @@ final class _RecordingEmbeddingModel implements EmbeddingModel {
 
   _RecordingEmbeddingModel({
     required this.result,
-    this.maxEmbeddingsPerCall,
-    this.supportsParallelCalls = true,
-  });
+  })  : maxEmbeddingsPerCall = null,
+        supportsParallelCalls = true;
 
   @override
   String get modelId => 'embed-test-model';
@@ -267,8 +286,7 @@ final class _RecordingImageModel implements ImageModel {
 
   _RecordingImageModel({
     required this.result,
-    this.maxImagesPerCall,
-  });
+  }) : maxImagesPerCall = null;
 
   @override
   String get modelId => 'image-test-model';

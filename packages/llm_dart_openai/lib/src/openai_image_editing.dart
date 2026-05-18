@@ -9,22 +9,22 @@ enum OpenAIImageInputFidelity {
   final String value;
 }
 
-final class OpenAIImageEditInput {
-  final List<int> bytes;
-  final String mediaType;
-  final String? filename;
-
+final class OpenAIImageEditInput extends ImageGenerationInput {
   const OpenAIImageEditInput({
-    required this.bytes,
-    this.mediaType = 'image/png',
-    this.filename,
-  });
+    required List<int> bytes,
+    String mediaType = 'image/png',
+    String? filename,
+  }) : super.bytes(
+          bytes,
+          mediaType: mediaType,
+          filename: filename,
+        );
 }
 
 final class OpenAIImageEditRequest {
   final String prompt;
-  final List<OpenAIImageEditInput> images;
-  final OpenAIImageEditInput? mask;
+  final List<ImageGenerationInput> images;
+  final ImageGenerationInput? mask;
   final int count;
   final String? size;
   final OpenAIImageInputFidelity? inputFidelity;
