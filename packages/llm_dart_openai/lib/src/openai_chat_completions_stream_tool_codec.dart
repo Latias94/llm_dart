@@ -2,7 +2,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'openai_chat_completions_stream_state.dart';
 import 'openai_chat_completions_stream_util.dart';
-import 'openai_streaming_support.dart';
+import 'openai_stream_tool_projection.dart';
 
 Iterable<LanguageModelStreamEvent> decodeOpenAIChatCompletionsToolCallDeltas(
   Map<String, Object?> delta,

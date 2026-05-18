@@ -3,7 +3,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'openai_responses_stream_state.dart';
 import 'openai_responses_stream_util.dart';
 import 'openai_responses_support.dart';
-import 'openai_streaming_support.dart';
+import 'openai_stream_tool_projection.dart';
 
 Iterable<LanguageModelStreamEvent> decodeOpenAIResponsesFunctionCallItemAdded(
   Map<String, Object?> chunk,
