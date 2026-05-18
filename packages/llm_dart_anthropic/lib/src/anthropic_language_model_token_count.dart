@@ -6,7 +6,10 @@ AnthropicTokenCountResult decodeAnthropicLanguageModelTokenCountResponse({
   required Object? body,
   required List<ModelWarning> warnings,
 }) {
-  final json = decodeAnthropicJsonObject(body);
+  final json = decodeAnthropicJsonObject(
+    body,
+    responseName: 'token count',
+  );
   return AnthropicTokenCountResult(
     inputTokens: _requiredAnthropicInputTokens(json['input_tokens']),
     warnings: warnings,

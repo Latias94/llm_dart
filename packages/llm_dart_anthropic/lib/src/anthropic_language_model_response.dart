@@ -10,7 +10,10 @@ GenerateTextResult decodeAnthropicLanguageModelGenerateResponse({
       const AnthropicMessagesResultCodec(),
 }) {
   return resultCodec.decodeResponse(
-    decodeAnthropicJsonObject(body),
+    decodeAnthropicJsonObject(
+      body,
+      responseName: 'messages',
+    ),
     warnings: warnings,
   );
 }

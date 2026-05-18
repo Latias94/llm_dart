@@ -212,7 +212,10 @@ final class AnthropicFiles {
     );
 
     return AnthropicFileDescriptor.fromJson(
-      decodeAnthropicJsonObject(response.body),
+      decodeAnthropicJsonObject(
+        response.body,
+        responseName: 'file upload',
+      ),
     );
   }
 
@@ -272,7 +275,10 @@ final class AnthropicFiles {
     );
 
     return AnthropicFileListResponse.fromJson(
-      decodeAnthropicJsonObject(response.body),
+      decodeAnthropicJsonObject(
+        response.body,
+        responseName: 'file list',
+      ),
     );
   }
 
@@ -306,7 +312,10 @@ final class AnthropicFiles {
     );
 
     return AnthropicFileDescriptor.fromJson(
-      decodeAnthropicJsonObject(response.body),
+      decodeAnthropicJsonObject(
+        response.body,
+        responseName: 'file metadata',
+      ),
     );
   }
 

@@ -195,7 +195,63 @@ Status: complete for the current breaking line.
   Google custom parts; raw provider metadata is not accepted as ordinary input
   customization.
 
+## Anthropic Row
+
+Status: complete for the current breaking line.
+
+### Shared Contracts
+
+- Language generation supports Anthropic Messages `doGenerate` and SSE
+  `doStream` behind the direct `LanguageModel` adapter.
+- Streaming emits unified text, reasoning, tool input, tool call, source,
+  file/code-execution replay, response metadata, usage, finish reason,
+  warnings, and raw-chunk events.
+- Token counting is exposed as an Anthropic-native helper on the language model
+  because Anthropic's `/messages/count_tokens` shape is provider-specific.
+- Files API support is exposed as a native helper client and as code-execution
+  file-handle metadata/download helpers.
+- JSON response coercion stays in `anthropic_api.dart`, which is already the
+  neutral Anthropic API helper for URI, headers, beta merging, and response-body
+  coercion.
+
+### Provider-Owned Surface
+
+- Anthropic beta header inference and merging, MCP client beta, interleaved
+  thinking beta, extended cache TTL beta, files beta, code execution replay,
+  deferred tool results, container/metadata/service tier, prompt cache control,
+  and tool result file semantics remain provider-owned.
+- Count tokens stays provider-owned. The shared core should not grow a token
+  counting contract until at least two providers expose compatible semantics.
+- Files stay provider-owned. The shared core should not grow a files contract
+  until provider file references, upload lifecycle, download permissions, and
+  beta/header policy can be modeled without Anthropic-specific behavior.
+- Embedding, image, speech, and transcription remain deferred for Anthropic in
+  this breaking line.
+
+### Shared Option Audit
+
+- Shared `reasoning` maps to Anthropic thinking policy through typed
+  `AnthropicGenerateTextOptions`; Anthropic-specific thinking budget and
+  interleaved thinking stay provider-owned.
+- Shared `topK`, `topP`, temperature, stop sequences, and max output tokens map
+  to Messages fields where compatible with thinking policy.
+- `responseFormat` does not become a shared Anthropic structured-output
+  contract in this row; Anthropic tool/json policy remains provider-owned until
+  a stable shared shape is proven.
+- No new shared option belongs in `llm_dart_provider` from the Anthropic row.
+
+### Metadata Audit
+
+- Namespace is `anthropic` for Anthropic-owned provider metadata.
+- Response id/model/timestamp/headers live in `ModelResponseMetadata`.
+- Provider metadata retains raw usage, container details, citations/sources,
+  thinking signatures, server-tool/code-execution replay details, file ids, and
+  token-count warnings where applicable.
+- Replay metadata flows back through typed prompt-part provider options and
+  Anthropic replay helper types; raw provider metadata is not accepted as
+  ordinary input customization.
+
 ## First Follow-Up
 
-Use the same row format for Anthropic, Ollama, ElevenLabs, and the
-OpenAI-compatible family.
+Use the same row format for Ollama, ElevenLabs, and the OpenAI-compatible
+family.

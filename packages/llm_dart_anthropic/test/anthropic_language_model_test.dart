@@ -547,6 +547,37 @@ void main() {
         throwsA(isA<ArgumentError>()),
       );
     });
+
+    test('messages response rejects non-object JSON bodies', () async {
+      final model = Anthropic(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (_) async => const TransportResponse(
+            statusCode: 200,
+            body: '[]',
+          ),
+        ),
+      ).chatModel('claude-sonnet-4-5');
+
+      await expectLater(
+        () => model.doGenerate(
+          GenerateTextRequest(
+            prompt: [
+              UserPromptMessage.text('Hello'),
+            ],
+          ),
+        ),
+        throwsA(
+          isA<TransportResponseFormatException>().having(
+            (error) => error.message,
+            'message',
+            contains(
+              'Anthropic messages API returned JSON that is not an object',
+            ),
+          ),
+        ),
+      );
+    });
   });
 }
 

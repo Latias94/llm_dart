@@ -65,9 +65,15 @@ Map<String, String> withoutAnthropicBetaHeader(Map<String, String> headers) {
   return filtered;
 }
 
-Map<String, Object?> decodeAnthropicJsonObject(Object? body) {
+Map<String, Object?> decodeAnthropicJsonObject(
+  Object? body, {
+  String? responseName,
+}) {
+  final sourceName = responseName == null || responseName.isEmpty
+      ? 'Anthropic'
+      : 'Anthropic $responseName';
   return JsonObjectResponseDecoder.decode(
     body,
-    sourceName: 'Anthropic',
+    sourceName: sourceName,
   );
 }
