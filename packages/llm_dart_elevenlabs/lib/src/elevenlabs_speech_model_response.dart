@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import 'elevenlabs_value.dart';
 import 'elevenlabs_shared.dart';
 
 SpeechGenerationResult decodeElevenLabsSpeechResponse({
@@ -20,7 +21,7 @@ SpeechGenerationResult decodeElevenLabsSpeechResponse({
 
   return SpeechGenerationResult(
     audioBytes: audioBytes,
-    mediaType: lookupHeader(headers, 'content-type') ??
+    mediaType: elevenLabsLookupHeader(headers, 'content-type') ??
         defaultElevenLabsSpeechMediaTypeForOutputFormat(outputFormat),
     warnings: warnings,
     responseMetadata: ModelResponseMetadata(
@@ -33,30 +34,10 @@ SpeechGenerationResult decodeElevenLabsSpeechResponse({
 }
 
 Uint8List decodeElevenLabsSpeechBytes(Object? body) {
-  if (body is Uint8List) {
-    return body;
-  }
-
-  if (body is List<int>) {
-    return Uint8List.fromList(body);
-  }
-
-  if (body is List) {
-    return Uint8List.fromList(
-      body.map((value) {
-        if (value is! int) {
-          throw StateError(
-            'Expected ElevenLabs speech byte value to be int, got ${value.runtimeType}.',
-          );
-        }
-
-        return value;
-      }).toList(),
-    );
-  }
-
-  throw StateError(
-    'Expected ElevenLabs speech response bytes but received ${body.runtimeType}.',
+  return elevenLabsRequiredBytes(
+    body,
+    path: 'speech_response.body',
+    sourceName: 'ElevenLabs speech response',
   );
 }
 

@@ -1,6 +1,7 @@
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'elevenlabs_shared.dart';
+import 'elevenlabs_value.dart';
 
 final class ElevenLabsVoiceCatalogSettings {
   final Map<String, String> headers;
@@ -31,17 +32,21 @@ final class ElevenLabsVoice {
 
   factory ElevenLabsVoice.fromJson(Map<String, Object?> json) {
     return ElevenLabsVoice(
-      id: _requiredNonEmptyString(json['voice_id'], path: 'voice.voice_id'),
-      name: _requiredNonEmptyString(json['name'], path: 'voice.name'),
-      category: _optionalString(json['category'], path: 'voice.category'),
-      description: _optionalString(
+      id: elevenLabsRequiredNonEmptyString(
+        json['voice_id'],
+        path: 'voice.voice_id',
+      ),
+      name: elevenLabsRequiredNonEmptyString(json['name'], path: 'voice.name'),
+      category:
+          elevenLabsOptionalString(json['category'], path: 'voice.category'),
+      description: elevenLabsOptionalString(
         json['description'],
         path: 'voice.description',
       ),
-      previewUrl:
-          _optionalString(json['preview_url'], path: 'voice.preview_url'),
-      labels: _optionalStringMap(json['labels'], path: 'voice.labels'),
-      availableForTiers: _optionalStringList(
+      previewUrl: elevenLabsOptionalString(json['preview_url'],
+          path: 'voice.preview_url'),
+      labels: elevenLabsOptionalStringMap(json['labels'], path: 'voice.labels'),
+      availableForTiers: elevenLabsOptionalStringList(
         json['available_for_tiers'],
         path: 'voice.available_for_tiers',
       ),
@@ -108,118 +113,16 @@ final class ElevenLabsVoiceCatalogClient {
       response.body,
       responseName: 'voice catalog',
     );
-    return _requiredList(json['voices'], path: 'voices')
+    return elevenLabsRequiredList(json['voices'], path: 'voices')
         .asMap()
         .entries
         .map((entry) {
       return ElevenLabsVoice.fromJson(
-        _requiredMap(
+        elevenLabsRequiredMap(
           entry.value,
           path: 'voices[${entry.key}]',
         ),
       );
     }).toList(growable: false);
   }
-}
-
-Map<String, Object?> _requiredMap(
-  Object? value, {
-  required String path,
-}) {
-  if (value is Map<String, Object?>) {
-    return value;
-  }
-
-  if (value is Map) {
-    return Map<String, Object?>.from(value);
-  }
-
-  throw FormatException('Expected a JSON object at $path.');
-}
-
-List<Object?> _requiredList(
-  Object? value, {
-  required String path,
-}) {
-  if (value is List<Object?>) {
-    return value;
-  }
-
-  if (value is List) {
-    return List<Object?>.from(value);
-  }
-
-  throw FormatException('Expected a list at $path.');
-}
-
-String _requiredNonEmptyString(
-  Object? value, {
-  required String path,
-}) {
-  final normalized = _optionalString(value, path: path);
-  if (normalized == null || normalized.isEmpty) {
-    throw FormatException('Expected a non-empty string at $path.');
-  }
-
-  return normalized;
-}
-
-String? _optionalString(
-  Object? value, {
-  required String path,
-}) {
-  if (value == null) {
-    return null;
-  }
-
-  if (value is String) {
-    return value;
-  }
-
-  throw FormatException('Expected a string at $path.');
-}
-
-Map<String, String> _optionalStringMap(
-  Object? value, {
-  required String path,
-}) {
-  if (value == null) {
-    return const {};
-  }
-
-  if (value is! Map) {
-    throw FormatException('Expected a string map at $path.');
-  }
-
-  return Map<String, String>.unmodifiable(
-    value.map((key, mapValue) {
-      if (key is! String || mapValue is! String) {
-        throw FormatException('Expected string entries at $path.');
-      }
-
-      return MapEntry(key, mapValue);
-    }),
-  );
-}
-
-List<String> _optionalStringList(
-  Object? value, {
-  required String path,
-}) {
-  if (value == null) {
-    return const [];
-  }
-
-  if (value is! List) {
-    throw FormatException('Expected a string list at $path.');
-  }
-
-  return List<String>.generate(
-    value.length,
-    (index) => _requiredNonEmptyString(
-      value[index],
-      path: '$path[$index]',
-    ),
-    growable: false,
-  );
 }
