@@ -52,6 +52,13 @@ final promptPart = TextPromptPart(
       }
       await _writeFile(
         temp,
+        'packages/llm_dart_provider/lib/src/common/provider_options.dart',
+        '''
+ProviderMetadata? providerReplayMetadataFromOptions(options) => null;
+''',
+      );
+      await _writeFile(
+        temp,
         'packages/llm_dart_anthropic/lib/src/anthropic_code_execution_replay.dart',
         '''
 final options = ProviderReplayPromptPartOptions.fromMetadata(metadata);
@@ -65,6 +72,57 @@ final replay = providerOptions: part.providerOptions;
 
       expect(result.violations, hasLength(1));
       expect(result.violations.single, contains('TextPromptPart'));
+    });
+
+    test('requires the provider replay extraction helper to stay single-entry',
+        () async {
+      final temp = await Directory.systemTemp.createTemp(
+        'provider_replay_guard_helper_',
+      );
+      addTearDown(() async {
+        if (temp.existsSync()) {
+          await temp.delete(recursive: true);
+        }
+      });
+
+      await _writeFile(
+        temp,
+        'packages/llm_dart_ai/lib/src/model/generate_text_runner_support.dart',
+        'final ok = TextPromptPart("replay", providerOptions: replayOptions);',
+      );
+      for (final path in [
+        'packages/llm_dart_openai/lib/src/openai_responses_codec.dart',
+        'packages/llm_dart_google/lib/src/google_generate_content_codec.dart',
+        'packages/llm_dart_anthropic/lib/src/anthropic_messages_codec.dart',
+      ]) {
+        await _writeFile(temp, path, 'final ok = part.providerOptions;');
+      }
+      await _writeFile(
+        temp,
+        'packages/llm_dart_anthropic/lib/src/anthropic_code_execution_replay.dart',
+        '''
+final options = ProviderReplayPromptPartOptions.fromMetadata(metadata);
+final replay = providerOptions: part.providerOptions;
+''',
+      );
+      await _writeFile(
+        temp,
+        'packages/llm_dart_provider/lib/src/common/provider_options.dart',
+        '''
+ProviderMetadata? providerReplayMetadataFromOptions(options) => null;
+ProviderMetadata? mergeProviderReplayMetadata({providerOptions}) => null;
+''',
+      );
+
+      final result = await guard.evaluateProviderReplayMetadataGuards(
+        repoRoot: temp,
+      );
+
+      expect(result.violations, hasLength(1));
+      expect(
+        result.violations.single,
+        contains('mergeProviderReplayMetadata'),
+      );
     });
   });
 }

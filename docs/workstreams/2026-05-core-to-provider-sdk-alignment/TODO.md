@@ -72,12 +72,12 @@
 
 ## Provider Options And Metadata
 
-- [ ] Audit typed provider option precedence rules for every provider
-- [ ] Audit shared-option versus provider-option conflict behavior
+- [x] Audit typed provider option precedence rules for every provider
+- [x] Audit shared-option versus provider-option conflict behavior
 - [x] Audit provider metadata namespace consistency
-- [ ] Audit replay metadata flow from output to prompt-part options
+- [x] Audit replay metadata flow from output to prompt-part options
 - [x] Add guard coverage for provider metadata namespace regression gaps
-- [ ] Add guard coverage for provider option/replay input regression gaps
+- [x] Add guard coverage for provider option/replay input regression gaps
 
 ## Compatibility And Migration
 

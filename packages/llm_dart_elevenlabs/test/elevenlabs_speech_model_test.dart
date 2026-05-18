@@ -193,6 +193,107 @@ void main() {
       );
     });
 
+    test('generateSpeech shared fields override ElevenLabs speech provider fields',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = ElevenLabs(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return const TransportResponse(
+              statusCode: 200,
+              body: [1, 2, 3],
+            );
+          },
+        ),
+      ).speechModel('eleven_multilingual_v2');
+
+      final result = await generateSpeech(
+        model: model,
+        text: 'Hello world.',
+        outputFormat: 'pcm',
+        language: 'en',
+        speed: 1.25,
+        callOptions: const CallOptions(
+          providerOptions: ElevenLabsSpeechOptions(
+            outputFormat: 'ulaw',
+            languageCode: 'es',
+            speed: 0.8,
+          ),
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      expect(
+        capturedRequest!.uri.toString(),
+        'https://api.elevenlabs.io/v1/text-to-speech/JBFqnCBsd6RMkjVDRZzb?output_format=pcm_44100',
+      );
+      expect(
+        capturedRequest!.body,
+        {
+          'text': 'Hello world.',
+          'model_id': 'eleven_multilingual_v2',
+          'voice_settings': {
+            'speed': 1.25,
+          },
+          'language_code': 'en',
+        },
+      );
+      expect(result.mediaType, 'audio/pcm');
+      expect(result.warnings, isEmpty);
+    });
+
+    test('generateSpeech falls back to ElevenLabs speech provider fields when shared fields are absent',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = ElevenLabs(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return const TransportResponse(
+              statusCode: 200,
+              body: [1, 2, 3],
+            );
+          },
+        ),
+      ).speechModel('eleven_multilingual_v2');
+
+      final result = await generateSpeech(
+        model: model,
+        text: 'Hello world.',
+        callOptions: const CallOptions(
+          providerOptions: ElevenLabsSpeechOptions(
+            outputFormat: 'ulaw',
+            languageCode: 'es',
+            speed: 0.8,
+          ),
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      expect(
+        capturedRequest!.uri.toString(),
+        'https://api.elevenlabs.io/v1/text-to-speech/JBFqnCBsd6RMkjVDRZzb?output_format=ulaw_8000',
+      );
+      expect(
+        capturedRequest!.body,
+        {
+          'text': 'Hello world.',
+          'model_id': 'eleven_multilingual_v2',
+          'voice_settings': {
+            'speed': 0.8,
+          },
+          'language_code': 'es',
+        },
+      );
+      expect(result.mediaType, 'audio/basic');
+      expect(result.warnings, isEmpty);
+    });
+
     test('speech model rejects incompatible provider options', () async {
       final model = ElevenLabs(
         apiKey: 'test-key',

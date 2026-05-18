@@ -25,9 +25,7 @@ final class GooglePromptPartMetadata {
 }
 
 ProviderMetadata? googlePromptPartProviderMetadata(PromptPart part) {
-  return mergeProviderReplayMetadata(
-    providerOptions: part.providerOptions,
-  );
+  return providerReplayMetadataFromOptions(part.providerOptions);
 }
 
 GooglePromptPartMetadata resolveGooglePromptPartMetadata(

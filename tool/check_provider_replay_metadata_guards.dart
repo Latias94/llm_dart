@@ -2,6 +2,8 @@ import 'dart:io';
 
 const String _runtimeContinuationPath =
     'packages/llm_dart_ai/lib/src/model/generate_text_runner_support.dart';
+const String _providerOptionsPath =
+    'packages/llm_dart_provider/lib/src/common/provider_options.dart';
 
 const List<String> _providerRequestCodecPaths = [
   'packages/llm_dart_openai/lib/src/openai_responses_codec.dart',
@@ -48,6 +50,10 @@ Future<ProviderReplayMetadataGuardResult> evaluateProviderReplayMetadataGuards({
     repoRoot: resolvedRepoRoot,
     violations: violations,
   );
+  await _collectProviderOptionsViolations(
+    repoRoot: resolvedRepoRoot,
+    violations: violations,
+  );
   await _collectProviderRequestCodecViolations(
     repoRoot: resolvedRepoRoot,
     violations: violations,
@@ -60,6 +66,32 @@ Future<ProviderReplayMetadataGuardResult> evaluateProviderReplayMetadataGuards({
   return ProviderReplayMetadataGuardResult(
     violations: List.unmodifiable(violations),
   );
+}
+
+Future<void> _collectProviderOptionsViolations({
+  required Directory repoRoot,
+  required List<String> violations,
+}) async {
+  final file = File.fromUri(repoRoot.uri.resolve(_providerOptionsPath));
+  if (!file.existsSync()) {
+    violations.add('provider replay metadata guard failed: '
+        'missing $_providerOptionsPath.');
+    return;
+  }
+
+  final source = await file.readAsString();
+  if (!source.contains('providerReplayMetadataFromOptions')) {
+    violations.add(
+      '$_providerOptionsPath: replay metadata must expose the single '
+      'providerReplayMetadataFromOptions extraction helper.',
+    );
+  }
+  if (source.contains('mergeProviderReplayMetadata')) {
+    violations.add(
+      '$_providerOptionsPath: remove mergeProviderReplayMetadata; replay '
+      'metadata extraction must stay a single explicit helper.',
+    );
+  }
 }
 
 Future<void> _collectRuntimeContinuationViolations({

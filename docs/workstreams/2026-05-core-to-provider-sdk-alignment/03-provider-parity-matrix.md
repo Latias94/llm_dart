@@ -62,6 +62,35 @@ Each provider row should record:
 - conflict rules with shared options
 - profile-specific rejection behavior
 
+## Provider Option Precedence Policy
+
+The Dart SDK keeps typed `ProviderInvocationOptions` instead of Vercel AI
+SDK's namespaced provider-options map, but the ownership rule is the same:
+shared fields express provider-agnostic intent, while provider options express
+provider-owned behavior.
+
+Policy for new and audited providers:
+
+- Shared fields win when both the shared request and provider options describe
+  the same cross-provider semantic. Provider options may be used as fallbacks
+  only when the shared field is absent. This is the speech policy for OpenAI
+  and ElevenLabs `outputFormat`, `instructions`, `language`, and `speed`.
+- Provider options override model settings when both configure the same
+  provider-owned knob. This keeps model defaults stable while allowing a single
+  invocation to opt into provider-native behavior such as ElevenLabs voice
+  settings.
+- Provider options may override a shared semantic only when the provider has a
+  stricter native shape and the adapter emits a compatibility warning. OpenAI,
+  Google, Anthropic, and Ollama reasoning policies use this path.
+- Shared/provider `responseFormat` double-configuration is rejected when both
+  sides describe the same output contract. Silent override is not allowed for
+  structured-output shape decisions.
+- Unsupported shared options warn and are dropped. They must not be encoded as
+  fake provider equivalents.
+- Replay data is not an invocation option. Output provider metadata can only
+  return to provider request codecs through `ProviderReplayPromptPartOptions`
+  and `providerReplayMetadataFromOptions`.
+
 ## Metadata Coverage
 
 Each provider row should record:

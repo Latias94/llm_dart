@@ -126,6 +126,28 @@ away from the provider that owns it.
   release readiness so provider implementation packages cannot reintroduce raw
   `ProviderMetadata` namespace maps.
 
+## Provider Option And Replay Metadata Slice
+
+- Compared `repo-ref/ai/packages/provider-utils/src/parse-provider-options.ts`
+  with the Dart typed option design. Vercel validates provider-owned options
+  under provider namespaces; Dart keeps compile-time provider option types and
+  rejects wrong-provider options at adapter entrypoints.
+- Documented the provider option precedence policy in the parity matrix:
+  shared cross-provider fields win, provider options fall back for the same
+  shared semantic, provider options override model settings for provider-owned
+  knobs, reasoning-like native overrides warn, and response-format double
+  configuration throws.
+- Added speech regression coverage for OpenAI and ElevenLabs so shared
+  `outputFormat`, `instructions`, `language`, and `speed` remain the primary
+  request interface when provider options also supply equivalent fields.
+- Removed the shallow `mergeProviderReplayMetadata` pass-through helper.
+  Replay metadata now has one shared extraction helper,
+  `providerReplayMetadataFromOptions`, which keeps request-side replay behavior
+  explicit instead of looking like a generic metadata merge.
+- Extended the provider replay metadata guard to fail if the old replay helper
+  alias is reintroduced, and verified release readiness includes the replay
+  guard command.
+
 ## Provider Utils Decision
 
 Keep `llm_dart_provider_utils` deferred for now.

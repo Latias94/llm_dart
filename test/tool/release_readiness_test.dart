@@ -46,6 +46,9 @@ void main() {
       final providerMetadataNamespaceGuardStep = steps.firstWhere(
         (step) => step.name == 'Provider metadata namespace guard',
       );
+      final providerReplayMetadataGuardStep = steps.firstWhere(
+        (step) => step.name == 'Provider replay metadata guard',
+      );
       final publishDryRunStep = steps.firstWhere(
         (step) => step.name == 'Workspace publish dry-run',
       );
@@ -74,6 +77,10 @@ void main() {
       expect(
         providerMetadataNamespaceGuardStep.commandText,
         'dart tool/check_provider_metadata_namespace_guards.dart',
+      );
+      expect(
+        providerReplayMetadataGuardStep.commandText,
+        'dart tool/check_provider_replay_metadata_guards.dart',
       );
       expect(
         publishDryRunStep.commandText,

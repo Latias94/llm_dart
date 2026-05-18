@@ -49,9 +49,7 @@ String? resolveOpenAIFileId({
 }
 
 ProviderMetadata? openAIPromptPartProviderMetadata(PromptPart part) {
-  return mergeProviderReplayMetadata(
-    providerOptions: part.providerOptions,
-  );
+  return providerReplayMetadataFromOptions(part.providerOptions);
 }
 
 Map<String, Object?>? openAIRequestAsMap(Object? value) {

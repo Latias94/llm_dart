@@ -159,6 +159,122 @@ void main() {
       expect(result.warnings, isEmpty);
     });
 
+    test('generateSpeech shared fields override OpenAI speech provider fields',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return const TransportResponse(
+              statusCode: 200,
+              body: [1, 2, 3],
+            );
+          },
+        ),
+      ).speechModel('gpt-4o-mini-tts');
+
+      final result = await generateSpeech(
+        model: model,
+        text: 'Hello world.',
+        outputFormat: 'wav',
+        instructions: 'Use a calm tone.',
+        speed: 1.5,
+        language: 'en',
+        callOptions: const CallOptions(
+          providerOptions: OpenAISpeechOptions(
+            outputFormat: 'opus',
+            instructions: 'Use the provider tone.',
+            speed: 0.75,
+            language: 'es',
+          ),
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      expect(
+        capturedRequest!.body,
+        {
+          'model': 'gpt-4o-mini-tts',
+          'input': 'Hello world.',
+          'voice': 'alloy',
+          'response_format': 'wav',
+          'instructions': 'Use a calm tone.',
+          'speed': 1.5,
+        },
+      );
+      expect(result.mediaType, 'audio/wav');
+      expect(
+        result.warnings,
+        [
+          const ModelWarning(
+            type: ModelWarningType.unsupported,
+            field: 'language',
+            message:
+                'OpenAI speech models do not support language selection. Language parameter "en" was ignored.',
+          ),
+        ],
+      );
+    });
+
+    test('generateSpeech falls back to OpenAI speech provider fields when shared fields are absent',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return const TransportResponse(
+              statusCode: 200,
+              body: [1, 2, 3],
+            );
+          },
+        ),
+      ).speechModel('gpt-4o-mini-tts');
+
+      final result = await generateSpeech(
+        model: model,
+        text: 'Hello world.',
+        callOptions: const CallOptions(
+          providerOptions: OpenAISpeechOptions(
+            outputFormat: 'opus',
+            instructions: 'Use the provider tone.',
+            speed: 0.75,
+            language: 'es',
+          ),
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      expect(
+        capturedRequest!.body,
+        {
+          'model': 'gpt-4o-mini-tts',
+          'input': 'Hello world.',
+          'voice': 'alloy',
+          'response_format': 'opus',
+          'instructions': 'Use the provider tone.',
+          'speed': 0.75,
+        },
+      );
+      expect(result.mediaType, 'audio/opus');
+      expect(
+        result.warnings,
+        [
+          const ModelWarning(
+            type: ModelWarningType.unsupported,
+            field: 'providerOptions.language',
+            message:
+                'OpenAI speech models do not support language selection. Language parameter "es" was ignored.',
+          ),
+        ],
+      );
+    });
+
     test('generateSpeech warning-drops unsupported language option', () async {
       TransportRequest? capturedRequest;
 

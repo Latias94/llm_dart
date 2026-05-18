@@ -204,8 +204,8 @@ final class AnthropicToolReplayEncoder {
         try {
           final replay = AnthropicCodeExecutionReplay.parseData(
             part.data,
-            providerMetadata: mergeProviderReplayMetadata(
-              providerOptions: part.providerOptions,
+            providerMetadata: providerReplayMetadataFromOptions(
+              part.providerOptions,
             ),
           );
           return replay.block;

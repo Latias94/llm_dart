@@ -902,6 +902,26 @@ void main() {
       );
     });
 
+    test('extracts replay metadata only from replay prompt part options', () {
+      const metadata = ProviderMetadata({
+        'openai': {
+          'itemId': 'item_1',
+        },
+      });
+
+      expect(
+        providerReplayMetadataFromOptions(
+          const ProviderReplayPromptPartOptions(metadata),
+        ),
+        metadata,
+      );
+      expect(
+        providerReplayMetadataFromOptions(_TestPromptPartOptions()),
+        isNull,
+      );
+      expect(providerReplayMetadataFromOptions(null), isNull);
+    });
+
     test('carries provider invocation options and cancellation', () {
       final cancellation = ProviderCancellation();
       final options = CallOptions(

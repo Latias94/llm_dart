@@ -6,7 +6,6 @@ export 'package:llm_dart_provider/llm_dart_provider.dart'
         ProviderPromptPartOptionsJsonCodec,
         ProviderReplayPromptPartOptions,
         ProviderReplayPromptPartOptionsJsonCodec,
-        mergeProviderReplayMetadata,
         providerReplayMetadataFromOptions,
         providerReplayPromptPartOptionsJsonCodec,
         resolveProviderPromptPartOptions;

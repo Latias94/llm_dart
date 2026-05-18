@@ -98,13 +98,6 @@ ProviderMetadata? providerReplayMetadataFromOptions(
   return null;
 }
 
-/// Extracts replay metadata carried by typed prompt-part options.
-ProviderMetadata? mergeProviderReplayMetadata({
-  ProviderPromptPartOptions? providerOptions,
-}) {
-  return providerReplayMetadataFromOptions(providerOptions);
-}
-
 /// JSON codec for provider-owned prompt part options.
 ///
 /// Core serialization cannot import concrete provider packages, so providers
