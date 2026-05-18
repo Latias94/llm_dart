@@ -562,69 +562,78 @@ final class DefaultChatSession implements ChatSession {
       _upsertAssistantMessage(latestAssistantMessage);
     }
 
-    _activeSubscription = stream.listen(
-      (chunk) async {
-        final projectedMessage = streamReader.applyChunk(chunk);
-        switch (chunk) {
-          case ChatUiTransientDataPartChunk(:final part):
-            _emitTransientDataPart(
-              DataUiPart<Object?>(
-                id: part.id,
-                key: part.key,
-                data: part.data,
-              ),
-            );
-          case ChatUiEventChunk(:final event):
-            latestAssistantMessage = projectedMessage;
-            _upsertAssistantMessage(projectedMessage);
+    void failAssistantTurn(Object error, StackTrace stackTrace) {
+      if (_activeCompletion != completion || completed) {
+        return;
+      }
 
-            if (event is ErrorEvent) {
-              completed = true;
-              streamReader.close();
-              await _activeSubscription?.cancel();
-              _clearActiveTurn();
-              _emitState(
-                _state.copyWith(
-                  status: ChatStatus.error,
-                  error: event.error,
+      completed = true;
+      streamReader.close();
+      unawaited(_activeSubscription?.cancel());
+      _clearActiveTurn();
+      _emitState(
+        _state.copyWith(
+          status: ChatStatus.error,
+          error: _chatSessionErrorToModelError(error),
+        ),
+      );
+      if (!completion.isCompleted) {
+        completion.complete();
+      }
+    }
+
+    _activeSubscription = stream.listen(
+      (chunk) {
+        try {
+          final projectedMessage = streamReader.applyChunk(chunk);
+          switch (chunk) {
+            case ChatUiTransientDataPartChunk(:final part):
+              _emitTransientDataPart(
+                DataUiPart<Object?>(
+                  id: part.id,
+                  key: part.key,
+                  data: part.data,
                 ),
               );
-              if (!completion.isCompleted) {
-                completion.complete();
-              }
-              return;
-            }
+            case ChatUiEventChunk(:final event):
+              latestAssistantMessage = projectedMessage;
+              _upsertAssistantMessage(projectedMessage);
 
-            if (event is FinishEvent) {
-              // Wait for the stream to close so trailing message-metadata or
-              // message-finish chunks can still patch the final assistant
-              // message before the session transitions out of the active turn.
-            }
-          case ChatUiDataPartChunk() ||
-                ChatUiMessageStartChunk() ||
-                ChatUiMessageMetadataChunk() ||
-                ChatUiMessageFinishChunk():
-            latestAssistantMessage = projectedMessage;
-            _upsertAssistantMessage(projectedMessage);
+              if (event is ErrorEvent) {
+                completed = true;
+                streamReader.close();
+                unawaited(_activeSubscription?.cancel());
+                _clearActiveTurn();
+                _emitState(
+                  _state.copyWith(
+                    status: ChatStatus.error,
+                    error: event.error,
+                  ),
+                );
+                if (!completion.isCompleted) {
+                  completion.complete();
+                }
+                return;
+              }
+
+              if (event is FinishEvent) {
+                // Wait for the stream to close so trailing message-metadata or
+                // message-finish chunks can still patch the final assistant
+                // message before the session transitions out of the active turn.
+              }
+            case ChatUiDataPartChunk() ||
+                  ChatUiMessageStartChunk() ||
+                  ChatUiMessageMetadataChunk() ||
+                  ChatUiMessageFinishChunk():
+              latestAssistantMessage = projectedMessage;
+              _upsertAssistantMessage(projectedMessage);
+          }
+        } catch (error, stackTrace) {
+          failAssistantTurn(error, stackTrace);
         }
       },
       onError: (error, stackTrace) {
-        if (_activeCompletion != completion) {
-          return;
-        }
-
-        completed = true;
-        streamReader.fail(error, stackTrace);
-        _clearActiveTurn();
-        _emitState(
-          _state.copyWith(
-            status: ChatStatus.error,
-            error: transportErrorToModelError(error),
-          ),
-        );
-        if (!completion.isCompleted) {
-          completion.complete();
-        }
+        failAssistantTurn(error, stackTrace);
       },
       onDone: () {
         if (completed || _activeCompletion != completion) {
@@ -859,6 +868,13 @@ ChatStatus _normalizeRestoredStatus(ChatStatus status) {
 
 ModelError? _normalizeRestoredError(ChatStatus status, ModelError? error) {
   return _normalizeRestoredStatus(status) == ChatStatus.error ? error : null;
+}
+
+ModelError _chatSessionErrorToModelError(Object error) {
+  return switch (error) {
+    ChatUiStreamError() => error.toModelError(),
+    _ => transportErrorToModelError(error),
+  };
 }
 
 MessageIdGenerator _sequentialMessageId({

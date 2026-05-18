@@ -24,6 +24,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart'
         ToolResultEvent;
 
 import '../stream/text_stream_event.dart';
+import 'chat_ui_stream_error.dart';
 import 'chat_ui_message.dart';
 import 'chat_ui_tool_part_store.dart';
 
@@ -174,9 +175,11 @@ final class ChatUiAccumulator {
       return index;
     }
 
-    throw StateError(
-      'Received $eventName for missing $partName with ID "$id". '
-      'Ensure a "$startEventName" event is applied first.',
+    throw ChatUiStreamError(
+      chunkType: eventName,
+      chunkId: id,
+      message: 'Received $eventName for missing $partName with ID "$id". '
+          'Ensure a "$startEventName" event is applied first.',
     );
   }
 

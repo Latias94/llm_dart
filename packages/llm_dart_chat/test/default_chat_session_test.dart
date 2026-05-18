@@ -3452,6 +3452,36 @@ void main() {
       await session.dispose();
     });
 
+    test('normalizes invalid UI stream chunks as stream errors', () async {
+      final session = DefaultChatSession(
+        transport: _FakeChatTransport(
+          onSendMessages: (request) => Stream<TextStreamEvent>.empty(),
+          onSendMessageChunks: (request) =>
+              Stream<ChatUiStreamChunk>.fromIterable([
+            const ChatUiEventChunk(
+              TextDeltaEvent(
+                id: 'missing-text',
+                delta: 'Hello',
+              ),
+            ),
+          ]),
+        ),
+      );
+
+      await session.sendMessage(ChatInput.text('Hi'));
+
+      expect(session.state.status, ChatStatus.error);
+      expect(session.state.error?.kind, ModelErrorKind.stream);
+      expect(session.state.error?.code, 'chat-ui-stream');
+      expect(session.state.error?.details, {
+        'chunkType': 'text-delta',
+        'chunkId': 'missing-text',
+      });
+      expect(session.state.error?.originalType, 'ChatUiStreamError');
+
+      await session.dispose();
+    });
+
     test(
         'resume removes the partial assistant message and rebuilds it from replay',
         () async {

@@ -73,5 +73,6 @@ export 'src/ui/chat_ui_accumulator.dart';
 export 'src/ui/chat_ui_message.dart';
 export 'src/ui/chat_ui_stream_accumulator.dart';
 export 'src/ui/chat_ui_stream_chunk.dart';
+export 'src/ui/chat_ui_stream_error.dart';
 export 'src/ui/chat_ui_stream_projection.dart';
 export 'src/ui/chat_ui_stream_reader.dart';

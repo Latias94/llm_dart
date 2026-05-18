@@ -12,6 +12,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart'
 
 import '../stream/text_stream_event.dart';
 import 'chat_ui_message.dart';
+import 'chat_ui_stream_error.dart';
 
 final class ChatUiToolPartStore {
   final List<ChatUiPart> _parts;
@@ -150,6 +151,13 @@ final class ChatUiToolPartStore {
   }
 
   void applyApprovalRequest(ToolApprovalRequestEvent event) {
+    _requirePart(
+      event.toolCallId,
+      chunkType: 'tool-approval-request',
+      message:
+          'Received tool-approval-request for missing tool call with ID "${event.toolCallId}". '
+          'Ensure a tool-input-start or tool-call event is applied first.',
+    );
     _upsert(
       _buildPart(
         toolCallId: event.toolCallId,
@@ -165,6 +173,13 @@ final class ChatUiToolPartStore {
 
   void applyResult(ToolResultEvent event) {
     _partialInputs.remove(event.toolResult.toolCallId);
+    _requirePart(
+      event.toolResult.toolCallId,
+      chunkType: 'tool-result',
+      message:
+          'Received tool-result for missing tool call with ID "${event.toolResult.toolCallId}". '
+          'Ensure a tool-input-start or tool-call event is applied first.',
+    );
     _upsert(
       _buildPart(
         toolCallId: event.toolResult.toolCallId,
@@ -190,6 +205,13 @@ final class ChatUiToolPartStore {
   }
 
   void applyOutputDenied(ToolOutputDeniedEvent event) {
+    _requirePart(
+      event.toolCallId,
+      chunkType: 'tool-output-denied',
+      message:
+          'Received tool-output-denied for missing tool call with ID "${event.toolCallId}". '
+          'Ensure a tool-input-start or tool-call event is applied first.',
+    );
     _upsert(
       _buildPart(
         toolCallId: event.toolCallId,
@@ -210,6 +232,23 @@ final class ChatUiToolPartStore {
     }
 
     return _parts[index] as ToolUiPart;
+  }
+
+  ToolUiPart _requirePart(
+    String toolCallId, {
+    required String chunkType,
+    required String message,
+  }) {
+    final part = _part(toolCallId);
+    if (part != null) {
+      return part;
+    }
+
+    throw ChatUiStreamError(
+      chunkType: chunkType,
+      chunkId: toolCallId,
+      message: message,
+    );
   }
 
   void _upsert(ToolUiPart part) {
@@ -256,9 +295,12 @@ final class ChatUiToolPartStore {
     final resolvedToolName = toolName ?? current?.toolName ?? partial?.toolName;
 
     if (resolvedToolName == null) {
-      throw StateError(
-        'Received tool update for missing tool call with ID "$toolCallId". '
-        'Ensure a tool-input-start or tool-call event is applied first.',
+      throw ChatUiStreamError(
+        chunkType: 'tool-update',
+        chunkId: toolCallId,
+        message:
+            'Received tool update for missing tool call with ID "$toolCallId". '
+            'Ensure a tool-input-start or tool-call event is applied first.',
       );
     }
 
@@ -297,9 +339,12 @@ final class ChatUiToolPartStore {
       return value;
     }
 
-    throw StateError(
-      'Received tool-input update for missing tool call with ID "$toolCallId". '
-      'Ensure a "tool-input-start" event is applied before later tool-input events.',
+    throw ChatUiStreamError(
+      chunkType: 'tool-input-update',
+      chunkId: toolCallId,
+      message:
+          'Received tool-input update for missing tool call with ID "$toolCallId". '
+          'Ensure a "tool-input-start" event is applied before later tool-input events.',
     );
   }
 }

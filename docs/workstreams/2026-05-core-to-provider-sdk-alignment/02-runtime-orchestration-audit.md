@@ -174,6 +174,28 @@ Implemented UI/chat transport ownership slice:
   `ChatMessageMapper` render-summary projection so UI serialization ownership
   is tested in `llm_dart_ai` rather than only through chat transports.
 
+Implemented runtime public error slice:
+
+- Compared Dart runtime/UI error surfaces against the reference
+  `UIMessageStreamError` and broader `packages/ai/src/error` exports.
+- Kept `ModelError` as the serializable provider/transport/runtime error
+  record rather than introducing a large `AISDKError`-style hierarchy.
+- Added the narrower public `ChatUiStreamError` for invalid or out-of-sequence
+  UI stream chunks. The error exposes `chunkType`, `chunkId`, and `message`,
+  matching the reference contract shape while staying idiomatic for Dart.
+- Replaced UI stream state-machine `StateError`s with `ChatUiStreamError` for
+  missing text/reasoning parts and missing tool-call state. Session lifecycle
+  errors, caller misuse, and user validator failures still use their existing
+  Dart error types.
+- Added `ChatUiStreamError.toModelError()` so chat sessions normalize invalid
+  UI stream chunks as `ModelErrorKind.stream` with structured chunk
+  diagnostics, instead of misclassifying them as transport failures.
+- Updated `DefaultChatSession` failure handling so synchronous projection
+  failures from transport chunks deterministically transition the session to
+  `ChatStatus.error`.
+- Added focused AI/runtime and chat session coverage for typed UI stream
+  errors and session-state normalization.
+
 Next runtime candidates:
 
 - Add an explicit `prepareStep` hook if real callers need per-step model,
