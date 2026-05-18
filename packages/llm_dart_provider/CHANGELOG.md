@@ -14,6 +14,9 @@
   `instructions`, `speed`, and `language` fields.
 - Made provider-facing `TranscriptionRequest.mediaType` required so adapters no
   longer receive ambiguous audio bytes.
+- Normalized `ModelWarning` with `deprecated` warning support plus stable
+  `feature` and `setting` target fields while preserving legacy `field`
+  serialization compatibility.
 
 ## [0.11.0-alpha.1] - 2026-05-12
 

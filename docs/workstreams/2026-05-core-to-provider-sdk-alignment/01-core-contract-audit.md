@@ -127,6 +127,19 @@ The next breaking line should:
 - keep `message` for human-readable context
 - preserve provider-owned details through `ProviderMetadata` when needed
 
+Implemented notes:
+
+- `ModelWarningType.deprecated` is now available for deprecated setting
+  warnings.
+- `ModelWarning.feature` is the stable target for unsupported and
+  compatibility warnings.
+- `ModelWarning.setting` is the stable target for deprecated warnings.
+- Legacy `field` remains as a compatibility alias. Old callers and old JSON
+  payloads still round-trip, and old `field` values infer the new stable
+  target where the warning type makes that unambiguous.
+- JSON decoding accepts both the Dart `message` field and the reference-style
+  `details` field for unsupported and compatibility warning payloads.
+
 ### Capability Profiles And Direct Limits
 
 Decision: Change.
@@ -370,7 +383,7 @@ Do these in order. Each slice should be small enough to test independently.
    - add shared speech request fields
    - require provider-facing transcription media type
    - settle provider option precedence tests
-5. Warning normalization
+5. Warning normalization - implemented
    - add deprecated warning support
    - migrate provider request-policy warnings
    - update JSON serialization compatibility rules

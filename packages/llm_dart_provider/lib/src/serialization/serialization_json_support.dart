@@ -148,6 +148,8 @@ final class SerializationJsonSupport {
     return {
       'type': warning.type.name,
       'message': warning.message,
+      if (warning.feature != null) 'feature': warning.feature,
+      if (warning.setting != null) 'setting': warning.setting,
       if (warning.field != null) 'field': warning.field,
     };
   }
@@ -161,7 +163,11 @@ final class SerializationJsonSupport {
       type: ModelWarningType.values.byName(
         asJsonString(map['type'], path: '$path.type'),
       ),
-      message: asJsonString(map['message'], path: '$path.message'),
+      message: asNullableJsonString(map['message'], path: '$path.message') ??
+          asNullableJsonString(map['details'], path: '$path.details') ??
+          '',
+      feature: asNullableJsonString(map['feature'], path: '$path.feature'),
+      setting: asNullableJsonString(map['setting'], path: '$path.setting'),
       field: asNullableJsonString(map['field'], path: '$path.field'),
     );
   }

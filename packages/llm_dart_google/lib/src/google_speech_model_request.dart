@@ -56,28 +56,28 @@ List<ModelWarning> buildGoogleSpeechRequestWarnings(
     if (outputFormat != null)
       ModelWarning(
         type: ModelWarningType.unsupported,
-        field: 'outputFormat',
+        feature: 'outputFormat',
         message:
             'Google speech models do not support selecting an output format through the shared request field. outputFormat "$outputFormat" was ignored.',
       ),
     if (instructions != null)
       ModelWarning(
         type: ModelWarningType.unsupported,
-        field: 'instructions',
+        feature: 'instructions',
         message:
             'Google speech models do not support speech instructions. instructions was ignored.',
       ),
     if (speed != null)
       ModelWarning(
         type: ModelWarningType.unsupported,
-        field: 'speed',
+        feature: 'speed',
         message:
             'Google speech models do not support speech speed selection. speed $speed was ignored.',
       ),
     if (language != null)
       ModelWarning(
         type: ModelWarningType.unsupported,
-        field: 'language',
+        feature: 'language',
         message:
             'Google speech models do not support language selection through the shared request field. language "$language" was ignored.',
       ),

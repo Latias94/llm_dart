@@ -207,7 +207,7 @@ void warnElevenLabsSpeechUnsupportedRequestFields(
     warnings.add(
       ModelWarning(
         type: ModelWarningType.unsupported,
-        field: 'instructions',
+        feature: 'instructions',
         message:
             'ElevenLabs speech models do not support instructions. Instructions parameter "$instructions" was ignored.',
       ),

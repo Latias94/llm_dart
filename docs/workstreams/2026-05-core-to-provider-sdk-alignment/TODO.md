@@ -33,7 +33,7 @@
 - [x] Add direct `EmbeddingModel` and `ImageModel` limit facts
 - [x] Expand the common image request seam
 - [x] Complete shared speech and transcription request fields
-- [ ] Normalize warning shape
+- [x] Normalize warning shape
 
 ## AI Runtime Audit
 

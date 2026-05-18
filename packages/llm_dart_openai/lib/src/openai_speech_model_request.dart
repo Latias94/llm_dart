@@ -76,7 +76,7 @@ String resolveOpenAISpeechOutputFormat(
   warnings.add(
     ModelWarning(
       type: ModelWarningType.unsupported,
-      field: request.outputFormat != null
+      feature: request.outputFormat != null
           ? 'outputFormat'
           : 'providerOptions.outputFormat',
       message:
@@ -99,7 +99,8 @@ void warnOpenAISpeechLanguageUnsupported(
   warnings.add(
     ModelWarning(
       type: ModelWarningType.unsupported,
-      field: request.language != null ? 'language' : 'providerOptions.language',
+      feature:
+          request.language != null ? 'language' : 'providerOptions.language',
       message:
           'OpenAI speech models do not support language selection. Language parameter "$language" was ignored.',
     ),
