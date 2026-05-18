@@ -5,6 +5,7 @@ import 'package:llm_dart_transport/llm_dart_transport.dart';
 import 'anthropic_api.dart';
 import 'anthropic_code_execution_replay.dart';
 import 'anthropic_options.dart';
+import 'anthropic_value.dart';
 
 final class AnthropicFileUpload {
   final List<int> bytes;
@@ -39,19 +40,25 @@ final class AnthropicFileDescriptor {
 
   factory AnthropicFileDescriptor.fromJson(Map<String, Object?> json) {
     return AnthropicFileDescriptor(
-      id: _requiredNonEmptyString(json['id'], path: 'file.id'),
-      type: _optionalString(json['type'], path: 'file.type') ?? 'file',
-      filename:
-          _requiredNonEmptyString(json['filename'], path: 'file.filename'),
-      mimeType: _requiredNonEmptyString(
+      id: anthropicRequiredNonEmptyString(json['id'], path: 'file.id'),
+      type: anthropicOptionalString(json['type'], path: 'file.type') ?? 'file',
+      filename: anthropicRequiredNonEmptyString(
+        json['filename'],
+        path: 'file.filename',
+      ),
+      mimeType: anthropicRequiredNonEmptyString(
         json['mime_type'],
         path: 'file.mime_type',
       ),
-      sizeBytes: _requiredInt(json['size_bytes'], path: 'file.size_bytes'),
+      sizeBytes:
+          anthropicRequiredInt(json['size_bytes'], path: 'file.size_bytes'),
       createdAt: DateTime.parse(
-        _requiredNonEmptyString(json['created_at'], path: 'file.created_at'),
+        anthropicRequiredNonEmptyString(
+          json['created_at'],
+          path: 'file.created_at',
+        ),
       ),
-      downloadable: _optionalBool(
+      downloadable: anthropicOptionalBool(
             json['downloadable'],
             path: 'file.downloadable',
           ) ??
@@ -87,21 +94,26 @@ final class AnthropicFileListResponse {
 
   factory AnthropicFileListResponse.fromJson(Map<String, Object?> json) {
     return AnthropicFileListResponse(
-      data: _requiredList(json['data'], path: 'file_list.data')
+      data: anthropicRequiredList(json['data'], path: 'file_list.data')
           .asMap()
           .entries
           .map((entry) {
         return AnthropicFileDescriptor.fromJson(
-          _requiredMap(
+          anthropicRequiredMap(
             entry.value,
             path: 'file_list.data[${entry.key}]',
           ),
         );
       }).toList(growable: false),
-      hasMore:
-          _optionalBool(json['has_more'], path: 'file_list.has_more') ?? false,
-      firstId: _optionalString(json['first_id'], path: 'file_list.first_id'),
-      lastId: _optionalString(json['last_id'], path: 'file_list.last_id'),
+      hasMore: anthropicOptionalBool(
+            json['has_more'],
+            path: 'file_list.has_more',
+          ) ??
+          false,
+      firstId:
+          anthropicOptionalString(json['first_id'], path: 'file_list.first_id'),
+      lastId:
+          anthropicOptionalString(json['last_id'], path: 'file_list.last_id'),
     );
   }
 
@@ -143,7 +155,7 @@ final class AnthropicFileDownload {
     this.headers = const {},
   });
 
-  String? get contentType => _lookupHeader(headers, 'content-type');
+  String? get contentType => anthropicLookupHeader(headers, 'content-type');
 
   int get sizeBytes => bytes.length;
 }
@@ -343,9 +355,10 @@ final class AnthropicFiles {
 
     return AnthropicFileDownload(
       fileId: normalizedFileId,
-      bytes: _decodeBytes(
+      bytes: anthropicRequiredBytes(
         response.body,
         path: 'download.body',
+        sourceName: 'Anthropic file download',
       ),
       headers: response.headers,
     );
@@ -486,131 +499,4 @@ String _requireNonEmptyFileId(String fileId) {
   }
 
   return normalized;
-}
-
-Map<String, Object?> _requiredMap(
-  Object? value, {
-  required String path,
-}) {
-  if (value is Map<String, Object?>) {
-    return value;
-  }
-
-  if (value is Map) {
-    return Map<String, Object?>.from(value);
-  }
-
-  throw FormatException('Expected a JSON object at $path.');
-}
-
-List<Object?> _requiredList(
-  Object? value, {
-  required String path,
-}) {
-  if (value is List<Object?>) {
-    return value;
-  }
-
-  if (value is List) {
-    return List<Object?>.from(value);
-  }
-
-  throw FormatException('Expected a list at $path.');
-}
-
-Uint8List _decodeBytes(
-  Object? body, {
-  required String path,
-}) {
-  if (body is Uint8List) {
-    return body;
-  }
-
-  if (body is List<int>) {
-    return Uint8List.fromList(body);
-  }
-
-  if (body is List) {
-    final bytes = <int>[];
-    for (var index = 0; index < body.length; index++) {
-      bytes.add(
-        _requiredInt(
-          body[index],
-          path: '$path[$index]',
-        ),
-      );
-    }
-    return Uint8List.fromList(bytes);
-  }
-
-  throw StateError(
-    'Expected Anthropic file download bytes at $path but received ${body.runtimeType}.',
-  );
-}
-
-String? _lookupHeader(Map<String, String> headers, String name) {
-  for (final entry in headers.entries) {
-    if (entry.key.toLowerCase() == name.toLowerCase()) {
-      return entry.value;
-    }
-  }
-
-  return null;
-}
-
-String _requiredNonEmptyString(
-  Object? value, {
-  required String path,
-}) {
-  final normalized = _optionalString(value, path: path);
-  if (normalized == null || normalized.isEmpty) {
-    throw FormatException('Expected a non-empty string at $path.');
-  }
-
-  return normalized;
-}
-
-String? _optionalString(
-  Object? value, {
-  required String path,
-}) {
-  if (value == null) {
-    return null;
-  }
-
-  if (value is String) {
-    return value;
-  }
-
-  throw FormatException('Expected a string at $path.');
-}
-
-int _requiredInt(
-  Object? value, {
-  required String path,
-}) {
-  if (value is int) {
-    return value;
-  }
-
-  if (value is num) {
-    return value.toInt();
-  }
-
-  throw FormatException('Expected an int at $path.');
-}
-
-bool? _optionalBool(
-  Object? value, {
-  required String path,
-}) {
-  if (value == null) {
-    return null;
-  }
-
-  if (value is bool) {
-    return value;
-  }
-
-  throw FormatException('Expected a bool at $path.');
 }
