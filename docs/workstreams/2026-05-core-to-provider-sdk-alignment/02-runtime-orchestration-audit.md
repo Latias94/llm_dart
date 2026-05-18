@@ -169,6 +169,10 @@ Implemented UI/chat transport ownership slice:
 - Preserved the public `http_chat_transport_protocol.dart` export surface and a
   compatibility barrel for the old implementation file while making internal
   implementation files depend on the narrower modules directly.
+- Added direct AI-runtime contract coverage for text-event to UI-chunk
+  projection, `ChatUiJsonCodec` message serialization, and
+  `ChatMessageMapper` render-summary projection so UI serialization ownership
+  is tested in `llm_dart_ai` rather than only through chat transports.
 
 Next runtime candidates:
 

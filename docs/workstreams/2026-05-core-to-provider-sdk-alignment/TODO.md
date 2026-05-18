@@ -45,7 +45,7 @@
 - [x] Audit output parsing, partial output, and structured output events
 - [x] Audit UI message projection, chat adapters, and serialization ownership
 - [ ] Decide whether runtime needs additional public error types
-- [ ] Add or update focused runtime tests for any discovered gaps
+- [x] Add or update focused runtime tests for any discovered gaps
 
 ## Transport And Provider Implementation Helpers
 
