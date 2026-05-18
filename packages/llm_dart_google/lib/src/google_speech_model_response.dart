@@ -1,7 +1,7 @@
-import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:llm_dart_provider/llm_dart_provider.dart';
+import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'google_shared.dart';
 
@@ -81,22 +81,8 @@ SpeechGenerationResult decodeGoogleSpeechResponse({
 }
 
 Map<String, Object?> decodeGoogleSpeechJsonObject(Object? body) {
-  if (body is Map<String, Object?>) {
-    return body;
-  }
-
-  if (body is Map) {
-    return Map<String, Object?>.from(body);
-  }
-
-  if (body is String) {
-    final decoded = jsonDecode(body);
-    if (decoded is Map) {
-      return Map<String, Object?>.from(decoded);
-    }
-  }
-
-  throw StateError(
-    'Expected a Google speech JSON object response but received ${body.runtimeType}.',
+  return JsonObjectResponseDecoder.decode(
+    body,
+    sourceName: 'Google speech',
   );
 }

@@ -1,4 +1,4 @@
-import 'dart:convert';
+import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'ollama_options.dart';
 
@@ -41,22 +41,8 @@ Map<String, Object?> decodeOllamaJsonObject(
   Object? body, {
   required String responseName,
 }) {
-  if (body is Map<String, Object?>) {
-    return body;
-  }
-
-  if (body is Map) {
-    return Map<String, Object?>.from(body);
-  }
-
-  if (body is String) {
-    final decoded = jsonDecode(body);
-    if (decoded is Map) {
-      return Map<String, Object?>.from(decoded);
-    }
-  }
-
-  throw StateError(
-    'Expected an Ollama $responseName JSON object but received ${body.runtimeType}.',
+  return JsonObjectResponseDecoder.decode(
+    body,
+    sourceName: 'Ollama $responseName',
   );
 }

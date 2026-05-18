@@ -1,6 +1,5 @@
-import 'dart:convert';
-
 import 'package:llm_dart_provider/llm_dart_provider.dart';
+import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'openai_family_profile.dart';
 
@@ -49,23 +48,9 @@ Map<String, Object?> decodeOpenAIJsonObject(
   Object? body, {
   required String responseName,
 }) {
-  if (body is Map<String, Object?>) {
-    return body;
-  }
-
-  if (body is Map) {
-    return Map<String, Object?>.from(body);
-  }
-
-  if (body is String) {
-    final decoded = jsonDecode(body);
-    if (decoded is Map) {
-      return Map<String, Object?>.from(decoded);
-    }
-  }
-
-  throw StateError(
-    'Expected an OpenAI $responseName JSON object but received ${body.runtimeType}.',
+  return JsonObjectResponseDecoder.decode(
+    body,
+    sourceName: 'OpenAI $responseName',
   );
 }
 

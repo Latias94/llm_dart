@@ -5,14 +5,17 @@ import '../common/transport_exception.dart';
 /// Decodes provider HTTP response bodies into JSON objects without coupling
 /// the parsing logic to any root compatibility error types.
 abstract final class JsonObjectResponseDecoder {
-  static Map<String, dynamic> decode(
+  static Map<String, Object?> decode(
     Object? responseData, {
     String? sourceName,
   }) {
     final source = sourceName ?? 'Unknown';
 
-    if (responseData is Map<String, dynamic>) {
-      return responseData;
+    if (responseData is Map) {
+      return _copyJsonObject(
+        responseData,
+        source: source,
+      );
     }
 
     if (responseData is String) {
@@ -26,8 +29,11 @@ abstract final class JsonObjectResponseDecoder {
 
       try {
         final jsonData = jsonDecode(responseData);
-        if (jsonData is Map<String, dynamic>) {
-          return jsonData;
+        if (jsonData is Map) {
+          return _copyJsonObject(
+            jsonData,
+            source: source,
+          );
         }
 
         throw TransportResponseFormatException(
@@ -47,6 +53,25 @@ abstract final class JsonObjectResponseDecoder {
       '$source API returned unexpected response type: ${responseData.runtimeType}',
       responseBody: _truncateResponse(responseData),
     );
+  }
+
+  static Map<String, Object?> _copyJsonObject(
+    Map value, {
+    required String source,
+  }) {
+    final jsonObject = <String, Object?>{};
+    for (final entry in value.entries) {
+      if (entry.key is! String) {
+        throw TransportResponseFormatException(
+          '$source API returned JSON object with a non-string key.',
+          responseBody: _truncateResponse(value),
+        );
+      }
+
+      jsonObject[entry.key as String] = entry.value;
+    }
+
+    return jsonObject;
   }
 
   static String _truncateResponse(Object? responseData) {

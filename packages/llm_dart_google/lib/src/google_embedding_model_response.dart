@@ -1,6 +1,5 @@
-import 'dart:convert';
-
 import 'package:llm_dart_provider/llm_dart_provider.dart';
+import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 EmbedResult decodeGoogleEmbeddingResponse({
   required Object? body,
@@ -25,23 +24,9 @@ EmbedResult decodeGoogleEmbeddingResponse({
 }
 
 Map<String, Object?> decodeGoogleEmbeddingJsonObject(Object? body) {
-  if (body is Map<String, Object?>) {
-    return body;
-  }
-
-  if (body is Map) {
-    return Map<String, Object?>.from(body);
-  }
-
-  if (body is String) {
-    final decoded = jsonDecode(body);
-    if (decoded is Map) {
-      return Map<String, Object?>.from(decoded);
-    }
-  }
-
-  throw StateError(
-    'Expected a Google JSON object response but received ${body.runtimeType}.',
+  return JsonObjectResponseDecoder.decode(
+    body,
+    sourceName: 'Google embedding',
   );
 }
 

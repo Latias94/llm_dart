@@ -49,12 +49,12 @@
 
 ## Transport And Provider Implementation Helpers
 
-- [ ] Inventory repeated provider helper code after request/transport/response
+- [x] Inventory repeated provider helper code after request/transport/response
   splits
-- [ ] Classify helpers as local, internal shared, or candidate public utility
-- [ ] Audit JSON response parsing and error normalization helpers
-- [ ] Audit media type, file data, base64, and multipart helper duplication
-- [ ] Audit stream helper duplication across SSE, NDJSON, and UTF-8 stream
+- [x] Classify helpers as local, internal shared, or candidate public utility
+- [x] Audit JSON response parsing and error normalization helpers
+- [x] Audit media type, file data, base64, and multipart helper duplication
+- [x] Audit stream helper duplication across SSE, NDJSON, and UTF-8 stream
   decoding
 - [ ] Decide whether `llm_dart_provider_utils` remains deferred or receives an
   internal-only predecessor

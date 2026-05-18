@@ -85,3 +85,45 @@ Write a helper inventory table before extracting code:
 
 This avoids extracting shallow pass-through modules that merely move complexity
 away from the provider that owns it.
+
+## Inventory
+
+| Helper | Duplicate locations | Owner | Public status | Decision |
+| --- | --- | --- | --- | --- |
+| JSON object response coercion | OpenAI language/non-text, Google language/embedding/image/speech, Anthropic API/files/token count, Ollama language/embedding/catalog/stream | `llm_dart_transport` | Public transport utility, not provider-utils | Use `JsonObjectResponseDecoder` behind provider-named wrappers so providers keep readable diagnostics while parsing/error normalization lives in one module. |
+| SSE JSON chunk parsing | OpenAI, Google, Anthropic stream adapters; transport tests already cover SSE framing | `llm_dart_transport` | Public transport utility | Keep provider stream codecs responsible for provider event vocabulary; transport owns byte/SSE/JSON frame mechanics. |
+| UTF-8 stream decoding | Transport stream helpers and streaming tests | `llm_dart_transport` | Public transport utility | Keep shared; providers should not hand-roll split-codepoint handling. |
+| Multipart body construction | OpenAI image/transcription/files, Anthropic files, ElevenLabs transcription | `llm_dart_transport` | Public transport utility | Keep shared builder; provider request modules still own field names and required form policy. |
+| Base64 bytes and data URL encoding | OpenAI prompt/file paths, Google binary parts and image/speech responses, Anthropic content encoder, Ollama image prompts | Provider-local for now | Internal only | Patterns are similar but provider policy differs: media type defaults, accepted file kinds, and data URL shape are provider-owned. Revisit after provider parity rows identify identical contracts. |
+| Header lookup and merge helpers | OpenAI files, Anthropic files, provider-specific API helpers | Provider-local for now | Internal only | Similar helper shape, but merge precedence and beta/header filtering are provider policy. |
+| Provider metadata namespace construction | Google and ElevenLabs have small helpers; other providers embed metadata directly | Candidate internal shared helper | Deferred | Needs a broader provider metadata audit before extraction. |
+
+## Implemented First Slice
+
+- Deepened `JsonObjectResponseDecoder` in `llm_dart_transport` so it accepts
+  any `Map` with string keys and returns `Map<String, Object?>`.
+- Kept provider-named wrappers (`decodeOpenAIJsonObject`,
+  `decodeGoogleJsonObject`, `decodeAnthropicJsonObject`,
+  `decodeOllamaJsonObject`) as the provider-facing seam while deleting their
+  duplicated `jsonDecode` and map coercion implementation.
+- Migrated OpenAI language/non-text, Google language/embedding/image/speech,
+  Anthropic API, and Ollama API JSON body parsing to the transport helper.
+- Left ElevenLabs JSON body parsing local for now because voice catalog and
+  transcription response parsing still mix response-body coercion with
+  package-specific validation paths. That should be revisited after the
+  ElevenLabs parity row.
+- Added transport-level tests for generic maps, non-string keys, and non-object
+  JSON responses so the shared helper has its own contract.
+
+## Follow-Up Candidates
+
+- Migrate ElevenLabs JSON body coercion after separating response-body coercion
+  from voice/transcription field validation.
+- Audit whether OpenAI moderation and assistant/file local response coercion can
+  reuse the OpenAI non-text wrapper without making those clients depend on
+  language-model support modules.
+- Compare provider binary/media helpers and decide whether a small
+  `DataUrlEncoder` or media-type normalization helper would be deep enough to
+  justify a shared module.
+- Audit stream parser call sites to ensure provider stream codecs only own
+  provider event vocabulary, not byte/SSE/UTF-8 mechanics.

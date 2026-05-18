@@ -1,6 +1,5 @@
-import 'dart:convert';
-
 import 'package:llm_dart_provider/llm_dart_provider.dart';
+import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'google_options.dart';
 import 'google_response_format.dart';
@@ -51,23 +50,9 @@ Map<String, String> buildGoogleRequestHeaders({
 }
 
 Map<String, Object?> decodeGoogleJsonObject(Object? body) {
-  if (body is Map<String, Object?>) {
-    return body;
-  }
-
-  if (body is Map) {
-    return Map<String, Object?>.from(body);
-  }
-
-  if (body is String) {
-    final decoded = jsonDecode(body);
-    if (decoded is Map) {
-      return Map<String, Object?>.from(decoded);
-    }
-  }
-
-  throw StateError(
-    'Expected a Google JSON object response but received ${body.runtimeType}.',
+  return JsonObjectResponseDecoder.decode(
+    body,
+    sourceName: 'Google',
   );
 }
 
