@@ -8,8 +8,23 @@ import 'package:test/test.dart';
 void main() {
   group('StreamTextRunner', () {
     test('streams a single generation step and returns a run result', () async {
+      const warning = ModelWarning(
+        type: ModelWarningType.unsupported,
+        message: 'Ignored unsupported setting.',
+        feature: 'temperature',
+      );
+      final file = GeneratedFile(
+        mediaType: 'text/plain',
+        filename: 'note.txt',
+        data: const FileTextData('note'),
+      );
       final model = _RecordingStreamLanguageModel([
-        const [
+        [
+          StartEvent(
+            warnings: [
+              warning,
+            ],
+          ),
           ResponseMetadataEvent(
             responseId: 'resp-1',
             modelId: 'test-model',
@@ -22,6 +37,7 @@ void main() {
           TextStartEvent(id: 'text-1'),
           TextDeltaEvent(id: 'text-1', delta: 'Runner output'),
           TextEndEvent(id: 'text-1'),
+          FileEvent(file),
           FinishEvent(
             finishReason: FinishReason.stop,
             usage: UsageStats(
@@ -84,13 +100,13 @@ void main() {
         const Duration(seconds: 30),
       );
 
-      expect(events, hasLength(9));
+      expect(events, hasLength(11));
       expect(events.first, isA<RunStartEvent>());
       expect(events.last, isA<RunFinishEvent>());
       expect(events.whereType<StepStartEvent>(), hasLength(1));
       expect(events.whereType<StepFinishEvent>(), hasLength(1));
       expect(events.whereType<TextDeltaEvent>().single.delta, 'Runner output');
-      expect(await run.textStream.toList(), hasLength(9));
+      expect(await run.textStream.toList(), hasLength(11));
 
       final uiChunks = await run.chatUiStream(
         messageId: 'assistant-1',
@@ -99,7 +115,7 @@ void main() {
         },
       ).toList();
       expect(uiChunks.first, isA<ChatUiMessageStartChunk>());
-      expect(uiChunks.whereType<ChatUiEventChunk>(), hasLength(9));
+      expect(uiChunks.whereType<ChatUiEventChunk>(), hasLength(11));
       expect(uiChunks.last, isA<ChatUiMessageFinishChunk>());
 
       expect(steps, hasLength(1));
@@ -109,7 +125,19 @@ void main() {
       expect(result.steps, hasLength(1));
       expect(result.text, 'Runner output');
       expect(result.totalUsage?.totalTokens, 12);
-      expect((await run.content).single, isA<TextContentPart>());
+      expect(result.files, [file]);
+      expect(result.warnings, [warning]);
+      final streamedContent = await run.content;
+      expect(
+        streamedContent.whereType<TextContentPart>().single.text,
+        'Runner output',
+      );
+      expect(
+        streamedContent.whereType<FileContentPart>().single.file,
+        same(file),
+      );
+      expect(await run.files, [file]);
+      expect(await run.warnings, [warning]);
       expect(
         await run.usage,
         const UsageStats(
@@ -769,6 +797,13 @@ void main() {
         isTrue,
       );
       expect(steps.first.toolResults.single.isDynamic, isTrue);
+      expect((await run.dynamicToolCalls).single.toolCallId, 'dynamic-tool-1');
+      expect((await run.staticToolCalls), isEmpty);
+      expect(
+        (await run.dynamicToolResults).single.toolCallId,
+        'dynamic-tool-1',
+      );
+      expect((await run.staticToolResults), isEmpty);
       expect(result.text, 'Dynamic tool completed.');
       expect(model.requests, hasLength(2));
     });

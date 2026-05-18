@@ -35,13 +35,29 @@ final class GenerateTextRunResult {
 
   String? get reasoningText => lastStep.reasoningText;
 
-  List<SourceReference> get sources => lastStep.sources;
+  List<SourceReference> get sources =>
+      steps.expand((step) => step.sources).toList(growable: false);
 
-  List<GeneratedFile> get files => lastStep.files;
+  List<GeneratedFile> get files =>
+      steps.expand((step) => step.files).toList(growable: false);
 
-  List<ToolCallContent> get toolCalls => lastStep.toolCalls;
+  List<ToolCallContent> get toolCalls =>
+      steps.expand((step) => step.toolCalls).toList(growable: false);
 
-  List<ToolResultContent> get toolResults => lastStep.toolResults;
+  List<ToolCallContent> get staticToolCalls =>
+      steps.expand((step) => step.staticToolCalls).toList(growable: false);
+
+  List<ToolCallContent> get dynamicToolCalls =>
+      steps.expand((step) => step.dynamicToolCalls).toList(growable: false);
+
+  List<ToolResultContent> get toolResults =>
+      steps.expand((step) => step.toolResults).toList(growable: false);
+
+  List<ToolResultContent> get staticToolResults =>
+      steps.expand((step) => step.staticToolResults).toList(growable: false);
+
+  List<ToolResultContent> get dynamicToolResults =>
+      steps.expand((step) => step.dynamicToolResults).toList(growable: false);
 
   List<ToolApprovalRequestContent> get toolApprovalRequests =>
       lastStep.toolApprovalRequests;
@@ -59,4 +75,7 @@ final class GenerateTextRunResult {
   String? get responseModelId => lastStep.responseModelId;
 
   ProviderMetadata? get providerMetadata => lastStep.providerMetadata;
+
+  List<ModelWarning> get warnings =>
+      steps.expand((step) => step.warnings).toList(growable: false);
 }

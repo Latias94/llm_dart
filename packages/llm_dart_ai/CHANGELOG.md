@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+- Aligned text run result facades with reference step-level projections:
+  generated files, sources, tool calls, tool results, and warnings now
+  aggregate across steps, and generate/stream results expose static and dynamic
+  tool call/result views.
 - Refactored structured output into a public facade, output strategy, JSON
   support, stream result, and runner modules. Public `OutputSpec` APIs and
   `generateOutput`/`streamOutput` behavior are unchanged.

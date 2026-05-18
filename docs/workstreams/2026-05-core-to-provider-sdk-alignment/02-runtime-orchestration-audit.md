@@ -119,6 +119,21 @@ Implemented tool-loop continuation slice:
   evaluation and prompt replay are one runtime seam instead of duplicated in
   both runners.
 
+Implemented result facade parity slice:
+
+- Added step-level static and dynamic projections for tool calls and tool
+  results, matching the reference distinction between schema-owned tools and
+  dynamic tool surfaces.
+- Changed text run result facades to aggregate generated files, sources, tool
+  calls, tool results, and warnings across all steps while preserving final-step
+  semantics for text, reasoning text, finish reason, response metadata, and
+  provider metadata.
+- Added streaming run result futures for static/dynamic tool calls,
+  static/dynamic tool results, and warnings so streaming and non-streaming
+  facades expose the same result views.
+- Kept tool approval requests as a current-step view because they represent
+  pending approval state rather than a historical projection.
+
 Next runtime candidates:
 
 - Add an explicit `prepareStep` hook if real callers need per-step model,
@@ -127,6 +142,4 @@ Next runtime candidates:
   treating approvals only as a natural stop condition.
 - Split provider approval waiting, automatic denial, and user approval response
   replay into their own module once the public approval policy is designed.
-- Audit result facades for parity with reference step-level projections:
-  static/dynamic tool calls, static/dynamic tool results, warnings, files, and
-  response messages.
+- Audit response-message projection parity once UI message ownership is settled.

@@ -11,6 +11,16 @@ void main() {
     });
 
     test('projects the final step and aggregates usage across steps', () {
+      final firstFile = GeneratedFile(
+        mediaType: 'text/plain',
+        filename: 'first.txt',
+        data: const FileTextData('first'),
+      );
+      final firstSource = SourceReference(
+        kind: SourceReferenceKind.url,
+        sourceId: 'source-1',
+        uri: Uri.parse('https://example.com/one'),
+      );
       final firstStep = _stepResult(
         stepNumber: 0,
         text: 'First',
@@ -21,6 +31,40 @@ void main() {
           reasoningTokens: 2,
         ),
         finishReason: FinishReason.toolCalls,
+        extraContent: [
+          FileContentPart(firstFile),
+          SourceContentPart(firstSource),
+          const ToolCallContentPart(
+            ToolCallContent(
+              toolCallId: 'tool-1',
+              toolName: 'weather',
+            ),
+          ),
+          ToolResultContentPart(
+            ToolResultContent(
+              toolCallId: 'tool-1',
+              toolName: 'weather',
+              output: 'sunny',
+            ),
+          ),
+        ],
+        warnings: const [
+          ModelWarning(
+            type: ModelWarningType.unsupported,
+            message: 'first warning',
+            feature: 'temperature',
+          ),
+        ],
+      );
+      final secondFile = GeneratedFile(
+        mediaType: 'text/plain',
+        filename: 'second.txt',
+        data: const FileTextData('second'),
+      );
+      final secondSource = SourceReference(
+        kind: SourceReferenceKind.url,
+        sourceId: 'source-2',
+        uri: Uri.parse('https://example.com/two'),
       );
       final secondStep = _stepResult(
         stepNumber: 1,
@@ -32,6 +76,32 @@ void main() {
           reasoningTokens: 1,
         ),
         finishReason: FinishReason.stop,
+        extraContent: [
+          FileContentPart(secondFile),
+          SourceContentPart(secondSource),
+          const ToolCallContentPart(
+            ToolCallContent(
+              toolCallId: 'tool-2',
+              toolName: 'dynamicWeather',
+              isDynamic: true,
+            ),
+          ),
+          ToolResultContentPart(
+            ToolResultContent(
+              toolCallId: 'tool-2',
+              toolName: 'dynamicWeather',
+              output: 'warm',
+              isDynamic: true,
+            ),
+          ),
+        ],
+        warnings: const [
+          ModelWarning(
+            type: ModelWarningType.compatibility,
+            message: 'second warning',
+            feature: 'toolChoice',
+          ),
+        ],
       );
 
       final run = GenerateTextRunResult(
@@ -44,6 +114,24 @@ void main() {
       expect(run.lastStep, same(secondStep));
       expect(run.text, 'Second');
       expect(run.finishReason, FinishReason.stop);
+      expect(run.files, [firstFile, secondFile]);
+      expect(run.sources, [firstSource, secondSource]);
+      expect(run.toolCalls.map((toolCall) => toolCall.toolName), [
+        'weather',
+        'dynamicWeather',
+      ]);
+      expect(run.staticToolCalls.single.toolName, 'weather');
+      expect(run.dynamicToolCalls.single.toolName, 'dynamicWeather');
+      expect(run.toolResults.map((toolResult) => toolResult.output), [
+        'sunny',
+        'warm',
+      ]);
+      expect(run.staticToolResults.single.toolName, 'weather');
+      expect(run.dynamicToolResults.single.toolName, 'dynamicWeather');
+      expect(run.warnings.map((warning) => warning.message), [
+        'first warning',
+        'second warning',
+      ]);
       expect(
           run.totalUsage,
           const UsageStats(
@@ -93,6 +181,8 @@ GenerateTextStepResult _stepResult({
   required String text,
   UsageStats? usage,
   FinishReason finishReason = FinishReason.stop,
+  List<ContentPart> extraContent = const [],
+  List<ModelWarning> warnings = const [],
 }) {
   return GenerateTextStepResult(
     stepNumber: stepNumber,
@@ -106,9 +196,11 @@ GenerateTextStepResult _stepResult({
     result: GenerateTextResult(
       content: [
         TextContentPart(text),
+        ...extraContent,
       ],
       finishReason: finishReason,
       usage: usage,
+      warnings: warnings,
     ),
   );
 }

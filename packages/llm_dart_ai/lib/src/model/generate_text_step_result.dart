@@ -36,9 +36,24 @@ final class GenerateTextStepResult {
       .map((part) => part.toolCall)
       .toList(growable: false);
 
+  List<ToolCallContent> get staticToolCalls => toolCalls
+      .where((toolCall) => !toolCall.isDynamic)
+      .toList(growable: false);
+
+  List<ToolCallContent> get dynamicToolCalls =>
+      toolCalls.where((toolCall) => toolCall.isDynamic).toList(growable: false);
+
   List<ToolResultContent> get toolResults => result.content
       .whereType<ToolResultContentPart>()
       .map((part) => part.toolResult)
+      .toList(growable: false);
+
+  List<ToolResultContent> get staticToolResults => toolResults
+      .where((toolResult) => !toolResult.isDynamic)
+      .toList(growable: false);
+
+  List<ToolResultContent> get dynamicToolResults => toolResults
+      .where((toolResult) => toolResult.isDynamic)
       .toList(growable: false);
 
   List<ToolApprovalRequestContent> get toolApprovalRequests => result.content

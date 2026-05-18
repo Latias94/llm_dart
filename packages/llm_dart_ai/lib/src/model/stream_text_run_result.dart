@@ -88,8 +88,24 @@ final class StreamTextRunResult extends StreamView<TextStreamEvent> {
         (value) => value.toolCalls,
       );
 
+  Future<List<ToolCallContent>> get staticToolCalls => result.then(
+        (value) => value.staticToolCalls,
+      );
+
+  Future<List<ToolCallContent>> get dynamicToolCalls => result.then(
+        (value) => value.dynamicToolCalls,
+      );
+
   Future<List<ToolResultContent>> get toolResults => result.then(
         (value) => value.toolResults,
+      );
+
+  Future<List<ToolResultContent>> get staticToolResults => result.then(
+        (value) => value.staticToolResults,
+      );
+
+  Future<List<ToolResultContent>> get dynamicToolResults => result.then(
+        (value) => value.dynamicToolResults,
       );
 
   Future<List<ToolApprovalRequestContent>> get toolApprovalRequests =>
@@ -115,6 +131,10 @@ final class StreamTextRunResult extends StreamView<TextStreamEvent> {
 
   Future<ProviderMetadata?> get providerMetadata => result.then(
         (value) => value.providerMetadata,
+      );
+
+  Future<List<ModelWarning>> get warnings => result.then(
+        (value) => value.warnings,
       );
 }
 

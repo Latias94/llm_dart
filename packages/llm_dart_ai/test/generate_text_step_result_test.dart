@@ -36,6 +36,13 @@ void main() {
               },
             ),
           ),
+          const ToolCallContentPart(
+            ToolCallContent(
+              toolCallId: 'tool-2',
+              toolName: 'dynamicWeather',
+              isDynamic: true,
+            ),
+          ),
           ToolApprovalRequestContentPart(
             const ToolApprovalRequestContent(
               approvalId: 'approval-1',
@@ -49,6 +56,16 @@ void main() {
               output: {
                 'temperature': 24,
               },
+            ),
+          ),
+          ToolResultContentPart(
+            ToolResultContent(
+              toolCallId: 'tool-2',
+              toolName: 'dynamicWeather',
+              output: {
+                'temperature': 25,
+              },
+              isDynamic: true,
             ),
           ),
           SourceContentPart(source),
@@ -97,11 +114,15 @@ void main() {
       expect(step.reasoningText, 'Think first.');
       expect(step.sources, [source]);
       expect(step.files, [file]);
-      expect(step.toolCalls, hasLength(1));
-      expect(step.toolCalls.single.toolName, 'weather');
-      expect(step.toolResults, hasLength(1));
-      expect(step.toolResults.single.output, {
+      expect(step.toolCalls, hasLength(2));
+      expect(step.staticToolCalls.single.toolName, 'weather');
+      expect(step.dynamicToolCalls.single.toolName, 'dynamicWeather');
+      expect(step.toolResults, hasLength(2));
+      expect(step.staticToolResults.single.output, {
         'temperature': 24,
+      });
+      expect(step.dynamicToolResults.single.output, {
+        'temperature': 25,
       });
       expect(step.toolApprovalRequests, hasLength(1));
       expect(step.toolApprovalRequests.single.approvalId, 'approval-1');
