@@ -23,6 +23,20 @@ void main() {
       );
     });
 
+    test('normalizes custom base url before resolving transcription endpoint',
+        () {
+      final model = OpenAI(
+        apiKey: 'test-key',
+        baseUrl: 'https://api.openai.test/v1/',
+      ).transcriptionModel('whisper-1');
+
+      expect(model.baseUrl, 'https://api.openai.test/v1');
+      expect(
+        model.transcriptionUri.toString(),
+        'https://api.openai.test/v1/audio/transcriptions',
+      );
+    });
+
     test('transcribe sends multipart data and decodes verbose JSON metadata',
         () async {
       TransportRequest? capturedRequest;

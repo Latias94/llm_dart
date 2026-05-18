@@ -21,6 +21,19 @@ void main() {
       );
     });
 
+    test('normalizes custom base url before resolving speech endpoint', () {
+      final model = OpenAI(
+        apiKey: 'test-key',
+        baseUrl: 'https://api.openai.test/v1/',
+      ).speechModel('gpt-4o-mini-tts');
+
+      expect(model.baseUrl, 'https://api.openai.test/v1');
+      expect(
+        model.speechUri.toString(),
+        'https://api.openai.test/v1/audio/speech',
+      );
+    });
+
     test('generateSpeech sends a bytes request and decodes audio output',
         () async {
       TransportRequest? capturedRequest;

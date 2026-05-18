@@ -113,6 +113,59 @@ void main() {
       );
     });
 
+    test('OpenAI factory normalizes compatible profile base urls', () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        baseUrl: 'https://example.test/v1/',
+        profile: const OpenRouterProfile(),
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'chatcmpl_or_1',
+                'model': 'openai/gpt-4o-mini',
+                'created': 1710000000,
+                'choices': [
+                  {
+                    'index': 0,
+                    'finish_reason': 'stop',
+                    'message': {
+                      'role': 'assistant',
+                      'content': 'hello',
+                    },
+                  },
+                ],
+                'usage': {
+                  'prompt_tokens': 1,
+                  'completion_tokens': 1,
+                  'total_tokens': 2,
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel('openai/gpt-4o-mini');
+
+      await model.doGenerate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage.text('hello'),
+          ],
+        ),
+      );
+
+      expect(model.baseUrl, 'https://example.test/v1');
+      expect(capturedRequest, isNotNull);
+      expect(
+        capturedRequest!.uri.toString(),
+        'https://example.test/v1/chat/completions',
+      );
+    });
+
     test('OpenRouter model settings shape the request model to :online',
         () async {
       TransportRequest? capturedRequest;

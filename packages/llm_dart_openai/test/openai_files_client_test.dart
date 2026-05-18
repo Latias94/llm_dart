@@ -193,6 +193,20 @@ void main() {
       expect(deleted.deleted, isTrue);
     });
 
+    test('normalizes custom base url before resolving file endpoints', () {
+      final files = OpenAI(
+        apiKey: 'test-key',
+        baseUrl: 'https://api.openai.test/v1/',
+      ).files();
+
+      expect(files.baseUrl, 'https://api.openai.test/v1');
+      expect(files.filesUri.toString(), 'https://api.openai.test/v1/files');
+      expect(
+        files.fileContentUri('file_123').toString(),
+        'https://api.openai.test/v1/files/file_123/content',
+      );
+    });
+
     test('rejects invalid uploads and non-openai profiles', () async {
       final files = OpenAI(apiKey: 'test-key').files();
 

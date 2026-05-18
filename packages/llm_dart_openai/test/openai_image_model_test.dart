@@ -25,6 +25,23 @@ void main() {
       );
     });
 
+    test('normalizes custom base url before resolving image endpoints', () {
+      final model = OpenAI(
+        apiKey: 'test-key',
+        baseUrl: 'https://api.openai.test/v1/',
+      ).imageModel('gpt-image-1');
+
+      expect(model.baseUrl, 'https://api.openai.test/v1');
+      expect(
+        model.imageGenerationUri.toString(),
+        'https://api.openai.test/v1/images/generations',
+      );
+      expect(
+        model.imageEditUri.toString(),
+        'https://api.openai.test/v1/images/edits',
+      );
+    });
+
     test('image models expose Vercel-aligned max images per call', () {
       final provider = OpenAI(
         apiKey: 'test-key',

@@ -25,7 +25,7 @@ features fail or warn predictably.
 | Anthropic | Done | Defer | Defer | Defer | Defer | Done | Done | Done | Count tokens and Anthropic beta/tool policy remain provider-owned |
 | Ollama | Done | Done | Defer | Defer | Defer | Done | Done | Done | Local catalog and binary resolver behavior remain provider-owned |
 | ElevenLabs | Defer | Defer | Defer | Done | Done | Defer | Done | Done | Voice catalog remains provider-owned |
-| OpenAI-compatible family | Done | Audit | Audit | Audit | Audit | Done | Audit | Done | Family profiles and option policies remain provider-owned over shared wire code |
+| OpenAI-compatible family | Done | Provider-owned | Provider-owned | Provider-owned | Provider-owned | Done | Done | Done | OpenAI native helpers stay OpenAI-only; compatible profiles are language-first |
 
 ## Shared Option Coverage
 
@@ -383,6 +383,77 @@ Status: complete for the current breaking line.
   They should not be accepted as raw input customization; replay-like speech
   continuity must continue through typed ElevenLabs speech provider options.
 
+## OpenAI-Compatible Family Row
+
+Status: complete for the current breaking line.
+
+### Reference Posture
+
+- Vercel's first-party OpenAI provider uses one `createOpenAI` provider factory
+  with a provider name, normalized base URL, per-model factories, and OpenAI
+  native helpers.
+- The Dart package keeps the same family-level seam, but models compatibility
+  with typed `OpenAIFamilyProfile` implementations for OpenAI, OpenRouter,
+  DeepSeek, Groq, xAI, and Phind. This preserves a unified interface while
+  making profile-specific capability and option policy explicit.
+- Base URL normalization is now family-owned. Custom URLs with one trailing
+  slash are normalized before route construction, matching the reference
+  `withoutTrailingSlash` behavior and preventing double-slash request paths.
+
+### Shared Contracts
+
+- Language generation is the common supported model kind for OpenAI-compatible
+  profiles and flows through one `LanguageModel` adapter.
+- Chat Completions is the compatibility route for non-OpenAI profiles. The
+  Responses route is only selected when `profile.supportsResponsesApi` allows
+  it.
+- Streaming emits unified language stream events with response metadata, usage,
+  finish reason, provider metadata, warnings, and raw-chunk opt-in.
+- Capability profiles are family-aware: OpenAI exposes language, embedding,
+  image, speech, and transcription facets; compatible profiles are
+  language-only until explicit support is modeled.
+- Provider metadata namespaces follow `profile.providerId`, so compatible
+  profile output lands under `openrouter`, `deepseek`, `groq`, `xai`, or
+  `phind` instead of being forced into `openai`.
+
+### Provider-Owned Surface
+
+- OpenRouter online model routing and app attribution headers stay
+  OpenRouter-owned typed options/profile data.
+- DeepSeek chat options such as logprobs, top-logprobs, penalties, and
+  response-format behavior stay DeepSeek-owned.
+- xAI live search request options and source metadata stay xAI-owned.
+- OpenAI native helper clients such as files, moderation, assistants, and
+  Responses lifecycle stay OpenAI-only and are rejected for compatible
+  profiles unless a profile-specific helper is deliberately modeled later.
+- Embedding, image, speech, and transcription are not promoted to the whole
+  compatible family just because OpenAI implements them. They remain
+  profile-owned facets.
+
+### Shared Option Audit
+
+- Shared language options continue to map through the OpenAI-family option
+  resolver where the active profile and route support them.
+- Profile-specific provider options are rejected outside their owning profile.
+  This keeps provider behavior local and prevents accidental cross-provider
+  option leakage.
+- Shared `reasoning` and `responseFormat` remain shared language options, but
+  route/profile-specific conversion and conflict behavior stay in the
+  OpenAI-family package.
+- No new shared option belongs in `llm_dart_provider` from the compatible
+  family row. Current gaps are provider-owned or profile-owned.
+
+### Metadata Audit
+
+- Response id/model/timestamp/headers live in `ModelResponseMetadata` when the
+  active route exposes them.
+- Provider metadata keeps route-specific finish reasons, logprob/source/search
+  details, replay details, and option diagnostics under the active profile
+  namespace.
+- Raw provider metadata is observational. Replay or request customization must
+  continue through typed prompt-part options or typed profile/provider options.
+
 ## First Follow-Up
 
-Use the same row format for the OpenAI-compatible family.
+Move to the provider options and metadata audit now that every provider row is
+classified.

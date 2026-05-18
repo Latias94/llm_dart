@@ -66,9 +66,9 @@
 - [x] Complete Anthropic parity row
 - [x] Complete Ollama parity row
 - [x] Complete ElevenLabs parity row
-- [ ] Complete OpenAI-compatible provider family parity row
-- [ ] Identify provider-specific gaps that should stay provider-owned
-- [ ] Identify shared option gaps that belong in core contracts
+- [x] Complete OpenAI-compatible provider family parity row
+- [x] Identify provider-specific gaps that should stay provider-owned
+- [x] Identify shared option gaps that belong in core contracts
 
 ## Provider Options And Metadata
 

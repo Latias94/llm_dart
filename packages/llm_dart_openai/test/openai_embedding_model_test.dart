@@ -24,6 +24,19 @@ void main() {
       );
     });
 
+    test('normalizes custom base url before resolving embedding endpoint', () {
+      final model = OpenAI(
+        apiKey: 'test-key',
+        baseUrl: 'https://api.openai.test/v1/',
+      ).embeddingModel('text-embedding-3-small');
+
+      expect(model.baseUrl, 'https://api.openai.test/v1');
+      expect(
+        model.embeddingsUri.toString(),
+        'https://api.openai.test/v1/embeddings',
+      );
+    });
+
     test('embedMany sends an embeddings request and decodes the response',
         () async {
       TransportRequest? capturedRequest;

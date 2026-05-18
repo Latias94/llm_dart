@@ -1,6 +1,7 @@
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'openai_family_profile.dart';
+import 'openai_family_url_support.dart';
 import 'openai_json_support.dart';
 import 'openai_profile_boundary.dart';
 
@@ -289,7 +290,7 @@ final class OpenAIModerationClient {
     required this.transport,
     this.settings = const OpenAIModerationSettings(),
     String? baseUrl,
-  }) : baseUrl = baseUrl ?? profile.defaultBaseUrl {
+  }) : baseUrl = normalizeOpenAIFamilyBaseUrl(baseUrl, profile) {
     requireOpenAIProfile(profile, featureName: 'OpenAI moderation client');
   }
 

@@ -2,6 +2,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'openai_family_profile.dart';
+import 'openai_family_url_support.dart';
 import 'openai_embedding_model_request.dart';
 import 'openai_embedding_model_response.dart';
 import 'openai_embedding_model_transport.dart';
@@ -27,7 +28,7 @@ final class OpenAIEmbeddingModel
     String? baseUrl,
     ProviderModelOptions settings = const OpenAIEmbeddingModelSettings(),
   })  : settings = resolveOpenAIEmbeddingModelSettings(settings),
-        baseUrl = baseUrl ?? profile.defaultBaseUrl;
+        baseUrl = normalizeOpenAIFamilyBaseUrl(baseUrl, profile);
 
   @override
   String get providerId => profile.providerId;

@@ -2,6 +2,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'openai_family_profile.dart';
+import 'openai_family_url_support.dart';
 import 'openai_image_editing.dart';
 import 'openai_image_model_request.dart';
 import 'openai_image_model_response.dart';
@@ -27,7 +28,7 @@ final class OpenAIImageModel implements ImageModel, CapabilityDescribedModel {
     String? baseUrl,
     ProviderModelOptions settings = const OpenAIImageModelSettings(),
   })  : settings = resolveOpenAIImageModelSettings(settings),
-        baseUrl = baseUrl ?? profile.defaultBaseUrl;
+        baseUrl = normalizeOpenAIFamilyBaseUrl(baseUrl, profile);
 
   @override
   String get providerId => profile.providerId;

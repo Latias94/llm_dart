@@ -3,6 +3,7 @@ import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'openai_chat_completions_codec.dart';
 import 'openai_family_profile.dart';
+import 'openai_family_url_support.dart';
 import 'openai_language_model_request.dart';
 import 'openai_language_model_response.dart';
 import 'openai_language_model_stream.dart';
@@ -36,7 +37,7 @@ final class OpenAILanguageModel
     String? baseUrl,
     ProviderModelOptions settings = const OpenAIChatModelSettings(),
   })  : settings = resolveOpenAIModelSettingsForProfile(profile, settings),
-        baseUrl = baseUrl ?? profile.defaultBaseUrl;
+        baseUrl = normalizeOpenAIFamilyBaseUrl(baseUrl, profile);
 
   @override
   String get providerId => profile.providerId;

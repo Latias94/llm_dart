@@ -3,6 +3,7 @@ import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'openai_embedding_model.dart';
 import 'openai_family_profile.dart';
+import 'openai_family_url_support.dart';
 import 'openai_assistants.dart';
 import 'openai_files.dart';
 import 'openai_image_model.dart';
@@ -122,7 +123,10 @@ final class OpenAI
     String? baseUrl,
     OpenAIFamilyProfile? profile,
   })  : profile = profile ?? const OpenAIProfile(),
-        baseUrl = baseUrl ?? (profile ?? const OpenAIProfile()).defaultBaseUrl,
+        baseUrl = normalizeOpenAIFamilyBaseUrl(
+          baseUrl,
+          profile ?? const OpenAIProfile(),
+        ),
         transport = transport ?? DioTransportClient();
 
   @override
