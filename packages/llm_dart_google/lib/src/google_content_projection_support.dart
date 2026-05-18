@@ -204,26 +204,6 @@ ToolResultEvent googleProjectedToolResultEvent(
   );
 }
 
-Iterable<SourceContentPart> projectGoogleGroundingContentParts(
-  Map<String, Object?>? groundingMetadata,
-) sync* {
-  for (final source in extractGroundingSources(groundingMetadata)) {
-    yield SourceContentPart(source);
-  }
-}
-
-Iterable<SourceEvent> emitGoogleGroundingSourceEvents(
-  Map<String, Object?>? groundingMetadata, {
-  required Set<String> emittedSourceKeys,
-}) sync* {
-  for (final source in extractGroundingSources(groundingMetadata)) {
-    final key = '${source.kind}:${source.sourceId}';
-    if (emittedSourceKeys.add(key)) {
-      yield SourceEvent(source);
-    }
-  }
-}
-
 void attachGoogleMetadataToLastContent(
   List<ContentPart> content,
   ProviderMetadata? metadata,

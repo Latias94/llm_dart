@@ -1,6 +1,6 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
-import 'google_content_projection_support.dart';
+import 'google_grounding_projection.dart';
 import 'google_provider_metadata_support.dart';
 import 'google_shared.dart';
 import 'google_stream_part_codec.dart';
