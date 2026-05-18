@@ -23,6 +23,8 @@ TranscriptionResult decodeElevenLabsTranscriptionResponse({
       if (json['language_code'] != null) 'languageCode': json['language_code'],
       if (json['language_probability'] != null)
         'languageProbability': json['language_probability'],
+      if (json['transcription_id'] != null)
+        'transcriptionId': json['transcription_id'],
       if (json['words'] != null) 'words': json['words'],
       if (json['additional_formats'] != null)
         'additionalFormats': json['additional_formats'],

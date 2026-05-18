@@ -40,6 +40,7 @@ void main() {
                 'text': 'hello world',
                 'language_code': 'en',
                 'language_probability': 0.98,
+                'transcription_id': 'transcription_123',
                 'words': [
                   {
                     'text': 'hello',
@@ -145,6 +146,7 @@ void main() {
           'requestId': 'req_456',
           'languageCode': 'en',
           'languageProbability': 0.98,
+          'transcriptionId': 'transcription_123',
           'words': [
             {
               'text': 'hello',

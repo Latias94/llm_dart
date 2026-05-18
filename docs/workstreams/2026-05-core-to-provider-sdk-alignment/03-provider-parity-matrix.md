@@ -320,6 +320,69 @@ Status: complete for the current breaking line.
   thought signatures, or Anthropic server-tool/file ids. Raw provider metadata
   is therefore observational only and not accepted as input customization.
 
+## ElevenLabs Row
+
+Status: complete for the current breaking line.
+
+### Shared Contracts
+
+- Speech generation supports ElevenLabs `/v1/text-to-speech/{voiceId}` behind
+  the direct `SpeechModel` adapter.
+- Transcription supports ElevenLabs `/v1/speech-to-text` behind the direct
+  `TranscriptionModel` adapter.
+- Speech response bytes use transport byte response handling while
+  transcription and voice catalog JSON response coercion go through
+  `decodeElevenLabsJsonObject` in `elevenlabs_shared.dart`.
+- Transcription multipart body construction uses `llm_dart_transport`
+  multipart mechanics; the ElevenLabs package owns field names, file naming,
+  and provider option encoding.
+- The package aligns with `repo-ref/ai/packages/elevenlabs`: speech and
+  transcription are first-class model kinds, while language, embedding, and
+  image remain unsupported for ElevenLabs.
+
+### Provider-Owned Surface
+
+- Voice catalog support remains an ElevenLabs-native helper client. Vercel's
+  first-party provider does not expose voice catalog as a shared provider
+  contract, and the catalog shape is provider product data rather than a model
+  execution contract.
+- Voice id resolution, default voice id, model-level voice settings, history
+  continuity fields, pronunciation dictionaries, logging, text normalization,
+  streaming-latency query policy, and character-cost/history headers remain
+  ElevenLabs-owned.
+- Transcription diarization, timestamp granularity, tag-audio-events,
+  additional transcript formats, input file-format hints, and transcription ids
+  remain provider metadata or typed provider options.
+- Language, embedding, image, and streaming remain deferred for ElevenLabs in
+  this breaking line.
+
+### Shared Option Audit
+
+- Shared speech `voice`, `outputFormat`, `language`, and `speed` map to
+  ElevenLabs voice id, `output_format`, `language_code`, and voice setting
+  `speed`.
+- Shared speech `instructions` is warning-dropped because ElevenLabs speech
+  generation has no compatible instruction field.
+- Provider speech options override model-level voice settings where both are
+  present. This stays provider-owned because the precedence applies only to
+  ElevenLabs voice-setting fields.
+- Transcription currently has no shared request options beyond audio bytes and
+  media type. Language hints, diarization, timestamps, and file-format hints
+  stay provider-owned until another transcription provider proves compatible
+  semantics.
+- No new shared option belongs in `llm_dart_provider` from the ElevenLabs row.
+
+### Metadata Audit
+
+- Namespace is `elevenlabs` for ElevenLabs-owned provider metadata.
+- Response model, timestamp, and headers live in `ModelResponseMetadata`.
+- Provider metadata retains request id, history item id, character cost,
+  transcription id, detected language, language probability, words, and
+  additional transcript formats.
+- Speech history ids and transcription ids are observational metadata for now.
+  They should not be accepted as raw input customization; replay-like speech
+  continuity must continue through typed ElevenLabs speech provider options.
+
 ## First Follow-Up
 
-Use the same row format for ElevenLabs and the OpenAI-compatible family.
+Use the same row format for the OpenAI-compatible family.
