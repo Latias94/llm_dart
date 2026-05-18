@@ -1,10 +1,8 @@
-export 'http_chat_transport_protocol_impl.dart'
+export 'http_chat_transport_chunk.dart'
     show
         HttpChatTransportAbortChunk,
-        HttpChatTransportCallOptionsPayload,
         HttpChatTransportCheckpointChunk,
         HttpChatTransportChunk,
-        HttpChatTransportChunkJsonCodec,
         HttpChatTransportDataPartChunk,
         HttpChatTransportTransientDataPartChunk,
         HttpChatTransportErrorChunk,
@@ -14,9 +12,16 @@ export 'http_chat_transport_protocol_impl.dart'
         HttpChatTransportMessageFinishChunk,
         HttpChatTransportMessageMetadataChunk,
         HttpChatTransportMessageStartChunk,
-        HttpChatTransportReconnectRequestPayload,
-        HttpChatTransportRequestJsonCodec,
-        HttpChatTransportRequestPayload,
         HttpChatTransportStartChunk,
-        HttpChatTransportStreamProtocol,
         HttpChatTransportTransportStartChunk;
+export 'http_chat_transport_chunk_json_codec.dart'
+    show HttpChatTransportChunkJsonCodec;
+export 'http_chat_transport_request_json_codec.dart'
+    show HttpChatTransportRequestJsonCodec;
+export 'http_chat_transport_request_payload.dart'
+    show
+        HttpChatTransportCallOptionsPayload,
+        HttpChatTransportReconnectRequestPayload,
+        HttpChatTransportRequestPayload;
+export 'http_chat_transport_stream_protocol.dart'
+    show HttpChatTransportStreamProtocol;

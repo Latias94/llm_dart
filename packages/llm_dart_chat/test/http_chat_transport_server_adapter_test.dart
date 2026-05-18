@@ -5,6 +5,30 @@ import 'package:test/test.dart';
 
 void main() {
   group('HttpChatTransportServerAdapter', () {
+    test('exports standalone SSE encoder through the package entrypoint',
+        () async {
+      const encoder = HttpChatTransportSseEncoder();
+      const parser = SseJsonChunkParser();
+      const chunkCodec = HttpChatTransportChunkJsonCodec();
+
+      final payloads = await parser
+          .parse(
+            encoder.encodeChunkStream(
+              Stream.fromIterable([
+                const HttpChatTransportKeepAliveChunk(),
+              ]),
+              includeDoneFrame: true,
+            ),
+          )
+          .toList();
+
+      expect(payloads, hasLength(1));
+      expect(
+        chunkCodec.decodeChunk(payloads.single),
+        isA<HttpChatTransportKeepAliveChunk>(),
+      );
+    });
+
     test('encodes text stream events as v2 SSE frames', () async {
       const adapter = HttpChatTransportServerAdapter();
       const parser = SseJsonChunkParser();

@@ -1,5 +1,7 @@
 import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'package:llm_dart_chat/llm_dart_chat.dart';
+import 'package:llm_dart_chat/src/http_chat_transport_protocol_impl.dart'
+    as legacy_protocol;
 import 'package:test/test.dart';
 
 void main() {
@@ -278,5 +280,18 @@ void main() {
 
       expect(decoded[12], isA<HttpChatTransportKeepAliveChunk>());
     });
+  });
+
+  test('legacy protocol implementation barrel forwards split protocol names',
+      () {
+    const codec = legacy_protocol.HttpChatTransportChunkJsonCodec();
+    final envelope = codec.encodeChunk(
+      const legacy_protocol.HttpChatTransportKeepAliveChunk(),
+    );
+
+    expect(
+      codec.decodeChunk(envelope),
+      isA<legacy_protocol.HttpChatTransportKeepAliveChunk>(),
+    );
   });
 }

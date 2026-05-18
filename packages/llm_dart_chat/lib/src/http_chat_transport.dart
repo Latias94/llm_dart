@@ -5,7 +5,11 @@ import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'chat_request_options.dart';
 import 'chat_transport.dart';
-import 'http_chat_transport_protocol.dart';
+import 'http_chat_transport_chunk.dart';
+import 'http_chat_transport_chunk_json_codec.dart';
+import 'http_chat_transport_request_json_codec.dart';
+import 'http_chat_transport_request_payload.dart';
+import 'http_chat_transport_stream_protocol.dart';
 
 typedef PrepareSendMessagesRequest
     = FutureOr<HttpChatTransportPreparedSendMessagesRequest?> Function(

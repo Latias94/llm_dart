@@ -150,6 +150,26 @@ Implemented structured output stream parity slice:
 - Updated `streamTextCall(... outputSpec)` to preserve raw text result
   compatibility while keeping parsed output on its own future.
 
+Implemented UI/chat transport ownership slice:
+
+- Compared Dart chat transport code against the reference UI message stream and
+  transport split in `repo-ref/ai`.
+- Kept UI message projection in `llm_dart_ai` and framework-neutral chat
+  transport adapters in `llm_dart_chat`.
+- Kept HTTP chat wire request/chunk codecs in `llm_dart_chat` because the
+  chunk protocol currently carries `TextStreamEvent` and `ChatUiStreamChunk`
+  concepts; moving those codecs to `llm_dart_transport` would force transport
+  to depend on runtime/UI packages and contradict the current package graph.
+- Replaced the monolithic HTTP chat transport protocol implementation with
+  focused modules for stream protocol selection, request payloads, request JSON
+  codec, wire chunks, chunk JSON codec, and SSE framing.
+- Kept `HttpChatTransportServerAdapter` as the typed bridge from runtime/UI
+  chunks to HTTP transport chunks, and kept `HttpChatTransportSseEncoder` as a
+  thin JSON-to-SSE framing helper.
+- Preserved the public `http_chat_transport_protocol.dart` export surface and a
+  compatibility barrel for the old implementation file while making internal
+  implementation files depend on the narrower modules directly.
+
 Next runtime candidates:
 
 - Add an explicit `prepareStep` hook if real callers need per-step model,
