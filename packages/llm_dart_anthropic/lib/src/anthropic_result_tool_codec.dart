@@ -1,7 +1,7 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
-import 'anthropic_code_execution_replay.dart';
 import 'anthropic_result_util.dart';
+import 'anthropic_tool_result_projection.dart';
 
 final class AnthropicResultToolDescriptor {
   final String toolName;
@@ -16,13 +16,7 @@ final class AnthropicResultToolDescriptor {
 }
 
 bool isAnthropicResultToolResultPart(String? type) {
-  return type == 'mcp_tool_result' ||
-      type == 'web_fetch_tool_result' ||
-      type == 'web_search_tool_result' ||
-      type == 'code_execution_tool_result' ||
-      type == 'bash_code_execution_tool_result' ||
-      type == 'text_editor_code_execution_tool_result' ||
-      type == 'tool_search_tool_result';
+  return isAnthropicToolResultBlockType(type);
 }
 
 ToolCallContentPart? decodeAnthropicResultToolUsePart(
@@ -131,7 +125,8 @@ Iterable<ContentPart> decodeAnthropicResultToolResultParts(
   }
 
   final descriptor = toolDescriptors[toolUseId];
-  final toolName = descriptor?.toolName ?? _fallbackToolName(type);
+  final toolName =
+      descriptor?.toolName ?? anthropicFallbackToolResultName(type);
   final metadata = anthropicResultProviderMetadata({
     ...anthropicResultProviderMetadataValues(descriptor?.providerMetadata),
     'partType': type,
@@ -141,17 +136,17 @@ Iterable<ContentPart> decodeAnthropicResultToolResultParts(
     ToolResultContent(
       toolCallId: toolUseId,
       toolName: toolName,
-      toolOutput: _toolResultOutput(type, part),
+      toolOutput: anthropicToolResultOutput(type, part),
       isDynamic: descriptor?.isDynamic ?? true,
     ),
     providerMetadata: metadata,
   );
 
-  final customKind = _toolResultCustomKind(type);
+  final customKind = anthropicToolResultCustomKind(type);
   if (customKind != null) {
     yield CustomContentPart(
       kind: customKind,
-      data: _toolResultReplayPayload(
+      data: anthropicToolResultReplayPayload(
         blockType: type,
         block: part,
         toolCallId: toolUseId,
@@ -186,83 +181,4 @@ Iterable<ContentPart> decodeAnthropicResultToolResultParts(
       }
     }
   }
-}
-
-bool _isExecutionToolResultBlock(String blockType) {
-  return blockType == 'code_execution_tool_result' ||
-      blockType == 'bash_code_execution_tool_result' ||
-      blockType == 'text_editor_code_execution_tool_result';
-}
-
-bool _isErrorToolResult(String partType, Map<String, Object?> part) {
-  if (partType == 'mcp_tool_result') {
-    return part['is_error'] == true;
-  }
-
-  final content = anthropicResultAsMap(part['content']);
-  final contentType = anthropicResultAsString(content?['type']);
-  return contentType != null && contentType.endsWith('_error');
-}
-
-ToolOutput _toolResultOutput(String partType, Map<String, Object?> part) {
-  return ToolOutput.fromValue(
-    normalizeJsonValue(part['content']),
-    isError: _isErrorToolResult(partType, part),
-  );
-}
-
-String _fallbackToolName(String partType) {
-  switch (partType) {
-    case 'mcp_tool_result':
-      return 'mcp.unknown';
-    case 'web_fetch_tool_result':
-      return 'web_fetch';
-    case 'web_search_tool_result':
-      return 'web_search';
-    case 'code_execution_tool_result':
-    case 'bash_code_execution_tool_result':
-    case 'text_editor_code_execution_tool_result':
-      return 'code_execution';
-    case 'tool_search_tool_result':
-      return 'tool_search';
-    default:
-      return 'tool';
-  }
-}
-
-String? _toolResultCustomKind(String partType) {
-  switch (partType) {
-    case 'web_fetch_tool_result':
-      return 'anthropic.result.web_fetch';
-    case 'web_search_tool_result':
-      return 'anthropic.result.web_search';
-    case 'tool_search_tool_result':
-      return 'anthropic.result.tool_search';
-    case 'code_execution_tool_result':
-    case 'bash_code_execution_tool_result':
-    case 'text_editor_code_execution_tool_result':
-      return 'anthropic.result.code_execution';
-    default:
-      return null;
-  }
-}
-
-Map<String, Object?> _toolResultReplayPayload({
-  required String blockType,
-  required Map<String, Object?> block,
-  required String toolCallId,
-  required String toolName,
-}) {
-  final replayToolName =
-      _isExecutionToolResultBlock(blockType) ? 'code_execution' : toolName;
-
-  return {
-    if (_isExecutionToolResultBlock(blockType))
-      'schema': AnthropicCodeExecutionReplay.schema,
-    'replayRole': 'tool',
-    'toolCallId': toolCallId,
-    'toolName': replayToolName,
-    if (_isExecutionToolResultBlock(blockType)) 'blockType': blockType,
-    'block': normalizeJsonValue(block),
-  };
 }

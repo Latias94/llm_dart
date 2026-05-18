@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'anthropic_stream_state.dart';
+import 'anthropic_tool_result_projection.dart';
 import 'anthropic_stream_util.dart';
 
 final class AnthropicStreamToolCodec {
@@ -185,23 +186,25 @@ final class AnthropicStreamToolCodec {
       ...anthropicStreamProviderMetadataValues(descriptor?.providerMetadata),
       'blockType': blockType,
     });
-    final toolName = descriptor?.toolName ?? _fallbackToolName(blockType);
+    final toolName =
+        descriptor?.toolName ?? anthropicFallbackToolResultName(blockType);
 
     yield ToolResultEvent(
       toolResult: ToolResultContent(
         toolCallId: toolUseId,
         toolName: toolName,
-        toolOutput: _toolResultOutput(blockType, contentBlock),
-        isDynamic: descriptor?.isDynamic ?? _isDynamicToolResult(blockType),
+        toolOutput: anthropicToolResultOutput(blockType, contentBlock),
+        isDynamic: descriptor?.isDynamic ??
+            isAnthropicDynamicToolResultBlock(blockType),
       ),
       providerMetadata: providerMetadata,
     );
 
-    final customKind = _toolResultCustomKind(blockType);
+    final customKind = anthropicToolResultCustomKind(blockType);
     if (customKind != null) {
       yield CustomEvent(
         kind: customKind,
-        data: _toolResultReplayPayload(
+        data: anthropicToolResultReplayPayload(
           blockType: blockType,
           block: contentBlock,
           toolCallId: toolUseId,
@@ -239,13 +242,7 @@ final class AnthropicStreamToolCodec {
   }
 
   bool isImmediateToolResultBlock(String? blockType) {
-    return blockType == 'web_fetch_tool_result' ||
-        blockType == 'web_search_tool_result' ||
-        blockType == 'code_execution_tool_result' ||
-        blockType == 'bash_code_execution_tool_result' ||
-        blockType == 'text_editor_code_execution_tool_result' ||
-        blockType == 'tool_search_tool_result' ||
-        blockType == 'mcp_tool_result';
+    return isAnthropicToolResultBlockType(blockType);
   }
 
   _DecodedJsonValue _tryDecodeJsonValue(String value) {
@@ -276,101 +273,6 @@ final class AnthropicStreamToolCodec {
     }
 
     return 'Invalid JSON tool arguments for "$toolName": $message';
-  }
-
-  String _fallbackToolName(String blockType) {
-    switch (blockType) {
-      case 'web_fetch_tool_result':
-        return 'web_fetch';
-      case 'web_search_tool_result':
-        return 'web_search';
-      case 'code_execution_tool_result':
-      case 'bash_code_execution_tool_result':
-      case 'text_editor_code_execution_tool_result':
-        return 'code_execution';
-      case 'tool_search_tool_result':
-        return 'tool_search';
-      case 'mcp_tool_result':
-        return 'mcp.unknown';
-      default:
-        return 'tool';
-    }
-  }
-
-  bool _isDynamicToolResult(String blockType) {
-    return blockType == 'web_fetch_tool_result' ||
-        blockType == 'web_search_tool_result' ||
-        blockType == 'code_execution_tool_result' ||
-        blockType == 'bash_code_execution_tool_result' ||
-        blockType == 'text_editor_code_execution_tool_result' ||
-        blockType == 'tool_search_tool_result' ||
-        blockType == 'mcp_tool_result';
-  }
-
-  bool _isErrorToolResult(
-    String blockType,
-    Map<String, Object?> contentBlock,
-  ) {
-    if (blockType == 'mcp_tool_result') {
-      return contentBlock['is_error'] == true;
-    }
-
-    final content = anthropicStreamAsMap(contentBlock['content']);
-    final contentType = anthropicStreamAsString(content?['type']);
-    return contentType != null && contentType.endsWith('_error');
-  }
-
-  ToolOutput _toolResultOutput(
-    String blockType,
-    Map<String, Object?> contentBlock,
-  ) {
-    return ToolOutput.fromValue(
-      normalizeJsonValue(contentBlock['content']),
-      isError: _isErrorToolResult(blockType, contentBlock),
-    );
-  }
-
-  String? _toolResultCustomKind(String blockType) {
-    switch (blockType) {
-      case 'web_fetch_tool_result':
-        return 'anthropic.result.web_fetch';
-      case 'web_search_tool_result':
-        return 'anthropic.result.web_search';
-      case 'tool_search_tool_result':
-        return 'anthropic.result.tool_search';
-      case 'code_execution_tool_result':
-      case 'bash_code_execution_tool_result':
-      case 'text_editor_code_execution_tool_result':
-        return 'anthropic.result.code_execution';
-      default:
-        return null;
-    }
-  }
-
-  Map<String, Object?> _toolResultReplayPayload({
-    required String blockType,
-    required Map<String, Object?> block,
-    required String toolCallId,
-    required String toolName,
-  }) {
-    final replayToolName =
-        _isExecutionToolResultBlock(blockType) ? 'code_execution' : toolName;
-
-    return {
-      if (_isExecutionToolResultBlock(blockType))
-        'schema': 'anthropic.execution.result.v1',
-      'replayRole': 'tool',
-      'toolCallId': toolCallId,
-      'toolName': replayToolName,
-      if (_isExecutionToolResultBlock(blockType)) 'blockType': blockType,
-      'block': normalizeJsonValue(block),
-    };
-  }
-
-  bool _isExecutionToolResultBlock(String blockType) {
-    return blockType == 'code_execution_tool_result' ||
-        blockType == 'bash_code_execution_tool_result' ||
-        blockType == 'text_editor_code_execution_tool_result';
   }
 }
 
