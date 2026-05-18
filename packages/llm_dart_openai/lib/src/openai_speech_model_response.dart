@@ -2,31 +2,13 @@ import 'dart:typed_data';
 
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import 'openai_json_value.dart';
+
 Uint8List decodeOpenAISpeechResponseBytes(Object? body) {
-  if (body is Uint8List) {
-    return body;
-  }
-
-  if (body is List<int>) {
-    return Uint8List.fromList(body);
-  }
-
-  if (body is List) {
-    return Uint8List.fromList(
-      body.map((value) {
-        if (value is! int) {
-          throw StateError(
-            'Expected speech byte value to be int, got ${value.runtimeType}.',
-          );
-        }
-
-        return value;
-      }).toList(),
-    );
-  }
-
-  throw StateError(
-    'Expected OpenAI speech response bytes but received ${body.runtimeType}.',
+  return openAIRequiredBytes(
+    body,
+    path: 'speech_response.body',
+    sourceName: 'OpenAI speech response',
   );
 }
 
@@ -46,7 +28,7 @@ SpeechGenerationResult decodeOpenAISpeechResponse({
 
   return SpeechGenerationResult(
     audioBytes: audioBytes,
-    mediaType: lookupOpenAISpeechHeader(headers, 'content-type') ??
+    mediaType: openAILookupHeader(headers, 'content-type') ??
         defaultOpenAISpeechMediaTypeForOutputFormat(outputFormat),
     warnings: warnings,
     responseMetadata: ModelResponseMetadata(
@@ -55,19 +37,6 @@ SpeechGenerationResult decodeOpenAISpeechResponse({
       headers: headers,
     ),
   );
-}
-
-String? lookupOpenAISpeechHeader(
-  Map<String, String> headers,
-  String name,
-) {
-  for (final entry in headers.entries) {
-    if (entry.key.toLowerCase() == name.toLowerCase()) {
-      return entry.value;
-    }
-  }
-
-  return null;
 }
 
 String defaultOpenAISpeechMediaTypeForOutputFormat(String? outputFormat) {

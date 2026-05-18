@@ -3,6 +3,7 @@ import 'package:llm_dart_transport/llm_dart_transport.dart';
 import 'openai_family_profile.dart';
 import 'openai_family_url_support.dart';
 import 'openai_json_support.dart';
+import 'openai_json_value.dart';
 import 'openai_profile_boundary.dart';
 
 final class OpenAIModerationSettings {
@@ -48,41 +49,41 @@ final class OpenAIModerationCategories {
 
   factory OpenAIModerationCategories.fromJson(Map<String, Object?> json) {
     return OpenAIModerationCategories(
-      hate: _requiredBool(json['hate'], path: 'categories.hate'),
-      hateThreatening: _requiredBool(
+      hate: openAIRequiredBool(json['hate'], path: 'categories.hate'),
+      hateThreatening: openAIRequiredBool(
         json['hate/threatening'],
         path: 'categories.hate/threatening',
       ),
-      harassment: _requiredBool(
+      harassment: openAIRequiredBool(
         json['harassment'],
         path: 'categories.harassment',
       ),
-      harassmentThreatening: _requiredBool(
+      harassmentThreatening: openAIRequiredBool(
         json['harassment/threatening'],
         path: 'categories.harassment/threatening',
       ),
-      selfHarm: _requiredBool(
+      selfHarm: openAIRequiredBool(
         json['self-harm'],
         path: 'categories.self-harm',
       ),
-      selfHarmIntent: _requiredBool(
+      selfHarmIntent: openAIRequiredBool(
         json['self-harm/intent'],
         path: 'categories.self-harm/intent',
       ),
-      selfHarmInstructions: _requiredBool(
+      selfHarmInstructions: openAIRequiredBool(
         json['self-harm/instructions'],
         path: 'categories.self-harm/instructions',
       ),
-      sexual: _requiredBool(json['sexual'], path: 'categories.sexual'),
-      sexualMinors: _requiredBool(
+      sexual: openAIRequiredBool(json['sexual'], path: 'categories.sexual'),
+      sexualMinors: openAIRequiredBool(
         json['sexual/minors'],
         path: 'categories.sexual/minors',
       ),
-      violence: _requiredBool(
+      violence: openAIRequiredBool(
         json['violence'],
         path: 'categories.violence',
       ),
-      violenceGraphic: _requiredBool(
+      violenceGraphic: openAIRequiredBool(
         json['violence/graphic'],
         path: 'categories.violence/graphic',
       ),
@@ -143,44 +144,44 @@ final class OpenAIModerationCategoryScores {
 
   factory OpenAIModerationCategoryScores.fromJson(Map<String, Object?> json) {
     return OpenAIModerationCategoryScores(
-      hate: _requiredDouble(json['hate'], path: 'category_scores.hate'),
-      hateThreatening: _requiredDouble(
+      hate: openAIRequiredDouble(json['hate'], path: 'category_scores.hate'),
+      hateThreatening: openAIRequiredDouble(
         json['hate/threatening'],
         path: 'category_scores.hate/threatening',
       ),
-      harassment: _requiredDouble(
+      harassment: openAIRequiredDouble(
         json['harassment'],
         path: 'category_scores.harassment',
       ),
-      harassmentThreatening: _requiredDouble(
+      harassmentThreatening: openAIRequiredDouble(
         json['harassment/threatening'],
         path: 'category_scores.harassment/threatening',
       ),
-      selfHarm: _requiredDouble(
+      selfHarm: openAIRequiredDouble(
         json['self-harm'],
         path: 'category_scores.self-harm',
       ),
-      selfHarmIntent: _requiredDouble(
+      selfHarmIntent: openAIRequiredDouble(
         json['self-harm/intent'],
         path: 'category_scores.self-harm/intent',
       ),
-      selfHarmInstructions: _requiredDouble(
+      selfHarmInstructions: openAIRequiredDouble(
         json['self-harm/instructions'],
         path: 'category_scores.self-harm/instructions',
       ),
-      sexual: _requiredDouble(
+      sexual: openAIRequiredDouble(
         json['sexual'],
         path: 'category_scores.sexual',
       ),
-      sexualMinors: _requiredDouble(
+      sexualMinors: openAIRequiredDouble(
         json['sexual/minors'],
         path: 'category_scores.sexual/minors',
       ),
-      violence: _requiredDouble(
+      violence: openAIRequiredDouble(
         json['violence'],
         path: 'category_scores.violence',
       ),
-      violenceGraphic: _requiredDouble(
+      violenceGraphic: openAIRequiredDouble(
         json['violence/graphic'],
         path: 'category_scores.violence/graphic',
       ),
@@ -217,12 +218,12 @@ final class OpenAIModerationResult {
 
   factory OpenAIModerationResult.fromJson(Map<String, Object?> json) {
     return OpenAIModerationResult(
-      flagged: _requiredBool(json['flagged'], path: 'result.flagged'),
+      flagged: openAIRequiredBool(json['flagged'], path: 'result.flagged'),
       categories: OpenAIModerationCategories.fromJson(
-        _requiredMap(json['categories'], path: 'result.categories'),
+        openAIRequiredMap(json['categories'], path: 'result.categories'),
       ),
       categoryScores: OpenAIModerationCategoryScores.fromJson(
-        _requiredMap(
+        openAIRequiredMap(
           json['category_scores'],
           path: 'result.category_scores',
         ),
@@ -252,14 +253,15 @@ final class OpenAIModerationResponse {
 
   factory OpenAIModerationResponse.fromJson(Map<String, Object?> json) {
     return OpenAIModerationResponse(
-      id: _requiredNonEmptyString(json['id'], path: 'response.id'),
-      model: _requiredNonEmptyString(json['model'], path: 'response.model'),
-      results: _requiredList(
+      id: openAIRequiredNonEmptyString(json['id'], path: 'response.id'),
+      model:
+          openAIRequiredNonEmptyString(json['model'], path: 'response.model'),
+      results: openAIRequiredList(
         json['results'],
         path: 'response.results',
       ).asMap().entries.map((entry) {
         return OpenAIModerationResult.fromJson(
-          _requiredMap(
+          openAIRequiredMap(
             entry.value,
             path: 'response.results[${entry.key}]',
           ),
@@ -446,67 +448,4 @@ Object _normalizeInput(Object input) {
     'input',
     'Expected moderation input to be a String or List<String>.',
   );
-}
-
-Map<String, Object?> _requiredMap(
-  Object? value, {
-  required String path,
-}) {
-  if (value is Map<String, Object?>) {
-    return value;
-  }
-
-  if (value is Map) {
-    return Map<String, Object?>.from(value);
-  }
-
-  throw FormatException('Expected a JSON object at $path.');
-}
-
-List<Object?> _requiredList(
-  Object? value, {
-  required String path,
-}) {
-  if (value is List<Object?>) {
-    return value;
-  }
-
-  if (value is List) {
-    return List<Object?>.from(value);
-  }
-
-  throw FormatException('Expected a list at $path.');
-}
-
-String _requiredNonEmptyString(
-  Object? value, {
-  required String path,
-}) {
-  if (value is String && value.isNotEmpty) {
-    return value;
-  }
-
-  throw FormatException('Expected a non-empty string at $path.');
-}
-
-bool _requiredBool(
-  Object? value, {
-  required String path,
-}) {
-  if (value is bool) {
-    return value;
-  }
-
-  throw FormatException('Expected a bool at $path.');
-}
-
-double _requiredDouble(
-  Object? value, {
-  required String path,
-}) {
-  if (value is num) {
-    return value.toDouble();
-  }
-
-  throw FormatException('Expected a number at $path.');
 }

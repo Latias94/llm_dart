@@ -3,6 +3,7 @@ import 'package:llm_dart_transport/llm_dart_transport.dart';
 import 'openai_family_profile.dart';
 import 'openai_family_url_support.dart';
 import 'openai_json_support.dart';
+import 'openai_json_value.dart';
 import 'openai_non_text_model_support.dart';
 import 'openai_profile_boundary.dart';
 
@@ -27,15 +28,19 @@ final class OpenAIRawResponse {
     return OpenAIRawResponse(json);
   }
 
-  String? get id => _optionalString(json['id'], path: 'response.id');
+  String? get id => openAIOptionalString(json['id'], path: 'response.id');
 
   String? get status =>
-      _optionalString(json['status'], path: 'response.status');
+      openAIOptionalString(json['status'], path: 'response.status');
 
-  String? get model => _optionalString(json['model'], path: 'response.model');
+  String? get model =>
+      openAIOptionalString(json['model'], path: 'response.model');
 
   String? get outputText =>
-      _optionalString(json['output_text'], path: 'response.output_text') ??
+      openAIOptionalString(
+        json['output_text'],
+        path: 'response.output_text',
+      ) ??
       _extractOutputText(json);
 
   Object? operator [](String key) => json[key];
@@ -60,23 +65,35 @@ final class OpenAIResponseInputItemsList {
 
   factory OpenAIResponseInputItemsList.fromJson(Map<String, Object?> json) {
     return OpenAIResponseInputItemsList(
-      object:
-          _optionalString(json['object'], path: 'input_items.object') ?? 'list',
-      data: _requiredList(json['data'], path: 'input_items.data')
+      object: openAIOptionalString(
+            json['object'],
+            path: 'input_items.object',
+          ) ??
+          'list',
+      data: openAIRequiredList(json['data'], path: 'input_items.data')
           .asMap()
           .entries
           .map(
             (entry) => OpenAIResponseInputItem.fromJson(
-              _requiredMap(
+              openAIRequiredMap(
                 entry.value,
                 path: 'input_items.data[${entry.key}]',
               ),
             ),
           )
           .toList(growable: false),
-      firstId: _optionalString(json['first_id'], path: 'input_items.first_id'),
-      lastId: _optionalString(json['last_id'], path: 'input_items.last_id'),
-      hasMore: _requiredBool(json['has_more'], path: 'input_items.has_more'),
+      firstId: openAIOptionalString(
+        json['first_id'],
+        path: 'input_items.first_id',
+      ),
+      lastId: openAIOptionalString(
+        json['last_id'],
+        path: 'input_items.last_id',
+      ),
+      hasMore: openAIRequiredBool(
+        json['has_more'],
+        path: 'input_items.has_more',
+      ),
     );
   }
 
@@ -116,14 +133,17 @@ final class OpenAIResponseInputItem {
 
   factory OpenAIResponseInputItem.fromJson(Map<String, Object?> json) {
     return OpenAIResponseInputItem(
-      id: _requiredNonEmptyString(json['id'], path: 'input_item.id'),
-      type: _requiredNonEmptyString(json['type'], path: 'input_item.type'),
-      role: _optionalString(json['role'], path: 'input_item.role'),
-      content: _optionalList(json['content'], path: 'input_item.content')
+      id: openAIRequiredNonEmptyString(json['id'], path: 'input_item.id'),
+      type: openAIRequiredNonEmptyString(
+        json['type'],
+        path: 'input_item.type',
+      ),
+      role: openAIOptionalString(json['role'], path: 'input_item.role'),
+      content: openAIOptionalList(json['content'], path: 'input_item.content')
           ?.asMap()
           .entries
           .map(
-            (entry) => _requiredMap(
+            (entry) => openAIRequiredMap(
               entry.value,
               path: 'input_item.content[${entry.key}]',
             ),
@@ -149,10 +169,19 @@ final class OpenAIResponseDeleteResult {
 
   factory OpenAIResponseDeleteResult.fromJson(Map<String, Object?> json) {
     return OpenAIResponseDeleteResult(
-      id: _requiredNonEmptyString(json['id'], path: 'response_delete.id'),
-      object: _optionalString(json['object'], path: 'response_delete.object') ??
+      id: openAIRequiredNonEmptyString(
+        json['id'],
+        path: 'response_delete.id',
+      ),
+      object: openAIOptionalString(
+            json['object'],
+            path: 'response_delete.object',
+          ) ??
           'response.deleted',
-      deleted: _requiredBool(json['deleted'], path: 'response_delete.deleted'),
+      deleted: openAIRequiredBool(
+        json['deleted'],
+        path: 'response_delete.deleted',
+      ),
     );
   }
 
@@ -497,7 +526,7 @@ String? _extractOutputText(Map<String, Object?> json) {
   }
 
   for (final item in output) {
-    final itemJson = _optionalMap(item, path: 'response.output[]');
+    final itemJson = openAIOptionalMap(item, path: 'response.output[]');
     if (itemJson == null || itemJson['type'] != 'message') {
       continue;
     }
@@ -508,12 +537,15 @@ String? _extractOutputText(Map<String, Object?> json) {
     }
 
     for (final part in content) {
-      final partJson = _optionalMap(part, path: 'response.output[].content[]');
+      final partJson = openAIOptionalMap(
+        part,
+        path: 'response.output[].content[]',
+      );
       if (partJson == null || partJson['type'] != 'output_text') {
         continue;
       }
 
-      final text = _optionalString(
+      final text = openAIOptionalString(
         partJson['text'],
         path: 'response.output[].content[].text',
       );
@@ -524,90 +556,4 @@ String? _extractOutputText(Map<String, Object?> json) {
   }
 
   return null;
-}
-
-Map<String, Object?> _requiredMap(
-  Object? value, {
-  required String path,
-}) {
-  if (value is Map<String, Object?>) {
-    return value;
-  }
-
-  if (value is Map) {
-    return Map<String, Object?>.from(value);
-  }
-
-  throw FormatException('Expected a JSON object at $path.');
-}
-
-Map<String, Object?>? _optionalMap(
-  Object? value, {
-  required String path,
-}) {
-  if (value == null) {
-    return null;
-  }
-  return _requiredMap(value, path: path);
-}
-
-List<Object?> _requiredList(
-  Object? value, {
-  required String path,
-}) {
-  if (value is List<Object?>) {
-    return value;
-  }
-
-  if (value is List) {
-    return List<Object?>.from(value);
-  }
-
-  throw FormatException('Expected a list at $path.');
-}
-
-List<Object?>? _optionalList(
-  Object? value, {
-  required String path,
-}) {
-  if (value == null) {
-    return null;
-  }
-  return _requiredList(value, path: path);
-}
-
-String _requiredNonEmptyString(
-  Object? value, {
-  required String path,
-}) {
-  final string = _optionalString(value, path: path);
-  if (string == null || string.isEmpty) {
-    throw FormatException('Expected a non-empty string at $path.');
-  }
-  return string;
-}
-
-String? _optionalString(
-  Object? value, {
-  required String path,
-}) {
-  if (value == null) {
-    return null;
-  }
-
-  if (value is String) {
-    return value;
-  }
-
-  throw FormatException('Expected a string at $path.');
-}
-
-bool _requiredBool(
-  Object? value, {
-  required String path,
-}) {
-  if (value is bool) {
-    return value;
-  }
-  throw FormatException('Expected a bool at $path.');
 }

@@ -4,6 +4,7 @@ import 'package:llm_dart_transport/llm_dart_transport.dart';
 import 'openai_family_profile.dart';
 import 'openai_family_url_support.dart';
 import 'openai_json_support.dart';
+import 'openai_json_value.dart';
 import 'openai_non_text_model_support.dart';
 import 'openai_profile_boundary.dart';
 import 'openai_response_format.dart';
@@ -136,7 +137,7 @@ final class OpenAIAssistantToolResources {
       codeInterpreter: json['code_interpreter'] == null
           ? null
           : OpenAIAssistantCodeInterpreterResources.fromJson(
-              _requiredMap(
+              openAIRequiredMap(
                 json['code_interpreter'],
                 path: 'tool_resources.code_interpreter',
               ),
@@ -144,7 +145,7 @@ final class OpenAIAssistantToolResources {
       fileSearch: json['file_search'] == null
           ? null
           : OpenAIAssistantFileSearchResources.fromJson(
-              _requiredMap(
+              openAIRequiredMap(
                 json['file_search'],
                 path: 'tool_resources.file_search',
               ),
@@ -172,7 +173,7 @@ final class OpenAIAssistantCodeInterpreterResources {
     Map<String, Object?> json,
   ) {
     return OpenAIAssistantCodeInterpreterResources(
-      fileIds: _optionalStringList(
+      fileIds: openAIOptionalStringList(
         json['file_ids'],
         path: 'code_interpreter.file_ids',
       ),
@@ -199,11 +200,11 @@ final class OpenAIAssistantFileSearchResources {
     Map<String, Object?> json,
   ) {
     return OpenAIAssistantFileSearchResources(
-      vectorStoreIds: _optionalStringList(
+      vectorStoreIds: openAIOptionalStringList(
         json['vector_store_ids'],
         path: 'file_search.vector_store_ids',
       ),
-      vectorStores: _optionalList(
+      vectorStores: openAIOptionalList(
         json['vector_stores'],
         path: 'file_search.vector_stores',
       )
@@ -211,7 +212,7 @@ final class OpenAIAssistantFileSearchResources {
           .entries
           .map(
             (entry) => OpenAIAssistantVectorStoreRequest.fromJson(
-              _requiredMap(
+              openAIRequiredMap(
                 entry.value,
                 path: 'file_search.vector_stores[${entry.key}]',
               ),
@@ -246,17 +247,17 @@ final class OpenAIAssistantVectorStoreRequest {
     Map<String, Object?> json,
   ) {
     return OpenAIAssistantVectorStoreRequest(
-      fileIds: _optionalStringList(
+      fileIds: openAIOptionalStringList(
         json['file_ids'],
         path: 'vector_store.file_ids',
       ),
       chunkingStrategy: json['chunking_strategy'] == null
           ? null
-          : _requiredMap(
+          : openAIRequiredMap(
               json['chunking_strategy'],
               path: 'vector_store.chunking_strategy',
             ),
-      metadata: _optionalStringMap(
+      metadata: openAIOptionalStringMap(
         json['metadata'],
         path: 'vector_store.metadata',
       ),
@@ -305,7 +306,7 @@ final class OpenAIAssistantResponseFormat {
   }) : type = 'json_schema';
 
   factory OpenAIAssistantResponseFormat.fromJson(Map<String, Object?> json) {
-    final type = _requiredNonEmptyString(
+    final type = openAIRequiredNonEmptyString(
       json['type'],
       path: 'assistant.response_format.type',
     );
@@ -315,7 +316,7 @@ final class OpenAIAssistantResponseFormat {
       jsonSchema: rawJsonSchema == null
           ? null
           : _openAIJsonSchemaResponseFormatFromJson(
-              _requiredMap(
+              openAIRequiredMap(
                 rawJsonSchema,
                 path: 'assistant.response_format.json_schema',
               ),
@@ -369,22 +370,23 @@ final class OpenAIAssistant {
   });
 
   factory OpenAIAssistant.fromJson(Map<String, Object?> json) {
-    final rawTools = _optionalList(json['tools'], path: 'assistant.tools');
+    final rawTools = openAIOptionalList(json['tools'], path: 'assistant.tools');
     return OpenAIAssistant(
-      id: _requiredNonEmptyString(json['id'], path: 'assistant.id'),
-      object: _optionalString(json['object'], path: 'assistant.object') ??
+      id: openAIRequiredNonEmptyString(json['id'], path: 'assistant.id'),
+      object: openAIOptionalString(json['object'], path: 'assistant.object') ??
           'assistant',
-      createdAt: _requiredEpochSecondsDateTime(
+      createdAt: openAIRequiredEpochSecondsDateTime(
         json['created_at'],
         path: 'assistant.created_at',
       ),
-      name: _optionalString(json['name'], path: 'assistant.name'),
-      description: _optionalString(
+      name: openAIOptionalString(json['name'], path: 'assistant.name'),
+      description: openAIOptionalString(
         json['description'],
         path: 'assistant.description',
       ),
-      model: _requiredNonEmptyString(json['model'], path: 'assistant.model'),
-      instructions: _optionalString(
+      model:
+          openAIRequiredNonEmptyString(json['model'], path: 'assistant.model'),
+      instructions: openAIOptionalString(
         json['instructions'],
         path: 'assistant.instructions',
       ),
@@ -395,7 +397,7 @@ final class OpenAIAssistant {
               .entries
               .map(
                 (entry) => _assistantToolFromJson(
-                  _requiredMap(
+                  openAIRequiredMap(
                     entry.value,
                     path: 'assistant.tools[${entry.key}]',
                   ),
@@ -405,24 +407,24 @@ final class OpenAIAssistant {
       toolResources: json['tool_resources'] == null
           ? null
           : OpenAIAssistantToolResources.fromJson(
-              _requiredMap(
+              openAIRequiredMap(
                 json['tool_resources'],
                 path: 'assistant.tool_resources',
               ),
             ),
-      metadata: _optionalStringMap(
+      metadata: openAIOptionalStringMap(
         json['metadata'],
         path: 'assistant.metadata',
       ),
-      temperature: _optionalDouble(
+      temperature: openAIOptionalDouble(
         json['temperature'],
         path: 'assistant.temperature',
       ),
-      topP: _optionalDouble(json['top_p'], path: 'assistant.top_p'),
+      topP: openAIOptionalDouble(json['top_p'], path: 'assistant.top_p'),
       responseFormat: json['response_format'] == null
           ? null
           : OpenAIAssistantResponseFormat.fromJson(
-              _requiredMap(
+              openAIRequiredMap(
                 json['response_format'],
                 path: 'assistant.response_format',
               ),
@@ -591,23 +593,25 @@ final class OpenAIListAssistantsResponse {
 
   factory OpenAIListAssistantsResponse.fromJson(Map<String, Object?> json) {
     return OpenAIListAssistantsResponse(
-      object:
-          _optionalString(json['object'], path: 'assistants.object') ?? 'list',
-      data: _requiredList(json['data'], path: 'assistants.data')
+      object: openAIOptionalString(json['object'], path: 'assistants.object') ??
+          'list',
+      data: openAIRequiredList(json['data'], path: 'assistants.data')
           .asMap()
           .entries
           .map(
             (entry) => OpenAIAssistant.fromJson(
-              _requiredMap(
+              openAIRequiredMap(
                 entry.value,
                 path: 'assistants.data[${entry.key}]',
               ),
             ),
           )
           .toList(growable: false),
-      firstId: _optionalString(json['first_id'], path: 'assistants.first_id'),
-      lastId: _optionalString(json['last_id'], path: 'assistants.last_id'),
-      hasMore: _requiredBool(json['has_more'], path: 'assistants.has_more'),
+      firstId:
+          openAIOptionalString(json['first_id'], path: 'assistants.first_id'),
+      lastId: openAIOptionalString(json['last_id'], path: 'assistants.last_id'),
+      hasMore:
+          openAIRequiredBool(json['has_more'], path: 'assistants.has_more'),
     );
   }
 
@@ -635,11 +639,12 @@ final class OpenAIDeleteAssistantResponse {
 
   factory OpenAIDeleteAssistantResponse.fromJson(Map<String, Object?> json) {
     return OpenAIDeleteAssistantResponse(
-      id: _requiredNonEmptyString(json['id'], path: 'assistant_delete.id'),
-      object:
-          _optionalString(json['object'], path: 'assistant_delete.object') ??
-              'assistant.deleted',
-      deleted: _requiredBool(json['deleted'], path: 'assistant_delete.deleted'),
+      id: openAIRequiredNonEmptyString(json['id'], path: 'assistant_delete.id'),
+      object: openAIOptionalString(json['object'],
+              path: 'assistant_delete.object') ??
+          'assistant.deleted',
+      deleted:
+          openAIRequiredBool(json['deleted'], path: 'assistant_delete.deleted'),
     );
   }
 
@@ -994,56 +999,59 @@ final class OpenAIAssistantsClient {
   Future<OpenAIAssistant> importAssistant(Map<String, Object?> config) {
     return createAssistant(
       OpenAICreateAssistantRequest(
-        model: _requiredNonEmptyString(
+        model: openAIRequiredNonEmptyString(
           config['model'],
           path: 'assistant_import.model',
         ),
-        name: _optionalString(config['name'], path: 'assistant_import.name'),
-        description: _optionalString(
+        name:
+            openAIOptionalString(config['name'], path: 'assistant_import.name'),
+        description: openAIOptionalString(
           config['description'],
           path: 'assistant_import.description',
         ),
-        instructions: _optionalString(
+        instructions: openAIOptionalString(
           config['instructions'],
           path: 'assistant_import.instructions',
         ),
-        tools: _optionalList(config['tools'], path: 'assistant_import.tools')
-                ?.asMap()
-                .entries
-                .map(
-                  (entry) => _assistantToolFromJson(
-                    _requiredMap(
-                      entry.value,
-                      path: 'assistant_import.tools[${entry.key}]',
-                    ),
-                  ),
-                )
-                .toList(growable: false) ??
-            const [],
+        tools:
+            openAIOptionalList(config['tools'], path: 'assistant_import.tools')
+                    ?.asMap()
+                    .entries
+                    .map(
+                      (entry) => _assistantToolFromJson(
+                        openAIRequiredMap(
+                          entry.value,
+                          path: 'assistant_import.tools[${entry.key}]',
+                        ),
+                      ),
+                    )
+                    .toList(growable: false) ??
+                const [],
         toolResources: config['tool_resources'] == null
             ? null
             : OpenAIAssistantToolResources.fromJson(
-                _requiredMap(
+                openAIRequiredMap(
                   config['tool_resources'],
                   path: 'assistant_import.tool_resources',
                 ),
               ),
         metadata: {
-          ...?_optionalStringMap(
+          ...?openAIOptionalStringMap(
             config['metadata'],
             path: 'assistant_import.metadata',
           ),
           'imported_at': DateTime.now().toUtc().toIso8601String(),
         },
-        temperature: _optionalDouble(
+        temperature: openAIOptionalDouble(
           config['temperature'],
           path: 'assistant_import.temperature',
         ),
-        topP: _optionalDouble(config['top_p'], path: 'assistant_import.top_p'),
+        topP: openAIOptionalDouble(config['top_p'],
+            path: 'assistant_import.top_p'),
         responseFormat: config['response_format'] == null
             ? null
             : OpenAIAssistantResponseFormat.fromJson(
-                _requiredMap(
+                openAIRequiredMap(
                   config['response_format'],
                   path: 'assistant_import.response_format',
                 ),
@@ -1083,7 +1091,7 @@ Map<String, Object?> _functionToolDefinitionToJson(
 }
 
 OpenAIAssistantTool _assistantToolFromJson(Map<String, Object?> json) {
-  final rawType = _requiredNonEmptyString(
+  final rawType = openAIRequiredNonEmptyString(
     json['type'],
     path: 'assistant_tool.type',
   );
@@ -1091,15 +1099,15 @@ OpenAIAssistantTool _assistantToolFromJson(Map<String, Object?> json) {
     OpenAIAssistantToolType.codeInterpreter =>
       const OpenAIAssistantCodeInterpreterTool(),
     OpenAIAssistantToolType.fileSearch => OpenAIAssistantFileSearchTool(
-        maxNumResults: _optionalInt(
-          _optionalMap(json['file_search'],
+        maxNumResults: openAIOptionalInt(
+          openAIOptionalMap(json['file_search'],
               path: 'assistant_tool.file_search')?['max_num_results'],
           path: 'assistant_tool.file_search.max_num_results',
         ),
       ),
     OpenAIAssistantToolType.function => OpenAIAssistantFunctionTool(
         function: _functionToolDefinitionFromJson(
-          _requiredMap(json['function'], path: 'assistant_tool.function'),
+          openAIRequiredMap(json['function'], path: 'assistant_tool.function'),
         ),
       ),
     OpenAIAssistantToolType.raw => OpenAIAssistantRawTool(
@@ -1114,17 +1122,17 @@ FunctionToolDefinition _functionToolDefinitionFromJson(
 ) {
   final rawParameters = json['parameters'];
   return FunctionToolDefinition(
-    name: _requiredNonEmptyString(json['name'], path: 'function.name'),
-    description: _optionalString(
+    name: openAIRequiredNonEmptyString(json['name'], path: 'function.name'),
+    description: openAIOptionalString(
       json['description'],
       path: 'function.description',
     ),
     inputSchema: rawParameters == null
         ? ToolJsonSchema.object()
         : ToolJsonSchema.raw(
-            _requiredMap(rawParameters, path: 'function.parameters'),
+            openAIRequiredMap(rawParameters, path: 'function.parameters'),
           ),
-    strict: _optionalBool(json['strict'], path: 'function.strict'),
+    strict: openAIOptionalBool(json['strict'], path: 'function.strict'),
   );
 }
 
@@ -1132,15 +1140,15 @@ OpenAIJsonSchemaResponseFormat _openAIJsonSchemaResponseFormatFromJson(
   Map<String, Object?> json,
 ) {
   return OpenAIJsonSchemaResponseFormat(
-    name: _requiredNonEmptyString(json['name'], path: 'json_schema.name'),
-    description: _optionalString(
+    name: openAIRequiredNonEmptyString(json['name'], path: 'json_schema.name'),
+    description: openAIOptionalString(
       json['description'],
       path: 'json_schema.description',
     ),
     schema: json['schema'] == null
         ? null
-        : _requiredMap(json['schema'], path: 'json_schema.schema'),
-    strict: _optionalBool(json['strict'], path: 'json_schema.strict'),
+        : openAIRequiredMap(json['schema'], path: 'json_schema.schema'),
+    strict: openAIOptionalBool(json['strict'], path: 'json_schema.strict'),
   );
 }
 
@@ -1208,185 +1216,4 @@ String _requireNonEmptyId(
     );
   }
   return normalized;
-}
-
-Map<String, Object?> _requiredMap(
-  Object? value, {
-  required String path,
-}) {
-  if (value is Map<String, Object?>) {
-    return value;
-  }
-
-  if (value is Map) {
-    return Map<String, Object?>.from(value);
-  }
-
-  throw FormatException('Expected a JSON object at $path.');
-}
-
-Map<String, Object?>? _optionalMap(
-  Object? value, {
-  required String path,
-}) {
-  if (value == null) {
-    return null;
-  }
-  return _requiredMap(value, path: path);
-}
-
-List<Object?> _requiredList(
-  Object? value, {
-  required String path,
-}) {
-  if (value is List<Object?>) {
-    return value;
-  }
-
-  if (value is List) {
-    return List<Object?>.from(value);
-  }
-
-  throw FormatException('Expected a list at $path.');
-}
-
-List<Object?>? _optionalList(
-  Object? value, {
-  required String path,
-}) {
-  if (value == null) {
-    return null;
-  }
-  return _requiredList(value, path: path);
-}
-
-String _requiredNonEmptyString(
-  Object? value, {
-  required String path,
-}) {
-  final string = _optionalString(value, path: path);
-  if (string == null || string.isEmpty) {
-    throw FormatException('Expected a non-empty string at $path.');
-  }
-  return string;
-}
-
-String? _optionalString(
-  Object? value, {
-  required String path,
-}) {
-  if (value == null) {
-    return null;
-  }
-
-  if (value is String) {
-    return value;
-  }
-
-  throw FormatException('Expected a string at $path.');
-}
-
-int _requiredInt(
-  Object? value, {
-  required String path,
-}) {
-  if (value is int) {
-    return value;
-  }
-  if (value is num) {
-    return value.toInt();
-  }
-  throw FormatException('Expected an int at $path.');
-}
-
-int? _optionalInt(
-  Object? value, {
-  required String path,
-}) {
-  if (value == null) {
-    return null;
-  }
-  return _requiredInt(value, path: path);
-}
-
-double? _optionalDouble(
-  Object? value, {
-  required String path,
-}) {
-  if (value == null) {
-    return null;
-  }
-  if (value is num) {
-    return value.toDouble();
-  }
-  throw FormatException('Expected a number at $path.');
-}
-
-bool _requiredBool(
-  Object? value, {
-  required String path,
-}) {
-  if (value is bool) {
-    return value;
-  }
-  throw FormatException('Expected a bool at $path.');
-}
-
-bool? _optionalBool(
-  Object? value, {
-  required String path,
-}) {
-  if (value == null) {
-    return null;
-  }
-  return _requiredBool(value, path: path);
-}
-
-Map<String, String>? _optionalStringMap(
-  Object? value, {
-  required String path,
-}) {
-  if (value == null) {
-    return null;
-  }
-
-  final map = _requiredMap(value, path: path);
-  return map.map((key, value) {
-    if (value is! String) {
-      throw FormatException('Expected a string value at $path.$key.');
-    }
-    return MapEntry(key, value);
-  });
-}
-
-List<String>? _optionalStringList(
-  Object? value, {
-  required String path,
-}) {
-  if (value == null) {
-    return null;
-  }
-
-  final list = _requiredList(value, path: path);
-  return List<String>.generate(
-    list.length,
-    (index) {
-      final item = list[index];
-      if (item is! String) {
-        throw FormatException('Expected a string at $path[$index].');
-      }
-      return item;
-    },
-    growable: false,
-  );
-}
-
-DateTime _requiredEpochSecondsDateTime(
-  Object? value, {
-  required String path,
-}) {
-  return DateTime.fromMillisecondsSinceEpoch(
-    _requiredInt(value, path: path) * 1000,
-    isUtc: true,
-  );
 }

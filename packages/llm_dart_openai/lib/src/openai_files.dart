@@ -6,6 +6,7 @@ import 'package:llm_dart_transport/llm_dart_transport.dart';
 import 'openai_family_profile.dart';
 import 'openai_family_url_support.dart';
 import 'openai_json_support.dart';
+import 'openai_json_value.dart';
 import 'openai_non_text_model_support.dart';
 import 'openai_profile_boundary.dart';
 
@@ -68,24 +69,26 @@ final class OpenAIFileObject {
 
   factory OpenAIFileObject.fromJson(Map<String, Object?> json) {
     return OpenAIFileObject(
-      id: _requiredNonEmptyString(json['id'], path: 'file.id'),
-      object: _optionalString(json['object'], path: 'file.object') ?? 'file',
-      sizeBytes: _requiredInt(json['bytes'], path: 'file.bytes'),
-      createdAt: _requiredEpochSecondsDateTime(
+      id: openAIRequiredNonEmptyString(json['id'], path: 'file.id'),
+      object:
+          openAIOptionalString(json['object'], path: 'file.object') ?? 'file',
+      sizeBytes: openAIRequiredInt(json['bytes'], path: 'file.bytes'),
+      createdAt: openAIRequiredEpochSecondsDateTime(
         json['created_at'],
         path: 'file.created_at',
       ),
-      filename: _requiredNonEmptyString(
+      filename: openAIRequiredNonEmptyString(
         json['filename'],
         path: 'file.filename',
       ),
-      purpose: _requiredNonEmptyString(json['purpose'], path: 'file.purpose'),
-      status: _optionalString(json['status'], path: 'file.status'),
-      statusDetails: _optionalString(
+      purpose:
+          openAIRequiredNonEmptyString(json['purpose'], path: 'file.purpose'),
+      status: openAIOptionalString(json['status'], path: 'file.status'),
+      statusDetails: openAIOptionalString(
         json['status_details'],
         path: 'file.status_details',
       ),
-      expiresAt: _optionalEpochSecondsDateTime(
+      expiresAt: openAIOptionalEpochSecondsDateTime(
         json['expires_at'],
         path: 'file.expires_at',
       ),
@@ -125,22 +128,23 @@ final class OpenAIFileListResponse {
 
   factory OpenAIFileListResponse.fromJson(Map<String, Object?> json) {
     return OpenAIFileListResponse(
-      object:
-          _optionalString(json['object'], path: 'file_list.object') ?? 'list',
-      data: _requiredList(json['data'], path: 'file_list.data')
+      object: openAIOptionalString(json['object'], path: 'file_list.object') ??
+          'list',
+      data: openAIRequiredList(json['data'], path: 'file_list.data')
           .asMap()
           .entries
           .map((entry) {
         return OpenAIFileObject.fromJson(
-          _requiredMap(
+          openAIRequiredMap(
             entry.value,
             path: 'file_list.data[${entry.key}]',
           ),
         );
       }).toList(growable: false),
-      firstId: _optionalString(json['first_id'], path: 'file_list.first_id'),
-      lastId: _optionalString(json['last_id'], path: 'file_list.last_id'),
-      hasMore: _optionalBool(json['has_more'], path: 'file_list.has_more'),
+      firstId:
+          openAIOptionalString(json['first_id'], path: 'file_list.first_id'),
+      lastId: openAIOptionalString(json['last_id'], path: 'file_list.last_id'),
+      hasMore: openAIOptionalBool(json['has_more'], path: 'file_list.has_more'),
     );
   }
 
@@ -168,10 +172,11 @@ final class OpenAIFileDeleteResponse {
 
   factory OpenAIFileDeleteResponse.fromJson(Map<String, Object?> json) {
     return OpenAIFileDeleteResponse(
-      id: _requiredNonEmptyString(json['id'], path: 'file_delete.id'),
+      id: openAIRequiredNonEmptyString(json['id'], path: 'file_delete.id'),
       object:
-          _optionalString(json['object'], path: 'file_delete.object') ?? 'file',
-      deleted: _requiredBool(json['deleted'], path: 'file_delete.deleted'),
+          openAIOptionalString(json['object'], path: 'file_delete.object') ??
+              'file',
+      deleted: openAIRequiredBool(json['deleted'], path: 'file_delete.deleted'),
     );
   }
 
@@ -195,7 +200,7 @@ final class OpenAIFileDownload {
     this.headers = const {},
   });
 
-  String? get contentType => _lookupHeader(headers, 'content-type');
+  String? get contentType => openAILookupHeader(headers, 'content-type');
 
   int get sizeBytes => bytes.length;
 
@@ -435,7 +440,11 @@ final class OpenAIFilesClient {
 
     return OpenAIFileDownload(
       fileId: normalizedFileId,
-      bytes: _decodeBytes(response.body, path: 'file_download.body'),
+      bytes: openAIRequiredBytes(
+        response.body,
+        path: 'file_download.body',
+        sourceName: 'OpenAI file download',
+      ),
       headers: response.headers,
     );
   }
@@ -527,158 +536,4 @@ String _requireNonEmptyFileId(String fileId) {
   }
 
   return normalized;
-}
-
-Uint8List _decodeBytes(
-  Object? body, {
-  required String path,
-}) {
-  if (body is Uint8List) {
-    return body;
-  }
-
-  if (body is List<int>) {
-    return Uint8List.fromList(body);
-  }
-
-  if (body is List) {
-    final bytes = <int>[];
-    for (var index = 0; index < body.length; index += 1) {
-      bytes.add(_requiredInt(body[index], path: '$path[$index]'));
-    }
-    return Uint8List.fromList(bytes);
-  }
-
-  throw StateError(
-    'Expected OpenAI file download bytes at $path but received ${body.runtimeType}.',
-  );
-}
-
-Map<String, Object?> _requiredMap(
-  Object? value, {
-  required String path,
-}) {
-  if (value is Map<String, Object?>) {
-    return value;
-  }
-
-  if (value is Map) {
-    return Map<String, Object?>.from(value);
-  }
-
-  throw FormatException('Expected a JSON object at $path.');
-}
-
-List<Object?> _requiredList(
-  Object? value, {
-  required String path,
-}) {
-  if (value is List<Object?>) {
-    return value;
-  }
-
-  if (value is List) {
-    return List<Object?>.from(value);
-  }
-
-  throw FormatException('Expected a list at $path.');
-}
-
-String _requiredNonEmptyString(
-  Object? value, {
-  required String path,
-}) {
-  final normalized = _optionalString(value, path: path);
-  if (normalized == null || normalized.isEmpty) {
-    throw FormatException('Expected a non-empty string at $path.');
-  }
-
-  return normalized;
-}
-
-String? _optionalString(
-  Object? value, {
-  required String path,
-}) {
-  if (value == null) {
-    return null;
-  }
-
-  if (value is String) {
-    return value;
-  }
-
-  throw FormatException('Expected a string at $path.');
-}
-
-int _requiredInt(
-  Object? value, {
-  required String path,
-}) {
-  if (value is int) {
-    return value;
-  }
-
-  if (value is num) {
-    return value.toInt();
-  }
-
-  throw FormatException('Expected an int at $path.');
-}
-
-bool _requiredBool(
-  Object? value, {
-  required String path,
-}) {
-  if (value is bool) {
-    return value;
-  }
-
-  throw FormatException('Expected a bool at $path.');
-}
-
-bool? _optionalBool(
-  Object? value, {
-  required String path,
-}) {
-  if (value == null) {
-    return null;
-  }
-
-  if (value is bool) {
-    return value;
-  }
-
-  throw FormatException('Expected a bool at $path.');
-}
-
-DateTime _requiredEpochSecondsDateTime(
-  Object? value, {
-  required String path,
-}) {
-  return DateTime.fromMillisecondsSinceEpoch(
-    _requiredInt(value, path: path) * 1000,
-    isUtc: true,
-  );
-}
-
-DateTime? _optionalEpochSecondsDateTime(
-  Object? value, {
-  required String path,
-}) {
-  if (value == null) {
-    return null;
-  }
-
-  return _requiredEpochSecondsDateTime(value, path: path);
-}
-
-String? _lookupHeader(Map<String, String> headers, String name) {
-  for (final entry in headers.entries) {
-    if (entry.key.toLowerCase() == name.toLowerCase()) {
-      return entry.value;
-    }
-  }
-
-  return null;
 }
