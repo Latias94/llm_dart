@@ -17,17 +17,51 @@ final class PublishDryRunSummary {
 
 const publishDryRunTimeout = Duration(minutes: 3);
 const publishDryRunTerminationTimeout = Duration(seconds: 5);
+const publishDryRunCleanupAttempts = 5;
+const publishDryRunCleanupRetryDelay = Duration(milliseconds: 300);
 
-Future<void> main() async {
+final class PublishDryRunOptions {
+  final List<String> packageNames;
+  final Duration timeout;
+  final bool showHelp;
+
+  const PublishDryRunOptions({
+    required this.packageNames,
+    required this.timeout,
+    this.showHelp = false,
+  });
+}
+
+Future<void> main(List<String> arguments) async {
+  late final PublishDryRunOptions options;
+  try {
+    options = parsePublishDryRunOptions(arguments);
+  } on FormatException catch (error) {
+    stderr
+        .writeln('workspace publish dry-run argument error: ${error.message}');
+    stderr.writeln('');
+    stderr.write(publishDryRunUsage);
+    exitCode = 64;
+    return;
+  }
+
+  if (options.showHelp) {
+    stdout.write(publishDryRunUsage);
+    return;
+  }
+
   final repoRoot = Directory.current.absolute;
   await generateWorkspacePubspecOverrides(repoRoot: repoRoot);
+  final packageNames = options.packageNames.isEmpty
+      ? publishableWorkspacePackages
+      : options.packageNames;
 
   stdout.writeln(
     'running workspace publish dry-runs for '
-    '${publishableWorkspacePackages.length} package(s)...',
+    '${packageNames.length} package(s)...',
   );
 
-  for (final packageName in publishableWorkspacePackages) {
+  for (final packageName in packageNames) {
     final packageDirectory = _resolvePackageDirectory(
       repoRoot: repoRoot,
       packageName: packageName,
@@ -58,6 +92,7 @@ Future<void> main() async {
         result = await runPublishDryRunProcess(
           workingDirectory,
           command: command,
+          timeout: options.timeout,
         );
       } on TimeoutException catch (error) {
         final duration = error.duration ?? publishDryRunTimeout;
@@ -144,17 +179,72 @@ Future<void> main() async {
         }
       }
     } finally {
-      if (workingDirectory.existsSync()) {
-        await workingDirectory.delete(recursive: true);
-      }
+      await cleanupPublishDryRunDirectory(workingDirectory);
     }
   }
 
   stdout.writeln('');
   stdout.writeln(
     'workspace publish dry-run passed for '
-    '${publishableWorkspacePackages.length} package(s).',
+    '${packageNames.length} package(s).',
   );
+}
+
+PublishDryRunOptions parsePublishDryRunOptions(List<String> arguments) {
+  final packageNames = <String>[];
+  var timeout = publishDryRunTimeout;
+  var showHelp = false;
+
+  for (final argument in arguments) {
+    switch (argument) {
+      case '-h' || '--help':
+        showHelp = true;
+      default:
+        if (argument.startsWith('--package=')) {
+          final packageName = _readFlagValue(argument, '--package=');
+          if (!publishableWorkspacePackages.contains(packageName)) {
+            throw FormatException(
+              'unknown publishable package `$packageName`',
+            );
+          }
+          packageNames.add(packageName);
+          continue;
+        }
+        if (argument.startsWith('--timeout=')) {
+          timeout = _readPositiveSecondsDuration(argument, '--timeout=');
+          continue;
+        }
+        throw FormatException('unknown option `$argument`');
+    }
+  }
+
+  return PublishDryRunOptions(
+    packageNames: List.unmodifiable(packageNames),
+    timeout: timeout,
+    showHelp: showHelp,
+  );
+}
+
+String _readFlagValue(String argument, String prefix) {
+  final value = argument.substring(prefix.length).trim();
+  if (value.isEmpty) {
+    throw FormatException(
+      '`${prefix.substring(0, prefix.length - 1)}` needs a value',
+    );
+  }
+  return value;
+}
+
+Duration _readPositiveSecondsDuration(String argument, String prefix) {
+  final value = _readFlagValue(argument, prefix);
+  final seconds = int.tryParse(value);
+  if (seconds == null || seconds <= 0) {
+    throw FormatException(
+      '`${prefix.substring(0, prefix.length - 1)}` must be a positive number '
+      'of seconds',
+    );
+  }
+  return Duration(seconds: seconds);
 }
 
 final class PublishDryRunCommand {
@@ -168,7 +258,7 @@ final class PublishDryRunCommand {
 
   String get commandText => [
         executable,
-        ...arguments,
+        ...resolveToolArguments(executable, arguments),
       ].join(' ');
 }
 
@@ -253,8 +343,9 @@ Future<ProcessResult> runPublishDryRunProcess(
 }) async {
   final process = await Process.start(
     resolveToolExecutable(command.executable),
-    command.arguments,
+    resolveToolArguments(command.executable, command.arguments),
     workingDirectory: workingDirectory.path,
+    environment: buildToolProcessEnvironment(),
   );
   final stdoutFuture = process.stdout.transform(utf8.decoder).join();
   final stderrFuture = process.stderr.transform(utf8.decoder).join();
@@ -271,14 +362,17 @@ Future<ProcessResult> runPublishDryRunProcess(
       output[1],
     );
   } on TimeoutException {
-    process.kill();
-    await process.exitCode.timeout(
-      terminationTimeout,
-      onTimeout: () => -1,
+    await terminateProcessTree(
+      process,
+      timeout: terminationTimeout,
     );
     final output = await Future.wait([stdoutFuture, stderrFuture]).timeout(
       terminationTimeout,
       onTimeout: () => const ['', ''],
+    );
+    await process.exitCode.timeout(
+      terminationTimeout,
+      onTimeout: () => -1,
     );
     if (output[0].isNotEmpty || output[1].isNotEmpty) {
       writeProcessOutput(stdoutText: output[0], stderrText: output[1]);
@@ -289,6 +383,82 @@ Future<ProcessResult> runPublishDryRunProcess(
     );
   }
 }
+
+Future<void> terminateProcessTree(
+  Process process, {
+  Duration timeout = publishDryRunTerminationTimeout,
+}) async {
+  if (Platform.isWindows) {
+    await Process.run(
+      'taskkill',
+      ['/PID', '${process.pid}', '/T', '/F'],
+      stdoutEncoding: systemEncoding,
+      stderrEncoding: systemEncoding,
+    ).timeout(
+      timeout,
+      onTimeout: () => ProcessResult(
+        0,
+        -1,
+        '',
+        'taskkill timed out for process ${process.pid}',
+      ),
+    );
+  } else {
+    process.kill();
+  }
+
+  process.kill();
+
+  await process.exitCode.timeout(
+    timeout,
+    onTimeout: () => -1,
+  );
+}
+
+Future<void> cleanupPublishDryRunDirectory(
+  Directory directory, {
+  int attempts = publishDryRunCleanupAttempts,
+  Duration retryDelay = publishDryRunCleanupRetryDelay,
+}) async {
+  if (!directory.existsSync()) {
+    return;
+  }
+
+  Object? lastError;
+
+  for (var attempt = 1; attempt <= attempts; attempt++) {
+    try {
+      if (!directory.existsSync()) {
+        return;
+      }
+      await directory.delete(recursive: true);
+      return;
+    } catch (error) {
+      lastError = error;
+      if (attempt == attempts) {
+        break;
+      }
+      await Future<void>.delayed(retryDelay * attempt);
+    }
+  }
+
+  stderr.writeln(
+    'warning: could not delete publish dry-run temp directory '
+    '${directory.path}: $lastError',
+  );
+}
+
+const publishDryRunUsage = '''
+Usage: dart tool/run_workspace_publish_dry_run.dart [options]
+
+Runs pub publish dry-runs for publishable workspace packages from staged
+temporary package directories.
+
+Options:
+  --package=<name>  Run one publishable package. May be passed more than once.
+  --timeout=<secs>  Timeout for each package dry-run. Default: 180.
+  -h, --help        Print this help text.
+''';
 
 Directory _resolvePackageDirectory({
   required Directory repoRoot,

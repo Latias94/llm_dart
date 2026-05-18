@@ -1,4 +1,5 @@
 import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_ai/llm_dart_ai.dart' as ai;
 import 'package:test/test.dart';
 
 void main() {
@@ -784,7 +785,7 @@ void main() {
             delta: 'Hello',
           ),
         ),
-        throwsA(isA<StateError>()),
+        throwsA(isA<ai.ChatUiStreamError>()),
       );
 
       expect(
@@ -794,7 +795,7 @@ void main() {
             delta: '{}',
           ),
         ),
-        throwsA(isA<StateError>()),
+        throwsA(isA<ai.ChatUiStreamError>()),
       );
 
       expect(
@@ -803,7 +804,7 @@ void main() {
             toolCallId: 'missing-tool',
           ),
         ),
-        throwsA(isA<StateError>()),
+        throwsA(isA<ai.ChatUiStreamError>()),
       );
     });
   });

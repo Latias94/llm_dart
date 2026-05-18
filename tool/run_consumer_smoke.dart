@@ -43,7 +43,7 @@ final class ConsumerSmokeCommand {
 
   String get commandText => [
         executable,
-        ...arguments,
+        ...resolveToolArguments(executable, arguments),
       ].map(quoteCommandPart).join(' ');
 }
 
@@ -485,7 +485,7 @@ Future<ConsumerSmokeCommandResult> runConsumerSmokeCommand(
   final stopwatch = Stopwatch()..start();
   final process = await Process.start(
     executableForCurrentPlatform(command.executable),
-    command.arguments,
+    resolveToolArguments(command.executable, command.arguments),
     workingDirectory: command.workingDirectory.path,
     environment: environment,
   );
@@ -997,17 +997,15 @@ Future<void> writeTextFile(File file, String contents) async {
 Map<String, String> buildConsumerSmokeEnvironment(
   ConsumerSmokeOptions options,
 ) {
-  final environment = {
-    'DART_SUPPRESS_ANALYTICS': 'true',
-    'FLUTTER_SUPPRESS_ANALYTICS': 'true',
-  };
   final proxy = options.proxy;
-  if (proxy != null) {
-    environment['HTTP_PROXY'] = proxy;
-    environment['HTTPS_PROXY'] = proxy;
-  }
-
-  return Map.unmodifiable(environment);
+  return buildToolProcessEnvironment(
+    proxy == null
+        ? null
+        : {
+            'HTTP_PROXY': proxy,
+            'HTTPS_PROXY': proxy,
+          },
+  );
 }
 
 String pathForPubspec(FileSystemEntity entity) {

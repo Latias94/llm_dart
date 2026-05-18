@@ -209,7 +209,8 @@ Future<void> _collectAnthropicCodeExecutionReplayViolations({
       'ProviderReplayPromptPartOptions.',
     );
   }
-  if (!source.contains('providerOptions: part.providerOptions')) {
+  if (!source.contains('providerReplayMetadataFromOptions(') ||
+      !source.contains('part.providerOptions')) {
     violations.add(
       '$_anthropicCodeExecutionReplayPath: Anthropic code execution prompt '
       'replay parsing must read replay metadata from providerOptions.',

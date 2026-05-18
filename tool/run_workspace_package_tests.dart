@@ -19,7 +19,7 @@ final class WorkspacePackageTestTarget {
 
   String get commandText => [
         executable,
-        ...arguments,
+        ...resolveToolArguments(executable, arguments),
       ].join(' ');
 }
 
@@ -131,8 +131,9 @@ Future<ProcessResult> runWorkspacePackageTestProcess(
 }) {
   return Process.run(
     resolveToolExecutable(target.executable),
-    target.arguments,
+    resolveToolArguments(target.executable, target.arguments),
     workingDirectory: workingDirectory.path,
+    environment: buildToolProcessEnvironment(),
     stdoutEncoding: utf8,
     stderrEncoding: utf8,
   );

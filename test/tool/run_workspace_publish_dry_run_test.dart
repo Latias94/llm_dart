@@ -6,6 +6,46 @@ import 'package:test/test.dart';
 import '../../tool/run_workspace_publish_dry_run.dart';
 
 void main() {
+  group('parsePublishDryRunOptions', () {
+    test('uses all packages and default timeout by default', () {
+      final options = parsePublishDryRunOptions(const []);
+
+      expect(options.packageNames, isEmpty);
+      expect(options.timeout, publishDryRunTimeout);
+      expect(options.showHelp, isFalse);
+    });
+
+    test('accepts repeated package filters and custom timeout', () {
+      final options = parsePublishDryRunOptions(const [
+        '--package=llm_dart_provider',
+        '--package=llm_dart_ai',
+        '--timeout=600',
+      ]);
+
+      expect(options.packageNames, [
+        'llm_dart_provider',
+        'llm_dart_ai',
+      ]);
+      expect(options.timeout, const Duration(seconds: 600));
+    });
+
+    test('rejects unknown packages', () {
+      expect(
+        () => parsePublishDryRunOptions(const [
+          '--package=llm_dart_unknown',
+        ]),
+        throwsFormatException,
+      );
+    });
+
+    test('rejects invalid timeout values', () {
+      expect(
+        () => parsePublishDryRunOptions(const ['--timeout=0']),
+        throwsFormatException,
+      );
+    });
+  });
+
   group('packagePubspecRequiresFlutter', () {
     test('detects Flutter environment constraints', () {
       expect(
@@ -164,6 +204,21 @@ Future<void> main() {
       ),
       throwsA(isA<TimeoutException>()),
     );
+  });
+
+  test('cleanupPublishDryRunDirectory deletes staged directories', () async {
+    final directory = await Directory.systemTemp.createTemp(
+      'llm_dart_publish_cleanup_',
+    );
+    await File.fromUri(directory.uri.resolve('file.txt')).writeAsString('x');
+
+    await cleanupPublishDryRunDirectory(
+      directory,
+      attempts: 1,
+      retryDelay: Duration.zero,
+    );
+
+    expect(directory.existsSync(), isFalse);
   });
 
   group('publish dry-run output helpers', () {

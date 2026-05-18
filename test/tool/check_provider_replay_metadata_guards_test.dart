@@ -62,7 +62,7 @@ ProviderMetadata? providerReplayMetadataFromOptions(options) => null;
         'packages/llm_dart_anthropic/lib/src/anthropic_code_execution_replay.dart',
         '''
 final options = ProviderReplayPromptPartOptions.fromMetadata(metadata);
-final replay = providerOptions: part.providerOptions;
+final replay = providerReplayMetadataFromOptions(part.providerOptions);
 ''',
       );
 
@@ -102,7 +102,7 @@ final replay = providerOptions: part.providerOptions;
         'packages/llm_dart_anthropic/lib/src/anthropic_code_execution_replay.dart',
         '''
 final options = ProviderReplayPromptPartOptions.fromMetadata(metadata);
-final replay = providerOptions: part.providerOptions;
+final replay = providerReplayMetadataFromOptions(part.providerOptions);
 ''',
       );
       await _writeFile(

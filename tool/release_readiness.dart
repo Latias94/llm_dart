@@ -43,7 +43,7 @@ final class ReleaseReadinessStep {
 
   String get commandText => [
         executable,
-        ...arguments,
+        ...resolveToolArguments(executable, arguments),
       ].map(_quoteCommandPart).join(' ');
 }
 
@@ -190,7 +190,7 @@ Future<ReleaseReadinessStepResult> runReleaseReadinessStep(
   final stopwatch = Stopwatch()..start();
   final process = await Process.start(
     resolveToolExecutable(step.executable),
-    step.arguments,
+    resolveToolArguments(step.executable, step.arguments),
     workingDirectory: repoRoot.path,
     environment: environment,
   );
@@ -282,56 +282,56 @@ List<ReleaseReadinessStep> buildReleaseReadinessSteps(
     const ReleaseReadinessStep(
       name: 'Workspace dependency guards',
       executable: 'dart',
-      arguments: ['tool/check_workspace_dependency_guards.dart'],
+      arguments: ['run', 'tool/check_workspace_dependency_guards.dart'],
       failureHint:
           'Fix workspace package dependency direction or update the guard policy intentionally.',
     ),
     const ReleaseReadinessStep(
       name: 'Root package boundary guards',
       executable: 'dart',
-      arguments: ['tool/check_root_package_boundary_guards.dart'],
+      arguments: ['run', 'tool/check_root_package_boundary_guards.dart'],
       failureHint:
           'Move implementation ownership out of root compatibility areas or update the boundary guard intentionally.',
     ),
     const ReleaseReadinessStep(
       name: 'Core compatibility shell guard',
       executable: 'dart',
-      arguments: ['tool/check_core_compatibility_shell_guard.dart'],
+      arguments: ['run', 'tool/check_core_compatibility_shell_guard.dart'],
       failureHint:
           'Keep llm_dart_core as a compatibility shell and move new implementation ownership to focused packages.',
     ),
     const ReleaseReadinessStep(
       name: 'Provider replay metadata guard',
       executable: 'dart',
-      arguments: ['tool/check_provider_replay_metadata_guards.dart'],
+      arguments: ['run', 'tool/check_provider_replay_metadata_guards.dart'],
       failureHint:
           'Keep replay continuation metadata in explicit replay prompt options and approved provider replay helpers.',
     ),
     const ReleaseReadinessStep(
       name: 'Provider metadata namespace guard',
       executable: 'dart',
-      arguments: ['tool/check_provider_metadata_namespace_guards.dart'],
+      arguments: ['run', 'tool/check_provider_metadata_namespace_guards.dart'],
       failureHint:
           'Construct provider metadata through ProviderMetadata.forNamespace or package-local namespace helpers.',
     ),
     const ReleaseReadinessStep(
       name: 'Transport boundary guard',
       executable: 'dart',
-      arguments: ['tool/check_transport_boundary_guards.dart'],
+      arguments: ['run', 'tool/check_transport_boundary_guards.dart'],
       failureHint:
           'Keep transport-owned public names and avoid leaking provider legacy aliases through transport barrels.',
     ),
     const ReleaseReadinessStep(
       name: 'Test legacy-import guard',
       executable: 'dart',
-      arguments: ['tool/check_test_legacy_import_guards.dart'],
+      arguments: ['run', 'tool/check_test_legacy_import_guards.dart'],
       failureHint:
           'Move foundational tests to focused imports and keep legacy.dart imports only for explicit compatibility coverage.',
     ),
     const ReleaseReadinessStep(
       name: 'Example API guard',
       executable: 'dart',
-      arguments: ['tool/check_example_api_guards.dart'],
+      arguments: ['run', 'tool/check_example_api_guards.dart'],
       failureHint:
           'Keep default examples on model-first entrypoints and move legacy builder material to explicit compatibility appendices.',
     ),
@@ -354,7 +354,7 @@ List<ReleaseReadinessStep> buildReleaseReadinessSteps(
       const ReleaseReadinessStep(
         name: 'Workspace package tests',
         executable: 'dart',
-        arguments: ['tool/run_workspace_package_tests.dart'],
+        arguments: ['run', 'tool/run_workspace_package_tests.dart'],
         failureHint:
             'Fix failing focused package tests before release; root tests alone do not cover the split packages.',
       ),
@@ -363,6 +363,7 @@ List<ReleaseReadinessStep> buildReleaseReadinessSteps(
         name: 'Consumer smoke',
         executable: 'dart',
         arguments: [
+          'run',
           'tool/run_consumer_smoke.dart',
           if (options.proxy != null) '--proxy=${options.proxy}',
         ],
@@ -373,7 +374,7 @@ List<ReleaseReadinessStep> buildReleaseReadinessSteps(
       const ReleaseReadinessStep(
         name: 'Workspace publish dry-run',
         executable: 'dart',
-        arguments: ['tool/run_workspace_publish_dry_run.dart'],
+        arguments: ['run', 'tool/run_workspace_publish_dry_run.dart'],
         failureHint:
             'Fix package metadata, dependency resolution, or publish warnings before publishing.',
       ),
@@ -382,6 +383,7 @@ List<ReleaseReadinessStep> buildReleaseReadinessSteps(
         name: 'Pub version availability',
         executable: 'dart',
         arguments: [
+          'run',
           'tool/check_pub_version_availability.dart',
           if (options.proxy != null) '--proxy=${options.proxy}',
         ],
@@ -391,18 +393,18 @@ List<ReleaseReadinessStep> buildReleaseReadinessSteps(
   ];
 }
 
-Map<String, String>? buildReleaseReadinessEnvironment(
+Map<String, String> buildReleaseReadinessEnvironment(
   ReleaseReadinessOptions options,
 ) {
   final proxy = options.proxy;
-  if (proxy == null) {
-    return null;
-  }
-
-  return {
-    'HTTP_PROXY': proxy,
-    'HTTPS_PROXY': proxy,
-  };
+  return buildToolProcessEnvironment(
+    proxy == null
+        ? null
+        : {
+            'HTTP_PROXY': proxy,
+            'HTTPS_PROXY': proxy,
+          },
+  );
 }
 
 Future<String> readRootPackageVersion(Directory repoRoot) async {

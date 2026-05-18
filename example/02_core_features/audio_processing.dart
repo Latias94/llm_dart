@@ -215,7 +215,9 @@ Future<void> _demonstrateTranscription(
     final result = await core.transcribe(
       model: entry.model,
       audioBytes: sample.audioBytes,
-      mediaType: sample.mediaType,
+      mediaType: sample.mediaType ??
+          _defaultMediaTypeForPath(sample.outputPath) ??
+          'audio/mpeg',
       callOptions: entry.callOptions,
     );
 

@@ -68,23 +68,23 @@ void main() {
       );
       expect(
         consumerSmokeStep.commandText,
-        'dart tool/run_consumer_smoke.dart',
+        'dart --suppress-analytics run tool/run_consumer_smoke.dart',
       );
       expect(
         workspaceGuardStep.commandText,
-        'dart tool/check_workspace_dependency_guards.dart',
+        'dart --suppress-analytics run tool/check_workspace_dependency_guards.dart',
       );
       expect(
         providerMetadataNamespaceGuardStep.commandText,
-        'dart tool/check_provider_metadata_namespace_guards.dart',
+        'dart --suppress-analytics run tool/check_provider_metadata_namespace_guards.dart',
       );
       expect(
         providerReplayMetadataGuardStep.commandText,
-        'dart tool/check_provider_replay_metadata_guards.dart',
+        'dart --suppress-analytics run tool/check_provider_replay_metadata_guards.dart',
       );
       expect(
         publishDryRunStep.commandText,
-        'dart tool/run_workspace_publish_dry_run.dart',
+        'dart --suppress-analytics run tool/run_workspace_publish_dry_run.dart',
       );
     });
 
@@ -146,15 +146,20 @@ void main() {
       );
 
       expect(environment, isNotNull);
-      expect(environment!['HTTP_PROXY'], 'http://127.0.0.1:10809');
+      expect(environment['HTTP_PROXY'], 'http://127.0.0.1:10809');
       expect(environment['HTTPS_PROXY'], 'http://127.0.0.1:10809');
+      expect(environment['DART_SUPPRESS_ANALYTICS'], 'true');
+      expect(environment['FLUTTER_SUPPRESS_ANALYTICS'], 'true');
     });
 
-    test('returns null without proxy', () {
-      expect(
-        buildReleaseReadinessEnvironment(const ReleaseReadinessOptions()),
-        isNull,
+    test('suppresses analytics without proxy', () {
+      final environment = buildReleaseReadinessEnvironment(
+        const ReleaseReadinessOptions(),
       );
+
+      expect(environment['DART_SUPPRESS_ANALYTICS'], 'true');
+      expect(environment['FLUTTER_SUPPRESS_ANALYTICS'], 'true');
+      expect(environment, isNot(containsPair('HTTP_PROXY', anything)));
     });
   });
 
