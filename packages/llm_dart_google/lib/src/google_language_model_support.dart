@@ -1,5 +1,4 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
-import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'google_options.dart';
 import 'google_response_format.dart';
@@ -47,13 +46,6 @@ Map<String, String> buildGoogleRequestHeaders({
     ...settings.headers,
     if (extraHeaders != null) ...extraHeaders,
   };
-}
-
-Map<String, Object?> decodeGoogleJsonObject(Object? body) {
-  return JsonObjectResponseDecoder.decode(
-    body,
-    sourceName: 'Google',
-  );
 }
 
 String normalizeGoogleBaseUrl(String baseUrl) {

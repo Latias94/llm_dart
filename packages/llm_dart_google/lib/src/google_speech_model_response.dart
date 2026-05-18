@@ -1,8 +1,8 @@
 import 'dart:typed_data';
 
 import 'package:llm_dart_provider/llm_dart_provider.dart';
-import 'package:llm_dart_transport/llm_dart_transport.dart';
 
+import 'google_json_support.dart';
 import 'google_shared.dart';
 
 SpeechGenerationResult decodeGoogleSpeechResponse({
@@ -81,8 +81,8 @@ SpeechGenerationResult decodeGoogleSpeechResponse({
 }
 
 Map<String, Object?> decodeGoogleSpeechJsonObject(Object? body) {
-  return JsonObjectResponseDecoder.decode(
+  return decodeGoogleJsonObject(
     body,
-    sourceName: 'Google speech',
+    responseName: 'speech',
   );
 }

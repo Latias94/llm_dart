@@ -423,6 +423,32 @@ void main() {
         ),
       );
     });
+
+    test('speech response rejects non-object JSON bodies', () async {
+      final model = Google(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (_) async => const TransportResponse(
+            statusCode: 200,
+            body: '[]',
+          ),
+        ),
+      ).speechModel('gemini-2.5-flash-preview-tts');
+
+      await expectLater(
+        () => generateSpeech(
+          model: model,
+          text: 'Hello',
+        ),
+        throwsA(
+          isA<TransportResponseFormatException>().having(
+            (error) => error.message,
+            'message',
+            contains('Google speech API returned JSON that is not an object'),
+          ),
+        ),
+      );
+    });
   });
 }
 

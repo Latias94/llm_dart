@@ -140,7 +140,62 @@ Status: complete for the current breaking line.
 - Replay metadata flows back through explicit prompt-part provider options; raw
   provider metadata is not accepted as ordinary input customization.
 
+## Google Row
+
+Status: complete for the current breaking line.
+
+### Shared Contracts
+
+- Language generation supports Gemini `generateContent` and
+  `streamGenerateContent` behind the direct `LanguageModel` adapter.
+- Embeddings implement single and batch Google embedding routes with the direct
+  `EmbeddingModel` contract and Vercel-aligned max embedding count.
+- Images support both Imagen `predict` and Gemini `generateContent` image
+  output/editing through the direct `ImageModel` contract.
+- Speech supports Gemini TTS through the direct `SpeechModel` contract.
+- Streaming emits unified text, reasoning, reasoning-file, file, source,
+  tool-call, custom server-tool replay, response metadata, usage, warnings, and
+  raw-chunk events.
+- JSON response coercion now goes through `google_json_support.dart` for
+  language, embedding, image, and speech response bodies.
+
+### Provider-Owned Surface
+
+- Gemini thought signatures, reasoning files, server-side tool call/replay,
+  function-response replay, grounding metadata, cached content, safety settings,
+  and Google native tools remain provider-owned.
+- Imagen-specific image generation options and Gemini image editing options stay
+  on typed `GoogleImageOptions` instead of becoming shared image options.
+- Gemini TTS voice and multi-speaker policy remain `GoogleSpeechOptions`; shared
+  speech fields unsupported by Gemini TTS are warning-dropped.
+- Google transcription remains deferred because there is no implemented Google
+  transcription adapter in this breaking line.
+
+### Shared Option Audit
+
+- Shared `responseFormat` maps to Google JSON schema response configuration and
+  conflicts with `GoogleGenerateTextOptions.responseFormat` by design.
+- Shared `reasoning` maps to Google thinking configuration for supported Gemini
+  model families.
+- `topK` is supported by Google language/speech generation where the underlying
+  Gemini route accepts it; it should stay a shared option, not a provider-only
+  escape hatch.
+- No new shared option belongs in `llm_dart_provider` from the Google row.
+  Current gaps are either already modeled as shared options or provider-owned.
+
+### Metadata Audit
+
+- Namespace is `google` for Google-owned provider metadata.
+- Response id/model/timestamp/headers live in `ModelResponseMetadata`.
+- Provider metadata retains Google response ids, model versions, usage metadata,
+  prompt feedback, grounding metadata, finish messages/reasons, thought
+  signatures, reasoning-file markers, function-response replay details, server
+  tool replay details, revised prompts, and TTS/image generation route details.
+- Replay metadata flows back through typed prompt-part provider options and
+  Google custom parts; raw provider metadata is not accepted as ordinary input
+  customization.
+
 ## First Follow-Up
 
-Use the same row format for Google, Anthropic, Ollama, ElevenLabs, and the
+Use the same row format for Anthropic, Ollama, ElevenLabs, and the
 OpenAI-compatible family.

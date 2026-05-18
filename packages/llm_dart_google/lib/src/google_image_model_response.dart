@@ -1,7 +1,7 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
-import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'google_image_model_transport.dart';
+import 'google_json_support.dart';
 import 'google_shared.dart';
 
 ImageGenerationResult decodeGoogleImageResponse({
@@ -172,8 +172,8 @@ ImageGenerationResult decodeGoogleGeminiImageResponse(
 }
 
 Map<String, Object?> decodeGoogleImageJsonObject(Object? body) {
-  return JsonObjectResponseDecoder.decode(
+  return decodeGoogleJsonObject(
     body,
-    sourceName: 'Google image',
+    responseName: 'image',
   );
 }

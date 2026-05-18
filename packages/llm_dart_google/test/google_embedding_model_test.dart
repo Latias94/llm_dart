@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'package:llm_dart_google/llm_dart_google.dart';
 import 'package:llm_dart_test/llm_dart_test.dart';
@@ -210,6 +212,26 @@ void main() {
           ),
         ),
       );
+    });
+
+    test('embedding response accepts string JSON bodies', () async {
+      final model = Google(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (_) async => TransportResponse(
+            statusCode: 200,
+            body: jsonEncode({
+              'embedding': {
+                'values': [0.1, 0.2, 0.3],
+              },
+            }),
+          ),
+        ),
+      ).embeddingModel('text-embedding-004');
+
+      final result = await embed(model: model, value: 'hello');
+
+      expect(result.embedding, [0.1, 0.2, 0.3]);
     });
   });
 }
