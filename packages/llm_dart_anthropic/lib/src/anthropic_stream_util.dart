@@ -1,5 +1,7 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import 'anthropic_metadata_support.dart';
+
 Map<String, Object?>? anthropicStreamAsMap(Object? value) {
   if (value is Map<String, Object?>) {
     return value;
@@ -57,31 +59,11 @@ Map<String, Object?>? mergeAnthropicStreamObjects(
 ProviderMetadata? anthropicStreamProviderMetadata(
   Map<String, Object?> values,
 ) {
-  final anthropicValues = <String, Object?>{};
-  for (final entry in values.entries) {
-    if (entry.value != null) {
-      anthropicValues[entry.key] = entry.value;
-    }
-  }
-
-  if (anthropicValues.isEmpty) {
-    return null;
-  }
-
-  return ProviderMetadata.forNamespace('anthropic', anthropicValues);
+  return anthropicProviderMetadata(values);
 }
 
 Map<String, Object?> anthropicStreamProviderMetadataValues(
   ProviderMetadata? metadata,
 ) {
-  final values = metadata?.values['anthropic'];
-  if (values is Map<String, Object?>) {
-    return values;
-  }
-
-  if (values is Map) {
-    return Map<String, Object?>.from(values);
-  }
-
-  return const {};
+  return anthropicProviderMetadataValues(metadata);
 }

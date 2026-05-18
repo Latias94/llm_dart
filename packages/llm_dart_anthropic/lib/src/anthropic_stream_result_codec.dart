@@ -1,5 +1,6 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import 'anthropic_metadata_support.dart';
 import 'anthropic_stream_state.dart';
 import 'anthropic_stream_util.dart';
 
@@ -31,7 +32,7 @@ final class AnthropicStreamResultCodec {
     state.responseModelId = anthropicStreamAsString(message['model']);
     state.rawFinishReason = anthropicStreamAsString(message['stop_reason']);
     state.rawUsage = anthropicStreamAsMap(message['usage']);
-    state.container = decodeContainer(
+    state.container = decodeAnthropicContainerMetadata(
       anthropicStreamAsMap(message['container']),
     );
 
@@ -71,9 +72,10 @@ final class AnthropicStreamResultCodec {
         anthropicStreamAsString(delta?['stop_reason']) ?? state.rawFinishReason;
     state.stopSequence =
         anthropicStreamAsString(delta?['stop_sequence']) ?? state.stopSequence;
-    state.container =
-        decodeContainer(anthropicStreamAsMap(delta?['container'])) ??
-            state.container;
+    state.container = decodeAnthropicContainerMetadata(
+          anthropicStreamAsMap(delta?['container']),
+        ) ??
+        state.container;
     state.contextManagement =
         anthropicStreamAsMap(chunk['context_management']) ??
             state.contextManagement;
@@ -83,9 +85,9 @@ final class AnthropicStreamResultCodec {
 
   FinishEvent decodeMessageStop(AnthropicMessagesStreamState state) {
     return FinishEvent(
-      finishReason: mapFinishReason(state.rawFinishReason),
+      finishReason: mapAnthropicStopReason(state.rawFinishReason),
       rawFinishReason: state.rawFinishReason,
-      usage: decodeUsage(state.rawUsage),
+      usage: decodeAnthropicUsage(state.rawUsage),
       providerMetadata: anthropicStreamProviderMetadata({
         'usage': state.rawUsage,
         'stopSequence': state.stopSequence,
@@ -93,52 +95,5 @@ final class AnthropicStreamResultCodec {
         'contextManagement': state.contextManagement,
       }),
     );
-  }
-
-  FinishReason mapFinishReason(String? rawReason) {
-    switch (rawReason) {
-      case 'pause_turn':
-      case 'end_turn':
-      case 'stop_sequence':
-        return FinishReason.stop;
-      case 'tool_use':
-        return FinishReason.toolCalls;
-      case 'max_tokens':
-      case 'model_context_window_exceeded':
-        return FinishReason.maxTokens;
-      case 'refusal':
-        return FinishReason.contentFilter;
-      default:
-        return FinishReason.other;
-    }
-  }
-
-  UsageStats? decodeUsage(Map<String, Object?>? usage) {
-    if (usage == null) {
-      return null;
-    }
-
-    final inputTokens = anthropicStreamAsInt(usage['input_tokens']);
-    final outputTokens = anthropicStreamAsInt(usage['output_tokens']);
-    return UsageStats(
-      inputTokens: inputTokens,
-      outputTokens: outputTokens,
-      totalTokens: (inputTokens ?? 0) + (outputTokens ?? 0),
-    );
-  }
-
-  Map<String, Object?>? decodeContainer(Map<String, Object?>? container) {
-    if (container == null) {
-      return null;
-    }
-
-    return {
-      if (anthropicStreamAsString(container['id']) != null)
-        'id': anthropicStreamAsString(container['id']),
-      if (anthropicStreamAsString(container['expires_at']) != null)
-        'expiresAt': anthropicStreamAsString(container['expires_at']),
-      if (container['skills'] != null)
-        'skills': normalizeJsonValue(container['skills']),
-    };
   }
 }
