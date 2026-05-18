@@ -61,7 +61,7 @@
 
 ## Provider Parity Matrix
 
-- [ ] Complete OpenAI parity row
+- [x] Complete OpenAI parity row
 - [ ] Complete Google parity row
 - [ ] Complete Anthropic parity row
 - [ ] Complete Ollama parity row

@@ -1,5 +1,4 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
-import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'openai_family_profile.dart';
 import 'openai_family_option_resolver.dart';
@@ -124,13 +123,6 @@ Map<String, String> buildOpenAIDefaultHeaders({
         'openai-project': project,
       ...settings.common.headers,
     },
-  );
-}
-
-Map<String, Object?> decodeOpenAIJsonObject(Object? body) {
-  return JsonObjectResponseDecoder.decode(
-    body,
-    sourceName: 'OpenAI',
   );
 }
 

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:llm_dart_openai/llm_dart_openai.dart';
 import 'package:llm_dart_test/llm_dart_test.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
@@ -281,7 +283,87 @@ void main() {
         ),
       );
     });
+
+    test('moderate accepts string JSON bodies', () async {
+      final moderation = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (_) async => TransportResponse(
+            statusCode: 200,
+            body: jsonEncode(_moderationResponseBody()),
+          ),
+        ),
+      ).moderation();
+
+      final result = await moderation.moderateText('Hello world');
+
+      expect(result.flagged, isFalse);
+      expect(result.categoryScores.harassment, 0.0);
+    });
+
+    test('moderate rejects non-object JSON bodies', () async {
+      final moderation = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (_) async => const TransportResponse(
+            statusCode: 200,
+            body: '[]',
+          ),
+        ),
+      ).moderation();
+
+      await expectLater(
+        () => moderation.moderateText('Hello world'),
+        throwsA(
+          isA<TransportResponseFormatException>().having(
+            (error) => error.message,
+            'message',
+            contains(
+              'OpenAI moderation API returned JSON that is not an object',
+            ),
+          ),
+        ),
+      );
+    });
   });
 }
 
 typedef _FakeTransportClient = FakeTransportClient;
+
+Map<String, Object?> _moderationResponseBody() {
+  return {
+    'id': 'modr_123',
+    'model': 'omni-moderation-latest',
+    'results': [
+      {
+        'flagged': false,
+        'categories': {
+          'hate': false,
+          'hate/threatening': false,
+          'harassment': false,
+          'harassment/threatening': false,
+          'self-harm': false,
+          'self-harm/intent': false,
+          'self-harm/instructions': false,
+          'sexual': false,
+          'sexual/minors': false,
+          'violence': false,
+          'violence/graphic': false,
+        },
+        'category_scores': {
+          'hate': 0.0,
+          'hate/threatening': 0.0,
+          'harassment': 0.0,
+          'harassment/threatening': 0.0,
+          'self-harm': 0.0,
+          'self-harm/intent': 0.0,
+          'self-harm/instructions': 0.0,
+          'sexual': 0.0,
+          'sexual/minors': 0.0,
+          'violence': 0.0,
+          'violence/graphic': 0.0,
+        },
+      },
+    ],
+  };
+}

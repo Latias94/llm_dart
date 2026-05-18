@@ -2,6 +2,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'openai_family_profile.dart';
+import 'openai_json_support.dart';
 import 'openai_non_text_model_support.dart';
 import 'openai_profile_boundary.dart';
 import 'openai_response_format.dart';

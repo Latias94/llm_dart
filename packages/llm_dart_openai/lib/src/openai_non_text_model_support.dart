@@ -1,5 +1,4 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
-import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'openai_family_profile.dart';
 
@@ -41,16 +40,6 @@ T? resolveOpenAIProviderOptions<T extends ProviderInvocationOptions>(
     callOptions.providerOptions,
     parameterName: parameterName,
     expectedTypeName: expectedTypeName,
-  );
-}
-
-Map<String, Object?> decodeOpenAIJsonObject(
-  Object? body, {
-  required String responseName,
-}) {
-  return JsonObjectResponseDecoder.decode(
-    body,
-    sourceName: 'OpenAI $responseName',
   );
 }
 

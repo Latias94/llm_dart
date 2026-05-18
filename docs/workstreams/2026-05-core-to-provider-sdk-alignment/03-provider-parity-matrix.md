@@ -87,8 +87,60 @@ Each provider row should record:
 - speech/transcription option support
 - known model-family policy
 
+## OpenAI Row
+
+Status: complete for the current breaking line.
+
+### Shared Contracts
+
+- Language generation supports Responses and Chat Completions routes behind one
+  `LanguageModel` adapter.
+- Embeddings, images, speech, and transcription implement the direct provider
+  contracts and expose response metadata through `ModelResponseMetadata`.
+- Streaming emits provider stream events with unified response metadata,
+  warnings, usage, finish reason, provider metadata, and explicit raw-chunk
+  opt-in.
+- Request body parsing follows the reference ownership split: provider package
+  owns OpenAI wire vocabulary; transport owns response-body JSON coercion.
+- JSON response coercion now goes through `openai_json_support.dart` for
+  language, embedding, image, transcription, files, assistants, moderation, and
+  Responses lifecycle helper clients.
+
+### Provider-Owned Surface
+
+- Responses API replay policy, stored item references, encrypted reasoning
+  content, `phase`, MCP/code-interpreter/file-search tools, and lifecycle
+  helper clients stay OpenAI-owned.
+- Chat Completions compatibility policy, reasoning-model request conversion,
+  OpenRouter online model rewrite, xAI/DeepSeek/OpenRouter profile options,
+  service tier, metadata support, and logprob handling stay OpenAI-family owned.
+- Files, moderation, assistants, and raw Responses lifecycle clients are native
+  helper clients. They should not be promoted into shared provider contracts
+  unless another provider exposes the same durable model.
+
+### Shared Option Audit
+
+- Shared `responseFormat` maps to OpenAI response-format policy and conflicts
+  with OpenAI-specific response format options by design.
+- Shared `reasoning` maps to OpenAI reasoning policy; provider-specific
+  reasoning effort overrides shared reasoning with a warning when applicable.
+- `topK` remains unsupported by OpenAI and should continue to warn or be
+  ignored according to the route/profile policy rather than become a fake
+  shared mapping.
+- No new shared option belongs in `llm_dart_provider` from the OpenAI row.
+  Current gaps are provider-owned or profile-owned.
+
+### Metadata Audit
+
+- Namespace is `openai` for OpenAI-owned provider metadata.
+- Response id/model/timestamp/headers live in `ModelResponseMetadata`.
+- Provider metadata retains Responses replay fields, output item ids, reasoning
+  encrypted content, annotations, image revised prompts and token details, and
+  transcription/image response details.
+- Replay metadata flows back through explicit prompt-part provider options; raw
+  provider metadata is not accepted as ordinary input customization.
+
 ## First Follow-Up
 
-Populate the OpenAI row first because it is the largest surface and the
-OpenAI-compatible family depends on it. Then use the same matrix fields for
-Google, Anthropic, Ollama, and ElevenLabs.
+Use the same row format for Google, Anthropic, Ollama, ElevenLabs, and the
+OpenAI-compatible family.

@@ -1,6 +1,7 @@
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'openai_family_profile.dart';
+import 'openai_json_support.dart';
 import 'openai_profile_boundary.dart';
 
 final class OpenAIModerationSettings {
@@ -322,7 +323,10 @@ final class OpenAIModerationClient {
     );
 
     return OpenAIModerationResponse.fromJson(
-      _decodeJsonObject(response.body),
+      decodeOpenAIJsonObject(
+        response.body,
+        responseName: 'moderation',
+      ),
     );
   }
 
@@ -440,21 +444,6 @@ Object _normalizeInput(Object input) {
     input,
     'input',
     'Expected moderation input to be a String or List<String>.',
-  );
-}
-
-Map<String, Object?> _decodeJsonObject(Object? body) {
-  if (body is Map<String, Object?>) {
-    return body;
-  }
-
-  if (body is Map) {
-    return Map<String, Object?>.from(body);
-  }
-
-  throw StateError(
-    'Expected an OpenAI moderation JSON object response but received '
-    '${body.runtimeType}.',
   );
 }
 
