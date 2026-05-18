@@ -1,4 +1,5 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
+import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'elevenlabs_options.dart';
 
@@ -21,6 +22,16 @@ String? lookupHeader(
   }
 
   return null;
+}
+
+Map<String, Object?> decodeElevenLabsJsonObject(
+  Object? body, {
+  required String responseName,
+}) {
+  return JsonObjectResponseDecoder.decode(
+    body,
+    sourceName: 'ElevenLabs $responseName',
+  );
 }
 
 ProviderMetadata? elevenLabsResponseMetadata(Map<String, String> headers) {

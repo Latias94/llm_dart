@@ -87,6 +87,48 @@ void main() {
       expect(result.single.accent, 'american');
       expect(result.single.availableForTiers, ['free', 'creator']);
     });
+
+    test('listVoices accepts string JSON bodies', () async {
+      final voices = ElevenLabs(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (_) async => const TransportResponse(
+            statusCode: 200,
+            body: '{"voices":[{"voice_id":"voice_123","name":"Rachel"}]}',
+          ),
+        ),
+      ).voices();
+
+      final result = await voices.listVoices();
+
+      expect(result, hasLength(1));
+      expect(result.single.id, 'voice_123');
+      expect(result.single.name, 'Rachel');
+    });
+
+    test('listVoices rejects non-object JSON bodies', () async {
+      final voices = ElevenLabs(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (_) async => const TransportResponse(
+            statusCode: 200,
+            body: '[]',
+          ),
+        ),
+      ).voices();
+
+      await expectLater(
+        voices.listVoices,
+        throwsA(
+          isA<TransportResponseFormatException>().having(
+            (error) => error.message,
+            'message',
+            contains(
+                'ElevenLabs voice catalog API returned JSON that is not an object'),
+          ),
+        ),
+      );
+    });
   });
 }
 

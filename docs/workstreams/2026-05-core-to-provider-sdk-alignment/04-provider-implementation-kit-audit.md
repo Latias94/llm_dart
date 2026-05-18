@@ -90,7 +90,7 @@ away from the provider that owns it.
 
 | Helper | Duplicate locations | Owner | Public status | Decision |
 | --- | --- | --- | --- | --- |
-| JSON object response coercion | OpenAI language/non-text, Google language/embedding/image/speech, Anthropic API/files/token count, Ollama language/embedding/catalog/stream | `llm_dart_transport` | Public transport utility, not provider-utils | Use `JsonObjectResponseDecoder` behind provider-named wrappers so providers keep readable diagnostics while parsing/error normalization lives in one module. |
+| JSON object response coercion | OpenAI language/non-text, Google language/embedding/image/speech, Anthropic API/files/token count, Ollama language/embedding/catalog/stream, ElevenLabs transcription/voice catalog | `llm_dart_transport` | Public transport utility, not provider-utils | Use `JsonObjectResponseDecoder` behind provider-named wrappers so providers keep readable diagnostics while parsing/error normalization lives in one module. |
 | SSE JSON chunk parsing | OpenAI, Google, Anthropic stream adapters; transport tests already cover SSE framing | `llm_dart_transport` | Public transport utility | Keep provider stream codecs responsible for provider event vocabulary; transport owns byte/SSE/JSON frame mechanics. |
 | UTF-8 stream decoding | Transport stream helpers and streaming tests | `llm_dart_transport` | Public transport utility | Keep shared; providers should not hand-roll split-codepoint handling. |
 | Multipart body construction | OpenAI image/transcription/files, Anthropic files, ElevenLabs transcription | `llm_dart_transport` | Public transport utility | Keep shared builder; provider request modules still own field names and required form policy. |
@@ -107,18 +107,34 @@ away from the provider that owns it.
   `decodeOllamaJsonObject`) as the provider-facing seam while deleting their
   duplicated `jsonDecode` and map coercion implementation.
 - Migrated OpenAI language/non-text, Google language/embedding/image/speech,
-  Anthropic API, and Ollama API JSON body parsing to the transport helper.
-- Left ElevenLabs JSON body parsing local for now because voice catalog and
-  transcription response parsing still mix response-body coercion with
-  package-specific validation paths. That should be revisited after the
-  ElevenLabs parity row.
+  Anthropic API, Ollama API, and ElevenLabs transcription/voice catalog JSON
+  body parsing to the transport helper.
+- Kept ElevenLabs field validation local while separating response-body
+  coercion behind `decodeElevenLabsJsonObject`, matching the provider-named
+  wrapper pattern used by the other providers.
 - Added transport-level tests for generic maps, non-string keys, and non-object
   JSON responses so the shared helper has its own contract.
 
+## Provider Utils Decision
+
+Keep `llm_dart_provider_utils` deferred for now.
+
+`repo-ref/ai` centralizes JSON parsing, response handlers, form-data helpers,
+and stream parsing in `packages/provider-utils`. The Dart split already has a
+more precise owner for the proven mechanics:
+
+- `llm_dart_transport` owns response-body coercion, multipart bodies, SSE, and
+  UTF-8 stream mechanics.
+- Provider packages own field validation, route policy, provider option
+  conflicts, response metadata names, and product-specific helper clients.
+
+Do not create an internal predecessor package yet. The current deep helpers can
+live in transport without forcing a new shallow module. Revisit a public
+`llm_dart_provider_utils` package only when external provider authors need a
+stable helper contract that is not transport-specific.
+
 ## Follow-Up Candidates
 
-- Migrate ElevenLabs JSON body coercion after separating response-body coercion
-  from voice/transcription field validation.
 - Audit whether OpenAI moderation and assistant/file local response coercion can
   reuse the OpenAI non-text wrapper without making those clients depend on
   language-model support modules.

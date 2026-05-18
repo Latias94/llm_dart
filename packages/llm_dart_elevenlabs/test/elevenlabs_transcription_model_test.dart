@@ -188,6 +188,55 @@ void main() {
         ),
       );
     });
+
+    test('transcription response accepts string JSON bodies', () async {
+      final model = ElevenLabs(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (_) async => const TransportResponse(
+            statusCode: 200,
+            body: '{"text":"hello","language_code":"en"}',
+          ),
+        ),
+      ).transcriptionModel('scribe_v1');
+
+      final result = await transcribe(
+        model: model,
+        audioBytes: utf8.encode('abc'),
+        mediaType: 'audio/mpeg',
+      );
+
+      expect(result.text, 'hello');
+      expect(result.language, 'en');
+    });
+
+    test('transcription response rejects non-object JSON bodies', () async {
+      final model = ElevenLabs(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (_) async => const TransportResponse(
+            statusCode: 200,
+            body: '[]',
+          ),
+        ),
+      ).transcriptionModel('scribe_v1');
+
+      await expectLater(
+        () => transcribe(
+          model: model,
+          audioBytes: utf8.encode('abc'),
+          mediaType: 'audio/mpeg',
+        ),
+        throwsA(
+          isA<TransportResponseFormatException>().having(
+            (error) => error.message,
+            'message',
+            contains(
+                'ElevenLabs transcription API returned JSON that is not an object'),
+          ),
+        ),
+      );
+    });
   });
 }
 

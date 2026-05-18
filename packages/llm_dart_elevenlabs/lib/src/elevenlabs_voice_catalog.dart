@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'elevenlabs_shared.dart';
@@ -106,7 +104,10 @@ final class ElevenLabsVoiceCatalogClient {
       ),
     );
 
-    final json = _decodeJsonObject(response.body);
+    final json = decodeElevenLabsJsonObject(
+      response.body,
+      responseName: 'voice catalog',
+    );
     return _requiredList(json['voices'], path: 'voices')
         .asMap()
         .entries
@@ -119,27 +120,6 @@ final class ElevenLabsVoiceCatalogClient {
       );
     }).toList(growable: false);
   }
-}
-
-Map<String, Object?> _decodeJsonObject(Object? body) {
-  if (body is Map<String, Object?>) {
-    return body;
-  }
-
-  if (body is Map) {
-    return Map<String, Object?>.from(body);
-  }
-
-  if (body is String) {
-    final decoded = jsonDecode(body);
-    if (decoded is Map) {
-      return Map<String, Object?>.from(decoded);
-    }
-  }
-
-  throw StateError(
-    'Expected an ElevenLabs voice catalog JSON object but received ${body.runtimeType}.',
-  );
 }
 
 Map<String, Object?> _requiredMap(

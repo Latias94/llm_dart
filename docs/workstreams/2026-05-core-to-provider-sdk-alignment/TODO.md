@@ -56,7 +56,7 @@
 - [x] Audit media type, file data, base64, and multipart helper duplication
 - [x] Audit stream helper duplication across SSE, NDJSON, and UTF-8 stream
   decoding
-- [ ] Decide whether `llm_dart_provider_utils` remains deferred or receives an
+- [x] Decide whether `llm_dart_provider_utils` remains deferred or receives an
   internal-only predecessor
 
 ## Provider Parity Matrix
