@@ -81,10 +81,10 @@
 
 ## Compatibility And Migration
 
-- [ ] Inventory root facade exports and compatibility exports
-- [ ] Inventory `llm_dart_core` exports by owner package
-- [ ] Decide final `ModelRegistry` posture: adapt, deprecate, or remove
-- [ ] Decide final `llm_dart_core` posture: freeze, staged removal, or long
+- [x] Inventory root facade exports and compatibility exports
+- [x] Inventory `llm_dart_core` exports by owner package
+- [x] Decide final `ModelRegistry` posture: adapt, deprecate, or remove
+- [x] Decide final `llm_dart_core` posture: freeze, staged removal, or long
   compatibility shell
 - [ ] Write before/after migration examples for the final breaking line
 - [ ] Update example and consumer smoke expectations
