@@ -251,7 +251,75 @@ Status: complete for the current breaking line.
   Anthropic replay helper types; raw provider metadata is not accepted as
   ordinary input customization.
 
+## Ollama Row
+
+Status: complete for the current breaking line.
+
+### Reference Posture
+
+- `repo-ref/ai` does not include a first-party Ollama provider package. Its
+  provider docs point to community providers, so this row aligns Ollama against
+  the shared provider contracts and `provider-utils` ownership split rather
+  than a first-party wire implementation.
+- The Dart package intentionally keeps direct HTTP integration in-tree because
+  local model catalog behavior, binary image resolution, and Ollama sampling
+  policy are product-specific enough to stay provider-owned.
+
+### Shared Contracts
+
+- Language generation supports Ollama `/api/chat` behind the direct
+  `LanguageModel` adapter.
+- Embeddings support Ollama `/api/embed` behind the direct `EmbeddingModel`
+  adapter. `maxEmbeddingsPerCall` remains unknown because Ollama does not
+  publish a stable shared batch limit.
+- Streaming decodes Ollama NDJSON chunks through transport UTF-8 mechanics and
+  emits unified response metadata, reasoning, text, tool-call, finish, usage,
+  provider metadata, and raw-chunk events.
+- Shared JSON schema `responseFormat` maps to Ollama `format`. Unsupported
+  shared response-format decoration fields warn and are dropped.
+- Shared reasoning maps only to Ollama's boolean `think` toggle. Shared
+  reasoning effort and budget are warning-dropped because Ollama has no
+  compatible budget contract.
+- JSON response coercion goes through `decodeOllamaJsonObject` in
+  `ollama_api.dart`, preserving provider-readable diagnostics while
+  `llm_dart_transport` owns parsing and object coercion.
+
+### Provider-Owned Surface
+
+- Local model catalog support (`/api/tags`) remains an Ollama-native helper and
+  should not become a shared model registry contract.
+- Binary/image prompt resolution remains provider-owned through
+  `OllamaBinaryResolver` because Ollama expects base64 image payloads while the
+  shared prompt contract can carry bytes, data URLs, and remote URLs.
+- Ollama native sampling and runtime options such as `num_ctx`, `num_gpu`,
+  `num_thread`, `num_batch`, `numa`, `keep_alive`, `raw`, and `reasoning`
+  remain typed provider options.
+- Image generation, speech, and transcription remain deferred for Ollama in
+  this breaking line.
+
+### Shared Option Audit
+
+- `temperature`, `topP`, `topK`, `maxOutputTokens`, `seed`, and
+  `stopSequences` map to Ollama chat `options`.
+- `presencePenalty` and `frequencyPenalty` remain unsupported shared options
+  for this provider and warn rather than silently pretending to map to an
+  Ollama-specific equivalent.
+- Provider `reasoning` overrides shared `options.reasoning` with an explicit
+  compatibility warning.
+- No new shared option belongs in `llm_dart_provider` from the Ollama row.
+  Current gaps are provider-owned local runtime controls.
+
+### Metadata Audit
+
+- Namespace is `ollama` for Ollama-owned provider metadata.
+- Response model and timestamp live in `ModelResponseMetadata`; Ollama chat
+  responses do not expose a durable response id.
+- Provider metadata retains created-at text, done reason, total/load/eval
+  durations, prompt/eval duration counters, and embedding timing counters.
+- Ollama has no replay metadata model comparable to OpenAI item ids, Google
+  thought signatures, or Anthropic server-tool/file ids. Raw provider metadata
+  is therefore observational only and not accepted as input customization.
+
 ## First Follow-Up
 
-Use the same row format for Ollama, ElevenLabs, and the OpenAI-compatible
-family.
+Use the same row format for ElevenLabs and the OpenAI-compatible family.

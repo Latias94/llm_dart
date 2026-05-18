@@ -64,7 +64,7 @@
 - [x] Complete OpenAI parity row
 - [x] Complete Google parity row
 - [x] Complete Anthropic parity row
-- [ ] Complete Ollama parity row
+- [x] Complete Ollama parity row
 - [ ] Complete ElevenLabs parity row
 - [ ] Complete OpenAI-compatible provider family parity row
 - [ ] Identify provider-specific gaps that should stay provider-owned

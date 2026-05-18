@@ -2,6 +2,9 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'ollama_api.dart';
+import 'ollama_chat_request_codec.dart';
+import 'ollama_chat_response_codec.dart';
+import 'ollama_chat_stream_codec.dart';
 import 'ollama_language_model_request.dart';
 import 'ollama_language_model_response.dart';
 import 'ollama_language_model_stream.dart';
@@ -47,16 +50,16 @@ final class OllamaLanguageModel
         settings: settings,
       );
 
-  get _requestCodec => buildOllamaChatRequestCodec(
+  OllamaChatRequestCodec get _requestCodec => buildOllamaChatRequestCodec(
         modelId: modelId,
         settings: settings,
       );
 
-  get _responseCodec => buildOllamaChatResponseCodec(
+  OllamaChatResponseCodec get _responseCodec => buildOllamaChatResponseCodec(
         modelId: modelId,
       );
 
-  get _streamCodec => buildOllamaChatStreamCodec(
+  OllamaChatStreamCodec get _streamCodec => buildOllamaChatStreamCodec(
         responseCodec: _responseCodec,
       );
 
