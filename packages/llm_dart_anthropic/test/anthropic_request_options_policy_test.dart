@@ -1,7 +1,9 @@
 import 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
 import 'package:llm_dart_anthropic/src/anthropic_beta_feature_inference.dart';
+import 'package:llm_dart_anthropic/src/anthropic_prompt_blocks.dart';
 import 'package:llm_dart_anthropic/src/anthropic_thinking_policy.dart';
 import 'package:llm_dart_anthropic/src/anthropic_token_count_request_projection.dart';
+import 'package:llm_dart_anthropic/src/anthropic_tool_configuration.dart';
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:test/test.dart';
 
@@ -79,26 +81,44 @@ void main() {
         betaFeatures: betaFeatures,
         warnings: warnings,
       );
-      inference.collectBodyFeatures(
-        body: const {
-          'messages': [
-            {
-              'content': [
-                {
-                  'cache_control': {
-                    'type': 'ephemeral',
-                  },
-                },
-                {
-                  'source': {
-                    'type': 'file',
-                    'file_id': 'file_123',
-                  },
-                },
-              ],
-            },
-          ],
-        },
+      final prompt = const AnthropicPromptBlockEncoder().encode(
+        [
+          UserPromptMessage(
+            parts: [
+              TextPromptPart(
+                'Cached prompt',
+                providerOptions: AnthropicPromptPartOptions(
+                  cacheControl: AnthropicCacheControl.ephemeral(),
+                ),
+              ),
+              FilePromptPart(
+                mediaType: 'application/pdf',
+                data: FileProviderReferenceData(
+                  ProviderReference({'anthropic': 'file_123'}),
+                ),
+              ),
+            ],
+          ),
+        ],
+        warnings: warnings,
+      );
+      final toolConfiguration = resolveAnthropicToolConfiguration(
+        tools: [
+          FunctionToolDefinition(
+            name: 'weather',
+            inputSchema: ToolJsonSchema.object(),
+          ),
+        ],
+        nativeTools: const [],
+        toolChoice: null,
+        deferredToolNames: const [],
+        toolsCacheControl: const AnthropicCacheControl.ephemeral(),
+        warnings: warnings,
+      );
+
+      betaFeatures.addAll(prompt.betaFeatures);
+      betaFeatures.addAll(toolConfiguration.betaFeatures);
+      inference.collectProviderOptionFeatures(
         providerOptions: const AnthropicGenerateTextOptions(
           mcpServers: [
             AnthropicMcpServer.url(

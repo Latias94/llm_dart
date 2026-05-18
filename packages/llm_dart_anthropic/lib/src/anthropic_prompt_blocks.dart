@@ -1,17 +1,21 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import 'anthropic_beta_features.dart';
 import 'anthropic_content_encoder.dart';
 import 'anthropic_tool_replay_encoder.dart';
 
 final class AnthropicEncodedPrompt {
   final List<Map<String, Object?>> system;
   final List<Map<String, Object?>> messages;
+  final List<String> betaFeatures;
 
   AnthropicEncodedPrompt({
     required List<Map<String, Object?>> system,
     required List<Map<String, Object?>> messages,
+    List<String> betaFeatures = const [],
   })  : system = List.unmodifiable(system),
-        messages = List.unmodifiable(messages);
+        messages = List.unmodifiable(messages),
+        betaFeatures = List.unmodifiable(betaFeatures);
 }
 
 final class AnthropicPromptBlockEncoder {
@@ -67,7 +71,30 @@ final class AnthropicPromptBlockEncoder {
     return AnthropicEncodedPrompt(
       system: system,
       messages: messages,
+      betaFeatures: _inferPromptBetaFeatures(
+        system: system,
+        messages: messages,
+      ),
     );
+  }
+
+  List<String> _inferPromptBetaFeatures({
+    required List<Map<String, Object?>> system,
+    required List<Map<String, Object?>> messages,
+  }) {
+    final betaFeatures = <String>{};
+
+    if (containsAnthropicCacheControl(system) ||
+        containsAnthropicCacheControl(messages)) {
+      betaFeatures.add(anthropicExtendedCacheTtlBeta);
+    }
+
+    if (containsAnthropicFileSource(system) ||
+        containsAnthropicFileSource(messages)) {
+      betaFeatures.add(anthropicFilesApiBeta);
+    }
+
+    return sortedAnthropicBetaFeatures(betaFeatures);
   }
 
   List<_AnthropicPromptBlock> _groupPrompt(List<PromptMessage> prompt) {

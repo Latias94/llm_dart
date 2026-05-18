@@ -1,13 +1,7 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import 'anthropic_beta_features.dart';
 import 'anthropic_options.dart';
-import 'anthropic_request_json.dart';
-
-const String anthropicInterleavedThinkingBeta =
-    'interleaved-thinking-2025-05-14';
-const String anthropicMcpClientBeta = 'mcp-client-2025-04-04';
-const String anthropicExtendedCacheTtlBeta = 'extended-cache-ttl-2025-04-11';
-const String anthropicFilesApiBeta = 'files-api-2025-04-14';
 
 final class AnthropicBetaFeatureInference {
   const AnthropicBetaFeatureInference();
@@ -37,8 +31,7 @@ final class AnthropicBetaFeatureInference {
     betaFeatures.add(anthropicInterleavedThinkingBeta);
   }
 
-  void collectBodyFeatures({
-    required Map<String, Object?> body,
+  void collectProviderOptionFeatures({
     required AnthropicGenerateTextOptions providerOptions,
     required Set<String> betaFeatures,
   }) {
@@ -46,17 +39,9 @@ final class AnthropicBetaFeatureInference {
     if (mcpServers != null && mcpServers.isNotEmpty) {
       betaFeatures.add(anthropicMcpClientBeta);
     }
-
-    if (containsAnthropicCacheControl(body)) {
-      betaFeatures.add(anthropicExtendedCacheTtlBeta);
-    }
-
-    if (containsAnthropicFileSource(body)) {
-      betaFeatures.add(anthropicFilesApiBeta);
-    }
   }
 
   List<String> sorted(Set<String> betaFeatures) {
-    return betaFeatures.toList(growable: false)..sort();
+    return sortedAnthropicBetaFeatures(betaFeatures);
   }
 }

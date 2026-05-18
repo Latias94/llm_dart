@@ -60,6 +60,7 @@ final class AnthropicRequestOptionsEncoder {
       betaFeatures: betaFeatures,
       warnings: warnings,
     );
+    betaFeatures.addAll(prompt.betaFeatures);
 
     validateAnthropicThinkingCompatibleToolChoice(
       extendedThinking: thinkingSampling.extendedThinking,
@@ -74,6 +75,7 @@ final class AnthropicRequestOptionsEncoder {
       toolsCacheControl: providerOptions.toolsCacheControl,
       warnings: warnings,
     );
+    betaFeatures.addAll(toolConfiguration.betaFeatures);
 
     final body = <String, Object?>{
       'model': modelId,
@@ -107,8 +109,7 @@ final class AnthropicRequestOptionsEncoder {
         'tool_choice': toolConfiguration.toolChoice,
     };
 
-    _betaFeatureInference.collectBodyFeatures(
-      body: body,
+    _betaFeatureInference.collectProviderOptionFeatures(
       providerOptions: providerOptions,
       betaFeatures: betaFeatures,
     );

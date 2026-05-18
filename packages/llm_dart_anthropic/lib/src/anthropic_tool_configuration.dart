@@ -1,15 +1,18 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import 'anthropic_beta_features.dart';
 import 'anthropic_options.dart';
 import 'anthropic_tools.dart';
 
 final class AnthropicToolConfiguration {
   final List<Map<String, Object?>>? tools;
   final Map<String, Object?>? toolChoice;
+  final List<String> betaFeatures;
 
   const AnthropicToolConfiguration({
     this.tools,
     this.toolChoice,
+    this.betaFeatures = const [],
   });
 }
 
@@ -94,6 +97,11 @@ AnthropicToolConfiguration resolveAnthropicToolConfiguration({
     };
   }
 
+  final betaFeatures = <String>{};
+  if (toolsCacheControl != null && encodedTools.isNotEmpty) {
+    betaFeatures.add(anthropicExtendedCacheTtlBeta);
+  }
+
   final encodedToolChoice = switch (toolChoice) {
     null => null,
     AutoToolChoice() => const {
@@ -112,6 +120,7 @@ AnthropicToolConfiguration resolveAnthropicToolConfiguration({
   return AnthropicToolConfiguration(
     tools: encodedTools,
     toolChoice: encodedToolChoice,
+    betaFeatures: sortedAnthropicBetaFeatures(betaFeatures),
   );
 }
 
