@@ -2,6 +2,7 @@ library;
 
 export 'src/anthropic.dart';
 export 'src/anthropic_code_execution_replay.dart';
+export 'src/anthropic_file_types.dart';
 export 'src/anthropic_files.dart';
 export 'src/anthropic_language_model.dart';
 export 'src/anthropic_messages_codec.dart';
