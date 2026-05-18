@@ -1,5 +1,6 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import 'openai_responses_custom_projection.dart';
 import 'openai_responses_mcp_projection.dart';
 import 'openai_responses_source_projection.dart';
 import 'openai_streaming_support.dart';
@@ -167,21 +168,7 @@ List<ContentPart> decodeOpenAIResponsesMcpCallOutput(
 
 CustomContentPart? decodeOpenAIResponsesCustomOutput(
     Map<String, Object?> item) {
-  final type = _asString(item['type']);
-  if (type == null) {
-    return null;
-  }
-
-  return CustomContentPart(
-    kind: 'openai.$type',
-    data: item,
-    providerMetadata: openAIResponsesItemMetadata(
-      item,
-      extra: {
-        if (type == 'compaction') 'encryptedContent': item['encrypted_content'],
-      },
-    ),
-  );
+  return projectOpenAIResponsesCustomOutputItem(item)?.toContentPart();
 }
 
 ProviderMetadata? openAIResponsesResponseMetadata(

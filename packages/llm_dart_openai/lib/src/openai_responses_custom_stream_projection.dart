@@ -1,30 +1,17 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import 'openai_responses_custom_projection.dart';
 import 'openai_responses_stream_state.dart';
-import 'openai_responses_stream_util.dart';
 
 Iterable<LanguageModelStreamEvent> decodeOpenAIResponsesPartialImageChunk(
   Map<String, Object?> chunk,
   OpenAIResponsesStreamState state,
-  OpenAIResponsesStreamMetadataAdapter metadata,
 ) sync* {
-  yield CustomEvent(
-    kind: 'openai.image_generation_call.partial_image',
-    data: {
-      'item_id': openAIResponsesAsString(chunk['item_id']),
-      'output_index': openAIResponsesAsInt(chunk['output_index']),
-      'partial_image_b64': openAIResponsesAsString(
-        chunk['partial_image_b64'],
-      ),
-    },
-    providerMetadata: metadata.custom({
-      'responseId': state.responseId,
-      'itemId': openAIResponsesAsString(chunk['item_id']),
-      'itemType': 'image_generation_call.partial_image',
-      'outputIndex': openAIResponsesAsInt(chunk['output_index']),
-      'serviceTier': state.serviceTier,
-    }),
-  );
+  yield projectOpenAIResponsesPartialImageChunk(
+    chunk: chunk,
+    responseId: state.responseId,
+    serviceTier: state.serviceTier,
+  ).toEvent();
 }
 
 Iterable<LanguageModelStreamEvent> decodeOpenAIResponsesCustomOutputItemDone(
@@ -32,13 +19,14 @@ Iterable<LanguageModelStreamEvent> decodeOpenAIResponsesCustomOutputItemDone(
   Map<String, Object?> item,
   ProviderMetadata? providerMetadata,
 ) sync* {
-  if (itemType == null || itemType == 'reasoning') {
+  final projection = projectOpenAIResponsesCustomOutputItem(
+    item,
+    itemType: itemType,
+    providerMetadata: providerMetadata,
+  );
+  if (projection == null) {
     return;
   }
 
-  yield CustomEvent(
-    kind: 'openai.$itemType',
-    data: item,
-    providerMetadata: providerMetadata,
-  );
+  yield projection.toEvent();
 }

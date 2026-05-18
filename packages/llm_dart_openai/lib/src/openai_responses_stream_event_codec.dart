@@ -84,7 +84,7 @@ Iterable<LanguageModelStreamEvent> decodeOpenAIResponsesStreamChunk(
       yield* decodeOpenAIResponsesContentPartDoneChunk(chunk, state, metadata);
       return;
     case 'response.image_generation_call.partial_image':
-      yield* decodeOpenAIResponsesPartialImageChunk(chunk, state, metadata);
+      yield* decodeOpenAIResponsesPartialImageChunk(chunk, state);
       return;
     case 'response.output_item.done':
       yield* decodeOpenAIResponsesOutputItemDoneChunk(chunk, state, metadata);
