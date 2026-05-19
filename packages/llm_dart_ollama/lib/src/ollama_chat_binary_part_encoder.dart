@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'ollama_options.dart';
+import 'ollama_binary_resolver.dart';
 
 final class OllamaChatBinaryPartEncoder {
   final OllamaBinaryResolver? binaryResolver;

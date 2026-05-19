@@ -1,6 +1,6 @@
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
-import 'ollama_options.dart';
+import 'ollama_api_options.dart';
 
 String normalizeOllamaBaseUrl(String? baseUrl) {
   final normalized =

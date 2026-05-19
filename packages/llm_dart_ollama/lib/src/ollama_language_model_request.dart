@@ -1,7 +1,7 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'ollama_chat_request_codec.dart';
-import 'ollama_options.dart';
+import 'ollama_model_settings.dart';
 
 OllamaChatModelSettings resolveOllamaChatModelSettings(
   ProviderModelOptions settings,

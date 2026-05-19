@@ -6,7 +6,7 @@ import 'ollama_embedding_model_request.dart';
 import 'ollama_embedding_model_response.dart';
 import 'ollama_embedding_model_transport.dart';
 import 'ollama_model_describer.dart';
-import 'ollama_options.dart';
+import 'ollama_model_settings.dart';
 
 /// Package-owned modern Ollama embedding model surface.
 final class OllamaEmbeddingModel

@@ -2,10 +2,11 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'ollama_api.dart';
+import 'ollama_api_options.dart';
 import 'ollama_embedding_model.dart';
 import 'ollama_language_model.dart';
 import 'ollama_model_catalog.dart';
-import 'ollama_options.dart';
+import 'ollama_model_settings.dart';
 
 /// Creates an Ollama provider facade for local chat, embeddings, and catalog APIs.
 Ollama ollama({

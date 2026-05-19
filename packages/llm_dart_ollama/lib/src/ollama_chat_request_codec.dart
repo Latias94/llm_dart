@@ -3,7 +3,9 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'ollama_chat_binary_part_encoder.dart';
 import 'ollama_chat_prompt_projection.dart';
 import 'ollama_chat_request_options_policy.dart';
-import 'ollama_options.dart';
+import 'ollama_binary_resolver.dart';
+import 'ollama_generate_text_options.dart';
+import 'ollama_model_settings.dart';
 import 'ollama_tool_codec.dart';
 
 final class OllamaPreparedChatRequest {

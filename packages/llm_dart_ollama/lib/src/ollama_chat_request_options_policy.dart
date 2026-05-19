@@ -1,6 +1,6 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
-import 'ollama_options.dart';
+import 'ollama_generate_text_options.dart';
 
 final class OllamaChatRequestOptionsProjection {
   final Map<String, Object?> options;

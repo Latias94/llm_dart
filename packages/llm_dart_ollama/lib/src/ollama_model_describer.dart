@@ -1,6 +1,6 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
-import 'ollama_options.dart';
+import 'ollama_model_settings.dart';
 
 const List<String> _ollamaInvocationOptions = [
   'numCtx',

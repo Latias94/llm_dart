@@ -10,7 +10,7 @@ import 'ollama_language_model_response.dart';
 import 'ollama_language_model_stream.dart';
 import 'ollama_language_model_transport.dart';
 import 'ollama_model_describer.dart';
-import 'ollama_options.dart';
+import 'ollama_model_settings.dart';
 
 final class OllamaLanguageModel
     implements LanguageModel, CapabilityDescribedModel {
