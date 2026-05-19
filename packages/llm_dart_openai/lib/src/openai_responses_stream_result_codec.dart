@@ -1,9 +1,9 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import 'openai_responses_result_item_projection.dart';
 import 'openai_responses_stream_state.dart';
 import 'openai_responses_stream_util.dart';
 import 'openai_responses_support.dart';
-import 'openai_responses_tool_search_projection.dart';
 import 'openai_streaming_support.dart';
 
 GenerateTextResult decodeOpenAIResponsesGenerateResponse(
@@ -11,200 +11,15 @@ GenerateTextResult decodeOpenAIResponsesGenerateResponse(
   List<ModelWarning> warnings = const [],
 }) {
   _throwIfOpenAIResponsesError(response);
-
-  final content = <ContentPart>[];
-  final collectedLogprobs = <Object?>[];
-  final hostedToolSearchCallIds = <String>[];
-  final customToolNamesByCallId = <String, String>{};
-  var hasToolCalls = false;
-
-  for (final item in _openAIResponsesOutputItems(response)) {
-    final type = openAIResponsesAsString(item['type']);
-    if (type == 'message') {
-      collectOpenAIResponsesMessageOutputLogprobs(
-        item,
-        into: collectedLogprobs,
-      );
-      content.addAll(decodeOpenAIResponsesMessageOutput(item));
-      continue;
-    }
-
-    if (type == 'reasoning') {
-      content.addAll(decodeOpenAIResponsesReasoningOutput(item));
-      continue;
-    }
-
-    if (type == 'function_call') {
-      hasToolCalls = true;
-      final toolCall = decodeOpenAIResponsesFunctionCallOutput(item);
-      if (toolCall != null) {
-        content.add(toolCall);
-      }
-      continue;
-    }
-
-    if (type == 'custom_tool_call') {
-      hasToolCalls = true;
-      final toolCall = decodeOpenAIResponsesCustomToolCallOutput(item);
-      if (toolCall != null) {
-        content.add(toolCall);
-        customToolNamesByCallId[toolCall.toolCall.toolCallId] =
-            toolCall.toolCall.toolName;
-      }
-      continue;
-    }
-
-    if (type == 'custom_tool_call_output') {
-      hasToolCalls = true;
-      final toolCallId = openAIResponsesAsString(item['call_id']);
-      final toolResult = decodeOpenAIResponsesCustomToolCallOutputItem(
-        item,
-        fallbackToolName:
-            toolCallId == null ? null : customToolNamesByCallId[toolCallId],
-      );
-      if (toolResult != null) {
-        content.add(toolResult);
-      }
-      continue;
-    }
-
-    if (type == 'mcp_approval_request') {
-      hasToolCalls = true;
-      content.addAll(decodeOpenAIResponsesMcpApprovalRequestOutput(item));
-      continue;
-    }
-
-    if (type == 'mcp_call') {
-      hasToolCalls = true;
-      content.addAll(decodeOpenAIResponsesMcpCallOutput(item));
-      continue;
-    }
-
-    if (type == 'code_interpreter_call') {
-      hasToolCalls = true;
-      content.addAll(decodeOpenAIResponsesCodeInterpreterCallOutput(item));
-      continue;
-    }
-
-    if (type == 'image_generation_call') {
-      hasToolCalls = true;
-      content.addAll(decodeOpenAIResponsesImageGenerationCallOutput(item));
-      continue;
-    }
-
-    if (type == 'file_search_call') {
-      hasToolCalls = true;
-      content.addAll(decodeOpenAIResponsesFileSearchCallOutput(item));
-      continue;
-    }
-
-    if (type == 'web_search_call') {
-      hasToolCalls = true;
-      content.addAll(decodeOpenAIResponsesWebSearchCallOutput(item));
-      continue;
-    }
-
-    if (type == 'computer_call') {
-      hasToolCalls = true;
-      content.addAll(decodeOpenAIResponsesComputerUseCallOutput(item));
-      continue;
-    }
-
-    if (type == 'tool_search_call') {
-      hasToolCalls = true;
-      final toolCall = decodeOpenAIResponsesToolSearchCallOutput(item);
-      if (toolCall != null) {
-        content.add(toolCall);
-        if (toolCall.toolCall.providerExecuted) {
-          hostedToolSearchCallIds.add(toolCall.toolCall.toolCallId);
-        }
-      }
-      continue;
-    }
-
-    if (type == 'tool_search_output') {
-      hasToolCalls = true;
-      final toolResult = decodeOpenAIResponsesToolSearchOutput(
-        item,
-        fallbackToolCallId: openAIResponsesAsString(item['call_id']) == null
-            ? openAIResponsesTakeHostedToolSearchCallId(
-                hostedToolSearchCallIds,
-              )
-            : null,
-      );
-      if (toolResult != null) {
-        content.add(toolResult);
-      }
-      continue;
-    }
-
-    if (type == 'local_shell_call') {
-      hasToolCalls = true;
-      final toolCall = decodeOpenAIResponsesLocalShellCallOutput(item);
-      if (toolCall != null) {
-        content.add(toolCall);
-      }
-      continue;
-    }
-
-    if (type == 'local_shell_call_output') {
-      hasToolCalls = true;
-      final toolResult = decodeOpenAIResponsesLocalShellCallOutputItem(item);
-      if (toolResult != null) {
-        content.add(toolResult);
-      }
-      continue;
-    }
-
-    if (type == 'shell_call') {
-      hasToolCalls = true;
-      final toolCall = decodeOpenAIResponsesShellCallOutput(item);
-      if (toolCall != null) {
-        content.add(toolCall);
-      }
-      continue;
-    }
-
-    if (type == 'shell_call_output') {
-      hasToolCalls = true;
-      final toolResult = decodeOpenAIResponsesShellCallOutputItem(item);
-      if (toolResult != null) {
-        content.add(toolResult);
-      }
-      continue;
-    }
-
-    if (type == 'apply_patch_call') {
-      hasToolCalls = true;
-      final toolCall = decodeOpenAIResponsesApplyPatchCallOutput(item);
-      if (toolCall != null) {
-        content.add(toolCall);
-      }
-      continue;
-    }
-
-    if (type == 'apply_patch_call_output') {
-      hasToolCalls = true;
-      final toolResult = decodeOpenAIResponsesApplyPatchCallOutputItem(item);
-      if (toolResult != null) {
-        content.add(toolResult);
-      }
-      continue;
-    }
-
-    final customPart = decodeOpenAIResponsesCustomOutput(item);
-    if (customPart != null) {
-      content.add(customPart);
-    }
-  }
+  final projection = projectOpenAIResponsesResultContent(response);
 
   final rawFinishReason = openAIResponsesResponseFinishReason(response);
 
   return GenerateTextResult(
-    content: content,
+    content: projection.content,
     finishReason: mapOpenAIResponsesFinishReason(
       rawReason: rawFinishReason,
-      hasToolCalls: hasToolCalls,
+      hasToolCalls: projection.hasToolCalls,
       status: openAIResponsesAsString(response['status']),
     ),
     rawFinishReason: rawFinishReason,
@@ -218,7 +33,7 @@ GenerateTextResult decodeOpenAIResponsesGenerateResponse(
     ),
     providerMetadata: openAIResponsesResponseMetadata(
       response,
-      logprobs: collectedLogprobs,
+      logprobs: projection.logprobs,
     ),
     warnings: warnings,
   );
@@ -387,20 +202,4 @@ void _throwIfOpenAIResponsesError(Map<String, Object?> response) {
     '${type == null ? '' : ' (type: $type)'}'
     '${code == null ? '' : ' (code: $code)'}',
   );
-}
-
-List<Map<String, Object?>> _openAIResponsesOutputItems(
-  Map<String, Object?> response,
-) {
-  final output = openAIResponsesAsList(response['output']);
-  final items = <Map<String, Object?>>[];
-
-  for (final rawItem in output) {
-    final item = openAIResponsesAsMap(rawItem);
-    if (item != null) {
-      items.add(item);
-    }
-  }
-
-  return items;
 }
