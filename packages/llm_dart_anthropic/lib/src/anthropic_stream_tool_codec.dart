@@ -1,10 +1,9 @@
-import 'dart:convert';
-
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'anthropic_stream_state.dart';
-import 'anthropic_tool_result_projection.dart';
+import 'anthropic_stream_tool_projection.dart';
 import 'anthropic_stream_util.dart';
+import 'anthropic_tool_result_projection.dart';
 
 final class AnthropicStreamToolCodec {
   const AnthropicStreamToolCodec();
@@ -19,12 +18,15 @@ final class AnthropicStreamToolCodec {
       return;
     }
 
-    final input =
-        normalizeJsonValue(part['input']) ?? const <String, Object?>{};
-    final encodedInput = jsonEncode(input);
     final providerMetadata = anthropicStreamProviderMetadata({
       'caller': part['caller'],
     });
+    final projectedToolCall = projectAnthropicToolCall(
+      toolCallId: toolCallId,
+      toolName: toolName,
+      input: part['input'],
+      providerMetadata: providerMetadata,
+    );
 
     state.toolDescriptorsById[toolCallId] = AnthropicStreamToolDescriptor(
       toolName: toolName,
@@ -34,28 +36,7 @@ final class AnthropicStreamToolCodec {
       title: null,
     );
 
-    yield ToolInputStartEvent(
-      toolCallId: toolCallId,
-      toolName: toolName,
-      providerMetadata: providerMetadata,
-    );
-    yield ToolInputDeltaEvent(
-      toolCallId: toolCallId,
-      delta: encodedInput,
-      providerMetadata: providerMetadata,
-    );
-    yield ToolInputEndEvent(
-      toolCallId: toolCallId,
-      providerMetadata: providerMetadata,
-    );
-    yield ToolCallEvent(
-      toolCall: ToolCallContent(
-        toolCallId: toolCallId,
-        toolName: toolName,
-        input: input,
-      ),
-      providerMetadata: providerMetadata,
-    );
+    yield* emitAnthropicProjectedToolCallEvents(projectedToolCall);
   }
 
   Iterable<LanguageModelStreamEvent> startToolBlock({
@@ -70,10 +51,16 @@ final class AnthropicStreamToolCodec {
     required AnthropicMessagesStreamState state,
   }) sync* {
     final providerMetadata = anthropicStreamProviderMetadata(metadataValues);
-    final initialInputValue =
-        normalizeJsonValue(initialInput) ?? const <String, Object?>{};
-    final encodedInitialInput =
-        initialInput == null ? '' : jsonEncode(initialInputValue);
+    final projectedToolCall = projectAnthropicToolCall(
+      toolCallId: toolCallId,
+      toolName: toolName,
+      input: initialInput,
+      providerExecuted: providerExecuted,
+      isDynamic: isDynamic,
+      title: title,
+      providerMetadata: providerMetadata,
+      emitInputDeltaForNull: false,
+    );
 
     final toolState = AnthropicStreamToolBlockState(
       toolCallId: toolCallId,
@@ -84,8 +71,8 @@ final class AnthropicStreamToolCodec {
       providerMetadata: providerMetadata,
     );
 
-    if (encodedInitialInput.isNotEmpty) {
-      toolState.inputBuffer.write(encodedInitialInput);
+    if (projectedToolCall.encodedInput.isNotEmpty) {
+      toolState.inputBuffer.write(projectedToolCall.encodedInput);
     }
 
     state.contentBlocksByIndex[index] = toolState;
@@ -97,22 +84,7 @@ final class AnthropicStreamToolCodec {
       title: title,
     );
 
-    yield ToolInputStartEvent(
-      toolCallId: toolCallId,
-      toolName: toolName,
-      providerExecuted: providerExecuted,
-      isDynamic: isDynamic,
-      title: title,
-      providerMetadata: providerMetadata,
-    );
-
-    if (encodedInitialInput.isNotEmpty) {
-      yield ToolInputDeltaEvent(
-        toolCallId: toolCallId,
-        delta: encodedInitialInput,
-        providerMetadata: providerMetadata,
-      );
-    }
+    yield* emitAnthropicToolInputStartEvents(projectedToolCall);
   }
 
   Iterable<LanguageModelStreamEvent> finishToolBlock(
@@ -122,49 +94,27 @@ final class AnthropicStreamToolCodec {
     final encodedInput = contentBlock.inputBuffer.isEmpty
         ? '{}'
         : contentBlock.inputBuffer.toString();
-    final decodedInput = _tryDecodeJsonValue(encodedInput);
-
-    if (decodedInput.error != null) {
-      yield ToolInputErrorEvent(
-        toolCallId: contentBlock.toolCallId,
-        toolName: contentBlock.toolName,
-        input: encodedInput,
-        errorText: _formatInvalidToolInputError(
-          contentBlock.toolName,
-          decodedInput.error!,
-        ),
-        providerExecuted: contentBlock.providerExecuted,
-        isDynamic: contentBlock.isDynamic,
-        title: contentBlock.title,
-        providerMetadata: contentBlock.providerMetadata,
-      );
-      return;
-    }
-
-    yield ToolInputEndEvent(
+    final projection = projectAnthropicFinishedToolInput(
       toolCallId: contentBlock.toolCallId,
-      providerMetadata: contentBlock.providerMetadata,
-    );
-    yield ToolCallEvent(
-      toolCall: ToolCallContent(
-        toolCallId: contentBlock.toolCallId,
-        toolName: contentBlock.toolName,
-        input: decodedInput.value,
-        providerExecuted: contentBlock.providerExecuted,
-        isDynamic: contentBlock.isDynamic,
-        title: contentBlock.title,
-      ),
-      providerMetadata: contentBlock.providerMetadata,
-    );
-
-    state.toolDescriptorsById[contentBlock.toolCallId] =
-        AnthropicStreamToolDescriptor(
       toolName: contentBlock.toolName,
-      providerMetadata: contentBlock.providerMetadata,
+      encodedInput: encodedInput,
       providerExecuted: contentBlock.providerExecuted,
       isDynamic: contentBlock.isDynamic,
       title: contentBlock.title,
+      providerMetadata: contentBlock.providerMetadata,
     );
+    yield* projection.emitEvents();
+
+    if (projection.hasToolCall) {
+      state.toolDescriptorsById[contentBlock.toolCallId] =
+          AnthropicStreamToolDescriptor(
+        toolName: contentBlock.toolName,
+        providerMetadata: contentBlock.providerMetadata,
+        providerExecuted: contentBlock.providerExecuted,
+        isDynamic: contentBlock.isDynamic,
+        title: contentBlock.title,
+      );
+    }
   }
 
   Iterable<LanguageModelStreamEvent> emitImmediateToolResult({
@@ -182,106 +132,16 @@ final class AnthropicStreamToolCodec {
     }
 
     final descriptor = state.toolDescriptorsById[toolUseId];
-    final providerMetadata = anthropicStreamProviderMetadata({
-      ...anthropicStreamProviderMetadataValues(descriptor?.providerMetadata),
-      'blockType': blockType,
-    });
-    final toolName =
-        descriptor?.toolName ?? anthropicFallbackToolResultName(blockType);
-
-    yield ToolResultEvent(
-      toolResult: ToolResultContent(
-        toolCallId: toolUseId,
-        toolName: toolName,
-        toolOutput: anthropicToolResultOutput(blockType, contentBlock),
-        isDynamic: descriptor?.isDynamic ??
-            isAnthropicDynamicToolResultBlock(blockType),
-      ),
-      providerMetadata: providerMetadata,
+    yield* emitAnthropicImmediateToolResultEvents(
+      blockType: blockType,
+      contentBlock: contentBlock,
+      descriptorProviderMetadata: descriptor?.providerMetadata,
+      descriptorToolName: descriptor?.toolName,
+      descriptorIsDynamic: descriptor?.isDynamic,
     );
-
-    final customKind = anthropicToolResultCustomKind(blockType);
-    if (customKind != null) {
-      yield CustomEvent(
-        kind: customKind,
-        data: anthropicToolResultReplayPayload(
-          blockType: blockType,
-          block: contentBlock,
-          toolCallId: toolUseId,
-          toolName: toolName,
-        ),
-        providerMetadata: providerMetadata,
-      );
-    }
-
-    if (blockType == 'web_search_tool_result') {
-      final resultList = contentBlock['content'];
-      if (resultList is List) {
-        for (final item in resultList) {
-          final result = anthropicStreamAsMap(item);
-          final url = anthropicStreamAsString(result?['url']);
-          if (url == null) {
-            continue;
-          }
-
-          yield SourceEvent(
-            SourceReference(
-              kind: SourceReferenceKind.url,
-              sourceId: url,
-              uri: Uri.tryParse(url),
-              title: anthropicStreamAsString(result?['title']),
-              providerMetadata: anthropicStreamProviderMetadata({
-                'pageAge': anthropicStreamAsString(result?['page_age']),
-                'resultType': anthropicStreamAsString(result?['type']),
-              }),
-            ),
-          );
-        }
-      }
-    }
   }
 
   bool isImmediateToolResultBlock(String? blockType) {
     return isAnthropicToolResultBlockType(blockType);
   }
-
-  _DecodedJsonValue _tryDecodeJsonValue(String value) {
-    try {
-      return _DecodedJsonValue(
-        value: jsonDecode(value),
-      );
-    } on FormatException catch (error) {
-      return _DecodedJsonValue(
-        value: value,
-        error: error,
-      );
-    } catch (error) {
-      return _DecodedJsonValue(
-        value: value,
-        error: FormatException(error.toString()),
-      );
-    }
-  }
-
-  String _formatInvalidToolInputError(
-    String toolName,
-    FormatException error,
-  ) {
-    final message = error.message.trim();
-    if (message.isEmpty) {
-      return 'Invalid JSON tool arguments for "$toolName".';
-    }
-
-    return 'Invalid JSON tool arguments for "$toolName": $message';
-  }
-}
-
-final class _DecodedJsonValue {
-  final Object? value;
-  final FormatException? error;
-
-  const _DecodedJsonValue({
-    required this.value,
-    this.error,
-  });
 }
