@@ -1,5 +1,5 @@
 import 'openai_assistants_message_models.dart';
-import 'openai_assistants_models.dart';
+import 'openai_assistants_tool_resources_models.dart';
 import 'openai_json_value.dart';
 
 final class OpenAICreateThreadRequest {

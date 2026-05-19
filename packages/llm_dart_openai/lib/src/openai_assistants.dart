@@ -1,7 +1,9 @@
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
-import 'openai_assistants_models.dart';
+import 'openai_assistants_lifecycle_models.dart';
 import 'openai_assistants_thread_models.dart';
+import 'openai_assistants_tool_models.dart';
+import 'openai_assistants_tool_resources_models.dart';
 import 'openai_assistants_transport.dart';
 import 'openai_family_profile.dart';
 import 'openai_family_url_support.dart';
