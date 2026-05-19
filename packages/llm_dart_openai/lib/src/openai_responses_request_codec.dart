@@ -1,6 +1,7 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'openai_generate_text_options.dart';
+import 'openai_responses_mcp_approval_replay_projection.dart';
 import 'openai_responses_native_tool_context.dart';
 import 'openai_responses_request_body_projection.dart';
 import 'openai_responses_request_prompt_codec.dart';
@@ -46,6 +47,7 @@ final class OpenAIResponsesRequestCodec {
     final nativeToolContext = OpenAIResponsesNativeToolContext.fromBuiltInTools(
       providerOptions.builtInTools,
     );
+    final approvalState = OpenAIResponsesMcpApprovalReplayState();
 
     for (final message in prompt) {
       input.addAll(
@@ -55,6 +57,7 @@ final class OpenAIResponsesRequestCodec {
           systemMessageMode: context.systemMessageMode,
           store: context.store,
           hasConversation: context.hasConversation,
+          approvalState: approvalState,
           nativeToolContext: nativeToolContext,
         ),
       );

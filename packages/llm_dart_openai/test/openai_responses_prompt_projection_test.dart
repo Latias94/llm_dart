@@ -1,6 +1,7 @@
 import 'package:llm_dart_openai/llm_dart_openai.dart';
 import 'package:llm_dart_openai/src/openai_responses_assistant_replay_projection.dart';
 import 'package:llm_dart_openai/src/openai_responses_assistant_prompt_projection.dart';
+import 'package:llm_dart_openai/src/openai_responses_mcp_approval_replay_projection.dart';
 import 'package:llm_dart_openai/src/openai_responses_request_prompt_codec.dart';
 import 'package:llm_dart_openai/src/openai_responses_replay_policy.dart';
 import 'package:llm_dart_openai/src/openai_responses_tool_prompt_projection.dart';
@@ -437,6 +438,7 @@ void main() {
             store: true,
             hasConversation: false,
           ),
+          approvalState: OpenAIResponsesMcpApprovalReplayState(),
         ),
         [
           {
@@ -458,6 +460,7 @@ void main() {
             store: false,
             hasConversation: false,
           ),
+          approvalState: OpenAIResponsesMcpApprovalReplayState(),
         ),
         [
           {
@@ -466,6 +469,84 @@ void main() {
             'approve': true,
           },
         ],
+      );
+    });
+
+    test('deduplicates approval responses across tool prompt messages', () {
+      const projection = OpenAIResponsesToolPromptProjection();
+      final approvalState = OpenAIResponsesMcpApprovalReplayState();
+      final message = ToolPromptMessage(
+        toolName: 'mcp.create_short_url',
+        parts: const [
+          ToolApprovalResponsePromptPart(
+            approvalId: 'approval_1',
+            toolCallId: 'approval_1',
+            approved: true,
+          ),
+        ],
+      );
+
+      expect(
+        projection.encode(
+          message,
+          replayPolicy: const OpenAIResponsesReplayPolicy(
+            store: false,
+            hasConversation: false,
+          ),
+          approvalState: approvalState,
+        ),
+        [
+          {
+            'type': 'mcp_approval_response',
+            'approval_request_id': 'approval_1',
+            'approve': true,
+          },
+        ],
+      );
+
+      expect(
+        projection.encode(
+          message,
+          replayPolicy: const OpenAIResponsesReplayPolicy(
+            store: false,
+            hasConversation: false,
+          ),
+          approvalState: approvalState,
+        ),
+        isEmpty,
+      );
+    });
+
+    test('skips denied execution results that already map to approvals', () {
+      const projection = OpenAIResponsesToolPromptProjection();
+
+      expect(
+        projection.encode(
+          ToolPromptMessage(
+            toolName: 'mcp.create_short_url',
+            parts: [
+              ToolResultPromptPart(
+                toolCallId: 'approval_1',
+                toolName: 'mcp.create_short_url',
+                toolOutput: ExecutionDeniedToolOutput.withMetadata(
+                  reason: 'denied',
+                  providerMetadata: ProviderMetadata.forNamespace(
+                    'openai',
+                    {
+                      'approvalId': 'approval_1',
+                    },
+                  ),
+                ),
+              ),
+            ],
+          ),
+          replayPolicy: const OpenAIResponsesReplayPolicy(
+            store: false,
+            hasConversation: false,
+          ),
+          approvalState: OpenAIResponsesMcpApprovalReplayState(),
+        ),
+        isEmpty,
       );
     });
 
@@ -484,6 +565,7 @@ void main() {
             store: false,
             hasConversation: false,
           ),
+          approvalState: OpenAIResponsesMcpApprovalReplayState(),
         ),
         throwsA(
           isA<UnsupportedError>().having(

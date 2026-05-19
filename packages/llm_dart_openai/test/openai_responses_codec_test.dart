@@ -1545,6 +1545,52 @@ void main() {
       );
     });
 
+    test('deduplicates MCP approval responses across tool messages', () {
+      const codec = OpenAIResponsesCodec();
+
+      final request = codec.encodeRequest(
+        modelId: 'gpt-4.1-mini',
+        prompt: [
+          ToolPromptMessage(
+            toolName: 'mcp.create_short_url',
+            parts: const [
+              ToolApprovalResponsePromptPart(
+                approvalId: 'approval-1',
+                toolCallId: 'approval-1',
+                approved: true,
+              ),
+            ],
+          ),
+          ToolPromptMessage(
+            toolName: 'mcp.create_short_url',
+            parts: const [
+              ToolApprovalResponsePromptPart(
+                approvalId: 'approval-1',
+                toolCallId: 'approval-1',
+                approved: false,
+              ),
+            ],
+          ),
+        ],
+        tools: const [],
+        toolChoice: null,
+        options: const GenerateTextOptions(),
+        providerOptions: const OpenAIGenerateTextOptions(store: false),
+        stream: false,
+      );
+
+      expect(
+        request.body['input'],
+        [
+          {
+            'type': 'mcp_approval_response',
+            'approval_request_id': 'approval-1',
+            'approve': true,
+          },
+        ],
+      );
+    });
+
     test('decodes provider metadata needed for replay fidelity', () {
       const codec = OpenAIResponsesCodec();
 

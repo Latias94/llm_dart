@@ -2,6 +2,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'openai_generate_text_options.dart';
 import 'openai_responses_assistant_prompt_projection.dart';
+import 'openai_responses_mcp_approval_replay_projection.dart';
 import 'openai_responses_native_tool_context.dart';
 import 'openai_responses_prompt_limitations.dart';
 import 'openai_responses_replay_policy.dart';
@@ -26,6 +27,7 @@ final class OpenAIResponsesPromptCodec {
     required OpenAISystemMessageMode systemMessageMode,
     required bool store,
     required bool hasConversation,
+    OpenAIResponsesMcpApprovalReplayState? approvalState,
     OpenAIResponsesNativeToolContext nativeToolContext =
         OpenAIResponsesNativeToolContext.empty,
   }) {
@@ -79,11 +81,14 @@ final class OpenAIResponsesPromptCodec {
     }
 
     if (message is ToolPromptMessage) {
+      final effectiveApprovalState =
+          approvalState ?? OpenAIResponsesMcpApprovalReplayState();
       return OpenAIResponsesToolPromptProjection(
         toolCodec: toolCodec,
       ).encode(
         message,
         replayPolicy: replayPolicy,
+        approvalState: effectiveApprovalState,
         nativeToolContext: nativeToolContext,
       );
     }
