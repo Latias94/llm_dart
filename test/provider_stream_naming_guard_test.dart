@@ -272,8 +272,9 @@ void main() {
       final options = File(
         'packages/llm_dart_provider/lib/src/common/provider_options.dart',
       ).readAsStringSync();
-      final promptCodec = File(
-        'packages/llm_dart_provider/lib/src/serialization/prompt_json_codec.dart',
+      final promptPartCodec = File(
+        'packages/llm_dart_provider/lib/src/serialization/'
+        'prompt_part_json_codec.dart',
       ).readAsStringSync();
       final toolOutputCodec = File(
         'packages/llm_dart_provider/lib/src/serialization/'
@@ -283,7 +284,7 @@ void main() {
       expect(options, contains('ProviderReplayPromptPartOptions'));
       expect(options, contains('ProviderMetadata metadata'));
       expect(
-        promptCodec,
+        promptPartCodec,
         contains('Legacy prompt replay metadata is no longer supported'),
       );
       expect(
