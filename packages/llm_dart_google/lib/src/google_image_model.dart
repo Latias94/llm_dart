@@ -9,7 +9,7 @@ import 'google_image_model_options_resolution.dart';
 import 'google_image_model_response.dart';
 import 'google_image_model_transport.dart';
 import 'google_model_describer.dart';
-import 'google_options.dart';
+import 'google_model_settings.dart';
 
 final class GoogleImageModel implements ImageModel, CapabilityDescribedModel {
   final String apiKey;

@@ -5,7 +5,7 @@ import 'google_embedding_model_request.dart';
 import 'google_embedding_model_response.dart';
 import 'google_embedding_model_transport.dart';
 import 'google_model_describer.dart';
-import 'google_options.dart';
+import 'google_model_settings.dart';
 
 final class GoogleEmbeddingModel
     implements EmbeddingModel, CapabilityDescribedModel {

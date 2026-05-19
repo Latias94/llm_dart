@@ -4,7 +4,7 @@ import 'package:llm_dart_transport/llm_dart_transport.dart';
 import 'google_embedding_model.dart';
 import 'google_image_model.dart';
 import 'google_language_model.dart';
-import 'google_options.dart';
+import 'google_model_settings.dart';
 import 'google_speech_model.dart';
 
 /// Creates a Google provider facade.

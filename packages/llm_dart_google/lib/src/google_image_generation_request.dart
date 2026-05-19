@@ -1,8 +1,9 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'google_gemini_image_request.dart';
+import 'google_image_options.dart';
 import 'google_imagen_image_request.dart';
-import 'google_options.dart';
+import 'google_model_settings.dart';
 
 void validateGoogleImageGenerationRequest({
   required ImageGenerationRequest request,

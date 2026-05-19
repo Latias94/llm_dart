@@ -1,6 +1,7 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
-import 'google_options.dart';
+import 'google_image_options.dart';
+import 'google_model_settings.dart';
 
 GoogleImageModelSettings resolveGoogleImageModelSettings(
   ProviderModelOptions settings,

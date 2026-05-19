@@ -1,6 +1,7 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
-import 'google_options.dart';
+import 'google_embedding_options.dart';
+import 'google_model_settings.dart';
 
 GoogleEmbeddingModelSettings resolveGoogleEmbeddingModelSettings(
   ProviderModelOptions settings,

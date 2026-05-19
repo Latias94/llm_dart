@@ -7,7 +7,7 @@ import 'google_language_model_support.dart';
 import 'google_language_model_stream.dart';
 import 'google_language_model_transport.dart';
 import 'google_model_describer.dart';
-import 'google_options.dart';
+import 'google_model_settings.dart';
 
 final class GoogleLanguageModel
     implements LanguageModel, CapabilityDescribedModel {

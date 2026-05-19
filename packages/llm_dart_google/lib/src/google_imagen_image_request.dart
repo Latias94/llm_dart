@@ -1,7 +1,8 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import 'google_image_options.dart';
 import 'google_image_safety_settings.dart';
-import 'google_options.dart';
+import 'google_model_settings.dart';
 
 void validateGoogleImagenImageGenerationRequest({
   required ImageGenerationRequest request,

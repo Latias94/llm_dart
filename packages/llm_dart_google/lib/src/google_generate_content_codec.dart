@@ -1,9 +1,10 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'google_content_projection.dart';
+import 'google_generate_text_options.dart';
 import 'google_generation_config_encoder.dart';
 import 'google_language_model_policy.dart';
-import 'google_options.dart';
+import 'google_model_settings.dart';
 import 'google_tool_configuration.dart';
 
 final class GoogleGenerateContentRequest {

@@ -2,7 +2,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'google_generate_content_codec.dart';
 import 'google_language_model_support.dart';
-import 'google_options.dart';
+import 'google_model_settings.dart';
 
 GoogleGenerateContentRequest encodeGoogleLanguageModelRequest({
   required String modelId,

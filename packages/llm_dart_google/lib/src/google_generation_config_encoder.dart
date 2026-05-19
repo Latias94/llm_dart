@@ -1,7 +1,7 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import 'google_generate_text_options.dart';
 import 'google_language_model_policy.dart';
-import 'google_options.dart';
 import 'google_response_format.dart';
 
 final class GoogleGenerationConfigEncoder {

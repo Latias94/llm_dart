@@ -1,6 +1,6 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
-import 'google_options.dart';
+import 'google_generate_text_options.dart';
 
 const List<String> googleNativeToolFamilies = [
   'google_search',

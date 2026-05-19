@@ -1,7 +1,7 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'google_language_model_policy.dart';
-import 'google_options.dart';
+import 'google_model_settings.dart';
 
 ModelCapabilityProfile describeGoogleChatModel(
   String modelId, {

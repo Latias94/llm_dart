@@ -1,4 +1,4 @@
-import 'google_options.dart';
+import 'google_model_settings.dart';
 
 bool isGoogleGeminiImageModel(String modelId) {
   return modelId.toLowerCase().contains('gemini');
