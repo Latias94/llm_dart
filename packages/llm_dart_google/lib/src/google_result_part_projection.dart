@@ -1,9 +1,8 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'google_content_projection_support.dart';
-import 'google_file_projection.dart';
 import 'google_provider_metadata_support.dart';
-import 'google_server_tool_replay.dart';
+import 'google_result_non_text_part_projection.dart';
 import 'google_shared.dart';
 
 final class GoogleGenerateContentResultPartProjection {
@@ -58,60 +57,49 @@ final class GoogleGenerateContentResultPartProjector {
     );
 
     if (part case {'executableCode': final Object? executableCode}) {
-      final projectedToolCall = projectGoogleCodeExecutionToolCall(
+      yield* projectGoogleResultExecutableCodePart(
         tracker: _codeExecutionTracker,
         executableCode: executableCode,
-        providerMetadata: metadata,
+        metadata: metadata,
       );
-      yield googleProjectedToolCallContentPart(projectedToolCall);
       return;
     }
 
     if (part case {'codeExecutionResult': final Object? executionResult}) {
-      final projectedToolResult = projectGoogleCodeExecutionToolResult(
+      yield* projectGoogleResultCodeExecutionResultPart(
         tracker: _codeExecutionTracker,
         executionResult: executionResult,
-        providerMetadata: metadata,
+        metadata: metadata,
       );
-      yield googleProjectedToolResultContentPart(projectedToolResult);
       return;
     }
 
     if (part case {'functionCall': final Object? functionCallValue}) {
-      final functionCall = asMap(functionCallValue);
-      final projectedToolCall = projectGoogleFunctionToolCall(
-        functionCall: functionCall,
+      final projection = projectGoogleResultFunctionCallPart(
+        functionCallValue: functionCallValue,
         fallbackToolCallId: 'tool-$index',
-        providerMetadata: metadata,
+        metadata: metadata,
       );
-      if (projectedToolCall != null) {
+      if (projection.hasClientToolCalls) {
         _hasClientToolCalls = true;
-        yield googleProjectedToolCallContentPart(projectedToolCall);
       }
+      yield* projection.content;
       return;
     }
 
     if (part case {'toolCall': final Object? toolCallValue}) {
-      final toolCall = asMap(toolCallValue);
-      if (toolCall != null) {
-        final replay = GoogleToolCallReplay.fromToolCall(
-          toolCall,
-          providerMetadata: metadata,
-        );
-        yield replay.toCustomContentPart();
-      }
+      yield* projectGoogleResultServerToolCallPart(
+        toolCallValue: toolCallValue,
+        metadata: metadata,
+      );
       return;
     }
 
     if (part case {'toolResponse': final Object? toolResponseValue}) {
-      final toolResponse = asMap(toolResponseValue);
-      if (toolResponse != null) {
-        final replay = GoogleToolResponseReplay.fromToolResponse(
-          toolResponse,
-          providerMetadata: metadata,
-        );
-        yield replay.toCustomContentPart();
-      }
+      yield* projectGoogleResultServerToolResponsePart(
+        toolResponseValue: toolResponseValue,
+        metadata: metadata,
+      );
       return;
     }
 
@@ -137,14 +125,11 @@ final class GoogleGenerateContentResultPartProjector {
     }
 
     if (part case {'inlineData': final Object? inlineDataValue}) {
-      final projectedFile = projectGoogleInlineDataFile(
+      yield* projectGoogleResultInlineDataPart(
+        part: part,
         inlineDataValue: inlineDataValue,
-        isThought: part['thought'] == true,
-        providerMetadata: metadata,
+        metadata: metadata,
       );
-      if (projectedFile != null) {
-        yield googleProjectedFileContentPart(projectedFile);
-      }
     }
   }
 }
