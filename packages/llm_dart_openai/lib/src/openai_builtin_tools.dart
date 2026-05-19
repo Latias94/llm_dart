@@ -1,0 +1,97 @@
+import 'openai_code_interpreter_tool.dart';
+import 'openai_computer_use_tool.dart';
+import 'openai_file_search_tool.dart';
+import 'openai_image_generation_tool.dart';
+import 'openai_image_types.dart';
+import 'openai_mcp_tool.dart';
+import 'openai_web_search_tool.dart';
+
+final class OpenAIBuiltInTools {
+  static OpenAIWebSearchTool webSearch() => const OpenAIWebSearchTool();
+
+  static OpenAIFileSearchTool fileSearch({
+    List<String>? vectorStoreIds,
+    Map<String, Object?>? parameters,
+  }) {
+    return OpenAIFileSearchTool(
+      vectorStoreIds: vectorStoreIds,
+      parameters: parameters,
+    );
+  }
+
+  static OpenAIComputerUseTool computerUse({
+    required int displayWidth,
+    required int displayHeight,
+    required String environment,
+    Map<String, Object?>? parameters,
+  }) {
+    return OpenAIComputerUseTool(
+      displayWidth: displayWidth,
+      displayHeight: displayHeight,
+      environment: environment,
+      parameters: parameters,
+    );
+  }
+
+  static OpenAIImageGenerationTool imageGeneration({
+    OpenAIImageBackground? background,
+    OpenAIImageGenerationInputFidelity? inputFidelity,
+    OpenAIImageMask? inputImageMask,
+    String? model,
+    OpenAIImageGenerationModeration? moderation,
+    int? partialImages,
+    OpenAIImageQuality? quality,
+    int? outputCompression,
+    OpenAIImageOutputFormat? outputFormat,
+    OpenAIImageGenerationSize? size,
+    Map<String, Object?>? parameters,
+  }) {
+    return OpenAIImageGenerationTool(
+      background: background,
+      inputFidelity: inputFidelity,
+      inputImageMask: inputImageMask,
+      model: model,
+      moderation: moderation,
+      partialImages: partialImages,
+      quality: quality,
+      outputCompression: outputCompression,
+      outputFormat: outputFormat,
+      size: size,
+      parameters: parameters,
+    );
+  }
+
+  static OpenAICodeInterpreterTool codeInterpreter({
+    OpenAICodeInterpreterContainer? container,
+    Map<String, Object?>? parameters,
+  }) {
+    return OpenAICodeInterpreterTool(
+      container: container,
+      parameters: parameters,
+    );
+  }
+
+  static OpenAIMcpTool mcp({
+    required String serverLabel,
+    OpenAIMcpAllowedTools? allowedTools,
+    String? authorization,
+    String? connectorId,
+    Map<String, String>? headers,
+    OpenAIMcpApprovalPolicy? requireApproval,
+    String? serverDescription,
+    Uri? serverUrl,
+    Map<String, Object?>? parameters,
+  }) {
+    return OpenAIMcpTool(
+      serverLabel: serverLabel,
+      allowedTools: allowedTools,
+      authorization: authorization,
+      connectorId: connectorId,
+      headers: headers,
+      requireApproval: requireApproval,
+      serverDescription: serverDescription,
+      serverUrl: serverUrl,
+      parameters: parameters,
+    );
+  }
+}
