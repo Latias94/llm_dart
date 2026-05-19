@@ -1,5 +1,6 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import 'openai_responses_apply_patch_stream_projection.dart';
 import 'openai_responses_code_interpreter_stream_projection.dart';
 import 'openai_responses_computer_use_stream_projection.dart';
 import 'openai_responses_custom_stream_projection.dart';
