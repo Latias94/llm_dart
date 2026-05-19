@@ -2,6 +2,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'openai_responses_code_interpreter_stream_projection.dart';
 import 'openai_responses_custom_stream_projection.dart';
+import 'openai_responses_file_search_stream_projection.dart';
 import 'openai_responses_image_generation_stream_projection.dart';
 import 'openai_responses_mcp_stream_projection.dart';
 import 'openai_responses_stream_state.dart';
@@ -54,6 +55,16 @@ Iterable<LanguageModelStreamEvent> decodeOpenAIResponsesOutputItemAddedChunk(
   if (itemType == 'image_generation_call') {
     state.hasToolCalls = true;
     yield* decodeOpenAIResponsesImageGenerationItemAddedChunk(
+      chunk,
+      item,
+      state,
+    );
+    return;
+  }
+
+  if (itemType == 'file_search_call') {
+    state.hasToolCalls = true;
+    yield* decodeOpenAIResponsesFileSearchItemAddedChunk(
       chunk,
       item,
       state,
@@ -128,6 +139,16 @@ Iterable<LanguageModelStreamEvent> decodeOpenAIResponsesOutputItemDoneChunk(
   if (itemType == 'image_generation_call') {
     state.hasToolCalls = true;
     yield* decodeOpenAIResponsesImageGenerationItemDoneChunk(
+      chunk,
+      item,
+      state,
+    );
+    return;
+  }
+
+  if (itemType == 'file_search_call') {
+    state.hasToolCalls = true;
+    yield* decodeOpenAIResponsesFileSearchItemDoneChunk(
       chunk,
       item,
       state,

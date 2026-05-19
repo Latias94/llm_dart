@@ -588,6 +588,74 @@ void main() {
       });
     });
 
+    test('maps file search streams to provider-executed tool events', () {
+      const codec = OpenAIResponsesCodec();
+      final state = OpenAIResponsesStreamState()
+        ..responseId = 'resp_file_search'
+        ..serviceTier = 'default';
+      final events = <LanguageModelStreamEvent>[];
+
+      for (final chunk in <Map<String, Object?>>[
+        {
+          'type': 'response.output_item.added',
+          'output_index': 1,
+          'item': {
+            'id': 'fs_1',
+            'type': 'file_search_call',
+            'status': 'in_progress',
+            'queries': const [],
+          },
+        },
+        {
+          'type': 'response.output_item.done',
+          'output_index': 1,
+          'item': {
+            'id': 'fs_1',
+            'type': 'file_search_call',
+            'status': 'completed',
+            'queries': ['architecture notes'],
+            'results': [
+              {
+                'attributes': {
+                  'source': 'adr',
+                },
+                'file_id': 'file_1',
+                'filename': 'ADR-001.md',
+                'score': 0.91,
+                'text': 'Provider-local projection keeps OpenAI details local.',
+              },
+            ],
+          },
+        },
+      ]) {
+        events.addAll(codec.decodeStreamChunk(chunk, state));
+      }
+
+      final toolCall = events.whereType<ToolCallEvent>().single.toolCall;
+      expect(toolCall.toolCallId, 'fs_1');
+      expect(toolCall.toolName, 'file_search');
+      expect(toolCall.providerExecuted, isTrue);
+      expect(toolCall.input, isEmpty);
+
+      final toolResult = events.whereType<ToolResultEvent>().single.toolResult;
+      expect(toolResult.toolCallId, 'fs_1');
+      expect(toolResult.toolName, 'file_search');
+      expect(toolResult.output, {
+        'queries': ['architecture notes'],
+        'results': [
+          {
+            'attributes': {
+              'source': 'adr',
+            },
+            'fileId': 'file_1',
+            'filename': 'ADR-001.md',
+            'score': 0.91,
+            'text': 'Provider-local projection keeps OpenAI details local.',
+          },
+        ],
+      });
+    });
+
     test('maps tool search streams using the final call id', () {
       const codec = OpenAIResponsesCodec();
       final state = OpenAIResponsesStreamState()

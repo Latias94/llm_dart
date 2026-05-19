@@ -1207,6 +1207,99 @@ void main() {
       expect(OpenAICustomPart.parseContentParts(result.content), isEmpty);
     });
 
+    test('decodes file search calls as provider-executed tool content', () {
+      const codec = OpenAIResponsesCodec();
+
+      final result = codec.decodeGenerateResponse({
+        'id': 'resp_file_search',
+        'status': 'completed',
+        'output': [
+          {
+            'id': 'fs_1',
+            'type': 'file_search_call',
+            'status': 'completed',
+            'queries': ['architecture notes'],
+            'results': [
+              {
+                'attributes': {
+                  'source': 'adr',
+                  'version': 2,
+                },
+                'file_id': 'file_1',
+                'filename': 'ADR-001.md',
+                'score': 0.91,
+                'text': 'Provider-local projection keeps OpenAI details local.',
+              },
+            ],
+          },
+        ],
+      });
+
+      final toolCall = result.content.whereType<ToolCallContentPart>().single;
+      expect(toolCall.toolCall.toolCallId, 'fs_1');
+      expect(toolCall.toolCall.toolName, 'file_search');
+      expect(toolCall.toolCall.providerExecuted, isTrue);
+      expect(toolCall.toolCall.input, isEmpty);
+
+      final toolResult =
+          result.content.whereType<ToolResultContentPart>().single;
+      expect(toolResult.toolResult.toolCallId, 'fs_1');
+      expect(toolResult.toolResult.toolName, 'file_search');
+      expect(toolResult.toolResult.output, {
+        'queries': ['architecture notes'],
+        'results': [
+          {
+            'attributes': {
+              'source': 'adr',
+              'version': 2,
+            },
+            'fileId': 'file_1',
+            'filename': 'ADR-001.md',
+            'score': 0.91,
+            'text': 'Provider-local projection keeps OpenAI details local.',
+          },
+        ],
+      });
+      expect(
+        toolResult.providerMetadata?.namespace('openai'),
+        allOf(
+          containsPair('itemId', 'fs_1'),
+          containsPair('itemType', 'file_search_call'),
+          containsPair('queryCount', 1),
+          containsPair('resultCount', 1),
+        ),
+      );
+      expect(result.finishReason, FinishReason.toolCalls);
+      expect(OpenAICustomPart.parseContentParts(result.content), isEmpty);
+    });
+
+    test('preserves missing file search include results as null', () {
+      const codec = OpenAIResponsesCodec();
+
+      final result = codec.decodeGenerateResponse({
+        'id': 'resp_file_search_no_include',
+        'status': 'completed',
+        'output': [
+          {
+            'id': 'fs_1',
+            'type': 'file_search_call',
+            'queries': ['architecture notes'],
+          },
+        ],
+      });
+
+      final toolResult =
+          result.content.whereType<ToolResultContentPart>().single;
+      expect(toolResult.toolResult.output, {
+        'queries': ['architecture notes'],
+        'results': null,
+      });
+      expect(
+        toolResult.providerMetadata?.namespace('openai'),
+        isNot(contains('resultCount')),
+      );
+    });
+
     test('decodes tool search calls and outputs as unified tool content', () {
       const codec = OpenAIResponsesCodec();
 

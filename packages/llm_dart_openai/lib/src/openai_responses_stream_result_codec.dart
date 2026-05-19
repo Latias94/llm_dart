@@ -66,6 +66,12 @@ GenerateTextResult decodeOpenAIResponsesGenerateResponse(
       continue;
     }
 
+    if (type == 'file_search_call') {
+      hasToolCalls = true;
+      content.addAll(decodeOpenAIResponsesFileSearchCallOutput(item));
+      continue;
+    }
+
     if (type == 'tool_search_call') {
       hasToolCalls = true;
       final toolCall = decodeOpenAIResponsesToolSearchCallOutput(item);
