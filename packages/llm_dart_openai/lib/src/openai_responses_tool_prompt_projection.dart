@@ -3,6 +3,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'openai_responses_prompt_limitations.dart';
 import 'openai_responses_replay_policy.dart';
 import 'openai_responses_request_tool_codec.dart';
+import 'openai_responses_tool_search_replay_projection.dart';
 
 final class OpenAIResponsesToolPromptProjection {
   final OpenAIResponsesRequestToolCodec toolCodec;
@@ -35,6 +36,17 @@ final class OpenAIResponsesToolPromptProjection {
           role: 'tool',
           part: part,
         );
+      }
+
+      if (!part.isError) {
+        final toolSearchOutput = projectOpenAIResponsesToolSearchReplayOutput(
+          part,
+          metadata: null,
+        );
+        if (toolSearchOutput != null) {
+          items.add(toolSearchOutput.toInputItem());
+          continue;
+        }
       }
 
       items.add({

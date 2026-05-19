@@ -412,6 +412,61 @@ void main() {
       expect(request.warnings, isEmpty);
     });
 
+    test('encodes tool search tool outputs as native Responses items', () {
+      const codec = OpenAIResponsesCodec();
+
+      final request = codec.encodeRequest(
+        modelId: 'gpt-5-mini',
+        prompt: [
+          ToolPromptMessage(
+            toolName: 'tool_search',
+            parts: [
+              ToolResultPromptPart(
+                toolCallId: 'call_tool_search_1',
+                toolName: 'tool_search',
+                output: {
+                  'tools': [
+                    {
+                      'type': 'function',
+                      'name': 'get_weather',
+                      'description': 'Get the weather.',
+                      'defer_loading': true,
+                    },
+                  ],
+                },
+              ),
+            ],
+          ),
+        ],
+        tools: const [],
+        toolChoice: null,
+        options: const GenerateTextOptions(),
+        providerOptions: const OpenAIGenerateTextOptions(),
+        stream: false,
+      );
+
+      expect(
+        request.body['input'],
+        [
+          {
+            'type': 'tool_search_output',
+            'execution': 'client',
+            'call_id': 'call_tool_search_1',
+            'status': 'completed',
+            'tools': [
+              {
+                'type': 'function',
+                'name': 'get_weather',
+                'description': 'Get the weather.',
+                'defer_loading': true,
+              },
+            ],
+          },
+        ],
+      );
+      expect(request.warnings, isEmpty);
+    });
+
     test('encodes URI-backed non-PDF file prompt parts on the Responses path',
         () {
       const codec = OpenAIResponsesCodec();
