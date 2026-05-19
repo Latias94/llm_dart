@@ -7,8 +7,8 @@ import 'anthropic_language_model_response.dart';
 import 'anthropic_language_model_stream.dart';
 import 'anthropic_language_model_token_count.dart';
 import 'anthropic_language_model_transport.dart';
+import 'anthropic_model_settings.dart';
 import 'anthropic_model_describer.dart';
-import 'anthropic_options.dart';
 import 'anthropic_token_count.dart';
 
 final class AnthropicLanguageModel

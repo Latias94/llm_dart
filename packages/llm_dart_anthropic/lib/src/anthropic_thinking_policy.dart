@@ -1,6 +1,6 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
-import 'anthropic_options.dart';
+import 'anthropic_generate_text_options.dart';
 
 const int anthropicDefaultMaxTokens = 1024;
 const int anthropicDefaultThinkingBudgetTokens = 1024;

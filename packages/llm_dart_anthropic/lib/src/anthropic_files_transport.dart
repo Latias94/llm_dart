@@ -2,7 +2,7 @@ import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'anthropic_api.dart';
 import 'anthropic_file_types.dart';
-import 'anthropic_options.dart';
+import 'anthropic_model_settings.dart';
 
 final class AnthropicFilesTransportSupport {
   static const String filesApiBetaFeature = 'files-api-2025-04-14';

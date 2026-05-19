@@ -1,7 +1,7 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'anthropic_beta_features.dart';
-import 'anthropic_options.dart';
+import 'anthropic_cache_options.dart';
 import 'anthropic_tools.dart';
 
 final class AnthropicToolConfiguration {

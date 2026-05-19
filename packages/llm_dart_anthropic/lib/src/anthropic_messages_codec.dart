@@ -1,6 +1,7 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
-import 'anthropic_options.dart';
+import 'anthropic_generate_text_options.dart';
+import 'anthropic_model_settings.dart';
 import 'anthropic_prompt_blocks.dart';
 import 'anthropic_request_options_encoder.dart';
 

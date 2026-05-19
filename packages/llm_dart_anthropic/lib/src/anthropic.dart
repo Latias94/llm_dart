@@ -4,7 +4,7 @@ import 'package:llm_dart_transport/llm_dart_transport.dart';
 import 'anthropic_api.dart';
 import 'anthropic_files.dart';
 import 'anthropic_language_model.dart';
-import 'anthropic_options.dart';
+import 'anthropic_model_settings.dart';
 
 /// Creates an Anthropic provider facade.
 Anthropic anthropic({

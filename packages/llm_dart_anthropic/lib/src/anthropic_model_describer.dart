@@ -1,6 +1,6 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
-import 'anthropic_options.dart';
+import 'anthropic_model_settings.dart';
 
 const List<String> _anthropicNativeToolFamilies = [
   'web_search',

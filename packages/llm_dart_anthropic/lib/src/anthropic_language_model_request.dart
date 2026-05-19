@@ -1,7 +1,8 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import 'anthropic_generate_text_options.dart';
 import 'anthropic_messages_codec.dart';
-import 'anthropic_options.dart';
+import 'anthropic_model_settings.dart';
 import 'anthropic_token_count.dart';
 
 AnthropicGenerateTextOptions resolveAnthropicLanguageModelProviderOptions(

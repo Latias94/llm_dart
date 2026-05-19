@@ -5,7 +5,7 @@ import 'anthropic_code_execution_replay.dart';
 import 'anthropic_file_response.dart';
 import 'anthropic_file_types.dart';
 import 'anthropic_files_transport.dart';
-import 'anthropic_options.dart';
+import 'anthropic_model_settings.dart';
 
 final class AnthropicFiles {
   final String apiKey;
