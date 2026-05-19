@@ -2,7 +2,8 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'openai_family_profile.dart';
-import 'openai_language_model_support.dart';
+import 'openai_language_model_call_routing.dart';
+import 'openai_provider_support.dart';
 import 'resolved_openai_chat_settings.dart';
 
 TransportRequest buildOpenAILanguageModelTransportRequest({

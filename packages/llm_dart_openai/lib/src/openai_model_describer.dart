@@ -2,9 +2,9 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'openai_family_capability_policy.dart';
 import 'openai_family_profile.dart';
-import 'openai_language_model_support.dart';
 import 'openai_model_capabilities.dart';
 import 'openai_options.dart';
+import 'openai_provider_support.dart';
 
 const List<String> _openAIBuiltInToolFamilies = [
   'webSearch',
