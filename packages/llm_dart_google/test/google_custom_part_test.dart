@@ -140,6 +140,46 @@ void main() {
       );
     });
 
+    test('parse helpers preserve order and skip non-Google custom parts', () {
+      final toolCall = GoogleToolCallReplay.fromToolCall(
+        {
+          'id': 'srvtool_1',
+          'toolType': 'google_search',
+          'query': 'Dart SDK',
+        },
+      );
+      final functionResponse = GoogleFunctionResponseReplay(
+        toolCallId: 'call_google_2',
+        toolName: 'render_chart',
+        response: {
+          'status': 'ok',
+        },
+      );
+
+      final parsed = GoogleCustomPart.parseEvents([
+        const CustomEvent(
+          kind: 'openai.image_generation_call',
+          data: {
+            'id': 'img_1',
+          },
+        ),
+        toolCall.toCustomEvent(),
+        functionResponse.toCustomEvent(),
+      ]);
+
+      expect(
+        parsed.map((part) => part.kind),
+        [
+          GoogleToolCallReplay.kind,
+          GoogleFunctionResponseReplay.kind,
+        ],
+      );
+      expect(parsed.map((part) => part.toolCallId), [
+        'srvtool_1',
+        'call_google_2',
+      ]);
+    });
+
     test('returns null for non-Google custom payloads', () {
       expect(
         GoogleCustomPart.tryParseContentPart(
