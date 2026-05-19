@@ -541,6 +541,97 @@ void main() {
       });
     });
 
+    test('maps tool search streams using the final call id', () {
+      const codec = OpenAIResponsesCodec();
+      final state = OpenAIResponsesStreamState()
+        ..responseId = 'resp_tool_search'
+        ..serviceTier = 'default';
+      final events = <LanguageModelStreamEvent>[];
+
+      for (final chunk in <Map<String, Object?>>[
+        {
+          'type': 'response.output_item.added',
+          'output_index': 0,
+          'item': {
+            'id': 'tsc_client_1',
+            'type': 'tool_search_call',
+            'execution': 'client',
+            'call_id': 'call_provisional',
+            'status': 'completed',
+            'arguments': {
+              'goal': 'Find the weather tool',
+            },
+          },
+        },
+        {
+          'type': 'response.output_item.done',
+          'output_index': 0,
+          'item': {
+            'id': 'tsc_client_1',
+            'type': 'tool_search_call',
+            'execution': 'client',
+            'call_id': 'call_final',
+            'status': 'completed',
+            'arguments': {
+              'goal': 'Find the weather tool',
+            },
+          },
+        },
+        {
+          'type': 'response.output_item.done',
+          'output_index': 1,
+          'item': {
+            'id': 'tso_client_1',
+            'type': 'tool_search_output',
+            'execution': 'client',
+            'call_id': 'call_final',
+            'status': 'completed',
+            'tools': [
+              {
+                'type': 'function',
+                'name': 'get_weather',
+              },
+            ],
+          },
+        },
+      ]) {
+        events.addAll(codec.decodeStreamChunk(chunk, state));
+      }
+
+      final start = events.whereType<ToolInputStartEvent>().single;
+      expect(start.toolCallId, 'call_final');
+      expect(start.toolName, 'tool_search');
+      expect(start.providerExecuted, isFalse);
+      expect(events.whereType<ToolInputDeltaEvent>(), isEmpty);
+      expect(
+        events.whereType<ToolInputEndEvent>().single.toolCallId,
+        'call_final',
+      );
+
+      final toolCall = events.whereType<ToolCallEvent>().single.toolCall;
+      expect(toolCall.toolCallId, 'call_final');
+      expect(toolCall.toolName, 'tool_search');
+      expect(toolCall.providerExecuted, isFalse);
+      expect(toolCall.input, {
+        'arguments': {
+          'goal': 'Find the weather tool',
+        },
+        'call_id': 'call_final',
+      });
+
+      final toolResult = events.whereType<ToolResultEvent>().single.toolResult;
+      expect(toolResult.toolCallId, 'call_final');
+      expect(toolResult.toolName, 'tool_search');
+      expect(toolResult.output, {
+        'tools': [
+          {
+            'type': 'function',
+            'name': 'get_weather',
+          },
+        ],
+      });
+    });
+
     test('maps message output item completion to text end without custom event',
         () {
       const codec = OpenAIResponsesCodec();

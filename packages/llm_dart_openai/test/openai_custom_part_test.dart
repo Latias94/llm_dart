@@ -128,5 +128,68 @@ void main() {
       expect(codePart.outputCount, 1);
       expect(codePart.logs, ['hi']);
     });
+
+    test('parses tool search custom content parts', () {
+      final call = OpenAICustomPart.tryParseContentPart(
+        CustomContentPart(
+          kind: OpenAIToolSearchCallCustomPart.customKind,
+          data: {
+            'id': 'tsc_1',
+            'execution': 'client',
+            'call_id': 'call_1',
+            'arguments': {
+              'goal': 'Find a tool',
+            },
+          },
+          providerMetadata: ProviderMetadata.forNamespace(
+            'openai',
+            {
+              'itemId': 'tsc_1',
+              'execution': 'client',
+              'callId': 'call_1',
+            },
+          ),
+        ),
+      );
+      expect(call, isA<OpenAIToolSearchCallCustomPart>());
+      final callPart = call! as OpenAIToolSearchCallCustomPart;
+      expect(callPart.itemId, 'tsc_1');
+      expect(callPart.callId, 'call_1');
+      expect(callPart.execution, 'client');
+      expect(callPart.providerExecuted, isFalse);
+
+      final output = OpenAICustomPart.tryParseContentPart(
+        CustomContentPart(
+          kind: OpenAIToolSearchOutputCustomPart.customKind,
+          data: {
+            'id': 'tso_1',
+            'execution': 'client',
+            'call_id': 'call_1',
+            'tools': [
+              {
+                'type': 'function',
+                'name': 'get_weather',
+              },
+            ],
+          },
+          providerMetadata: ProviderMetadata.forNamespace(
+            'openai',
+            {
+              'itemId': 'tso_1',
+              'execution': 'client',
+              'callId': 'call_1',
+              'toolCount': 1,
+            },
+          ),
+        ),
+      );
+      expect(output, isA<OpenAIToolSearchOutputCustomPart>());
+      final outputPart = output! as OpenAIToolSearchOutputCustomPart;
+      expect(outputPart.itemId, 'tso_1');
+      expect(outputPart.callId, 'call_1');
+      expect(outputPart.execution, 'client');
+      expect(outputPart.toolCount, 1);
+      expect(outputPart.toolNames, ['get_weather']);
+    });
   });
 }

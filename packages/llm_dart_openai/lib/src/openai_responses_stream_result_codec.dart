@@ -3,6 +3,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'openai_responses_stream_state.dart';
 import 'openai_responses_stream_util.dart';
 import 'openai_responses_support.dart';
+import 'openai_responses_tool_search_projection.dart';
 import 'openai_streaming_support.dart';
 
 GenerateTextResult decodeOpenAIResponsesGenerateResponse(
@@ -13,6 +14,7 @@ GenerateTextResult decodeOpenAIResponsesGenerateResponse(
 
   final content = <ContentPart>[];
   final collectedLogprobs = <Object?>[];
+  final hostedToolSearchCallIds = <String>[];
   var hasToolCalls = false;
 
   for (final item in _openAIResponsesOutputItems(response)) {
@@ -55,6 +57,34 @@ GenerateTextResult decodeOpenAIResponsesGenerateResponse(
     if (type == 'code_interpreter_call') {
       hasToolCalls = true;
       content.addAll(decodeOpenAIResponsesCodeInterpreterCallOutput(item));
+      continue;
+    }
+
+    if (type == 'tool_search_call') {
+      hasToolCalls = true;
+      final toolCall = decodeOpenAIResponsesToolSearchCallOutput(item);
+      if (toolCall != null) {
+        content.add(toolCall);
+        if (toolCall.toolCall.providerExecuted) {
+          hostedToolSearchCallIds.add(toolCall.toolCall.toolCallId);
+        }
+      }
+      continue;
+    }
+
+    if (type == 'tool_search_output') {
+      hasToolCalls = true;
+      final toolResult = decodeOpenAIResponsesToolSearchOutput(
+        item,
+        fallbackToolCallId: openAIResponsesAsString(item['call_id']) == null
+            ? openAIResponsesTakeHostedToolSearchCallId(
+                hostedToolSearchCallIds,
+              )
+            : null,
+      );
+      if (toolResult != null) {
+        content.add(toolResult);
+      }
       continue;
     }
 

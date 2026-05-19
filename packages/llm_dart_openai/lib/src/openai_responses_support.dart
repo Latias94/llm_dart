@@ -4,6 +4,7 @@ import 'openai_responses_code_interpreter_projection.dart';
 import 'openai_responses_custom_projection.dart';
 import 'openai_responses_mcp_projection.dart';
 import 'openai_responses_source_projection.dart';
+import 'openai_responses_tool_search_projection.dart';
 import 'openai_streaming_support.dart';
 
 List<ContentPart> decodeOpenAIResponsesMessageOutput(
@@ -185,6 +186,38 @@ List<ContentPart> decodeOpenAIResponsesCodeInterpreterCallOutput(
       providerMetadata: projection.providerMetadata,
     ),
   ];
+}
+
+ToolCallContentPart? decodeOpenAIResponsesToolSearchCallOutput(
+  Map<String, Object?> item,
+) {
+  final projection = projectOpenAIResponsesToolSearchCall(item);
+  if (projection == null) {
+    return null;
+  }
+
+  return ToolCallContentPart(
+    projection.toToolCall(),
+    providerMetadata: projection.providerMetadata,
+  );
+}
+
+ToolResultContentPart? decodeOpenAIResponsesToolSearchOutput(
+  Map<String, Object?> item, {
+  String? fallbackToolCallId,
+}) {
+  final projection = projectOpenAIResponsesToolSearchOutput(
+    item,
+    fallbackToolCallId: fallbackToolCallId,
+  );
+  if (projection == null) {
+    return null;
+  }
+
+  return ToolResultContentPart(
+    projection.toToolResult(),
+    providerMetadata: projection.providerMetadata,
+  );
 }
 
 CustomContentPart? decodeOpenAIResponsesCustomOutput(

@@ -237,6 +237,86 @@ final class OpenAICodeInterpreterCallCustomPart extends OpenAICustomPart {
       ]);
 }
 
+final class OpenAIToolSearchCallCustomPart extends OpenAICustomPart {
+  static const customKind = 'openai.tool_search_call';
+
+  @override
+  final Map<String, Object?> payload;
+
+  @override
+  final ProviderMetadata? providerMetadata;
+
+  const OpenAIToolSearchCallCustomPart({
+    required this.payload,
+    this.providerMetadata,
+  });
+
+  @override
+  String get kind => customKind;
+
+  String? get itemId =>
+      openaiMetadataString(providerMetadata, 'itemId') ??
+      asString(payload['id']);
+
+  String? get callId =>
+      asString(payload['call_id']) ??
+      openaiMetadataString(providerMetadata, 'callId');
+
+  String get execution =>
+      asString(payload['execution']) ??
+      openaiMetadataString(providerMetadata, 'execution') ??
+      'server';
+
+  Object? get arguments => payload['arguments'];
+
+  bool get providerExecuted => execution == 'server';
+}
+
+final class OpenAIToolSearchOutputCustomPart extends OpenAICustomPart {
+  static const customKind = 'openai.tool_search_output';
+
+  @override
+  final Map<String, Object?> payload;
+
+  @override
+  final ProviderMetadata? providerMetadata;
+
+  const OpenAIToolSearchOutputCustomPart({
+    required this.payload,
+    this.providerMetadata,
+  });
+
+  @override
+  String get kind => customKind;
+
+  String? get itemId =>
+      openaiMetadataString(providerMetadata, 'itemId') ??
+      asString(payload['id']);
+
+  String? get callId =>
+      asString(payload['call_id']) ??
+      openaiMetadataString(providerMetadata, 'callId');
+
+  String get execution =>
+      asString(payload['execution']) ??
+      openaiMetadataString(providerMetadata, 'execution') ??
+      'server';
+
+  List<Map<String, Object?>> get tools =>
+      List<Map<String, Object?>>.unmodifiable([
+        for (final item in asList(payload['tools']))
+          if (asMap(item) case final tool?) tool,
+      ]);
+
+  int get toolCount =>
+      openaiMetadataInt(providerMetadata, 'toolCount') ?? tools.length;
+
+  List<String> get toolNames => List<String>.unmodifiable([
+        for (final tool in tools)
+          if (asString(tool['name']) case final name?) name,
+      ]);
+}
+
 OpenAICustomPart? _parseCustomPayload({
   required String kind,
   required Object? data,
@@ -264,6 +344,15 @@ OpenAICustomPart? _parseCustomPayload({
       ),
     OpenAICodeInterpreterCallCustomPart.customKind =>
       OpenAICodeInterpreterCallCustomPart(
+        payload: payload,
+        providerMetadata: providerMetadata,
+      ),
+    OpenAIToolSearchCallCustomPart.customKind => OpenAIToolSearchCallCustomPart(
+        payload: payload,
+        providerMetadata: providerMetadata,
+      ),
+    OpenAIToolSearchOutputCustomPart.customKind =>
+      OpenAIToolSearchOutputCustomPart(
         payload: payload,
         providerMetadata: providerMetadata,
       ),

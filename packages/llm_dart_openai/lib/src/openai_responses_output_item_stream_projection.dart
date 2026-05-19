@@ -7,6 +7,7 @@ import 'openai_responses_stream_state.dart';
 import 'openai_responses_stream_tool_codec.dart';
 import 'openai_responses_stream_util.dart';
 import 'openai_responses_text_reasoning_stream_projection.dart';
+import 'openai_responses_tool_search_stream_projection.dart';
 
 Iterable<LanguageModelStreamEvent> decodeOpenAIResponsesOutputItemAddedChunk(
   Map<String, Object?> chunk,
@@ -42,6 +43,15 @@ Iterable<LanguageModelStreamEvent> decodeOpenAIResponsesOutputItemAddedChunk(
 
   if (itemType == 'code_interpreter_call') {
     yield* decodeOpenAIResponsesCodeInterpreterItemAddedChunk(
+      chunk,
+      item,
+      state,
+    );
+    return;
+  }
+
+  if (itemType == 'tool_search_call') {
+    yield* decodeOpenAIResponsesToolSearchCallItemAddedChunk(
       chunk,
       item,
       state,
@@ -97,6 +107,26 @@ Iterable<LanguageModelStreamEvent> decodeOpenAIResponsesOutputItemDoneChunk(
   if (itemType == 'code_interpreter_call') {
     state.hasToolCalls = true;
     yield* decodeOpenAIResponsesCodeInterpreterItemDoneChunk(
+      chunk,
+      item,
+      state,
+    );
+    return;
+  }
+
+  if (itemType == 'tool_search_call') {
+    state.hasToolCalls = true;
+    yield* decodeOpenAIResponsesToolSearchCallItemDoneChunk(
+      chunk,
+      item,
+      state,
+    );
+    return;
+  }
+
+  if (itemType == 'tool_search_output') {
+    state.hasToolCalls = true;
+    yield* decodeOpenAIResponsesToolSearchOutputItemDoneChunk(
       chunk,
       item,
       state,

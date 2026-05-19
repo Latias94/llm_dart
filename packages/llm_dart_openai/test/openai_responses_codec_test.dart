@@ -1187,5 +1187,73 @@ void main() {
       expect(result.finishReason, FinishReason.toolCalls);
       expect(OpenAICustomPart.parseContentParts(result.content), isEmpty);
     });
+
+    test('decodes tool search calls and outputs as unified tool content', () {
+      const codec = OpenAIResponsesCodec();
+
+      final result = codec.decodeGenerateResponse({
+        'id': 'resp_tool_search',
+        'status': 'completed',
+        'output': [
+          {
+            'id': 'tsc_1',
+            'type': 'tool_search_call',
+            'execution': 'server',
+            'call_id': null,
+            'status': 'completed',
+            'arguments': {
+              'goal': 'Find the weather tool',
+            },
+          },
+          {
+            'id': 'tso_1',
+            'type': 'tool_search_output',
+            'execution': 'server',
+            'call_id': null,
+            'status': 'completed',
+            'tools': [
+              {
+                'type': 'function',
+                'name': 'get_weather',
+              },
+            ],
+          },
+        ],
+      });
+
+      final toolCall = result.content.whereType<ToolCallContentPart>().single;
+      expect(toolCall.toolCall.toolCallId, 'tsc_1');
+      expect(toolCall.toolCall.toolName, 'tool_search');
+      expect(toolCall.toolCall.providerExecuted, isTrue);
+      expect(toolCall.toolCall.input, {
+        'arguments': {
+          'goal': 'Find the weather tool',
+        },
+        'call_id': null,
+      });
+
+      final toolResult =
+          result.content.whereType<ToolResultContentPart>().single;
+      expect(toolResult.toolResult.toolCallId, 'tsc_1');
+      expect(toolResult.toolResult.toolName, 'tool_search');
+      expect(toolResult.toolResult.output, {
+        'tools': [
+          {
+            'type': 'function',
+            'name': 'get_weather',
+          },
+        ],
+      });
+      expect(
+        toolResult.providerMetadata?.namespace('openai'),
+        allOf(
+          containsPair('itemId', 'tso_1'),
+          containsPair('itemType', 'tool_search_output'),
+          containsPair('toolCount', 1),
+        ),
+      );
+      expect(result.finishReason, FinishReason.toolCalls);
+      expect(OpenAICustomPart.parseContentParts(result.content), isEmpty);
+    });
   });
 }

@@ -37,6 +37,8 @@ final class OpenAICustomPartSummary {
       OpenAIMcpListToolsCustomPart() => _buildMcpListToolsSummary(part),
       OpenAICodeInterpreterCallCustomPart() =>
         _buildCodeInterpreterCallSummary(part),
+      OpenAIToolSearchCallCustomPart() => _buildToolSearchCallSummary(part),
+      OpenAIToolSearchOutputCustomPart() => _buildToolSearchOutputSummary(part),
     };
   }
 
@@ -181,6 +183,53 @@ OpenAICustomPartSummary _buildCodeInterpreterCallSummary(
       OpenAICustomPartSummaryField(
         label: 'Outputs',
         value: '${part.outputCount}',
+      ),
+    ]),
+  );
+}
+
+OpenAICustomPartSummary _buildToolSearchCallSummary(
+  OpenAIToolSearchCallCustomPart part,
+) {
+  return OpenAICustomPartSummary(
+    part: part,
+    title: 'Tool Search',
+    subtitle: part.providerExecuted ? 'Server Execution' : 'Client Execution',
+    previewText: part.arguments?.toString(),
+    fields: List<OpenAICustomPartSummaryField>.unmodifiable([
+      if (part.itemId != null)
+        OpenAICustomPartSummaryField(label: 'Item ID', value: part.itemId!),
+      if (part.callId != null)
+        OpenAICustomPartSummaryField(label: 'Call ID', value: part.callId!),
+      OpenAICustomPartSummaryField(
+        label: 'Execution',
+        value: part.execution,
+      ),
+    ]),
+  );
+}
+
+OpenAICustomPartSummary _buildToolSearchOutputSummary(
+  OpenAIToolSearchOutputCustomPart part,
+) {
+  final previewNames = part.toolNames.take(3).join(', ');
+  return OpenAICustomPartSummary(
+    part: part,
+    title: 'Tool Search',
+    subtitle: 'Loaded Tools',
+    previewText: previewNames.isEmpty ? null : previewNames,
+    fields: List<OpenAICustomPartSummaryField>.unmodifiable([
+      if (part.itemId != null)
+        OpenAICustomPartSummaryField(label: 'Item ID', value: part.itemId!),
+      if (part.callId != null)
+        OpenAICustomPartSummaryField(label: 'Call ID', value: part.callId!),
+      OpenAICustomPartSummaryField(
+        label: 'Execution',
+        value: part.execution,
+      ),
+      OpenAICustomPartSummaryField(
+        label: 'Tool Count',
+        value: '${part.toolCount}',
       ),
     ]),
   );
