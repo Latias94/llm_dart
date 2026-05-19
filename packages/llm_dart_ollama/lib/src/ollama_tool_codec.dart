@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import 'ollama_chat_limitations.dart';
+
 final class OllamaToolCodec {
   const OllamaToolCodec();
 
@@ -17,14 +19,7 @@ final class OllamaToolCodec {
     if (!shouldIncludeTools) return const [];
 
     if (toolChoice is RequiredToolChoice || toolChoice is SpecificToolChoice) {
-      warnings.add(
-        const ModelWarning(
-          type: ModelWarningType.compatibility,
-          field: 'toolChoice',
-          message:
-              'Ollama does not support explicit toolChoice control. Declared tools remain available for provider-side automatic selection.',
-        ),
-      );
+      warnings.add(ollamaToolChoiceWarning);
     }
 
     return tools

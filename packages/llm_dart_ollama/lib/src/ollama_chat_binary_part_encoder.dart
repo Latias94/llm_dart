@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'ollama_binary_resolver.dart';
+import 'ollama_chat_limitations.dart';
 
 final class OllamaChatBinaryPartEncoder {
   final OllamaBinaryResolver? binaryResolver;
@@ -39,8 +40,8 @@ final class OllamaChatBinaryPartEncoder {
     }
 
     if (uri == null) {
-      throw UnsupportedError(
-        'Ollama $promptPartKind prompt parts require bytes, a data URI, or a configured OllamaBinaryResolver.',
+      throw missingOllamaPromptPartBytes(
+        promptPartKind: promptPartKind,
       );
     }
 
@@ -64,8 +65,9 @@ final class OllamaChatBinaryPartEncoder {
       }
     }
 
-    throw UnsupportedError(
-      'Ollama $promptPartKind prompt parts cannot encode URI $uri without bytes, a data URI, or a configured OllamaBinaryResolver.',
+    throw unresolvedOllamaPromptPartUri(
+      promptPartKind: promptPartKind,
+      uri: uri,
     );
   }
 }

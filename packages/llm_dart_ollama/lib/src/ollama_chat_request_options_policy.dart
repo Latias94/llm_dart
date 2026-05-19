@@ -1,5 +1,6 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import 'ollama_chat_limitations.dart';
 import 'ollama_generate_text_options.dart';
 
 final class OllamaChatRequestOptionsProjection {
@@ -39,14 +40,7 @@ final class OllamaChatRequestOptionsPolicy {
     );
     final effectiveReasoning = providerOptions?.reasoning ?? sharedReasoning;
     if (providerOptions?.reasoning != null && sharedReasoning != null) {
-      warnings.add(
-        const ModelWarning(
-          type: ModelWarningType.compatibility,
-          field: 'options.reasoning',
-          message:
-              'Ollama providerOptions.reasoning overrides shared options.reasoning.',
-        ),
-      );
+      warnings.add(ollamaProviderReasoningOverrideWarning);
     }
 
     _warnUnsupportedSharedOptions(
@@ -76,25 +70,11 @@ final class OllamaChatRequestOptionsPolicy {
     }
 
     if (reasoning.effort != null) {
-      warnings.add(
-        const ModelWarning(
-          type: ModelWarningType.unsupported,
-          field: 'options.reasoning.effort',
-          message:
-              'Ollama reasoning is a provider toggle; shared reasoning.effort is ignored.',
-        ),
-      );
+      warnings.add(ollamaReasoningEffortWarning);
     }
 
     if (reasoning.budgetTokens != null) {
-      warnings.add(
-        const ModelWarning(
-          type: ModelWarningType.unsupported,
-          field: 'options.reasoning.budgetTokens',
-          message:
-              'Ollama reasoning is a provider toggle; shared reasoning.budgetTokens is ignored.',
-        ),
-      );
+      warnings.add(ollamaReasoningBudgetTokensWarning);
     }
 
     return reasoning.enabled;
@@ -105,25 +85,11 @@ final class OllamaChatRequestOptionsPolicy {
     required List<ModelWarning> warnings,
   }) {
     if (options.frequencyPenalty != null) {
-      warnings.add(
-        const ModelWarning(
-          type: ModelWarningType.unsupported,
-          field: 'options.frequencyPenalty',
-          message:
-              'Ollama does not support shared frequencyPenalty; use provider-native sampling options when needed.',
-        ),
-      );
+      warnings.add(ollamaFrequencyPenaltyWarning);
     }
 
     if (options.presencePenalty != null) {
-      warnings.add(
-        const ModelWarning(
-          type: ModelWarningType.unsupported,
-          field: 'options.presencePenalty',
-          message:
-              'Ollama does not support shared presencePenalty; use provider-native sampling options when needed.',
-        ),
-      );
+      warnings.add(ollamaPresencePenaltyWarning);
     }
   }
 
@@ -141,14 +107,7 @@ final class OllamaChatRequestOptionsPolicy {
       ) =>
         () {
           if (name != null || description != null || strict != null) {
-            warnings.add(
-              const ModelWarning(
-                type: ModelWarningType.compatibility,
-                field: 'options.responseFormat',
-                message:
-                    'Ollama only supports the shared JSON schema body. responseFormat name, description, and strict are ignored.',
-              ),
-            );
+            warnings.add(ollamaResponseFormatCompatibilityWarning);
           }
           return schema.toJson();
         }(),

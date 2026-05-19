@@ -1,6 +1,7 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'ollama_chat_binary_part_encoder.dart';
+import 'ollama_chat_limitations.dart';
 import 'ollama_tool_codec.dart';
 
 final class OllamaChatPromptProjectionCodec {
@@ -98,23 +99,12 @@ final class OllamaChatPromptProjectionCodec {
             ),
           );
         case FilePromptPart():
-          throw UnsupportedError(
-            'Ollama only supports image multimodal file prompt parts on the current modern chat path.',
-          );
+          throw unsupportedOllamaUserFilePromptPart();
         case ReasoningPromptPart(:final text):
-          warnings.add(
-            const ModelWarning(
-              type: ModelWarningType.compatibility,
-              field: 'prompt',
-              message:
-                  'Ollama does not have a dedicated user reasoning-input field. The reasoning text has been appended to the user content.',
-            ),
-          );
+          warnings.add(ollamaUserReasoningPromptWarning);
           textParts.add(text);
         default:
-          throw UnsupportedError(
-            'Ollama user prompt part ${part.runtimeType} is not supported yet.',
-          );
+          throw unsupportedOllamaPromptPart(role: 'user', part: part);
       }
     }
 
@@ -148,9 +138,7 @@ final class OllamaChatPromptProjectionCodec {
             ),
           );
         default:
-          throw UnsupportedError(
-            'Ollama assistant prompt part ${part.runtimeType} is not supported yet.',
-          );
+          throw unsupportedOllamaPromptPart(role: 'assistant', part: part);
       }
     }
 
@@ -175,14 +163,9 @@ final class OllamaChatPromptProjectionCodec {
             toolOutput: final toolOutput,
           ):
           if (toolOutput.isError) {
-            _addWarningOnce(
+            addOllamaWarningOnce(
               warnings,
-              const ModelWarning(
-                type: ModelWarningType.compatibility,
-                field: 'prompt',
-                message:
-                    'Ollama does not support replaying tool error state separately. The tool result has been sent as a plain tool content message.',
-              ),
+              ollamaToolErrorReplayWarning,
             );
           }
           encodedMessages.add({
@@ -191,9 +174,7 @@ final class OllamaChatPromptProjectionCodec {
             'content': toolCodec.stringifyToolOutput(toolOutput),
           });
         default:
-          throw UnsupportedError(
-            'Ollama tool prompt part ${part.runtimeType} is not supported yet.',
-          );
+          throw unsupportedOllamaPromptPart(role: 'tool', part: part);
       }
     }
 
@@ -212,27 +193,16 @@ final class OllamaChatPromptProjectionCodec {
         case TextPromptPart(:final text):
           textParts.add(text);
         case ReasoningPromptPart(:final text):
-          warnings.add(
-            ModelWarning(
-              type: ModelWarningType.compatibility,
-              field: 'prompt',
-              message:
-                  'Ollama does not support replaying $messageRole reasoning as a separate prompt field. The reasoning text has been appended to the message content.',
-            ),
-          );
+          warnings.add(ollamaReasoningPromptReplayWarning(messageRole));
           textParts.add(text);
         default:
-          throw UnsupportedError(
-            'Ollama $messageRole prompt part ${part.runtimeType} is not supported yet.',
+          throw unsupportedOllamaPromptPart(
+            role: messageRole,
+            part: part,
           );
       }
     }
 
     return textParts.join('\n');
-  }
-
-  void _addWarningOnce(List<ModelWarning> warnings, ModelWarning warning) {
-    if (warnings.contains(warning)) return;
-    warnings.add(warning);
   }
 }
