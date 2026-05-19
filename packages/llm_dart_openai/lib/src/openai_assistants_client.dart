@@ -1,11 +1,11 @@
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
+import 'openai_assistants_lifecycle_clients.dart';
 import 'openai_assistants_lifecycle_models.dart';
 import 'openai_assistants_thread_models.dart';
 import 'openai_assistants_transport.dart';
 import 'openai_family_profile.dart';
 import 'openai_family_url_support.dart';
-import 'openai_json_support.dart';
 import 'openai_profile_boundary.dart';
 
 final class OpenAIAssistantsClient {
@@ -21,6 +21,30 @@ final class OpenAIAssistantsClient {
     baseUrl: baseUrl,
     profile: profile,
     settings: settings,
+  );
+  late final OpenAIAssistantsAssistantLifecycle _assistants =
+      OpenAIAssistantsAssistantLifecycle(
+    transport: transport,
+    requestSupport: _requestSupport,
+  );
+  late final OpenAIAssistantsThreadLifecycle _threads =
+      OpenAIAssistantsThreadLifecycle(
+    transport: transport,
+    requestSupport: _requestSupport,
+  );
+  late final OpenAIAssistantsMessageLifecycle _messages =
+      OpenAIAssistantsMessageLifecycle(
+    transport: transport,
+    requestSupport: _requestSupport,
+  );
+  late final OpenAIAssistantsRunLifecycle _runs = OpenAIAssistantsRunLifecycle(
+    transport: transport,
+    requestSupport: _requestSupport,
+  );
+  late final OpenAIAssistantsRunStepLifecycle _runSteps =
+      OpenAIAssistantsRunStepLifecycle(
+    transport: transport,
+    requestSupport: _requestSupport,
   );
 
   OpenAIAssistantsClient({
@@ -78,36 +102,6 @@ final class OpenAIAssistantsClient {
     return _requestSupport.threadRunStepUri(threadId, runId, stepId);
   }
 
-  Future<T> _sendJsonModel<T>({
-    required Uri uri,
-    required TransportMethod method,
-    required String responseName,
-    required T Function(Map<String, Object?> json) decode,
-    Object? body,
-    Duration? timeout,
-    int? maxRetries,
-    TransportCancellation? cancellation,
-    Map<String, String>? headers,
-    bool contentType = false,
-  }) async {
-    final response = await transport.send(
-      _requestSupport.jsonRequest(
-        uri: uri,
-        method: method,
-        extraHeaders: headers,
-        contentType: contentType,
-        body: body,
-        timeout: timeout,
-        maxRetries: maxRetries,
-        cancellation: cancellation,
-      ),
-    );
-
-    return decode(
-      decodeOpenAIJsonObject(response.body, responseName: responseName),
-    );
-  }
-
   Future<OpenAIAssistant> createAssistant(
     OpenAICreateAssistantRequest request, {
     Duration? timeout,
@@ -115,13 +109,8 @@ final class OpenAIAssistantsClient {
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
-    return _sendJsonModel(
-      uri: assistantsUri(),
-      method: TransportMethod.post,
-      responseName: 'assistant create response',
-      decode: (json) => OpenAIAssistant.fromJson(json),
-      contentType: true,
-      body: request.toJson(),
+    return _assistants.create(
+      request,
       timeout: timeout,
       maxRetries: maxRetries,
       cancellation: cancellation,
@@ -136,13 +125,8 @@ final class OpenAIAssistantsClient {
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
-    return _sendJsonModel(
-      uri: threadsUri,
-      method: TransportMethod.post,
-      responseName: 'thread create response',
-      decode: (json) => OpenAIThread.fromJson(json),
-      contentType: true,
-      body: request.toJson(),
+    return _threads.create(
+      request: request,
       timeout: timeout,
       maxRetries: maxRetries,
       cancellation: cancellation,
@@ -157,11 +141,8 @@ final class OpenAIAssistantsClient {
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
-    return _sendJsonModel(
-      uri: threadUri(threadId),
-      method: TransportMethod.get,
-      responseName: 'thread retrieve response',
-      decode: (json) => OpenAIThread.fromJson(json),
+    return _threads.retrieve(
+      threadId,
       timeout: timeout,
       maxRetries: maxRetries,
       cancellation: cancellation,
@@ -177,13 +158,9 @@ final class OpenAIAssistantsClient {
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
-    return _sendJsonModel(
-      uri: threadUri(threadId),
-      method: TransportMethod.post,
-      responseName: 'thread modify response',
-      decode: (json) => OpenAIThread.fromJson(json),
-      contentType: true,
-      body: request.toJson(),
+    return _threads.modify(
+      threadId,
+      request,
       timeout: timeout,
       maxRetries: maxRetries,
       cancellation: cancellation,
@@ -198,11 +175,8 @@ final class OpenAIAssistantsClient {
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
-    return _sendJsonModel(
-      uri: threadUri(threadId),
-      method: TransportMethod.delete,
-      responseName: 'thread delete response',
-      decode: (json) => OpenAIThreadDeleteResult.fromJson(json),
+    return _threads.delete(
+      threadId,
       timeout: timeout,
       maxRetries: maxRetries,
       cancellation: cancellation,
@@ -218,13 +192,9 @@ final class OpenAIAssistantsClient {
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
-    return _sendJsonModel(
-      uri: threadMessagesUri(threadId),
-      method: TransportMethod.post,
-      responseName: 'thread message create response',
-      decode: (json) => OpenAIThreadMessage.fromJson(json),
-      contentType: true,
-      body: request.toJson(),
+    return _messages.create(
+      threadId,
+      request,
       timeout: timeout,
       maxRetries: maxRetries,
       cancellation: cancellation,
@@ -240,11 +210,9 @@ final class OpenAIAssistantsClient {
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
-    return _sendJsonModel(
-      uri: threadMessagesUri(threadId, query),
-      method: TransportMethod.get,
-      responseName: 'thread message list response',
-      decode: (json) => OpenAIListThreadMessagesResponse.fromJson(json),
+    return _messages.list(
+      threadId,
+      query: query,
       timeout: timeout,
       maxRetries: maxRetries,
       cancellation: cancellation,
@@ -260,11 +228,9 @@ final class OpenAIAssistantsClient {
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
-    return _sendJsonModel(
-      uri: threadMessageUri(threadId, messageId),
-      method: TransportMethod.get,
-      responseName: 'thread message retrieve response',
-      decode: (json) => OpenAIThreadMessage.fromJson(json),
+    return _messages.retrieve(
+      threadId,
+      messageId,
       timeout: timeout,
       maxRetries: maxRetries,
       cancellation: cancellation,
@@ -281,13 +247,10 @@ final class OpenAIAssistantsClient {
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
-    return _sendJsonModel(
-      uri: threadMessageUri(threadId, messageId),
-      method: TransportMethod.post,
-      responseName: 'thread message modify response',
-      decode: (json) => OpenAIThreadMessage.fromJson(json),
-      contentType: true,
-      body: request.toJson(),
+    return _messages.modify(
+      threadId,
+      messageId,
+      request,
       timeout: timeout,
       maxRetries: maxRetries,
       cancellation: cancellation,
@@ -303,11 +266,9 @@ final class OpenAIAssistantsClient {
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
-    return _sendJsonModel(
-      uri: threadMessageUri(threadId, messageId),
-      method: TransportMethod.delete,
-      responseName: 'thread message delete response',
-      decode: (json) => OpenAIThreadMessageDeleteResult.fromJson(json),
+    return _messages.delete(
+      threadId,
+      messageId,
       timeout: timeout,
       maxRetries: maxRetries,
       cancellation: cancellation,
@@ -323,13 +284,9 @@ final class OpenAIAssistantsClient {
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
-    return _sendJsonModel(
-      uri: threadRunsUri(threadId),
-      method: TransportMethod.post,
-      responseName: 'thread run create response',
-      decode: (json) => OpenAIThreadRun.fromJson(json),
-      contentType: true,
-      body: request.toJson(),
+    return _runs.create(
+      threadId,
+      request,
       timeout: timeout,
       maxRetries: maxRetries,
       cancellation: cancellation,
@@ -344,13 +301,8 @@ final class OpenAIAssistantsClient {
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
-    return _sendJsonModel(
-      uri: _requestSupport.createThreadAndRunUri(),
-      method: TransportMethod.post,
-      responseName: 'thread and run create response',
-      decode: (json) => OpenAIThreadRun.fromJson(json),
-      contentType: true,
-      body: request.toJson(),
+    return _runs.createThreadAndRun(
+      request,
       timeout: timeout,
       maxRetries: maxRetries,
       cancellation: cancellation,
@@ -366,11 +318,9 @@ final class OpenAIAssistantsClient {
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
-    return _sendJsonModel(
-      uri: threadRunsUri(threadId, query),
-      method: TransportMethod.get,
-      responseName: 'thread run list response',
-      decode: (json) => OpenAIListRunsResponse.fromJson(json),
+    return _runs.list(
+      threadId,
+      query: query,
       timeout: timeout,
       maxRetries: maxRetries,
       cancellation: cancellation,
@@ -386,11 +336,9 @@ final class OpenAIAssistantsClient {
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
-    return _sendJsonModel(
-      uri: threadRunUri(threadId, runId),
-      method: TransportMethod.get,
-      responseName: 'thread run retrieve response',
-      decode: (json) => OpenAIThreadRun.fromJson(json),
+    return _runs.retrieve(
+      threadId,
+      runId,
       timeout: timeout,
       maxRetries: maxRetries,
       cancellation: cancellation,
@@ -407,13 +355,10 @@ final class OpenAIAssistantsClient {
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
-    return _sendJsonModel(
-      uri: threadRunUri(threadId, runId),
-      method: TransportMethod.post,
-      responseName: 'thread run modify response',
-      decode: (json) => OpenAIThreadRun.fromJson(json),
-      contentType: true,
-      body: request.toJson(),
+    return _runs.modify(
+      threadId,
+      runId,
+      request,
       timeout: timeout,
       maxRetries: maxRetries,
       cancellation: cancellation,
@@ -429,13 +374,9 @@ final class OpenAIAssistantsClient {
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
-    return _sendJsonModel(
-      uri: _requestSupport.cancelThreadRunUri(threadId, runId),
-      method: TransportMethod.post,
-      responseName: 'thread run cancel response',
-      decode: (json) => OpenAIThreadRun.fromJson(json),
-      contentType: true,
-      body: const <String, Object?>{},
+    return _runs.cancel(
+      threadId,
+      runId,
       timeout: timeout,
       maxRetries: maxRetries,
       cancellation: cancellation,
@@ -452,13 +393,10 @@ final class OpenAIAssistantsClient {
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
-    return _sendJsonModel(
-      uri: _requestSupport.submitThreadRunToolOutputsUri(threadId, runId),
-      method: TransportMethod.post,
-      responseName: 'thread run submit tool outputs response',
-      decode: (json) => OpenAIThreadRun.fromJson(json),
-      contentType: true,
-      body: request.toJson(),
+    return _runs.submitToolOutputs(
+      threadId,
+      runId,
+      request,
       timeout: timeout,
       maxRetries: maxRetries,
       cancellation: cancellation,
@@ -475,11 +413,10 @@ final class OpenAIAssistantsClient {
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
-    return _sendJsonModel(
-      uri: threadRunStepsUri(threadId, runId, query),
-      method: TransportMethod.get,
-      responseName: 'thread run step list response',
-      decode: (json) => OpenAIListRunStepsResponse.fromJson(json),
+    return _runSteps.list(
+      threadId,
+      runId,
+      query: query,
       timeout: timeout,
       maxRetries: maxRetries,
       cancellation: cancellation,
@@ -496,11 +433,10 @@ final class OpenAIAssistantsClient {
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
-    return _sendJsonModel(
-      uri: threadRunStepUri(threadId, runId, stepId),
-      method: TransportMethod.get,
-      responseName: 'thread run step retrieve response',
-      decode: (json) => OpenAIRunStep.fromJson(json),
+    return _runSteps.retrieve(
+      threadId,
+      runId,
+      stepId,
       timeout: timeout,
       maxRetries: maxRetries,
       cancellation: cancellation,
@@ -515,11 +451,8 @@ final class OpenAIAssistantsClient {
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
-    return _sendJsonModel(
-      uri: assistantsUri(query),
-      method: TransportMethod.get,
-      responseName: 'assistant list response',
-      decode: (json) => OpenAIListAssistantsResponse.fromJson(json),
+    return _assistants.list(
+      query: query,
       timeout: timeout,
       maxRetries: maxRetries,
       cancellation: cancellation,
@@ -534,11 +467,8 @@ final class OpenAIAssistantsClient {
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
-    return _sendJsonModel(
-      uri: assistantUri(assistantId),
-      method: TransportMethod.get,
-      responseName: 'assistant retrieve response',
-      decode: (json) => OpenAIAssistant.fromJson(json),
+    return _assistants.retrieve(
+      assistantId,
       timeout: timeout,
       maxRetries: maxRetries,
       cancellation: cancellation,
@@ -554,13 +484,9 @@ final class OpenAIAssistantsClient {
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
-    return _sendJsonModel(
-      uri: assistantUri(assistantId),
-      method: TransportMethod.post,
-      responseName: 'assistant modify response',
-      decode: (json) => OpenAIAssistant.fromJson(json),
-      contentType: true,
-      body: request.toJson(),
+    return _assistants.modify(
+      assistantId,
+      request,
       timeout: timeout,
       maxRetries: maxRetries,
       cancellation: cancellation,
@@ -575,11 +501,8 @@ final class OpenAIAssistantsClient {
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
-    return _sendJsonModel(
-      uri: assistantUri(assistantId),
-      method: TransportMethod.delete,
-      responseName: 'assistant delete response',
-      decode: (json) => OpenAIDeleteAssistantResponse.fromJson(json),
+    return _assistants.delete(
+      assistantId,
       timeout: timeout,
       maxRetries: maxRetries,
       cancellation: cancellation,
