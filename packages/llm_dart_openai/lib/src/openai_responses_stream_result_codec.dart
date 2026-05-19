@@ -60,6 +60,12 @@ GenerateTextResult decodeOpenAIResponsesGenerateResponse(
       continue;
     }
 
+    if (type == 'image_generation_call') {
+      hasToolCalls = true;
+      content.addAll(decodeOpenAIResponsesImageGenerationCallOutput(item));
+      continue;
+    }
+
     if (type == 'tool_search_call') {
       hasToolCalls = true;
       final toolCall = decodeOpenAIResponsesToolSearchCallOutput(item);

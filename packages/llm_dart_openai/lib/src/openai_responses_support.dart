@@ -2,6 +2,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'openai_responses_code_interpreter_projection.dart';
 import 'openai_responses_custom_projection.dart';
+import 'openai_responses_image_generation_projection.dart';
 import 'openai_responses_mcp_projection.dart';
 import 'openai_responses_source_projection.dart';
 import 'openai_responses_tool_search_projection.dart';
@@ -172,6 +173,26 @@ List<ContentPart> decodeOpenAIResponsesCodeInterpreterCallOutput(
   Map<String, Object?> item,
 ) {
   final projection = projectOpenAIResponsesCodeInterpreterCall(item);
+  if (projection == null) {
+    return const [];
+  }
+
+  return [
+    ToolCallContentPart(
+      projection.toToolCall(),
+      providerMetadata: projection.providerMetadata,
+    ),
+    ToolResultContentPart(
+      projection.toToolResult(),
+      providerMetadata: projection.providerMetadata,
+    ),
+  ];
+}
+
+List<ContentPart> decodeOpenAIResponsesImageGenerationCallOutput(
+  Map<String, Object?> item,
+) {
+  final projection = projectOpenAIResponsesImageGenerationCall(item);
   if (projection == null) {
     return const [];
   }

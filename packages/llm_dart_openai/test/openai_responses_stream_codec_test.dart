@@ -413,7 +413,8 @@ void main() {
       );
     });
 
-    test('maps image generation partial images to custom events', () {
+    test('maps image generation partial images to preliminary tool results',
+        () {
       const codec = OpenAIResponsesCodec();
       final state = OpenAIResponsesStreamState()
         ..responseId = 'resp_img'
@@ -429,18 +430,18 @@ void main() {
         state,
       ).toList();
 
-      final custom = events.whereType<CustomEvent>().single;
-      expect(custom.kind, 'openai.image_generation_call.partial_image');
+      final result = events.whereType<ToolResultEvent>().single;
+      expect(result.toolResult.toolCallId, 'img_1');
+      expect(result.toolResult.toolName, 'image_generation');
+      expect(result.toolResult.preliminary, isTrue);
       expect(
-        custom.data,
+        result.toolResult.output,
         {
-          'item_id': 'img_1',
-          'output_index': 1,
-          'partial_image_b64': 'AQID',
+          'result': 'AQID',
         },
       );
       expect(
-        custom.providerMetadata?.namespace('openai'),
+        result.providerMetadata?.namespace('openai'),
         allOf(
           containsPair('responseId', 'resp_img'),
           containsPair('itemId', 'img_1'),
@@ -449,6 +450,52 @@ void main() {
           containsPair('serviceTier', 'default'),
         ),
       );
+    });
+
+    test('maps image generation output items to provider-executed tool events',
+        () {
+      const codec = OpenAIResponsesCodec();
+      final state = OpenAIResponsesStreamState()
+        ..responseId = 'resp_img'
+        ..serviceTier = 'default';
+      final events = <LanguageModelStreamEvent>[];
+
+      for (final chunk in <Map<String, Object?>>[
+        {
+          'type': 'response.output_item.added',
+          'output_index': 1,
+          'item': {
+            'id': 'img_1',
+            'type': 'image_generation_call',
+            'status': 'in_progress',
+          },
+        },
+        {
+          'type': 'response.output_item.done',
+          'output_index': 1,
+          'item': {
+            'id': 'img_1',
+            'type': 'image_generation_call',
+            'status': 'completed',
+            'result': 'AAEC',
+          },
+        },
+      ]) {
+        events.addAll(codec.decodeStreamChunk(chunk, state));
+      }
+
+      final toolCall = events.whereType<ToolCallEvent>().single.toolCall;
+      expect(toolCall.toolCallId, 'img_1');
+      expect(toolCall.toolName, 'image_generation');
+      expect(toolCall.providerExecuted, isTrue);
+      expect(toolCall.input, isEmpty);
+
+      final toolResult = events.whereType<ToolResultEvent>().single.toolResult;
+      expect(toolResult.toolCallId, 'img_1');
+      expect(toolResult.toolName, 'image_generation');
+      expect(toolResult.output, {
+        'result': 'AAEC',
+      });
     });
 
     test('maps code interpreter streams to provider-executed tool events', () {

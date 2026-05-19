@@ -1086,8 +1086,7 @@ void main() {
       );
     });
 
-    test('decodes image generation and mcp list tools as custom content parts',
-        () {
+    test('decodes image generation as provider-executed tool content', () {
       const codec = OpenAIResponsesCodec();
 
       final result = codec.decodeGenerateResponse({
@@ -1099,6 +1098,32 @@ void main() {
             'type': 'image_generation_call',
             'result': 'AAEC',
           },
+        ],
+      });
+
+      final toolCall = result.content.whereType<ToolCallContentPart>().single;
+      expect(toolCall.toolCall.toolCallId, 'img_1');
+      expect(toolCall.toolCall.toolName, 'image_generation');
+      expect(toolCall.toolCall.providerExecuted, isTrue);
+      expect(toolCall.toolCall.input, isEmpty);
+
+      final toolResult =
+          result.content.whereType<ToolResultContentPart>().single;
+      expect(toolResult.toolResult.toolCallId, 'img_1');
+      expect(toolResult.toolResult.toolName, 'image_generation');
+      expect(toolResult.toolResult.output, {
+        'result': 'AAEC',
+      });
+      expect(OpenAICustomPart.parseContentParts(result.content), isEmpty);
+    });
+
+    test('decodes mcp list tools as custom content parts', () {
+      const codec = OpenAIResponsesCodec();
+
+      final result = codec.decodeGenerateResponse({
+        'id': 'resp_custom_outputs',
+        'status': 'completed',
+        'output': [
           {
             'id': 'mcp_tools_1',
             'type': 'mcp_list_tools',
@@ -1116,16 +1141,10 @@ void main() {
       });
 
       final customParts = OpenAICustomPart.parseContentParts(result.content);
-      expect(customParts, hasLength(2));
-      expect(customParts[0], isA<OpenAIImageGenerationCallCustomPart>());
+      expect(customParts, hasLength(1));
+      expect(customParts.single, isA<OpenAIMcpListToolsCustomPart>());
       expect(
-        (customParts[0] as OpenAIImageGenerationCallCustomPart)
-            .decodeImageBytes(),
-        [0, 1, 2],
-      );
-      expect(customParts[1], isA<OpenAIMcpListToolsCustomPart>());
-      expect(
-        (customParts[1] as OpenAIMcpListToolsCustomPart).toolNames,
+        (customParts.single as OpenAIMcpListToolsCustomPart).toolNames,
         ['create_short_url', 'get_status'],
       );
     });

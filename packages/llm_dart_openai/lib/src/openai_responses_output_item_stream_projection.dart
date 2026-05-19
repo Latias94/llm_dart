@@ -2,6 +2,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'openai_responses_code_interpreter_stream_projection.dart';
 import 'openai_responses_custom_stream_projection.dart';
+import 'openai_responses_image_generation_stream_projection.dart';
 import 'openai_responses_mcp_stream_projection.dart';
 import 'openai_responses_stream_state.dart';
 import 'openai_responses_stream_tool_codec.dart';
@@ -43,6 +44,16 @@ Iterable<LanguageModelStreamEvent> decodeOpenAIResponsesOutputItemAddedChunk(
 
   if (itemType == 'code_interpreter_call') {
     yield* decodeOpenAIResponsesCodeInterpreterItemAddedChunk(
+      chunk,
+      item,
+      state,
+    );
+    return;
+  }
+
+  if (itemType == 'image_generation_call') {
+    state.hasToolCalls = true;
+    yield* decodeOpenAIResponsesImageGenerationItemAddedChunk(
       chunk,
       item,
       state,
@@ -107,6 +118,16 @@ Iterable<LanguageModelStreamEvent> decodeOpenAIResponsesOutputItemDoneChunk(
   if (itemType == 'code_interpreter_call') {
     state.hasToolCalls = true;
     yield* decodeOpenAIResponsesCodeInterpreterItemDoneChunk(
+      chunk,
+      item,
+      state,
+    );
+    return;
+  }
+
+  if (itemType == 'image_generation_call') {
+    state.hasToolCalls = true;
+    yield* decodeOpenAIResponsesImageGenerationItemDoneChunk(
       chunk,
       item,
       state,
