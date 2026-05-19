@@ -11,6 +11,7 @@ import '../common/json_codec_common.dart';
 import 'serialization_file_json_codec.dart';
 import 'serialization_metadata_json_codec.dart';
 import 'serialization_source_reference_json_codec.dart';
+import 'serialization_tool_content_json_codec.dart';
 import 'serialization_tool_output_json_codec.dart';
 
 final class SerializationJsonSupport {
@@ -210,6 +211,32 @@ final class SerializationJsonSupport {
         value,
         path: path,
         decodeProviderOptions: decodeProviderOptions,
+      );
+
+  static JsonMap encodeToolCallContent(ToolCallContent toolCall) =>
+      const SerializationToolContentJsonCodec().encodeToolCallContent(toolCall);
+
+  static ToolCallContent decodeToolCallContent(
+    Object? value, {
+    required String path,
+  }) =>
+      const SerializationToolContentJsonCodec().decodeToolCallContent(
+        value,
+        path: path,
+      );
+
+  static JsonMap encodeToolResultContent(ToolResultContent toolResult) =>
+      const SerializationToolContentJsonCodec().encodeToolResultContent(
+        toolResult,
+      );
+
+  static ToolResultContent decodeToolResultContent(
+    Object? value, {
+    required String path,
+  }) =>
+      const SerializationToolContentJsonCodec().decodeToolResultContent(
+        value,
+        path: path,
       );
 
   static JsonMap encodeBytes(List<int> bytes) {

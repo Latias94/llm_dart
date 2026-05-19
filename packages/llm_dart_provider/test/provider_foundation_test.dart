@@ -194,5 +194,77 @@ void main() {
       expect(legacy.setting, isNull);
       expect(legacy.field, 'temperature');
     });
+
+    test('round-trips shared tool call and result content', () {
+      final encodedCall = SerializationJsonSupport.encodeToolCallContent(
+        const ToolCallContent(
+          toolCallId: 'call-1',
+          toolName: 'lookup',
+          input: {
+            'city': 'London',
+          },
+          providerExecuted: true,
+          isDynamic: true,
+          title: 'Weather lookup',
+        ),
+      );
+
+      expect(encodedCall, {
+        'toolCallId': 'call-1',
+        'toolName': 'lookup',
+        'input': {
+          'city': 'London',
+        },
+        'providerExecuted': true,
+        'isDynamic': true,
+        'title': 'Weather lookup',
+      });
+      final decodedCall = SerializationJsonSupport.decodeToolCallContent(
+        {
+          ...encodedCall,
+          'dynamic': true,
+          'isDynamic': null,
+        },
+        path: r'$.toolCall',
+      );
+      expect(decodedCall.toolCallId, 'call-1');
+      expect(decodedCall.isDynamic, isTrue);
+      expect(decodedCall.providerExecuted, isTrue);
+
+      final encodedResult = SerializationJsonSupport.encodeToolResultContent(
+        ToolResultContent(
+          toolCallId: 'call-1',
+          toolName: 'lookup',
+          toolOutput: const ErrorTextToolOutput('not found'),
+          preliminary: true,
+          isDynamic: true,
+        ),
+      );
+
+      expect(encodedResult['toolOutput'], {
+        'type': 'error-text',
+        'value': 'not found',
+      });
+      final decodedResult = SerializationJsonSupport.decodeToolResultContent(
+        encodedResult,
+        path: r'$.toolResult',
+      );
+      expect(decodedResult.toolCallId, 'call-1');
+      expect(decodedResult.isError, isTrue);
+      expect(decodedResult.output, 'not found');
+      expect(decodedResult.preliminary, isTrue);
+      expect(decodedResult.isDynamic, isTrue);
+
+      final legacyResult = SerializationJsonSupport.decodeToolResultContent(
+        {
+          'toolCallId': 'call-2',
+          'toolName': 'legacy',
+          'output': 'bad input',
+          'isError': true,
+        },
+        path: r'$.toolResult',
+      );
+      expect(legacyResult.toolOutput, isA<ErrorTextToolOutput>());
+    });
   });
 }

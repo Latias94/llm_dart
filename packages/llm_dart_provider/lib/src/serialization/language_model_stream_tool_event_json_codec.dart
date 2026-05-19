@@ -1,5 +1,4 @@
 import '../common/json_codec_common.dart';
-import '../content/content_part.dart';
 import '../stream/language_model_stream_event.dart';
 import 'serialization_json_support.dart';
 
@@ -88,7 +87,7 @@ final class LanguageModelStreamToolEventJsonCodec {
         },
       ToolCallEvent(:final toolCall, :final providerMetadata) => {
           'type': 'tool-call',
-          'toolCall': _encodeToolCallContent(toolCall),
+          'toolCall': SerializationJsonSupport.encodeToolCallContent(toolCall),
           if (providerMetadata != null)
             'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
               providerMetadata,
@@ -96,7 +95,8 @@ final class LanguageModelStreamToolEventJsonCodec {
         },
       ToolResultEvent(:final toolResult, :final providerMetadata) => {
           'type': 'tool-result',
-          'toolResult': _encodeToolResultContent(toolResult),
+          'toolResult':
+              SerializationJsonSupport.encodeToolResultContent(toolResult),
           if (providerMetadata != null)
             'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
               providerMetadata,
@@ -196,7 +196,7 @@ final class LanguageModelStreamToolEventJsonCodec {
           ),
         ),
       'tool-call' => ToolCallEvent(
-          toolCall: _decodeToolCallContent(
+          toolCall: SerializationJsonSupport.decodeToolCallContent(
             map['toolCall'],
             path: '$path.toolCall',
           ),
@@ -206,7 +206,7 @@ final class LanguageModelStreamToolEventJsonCodec {
           ),
         ),
       'tool-result' => ToolResultEvent(
-          toolResult: _decodeToolResultContent(
+          toolResult: SerializationJsonSupport.decodeToolResultContent(
             map['toolResult'],
             path: '$path.toolResult',
           ),
@@ -230,79 +230,5 @@ final class LanguageModelStreamToolEventJsonCodec {
           'Unsupported provider tool stream event type "$type" at $path.',
         ),
     };
-  }
-
-  JsonMap _encodeToolCallContent(ToolCallContent toolCall) {
-    return {
-      'toolCallId': toolCall.toolCallId,
-      'toolName': toolCall.toolName,
-      'input': ensureJsonValue(toolCall.input, path: r'$.toolCall.input'),
-      'providerExecuted': toolCall.providerExecuted,
-      'isDynamic': toolCall.isDynamic,
-      if (toolCall.title != null) 'title': toolCall.title,
-    };
-  }
-
-  ToolCallContent _decodeToolCallContent(
-    Object? value, {
-    required String path,
-  }) {
-    final map = asJsonMap(value, path: path);
-    return ToolCallContent(
-      toolCallId: asJsonString(map['toolCallId'], path: '$path.toolCallId'),
-      toolName: asJsonString(map['toolName'], path: '$path.toolName'),
-      input: map['input'],
-      providerExecuted: asNullableJsonBool(
-            map['providerExecuted'],
-            path: '$path.providerExecuted',
-          ) ??
-          false,
-      isDynamic: SerializationJsonSupport.decodeDynamicFlag(
-        map,
-        path: path,
-      ),
-      title: asNullableJsonString(map['title'], path: '$path.title'),
-    );
-  }
-
-  JsonMap _encodeToolResultContent(ToolResultContent toolResult) {
-    return {
-      'toolCallId': toolResult.toolCallId,
-      'toolName': toolResult.toolName,
-      'toolOutput':
-          SerializationJsonSupport.encodeToolOutput(toolResult.toolOutput),
-      'preliminary': toolResult.preliminary,
-      'isDynamic': toolResult.isDynamic,
-    };
-  }
-
-  ToolResultContent _decodeToolResultContent(
-    Object? value, {
-    required String path,
-  }) {
-    final map = asJsonMap(value, path: path);
-    return ToolResultContent(
-      toolCallId: asJsonString(map['toolCallId'], path: '$path.toolCallId'),
-      toolName: asJsonString(map['toolName'], path: '$path.toolName'),
-      toolOutput: map.containsKey('toolOutput')
-          ? SerializationJsonSupport.decodeToolOutput(
-              map['toolOutput'],
-              path: '$path.toolOutput',
-            )
-          : null,
-      output: map.containsKey('toolOutput') ? null : map['output'],
-      isError: map.containsKey('toolOutput')
-          ? false
-          : asNullableJsonBool(map['isError'], path: '$path.isError') ?? false,
-      preliminary: asNullableJsonBool(
-            map['preliminary'],
-            path: '$path.preliminary',
-          ) ??
-          false,
-      isDynamic: SerializationJsonSupport.decodeDynamicFlag(
-        map,
-        path: path,
-      ),
-    );
   }
 }
