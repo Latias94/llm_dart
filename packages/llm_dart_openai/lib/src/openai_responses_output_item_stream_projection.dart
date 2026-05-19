@@ -1,6 +1,7 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'openai_responses_code_interpreter_stream_projection.dart';
+import 'openai_responses_computer_use_stream_projection.dart';
 import 'openai_responses_custom_stream_projection.dart';
 import 'openai_responses_file_search_stream_projection.dart';
 import 'openai_responses_image_generation_stream_projection.dart';
@@ -77,6 +78,16 @@ Iterable<LanguageModelStreamEvent> decodeOpenAIResponsesOutputItemAddedChunk(
   if (itemType == 'web_search_call') {
     state.hasToolCalls = true;
     yield* decodeOpenAIResponsesWebSearchItemAddedChunk(
+      chunk,
+      item,
+      state,
+    );
+    return;
+  }
+
+  if (itemType == 'computer_call') {
+    state.hasToolCalls = true;
+    yield* decodeOpenAIResponsesComputerUseItemAddedChunk(
       chunk,
       item,
       state,
@@ -171,6 +182,16 @@ Iterable<LanguageModelStreamEvent> decodeOpenAIResponsesOutputItemDoneChunk(
   if (itemType == 'web_search_call') {
     state.hasToolCalls = true;
     yield* decodeOpenAIResponsesWebSearchItemDoneChunk(
+      chunk,
+      item,
+      state,
+    );
+    return;
+  }
+
+  if (itemType == 'computer_call') {
+    state.hasToolCalls = true;
+    yield* decodeOpenAIResponsesComputerUseItemDoneChunk(
       chunk,
       item,
       state,

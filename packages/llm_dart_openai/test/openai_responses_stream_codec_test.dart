@@ -953,6 +953,57 @@ void main() {
       expect(events.whereType<CustomEvent>(), isEmpty);
     });
 
+    test('maps computer call streams to provider-executed tool events', () {
+      const codec = OpenAIResponsesCodec();
+      final state = OpenAIResponsesStreamState()
+        ..responseId = 'resp_computer'
+        ..serviceTier = 'default';
+      final events = <LanguageModelStreamEvent>[];
+
+      for (final chunk in <Map<String, Object?>>[
+        {
+          'type': 'response.output_item.added',
+          'output_index': 0,
+          'item': {
+            'id': 'cu_1',
+            'type': 'computer_call',
+            'status': 'in_progress',
+          },
+        },
+        {
+          'type': 'response.output_item.done',
+          'output_index': 0,
+          'item': {
+            'id': 'cu_1',
+            'type': 'computer_call',
+            'status': 'completed',
+          },
+        },
+      ]) {
+        events.addAll(codec.decodeStreamChunk(chunk, state));
+      }
+
+      final inputStart = events.whereType<ToolInputStartEvent>().single;
+      expect(inputStart.toolCallId, 'cu_1');
+      expect(inputStart.toolName, 'computer_use');
+      expect(inputStart.providerExecuted, isTrue);
+      expect(events.whereType<ToolInputEndEvent>().single.toolCallId, 'cu_1');
+      final toolCall = events.whereType<ToolCallEvent>().single.toolCall;
+      expect(toolCall.toolCallId, 'cu_1');
+      expect(toolCall.toolName, 'computer_use');
+      expect(toolCall.providerExecuted, isTrue);
+      expect(toolCall.input, '');
+
+      final toolResult = events.whereType<ToolResultEvent>().single.toolResult;
+      expect(toolResult.toolCallId, 'cu_1');
+      expect(toolResult.toolName, 'computer_use');
+      expect(toolResult.output, {
+        'type': 'computer_use_tool_result',
+        'status': 'completed',
+      });
+      expect(events.whereType<CustomEvent>(), isEmpty);
+    });
+
     test('maps message output item completion to text end without custom event',
         () {
       const codec = OpenAIResponsesCodec();

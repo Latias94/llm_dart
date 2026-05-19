@@ -2058,5 +2058,38 @@ void main() {
       expect(result.finishReason, FinishReason.toolCalls);
       expect(OpenAICustomPart.parseContentParts(result.content), isEmpty);
     });
+
+    test('decodes computer calls as provider-executed tool content', () {
+      const codec = OpenAIResponsesCodec();
+
+      final result = codec.decodeGenerateResponse({
+        'id': 'resp_computer',
+        'status': 'completed',
+        'output': [
+          {
+            'id': 'cu_1',
+            'type': 'computer_call',
+            'status': 'completed',
+          },
+        ],
+      });
+
+      final toolCall = result.content.whereType<ToolCallContentPart>().single;
+      expect(toolCall.toolCall.toolCallId, 'cu_1');
+      expect(toolCall.toolCall.toolName, 'computer_use');
+      expect(toolCall.toolCall.providerExecuted, isTrue);
+      expect(toolCall.toolCall.input, '');
+
+      final toolResult =
+          result.content.whereType<ToolResultContentPart>().single;
+      expect(toolResult.toolResult.toolCallId, 'cu_1');
+      expect(toolResult.toolResult.toolName, 'computer_use');
+      expect(toolResult.toolResult.output, {
+        'type': 'computer_use_tool_result',
+        'status': 'completed',
+      });
+      expect(result.finishReason, FinishReason.toolCalls);
+      expect(OpenAICustomPart.parseContentParts(result.content), isEmpty);
+    });
   });
 }

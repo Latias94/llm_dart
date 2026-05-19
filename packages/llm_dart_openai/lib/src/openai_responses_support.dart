@@ -1,6 +1,7 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'openai_responses_code_interpreter_projection.dart';
+import 'openai_responses_computer_use_projection.dart';
 import 'openai_responses_custom_projection.dart';
 import 'openai_responses_file_search_projection.dart';
 import 'openai_responses_image_generation_projection.dart';
@@ -236,6 +237,26 @@ List<ContentPart> decodeOpenAIResponsesWebSearchCallOutput(
   Map<String, Object?> item,
 ) {
   final projection = projectOpenAIResponsesWebSearchCall(item);
+  if (projection == null) {
+    return const [];
+  }
+
+  return [
+    ToolCallContentPart(
+      projection.toToolCall(),
+      providerMetadata: projection.providerMetadata,
+    ),
+    ToolResultContentPart(
+      projection.toToolResult(),
+      providerMetadata: projection.providerMetadata,
+    ),
+  ];
+}
+
+List<ContentPart> decodeOpenAIResponsesComputerUseCallOutput(
+  Map<String, Object?> item,
+) {
+  final projection = projectOpenAIResponsesComputerUseCall(item);
   if (projection == null) {
     return const [];
   }
