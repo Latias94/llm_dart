@@ -44,6 +44,7 @@ void main() {
           filename: 'notes.jsonl',
           purpose: OpenAIFilePurposes.assistants,
           mediaType: 'application/jsonl',
+          expiresAfter: 3600,
         ),
         timeout: const Duration(seconds: 5),
         headers: const {
@@ -84,6 +85,8 @@ void main() {
       expect(body, contains('hello files'));
       expect(body, contains('name="purpose"'));
       expect(body, contains(OpenAIFilePurposes.assistants));
+      expect(body, contains('name="expires_after"'));
+      expect(body, contains('3600'));
 
       expect(uploaded.id, 'file_123');
       expect(uploaded.filename, 'notes.jsonl');
@@ -217,6 +220,15 @@ void main() {
             filename: 'empty.txt',
             purpose: OpenAIFilePurposes.assistants,
           ),
+        ),
+        throwsArgumentError,
+      );
+
+      await expectLater(
+        files.uploadBytes(
+          bytes: utf8.encode('hello'),
+          filename: 'bad-expiry.txt',
+          expiresAfter: 0,
         ),
         throwsArgumentError,
       );
