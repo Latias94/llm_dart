@@ -451,6 +451,96 @@ void main() {
       );
     });
 
+    test('maps code interpreter streams to provider-executed tool events', () {
+      const codec = OpenAIResponsesCodec();
+      final state = OpenAIResponsesStreamState()
+        ..responseId = 'resp_ci'
+        ..serviceTier = 'default';
+      final events = <LanguageModelStreamEvent>[];
+
+      for (final chunk in <Map<String, Object?>>[
+        {
+          'type': 'response.output_item.added',
+          'output_index': 1,
+          'item': {
+            'id': 'ci_1',
+            'type': 'code_interpreter_call',
+            'status': 'in_progress',
+            'code': '',
+            'container_id': 'cntr_1',
+            'outputs': const [],
+          },
+        },
+        {
+          'type': 'response.code_interpreter_call_code.delta',
+          'output_index': 1,
+          'item_id': 'ci_1',
+          'delta': 'print("hi")',
+        },
+        {
+          'type': 'response.code_interpreter_call_code.done',
+          'output_index': 1,
+          'item_id': 'ci_1',
+          'code': 'print("hi")',
+        },
+        {
+          'type': 'response.output_item.done',
+          'output_index': 1,
+          'item': {
+            'id': 'ci_1',
+            'type': 'code_interpreter_call',
+            'status': 'completed',
+            'code': 'print("hi")',
+            'container_id': 'cntr_1',
+            'outputs': [
+              {
+                'type': 'logs',
+                'logs': 'hi',
+              },
+            ],
+          },
+        },
+      ]) {
+        events.addAll(codec.decodeStreamChunk(chunk, state));
+      }
+
+      final start = events.whereType<ToolInputStartEvent>().single;
+      expect(start.toolCallId, 'ci_1');
+      expect(start.toolName, 'code_interpreter');
+      expect(start.providerExecuted, isTrue);
+
+      expect(
+        events.whereType<ToolInputDeltaEvent>().map((event) => event.delta),
+        [
+          '{"containerId":"cntr_1","code":"',
+          'print(\\"hi\\")',
+          '"}',
+        ],
+      );
+      expect(events.whereType<ToolInputEndEvent>().single.toolCallId, 'ci_1');
+
+      final toolCall = events.whereType<ToolCallEvent>().single.toolCall;
+      expect(toolCall.toolCallId, 'ci_1');
+      expect(toolCall.toolName, 'code_interpreter');
+      expect(toolCall.providerExecuted, isTrue);
+      expect(toolCall.input, {
+        'containerId': 'cntr_1',
+        'code': 'print("hi")',
+      });
+
+      final toolResult = events.whereType<ToolResultEvent>().single.toolResult;
+      expect(toolResult.toolCallId, 'ci_1');
+      expect(toolResult.toolName, 'code_interpreter');
+      expect(toolResult.output, {
+        'outputs': [
+          {
+            'type': 'logs',
+            'logs': 'hi',
+          },
+        ],
+      });
+    });
+
     test('maps message output item completion to text end without custom event',
         () {
       const codec = OpenAIResponsesCodec();

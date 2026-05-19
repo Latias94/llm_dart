@@ -1129,5 +1129,63 @@ void main() {
         ['create_short_url', 'get_status'],
       );
     });
+
+    test('decodes code interpreter calls as provider-executed tool content',
+        () {
+      const codec = OpenAIResponsesCodec();
+
+      final result = codec.decodeGenerateResponse({
+        'id': 'resp_code_interpreter',
+        'status': 'completed',
+        'output': [
+          {
+            'id': 'ci_1',
+            'type': 'code_interpreter_call',
+            'status': 'completed',
+            'code': 'print("hi")',
+            'container_id': 'cntr_1',
+            'outputs': [
+              {
+                'type': 'logs',
+                'logs': 'hi',
+              },
+            ],
+          },
+        ],
+      });
+
+      final toolCall = result.content.whereType<ToolCallContentPart>().single;
+      expect(toolCall.toolCall.toolCallId, 'ci_1');
+      expect(toolCall.toolCall.toolName, 'code_interpreter');
+      expect(toolCall.toolCall.providerExecuted, isTrue);
+      expect(toolCall.toolCall.input, {
+        'code': 'print("hi")',
+        'containerId': 'cntr_1',
+      });
+      expect(
+        toolCall.providerMetadata?.namespace('openai'),
+        allOf(
+          containsPair('itemId', 'ci_1'),
+          containsPair('itemType', 'code_interpreter_call'),
+          containsPair('containerId', 'cntr_1'),
+          containsPair('outputCount', 1),
+        ),
+      );
+
+      final toolResult =
+          result.content.whereType<ToolResultContentPart>().single;
+      expect(toolResult.toolResult.toolCallId, 'ci_1');
+      expect(toolResult.toolResult.toolName, 'code_interpreter');
+      expect(toolResult.toolResult.output, {
+        'outputs': [
+          {
+            'type': 'logs',
+            'logs': 'hi',
+          },
+        ],
+      });
+      expect(result.finishReason, FinishReason.toolCalls);
+      expect(OpenAICustomPart.parseContentParts(result.content), isEmpty);
+    });
   });
 }

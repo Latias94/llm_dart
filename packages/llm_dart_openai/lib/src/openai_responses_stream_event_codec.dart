@@ -1,5 +1,6 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import 'openai_responses_code_interpreter_stream_projection.dart';
 import 'openai_responses_custom_stream_projection.dart';
 import 'openai_responses_output_item_stream_projection.dart';
 import 'openai_responses_source_annotation_stream_projection.dart';
@@ -85,6 +86,20 @@ Iterable<LanguageModelStreamEvent> decodeOpenAIResponsesStreamChunk(
       return;
     case 'response.image_generation_call.partial_image':
       yield* decodeOpenAIResponsesPartialImageChunk(chunk, state);
+      return;
+    case 'response.code_interpreter_call_code.delta':
+      yield* decodeOpenAIResponsesCodeInterpreterCodeDeltaChunk(
+        chunk,
+        state,
+        metadata,
+      );
+      return;
+    case 'response.code_interpreter_call_code.done':
+      yield* decodeOpenAIResponsesCodeInterpreterCodeDoneChunk(
+        chunk,
+        state,
+        metadata,
+      );
       return;
     case 'response.output_item.done':
       yield* decodeOpenAIResponsesOutputItemDoneChunk(chunk, state, metadata);

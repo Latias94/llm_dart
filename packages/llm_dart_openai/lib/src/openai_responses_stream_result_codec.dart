@@ -52,6 +52,12 @@ GenerateTextResult decodeOpenAIResponsesGenerateResponse(
       continue;
     }
 
+    if (type == 'code_interpreter_call') {
+      hasToolCalls = true;
+      content.addAll(decodeOpenAIResponsesCodeInterpreterCallOutput(item));
+      continue;
+    }
+
     final customPart = decodeOpenAIResponsesCustomOutput(item);
     if (customPart != null) {
       content.add(customPart);

@@ -1,5 +1,6 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import 'openai_responses_code_interpreter_stream_projection.dart';
 import 'openai_responses_custom_stream_projection.dart';
 import 'openai_responses_mcp_stream_projection.dart';
 import 'openai_responses_stream_state.dart';
@@ -35,6 +36,15 @@ Iterable<LanguageModelStreamEvent> decodeOpenAIResponsesOutputItemAddedChunk(
       item,
       state,
       metadata,
+    );
+    return;
+  }
+
+  if (itemType == 'code_interpreter_call') {
+    yield* decodeOpenAIResponsesCodeInterpreterItemAddedChunk(
+      chunk,
+      item,
+      state,
     );
   }
 }
@@ -81,6 +91,16 @@ Iterable<LanguageModelStreamEvent> decodeOpenAIResponsesOutputItemDoneChunk(
   if (itemType == 'mcp_call') {
     state.hasToolCalls = true;
     yield* decodeOpenAIResponsesMcpCallItemDone(item);
+    return;
+  }
+
+  if (itemType == 'code_interpreter_call') {
+    state.hasToolCalls = true;
+    yield* decodeOpenAIResponsesCodeInterpreterItemDoneChunk(
+      chunk,
+      item,
+      state,
+    );
     return;
   }
 

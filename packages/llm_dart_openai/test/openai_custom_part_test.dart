@@ -93,5 +93,40 @@ void main() {
       expect(mcpPart.toolNames, ['create_short_url', 'get_status']);
       expect(mcpPart.hasError, isFalse);
     });
+
+    test('parses code_interpreter_call custom content parts', () {
+      final parsed = OpenAICustomPart.tryParseContentPart(
+        CustomContentPart(
+          kind: OpenAICodeInterpreterCallCustomPart.customKind,
+          data: {
+            'id': 'ci_1',
+            'code': 'print("hi")',
+            'container_id': 'cntr_1',
+            'outputs': [
+              {
+                'type': 'logs',
+                'logs': 'hi',
+              },
+            ],
+          },
+          providerMetadata: ProviderMetadata.forNamespace(
+            'openai',
+            {
+              'itemId': 'ci_1',
+              'containerId': 'cntr_1',
+              'outputCount': 1,
+            },
+          ),
+        ),
+      );
+
+      expect(parsed, isA<OpenAICodeInterpreterCallCustomPart>());
+      final codePart = parsed! as OpenAICodeInterpreterCallCustomPart;
+      expect(codePart.itemId, 'ci_1');
+      expect(codePart.containerId, 'cntr_1');
+      expect(codePart.code, 'print("hi")');
+      expect(codePart.outputCount, 1);
+      expect(codePart.logs, ['hi']);
+    });
   });
 }

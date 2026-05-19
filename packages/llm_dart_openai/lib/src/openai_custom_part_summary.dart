@@ -35,6 +35,8 @@ final class OpenAICustomPartSummary {
       OpenAIImageGenerationPartialCustomPart() =>
         _buildImageGenerationPartialSummary(part),
       OpenAIMcpListToolsCustomPart() => _buildMcpListToolsSummary(part),
+      OpenAICodeInterpreterCallCustomPart() =>
+        _buildCodeInterpreterCallSummary(part),
     };
   }
 
@@ -155,6 +157,30 @@ OpenAICustomPartSummary _buildMcpListToolsSummary(
       OpenAICustomPartSummaryField(
         label: 'Has Error',
         value: part.hasError ? 'Yes' : 'No',
+      ),
+    ]),
+  );
+}
+
+OpenAICustomPartSummary _buildCodeInterpreterCallSummary(
+  OpenAICodeInterpreterCallCustomPart part,
+) {
+  return OpenAICustomPartSummary(
+    part: part,
+    title: 'Code Interpreter',
+    subtitle: 'Execution',
+    previewText: part.logs.isEmpty ? part.code : part.logs.first,
+    fields: List<OpenAICustomPartSummaryField>.unmodifiable([
+      if (part.itemId != null)
+        OpenAICustomPartSummaryField(label: 'Item ID', value: part.itemId!),
+      if (part.containerId != null)
+        OpenAICustomPartSummaryField(
+          label: 'Container',
+          value: part.containerId!,
+        ),
+      OpenAICustomPartSummaryField(
+        label: 'Outputs',
+        value: '${part.outputCount}',
       ),
     ]),
   );

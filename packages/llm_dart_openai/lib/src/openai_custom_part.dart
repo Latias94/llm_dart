@@ -195,6 +195,48 @@ final class OpenAIMcpListToolsCustomPart extends OpenAICustomPart {
   bool get hasError => error != null;
 }
 
+final class OpenAICodeInterpreterCallCustomPart extends OpenAICustomPart {
+  static const customKind = 'openai.code_interpreter_call';
+
+  @override
+  final Map<String, Object?> payload;
+
+  @override
+  final ProviderMetadata? providerMetadata;
+
+  const OpenAICodeInterpreterCallCustomPart({
+    required this.payload,
+    this.providerMetadata,
+  });
+
+  @override
+  String get kind => customKind;
+
+  String? get itemId =>
+      openaiMetadataString(providerMetadata, 'itemId') ??
+      asString(payload['id']);
+
+  String? get containerId =>
+      asString(payload['container_id']) ??
+      openaiMetadataString(providerMetadata, 'containerId');
+
+  String get code => asString(payload['code']) ?? '';
+
+  List<Map<String, Object?>> get outputs =>
+      List<Map<String, Object?>>.unmodifiable([
+        for (final item in asList(payload['outputs']))
+          if (asMap(item) case final output?) output,
+      ]);
+
+  int get outputCount =>
+      openaiMetadataInt(providerMetadata, 'outputCount') ?? outputs.length;
+
+  List<String> get logs => List<String>.unmodifiable([
+        for (final output in outputs)
+          if (asString(output['logs']) case final logs?) logs,
+      ]);
+}
+
 OpenAICustomPart? _parseCustomPayload({
   required String kind,
   required Object? data,
@@ -217,6 +259,11 @@ OpenAICustomPart? _parseCustomPayload({
         providerMetadata: providerMetadata,
       ),
     OpenAIMcpListToolsCustomPart.customKind => OpenAIMcpListToolsCustomPart(
+        payload: payload,
+        providerMetadata: providerMetadata,
+      ),
+    OpenAICodeInterpreterCallCustomPart.customKind =>
+      OpenAICodeInterpreterCallCustomPart(
         payload: payload,
         providerMetadata: providerMetadata,
       ),
