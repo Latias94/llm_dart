@@ -4,11 +4,10 @@ import 'package:llm_dart_transport/llm_dart_transport.dart';
 import 'openai_chat_completions_codec.dart';
 import 'openai_family_profile.dart';
 import 'openai_family_url_support.dart';
-import 'openai_language_model_request.dart';
+import 'openai_language_model_prepared_call.dart';
 import 'openai_language_model_response.dart';
 import 'openai_language_model_stream.dart';
 import 'openai_language_model_support.dart';
-import 'openai_language_model_transport.dart';
 import 'openai_model_describer.dart';
 import 'openai_options.dart';
 import 'openrouter_options.dart';
@@ -68,36 +67,23 @@ final class OpenAILanguageModel
 
   @override
   Future<GenerateTextResult> doGenerate(GenerateTextRequest request) async {
-    final call = resolveOpenAILanguageModelCall(
+    final preparedCall = prepareOpenAILanguageModelCall(
       request: request,
       modelId: modelId,
+      baseUrl: baseUrl,
       profile: profile,
+      apiKey: apiKey,
       settings: settings,
-    );
-    final preparedRequest = encodeOpenAILanguageModelRequest(
-      call: call,
-      request: request,
       stream: false,
       responsesCodec: _codec,
       chatCompletionsCodec: _chatCompletionsCodec,
     );
-    final response = await transport.send(
-      buildOpenAILanguageModelTransportRequest(
-        baseUrl: baseUrl,
-        route: call.route,
-        request: request,
-        stream: false,
-        body: preparedRequest.body,
-        profile: profile,
-        apiKey: apiKey,
-        settings: settings,
-      ),
-    );
+    final response = await transport.send(preparedCall.transportRequest);
 
     return decodeOpenAILanguageModelGenerateResponse(
-      call: call,
+      call: preparedCall.call,
       body: response.body,
-      warnings: preparedRequest.warnings,
+      warnings: preparedCall.warnings,
       responsesCodec: _codec,
       chatCompletionsCodec: _chatCompletionsCodec,
     );
@@ -106,38 +92,27 @@ final class OpenAILanguageModel
   @override
   Stream<LanguageModelStreamEvent> doStream(
       GenerateTextRequest request) async* {
-    final call = resolveOpenAILanguageModelCall(
+    final preparedCall = prepareOpenAILanguageModelCall(
       request: request,
       modelId: modelId,
+      baseUrl: baseUrl,
       profile: profile,
+      apiKey: apiKey,
       settings: settings,
-    );
-    final preparedRequest = encodeOpenAILanguageModelRequest(
-      call: call,
-      request: request,
       stream: true,
       responsesCodec: _codec,
       chatCompletionsCodec: _chatCompletionsCodec,
     );
 
-    yield StartEvent(warnings: preparedRequest.warnings);
+    yield StartEvent(warnings: preparedCall.warnings);
 
     try {
       final response = await transport.sendStream(
-        buildOpenAILanguageModelTransportRequest(
-          baseUrl: baseUrl,
-          route: call.route,
-          request: request,
-          stream: true,
-          body: preparedRequest.body,
-          profile: profile,
-          apiKey: apiKey,
-          settings: settings,
-        ),
+        preparedCall.transportRequest,
       );
 
       yield* decodeOpenAILanguageModelStreamEvents(
-        route: call.route,
+        route: preparedCall.call.route,
         stream: response.stream,
         includeRawChunks: request.options.includeRawChunks,
         responsesCodec: _codec,
