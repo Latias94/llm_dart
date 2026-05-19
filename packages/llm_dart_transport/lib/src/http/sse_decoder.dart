@@ -84,7 +84,7 @@ final class DefaultSseDecoder implements SseDecoder {
           }
           break;
         case 'retry':
-          retryMilliseconds = int.tryParse(value);
+          retryMilliseconds = _parseRetryMilliseconds(value);
           break;
       }
     }
@@ -138,5 +138,20 @@ final class DefaultSseDecoder implements SseDecoder {
     if (trailingFrame != null) {
       yield trailingFrame;
     }
+  }
+
+  int? _parseRetryMilliseconds(String value) {
+    if (value.isEmpty) {
+      return null;
+    }
+
+    for (var index = 0; index < value.length; index++) {
+      final codeUnit = value.codeUnitAt(index);
+      if (codeUnit < 0x30 || codeUnit > 0x39) {
+        return null;
+      }
+    }
+
+    return int.tryParse(value);
   }
 }

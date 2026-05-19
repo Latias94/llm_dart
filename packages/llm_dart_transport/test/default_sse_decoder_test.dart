@@ -52,6 +52,25 @@ void main() {
     expect(frames.last.data, 'next');
   });
 
+  test('DefaultSseDecoder ignores invalid retry fields', () async {
+    final frames = await _decode([
+      'retry: -1\n',
+      'data: first\n\n',
+      'retry: 1.5\n',
+      'data: second\n\n',
+      'retry: abc\n',
+      'data: third\n\n',
+      'retry: 0\n',
+      'data: fourth\n\n',
+    ]);
+
+    expect(frames, hasLength(4));
+    expect(frames[0].retryMilliseconds, isNull);
+    expect(frames[1].retryMilliseconds, isNull);
+    expect(frames[2].retryMilliseconds, isNull);
+    expect(frames[3].retryMilliseconds, 0);
+  });
+
   test('DefaultSseDecoder flushes trailing frame without blank line', () async {
     final frames = await _decode([
       'event: message\n',
