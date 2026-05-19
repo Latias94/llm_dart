@@ -1,7 +1,7 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
-import 'elevenlabs_options.dart';
+import 'elevenlabs_api_options.dart';
 import 'elevenlabs_value.dart';
 
 String normalizeElevenLabsBaseUrl(String? baseUrl) {
