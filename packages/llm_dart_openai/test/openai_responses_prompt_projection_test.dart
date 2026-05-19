@@ -357,6 +357,38 @@ void main() {
       );
     });
 
+    test('skips synthetic denied tool results during assistant replay', () {
+      final warnings = <ModelWarning>[];
+
+      final items = projection.encode(
+        AssistantPromptMessage(
+          parts: [
+            ToolResultPromptPart(
+              toolCallId: 'approval_1',
+              toolName: 'mcp.create_short_url',
+              toolOutput: const ExecutionDeniedToolOutput('denied'),
+            ),
+            ToolResultPromptPart(
+              toolCallId: 'approval_2',
+              toolName: 'mcp.create_short_url',
+              toolOutput: const JsonToolOutput({
+                'type': 'execution-denied',
+                'reason': 'denied',
+              }),
+            ),
+          ],
+        ),
+        warnings,
+        replayPolicy: const OpenAIResponsesReplayPolicy(
+          store: false,
+          hasConversation: false,
+        ),
+      );
+
+      expect(items, isEmpty);
+      expect(warnings, isEmpty);
+    });
+
     test('reports unsupported assistant prompt parts as provider limitations',
         () {
       final warnings = <ModelWarning>[];
