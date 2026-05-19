@@ -10,8 +10,9 @@ import 'openai_image_model_capabilities.dart';
 import 'openai_image_model_options_resolution.dart';
 import 'openai_image_model_response.dart';
 import 'openai_image_model_transport.dart';
+import 'openai_image_types.dart';
 import 'openai_model_describer.dart';
-import 'openai_options.dart';
+import 'openai_model_settings.dart';
 
 final class OpenAIImageModel implements ImageModel, CapabilityDescribedModel {
   final String apiKey;

@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
-import 'openai_options.dart';
+import 'openai_prompt_part_options.dart';
 
 String encodeOpenAIJsonString(Object? value) {
   if (value == null) {

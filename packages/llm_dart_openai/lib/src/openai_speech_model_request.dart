@@ -1,7 +1,8 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import 'openai_model_settings.dart';
 import 'openai_non_text_model_support.dart';
-import 'openai_options.dart';
+import 'openai_speech_options.dart';
 
 OpenAISpeechModelSettings resolveOpenAISpeechModelSettings(
   ProviderModelOptions settings,

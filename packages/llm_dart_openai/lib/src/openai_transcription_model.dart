@@ -4,7 +4,7 @@ import 'package:llm_dart_transport/llm_dart_transport.dart';
 import 'openai_family_profile.dart';
 import 'openai_family_url_support.dart';
 import 'openai_model_describer.dart';
-import 'openai_options.dart';
+import 'openai_model_settings.dart';
 import 'openai_transcription_model_request.dart';
 import 'openai_transcription_model_response.dart';
 import 'openai_transcription_model_transport.dart';

@@ -1,8 +1,9 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import 'openai_image_options.dart';
 import 'openai_image_model_capabilities.dart';
 import 'openai_image_request_validation.dart';
-import 'openai_options.dart';
+import 'openai_image_types.dart';
 
 void validateOpenAIImageGenerationRequest({
   required String modelId,

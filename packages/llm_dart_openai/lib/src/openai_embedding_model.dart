@@ -7,7 +7,7 @@ import 'openai_embedding_model_request.dart';
 import 'openai_embedding_model_response.dart';
 import 'openai_embedding_model_transport.dart';
 import 'openai_model_describer.dart';
-import 'openai_options.dart';
+import 'openai_model_settings.dart';
 
 final class OpenAIEmbeddingModel
     implements EmbeddingModel, CapabilityDescribedModel {

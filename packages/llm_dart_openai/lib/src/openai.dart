@@ -10,7 +10,7 @@ import 'openai_files.dart';
 import 'openai_image_model.dart';
 import 'openai_language_model.dart';
 import 'openai_moderation.dart';
-import 'openai_options.dart';
+import 'openai_model_settings.dart';
 import 'openai_responses_lifecycle.dart';
 import 'openai_speech_model.dart';
 import 'openai_transcription_model.dart';
