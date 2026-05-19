@@ -107,6 +107,56 @@ void main() {
       );
     });
 
+    test('round-trips source references with legacy kind inference', () {
+      final source = SourceReference(
+        kind: SourceReferenceKind.url,
+        sourceId: 'src-1',
+        uri: Uri.parse('https://example.com/doc'),
+        title: 'Doc',
+        providerMetadata: const ProviderMetadata({
+          'openai': {'index': 1},
+        }),
+      );
+
+      final encoded = SerializationJsonSupport.encodeSourceReference(source);
+
+      expect(encoded, {
+        'kind': 'url',
+        'sourceId': 'src-1',
+        'uri': 'https://example.com/doc',
+        'title': 'Doc',
+        'providerMetadata': {
+          'openai': {'index': 1},
+        },
+      });
+      expect(
+        SerializationJsonSupport.decodeSourceReference(
+          encoded,
+          path: r'$.source',
+        ).providerMetadata,
+        source.providerMetadata,
+      );
+      expect(
+        SerializationJsonSupport.decodeSourceReference(
+          {
+            'sourceId': 'doc-1',
+          },
+          path: r'$.source',
+        ).kind,
+        SourceReferenceKind.document,
+      );
+      expect(
+        SerializationJsonSupport.decodeSourceReference(
+          {
+            'sourceId': 'url-1',
+            'uri': 'https://example.com',
+          },
+          path: r'$.source',
+        ).kind,
+        SourceReferenceKind.url,
+      );
+    });
+
     test('round-trips model warnings with new and legacy target fields', () {
       const warning = ModelWarning(
         type: ModelWarningType.deprecated,

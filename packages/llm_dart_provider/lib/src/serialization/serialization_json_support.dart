@@ -9,6 +9,7 @@ import '../model/model_response_metadata.dart';
 import '../tool/tool_output.dart';
 import '../common/json_codec_common.dart';
 import 'serialization_file_json_codec.dart';
+import 'serialization_source_reference_json_codec.dart';
 import 'serialization_tool_output_json_codec.dart';
 
 final class SerializationJsonSupport {
@@ -182,69 +183,30 @@ final class SerializationJsonSupport {
     return ModelError.fromJson(value, path: path);
   }
 
-  static JsonMap encodeSourceReference(SourceReference source) {
-    return {
-      'kind': encodeSourceReferenceKind(source.kind),
-      'sourceId': source.sourceId,
-      if (source.uri != null) 'uri': source.uri.toString(),
-      if (source.title != null) 'title': source.title,
-      if (source.filename != null) 'filename': source.filename,
-      if (source.mediaType != null) 'mediaType': source.mediaType,
-      if (source.providerMetadata != null)
-        'providerMetadata': encodeProviderMetadata(source.providerMetadata!),
-    };
-  }
+  static JsonMap encodeSourceReference(SourceReference source) =>
+      const SerializationSourceReferenceJsonCodec()
+          .encodeSourceReference(source);
 
   static SourceReference decodeSourceReference(
     Object? value, {
     required String path,
-  }) {
-    final map = asJsonMap(value, path: path);
-    return SourceReference(
-      kind: decodeSourceReferenceKind(
-        map['kind'],
-        path: '$path.kind',
-        uri: map['uri'],
-      ),
-      sourceId: asJsonString(map['sourceId'], path: '$path.sourceId'),
-      uri: decodeUri(map['uri'], path: '$path.uri'),
-      title: asNullableJsonString(map['title'], path: '$path.title'),
-      filename: asNullableJsonString(map['filename'], path: '$path.filename'),
-      mediaType:
-          asNullableJsonString(map['mediaType'], path: '$path.mediaType'),
-      providerMetadata: decodeProviderMetadata(
-        map['providerMetadata'],
-        path: '$path.providerMetadata',
-      ),
-    );
-  }
+  }) =>
+      const SerializationSourceReferenceJsonCodec().decodeSourceReference(
+        value,
+        path: path,
+      );
 
-  static String encodeSourceReferenceKind(SourceReferenceKind kind) {
-    switch (kind) {
-      case SourceReferenceKind.url:
-        return 'url';
-      case SourceReferenceKind.document:
-        return 'document';
-      case SourceReferenceKind.other:
-        return 'other';
-    }
-  }
+  static String encodeSourceReferenceKind(SourceReferenceKind kind) =>
+      const SerializationSourceReferenceJsonCodec()
+          .encodeSourceReferenceKind(kind);
 
   static SourceReferenceKind decodeSourceReferenceKind(
     Object? value, {
     required String path,
     required Object? uri,
-  }) {
-    final kind = asNullableJsonString(value, path: path);
-    return switch (kind) {
-      'url' => SourceReferenceKind.url,
-      'document' => SourceReferenceKind.document,
-      'other' => SourceReferenceKind.other,
-      null =>
-        uri == null ? SourceReferenceKind.document : SourceReferenceKind.url,
-      _ => throw FormatException('Invalid source kind at $path: $kind'),
-    };
-  }
+  }) =>
+      const SerializationSourceReferenceJsonCodec()
+          .decodeSourceReferenceKind(value, path: path, uri: uri);
 
   static JsonMap encodeGeneratedFile(GeneratedFile file) {
     return {
