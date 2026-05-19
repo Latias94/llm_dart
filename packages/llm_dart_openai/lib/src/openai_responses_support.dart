@@ -3,6 +3,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'openai_responses_code_interpreter_projection.dart';
 import 'openai_responses_computer_use_projection.dart';
 import 'openai_responses_custom_projection.dart';
+import 'openai_responses_custom_tool_projection.dart';
 import 'openai_responses_file_search_projection.dart';
 import 'openai_responses_image_generation_projection.dart';
 import 'openai_responses_mcp_projection.dart';
@@ -131,6 +132,38 @@ ToolCallContentPart? decodeOpenAIResponsesFunctionCallOutput(
         'callId': toolCallId,
       },
     ),
+  );
+}
+
+ToolCallContentPart? decodeOpenAIResponsesCustomToolCallOutput(
+  Map<String, Object?> item,
+) {
+  final projection = projectOpenAIResponsesCustomToolCall(item);
+  if (projection == null) {
+    return null;
+  }
+
+  return ToolCallContentPart(
+    projection.toToolCall(),
+    providerMetadata: projection.providerMetadata,
+  );
+}
+
+ToolResultContentPart? decodeOpenAIResponsesCustomToolCallOutputItem(
+  Map<String, Object?> item, {
+  String? fallbackToolName,
+}) {
+  final projection = projectOpenAIResponsesCustomToolOutput(
+    item,
+    fallbackToolName: fallbackToolName,
+  );
+  if (projection == null) {
+    return null;
+  }
+
+  return ToolResultContentPart(
+    projection.toToolResult(),
+    providerMetadata: projection.providerMetadata,
   );
 }
 

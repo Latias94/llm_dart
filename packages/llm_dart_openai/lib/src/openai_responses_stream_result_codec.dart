@@ -15,6 +15,7 @@ GenerateTextResult decodeOpenAIResponsesGenerateResponse(
   final content = <ContentPart>[];
   final collectedLogprobs = <Object?>[];
   final hostedToolSearchCallIds = <String>[];
+  final customToolNamesByCallId = <String, String>{};
   var hasToolCalls = false;
 
   for (final item in _openAIResponsesOutputItems(response)) {
@@ -38,6 +39,31 @@ GenerateTextResult decodeOpenAIResponsesGenerateResponse(
       final toolCall = decodeOpenAIResponsesFunctionCallOutput(item);
       if (toolCall != null) {
         content.add(toolCall);
+      }
+      continue;
+    }
+
+    if (type == 'custom_tool_call') {
+      hasToolCalls = true;
+      final toolCall = decodeOpenAIResponsesCustomToolCallOutput(item);
+      if (toolCall != null) {
+        content.add(toolCall);
+        customToolNamesByCallId[toolCall.toolCall.toolCallId] =
+            toolCall.toolCall.toolName;
+      }
+      continue;
+    }
+
+    if (type == 'custom_tool_call_output') {
+      hasToolCalls = true;
+      final toolCallId = openAIResponsesAsString(item['call_id']);
+      final toolResult = decodeOpenAIResponsesCustomToolCallOutputItem(
+        item,
+        fallbackToolName:
+            toolCallId == null ? null : customToolNamesByCallId[toolCallId],
+      );
+      if (toolResult != null) {
+        content.add(toolResult);
       }
       continue;
     }

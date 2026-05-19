@@ -1004,6 +1004,87 @@ void main() {
       expect(events.whereType<CustomEvent>(), isEmpty);
     });
 
+    test('maps custom tool streams to unified tool events', () {
+      const codec = OpenAIResponsesCodec();
+      final state = OpenAIResponsesStreamState()
+        ..responseId = 'resp_custom_tool'
+        ..serviceTier = 'default';
+      final events = <LanguageModelStreamEvent>[];
+
+      for (final chunk in <Map<String, Object?>>[
+        {
+          'type': 'response.output_item.added',
+          'output_index': 0,
+          'item': {
+            'id': 'ct_1',
+            'type': 'custom_tool_call',
+            'call_id': 'call_custom_1',
+            'name': 'write_sql',
+            'input': '',
+          },
+        },
+        {
+          'type': 'response.custom_tool_call_input.delta',
+          'item_id': 'ct_1',
+          'output_index': 0,
+          'delta': 'SELECT * ',
+        },
+        {
+          'type': 'response.custom_tool_call_input.delta',
+          'item_id': 'ct_1',
+          'output_index': 0,
+          'delta': 'FROM users',
+        },
+        {
+          'type': 'response.output_item.done',
+          'output_index': 0,
+          'item': {
+            'id': 'ct_1',
+            'type': 'custom_tool_call',
+            'call_id': 'call_custom_1',
+            'name': 'write_sql',
+            'input': 'SELECT * FROM users',
+            'status': 'completed',
+          },
+        },
+        {
+          'type': 'response.output_item.done',
+          'output_index': 1,
+          'item': {
+            'type': 'custom_tool_call_output',
+            'call_id': 'call_custom_1',
+            'output': 'ok',
+          },
+        },
+      ]) {
+        events.addAll(codec.decodeStreamChunk(chunk, state));
+      }
+
+      final inputStart = events.whereType<ToolInputStartEvent>().single;
+      expect(inputStart.toolCallId, 'call_custom_1');
+      expect(inputStart.toolName, 'write_sql');
+      expect(inputStart.providerExecuted, isFalse);
+      expect(
+        events.whereType<ToolInputDeltaEvent>().map((event) => event.delta),
+        ['SELECT * ', 'FROM users'],
+      );
+      expect(
+        events.whereType<ToolInputEndEvent>().single.toolCallId,
+        'call_custom_1',
+      );
+
+      final toolCall = events.whereType<ToolCallEvent>().single.toolCall;
+      expect(toolCall.toolCallId, 'call_custom_1');
+      expect(toolCall.toolName, 'write_sql');
+      expect(toolCall.input, 'SELECT * FROM users');
+
+      final toolResult = events.whereType<ToolResultEvent>().single.toolResult;
+      expect(toolResult.toolCallId, 'call_custom_1');
+      expect(toolResult.toolName, 'write_sql');
+      expect(toolResult.output, 'ok');
+      expect(events.whereType<CustomEvent>(), isEmpty);
+    });
+
     test('maps message output item completion to text end without custom event',
         () {
       const codec = OpenAIResponsesCodec();

@@ -2091,5 +2091,44 @@ void main() {
       expect(result.finishReason, FinishReason.toolCalls);
       expect(OpenAICustomPart.parseContentParts(result.content), isEmpty);
     });
+
+    test('decodes custom tool calls and outputs as unified tool content', () {
+      const codec = OpenAIResponsesCodec();
+
+      final result = codec.decodeGenerateResponse({
+        'id': 'resp_custom_tool',
+        'status': 'completed',
+        'output': [
+          {
+            'id': 'ct_1',
+            'type': 'custom_tool_call',
+            'call_id': 'call_custom_1',
+            'name': 'write_sql',
+            'input': 'SELECT * FROM users',
+            'status': 'completed',
+          },
+          {
+            'type': 'custom_tool_call_output',
+            'call_id': 'call_custom_1',
+            'output': 'ok',
+          },
+        ],
+      });
+
+      final toolCall = result.content.whereType<ToolCallContentPart>().single;
+      expect(toolCall.toolCall.toolCallId, 'call_custom_1');
+      expect(toolCall.toolCall.toolName, 'write_sql');
+      expect(toolCall.toolCall.input, 'SELECT * FROM users');
+      expect(toolCall.providerMetadata?.namespace('openai'),
+          containsPair('itemId', 'ct_1'));
+
+      final toolResult =
+          result.content.whereType<ToolResultContentPart>().single;
+      expect(toolResult.toolResult.toolCallId, 'call_custom_1');
+      expect(toolResult.toolResult.toolName, 'write_sql');
+      expect(toolResult.toolResult.output, 'ok');
+      expect(result.finishReason, FinishReason.toolCalls);
+      expect(OpenAICustomPart.parseContentParts(result.content), isEmpty);
+    });
   });
 }

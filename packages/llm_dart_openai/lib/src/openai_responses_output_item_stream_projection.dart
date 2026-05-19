@@ -3,6 +3,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'openai_responses_code_interpreter_stream_projection.dart';
 import 'openai_responses_computer_use_stream_projection.dart';
 import 'openai_responses_custom_stream_projection.dart';
+import 'openai_responses_custom_tool_stream_projection.dart';
 import 'openai_responses_file_search_stream_projection.dart';
 import 'openai_responses_image_generation_stream_projection.dart';
 import 'openai_responses_mcp_stream_projection.dart';
@@ -42,6 +43,15 @@ Iterable<LanguageModelStreamEvent> decodeOpenAIResponsesOutputItemAddedChunk(
       item,
       state,
       metadata,
+    );
+    return;
+  }
+
+  if (itemType == 'custom_tool_call') {
+    yield* decodeOpenAIResponsesCustomToolCallItemAddedChunk(
+      chunk,
+      item,
+      state,
     );
     return;
   }
@@ -133,6 +143,26 @@ Iterable<LanguageModelStreamEvent> decodeOpenAIResponsesOutputItemDoneChunk(
       item,
       state,
       metadata,
+    );
+    return;
+  }
+
+  if (itemType == 'custom_tool_call') {
+    state.hasToolCalls = true;
+    yield* decodeOpenAIResponsesCustomToolCallItemDoneChunk(
+      chunk,
+      item,
+      state,
+    );
+    return;
+  }
+
+  if (itemType == 'custom_tool_call_output') {
+    state.hasToolCalls = true;
+    yield* decodeOpenAIResponsesCustomToolOutputItemDoneChunk(
+      chunk,
+      item,
+      state,
     );
     return;
   }
