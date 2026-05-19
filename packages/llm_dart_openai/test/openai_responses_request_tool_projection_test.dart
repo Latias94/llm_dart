@@ -55,6 +55,38 @@ void main() {
         ],
       );
     });
+
+    test('encodes OpenAI function tool provider options', () {
+      const projection = OpenAIResponsesRequestToolProjection();
+
+      expect(
+        projection.encode(
+          tools: [
+            FunctionToolDefinition(
+              name: 'weather',
+              inputSchema: ToolJsonSchema.object(),
+              strict: true,
+              providerOptions: const OpenAIToolOptions(
+                strict: false,
+                deferLoading: true,
+              ),
+            ),
+          ],
+          builtInTools: null,
+        ),
+        [
+          {
+            'type': 'function',
+            'name': 'weather',
+            'parameters': {
+              'type': 'object',
+            },
+            'strict': false,
+            'defer_loading': true,
+          },
+        ],
+      );
+    });
   });
 
   group('OpenAI Responses tool choice projection', () {

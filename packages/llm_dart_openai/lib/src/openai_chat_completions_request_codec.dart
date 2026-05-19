@@ -49,7 +49,9 @@ final class OpenAIChatCompletionsRequestCodec {
     final promptCodec = OpenAIChatCompletionsPromptCodec(
       providerNamespace: providerNamespace,
     );
-    const toolCodec = OpenAIChatCompletionsRequestToolCodec();
+    final toolCodec = OpenAIChatCompletionsRequestToolCodec(
+      providerNamespace: providerNamespace,
+    );
     final requestPolicy = _requestPolicy;
 
     requestOptionsCodec.validateUnsupportedProviderOptions(providerOptions);

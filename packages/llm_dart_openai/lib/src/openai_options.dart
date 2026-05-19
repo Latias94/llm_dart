@@ -5,4 +5,5 @@ export 'openai_image_types.dart';
 export 'openai_model_settings.dart';
 export 'openai_prompt_part_options.dart';
 export 'openai_speech_options.dart';
+export 'openai_tool_options.dart';
 export 'openai_transcription_options.dart';

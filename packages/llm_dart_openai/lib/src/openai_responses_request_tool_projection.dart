@@ -1,6 +1,7 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'openai_native_tools.dart';
+import 'openai_tool_options.dart';
 
 final class OpenAIResponsesRequestToolProjection {
   const OpenAIResponsesRequestToolProjection();
@@ -23,12 +24,22 @@ final class OpenAIResponsesRequestToolProjection {
   }
 
   Map<String, Object?> _encodeFunctionTool(FunctionToolDefinition tool) {
+    final options = resolveProviderToolOptions<OpenAIToolOptions>(
+      tool.providerOptions,
+      parameterName: 'tool.providerOptions',
+      expectedTypeName: 'OpenAIToolOptions',
+      usageContext: 'OpenAI Responses function tool "${tool.name}"',
+    );
+    final strict = options?.strict ?? tool.strict;
+    final deferLoading = options?.deferLoading;
+
     return {
       'type': 'function',
       'name': tool.name,
       if (tool.description != null) 'description': tool.description,
       'parameters': tool.inputSchema.toJson(),
-      if (tool.strict != null) 'strict': tool.strict,
+      if (strict != null) 'strict': strict,
+      if (deferLoading != null) 'defer_loading': deferLoading,
     };
   }
 }
