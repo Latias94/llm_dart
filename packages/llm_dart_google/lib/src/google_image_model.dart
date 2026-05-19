@@ -1,8 +1,11 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
+import 'google_image_edit_request.dart';
 import 'google_image_editing.dart';
-import 'google_image_model_request.dart';
+import 'google_image_generation_request.dart';
+import 'google_image_model_capabilities.dart';
+import 'google_image_model_options_resolution.dart';
 import 'google_image_model_response.dart';
 import 'google_image_model_transport.dart';
 import 'google_model_describer.dart';
@@ -136,75 +139,17 @@ final class GoogleImageModel implements ImageModel, CapabilityDescribedModel {
   Future<ImageGenerationResult> createVariation(
     GoogleImageVariationRequest request,
   ) {
-    return edit(
-      GoogleImageEditRequest(
-        prompt: request.prompt,
-        images: request.images,
-        count: request.count,
-        aspectRatio: request.aspectRatio,
-        seed: request.seed,
-        callOptions: request.callOptions,
-      ),
-    );
+    return edit(buildGoogleImageEditRequestFromVariation(request));
   }
 
   Future<ImageGenerationResult> _doEditFromCommonRequest(
     ImageGenerationRequest request,
   ) {
-    validateGoogleImageEditSupport(isGeminiImageModel: isGeminiImageModel);
-
-    if (request.mask != null) {
-      throw UnsupportedError(
-        'Google image editing through ImageGenerationRequest does not support mask inputs yet.',
-      );
-    }
-
-    final prompt = request.prompt;
-    if (prompt == null || prompt.trim().isEmpty) {
-      throw ArgumentError.value(
-        prompt,
-        'request.prompt',
-        'Google image editing through ImageGenerationRequest requires a non-empty prompt.',
-      );
-    }
-
     return edit(
-      GoogleImageEditRequest(
-        prompt: prompt,
-        images: [
-          for (final file in request.files) _toGoogleImageEditInput(file),
-        ],
-        count: request.count,
-        aspectRatio: request.aspectRatio,
-        seed: request.seed,
-        callOptions: request.callOptions,
+      buildGoogleImageEditRequestFromCommon(
+        request: request,
+        isGeminiImageModel: isGeminiImageModel,
       ),
     );
   }
-}
-
-GoogleImageEditInput _toGoogleImageEditInput(ImageGenerationInput input) {
-  final uri = input.uri;
-  if (uri != null) {
-    return GoogleImageEditInput.uri(
-      uri,
-      mediaType: input.mediaType,
-      filename: input.filename,
-    );
-  }
-
-  final bytes = input.bytes;
-  if (bytes == null) {
-    throw ArgumentError.value(
-      input,
-      'request.files',
-      'Google image editing inputs must provide bytes or a URI.',
-    );
-  }
-
-  return GoogleImageEditInput.bytes(
-    bytes,
-    mediaType: input.mediaType,
-    filename: input.filename,
-  );
 }
