@@ -1,16 +1,14 @@
-import 'dart:convert';
-
 import '../common/model_error.dart';
 import '../common/model_warning.dart';
 import '../common/provider_metadata.dart';
 import '../common/provider_options.dart';
-import '../common/provider_reference.dart';
 import '../common/usage_stats.dart';
 import '../content/content_part.dart';
 import '../content/file_data.dart';
 import '../model/model_response_metadata.dart';
 import '../tool/tool_output.dart';
 import '../common/json_codec_common.dart';
+import 'serialization_file_json_codec.dart';
 
 final class SerializationJsonSupport {
   const SerializationJsonSupport._();
@@ -258,83 +256,21 @@ final class SerializationJsonSupport {
   static GeneratedFile decodeGeneratedFile(
     Object? value, {
     required String path,
-  }) {
-    final map = asJsonMap(value, path: path);
-    final data = decodeFileData(map['data'], path: '$path.data') ??
-        fileDataFromLegacy(
-          uri: decodeUri(map['uri'], path: '$path.uri'),
-          bytes: map.containsKey('data')
-              ? null
-              : decodeBytes(map['bytes'], path: '$path.bytes'),
-        );
-
-    if (data == null) {
-      throw FormatException(
-        'Expected file data, uri, or bytes at $path.',
+  }) =>
+      const SerializationFileJsonCodec().decodeGeneratedFile(
+        value,
+        path: path,
       );
-    }
-
-    return GeneratedFile(
-      mediaType: asJsonString(map['mediaType'], path: '$path.mediaType'),
-      filename: asNullableJsonString(map['filename'], path: '$path.filename'),
-      data: data,
-    );
-  }
 
   static JsonMap encodeFileData(FileData data) {
-    return switch (data) {
-      FileBytesData(:final bytes) => {
-          'type': 'bytes',
-          'bytes': encodeBytes(bytes),
-        },
-      FileUrlData(:final uri) => {
-          'type': 'url',
-          'uri': uri.toString(),
-        },
-      FileTextData(:final text) => {
-          'type': 'text',
-          'text': text,
-        },
-      FileProviderReferenceData(:final providerReference) => {
-          'type': 'provider-reference',
-          'providerReference': providerReference.toJsonMap(),
-        },
-    };
+    return const SerializationFileJsonCodec().encodeFileData(data);
   }
 
   static FileData? decodeFileData(
     Object? value, {
     required String path,
-  }) {
-    if (value == null) {
-      return null;
-    }
-
-    final map = asJsonMap(value, path: path);
-    final type = asJsonString(map['type'], path: '$path.type');
-
-    return switch (type) {
-      'bytes' => FileBytesData(
-          decodeBytes(map['bytes'], path: '$path.bytes') ??
-              (throw FormatException('Expected bytes at $path.bytes.')),
-        ),
-      'url' => FileUrlData(
-          decodeUri(map['uri'], path: '$path.uri') ??
-              (throw FormatException('Expected URI at $path.uri.')),
-        ),
-      'text' => FileTextData(
-          asJsonString(map['text'], path: '$path.text'),
-        ),
-      'provider-reference' => FileProviderReferenceData(
-          ProviderReference.fromJson(
-            map['providerReference'],
-            path: '$path.providerReference',
-          ),
-        ),
-      _ =>
-        throw FormatException('Unsupported file data type "$type" at $path.'),
-    };
-  }
+  }) =>
+      const SerializationFileJsonCodec().decodeFileData(value, path: path);
 
   static JsonMap encodeToolOutput(
     ToolOutput output, {
@@ -602,51 +538,25 @@ final class SerializationJsonSupport {
   static FileData _decodeRequiredToolOutputFileData(
     JsonMap map, {
     required String path,
-  }) {
-    final data = decodeFileData(map['data'], path: '$path.data') ??
-        fileDataFromLegacy(
-          uri: decodeUri(map['uri'], path: '$path.uri'),
-          bytes: map.containsKey('data')
-              ? null
-              : decodeBytes(map['bytes'], path: '$path.bytes'),
-        );
-
-    if (data == null) {
-      throw FormatException('Expected file data, uri, or bytes at $path.');
-    }
-
-    return data;
-  }
+  }) =>
+      const SerializationFileJsonCodec().decodeRequiredFileDataFromMap(
+        map,
+        path: path,
+      );
 
   static JsonMap encodeBytes(List<int> bytes) {
-    return {
-      'encoding': 'base64',
-      'data': base64Encode(bytes),
-    };
+    return const SerializationFileJsonCodec().encodeBytes(bytes);
   }
 
   static List<int>? decodeBytes(
     Object? value, {
     required String path,
-  }) {
-    if (value == null) {
-      return null;
-    }
-
-    final map = asJsonMap(value, path: path);
-    final encoding = asJsonString(map['encoding'], path: '$path.encoding');
-    if (encoding != 'base64') {
-      throw FormatException('Unsupported byte encoding "$encoding" at $path.');
-    }
-
-    return base64Decode(asJsonString(map['data'], path: '$path.data'));
-  }
+  }) =>
+      const SerializationFileJsonCodec().decodeBytes(value, path: path);
 
   static Uri? decodeUri(
     Object? value, {
     required String path,
-  }) {
-    final stringValue = asNullableJsonString(value, path: path);
-    return stringValue == null ? null : Uri.parse(stringValue);
-  }
+  }) =>
+      const SerializationFileJsonCodec().decodeUri(value, path: path);
 }
