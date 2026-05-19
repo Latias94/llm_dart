@@ -1,6 +1,8 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import 'google_function_tool_projection.dart';
 import 'google_language_model_policy.dart';
+import 'google_native_tool_projection.dart';
 import 'google_tools.dart';
 
 final class GoogleToolConfiguration {
@@ -36,7 +38,7 @@ final class GoogleToolConfigurationCodec {
       );
     }
 
-    final encodedNativeTools = _encodeNativeTools(
+    final encodedNativeTools = projectGoogleNativeTools(
       policy: policy,
       tools: nativeTools,
       warnings: warnings,
@@ -72,13 +74,14 @@ final class GoogleToolConfigurationCodec {
       );
     }
 
-    final encodedFunctionTools = _encodeFunctionTools(tools);
+    final encodedFunctionTools =
+        tools.isEmpty ? null : [googleFunctionDeclarationsTool(tools)];
     final shouldIncludeServerSideToolInvocations =
         includeServerSideToolInvocations &&
             (useNativeTools ||
                 tools.isNotEmpty ||
                 promptRequiresServerToolReplay);
-    final encodedToolConfig = _encodeToolConfig(
+    final encodedToolConfig = googleFunctionCallingToolConfig(
       tools: useMixedTools || !useNativeTools ? tools : const [],
       toolChoice: useMixedTools || !useNativeTools ? toolChoice : null,
       includeServerSideToolInvocations: shouldIncludeServerSideToolInvocations,
@@ -97,103 +100,6 @@ final class GoogleToolConfigurationCodec {
       tools: encodedTools,
       toolConfig: encodedToolConfig,
     );
-  }
-
-  List<Object?>? _encodeFunctionTools(List<FunctionToolDefinition> tools) {
-    if (tools.isEmpty) {
-      return null;
-    }
-
-    return [
-      {
-        'functionDeclarations': [
-          for (final tool in tools)
-            {
-              'name': tool.name,
-              'description': tool.description ?? '',
-              'parameters': tool.inputSchema.toJson(),
-            },
-        ],
-      },
-    ];
-  }
-
-  List<Object?> _encodeNativeTools({
-    required GoogleLanguageModelPolicy policy,
-    required List<GoogleNativeTool> tools,
-    required List<ModelWarning> warnings,
-  }) {
-    if (tools.isEmpty) {
-      return const [];
-    }
-
-    final encoded = <Object?>[];
-
-    for (final tool in tools) {
-      if (!policy.supportsNativeTools) {
-        warnings.add(
-          ModelWarning(
-            type: ModelWarningType.unsupported,
-            field: 'tools',
-            message:
-                'Google native tool "${tool.name}" requires Gemini 2.0 or newer compatible models.',
-          ),
-        );
-        continue;
-      }
-
-      encoded.add(tool.toJson());
-    }
-
-    return encoded;
-  }
-
-  Map<String, Object?>? _encodeToolConfig({
-    required List<FunctionToolDefinition> tools,
-    required ToolChoice? toolChoice,
-    required bool includeServerSideToolInvocations,
-  }) {
-    if (tools.isEmpty && !includeServerSideToolInvocations) {
-      return null;
-    }
-
-    Map<String, Object?>? functionCallingConfig;
-    if (tools.isNotEmpty) {
-      final hasStrictTools = tools.any((tool) => tool.strict == true);
-      String? mode;
-      List<String>? allowedFunctionNames;
-
-      switch (toolChoice) {
-        case null:
-          if (hasStrictTools) {
-            mode = 'VALIDATED';
-          }
-        case AutoToolChoice():
-          mode = hasStrictTools ? 'VALIDATED' : 'AUTO';
-        case NoneToolChoice():
-          mode = 'NONE';
-        case RequiredToolChoice():
-          mode = hasStrictTools ? 'VALIDATED' : 'ANY';
-        case SpecificToolChoice(toolName: final toolName):
-          mode = hasStrictTools ? 'VALIDATED' : 'ANY';
-          allowedFunctionNames = [toolName];
-      }
-
-      if (mode != null) {
-        functionCallingConfig = {
-          'mode': mode,
-          if (allowedFunctionNames != null)
-            'allowedFunctionNames': allowedFunctionNames,
-        };
-      }
-    }
-
-    return {
-      if (includeServerSideToolInvocations)
-        'includeServerSideToolInvocations': true,
-      if (functionCallingConfig != null)
-        'functionCallingConfig': functionCallingConfig,
-    };
   }
 
   void _validateServerSideToolInvocations({
