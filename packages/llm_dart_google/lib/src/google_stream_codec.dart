@@ -3,6 +3,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'google_grounding_projection.dart';
 import 'google_provider_metadata_support.dart';
 import 'google_shared.dart';
+import 'google_stream_block_projection.dart';
 import 'google_stream_part_codec.dart';
 import 'google_stream_state.dart';
 
@@ -108,7 +109,7 @@ final class GoogleGenerateContentStreamCodec {
       return;
     }
 
-    yield* _partCodec.closeOpenBlocks(state);
+    yield* closeGoogleStreamBlocks(state);
     state.finished = true;
     yield FinishEvent(
       finishReason: mapGoogleFinishReason(

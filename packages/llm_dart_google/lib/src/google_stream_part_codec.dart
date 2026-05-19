@@ -5,6 +5,7 @@ import 'google_file_projection.dart';
 import 'google_provider_metadata_support.dart';
 import 'google_server_tool_replay.dart';
 import 'google_shared.dart';
+import 'google_stream_block_projection.dart';
 import 'google_stream_state.dart';
 
 final class GoogleStreamPartCodec {
@@ -20,7 +21,7 @@ final class GoogleStreamPartCodec {
     );
 
     if (part case {'executableCode': final Object? executableCode}) {
-      yield* closeOpenBlocks(state);
+      yield* closeGoogleStreamBlocks(state);
 
       final projectedToolCall = projectGoogleCodeExecutionToolCall(
         tracker: state.codeExecutionTracker,
@@ -33,7 +34,7 @@ final class GoogleStreamPartCodec {
     }
 
     if (part case {'codeExecutionResult': final Object? executionResult}) {
-      yield* closeOpenBlocks(state);
+      yield* closeGoogleStreamBlocks(state);
 
       final projectedToolResult = projectGoogleCodeExecutionToolResult(
         tracker: state.codeExecutionTracker,
@@ -45,7 +46,7 @@ final class GoogleStreamPartCodec {
     }
 
     if (part case {'functionCall': final Object? functionCallValue}) {
-      yield* closeOpenBlocks(state);
+      yield* closeGoogleStreamBlocks(state);
 
       final functionCall = asMap(functionCallValue);
       final functionCallId = asString(functionCall?['id']);
@@ -68,7 +69,7 @@ final class GoogleStreamPartCodec {
     }
 
     if (part case {'toolCall': final Object? toolCallValue}) {
-      yield* closeOpenBlocks(state);
+      yield* closeGoogleStreamBlocks(state);
 
       final toolCall = asMap(toolCallValue);
       if (toolCall == null) {
@@ -84,7 +85,7 @@ final class GoogleStreamPartCodec {
     }
 
     if (part case {'toolResponse': final Object? toolResponseValue}) {
-      yield* closeOpenBlocks(state);
+      yield* closeGoogleStreamBlocks(state);
 
       final toolResponse = asMap(toolResponseValue);
       if (toolResponse == null) {
@@ -100,7 +101,7 @@ final class GoogleStreamPartCodec {
     }
 
     if (part case {'text': final Object? textValue}) {
-      yield* _decodeTextPart(
+      yield* decodeGoogleStreamTextPart(
         part,
         textValue: textValue,
         metadata: metadata,
@@ -110,7 +111,7 @@ final class GoogleStreamPartCodec {
     }
 
     if (part case {'inlineData': final Object? inlineDataValue}) {
-      yield* closeOpenBlocks(state);
+      yield* closeGoogleStreamBlocks(state);
 
       final projectedFile = projectGoogleInlineDataFile(
         inlineDataValue: inlineDataValue,
@@ -120,93 +121,6 @@ final class GoogleStreamPartCodec {
       if (projectedFile != null) {
         yield googleProjectedFileEvent(projectedFile);
       }
-    }
-  }
-
-  Iterable<LanguageModelStreamEvent> closeOpenBlocks(
-    GoogleGenerateContentStreamState state,
-  ) sync* {
-    if (state.currentTextBlockId != null) {
-      yield TextEndEvent(id: state.currentTextBlockId!);
-      state.currentTextBlockId = null;
-    }
-
-    if (state.currentReasoningBlockId != null) {
-      yield ReasoningEndEvent(id: state.currentReasoningBlockId!);
-      state.currentReasoningBlockId = null;
-    }
-  }
-
-  Iterable<LanguageModelStreamEvent> _decodeTextPart(
-    Map<String, Object?> part, {
-    required Object? textValue,
-    required ProviderMetadata? metadata,
-    required GoogleGenerateContentStreamState state,
-  }) sync* {
-    final text = asString(textValue) ?? '';
-    if (part['thought'] == true) {
-      if (state.currentTextBlockId != null) {
-        yield TextEndEvent(id: state.currentTextBlockId!);
-        state.currentTextBlockId = null;
-      }
-
-      final shouldStart = state.currentReasoningBlockId == null;
-      state.currentReasoningBlockId ??= '${state.blockCounter++}';
-
-      if (shouldStart) {
-        yield ReasoningStartEvent(
-          id: state.currentReasoningBlockId!,
-          providerMetadata: metadata,
-        );
-      }
-
-      if (text.isEmpty) {
-        if (metadata != null) {
-          yield ReasoningDeltaEvent(
-            id: state.currentReasoningBlockId!,
-            delta: '',
-            providerMetadata: metadata,
-          );
-        }
-      } else {
-        yield ReasoningDeltaEvent(
-          id: state.currentReasoningBlockId!,
-          delta: text,
-          providerMetadata: metadata,
-        );
-      }
-      return;
-    }
-
-    if (state.currentReasoningBlockId != null) {
-      yield ReasoningEndEvent(id: state.currentReasoningBlockId!);
-      state.currentReasoningBlockId = null;
-    }
-
-    final shouldStart = state.currentTextBlockId == null;
-    state.currentTextBlockId ??= '${state.blockCounter++}';
-
-    if (shouldStart) {
-      yield TextStartEvent(
-        id: state.currentTextBlockId!,
-        providerMetadata: metadata,
-      );
-    }
-
-    if (text.isEmpty) {
-      if (metadata != null) {
-        yield TextDeltaEvent(
-          id: state.currentTextBlockId!,
-          delta: '',
-          providerMetadata: metadata,
-        );
-      }
-    } else {
-      yield TextDeltaEvent(
-        id: state.currentTextBlockId!,
-        delta: text,
-        providerMetadata: metadata,
-      );
     }
   }
 }
