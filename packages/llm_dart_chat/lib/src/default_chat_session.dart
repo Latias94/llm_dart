@@ -13,6 +13,7 @@ import 'chat_tool_output_support.dart';
 import 'chat_transport.dart';
 import 'default_chat_session_active_turn.dart';
 import 'default_chat_session_support.dart';
+import 'default_chat_session_transcript.dart';
 import 'default_chat_session_tool_execution.dart';
 import 'tool_execution_registry.dart';
 
@@ -23,7 +24,7 @@ final class DefaultChatSession implements ChatSession {
   late final DefaultChatSessionToolExecutionScheduler _toolExecutionScheduler;
   final StreamController<ChatState> _statesController;
   final StreamController<DataUiPart<Object?>> _transientDataPartsController;
-  final List<PromptMessage> _promptHistory = [];
+  final DefaultChatSessionTranscript _transcript;
   final MessageIdGenerator _messageIdGenerator;
 
   ChatState _state;
@@ -108,6 +109,7 @@ final class DefaultChatSession implements ChatSession {
             sequentialChatMessageId(
               existingIds: initialState.messages.map((message) => message.id),
             ),
+        _transcript = DefaultChatSessionTranscript(initialPrompt),
         _state = initialState {
     _activeTurn = DefaultChatSessionActiveTurn(
       readState: () => _state,
@@ -125,7 +127,6 @@ final class DefaultChatSession implements ChatSession {
       readState: () => _state,
       applyToolOutput: addToolOutput,
     );
-    _promptHistory.addAll(initialPrompt);
     _maybeScheduleAutomaticToolExecution();
   }
 
@@ -147,16 +148,13 @@ final class DefaultChatSession implements ChatSession {
     _ensureUsable();
     _ensureIdle('sendMessage');
 
-    final promptMessages = normalizeModelMessages([input.message]);
-    final promptMessage = promptMessages.single;
-    final userMessage = promptMessageToChatUiMessage(
-      promptMessage,
-      id: _messageIdGenerator(),
+    final userAppend = _transcript.appendUserInput(
+      input,
+      messageId: _messageIdGenerator(),
     );
-    _promptHistory.add(promptMessage);
     _emitState(
       _state.copyWith(
-        messages: [..._state.messages, userMessage],
+        messages: [..._state.messages, userAppend.uiMessage],
         status: ChatStatus.submitting,
         error: null,
       ),
@@ -183,16 +181,9 @@ final class DefaultChatSession implements ChatSession {
       );
     }
 
-    if (_promptHistory.isNotEmpty &&
-        _promptHistory.last is AssistantPromptMessage) {
-      _promptHistory.removeLast();
-    }
-
-    final currentMessages = List<ChatUiMessage>.of(_state.messages);
-    if (currentMessages.isNotEmpty &&
-        currentMessages.last.role == ChatUiRole.assistant) {
-      currentMessages.removeLast();
-    }
+    _transcript.removeTrailingAssistantPrompt();
+    final currentMessages =
+        _transcript.removeTrailingAssistantMessage(_state.messages);
 
     _emitState(
       _state.copyWith(
@@ -214,7 +205,8 @@ final class DefaultChatSession implements ChatSession {
     _ensureIdle('addToolOutput');
 
     final toolOutput = update.toolOutput;
-    final assistantMessage = _requireLatestAssistantMessage();
+    final assistantMessage =
+        _transcript.requireLatestAssistantMessage(_state.messages);
     final updatedAssistantMessage = chatUpdateToolPartByCallId(
       assistantMessage,
       update.toolCallId,
@@ -240,23 +232,15 @@ final class DefaultChatSession implements ChatSession {
       requirePendingState: true,
     );
 
-    _promptHistory.add(
-      ToolPromptMessage(
-        toolName: update.toolName,
-        parts: [
-          ToolResultPromptPart(
-            toolCallId: update.toolCallId,
-            toolName: update.toolName,
-            toolOutput: toolOutput,
-          ),
-        ],
-      ),
-    );
+    _transcript.appendToolOutput(update);
 
     final nextStatus = chatDeriveCompletionStatus(updatedAssistantMessage);
     _emitState(
       _state.copyWith(
-        messages: _replaceLatestAssistantMessage(updatedAssistantMessage),
+        messages: _transcript.replaceLatestAssistantMessage(
+          _state.messages,
+          updatedAssistantMessage,
+        ),
         status:
             nextStatus == ChatStatus.ready ? ChatStatus.submitting : nextStatus,
         error: null,
@@ -290,7 +274,8 @@ final class DefaultChatSession implements ChatSession {
       );
     }
 
-    final assistantMessage = _requireLatestAssistantMessage();
+    final assistantMessage =
+        _transcript.requireLatestAssistantMessage(_state.messages);
     final updatedAssistantMessage = ChatUiAccumulator(
       messageId: assistantMessage.id,
       seedMessage: assistantMessage,
@@ -298,7 +283,10 @@ final class DefaultChatSession implements ChatSession {
 
     _emitState(
       _state.copyWith(
-        messages: _replaceLatestAssistantMessage(updatedAssistantMessage),
+        messages: _transcript.replaceLatestAssistantMessage(
+          _state.messages,
+          updatedAssistantMessage,
+        ),
         error: null,
       ),
     );
@@ -309,7 +297,8 @@ final class DefaultChatSession implements ChatSession {
     _ensureUsable();
     _ensureIdle('respondToolApproval');
 
-    final assistantMessage = _requireLatestAssistantMessage();
+    final assistantMessage =
+        _transcript.requireLatestAssistantMessage(_state.messages);
     final pendingTool = chatRequirePendingApprovalToolPart(
       assistantMessage,
       response.approvalId,
@@ -344,18 +333,9 @@ final class DefaultChatSession implements ChatSession {
       ),
     );
 
-    _promptHistory.add(
-      ToolPromptMessage(
-        toolName: pendingTool.toolName,
-        parts: [
-          ToolApprovalResponsePromptPart(
-            approvalId: response.approvalId,
-            toolCallId: pendingTool.toolCallId,
-            approved: response.approved,
-            reason: response.reason,
-          ),
-        ],
-      ),
+    _transcript.appendToolApprovalResponse(
+      response: response,
+      pendingTool: pendingTool,
     );
 
     final nextStatus = chatDeriveCompletionStatus(updatedAssistantMessage);
@@ -365,7 +345,10 @@ final class DefaultChatSession implements ChatSession {
     if (shouldContinueProviderTurn) {
       _emitState(
         _state.copyWith(
-          messages: _replaceLatestAssistantMessage(updatedAssistantMessage),
+          messages: _transcript.replaceLatestAssistantMessage(
+            _state.messages,
+            updatedAssistantMessage,
+          ),
           status: ChatStatus.submitting,
           error: null,
         ),
@@ -380,7 +363,10 @@ final class DefaultChatSession implements ChatSession {
 
     _emitState(
       _state.copyWith(
-        messages: _replaceLatestAssistantMessage(updatedAssistantMessage),
+        messages: _transcript.replaceLatestAssistantMessage(
+          _state.messages,
+          updatedAssistantMessage,
+        ),
         status: nextStatus,
         error: null,
       ),
@@ -406,15 +392,12 @@ final class DefaultChatSession implements ChatSession {
       );
     }
 
-    final messages = List<ChatUiMessage>.of(_state.messages);
-    ChatUiMessage? previousAssistantMessage;
-    if (messages.isNotEmpty && messages.last.role == ChatUiRole.assistant) {
-      previousAssistantMessage = messages.removeLast();
-    }
+    final detachedAssistant =
+        _transcript.detachTrailingAssistantMessage(_state.messages);
 
     _emitState(
       _state.copyWith(
-        messages: messages,
+        messages: detachedAssistant.messages,
         status: ChatStatus.streaming,
         error: null,
       ),
@@ -422,7 +405,8 @@ final class DefaultChatSession implements ChatSession {
 
     await _activeTurn.consume(
       stream: stream,
-      assistantMessageId: previousAssistantMessage?.id ?? _messageIdGenerator(),
+      assistantMessageId:
+          detachedAssistant.assistantMessage?.id ?? _messageIdGenerator(),
       promptAppendStartIndex: 0,
     );
   }
@@ -453,13 +437,7 @@ final class DefaultChatSession implements ChatSession {
       );
     }
 
-    return ChatSessionSnapshot(
-      chatId: _state.chatId,
-      prompt: List<PromptMessage>.of(_promptHistory),
-      messages: List<ChatUiMessage>.of(_state.messages),
-      status: _state.status,
-      error: _state.error,
-    );
+    return _transcript.snapshot(_state);
   }
 
   @override
@@ -492,7 +470,7 @@ final class DefaultChatSession implements ChatSession {
       ChatTransportRequest(
         chatId: _state.chatId,
         trigger: trigger,
-        prompt: List<PromptMessage>.of(_promptHistory),
+        prompt: _transcript.prompt,
         options: options,
       ),
     );
@@ -510,26 +488,19 @@ final class DefaultChatSession implements ChatSession {
     ChatUiMessage assistantMessage, {
     int startPartIndex = 0,
   }) {
-    final promptMessages = assistantPromptMessagesFromChatUiMessage(
+    _transcript.appendAssistantPromptIfPresent(
       assistantMessage,
       startPartIndex: startPartIndex,
     );
-    if (promptMessages.isNotEmpty) {
-      _promptHistory.addAll(promptMessages);
-    }
   }
 
   void _upsertAssistantMessage(ChatUiMessage assistantMessage) {
-    final messages = List<ChatUiMessage>.of(_state.messages);
-    if (messages.isNotEmpty && messages.last.role == ChatUiRole.assistant) {
-      messages[messages.length - 1] = assistantMessage;
-    } else {
-      messages.add(assistantMessage);
-    }
-
     _emitState(
       _state.copyWith(
-        messages: messages,
+        messages: _transcript.upsertAssistantMessage(
+          _state.messages,
+          assistantMessage,
+        ),
         error: null,
       ),
     );
@@ -564,26 +535,5 @@ final class DefaultChatSession implements ChatSession {
         'Cannot call $operation while another assistant turn is still active.',
       );
     }
-  }
-
-  ChatUiMessage _requireLatestAssistantMessage() {
-    if (_state.messages.isEmpty ||
-        _state.messages.last.role != ChatUiRole.assistant) {
-      throw StateError('No assistant message is available for tool handling.');
-    }
-
-    return _state.messages.last;
-  }
-
-  List<ChatUiMessage> _replaceLatestAssistantMessage(
-    ChatUiMessage assistantMessage,
-  ) {
-    final messages = List<ChatUiMessage>.of(_state.messages);
-    if (messages.isEmpty || messages.last.role != ChatUiRole.assistant) {
-      throw StateError('No assistant message is available for replacement.');
-    }
-
-    messages[messages.length - 1] = assistantMessage;
-    return messages;
   }
 }
