@@ -7,6 +7,7 @@ import 'openai_responses_image_generation_projection.dart';
 import 'openai_responses_mcp_projection.dart';
 import 'openai_responses_source_projection.dart';
 import 'openai_responses_tool_search_projection.dart';
+import 'openai_responses_web_search_projection.dart';
 import 'openai_streaming_support.dart';
 
 List<ContentPart> decodeOpenAIResponsesMessageOutput(
@@ -214,6 +215,26 @@ List<ContentPart> decodeOpenAIResponsesFileSearchCallOutput(
   Map<String, Object?> item,
 ) {
   final projection = projectOpenAIResponsesFileSearchCall(item);
+  if (projection == null) {
+    return const [];
+  }
+
+  return [
+    ToolCallContentPart(
+      projection.toToolCall(),
+      providerMetadata: projection.providerMetadata,
+    ),
+    ToolResultContentPart(
+      projection.toToolResult(),
+      providerMetadata: projection.providerMetadata,
+    ),
+  ];
+}
+
+List<ContentPart> decodeOpenAIResponsesWebSearchCallOutput(
+  Map<String, Object?> item,
+) {
+  final projection = projectOpenAIResponsesWebSearchCall(item);
   if (projection == null) {
     return const [];
   }

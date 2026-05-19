@@ -2247,14 +2247,26 @@ void main() {
       expect(events.whereType<TextStartEvent>().single.id, 'msg_1');
       expect(events.whereType<TextDeltaEvent>().single.delta, 'Hello');
       expect(events.whereType<TextEndEvent>().single.id, 'msg_1');
-      expect(events.whereType<CustomEvent>().single.kind,
-          'openai.web_search_call');
+      final webSearchCall = events.whereType<ToolCallEvent>().single.toolCall;
+      expect(webSearchCall.toolCallId, 'ws_1');
+      expect(webSearchCall.toolName, 'web_search');
+      expect(webSearchCall.providerExecuted, isTrue);
+      final webSearchResult =
+          events.whereType<ToolResultEvent>().single.toolResult;
+      expect(webSearchResult.toolCallId, 'ws_1');
+      expect(webSearchResult.toolName, 'web_search');
+      expect(webSearchResult.output, {
+        'action': {
+          'type': 'search',
+          'query': 'hello',
+        },
+      });
       final rawChunks = events.whereType<RawChunkEvent>().toList();
       expect(rawChunks, isNotEmpty);
       expect(rawChunks.first.raw, containsPair('type', 'response.created'));
 
       final finish = events.whereType<FinishEvent>().single;
-      expect(finish.finishReason, FinishReason.stop);
+      expect(finish.finishReason, FinishReason.toolCalls);
       expect(finish.usage?.totalTokens, 2);
     });
 

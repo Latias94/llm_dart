@@ -232,24 +232,85 @@
         }
       },
       {
-        "type": "custom",
-        "kind": "openai.web_search_call",
-        "data": {
-          "id": "ws_1",
-          "type": "web_search_call",
-          "status": "completed",
-          "action": {
-            "type": "search",
-            "query": "hello"
+        "type": "tool-input-start",
+        "toolCallId": "ws_1",
+        "toolName": "web_search",
+        "providerExecuted": true,
+        "isDynamic": false,
+        "providerMetadata": {
+          "openai": {
+            "responseId": "resp_fixture",
+            "itemId": "ws_1",
+            "itemType": "web_search_call",
+            "status": "completed",
+            "outputIndex": 5,
+            "serviceTier": "default",
+            "actionType": "search"
           }
+        }
+      },
+      {
+        "type": "tool-input-end",
+        "toolCallId": "ws_1",
+        "providerMetadata": {
+          "openai": {
+            "responseId": "resp_fixture",
+            "itemId": "ws_1",
+            "itemType": "web_search_call",
+            "status": "completed",
+            "outputIndex": 5,
+            "serviceTier": "default",
+            "actionType": "search"
+          }
+        }
+      },
+      {
+        "type": "tool-call",
+        "toolCall": {
+          "toolCallId": "ws_1",
+          "toolName": "web_search",
+          "input": {},
+          "providerExecuted": true,
+          "isDynamic": false
         },
         "providerMetadata": {
           "openai": {
             "responseId": "resp_fixture",
             "itemId": "ws_1",
             "itemType": "web_search_call",
+            "status": "completed",
             "outputIndex": 5,
-            "serviceTier": "default"
+            "serviceTier": "default",
+            "actionType": "search"
+          }
+        }
+      },
+      {
+        "type": "tool-result",
+        "toolResult": {
+          "toolCallId": "ws_1",
+          "toolName": "web_search",
+          "toolOutput": {
+            "type": "json",
+            "value": {
+              "action": {
+                "type": "search",
+                "query": "hello"
+              }
+            }
+          },
+          "preliminary": false,
+          "isDynamic": false
+        },
+        "providerMetadata": {
+          "openai": {
+            "responseId": "resp_fixture",
+            "itemId": "ws_1",
+            "itemType": "web_search_call",
+            "status": "completed",
+            "outputIndex": 5,
+            "serviceTier": "default",
+            "actionType": "search"
           }
         }
       },

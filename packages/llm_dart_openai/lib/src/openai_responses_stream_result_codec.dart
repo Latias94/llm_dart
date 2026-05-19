@@ -72,6 +72,12 @@ GenerateTextResult decodeOpenAIResponsesGenerateResponse(
       continue;
     }
 
+    if (type == 'web_search_call') {
+      hasToolCalls = true;
+      content.addAll(decodeOpenAIResponsesWebSearchCallOutput(item));
+      continue;
+    }
+
     if (type == 'tool_search_call') {
       hasToolCalls = true;
       final toolCall = decodeOpenAIResponsesToolSearchCallOutput(item);

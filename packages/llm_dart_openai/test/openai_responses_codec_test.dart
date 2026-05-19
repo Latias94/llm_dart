@@ -1300,6 +1300,127 @@ void main() {
       );
     });
 
+    test('decodes web search calls as provider-executed tool content', () {
+      const codec = OpenAIResponsesCodec();
+
+      final result = codec.decodeGenerateResponse({
+        'id': 'resp_web_search',
+        'status': 'completed',
+        'output': [
+          {
+            'id': 'ws_1',
+            'type': 'web_search_call',
+            'status': 'completed',
+            'action': {
+              'type': 'search',
+              'query': 'Vercel AI SDK',
+              'sources': [
+                {
+                  'type': 'url',
+                  'url': 'https://ai-sdk.dev',
+                },
+                {
+                  'type': 'api',
+                  'name': 'oai-search',
+                },
+              ],
+            },
+          },
+        ],
+      });
+
+      final toolCall = result.content.whereType<ToolCallContentPart>().single;
+      expect(toolCall.toolCall.toolCallId, 'ws_1');
+      expect(toolCall.toolCall.toolName, 'web_search');
+      expect(toolCall.toolCall.providerExecuted, isTrue);
+      expect(toolCall.toolCall.input, isEmpty);
+
+      final toolResult =
+          result.content.whereType<ToolResultContentPart>().single;
+      expect(toolResult.toolResult.toolCallId, 'ws_1');
+      expect(toolResult.toolResult.toolName, 'web_search');
+      expect(toolResult.toolResult.output, {
+        'action': {
+          'type': 'search',
+          'query': 'Vercel AI SDK',
+        },
+        'sources': [
+          {
+            'type': 'url',
+            'url': 'https://ai-sdk.dev',
+          },
+          {
+            'type': 'api',
+            'name': 'oai-search',
+          },
+        ],
+      });
+      expect(
+        toolResult.providerMetadata?.namespace('openai'),
+        allOf(
+          containsPair('itemId', 'ws_1'),
+          containsPair('itemType', 'web_search_call'),
+          containsPair('actionType', 'search'),
+          containsPair('sourceCount', 2),
+        ),
+      );
+      expect(result.finishReason, FinishReason.toolCalls);
+      expect(OpenAICustomPart.parseContentParts(result.content), isEmpty);
+    });
+
+    test('maps web search page actions and missing action payloads', () {
+      const codec = OpenAIResponsesCodec();
+
+      final result = codec.decodeGenerateResponse({
+        'id': 'resp_web_search_actions',
+        'status': 'completed',
+        'output': [
+          {
+            'id': 'ws_open',
+            'type': 'web_search_call',
+            'action': {
+              'type': 'open_page',
+              'url': 'https://ai-sdk.dev/docs',
+            },
+          },
+          {
+            'id': 'ws_find',
+            'type': 'web_search_call',
+            'action': {
+              'type': 'find_in_page',
+              'url': 'https://ai-sdk.dev/docs',
+              'pattern': 'streamText',
+            },
+          },
+          {
+            'id': 'ws_missing',
+            'type': 'web_search_call',
+          },
+        ],
+      });
+
+      final outputs = result.content
+          .whereType<ToolResultContentPart>()
+          .map((part) => part.toolResult.output)
+          .toList();
+      expect(outputs, [
+        {
+          'action': {
+            'type': 'openPage',
+            'url': 'https://ai-sdk.dev/docs',
+          },
+        },
+        {
+          'action': {
+            'type': 'findInPage',
+            'url': 'https://ai-sdk.dev/docs',
+            'pattern': 'streamText',
+          },
+        },
+        <String, Object?>{},
+      ]);
+    });
+
     test('decodes tool search calls and outputs as unified tool content', () {
       const codec = OpenAIResponsesCodec();
 

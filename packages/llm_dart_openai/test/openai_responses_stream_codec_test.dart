@@ -157,14 +157,26 @@ void main() {
       expect(events.whereType<TextDeltaEvent>().single.delta, 'Hello');
       expect(events.whereType<TextEndEvent>().single.id, 'msg_1');
 
-      final toolInputStart = events.whereType<ToolInputStartEvent>().single;
+      final toolInputStart =
+          events.whereType<ToolInputStartEvent>().singleWhere(
+                (event) => event.toolName == 'weather',
+              );
       expect(toolInputStart.toolCallId, 'call_1');
       expect(toolInputStart.toolName, 'weather');
       expect(events.whereType<ToolInputDeltaEvent>().single.delta,
           '{"city":"Hong Kong"}');
-      expect(events.whereType<ToolInputEndEvent>().single.toolCallId, 'call_1');
+      expect(
+        events
+            .whereType<ToolInputEndEvent>()
+            .singleWhere((event) => event.toolCallId == 'call_1')
+            .toolCallId,
+        'call_1',
+      );
 
-      final toolCall = events.whereType<ToolCallEvent>().single.toolCall;
+      final toolCall = events
+          .whereType<ToolCallEvent>()
+          .singleWhere((event) => event.toolCall.toolName == 'weather')
+          .toolCall;
       expect(toolCall.toolCallId, 'call_1');
       expect(toolCall.toolName, 'weather');
       expect(
@@ -180,12 +192,24 @@ void main() {
       expect(source.uri, Uri.parse('https://example.com'));
       expect(source.title, 'Example URL');
 
-      final custom = events.whereType<CustomEvent>().single;
-      expect(custom.kind, 'openai.web_search_call');
-      expect(
-        custom.data,
-        containsPair('id', 'ws_1'),
-      );
+      final webSearchCall = events
+          .whereType<ToolCallEvent>()
+          .singleWhere((event) => event.toolCall.toolName == 'web_search')
+          .toolCall;
+      expect(webSearchCall.toolCallId, 'ws_1');
+      expect(webSearchCall.providerExecuted, isTrue);
+      expect(webSearchCall.input, isEmpty);
+
+      final webSearchResult = events.whereType<ToolResultEvent>().single;
+      expect(webSearchResult.toolResult.toolCallId, 'ws_1');
+      expect(webSearchResult.toolResult.toolName, 'web_search');
+      expect(webSearchResult.toolResult.output, {
+        'action': {
+          'type': 'search',
+          'query': 'hello',
+        },
+      });
+      expect(events.whereType<CustomEvent>(), isEmpty);
 
       final finish = events.whereType<FinishEvent>().single;
       expect(finish.finishReason, FinishReason.toolCalls);
@@ -651,6 +675,87 @@ void main() {
             'filename': 'ADR-001.md',
             'score': 0.91,
             'text': 'Provider-local projection keeps OpenAI details local.',
+          },
+        ],
+      });
+    });
+
+    test('maps web search streams to provider-executed tool events', () {
+      const codec = OpenAIResponsesCodec();
+      final state = OpenAIResponsesStreamState()
+        ..responseId = 'resp_web_search'
+        ..serviceTier = 'default';
+      final events = <LanguageModelStreamEvent>[];
+
+      for (final chunk in <Map<String, Object?>>[
+        {
+          'type': 'response.output_item.added',
+          'output_index': 1,
+          'item': {
+            'id': 'ws_1',
+            'type': 'web_search_call',
+            'status': 'in_progress',
+            'action': {
+              'type': 'search',
+              'query': 'Vercel AI SDK',
+            },
+          },
+        },
+        {
+          'type': 'response.output_item.done',
+          'output_index': 1,
+          'item': {
+            'id': 'ws_1',
+            'type': 'web_search_call',
+            'status': 'completed',
+            'action': {
+              'type': 'search',
+              'query': 'Vercel AI SDK',
+              'sources': [
+                {
+                  'type': 'url',
+                  'url': 'https://ai-sdk.dev',
+                },
+                {
+                  'type': 'api',
+                  'name': 'oai-search',
+                },
+              ],
+            },
+          },
+        },
+      ]) {
+        events.addAll(codec.decodeStreamChunk(chunk, state));
+      }
+
+      final inputStart = events.whereType<ToolInputStartEvent>().single;
+      expect(inputStart.toolCallId, 'ws_1');
+      expect(inputStart.toolName, 'web_search');
+      expect(inputStart.providerExecuted, isTrue);
+      expect(events.whereType<ToolInputEndEvent>().single.toolCallId, 'ws_1');
+
+      final toolCall = events.whereType<ToolCallEvent>().single.toolCall;
+      expect(toolCall.toolCallId, 'ws_1');
+      expect(toolCall.toolName, 'web_search');
+      expect(toolCall.providerExecuted, isTrue);
+      expect(toolCall.input, isEmpty);
+
+      final toolResult = events.whereType<ToolResultEvent>().single.toolResult;
+      expect(toolResult.toolCallId, 'ws_1');
+      expect(toolResult.toolName, 'web_search');
+      expect(toolResult.output, {
+        'action': {
+          'type': 'search',
+          'query': 'Vercel AI SDK',
+        },
+        'sources': [
+          {
+            'type': 'url',
+            'url': 'https://ai-sdk.dev',
+          },
+          {
+            'type': 'api',
+            'name': 'oai-search',
           },
         ],
       });
