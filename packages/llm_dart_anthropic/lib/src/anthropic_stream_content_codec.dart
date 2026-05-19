@@ -1,5 +1,6 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import 'anthropic_stream_content_projection.dart';
 import 'anthropic_stream_state.dart';
 import 'anthropic_stream_tool_codec.dart';
 import 'anthropic_stream_util.dart';
@@ -22,40 +23,26 @@ final class AnthropicStreamContentCodec {
     }
 
     final blockType = anthropicStreamAsString(contentBlock['type']);
-    final blockMetadata = anthropicStreamProviderMetadata({
-      'blockIndex': index,
-      'blockType': blockType,
-    });
-
-    if (blockType == 'text' || blockType == 'compaction') {
-      final metadata = blockType == 'compaction'
-          ? anthropicStreamProviderMetadata({
-              'blockIndex': index,
-              'blockType': blockType,
-              'type': 'compaction',
-            })
-          : blockMetadata;
-      state.contentBlocksByIndex[index] = AnthropicStreamTextBlockState(
-        id: '$index',
-        providerMetadata: metadata,
-      );
-      yield TextStartEvent(id: '$index', providerMetadata: metadata);
-      return;
-    }
-
-    if (blockType == 'thinking' || blockType == 'redacted_thinking') {
-      final metadata = blockType == 'redacted_thinking'
-          ? anthropicStreamProviderMetadata({
-              'blockIndex': index,
-              'blockType': blockType,
-              'redactedData': contentBlock['data'],
-            })
-          : blockMetadata;
-      state.contentBlocksByIndex[index] = AnthropicStreamReasoningBlockState(
-        id: '$index',
-        providerMetadata: metadata,
-      );
-      yield ReasoningStartEvent(id: '$index', providerMetadata: metadata);
+    final contentProjection = projectAnthropicStreamContentBlockStart(
+      index: index,
+      blockType: blockType,
+      contentBlock: contentBlock,
+    );
+    if (contentProjection != null) {
+      switch (contentProjection.kind) {
+        case AnthropicProjectedStreamContentBlockKind.text:
+          state.contentBlocksByIndex[index] = AnthropicStreamTextBlockState(
+            id: contentProjection.id,
+            providerMetadata: contentProjection.providerMetadata,
+          );
+        case AnthropicProjectedStreamContentBlockKind.reasoning:
+          state.contentBlocksByIndex[index] =
+              AnthropicStreamReasoningBlockState(
+            id: contentProjection.id,
+            providerMetadata: contentProjection.providerMetadata,
+          );
+      }
+      yield contentProjection.event;
       return;
     }
 
@@ -132,10 +119,13 @@ final class AnthropicStreamContentCodec {
       return;
     }
 
-    yield CustomEvent(
-      kind: 'anthropic.$blockType',
-      data: contentBlock,
-      providerMetadata: blockMetadata,
+    yield projectAnthropicStreamCustomContentBlockEvent(
+      blockType: blockType,
+      contentBlock: contentBlock,
+      providerMetadata: anthropicStreamContentBlockMetadata(
+        index: index,
+        blockType: blockType,
+      ),
     );
   }
 
@@ -151,60 +141,6 @@ final class AnthropicStreamContentCodec {
 
     final deltaType = anthropicStreamAsString(delta['type']);
     final contentBlock = state.contentBlocksByIndex[index];
-    if (deltaType == 'text_delta' || deltaType == 'compaction_delta') {
-      if (contentBlock is! AnthropicStreamTextBlockState) {
-        return;
-      }
-
-      final value = deltaType == 'text_delta'
-          ? anthropicStreamAsString(delta['text'])
-          : anthropicStreamAsString(delta['content']);
-      if (value == null || value.isEmpty) {
-        return;
-      }
-
-      yield TextDeltaEvent(
-        id: contentBlock.id,
-        delta: value,
-        providerMetadata: contentBlock.providerMetadata,
-      );
-      return;
-    }
-
-    if (deltaType == 'thinking_delta') {
-      if (contentBlock is! AnthropicStreamReasoningBlockState) {
-        return;
-      }
-
-      final value = anthropicStreamAsString(delta['thinking']);
-      if (value == null || value.isEmpty) {
-        return;
-      }
-
-      yield ReasoningDeltaEvent(
-        id: contentBlock.id,
-        delta: value,
-        providerMetadata: contentBlock.providerMetadata,
-      );
-      return;
-    }
-
-    if (deltaType == 'signature_delta') {
-      if (contentBlock is! AnthropicStreamReasoningBlockState) {
-        return;
-      }
-
-      yield ReasoningDeltaEvent(
-        id: contentBlock.id,
-        delta: '',
-        providerMetadata: anthropicStreamProviderMetadata({
-          'blockIndex': index,
-          'blockType': 'thinking',
-          'signature': anthropicStreamAsString(delta['signature']),
-        }),
-      );
-      return;
-    }
 
     if (deltaType == 'input_json_delta') {
       if (contentBlock is! AnthropicStreamToolBlockState) {
@@ -225,12 +161,13 @@ final class AnthropicStreamContentCodec {
       return;
     }
 
-    if (deltaType == 'citations_delta') {
-      final citation = anthropicStreamAsMap(delta['citation']);
-      final source = _decodeCitationSource(citation);
-      if (source != null) {
-        yield SourceEvent(source);
-      }
+    final event = projectAnthropicStreamContentBlockDelta(
+      index: index,
+      delta: delta,
+      contentBlock: contentBlock,
+    );
+    if (event != null) {
+      yield event;
     }
   }
 
@@ -244,72 +181,18 @@ final class AnthropicStreamContentCodec {
     }
 
     final contentBlock = state.contentBlocksByIndex.remove(index);
-    if (contentBlock is AnthropicStreamTextBlockState) {
-      yield TextEndEvent(
-        id: contentBlock.id,
-        providerMetadata: contentBlock.providerMetadata,
-      );
+    if (contentBlock == null) {
       return;
     }
 
-    if (contentBlock is AnthropicStreamReasoningBlockState) {
-      yield ReasoningEndEvent(
-        id: contentBlock.id,
-        providerMetadata: contentBlock.providerMetadata,
-      );
+    final event = projectAnthropicStreamContentBlockStop(contentBlock);
+    if (event != null) {
+      yield event;
       return;
     }
 
     if (contentBlock is AnthropicStreamToolBlockState) {
       yield* toolCodec.finishToolBlock(contentBlock, state);
     }
-  }
-
-  SourceReference? _decodeCitationSource(Map<String, Object?>? citation) {
-    if (citation == null) {
-      return null;
-    }
-
-    final type = anthropicStreamAsString(citation['type']);
-    if (type == 'web_search_result_location') {
-      final url = anthropicStreamAsString(citation['url']);
-      if (url == null) {
-        return null;
-      }
-
-      return SourceReference(
-        kind: SourceReferenceKind.url,
-        sourceId: url,
-        uri: Uri.tryParse(url),
-        title: anthropicStreamAsString(citation['title']),
-        providerMetadata: anthropicStreamProviderMetadata({
-          'citationType': type,
-          'citedText': anthropicStreamAsString(citation['cited_text']),
-          'encryptedIndex':
-              anthropicStreamAsString(citation['encrypted_index']),
-        }),
-      );
-    }
-
-    if (type == 'page_location' || type == 'char_location') {
-      final documentIndex = anthropicStreamAsInt(citation['document_index']);
-      return SourceReference(
-        kind: SourceReferenceKind.document,
-        sourceId: 'document-${documentIndex ?? 0}',
-        title: anthropicStreamAsString(citation['document_title']),
-        providerMetadata: anthropicStreamProviderMetadata({
-          'citationType': type,
-          'citedText': anthropicStreamAsString(citation['cited_text']),
-          'documentIndex': documentIndex,
-          'startPageNumber':
-              anthropicStreamAsInt(citation['start_page_number']),
-          'endPageNumber': anthropicStreamAsInt(citation['end_page_number']),
-          'startCharIndex': anthropicStreamAsInt(citation['start_char_index']),
-          'endCharIndex': anthropicStreamAsInt(citation['end_char_index']),
-        }),
-      );
-    }
-
-    return null;
   }
 }
