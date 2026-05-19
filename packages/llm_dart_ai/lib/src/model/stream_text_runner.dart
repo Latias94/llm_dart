@@ -6,20 +6,19 @@ import 'package:llm_dart_provider/llm_dart_provider.dart' hide ErrorEvent;
 import '../prompt/model_message.dart';
 import '../prompt/prompt_normalization.dart';
 import '../stream/text_stream_event.dart';
-import 'generate_text_result_accumulator.dart';
 import 'generate_text_run_result.dart';
 import 'generate_text_runner_support.dart';
 import 'generate_text_step_continuation_resolver.dart';
 import 'generate_text_step_planner.dart';
 import 'generate_text_stop_condition.dart';
 import 'generate_text_step_result.dart';
-import 'language_model_stream_adapter.dart';
 import 'stream_result_foundation.dart';
 import 'stream_text_event_emitter.dart';
 import 'stream_text_cancellation.dart';
 import 'stream_text_run_lifecycle.dart';
 import 'stream_text_run_result.dart';
 import 'stream_text_run_state.dart';
+import 'stream_text_step_executor.dart';
 
 export 'stream_text_run_result.dart' show StreamTextRunResult;
 
@@ -123,6 +122,12 @@ final class StreamTextRunner {
       streamResult: streamResult,
       onChunk: onChunk,
     );
+    final stepExecutor = StreamTextStepExecutor(
+      model: model,
+      callOptions: callOptions,
+      emitter: emitter,
+      stepId: _stepId,
+    );
     final lifecycle = StreamTextRunLifecycle(
       emitter: emitter,
       stepChannel: stepChannel,
@@ -140,40 +145,20 @@ final class StreamTextRunner {
           promptHistory: promptHistory,
           previousSteps: state.previousSteps,
         );
-        final accumulator = GenerateTextResultAccumulator();
-        state.beginStep(
-          stepNumber: plan.stepNumber,
-          request: plan.request,
-          accumulator: accumulator,
+        final execution = await stepExecutor.executeStep(
+          plan,
+          beginStep: (accumulator) {
+            state.beginStep(
+              stepNumber: plan.stepNumber,
+              request: plan.request,
+              accumulator: accumulator,
+            );
+          },
+          onStepStart: () async => onStepStart?.call(plan.startEvent),
+          markStepOpen: state.markActiveStepOpen,
+          throwIfCancelled: _throwIfCancelled,
         );
-
-        await onStepStart?.call(plan.startEvent);
-        await emitter.add(
-          StepStartEvent(stepId: _stepId(plan.stepNumber)),
-        );
-        state.markActiveStepOpen();
-        _throwIfCancelled();
-
-        final events = adaptLanguageModelStreamEvents(
-          cancelOnProviderCancellation(
-            model.doStream(plan.request),
-            callOptions.cancellation,
-          ),
-          context: 'StreamTextRunner.modelStream',
-        );
-        await for (final event in events) {
-          accumulator.apply(event);
-          await emitter.add(event);
-        }
-        _throwIfCancelled();
-
-        var step = GenerateTextStepResult(
-          stepNumber: plan.stepNumber,
-          providerId: model.providerId,
-          modelId: model.modelId,
-          request: plan.request,
-          result: accumulator.build(),
-        );
+        var step = execution.step;
         state.addOrReplaceStep(step);
 
         final continuation = await continuationResolver.resolve(
@@ -184,17 +169,10 @@ final class StreamTextRunner {
             return state.previousSteps;
           },
           applyToolExecutions: (step, executions) async {
-            for (final execution in executions) {
-              final event = execution.toTextStreamEvent();
-              accumulator.apply(event);
-              await emitter.add(event);
-            }
-            return GenerateTextStepResult(
-              stepNumber: step.stepNumber,
-              providerId: step.providerId,
-              modelId: step.modelId,
-              request: step.request,
-              result: accumulator.build(),
+            return stepExecutor.applyToolExecutions(
+              step,
+              executions,
+              execution.accumulator,
             );
           },
           throwIfCancelled: _throwIfCancelled,
