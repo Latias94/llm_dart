@@ -1,6 +1,7 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import '../ui/chat_ui_message.dart';
+import 'chat_ui_tool_part_json_codec.dart';
 
 final class ChatUiJsonCodec {
   static const envelopeKind = 'chat-ui-messages';
@@ -99,54 +100,7 @@ final class ChatUiJsonCodec {
             'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
                 providerMetadata),
         },
-      ToolUiPart(
-        :final toolCallId,
-        :final toolName,
-        :final state,
-        :final input,
-        :final inputText,
-        :final output,
-        :final toolOutput,
-        :final errorText,
-        :final providerExecuted,
-        :final isDynamic,
-        :final preliminary,
-        :final title,
-        :final approval,
-        :final callProviderMetadata,
-        :final resultProviderMetadata,
-      ) =>
-        {
-          'type': 'tool',
-          'toolCallId': toolCallId,
-          'toolName': toolName,
-          'state': state.name,
-          'input': ensureJsonValue(input, path: r'$.tool.input'),
-          if (inputText != null) 'inputText': inputText,
-          if (_toolOutputForJson(
-            state: state,
-            output: output,
-            toolOutput: toolOutput,
-            errorText: errorText,
-          )
-              case final encodedToolOutput?)
-            'toolOutput':
-                SerializationJsonSupport.encodeToolOutput(encodedToolOutput),
-          if (errorText != null) 'errorText': errorText,
-          'providerExecuted': providerExecuted,
-          'isDynamic': isDynamic,
-          'preliminary': preliminary,
-          if (title != null) 'title': title,
-          if (approval != null) 'approval': _encodeApprovalState(approval),
-          if (callProviderMetadata != null)
-            'callProviderMetadata':
-                SerializationJsonSupport.encodeProviderMetadata(
-                    callProviderMetadata),
-          if (resultProviderMetadata != null)
-            'resultProviderMetadata':
-                SerializationJsonSupport.encodeProviderMetadata(
-                    resultProviderMetadata),
-        },
+      ToolUiPart() => const ChatUiToolPartJsonCodec().encode(part),
       SourceUiPart(:final source) => {
           'type': 'source',
           'source': SerializationJsonSupport.encodeSourceReference(source),
@@ -227,7 +181,7 @@ final class ChatUiJsonCodec {
             path: '$path.providerMetadata',
           ),
         ),
-      'tool' => _decodeToolPart(map, path: path),
+      'tool' => const ChatUiToolPartJsonCodec().decode(map, path: path),
       'source' => SourceUiPart(
           SerializationJsonSupport.decodeSourceReference(map['source'],
               path: '$path.source'),
@@ -410,136 +364,4 @@ final class ChatUiJsonCodec {
       _ => value,
     };
   }
-
-  JsonMap _encodeApprovalState(ToolApprovalUiState state) {
-    return {
-      'approvalId': state.approvalId,
-      if (state.approved != null) 'approved': state.approved,
-      if (state.reason != null) 'reason': state.reason,
-    };
-  }
-
-  ToolApprovalUiState? _decodeApprovalState(
-    Object? value, {
-    required String path,
-  }) {
-    if (value == null) {
-      return null;
-    }
-
-    final map = asJsonMap(value, path: path);
-    return ToolApprovalUiState(
-      approvalId: asJsonString(map['approvalId'], path: '$path.approvalId'),
-      approved: asNullableJsonBool(map['approved'], path: '$path.approved'),
-      reason: asNullableJsonString(map['reason'], path: '$path.reason'),
-    );
-  }
-
-  ToolUiPart _decodeToolPart(
-    JsonMap map, {
-    required String path,
-  }) {
-    final state = ToolUiPartState.values.byName(
-      asJsonString(map['state'], path: '$path.state'),
-    );
-    final errorText =
-        asNullableJsonString(map['errorText'], path: '$path.errorText');
-
-    return ToolUiPart(
-      toolCallId: asJsonString(map['toolCallId'], path: '$path.toolCallId'),
-      toolName: asJsonString(map['toolName'], path: '$path.toolName'),
-      state: state,
-      input: map['input'],
-      inputText:
-          asNullableJsonString(map['inputText'], path: '$path.inputText'),
-      output: map['output'],
-      toolOutput: _decodeToolOutputForUiPart(
-        map,
-        state: state,
-        errorText: errorText,
-        path: path,
-      ),
-      errorText: errorText,
-      providerExecuted: asNullableJsonBool(
-            map['providerExecuted'],
-            path: '$path.providerExecuted',
-          ) ??
-          false,
-      isDynamic: SerializationJsonSupport.decodeDynamicFlag(
-        map,
-        path: path,
-      ),
-      preliminary:
-          asNullableJsonBool(map['preliminary'], path: '$path.preliminary') ??
-              false,
-      title: asNullableJsonString(map['title'], path: '$path.title'),
-      approval: _decodeApprovalState(map['approval'], path: '$path.approval'),
-      callProviderMetadata: SerializationJsonSupport.decodeProviderMetadata(
-        map['callProviderMetadata'],
-        path: '$path.callProviderMetadata',
-      ),
-      resultProviderMetadata: SerializationJsonSupport.decodeProviderMetadata(
-        map['resultProviderMetadata'],
-        path: '$path.resultProviderMetadata',
-      ),
-    );
-  }
-}
-
-ToolOutput? _toolOutputForJson({
-  required ToolUiPartState state,
-  required Object? output,
-  required ToolOutput? toolOutput,
-  required String? errorText,
-}) {
-  if (toolOutput != null) {
-    return toolOutput;
-  }
-
-  return switch (state) {
-    ToolUiPartState.outputAvailable => ToolOutput.fromValue(output),
-    ToolUiPartState.outputError => output != null
-        ? ToolOutput.fromValue(output, isError: true)
-        : errorText == null
-            ? null
-            : ToolOutput.fromValue(errorText, isError: true),
-    ToolUiPartState.outputDenied => output is String
-        ? ExecutionDeniedToolOutput(output)
-        : const ExecutionDeniedToolOutput(),
-    _ => output == null ? null : ToolOutput.fromValue(output),
-  };
-}
-
-ToolOutput? _decodeToolOutputForUiPart(
-  JsonMap map, {
-  required ToolUiPartState state,
-  required String? errorText,
-  required String path,
-}) {
-  if (map.containsKey('toolOutput')) {
-    return SerializationJsonSupport.decodeToolOutput(
-      map['toolOutput'],
-      path: '$path.toolOutput',
-    );
-  }
-
-  if (!map.containsKey('output')) {
-    return state == ToolUiPartState.outputDenied
-        ? const ExecutionDeniedToolOutput()
-        : null;
-  }
-
-  final output = map['output'];
-  return switch (state) {
-    ToolUiPartState.outputAvailable => ToolOutput.fromValue(output),
-    ToolUiPartState.outputError => output != null
-        ? ToolOutput.fromValue(output, isError: true)
-        : errorText == null
-            ? null
-            : ToolOutput.fromValue(errorText, isError: true),
-    ToolUiPartState.outputDenied => output is String
-        ? ExecutionDeniedToolOutput(output)
-        : const ExecutionDeniedToolOutput(),
-    _ => output == null ? null : ToolOutput.fromValue(output),
-  };
 }
