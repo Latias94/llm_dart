@@ -1267,6 +1267,145 @@ void main() {
       );
     });
 
+    test('encodes Anthropic function tool provider options', () {
+      final request = codec.encodeRequest(
+        modelId: 'claude-sonnet-4-5',
+        prompt: [
+          UserPromptMessage.text('Query the database.'),
+        ],
+        tools: [
+          FunctionToolDefinition(
+            name: 'query_database',
+            description: 'Query a database.',
+            inputSchema: ToolJsonSchema.object(
+              properties: const {
+                'sql': {'type': 'string'},
+              },
+              required: const ['sql'],
+            ),
+          ),
+        ],
+        toolChoice: const AutoToolChoice(),
+        options: const GenerateTextOptions(),
+        settings: const AnthropicChatModelSettings(),
+        providerOptions: AnthropicGenerateTextOptions(
+          functionToolOptions: {
+            'query_database': AnthropicFunctionToolOptions(
+              deferLoading: false,
+              eagerInputStreaming: true,
+              allowedCallers: const [
+                AnthropicToolAllowedCaller.codeExecution20260120,
+              ],
+              inputExamples: [
+                AnthropicToolInputExample({
+                  'sql': 'select 1',
+                }),
+              ],
+            ),
+          },
+        ),
+        stream: false,
+      );
+
+      expect(
+        request.body['tools'],
+        [
+          {
+            'name': 'query_database',
+            'description': 'Query a database.',
+            'input_schema': {
+              'type': 'object',
+              'properties': {
+                'sql': {'type': 'string'},
+              },
+              'required': ['sql'],
+            },
+            'defer_loading': false,
+            'eager_input_streaming': true,
+            'allowed_callers': ['code_execution_20260120'],
+            'input_examples': [
+              {
+                'sql': 'select 1',
+              },
+            ],
+          },
+        ],
+      );
+      expect(
+        request.betaFeatures,
+        contains('advanced-tool-use-2025-11-20'),
+      );
+    });
+
+    test('defaults eager tool input streaming only for stream requests', () {
+      final streamRequest = codec.encodeRequest(
+        modelId: 'claude-sonnet-4-5',
+        prompt: [
+          UserPromptMessage.text('Use weather.'),
+        ],
+        tools: [
+          FunctionToolDefinition(
+            name: 'weather',
+            inputSchema: ToolJsonSchema.object(),
+          ),
+        ],
+        toolChoice: const AutoToolChoice(),
+        options: const GenerateTextOptions(),
+        settings: const AnthropicChatModelSettings(),
+        providerOptions: const AnthropicGenerateTextOptions(),
+        stream: true,
+      );
+      final generateRequest = codec.encodeRequest(
+        modelId: 'claude-sonnet-4-5',
+        prompt: [
+          UserPromptMessage.text('Use weather.'),
+        ],
+        tools: [
+          FunctionToolDefinition(
+            name: 'weather',
+            inputSchema: ToolJsonSchema.object(),
+          ),
+        ],
+        toolChoice: const AutoToolChoice(),
+        options: const GenerateTextOptions(),
+        settings: const AnthropicChatModelSettings(),
+        providerOptions: const AnthropicGenerateTextOptions(),
+        stream: false,
+      );
+      final disabledRequest = codec.encodeRequest(
+        modelId: 'claude-sonnet-4-5',
+        prompt: [
+          UserPromptMessage.text('Use weather.'),
+        ],
+        tools: [
+          FunctionToolDefinition(
+            name: 'weather',
+            inputSchema: ToolJsonSchema.object(),
+          ),
+        ],
+        toolChoice: const AutoToolChoice(),
+        options: const GenerateTextOptions(),
+        settings: const AnthropicChatModelSettings(),
+        providerOptions: const AnthropicGenerateTextOptions(
+          toolStreaming: false,
+        ),
+        stream: true,
+      );
+
+      expect(
+        (streamRequest.body['tools']! as List).single,
+        containsPair('eager_input_streaming', true),
+      );
+      expect(
+        (generateRequest.body['tools']! as List).single,
+        isNot(contains('eager_input_streaming')),
+      );
+      expect(
+        (disabledRequest.body['tools']! as List).single,
+        isNot(contains('eager_input_streaming')),
+      );
+    });
+
     test('normalizes deferred tool names and warns when tool-search is missing',
         () {
       final request = codec.encodeRequest(

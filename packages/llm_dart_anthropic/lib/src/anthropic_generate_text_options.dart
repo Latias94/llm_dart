@@ -1,6 +1,7 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'anthropic_cache_options.dart';
+import 'anthropic_function_tool_options.dart';
 import 'anthropic_mcp_models.dart';
 import 'anthropic_tools.dart';
 
@@ -14,6 +15,8 @@ final class AnthropicGenerateTextOptions implements ProviderInvocationOptions {
   final List<AnthropicMcpServer>? mcpServers;
   final List<AnthropicNativeTool>? tools;
   final List<String>? deferredToolNames;
+  final Map<String, AnthropicFunctionToolOptions>? functionToolOptions;
+  final bool? toolStreaming;
   final AnthropicCacheControl? toolsCacheControl;
 
   const AnthropicGenerateTextOptions({
@@ -26,6 +29,8 @@ final class AnthropicGenerateTextOptions implements ProviderInvocationOptions {
     this.mcpServers,
     this.tools,
     this.deferredToolNames,
+    this.functionToolOptions,
+    this.toolStreaming,
     this.toolsCacheControl,
   });
 
@@ -39,6 +44,8 @@ final class AnthropicGenerateTextOptions implements ProviderInvocationOptions {
     List<AnthropicMcpServer>? mcpServers,
     List<AnthropicNativeTool>? tools,
     List<String>? deferredToolNames,
+    Map<String, AnthropicFunctionToolOptions>? functionToolOptions,
+    bool? toolStreaming,
     AnthropicCacheControl? toolsCacheControl,
   }) {
     return AnthropicGenerateTextOptions(
@@ -51,6 +58,8 @@ final class AnthropicGenerateTextOptions implements ProviderInvocationOptions {
       mcpServers: mcpServers ?? this.mcpServers,
       tools: tools ?? this.tools,
       deferredToolNames: deferredToolNames ?? this.deferredToolNames,
+      functionToolOptions: functionToolOptions ?? this.functionToolOptions,
+      toolStreaming: toolStreaming ?? this.toolStreaming,
       toolsCacheControl: toolsCacheControl ?? this.toolsCacheControl,
     );
   }

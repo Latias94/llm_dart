@@ -3,6 +3,7 @@ const String anthropicInterleavedThinkingBeta =
 const String anthropicMcpClientBeta = 'mcp-client-2025-04-04';
 const String anthropicExtendedCacheTtlBeta = 'extended-cache-ttl-2025-04-11';
 const String anthropicFilesApiBeta = 'files-api-2025-04-14';
+const String anthropicAdvancedToolUseBeta = 'advanced-tool-use-2025-11-20';
 
 List<String> sortedAnthropicBetaFeatures(Set<String> betaFeatures) {
   return betaFeatures.toList(growable: false)..sort();

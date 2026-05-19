@@ -73,6 +73,9 @@ final class AnthropicRequestOptionsEncoder {
       nativeTools: nativeTools,
       toolChoice: toolChoice,
       deferredToolNames: deferredToolNames,
+      functionToolOptions: providerOptions.functionToolOptions,
+      defaultEagerInputStreaming:
+          stream && providerOptions.toolStreaming != false,
       toolsCacheControl: providerOptions.toolsCacheControl,
       warnings: warnings,
     );

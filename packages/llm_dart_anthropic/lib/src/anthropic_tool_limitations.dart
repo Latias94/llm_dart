@@ -1,5 +1,6 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import 'anthropic_function_tool_options.dart';
 import 'anthropic_tools.dart';
 
 Set<String> resolveAnthropicDeferredToolNames({
@@ -33,6 +34,49 @@ Set<String> resolveAnthropicDeferredToolNames({
   }
 
   return deferredToolNameSet;
+}
+
+Map<String, AnthropicFunctionToolOptions> resolveAnthropicFunctionToolOptions({
+  required Map<String, AnthropicFunctionToolOptions>? optionsByToolName,
+  required Set<String> commonToolNames,
+  required List<ModelWarning> warnings,
+}) {
+  if (optionsByToolName == null || optionsByToolName.isEmpty) {
+    return const {};
+  }
+
+  final normalizedOptions = <String, AnthropicFunctionToolOptions>{};
+  var normalizedNameCount = 0;
+
+  for (final entry in optionsByToolName.entries) {
+    final toolName = entry.key.trim();
+    if (toolName.isEmpty) {
+      continue;
+    }
+
+    normalizedNameCount += 1;
+    normalizedOptions[toolName] = entry.value;
+  }
+
+  if (normalizedOptions.length != optionsByToolName.length ||
+      normalizedNameCount != optionsByToolName.length) {
+    warnings.add(anthropicFunctionToolOptionsNormalizedWarning);
+  }
+
+  final unknownOptionToolNames = normalizedOptions.keys
+      .where((toolName) => !commonToolNames.contains(toolName))
+      .toList(growable: false)
+    ..sort();
+  if (unknownOptionToolNames.isNotEmpty) {
+    warnings.add(
+      unknownAnthropicFunctionToolOptionsWarning(unknownOptionToolNames),
+    );
+  }
+
+  return Map.unmodifiable({
+    for (final entry in normalizedOptions.entries)
+      if (commonToolNames.contains(entry.key)) entry.key: entry.value,
+  });
 }
 
 void validateAnthropicSpecificToolChoice({
@@ -94,5 +138,23 @@ ModelWarning unknownAnthropicDeferredToolNamesWarning(
     field: 'deferredToolNames',
     message:
         'Anthropic deferredToolNames only apply to common function tools. Ignoring unknown names: ${toolNames.join(', ')}.',
+  );
+}
+
+const anthropicFunctionToolOptionsNormalizedWarning = ModelWarning(
+  type: ModelWarningType.compatibility,
+  field: 'functionToolOptions',
+  message:
+      'Anthropic functionToolOptions contained duplicate or empty tool names after normalization. The request uses the normalized unique non-empty subset.',
+);
+
+ModelWarning unknownAnthropicFunctionToolOptionsWarning(
+  List<String> toolNames,
+) {
+  return ModelWarning(
+    type: ModelWarningType.compatibility,
+    field: 'functionToolOptions',
+    message:
+        'Anthropic functionToolOptions only apply to declared common function tools. Ignoring unknown names: ${toolNames.join(', ')}.',
   );
 }

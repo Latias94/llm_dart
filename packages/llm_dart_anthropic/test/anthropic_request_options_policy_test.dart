@@ -112,6 +112,8 @@ void main() {
         nativeTools: const [],
         toolChoice: null,
         deferredToolNames: const [],
+        functionToolOptions: const {},
+        defaultEagerInputStreaming: false,
         toolsCacheControl: const AnthropicCacheControl.ephemeral(),
         warnings: warnings,
       );

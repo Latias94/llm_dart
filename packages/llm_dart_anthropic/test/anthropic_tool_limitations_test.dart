@@ -27,6 +27,8 @@ void main() {
           '',
           'missing_tool',
         ],
+        functionToolOptions: const {},
+        defaultEagerInputStreaming: false,
         toolsCacheControl: null,
         warnings: warnings,
       );
@@ -79,6 +81,36 @@ void main() {
       expect(warnings, isEmpty);
     });
 
+    test('normalizes function tool option names and warns for unknown tools',
+        () {
+      final warnings = <ModelWarning>[];
+      final options = resolveAnthropicFunctionToolOptions(
+        optionsByToolName: const {
+          ' get_weather ': AnthropicFunctionToolOptions(
+            eagerInputStreaming: true,
+          ),
+          '': AnthropicFunctionToolOptions(deferLoading: true),
+          'missing_tool': AnthropicFunctionToolOptions(deferLoading: true),
+        },
+        commonToolNames: const {'get_weather'},
+        warnings: warnings,
+      );
+
+      expect(options.keys, ['get_weather']);
+      expect(options['get_weather']?.eagerInputStreaming, isTrue);
+      expect(
+        warnings.map((warning) => warning.field),
+        everyElement('functionToolOptions'),
+      );
+      expect(
+        warnings.map((warning) => warning.message),
+        containsAll([
+          contains('duplicate or empty tool names'),
+          contains('Ignoring unknown names: missing_tool'),
+        ]),
+      );
+    });
+
     test('rejects native or undeclared specific tool choice', () {
       expect(
         () => resolveAnthropicToolConfiguration(
@@ -93,6 +125,8 @@ void main() {
           ],
           toolChoice: const SpecificToolChoice('web_search'),
           deferredToolNames: const [],
+          functionToolOptions: const {},
+          defaultEagerInputStreaming: false,
           toolsCacheControl: null,
           warnings: <ModelWarning>[],
         ),
