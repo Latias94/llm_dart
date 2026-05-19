@@ -3,8 +3,11 @@ import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'openai_family_profile.dart';
 import 'openai_family_url_support.dart';
+import 'openai_image_edit_request.dart';
 import 'openai_image_editing.dart';
-import 'openai_image_model_request.dart';
+import 'openai_image_generation_request.dart';
+import 'openai_image_model_capabilities.dart';
+import 'openai_image_model_options_resolution.dart';
 import 'openai_image_model_response.dart';
 import 'openai_image_model_transport.dart';
 import 'openai_model_describer.dart';
@@ -137,73 +140,6 @@ final class OpenAIImageModel implements ImageModel, CapabilityDescribedModel {
   Future<ImageGenerationResult> _doEditFromCommonRequest(
     ImageGenerationRequest request,
   ) {
-    final prompt = request.prompt;
-    if (prompt == null || prompt.trim().isEmpty) {
-      throw ArgumentError.value(
-        prompt,
-        'request.prompt',
-        'OpenAI image editing through ImageGenerationRequest requires a non-empty prompt.',
-      );
-    }
-
-    if (request.aspectRatio != null) {
-      throw ArgumentError.value(
-        request.aspectRatio,
-        'request.aspectRatio',
-        'OpenAI image editing does not support request.aspectRatio. Use request.size instead.',
-      );
-    }
-
-    if (request.seed != null) {
-      throw ArgumentError.value(
-        request.seed,
-        'request.seed',
-        'OpenAI image editing does not support request.seed.',
-      );
-    }
-
-    return edit(
-      OpenAIImageEditRequest(
-        prompt: prompt,
-        images: [
-          for (final file in request.files)
-            _toOpenAIImageEditInput(file, 'request.files'),
-        ],
-        mask: request.mask == null
-            ? null
-            : _toOpenAIImageEditInput(request.mask!, 'request.mask'),
-        count: request.count,
-        size: request.size,
-        callOptions: request.callOptions,
-      ),
-    );
+    return edit(buildOpenAIImageEditRequestFromCommon(request));
   }
-}
-
-OpenAIImageEditInput _toOpenAIImageEditInput(
-  ImageGenerationInput input,
-  String parameterName,
-) {
-  if (input.uri != null) {
-    throw ArgumentError.value(
-      input.uri,
-      '$parameterName.uri',
-      'OpenAI image editing does not support URL-backed common image inputs.',
-    );
-  }
-
-  final bytes = input.bytes;
-  if (bytes == null) {
-    throw ArgumentError.value(
-      input,
-      parameterName,
-      'OpenAI image editing inputs must provide image bytes.',
-    );
-  }
-
-  return OpenAIImageEditInput(
-    bytes: bytes,
-    mediaType: input.mediaType,
-    filename: input.filename,
-  );
 }

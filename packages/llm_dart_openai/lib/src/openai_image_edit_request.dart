@@ -2,85 +2,18 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'openai_image_editing.dart';
-import 'openai_non_text_model_support.dart';
+import 'openai_image_request_validation.dart';
 import 'openai_options.dart';
 
-OpenAIImageModelSettings resolveOpenAIImageModelSettings(
-  ProviderModelOptions settings,
+OpenAIImageEditRequest buildOpenAIImageEditRequestFromCommon(
+  ImageGenerationRequest request,
 ) {
-  return resolveOpenAIModelSettings<OpenAIImageModelSettings>(
-    settings,
-    parameterName: 'settings',
-    expectedTypeName: 'OpenAIImageModelSettings for OpenAI-family image models',
-  );
-}
-
-OpenAIImageOptions? resolveOpenAIImageProviderOptions(
-  CallOptions callOptions,
-) {
-  return resolveOpenAIProviderOptions<OpenAIImageOptions>(
-    callOptions,
-    parameterName: 'request.callOptions.providerOptions',
-    expectedTypeName: 'OpenAIImageOptions for OpenAI-family image models',
-  );
-}
-
-int resolveOpenAIImageMaxImagesPerCall(String modelId) {
-  return switch (modelId) {
-    'dall-e-2' => 10,
-    'dall-e-3' => 1,
-    'chatgpt-image-latest' => 10,
-    'gpt-image-1' => 10,
-    'gpt-image-1-mini' => 10,
-    'gpt-image-1.5' => 10,
-    'gpt-image-2' => 10,
-    _ => 1,
-  };
-}
-
-bool shouldIncludeOpenAIImageResponseFormat(String modelId) {
-  return !hasDefaultOpenAIImageResponseFormat(modelId);
-}
-
-bool hasDefaultOpenAIImageResponseFormat(String modelId) {
-  const defaultResponseFormatPrefixes = [
-    'chatgpt-image-',
-    'gpt-image-1-mini',
-    'gpt-image-1.5',
-    'gpt-image-1',
-    'gpt-image-2',
-  ];
-
-  return defaultResponseFormatPrefixes.any(modelId.startsWith);
-}
-
-void validateOpenAIImageGenerationRequest({
-  required String modelId,
-  required ImageGenerationRequest request,
-  required OpenAIImageOptions? options,
-  required int maxImagesPerCall,
-}) {
-  if (request.prompt == null || request.prompt!.trim().isEmpty) {
+  final prompt = request.prompt;
+  if (prompt == null || prompt.trim().isEmpty) {
     throw ArgumentError.value(
-      request.prompt,
+      prompt,
       'request.prompt',
-      'OpenAI image generation requires a non-empty prompt.',
-    );
-  }
-
-  if (request.count < 1) {
-    throw ArgumentError.value(
-      request.count,
-      'request.count',
-      'OpenAI image generation requires count >= 1.',
-    );
-  }
-
-  if (request.count > maxImagesPerCall) {
-    throw ArgumentError.value(
-      request.count,
-      'request.count',
-      'OpenAI image model $modelId supports at most $maxImagesPerCall generated images per call.',
+      'OpenAI image editing through ImageGenerationRequest requires a non-empty prompt.',
     );
   }
 
@@ -88,7 +21,7 @@ void validateOpenAIImageGenerationRequest({
     throw ArgumentError.value(
       request.aspectRatio,
       'request.aspectRatio',
-      'OpenAI image models do not support request.aspectRatio. Use request.size instead.',
+      'OpenAI image editing does not support request.aspectRatio. Use request.size instead.',
     );
   }
 
@@ -96,16 +29,23 @@ void validateOpenAIImageGenerationRequest({
     throw ArgumentError.value(
       request.seed,
       'request.seed',
-      'OpenAI image models do not support request.seed.',
+      'OpenAI image editing does not support request.seed.',
     );
   }
 
-  if (options?.outputCompression case final outputCompression?) {
-    validateOpenAIImageOutputCompression(
-      outputCompression,
-      'request.callOptions.providerOptions.outputCompression',
-    );
-  }
+  return OpenAIImageEditRequest(
+    prompt: prompt,
+    images: [
+      for (final file in request.files)
+        _toOpenAIImageEditInput(file, 'request.files'),
+    ],
+    mask: request.mask == null
+        ? null
+        : _toOpenAIImageEditInput(request.mask!, 'request.mask'),
+    count: request.count,
+    size: request.size,
+    callOptions: request.callOptions,
+  );
 }
 
 void validateOpenAIImageEditRequest(
@@ -199,34 +139,6 @@ void validateOpenAIImageEditRequest(
   }
 }
 
-Map<String, Object?> buildOpenAIImageGenerationRequestBody({
-  required String modelId,
-  required ImageGenerationRequest request,
-  required OpenAIImageOptions? options,
-}) {
-  return {
-    'model': modelId,
-    'prompt': request.prompt!,
-    'n': request.count,
-    if (request.size != null) 'size': request.size,
-    if (options?.style case final style?) 'style': style.value,
-    if (options?.quality case final quality?) 'quality': quality.value,
-    if (options?.background case final background?)
-      'background': background.value,
-    if (options?.moderation case final moderation?)
-      'moderation': moderation.value,
-    if (options?.outputFormat case final outputFormat?)
-      'output_format': outputFormat.value,
-    if (options?.outputCompression case final outputCompression?)
-      'output_compression': outputCompression,
-    if (options?.user case final user?) 'user': user,
-    if (shouldIncludeOpenAIImageResponseFormat(modelId))
-      'response_format':
-          (options?.responseFormat ?? OpenAIImageResponseFormat.base64Json)
-              .value,
-  };
-}
-
 TransportMultipartBody buildOpenAIImageEditRequestBody({
   required String modelId,
   required OpenAIImageEditRequest request,
@@ -311,7 +223,7 @@ TransportMultipartBody buildOpenAIImageEditRequestBody({
   );
 }
 
-void validateOpenAIImageEditInput(
+OpenAIImageEditInput _toOpenAIImageEditInput(
   ImageGenerationInput input,
   String parameterName,
 ) {
@@ -319,51 +231,22 @@ void validateOpenAIImageEditInput(
     throw ArgumentError.value(
       input.uri,
       '$parameterName.uri',
-      'OpenAI image editing inputs must provide image bytes.',
+      'OpenAI image editing does not support URL-backed common image inputs.',
     );
   }
 
   final bytes = input.bytes;
-  if (bytes == null || bytes.isEmpty) {
+  if (bytes == null) {
     throw ArgumentError.value(
-      input.bytes,
-      '$parameterName.bytes',
-      'OpenAI image editing inputs must provide non-empty bytes.',
-    );
-  }
-
-  if (!input.mediaType.startsWith('image/')) {
-    throw ArgumentError.value(
-      input.mediaType,
-      '$parameterName.mediaType',
-      'OpenAI image editing inputs must use an image/* media type.',
-    );
-  }
-}
-
-void validateOpenAIImageOutputCompression(
-  int outputCompression,
-  String parameterName,
-) {
-  if (outputCompression < 0 || outputCompression > 100) {
-    throw ArgumentError.value(
-      outputCompression,
+      input,
       parameterName,
-      'OpenAI image outputCompression must be between 0 and 100.',
+      'OpenAI image editing inputs must provide image bytes.',
     );
   }
-}
 
-String buildOpenAIImageFilename(String mediaType) {
-  final normalized = mediaType.split(';').first.trim().toLowerCase();
-  final extension = switch (normalized) {
-    'image/png' => 'png',
-    'image/jpeg' => 'jpeg',
-    'image/jpg' => 'jpg',
-    'image/webp' => 'webp',
-    'image/gif' => 'gif',
-    _ => 'bin',
-  };
-
-  return 'image.$extension';
+  return OpenAIImageEditInput(
+    bytes: bytes,
+    mediaType: input.mediaType,
+    filename: input.filename,
+  );
 }
