@@ -467,6 +467,73 @@ void main() {
       expect(request.warnings, isEmpty);
     });
 
+    test('encodes custom tool replay as native Responses items', () {
+      const codec = OpenAIResponsesCodec();
+
+      final request = codec.encodeRequest(
+        modelId: 'gpt-5-mini',
+        prompt: [
+          AssistantPromptMessage(
+            parts: const [
+              ToolCallPromptPart(
+                toolCallId: 'call_custom_1',
+                toolName: 'write_sql',
+                input: 'SELECT * FROM users',
+                providerOptions: ProviderReplayPromptPartOptions(
+                  ProviderMetadata({
+                    'openai': {
+                      'itemId': 'ct_1',
+                    },
+                  }),
+                ),
+              ),
+            ],
+          ),
+          ToolPromptMessage(
+            toolName: 'write_sql',
+            parts: [
+              ToolResultPromptPart(
+                toolCallId: 'call_custom_1',
+                toolName: 'write_sql',
+                output: {
+                  'rows': 1,
+                },
+              ),
+            ],
+          ),
+        ],
+        tools: const [],
+        toolChoice: null,
+        options: const GenerateTextOptions(),
+        providerOptions: const OpenAIGenerateTextOptions(
+          store: false,
+          builtInTools: [
+            OpenAICustomTool(name: 'write_sql'),
+          ],
+        ),
+        stream: false,
+      );
+
+      expect(
+        request.body['input'],
+        [
+          {
+            'type': 'custom_tool_call',
+            'call_id': 'call_custom_1',
+            'name': 'write_sql',
+            'input': 'SELECT * FROM users',
+            'id': 'ct_1',
+          },
+          {
+            'type': 'custom_tool_call_output',
+            'call_id': 'call_custom_1',
+            'output': '{"rows":1}',
+          },
+        ],
+      );
+      expect(request.warnings, isEmpty);
+    });
+
     test('encodes URI-backed non-PDF file prompt parts on the Responses path',
         () {
       const codec = OpenAIResponsesCodec();

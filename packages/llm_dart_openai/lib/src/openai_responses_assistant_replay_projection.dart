@@ -1,6 +1,7 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'openai_request_encoding_util.dart';
+import 'openai_responses_custom_tool_replay_projection.dart';
 import 'openai_responses_native_tool_context.dart';
 import 'openai_responses_prompt_limitations.dart';
 import 'openai_responses_replay_policy.dart';
@@ -118,6 +119,15 @@ final class OpenAIResponsesAssistantToolReplayProjection {
       return;
     }
 
+    final customToolCall = projectOpenAIResponsesCustomToolReplayCall(
+      part,
+      isCustomToolName: nativeToolContext.isCustomToolName,
+    );
+    if (customToolCall != null) {
+      items.add(customToolCall.inputItem);
+      return;
+    }
+
     if (nativeToolContext.hasLocalShell) {
       final localShellCall = projectOpenAIResponsesLocalShellReplayCall(part);
       if (localShellCall != null) {
@@ -210,6 +220,15 @@ final class OpenAIResponsesAssistantToolReplayProjection {
     );
     if (toolSearchOutput != null) {
       items.add(toolSearchOutput.toInputItem());
+      return;
+    }
+
+    final customToolOutput = projectOpenAIResponsesCustomToolReplayOutput(
+      part,
+      isCustomToolName: nativeToolContext.isCustomToolName,
+    );
+    if (customToolOutput != null) {
+      items.add(customToolOutput.inputItem);
       return;
     }
 

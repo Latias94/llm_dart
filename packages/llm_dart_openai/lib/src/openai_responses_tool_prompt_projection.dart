@@ -1,5 +1,6 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import 'openai_responses_custom_tool_replay_projection.dart';
 import 'openai_responses_native_tool_context.dart';
 import 'openai_responses_prompt_limitations.dart';
 import 'openai_responses_replay_policy.dart';
@@ -40,6 +41,16 @@ final class OpenAIResponsesToolPromptProjection {
           role: 'tool',
           part: part,
         );
+      }
+
+      final customToolOutput = projectOpenAIResponsesCustomToolReplayOutput(
+        part,
+        isCustomToolName: nativeToolContext.isCustomToolName,
+        toolOutputProjection: toolCodec.toolOutputProjection,
+      );
+      if (customToolOutput != null) {
+        items.add(customToolOutput.inputItem);
+        continue;
       }
 
       if (!part.isError) {
