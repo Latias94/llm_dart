@@ -4,13 +4,13 @@ import 'openai_responses_apply_patch_stream_projection.dart';
 import 'openai_responses_code_interpreter_stream_projection.dart';
 import 'openai_responses_custom_tool_stream_projection.dart';
 import 'openai_responses_image_generation_stream_projection.dart';
+import 'openai_responses_metadata.dart';
 import 'openai_responses_output_item_stream_projection.dart';
 import 'openai_responses_source_annotation_stream_projection.dart';
 import 'openai_responses_stream_result_codec.dart';
 import 'openai_responses_stream_state.dart';
 import 'openai_responses_stream_tool_codec.dart';
 import 'openai_responses_stream_util.dart';
-import 'openai_responses_support.dart';
 import 'openai_responses_text_reasoning_stream_projection.dart';
 
 Iterable<LanguageModelStreamEvent> decodeOpenAIResponsesStreamChunk(

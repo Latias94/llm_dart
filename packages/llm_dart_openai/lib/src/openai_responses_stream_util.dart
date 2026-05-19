@@ -1,7 +1,7 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import 'openai_responses_metadata.dart';
 import 'openai_responses_stream_state.dart';
-import 'openai_responses_support.dart';
 
 Map<String, Object?>? openAIResponsesAsMap(Object? value) {
   if (value is Map<String, Object?>) {

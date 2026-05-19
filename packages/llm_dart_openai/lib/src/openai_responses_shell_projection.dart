@@ -1,6 +1,6 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
-import 'openai_responses_support.dart';
+import 'openai_responses_metadata.dart';
 
 const openAIResponsesLocalShellToolName = 'local_shell';
 const openAIResponsesShellToolName = 'shell';
