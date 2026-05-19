@@ -5,6 +5,7 @@ import 'openai_responses_custom_stream_projection.dart';
 import 'openai_responses_file_search_stream_projection.dart';
 import 'openai_responses_image_generation_stream_projection.dart';
 import 'openai_responses_mcp_stream_projection.dart';
+import 'openai_responses_shell_stream_projection.dart';
 import 'openai_responses_stream_state.dart';
 import 'openai_responses_stream_tool_codec.dart';
 import 'openai_responses_stream_util.dart';
@@ -190,6 +191,56 @@ Iterable<LanguageModelStreamEvent> decodeOpenAIResponsesOutputItemDoneChunk(
   if (itemType == 'tool_search_output') {
     state.hasToolCalls = true;
     yield* decodeOpenAIResponsesToolSearchOutputItemDoneChunk(
+      chunk,
+      item,
+      state,
+    );
+    return;
+  }
+
+  if (itemType == 'local_shell_call') {
+    state.hasToolCalls = true;
+    yield* decodeOpenAIResponsesLocalShellItemDoneChunk(
+      chunk,
+      item,
+      state,
+    );
+    return;
+  }
+
+  if (itemType == 'shell_call') {
+    state.hasToolCalls = true;
+    yield* decodeOpenAIResponsesShellItemDoneChunk(
+      chunk,
+      item,
+      state,
+    );
+    return;
+  }
+
+  if (itemType == 'shell_call_output') {
+    state.hasToolCalls = true;
+    yield* decodeOpenAIResponsesShellOutputItemDoneChunk(
+      chunk,
+      item,
+      state,
+    );
+    return;
+  }
+
+  if (itemType == 'apply_patch_call') {
+    state.hasToolCalls = true;
+    yield* decodeOpenAIResponsesApplyPatchItemDoneChunk(
+      chunk,
+      item,
+      state,
+    );
+    return;
+  }
+
+  if (itemType == 'apply_patch_call_output') {
+    state.hasToolCalls = true;
+    yield* decodeOpenAIResponsesApplyPatchOutputItemDoneChunk(
       chunk,
       item,
       state,

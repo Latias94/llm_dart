@@ -1951,5 +1951,112 @@ void main() {
       expect(result.finishReason, FinishReason.toolCalls);
       expect(OpenAICustomPart.parseContentParts(result.content), isEmpty);
     });
+
+    test('decodes shell and apply patch items as unified tool content', () {
+      const codec = OpenAIResponsesCodec();
+
+      final result = codec.decodeGenerateResponse({
+        'id': 'resp_shell',
+        'status': 'completed',
+        'output': [
+          {
+            'id': 'sh_1',
+            'type': 'shell_call',
+            'call_id': 'call_shell_1',
+            'status': 'completed',
+            'action': {
+              'commands': ['ls -la'],
+              'timeout_ms': 1000,
+            },
+            'environment': {
+              'type': 'container_reference',
+              'container_id': 'cntr_1',
+            },
+          },
+          {
+            'id': 'sho_1',
+            'type': 'shell_call_output',
+            'call_id': 'call_shell_1',
+            'status': 'completed',
+            'output': [
+              {
+                'stdout': 'ok',
+                'stderr': '',
+                'outcome': {
+                  'type': 'exit',
+                  'exit_code': 0,
+                },
+              },
+            ],
+          },
+          {
+            'id': 'apc_1',
+            'type': 'apply_patch_call',
+            'call_id': 'call_patch_1',
+            'status': 'completed',
+            'operation': {
+              'type': 'update_file',
+              'path': 'lib/main.dart',
+              'diff': '-old\n+new',
+            },
+          },
+          {
+            'id': 'apo_1',
+            'type': 'apply_patch_call_output',
+            'call_id': 'call_patch_1',
+            'status': 'completed',
+            'output': 'patched',
+          },
+        ],
+      });
+
+      final toolCalls =
+          result.content.whereType<ToolCallContentPart>().toList();
+      expect(toolCalls, hasLength(2));
+      expect(toolCalls[0].toolCall.toolCallId, 'call_shell_1');
+      expect(toolCalls[0].toolCall.toolName, 'shell');
+      expect(toolCalls[0].toolCall.providerExecuted, isTrue);
+      expect(toolCalls[0].toolCall.input, {
+        'action': {
+          'commands': ['ls -la'],
+        },
+      });
+      expect(toolCalls[1].toolCall.toolCallId, 'call_patch_1');
+      expect(toolCalls[1].toolCall.toolName, 'apply_patch');
+      expect(toolCalls[1].toolCall.input, {
+        'callId': 'call_patch_1',
+        'operation': {
+          'type': 'update_file',
+          'path': 'lib/main.dart',
+          'diff': '-old\n+new',
+        },
+      });
+
+      final toolResults =
+          result.content.whereType<ToolResultContentPart>().toList();
+      expect(toolResults, hasLength(2));
+      expect(toolResults[0].toolResult.toolCallId, 'call_shell_1');
+      expect(toolResults[0].toolResult.toolName, 'shell');
+      expect(toolResults[0].toolResult.output, {
+        'output': [
+          {
+            'stdout': 'ok',
+            'stderr': '',
+            'outcome': {
+              'type': 'exit',
+              'exitCode': 0,
+            },
+          },
+        ],
+      });
+      expect(toolResults[1].toolResult.toolCallId, 'call_patch_1');
+      expect(toolResults[1].toolResult.toolName, 'apply_patch');
+      expect(toolResults[1].toolResult.output, {
+        'status': 'completed',
+        'output': 'patched',
+      });
+      expect(result.finishReason, FinishReason.toolCalls);
+      expect(OpenAICustomPart.parseContentParts(result.content), isEmpty);
+    });
   });
 }

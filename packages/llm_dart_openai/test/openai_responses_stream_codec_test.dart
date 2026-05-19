@@ -852,6 +852,107 @@ void main() {
       });
     });
 
+    test('maps shell and apply patch streams to native tool events', () {
+      const codec = OpenAIResponsesCodec();
+      final state = OpenAIResponsesStreamState()
+        ..responseId = 'resp_shell'
+        ..serviceTier = 'default';
+      final events = <LanguageModelStreamEvent>[];
+
+      for (final chunk in <Map<String, Object?>>[
+        {
+          'type': 'response.output_item.done',
+          'output_index': 0,
+          'item': {
+            'id': 'sh_1',
+            'type': 'shell_call',
+            'call_id': 'call_shell_1',
+            'status': 'completed',
+            'action': {
+              'commands': ['ls -la'],
+            },
+            'environment': {
+              'type': 'container_reference',
+              'container_id': 'cntr_1',
+            },
+          },
+        },
+        {
+          'type': 'response.output_item.done',
+          'output_index': 1,
+          'item': {
+            'id': 'sho_1',
+            'type': 'shell_call_output',
+            'call_id': 'call_shell_1',
+            'status': 'completed',
+            'output': [
+              {
+                'stdout': 'ok',
+                'stderr': '',
+                'outcome': {
+                  'type': 'exit',
+                  'exit_code': 0,
+                },
+              },
+            ],
+          },
+        },
+        {
+          'type': 'response.output_item.done',
+          'output_index': 2,
+          'item': {
+            'id': 'apc_1',
+            'type': 'apply_patch_call',
+            'call_id': 'call_patch_1',
+            'status': 'completed',
+            'operation': {
+              'type': 'delete_file',
+              'path': 'old.txt',
+            },
+          },
+        },
+      ]) {
+        events.addAll(codec.decodeStreamChunk(chunk, state));
+      }
+
+      final toolCalls = events.whereType<ToolCallEvent>().toList();
+      expect(toolCalls, hasLength(2));
+      expect(toolCalls[0].toolCall.toolCallId, 'call_shell_1');
+      expect(toolCalls[0].toolCall.toolName, 'shell');
+      expect(toolCalls[0].toolCall.providerExecuted, isTrue);
+      expect(toolCalls[0].toolCall.input, {
+        'action': {
+          'commands': ['ls -la'],
+        },
+      });
+      expect(toolCalls[1].toolCall.toolCallId, 'call_patch_1');
+      expect(toolCalls[1].toolCall.toolName, 'apply_patch');
+      expect(toolCalls[1].toolCall.input, {
+        'callId': 'call_patch_1',
+        'operation': {
+          'type': 'delete_file',
+          'path': 'old.txt',
+        },
+      });
+
+      final toolResult = events.whereType<ToolResultEvent>().single.toolResult;
+      expect(toolResult.toolCallId, 'call_shell_1');
+      expect(toolResult.toolName, 'shell');
+      expect(toolResult.output, {
+        'output': [
+          {
+            'stdout': 'ok',
+            'stderr': '',
+            'outcome': {
+              'type': 'exit',
+              'exitCode': 0,
+            },
+          },
+        ],
+      });
+      expect(events.whereType<CustomEvent>(), isEmpty);
+    });
+
     test('maps message output item completion to text end without custom event',
         () {
       const codec = OpenAIResponsesCodec();

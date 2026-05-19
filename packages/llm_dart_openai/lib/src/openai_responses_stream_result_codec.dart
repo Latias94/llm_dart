@@ -106,6 +106,60 @@ GenerateTextResult decodeOpenAIResponsesGenerateResponse(
       continue;
     }
 
+    if (type == 'local_shell_call') {
+      hasToolCalls = true;
+      final toolCall = decodeOpenAIResponsesLocalShellCallOutput(item);
+      if (toolCall != null) {
+        content.add(toolCall);
+      }
+      continue;
+    }
+
+    if (type == 'local_shell_call_output') {
+      hasToolCalls = true;
+      final toolResult = decodeOpenAIResponsesLocalShellCallOutputItem(item);
+      if (toolResult != null) {
+        content.add(toolResult);
+      }
+      continue;
+    }
+
+    if (type == 'shell_call') {
+      hasToolCalls = true;
+      final toolCall = decodeOpenAIResponsesShellCallOutput(item);
+      if (toolCall != null) {
+        content.add(toolCall);
+      }
+      continue;
+    }
+
+    if (type == 'shell_call_output') {
+      hasToolCalls = true;
+      final toolResult = decodeOpenAIResponsesShellCallOutputItem(item);
+      if (toolResult != null) {
+        content.add(toolResult);
+      }
+      continue;
+    }
+
+    if (type == 'apply_patch_call') {
+      hasToolCalls = true;
+      final toolCall = decodeOpenAIResponsesApplyPatchCallOutput(item);
+      if (toolCall != null) {
+        content.add(toolCall);
+      }
+      continue;
+    }
+
+    if (type == 'apply_patch_call_output') {
+      hasToolCalls = true;
+      final toolResult = decodeOpenAIResponsesApplyPatchCallOutputItem(item);
+      if (toolResult != null) {
+        content.add(toolResult);
+      }
+      continue;
+    }
+
     final customPart = decodeOpenAIResponsesCustomOutput(item);
     if (customPart != null) {
       content.add(customPart);

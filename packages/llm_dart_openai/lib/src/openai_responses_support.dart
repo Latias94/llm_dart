@@ -5,6 +5,7 @@ import 'openai_responses_custom_projection.dart';
 import 'openai_responses_file_search_projection.dart';
 import 'openai_responses_image_generation_projection.dart';
 import 'openai_responses_mcp_projection.dart';
+import 'openai_responses_shell_projection.dart';
 import 'openai_responses_source_projection.dart';
 import 'openai_responses_tool_search_projection.dart';
 import 'openai_responses_web_search_projection.dart';
@@ -273,6 +274,90 @@ ToolResultContentPart? decodeOpenAIResponsesToolSearchOutput(
     item,
     fallbackToolCallId: fallbackToolCallId,
   );
+  if (projection == null) {
+    return null;
+  }
+
+  return ToolResultContentPart(
+    projection.toToolResult(),
+    providerMetadata: projection.providerMetadata,
+  );
+}
+
+ToolCallContentPart? decodeOpenAIResponsesLocalShellCallOutput(
+  Map<String, Object?> item,
+) {
+  final projection = projectOpenAIResponsesLocalShellCall(item);
+  if (projection == null) {
+    return null;
+  }
+
+  return ToolCallContentPart(
+    projection.toToolCall(),
+    providerMetadata: projection.providerMetadata,
+  );
+}
+
+ToolResultContentPart? decodeOpenAIResponsesLocalShellCallOutputItem(
+  Map<String, Object?> item,
+) {
+  final projection = projectOpenAIResponsesLocalShellOutput(item);
+  if (projection == null) {
+    return null;
+  }
+
+  return ToolResultContentPart(
+    projection.toToolResult(),
+    providerMetadata: projection.providerMetadata,
+  );
+}
+
+ToolCallContentPart? decodeOpenAIResponsesShellCallOutput(
+  Map<String, Object?> item,
+) {
+  final projection = projectOpenAIResponsesShellCall(item);
+  if (projection == null) {
+    return null;
+  }
+
+  return ToolCallContentPart(
+    projection.toToolCall(),
+    providerMetadata: projection.providerMetadata,
+  );
+}
+
+ToolResultContentPart? decodeOpenAIResponsesShellCallOutputItem(
+  Map<String, Object?> item,
+) {
+  final projection = projectOpenAIResponsesShellOutput(item);
+  if (projection == null) {
+    return null;
+  }
+
+  return ToolResultContentPart(
+    projection.toToolResult(),
+    providerMetadata: projection.providerMetadata,
+  );
+}
+
+ToolCallContentPart? decodeOpenAIResponsesApplyPatchCallOutput(
+  Map<String, Object?> item,
+) {
+  final projection = projectOpenAIResponsesApplyPatchCall(item);
+  if (projection == null) {
+    return null;
+  }
+
+  return ToolCallContentPart(
+    projection.toToolCall(),
+    providerMetadata: projection.providerMetadata,
+  );
+}
+
+ToolResultContentPart? decodeOpenAIResponsesApplyPatchCallOutputItem(
+  Map<String, Object?> item,
+) {
+  final projection = projectOpenAIResponsesApplyPatchOutput(item);
   if (projection == null) {
     return null;
   }
