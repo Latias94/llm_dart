@@ -1,6 +1,7 @@
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'openai_assistants_models.dart';
+import 'openai_assistants_thread_models.dart';
 import 'openai_family_profile.dart';
 import 'openai_non_text_model_support.dart';
 
@@ -47,6 +48,108 @@ final class OpenAIAssistantsTransportSupport {
     );
   }
 
+  Uri get threadsUri => Uri.parse('$baseUrl/threads');
+
+  Uri threadUri(String threadId) {
+    return Uri.parse(
+      '$baseUrl/threads/${Uri.encodeComponent(requireThreadId(
+        threadId,
+        parameterName: 'threadId',
+      ))}',
+    );
+  }
+
+  Uri threadMessagesUri(
+    String threadId, [
+    OpenAIListThreadMessagesQuery? query,
+  ]) {
+    return _uriWithQuery(
+      '$baseUrl/threads/${Uri.encodeComponent(requireThreadId(
+        threadId,
+        parameterName: 'threadId',
+      ))}/messages',
+      query?.toQueryParameters() ?? const {},
+    );
+  }
+
+  Uri threadMessageUri(String threadId, String messageId) {
+    return Uri.parse(
+      '$baseUrl/threads/${Uri.encodeComponent(requireThreadId(
+        threadId,
+        parameterName: 'threadId',
+      ))}/messages/${Uri.encodeComponent(requireMessageId(
+        messageId,
+        parameterName: 'messageId',
+      ))}',
+    );
+  }
+
+  Uri threadRunsUri(String threadId, [OpenAIListRunsQuery? query]) {
+    return _uriWithQuery(
+      '$baseUrl/threads/${Uri.encodeComponent(requireThreadId(
+        threadId,
+        parameterName: 'threadId',
+      ))}/runs',
+      query?.toQueryParameters() ?? const {},
+    );
+  }
+
+  Uri threadRunUri(String threadId, String runId) {
+    return Uri.parse(
+      '$baseUrl/threads/${Uri.encodeComponent(requireThreadId(
+        threadId,
+        parameterName: 'threadId',
+      ))}/runs/${Uri.encodeComponent(requireRunId(
+        runId,
+        parameterName: 'runId',
+      ))}',
+    );
+  }
+
+  Uri cancelThreadRunUri(String threadId, String runId) {
+    return Uri.parse('${threadRunUri(threadId, runId)}/cancel');
+  }
+
+  Uri submitThreadRunToolOutputsUri(String threadId, String runId) {
+    return Uri.parse('${threadRunUri(threadId, runId)}/submit_tool_outputs');
+  }
+
+  Uri createThreadAndRunUri() {
+    return Uri.parse('$baseUrl/threads/runs');
+  }
+
+  Uri threadRunStepsUri(
+    String threadId,
+    String runId, [
+    OpenAIListRunStepsQuery? query,
+  ]) {
+    return _uriWithQuery(
+      '$baseUrl/threads/${Uri.encodeComponent(requireThreadId(
+        threadId,
+        parameterName: 'threadId',
+      ))}/runs/${Uri.encodeComponent(requireRunId(
+        runId,
+        parameterName: 'runId',
+      ))}/steps',
+      query?.toQueryParameters() ?? const {},
+    );
+  }
+
+  Uri threadRunStepUri(String threadId, String runId, String stepId) {
+    return Uri.parse(
+      '$baseUrl/threads/${Uri.encodeComponent(requireThreadId(
+        threadId,
+        parameterName: 'threadId',
+      ))}/runs/${Uri.encodeComponent(requireRunId(
+        runId,
+        parameterName: 'runId',
+      ))}/steps/${Uri.encodeComponent(requireStepId(
+        stepId,
+        parameterName: 'stepId',
+      ))}',
+    );
+  }
+
   TransportRequest jsonRequest({
     required Uri uri,
     required TransportMethod method,
@@ -83,6 +186,7 @@ final class OpenAIAssistantsTransportSupport {
       project: settings.project,
       headers: {
         ...settings.headers,
+        'openai-beta': 'assistants=v2',
         if (contentType) 'content-type': 'application/json',
         'accept': 'application/json',
         if (extraHeaders != null) ...extraHeaders,
@@ -94,14 +198,78 @@ final class OpenAIAssistantsTransportSupport {
     String value, {
     required String parameterName,
   }) {
+    return _requireNonEmptyId(
+      value,
+      parameterName: parameterName,
+      label: 'assistant',
+    );
+  }
+
+  String requireThreadId(
+    String value, {
+    required String parameterName,
+  }) {
+    return _requireNonEmptyId(
+      value,
+      parameterName: parameterName,
+      label: 'thread',
+    );
+  }
+
+  String requireMessageId(
+    String value, {
+    required String parameterName,
+  }) {
+    return _requireNonEmptyId(
+      value,
+      parameterName: parameterName,
+      label: 'thread message',
+    );
+  }
+
+  String requireRunId(
+    String value, {
+    required String parameterName,
+  }) {
+    return _requireNonEmptyId(
+      value,
+      parameterName: parameterName,
+      label: 'thread run',
+    );
+  }
+
+  String requireStepId(
+    String value, {
+    required String parameterName,
+  }) {
+    return _requireNonEmptyId(
+      value,
+      parameterName: parameterName,
+      label: 'run step',
+    );
+  }
+
+  String _requireNonEmptyId(
+    String value, {
+    required String parameterName,
+    required String label,
+  }) {
     final normalized = value.trim();
     if (normalized.isEmpty) {
       throw ArgumentError.value(
         value,
         parameterName,
-        'Expected a non-empty OpenAI assistant ID.',
+        'Expected a non-empty OpenAI $label ID.',
       );
     }
     return normalized;
   }
+}
+
+Uri _uriWithQuery(String uri, Map<String, String> queryParameters) {
+  final parsed = Uri.parse(uri);
+  if (queryParameters.isEmpty) {
+    return parsed;
+  }
+  return parsed.replace(queryParameters: queryParameters);
 }

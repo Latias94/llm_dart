@@ -213,6 +213,231 @@ void main() {
       expect(cloned.id, 'asst_clone');
     });
 
+    test('threads messages runs and steps use Assistants v2 endpoints',
+        () async {
+      final requests = <TransportRequest>[];
+      var callCount = 0;
+
+      final assistants = OpenAI(
+        apiKey: 'test-key',
+        transport: FakeTransportClient(
+          onSend: (request) async {
+            requests.add(request);
+            callCount += 1;
+
+            return switch (callCount) {
+              1 => const TransportResponse(
+                  statusCode: 200,
+                  body: {
+                    'id': 'thread_1',
+                    'object': 'thread',
+                    'created_at': 1700000000,
+                  },
+                ),
+              2 => const TransportResponse(
+                  statusCode: 200,
+                  body: {
+                    'id': 'msg_1',
+                    'object': 'thread.message',
+                    'created_at': 1700000001,
+                    'thread_id': 'thread_1',
+                    'role': 'user',
+                    'content': [
+                      {
+                        'type': 'text',
+                        'text': {'value': 'Hello'},
+                      },
+                    ],
+                  },
+                ),
+              3 => const TransportResponse(
+                  statusCode: 200,
+                  body: {
+                    'object': 'list',
+                    'data': [
+                      {
+                        'id': 'msg_1',
+                        'object': 'thread.message',
+                        'created_at': 1700000001,
+                        'thread_id': 'thread_1',
+                        'role': 'user',
+                        'content': [],
+                      },
+                    ],
+                    'has_more': false,
+                  },
+                ),
+              4 => const TransportResponse(
+                  statusCode: 200,
+                  body: {
+                    'id': 'run_1',
+                    'object': 'thread.run',
+                    'created_at': 1700000002,
+                    'thread_id': 'thread_1',
+                    'assistant_id': 'asst_1',
+                    'status': 'queued',
+                  },
+                ),
+              5 => const TransportResponse(
+                  statusCode: 200,
+                  body: {
+                    'id': 'run_1',
+                    'object': 'thread.run',
+                    'created_at': 1700000002,
+                    'thread_id': 'thread_1',
+                    'assistant_id': 'asst_1',
+                    'status': 'requires_action',
+                  },
+                ),
+              6 => const TransportResponse(
+                  statusCode: 200,
+                  body: {
+                    'id': 'run_1',
+                    'object': 'thread.run',
+                    'created_at': 1700000002,
+                    'thread_id': 'thread_1',
+                    'assistant_id': 'asst_1',
+                    'status': 'in_progress',
+                  },
+                ),
+              7 => const TransportResponse(
+                  statusCode: 200,
+                  body: {
+                    'object': 'list',
+                    'data': [
+                      {
+                        'id': 'step_1',
+                        'object': 'thread.run.step',
+                        'created_at': 1700000003,
+                        'run_id': 'run_1',
+                        'assistant_id': 'asst_1',
+                        'thread_id': 'thread_1',
+                        'type': 'message_creation',
+                        'status': 'completed',
+                        'step_details': {'type': 'message_creation'},
+                      },
+                    ],
+                    'has_more': false,
+                  },
+                ),
+              8 => const TransportResponse(
+                  statusCode: 200,
+                  body: {
+                    'id': 'step_1',
+                    'object': 'thread.run.step',
+                    'created_at': 1700000003,
+                    'run_id': 'run_1',
+                    'assistant_id': 'asst_1',
+                    'thread_id': 'thread_1',
+                    'type': 'message_creation',
+                    'status': 'completed',
+                    'step_details': {'type': 'message_creation'},
+                  },
+                ),
+              _ => throw StateError('Unexpected request $callCount'),
+            };
+          },
+        ),
+      ).assistants();
+
+      final thread = await assistants.createThread();
+      final message = await assistants.createThreadMessage(
+        'thread_1',
+        const OpenAICreateThreadMessageRequest(content: 'Hello'),
+      );
+      final messages = await assistants.listThreadMessages(
+        'thread_1',
+        query: const OpenAIListThreadMessagesQuery(
+          limit: 10,
+          runId: 'run_1',
+        ),
+      );
+      final run = await assistants.createThreadRun(
+        'thread_1',
+        const OpenAICreateRunRequest(
+          assistantId: 'asst_1',
+          additionalInstructions: 'Be brief.',
+        ),
+      );
+      final submitted = await assistants.submitThreadRunToolOutputs(
+        'thread_1',
+        'run_1',
+        const OpenAISubmitToolOutputsRequest(
+          toolOutputs: [
+            OpenAIRunToolOutput(
+              toolCallId: 'call_1',
+              output: 'done',
+            ),
+          ],
+        ),
+      );
+      final cancelled = await assistants.cancelThreadRun('thread_1', 'run_1');
+      final steps = await assistants.listThreadRunSteps(
+        'thread_1',
+        'run_1',
+        query: const OpenAIListRunStepsQuery(limit: 5),
+      );
+      final step = await assistants.retrieveThreadRunStep(
+        'thread_1',
+        'run_1',
+        'step_1',
+      );
+
+      expect(requests, hasLength(8));
+      expect(
+          requests.every(
+              (request) => request.headers['openai-beta'] == 'assistants=v2'),
+          isTrue);
+
+      expect(requests[0].method, TransportMethod.post);
+      expect(requests[0].uri.path, '/v1/threads');
+      expect(requests[0].body, <String, Object?>{});
+
+      expect(requests[1].uri.path, '/v1/threads/thread_1/messages');
+      expect(requests[1].body, {
+        'role': 'user',
+        'content': 'Hello',
+      });
+
+      expect(requests[2].uri.path, '/v1/threads/thread_1/messages');
+      expect(requests[2].uri.queryParameters, {
+        'limit': '10',
+        'run_id': 'run_1',
+      });
+
+      expect(requests[3].uri.path, '/v1/threads/thread_1/runs');
+      expect(requests[3].body, {
+        'assistant_id': 'asst_1',
+        'additional_instructions': 'Be brief.',
+      });
+
+      expect(requests[4].uri.path,
+          '/v1/threads/thread_1/runs/run_1/submit_tool_outputs');
+      expect(requests[4].body, {
+        'tool_outputs': [
+          {
+            'tool_call_id': 'call_1',
+            'output': 'done',
+          },
+        ],
+      });
+
+      expect(requests[5].uri.path, '/v1/threads/thread_1/runs/run_1/cancel');
+      expect(requests[6].uri.path, '/v1/threads/thread_1/runs/run_1/steps');
+      expect(requests[6].uri.queryParameters, {'limit': '5'});
+      expect(
+          requests[7].uri.path, '/v1/threads/thread_1/runs/run_1/steps/step_1');
+
+      expect(thread.id, 'thread_1');
+      expect(message.id, 'msg_1');
+      expect(messages.data.single.id, 'msg_1');
+      expect(run.status, 'queued');
+      expect(submitted.status, 'requires_action');
+      expect(cancelled.status, 'in_progress');
+      expect(steps.data.single.id, 'step_1');
+      expect(step.id, 'step_1');
+    });
+
     test('rejects non-openai profiles', () {
       expect(
         () => OpenAI(apiKey: 'test-key', profile: const XAIProfile())

@@ -1,6 +1,7 @@
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'openai_assistants_models.dart';
+import 'openai_assistants_thread_models.dart';
 import 'openai_assistants_transport.dart';
 import 'openai_family_profile.dart';
 import 'openai_family_url_support.dart';
@@ -26,6 +27,29 @@ export 'openai_assistants_models.dart'
         OpenAIListAssistantsQuery,
         OpenAIListAssistantsResponse,
         OpenAIModifyAssistantRequest;
+export 'openai_assistants_thread_models.dart'
+    show
+        OpenAICreateRunRequest,
+        OpenAICreateThreadAndRunRequest,
+        OpenAICreateThreadMessageRequest,
+        OpenAICreateThreadRequest,
+        OpenAIListRunStepsQuery,
+        OpenAIListRunStepsResponse,
+        OpenAIListRunsQuery,
+        OpenAIListRunsResponse,
+        OpenAIListThreadMessagesQuery,
+        OpenAIListThreadMessagesResponse,
+        OpenAIModifyRunRequest,
+        OpenAIModifyThreadMessageRequest,
+        OpenAIModifyThreadRequest,
+        OpenAIRunStep,
+        OpenAIRunToolOutput,
+        OpenAISubmitToolOutputsRequest,
+        OpenAIThread,
+        OpenAIThreadDeleteResult,
+        OpenAIThreadMessage,
+        OpenAIThreadMessageDeleteResult,
+        OpenAIThreadRun;
 export 'openai_assistants_transport.dart' show OpenAIAssistantsSettings;
 
 final class OpenAIAssistantsClient {
@@ -61,6 +85,43 @@ final class OpenAIAssistantsClient {
     return _requestSupport.assistantUri(assistantId);
   }
 
+  Uri get threadsUri => _requestSupport.threadsUri;
+
+  Uri threadUri(String threadId) {
+    return _requestSupport.threadUri(threadId);
+  }
+
+  Uri threadMessagesUri(
+    String threadId, [
+    OpenAIListThreadMessagesQuery? query,
+  ]) {
+    return _requestSupport.threadMessagesUri(threadId, query);
+  }
+
+  Uri threadMessageUri(String threadId, String messageId) {
+    return _requestSupport.threadMessageUri(threadId, messageId);
+  }
+
+  Uri threadRunsUri(String threadId, [OpenAIListRunsQuery? query]) {
+    return _requestSupport.threadRunsUri(threadId, query);
+  }
+
+  Uri threadRunUri(String threadId, String runId) {
+    return _requestSupport.threadRunUri(threadId, runId);
+  }
+
+  Uri threadRunStepsUri(
+    String threadId,
+    String runId, [
+    OpenAIListRunStepsQuery? query,
+  ]) {
+    return _requestSupport.threadRunStepsUri(threadId, runId, query);
+  }
+
+  Uri threadRunStepUri(String threadId, String runId, String stepId) {
+    return _requestSupport.threadRunStepUri(threadId, runId, stepId);
+  }
+
   Future<OpenAIAssistant> createAssistant(
     OpenAICreateAssistantRequest request, {
     Duration? timeout,
@@ -85,6 +146,511 @@ final class OpenAIAssistantsClient {
       decodeOpenAIJsonObject(
         response.body,
         responseName: 'assistant create response',
+      ),
+    );
+  }
+
+  Future<OpenAIThread> createThread({
+    OpenAICreateThreadRequest request = const OpenAICreateThreadRequest(),
+    Duration? timeout,
+    int? maxRetries,
+    TransportCancellation? cancellation,
+    Map<String, String>? headers,
+  }) async {
+    final response = await transport.send(
+      _requestSupport.jsonRequest(
+        uri: threadsUri,
+        method: TransportMethod.post,
+        extraHeaders: headers,
+        contentType: true,
+        body: request.toJson(),
+        timeout: timeout,
+        maxRetries: maxRetries,
+        cancellation: cancellation,
+      ),
+    );
+
+    return OpenAIThread.fromJson(
+      decodeOpenAIJsonObject(
+        response.body,
+        responseName: 'thread create response',
+      ),
+    );
+  }
+
+  Future<OpenAIThread> retrieveThread(
+    String threadId, {
+    Duration? timeout,
+    int? maxRetries,
+    TransportCancellation? cancellation,
+    Map<String, String>? headers,
+  }) async {
+    final response = await transport.send(
+      _requestSupport.jsonRequest(
+        uri: threadUri(threadId),
+        method: TransportMethod.get,
+        extraHeaders: headers,
+        timeout: timeout,
+        maxRetries: maxRetries,
+        cancellation: cancellation,
+      ),
+    );
+
+    return OpenAIThread.fromJson(
+      decodeOpenAIJsonObject(
+        response.body,
+        responseName: 'thread retrieve response',
+      ),
+    );
+  }
+
+  Future<OpenAIThread> modifyThread(
+    String threadId,
+    OpenAIModifyThreadRequest request, {
+    Duration? timeout,
+    int? maxRetries,
+    TransportCancellation? cancellation,
+    Map<String, String>? headers,
+  }) async {
+    final response = await transport.send(
+      _requestSupport.jsonRequest(
+        uri: threadUri(threadId),
+        method: TransportMethod.post,
+        extraHeaders: headers,
+        contentType: true,
+        body: request.toJson(),
+        timeout: timeout,
+        maxRetries: maxRetries,
+        cancellation: cancellation,
+      ),
+    );
+
+    return OpenAIThread.fromJson(
+      decodeOpenAIJsonObject(
+        response.body,
+        responseName: 'thread modify response',
+      ),
+    );
+  }
+
+  Future<OpenAIThreadDeleteResult> deleteThread(
+    String threadId, {
+    Duration? timeout,
+    int? maxRetries,
+    TransportCancellation? cancellation,
+    Map<String, String>? headers,
+  }) async {
+    final response = await transport.send(
+      _requestSupport.jsonRequest(
+        uri: threadUri(threadId),
+        method: TransportMethod.delete,
+        extraHeaders: headers,
+        timeout: timeout,
+        maxRetries: maxRetries,
+        cancellation: cancellation,
+      ),
+    );
+
+    return OpenAIThreadDeleteResult.fromJson(
+      decodeOpenAIJsonObject(
+        response.body,
+        responseName: 'thread delete response',
+      ),
+    );
+  }
+
+  Future<OpenAIThreadMessage> createThreadMessage(
+    String threadId,
+    OpenAICreateThreadMessageRequest request, {
+    Duration? timeout,
+    int? maxRetries,
+    TransportCancellation? cancellation,
+    Map<String, String>? headers,
+  }) async {
+    final response = await transport.send(
+      _requestSupport.jsonRequest(
+        uri: threadMessagesUri(threadId),
+        method: TransportMethod.post,
+        extraHeaders: headers,
+        contentType: true,
+        body: request.toJson(),
+        timeout: timeout,
+        maxRetries: maxRetries,
+        cancellation: cancellation,
+      ),
+    );
+
+    return OpenAIThreadMessage.fromJson(
+      decodeOpenAIJsonObject(
+        response.body,
+        responseName: 'thread message create response',
+      ),
+    );
+  }
+
+  Future<OpenAIListThreadMessagesResponse> listThreadMessages(
+    String threadId, {
+    OpenAIListThreadMessagesQuery? query,
+    Duration? timeout,
+    int? maxRetries,
+    TransportCancellation? cancellation,
+    Map<String, String>? headers,
+  }) async {
+    final response = await transport.send(
+      _requestSupport.jsonRequest(
+        uri: threadMessagesUri(threadId, query),
+        method: TransportMethod.get,
+        extraHeaders: headers,
+        timeout: timeout,
+        maxRetries: maxRetries,
+        cancellation: cancellation,
+      ),
+    );
+
+    return OpenAIListThreadMessagesResponse.fromJson(
+      decodeOpenAIJsonObject(
+        response.body,
+        responseName: 'thread message list response',
+      ),
+    );
+  }
+
+  Future<OpenAIThreadMessage> retrieveThreadMessage(
+    String threadId,
+    String messageId, {
+    Duration? timeout,
+    int? maxRetries,
+    TransportCancellation? cancellation,
+    Map<String, String>? headers,
+  }) async {
+    final response = await transport.send(
+      _requestSupport.jsonRequest(
+        uri: threadMessageUri(threadId, messageId),
+        method: TransportMethod.get,
+        extraHeaders: headers,
+        timeout: timeout,
+        maxRetries: maxRetries,
+        cancellation: cancellation,
+      ),
+    );
+
+    return OpenAIThreadMessage.fromJson(
+      decodeOpenAIJsonObject(
+        response.body,
+        responseName: 'thread message retrieve response',
+      ),
+    );
+  }
+
+  Future<OpenAIThreadMessage> modifyThreadMessage(
+    String threadId,
+    String messageId,
+    OpenAIModifyThreadMessageRequest request, {
+    Duration? timeout,
+    int? maxRetries,
+    TransportCancellation? cancellation,
+    Map<String, String>? headers,
+  }) async {
+    final response = await transport.send(
+      _requestSupport.jsonRequest(
+        uri: threadMessageUri(threadId, messageId),
+        method: TransportMethod.post,
+        extraHeaders: headers,
+        contentType: true,
+        body: request.toJson(),
+        timeout: timeout,
+        maxRetries: maxRetries,
+        cancellation: cancellation,
+      ),
+    );
+
+    return OpenAIThreadMessage.fromJson(
+      decodeOpenAIJsonObject(
+        response.body,
+        responseName: 'thread message modify response',
+      ),
+    );
+  }
+
+  Future<OpenAIThreadMessageDeleteResult> deleteThreadMessage(
+    String threadId,
+    String messageId, {
+    Duration? timeout,
+    int? maxRetries,
+    TransportCancellation? cancellation,
+    Map<String, String>? headers,
+  }) async {
+    final response = await transport.send(
+      _requestSupport.jsonRequest(
+        uri: threadMessageUri(threadId, messageId),
+        method: TransportMethod.delete,
+        extraHeaders: headers,
+        timeout: timeout,
+        maxRetries: maxRetries,
+        cancellation: cancellation,
+      ),
+    );
+
+    return OpenAIThreadMessageDeleteResult.fromJson(
+      decodeOpenAIJsonObject(
+        response.body,
+        responseName: 'thread message delete response',
+      ),
+    );
+  }
+
+  Future<OpenAIThreadRun> createThreadRun(
+    String threadId,
+    OpenAICreateRunRequest request, {
+    Duration? timeout,
+    int? maxRetries,
+    TransportCancellation? cancellation,
+    Map<String, String>? headers,
+  }) async {
+    final response = await transport.send(
+      _requestSupport.jsonRequest(
+        uri: threadRunsUri(threadId),
+        method: TransportMethod.post,
+        extraHeaders: headers,
+        contentType: true,
+        body: request.toJson(),
+        timeout: timeout,
+        maxRetries: maxRetries,
+        cancellation: cancellation,
+      ),
+    );
+
+    return OpenAIThreadRun.fromJson(
+      decodeOpenAIJsonObject(
+        response.body,
+        responseName: 'thread run create response',
+      ),
+    );
+  }
+
+  Future<OpenAIThreadRun> createThreadAndRun(
+    OpenAICreateThreadAndRunRequest request, {
+    Duration? timeout,
+    int? maxRetries,
+    TransportCancellation? cancellation,
+    Map<String, String>? headers,
+  }) async {
+    final response = await transport.send(
+      _requestSupport.jsonRequest(
+        uri: _requestSupport.createThreadAndRunUri(),
+        method: TransportMethod.post,
+        extraHeaders: headers,
+        contentType: true,
+        body: request.toJson(),
+        timeout: timeout,
+        maxRetries: maxRetries,
+        cancellation: cancellation,
+      ),
+    );
+
+    return OpenAIThreadRun.fromJson(
+      decodeOpenAIJsonObject(
+        response.body,
+        responseName: 'thread and run create response',
+      ),
+    );
+  }
+
+  Future<OpenAIListRunsResponse> listThreadRuns(
+    String threadId, {
+    OpenAIListRunsQuery? query,
+    Duration? timeout,
+    int? maxRetries,
+    TransportCancellation? cancellation,
+    Map<String, String>? headers,
+  }) async {
+    final response = await transport.send(
+      _requestSupport.jsonRequest(
+        uri: threadRunsUri(threadId, query),
+        method: TransportMethod.get,
+        extraHeaders: headers,
+        timeout: timeout,
+        maxRetries: maxRetries,
+        cancellation: cancellation,
+      ),
+    );
+
+    return OpenAIListRunsResponse.fromJson(
+      decodeOpenAIJsonObject(
+        response.body,
+        responseName: 'thread run list response',
+      ),
+    );
+  }
+
+  Future<OpenAIThreadRun> retrieveThreadRun(
+    String threadId,
+    String runId, {
+    Duration? timeout,
+    int? maxRetries,
+    TransportCancellation? cancellation,
+    Map<String, String>? headers,
+  }) async {
+    final response = await transport.send(
+      _requestSupport.jsonRequest(
+        uri: threadRunUri(threadId, runId),
+        method: TransportMethod.get,
+        extraHeaders: headers,
+        timeout: timeout,
+        maxRetries: maxRetries,
+        cancellation: cancellation,
+      ),
+    );
+
+    return OpenAIThreadRun.fromJson(
+      decodeOpenAIJsonObject(
+        response.body,
+        responseName: 'thread run retrieve response',
+      ),
+    );
+  }
+
+  Future<OpenAIThreadRun> modifyThreadRun(
+    String threadId,
+    String runId,
+    OpenAIModifyRunRequest request, {
+    Duration? timeout,
+    int? maxRetries,
+    TransportCancellation? cancellation,
+    Map<String, String>? headers,
+  }) async {
+    final response = await transport.send(
+      _requestSupport.jsonRequest(
+        uri: threadRunUri(threadId, runId),
+        method: TransportMethod.post,
+        extraHeaders: headers,
+        contentType: true,
+        body: request.toJson(),
+        timeout: timeout,
+        maxRetries: maxRetries,
+        cancellation: cancellation,
+      ),
+    );
+
+    return OpenAIThreadRun.fromJson(
+      decodeOpenAIJsonObject(
+        response.body,
+        responseName: 'thread run modify response',
+      ),
+    );
+  }
+
+  Future<OpenAIThreadRun> cancelThreadRun(
+    String threadId,
+    String runId, {
+    Duration? timeout,
+    int? maxRetries,
+    TransportCancellation? cancellation,
+    Map<String, String>? headers,
+  }) async {
+    final response = await transport.send(
+      _requestSupport.jsonRequest(
+        uri: _requestSupport.cancelThreadRunUri(threadId, runId),
+        method: TransportMethod.post,
+        extraHeaders: headers,
+        contentType: true,
+        body: const <String, Object?>{},
+        timeout: timeout,
+        maxRetries: maxRetries,
+        cancellation: cancellation,
+      ),
+    );
+
+    return OpenAIThreadRun.fromJson(
+      decodeOpenAIJsonObject(
+        response.body,
+        responseName: 'thread run cancel response',
+      ),
+    );
+  }
+
+  Future<OpenAIThreadRun> submitThreadRunToolOutputs(
+    String threadId,
+    String runId,
+    OpenAISubmitToolOutputsRequest request, {
+    Duration? timeout,
+    int? maxRetries,
+    TransportCancellation? cancellation,
+    Map<String, String>? headers,
+  }) async {
+    final response = await transport.send(
+      _requestSupport.jsonRequest(
+        uri: _requestSupport.submitThreadRunToolOutputsUri(threadId, runId),
+        method: TransportMethod.post,
+        extraHeaders: headers,
+        contentType: true,
+        body: request.toJson(),
+        timeout: timeout,
+        maxRetries: maxRetries,
+        cancellation: cancellation,
+      ),
+    );
+
+    return OpenAIThreadRun.fromJson(
+      decodeOpenAIJsonObject(
+        response.body,
+        responseName: 'thread run submit tool outputs response',
+      ),
+    );
+  }
+
+  Future<OpenAIListRunStepsResponse> listThreadRunSteps(
+    String threadId,
+    String runId, {
+    OpenAIListRunStepsQuery? query,
+    Duration? timeout,
+    int? maxRetries,
+    TransportCancellation? cancellation,
+    Map<String, String>? headers,
+  }) async {
+    final response = await transport.send(
+      _requestSupport.jsonRequest(
+        uri: threadRunStepsUri(threadId, runId, query),
+        method: TransportMethod.get,
+        extraHeaders: headers,
+        timeout: timeout,
+        maxRetries: maxRetries,
+        cancellation: cancellation,
+      ),
+    );
+
+    return OpenAIListRunStepsResponse.fromJson(
+      decodeOpenAIJsonObject(
+        response.body,
+        responseName: 'thread run step list response',
+      ),
+    );
+  }
+
+  Future<OpenAIRunStep> retrieveThreadRunStep(
+    String threadId,
+    String runId,
+    String stepId, {
+    Duration? timeout,
+    int? maxRetries,
+    TransportCancellation? cancellation,
+    Map<String, String>? headers,
+  }) async {
+    final response = await transport.send(
+      _requestSupport.jsonRequest(
+        uri: threadRunStepUri(threadId, runId, stepId),
+        method: TransportMethod.get,
+        extraHeaders: headers,
+        timeout: timeout,
+        maxRetries: maxRetries,
+        cancellation: cancellation,
+      ),
+    );
+
+    return OpenAIRunStep.fromJson(
+      decodeOpenAIJsonObject(
+        response.body,
+        responseName: 'thread run step retrieve response',
       ),
     );
   }
