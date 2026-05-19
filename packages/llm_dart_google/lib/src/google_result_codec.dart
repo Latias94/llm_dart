@@ -1,6 +1,7 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'google_content_projection_support.dart';
+import 'google_file_projection.dart';
 import 'google_grounding_projection.dart';
 import 'google_provider_metadata_support.dart';
 import 'google_server_tool_replay.dart';
@@ -123,35 +124,13 @@ final class GoogleGenerateContentResultCodec {
         }
 
         if (part case {'inlineData': final Object? inlineDataValue}) {
-          final inlineData = asMap(inlineDataValue);
-          final mediaType = asString(inlineData?['mimeType']);
-          final data = asString(inlineData?['data']);
-          if (mediaType != null && data != null) {
-            final file = GeneratedFile(
-              mediaType: mediaType,
-              data: FileBytesData(
-                decodeBase64(data) ??
-                    (throw FormatException(
-                      'Expected Google inlineData.data to be base64.',
-                    )),
-              ),
-            );
-
-            if (part['thought'] == true) {
-              content.add(
-                ReasoningFileContentPart(
-                  file,
-                  providerMetadata: signatureMetadata,
-                ),
-              );
-            } else {
-              content.add(
-                FileContentPart(
-                  file,
-                  providerMetadata: signatureMetadata,
-                ),
-              );
-            }
+          final projectedFile = projectGoogleInlineDataFile(
+            inlineDataValue: inlineDataValue,
+            isThought: part['thought'] == true,
+            providerMetadata: signatureMetadata,
+          );
+          if (projectedFile != null) {
+            content.add(googleProjectedFileContentPart(projectedFile));
           }
         }
       }

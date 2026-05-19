@@ -1,6 +1,7 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'google_content_projection_support.dart';
+import 'google_file_projection.dart';
 import 'google_provider_metadata_support.dart';
 import 'google_server_tool_replay.dart';
 import 'google_shared.dart';
@@ -111,31 +112,13 @@ final class GoogleStreamPartCodec {
     if (part case {'inlineData': final Object? inlineDataValue}) {
       yield* closeOpenBlocks(state);
 
-      final inlineData = asMap(inlineDataValue);
-      final mediaType = asString(inlineData?['mimeType']);
-      final data = asString(inlineData?['data']);
-      if (mediaType != null && data != null) {
-        final file = GeneratedFile(
-          mediaType: mediaType,
-          data: FileBytesData(
-            decodeBase64(data) ??
-                (throw FormatException(
-                  'Expected Google inlineData.data to be base64.',
-                )),
-          ),
-        );
-
-        if (part['thought'] == true) {
-          yield ReasoningFileEvent(
-            file,
-            providerMetadata: metadata,
-          );
-        } else {
-          yield FileEvent(
-            file,
-            providerMetadata: metadata,
-          );
-        }
+      final projectedFile = projectGoogleInlineDataFile(
+        inlineDataValue: inlineDataValue,
+        isThought: part['thought'] == true,
+        providerMetadata: metadata,
+      );
+      if (projectedFile != null) {
+        yield googleProjectedFileEvent(projectedFile);
       }
     }
   }
