@@ -24,8 +24,9 @@ import 'package:llm_dart_provider/llm_dart_provider.dart'
         ToolResultEvent;
 
 import '../stream/text_stream_event.dart';
-import 'chat_ui_stream_error.dart';
 import 'chat_ui_message.dart';
+import 'chat_ui_metadata_store.dart';
+import 'chat_ui_stream_error.dart';
 import 'chat_ui_tool_part_store.dart';
 
 final class ChatUiAccumulatorOptions {
@@ -47,6 +48,10 @@ final class ChatUiAccumulator {
   final Map<String, int> _activeReasoningPartIndexes = {};
   final Map<String, int> _dataPartIndexes = {};
   final ChatUiToolPartStore _toolParts;
+  late final ChatUiMetadataStore _metadataStore = ChatUiMetadataStore(
+    metadata: _metadata,
+    includeRawChunks: options.includeRawChunksInMetadata,
+  );
   int _nextStepIndex = 0;
 
   factory ChatUiAccumulator({
@@ -88,13 +93,13 @@ final class ChatUiAccumulator {
   ChatUiMessage apply(TextStreamEvent event) {
     switch (event) {
       case RunStartEvent():
-        _applyRunStartEvent(event);
+        _metadataStore.applyRunStart(event);
       case RunFinishEvent():
-        _applyRunFinishEvent(event);
+        _metadataStore.applyRunFinish(event);
       case StartEvent():
-        _applyStartEvent(event);
+        _metadataStore.applyStart(event);
       case ResponseMetadataEvent():
-        _applyResponseMetadataEvent(event);
+        _metadataStore.applyResponseMetadata(event);
       case TextStartEvent():
         _applyTextStartEvent(event);
       case TextDeltaEvent():
@@ -134,15 +139,15 @@ final class ChatUiAccumulator {
       case StepFinishEvent():
         _applyStepFinishEvent();
       case AbortEvent(:final reason):
-        _applyAbortEvent(reason);
+        _metadataStore.applyAbort(reason);
       case FinishEvent():
-        _applyFinishEvent(event);
+        _metadataStore.applyFinish(event);
       case CustomEvent():
         _applyCustomEvent(event);
       case RawChunkEvent():
-        _applyRawChunkEvent(event);
+        _metadataStore.applyRawChunk(event);
       case ErrorEvent():
-        _applyErrorEvent(event);
+        _metadataStore.applyError(event);
     }
 
     return message;
@@ -183,12 +188,6 @@ final class ChatUiAccumulator {
     );
   }
 
-  void _setMetadataIfNotNull(String key, Object? value) {
-    if (value != null) {
-      _metadata[key] = value;
-    }
-  }
-
   ChatUiMessage _applyDataPart<T>(DataUiPart<T> part) {
     final dataPartId = part.id;
     if (dataPartId == null) {
@@ -225,100 +224,6 @@ final class ChatUiAccumulator {
 
   void _hydrateDataPartIndex(String key, String id, int index) {
     _dataPartIndexes[_dataPartIdentity(key, id)] = index;
-  }
-
-  void _applyStartEvent(StartEvent event) {
-    _metadata[ChatUiMetadataKeys.warnings] = List.unmodifiable(event.warnings);
-  }
-
-  void _applyRunStartEvent(RunStartEvent event) {
-    _setMetadataIfNotNull(ChatUiMetadataKeys.runId, event.runId);
-  }
-
-  void _applyRunFinishEvent(RunFinishEvent event) {
-    _setMetadataIfNotNull(ChatUiMetadataKeys.runId, event.runId);
-    _metadata[ChatUiMetadataKeys.runFinishReason] = event.finishReason;
-    _setMetadataIfNotNull(
-      ChatUiMetadataKeys.runRawFinishReason,
-      event.rawFinishReason,
-    );
-    if (event.usage != null) {
-      _metadata[ChatUiMetadataKeys.runUsage] = event.usage;
-    }
-    if (event.finishReason == FinishReason.aborted) {
-      _metadata[ChatUiMetadataKeys.isAborted] = true;
-      _setMetadataIfNotNull(
-        ChatUiMetadataKeys.abortReason,
-        event.rawFinishReason,
-      );
-    }
-  }
-
-  void _applyResponseMetadataEvent(ResponseMetadataEvent event) {
-    _setMetadataIfNotNull(ChatUiMetadataKeys.responseId, event.responseId);
-    _setMetadataIfNotNull(
-      ChatUiMetadataKeys.responseTimestamp,
-      event.timestamp,
-    );
-    _setMetadataIfNotNull(ChatUiMetadataKeys.modelId, event.modelId);
-    if (event.providerMetadata != null) {
-      _metadata[ChatUiMetadataKeys.responseProviderMetadata] =
-          ProviderMetadata.mergeNullable(
-        _metadata[ChatUiMetadataKeys.responseProviderMetadata]
-            as ProviderMetadata?,
-        event.providerMetadata,
-      );
-    }
-  }
-
-  void _applyAbortEvent(String? reason) {
-    _metadata[ChatUiMetadataKeys.isAborted] = true;
-    if (reason != null) {
-      _metadata[ChatUiMetadataKeys.abortReason] = reason;
-    }
-  }
-
-  void _applyFinishEvent(FinishEvent event) {
-    _metadata[ChatUiMetadataKeys.finishReason] = event.finishReason;
-    _setMetadataIfNotNull(
-      ChatUiMetadataKeys.rawFinishReason,
-      event.rawFinishReason,
-    );
-    if (event.finishReason == FinishReason.aborted) {
-      _metadata[ChatUiMetadataKeys.isAborted] = true;
-      _setMetadataIfNotNull(
-        ChatUiMetadataKeys.abortReason,
-        event.rawFinishReason,
-      );
-    }
-    if (event.usage != null) {
-      _metadata[ChatUiMetadataKeys.usage] = event.usage;
-    }
-    if (event.providerMetadata != null) {
-      _metadata[ChatUiMetadataKeys.finishProviderMetadata] =
-          ProviderMetadata.mergeNullable(
-        _metadata[ChatUiMetadataKeys.finishProviderMetadata]
-            as ProviderMetadata?,
-        event.providerMetadata,
-      );
-    }
-  }
-
-  void _applyRawChunkEvent(RawChunkEvent event) {
-    if (options.includeRawChunksInMetadata) {
-      final current =
-          _metadata[ChatUiMetadataKeys.rawChunks] as List<Object?>? ??
-              const <Object?>[];
-      _metadata[ChatUiMetadataKeys.rawChunks] =
-          List<Object?>.unmodifiable([...current, event.raw]);
-    }
-  }
-
-  void _applyErrorEvent(ErrorEvent event) {
-    final current = _metadata[ChatUiMetadataKeys.errors] as List<ModelError>? ??
-        const <ModelError>[];
-    _metadata[ChatUiMetadataKeys.errors] =
-        List<ModelError>.unmodifiable([...current, event.error]);
   }
 
   void _applyReasoningFileEvent(ReasoningFileEvent event) {
