@@ -1,4 +1,5 @@
 import 'package:llm_dart_openai/llm_dart_openai.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -9,6 +10,9 @@ void main() {
       expect(tool, isA<OpenAIBuiltInTool>());
       expect(tool.type, OpenAIBuiltInToolType.webSearch);
       expect(OpenAIBuiltInTools.webSearch(), isA<OpenAIWebSearchTool>());
+      expect(OpenAIBuiltInTools.localShell(), isA<OpenAILocalShellTool>());
+      expect(OpenAIBuiltInTools.applyPatch(), isA<OpenAIApplyPatchTool>());
+      expect(OpenAIBuiltInTools.toolSearch(), isA<OpenAIToolSearchTool>());
     });
 
     test('encodes provider-native Responses tools', () {
@@ -122,6 +126,168 @@ void main() {
             'never': {
               'tool_names': ['search'],
             },
+          },
+        },
+      );
+    });
+
+    test('encodes shell, tool search, apply patch, and custom tools', () {
+      expect(OpenAIBuiltInTools.localShell().toJson(), {
+        'type': 'local_shell',
+      });
+
+      expect(
+        OpenAIBuiltInTools.shell(
+          environment: OpenAIShellContainerAutoEnvironment(
+            fileIds: const ['file_1'],
+            memoryLimit: OpenAIShellMemoryLimit.fourGb,
+            networkPolicy: OpenAIShellAllowlistNetworkPolicy(
+              allowedDomains: const ['example.com'],
+              domainSecrets: const [
+                OpenAIShellDomainSecret(
+                  domain: 'example.com',
+                  name: 'API_KEY',
+                  value: 'secret_ref',
+                ),
+              ],
+            ),
+            skills: const [
+              OpenAIShellSkillReference(
+                providerReference: ProviderReference({'openai': 'skill_1'}),
+              ),
+              OpenAIShellInlineSkill(
+                name: 'lint',
+                description: 'Run lint checks.',
+                source: OpenAIShellInlineSkillSource.base64Zip(
+                  data: 'UEsDBAo=',
+                ),
+              ),
+            ],
+          ),
+        ).toJson(),
+        {
+          'type': 'shell',
+          'environment': {
+            'type': 'container_auto',
+            'file_ids': ['file_1'],
+            'memory_limit': '4g',
+            'network_policy': {
+              'type': 'allowlist',
+              'allowed_domains': ['example.com'],
+              'domain_secrets': [
+                {
+                  'domain': 'example.com',
+                  'name': 'API_KEY',
+                  'value': 'secret_ref',
+                },
+              ],
+            },
+            'skills': [
+              {
+                'type': 'skill_reference',
+                'skill_id': 'skill_1',
+                'version': 'latest',
+              },
+              {
+                'type': 'inline',
+                'name': 'lint',
+                'description': 'Run lint checks.',
+                'source': {
+                  'type': 'base64',
+                  'media_type': 'application/zip',
+                  'data': 'UEsDBAo=',
+                },
+              },
+            ],
+          },
+        },
+      );
+
+      expect(
+        OpenAIBuiltInTools.shell(
+          environment: const OpenAIShellContainerReferenceEnvironment('ctr_1'),
+        ).toJson(),
+        {
+          'type': 'shell',
+          'environment': {
+            'type': 'container_reference',
+            'container_id': 'ctr_1',
+          },
+        },
+      );
+
+      expect(
+        OpenAIBuiltInTools.shell(
+          environment: const OpenAIShellLocalEnvironment(
+            skills: [
+              OpenAIShellLocalSkill(
+                name: 'local',
+                description: 'Use local files.',
+                path: '/tmp/skill',
+              ),
+            ],
+          ),
+        ).toJson(),
+        {
+          'type': 'shell',
+          'environment': {
+            'type': 'local',
+            'skills': [
+              {
+                'name': 'local',
+                'description': 'Use local files.',
+                'path': '/tmp/skill',
+              },
+            ],
+          },
+        },
+      );
+
+      expect(OpenAIBuiltInTools.applyPatch().toJson(), {
+        'type': 'apply_patch',
+      });
+
+      expect(
+        OpenAIBuiltInTools.toolSearch(
+          execution: OpenAIToolSearchExecution.client,
+          description: 'Load tools on demand.',
+          parameters: const {
+            'type': 'object',
+            'properties': {
+              'query': {'type': 'string'},
+            },
+          },
+        ).toJson(),
+        {
+          'type': 'tool_search',
+          'execution': 'client',
+          'description': 'Load tools on demand.',
+          'parameters': {
+            'type': 'object',
+            'properties': {
+              'query': {'type': 'string'},
+            },
+          },
+        },
+      );
+
+      expect(
+        OpenAIBuiltInTools.custom(
+          name: 'grammar',
+          description: 'Emit a grammar-constrained command.',
+          format: const OpenAICustomToolGrammarFormat(
+            syntax: OpenAICustomToolGrammarSyntax.lark,
+            definition: 'start: /[a-z]+/',
+          ),
+        ).toJson(),
+        {
+          'type': 'custom',
+          'name': 'grammar',
+          'description': 'Emit a grammar-constrained command.',
+          'format': {
+            'type': 'grammar',
+            'syntax': 'lark',
+            'definition': 'start: /[a-z]+/',
           },
         },
       );

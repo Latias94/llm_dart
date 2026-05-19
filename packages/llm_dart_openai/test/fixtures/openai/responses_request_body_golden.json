@@ -105,9 +105,7 @@
   ],
   "tool_choice": {
     "type": "function",
-    "function": {
-      "name": "weather"
-    }
+    "name": "weather"
   },
   "response_format": {
     "type": "json_schema",

@@ -90,7 +90,7 @@ void main() {
   });
 
   group('OpenAI Responses tool choice projection', () {
-    test('encodes choices only when function tools are present', () {
+    test('encodes function and provider-native tool choices', () {
       const projection = OpenAIResponsesToolChoiceProjection();
 
       expect(
@@ -100,12 +100,43 @@ void main() {
         ),
         {
           'type': 'function',
-          'function': {'name': 'weather'},
+          'name': 'weather',
+        },
+      );
+      expect(
+        projection.encode(
+          const SpecificToolChoice('file_search'),
+          hasFunctionTools: false,
+          builtInTools: const [
+            OpenAIFileSearchTool(vectorStoreIds: ['vs_1']),
+          ],
+        ),
+        {'type': 'file_search'},
+      );
+      expect(
+        projection.encode(
+          const SpecificToolChoice('grammar'),
+          hasFunctionTools: false,
+          builtInTools: const [
+            OpenAICustomTool(name: 'grammar'),
+          ],
+        ),
+        {
+          'type': 'custom',
+          'name': 'grammar',
         },
       );
       expect(
         projection.encode(const AutoToolChoice(), hasFunctionTools: true),
-        {'type': 'auto'},
+        'auto',
+      );
+      expect(
+        projection.encode(const RequiredToolChoice(), hasFunctionTools: true),
+        'required',
+      );
+      expect(
+        projection.encode(const NoneToolChoice(), hasFunctionTools: true),
+        'none',
       );
       expect(
         projection.encode(const SpecificToolChoice('weather'),

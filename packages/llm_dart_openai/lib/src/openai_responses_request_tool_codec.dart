@@ -26,13 +26,15 @@ final class OpenAIResponsesRequestToolCodec {
     );
   }
 
-  Map<String, Object?>? encodeToolChoice(
+  Object? encodeToolChoice(
     ToolChoice? toolChoice, {
     required bool hasFunctionTools,
+    List<OpenAIBuiltInTool>? builtInTools,
   }) {
     return toolChoiceProjection.encode(
       toolChoice,
       hasFunctionTools: hasFunctionTools,
+      builtInTools: builtInTools,
     );
   }
 

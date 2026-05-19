@@ -37,6 +37,11 @@ void main() {
             'imageGeneration',
             'mcp',
             'codeInterpreter',
+            'localShell',
+            'shell',
+            'applyPatch',
+            'toolSearch',
+            'custom',
           ],
         },
       );

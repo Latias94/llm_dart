@@ -448,7 +448,7 @@ void main() {
         requestBody['tool_choice'],
         {
           'type': 'function',
-          'function': {'name': 'weather'},
+          'name': 'weather',
         },
       );
       expect(requestBody['parallel_tool_calls'], isTrue);

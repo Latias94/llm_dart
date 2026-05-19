@@ -5,6 +5,11 @@ enum OpenAIBuiltInToolType {
   imageGeneration,
   mcp,
   codeInterpreter,
+  localShell,
+  shell,
+  applyPatch,
+  toolSearch,
+  custom,
 }
 
 abstract interface class OpenAIBuiltInTool {

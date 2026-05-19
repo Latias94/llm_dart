@@ -74,6 +74,7 @@ final class OpenAIResponsesRequestCodec {
       final encodedToolChoice = toolCodec.encodeToolChoice(
         toolChoice,
         hasFunctionTools: tools.isNotEmpty,
+        builtInTools: providerOptions.builtInTools,
       );
       if (encodedToolChoice != null) {
         body['tool_choice'] = encodedToolChoice;

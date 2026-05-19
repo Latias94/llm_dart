@@ -7,6 +7,13 @@ export 'openai_code_interpreter_tool.dart'
         OpenAICodeInterpreterContainerReference,
         OpenAICodeInterpreterTool;
 export 'openai_computer_use_tool.dart' show OpenAIComputerUseTool;
+export 'openai_custom_tool.dart'
+    show
+        OpenAICustomTool,
+        OpenAICustomToolFormat,
+        OpenAICustomToolGrammarFormat,
+        OpenAICustomToolGrammarSyntax,
+        OpenAICustomToolTextFormat;
 export 'openai_file_search_tool.dart' show OpenAIFileSearchTool;
 export 'openai_image_generation_tool.dart'
     show
@@ -22,4 +29,25 @@ export 'openai_mcp_tool.dart'
         OpenAIMcpApprovalPolicy,
         OpenAIMcpApprovalPolicyType,
         OpenAIMcpTool;
+export 'openai_shell_tool.dart'
+    show
+        OpenAIApplyPatchTool,
+        OpenAILocalShellTool,
+        OpenAIShellAllowlistNetworkPolicy,
+        OpenAIShellContainerAutoEnvironment,
+        OpenAIShellContainerReferenceEnvironment,
+        OpenAIShellDisabledNetworkPolicy,
+        OpenAIShellDomainSecret,
+        OpenAIShellEnvironment,
+        OpenAIShellInlineSkill,
+        OpenAIShellInlineSkillSource,
+        OpenAIShellLocalEnvironment,
+        OpenAIShellLocalSkill,
+        OpenAIShellMemoryLimit,
+        OpenAIShellNetworkPolicy,
+        OpenAIShellSkill,
+        OpenAIShellSkillReference,
+        OpenAIShellTool;
+export 'openai_tool_search_tool.dart'
+    show OpenAIToolSearchExecution, OpenAIToolSearchTool;
 export 'openai_web_search_tool.dart' show OpenAIWebSearchTool;

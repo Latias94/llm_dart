@@ -1,9 +1,12 @@
 import 'openai_code_interpreter_tool.dart';
 import 'openai_computer_use_tool.dart';
+import 'openai_custom_tool.dart';
 import 'openai_file_search_tool.dart';
 import 'openai_image_generation_tool.dart';
 import 'openai_image_types.dart';
 import 'openai_mcp_tool.dart';
+import 'openai_shell_tool.dart';
+import 'openai_tool_search_tool.dart';
 import 'openai_web_search_tool.dart';
 
 final class OpenAIBuiltInTools {
@@ -92,6 +95,40 @@ final class OpenAIBuiltInTools {
       serverDescription: serverDescription,
       serverUrl: serverUrl,
       parameters: parameters,
+    );
+  }
+
+  static OpenAILocalShellTool localShell() => const OpenAILocalShellTool();
+
+  static OpenAIShellTool shell({
+    OpenAIShellEnvironment? environment,
+  }) {
+    return OpenAIShellTool(environment: environment);
+  }
+
+  static OpenAIApplyPatchTool applyPatch() => const OpenAIApplyPatchTool();
+
+  static OpenAIToolSearchTool toolSearch({
+    OpenAIToolSearchExecution? execution,
+    String? description,
+    Map<String, Object?>? parameters,
+  }) {
+    return OpenAIToolSearchTool(
+      execution: execution,
+      description: description,
+      parameters: parameters,
+    );
+  }
+
+  static OpenAICustomTool custom({
+    required String name,
+    String? description,
+    OpenAICustomToolFormat? format,
+  }) {
+    return OpenAICustomTool(
+      name: name,
+      description: description,
+      format: format,
     );
   }
 }

@@ -13,6 +13,11 @@ const List<String> _openAIBuiltInToolFamilies = [
   'imageGeneration',
   'mcp',
   'codeInterpreter',
+  'localShell',
+  'shell',
+  'applyPatch',
+  'toolSearch',
+  'custom',
 ];
 
 ModelCapabilityProfile describeOpenAIChatModel(
