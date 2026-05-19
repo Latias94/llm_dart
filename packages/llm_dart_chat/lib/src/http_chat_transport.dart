@@ -7,7 +7,7 @@ import 'http_chat_transport_request_json_codec.dart';
 import 'http_chat_transport_request_payload.dart';
 import 'http_chat_transport_request_support.dart';
 import 'http_chat_transport_resume_state.dart';
-import 'http_chat_transport_stream_projection.dart';
+import 'http_chat_transport_stream_client.dart';
 import 'http_chat_transport_stream_protocol.dart';
 
 export 'http_chat_transport_request_support.dart'
@@ -27,6 +27,7 @@ final class HttpChatTransport implements ChatTransport {
   final HttpChatTransportRequestJsonCodec requestCodec;
   final HttpChatTransportChunkJsonCodec chunkCodec;
   final HttpChatTransportStreamProtocol streamProtocol;
+  late final HttpChatTransportStreamClient _streamClient;
   final Map<String, String> headers;
   final Duration? requestTimeout;
   final HttpChatTransportProviderOptionsEncoder? providerOptionsEncoder;
@@ -46,7 +47,13 @@ final class HttpChatTransport implements ChatTransport {
     this.providerOptionsEncoder,
     this.prepareSendMessagesRequest,
     this.prepareReconnectRequest,
-  });
+  }) {
+    _streamClient = HttpChatTransportStreamClient(
+      transport: transport,
+      sseDecoder: sseDecoder,
+      chunkCodec: chunkCodec,
+    );
+  }
 
   @override
   Stream<ChatUiStreamChunk> sendMessages(ChatTransportRequest request) async* {
@@ -96,7 +103,6 @@ final class HttpChatTransport implements ChatTransport {
             : baseRequestTimeout;
 
     yield* _sendPayload(
-      chatId: request.chatId,
       state: state,
       endpoint: resolvedEndpoint,
       headers: resolvedHeaders,
@@ -159,7 +165,6 @@ final class HttpChatTransport implements ChatTransport {
 
     yield* Stream<ChatUiStreamChunk>.fromIterable(replayChunks);
     yield* _sendPayload(
-      chatId: chatId,
       state: state,
       endpoint: resolvedEndpoint,
       headers: resolvedHeaders,
@@ -171,7 +176,6 @@ final class HttpChatTransport implements ChatTransport {
   }
 
   Stream<ChatUiStreamChunk> _sendPayload({
-    required String chatId,
     required HttpChatTransportResumeState state,
     required Uri endpoint,
     required Map<String, String> headers,
@@ -180,71 +184,26 @@ final class HttpChatTransport implements ChatTransport {
     required ProviderCancellation? cancellation,
     required Map<String, Object?> payload,
   }) async* {
-    try {
-      final response = await transport.sendStream(
-        TransportRequest(
-          uri: endpoint,
-          method: TransportMethod.post,
-          headers: {
-            ...headers,
-          },
-          body: payload,
-          timeout: requestTimeout,
-          maxRetries: maxRetries,
-          cancellation: cancellation,
-          responseType: TransportResponseType.plainText,
-        ),
-      );
+    yield* _streamClient.sendPayload(
+      state: state,
+      endpoint: endpoint,
+      headers: headers,
+      requestTimeout: requestTimeout,
+      maxRetries: maxRetries,
+      cancellation: cancellation,
+      payload: payload,
+      clearResumeState: () => _clearResumeStateForState(state),
+    );
+  }
 
-      if (response.statusCode >= 400) {
-        _clearResumeState(chatId, state);
-        yield ChatUiEventChunk(
-          ErrorEvent(
-            ModelError(
-              kind: ModelErrorKind.transport,
-              message: 'HTTP chat transport request failed.',
-              code: 'http-transport-status',
-              statusCode: response.statusCode,
-              isRetryable: response.statusCode >= 500 ||
-                  response.statusCode == 408 ||
-                  response.statusCode == 409 ||
-                  response.statusCode == 429,
-            ),
-          ),
-        );
+  void _clearResumeStateForState(HttpChatTransportResumeState state) {
+    for (final entry in _resumeStates.entries.toList(growable: false)) {
+      if (identical(entry.value, state)) {
+        _clearResumeState(entry.key, state);
         return;
       }
-
-      final parser = SseJsonChunkParser(sseDecoder: sseDecoder);
-      await for (final envelope in parser.parse(response.stream)) {
-        final chunk = chunkCodec.decodeChunk(envelope);
-        final projected = projectHttpChatTransportChunk(
-          chunk: chunk,
-          state: state,
-          clearResumeState: () => _clearResumeState(chatId, state),
-        );
-
-        switch (projected) {
-          case HttpChatTransportEmitChunk(
-              :final chunks,
-              :final terminateStream,
-            ):
-            yield* Stream<ChatUiStreamChunk>.fromIterable(chunks);
-            if (terminateStream) {
-              return;
-            }
-          case HttpChatTransportNoopChunk():
-            break;
-        }
-      }
-    } catch (error) {
-      if (!state.canReconnect) {
-        _clearResumeState(chatId, state);
-      }
-      yield ChatUiEventChunk(
-        ErrorEvent(transportErrorToModelError(error)),
-      );
     }
+    state.markTerminal();
   }
 
   void _clearResumeState(
