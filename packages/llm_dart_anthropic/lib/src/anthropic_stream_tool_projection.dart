@@ -244,34 +244,6 @@ Iterable<SourceEvent> emitAnthropicWebSearchToolResultSourceEvents(
   }
 }
 
-Iterable<SourceReference> projectAnthropicWebSearchToolResultSources(
-  Map<String, Object?> contentBlock,
-) sync* {
-  final resultList = contentBlock['content'];
-  if (resultList is! List) {
-    return;
-  }
-
-  for (final item in resultList) {
-    final result = anthropicStreamAsMap(item);
-    final url = anthropicStreamAsString(result?['url']);
-    if (url == null) {
-      continue;
-    }
-
-    yield SourceReference(
-      kind: SourceReferenceKind.url,
-      sourceId: url,
-      uri: Uri.tryParse(url),
-      title: anthropicStreamAsString(result?['title']),
-      providerMetadata: anthropicStreamProviderMetadata({
-        'pageAge': anthropicStreamAsString(result?['page_age']),
-        'resultType': anthropicStreamAsString(result?['type']),
-      }),
-    );
-  }
-}
-
 _DecodedJsonValue _tryDecodeJsonValue(String value) {
   try {
     return _DecodedJsonValue(

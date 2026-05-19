@@ -1,6 +1,7 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'anthropic_code_execution_replay.dart';
+import 'anthropic_metadata_support.dart';
 
 bool isAnthropicToolResultBlockType(String? blockType) {
   return blockType == 'mcp_tool_result' ||
@@ -100,6 +101,34 @@ bool isAnthropicExecutionToolResultBlock(String blockType) {
   return blockType == 'code_execution_tool_result' ||
       blockType == 'bash_code_execution_tool_result' ||
       blockType == 'text_editor_code_execution_tool_result';
+}
+
+Iterable<SourceReference> projectAnthropicWebSearchToolResultSources(
+  Map<String, Object?> block,
+) sync* {
+  final resultList = block['content'];
+  if (resultList is! List) {
+    return;
+  }
+
+  for (final item in resultList) {
+    final result = _asObjectMap(item);
+    final url = _asString(result?['url']);
+    if (url == null) {
+      continue;
+    }
+
+    yield SourceReference(
+      kind: SourceReferenceKind.url,
+      sourceId: url,
+      uri: Uri.tryParse(url),
+      title: _asString(result?['title']),
+      providerMetadata: anthropicProviderMetadata({
+        'pageAge': _asString(result?['page_age']),
+        'resultType': _asString(result?['type']),
+      }),
+    );
+  }
 }
 
 Map<String, Object?>? _asObjectMap(Object? value) {

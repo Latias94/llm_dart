@@ -117,6 +117,27 @@ final class AnthropicStreamToolCodec {
     }
   }
 
+  Iterable<LanguageModelStreamEvent> decodeToolInputDelta(
+    AnthropicStreamContentBlockState? contentBlock,
+    Map<String, Object?> delta,
+  ) sync* {
+    if (contentBlock is! AnthropicStreamToolBlockState) {
+      return;
+    }
+
+    final partialJson = anthropicStreamAsString(delta['partial_json']);
+    if (partialJson == null || partialJson.isEmpty) {
+      return;
+    }
+
+    contentBlock.inputBuffer.write(partialJson);
+    yield ToolInputDeltaEvent(
+      toolCallId: contentBlock.toolCallId,
+      delta: partialJson,
+      providerMetadata: contentBlock.providerMetadata,
+    );
+  }
+
   Iterable<LanguageModelStreamEvent> emitImmediateToolResult({
     required String blockType,
     required Map<String, Object?> contentBlock,

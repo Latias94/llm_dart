@@ -143,21 +143,7 @@ final class AnthropicStreamContentCodec {
     final contentBlock = state.contentBlocksByIndex[index];
 
     if (deltaType == 'input_json_delta') {
-      if (contentBlock is! AnthropicStreamToolBlockState) {
-        return;
-      }
-
-      final partialJson = anthropicStreamAsString(delta['partial_json']);
-      if (partialJson == null || partialJson.isEmpty) {
-        return;
-      }
-
-      contentBlock.inputBuffer.write(partialJson);
-      yield ToolInputDeltaEvent(
-        toolCallId: contentBlock.toolCallId,
-        delta: partialJson,
-        providerMetadata: contentBlock.providerMetadata,
-      );
+      yield* toolCodec.decodeToolInputDelta(contentBlock, delta);
       return;
     }
 
