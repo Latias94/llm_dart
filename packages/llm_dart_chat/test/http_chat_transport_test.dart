@@ -1049,36 +1049,53 @@ void main() {
       );
     });
 
+    test('serializes tools and tool choice in request payload', () async {
+      TransportRequest? capturedRequest;
+      final transport = HttpChatTransport(
+        endpoint: Uri.parse('https://example.com/chat'),
+        transport: _FakeTransportClient(
+          onSendStream: (request) async {
+            capturedRequest = request;
+            return StreamingTransportResponse(
+              statusCode: 200,
+              stream: const Stream<List<int>>.empty(),
+            );
+          },
+        ),
+      );
+
+      await transport
+          .sendMessages(
+            ChatTransportRequest(
+              chatId: 'chat-1',
+              prompt: [
+                UserPromptMessage.text('Hello'),
+              ],
+              options: ChatRequestOptions(
+                tools: [
+                  FunctionToolDefinition(
+                    name: 'weather',
+                    inputSchema: ToolJsonSchema.object(),
+                  ),
+                ],
+                toolChoice: const RequiredToolChoice(),
+              ),
+            ),
+          )
+          .toList();
+
+      final decodedRequest =
+          const HttpChatTransportRequestJsonCodec().decodeRequest(
+        capturedRequest!.body,
+      );
+      expect(decodedRequest.tools.single.name, 'weather');
+      expect(decodedRequest.toolChoice, isA<RequiredToolChoice>());
+    });
+
     test('rejects local runtime tool loop options', () async {
       final transport = HttpChatTransport(
         endpoint: Uri.parse('https://example.com/chat'),
         transport: const _FakeTransportClient(),
-      );
-
-      await expectLater(
-        transport.sendMessages(
-          ChatTransportRequest(
-            chatId: 'chat-1',
-            prompt: [
-              UserPromptMessage.text('Hello'),
-            ],
-            options: ChatRequestOptions(
-              tools: [
-                FunctionToolDefinition(
-                  name: 'weather',
-                  inputSchema: ToolJsonSchema.object(),
-                ),
-              ],
-            ),
-          ),
-        ),
-        emitsError(
-          isA<UnsupportedError>().having(
-            (error) => error.message,
-            'message',
-            contains('tools or toolChoice'),
-          ),
-        ),
       );
 
       await expectLater(

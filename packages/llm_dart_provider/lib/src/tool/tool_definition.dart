@@ -1,4 +1,5 @@
 import '../common/json_schema.dart';
+import '../common/provider_options.dart';
 
 sealed class ToolChoice {
   const ToolChoice();
@@ -123,11 +124,13 @@ final class FunctionToolDefinition extends ToolDefinition {
   final String? description;
   final ToolJsonSchema inputSchema;
   final bool? strict;
+  final ProviderToolOptions? providerOptions;
 
   const FunctionToolDefinition({
     required this.name,
     this.description,
     required this.inputSchema,
     this.strict,
+    this.providerOptions,
   });
 }

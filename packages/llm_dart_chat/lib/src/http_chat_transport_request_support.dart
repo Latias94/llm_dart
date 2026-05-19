@@ -87,14 +87,6 @@ final class HttpChatTransportPreparedReconnectRequest {
 }
 
 void validateSerializableHttpChatRequestOptions(ChatRequestOptions options) {
-  if (options.tools.isNotEmpty || options.toolChoice != null) {
-    throw UnsupportedError(
-      'HttpChatTransport cannot serialize ChatRequestOptions.tools or '
-      'toolChoice yet. Declare tools on the server side or add an explicit '
-      'HTTP chat tool protocol.',
-    );
-  }
-
   if (options.hasLocalRuntimeHooks) {
     throw UnsupportedError(
       'HttpChatTransport cannot serialize local runtime callbacks, '

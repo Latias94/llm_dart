@@ -71,6 +71,8 @@ final class HttpChatTransport implements ChatTransport {
       chatId: request.chatId,
       prompt: request.prompt,
       generateOptions: request.options.generateOptions,
+      tools: request.options.tools,
+      toolChoice: request.options.toolChoice,
       callOptions: callOptionsPayload,
       streamProtocol: streamProtocol,
       metadata: request.options.metadata,

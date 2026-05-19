@@ -1283,14 +1283,7 @@ void main() {
               },
               required: const ['sql'],
             ),
-          ),
-        ],
-        toolChoice: const AutoToolChoice(),
-        options: const GenerateTextOptions(),
-        settings: const AnthropicChatModelSettings(),
-        providerOptions: AnthropicGenerateTextOptions(
-          functionToolOptions: {
-            'query_database': AnthropicFunctionToolOptions(
+            providerOptions: AnthropicFunctionToolOptions(
               deferLoading: false,
               eagerInputStreaming: true,
               allowedCallers: const [
@@ -1301,6 +1294,16 @@ void main() {
                   'sql': 'select 1',
                 }),
               ],
+            ),
+          ),
+        ],
+        toolChoice: const AutoToolChoice(),
+        options: const GenerateTextOptions(),
+        settings: const AnthropicChatModelSettings(),
+        providerOptions: const AnthropicGenerateTextOptions(
+          functionToolOptions: {
+            'query_database': AnthropicFunctionToolOptions(
+              deferLoading: true,
             ),
           },
         ),
@@ -1334,6 +1337,38 @@ void main() {
       expect(
         request.betaFeatures,
         contains('advanced-tool-use-2025-11-20'),
+      );
+    });
+
+    test('uses invocation function tool options as a compatibility fallback',
+        () {
+      final request = codec.encodeRequest(
+        modelId: 'claude-sonnet-4-5',
+        prompt: [
+          UserPromptMessage.text('Use weather.'),
+        ],
+        tools: [
+          FunctionToolDefinition(
+            name: 'weather',
+            inputSchema: ToolJsonSchema.object(),
+          ),
+        ],
+        toolChoice: const AutoToolChoice(),
+        options: const GenerateTextOptions(),
+        settings: const AnthropicChatModelSettings(),
+        providerOptions: const AnthropicGenerateTextOptions(
+          functionToolOptions: {
+            'weather': AnthropicFunctionToolOptions(
+              deferLoading: false,
+            ),
+          },
+        ),
+        stream: false,
+      );
+
+      expect(
+        (request.body['tools']! as List).single,
+        containsPair('defer_loading', false),
       );
     });
 

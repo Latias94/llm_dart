@@ -16,6 +16,20 @@ void main() {
           prompt: [
             UserPromptMessage.text('Hello'),
           ],
+          tools: [
+            FunctionToolDefinition(
+              name: 'weather',
+              description: 'Get weather.',
+              inputSchema: ToolJsonSchema.object(
+                properties: const {
+                  'city': {'type': 'string'},
+                },
+                required: const ['city'],
+              ),
+              strict: true,
+            ),
+          ],
+          toolChoice: const SpecificToolChoice('weather'),
           generateOptions: const GenerateTextOptions(
             maxOutputTokens: 256,
             temperature: 0.2,
@@ -54,6 +68,25 @@ void main() {
       final decoded = codec.decodeRequest(encoded);
       expect(decoded.chatId, 'chat-1');
       expect(decoded.prompt.single, isA<UserPromptMessage>());
+      expect(decoded.tools, hasLength(1));
+      expect(decoded.tools.single.name, 'weather');
+      expect(decoded.tools.single.description, 'Get weather.');
+      expect(decoded.tools.single.inputSchema.toJson(), {
+        'type': 'object',
+        'properties': {
+          'city': {'type': 'string'},
+        },
+        'required': ['city'],
+      });
+      expect(decoded.tools.single.strict, isTrue);
+      expect(
+        decoded.toolChoice,
+        isA<SpecificToolChoice>().having(
+          (choice) => choice.toolName,
+          'toolName',
+          'weather',
+        ),
+      );
       expect(decoded.generateOptions.maxOutputTokens, 256);
       expect(decoded.generateOptions.temperature, 0.2);
       expect(decoded.generateOptions.stopSequences, ['DONE']);
@@ -81,6 +114,66 @@ void main() {
       expect(decoded.metadata, {
         'clientRequestId': 'req-1',
       });
+    });
+
+    test('round-trips typed provider tool options through registered codecs',
+        () {
+      const codec = HttpChatTransportRequestJsonCodec(
+        providerToolOptionsCodecs: [
+          _TestToolOptionsJsonCodec(),
+        ],
+      );
+      final options = _TestToolOptions('fast');
+
+      final decoded = codec.decodeRequest(
+        codec.encodeRequest(
+          HttpChatTransportRequestPayload(
+            chatId: 'chat-1',
+            prompt: [
+              UserPromptMessage.text('Hello'),
+            ],
+            tools: [
+              FunctionToolDefinition(
+                name: 'weather',
+                inputSchema: ToolJsonSchema.object(),
+                providerOptions: options,
+              ),
+            ],
+          ),
+        ),
+      );
+
+      expect(
+        decoded.tools.single.providerOptions,
+        isA<_TestToolOptions>().having(
+          (options) => options.mode,
+          'mode',
+          'fast',
+        ),
+      );
+    });
+
+    test('rejects unregistered typed provider tool options', () {
+      const codec = HttpChatTransportRequestJsonCodec();
+
+      expect(
+        () => codec.encodeRequest(
+          HttpChatTransportRequestPayload(
+            chatId: 'chat-1',
+            prompt: [
+              UserPromptMessage.text('Hello'),
+            ],
+            tools: [
+              FunctionToolDefinition(
+                name: 'weather',
+                inputSchema: ToolJsonSchema.object(),
+                providerOptions: _TestToolOptions('fast'),
+              ),
+            ],
+          ),
+        ),
+        throwsUnsupportedError,
+      );
     });
 
     test('decodes legacy request payloads without stream protocol as v1', () {
@@ -294,4 +387,32 @@ void main() {
       isA<legacy_protocol.HttpChatTransportKeepAliveChunk>(),
     );
   });
+}
+
+final class _TestToolOptions implements ProviderToolOptions {
+  final String mode;
+
+  const _TestToolOptions(this.mode);
+}
+
+final class _TestToolOptionsJsonCodec
+    implements ProviderToolOptionsJsonCodec<_TestToolOptions> {
+  const _TestToolOptionsJsonCodec();
+
+  @override
+  String get type => 'test.toolOptions';
+
+  @override
+  bool canEncode(ProviderToolOptions options) => options is _TestToolOptions;
+
+  @override
+  Map<String, Object?> encode(ProviderToolOptions options) {
+    final typed = options as _TestToolOptions;
+    return {'mode': typed.mode};
+  }
+
+  @override
+  _TestToolOptions decode(Map<String, Object?> json) {
+    return _TestToolOptions(json['mode']! as String);
+  }
 }

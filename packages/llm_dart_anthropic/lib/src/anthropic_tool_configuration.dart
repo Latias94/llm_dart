@@ -50,12 +50,21 @@ AnthropicToolConfiguration resolveAnthropicToolConfiguration({
     commonToolNames: commonToolNames,
     warnings: warnings,
   );
+  final resolvedFunctionToolOptionsByName = {
+    for (final tool in tools)
+      if (_resolveFunctionToolOptions(
+        tool,
+        fallbackOptionsByName: functionToolOptionsByName,
+      )
+          case final options?)
+        tool.name: options,
+  };
 
   final encodedTools = <Map<String, Object?>>[
     for (final tool in tools)
       _encodeFunctionTool(
         tool,
-        options: functionToolOptionsByName[tool.name],
+        options: resolvedFunctionToolOptionsByName[tool.name],
         deferredToolNames: deferredToolNameSet,
         defaultEagerInputStreaming: defaultEagerInputStreaming,
       ),
@@ -73,7 +82,7 @@ AnthropicToolConfiguration resolveAnthropicToolConfiguration({
   if (toolsCacheControl != null && encodedTools.isNotEmpty) {
     betaFeatures.add(anthropicExtendedCacheTtlBeta);
   }
-  if (functionToolOptionsByName.values.any(
+  if (resolvedFunctionToolOptionsByName.values.any(
     (options) => options.usesAdvancedToolUse,
   )) {
     betaFeatures.add(anthropicAdvancedToolUseBeta);
@@ -99,6 +108,19 @@ AnthropicToolConfiguration resolveAnthropicToolConfiguration({
     toolChoice: encodedToolChoice,
     betaFeatures: sortedAnthropicBetaFeatures(betaFeatures),
   );
+}
+
+AnthropicFunctionToolOptions? _resolveFunctionToolOptions(
+  FunctionToolDefinition tool, {
+  required Map<String, AnthropicFunctionToolOptions> fallbackOptionsByName,
+}) {
+  return resolveProviderToolOptions<AnthropicFunctionToolOptions>(
+        tool.providerOptions,
+        parameterName: 'tool.providerOptions',
+        expectedTypeName: 'AnthropicFunctionToolOptions',
+        usageContext: 'Anthropic function tool "${tool.name}"',
+      ) ??
+      fallbackOptionsByName[tool.name];
 }
 
 Map<String, Object?> _encodeFunctionTool(

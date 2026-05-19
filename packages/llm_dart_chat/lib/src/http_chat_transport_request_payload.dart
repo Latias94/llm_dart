@@ -74,6 +74,8 @@ final class HttpChatTransportRequestPayload {
   final String chatId;
   final List<PromptMessage> prompt;
   final GenerateTextOptions generateOptions;
+  final List<FunctionToolDefinition> tools;
+  final ToolChoice? toolChoice;
   final HttpChatTransportCallOptionsPayload callOptions;
   final HttpChatTransportStreamProtocol streamProtocol;
   final Map<String, Object?> metadata;
@@ -82,10 +84,13 @@ final class HttpChatTransportRequestPayload {
     required this.chatId,
     required List<PromptMessage> prompt,
     this.generateOptions = const GenerateTextOptions(),
+    List<FunctionToolDefinition> tools = const [],
+    this.toolChoice,
     this.callOptions = HttpChatTransportCallOptionsPayload.empty,
     this.streamProtocol = HttpChatTransportStreamProtocol.uiMessageStreamV2,
     Map<String, Object?> metadata = const {},
   })  : prompt = List.unmodifiable(prompt),
+        tools = List.unmodifiable(tools),
         metadata = Map.unmodifiable(
           HttpChatTransportJson.ensureMap(metadata, path: r'$.metadata'),
         );

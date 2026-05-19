@@ -902,6 +902,53 @@ void main() {
       );
     });
 
+    test('resolves typed provider tool options', () {
+      const options = _TestToolOptions();
+
+      final tool = FunctionToolDefinition(
+        name: 'weather',
+        inputSchema: ToolJsonSchema.object(),
+        providerOptions: options,
+      );
+
+      expect(tool.providerOptions, same(options));
+      expect(
+        resolveProviderToolOptions<_TestToolOptions>(
+          tool.providerOptions,
+          parameterName: 'tool.providerOptions',
+          expectedTypeName: '_TestToolOptions',
+          usageContext: 'test tools',
+        ),
+        same(options),
+      );
+      expect(
+        resolveProviderToolOptions<_TestToolOptions>(
+          null,
+          parameterName: 'tool.providerOptions',
+          expectedTypeName: '_TestToolOptions',
+          usageContext: 'test tools',
+        ),
+        isNull,
+      );
+      expect(
+        () => resolveProviderToolOptions<_TestToolOptions>(
+          _OtherToolOptions(),
+          parameterName: 'tool.providerOptions',
+          expectedTypeName: '_TestToolOptions',
+          usageContext: 'test tools',
+        ),
+        throwsA(
+          isA<ArgumentError>()
+              .having((error) => error.name, 'name', 'tool.providerOptions')
+              .having(
+                (error) => error.message,
+                'message',
+                'Expected _TestToolOptions for test tools.',
+              ),
+        ),
+      );
+    });
+
     test('extracts replay metadata only from replay prompt part options', () {
       const metadata = ProviderMetadata({
         'openai': {
@@ -1025,6 +1072,12 @@ final class _TestPromptPartOptions implements ProviderPromptPartOptions {
 }
 
 final class _OtherPromptPartOptions implements ProviderPromptPartOptions {}
+
+final class _TestToolOptions implements ProviderToolOptions {
+  const _TestToolOptions();
+}
+
+final class _OtherToolOptions implements ProviderToolOptions {}
 
 final class _SingleStepLanguageModel implements LanguageModel {
   final GenerateTextResult result;
