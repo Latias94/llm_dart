@@ -27,6 +27,29 @@ void main() {
     );
   });
 
+  test('SseJsonChunkParser skips empty frames and parses multiline data',
+      () async {
+    final parser = const SseJsonChunkParser();
+
+    final chunks = await parser
+        .parse(
+          Stream.fromIterable([
+            utf8.encode('data:\n\n'),
+            utf8.encode('data: {\n'),
+            utf8.encode('data: "ok": true\n'),
+            utf8.encode('data: }\n\n'),
+          ]),
+        )
+        .toList();
+
+    expect(
+      chunks,
+      const [
+        {'ok': true},
+      ],
+    );
+  });
+
   test('SseJsonChunkParser supports custom frame filtering', () async {
     final parser = const SseJsonChunkParser();
 
@@ -64,6 +87,19 @@ void main() {
           contains('JSON object SSE payload'),
         ),
       ),
+    );
+  });
+
+  test('SseJsonChunkParser reports malformed JSON payloads', () {
+    const parser = SseJsonChunkParser();
+
+    expect(
+      parser.parse(
+        Stream.fromIterable([
+          utf8.encode('data: {"broken":\n\n'),
+        ]),
+      ),
+      emitsError(isA<FormatException>()),
     );
   });
 }

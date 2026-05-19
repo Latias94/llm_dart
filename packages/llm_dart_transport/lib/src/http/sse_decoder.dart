@@ -21,14 +21,16 @@ final class DefaultSseDecoder implements SseDecoder {
 
   @override
   Stream<SseFrame> decode(Stream<String> chunks) async* {
-    final buffer = StringBuffer();
+    final lineBuffer = StringBuffer();
     final dataLines = <String>[];
     String? event;
     String? lastEventId;
     int? retryMilliseconds;
+    var atStreamStart = true;
+    var pendingCarriageReturn = false;
 
     SseFrame? flushFrame() {
-      if (dataLines.isEmpty && event == null && retryMilliseconds == null) {
+      if (dataLines.isEmpty) {
         event = null;
         retryMilliseconds = null;
         return null;
@@ -47,69 +49,87 @@ final class DefaultSseDecoder implements SseDecoder {
       return frame;
     }
 
-    Iterable<SseFrame> processLines(List<String> lines) sync* {
-      for (final line in lines) {
-        if (line.isEmpty) {
-          final frame = flushFrame();
-          if (frame != null) {
-            yield frame;
+    Iterable<SseFrame> processLine(String line) sync* {
+      if (line.isEmpty) {
+        final frame = flushFrame();
+        if (frame != null) {
+          yield frame;
+        }
+        return;
+      }
+
+      if (line.startsWith(':')) {
+        return;
+      }
+
+      final separatorIndex = line.indexOf(':');
+      final field =
+          separatorIndex == -1 ? line : line.substring(0, separatorIndex);
+      var value =
+          separatorIndex == -1 ? '' : line.substring(separatorIndex + 1);
+      if (value.startsWith(' ')) {
+        value = value.substring(1);
+      }
+
+      switch (field) {
+        case 'event':
+          event = value;
+          break;
+        case 'data':
+          dataLines.add(value);
+          break;
+        case 'id':
+          if (!value.contains('\u0000')) {
+            lastEventId = value;
           }
-          continue;
-        }
-
-        if (line.startsWith(':')) {
-          continue;
-        }
-
-        final separatorIndex = line.indexOf(':');
-        final field =
-            separatorIndex == -1 ? line : line.substring(0, separatorIndex);
-        var value =
-            separatorIndex == -1 ? '' : line.substring(separatorIndex + 1);
-        if (value.startsWith(' ')) {
-          value = value.substring(1);
-        }
-
-        switch (field) {
-          case 'event':
-            event = value;
-            break;
-          case 'data':
-            dataLines.add(value);
-            break;
-          case 'id':
-            if (!value.contains('\u0000')) {
-              lastEventId = value;
-            }
-            break;
-          case 'retry':
-            retryMilliseconds = int.tryParse(value);
-            break;
-        }
+          break;
+        case 'retry':
+          retryMilliseconds = int.tryParse(value);
+          break;
       }
     }
 
     await for (final chunk in chunks) {
-      buffer.write(chunk);
-      final normalized = buffer.toString().replaceAll('\r\n', '\n').replaceAll(
-            '\r',
-            '\n',
-          );
-      final lines = normalized.split('\n');
-      final hasTrailingNewline = normalized.endsWith('\n');
+      for (var index = 0; index < chunk.length; index++) {
+        final codeUnit = chunk.codeUnitAt(index);
 
-      buffer.clear();
-      if (!hasTrailingNewline) {
-        buffer.write(lines.removeLast());
-      }
+        if (pendingCarriageReturn) {
+          pendingCarriageReturn = false;
+          if (codeUnit == 0x0A) {
+            continue;
+          }
+        }
 
-      for (final frame in processLines(lines)) {
-        yield frame;
+        if (atStreamStart) {
+          atStreamStart = false;
+          if (codeUnit == 0xFEFF) {
+            continue;
+          }
+        }
+
+        if (codeUnit == 0x0D) {
+          for (final frame in processLine(lineBuffer.toString())) {
+            yield frame;
+          }
+          lineBuffer.clear();
+          pendingCarriageReturn = true;
+          continue;
+        }
+
+        if (codeUnit == 0x0A) {
+          for (final frame in processLine(lineBuffer.toString())) {
+            yield frame;
+          }
+          lineBuffer.clear();
+          continue;
+        }
+
+        lineBuffer.writeCharCode(codeUnit);
       }
     }
 
-    if (buffer.isNotEmpty) {
-      for (final frame in processLines([buffer.toString()])) {
+    if (lineBuffer.isNotEmpty) {
+      for (final frame in processLine(lineBuffer.toString())) {
         yield frame;
       }
     }
