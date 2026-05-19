@@ -1,6 +1,7 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'openai_responses_metadata.dart';
+import 'openai_responses_shell_output_projection.dart';
 
 const openAIResponsesLocalShellToolName = 'local_shell';
 const openAIResponsesShellToolName = 'shell';
@@ -172,7 +173,7 @@ OpenAIResponsesNativeShellOutputProjection? projectOpenAIResponsesShellOutput(
     output: {
       'output': [
         for (final entry in _asList(item['output']))
-          _projectShellOutputEntry(entry),
+          projectOpenAIResponsesShellOutputEntry(entry),
       ],
     },
     providerMetadata: _metadata(
@@ -267,32 +268,6 @@ ProviderMetadata? _metadata(
     'serviceTier': serviceTier,
     ...extra,
   });
-}
-
-Map<String, Object?> _projectShellOutputEntry(Object? value) {
-  final entry = _asMap(value) ?? const <String, Object?>{};
-  final outcome = _asMap(entry['outcome']);
-  return {
-    'stdout': entry['stdout'],
-    'stderr': entry['stderr'],
-    'outcome': _projectShellOutcome(outcome),
-  };
-}
-
-Map<String, Object?>? _projectShellOutcome(Map<String, Object?>? outcome) {
-  final type = _asString(outcome?['type']);
-  if (type == 'timeout') {
-    return const {'type': 'timeout'};
-  }
-
-  if (type == 'exit') {
-    return {
-      'type': 'exit',
-      'exitCode': outcome?['exit_code'] ?? outcome?['exitCode'],
-    };
-  }
-
-  return outcome;
 }
 
 bool _isShellProviderExecuted(Map<String, Object?> item) {

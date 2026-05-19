@@ -1,6 +1,7 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'openai_request_encoding_util.dart';
+import 'openai_responses_shell_output_projection.dart';
 
 final class OpenAIResponsesNativeToolCallReplayProjection {
   final Map<String, Object?> inputItem;
@@ -126,7 +127,8 @@ OpenAIResponsesNativeToolOutputReplayProjection?
     'type': 'shell_call_output',
     'call_id': part.toolCallId,
     'output': [
-      for (final entry in entries) _projectShellOutputEntry(entry),
+      for (final entry in entries)
+        projectOpenAIResponsesShellReplayOutputEntry(entry),
     ],
   });
 }
@@ -153,32 +155,6 @@ OpenAIResponsesNativeToolOutputReplayProjection?
 String? _replayItemId(PromptPart part) {
   final metadata = openAIPromptPartProviderMetadata(part)?.namespace('openai');
   return openAIRequestAsString(metadata?['itemId']);
-}
-
-Map<String, Object?> _projectShellOutputEntry(Object? value) {
-  final entry = openAIRequestAsMap(value) ?? const <String, Object?>{};
-  final outcome = openAIRequestAsMap(entry['outcome']);
-  return {
-    'stdout': entry['stdout'],
-    'stderr': entry['stderr'],
-    'outcome': _projectShellOutcome(outcome),
-  };
-}
-
-Map<String, Object?>? _projectShellOutcome(Map<String, Object?>? outcome) {
-  final type = openAIRequestAsString(outcome?['type']);
-  if (type == 'timeout') {
-    return const {'type': 'timeout'};
-  }
-
-  if (type == 'exit') {
-    return {
-      'type': 'exit',
-      'exit_code': outcome?['exitCode'] ?? outcome?['exit_code'],
-    };
-  }
-
-  return outcome;
 }
 
 List<Object?> _asList(Object? value) {
