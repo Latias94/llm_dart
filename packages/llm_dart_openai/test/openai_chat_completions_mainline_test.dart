@@ -1439,6 +1439,162 @@ void main() {
       );
     });
 
+    test('chat completions encode OpenAI provider reference image handles',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'chatcmpl_image_provider_ref_1',
+                'model': 'gpt-4.1-mini',
+                'created': 1710000000,
+                'choices': [
+                  {
+                    'index': 0,
+                    'finish_reason': 'stop',
+                    'message': {
+                      'role': 'assistant',
+                      'content': 'Done.',
+                    },
+                  },
+                ],
+                'usage': {
+                  'prompt_tokens': 4,
+                  'completion_tokens': 1,
+                  'total_tokens': 5,
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel(
+        'gpt-4.1-mini',
+        settings: const OpenAIChatModelSettings(
+          useResponsesApi: false,
+        ),
+      );
+
+      await model.doGenerate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage(
+              parts: const [
+                FilePromptPart(
+                  mediaType: 'image/png',
+                  data: FileProviderReferenceData(
+                    ProviderReference({'openai': 'file-img-12345'}),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(
+        requestBody['messages'],
+        [
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'file',
+                'file': {
+                  'file_id': 'file-img-12345',
+                },
+              },
+            ],
+          },
+        ],
+      );
+    });
+
+    test('chat completions encode OpenAI provider reference text handles',
+        () async {
+      TransportRequest? capturedRequest;
+
+      final model = OpenAI(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return TransportResponse(
+              statusCode: 200,
+              body: {
+                'id': 'chatcmpl_text_provider_ref_1',
+                'model': 'gpt-4.1-mini',
+                'created': 1710000000,
+                'choices': [
+                  {
+                    'index': 0,
+                    'finish_reason': 'stop',
+                    'message': {
+                      'role': 'assistant',
+                      'content': 'Done.',
+                    },
+                  },
+                ],
+                'usage': {
+                  'prompt_tokens': 4,
+                  'completion_tokens': 1,
+                  'total_tokens': 5,
+                },
+              },
+            );
+          },
+        ),
+      ).chatModel(
+        'gpt-4.1-mini',
+        settings: const OpenAIChatModelSettings(
+          useResponsesApi: false,
+        ),
+      );
+
+      await model.doGenerate(
+        GenerateTextRequest(
+          prompt: [
+            UserPromptMessage(
+              parts: const [
+                FilePromptPart(
+                  mediaType: 'text/plain',
+                  data: FileProviderReferenceData(
+                    ProviderReference({'openai': 'file-notes-12345'}),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+
+      expect(capturedRequest, isNotNull);
+      final requestBody = capturedRequest!.body as Map<String, Object?>;
+      expect(
+        requestBody['messages'],
+        [
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'file',
+                'file': {
+                  'file_id': 'file-notes-12345',
+                },
+              },
+            ],
+          },
+        ],
+      );
+    });
+
     test(
         'chat completions encode OpenAI image detail through prompt part options',
         () async {
@@ -1563,7 +1719,7 @@ void main() {
           isA<UnsupportedError>().having(
             (error) => error.message,
             'message',
-            contains('PDF file prompt parts need bytes'),
+            contains('PDF file prompt parts require bytes'),
           ),
         ),
       );
@@ -1759,7 +1915,7 @@ void main() {
           isA<UnsupportedError>().having(
             (error) => error.toString(),
             'message',
-            contains('file prompt media type text/plain'),
+            contains('media type text/plain'),
           ),
         ),
       );
@@ -2509,10 +2665,10 @@ void main() {
       expect(
         result.warnings.map((warning) => warning.message),
         containsAll([
-          'Chat-completions replay dropped unsupported assistant part: ReasoningPromptPart.',
-          'Chat-completions replay dropped unsupported assistant part: CustomPromptPart.',
-          'Chat-completions replay dropped unsupported assistant part: ImagePromptPart.',
-          'Chat-completions replay dropped unsupported assistant part: FilePromptPart.',
+          'Chat-completions replay dropped unsupported assistant prompt part: ReasoningPromptPart.',
+          'Chat-completions replay dropped unsupported assistant prompt part: CustomPromptPart.',
+          'Chat-completions replay dropped unsupported assistant prompt part: ImagePromptPart.',
+          'Chat-completions replay dropped unsupported assistant prompt part: FilePromptPart.',
         ]),
       );
     });

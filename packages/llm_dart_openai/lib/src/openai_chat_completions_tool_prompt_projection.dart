@@ -1,5 +1,6 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import 'openai_chat_completions_prompt_limitations.dart';
 import 'openai_chat_completions_request_tool_codec.dart';
 
 final class OpenAIChatCompletionsToolPromptProjection {
@@ -57,12 +58,7 @@ final class OpenAIChatCompletionsToolPromptProjection {
         case ImagePromptPart():
         case FilePromptPart():
           warnings.add(
-            ModelWarning(
-              type: ModelWarningType.unsupported,
-              field: 'prompt.tool.parts',
-              message:
-                  'Chat-completions replay dropped unsupported tool prompt part: ${part.runtimeType}.',
-            ),
+            unsupportedOpenAIChatCompletionsToolPartWarning(part),
           );
       }
     }

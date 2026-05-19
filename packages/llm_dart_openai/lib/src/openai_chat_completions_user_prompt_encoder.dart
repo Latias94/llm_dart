@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import 'openai_chat_completions_prompt_limitations.dart';
 import 'openai_request_encoding_util.dart';
 
 final class OpenAIChatCompletionsUserPromptEncoder {
@@ -59,8 +60,9 @@ final class OpenAIChatCompletionsUserPromptEncoder {
         case ToolApprovalRequestPromptPart():
         case ToolResultPromptPart():
         case ToolApprovalResponsePromptPart():
-          throw UnsupportedError(
-            'Unsupported user prompt part for chat-completions requests: ${part.runtimeType}.',
+          throw unsupportedOpenAIChatCompletionsPromptPart(
+            role: 'user',
+            part: part,
           );
       }
     }
@@ -105,6 +107,15 @@ final class OpenAIChatCompletionsUserPromptEncoder {
     FilePromptPart part, {
     required int index,
   }) {
+    if (_openAIFileId(data: part.data) case final fileId?) {
+      return {
+        'type': 'file',
+        'file': {
+          'file_id': fileId,
+        },
+      };
+    }
+
     if (part.mediaType.startsWith('image/')) {
       return _encodeImageContentPart(
         mediaType: part.mediaType,
@@ -116,16 +127,12 @@ final class OpenAIChatCompletionsUserPromptEncoder {
 
     if (part.mediaType.startsWith('audio/')) {
       if (part.uri != null) {
-        throw UnsupportedError(
-          'OpenAI-family chat-completions audio file prompt parts do not support URIs. Provide bytes instead.',
-        );
+        throw unsupportedOpenAIChatCompletionsAudioFileUri();
       }
 
       final bytes = part.bytes;
       if (bytes == null) {
-        throw UnsupportedError(
-          'OpenAI-family chat-completions audio file prompt parts need bytes.',
-        );
+        throw missingOpenAIChatCompletionsAudioFileData();
       }
 
       return {
@@ -138,26 +145,13 @@ final class OpenAIChatCompletionsUserPromptEncoder {
     }
 
     if (part.mediaType == 'application/pdf') {
-      if (_openAIFileId(data: part.data) case final fileId?) {
-        return {
-          'type': 'file',
-          'file': {
-            'file_id': fileId,
-          },
-        };
-      }
-
       if (part.uri != null) {
-        throw UnsupportedError(
-          'OpenAI-family chat-completions PDF file prompt parts do not support URIs. Provide bytes instead.',
-        );
+        throw unsupportedOpenAIChatCompletionsPdfFileUri();
       }
 
       final bytes = part.bytes;
       if (bytes == null) {
-        throw UnsupportedError(
-          'OpenAI-family chat-completions PDF file prompt parts need bytes.',
-        );
+        throw missingOpenAIChatCompletionsPdfFileData();
       }
 
       return {
@@ -169,9 +163,7 @@ final class OpenAIChatCompletionsUserPromptEncoder {
       };
     }
 
-    throw UnsupportedError(
-      'OpenAI-family chat-completions requests do not support file prompt media type ${part.mediaType}.',
-    );
+    throw unsupportedOpenAIChatCompletionsUserFileMediaType(part.mediaType);
   }
 
   String _encodeAudioFormat(String mediaType) {
@@ -179,9 +171,7 @@ final class OpenAIChatCompletionsUserPromptEncoder {
       'audio/wav' => 'wav',
       'audio/mpeg' => 'mp3',
       'audio/mp3' => 'mp3',
-      _ => throw UnsupportedError(
-          'OpenAI-family chat-completions requests do not support audio file media type $mediaType.',
-        ),
+      _ => throw unsupportedOpenAIChatCompletionsAudioMediaType(mediaType),
     };
   }
 
@@ -203,8 +193,9 @@ String joinOpenAIChatCompletionsTextParts({
   final buffer = StringBuffer();
   for (final part in parts) {
     if (part is! TextPromptPart) {
-      throw UnsupportedError(
-        'OpenAI-family chat-completions requests only support text $role prompt parts for now. Received ${part.runtimeType}.',
+      throw unsupportedOpenAIChatCompletionsPromptPart(
+        role: role,
+        part: part,
       );
     }
 
