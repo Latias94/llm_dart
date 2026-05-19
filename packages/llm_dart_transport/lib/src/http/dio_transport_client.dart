@@ -9,7 +9,9 @@ import '../common/transport_exception.dart';
 import '../common/transport_retry.dart';
 import 'dio_cancellation_adapter.dart';
 import 'dio_response_stream.dart';
-import 'log_sanitizer.dart';
+import 'dio_transport_diagnostics_support.dart';
+import 'dio_transport_error_mapper.dart';
+import 'dio_transport_response_support.dart';
 import 'transport_client.dart';
 
 final class DioTransportClient implements TransportClient {
@@ -18,6 +20,8 @@ final class DioTransportClient implements TransportClient {
   final TransportDiagnostics? _diagnostics;
   final TransportDiagnosticsOptions _diagnosticsOptions;
   final TransportRetryPolicy _retryPolicy;
+  final DioTransportResponseSupport _responseSupport =
+      const DioTransportResponseSupport();
 
   static final Object _retryDelaySentinel = Object();
 
@@ -42,6 +46,16 @@ final class DioTransportClient implements TransportClient {
   /// Exposes the underlying Dio instance for compatibility adapters.
   Dio get dio => _dio;
 
+  late final DioTransportDiagnosticsSupport _diagnosticsSupport =
+      DioTransportDiagnosticsSupport(
+    diagnostics: _diagnostics,
+    options: _diagnosticsOptions,
+  );
+  late final DioTransportErrorMapper _errorMapper = DioTransportErrorMapper(
+    logger: _logger,
+    responseSupport: _responseSupport,
+  );
+
   @override
   Future<TransportResponse> send(TransportRequest request) async {
     return _executeWithRetry(
@@ -53,18 +67,19 @@ final class DioTransportClient implements TransportClient {
           data: request.body,
           cancelToken: cancelToken,
           options: Options(
-            method: _toDioMethod(request.method),
+            method: _responseSupport.toDioMethod(request.method),
             headers: request.headers,
-            responseType: _toDioResponseType(request.responseType),
+            responseType:
+                _responseSupport.toDioResponseType(request.responseType),
             connectTimeout: request.timeout,
             sendTimeout: request.timeout,
             receiveTimeout: request.timeout,
           ),
         );
 
-        final headers = _flattenHeaders(response.headers.map);
+        final headers = _responseSupport.flattenHeaders(response.headers.map);
 
-        if (!_isSuccessStatus(response.statusCode)) {
+        if (!_responseSupport.isSuccessStatus(response.statusCode)) {
           throw TransportHttpException(
             'HTTP request failed with status ${response.statusCode}',
             statusCode: response.statusCode ?? 0,
@@ -81,7 +96,7 @@ final class DioTransportClient implements TransportClient {
         );
         return _TransportAttemptSuccess(
           value: result,
-          response: _createResponseInfo(
+          response: _diagnosticsSupport.createResponseInfo(
             statusCode: result.statusCode,
             headers: result.headers,
             body: result.body,
@@ -104,7 +119,7 @@ final class DioTransportClient implements TransportClient {
           data: request.body,
           cancelToken: cancelToken,
           options: Options(
-            method: _toDioMethod(request.method),
+            method: _responseSupport.toDioMethod(request.method),
             headers: request.headers,
             responseType: ResponseType.stream,
             connectTimeout: request.timeout,
@@ -113,14 +128,14 @@ final class DioTransportClient implements TransportClient {
           ),
         );
 
-        final headers = _flattenHeaders(response.headers.map);
+        final headers = _responseSupport.flattenHeaders(response.headers.map);
 
-        if (!_isSuccessStatus(response.statusCode)) {
+        if (!_responseSupport.isSuccessStatus(response.statusCode)) {
           throw TransportHttpException(
             'HTTP stream request failed with status ${response.statusCode}',
             statusCode: response.statusCode ?? 0,
             headers: headers,
-            responseBody: await _readErrorBody(response.data),
+            responseBody: await _errorMapper.readErrorBody(response.data),
             uri: request.uri,
           );
         }
@@ -138,7 +153,7 @@ final class DioTransportClient implements TransportClient {
 
         return _TransportAttemptSuccess(
           value: result,
-          response: _createResponseInfo(
+          response: _diagnosticsSupport.createResponseInfo(
             statusCode: result.statusCode,
             headers: result.headers,
             body: responseBody,
@@ -157,14 +172,14 @@ final class DioTransportClient implements TransportClient {
     ) sendAttempt,
   }) async {
     final retryPolicy = _effectiveRetryPolicy(request);
-    final requestInfo = _createRequestInfo(
+    final requestInfo = _diagnosticsSupport.createRequestInfo(
       request,
       isStreaming: isStreaming,
       retryPolicy: retryPolicy,
     );
     for (var attempt = 1; true; attempt++) {
       final startedAt = DateTime.now();
-      _emitDiagnostics(
+      _diagnosticsSupport.emit(
         TransportDiagnosticsEvent(
           kind: TransportDiagnosticsEventKind.requestStart,
           request: requestInfo,
@@ -178,7 +193,7 @@ final class DioTransportClient implements TransportClient {
         final cancelToken = bindDioCancellation(request.cancellation);
         final success = await sendAttempt(cancelToken);
         final finishedAt = DateTime.now();
-        _emitDiagnostics(
+        _diagnosticsSupport.emit(
           TransportDiagnosticsEvent(
             kind: TransportDiagnosticsEventKind.requestSuccess,
             request: requestInfo,
@@ -190,7 +205,7 @@ final class DioTransportClient implements TransportClient {
         );
         return success.value;
       } on DioException catch (error) {
-        final mapped = await _mapDioException(
+        final mapped = await _errorMapper.mapDioException(
           error,
           uri: request.uri,
         );
@@ -249,11 +264,11 @@ final class DioTransportClient implements TransportClient {
     required TransportRetryPolicy retryPolicy,
   }) async {
     final finishedAt = DateTime.now();
-    _emitDiagnostics(
+    _diagnosticsSupport.emit(
       TransportDiagnosticsEvent(
         kind: TransportDiagnosticsEventKind.requestFailure,
         request: requestInfo,
-        response: _responseInfoFromError(error),
+        response: _diagnosticsSupport.responseInfoFromError(error),
         error: error,
         timestamp: finishedAt,
         duration: finishedAt.difference(startedAt),
@@ -287,73 +302,6 @@ final class DioTransportClient implements TransportClient {
     return _retryPolicy.withRequestMaxRetries(maxRetries);
   }
 
-  TransportDiagnosticsRequestInfo _createRequestInfo(
-    TransportRequest request, {
-    required bool isStreaming,
-    required TransportRetryPolicy retryPolicy,
-  }) {
-    final headerNames = request.headers.keys.toList(growable: false)..sort();
-    return TransportDiagnosticsRequestInfo(
-      uri: request.uri,
-      method: request.method,
-      responseType: request.responseType,
-      timeout: request.timeout,
-      maxRetries: retryPolicy.maxRetries,
-      isStreaming: isStreaming,
-      hasBody: request.body != null,
-      bodyType: request.body?.runtimeType.toString(),
-      headerNames: headerNames,
-      headers: _diagnosticsOptions.includeHeaders
-          ? _sanitizeHeaders(request.headers)
-          : null,
-      body: _diagnosticsOptions.includeRequestBody
-          ? _diagnosticsOptions.sanitizeBody(request.body)
-          : null,
-    );
-  }
-
-  TransportDiagnosticsResponseInfo _createResponseInfo({
-    required int statusCode,
-    required Map<String, String> headers,
-    required Object? body,
-    bool includeBody = true,
-  }) {
-    final headerNames = headers.keys.toList(growable: false)..sort();
-    return TransportDiagnosticsResponseInfo(
-      statusCode: statusCode,
-      headerNames: headerNames,
-      bodyType: body?.runtimeType.toString(),
-      headers:
-          _diagnosticsOptions.includeHeaders ? _sanitizeHeaders(headers) : null,
-      body: includeBody && _diagnosticsOptions.includeResponseBody
-          ? _diagnosticsOptions.sanitizeBody(body)
-          : null,
-    );
-  }
-
-  TransportDiagnosticsResponseInfo? _responseInfoFromError(Object error) {
-    if (error is! TransportHttpException) {
-      return null;
-    }
-
-    return _createResponseInfo(
-      statusCode: error.statusCode,
-      headers: error.headers,
-      body: error.responseBody,
-    );
-  }
-
-  void _emitDiagnostics(TransportDiagnosticsEvent event) {
-    _diagnostics?.onEvent(event);
-  }
-
-  Map<String, String> _sanitizeHeaders(Map<String, String> headers) {
-    final sanitized = LogSanitizer.sanitizeHeaders(headers);
-    return sanitized.map(
-      (key, value) => MapEntry(key, value?.toString() ?? ''),
-    );
-  }
-
   Future<void> _waitForRetryDelay(
     Duration delay,
     TransportCancellation? cancellation,
@@ -375,96 +323,6 @@ final class DioTransportClient implements TransportClient {
     if (!identical(result, _retryDelaySentinel)) {
       throw TransportCancelledException(result);
     }
-  }
-
-  Future<Object> _mapDioException(
-    DioException error, {
-    required Uri uri,
-  }) async {
-    if (CancelToken.isCancel(error)) {
-      return TransportCancelledException(error.message);
-    }
-
-    switch (error.type) {
-      case DioExceptionType.connectionTimeout:
-      case DioExceptionType.sendTimeout:
-      case DioExceptionType.receiveTimeout:
-        return TransportTimeoutException(
-          error.message ?? 'Transport request timed out',
-          uri: uri,
-          cause: error,
-        );
-      case DioExceptionType.badResponse:
-        return TransportHttpException(
-          error.message ?? 'HTTP request failed',
-          statusCode: error.response?.statusCode ?? 0,
-          headers: _flattenHeaders(
-            error.response?.headers.map ?? const <String, List<String>>{},
-          ),
-          responseBody: await _readErrorBody(error.response?.data),
-          uri: uri,
-          cause: error,
-        );
-      case DioExceptionType.badCertificate:
-      case DioExceptionType.connectionError:
-      case DioExceptionType.unknown:
-        return TransportNetworkException(
-          error.message ?? 'Transport network error',
-          uri: uri,
-          cause: error,
-        );
-      case DioExceptionType.cancel:
-        return TransportCancelledException(error.message);
-    }
-  }
-
-  Future<Object?> _readErrorBody(Object? data) async {
-    if (data is ResponseBody) {
-      try {
-        final content = await collectDioResponseTextBody(data);
-        if (content.isEmpty) {
-          return null;
-        }
-        return content;
-      } catch (error, stackTrace) {
-        _logger.fine('Failed to read error response body: $error');
-        _logger.finer(stackTrace.toString());
-        return null;
-      }
-    }
-
-    return data;
-  }
-
-  static ResponseType _toDioResponseType(TransportResponseType responseType) {
-    return switch (responseType) {
-      TransportResponseType.json => ResponseType.json,
-      TransportResponseType.plainText => ResponseType.plain,
-      TransportResponseType.bytes => ResponseType.bytes,
-    };
-  }
-
-  static String _toDioMethod(TransportMethod method) {
-    return switch (method) {
-      TransportMethod.get => 'GET',
-      TransportMethod.post => 'POST',
-      TransportMethod.put => 'PUT',
-      TransportMethod.patch => 'PATCH',
-      TransportMethod.delete => 'DELETE',
-    };
-  }
-
-  static Map<String, String> _flattenHeaders(
-      Map<String, List<String>> headers) {
-    return Map<String, String>.fromEntries(
-      headers.entries.map(
-        (entry) => MapEntry(entry.key, entry.value.join(',')),
-      ),
-    );
-  }
-
-  static bool _isSuccessStatus(int? statusCode) {
-    return statusCode != null && statusCode >= 200 && statusCode < 300;
   }
 }
 
