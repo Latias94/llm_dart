@@ -1,4 +1,5 @@
 import 'openai_generate_text_options.dart';
+import 'openai_native_tools.dart';
 
 final class OpenAIResponsesResolvedIncludeOptions {
   final List<String>? include;
@@ -47,6 +48,10 @@ List<String>? _resolveOpenAIResponsesInclude(
     values.add(OpenAIResponsesInclude.messageOutputTextLogprobs.value);
   }
 
+  if (_hasOpenAIWebSearchTool(providerOptions.builtInTools)) {
+    values.add(OpenAIResponsesInclude.webSearchCallActionSources.value);
+  }
+
   if (!store && isReasoningModel) {
     values.add(OpenAIResponsesInclude.reasoningEncryptedContent.value);
   }
@@ -56,6 +61,10 @@ List<String>? _resolveOpenAIResponsesInclude(
   }
 
   return values.toList(growable: false);
+}
+
+bool _hasOpenAIWebSearchTool(List<OpenAIBuiltInTool>? builtInTools) {
+  return builtInTools?.any((tool) => tool is OpenAIWebSearchTool) ?? false;
 }
 
 int? _encodeOpenAIResponsesTopLogProbs(OpenAILogProbs? logprobs) {

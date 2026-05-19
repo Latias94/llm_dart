@@ -52,7 +52,11 @@ void main() {
           metadata: {'tenant': 'demo'},
           truncation: OpenAIResponseTruncation.auto,
           user: 'user_1',
-          include: [OpenAIResponsesInclude.fileSearchCallResults],
+          include: [
+            OpenAIResponsesInclude.fileSearchCallResults,
+            OpenAIResponsesInclude.webSearchCallActionSources,
+          ],
+          builtInTools: [OpenAIWebSearchTool.current()],
           promptCacheKey: 'cache_key',
           promptCacheRetention: OpenAIPromptCacheRetention.inMemory,
           safetyIdentifier: 'safe_1',
@@ -91,7 +95,11 @@ void main() {
           metadata: {'tenant': 'demo'},
           truncation: OpenAIResponseTruncation.auto,
           user: 'user_1',
-          include: [OpenAIResponsesInclude.fileSearchCallResults],
+          include: [
+            OpenAIResponsesInclude.fileSearchCallResults,
+            OpenAIResponsesInclude.webSearchCallActionSources,
+          ],
+          builtInTools: [OpenAIWebSearchTool.current()],
           promptCacheKey: 'cache_key',
           promptCacheRetention: OpenAIPromptCacheRetention.inMemory,
           safetyIdentifier: 'safe_1',
@@ -130,6 +138,7 @@ void main() {
         body['include'],
         [
           'file_search_call.results',
+          'web_search_call.action.sources',
           'message.output_text.logprobs',
           'reasoning.encrypted_content',
         ],
@@ -163,6 +172,35 @@ void main() {
           'topP',
         ]),
       );
+    });
+
+    test('auto-includes web search sources without duplicating user include',
+        () {
+      const projection = OpenAIResponsesRequestBodyProjection();
+      final warnings = <ModelWarning>[];
+      final context = projection.resolveContext(
+        modelId: 'gpt-4.1-mini',
+        providerOptions: const OpenAIGenerateTextOptions(
+          include: [OpenAIResponsesInclude.webSearchCallActionSources],
+          builtInTools: [OpenAIWebSearchTool.current()],
+        ),
+      );
+
+      final body = projection.encodeBody(
+        modelId: 'gpt-4.1-mini',
+        input: const [],
+        options: const GenerateTextOptions(),
+        providerOptions: const OpenAIGenerateTextOptions(
+          include: [OpenAIResponsesInclude.webSearchCallActionSources],
+          builtInTools: [OpenAIWebSearchTool.current()],
+        ),
+        stream: false,
+        context: context,
+        warnings: warnings,
+      );
+
+      expect(body['include'], ['web_search_call.action.sources']);
+      expect(warnings, isEmpty);
     });
 
     test('warns and drops unsupported service tiers', () {

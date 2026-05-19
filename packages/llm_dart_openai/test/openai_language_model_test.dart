@@ -445,6 +445,12 @@ void main() {
         ],
       );
       expect(
+        requestBody['include'],
+        [
+          'web_search_call.action.sources',
+        ],
+      );
+      expect(
         requestBody['tool_choice'],
         {
           'type': 'function',
@@ -1837,6 +1843,7 @@ void main() {
         requestBody['include'],
         [
           'message.output_text.logprobs',
+          'web_search_call.action.sources',
         ],
       );
       expect(requestBody['top_logprobs'], 20);
