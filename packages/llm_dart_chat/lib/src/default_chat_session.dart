@@ -1,8 +1,6 @@
 import 'dart:async';
 
 import 'package:llm_dart_ai/llm_dart_ai.dart';
-import 'package:llm_dart_transport/llm_dart_transport.dart'
-    show transportErrorToModelError;
 
 import 'chat_input.dart';
 import 'chat_request_options.dart';
@@ -13,24 +11,22 @@ import 'chat_state.dart';
 import 'chat_session_tool_support.dart';
 import 'chat_tool_output_support.dart';
 import 'chat_transport.dart';
+import 'default_chat_session_active_turn.dart';
+import 'default_chat_session_support.dart';
+import 'default_chat_session_tool_execution.dart';
 import 'tool_execution_registry.dart';
-
-typedef MessageIdGenerator = String Function();
 
 final class DefaultChatSession implements ChatSession {
   final ChatTransport transport;
   final ChatOnToolCall? onToolCall;
+  late final DefaultChatSessionActiveTurn _activeTurn;
+  late final DefaultChatSessionToolExecutionScheduler _toolExecutionScheduler;
   final StreamController<ChatState> _statesController;
   final StreamController<DataUiPart<Object?>> _transientDataPartsController;
   final List<PromptMessage> _promptHistory = [];
   final MessageIdGenerator _messageIdGenerator;
-  final Set<String> _scheduledToolExecutionKeys = <String>{};
 
   ChatState _state;
-  StreamSubscription<ChatUiStreamChunk>? _activeSubscription;
-  ChatUiStreamReader? _activeStreamReader;
-  Completer<void>? _activeCompletion;
-  int _activePromptAppendStartIndex = 0;
   bool _isDisposed = false;
 
   DefaultChatSession({
@@ -42,7 +38,7 @@ final class DefaultChatSession implements ChatSession {
     ToolExecutionRegistry? toolExecutionRegistry,
   }) : this._(
           transport: transport,
-          onToolCall: _resolveToolExecutionCallback(
+          onToolCall: resolveChatToolExecutionCallback(
             onToolCall: onToolCall,
             toolExecutionRegistry: toolExecutionRegistry,
           ),
@@ -65,7 +61,7 @@ final class DefaultChatSession implements ChatSession {
     ToolExecutionRegistry? toolExecutionRegistry,
   }) : this._(
           transport: transport,
-          onToolCall: _resolveToolExecutionCallback(
+          onToolCall: resolveChatToolExecutionCallback(
             onToolCall: onToolCall,
             toolExecutionRegistry: toolExecutionRegistry,
           ),
@@ -85,15 +81,15 @@ final class DefaultChatSession implements ChatSession {
     ToolExecutionRegistry? toolExecutionRegistry,
   }) : this._(
           transport: transport,
-          onToolCall: _resolveToolExecutionCallback(
+          onToolCall: resolveChatToolExecutionCallback(
             onToolCall: onToolCall,
             toolExecutionRegistry: toolExecutionRegistry,
           ),
           initialState: ChatState(
             chatId: snapshot.chatId,
             messages: snapshot.messages,
-            status: _normalizeRestoredStatus(snapshot.status),
-            error: _normalizeRestoredError(snapshot.status, snapshot.error),
+            status: normalizeRestoredChatStatus(snapshot.status),
+            error: normalizeRestoredChatError(snapshot.status, snapshot.error),
           ),
           initialPrompt: snapshot.prompt,
           messageIdGenerator: messageIdGenerator,
@@ -109,10 +105,26 @@ final class DefaultChatSession implements ChatSession {
         _transientDataPartsController =
             StreamController<DataUiPart<Object?>>.broadcast(sync: true),
         _messageIdGenerator = messageIdGenerator ??
-            _sequentialMessageId(
+            sequentialChatMessageId(
               existingIds: initialState.messages.map((message) => message.id),
             ),
         _state = initialState {
+    _activeTurn = DefaultChatSessionActiveTurn(
+      readState: () => _state,
+      emitState: _emitState,
+      upsertAssistantMessage: _upsertAssistantMessage,
+      appendAssistantPromptIfPresent: _appendAssistantPromptIfPresent,
+      emitTransientDataPart: _emitTransientDataPart,
+      scheduleAutomaticToolExecution: _maybeScheduleAutomaticToolExecution,
+      mapError: chatSessionErrorToModelError,
+    );
+    _toolExecutionScheduler = DefaultChatSessionToolExecutionScheduler(
+      onToolCall: onToolCall,
+      isDisposed: () => _isDisposed,
+      hasActiveTurn: () => _activeTurn.hasActiveTurn,
+      readState: () => _state,
+      applyToolOutput: addToolOutput,
+    );
     _promptHistory.addAll(initialPrompt);
     _maybeScheduleAutomaticToolExecution();
   }
@@ -267,9 +279,7 @@ final class DefaultChatSession implements ChatSession {
   Future<void> addDataPart<T>(DataUiPart<T> part) async {
     _ensureUsable();
 
-    final streamReader = _activeStreamReader;
-    if (streamReader != null) {
-      _upsertAssistantMessage(streamReader.applyDataPart(part));
+    if (_activeTurn.applyDataPart(part)) {
       return;
     }
 
@@ -410,7 +420,7 @@ final class DefaultChatSession implements ChatSession {
       ),
     );
 
-    await _consumeAssistantStream(
+    await _activeTurn.consume(
       stream: stream,
       assistantMessageId: previousAssistantMessage?.id ?? _messageIdGenerator(),
       promptAppendStartIndex: 0,
@@ -420,42 +430,7 @@ final class DefaultChatSession implements ChatSession {
   @override
   Future<void> stop() async {
     _ensureUsable();
-
-    final subscription = _activeSubscription;
-    if (subscription == null) {
-      return;
-    }
-
-    final streamReader = _activeStreamReader;
-    if (streamReader != null) {
-      final abortedMessage = streamReader.applyEvent(
-        const AbortEvent(),
-      );
-      _upsertAssistantMessage(abortedMessage);
-      final assistantMessage = streamReader.applyEvent(
-        const FinishEvent(
-          finishReason: FinishReason.aborted,
-        ),
-      );
-      _upsertAssistantMessage(assistantMessage);
-      _appendAssistantPromptIfPresent(
-        assistantMessage,
-        startPartIndex: _activePromptAppendStartIndex,
-      );
-    }
-
-    await subscription.cancel();
-    final completion = _activeCompletion;
-    _clearActiveTurn();
-    _emitState(
-      _state.copyWith(
-        status: ChatStatus.ready,
-        error: null,
-      ),
-    );
-    if (completion != null && !completion.isCompleted) {
-      completion.complete();
-    }
+    await _activeTurn.stop();
   }
 
   @override
@@ -472,7 +447,7 @@ final class DefaultChatSession implements ChatSession {
   @override
   ChatSessionSnapshot exportSnapshot() {
     _ensureUsable();
-    if (_activeSubscription != null) {
+    if (_activeTurn.hasActiveTurn) {
       throw StateError(
         'Cannot export a chat snapshot while an assistant turn is still active.',
       );
@@ -493,12 +468,7 @@ final class DefaultChatSession implements ChatSession {
       return;
     }
 
-    await _activeSubscription?.cancel();
-    final completion = _activeCompletion;
-    if (completion != null && !completion.isCompleted) {
-      completion.complete();
-    }
-    _clearActiveTurn();
+    await _activeTurn.dispose();
     _isDisposed = true;
     if (!_transientDataPartsController.isClosed) {
       await _transientDataPartsController.close();
@@ -527,144 +497,13 @@ final class DefaultChatSession implements ChatSession {
       ),
     );
 
-    await _consumeAssistantStream(
+    await _activeTurn.consume(
       stream: stream,
       assistantMessageId: seedAssistantMessage?.id ?? _messageIdGenerator(),
       seedAssistantMessage: seedAssistantMessage,
       promptAppendStartIndex: seedAssistantMessage?.parts.length ?? 0,
       syntheticStepStartOnSeed: true,
     );
-  }
-
-  Future<void> _consumeAssistantStream({
-    required Stream<ChatUiStreamChunk> stream,
-    required String assistantMessageId,
-    required int promptAppendStartIndex,
-    ChatUiMessage? seedAssistantMessage,
-    bool syntheticStepStartOnSeed = true,
-  }) async {
-    final streamReader = ChatUiStreamReader(
-      messageId: assistantMessageId,
-      seedMessage: seedAssistantMessage,
-    );
-    final completion = Completer<void>();
-    var completed = false;
-    ChatUiMessage? latestAssistantMessage;
-
-    _activeStreamReader = streamReader;
-    _activeCompletion = completion;
-    _activePromptAppendStartIndex = promptAppendStartIndex;
-
-    if (seedAssistantMessage != null && syntheticStepStartOnSeed) {
-      latestAssistantMessage = streamReader.applyEvent(
-        const StepStartEvent(),
-      );
-      _upsertAssistantMessage(latestAssistantMessage);
-    }
-
-    void failAssistantTurn(Object error, StackTrace stackTrace) {
-      if (_activeCompletion != completion || completed) {
-        return;
-      }
-
-      completed = true;
-      streamReader.close();
-      unawaited(_activeSubscription?.cancel());
-      _clearActiveTurn();
-      _emitState(
-        _state.copyWith(
-          status: ChatStatus.error,
-          error: _chatSessionErrorToModelError(error),
-        ),
-      );
-      if (!completion.isCompleted) {
-        completion.complete();
-      }
-    }
-
-    _activeSubscription = stream.listen(
-      (chunk) {
-        try {
-          final projectedMessage = streamReader.applyChunk(chunk);
-          switch (chunk) {
-            case ChatUiTransientDataPartChunk(:final part):
-              _emitTransientDataPart(
-                DataUiPart<Object?>(
-                  id: part.id,
-                  key: part.key,
-                  data: part.data,
-                ),
-              );
-            case ChatUiEventChunk(:final event):
-              latestAssistantMessage = projectedMessage;
-              _upsertAssistantMessage(projectedMessage);
-
-              if (event is ErrorEvent) {
-                completed = true;
-                streamReader.close();
-                unawaited(_activeSubscription?.cancel());
-                _clearActiveTurn();
-                _emitState(
-                  _state.copyWith(
-                    status: ChatStatus.error,
-                    error: event.error,
-                  ),
-                );
-                if (!completion.isCompleted) {
-                  completion.complete();
-                }
-                return;
-              }
-
-              if (event is FinishEvent) {
-                // Wait for the stream to close so trailing message-metadata or
-                // message-finish chunks can still patch the final assistant
-                // message before the session transitions out of the active turn.
-              }
-            case ChatUiDataPartChunk() ||
-                  ChatUiMessageStartChunk() ||
-                  ChatUiMessageMetadataChunk() ||
-                  ChatUiMessageFinishChunk():
-              latestAssistantMessage = projectedMessage;
-              _upsertAssistantMessage(projectedMessage);
-          }
-        } catch (error, stackTrace) {
-          failAssistantTurn(error, stackTrace);
-        }
-      },
-      onError: (error, stackTrace) {
-        failAssistantTurn(error, stackTrace);
-      },
-      onDone: () {
-        if (completed || _activeCompletion != completion) {
-          return;
-        }
-
-        streamReader.close();
-
-        if (latestAssistantMessage != null) {
-          _appendAssistantPromptIfPresent(
-            latestAssistantMessage!,
-            startPartIndex: promptAppendStartIndex,
-          );
-        }
-
-        _clearActiveTurn();
-        _emitState(
-          _state.copyWith(
-            status: chatDeriveCompletionStatus(latestAssistantMessage),
-            error: null,
-          ),
-        );
-        _maybeScheduleAutomaticToolExecution();
-        if (!completion.isCompleted) {
-          completion.complete();
-        }
-      },
-      cancelOnError: false,
-    );
-
-    await completion.future;
   }
 
   void _appendAssistantPromptIfPresent(
@@ -709,109 +548,8 @@ final class DefaultChatSession implements ChatSession {
     }
   }
 
-  void _clearActiveTurn() {
-    _activeSubscription = null;
-    _activeStreamReader = null;
-    _activeCompletion = null;
-    _activePromptAppendStartIndex = 0;
-  }
-
   void _maybeScheduleAutomaticToolExecution() {
-    final handler = onToolCall;
-    if (handler == null ||
-        _isDisposed ||
-        _activeSubscription != null ||
-        _state.status != ChatStatus.awaitingTool) {
-      return;
-    }
-
-    final assistantMessage = _latestAssistantMessageOrNull();
-    if (assistantMessage == null) {
-      return;
-    }
-
-    for (final part in chatPendingAutomaticToolParts(assistantMessage)) {
-      final executionKey =
-          _toolExecutionKey(assistantMessage.id, part.toolCallId);
-      if (!_scheduledToolExecutionKeys.add(executionKey)) {
-        continue;
-      }
-
-      final request = ToolExecutionRequest(
-        chatId: _state.chatId,
-        messageId: assistantMessage.id,
-        toolCallId: part.toolCallId,
-        toolName: part.toolName,
-        input: part.input,
-        inputText: part.inputText,
-        isDynamic: part.isDynamic,
-        title: part.title,
-        approval: part.approval,
-        callProviderMetadata: part.callProviderMetadata,
-      );
-
-      unawaited(_runAutomaticToolExecution(handler, request));
-    }
-  }
-
-  Future<void> _runAutomaticToolExecution(
-    ChatOnToolCall handler,
-    ToolExecutionRequest request,
-  ) async {
-    ToolExecutionResult? result;
-
-    try {
-      result = await handler(request);
-    } catch (error) {
-      result = ToolExecutionResult.error(
-        'Automatic tool execution failed for "${request.toolName}": $error',
-      );
-    }
-
-    if (result == null || !_canApplyAutomaticToolOutput(request.toolCallId)) {
-      return;
-    }
-
-    try {
-      await addToolOutput(
-        ToolOutputUpdate(
-          toolCallId: request.toolCallId,
-          toolName: request.toolName,
-          toolOutput: result.toolOutput,
-          options: result.options,
-        ),
-      );
-    } on StateError {
-      if (_canApplyAutomaticToolOutput(request.toolCallId)) {
-        rethrow;
-      }
-    }
-  }
-
-  bool _canApplyAutomaticToolOutput(String toolCallId) {
-    if (_isDisposed ||
-        _activeSubscription != null ||
-        _state.status != ChatStatus.awaitingTool) {
-      return false;
-    }
-
-    final assistantMessage = _latestAssistantMessageOrNull();
-    if (assistantMessage == null) {
-      return false;
-    }
-
-    for (final part in assistantMessage.parts.whereType<ToolUiPart>()) {
-      if (part.toolCallId != toolCallId) {
-        continue;
-      }
-
-      return !part.providerExecuted &&
-          (part.state == ToolUiPartState.inputAvailable ||
-              part.state == ToolUiPartState.inputStreaming ||
-              part.state == ToolUiPartState.approvalResponded);
-    }
-
-    return false;
+    _toolExecutionScheduler.maybeSchedule();
   }
 
   void _ensureUsable() {
@@ -820,17 +558,8 @@ final class DefaultChatSession implements ChatSession {
     }
   }
 
-  ChatUiMessage? _latestAssistantMessageOrNull() {
-    if (_state.messages.isEmpty ||
-        _state.messages.last.role != ChatUiRole.assistant) {
-      return null;
-    }
-
-    return _state.messages.last;
-  }
-
   void _ensureIdle(String operation) {
-    if (_activeSubscription != null) {
+    if (_activeTurn.hasActiveTurn) {
       throw StateError(
         'Cannot call $operation while another assistant turn is still active.',
       );
@@ -857,56 +586,4 @@ final class DefaultChatSession implements ChatSession {
     messages[messages.length - 1] = assistantMessage;
     return messages;
   }
-}
-
-ChatStatus _normalizeRestoredStatus(ChatStatus status) {
-  return switch (status) {
-    ChatStatus.submitting || ChatStatus.streaming => ChatStatus.ready,
-    _ => status,
-  };
-}
-
-ModelError? _normalizeRestoredError(ChatStatus status, ModelError? error) {
-  return _normalizeRestoredStatus(status) == ChatStatus.error ? error : null;
-}
-
-ModelError _chatSessionErrorToModelError(Object error) {
-  return switch (error) {
-    ChatUiStreamError() => error.toModelError(),
-    _ => transportErrorToModelError(error),
-  };
-}
-
-MessageIdGenerator _sequentialMessageId({
-  Iterable<String> existingIds = const [],
-}) {
-  final reservedIds = existingIds.toSet();
-  var index = 0;
-
-  return () {
-    while (true) {
-      final value = 'msg-$index';
-      index += 1;
-      if (reservedIds.add(value)) {
-        return value;
-      }
-    }
-  };
-}
-
-String _toolExecutionKey(String messageId, String toolCallId) {
-  return '$messageId\u0000$toolCallId';
-}
-
-ChatOnToolCall? _resolveToolExecutionCallback({
-  ChatOnToolCall? onToolCall,
-  ToolExecutionRegistry? toolExecutionRegistry,
-}) {
-  if (onToolCall != null && toolExecutionRegistry != null) {
-    throw ArgumentError(
-      'Provide either onToolCall or toolExecutionRegistry, not both.',
-    );
-  }
-
-  return onToolCall ?? toolExecutionRegistry?.call;
 }
