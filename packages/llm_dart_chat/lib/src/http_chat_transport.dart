@@ -1,95 +1,24 @@
-import 'dart:async';
-
 import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
-import 'chat_request_options.dart';
 import 'chat_transport.dart';
-import 'http_chat_transport_chunk.dart';
 import 'http_chat_transport_chunk_json_codec.dart';
 import 'http_chat_transport_request_json_codec.dart';
 import 'http_chat_transport_request_payload.dart';
+import 'http_chat_transport_request_support.dart';
+import 'http_chat_transport_resume_state.dart';
+import 'http_chat_transport_stream_projection.dart';
 import 'http_chat_transport_stream_protocol.dart';
 
-typedef PrepareSendMessagesRequest
-    = FutureOr<HttpChatTransportPreparedSendMessagesRequest?> Function(
-  HttpChatTransportSendMessagesRequestContext context,
-);
-
-typedef PrepareReconnectRequest
-    = FutureOr<HttpChatTransportPreparedReconnectRequest?> Function(
-  HttpChatTransportReconnectRequestContext context,
-);
-
-typedef HttpChatTransportProviderOptionsEncoder = Map<String, Object?> Function(
-  ProviderInvocationOptions providerOptions,
-);
-
-final class HttpChatTransportSendMessagesRequestContext {
-  final ChatTransportRequest request;
-  final Uri endpoint;
-  final Map<String, String> headers;
-  final Duration? requestTimeout;
-  final HttpChatTransportRequestPayload payload;
-
-  const HttpChatTransportSendMessagesRequestContext({
-    required this.request,
-    required this.endpoint,
-    required this.headers,
-    required this.requestTimeout,
-    required this.payload,
-  });
-}
-
-final class HttpChatTransportPreparedSendMessagesRequest {
-  final Uri? endpoint;
-  final Map<String, String>? headers;
-  final Duration? requestTimeout;
-  final bool overrideRequestTimeout;
-  final HttpChatTransportRequestPayload? payload;
-
-  const HttpChatTransportPreparedSendMessagesRequest({
-    this.endpoint,
-    this.headers,
-    this.requestTimeout,
-    this.overrideRequestTimeout = false,
-    this.payload,
-  });
-}
-
-final class HttpChatTransportReconnectRequestContext {
-  final String chatId;
-  final String resumeToken;
-  final Uri endpoint;
-  final Map<String, String> headers;
-  final Duration? requestTimeout;
-  final HttpChatTransportReconnectRequestPayload payload;
-
-  const HttpChatTransportReconnectRequestContext({
-    required this.chatId,
-    required this.resumeToken,
-    required this.endpoint,
-    required this.headers,
-    required this.requestTimeout,
-    required this.payload,
-  });
-}
-
-final class HttpChatTransportPreparedReconnectRequest {
-  final Uri? endpoint;
-  final Map<String, String>? headers;
-  final Duration? requestTimeout;
-  final bool overrideRequestTimeout;
-  final HttpChatTransportReconnectRequestPayload? payload;
-
-  const HttpChatTransportPreparedReconnectRequest({
-    this.endpoint,
-    this.headers,
-    this.requestTimeout,
-    this.overrideRequestTimeout = false,
-    this.payload,
-  });
-}
+export 'http_chat_transport_request_support.dart'
+    show
+        HttpChatTransportPreparedReconnectRequest,
+        HttpChatTransportPreparedSendMessagesRequest,
+        HttpChatTransportProviderOptionsEncoder,
+        HttpChatTransportReconnectRequestContext,
+        HttpChatTransportSendMessagesRequestContext,
+        PrepareReconnectRequest,
+        PrepareSendMessagesRequest;
 
 final class HttpChatTransport implements ChatTransport {
   final Uri endpoint;
@@ -103,7 +32,7 @@ final class HttpChatTransport implements ChatTransport {
   final HttpChatTransportProviderOptionsEncoder? providerOptionsEncoder;
   final PrepareSendMessagesRequest? prepareSendMessagesRequest;
   final PrepareReconnectRequest? prepareReconnectRequest;
-  final Map<String, _HttpChatTransportResumeState> _resumeStates = {};
+  final Map<String, HttpChatTransportResumeState> _resumeStates = {};
 
   HttpChatTransport({
     required this.endpoint,
@@ -121,14 +50,15 @@ final class HttpChatTransport implements ChatTransport {
 
   @override
   Stream<ChatUiStreamChunk> sendMessages(ChatTransportRequest request) async* {
-    _validateSerializableRequestOptions(request.options);
+    validateSerializableHttpChatRequestOptions(request.options);
 
-    final callOptionsPayload = _serializeCallOptions(
+    final callOptionsPayload = serializeHttpChatTransportCallOptions(
       request.options.callOptions,
+      providerOptionsEncoder: providerOptionsEncoder,
     );
     final baseRequestTimeout =
         request.options.callOptions.timeout ?? requestTimeout;
-    final state = _HttpChatTransportResumeState(
+    final state = HttpChatTransportResumeState(
       callOptionsPayload: callOptionsPayload,
       requestTimeout: baseRequestTimeout,
       maxRetries: request.options.callOptions.maxRetries,
@@ -136,7 +66,7 @@ final class HttpChatTransport implements ChatTransport {
     );
     _resumeStates[request.chatId] = state;
 
-    final baseHeaders = _baseHeaders();
+    final baseHeaders = buildHttpChatTransportBaseHeaders(headers);
     final basePayload = HttpChatTransportRequestPayload(
       chatId: request.chatId,
       prompt: request.prompt,
@@ -175,31 +105,6 @@ final class HttpChatTransport implements ChatTransport {
     );
   }
 
-  void _validateSerializableRequestOptions(ChatRequestOptions options) {
-    if (options.tools.isNotEmpty || options.toolChoice != null) {
-      throw UnsupportedError(
-        'HttpChatTransport cannot serialize ChatRequestOptions.tools or '
-        'toolChoice yet. Declare tools on the server side or add an explicit '
-        'HTTP chat tool protocol.',
-      );
-    }
-
-    if (options.hasLocalRuntimeHooks) {
-      throw UnsupportedError(
-        'HttpChatTransport cannot serialize local runtime callbacks, '
-        'functionToolExecutor, or stopWhen. Use DirectChatTransport for local '
-        'runtime tool execution, or implement the tool loop on the server.',
-      );
-    }
-
-    if (options.maxSteps != 8) {
-      throw UnsupportedError(
-        'HttpChatTransport cannot serialize ChatRequestOptions.maxSteps yet. '
-        'Configure maxSteps on the server side.',
-      );
-    }
-  }
-
   @override
   Stream<ChatUiStreamChunk>? reconnect(String chatId) {
     final state = _resumeStates[chatId];
@@ -221,10 +126,10 @@ final class HttpChatTransport implements ChatTransport {
   Stream<ChatUiStreamChunk> _reconnectWithReplay({
     required String chatId,
     required String resumeToken,
-    required _HttpChatTransportResumeState state,
+    required HttpChatTransportResumeState state,
     required List<ChatUiStreamChunk> replayChunks,
   }) async* {
-    final baseHeaders = _baseHeaders();
+    final baseHeaders = buildHttpChatTransportBaseHeaders(headers);
     final basePayload = HttpChatTransportReconnectRequestPayload(
       chatId: chatId,
       resumeToken: resumeToken,
@@ -265,7 +170,7 @@ final class HttpChatTransport implements ChatTransport {
 
   Stream<ChatUiStreamChunk> _sendPayload({
     required String chatId,
-    required _HttpChatTransportResumeState state,
+    required HttpChatTransportResumeState state,
     required Uri endpoint,
     required Map<String, String> headers,
     required Duration? requestTimeout,
@@ -311,105 +216,22 @@ final class HttpChatTransport implements ChatTransport {
       final parser = SseJsonChunkParser(sseDecoder: sseDecoder);
       await for (final envelope in parser.parse(response.stream)) {
         final chunk = chunkCodec.decodeChunk(envelope);
-        switch (chunk) {
-          case HttpChatTransportTransportStartChunk(:final resumeToken):
-            if (resumeToken != null) {
-              state.resumeToken = resumeToken;
-            }
-          case HttpChatTransportStartChunk(
-              :final resumeToken,
-              :final messageId,
+        final projected = projectHttpChatTransportChunk(
+          chunk: chunk,
+          state: state,
+          clearResumeState: () => _clearResumeState(chatId, state),
+        );
+
+        switch (projected) {
+          case HttpChatTransportEmitChunk(
+              :final chunks,
+              :final terminateStream,
             ):
-            if (resumeToken != null) {
-              state.resumeToken = resumeToken;
+            yield* Stream<ChatUiStreamChunk>.fromIterable(chunks);
+            if (terminateStream) {
+              return;
             }
-            if (messageId != null) {
-              final replayChunk = ChatUiMessageStartChunk(
-                messageId: messageId,
-              );
-              state.replayChunks.add(replayChunk);
-              yield replayChunk;
-            }
-          case HttpChatTransportMessageStartChunk(
-              :final messageId,
-              :final metadata,
-            ):
-            final replayChunk = ChatUiMessageStartChunk(
-              messageId: messageId,
-              metadata: metadata,
-            );
-            state.replayChunks.add(replayChunk);
-            yield replayChunk;
-          case HttpChatTransportMessageMetadataChunk(:final metadata):
-            final replayChunk = ChatUiMessageMetadataChunk(
-              metadata: metadata,
-            );
-            state.replayChunks.add(replayChunk);
-            yield replayChunk;
-          case HttpChatTransportEventChunk(:final event):
-            final replayChunk = ChatUiEventChunk(event);
-            state.replayChunks.add(replayChunk);
-            if (event is FinishEvent) {
-              _clearResumeState(chatId, state);
-            }
-            yield replayChunk;
-          case HttpChatTransportDataPartChunk(:final part):
-            final replayChunk = ChatUiDataPartChunk<Object?>(part);
-            state.replayChunks.add(replayChunk);
-            yield replayChunk;
-          case HttpChatTransportTransientDataPartChunk(:final part):
-            yield ChatUiTransientDataPartChunk<Object?>(part);
-          case HttpChatTransportAbortChunk(:final reason):
-            _clearResumeState(chatId, state);
-            yield ChatUiEventChunk(
-              AbortEvent(
-                reason: reason,
-              ),
-            );
-            yield ChatUiEventChunk(
-              FinishEvent(
-                finishReason: FinishReason.aborted,
-                rawFinishReason: reason,
-              ),
-            );
-            return;
-          case HttpChatTransportErrorChunk(
-              :final code,
-              :final message,
-              :final details,
-            ):
-            _clearResumeState(chatId, state);
-            yield ChatUiEventChunk(
-              ErrorEvent(
-                ModelError(
-                  kind: ModelErrorKind.transport,
-                  message: message,
-                  code: code ?? 'http-chat-transport-error',
-                  isRetryable: switch (details) {
-                    {
-                      'retryable': final bool retryable,
-                    } =>
-                      retryable,
-                    _ => null,
-                  },
-                  details: details,
-                ),
-              ),
-            );
-            return;
-          case HttpChatTransportCheckpointChunk(:final resumeToken):
-            state.resumeToken = resumeToken;
-          case HttpChatTransportMessageFinishChunk(:final metadata):
-            final replayChunk = ChatUiMessageFinishChunk(
-              metadata: metadata,
-            );
-            state.replayChunks.add(replayChunk);
-            yield replayChunk;
-          case HttpChatTransportFinishChunk():
-            if (state.isTerminal) {
-              _clearResumeState(chatId, state);
-            }
-          case HttpChatTransportKeepAliveChunk():
+          case HttpChatTransportNoopChunk():
             break;
         }
       }
@@ -423,64 +245,13 @@ final class HttpChatTransport implements ChatTransport {
     }
   }
 
-  HttpChatTransportCallOptionsPayload _serializeCallOptions(
-    CallOptions options,
-  ) {
-    Map<String, Object?> providerOptions = const {};
-    final typedProviderOptions = options.providerOptions;
-    if (typedProviderOptions != null) {
-      final encoder = providerOptionsEncoder;
-      if (encoder == null) {
-        throw UnsupportedError(
-          'HttpChatTransport needs providerOptionsEncoder to serialize typed providerOptions. Common CallOptions fields are supported without an encoder.',
-        );
-      }
-
-      providerOptions = encoder(typedProviderOptions);
-    }
-
-    return HttpChatTransportCallOptionsPayload(
-      timeout: options.timeout,
-      headers: options.headers ?? const {},
-      maxRetries: options.maxRetries,
-      providerOptions: providerOptions,
-    );
-  }
-
-  Map<String, String> _baseHeaders() {
-    return {
-      'content-type': 'application/json',
-      'accept': 'text/event-stream',
-      ...headers,
-    };
-  }
-
   void _clearResumeState(
     String chatId,
-    _HttpChatTransportResumeState state,
+    HttpChatTransportResumeState state,
   ) {
     if (identical(_resumeStates[chatId], state)) {
       _resumeStates.remove(chatId);
     }
-    state.isTerminal = true;
+    state.markTerminal();
   }
-}
-
-final class _HttpChatTransportResumeState {
-  final HttpChatTransportCallOptionsPayload callOptionsPayload;
-  final Duration? requestTimeout;
-  final int? maxRetries;
-  final ProviderCancellation? cancellation;
-  final List<ChatUiStreamChunk> replayChunks = [];
-  String? resumeToken;
-  bool isTerminal = false;
-
-  _HttpChatTransportResumeState({
-    required this.callOptionsPayload,
-    required this.requestTimeout,
-    required this.maxRetries,
-    required this.cancellation,
-  });
-
-  bool get canReconnect => !isTerminal && resumeToken != null;
 }
