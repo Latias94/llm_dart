@@ -1,7 +1,8 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
-import 'anthropic_beta_features.dart';
 import 'anthropic_content_encoder.dart';
+import 'anthropic_prompt_beta_features.dart';
+import 'anthropic_prompt_block_grouping.dart';
 import 'anthropic_prompt_limitations.dart';
 import 'anthropic_tool_replay_encoder.dart';
 
@@ -32,7 +33,7 @@ final class AnthropicPromptBlockEncoder {
     List<PromptMessage> prompt, {
     required List<ModelWarning> warnings,
   }) {
-    final blocks = _groupPrompt(prompt);
+    final blocks = groupAnthropicPromptBlocks(prompt);
     final system = <Map<String, Object?>>[];
     final messages = <Map<String, Object?>>[];
     var sawConversationBlock = false;
@@ -40,17 +41,17 @@ final class AnthropicPromptBlockEncoder {
     for (var index = 0; index < blocks.length; index++) {
       final block = blocks[index];
       switch (block.type) {
-        case _AnthropicPromptBlockType.system:
+        case AnthropicPromptBlockType.system:
           if (sawConversationBlock) {
             throw UnsupportedError(
               'Anthropic requests only support system messages before the first conversation block.',
             );
           }
           system.addAll(_encodeSystemBlock(block));
-        case _AnthropicPromptBlockType.user:
+        case AnthropicPromptBlockType.user:
           sawConversationBlock = true;
           messages.add(_encodeUserBlock(block));
-        case _AnthropicPromptBlockType.assistant:
+        case AnthropicPromptBlockType.assistant:
           sawConversationBlock = true;
           if (_encodeAssistantBlock(
             block,
@@ -72,58 +73,15 @@ final class AnthropicPromptBlockEncoder {
     return AnthropicEncodedPrompt(
       system: system,
       messages: messages,
-      betaFeatures: _inferPromptBetaFeatures(
+      betaFeatures: inferAnthropicPromptBetaFeatures(
         system: system,
         messages: messages,
       ),
     );
   }
 
-  List<String> _inferPromptBetaFeatures({
-    required List<Map<String, Object?>> system,
-    required List<Map<String, Object?>> messages,
-  }) {
-    final betaFeatures = <String>{};
-
-    if (containsAnthropicCacheControl(system) ||
-        containsAnthropicCacheControl(messages)) {
-      betaFeatures.add(anthropicExtendedCacheTtlBeta);
-    }
-
-    if (containsAnthropicFileSource(system) ||
-        containsAnthropicFileSource(messages)) {
-      betaFeatures.add(anthropicFilesApiBeta);
-    }
-
-    return sortedAnthropicBetaFeatures(betaFeatures);
-  }
-
-  List<_AnthropicPromptBlock> _groupPrompt(List<PromptMessage> prompt) {
-    final blocks = <_AnthropicPromptBlock>[];
-    _AnthropicPromptBlock? currentBlock;
-
-    for (final message in prompt) {
-      final type = switch (message) {
-        SystemPromptMessage() => _AnthropicPromptBlockType.system,
-        AssistantPromptMessage() => _AnthropicPromptBlockType.assistant,
-        UserPromptMessage() ||
-        ToolPromptMessage() =>
-          _AnthropicPromptBlockType.user,
-      };
-
-      if (currentBlock?.type != type) {
-        currentBlock = _AnthropicPromptBlock(type);
-        blocks.add(currentBlock);
-      }
-
-      currentBlock!.messages.add(message);
-    }
-
-    return blocks;
-  }
-
   List<Map<String, Object?>> _encodeSystemBlock(
-    _AnthropicPromptBlock block,
+    AnthropicPromptBlock block,
   ) {
     final content = <Map<String, Object?>>[];
 
@@ -150,7 +108,7 @@ final class AnthropicPromptBlockEncoder {
   }
 
   Map<String, Object?> _encodeUserBlock(
-    _AnthropicPromptBlock block,
+    AnthropicPromptBlock block,
   ) {
     final content = <Map<String, Object?>>[];
 
@@ -184,7 +142,7 @@ final class AnthropicPromptBlockEncoder {
   }
 
   Map<String, Object?>? _encodeAssistantBlock(
-    _AnthropicPromptBlock block, {
+    AnthropicPromptBlock block, {
     required bool trimTrailingText,
     required List<ModelWarning> warnings,
   }) {
@@ -258,17 +216,4 @@ final class AnthropicPromptBlockEncoder {
       'content': content,
     };
   }
-}
-
-enum _AnthropicPromptBlockType {
-  system,
-  user,
-  assistant,
-}
-
-final class _AnthropicPromptBlock {
-  final _AnthropicPromptBlockType type;
-  final List<PromptMessage> messages = [];
-
-  _AnthropicPromptBlock(this.type);
 }
