@@ -1,6 +1,7 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'anthropic_custom_tool_replay_encoder.dart';
+import 'anthropic_prompt_limitations.dart';
 import 'anthropic_tool_result_replay_encoder.dart';
 
 final class AnthropicToolReplayEncoder {
@@ -75,8 +76,6 @@ final class AnthropicToolReplayEncoder {
       return;
     }
 
-    throw UnsupportedError(
-      'Anthropic tool prompt part ${part.runtimeType} is not supported yet.',
-    );
+    throw unsupportedAnthropicPromptPart(role: 'tool', part: part);
   }
 }

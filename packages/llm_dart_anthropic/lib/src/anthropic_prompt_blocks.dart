@@ -2,6 +2,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'anthropic_beta_features.dart';
 import 'anthropic_content_encoder.dart';
+import 'anthropic_prompt_limitations.dart';
 import 'anthropic_tool_replay_encoder.dart';
 
 final class AnthropicEncodedPrompt {
@@ -133,9 +134,7 @@ final class AnthropicPromptBlockEncoder {
 
       for (final part in message.parts) {
         if (part is! TextPromptPart) {
-          throw UnsupportedError(
-            'Anthropic system prompt part ${part.runtimeType} is not supported yet.',
-          );
+          throw unsupportedAnthropicPromptPart(role: 'system', part: part);
         }
 
         content.add(
@@ -242,36 +241,11 @@ final class AnthropicPromptBlockEncoder {
             part is FilePromptPart ||
             part is ReasoningFilePromptPart ||
             part is CustomPromptPart) {
-          warnings.add(
-            ModelWarning(
-              type: ModelWarningType.unsupported,
-              field: switch (part) {
-                ReasoningPromptPart() => 'assistant.reasoning',
-                FilePromptPart() => 'assistant.file',
-                ReasoningFilePromptPart() => 'assistant.reasoningFile',
-                CustomPromptPart() => 'assistant.custom',
-                _ => 'assistant.part',
-              },
-              message: switch (part) {
-                ReasoningPromptPart() =>
-                  'Anthropic assistant replay does not support reasoning parts yet. The part has been dropped.',
-                FilePromptPart() =>
-                  'Anthropic assistant replay does not support assistant file parts yet. The part has been dropped.',
-                ReasoningFilePromptPart() =>
-                  'Anthropic assistant replay does not support reasoning file parts yet. The part has been dropped.',
-                CustomPromptPart(:final kind) =>
-                  'Anthropic assistant replay does not support custom part "$kind" yet. The part has been dropped.',
-                _ =>
-                  'Anthropic assistant replay does not support this part yet. The part has been dropped.',
-              },
-            ),
-          );
+          warnings.add(unsupportedAnthropicAssistantReplayPartWarning(part));
           continue;
         }
 
-        throw UnsupportedError(
-          'Anthropic assistant prompt part ${part.runtimeType} is not supported yet.',
-        );
+        throw unsupportedAnthropicPromptPart(role: 'assistant', part: part);
       }
     }
 

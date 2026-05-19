@@ -2,6 +2,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'anthropic_cache_control.dart';
 import 'anthropic_file_source_encoder.dart';
+import 'anthropic_prompt_limitations.dart';
 import 'anthropic_tool_output_encoder.dart';
 
 final class AnthropicContentEncoder {
@@ -44,9 +45,7 @@ final class AnthropicContentEncoder {
       return _encodeFilePromptPart(part);
     }
 
-    throw UnsupportedError(
-      'Anthropic user prompt part ${part.runtimeType} is not supported yet.',
-    );
+    throw unsupportedAnthropicPromptPart(role: 'user', part: part);
   }
 
   Map<String, Object?> encodeTextContent(
@@ -118,8 +117,6 @@ final class AnthropicContentEncoder {
       );
     }
 
-    throw UnsupportedError(
-      'Anthropic document media type ${part.mediaType} is not supported yet.',
-    );
+    throw unsupportedAnthropicDocumentMediaType(part.mediaType);
   }
 }

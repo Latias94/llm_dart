@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import 'anthropic_prompt_limitations.dart';
+
 final class AnthropicFileSourceEncoder {
   const AnthropicFileSourceEncoder();
 
@@ -37,9 +39,7 @@ final class AnthropicFileSourceEncoder {
       };
     }
 
-    throw UnsupportedError(
-      'Anthropic $path requires in-memory bytes or an HTTP/HTTPS URI.',
-    );
+    throw missingAnthropicUserBinarySource(path);
   }
 
   Map<String, Object?> encodeUserTextDocumentSource({
@@ -80,9 +80,7 @@ final class AnthropicFileSourceEncoder {
       };
     }
 
-    throw UnsupportedError(
-      'Anthropic text documents require UTF-8 bytes or an HTTP/HTTPS URI.',
-    );
+    throw missingAnthropicUserTextDocumentSource();
   }
 
   Map<String, Object?> encodeToolOutputFileBlock({
@@ -100,9 +98,7 @@ final class AnthropicFileSourceEncoder {
         isDocumentToolOutputMediaType(mediaType);
 
     if (!isDocument) {
-      throw UnsupportedError(
-        'Anthropic tool output file part media type $mediaType is not supported yet.',
-      );
+      throw unsupportedAnthropicToolOutputFileMediaType(mediaType);
     }
 
     if (hasAnthropicReference) {
@@ -153,9 +149,7 @@ final class AnthropicFileSourceEncoder {
     final text = data.text;
     if (text != null) {
       if (isImage) {
-        throw UnsupportedError(
-          'Anthropic tool output image parts require in-memory bytes, a URI, or an Anthropic provider reference.',
-        );
+        throw missingAnthropicToolOutputImageData();
       }
 
       return {
@@ -169,9 +163,7 @@ final class AnthropicFileSourceEncoder {
       };
     }
 
-    throw UnsupportedError(
-      'Anthropic tool output file part requires in-memory bytes, text, a URI, or an Anthropic provider reference.',
-    );
+    throw missingAnthropicToolOutputFileData();
   }
 
   String normalizeImageMediaType(String mediaType) {
