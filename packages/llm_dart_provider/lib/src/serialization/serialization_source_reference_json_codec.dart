@@ -1,7 +1,7 @@
 import '../common/json_codec_common.dart';
-import '../common/provider_metadata.dart';
 import '../content/content_part.dart';
 import 'serialization_file_json_codec.dart';
+import 'serialization_metadata_json_codec.dart';
 
 final class SerializationSourceReferenceJsonCodec {
   const SerializationSourceReferenceJsonCodec();
@@ -15,7 +15,8 @@ final class SerializationSourceReferenceJsonCodec {
       if (source.filename != null) 'filename': source.filename,
       if (source.mediaType != null) 'mediaType': source.mediaType,
       if (source.providerMetadata != null)
-        'providerMetadata': _encodeProviderMetadata(source.providerMetadata!),
+        'providerMetadata': const SerializationMetadataJsonCodec()
+            .encodeProviderMetadata(source.providerMetadata!),
     };
   }
 
@@ -39,7 +40,8 @@ final class SerializationSourceReferenceJsonCodec {
       filename: asNullableJsonString(map['filename'], path: '$path.filename'),
       mediaType:
           asNullableJsonString(map['mediaType'], path: '$path.mediaType'),
-      providerMetadata: _decodeProviderMetadata(
+      providerMetadata:
+          const SerializationMetadataJsonCodec().decodeProviderMetadata(
         map['providerMetadata'],
         path: '$path.providerMetadata',
       ),
@@ -71,20 +73,5 @@ final class SerializationSourceReferenceJsonCodec {
         uri == null ? SourceReferenceKind.document : SourceReferenceKind.url,
       _ => throw FormatException('Invalid source kind at $path: $kind'),
     };
-  }
-
-  JsonMap _encodeProviderMetadata(ProviderMetadata metadata) {
-    return metadata.toJsonMap();
-  }
-
-  ProviderMetadata? _decodeProviderMetadata(
-    Object? value, {
-    required String path,
-  }) {
-    if (value == null) {
-      return null;
-    }
-
-    return ProviderMetadata(asJsonMap(value, path: path));
   }
 }

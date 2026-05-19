@@ -3,6 +3,7 @@ import '../common/provider_metadata.dart';
 import '../common/provider_options.dart';
 import '../tool/tool_output.dart';
 import 'serialization_file_json_codec.dart';
+import 'serialization_metadata_json_codec.dart';
 
 final class SerializationToolOutputJsonCodec {
   const SerializationToolOutputJsonCodec();
@@ -232,7 +233,8 @@ final class SerializationToolOutputJsonCodec {
   }
 
   JsonMap _encodeProviderMetadata(ProviderMetadata metadata) {
-    return metadata.toJsonMap();
+    return const SerializationMetadataJsonCodec()
+        .encodeProviderMetadata(metadata);
   }
 
   ProviderMetadata? _decodeProviderMetadata(
@@ -243,7 +245,10 @@ final class SerializationToolOutputJsonCodec {
       return null;
     }
 
-    return ProviderMetadata(asJsonMap(value, path: path));
+    return const SerializationMetadataJsonCodec().decodeProviderMetadata(
+      value,
+      path: path,
+    );
   }
 
   JsonMap _encodeProviderOptions(
