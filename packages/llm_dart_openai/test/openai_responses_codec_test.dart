@@ -736,6 +736,188 @@ void main() {
       );
     });
 
+    test('reconstructs hosted tool search replay when store is false', () {
+      const codec = OpenAIResponsesCodec();
+
+      final request = codec.encodeRequest(
+        modelId: 'gpt-5-mini',
+        prompt: [
+          UserPromptMessage.text('Find a tool.'),
+          AssistantPromptMessage(
+            parts: [
+              const ToolCallPromptPart(
+                toolCallId: 'tsc_hosted_123',
+                toolName: 'tool_search',
+                input: {
+                  'arguments': {
+                    'paths': ['get_weather'],
+                  },
+                  'call_id': null,
+                },
+                providerExecuted: true,
+                providerOptions: ProviderReplayPromptPartOptions(
+                  ProviderMetadata({
+                    'openai': {
+                      'itemId': 'tsc_hosted_123',
+                    },
+                  }),
+                ),
+              ),
+              ToolResultPromptPart(
+                toolCallId: 'tsc_hosted_123',
+                toolName: 'tool_search',
+                output: {
+                  'tools': [
+                    {
+                      'type': 'function',
+                      'name': 'get_weather',
+                      'defer_loading': true,
+                    },
+                  ],
+                },
+                providerOptions: ProviderReplayPromptPartOptions(
+                  ProviderMetadata({
+                    'openai': {
+                      'itemId': 'tso_hosted_456',
+                      'execution': 'server',
+                    },
+                  }),
+                ),
+              ),
+            ],
+          ),
+        ],
+        tools: const [],
+        toolChoice: null,
+        options: const GenerateTextOptions(),
+        providerOptions: const OpenAIGenerateTextOptions(
+          store: false,
+        ),
+        stream: false,
+      );
+
+      expect(
+        request.body['input'],
+        [
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'input_text',
+                'text': 'Find a tool.',
+              },
+            ],
+          },
+          {
+            'type': 'tool_search_call',
+            'id': 'tsc_hosted_123',
+            'execution': 'server',
+            'call_id': null,
+            'status': 'completed',
+            'arguments': {
+              'paths': ['get_weather'],
+            },
+          },
+          {
+            'type': 'tool_search_output',
+            'id': 'tso_hosted_456',
+            'execution': 'server',
+            'call_id': null,
+            'status': 'completed',
+            'tools': [
+              {
+                'type': 'function',
+                'name': 'get_weather',
+                'defer_loading': true,
+              },
+            ],
+          },
+        ],
+      );
+      expect(request.warnings, isEmpty);
+    });
+
+    test('uses distinct tool search replay item references by default', () {
+      const codec = OpenAIResponsesCodec();
+
+      final request = codec.encodeRequest(
+        modelId: 'gpt-5-mini',
+        prompt: [
+          UserPromptMessage.text('Find a tool.'),
+          AssistantPromptMessage(
+            parts: [
+              const ToolCallPromptPart(
+                toolCallId: 'tsc_hosted_123',
+                toolName: 'tool_search',
+                input: {
+                  'arguments': {
+                    'paths': ['get_weather'],
+                  },
+                  'call_id': null,
+                },
+                providerExecuted: true,
+                providerOptions: ProviderReplayPromptPartOptions(
+                  ProviderMetadata({
+                    'openai': {
+                      'itemId': 'tsc_hosted_123',
+                    },
+                  }),
+                ),
+              ),
+              ToolResultPromptPart(
+                toolCallId: 'tsc_hosted_123',
+                toolName: 'tool_search',
+                output: {
+                  'tools': [
+                    {
+                      'type': 'function',
+                      'name': 'get_weather',
+                    },
+                  ],
+                },
+                providerOptions: ProviderReplayPromptPartOptions(
+                  ProviderMetadata({
+                    'openai': {
+                      'itemId': 'tso_hosted_456',
+                    },
+                  }),
+                ),
+              ),
+            ],
+          ),
+        ],
+        tools: const [],
+        toolChoice: null,
+        options: const GenerateTextOptions(),
+        providerOptions: const OpenAIGenerateTextOptions(),
+        stream: false,
+      );
+
+      expect(
+        request.body['input'],
+        [
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'input_text',
+                'text': 'Find a tool.',
+              },
+            ],
+          },
+          {
+            'type': 'item_reference',
+            'id': 'tsc_hosted_123',
+          },
+          {
+            'type': 'item_reference',
+            'id': 'tso_hosted_456',
+          },
+        ],
+      );
+      expect(request.warnings, isEmpty);
+    });
+
     test(
         'uses item references for stored assistant replay items by default on the Responses path',
         () {

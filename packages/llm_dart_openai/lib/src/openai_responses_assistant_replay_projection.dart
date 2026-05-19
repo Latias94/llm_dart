@@ -3,6 +3,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'openai_request_encoding_util.dart';
 import 'openai_responses_prompt_limitations.dart';
 import 'openai_responses_replay_policy.dart';
+import 'openai_responses_tool_search_replay_projection.dart';
 
 final class OpenAIResponsesAssistantReasoningReplayProjection {
   const OpenAIResponsesAssistantReasoningReplayProjection();
@@ -104,6 +105,15 @@ final class OpenAIResponsesAssistantToolReplayProjection {
       return;
     }
 
+    final toolSearchCall = projectOpenAIResponsesToolSearchReplayCall(
+      part,
+      metadata: metadata,
+    );
+    if (toolSearchCall != null) {
+      items.add(toolSearchCall.toInputItem());
+      return;
+    }
+
     if (part.providerExecuted) {
       return;
     }
@@ -135,6 +145,15 @@ final class OpenAIResponsesAssistantToolReplayProjection {
 
     if (replayPolicy.store) {
       items.add(replayPolicy.itemReference(itemId));
+      return;
+    }
+
+    final toolSearchOutput = projectOpenAIResponsesToolSearchReplayOutput(
+      part,
+      metadata: metadata,
+    );
+    if (toolSearchOutput != null) {
+      items.add(toolSearchOutput.toInputItem());
       return;
     }
 
