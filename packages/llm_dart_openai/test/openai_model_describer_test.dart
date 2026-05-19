@@ -31,6 +31,7 @@ void main() {
         {
           'persistence': ['previousResponseId', 'conversation', 'store'],
           'builtInTools': [
+            'webSearchPreview',
             'webSearch',
             'fileSearch',
             'computerUse',

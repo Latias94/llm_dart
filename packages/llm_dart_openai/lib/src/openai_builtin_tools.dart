@@ -10,7 +10,45 @@ import 'openai_tool_search_tool.dart';
 import 'openai_web_search_tool.dart';
 
 final class OpenAIBuiltInTools {
-  static OpenAIWebSearchTool webSearch() => const OpenAIWebSearchTool();
+  static OpenAIWebSearchTool webSearch({
+    OpenAIWebSearchApi api = OpenAIWebSearchApi.preview,
+    OpenAIWebSearchContextSize? searchContextSize,
+    OpenAIWebSearchUserLocation? userLocation,
+    OpenAIWebSearchFilters? filters,
+    bool? externalWebAccess,
+  }) {
+    return OpenAIWebSearchTool(
+      api: api,
+      searchContextSize: searchContextSize,
+      userLocation: userLocation,
+      filters: filters,
+      externalWebAccess: externalWebAccess,
+    );
+  }
+
+  static OpenAIWebSearchTool webSearchPreview({
+    OpenAIWebSearchContextSize? searchContextSize,
+    OpenAIWebSearchUserLocation? userLocation,
+  }) {
+    return OpenAIWebSearchTool.preview(
+      searchContextSize: searchContextSize,
+      userLocation: userLocation,
+    );
+  }
+
+  static OpenAIWebSearchTool webSearchCurrent({
+    OpenAIWebSearchContextSize? searchContextSize,
+    OpenAIWebSearchUserLocation? userLocation,
+    OpenAIWebSearchFilters? filters,
+    bool? externalWebAccess,
+  }) {
+    return OpenAIWebSearchTool.current(
+      searchContextSize: searchContextSize,
+      userLocation: userLocation,
+      filters: filters,
+      externalWebAccess: externalWebAccess,
+    );
+  }
 
   static OpenAIFileSearchTool fileSearch({
     List<String>? vectorStoreIds,

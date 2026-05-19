@@ -7,6 +7,7 @@ import 'openai_model_settings.dart';
 import 'openai_provider_support.dart';
 
 const List<String> _openAIBuiltInToolFamilies = [
+  'webSearchPreview',
   'webSearch',
   'fileSearch',
   'computerUse',

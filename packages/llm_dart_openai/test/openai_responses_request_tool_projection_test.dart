@@ -28,6 +28,12 @@ void main() {
           ],
           builtInTools: const [
             OpenAIWebSearchTool(),
+            OpenAIWebSearchTool.current(
+              externalWebAccess: true,
+              filters: OpenAIWebSearchFilters(
+                allowedDomains: ['example.com'],
+              ),
+            ),
             OpenAIFileSearchTool(vectorStoreIds: ['vs_1']),
           ],
         ),
@@ -47,6 +53,13 @@ void main() {
           },
           {
             'type': 'web_search_preview',
+          },
+          {
+            'type': 'web_search',
+            'filters': {
+              'allowed_domains': ['example.com'],
+            },
+            'external_web_access': true,
           },
           {
             'type': 'file_search',
@@ -112,6 +125,16 @@ void main() {
           ],
         ),
         {'type': 'file_search'},
+      );
+      expect(
+        projection.encode(
+          const SpecificToolChoice('web_search'),
+          hasFunctionTools: false,
+          builtInTools: const [
+            OpenAIWebSearchTool.current(),
+          ],
+        ),
+        {'type': 'web_search'},
       );
       expect(
         projection.encode(

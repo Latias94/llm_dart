@@ -34,7 +34,7 @@ final class OpenAIResponsesToolChoiceProjection {
     if (_findBuiltInTool(toolName, builtInTools) case final tool?) {
       return switch (tool) {
         OpenAIFileSearchTool() => const {'type': 'file_search'},
-        OpenAIWebSearchTool() => const {'type': 'web_search_preview'},
+        OpenAIWebSearchTool(:final api) => {'type': api.value},
         OpenAICodeInterpreterTool() => const {'type': 'code_interpreter'},
         OpenAIImageGenerationTool() => const {'type': 'image_generation'},
         OpenAIMcpTool() => const {'type': 'mcp'},
@@ -82,7 +82,7 @@ final class OpenAIResponsesToolChoiceProjection {
   String? _builtInToolChoiceName(OpenAIBuiltInTool tool) {
     return switch (tool) {
       OpenAIFileSearchTool() => 'file_search',
-      OpenAIWebSearchTool() => 'web_search_preview',
+      OpenAIWebSearchTool(:final api) => api.value,
       OpenAICodeInterpreterTool() => 'code_interpreter',
       OpenAIImageGenerationTool() => 'image_generation',
       OpenAIMcpTool() => 'mcp',

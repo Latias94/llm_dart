@@ -10,9 +10,63 @@ void main() {
       expect(tool, isA<OpenAIBuiltInTool>());
       expect(tool.type, OpenAIBuiltInToolType.webSearch);
       expect(OpenAIBuiltInTools.webSearch(), isA<OpenAIWebSearchTool>());
+      expect(OpenAIBuiltInTools.webSearchPreview(), isA<OpenAIWebSearchTool>());
+      expect(OpenAIBuiltInTools.webSearchCurrent(), isA<OpenAIWebSearchTool>());
       expect(OpenAIBuiltInTools.localShell(), isA<OpenAILocalShellTool>());
       expect(OpenAIBuiltInTools.applyPatch(), isA<OpenAIApplyPatchTool>());
       expect(OpenAIBuiltInTools.toolSearch(), isA<OpenAIToolSearchTool>());
+    });
+
+    test('encodes web search preview and current tools', () {
+      expect(const OpenAIWebSearchTool().toJson(), {
+        'type': 'web_search_preview',
+      });
+
+      expect(
+        OpenAIBuiltInTools.webSearchPreview(
+          searchContextSize: OpenAIWebSearchContextSize.high,
+          userLocation: const OpenAIWebSearchUserLocation(
+            country: 'US',
+            city: 'Minneapolis',
+            region: 'Minnesota',
+            timezone: 'America/Chicago',
+          ),
+        ).toJson(),
+        {
+          'type': 'web_search_preview',
+          'search_context_size': 'high',
+          'user_location': {
+            'type': 'approximate',
+            'country': 'US',
+            'city': 'Minneapolis',
+            'region': 'Minnesota',
+            'timezone': 'America/Chicago',
+          },
+        },
+      );
+
+      expect(
+        OpenAIBuiltInTools.webSearchCurrent(
+          searchContextSize: OpenAIWebSearchContextSize.medium,
+          externalWebAccess: false,
+          filters: const OpenAIWebSearchFilters(
+            allowedDomains: ['example.com', 'docs.example.com'],
+          ),
+          userLocation: const OpenAIWebSearchUserLocation(country: 'US'),
+        ).toJson(),
+        {
+          'type': 'web_search',
+          'search_context_size': 'medium',
+          'user_location': {
+            'type': 'approximate',
+            'country': 'US',
+          },
+          'filters': {
+            'allowed_domains': ['example.com', 'docs.example.com'],
+          },
+          'external_web_access': false,
+        },
+      );
     });
 
     test('encodes provider-native Responses tools', () {

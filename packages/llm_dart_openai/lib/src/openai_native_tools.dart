@@ -50,4 +50,10 @@ export 'openai_shell_tool.dart'
         OpenAIShellTool;
 export 'openai_tool_search_tool.dart'
     show OpenAIToolSearchExecution, OpenAIToolSearchTool;
-export 'openai_web_search_tool.dart' show OpenAIWebSearchTool;
+export 'openai_web_search_tool.dart'
+    show
+        OpenAIWebSearchApi,
+        OpenAIWebSearchContextSize,
+        OpenAIWebSearchFilters,
+        OpenAIWebSearchTool,
+        OpenAIWebSearchUserLocation;
