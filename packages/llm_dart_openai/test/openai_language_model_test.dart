@@ -852,6 +852,12 @@ void main() {
       expect(capturedRequest, isNotNull);
       final requestBody = capturedRequest!.body as Map<String, Object?>;
       expect(
+        requestBody['include'],
+        [
+          'code_interpreter_call.outputs',
+        ],
+      );
+      expect(
         requestBody['tools'],
         [
           {

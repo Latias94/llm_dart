@@ -174,15 +174,17 @@ void main() {
       );
     });
 
-    test('auto-includes web search sources without duplicating user include',
-        () {
+    test('auto-includes provider-native tool response fields', () {
       const projection = OpenAIResponsesRequestBodyProjection();
       final warnings = <ModelWarning>[];
       final context = projection.resolveContext(
         modelId: 'gpt-4.1-mini',
         providerOptions: const OpenAIGenerateTextOptions(
           include: [OpenAIResponsesInclude.webSearchCallActionSources],
-          builtInTools: [OpenAIWebSearchTool.current()],
+          builtInTools: [
+            OpenAIWebSearchTool.current(),
+            OpenAICodeInterpreterTool(),
+          ],
         ),
       );
 
@@ -192,14 +194,23 @@ void main() {
         options: const GenerateTextOptions(),
         providerOptions: const OpenAIGenerateTextOptions(
           include: [OpenAIResponsesInclude.webSearchCallActionSources],
-          builtInTools: [OpenAIWebSearchTool.current()],
+          builtInTools: [
+            OpenAIWebSearchTool.current(),
+            OpenAICodeInterpreterTool(),
+          ],
         ),
         stream: false,
         context: context,
         warnings: warnings,
       );
 
-      expect(body['include'], ['web_search_call.action.sources']);
+      expect(
+        body['include'],
+        [
+          'web_search_call.action.sources',
+          'code_interpreter_call.outputs',
+        ],
+      );
       expect(warnings, isEmpty);
     });
 

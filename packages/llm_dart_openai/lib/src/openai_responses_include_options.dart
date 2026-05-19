@@ -48,9 +48,7 @@ List<String>? _resolveOpenAIResponsesInclude(
     values.add(OpenAIResponsesInclude.messageOutputTextLogprobs.value);
   }
 
-  if (_hasOpenAIWebSearchTool(providerOptions.builtInTools)) {
-    values.add(OpenAIResponsesInclude.webSearchCallActionSources.value);
-  }
+  values.addAll(_providerNativeIncludes(providerOptions.builtInTools));
 
   if (!store && isReasoningModel) {
     values.add(OpenAIResponsesInclude.reasoningEncryptedContent.value);
@@ -63,8 +61,21 @@ List<String>? _resolveOpenAIResponsesInclude(
   return values.toList(growable: false);
 }
 
-bool _hasOpenAIWebSearchTool(List<OpenAIBuiltInTool>? builtInTools) {
-  return builtInTools?.any((tool) => tool is OpenAIWebSearchTool) ?? false;
+Iterable<String> _providerNativeIncludes(List<OpenAIBuiltInTool>? tools) sync* {
+  if (tools == null) {
+    return;
+  }
+
+  for (final tool in tools) {
+    switch (tool) {
+      case OpenAIWebSearchTool():
+        yield OpenAIResponsesInclude.webSearchCallActionSources.value;
+      case OpenAICodeInterpreterTool():
+        yield OpenAIResponsesInclude.codeInterpreterCallOutputs.value;
+      default:
+        break;
+    }
+  }
 }
 
 int? _encodeOpenAIResponsesTopLogProbs(OpenAILogProbs? logprobs) {
