@@ -2,11 +2,11 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import '../prompt/model_message.dart';
 import '../prompt/prompt_normalization.dart';
-import 'generate_text_loop_continuation.dart';
 import 'generate_text_run_lifecycle.dart';
 import 'generate_text_run_result.dart';
 import 'generate_text_run_state.dart';
 import 'generate_text_runner_support.dart';
+import 'generate_text_step_continuation_resolver.dart';
 import 'generate_text_step_planner.dart';
 import 'generate_text_stop_condition.dart';
 import 'generate_text_step_result.dart';
@@ -79,6 +79,14 @@ final class GenerateTextRunner {
         maxSteps: maxSteps,
       );
       final declaredToolNames = planner.declaredToolNames;
+      final continuationResolver = GenerateTextStepContinuationResolver(
+        declaredToolNames: declaredToolNames,
+        functionToolExecutor: functionToolExecutor,
+        onToolStart: onToolStart,
+        onToolFinish: onToolFinish,
+        stopConditions: stopWhen,
+        runnerName: 'GenerateTextRunner',
+      );
 
       while (true) {
         final plan = planner.planNextStep(
@@ -104,44 +112,19 @@ final class GenerateTextRunner {
           result: result,
         );
 
-        if (step.finishReason != FinishReason.toolCalls) {
-          await lifecycle.finishStep(state, step);
-          break;
-        }
-
-        _throwIfCancelled();
-        final continuation =
-            await GenerateTextRunnerSupport.resolveFunctionToolContinuation(
-          step,
-          declaredToolNames: declaredToolNames,
-          functionToolExecutor: functionToolExecutor,
-          onToolStart: onToolStart,
-          onToolFinish: onToolFinish,
-          runnerName: 'GenerateTextRunner',
-        );
-        _throwIfCancelled();
-        if (!continuation.shouldContinue) {
-          await lifecycle.finishStep(state, step);
-          break;
-        }
-
-        step = GenerateTextRunnerSupport.addToolExecutionsToStep(
-          step,
-          continuation.executions,
-        );
-        await lifecycle.finishStep(state, step);
-
-        final loopContinuation = await resolveGenerateTextLoopContinuation(
-          promptHistory: promptHistory,
+        final continuation = await continuationResolver.resolve(
           step: step,
-          completedSteps: state.previousSteps,
-          stopConditions: stopWhen,
-          runnerName: 'GenerateTextRunner',
+          promptHistory: promptHistory,
+          finishStep: (step) async {
+            await lifecycle.finishStep(state, step);
+            return state.previousSteps;
+          },
+          throwIfCancelled: _throwIfCancelled,
         );
-        if (!loopContinuation.shouldContinue) {
+        if (!continuation.shouldContinue) {
           break;
         }
-        promptHistory = loopContinuation.promptHistory;
+        promptHistory = continuation.promptHistory;
       }
 
       return lifecycle.finishSuccessfulRun(state);

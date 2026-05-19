@@ -6,10 +6,10 @@ import 'package:llm_dart_provider/llm_dart_provider.dart' hide ErrorEvent;
 import '../prompt/model_message.dart';
 import '../prompt/prompt_normalization.dart';
 import '../stream/text_stream_event.dart';
-import 'generate_text_loop_continuation.dart';
 import 'generate_text_result_accumulator.dart';
 import 'generate_text_run_result.dart';
 import 'generate_text_runner_support.dart';
+import 'generate_text_step_continuation_resolver.dart';
 import 'generate_text_step_planner.dart';
 import 'generate_text_stop_condition.dart';
 import 'generate_text_step_result.dart';
@@ -110,6 +110,14 @@ final class StreamTextRunner {
       maxSteps: maxSteps,
     );
     final declaredToolNames = planner.declaredToolNames;
+    final continuationResolver = GenerateTextStepContinuationResolver(
+      declaredToolNames: declaredToolNames,
+      functionToolExecutor: functionToolExecutor,
+      onToolStart: onToolStart,
+      onToolFinish: onToolFinish,
+      stopConditions: stopWhen,
+      runnerName: 'StreamTextRunner',
+    );
     var streamClosed = false;
     final emitter = StreamTextEventEmitter(
       streamResult: streamResult,
@@ -168,52 +176,33 @@ final class StreamTextRunner {
         );
         state.addOrReplaceStep(step);
 
-        if (step.finishReason != FinishReason.toolCalls) {
-          await lifecycle.finishStep(state, step);
-          break;
-        }
-
-        _throwIfCancelled();
-        final continuation =
-            await GenerateTextRunnerSupport.resolveFunctionToolContinuation(
-          step,
-          declaredToolNames: declaredToolNames,
-          functionToolExecutor: functionToolExecutor,
-          onToolStart: onToolStart,
-          onToolFinish: onToolFinish,
-          runnerName: 'StreamTextRunner',
-        );
-        _throwIfCancelled();
-        if (!continuation.shouldContinue) {
-          await lifecycle.finishStep(state, step);
-          break;
-        }
-
-        for (final execution in continuation.executions) {
-          final event = execution.toTextStreamEvent();
-          accumulator.apply(event);
-          await emitter.add(event);
-        }
-        step = GenerateTextStepResult(
-          stepNumber: step.stepNumber,
-          providerId: step.providerId,
-          modelId: step.modelId,
-          request: step.request,
-          result: accumulator.build(),
-        );
-        await lifecycle.finishStep(state, step);
-
-        final loopContinuation = await resolveGenerateTextLoopContinuation(
-          promptHistory: promptHistory,
+        final continuation = await continuationResolver.resolve(
           step: step,
-          completedSteps: state.previousSteps,
-          stopConditions: stopWhen,
-          runnerName: 'StreamTextRunner',
+          promptHistory: promptHistory,
+          finishStep: (step) async {
+            await lifecycle.finishStep(state, step);
+            return state.previousSteps;
+          },
+          applyToolExecutions: (step, executions) async {
+            for (final execution in executions) {
+              final event = execution.toTextStreamEvent();
+              accumulator.apply(event);
+              await emitter.add(event);
+            }
+            return GenerateTextStepResult(
+              stepNumber: step.stepNumber,
+              providerId: step.providerId,
+              modelId: step.modelId,
+              request: step.request,
+              result: accumulator.build(),
+            );
+          },
+          throwIfCancelled: _throwIfCancelled,
         );
-        if (!loopContinuation.shouldContinue) {
+        if (!continuation.shouldContinue) {
           break;
         }
-        promptHistory = loopContinuation.promptHistory;
+        promptHistory = continuation.promptHistory;
       }
 
       await lifecycle.finishSuccessfulRun(state);
