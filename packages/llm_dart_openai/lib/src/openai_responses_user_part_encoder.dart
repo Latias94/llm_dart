@@ -91,7 +91,7 @@ final class OpenAIResponsesUserPartEncoder {
             : 'data:${normalizeOpenAIImageMediaTypeForDataUrl(mediaType)};base64,'
                 '${base64Encode(data.bytes!)}');
     if (imageUrl == null) {
-      throw UnsupportedError(missingDataMessage);
+      throw missingOpenAIResponsesUserImageData(missingDataMessage);
     }
 
     return {

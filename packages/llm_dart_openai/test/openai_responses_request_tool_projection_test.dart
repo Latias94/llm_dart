@@ -142,6 +142,52 @@ void main() {
       );
     });
 
+    test('reports unsupported file output data shapes', () {
+      const projection = OpenAIResponsesToolOutputProjection();
+
+      expect(
+        () => projection.encode(
+          ContentToolOutput(
+            parts: const [
+              FileToolOutputContentPart(
+                mediaType: 'image/png',
+                data: FileTextData('not image bytes'),
+              ),
+            ],
+          ),
+        ),
+        throwsA(
+          isA<UnsupportedError>().having(
+            (error) => error.message,
+            'message',
+            contains('tool output image parts require in-memory bytes'),
+          ),
+        ),
+      );
+
+      expect(
+        () => projection.encode(
+          ContentToolOutput(
+            parts: const [
+              FileToolOutputContentPart(
+                mediaType: 'application/pdf',
+                data: FileProviderReferenceData(
+                  ProviderReference({'anthropic': 'file_1'}),
+                ),
+              ),
+            ],
+          ),
+        ),
+        throwsA(
+          isA<UnsupportedError>().having(
+            (error) => error.message,
+            'message',
+            contains('tool output file part requires in-memory bytes'),
+          ),
+        ),
+      );
+    });
+
     test('keeps codec facade compatible', () {
       const codec = OpenAIResponsesRequestToolCodec();
 

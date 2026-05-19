@@ -1,4 +1,5 @@
 import 'package:llm_dart_openai/llm_dart_openai.dart';
+import 'package:llm_dart_openai/src/openai_responses_assistant_replay_projection.dart';
 import 'package:llm_dart_openai/src/openai_responses_assistant_prompt_projection.dart';
 import 'package:llm_dart_openai/src/openai_responses_request_prompt_codec.dart';
 import 'package:llm_dart_openai/src/openai_responses_replay_policy.dart';
@@ -254,6 +255,73 @@ void main() {
       expect(warnings, isEmpty);
     });
 
+    test('appends reasoning summaries and warns on empty continuation', () {
+      final warnings = <ModelWarning>[];
+      final projection =
+          const OpenAIResponsesAssistantReasoningReplayProjection();
+      final items = <Object?>[];
+      final reasoningItemsById = <String, Map<String, Object?>>{};
+      final referencedReasoningIds = <String>{};
+
+      projection.encode(
+        const ReasoningPromptPart(
+          'first',
+          providerOptions: ProviderReplayPromptPartOptions(
+            ProviderMetadata({
+              'openai': {
+                'itemId': 'rs_1',
+                'reasoningEncryptedContent': 'enc_1',
+              },
+            }),
+          ),
+        ),
+        items: items,
+        reasoningItemsById: reasoningItemsById,
+        referencedReasoningIds: referencedReasoningIds,
+        warnings: warnings,
+        replayPolicy: const OpenAIResponsesReplayPolicy(
+          store: false,
+          hasConversation: false,
+        ),
+      );
+      projection.encode(
+        const ReasoningPromptPart(
+          '',
+          providerOptions: ProviderReplayPromptPartOptions(
+            ProviderMetadata({
+              'openai': {
+                'itemId': 'rs_1',
+              },
+            }),
+          ),
+        ),
+        items: items,
+        reasoningItemsById: reasoningItemsById,
+        referencedReasoningIds: referencedReasoningIds,
+        warnings: warnings,
+        replayPolicy: const OpenAIResponsesReplayPolicy(
+          store: false,
+          hasConversation: false,
+        ),
+      );
+
+      expect(items, [
+        {
+          'type': 'reasoning',
+          'id': 'rs_1',
+          'encrypted_content': 'enc_1',
+          'summary': [
+            {
+              'type': 'summary_text',
+              'text': 'first',
+            },
+          ],
+        },
+      ]);
+      expect(warnings.single.field, 'prompt.assistant.reasoning');
+      expect(warnings.single.message, contains('empty reasoning part'));
+    });
+
     test('removes reasoning without encrypted content when store is false', () {
       final warnings = <ModelWarning>[];
 
@@ -320,6 +388,31 @@ void main() {
         ),
       );
       expect(warnings, isEmpty);
+    });
+
+    test('projects compaction replay items with extra provider fields', () {
+      final item =
+          const OpenAIResponsesAssistantCompactionReplayProjection().encode(
+        const CustomPromptPart(
+          kind: 'openai.compaction',
+          data: {
+            'id': 'cmp_1',
+            'encrypted_content': 'enc_cmp',
+            'reason': 'context_window',
+          },
+        ),
+        replayPolicy: OpenAIResponsesReplayPolicy(
+          store: false,
+          hasConversation: false,
+        ),
+      );
+
+      expect(item, {
+        'type': 'compaction',
+        'id': 'cmp_1',
+        'encrypted_content': 'enc_cmp',
+        'reason': 'context_window',
+      });
     });
   });
 

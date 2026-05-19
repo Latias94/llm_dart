@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'openai_request_encoding_util.dart';
+import 'openai_responses_prompt_limitations.dart';
 import 'openai_tool_output_encoding.dart';
 
 final class OpenAIResponsesToolOutputProjection {
@@ -115,9 +116,7 @@ final class OpenAIResponsesToolOutputProjection {
     final text = data.text;
     if (text != null) {
       if (isImage) {
-        throw UnsupportedError(
-          'OpenAI Responses tool output image parts require in-memory bytes, a URI, or an OpenAI provider reference.',
-        );
+        throw missingOpenAIResponsesToolOutputImageData();
       }
 
       final normalizedMediaType =
@@ -130,8 +129,6 @@ final class OpenAIResponsesToolOutputProjection {
       };
     }
 
-    throw UnsupportedError(
-      'OpenAI Responses tool output file part requires in-memory bytes, text, a URI, or an OpenAI provider reference.',
-    );
+    throw missingOpenAIResponsesToolOutputFileData();
   }
 }
