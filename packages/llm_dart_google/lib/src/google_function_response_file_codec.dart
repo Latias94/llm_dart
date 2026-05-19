@@ -21,12 +21,24 @@ GeneratedFile normalizeGoogleFunctionResponseFile(GeneratedFile file) {
     );
   }
 
+  final filename = normalizeGoogleOptionalDisplayName(file.filename);
+  if (file.uri case final uri?) {
+    final dataUrl = _parseGoogleFunctionResponseDataUrl(uri);
+    if (dataUrl != null) {
+      return GeneratedFile(
+        mediaType: dataUrl.mediaType,
+        filename: filename,
+        data: FileBytesData(dataUrl.bytes),
+      );
+    }
+  }
+
   return GeneratedFile(
     mediaType: requireGoogleReplayNonEmptyValue(
       file.mediaType,
       name: 'files.mediaType',
     ),
-    filename: normalizeGoogleOptionalDisplayName(file.filename),
+    filename: filename,
     data: file.bytes == null
         ? file.text == null
             ? file.data
@@ -177,4 +189,31 @@ String? _googleFunctionResponseFileUri(ProviderReference? reference) {
         'google',
         context: 'Google function response file',
       );
+}
+
+final class _GoogleFunctionResponseDataUrl {
+  final String mediaType;
+  final List<int> bytes;
+
+  const _GoogleFunctionResponseDataUrl({
+    required this.mediaType,
+    required this.bytes,
+  });
+}
+
+_GoogleFunctionResponseDataUrl? _parseGoogleFunctionResponseDataUrl(Uri uri) {
+  if (uri.scheme != 'data') {
+    return null;
+  }
+
+  final match = RegExp(r'^data:([^;,]+);base64,(.+)$', dotAll: true)
+      .firstMatch(uri.toString());
+  if (match == null) {
+    return null;
+  }
+
+  return _GoogleFunctionResponseDataUrl(
+    mediaType: match.group(1)!,
+    bytes: base64Decode(match.group(2)!),
+  );
 }

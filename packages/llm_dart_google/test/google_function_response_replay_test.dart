@@ -160,6 +160,46 @@ void main() {
       );
     });
 
+    test('encodes data URL files as inlineData function response parts', () {
+      final replay = GoogleFunctionResponseReplay.fromToolOutput(
+        toolCallId: 'call_google_6',
+        toolName: 'inspect_image',
+        toolOutput: ContentToolOutput(
+          parts: [
+            FileToolOutputContentPart(
+              mediaType: 'application/octet-stream',
+              filename: 'image.png',
+              data: FileUrlData(
+                Uri.parse('data:image/png;base64,AQID'),
+              ),
+            ),
+          ],
+        ),
+      );
+
+      expect(
+        replay.functionResponse,
+        {
+          'name': 'inspect_image',
+          'response': {
+            'name': 'inspect_image',
+            'content': 'Tool executed successfully.',
+          },
+          'parts': [
+            {
+              'inlineData': {
+                'mimeType': 'image/png',
+                'data': 'AQID',
+                'displayName': 'image.png',
+              },
+            },
+          ],
+        },
+      );
+      expect(replay.files.single.mediaType, 'image/png');
+      expect(replay.files.single.bytes, [1, 2, 3]);
+    });
+
     test('rejects mismatched tool names in replay payloads', () {
       expect(
         () => GoogleFunctionResponseReplay.fromJson({
