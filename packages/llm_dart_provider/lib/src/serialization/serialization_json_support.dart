@@ -9,6 +9,7 @@ import '../model/model_response_metadata.dart';
 import '../tool/tool_output.dart';
 import '../common/json_codec_common.dart';
 import 'serialization_file_json_codec.dart';
+import 'serialization_tool_output_json_codec.dart';
 
 final class SerializationJsonSupport {
   const SerializationJsonSupport._();
@@ -278,53 +279,11 @@ final class SerializationJsonSupport {
       ProviderPromptPartOptions options, {
       required String path,
     })? encodeProviderOptions,
-  }) {
-    return switch (output) {
-      TextToolOutput(:final value, :final providerMetadata) => {
-          'type': 'text',
-          'value': value,
-          if (providerMetadata != null)
-            'providerMetadata': encodeProviderMetadata(providerMetadata),
-        },
-      JsonToolOutput(:final value, :final providerMetadata) => {
-          'type': 'json',
-          'value': ensureJsonValue(value, path: r'$.toolOutput.value'),
-          if (providerMetadata != null)
-            'providerMetadata': encodeProviderMetadata(providerMetadata),
-        },
-      ErrorTextToolOutput(:final value, :final providerMetadata) => {
-          'type': 'error-text',
-          'value': value,
-          if (providerMetadata != null)
-            'providerMetadata': encodeProviderMetadata(providerMetadata),
-        },
-      ErrorJsonToolOutput(:final value, :final providerMetadata) => {
-          'type': 'error-json',
-          'value': ensureJsonValue(value, path: r'$.toolOutput.value'),
-          if (providerMetadata != null)
-            'providerMetadata': encodeProviderMetadata(providerMetadata),
-        },
-      ExecutionDeniedToolOutput(:final reason, :final providerMetadata) => {
-          'type': 'execution-denied',
-          if (reason != null) 'reason': reason,
-          if (providerMetadata != null)
-            'providerMetadata': encodeProviderMetadata(providerMetadata),
-        },
-      ContentToolOutput(:final parts, :final providerMetadata) => {
-          'type': 'content',
-          'parts': [
-            for (final entry in parts.asMap().entries)
-              encodeToolOutputContentPart(
-                entry.value,
-                path: '\$.toolOutput.parts[${entry.key}]',
-                encodeProviderOptions: encodeProviderOptions,
-              ),
-          ],
-          if (providerMetadata != null)
-            'providerMetadata': encodeProviderMetadata(providerMetadata),
-        },
-    };
-  }
+  }) =>
+      const SerializationToolOutputJsonCodec().encodeToolOutput(
+        output,
+        encodeProviderOptions: encodeProviderOptions,
+      );
 
   static ToolOutput decodeToolOutput(
     Object? value, {
@@ -333,66 +292,12 @@ final class SerializationJsonSupport {
       Object? value, {
       required String path,
     })? decodeProviderOptions,
-  }) {
-    final map = asJsonMap(value, path: path);
-    final type = asJsonString(map['type'], path: '$path.type');
-
-    return switch (type) {
-      'text' => TextToolOutput(
-          asJsonString(map['value'], path: '$path.value'),
-          providerMetadata: decodeProviderMetadata(
-            map['providerMetadata'],
-            path: '$path.providerMetadata',
-          ),
-        ),
-      'json' => JsonToolOutput(
-          map['value'],
-          providerMetadata: decodeProviderMetadata(
-            map['providerMetadata'],
-            path: '$path.providerMetadata',
-          ),
-        ),
-      'error-text' => ErrorTextToolOutput(
-          asJsonString(map['value'], path: '$path.value'),
-          providerMetadata: decodeProviderMetadata(
-            map['providerMetadata'],
-            path: '$path.providerMetadata',
-          ),
-        ),
-      'error-json' => ErrorJsonToolOutput(
-          map['value'],
-          providerMetadata: decodeProviderMetadata(
-            map['providerMetadata'],
-            path: '$path.providerMetadata',
-          ),
-        ),
-      'execution-denied' => ExecutionDeniedToolOutput.withMetadata(
-          reason: asNullableJsonString(map['reason'], path: '$path.reason'),
-          providerMetadata: decodeProviderMetadata(
-            map['providerMetadata'],
-            path: '$path.providerMetadata',
-          ),
-        ),
-      'content' => ContentToolOutput(
-          parts: [
-            for (final entry in asJsonList(map['parts'], path: '$path.parts')
-                .asMap()
-                .entries)
-              decodeToolOutputContentPart(
-                entry.value,
-                path: '$path.parts[${entry.key}]',
-                decodeProviderOptions: decodeProviderOptions,
-              ),
-          ],
-          providerMetadata: decodeProviderMetadata(
-            map['providerMetadata'],
-            path: '$path.providerMetadata',
-          ),
-        ),
-      _ =>
-        throw FormatException('Unsupported tool output type "$type" at $path.'),
-    };
-  }
+  }) =>
+      const SerializationToolOutputJsonCodec().decodeToolOutput(
+        value,
+        path: path,
+        decodeProviderOptions: decodeProviderOptions,
+      );
 
   static JsonMap encodeToolOutputContentPart(
     ToolOutputContentPart part, {
@@ -401,50 +306,12 @@ final class SerializationJsonSupport {
       ProviderPromptPartOptions options, {
       required String path,
     })? encodeProviderOptions,
-  }) {
-    final JsonMap encoded = switch (part) {
-      TextToolOutputContentPart(:final text) => {
-          'type': 'text',
-          'text': text,
-        },
-      JsonToolOutputContentPart(:final value) => {
-          'type': 'json',
-          'value': ensureJsonValue(
-            value,
-            path: r'$.toolOutput.parts[].value',
-          ),
-        },
-      FileToolOutputContentPart(
-        :final mediaType,
-        :final filename,
-        :final data,
-      ) =>
-        {
-          'type': 'file',
-          'mediaType': mediaType,
-          if (filename != null) 'filename': filename,
-          'data': encodeFileData(data),
-        },
-      CustomToolOutputContentPart(:final kind, :final data) => {
-          'type': 'custom',
-          'kind': kind,
-          'data': ensureJsonValue(
-            data,
-            path: r'$.toolOutput.parts[].data',
-          ),
-        },
-    };
-
-    if (part.providerOptions case final providerOptions?) {
-      encoded['providerOptions'] = _encodeProviderOptions(
-        providerOptions,
-        path: '$path.providerOptions',
+  }) =>
+      const SerializationToolOutputJsonCodec().encodeToolOutputContentPart(
+        part,
+        path: path,
         encodeProviderOptions: encodeProviderOptions,
       );
-    }
-
-    return encoded;
-  }
 
   static ToolOutputContentPart decodeToolOutputContentPart(
     Object? value, {
@@ -453,95 +320,11 @@ final class SerializationJsonSupport {
       Object? value, {
       required String path,
     })? decodeProviderOptions,
-  }) {
-    final map = asJsonMap(value, path: path);
-    final type = asJsonString(map['type'], path: '$path.type');
-    final providerOptions = _decodeProviderOptions(
-      map['providerOptions'],
-      path: '$path.providerOptions',
-      decodeProviderOptions: decodeProviderOptions,
-    );
-    if (map.containsKey('providerMetadata')) {
-      throw FormatException(
-        'Legacy prompt replay metadata is no longer supported at $path.providerMetadata. '
-        'Use ProviderReplayPromptPartOptions instead.',
-      );
-    }
-
-    return switch (type) {
-      'text' => TextToolOutputContentPart(
-          asJsonString(map['text'], path: '$path.text'),
-          providerOptions: providerOptions,
-        ),
-      'json' => JsonToolOutputContentPart(
-          map['value'],
-          providerOptions: providerOptions,
-        ),
-      'file' => FileToolOutputContentPart(
-          mediaType: asJsonString(map['mediaType'], path: '$path.mediaType'),
-          filename:
-              asNullableJsonString(map['filename'], path: '$path.filename'),
-          data: _decodeRequiredToolOutputFileData(map, path: path),
-          providerOptions: providerOptions,
-        ),
-      'custom' => CustomToolOutputContentPart(
-          kind: asJsonString(map['kind'], path: '$path.kind'),
-          data: map['data'],
-          providerOptions: providerOptions,
-        ),
-      _ => throw FormatException(
-          'Unsupported tool output content part type "$type" at $path.',
-        ),
-    };
-  }
-
-  static JsonMap _encodeProviderOptions(
-    ProviderPromptPartOptions options, {
-    required String path,
-    required JsonMap Function(
-      ProviderPromptPartOptions options, {
-      required String path,
-    })? encodeProviderOptions,
-  }) {
-    if (encodeProviderOptions == null) {
-      throw UnsupportedError(
-        'Cannot serialize providerOptions at $path without a '
-        'provider prompt part options encoder.',
-      );
-    }
-
-    return encodeProviderOptions(options, path: path);
-  }
-
-  static ProviderPromptPartOptions? _decodeProviderOptions(
-    Object? value, {
-    required String path,
-    required ProviderPromptPartOptions? Function(
-      Object? value, {
-      required String path,
-    })? decodeProviderOptions,
-  }) {
-    if (value == null) {
-      return null;
-    }
-
-    if (decodeProviderOptions == null) {
-      throw FormatException(
-        'Cannot decode providerOptions at $path without a provider prompt '
-        'part options decoder.',
-      );
-    }
-
-    return decodeProviderOptions(value, path: path);
-  }
-
-  static FileData _decodeRequiredToolOutputFileData(
-    JsonMap map, {
-    required String path,
   }) =>
-      const SerializationFileJsonCodec().decodeRequiredFileDataFromMap(
-        map,
+      const SerializationToolOutputJsonCodec().decodeToolOutputContentPart(
+        value,
         path: path,
+        decodeProviderOptions: decodeProviderOptions,
       );
 
   static JsonMap encodeBytes(List<int> bytes) {
