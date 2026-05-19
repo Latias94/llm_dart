@@ -3,7 +3,8 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'openai_model_capabilities.dart';
 import 'openai_options.dart';
 import 'openai_request_format_codec.dart';
-import 'openai_responses_request_options_codec.dart';
+import 'openai_responses_include_options.dart';
+import 'openai_responses_openai_compatibility.dart';
 import 'openai_responses_request_prompt_codec.dart';
 import 'openai_responses_request_tool_codec.dart';
 
@@ -67,13 +68,10 @@ final class OpenAIResponsesRequestCodec {
       );
     }
 
-    final include = resolveOpenAIResponsesInclude(
+    final includeOptions = resolveOpenAIResponsesIncludeOptions(
       providerOptions,
       isReasoningModel: isReasoningModel,
       store: store,
-    );
-    final topLogProbs = encodeOpenAIResponsesTopLogProbs(
-      providerOptions.logprobs,
     );
     final sharedReasoningEffort = mapSharedOpenAIReasoningEffort(
       options.reasoning,
@@ -126,30 +124,26 @@ final class OpenAIResponsesRequestCodec {
       if (providerOptions.truncation != null)
         'truncation': providerOptions.truncation!.value,
       if (providerOptions.user != null) 'user': providerOptions.user,
-      if (include != null) 'include': include,
+      if (includeOptions.include != null) 'include': includeOptions.include,
       if (providerOptions.promptCacheKey != null)
         'prompt_cache_key': providerOptions.promptCacheKey,
       if (providerOptions.promptCacheRetention != null)
         'prompt_cache_retention': providerOptions.promptCacheRetention!.value,
       if (providerOptions.safetyIdentifier != null)
         'safety_identifier': providerOptions.safetyIdentifier,
-      if (topLogProbs != null) 'top_logprobs': topLogProbs,
+      if (includeOptions.topLogProbs != null)
+        'top_logprobs': includeOptions.topLogProbs,
       if (isReasoningModel && effectiveReasoningEffort != null)
         'reasoning': <String, Object?>{
           'effort': effectiveReasoningEffort.value,
         },
     };
 
-    applyOpenAIResponsesReasoningCompatibility(
+    applyOpenAIResponsesCompatibility(
       reasoningEffort: effectiveReasoningEffort,
       body: body,
       warnings: warnings,
       isReasoningModel: isReasoningModel,
-      capabilities: capabilities,
-    );
-    applyOpenAIResponsesServiceTierCompatibility(
-      body: body,
-      warnings: warnings,
       capabilities: capabilities,
     );
 

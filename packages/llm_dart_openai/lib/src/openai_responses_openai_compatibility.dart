@@ -42,7 +42,28 @@ void warnUnsupportedOpenAIResponsesSharedOptions(
   }
 }
 
-void applyOpenAIResponsesReasoningCompatibility({
+void applyOpenAIResponsesCompatibility({
+  required OpenAIReasoningEffort? reasoningEffort,
+  required Map<String, Object?> body,
+  required List<ModelWarning> warnings,
+  required bool isReasoningModel,
+  required OpenAIModelCapabilities capabilities,
+}) {
+  _applyOpenAIResponsesReasoningCompatibility(
+    reasoningEffort: reasoningEffort,
+    body: body,
+    warnings: warnings,
+    isReasoningModel: isReasoningModel,
+    capabilities: capabilities,
+  );
+  _applyOpenAIResponsesServiceTierCompatibility(
+    body: body,
+    warnings: warnings,
+    capabilities: capabilities,
+  );
+}
+
+void _applyOpenAIResponsesReasoningCompatibility({
   required OpenAIReasoningEffort? reasoningEffort,
   required Map<String, Object?> body,
   required List<ModelWarning> warnings,
@@ -91,7 +112,7 @@ void applyOpenAIResponsesReasoningCompatibility({
   }
 }
 
-void applyOpenAIResponsesServiceTierCompatibility({
+void _applyOpenAIResponsesServiceTierCompatibility({
   required Map<String, Object?> body,
   required List<ModelWarning> warnings,
   required OpenAIModelCapabilities capabilities,
@@ -120,40 +141,4 @@ void applyOpenAIResponsesServiceTierCompatibility({
       ),
     );
   }
-}
-
-List<String>? resolveOpenAIResponsesInclude(
-  OpenAIGenerateTextOptions providerOptions, {
-  required bool isReasoningModel,
-  required bool store,
-}) {
-  final values = <String>{};
-
-  if (providerOptions.include case final include?) {
-    for (final item in include) {
-      values.add(item.value);
-    }
-  }
-
-  if (providerOptions.logprobs != null) {
-    values.add(OpenAIResponsesInclude.messageOutputTextLogprobs.value);
-  }
-
-  if (!store && isReasoningModel) {
-    values.add(OpenAIResponsesInclude.reasoningEncryptedContent.value);
-  }
-
-  if (values.isEmpty) {
-    return null;
-  }
-
-  return values.toList(growable: false);
-}
-
-int? encodeOpenAIResponsesTopLogProbs(OpenAILogProbs? logprobs) {
-  if (logprobs == null) {
-    return null;
-  }
-
-  return logprobs.topLogProbs ?? OpenAILogProbs.responsesMaxTopLogProbs;
 }
