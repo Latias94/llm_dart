@@ -4,6 +4,7 @@ import 'openai_responses_code_interpreter_stream_projection.dart';
 import 'openai_responses_custom_tool_stream_projection.dart';
 import 'openai_responses_image_generation_stream_projection.dart';
 import 'openai_responses_output_item_stream_projection.dart';
+import 'openai_responses_shell_stream_projection.dart';
 import 'openai_responses_source_annotation_stream_projection.dart';
 import 'openai_responses_stream_result_codec.dart';
 import 'openai_responses_stream_state.dart';
@@ -110,6 +111,18 @@ Iterable<LanguageModelStreamEvent> decodeOpenAIResponsesStreamChunk(
         chunk,
         state,
         metadata,
+      );
+      return;
+    case 'response.apply_patch_call_operation_diff.delta':
+      yield* decodeOpenAIResponsesApplyPatchOperationDiffDeltaChunk(
+        chunk,
+        state,
+      );
+      return;
+    case 'response.apply_patch_call_operation_diff.done':
+      yield* decodeOpenAIResponsesApplyPatchOperationDiffDoneChunk(
+        chunk,
+        state,
       );
       return;
     case 'response.output_item.done':

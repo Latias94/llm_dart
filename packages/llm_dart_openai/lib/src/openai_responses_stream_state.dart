@@ -5,4 +5,13 @@ final class OpenAIResponsesStreamState extends OpenAIStreamState {
   final List<String> hostedToolSearchCallIds = [];
   final Set<String> emittedWebSearchToolCallIds = {};
   final Map<String, String> customToolNamesByCallId = {};
+  final Map<int, OpenAIResponsesApplyPatchStreamState> applyPatchInputs = {};
+}
+
+final class OpenAIResponsesApplyPatchStreamState {
+  bool hasDiff;
+
+  OpenAIResponsesApplyPatchStreamState({
+    this.hasDiff = false,
+  });
 }

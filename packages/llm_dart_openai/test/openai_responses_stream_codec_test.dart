@@ -898,6 +898,20 @@ void main() {
           },
         },
         {
+          'type': 'response.output_item.added',
+          'output_index': 2,
+          'item': {
+            'id': 'apc_1',
+            'type': 'apply_patch_call',
+            'call_id': 'call_patch_1',
+            'status': 'in_progress',
+            'operation': {
+              'type': 'delete_file',
+              'path': 'old.txt',
+            },
+          },
+        },
+        {
           'type': 'response.output_item.done',
           'output_index': 2,
           'item': {
@@ -911,12 +925,54 @@ void main() {
             },
           },
         },
+        {
+          'type': 'response.output_item.added',
+          'output_index': 3,
+          'item': {
+            'id': 'apc_2',
+            'type': 'apply_patch_call',
+            'call_id': 'call_patch_2',
+            'status': 'in_progress',
+            'operation': {
+              'type': 'update_file',
+              'path': 'lib/main.dart',
+              'diff': '',
+            },
+          },
+        },
+        {
+          'type': 'response.apply_patch_call_operation_diff.delta',
+          'item_id': 'apc_2',
+          'output_index': 3,
+          'delta': '+void main() {',
+        },
+        {
+          'type': 'response.apply_patch_call_operation_diff.done',
+          'item_id': 'apc_2',
+          'output_index': 3,
+          'diff': '+void main() {\\n}',
+        },
+        {
+          'type': 'response.output_item.done',
+          'output_index': 3,
+          'item': {
+            'id': 'apc_2',
+            'type': 'apply_patch_call',
+            'call_id': 'call_patch_2',
+            'status': 'completed',
+            'operation': {
+              'type': 'update_file',
+              'path': 'lib/main.dart',
+              'diff': '+void main() {\\n}',
+            },
+          },
+        },
       ]) {
         events.addAll(codec.decodeStreamChunk(chunk, state));
       }
 
       final toolCalls = events.whereType<ToolCallEvent>().toList();
-      expect(toolCalls, hasLength(2));
+      expect(toolCalls, hasLength(3));
       expect(toolCalls[0].toolCall.toolCallId, 'call_shell_1');
       expect(toolCalls[0].toolCall.toolName, 'shell');
       expect(toolCalls[0].toolCall.providerExecuted, isTrue);
@@ -934,6 +990,55 @@ void main() {
           'path': 'old.txt',
         },
       });
+      expect(toolCalls[2].toolCall.toolCallId, 'call_patch_2');
+      expect(toolCalls[2].toolCall.toolName, 'apply_patch');
+      expect(toolCalls[2].toolCall.input, {
+        'callId': 'call_patch_2',
+        'operation': {
+          'type': 'update_file',
+          'path': 'lib/main.dart',
+          'diff': '+void main() {\\n}',
+        },
+      });
+
+      final applyPatchStarts = events
+          .whereType<ToolInputStartEvent>()
+          .where((event) => event.toolName == 'apply_patch')
+          .toList();
+      expect(applyPatchStarts.map((event) => event.toolCallId), [
+        'call_patch_1',
+        'call_patch_2',
+      ]);
+      expect(
+        events
+            .whereType<ToolInputDeltaEvent>()
+            .where((event) => event.toolCallId == 'call_patch_1')
+            .map((event) => event.delta)
+            .toList(),
+        [
+          '{"callId":"call_patch_1","operation":{"type":"delete_file","path":"old.txt"}}',
+        ],
+      );
+      expect(
+        events
+            .whereType<ToolInputDeltaEvent>()
+            .where((event) => event.toolCallId == 'call_patch_2')
+            .map((event) => event.delta)
+            .toList(),
+        [
+          '{"callId":"call_patch_2","operation":{"type":"update_file","path":"lib/main.dart","diff":"',
+          '+void main() {',
+          '"}}',
+        ],
+      );
+      expect(
+        events
+            .whereType<ToolInputEndEvent>()
+            .map((event) => event.toolCallId)
+            .where((id) => id.startsWith('call_patch_'))
+            .toList(),
+        ['call_patch_1', 'call_patch_2'],
+      );
 
       final toolResult = events.whereType<ToolResultEvent>().single.toolResult;
       expect(toolResult.toolCallId, 'call_shell_1');

@@ -105,6 +105,16 @@ Iterable<LanguageModelStreamEvent> decodeOpenAIResponsesOutputItemAddedChunk(
     return;
   }
 
+  if (itemType == 'apply_patch_call') {
+    state.hasToolCalls = true;
+    yield* decodeOpenAIResponsesApplyPatchItemAddedChunk(
+      chunk,
+      item,
+      state,
+    );
+    return;
+  }
+
   if (itemType == 'tool_search_call') {
     yield* decodeOpenAIResponsesToolSearchCallItemAddedChunk(
       chunk,
