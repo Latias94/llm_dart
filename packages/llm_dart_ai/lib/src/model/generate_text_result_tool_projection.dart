@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:llm_dart_provider/llm_dart_provider.dart'
     hide
         CustomEvent,
@@ -25,20 +23,21 @@ import 'package:llm_dart_provider/llm_dart_provider.dart'
         ToolInputStartEvent,
         ToolResultEvent;
 
+import '../common/tool_input_stream_state.dart';
 import '../stream/text_stream_event.dart';
 import 'generate_text_result_content_buffer.dart';
 
 final class GenerateTextResultToolProjector {
   final GenerateTextResultContentBuffer _content;
-  final Map<String, _PartialToolCall> _partialToolCalls =
-      <String, _PartialToolCall>{};
+  final Map<String, StreamingToolInputState> _partialToolCalls =
+      <String, StreamingToolInputState>{};
 
   GenerateTextResultToolProjector(this._content);
 
   ProviderMetadata? apply(TextStreamEvent event) {
     switch (event) {
       case ToolInputStartEvent():
-        _partialToolCalls[event.toolCallId] = _PartialToolCall(
+        _partialToolCalls[event.toolCallId] = StreamingToolInputState(
           toolName: event.toolName,
           providerExecuted: event.providerExecuted,
           isDynamic: event.isDynamic,
@@ -49,10 +48,7 @@ final class GenerateTextResultToolProjector {
       case ToolInputDeltaEvent():
         final partial = _requirePartialToolCall(event.toolCallId);
         partial.append(event.delta);
-        partial.providerMetadata = ProviderMetadata.mergeNullable(
-          partial.providerMetadata,
-          event.providerMetadata,
-        );
+        partial.mergeProviderMetadata(event.providerMetadata);
         return event.providerMetadata;
       case ToolInputEndEvent():
         final partial = _requirePartialToolCall(event.toolCallId);
@@ -65,7 +61,7 @@ final class GenerateTextResultToolProjector {
             ToolCallContent(
               toolCallId: event.toolCallId,
               toolName: partial.toolName,
-              input: _decodeToolInputValue(partial.text),
+              input: partial.input,
               providerExecuted: partial.providerExecuted,
               isDynamic: partial.isDynamic,
               title: partial.title,
@@ -160,7 +156,7 @@ final class GenerateTextResultToolProjector {
     }
   }
 
-  _PartialToolCall _requirePartialToolCall(String toolCallId) {
+  StreamingToolInputState _requirePartialToolCall(String toolCallId) {
     final value = _partialToolCalls[toolCallId];
     if (value != null) {
       return value;
@@ -170,42 +166,5 @@ final class GenerateTextResultToolProjector {
       'Received tool-input update for missing tool call with ID "$toolCallId". '
       'Ensure a "tool-input-start" event is applied before later tool-input events.',
     );
-  }
-}
-
-Object? _decodeToolInputValue(String inputText) {
-  final trimmed = inputText.trim();
-  if (trimmed.isEmpty) {
-    return null;
-  }
-
-  try {
-    return jsonDecode(trimmed);
-  } on FormatException {
-    return inputText;
-  }
-}
-
-final class _PartialToolCall {
-  final String toolName;
-  final bool providerExecuted;
-  final bool isDynamic;
-  final String? title;
-  final StringBuffer _buffer;
-  ProviderMetadata? providerMetadata;
-
-  _PartialToolCall({
-    required this.toolName,
-    required this.providerExecuted,
-    required this.isDynamic,
-    required this.title,
-    required this.providerMetadata,
-    String initialText = '',
-  }) : _buffer = StringBuffer(initialText);
-
-  String get text => _buffer.toString();
-
-  void append(String value) {
-    _buffer.write(value);
   }
 }

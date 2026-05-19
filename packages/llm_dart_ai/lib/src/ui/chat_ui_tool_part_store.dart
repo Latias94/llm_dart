@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:llm_dart_provider/llm_dart_provider.dart'
     hide
         ToolApprovalRequestEvent,
@@ -10,6 +8,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart'
         ToolInputStartEvent,
         ToolResultEvent;
 
+import '../common/tool_input_stream_state.dart';
 import '../stream/text_stream_event.dart';
 import 'chat_ui_message.dart';
 import 'chat_ui_stream_error.dart';
@@ -17,7 +16,7 @@ import 'chat_ui_stream_error.dart';
 final class ChatUiToolPartStore {
   final List<ChatUiPart> _parts;
   final Map<String, int> _partIndexes = {};
-  final Map<String, _PartialToolInput> _partialInputs = {};
+  final Map<String, StreamingToolInputState> _partialInputs = {};
 
   ChatUiToolPartStore(this._parts);
 
@@ -27,12 +26,13 @@ final class ChatUiToolPartStore {
       return;
     }
 
-    _partialInputs[part.toolCallId] = _PartialToolInput(
+    _partialInputs[part.toolCallId] = StreamingToolInputState(
       toolName: part.toolName,
       providerExecuted: part.providerExecuted,
       isDynamic: part.isDynamic,
       title: part.title,
-      initialText: part.inputText ?? _stringifyValue(part.input) ?? '',
+      initialText:
+          part.inputText ?? stringifyStreamingToolValue(part.input) ?? '',
     );
   }
 
@@ -41,7 +41,7 @@ final class ChatUiToolPartStore {
   }
 
   void applyInputStart(ToolInputStartEvent event) {
-    _partialInputs[event.toolCallId] = _PartialToolInput(
+    _partialInputs[event.toolCallId] = StreamingToolInputState(
       toolName: event.toolName,
       providerExecuted: event.providerExecuted,
       isDynamic: event.isDynamic,
@@ -79,7 +79,7 @@ final class ChatUiToolPartStore {
         toolCallId: event.toolCallId,
         state: ToolUiPartState.inputStreaming,
         setInput: true,
-        input: _decodeToolInputValue(partial.text),
+        input: partial.input,
         setInputText: true,
         inputText: partial.text,
         callProviderMetadata: event.providerMetadata,
@@ -94,7 +94,7 @@ final class ChatUiToolPartStore {
         toolCallId: event.toolCallId,
         state: ToolUiPartState.inputAvailable,
         setInput: true,
-        input: _decodeToolInputValue(partial.text),
+        input: partial.input,
         setInputText: true,
         inputText: partial.text,
         callProviderMetadata: event.providerMetadata,
@@ -105,9 +105,8 @@ final class ChatUiToolPartStore {
 
   void applyInputError(ToolInputErrorEvent event) {
     final partial = _partialInputs.remove(event.toolCallId);
-    final input = event.input ??
-        (partial == null ? null : _decodeToolInputValue(partial.text));
-    final inputText = partial?.text ?? _stringifyValue(input);
+    final input = event.input ?? partial?.input;
+    final inputText = partial?.text ?? stringifyStreamingToolValue(input);
     _upsert(
       _buildPart(
         toolCallId: event.toolCallId,
@@ -195,7 +194,7 @@ final class ChatUiToolPartStore {
         toolOutput: event.toolResult.toolOutput,
         setErrorText: true,
         errorText: event.toolResult.isError
-            ? _stringifyValue(event.toolResult.output)
+            ? stringifyStreamingToolValue(event.toolResult.output)
             : null,
         preliminary: event.toolResult.preliminary,
         isDynamic: event.toolResult.isDynamic,
@@ -333,7 +332,7 @@ final class ChatUiToolPartStore {
     );
   }
 
-  _PartialToolInput _requirePartialInput(String toolCallId) {
+  StreamingToolInputState _requirePartialInput(String toolCallId) {
     final value = _partialInputs[toolCallId];
     if (value != null) {
       return value;
@@ -346,56 +345,5 @@ final class ChatUiToolPartStore {
           'Received tool-input update for missing tool call with ID "$toolCallId". '
           'Ensure a "tool-input-start" event is applied before later tool-input events.',
     );
-  }
-}
-
-Object? _decodeToolInputValue(String inputText) {
-  final trimmed = inputText.trim();
-  if (trimmed.isEmpty) {
-    return null;
-  }
-
-  try {
-    return jsonDecode(trimmed);
-  } on FormatException {
-    return inputText;
-  }
-}
-
-String? _stringifyValue(Object? value) {
-  if (value == null) {
-    return null;
-  }
-
-  if (value is String) {
-    return value;
-  }
-
-  try {
-    return jsonEncode(value);
-  } on JsonUnsupportedObjectError {
-    return value.toString();
-  }
-}
-
-final class _PartialToolInput {
-  final String toolName;
-  final bool providerExecuted;
-  final bool isDynamic;
-  final String? title;
-  final StringBuffer _buffer;
-
-  _PartialToolInput({
-    required this.toolName,
-    required this.providerExecuted,
-    required this.isDynamic,
-    required this.title,
-    String initialText = '',
-  }) : _buffer = StringBuffer(initialText);
-
-  String get text => _buffer.toString();
-
-  void append(String value) {
-    _buffer.write(value);
   }
 }
