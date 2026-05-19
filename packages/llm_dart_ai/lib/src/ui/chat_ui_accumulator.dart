@@ -1,32 +1,7 @@
-import 'package:llm_dart_provider/llm_dart_provider.dart'
-    hide
-        CustomEvent,
-        ErrorEvent,
-        FileEvent,
-        FinishEvent,
-        RawChunkEvent,
-        ReasoningDeltaEvent,
-        ReasoningEndEvent,
-        ReasoningFileEvent,
-        ReasoningStartEvent,
-        ResponseMetadataEvent,
-        SourceEvent,
-        StartEvent,
-        TextDeltaEvent,
-        TextEndEvent,
-        TextStartEvent,
-        ToolApprovalRequestEvent,
-        ToolCallEvent,
-        ToolInputDeltaEvent,
-        ToolInputEndEvent,
-        ToolInputErrorEvent,
-        ToolInputStartEvent,
-        ToolResultEvent;
-
 import '../stream/text_stream_event.dart';
+import 'chat_ui_content_part_store.dart';
 import 'chat_ui_message.dart';
 import 'chat_ui_metadata_store.dart';
-import 'chat_ui_stream_error.dart';
 import 'chat_ui_tool_part_store.dart';
 
 final class ChatUiAccumulatorOptions {
@@ -44,9 +19,8 @@ final class ChatUiAccumulator {
   String _messageId;
   final List<ChatUiPart> _parts;
   final Map<String, Object?> _metadata;
-  final Map<String, int> _activeTextPartIndexes = {};
-  final Map<String, int> _activeReasoningPartIndexes = {};
   final Map<String, int> _dataPartIndexes = {};
+  final ChatUiContentPartStore _contentParts;
   final ChatUiToolPartStore _toolParts;
   late final ChatUiMetadataStore _metadataStore = ChatUiMetadataStore(
     metadata: _metadata,
@@ -81,6 +55,7 @@ final class ChatUiAccumulator {
   })  : _messageId = messageId,
         _parts = parts,
         _metadata = metadata,
+        _contentParts = ChatUiContentPartStore(parts),
         _toolParts = ChatUiToolPartStore(parts);
 
   ChatUiMessage get message => ChatUiMessage(
@@ -101,17 +76,17 @@ final class ChatUiAccumulator {
       case ResponseMetadataEvent():
         _metadataStore.applyResponseMetadata(event);
       case TextStartEvent():
-        _applyTextStartEvent(event);
+        _contentParts.applyTextStart(event);
       case TextDeltaEvent():
-        _applyTextDeltaEvent(event);
+        _contentParts.applyTextDelta(event);
       case TextEndEvent():
-        _applyTextEndEvent(event);
+        _contentParts.applyTextEnd(event);
       case ReasoningStartEvent():
-        _applyReasoningStartEvent(event);
+        _contentParts.applyReasoningStart(event);
       case ReasoningDeltaEvent():
-        _applyReasoningDeltaEvent(event);
+        _contentParts.applyReasoningDelta(event);
       case ReasoningEndEvent():
-        _applyReasoningEndEvent(event);
+        _contentParts.applyReasoningEnd(event);
       case ReasoningFileEvent():
         _applyReasoningFileEvent(event);
       case ToolInputStartEvent():
@@ -166,26 +141,6 @@ final class ChatUiAccumulator {
   int _appendPart(ChatUiPart part) {
     _parts.add(part);
     return _parts.length - 1;
-  }
-
-  int _requireActivePartIndex(
-    Map<String, int> activeParts,
-    String id, {
-    required String eventName,
-    required String startEventName,
-    required String partName,
-  }) {
-    final index = activeParts[id];
-    if (index != null) {
-      return index;
-    }
-
-    throw ChatUiStreamError(
-      chunkType: eventName,
-      chunkId: id,
-      message: 'Received $eventName for missing $partName with ID "$id". '
-          'Ensure a "$startEventName" event is applied first.',
-    );
   }
 
   ChatUiMessage _applyDataPart<T>(DataUiPart<T> part) {
@@ -258,104 +213,6 @@ final class ChatUiAccumulator {
     );
   }
 
-  void _applyTextStartEvent(TextStartEvent event) {
-    _activeTextPartIndexes[event.id] = _appendPart(
-      TextUiPart(
-        text: '',
-        isStreaming: true,
-        providerMetadata: event.providerMetadata,
-      ),
-    );
-  }
-
-  void _applyTextDeltaEvent(TextDeltaEvent event) {
-    final index = _requireActivePartIndex(
-      _activeTextPartIndexes,
-      event.id,
-      eventName: 'text-delta',
-      startEventName: 'text-start',
-      partName: 'text part',
-    );
-    final current = _parts[index] as TextUiPart;
-    _parts[index] = TextUiPart(
-      text: current.text + event.delta,
-      isStreaming: true,
-      providerMetadata: ProviderMetadata.mergeNullable(
-        current.providerMetadata,
-        event.providerMetadata,
-      ),
-    );
-  }
-
-  void _applyTextEndEvent(TextEndEvent event) {
-    final index = _requireActivePartIndex(
-      _activeTextPartIndexes,
-      event.id,
-      eventName: 'text-end',
-      startEventName: 'text-start',
-      partName: 'text part',
-    );
-    final current = _parts[index] as TextUiPart;
-    _parts[index] = TextUiPart(
-      text: current.text,
-      isStreaming: false,
-      providerMetadata: ProviderMetadata.mergeNullable(
-        current.providerMetadata,
-        event.providerMetadata,
-      ),
-    );
-    _activeTextPartIndexes.remove(event.id);
-  }
-
-  void _applyReasoningStartEvent(ReasoningStartEvent event) {
-    _activeReasoningPartIndexes[event.id] = _appendPart(
-      ReasoningUiPart(
-        text: '',
-        isStreaming: true,
-        providerMetadata: event.providerMetadata,
-      ),
-    );
-  }
-
-  void _applyReasoningDeltaEvent(ReasoningDeltaEvent event) {
-    final index = _requireActivePartIndex(
-      _activeReasoningPartIndexes,
-      event.id,
-      eventName: 'reasoning-delta',
-      startEventName: 'reasoning-start',
-      partName: 'reasoning part',
-    );
-    final current = _parts[index] as ReasoningUiPart;
-    _parts[index] = ReasoningUiPart(
-      text: current.text + event.delta,
-      isStreaming: true,
-      providerMetadata: ProviderMetadata.mergeNullable(
-        current.providerMetadata,
-        event.providerMetadata,
-      ),
-    );
-  }
-
-  void _applyReasoningEndEvent(ReasoningEndEvent event) {
-    final index = _requireActivePartIndex(
-      _activeReasoningPartIndexes,
-      event.id,
-      eventName: 'reasoning-end',
-      startEventName: 'reasoning-start',
-      partName: 'reasoning part',
-    );
-    final current = _parts[index] as ReasoningUiPart;
-    _parts[index] = ReasoningUiPart(
-      text: current.text,
-      isStreaming: false,
-      providerMetadata: ProviderMetadata.mergeNullable(
-        current.providerMetadata,
-        event.providerMetadata,
-      ),
-    );
-    _activeReasoningPartIndexes.remove(event.id);
-  }
-
   void _applyStepStartEvent(StepStartEvent event) {
     final stepId = event.stepId ?? 'step-$_nextStepIndex';
     _nextStepIndex += 1;
@@ -363,8 +220,7 @@ final class ChatUiAccumulator {
   }
 
   void _applyStepFinishEvent() {
-    _activeTextPartIndexes.clear();
-    _activeReasoningPartIndexes.clear();
+    _contentParts.clearStreamingParts();
     _toolParts.clearStreamingInputs();
   }
 }

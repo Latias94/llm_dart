@@ -48,6 +48,42 @@ void main() {
       );
     });
 
+    test('clears active content parts at step boundaries', () {
+      final accumulator = ChatUiAccumulator(messageId: 'assistant-1');
+
+      accumulator
+        ..apply(const TextStartEvent(id: 'text-1'))
+        ..apply(const TextDeltaEvent(id: 'text-1', delta: 'Hello'))
+        ..apply(const ReasoningStartEvent(id: 'reasoning-1'))
+        ..apply(const ReasoningDeltaEvent(id: 'reasoning-1', delta: 'Think'))
+        ..apply(const StepFinishEvent());
+
+      expect(
+        () => accumulator.apply(
+          const TextDeltaEvent(id: 'text-1', delta: ' again'),
+        ),
+        throwsA(
+          isA<ChatUiStreamError>()
+              .having((error) => error.chunkType, 'chunkType', 'text-delta')
+              .having((error) => error.chunkId, 'chunkId', 'text-1'),
+        ),
+      );
+      expect(
+        () => accumulator.apply(
+          const ReasoningEndEvent(id: 'reasoning-1'),
+        ),
+        throwsA(
+          isA<ChatUiStreamError>()
+              .having(
+                (error) => error.chunkType,
+                'chunkType',
+                'reasoning-end',
+              )
+              .having((error) => error.chunkId, 'chunkId', 'reasoning-1'),
+        ),
+      );
+    });
+
     test('converts to a stream ModelError with chunk diagnostics', () {
       const error = ChatUiStreamError(
         chunkType: 'reasoning-end',
