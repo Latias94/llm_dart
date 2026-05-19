@@ -1,5 +1,6 @@
 import 'package:llm_dart_openai/llm_dart_openai.dart';
 import 'package:llm_dart_openai/src/openai_responses_assistant_prompt_projection.dart';
+import 'package:llm_dart_openai/src/openai_responses_request_prompt_codec.dart';
 import 'package:llm_dart_openai/src/openai_responses_replay_policy.dart';
 import 'package:llm_dart_openai/src/openai_responses_tool_prompt_projection.dart';
 import 'package:llm_dart_openai/src/openai_responses_user_part_encoder.dart';
@@ -7,6 +8,41 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:test/test.dart';
 
 void main() {
+  group('OpenAIResponsesPromptCodec', () {
+    test('reports unsupported system prompt parts as provider limitations', () {
+      const codec = OpenAIResponsesPromptCodec();
+      final warnings = <ModelWarning>[];
+
+      expect(
+        () => codec.encodePromptMessage(
+          SystemPromptMessage(
+            parts: const [
+              FilePromptPart(
+                mediaType: 'text/plain',
+                data: FileBytesData.constBytes([1, 2, 3]),
+              ),
+            ],
+          ),
+          warnings,
+          systemMessageMode: OpenAISystemMessageMode.system,
+          store: false,
+          hasConversation: false,
+        ),
+        throwsA(
+          isA<UnsupportedError>().having(
+            (error) => error.message,
+            'message',
+            allOf(
+              contains('OpenAI Responses system prompt messages'),
+              contains('FilePromptPart'),
+            ),
+          ),
+        ),
+      );
+      expect(warnings, isEmpty);
+    });
+  });
+
   group('OpenAIResponsesUserPartEncoder', () {
     test('encodes image file references and PDF bytes', () {
       const encoder = OpenAIResponsesUserPartEncoder();
@@ -44,6 +80,70 @@ void main() {
           'filename': 'part-2.pdf',
           'file_data': 'data:application/pdf;base64,AQID',
         },
+      );
+    });
+
+    test('encodes non-PDF OpenAI file references as input_file file_id', () {
+      const encoder = OpenAIResponsesUserPartEncoder();
+
+      expect(
+        encoder.encode(
+          const FilePromptPart(
+            mediaType: 'text/plain',
+            data: FileProviderReferenceData(
+              ProviderReference({'openai': 'file-notes-1'}),
+            ),
+          ),
+          index: 0,
+        ),
+        {
+          'type': 'input_file',
+          'file_id': 'file-notes-1',
+        },
+      );
+    });
+
+    test('encodes non-PDF file URLs as input_file file_url', () {
+      const encoder = OpenAIResponsesUserPartEncoder();
+
+      expect(
+        encoder.encode(
+          FilePromptPart(
+            mediaType: 'text/plain',
+            data: FileUrlData(
+              Uri.parse('https://example.com/notes.txt'),
+            ),
+          ),
+          index: 0,
+        ),
+        {
+          'type': 'input_file',
+          'file_url': 'https://example.com/notes.txt',
+        },
+      );
+    });
+
+    test('rejects non-PDF data files on the Responses user prompt path', () {
+      const encoder = OpenAIResponsesUserPartEncoder();
+
+      expect(
+        () => encoder.encode(
+          const FilePromptPart(
+            mediaType: 'text/plain',
+            data: FileBytesData.constBytes([1, 2, 3]),
+          ),
+          index: 0,
+        ),
+        throwsA(
+          isA<UnsupportedError>().having(
+            (error) => error.message,
+            'message',
+            allOf(
+              contains('do not support in-memory file data'),
+              contains('text/plain'),
+            ),
+          ),
+        ),
       );
     });
   });
@@ -187,6 +287,40 @@ void main() {
         contains('without encrypted content'),
       );
     });
+
+    test('reports unsupported assistant prompt parts as provider limitations',
+        () {
+      final warnings = <ModelWarning>[];
+
+      expect(
+        () => projection.encode(
+          AssistantPromptMessage(
+            parts: const [
+              ImagePromptPart(
+                mediaType: 'image/png',
+                data: FileBytesData.constBytes([1, 2, 3]),
+              ),
+            ],
+          ),
+          warnings,
+          replayPolicy: const OpenAIResponsesReplayPolicy(
+            store: false,
+            hasConversation: false,
+          ),
+        ),
+        throwsA(
+          isA<UnsupportedError>().having(
+            (error) => error.message,
+            'message',
+            allOf(
+              contains('OpenAI Responses assistant prompt messages'),
+              contains('ImagePromptPart'),
+            ),
+          ),
+        ),
+      );
+      expect(warnings, isEmpty);
+    });
   });
 
   group('OpenAIResponsesToolPromptProjection', () {
@@ -239,6 +373,35 @@ void main() {
             'approve': true,
           },
         ],
+      );
+    });
+
+    test('reports unsupported tool prompt parts as provider limitations', () {
+      const projection = OpenAIResponsesToolPromptProjection();
+
+      expect(
+        () => projection.encode(
+          ToolPromptMessage(
+            toolName: 'weather',
+            parts: const [
+              TextPromptPart('unexpected'),
+            ],
+          ),
+          replayPolicy: const OpenAIResponsesReplayPolicy(
+            store: false,
+            hasConversation: false,
+          ),
+        ),
+        throwsA(
+          isA<UnsupportedError>().having(
+            (error) => error.message,
+            'message',
+            allOf(
+              contains('OpenAI Responses tool prompt messages'),
+              contains('TextPromptPart'),
+            ),
+          ),
+        ),
       );
     });
   });

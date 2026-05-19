@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'openai_request_encoding_util.dart';
+import 'openai_responses_prompt_limitations.dart';
 
 final class OpenAIResponsesUserPartEncoder {
   const OpenAIResponsesUserPartEncoder();
@@ -42,26 +43,26 @@ final class OpenAIResponsesUserPartEncoder {
         return _encodePdfFile(part, index: index);
       }
 
+      if (_openAIFileId(data: part.data) case final fileId?) {
+        return {
+          'type': 'input_file',
+          'file_id': fileId,
+        };
+      }
+
       if (part.uri != null) {
-        throw UnsupportedError(
-          'User file prompt parts need bytes on the migrated OpenAI Responses path.',
-        );
+        return {
+          'type': 'input_file',
+          'file_url': part.uri!.toString(),
+        };
       }
 
-      if (part.bytes == null) {
-        throw UnsupportedError(
-          'User file prompt parts need bytes on the migrated OpenAI Responses path.',
-        );
-      }
-
-      return {
-        'type': 'input_file',
-        'file_data': base64Encode(part.bytes!),
-      };
+      throw unsupportedOpenAIResponsesUserFileDataMediaType(part.mediaType);
     }
 
-    throw UnsupportedError(
-      'User prompt part ${part.runtimeType} is not supported by the migrated Responses codec yet.',
+    throw unsupportedOpenAIResponsesPromptPart(
+      role: 'user',
+      part: part,
     );
   }
 
@@ -116,9 +117,7 @@ final class OpenAIResponsesUserPartEncoder {
     }
 
     if (part.bytes == null) {
-      throw UnsupportedError(
-        'User PDF file prompt parts need bytes, a URI, or an OpenAI provider reference on the migrated Responses path.',
-      );
+      throw missingOpenAIResponsesPdfFileData();
     }
 
     return {

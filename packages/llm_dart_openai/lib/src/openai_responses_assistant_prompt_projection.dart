@@ -1,6 +1,7 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'openai_request_encoding_util.dart';
+import 'openai_responses_prompt_limitations.dart';
 import 'openai_responses_replay_policy.dart';
 
 final class OpenAIResponsesAssistantPromptProjection {
@@ -120,8 +121,9 @@ final class OpenAIResponsesAssistantPromptProjection {
         continue;
       }
 
-      throw UnsupportedError(
-        'Assistant prompt part ${part.runtimeType} is not supported by the migrated Responses codec yet.',
+      throw unsupportedOpenAIResponsesPromptPart(
+        role: 'assistant',
+        part: part,
       );
     }
 

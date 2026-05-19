@@ -412,7 +412,48 @@ void main() {
       expect(request.warnings, isEmpty);
     });
 
-    test('rejects URI-backed non-PDF file prompt parts on the Responses path',
+    test('encodes URI-backed non-PDF file prompt parts on the Responses path',
+        () {
+      const codec = OpenAIResponsesCodec();
+
+      final request = codec.encodeRequest(
+        modelId: 'gpt-5-mini',
+        prompt: [
+          UserPromptMessage(
+            parts: [
+              FilePromptPart(
+                mediaType: 'text/plain',
+                data: FileUrlData(
+                  Uri.parse('https://example.com/notes.txt'),
+                ),
+              ),
+            ],
+          ),
+        ],
+        tools: const [],
+        toolChoice: null,
+        options: const GenerateTextOptions(),
+        providerOptions: const OpenAIGenerateTextOptions(),
+        stream: false,
+      );
+
+      expect(
+        request.body['input'],
+        [
+          {
+            'role': 'user',
+            'content': [
+              {
+                'type': 'input_file',
+                'file_url': 'https://example.com/notes.txt',
+              },
+            ],
+          },
+        ],
+      );
+    });
+
+    test('rejects bytes-backed non-PDF file prompt parts on the Responses path',
         () {
       const codec = OpenAIResponsesCodec();
 
@@ -421,12 +462,10 @@ void main() {
           modelId: 'gpt-5-mini',
           prompt: [
             UserPromptMessage(
-              parts: [
+              parts: const [
                 FilePromptPart(
                   mediaType: 'text/plain',
-                  data: FileUrlData(
-                    Uri.parse('https://example.com/notes.txt'),
-                  ),
+                  data: FileBytesData.constBytes([1, 2, 3]),
                 ),
               ],
             ),
@@ -439,9 +478,12 @@ void main() {
         ),
         throwsA(
           isA<UnsupportedError>().having(
-            (error) => error.toString(),
+            (error) => error.message,
             'message',
-            contains('need bytes'),
+            allOf(
+              contains('do not support in-memory file data'),
+              contains('text/plain'),
+            ),
           ),
         ),
       );

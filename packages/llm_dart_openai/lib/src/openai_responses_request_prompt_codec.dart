@@ -2,6 +2,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'openai_generate_text_options.dart';
 import 'openai_responses_assistant_prompt_projection.dart';
+import 'openai_responses_prompt_limitations.dart';
 import 'openai_responses_replay_policy.dart';
 import 'openai_responses_tool_prompt_projection.dart';
 import 'openai_responses_user_part_encoder.dart';
@@ -95,8 +96,9 @@ final class OpenAIResponsesPromptCodec {
 
     for (final part in parts) {
       if (part is! TextPromptPart) {
-        throw UnsupportedError(
-          '$role prompt part ${part.runtimeType} is not supported by the migrated Responses codec yet.',
+        throw unsupportedOpenAIResponsesPromptPart(
+          role: role,
+          part: part,
         );
       }
 

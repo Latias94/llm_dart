@@ -1,5 +1,6 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import 'openai_responses_prompt_limitations.dart';
 import 'openai_responses_replay_policy.dart';
 import 'openai_responses_request_tool_codec.dart';
 
@@ -30,8 +31,9 @@ final class OpenAIResponsesToolPromptProjection {
       }
 
       if (part is! ToolResultPromptPart) {
-        throw UnsupportedError(
-          'Tool prompt part ${part.runtimeType} is not supported by the migrated Responses codec yet.',
+        throw unsupportedOpenAIResponsesPromptPart(
+          role: 'tool',
+          part: part,
         );
       }
 
