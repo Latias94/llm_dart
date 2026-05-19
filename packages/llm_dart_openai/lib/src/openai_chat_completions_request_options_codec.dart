@@ -1,5 +1,5 @@
+import 'openai_generate_text_options.dart';
 import 'openai_model_capabilities.dart';
-import 'openai_options.dart';
 import 'resolved_openai_options.dart';
 
 final class OpenAIChatCompletionsRequestOptionsCodec {

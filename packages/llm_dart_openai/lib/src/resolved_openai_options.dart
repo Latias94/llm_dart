@@ -1,5 +1,5 @@
 import 'deepseek_options.dart';
-import 'openai_options.dart';
+import 'openai_generate_text_options.dart';
 import 'openrouter_options.dart';
 import 'xai_options.dart';
 

@@ -1,6 +1,6 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
-import 'openai_options.dart';
+import 'openai_generate_text_options.dart';
 import 'openai_responses_assistant_prompt_projection.dart';
 import 'openai_responses_replay_policy.dart';
 import 'openai_responses_tool_prompt_projection.dart';

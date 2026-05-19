@@ -5,7 +5,7 @@ import 'openai_chat_completions_request_policy.dart';
 import 'openai_chat_completions_request_prompt_codec.dart';
 import 'openai_chat_completions_request_tool_codec.dart';
 import 'openai_family_profile.dart';
-import 'openai_options.dart';
+import 'openai_generate_text_options.dart';
 import 'openai_request_format_codec.dart';
 import 'resolved_openai_options.dart';
 

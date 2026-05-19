@@ -1,6 +1,6 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
-import 'openai_options.dart';
+import 'openai_generate_text_options.dart';
 
 enum XAISearchMode {
   off('off'),

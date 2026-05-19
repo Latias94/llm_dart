@@ -4,7 +4,7 @@ import 'openai_chat_completions_assistant_prompt_projection.dart';
 import 'openai_chat_completions_request_tool_codec.dart';
 import 'openai_chat_completions_tool_prompt_projection.dart';
 import 'openai_chat_completions_user_prompt_encoder.dart';
-import 'openai_options.dart';
+import 'openai_generate_text_options.dart';
 
 final class OpenAIChatCompletionsPromptCodec {
   final String providerNamespace;

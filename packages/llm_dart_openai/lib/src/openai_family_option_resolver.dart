@@ -2,7 +2,8 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'deepseek_options.dart';
 import 'openai_family_profile.dart';
-import 'openai_options.dart';
+import 'openai_generate_text_options.dart';
+import 'openai_model_settings.dart';
 import 'openai_response_format.dart';
 import 'openrouter_options.dart';
 import 'resolved_openai_chat_settings.dart';

@@ -1,4 +1,4 @@
-import 'openai_options.dart';
+import 'openai_model_settings.dart';
 import 'openrouter_options.dart';
 
 final class ResolvedOpenAIChatModelSettings {

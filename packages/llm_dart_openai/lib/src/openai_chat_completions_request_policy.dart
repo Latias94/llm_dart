@@ -2,7 +2,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'openai_chat_completions_openai_compatibility.dart';
 import 'openai_family_profile.dart';
-import 'openai_options.dart';
+import 'openai_generate_text_options.dart';
 import 'openai_request_encoding_util.dart';
 import 'resolved_openai_options.dart';
 
