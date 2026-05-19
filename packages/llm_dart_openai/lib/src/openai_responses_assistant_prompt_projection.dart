@@ -2,6 +2,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'openai_request_encoding_util.dart';
 import 'openai_responses_assistant_replay_projection.dart';
+import 'openai_responses_native_tool_context.dart';
 import 'openai_responses_prompt_limitations.dart';
 import 'openai_responses_replay_policy.dart';
 
@@ -22,6 +23,8 @@ final class OpenAIResponsesAssistantPromptProjection {
     AssistantPromptMessage message,
     List<ModelWarning> warnings, {
     required OpenAIResponsesReplayPolicy replayPolicy,
+    OpenAIResponsesNativeToolContext nativeToolContext =
+        OpenAIResponsesNativeToolContext.empty,
   }) {
     final items = <Object?>[];
     final textContent = <Object?>[];
@@ -103,6 +106,7 @@ final class OpenAIResponsesAssistantPromptProjection {
           part,
           items,
           replayPolicy: replayPolicy,
+          nativeToolContext: nativeToolContext,
         );
         continue;
       }
@@ -132,6 +136,7 @@ final class OpenAIResponsesAssistantPromptProjection {
           items,
           warnings,
           replayPolicy: replayPolicy,
+          nativeToolContext: nativeToolContext,
         );
         continue;
       }

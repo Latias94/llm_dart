@@ -973,6 +973,232 @@ void main() {
       expect(request.warnings, isEmpty);
     });
 
+    test('reconstructs native shell and apply patch replay items', () {
+      const codec = OpenAIResponsesCodec();
+
+      final request = codec.encodeRequest(
+        modelId: 'gpt-5-mini',
+        prompt: [
+          AssistantPromptMessage(
+            parts: [
+              const ToolCallPromptPart(
+                toolCallId: 'call_shell_1',
+                toolName: 'shell',
+                input: {
+                  'action': {
+                    'commands': ['ls -la'],
+                    'timeoutMs': 1000,
+                    'maxOutputLength': 2000,
+                  },
+                },
+                providerOptions: ProviderReplayPromptPartOptions(
+                  ProviderMetadata({
+                    'openai': {
+                      'itemId': 'sh_1',
+                    },
+                  }),
+                ),
+              ),
+              ToolResultPromptPart(
+                toolCallId: 'call_shell_1',
+                toolName: 'shell',
+                output: {
+                  'output': [
+                    {
+                      'stdout': 'ok',
+                      'stderr': '',
+                      'outcome': {
+                        'type': 'exit',
+                        'exitCode': 0,
+                      },
+                    },
+                  ],
+                },
+              ),
+              const ToolCallPromptPart(
+                toolCallId: 'call_patch_1',
+                toolName: 'apply_patch',
+                input: {
+                  'callId': 'call_patch_1',
+                  'operation': {
+                    'type': 'create_file',
+                    'path': 'index.html',
+                    'diff': '+<html></html>',
+                  },
+                },
+                providerOptions: ProviderReplayPromptPartOptions(
+                  ProviderMetadata({
+                    'openai': {
+                      'itemId': 'apc_1',
+                    },
+                  }),
+                ),
+              ),
+            ],
+          ),
+          ToolPromptMessage(
+            toolName: 'apply_patch',
+            parts: [
+              ToolResultPromptPart(
+                toolCallId: 'call_patch_1',
+                toolName: 'apply_patch',
+                output: {
+                  'status': 'completed',
+                  'output': 'Created index.html',
+                },
+              ),
+            ],
+          ),
+        ],
+        tools: const [],
+        toolChoice: null,
+        options: const GenerateTextOptions(),
+        providerOptions: const OpenAIGenerateTextOptions(
+          store: false,
+          builtInTools: [
+            OpenAIShellTool(),
+            OpenAIApplyPatchTool(),
+          ],
+        ),
+        stream: false,
+      );
+
+      expect(
+        request.body['input'],
+        [
+          {
+            'type': 'shell_call',
+            'id': 'sh_1',
+            'call_id': 'call_shell_1',
+            'status': 'completed',
+            'action': {
+              'commands': ['ls -la'],
+              'timeout_ms': 1000,
+              'max_output_length': 2000,
+            },
+          },
+          {
+            'type': 'shell_call_output',
+            'call_id': 'call_shell_1',
+            'output': [
+              {
+                'stdout': 'ok',
+                'stderr': '',
+                'outcome': {
+                  'type': 'exit',
+                  'exit_code': 0,
+                },
+              },
+            ],
+          },
+          {
+            'type': 'apply_patch_call',
+            'id': 'apc_1',
+            'call_id': 'call_patch_1',
+            'status': 'completed',
+            'operation': {
+              'type': 'create_file',
+              'path': 'index.html',
+              'diff': '+<html></html>',
+            },
+          },
+          {
+            'type': 'apply_patch_call_output',
+            'call_id': 'call_patch_1',
+            'status': 'completed',
+            'output': 'Created index.html',
+          },
+        ],
+      );
+      expect(request.warnings, isEmpty);
+    });
+
+    test('encodes local shell tool outputs as native Responses items', () {
+      const codec = OpenAIResponsesCodec();
+
+      final request = codec.encodeRequest(
+        modelId: 'gpt-5-mini',
+        prompt: [
+          ToolPromptMessage(
+            toolName: 'local_shell',
+            parts: [
+              ToolResultPromptPart(
+                toolCallId: 'call_local_shell_1',
+                toolName: 'local_shell',
+                output: {
+                  'output': 'example output',
+                },
+              ),
+            ],
+          ),
+        ],
+        tools: const [],
+        toolChoice: null,
+        options: const GenerateTextOptions(),
+        providerOptions: const OpenAIGenerateTextOptions(
+          builtInTools: [
+            OpenAILocalShellTool(),
+          ],
+        ),
+        stream: false,
+      );
+
+      expect(
+        request.body['input'],
+        [
+          {
+            'type': 'local_shell_call_output',
+            'call_id': 'call_local_shell_1',
+            'output': 'example output',
+          },
+        ],
+      );
+      expect(request.warnings, isEmpty);
+    });
+
+    test('keeps shell-named function replay unless native tool is enabled', () {
+      const codec = OpenAIResponsesCodec();
+
+      final request = codec.encodeRequest(
+        modelId: 'gpt-5-mini',
+        prompt: [
+          AssistantPromptMessage(
+            parts: const [
+              ToolCallPromptPart(
+                toolCallId: 'call_shell_1',
+                toolName: 'shell',
+                input: {
+                  'action': {
+                    'commands': ['ls -la'],
+                  },
+                },
+              ),
+            ],
+          ),
+        ],
+        tools: const [],
+        toolChoice: null,
+        options: const GenerateTextOptions(),
+        providerOptions: const OpenAIGenerateTextOptions(
+          store: false,
+        ),
+        stream: false,
+      );
+
+      expect(
+        request.body['input'],
+        [
+          {
+            'type': 'function_call',
+            'call_id': 'call_shell_1',
+            'name': 'shell',
+            'arguments': '{"action":{"commands":["ls -la"]}}',
+          },
+        ],
+      );
+      expect(request.warnings, isEmpty);
+    });
+
     test(
         'uses item references for stored assistant replay items by default on the Responses path',
         () {

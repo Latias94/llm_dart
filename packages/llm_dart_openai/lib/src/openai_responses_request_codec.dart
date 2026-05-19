@@ -1,6 +1,7 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'openai_generate_text_options.dart';
+import 'openai_responses_native_tool_context.dart';
 import 'openai_responses_request_body_projection.dart';
 import 'openai_responses_request_prompt_codec.dart';
 import 'openai_responses_request_tool_codec.dart';
@@ -42,6 +43,9 @@ final class OpenAIResponsesRequestCodec {
       modelId: modelId,
       providerOptions: providerOptions,
     );
+    final nativeToolContext = OpenAIResponsesNativeToolContext.fromBuiltInTools(
+      providerOptions.builtInTools,
+    );
 
     for (final message in prompt) {
       input.addAll(
@@ -51,6 +55,7 @@ final class OpenAIResponsesRequestCodec {
           systemMessageMode: context.systemMessageMode,
           store: context.store,
           hasConversation: context.hasConversation,
+          nativeToolContext: nativeToolContext,
         ),
       );
     }

@@ -2,6 +2,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'openai_generate_text_options.dart';
 import 'openai_responses_assistant_prompt_projection.dart';
+import 'openai_responses_native_tool_context.dart';
 import 'openai_responses_prompt_limitations.dart';
 import 'openai_responses_replay_policy.dart';
 import 'openai_responses_tool_prompt_projection.dart';
@@ -25,6 +26,8 @@ final class OpenAIResponsesPromptCodec {
     required OpenAISystemMessageMode systemMessageMode,
     required bool store,
     required bool hasConversation,
+    OpenAIResponsesNativeToolContext nativeToolContext =
+        OpenAIResponsesNativeToolContext.empty,
   }) {
     if (message is SystemPromptMessage) {
       if (systemMessageMode == OpenAISystemMessageMode.remove) {
@@ -71,6 +74,7 @@ final class OpenAIResponsesPromptCodec {
         message,
         warnings,
         replayPolicy: replayPolicy,
+        nativeToolContext: nativeToolContext,
       );
     }
 
@@ -80,6 +84,7 @@ final class OpenAIResponsesPromptCodec {
       ).encode(
         message,
         replayPolicy: replayPolicy,
+        nativeToolContext: nativeToolContext,
       );
     }
 
