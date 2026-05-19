@@ -1,6 +1,7 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'google_binary_part_encoder.dart';
+import 'google_prompt_limitations.dart';
 
 final class GoogleUserPromptProjection {
   final GoogleBinaryPartEncoder binaryEncoder;
@@ -30,8 +31,9 @@ final class GoogleUserPromptProjection {
       );
     }
 
-    throw UnsupportedError(
-      'Google user prompt part ${part.runtimeType} is not supported yet.',
+    throw unsupportedGooglePromptPart(
+      role: 'user',
+      part: part,
     );
   }
 }

@@ -2,6 +2,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'google_assistant_prompt_projection.dart';
 import 'google_language_model_policy.dart';
+import 'google_prompt_limitations.dart';
 import 'google_tool_prompt_projection.dart';
 import 'google_user_prompt_projection.dart';
 
@@ -70,8 +71,6 @@ final class GooglePromptMessageEncoder {
       };
     }
 
-    throw UnsupportedError(
-      'Unsupported Google prompt message type: ${message.runtimeType}.',
-    );
+    throw unsupportedGooglePromptMessage(message);
   }
 }

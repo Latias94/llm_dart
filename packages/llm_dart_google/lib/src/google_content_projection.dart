@@ -1,6 +1,7 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'google_language_model_policy.dart';
+import 'google_prompt_limitations.dart';
 import 'google_prompt_message_encoder.dart';
 import 'google_server_tool_replay.dart';
 import 'google_shared.dart';
@@ -40,8 +41,9 @@ final class GoogleContentProjectionCodec {
 
         for (final part in message.parts) {
           if (part is! TextPromptPart) {
-            throw UnsupportedError(
-              'Google system prompt part ${part.runtimeType} is not supported yet.',
+            throw unsupportedGooglePromptPart(
+              role: 'system',
+              part: part,
             );
           }
 

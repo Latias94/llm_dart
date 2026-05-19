@@ -2,6 +2,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'google_function_response_replay.dart';
 import 'google_language_model_policy.dart';
+import 'google_prompt_limitations.dart';
 import 'google_prompt_replay_metadata.dart';
 
 final class GoogleToolPromptProjection {
@@ -62,8 +63,9 @@ final class GoogleToolPromptProjection {
       }
     }
 
-    throw UnsupportedError(
-      'Google tool prompt part ${part.runtimeType} is not supported yet.',
+    throw unsupportedGooglePromptPart(
+      role: 'tool',
+      part: part,
     );
   }
 }

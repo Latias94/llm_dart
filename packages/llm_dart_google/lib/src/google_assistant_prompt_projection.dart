@@ -2,6 +2,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'google_binary_part_encoder.dart';
 import 'google_language_model_policy.dart';
+import 'google_prompt_limitations.dart';
 import 'google_prompt_replay_metadata.dart';
 import 'google_server_tool_replay.dart';
 
@@ -103,8 +104,9 @@ final class GoogleAssistantPromptProjection {
       return null;
     }
 
-    throw UnsupportedError(
-      'Google assistant prompt part ${part.runtimeType} is not supported yet.',
+    throw unsupportedGooglePromptPart(
+      role: 'assistant',
+      part: part,
     );
   }
 }

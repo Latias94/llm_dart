@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import 'google_prompt_limitations.dart';
 import 'google_prompt_replay_metadata.dart';
 
 final class GoogleBinaryPartEncoder {
@@ -31,6 +32,16 @@ final class GoogleBinaryPartEncoder {
       };
     }
 
+    final text = data?.text;
+    if (text != null) {
+      return {
+        'inlineData': {
+          'mimeType': mediaType,
+          'data': base64Encode(utf8.encode(text)),
+        },
+      };
+    }
+
     if (_googleFileUri(data?.providerReference) case final fileUri?) {
       return {
         'fileData': {
@@ -40,9 +51,7 @@ final class GoogleBinaryPartEncoder {
       };
     }
 
-    throw UnsupportedError(
-      'Google binary prompt parts require in-memory bytes or a URI.',
-    );
+    throw missingGoogleUserBinaryData();
   }
 
   Map<String, Object?> encodeAssistantInlineDataPart({
@@ -53,9 +62,7 @@ final class GoogleBinaryPartEncoder {
   }) {
     final bytes = data?.bytes;
     if (bytes == null) {
-      throw UnsupportedError(
-        'Google assistant file prompt parts require in-memory bytes. Assistant-side file URIs are not supported.',
-      );
+      throw unsupportedGoogleAssistantFileData();
     }
 
     return {
