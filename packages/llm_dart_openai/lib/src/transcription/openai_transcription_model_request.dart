@@ -2,6 +2,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import '../provider/openai_model_settings.dart';
 import '../common/openai_non_text_model_support.dart';
+import '../provider/openai_provider_options_bag.dart';
 import 'openai_transcription_options.dart';
 
 OpenAITranscriptionModelSettings resolveOpenAITranscriptionModelSettings(
@@ -18,11 +19,8 @@ OpenAITranscriptionModelSettings resolveOpenAITranscriptionModelSettings(
 OpenAITranscriptionOptions? resolveOpenAITranscriptionProviderOptions(
   CallOptions callOptions,
 ) {
-  return resolveOpenAIProviderOptions<OpenAITranscriptionOptions>(
-    callOptions,
-    parameterName: 'request.callOptions.providerOptions',
-    expectedTypeName:
-        'OpenAITranscriptionOptions for OpenAI-family transcription models',
+  return resolveOpenAITranscriptionOptionsFromInvocation(
+    callOptions.providerOptions,
   );
 }
 

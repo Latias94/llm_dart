@@ -6,6 +6,7 @@ import 'package:llm_dart_openai/src/provider/openai_model_settings.dart';
 import 'package:llm_dart_openai/src/tools/openai_native_tools.dart';
 import 'package:llm_dart_openai/src/language/openai_response_format.dart';
 import 'package:llm_dart_openai/src/provider/openrouter_options.dart';
+import 'package:llm_dart_openai/src/provider/openai_provider_options_bag.dart';
 import 'package:llm_dart_openai/src/provider/resolved_openai_chat_settings.dart';
 import 'package:llm_dart_openai/src/provider/xai_options.dart';
 import 'package:llm_dart_provider/llm_dart_provider.dart';
@@ -69,6 +70,55 @@ void main() {
       expect(resolved.common.builtInTools, [fileSearchTool]);
     });
 
+    test('parses OpenAI provider options bag and merges typed overrides', () {
+      final resolved = openAIFamilyOptionResolverFor(
+        const OpenAIProfile(),
+      ).resolveInvocationOptions(
+        options: providerInvocationOptions(
+          typedOptions: const OpenAIGenerateTextOptions(
+            user: 'typed-user',
+          ),
+          bag: ProviderOptionsBag.forProvider('openai', {
+            'user': 'bag-user',
+            'store': true,
+            'reasoning_effort': 'high',
+            'include': ['message.output_text.logprobs'],
+            'metadata': {'traceId': 'trace_1'},
+          }),
+        ),
+        sharedResponseFormat: null,
+        modelSettings: const ResolvedOpenAIChatModelSettings(),
+      );
+
+      expect(resolved.common.user, 'typed-user');
+      expect(resolved.common.store, isTrue);
+      expect(resolved.common.reasoningEffort, OpenAIReasoningEffort.high);
+      expect(resolved.common.include, [
+        OpenAIResponsesInclude.messageOutputTextLogprobs,
+      ]);
+      expect(resolved.common.metadata, {'traceId': 'trace_1'});
+    });
+
+    test('projects typed OpenAI options into provider options bag', () {
+      final bag = openAIGenerateTextOptionsToProviderOptionsBag(
+        const OpenAIGenerateTextOptions(
+          store: true,
+          reasoningEffort: OpenAIReasoningEffort.high,
+          include: [
+            OpenAIResponsesInclude.reasoningEncryptedContent,
+          ],
+        ),
+      )!;
+
+      expect(bag.toJsonMap(), {
+        'openai': {
+          'store': true,
+          'reasoning_effort': 'high',
+          'include': ['reasoning.encrypted_content'],
+        },
+      });
+    });
+
     test('OpenRouter resolver applies settings and invocation search shaping',
         () {
       final resolver = openAIFamilyOptionResolverFor(
@@ -110,6 +160,74 @@ void main() {
         ),
         'anthropic/claude-3.5-sonnet:online',
       );
+
+      final bagLevelOptions = resolver.resolveInvocationOptions(
+        options: ProviderOptionsBag.fromJsonMap({
+          'openai': {
+            'service_tier': 'flex',
+          },
+          'openrouter': {
+            'search': {'mode': 'online_model'},
+          },
+        }),
+        sharedResponseFormat: null,
+        modelSettings: const ResolvedOpenAIChatModelSettings(),
+      );
+      expect(bagLevelOptions.common.serviceTier, 'flex');
+      expect(
+        resolver.resolveRequestModelId(
+          modelId: 'google/gemini-2.5-pro',
+          modelSettings: const ResolvedOpenAIChatModelSettings(),
+          invocationOptions: bagLevelOptions,
+        ),
+        'google/gemini-2.5-pro:online',
+      );
+    });
+
+    test('parses DeepSeek and xAI provider option namespaces', () {
+      final deepseek = openAIFamilyOptionResolverFor(
+        const DeepSeekProfile(),
+      ).resolveInvocationOptions(
+        options: ProviderOptionsBag.fromJsonMap({
+          'openai': {
+            'user': 'bag-user',
+          },
+          'deepseek': {
+            'logprobs': true,
+            'top_logprobs': 3,
+            'frequency_penalty': 0.2,
+            'response_format': {'type': 'json_object'},
+          },
+        }),
+        sharedResponseFormat: null,
+        modelSettings: const ResolvedOpenAIChatModelSettings(),
+      );
+
+      expect(deepseek.common.user, 'bag-user');
+      expect(deepseek.deepseek!.logprobs, isTrue);
+      expect(deepseek.deepseek!.topLogprobs, 3);
+      expect(deepseek.deepseek!.frequencyPenalty, 0.2);
+      expect(deepseek.deepseek!.responseFormat, {'type': 'json_object'});
+
+      final xai = openAIFamilyOptionResolverFor(
+        const XAIProfile(),
+      ).resolveInvocationOptions(
+        options: ProviderOptionsBag.fromJsonMap({
+          'xai': {
+            'search': {
+              'mode': 'on',
+              'return_citations': false,
+              'max_search_results': 5,
+            },
+          },
+        }),
+        sharedResponseFormat: null,
+        modelSettings: const ResolvedOpenAIChatModelSettings(),
+      );
+
+      expect(xai.xaiSearch!.mode, XAISearchMode.on);
+      expect(xai.xaiSearch!.returnCitations, isFalse);
+      expect(xai.xaiSearch!.maxSearchResults, 5);
     });
 
     test('profile-specific provider options are rejected on the wrong profile',

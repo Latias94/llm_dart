@@ -1,5 +1,6 @@
 import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'package:llm_dart_openai/src/speech/openai_speech_model_body.dart';
+import 'package:llm_dart_openai/src/speech/openai_speech_model_request.dart';
 import 'package:llm_dart_openai/src/speech/openai_speech_options.dart';
 import 'package:test/test.dart';
 
@@ -85,6 +86,34 @@ void main() {
           'speed': 0.75,
         },
       );
+    });
+
+    test('resolves speech options from provider options bag', () {
+      final options = resolveOpenAISpeechProviderOptions(
+        CallOptions(
+          providerOptions: ProviderOptionsBag.forProvider('openai', {
+            'output_format': 'flac',
+            'instructions': 'Use a warm tone.',
+            'speed': 0.9,
+            'language': 'en',
+          }),
+        ),
+      );
+      final outputFormat = resolveOpenAISpeechOutputFormat(
+        SpeechGenerationRequest(text: 'Hello world.'),
+        options,
+        warnings: [],
+      );
+      final body = buildOpenAISpeechRequestBody(
+        modelId: 'gpt-4o-mini-tts',
+        request: SpeechGenerationRequest(text: 'Hello world.'),
+        options: options,
+        outputFormat: outputFormat,
+      );
+
+      expect(body['response_format'], 'flac');
+      expect(body['instructions'], 'Use a warm tone.');
+      expect(body['speed'], 0.9);
     });
   });
 }

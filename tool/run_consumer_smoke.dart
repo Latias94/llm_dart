@@ -727,6 +727,7 @@ ConsumerSmokePaths buildConsumerSmokePaths(Directory repoRoot) {
         'llm_dart_ollama',
         'llm_dart_openai',
         'llm_dart_provider',
+        'llm_dart_provider_utils',
         'llm_dart_transport',
       ])
         packageName: pathForPubspec(
@@ -792,6 +793,7 @@ ${_dependencyEntries([
         'llm_dart_ollama',
         'llm_dart_openai',
         'llm_dart_provider',
+        'llm_dart_provider_utils',
         'llm_dart_transport',
       ], paths)}${_dependencyOverrides([
         'llm_dart_ai',
@@ -803,6 +805,7 @@ ${_dependencyEntries([
         'llm_dart_ollama',
         'llm_dart_openai',
         'llm_dart_provider',
+        'llm_dart_provider_utils',
         'llm_dart_transport',
       ], paths)}
 ''';
@@ -820,6 +823,7 @@ dependencies:
 ${_dependencyEntries(['llm_dart_openai'], paths)}${_dependencyOverrides([
         'llm_dart_ai',
         'llm_dart_provider',
+        'llm_dart_provider_utils',
         'llm_dart_transport',
       ], paths)}
 ''';
@@ -837,6 +841,7 @@ dependencies:
 ${_dependencyEntries(['llm_dart_google'], paths)}${_dependencyOverrides([
         'llm_dart_ai',
         'llm_dart_provider',
+        'llm_dart_provider_utils',
         'llm_dart_transport',
       ], paths)}
 ''';
@@ -854,6 +859,7 @@ dependencies:
 ${_dependencyEntries(['llm_dart_anthropic'], paths)}${_dependencyOverrides([
         'llm_dart_ai',
         'llm_dart_provider',
+        'llm_dart_provider_utils',
         'llm_dart_transport',
       ], paths)}
 ''';
@@ -870,6 +876,7 @@ environment:
 dependencies:
 ${_dependencyEntries(['llm_dart_ollama'], paths)}${_dependencyOverrides([
         'llm_dart_provider',
+        'llm_dart_provider_utils',
         'llm_dart_transport',
       ], paths)}
 ''';
@@ -886,6 +893,7 @@ environment:
 dependencies:
 ${_dependencyEntries(['llm_dart_elevenlabs'], paths)}${_dependencyOverrides([
         'llm_dart_provider',
+        'llm_dart_provider_utils',
         'llm_dart_transport',
       ], paths)}
 ''';
@@ -909,6 +917,7 @@ ${_dependencyEntries([
         'llm_dart_ollama',
         'llm_dart_openai',
         'llm_dart_provider',
+        'llm_dart_provider_utils',
         'llm_dart_transport',
       ], paths)}${_dependencyOverrides([
         'llm_dart_ai',
@@ -919,6 +928,7 @@ ${_dependencyEntries([
         'llm_dart_ollama',
         'llm_dart_openai',
         'llm_dart_provider',
+        'llm_dart_provider_utils',
         'llm_dart_transport',
       ], paths)}
 ''';
@@ -944,6 +954,7 @@ ${_dependencyEntries([
         'llm_dart_chat',
         'llm_dart_openai',
         'llm_dart_provider',
+        'llm_dart_provider_utils',
         'llm_dart_transport',
       ], paths)}
 dev_dependencies:
@@ -1061,17 +1072,12 @@ import 'package:llm_dart_ai/llm_dart_ai.dart' as ai;
 import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic;
 import 'package:llm_dart_chat/llm_dart_chat.dart' as chat;
 import 'package:llm_dart_core/llm_dart_core.dart' as compat_core;
-import 'package:llm_dart/deepseek.dart' as deepseek;
-import 'package:llm_dart/elevenlabs.dart' as elevenlabs;
-import 'package:llm_dart/groq.dart' as groq;
+import 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart' as elevenlabs;
 import 'package:llm_dart_google/llm_dart_google.dart' as google;
-import 'package:llm_dart/ollama.dart' as ollama;
+import 'package:llm_dart_ollama/llm_dart_ollama.dart' as ollama;
 import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
-import 'package:llm_dart/openrouter.dart' as openrouter;
-import 'package:llm_dart/phind.dart' as phind;
 import 'package:llm_dart_provider/llm_dart_provider.dart' as provider;
 import 'package:llm_dart_transport/llm_dart_transport.dart' as transport;
-import 'package:llm_dart/xai.dart' as xai;
 
 void main() {
   final prompts = <ai.ModelMessage>[
@@ -1080,18 +1086,18 @@ void main() {
   ];
 
   final models = [
-    llm.openai(apiKey: 'test').chatModel('gpt-4.1-mini'),
+    openai.openai(apiKey: 'test').chatModel('gpt-4.1-mini'),
     openai.openai(apiKey: 'test').chatModel('gpt-4.1-mini'),
     google.google(apiKey: 'test').chatModel('gemini-2.0-flash'),
     anthropic
         .anthropic(apiKey: 'test')
         .chatModel('claude-3-5-haiku-latest'),
     ollama.ollama().chatModel('llama3.2'),
-    xai.xai(apiKey: 'test').chatModel('grok-3'),
-    deepseek.deepSeek(apiKey: 'test').chatModel('deepseek-chat'),
-    openrouter.openRouter(apiKey: 'test').chatModel('openai/gpt-4o-mini'),
-    groq.groq(apiKey: 'test').chatModel('llama-3.3-70b-versatile'),
-    phind.phind(apiKey: 'test').chatModel('Phind-70B'),
+    openai.xai(apiKey: 'test').chatModel('grok-3'),
+    openai.deepSeek(apiKey: 'test').chatModel('deepseek-chat'),
+    openai.openRouter(apiKey: 'test').chatModel('openai/gpt-4o-mini'),
+    openai.groq(apiKey: 'test').chatModel('llama-3.3-70b-versatile'),
+    openai.phind(apiKey: 'test').chatModel('Phind-70B'),
   ];
 
   final speechModel =
@@ -1110,6 +1116,7 @@ void main() {
   }
 
   print([
+    llm.ProviderOptionsBag.empty.runtimeType,
     speechModel.runtimeType,
     mapped.runtimeType,
     'ok',

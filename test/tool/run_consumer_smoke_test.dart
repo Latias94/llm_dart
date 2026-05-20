@@ -74,6 +74,7 @@ void main() {
             'llm_dart_ollama',
             'llm_dart_openai',
             'llm_dart_provider',
+            'llm_dart_provider_utils',
             'llm_dart_transport',
           ])
             packageName: 'F:/repo/llm_dart/packages/$packageName',
@@ -85,6 +86,7 @@ void main() {
       expect(pubspec, contains('llm_dart:\n    path: F:/repo/llm_dart'));
       expect(pubspec, contains('dependency_overrides:'));
       expect(pubspec, contains('llm_dart_provider:'));
+      expect(pubspec, contains('llm_dart_provider_utils:'));
       expect(
         pubspec,
         contains('path: F:/repo/llm_dart/packages/llm_dart_transport'),
@@ -101,6 +103,7 @@ void main() {
             'llm_dart_flutter',
             'llm_dart_openai',
             'llm_dart_provider',
+            'llm_dart_provider_utils',
             'llm_dart_transport',
           ])
             packageName: 'F:/repo/llm_dart/packages/$packageName',
@@ -153,6 +156,7 @@ void main() {
             'llm_dart_ai',
             'llm_dart_openai',
             'llm_dart_provider',
+            'llm_dart_provider_utils',
             'llm_dart_transport',
           ])
             packageName: 'F:/repo/llm_dart/packages/$packageName',
@@ -169,6 +173,7 @@ void main() {
       );
       expect(pubspec, contains('dependency_overrides:'));
       expect(pubspec, contains('llm_dart_provider:'));
+      expect(pubspec, contains('llm_dart_provider_utils:'));
       expect(pubspec, contains('llm_dart_transport:'));
     });
 
@@ -180,6 +185,7 @@ void main() {
             'llm_dart_ai',
             'llm_dart_google',
             'llm_dart_provider',
+            'llm_dart_provider_utils',
             'llm_dart_transport',
           ])
             packageName: 'F:/repo/llm_dart/packages/$packageName',
@@ -196,6 +202,7 @@ void main() {
       );
       expect(pubspec, contains('dependency_overrides:'));
       expect(pubspec, contains('llm_dart_provider:'));
+      expect(pubspec, contains('llm_dart_provider_utils:'));
       expect(pubspec, contains('llm_dart_transport:'));
     });
 
@@ -207,6 +214,7 @@ void main() {
             'llm_dart_ai',
             'llm_dart_anthropic',
             'llm_dart_provider',
+            'llm_dart_provider_utils',
             'llm_dart_transport',
           ])
             packageName: 'F:/repo/llm_dart/packages/$packageName',
@@ -223,6 +231,7 @@ void main() {
       );
       expect(pubspec, contains('dependency_overrides:'));
       expect(pubspec, contains('llm_dart_provider:'));
+      expect(pubspec, contains('llm_dart_provider_utils:'));
       expect(pubspec, contains('llm_dart_transport:'));
     });
 
@@ -233,6 +242,7 @@ void main() {
           for (final packageName in const [
             'llm_dart_ollama',
             'llm_dart_provider',
+            'llm_dart_provider_utils',
             'llm_dart_transport',
           ])
             packageName: 'F:/repo/llm_dart/packages/$packageName',
@@ -249,6 +259,7 @@ void main() {
       );
       expect(pubspec, contains('dependency_overrides:'));
       expect(pubspec, contains('llm_dart_provider:'));
+      expect(pubspec, contains('llm_dart_provider_utils:'));
       expect(pubspec, contains('llm_dart_transport:'));
     });
 
@@ -259,6 +270,7 @@ void main() {
           for (final packageName in const [
             'llm_dart_elevenlabs',
             'llm_dart_provider',
+            'llm_dart_provider_utils',
             'llm_dart_transport',
           ])
             packageName: 'F:/repo/llm_dart/packages/$packageName',
@@ -275,6 +287,7 @@ void main() {
       );
       expect(pubspec, contains('dependency_overrides:'));
       expect(pubspec, contains('llm_dart_provider:'));
+      expect(pubspec, contains('llm_dart_provider_utils:'));
       expect(pubspec, contains('llm_dart_transport:'));
     });
 
@@ -291,6 +304,7 @@ void main() {
             'llm_dart_ollama',
             'llm_dart_openai',
             'llm_dart_provider',
+            'llm_dart_provider_utils',
             'llm_dart_transport',
           ])
             packageName: 'F:/repo/llm_dart/packages/$packageName',
@@ -315,6 +329,10 @@ void main() {
       expect(
         dartConsumerSmokeProgram,
         isNot(contains("package:llm_dart/legacy.dart")),
+      );
+      expect(
+        dartConsumerSmokeProgram,
+        isNot(contains("package:llm_dart/openai.dart")),
       );
       expect(dartConsumerSmokeProgram, isNot(contains('LLMBuilder')));
       expect(dartConsumerSmokeProgram, isNot(contains('PromptMessage')));

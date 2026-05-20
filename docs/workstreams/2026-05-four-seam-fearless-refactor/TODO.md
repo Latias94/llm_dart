@@ -32,15 +32,15 @@
 
 ## M4 Typed provider options + provider options bag
 
-- [ ] Add provider options bag primitives to provider contracts.
-- [ ] Add helpers for typed options to project into bag form.
-- [ ] Add OpenAI-family bag parsing/adoption path.
-- [ ] Add tests for typed options and bag coexistence/conflicts.
+- [x] Add provider options bag primitives to provider contracts.
+- [x] Add helpers for typed options to project into bag form.
+- [x] Add OpenAI-family bag parsing/adoption path.
+- [x] Add tests for typed options and bag coexistence/conflicts.
 
 ## M5 Final validation
 
-- [ ] Run focused tests/analyze for changed packages.
-- [ ] Run guards.
-- [ ] Run `git diff --check`.
-- [ ] Commit each coherent slice with conventional commit messages.
+- [x] Run focused tests/analyze for changed packages.
+- [x] Run guards.
+- [x] Run `git diff --check`.
+- [x] Commit each coherent slice with conventional commit messages.
 

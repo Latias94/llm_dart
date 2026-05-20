@@ -68,3 +68,39 @@ Validation captured during M3:
 - `dart analyze .`: passed
 - OpenAI package tests + prompt normalization + provider replay metadata guard tests:
   passed
+
+## M4 decision: typed provider options and provider options bag now coexist
+
+`ProviderInvocationOptions` remains the typed Dart Interface for provider-owned
+request customization. A new `ProviderOptionsBag` adds the Vercel AI
+SDK-style JSON Seam: an outer map keyed by provider namespace and an inner JSON
+object owned by that provider. `ProviderInvocationOptionsBundle` can carry a
+typed options object and a bag together; typed resolution still unwraps the
+typed object, while provider Implementations can parse the bag for transport
+and cross-process use cases.
+
+OpenAI-family language, embedding, image, speech, and transcription paths now
+accept bag namespaces. OpenAI-family profiles parse:
+
+- `openai` common options.
+- `openrouter` search shaping.
+- `deepseek` chat-completions-specific logprob/penalty/response-format fields.
+- `xai` live-search fields.
+
+Typed values take precedence when a bundle carries both typed options and a
+bag; bag values fill unset typed fields. HTTP chat transport can serialize a
+`ProviderOptionsBag` without a custom encoder while continuing to require an
+explicit encoder for non-projectable typed options.
+
+Validation captured during M4:
+
+- `dart analyze packages/llm_dart_provider packages/llm_dart_chat packages/llm_dart_openai packages/llm_dart_core`: passed
+- Provider contract, OpenAI option resolver/non-text body, and HTTP chat
+  transport focused tests: passed
+- Workspace guards, workspace analysis, workspace tests, workspace package
+  tests, and consumer smoke passed via `tool/release_readiness.dart`.
+- `tool/run_workspace_publish_dry_run.dart --package=llm_dart_provider`
+  repeatedly reached pub package validation and then timed out inside the Dart
+  pub validator after 300/600 seconds in this Windows environment; no package
+  metadata warning/error was emitted before the timeout.
+- `git diff --check`: passed

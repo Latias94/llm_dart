@@ -61,11 +61,19 @@ final class HttpChatTransportCallOptionsPayload {
   CallOptions toCallOptions({
     ProviderInvocationOptions? providerOptions,
   }) {
+    final jsonProviderOptions =
+        providerOptions == null && this.providerOptions.isNotEmpty
+            ? ProviderOptionsBag.fromJsonMap(
+                this.providerOptions,
+                path: r'$.callOptions.providerOptions',
+              )
+            : providerOptions;
+
     return CallOptions(
       timeout: timeout,
       headers: headers.isEmpty ? null : headers,
       maxRetries: maxRetries,
-      providerOptions: providerOptions,
+      providerOptions: jsonProviderOptions,
     );
   }
 }

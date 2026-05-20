@@ -20,6 +20,19 @@ typedef HttpChatTransportProviderOptionsEncoder = Map<String, Object?> Function(
   ProviderInvocationOptions providerOptions,
 );
 
+Map<String, Object?> normalizeHttpChatTransportProviderOptions(
+  Map<String, Object?> providerOptions,
+) {
+  try {
+    return ProviderOptionsBag.fromJsonMap(
+      providerOptions,
+      path: r'$.callOptions.providerOptions',
+    ).toJsonMap();
+  } on FormatException {
+    return providerOptions;
+  }
+}
+
 final class HttpChatTransportSendMessagesRequestContext {
   final ChatTransportRequest request;
   final Uri endpoint;
@@ -110,14 +123,44 @@ HttpChatTransportCallOptionsPayload serializeHttpChatTransportCallOptions(
   Map<String, Object?> providerOptions = const {};
   final typedProviderOptions = options.providerOptions;
   if (typedProviderOptions != null) {
-    final encoder = providerOptionsEncoder;
-    if (encoder == null) {
-      throw UnsupportedError(
-        'HttpChatTransport needs providerOptionsEncoder to serialize typed providerOptions. Common CallOptions fields are supported without an encoder.',
-      );
-    }
+    final bag = providerOptionsBagFromInvocationOptions(typedProviderOptions);
+    final typed = typedProviderOptionsFromInvocationOptions(
+      typedProviderOptions,
+    );
 
-    providerOptions = encoder(typedProviderOptions);
+    if (typed == null) {
+      providerOptions = bag?.toJsonMap() ?? const {};
+    } else {
+      final encoder = providerOptionsEncoder;
+      if (encoder == null) {
+        throw UnsupportedError(
+          'HttpChatTransport needs providerOptionsEncoder to serialize typed providerOptions. Common CallOptions fields are supported without an encoder.',
+        );
+      }
+
+      final encoded = normalizeHttpChatTransportProviderOptions(
+        encoder(typed),
+      );
+
+      if (bag == null || bag.isEmpty) {
+        providerOptions = encoded;
+      } else {
+        try {
+          providerOptions = bag
+              .mergedWith(
+                ProviderOptionsBag.fromJsonMap(
+                  encoded,
+                  path: r'$.callOptions.providerOptions',
+                ),
+              )
+              .toJsonMap();
+        } on FormatException {
+          throw UnsupportedError(
+            'HttpChatTransport providerOptionsEncoder must return namespaced provider options when combined with ProviderOptionsBag.',
+          );
+        }
+      }
+    }
   }
 
   return HttpChatTransportCallOptionsPayload(

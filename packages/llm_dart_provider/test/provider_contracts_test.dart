@@ -807,6 +807,116 @@ void main() {
       );
     });
 
+    test('models provider invocation options as typed options plus JSON bag',
+        () {
+      final bag = ProviderOptionsBag.fromJsonMap({
+        'openai': {
+          'reasoningEffort': 'high',
+          'metadata': {
+            'traceId': 'trace_1',
+          },
+        },
+      });
+      final bundle = providerInvocationOptions(
+        typedOptions: _TestProviderOptions(),
+        bag: bag,
+      )!;
+
+      expect(providerOptionsBagFromInvocationOptions(bundle), bag);
+      expect(
+        providerOptionsNamespaceFromInvocationOptions(bundle, 'openai'),
+        {
+          'reasoningEffort': 'high',
+          'metadata': {'traceId': 'trace_1'},
+        },
+      );
+      expect(
+        resolveProviderInvocationOptions<_TestProviderOptions>(
+          bundle,
+          parameterName: 'providerOptions',
+          expectedTypeName: '_TestProviderOptions',
+        ),
+        isA<_TestProviderOptions>(),
+      );
+      expect(
+        resolveProviderInvocationOptions<_TestProviderOptions>(
+          bag,
+          parameterName: 'providerOptions',
+          expectedTypeName: '_TestProviderOptions',
+        ),
+        isNull,
+      );
+    });
+
+    test('validates provider options bag namespace shape and deep merges', () {
+      final left = ProviderOptionsBag.forProvider('openai', {
+        'metadata': {
+          'traceId': 'left',
+        },
+        'store': true,
+      });
+      final right = ProviderOptionsBag.fromJsonMap({
+        'openai': {
+          'metadata': {
+            'spanId': 'right',
+          },
+          'user': 'user_123',
+        },
+      });
+
+      expect(
+        left!.mergedWith(right).toJsonMap(),
+        {
+          'openai': {
+            'metadata': {
+              'traceId': 'left',
+              'spanId': 'right',
+            },
+            'store': true,
+            'user': 'user_123',
+          },
+        },
+      );
+      expect(
+        () => ProviderOptionsBag.fromJsonMap({
+          'OpenAI': {'store': true},
+        }),
+        throwsFormatException,
+      );
+      expect(
+        () => ProviderOptionsBag.fromJsonMap({'openai': true}),
+        throwsFormatException,
+      );
+    });
+
+    test('collects bag projection from typed invocation options', () {
+      final options = _ProjectingProviderOptions();
+
+      expect(
+        providerOptionsBagFromInvocationOptions(options)!.toJsonMap(),
+        {
+          'test': {'mode': 'projected'},
+        },
+      );
+
+      final merged = providerInvocationOptions(
+        typedOptions: options,
+        bag: ProviderOptionsBag.forProvider('test', {
+          'traceId': 'trace_1',
+        }),
+      );
+
+      expect(
+        providerOptionsBagFromInvocationOptions(merged)!.toJsonMap(),
+        {
+          'test': {
+            'traceId': 'trace_1',
+            'mode': 'projected',
+          },
+        },
+      );
+    });
+
     test('resolves typed provider model options', () {
       final options = _TestModelOptions();
 
@@ -1062,6 +1172,16 @@ final class _ContractImageModel implements ImageModel {
 final class _TestProviderOptions implements ProviderInvocationOptions {}
 
 final class _OtherProviderOptions implements ProviderInvocationOptions {}
+
+final class _ProjectingProviderOptions
+    implements ProviderInvocationOptionsBagProjection {
+  @override
+  ProviderOptionsBag toProviderOptionsBag() {
+    return ProviderOptionsBag.forProvider('test', {
+      'mode': 'projected',
+    })!;
+  }
+}
 
 final class _TestModelOptions implements ProviderModelOptions {}
 

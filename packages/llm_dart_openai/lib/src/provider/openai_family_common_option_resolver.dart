@@ -5,6 +5,7 @@ import 'openai_family_option_resolver_base.dart';
 import '../language/openai_family_shared_response_format.dart';
 import '../language/openai_generate_text_options.dart';
 import 'openai_model_settings.dart';
+import 'openai_provider_options_bag.dart';
 import 'openrouter_options.dart';
 import 'resolved_openai_chat_settings.dart';
 import 'resolved_openai_options.dart';
@@ -71,11 +72,19 @@ class CommonOpenAIOptionResolver extends OpenAIFamilyOptionResolver {
       return const OpenAIGenerateTextOptions();
     }
 
-    if (options is OpenAIGenerateTextOptions) {
-      return options;
+    if (typedProviderOptionsFromInvocationOptions(options)
+        case OpenAIGenerateTextOptions()) {
+      return resolveOpenAIGenerateTextOptionsFromInvocation(options);
     }
 
-    throwWrongOpenAIFamilyProviderOptions(options);
+    if (providerOptionsBagFromInvocationOptions(options) != null &&
+        typedProviderOptionsFromInvocationOptions(options) == null) {
+      return resolveOpenAIGenerateTextOptionsFromInvocation(options);
+    }
+
+    throwWrongOpenAIFamilyProviderOptions(
+      typedProviderOptionsFromInvocationOptions(options) ?? options,
+    );
   }
 }
 

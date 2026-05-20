@@ -3,6 +3,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'openai_image_options.dart';
 import '../provider/openai_model_settings.dart';
 import '../common/openai_non_text_model_support.dart';
+import '../provider/openai_provider_options_bag.dart';
 
 OpenAIImageModelSettings resolveOpenAIImageModelSettings(
   ProviderModelOptions settings,
@@ -17,9 +18,5 @@ OpenAIImageModelSettings resolveOpenAIImageModelSettings(
 OpenAIImageOptions? resolveOpenAIImageProviderOptions(
   CallOptions callOptions,
 ) {
-  return resolveOpenAIProviderOptions<OpenAIImageOptions>(
-    callOptions,
-    parameterName: 'request.callOptions.providerOptions',
-    expectedTypeName: 'OpenAIImageOptions for OpenAI-family image models',
-  );
+  return resolveOpenAIImageOptionsFromInvocation(callOptions.providerOptions);
 }

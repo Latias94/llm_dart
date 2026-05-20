@@ -3,6 +3,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'openai_embedding_options.dart';
 import '../provider/openai_model_settings.dart';
 import '../common/openai_non_text_model_support.dart';
+import '../provider/openai_provider_options_bag.dart';
 
 const int openAIMaxEmbeddingsPerCall = 2048;
 
@@ -20,11 +21,7 @@ OpenAIEmbeddingModelSettings resolveOpenAIEmbeddingModelSettings(
 OpenAIEmbedOptions? resolveOpenAIEmbeddingProviderOptions(
   CallOptions callOptions,
 ) {
-  return resolveOpenAIProviderOptions<OpenAIEmbedOptions>(
-    callOptions,
-    parameterName: 'request.callOptions.providerOptions',
-    expectedTypeName: 'OpenAIEmbedOptions for OpenAI-family embedding models',
-  );
+  return resolveOpenAIEmbedOptionsFromInvocation(callOptions.providerOptions);
 }
 
 void validateOpenAIEmbeddingValueCount(

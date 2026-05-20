@@ -1,5 +1,6 @@
 import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'package:llm_dart_openai/src/image/openai_image_generation_body.dart';
+import 'package:llm_dart_openai/src/image/openai_image_model_options_resolution.dart';
 import 'package:llm_dart_openai/src/image/openai_image_options.dart';
 import 'package:llm_dart_openai/src/image/openai_image_types.dart';
 import 'package:test/test.dart';
@@ -66,6 +67,31 @@ void main() {
       );
 
       expect(body.containsKey('response_format'), isFalse);
+    });
+
+    test('resolves image options from provider options bag', () {
+      final options = resolveOpenAIImageProviderOptions(
+        CallOptions(
+          providerOptions: ProviderOptionsBag.forProvider('openai', {
+            'style': 'natural',
+            'quality': 'high',
+            'output_format': 'png',
+            'response_format': 'url',
+            'user': 'user_bag',
+          }),
+        ),
+      );
+      final body = buildOpenAIImageGenerationRequestBody(
+        modelId: 'dall-e-3',
+        request: ImageGenerationRequest(prompt: 'Draw a cat.'),
+        options: options,
+      );
+
+      expect(body['style'], 'natural');
+      expect(body['quality'], 'high');
+      expect(body['output_format'], 'png');
+      expect(body['response_format'], 'url');
+      expect(body['user'], 'user_bag');
     });
   });
 }

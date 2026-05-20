@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'package:llm_dart_openai/src/transcription/openai_transcription_model_body.dart';
+import 'package:llm_dart_openai/src/transcription/openai_transcription_model_request.dart';
 import 'package:llm_dart_openai/src/transcription/openai_transcription_options.dart';
 import 'package:test/test.dart';
 
@@ -107,6 +108,42 @@ void main() {
       final bodyText = utf8.decode(body.bytes);
 
       expect(bodyText, contains('name="file"; filename="audio.mp3"'));
+    });
+
+    test('resolves transcription options from provider options bag', () {
+      final options = resolveOpenAITranscriptionProviderOptions(
+        CallOptions(
+          providerOptions: ProviderOptionsBag.forProvider('openai', {
+            'include': ['logprobs'],
+            'language': 'en',
+            'prompt': 'Prefer short output.',
+            'temperature': 0.3,
+            'response_format': 'verbose_json',
+            'timestamp_granularities': ['segment'],
+          }),
+        ),
+      );
+      final responseFormat = resolveOpenAITranscriptionResponseFormat(
+        modelId: 'whisper-1',
+        options: options,
+      );
+      final body = buildOpenAITranscriptionMultipartBody(
+        modelId: 'whisper-1',
+        request: TranscriptionRequest(
+          audioBytes: utf8.encode('abc'),
+          mediaType: 'audio/wav',
+        ),
+        options: options,
+        responseFormat: responseFormat,
+      );
+      final bodyText = utf8.decode(body.bytes);
+
+      expect(bodyText, contains('logprobs'));
+      expect(bodyText, contains('en'));
+      expect(bodyText, contains('Prefer short output.'));
+      expect(bodyText, contains('0.3'));
+      expect(bodyText, contains('verbose_json'));
+      expect(bodyText, contains('segment'));
     });
   });
 }

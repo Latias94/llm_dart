@@ -31,7 +31,7 @@ void main() {
       expect(request.responseType, TransportResponseType.plainText);
       expect(request.timeout, const Duration(seconds: 3));
       expect(request.maxRetries, 2);
-      expect(request.cancellation, same(cancellation));
+      expect(request.cancellation!.source, same(cancellation));
       expect(request.headers, containsPair('accept', 'text/event-stream'));
       expect(request.body, {
         'kind': 'llm_dart.chat.request',

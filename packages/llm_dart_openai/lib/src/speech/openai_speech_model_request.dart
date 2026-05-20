@@ -2,6 +2,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import '../provider/openai_model_settings.dart';
 import '../common/openai_non_text_model_support.dart';
+import '../provider/openai_provider_options_bag.dart';
 import 'openai_speech_options.dart';
 
 OpenAISpeechModelSettings resolveOpenAISpeechModelSettings(
@@ -18,11 +19,7 @@ OpenAISpeechModelSettings resolveOpenAISpeechModelSettings(
 OpenAISpeechOptions? resolveOpenAISpeechProviderOptions(
   CallOptions callOptions,
 ) {
-  return resolveOpenAIProviderOptions<OpenAISpeechOptions>(
-    callOptions,
-    parameterName: 'request.callOptions.providerOptions',
-    expectedTypeName: 'OpenAISpeechOptions for OpenAI-family speech models',
-  );
+  return resolveOpenAISpeechOptionsFromInvocation(callOptions.providerOptions);
 }
 
 void validateOpenAISpeechOptions(OpenAISpeechOptions? options) {

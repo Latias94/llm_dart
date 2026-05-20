@@ -198,7 +198,7 @@ void main() {
       expect(capturedRequest, isNotNull);
       expect(capturedRequest!.timeout, const Duration(seconds: 5));
       expect(capturedRequest!.maxRetries, 2);
-      expect(capturedRequest!.cancellation, same(cancellation));
+      expect(capturedRequest!.cancellation!.source, same(cancellation));
       expect(capturedRequest!.headers, isNot(contains('x-provider-trace')));
 
       final decodedRequest =
@@ -258,6 +258,55 @@ void main() {
       expect(decodedRequest.callOptions.providerOptions, {
         'reasoningEffort': 'high',
       });
+    });
+
+    test('serializes provider options bag without a custom encoder', () async {
+      TransportRequest? capturedRequest;
+
+      final transport = HttpChatTransport(
+        endpoint: Uri.parse('https://example.com/chat'),
+        transport: _FakeTransportClient(
+          onSendStream: (request) async {
+            capturedRequest = request;
+            return StreamingTransportResponse(
+              statusCode: 200,
+              stream: const Stream<List<int>>.empty(),
+            );
+          },
+        ),
+      );
+
+      await transport
+          .sendMessages(
+            ChatTransportRequest(
+              chatId: 'chat-1',
+              prompt: [
+                UserPromptMessage.text('Hello'),
+              ],
+              options: ChatRequestOptions(
+                callOptions: CallOptions(
+                  providerOptions: ProviderOptionsBag.forProvider('openai', {
+                    'reasoningEffort': 'high',
+                  }),
+                ),
+              ),
+            ),
+          )
+          .toList();
+
+      final decodedRequest =
+          const HttpChatTransportRequestJsonCodec().decodeRequest(
+        capturedRequest!.body,
+      );
+      expect(decodedRequest.callOptions.providerOptions, {
+        'openai': {
+          'reasoningEffort': 'high',
+        },
+      });
+      expect(
+        decodedRequest.callOptions.toCallOptions().providerOptions,
+        isA<ProviderOptionsBag>(),
+      );
     });
 
     test(
@@ -1025,7 +1074,8 @@ void main() {
       expect(transport.reconnect('chat-1'), isNull);
     });
 
-    test('rejects provider options without an explicit encoder', () async {
+    test('rejects typed provider options without an explicit encoder',
+        () async {
       final transport = HttpChatTransport(
         endpoint: Uri.parse('https://example.com/chat'),
         transport: const _FakeTransportClient(),

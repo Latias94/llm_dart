@@ -1,5 +1,6 @@
 import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'package:llm_dart_openai/src/embedding/openai_embedding_model_body.dart';
+import 'package:llm_dart_openai/src/embedding/openai_embedding_model_request.dart';
 import 'package:llm_dart_openai/src/embedding/openai_embedding_options.dart';
 import 'package:test/test.dart';
 
@@ -52,6 +53,25 @@ void main() {
           'encoding_format': 'float',
         },
       );
+    });
+
+    test('resolves embedding options from provider options bag', () {
+      final options = resolveOpenAIEmbeddingProviderOptions(
+        CallOptions(
+          providerOptions: ProviderOptionsBag.forProvider('openai', {
+            'encoding_format': 'base64',
+            'user': 'user_bag',
+          }),
+        ),
+      );
+      final body = buildOpenAIEmbeddingRequestBody(
+        modelId: 'text-embedding-3-small',
+        request: EmbedRequest(values: const ['hello']),
+        options: options,
+      );
+
+      expect(body['encoding_format'], 'base64');
+      expect(body['user'], 'user_bag');
     });
   });
 }

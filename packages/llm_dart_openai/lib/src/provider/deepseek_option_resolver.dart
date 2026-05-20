@@ -1,7 +1,7 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
-import 'deepseek_options.dart';
 import 'openai_family_common_option_resolver.dart';
+import 'openai_provider_options_bag.dart';
 import 'resolved_openai_chat_settings.dart';
 import 'resolved_openai_options.dart';
 
@@ -14,15 +14,17 @@ final class DeepSeekOptionResolver extends CommonOpenAIOptionResolver {
     required ResponseFormat? sharedResponseFormat,
     required ResolvedOpenAIChatModelSettings modelSettings,
   }) {
-    if (options is DeepSeekGenerateTextOptions) {
+    final deepSeekOptions =
+        resolveDeepSeekGenerateTextOptionsFromInvocation(options);
+    if (deepSeekOptions != null) {
       return ResolvedOpenAIGenerateTextOptions(
         common: mergeOpenAIFamilyCommonOptions(
-          common: options.common,
+          common: deepSeekOptions.common,
           sharedResponseFormat: sharedResponseFormat,
           modelSettings: modelSettings.common,
-          deepseekOptions: options,
+          deepseekOptions: deepSeekOptions,
         ),
-        deepseek: options,
+        deepseek: deepSeekOptions,
       );
     }
 
