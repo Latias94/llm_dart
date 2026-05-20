@@ -2,6 +2,7 @@ import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'openai_family_profile.dart';
 import 'openai_non_text_model_support.dart';
+import 'openai_responses_lifecycle_routes.dart';
 
 final class OpenAIResponsesLifecycleSettings {
   final String? organization;
@@ -28,7 +29,11 @@ final class OpenAIResponsesLifecycleTransportSupport {
     required this.settings,
   });
 
-  Uri get responsesUri => Uri.parse('$baseUrl/responses');
+  OpenAIResponsesLifecycleRoutes get _routes {
+    return OpenAIResponsesLifecycleRoutes(baseUrl: baseUrl);
+  }
+
+  Uri get responsesUri => _routes.responsesUri;
 
   Uri responseUri(
     String responseId, {
@@ -36,26 +41,16 @@ final class OpenAIResponsesLifecycleTransportSupport {
     int? startingAfter,
     bool stream = false,
   }) {
-    return _uriWithQuery(
-      '$baseUrl/responses/${Uri.encodeComponent(requireResponseId(
-        responseId,
-        parameterName: 'responseId',
-      ))}',
-      {
-        if (include != null && include.isNotEmpty) 'include': include.join(','),
-        if (startingAfter != null) 'starting_after': '$startingAfter',
-        if (stream) 'stream': '$stream',
-      },
+    return _routes.responseUri(
+      responseId,
+      include: include,
+      startingAfter: startingAfter,
+      stream: stream,
     );
   }
 
   Uri cancelResponseUri(String responseId) {
-    return Uri.parse(
-      '$baseUrl/responses/${Uri.encodeComponent(requireResponseId(
-        responseId,
-        parameterName: 'responseId',
-      ))}/cancel',
-    );
+    return _routes.cancelResponseUri(responseId);
   }
 
   Uri inputItemsUri(
@@ -66,26 +61,13 @@ final class OpenAIResponsesLifecycleTransportSupport {
     int limit = 20,
     String order = 'desc',
   }) {
-    if (limit < 1) {
-      throw ArgumentError.value(
-        limit,
-        'limit',
-        'OpenAI response input item list limit must be >= 1.',
-      );
-    }
-
-    return _uriWithQuery(
-      '$baseUrl/responses/${Uri.encodeComponent(requireResponseId(
-        responseId,
-        parameterName: 'responseId',
-      ))}/input_items',
-      {
-        'limit': '$limit',
-        if (order.isNotEmpty) 'order': order,
-        if (after != null && after.isNotEmpty) 'after': after,
-        if (before != null && before.isNotEmpty) 'before': before,
-        if (include != null && include.isNotEmpty) 'include': include.join(','),
-      },
+    return _routes.inputItemsUri(
+      responseId,
+      after: after,
+      before: before,
+      include: include,
+      limit: limit,
+      order: order,
     );
   }
 
@@ -136,22 +118,6 @@ final class OpenAIResponsesLifecycleTransportSupport {
     String value, {
     required String parameterName,
   }) {
-    final normalized = value.trim();
-    if (normalized.isEmpty) {
-      throw ArgumentError.value(
-        value,
-        parameterName,
-        'Expected a non-empty OpenAI response ID.',
-      );
-    }
-    return normalized;
+    return _routes.requireResponseId(value, parameterName: parameterName);
   }
-}
-
-Uri _uriWithQuery(String uri, Map<String, String> queryParameters) {
-  final parsed = Uri.parse(uri);
-  if (queryParameters.isEmpty) {
-    return parsed;
-  }
-  return parsed.replace(queryParameters: queryParameters);
 }
