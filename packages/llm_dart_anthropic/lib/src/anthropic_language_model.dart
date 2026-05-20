@@ -7,6 +7,7 @@ import 'anthropic_language_model_response.dart';
 import 'anthropic_language_model_stream.dart';
 import 'anthropic_language_model_token_count.dart';
 import 'anthropic_language_model_transport.dart';
+import 'anthropic_model_call_support.dart';
 import 'anthropic_model_settings.dart';
 import 'anthropic_model_describer.dart';
 import 'anthropic_token_count.dart';
@@ -56,8 +57,9 @@ final class AnthropicLanguageModel
       stream: false,
     );
 
-    final response = await transport.send(
-      buildAnthropicLanguageModelTransportRequest(
+    return sendAnthropicModelRequest(
+      transport: transport,
+      request: buildAnthropicLanguageModelTransportRequest(
         baseUrl: baseUrl,
         route: AnthropicLanguageModelRoute.messages,
         callOptions: request.callOptions,
@@ -67,11 +69,10 @@ final class AnthropicLanguageModel
         settings: settings,
         requestBetas: preparedRequest.betaFeatures,
       ),
-    );
-
-    return decodeAnthropicLanguageModelGenerateResponse(
-      body: response.body,
-      warnings: preparedRequest.warnings,
+      decode: (body, _) => decodeAnthropicLanguageModelGenerateResponse(
+        body: body,
+        warnings: preparedRequest.warnings,
+      ),
     );
   }
 
@@ -119,8 +120,9 @@ final class AnthropicLanguageModel
       request: request,
     );
 
-    final response = await transport.send(
-      buildAnthropicLanguageModelTransportRequest(
+    return sendAnthropicModelRequest(
+      transport: transport,
+      request: buildAnthropicLanguageModelTransportRequest(
         baseUrl: baseUrl,
         route: AnthropicLanguageModelRoute.countTokens,
         callOptions: request.callOptions,
@@ -130,11 +132,10 @@ final class AnthropicLanguageModel
         settings: settings,
         requestBetas: preparedRequest.betaFeatures,
       ),
-    );
-
-    return decodeAnthropicLanguageModelTokenCountResponse(
-      body: response.body,
-      warnings: preparedRequest.warnings,
+      decode: (body, _) => decodeAnthropicLanguageModelTokenCountResponse(
+        body: body,
+        warnings: preparedRequest.warnings,
+      ),
     );
   }
 }
