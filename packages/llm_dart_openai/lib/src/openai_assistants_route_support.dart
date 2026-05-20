@@ -1,5 +1,5 @@
 import 'openai_assistants_lifecycle_models.dart';
-import 'openai_assistants_message_models.dart';
+import 'openai_assistants_message_list_models.dart';
 import 'openai_assistants_run_models.dart';
 import 'openai_assistants_run_step_models.dart';
 

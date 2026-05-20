@@ -1,7 +1,10 @@
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'openai_assistants_lifecycle_client_support.dart';
-import 'openai_assistants_thread_models.dart';
+import 'openai_assistants_message_delete_model.dart';
+import 'openai_assistants_message_list_models.dart';
+import 'openai_assistants_message_request_models.dart';
+import 'openai_assistants_message_response_model.dart';
 import 'openai_assistants_transport.dart';
 
 final class OpenAIAssistantsMessageLifecycle {
