@@ -1,10 +1,12 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import 'openai_responses_finish_support.dart';
 import 'openai_responses_metadata.dart';
 import 'openai_responses_result_item_projection.dart';
 import 'openai_responses_stream_state.dart';
 import 'openai_responses_stream_util.dart';
 import 'openai_streaming_support.dart';
+import 'openai_responses_usage_support.dart';
 
 GenerateTextResult decodeOpenAIResponsesGenerateResponse(
   Map<String, Object?> response, {
@@ -132,57 +134,6 @@ Iterable<LanguageModelStreamEvent> decodeOpenAIResponsesTerminalChunk(
     providerMetadata: metadata.response(
       response,
       logprobs: state.logprobs,
-    ),
-  );
-}
-
-FinishReason mapOpenAIResponsesFinishReason({
-  required String? rawReason,
-  required bool hasToolCalls,
-  required String? status,
-}) {
-  if (status == 'failed') {
-    return FinishReason.error;
-  }
-
-  if (rawReason == null) {
-    return hasToolCalls ? FinishReason.toolCalls : FinishReason.stop;
-  }
-
-  if (rawReason == 'max_output_tokens') {
-    return FinishReason.maxTokens;
-  }
-
-  if (rawReason == 'content_filter') {
-    return FinishReason.contentFilter;
-  }
-
-  if (rawReason == 'cancelled') {
-    return FinishReason.aborted;
-  }
-
-  return hasToolCalls ? FinishReason.toolCalls : FinishReason.other;
-}
-
-UsageStats? decodeOpenAIResponsesUsage(Map<String, Object?>? usage) {
-  if (usage == null) {
-    return null;
-  }
-
-  final inputTokens = openAIResponsesAsInt(usage['input_tokens']);
-  final outputTokens = openAIResponsesAsInt(usage['output_tokens']);
-  final totalTokens = openAIResponsesAsInt(usage['total_tokens']) ??
-      ((inputTokens != null && outputTokens != null)
-          ? inputTokens + outputTokens
-          : null);
-  final outputDetails = openAIResponsesAsMap(usage['output_tokens_details']);
-
-  return UsageStats(
-    inputTokens: inputTokens,
-    outputTokens: outputTokens,
-    totalTokens: totalTokens,
-    reasoningTokens: openAIResponsesAsInt(
-      outputDetails?['reasoning_tokens'],
     ),
   );
 }
