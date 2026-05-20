@@ -11,126 +11,45 @@ import 'package:llm_dart_provider/llm_dart_provider.dart'
 import '../common/tool_input_stream_state.dart';
 import '../stream/text_stream_event.dart';
 import 'chat_ui_message.dart';
-import 'chat_ui_tool_input_stream_store.dart';
+import 'chat_ui_tool_input_projection.dart';
 import 'chat_ui_tool_part_index.dart';
 import 'chat_ui_tool_part_builder.dart';
 
 final class ChatUiToolPartStore {
   final ChatUiToolPartIndex _parts;
-  final ChatUiToolInputStreamStore _inputStreams = ChatUiToolInputStreamStore();
+  late final ChatUiToolInputProjection _inputs =
+      ChatUiToolInputProjection(_parts);
 
   ChatUiToolPartStore(List<ChatUiPart> parts)
       : _parts = ChatUiToolPartIndex(parts);
 
   void hydrate(ToolUiPart part, int index) {
     _parts.hydrate(part, index);
-    _inputStreams.hydrate(part);
+    _inputs.hydrate(part);
   }
 
   void clearStreamingInputs() {
-    _inputStreams.clear();
+    _inputs.clearStreamingInputs();
   }
 
   void applyInputStart(ToolInputStartEvent event) {
-    _inputStreams.start(event);
-    _parts.upsert(
-      _buildPart(
-        toolCallId: event.toolCallId,
-        toolName: event.toolName,
-        state: ToolUiPartState.inputStreaming,
-        setInput: true,
-        input: null,
-        setInputText: true,
-        inputText: null,
-        setOutput: true,
-        output: null,
-        setToolOutput: true,
-        toolOutput: null,
-        setErrorText: true,
-        errorText: null,
-        providerExecuted: event.providerExecuted,
-        isDynamic: event.isDynamic,
-        setTitle: true,
-        title: event.title,
-        callProviderMetadata: event.providerMetadata,
-      ),
-    );
+    _inputs.applyInputStart(event);
   }
 
   void applyInputDelta(ToolInputDeltaEvent event) {
-    final partial = _inputStreams.appendDelta(event);
-    _parts.upsert(
-      _buildPart(
-        toolCallId: event.toolCallId,
-        state: ToolUiPartState.inputStreaming,
-        setInput: true,
-        input: partial.input,
-        setInputText: true,
-        inputText: partial.text,
-        callProviderMetadata: event.providerMetadata,
-      ),
-    );
+    _inputs.applyInputDelta(event);
   }
 
   void applyInputEnd(ToolInputEndEvent event) {
-    final partial = _inputStreams.end(event);
-    _parts.upsert(
-      _buildPart(
-        toolCallId: event.toolCallId,
-        state: ToolUiPartState.inputAvailable,
-        setInput: true,
-        input: partial.input,
-        setInputText: true,
-        inputText: partial.text,
-        callProviderMetadata: event.providerMetadata,
-      ),
-    );
+    _inputs.applyInputEnd(event);
   }
 
   void applyInputError(ToolInputErrorEvent event) {
-    final partial = _inputStreams.fail(event);
-    final input = event.input ?? partial?.input;
-    final inputText = partial?.text ?? stringifyStreamingToolValue(input);
-    _parts.upsert(
-      _buildPart(
-        toolCallId: event.toolCallId,
-        toolName: event.toolName,
-        state: ToolUiPartState.outputError,
-        setInput: true,
-        input: input,
-        setInputText: true,
-        inputText: inputText,
-        setOutput: true,
-        output: null,
-        setToolOutput: true,
-        toolOutput: null,
-        setErrorText: true,
-        errorText: event.errorText,
-        providerExecuted: event.providerExecuted,
-        isDynamic: event.isDynamic,
-        setTitle: event.title != null,
-        title: event.title,
-        callProviderMetadata: event.providerMetadata,
-      ),
-    );
+    _inputs.applyInputError(event);
   }
 
   void applyCall(ToolCallEvent event) {
-    _inputStreams.remove(event.toolCall.toolCallId);
-    _parts.upsert(
-      _buildPart(
-        toolCallId: event.toolCall.toolCallId,
-        toolName: event.toolCall.toolName,
-        state: ToolUiPartState.inputAvailable,
-        setInput: true,
-        input: event.toolCall.input,
-        providerExecuted: event.toolCall.providerExecuted,
-        isDynamic: event.toolCall.isDynamic,
-        setTitle: true,
-        title: event.toolCall.title,
-        callProviderMetadata: event.providerMetadata,
-      ),
-    );
+    _inputs.applyCall(event);
   }
 
   void applyApprovalRequest(ToolApprovalRequestEvent event) {
@@ -155,7 +74,7 @@ final class ChatUiToolPartStore {
   }
 
   void applyResult(ToolResultEvent event) {
-    _inputStreams.remove(event.toolResult.toolCallId);
+    _inputs.discard(event.toolResult.toolCallId);
     _parts.require(
       event.toolResult.toolCallId,
       chunkType: 'tool-result',
@@ -234,7 +153,7 @@ final class ChatUiToolPartStore {
   }) =>
       ChatUiToolPartBuilder(
         current: _parts.get(toolCallId),
-        partial: _inputStreams.get(toolCallId),
+        partial: null,
       ).build(
         toolCallId: toolCallId,
         toolName: toolName,
