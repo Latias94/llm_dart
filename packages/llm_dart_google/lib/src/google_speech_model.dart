@@ -3,6 +3,7 @@ import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'google_model_describer.dart';
 import 'google_model_settings.dart';
+import 'google_speech_model_body.dart';
 import 'google_speech_model_request.dart';
 import 'google_speech_model_response.dart';
 import 'google_speech_model_transport.dart';
