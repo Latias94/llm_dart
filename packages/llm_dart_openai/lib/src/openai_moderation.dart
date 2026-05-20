@@ -3,6 +3,7 @@ import 'package:llm_dart_transport/llm_dart_transport.dart';
 import 'openai_family_profile.dart';
 import 'openai_family_url_support.dart';
 import 'openai_moderation_body.dart';
+import 'openai_moderation_client_support.dart';
 import 'openai_moderation_models.dart';
 import 'openai_moderation_options.dart';
 import 'openai_moderation_transport.dart';
@@ -56,8 +57,9 @@ final class OpenAIModerationClient {
       model: model,
       settings: settings,
     );
-    final response = await transport.send(
-      _requestSupport.moderationRequest(
+    return sendOpenAIModerationRequest(
+      transport: transport,
+      request: _requestSupport.moderationRequest(
         body: body,
         timeout: timeout,
         maxRetries: maxRetries,
@@ -65,8 +67,6 @@ final class OpenAIModerationClient {
         extraHeaders: headers,
       ),
     );
-
-    return decodeOpenAIModerationResponse(response.body);
   }
 
   Future<OpenAIModerationResult> moderateText(
