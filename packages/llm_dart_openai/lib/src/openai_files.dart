@@ -2,11 +2,11 @@ import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'openai_family_profile.dart';
 import 'openai_family_url_support.dart';
+import 'openai_files_client_support.dart';
 import 'openai_files_models.dart';
 import 'openai_files_options.dart';
 import 'openai_files_transport.dart';
 import 'openai_files_upload_body.dart';
-import 'openai_json_support.dart';
 import 'openai_json_value.dart';
 import 'openai_profile_boundary.dart';
 
@@ -54,17 +54,6 @@ final class OpenAIFilesClient {
     return _requestSupport.fileContentUri(fileId);
   }
 
-  Future<T> _sendJsonRequest<T>({
-    required TransportRequest request,
-    required String responseName,
-    required T Function(Map<String, Object?> json) decode,
-  }) async {
-    final response = await transport.send(request);
-    return decode(
-      decodeOpenAIJsonObject(response.body, responseName: responseName),
-    );
-  }
-
   Future<OpenAIFileObject> uploadFile(
     OpenAIFileUpload request, {
     Duration? timeout,
@@ -73,7 +62,8 @@ final class OpenAIFilesClient {
     Map<String, String>? headers,
   }) async {
     final body = buildOpenAIFileUploadBody(request);
-    return _sendJsonRequest(
+    return sendOpenAIFilesJsonModel(
+      transport: transport,
       request: _requestSupport.uploadRequest(
         body: body,
         timeout: timeout,
@@ -122,7 +112,8 @@ final class OpenAIFilesClient {
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
-    return _sendJsonRequest(
+    return sendOpenAIFilesJsonModel(
+      transport: transport,
       request: _requestSupport.jsonRequest(
         uri: _requestSupport.fileListUri(
           purpose: purpose,
@@ -148,7 +139,8 @@ final class OpenAIFilesClient {
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
-    return _sendJsonRequest(
+    return sendOpenAIFilesJsonModel(
+      transport: transport,
       request: _requestSupport.jsonRequest(
         uri: fileUri(fileId),
         method: TransportMethod.get,
@@ -169,7 +161,8 @@ final class OpenAIFilesClient {
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
-    return _sendJsonRequest(
+    return sendOpenAIFilesJsonModel(
+      transport: transport,
       request: _requestSupport.jsonRequest(
         uri: fileUri(fileId),
         method: TransportMethod.delete,
