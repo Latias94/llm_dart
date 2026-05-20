@@ -32,6 +32,28 @@ void main() {
       );
     });
 
+    test('parses payloads through the provider-local parser module', () {
+      final parsed = parseOpenAICustomPayload(
+        kind: OpenAIImageGenerationCallCustomPart.customKind,
+        data: {
+          'id': 'img_2',
+          'result': 'AAEC',
+        },
+        providerMetadata: ProviderMetadata.forNamespace(
+          'openai',
+          {
+            'itemId': 'img_2',
+          },
+        ),
+      );
+
+      expect(parsed, isA<OpenAIImageGenerationCallCustomPart>());
+      expect(
+        (parsed! as OpenAIImageGenerationCallCustomPart).itemId,
+        'img_2',
+      );
+    });
+
     test('parses partial image custom events', () {
       final parsed = OpenAICustomPart.tryParseEvent(
         CustomEvent(

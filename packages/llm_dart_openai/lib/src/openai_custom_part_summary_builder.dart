@@ -14,6 +14,7 @@ OpenAICustomPartSummary buildOpenAICustomPartSummary(
       _buildCodeInterpreterCallSummary(part),
     OpenAIToolSearchCallCustomPart() => _buildToolSearchCallSummary(part),
     OpenAIToolSearchOutputCustomPart() => _buildToolSearchOutputSummary(part),
+    _ => throw UnsupportedError('Unsupported OpenAI custom part: ${part.kind}'),
   };
 }
 

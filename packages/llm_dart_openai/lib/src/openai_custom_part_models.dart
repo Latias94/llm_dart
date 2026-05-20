@@ -1,4 +1,7 @@
-part of 'openai_custom_part.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
+
+import 'openai_custom_part_core.dart';
+import 'openai_custom_part_value_support.dart';
 
 final class OpenAIImageGenerationCallCustomPart extends OpenAICustomPart {
   static const customKind = 'openai.image_generation_call';

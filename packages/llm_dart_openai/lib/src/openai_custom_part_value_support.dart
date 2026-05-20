@@ -1,4 +1,6 @@
-part of 'openai_custom_part.dart';
+import 'dart:convert';
+
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 Map<String, Object?>? asMap(Object? value) {
   if (value is Map<String, Object?>) {

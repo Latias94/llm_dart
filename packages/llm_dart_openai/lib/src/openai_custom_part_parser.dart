@@ -1,6 +1,10 @@
-part of 'openai_custom_part.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 
-OpenAICustomPart? _parseCustomPayload({
+import 'openai_custom_part_core.dart';
+import 'openai_custom_part_models.dart';
+import 'openai_custom_part_value_support.dart';
+
+OpenAICustomPart? parseOpenAICustomPayload({
   required String kind,
   required Object? data,
   required ProviderMetadata? providerMetadata,
