@@ -4,7 +4,7 @@ import 'openai_assistants_lifecycle_models.dart';
 import 'openai_assistants_message_list_models.dart';
 import 'openai_assistants_route_support.dart';
 import 'openai_assistants_run_models.dart';
-import 'openai_assistants_run_step_models.dart';
+import 'openai_assistants_run_step_list_models.dart';
 import 'openai_family_profile.dart';
 import 'openai_non_text_model_support.dart';
 

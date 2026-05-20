@@ -1,7 +1,7 @@
 import 'openai_assistants_lifecycle_models.dart';
 import 'openai_assistants_message_list_models.dart';
 import 'openai_assistants_run_models.dart';
-import 'openai_assistants_run_step_models.dart';
+import 'openai_assistants_run_step_list_models.dart';
 
 final class OpenAIAssistantsRouteSupport {
   final String baseUrl;
