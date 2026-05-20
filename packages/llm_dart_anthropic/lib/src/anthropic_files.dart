@@ -5,6 +5,7 @@ import 'anthropic_code_execution_replay.dart';
 import 'anthropic_file_response.dart';
 import 'anthropic_file_types.dart';
 import 'anthropic_files_transport.dart';
+import 'anthropic_files_upload_body.dart';
 import 'anthropic_model_settings.dart';
 
 final class AnthropicFiles {
@@ -40,9 +41,10 @@ final class AnthropicFiles {
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
+    final body = buildAnthropicFileUploadBody(request);
     final response = await transport.send(
       _requestSupport.uploadRequest(
-        request: request,
+        body: body,
         timeout: timeout,
         maxRetries: maxRetries,
         cancellation: cancellation,
