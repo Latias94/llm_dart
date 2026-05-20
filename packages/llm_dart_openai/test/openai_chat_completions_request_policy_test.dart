@@ -1,7 +1,7 @@
-import 'package:llm_dart_openai/src/deepseek_options.dart';
-import 'package:llm_dart_openai/src/openai_chat_completions_request_policy.dart';
-import 'package:llm_dart_openai/src/openai_generate_text_options.dart';
-import 'package:llm_dart_openai/src/resolved_openai_options.dart';
+import 'package:llm_dart_openai/src/provider/deepseek_options.dart';
+import 'package:llm_dart_openai/src/chat_completions/openai_chat_completions_request_policy.dart';
+import 'package:llm_dart_openai/src/language/openai_generate_text_options.dart';
+import 'package:llm_dart_openai/src/provider/resolved_openai_options.dart';
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:test/test.dart';
 

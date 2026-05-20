@@ -16,6 +16,8 @@ import 'tool/check_core_compatibility_shell_guard_test.dart'
     as core_compatibility_shell_guard_tool_tests;
 import 'tool/check_example_api_guards_test.dart'
     as example_api_guard_tool_tests;
+import 'tool/check_openai_provider_layout_guard_test.dart'
+    as openai_provider_layout_guard_tool_tests;
 import 'tool/check_pub_version_availability_test.dart'
     as pub_version_availability_tool_tests;
 import 'tool/check_provider_replay_metadata_guards_test.dart'
@@ -51,6 +53,7 @@ void main() {
       bootstrap_overrides_tool_tests.main();
       core_compatibility_shell_guard_tool_tests.main();
       example_api_guard_tool_tests.main();
+      openai_provider_layout_guard_tool_tests.main();
       pub_version_availability_tool_tests.main();
       provider_replay_metadata_guard_tool_tests.main();
       dependency_guard_tool_tests.main();

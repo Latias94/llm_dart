@@ -44,7 +44,7 @@ final promptPart = TextPromptPart(
 ''',
       );
       for (final path in [
-        'packages/llm_dart_openai/lib/src/openai_responses_codec.dart',
+        'packages/llm_dart_openai/lib/src/responses/openai_responses_codec.dart',
         'packages/llm_dart_google/lib/src/google_generate_content_codec.dart',
         'packages/llm_dart_anthropic/lib/src/anthropic_messages_codec.dart',
       ]) {
@@ -91,7 +91,7 @@ final replay = providerReplayMetadataFromOptions(part.providerOptions);
         'final ok = TextPromptPart("replay", providerOptions: replayOptions);',
       );
       for (final path in [
-        'packages/llm_dart_openai/lib/src/openai_responses_codec.dart',
+        'packages/llm_dart_openai/lib/src/responses/openai_responses_codec.dart',
         'packages/llm_dart_google/lib/src/google_generate_content_codec.dart',
         'packages/llm_dart_anthropic/lib/src/anthropic_messages_codec.dart',
       ]) {

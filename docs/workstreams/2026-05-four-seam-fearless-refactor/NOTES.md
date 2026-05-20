@@ -43,3 +43,28 @@ Validation captured during M2:
 - provider cancellation focused smoke tests: passed
 - `dart analyze .`: passed
 - `git diff --check`: passed
+
+## M3 decision: OpenAI provider code is organized by route/capability
+
+`llm_dart_openai` no longer keeps every OpenAI-family Implementation file flat under
+`lib/src`. The package now uses route/capability directories:
+
+- `provider/` for the OpenAI-family facade, profiles, settings, capability policy,
+  and compatible-provider option resolvers.
+- `chat_completions/` and `responses/` for the two language-model route
+  Implementations.
+- `assistants/`, `files/`, `embedding/`, `image/`, `moderation/`, `speech/`, and
+  `transcription/` for route-specific clients/models.
+- `tools/`, `custom_parts/`, and `common/` for provider-native tool definitions,
+  custom content parts, shared JSON/request/stream helpers.
+
+Rationale: this mirrors the Vercel provider package shape and improves Locality.
+Maintainers can now navigate by the provider route or capability Seam instead of
+scanning a 294-file flat `src` directory. The public package Interface remains stable
+through `lib/llm_dart_openai.dart`; only private `src` import paths changed.
+
+Validation captured during M3:
+
+- `dart analyze .`: passed
+- OpenAI package tests + prompt normalization + provider replay metadata guard tests:
+  passed

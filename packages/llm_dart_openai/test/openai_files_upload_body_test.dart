@@ -1,7 +1,7 @@
 import 'dart:convert';
 
-import 'package:llm_dart_openai/src/openai_files_options.dart';
-import 'package:llm_dart_openai/src/openai_files_upload_body.dart';
+import 'package:llm_dart_openai/src/files/openai_files_options.dart';
+import 'package:llm_dart_openai/src/files/openai_files_upload_body.dart';
 import 'package:test/test.dart';
 
 void main() {

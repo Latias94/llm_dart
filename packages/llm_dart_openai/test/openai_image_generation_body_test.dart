@@ -1,7 +1,7 @@
 import 'package:llm_dart_ai/llm_dart_ai.dart';
-import 'package:llm_dart_openai/src/openai_image_generation_body.dart';
-import 'package:llm_dart_openai/src/openai_image_options.dart';
-import 'package:llm_dart_openai/src/openai_image_types.dart';
+import 'package:llm_dart_openai/src/image/openai_image_generation_body.dart';
+import 'package:llm_dart_openai/src/image/openai_image_options.dart';
+import 'package:llm_dart_openai/src/image/openai_image_types.dart';
 import 'package:test/test.dart';
 
 void main() {

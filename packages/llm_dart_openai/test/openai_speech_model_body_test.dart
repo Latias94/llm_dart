@@ -1,6 +1,6 @@
 import 'package:llm_dart_ai/llm_dart_ai.dart';
-import 'package:llm_dart_openai/src/openai_speech_model_body.dart';
-import 'package:llm_dart_openai/src/openai_speech_options.dart';
+import 'package:llm_dart_openai/src/speech/openai_speech_model_body.dart';
+import 'package:llm_dart_openai/src/speech/openai_speech_options.dart';
 import 'package:test/test.dart';
 
 void main() {

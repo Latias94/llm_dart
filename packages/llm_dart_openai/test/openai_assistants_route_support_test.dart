@@ -1,4 +1,4 @@
-import 'package:llm_dart_openai/src/openai_assistants_route_support.dart';
+import 'package:llm_dart_openai/src/assistants/openai_assistants_route_support.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart';
 import 'package:test/test.dart';
 

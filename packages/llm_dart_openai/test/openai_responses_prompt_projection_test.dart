@@ -1,11 +1,11 @@
 import 'package:llm_dart_openai/llm_dart_openai.dart';
-import 'package:llm_dart_openai/src/openai_responses_assistant_replay_projection.dart';
-import 'package:llm_dart_openai/src/openai_responses_assistant_prompt_projection.dart';
-import 'package:llm_dart_openai/src/openai_responses_mcp_approval_replay_projection.dart';
-import 'package:llm_dart_openai/src/openai_responses_request_prompt_codec.dart';
-import 'package:llm_dart_openai/src/openai_responses_replay_policy.dart';
-import 'package:llm_dart_openai/src/openai_responses_tool_prompt_projection.dart';
-import 'package:llm_dart_openai/src/openai_responses_user_part_encoder.dart';
+import 'package:llm_dart_openai/src/responses/openai_responses_assistant_replay_projection.dart';
+import 'package:llm_dart_openai/src/responses/openai_responses_assistant_prompt_projection.dart';
+import 'package:llm_dart_openai/src/responses/openai_responses_mcp_approval_replay_projection.dart';
+import 'package:llm_dart_openai/src/responses/openai_responses_request_prompt_codec.dart';
+import 'package:llm_dart_openai/src/responses/openai_responses_replay_policy.dart';
+import 'package:llm_dart_openai/src/responses/openai_responses_tool_prompt_projection.dart';
+import 'package:llm_dart_openai/src/responses/openai_responses_user_part_encoder.dart';
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:test/test.dart';
 

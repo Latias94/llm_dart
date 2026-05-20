@@ -1,5 +1,5 @@
 import 'package:llm_dart_openai/llm_dart_openai.dart';
-import 'package:llm_dart_openai/src/openai_responses_request_context.dart';
+import 'package:llm_dart_openai/src/responses/openai_responses_request_context.dart';
 import 'package:test/test.dart';
 
 void main() {

@@ -1,10 +1,10 @@
 import 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
 import 'package:llm_dart_core/llm_dart_core.dart';
 import 'package:llm_dart_google/llm_dart_google.dart';
-import 'package:llm_dart_openai/src/openai_chat_completions_codec.dart';
-import 'package:llm_dart_openai/src/openai_options.dart';
-import 'package:llm_dart_openai/src/openai_responses_codec.dart';
-import 'package:llm_dart_openai/src/resolved_openai_options.dart';
+import 'package:llm_dart_openai/src/chat_completions/openai_chat_completions_codec.dart';
+import 'package:llm_dart_openai/src/common/openai_options.dart';
+import 'package:llm_dart_openai/src/responses/openai_responses_codec.dart';
+import 'package:llm_dart_openai/src/provider/resolved_openai_options.dart';
 import 'package:test/test.dart';
 
 void main() {

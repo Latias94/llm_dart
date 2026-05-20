@@ -1,9 +1,9 @@
 import 'dart:convert';
 
-import 'package:llm_dart_openai/src/openai_chat_completions_codec.dart';
-import 'package:llm_dart_openai/src/openai_language_model_call_routing.dart';
-import 'package:llm_dart_openai/src/openai_language_model_stream.dart';
-import 'package:llm_dart_openai/src/openai_responses_codec.dart';
+import 'package:llm_dart_openai/src/chat_completions/openai_chat_completions_codec.dart';
+import 'package:llm_dart_openai/src/language/openai_language_model_call_routing.dart';
+import 'package:llm_dart_openai/src/language/openai_language_model_stream.dart';
+import 'package:llm_dart_openai/src/responses/openai_responses_codec.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 import 'package:test/test.dart';
 

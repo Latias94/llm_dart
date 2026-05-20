@@ -6,7 +6,7 @@ const String _providerOptionsPath =
     'packages/llm_dart_provider/lib/src/common/provider_options.dart';
 
 const List<String> _providerRequestCodecPaths = [
-  'packages/llm_dart_openai/lib/src/openai_responses_codec.dart',
+  'packages/llm_dart_openai/lib/src/responses/openai_responses_codec.dart',
   'packages/llm_dart_google/lib/src/google_generate_content_codec.dart',
   'packages/llm_dart_anthropic/lib/src/anthropic_messages_codec.dart',
 ];

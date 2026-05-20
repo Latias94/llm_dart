@@ -49,6 +49,9 @@ void main() {
       final providerReplayMetadataGuardStep = steps.firstWhere(
         (step) => step.name == 'Provider replay metadata guard',
       );
+      final openAIProviderLayoutGuardStep = steps.firstWhere(
+        (step) => step.name == 'OpenAI provider layout guard',
+      );
       final publishDryRunStep = steps.firstWhere(
         (step) => step.name == 'Workspace publish dry-run',
       );
@@ -57,6 +60,7 @@ void main() {
         steps.map((step) => step.name),
         containsAll([
           'Provider replay metadata guard',
+          'OpenAI provider layout guard',
           'Provider metadata namespace guard',
           'Example API guard',
           'Workspace tests',
@@ -81,6 +85,10 @@ void main() {
       expect(
         providerReplayMetadataGuardStep.commandText,
         'dart --suppress-analytics run tool/check_provider_replay_metadata_guards.dart',
+      );
+      expect(
+        openAIProviderLayoutGuardStep.commandText,
+        'dart --suppress-analytics run tool/check_openai_provider_layout_guard.dart',
       );
       expect(
         publishDryRunStep.commandText,

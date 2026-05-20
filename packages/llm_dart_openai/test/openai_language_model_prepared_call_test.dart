@@ -1,10 +1,10 @@
-import 'package:llm_dart_openai/src/openai_chat_completions_codec.dart';
-import 'package:llm_dart_openai/src/openai_family_profile.dart';
-import 'package:llm_dart_openai/src/openai_language_model_call_routing.dart';
-import 'package:llm_dart_openai/src/openai_language_model_prepared_call.dart';
-import 'package:llm_dart_openai/src/openai_options.dart';
-import 'package:llm_dart_openai/src/openai_responses_codec.dart';
-import 'package:llm_dart_openai/src/resolved_openai_chat_settings.dart';
+import 'package:llm_dart_openai/src/chat_completions/openai_chat_completions_codec.dart';
+import 'package:llm_dart_openai/src/provider/openai_family_profile.dart';
+import 'package:llm_dart_openai/src/language/openai_language_model_call_routing.dart';
+import 'package:llm_dart_openai/src/language/openai_language_model_prepared_call.dart';
+import 'package:llm_dart_openai/src/common/openai_options.dart';
+import 'package:llm_dart_openai/src/responses/openai_responses_codec.dart';
+import 'package:llm_dart_openai/src/provider/resolved_openai_chat_settings.dart';
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 import 'package:test/test.dart';

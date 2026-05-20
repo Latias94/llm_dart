@@ -308,6 +308,13 @@ List<ReleaseReadinessStep> buildReleaseReadinessSteps(
           'Keep replay continuation metadata in explicit replay prompt options and approved provider replay helpers.',
     ),
     const ReleaseReadinessStep(
+      name: 'OpenAI provider layout guard',
+      executable: 'dart',
+      arguments: ['run', 'tool/check_openai_provider_layout_guard.dart'],
+      failureHint:
+          'Keep OpenAI provider implementation files in route/capability directories.',
+    ),
+    const ReleaseReadinessStep(
       name: 'Provider metadata namespace guard',
       executable: 'dart',
       arguments: ['run', 'tool/check_provider_metadata_namespace_guards.dart'],

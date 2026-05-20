@@ -1,5 +1,5 @@
-import 'package:llm_dart_openai/src/openai_stream_tool_projection.dart';
-import 'package:llm_dart_openai/src/openai_streaming_support.dart';
+import 'package:llm_dart_openai/src/tools/openai_stream_tool_projection.dart';
+import 'package:llm_dart_openai/src/common/openai_streaming_support.dart';
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:test/test.dart';
 

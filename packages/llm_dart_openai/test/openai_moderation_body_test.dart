@@ -1,5 +1,5 @@
-import 'package:llm_dart_openai/src/openai_moderation_body.dart';
-import 'package:llm_dart_openai/src/openai_moderation_options.dart';
+import 'package:llm_dart_openai/src/moderation/openai_moderation_body.dart';
+import 'package:llm_dart_openai/src/moderation/openai_moderation_options.dart';
 import 'package:test/test.dart';
 
 void main() {

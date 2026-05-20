@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-import 'package:llm_dart_openai/src/openai_json_value.dart';
+import 'package:llm_dart_openai/src/common/openai_json_value.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -30,8 +30,8 @@ void main() {
       expect(openAIOptionalBool(null, path: 'strict'), isNull);
       expect(openAIOptionalStringMap(null, path: 'metadata'), isNull);
       expect(openAIOptionalStringList(null, path: 'file_ids'), isNull);
-      expect(openAIOptionalEpochSecondsDateTime(null, path: 'expires_at'),
-          isNull);
+      expect(
+          openAIOptionalEpochSecondsDateTime(null, path: 'expires_at'), isNull);
     });
 
     test('validates typed string maps and lists', () {
@@ -169,8 +169,8 @@ void main() {
         openAILookupHeader({'Content-Type': 'audio/wav'}, 'content-type'),
         'audio/wav',
       );
-      expect(openAILookupHeader({'x-request-id': 'req_123'}, 'missing'),
-          isNull);
+      expect(
+          openAILookupHeader({'x-request-id': 'req_123'}, 'missing'), isNull);
     });
   });
 }

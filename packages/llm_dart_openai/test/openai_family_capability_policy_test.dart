@@ -1,9 +1,9 @@
-import 'package:llm_dart_openai/src/openai_family_capability_policy.dart';
-import 'package:llm_dart_openai/src/openai_family_profile.dart';
-import 'package:llm_dart_openai/src/openai_model_capabilities.dart';
-import 'package:llm_dart_openai/src/openai_model_settings.dart';
-import 'package:llm_dart_openai/src/openrouter_options.dart';
-import 'package:llm_dart_openai/src/resolved_openai_chat_settings.dart';
+import 'package:llm_dart_openai/src/provider/openai_family_capability_policy.dart';
+import 'package:llm_dart_openai/src/provider/openai_family_profile.dart';
+import 'package:llm_dart_openai/src/provider/openai_model_capabilities.dart';
+import 'package:llm_dart_openai/src/provider/openai_model_settings.dart';
+import 'package:llm_dart_openai/src/provider/openrouter_options.dart';
+import 'package:llm_dart_openai/src/provider/resolved_openai_chat_settings.dart';
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:test/test.dart';
 

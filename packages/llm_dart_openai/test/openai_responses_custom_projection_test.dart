@@ -1,4 +1,4 @@
-import 'package:llm_dart_openai/src/openai_responses_custom_projection.dart';
+import 'package:llm_dart_openai/src/responses/openai_responses_custom_projection.dart';
 import 'package:test/test.dart';
 
 void main() {

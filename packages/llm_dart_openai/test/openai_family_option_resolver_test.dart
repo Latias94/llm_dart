@@ -1,13 +1,13 @@
-import 'package:llm_dart_openai/src/deepseek_options.dart';
-import 'package:llm_dart_openai/src/openai_family_option_resolver.dart';
-import 'package:llm_dart_openai/src/openai_family_profile.dart';
-import 'package:llm_dart_openai/src/openai_generate_text_options.dart';
-import 'package:llm_dart_openai/src/openai_model_settings.dart';
-import 'package:llm_dart_openai/src/openai_native_tools.dart';
-import 'package:llm_dart_openai/src/openai_response_format.dart';
-import 'package:llm_dart_openai/src/openrouter_options.dart';
-import 'package:llm_dart_openai/src/resolved_openai_chat_settings.dart';
-import 'package:llm_dart_openai/src/xai_options.dart';
+import 'package:llm_dart_openai/src/provider/deepseek_options.dart';
+import 'package:llm_dart_openai/src/provider/openai_family_option_resolver.dart';
+import 'package:llm_dart_openai/src/provider/openai_family_profile.dart';
+import 'package:llm_dart_openai/src/language/openai_generate_text_options.dart';
+import 'package:llm_dart_openai/src/provider/openai_model_settings.dart';
+import 'package:llm_dart_openai/src/tools/openai_native_tools.dart';
+import 'package:llm_dart_openai/src/language/openai_response_format.dart';
+import 'package:llm_dart_openai/src/provider/openrouter_options.dart';
+import 'package:llm_dart_openai/src/provider/resolved_openai_chat_settings.dart';
+import 'package:llm_dart_openai/src/provider/xai_options.dart';
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:test/test.dart';
 

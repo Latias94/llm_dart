@@ -1,8 +1,8 @@
 import 'dart:convert';
 
 import 'package:llm_dart_ai/llm_dart_ai.dart';
-import 'package:llm_dart_openai/src/openai_transcription_model_body.dart';
-import 'package:llm_dart_openai/src/openai_transcription_options.dart';
+import 'package:llm_dart_openai/src/transcription/openai_transcription_model_body.dart';
+import 'package:llm_dart_openai/src/transcription/openai_transcription_options.dart';
 import 'package:test/test.dart';
 
 void main() {

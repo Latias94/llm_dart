@@ -1,6 +1,6 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
-import 'package:llm_dart_openai/src/openai_chat_completions_generate_result_codec.dart';
-import 'package:llm_dart_openai/src/openai_chat_completions_support.dart';
+import 'package:llm_dart_openai/src/chat_completions/openai_chat_completions_generate_result_codec.dart';
+import 'package:llm_dart_openai/src/chat_completions/openai_chat_completions_support.dart';
 import 'package:test/test.dart';
 
 void main() {

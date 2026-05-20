@@ -24,11 +24,11 @@
 
 ## M3 OpenAI provider organization
 
-- [ ] Create route/capability directories.
-- [ ] Move Chat Completions implementation files.
-- [ ] Move Responses implementation files.
-- [ ] Move assistants/files/images/embedding/audio/tool implementation files.
-- [ ] Keep public exports stable or document breakage.
+- [x] Create route/capability directories.
+- [x] Move Chat Completions implementation files.
+- [x] Move Responses implementation files.
+- [x] Move assistants/files/images/embedding/audio/tool implementation files.
+- [x] Keep public exports stable or document breakage.
 
 ## M4 Typed provider options + provider options bag
 
