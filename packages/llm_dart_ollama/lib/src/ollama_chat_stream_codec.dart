@@ -1,7 +1,6 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
-import 'ollama_api.dart';
 import 'ollama_chat_response_codec.dart';
 import 'ollama_tool_codec.dart';
 
@@ -11,10 +10,12 @@ const _ollamaReasoningPartId = 'ollama-reasoning';
 final class OllamaChatStreamCodec {
   final OllamaChatResponseCodec responseCodec;
   final OllamaToolCodec toolCodec;
+  final NdjsonJsonChunkParser streamChunkParser;
 
   const OllamaChatStreamCodec({
     required this.responseCodec,
     this.toolCodec = const OllamaToolCodec(),
+    this.streamChunkParser = const NdjsonJsonChunkParser(),
   });
 
   Stream<LanguageModelStreamEvent> decodeByteStream(
@@ -22,74 +23,29 @@ final class OllamaChatStreamCodec {
     required bool includeRawChunks,
   }) async* {
     final state = OllamaChatStreamState();
-    await for (final decoded in stream.decodeUtf8Stream()) {
-      for (final event in decodeText(
-        decoded,
+    await for (final json in streamChunkParser.parse(
+      stream,
+      sourceName: 'Ollama stream chunk',
+    )) {
+      for (final event in decodeJsonChunk(
+        json,
         state,
         includeRawChunks: includeRawChunks,
       )) {
         yield event;
       }
     }
-
-    for (final event in flushPendingLine(
-      state,
-      includeRawChunks: includeRawChunks,
-    )) {
-      yield event;
-    }
-  }
-
-  Iterable<LanguageModelStreamEvent> decodeText(
-    String chunk,
-    OllamaChatStreamState state, {
-    required bool includeRawChunks,
-  }) sync* {
-    state.buffer.write(chunk);
-    final buffered = state.buffer.toString();
-    final lines = buffered.split('\n');
-    state.buffer
-      ..clear()
-      ..write(lines.removeLast());
-
-    for (final line in lines) {
-      final trimmed = line.trim();
-      if (trimmed.isEmpty) continue;
-      final json = decodeOllamaJsonObject(
-        trimmed,
-        responseName: 'stream chunk',
-      );
-      if (includeRawChunks) {
-        yield RawChunkEvent(json);
-      }
-      yield* decodeJsonChunk(json, state);
-    }
-  }
-
-  Iterable<LanguageModelStreamEvent> flushPendingLine(
-    OllamaChatStreamState state, {
-    required bool includeRawChunks,
-  }) sync* {
-    final pendingLine = state.buffer.toString().trim();
-    if (pendingLine.isEmpty) {
-      return;
-    }
-
-    state.buffer.clear();
-    final json = decodeOllamaJsonObject(
-      pendingLine,
-      responseName: 'stream chunk',
-    );
-    if (includeRawChunks) {
-      yield RawChunkEvent(json);
-    }
-    yield* decodeJsonChunk(json, state);
   }
 
   Iterable<LanguageModelStreamEvent> decodeJsonChunk(
     Map<String, Object?> json,
-    OllamaChatStreamState state,
-  ) sync* {
+    OllamaChatStreamState state, {
+    required bool includeRawChunks,
+  }) sync* {
+    if (includeRawChunks) {
+      yield RawChunkEvent(json);
+    }
+
     if (!state.metadataEmitted) {
       state.metadataEmitted = true;
       yield ResponseMetadataEvent(
@@ -152,7 +108,6 @@ final class OllamaChatStreamCodec {
 }
 
 final class OllamaChatStreamState {
-  final StringBuffer buffer = StringBuffer();
   final Set<String> emittedToolCallIds = <String>{};
   bool metadataEmitted = false;
   bool textStarted = false;
