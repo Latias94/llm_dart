@@ -11,44 +11,28 @@ import 'package:llm_dart_provider/llm_dart_provider.dart'
 import '../common/tool_input_stream_state.dart';
 import '../stream/text_stream_event.dart';
 import 'chat_ui_message.dart';
-import 'chat_ui_stream_error.dart';
+import 'chat_ui_tool_input_stream_store.dart';
 import 'chat_ui_tool_part_index.dart';
 import 'chat_ui_tool_part_builder.dart';
 
 final class ChatUiToolPartStore {
   final ChatUiToolPartIndex _parts;
-  final Map<String, StreamingToolInputState> _partialInputs = {};
+  final ChatUiToolInputStreamStore _inputStreams = ChatUiToolInputStreamStore();
 
   ChatUiToolPartStore(List<ChatUiPart> parts)
       : _parts = ChatUiToolPartIndex(parts);
 
   void hydrate(ToolUiPart part, int index) {
     _parts.hydrate(part, index);
-    if (part.state != ToolUiPartState.inputStreaming) {
-      return;
-    }
-
-    _partialInputs[part.toolCallId] = StreamingToolInputState(
-      toolName: part.toolName,
-      providerExecuted: part.providerExecuted,
-      isDynamic: part.isDynamic,
-      title: part.title,
-      initialText:
-          part.inputText ?? stringifyStreamingToolValue(part.input) ?? '',
-    );
+    _inputStreams.hydrate(part);
   }
 
   void clearStreamingInputs() {
-    _partialInputs.clear();
+    _inputStreams.clear();
   }
 
   void applyInputStart(ToolInputStartEvent event) {
-    _partialInputs[event.toolCallId] = StreamingToolInputState(
-      toolName: event.toolName,
-      providerExecuted: event.providerExecuted,
-      isDynamic: event.isDynamic,
-      title: event.title,
-    );
+    _inputStreams.start(event);
     _parts.upsert(
       _buildPart(
         toolCallId: event.toolCallId,
@@ -74,8 +58,7 @@ final class ChatUiToolPartStore {
   }
 
   void applyInputDelta(ToolInputDeltaEvent event) {
-    final partial = _requirePartialInput(event.toolCallId);
-    partial.append(event.delta);
+    final partial = _inputStreams.appendDelta(event);
     _parts.upsert(
       _buildPart(
         toolCallId: event.toolCallId,
@@ -90,7 +73,7 @@ final class ChatUiToolPartStore {
   }
 
   void applyInputEnd(ToolInputEndEvent event) {
-    final partial = _requirePartialInput(event.toolCallId);
+    final partial = _inputStreams.end(event);
     _parts.upsert(
       _buildPart(
         toolCallId: event.toolCallId,
@@ -102,11 +85,10 @@ final class ChatUiToolPartStore {
         callProviderMetadata: event.providerMetadata,
       ),
     );
-    _partialInputs.remove(event.toolCallId);
   }
 
   void applyInputError(ToolInputErrorEvent event) {
-    final partial = _partialInputs.remove(event.toolCallId);
+    final partial = _inputStreams.fail(event);
     final input = event.input ?? partial?.input;
     final inputText = partial?.text ?? stringifyStreamingToolValue(input);
     _parts.upsert(
@@ -134,7 +116,7 @@ final class ChatUiToolPartStore {
   }
 
   void applyCall(ToolCallEvent event) {
-    _partialInputs.remove(event.toolCall.toolCallId);
+    _inputStreams.remove(event.toolCall.toolCallId);
     _parts.upsert(
       _buildPart(
         toolCallId: event.toolCall.toolCallId,
@@ -173,7 +155,7 @@ final class ChatUiToolPartStore {
   }
 
   void applyResult(ToolResultEvent event) {
-    _partialInputs.remove(event.toolResult.toolCallId);
+    _inputStreams.remove(event.toolResult.toolCallId);
     _parts.require(
       event.toolResult.toolCallId,
       chunkType: 'tool-result',
@@ -252,7 +234,7 @@ final class ChatUiToolPartStore {
   }) =>
       ChatUiToolPartBuilder(
         current: _parts.get(toolCallId),
-        partial: _partialInputs[toolCallId],
+        partial: _inputStreams.get(toolCallId),
       ).build(
         toolCallId: toolCallId,
         toolName: toolName,
@@ -277,19 +259,4 @@ final class ChatUiToolPartStore {
         callProviderMetadata: callProviderMetadata,
         resultProviderMetadata: resultProviderMetadata,
       );
-
-  StreamingToolInputState _requirePartialInput(String toolCallId) {
-    final value = _partialInputs[toolCallId];
-    if (value != null) {
-      return value;
-    }
-
-    throw ChatUiStreamError(
-      chunkType: 'tool-input-update',
-      chunkId: toolCallId,
-      message:
-          'Received tool-input update for missing tool call with ID "$toolCallId". '
-          'Ensure a "tool-input-start" event is applied before later tool-input events.',
-    );
-  }
 }
