@@ -5,6 +5,7 @@ import 'ollama_api.dart';
 import 'ollama_embedding_model_request.dart';
 import 'ollama_embedding_model_response.dart';
 import 'ollama_embedding_model_transport.dart';
+import 'ollama_model_call_support.dart';
 import 'ollama_model_describer.dart';
 import 'ollama_model_settings.dart';
 
@@ -57,19 +58,19 @@ final class OllamaEmbeddingModel
       modelId: modelId,
       request: request,
     );
-    final response = await transport.send(
-      buildOllamaEmbeddingTransportRequest(
+    return sendOllamaModelRequest(
+      transport: transport,
+      request: buildOllamaEmbeddingTransportRequest(
         baseUrl: baseUrl,
         request: request,
         body: body,
         defaultHeaders: defaultHeaders,
       ),
-    );
-
-    return decodeOllamaEmbeddingResponse(
-      body: response.body,
-      modelId: modelId,
-      headers: response.headers,
+      decode: (body, headers) => decodeOllamaEmbeddingResponse(
+        body: body,
+        modelId: modelId,
+        headers: headers,
+      ),
     );
   }
 }

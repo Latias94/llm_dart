@@ -9,6 +9,7 @@ import 'ollama_language_model_request.dart';
 import 'ollama_language_model_response.dart';
 import 'ollama_language_model_stream.dart';
 import 'ollama_language_model_transport.dart';
+import 'ollama_model_call_support.dart';
 import 'ollama_model_describer.dart';
 import 'ollama_model_settings.dart';
 
@@ -70,19 +71,19 @@ final class OllamaLanguageModel
       request: request,
       stream: false,
     );
-    final response = await transport.send(
-      buildOllamaChatGenerateTransportRequest(
+    return sendOllamaModelRequest(
+      transport: transport,
+      request: buildOllamaChatGenerateTransportRequest(
         baseUrl: baseUrl,
         request: request,
         body: preparedRequest.body,
         defaultHeaders: defaultHeaders,
       ),
-    );
-
-    return decodeOllamaChatGenerateResponse(
-      body: response.body,
-      responseCodec: _responseCodec,
-      preparedRequest: preparedRequest,
+      decode: (body, _) => decodeOllamaChatGenerateResponse(
+        body: body,
+        responseCodec: _responseCodec,
+        preparedRequest: preparedRequest,
+      ),
     );
   }
 

@@ -1,6 +1,7 @@
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'ollama_api.dart';
+import 'ollama_model_call_support.dart';
 import 'ollama_model_catalog_models.dart';
 export 'ollama_model_catalog_models.dart'
     show OllamaInstalledModel, OllamaInstalledModelDetails;
@@ -35,8 +36,9 @@ final class OllamaModelCatalogClient {
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
-    final response = await transport.send(
-      TransportRequest(
+    return sendOllamaModelRequest(
+      transport: transport,
+      request: TransportRequest(
         uri: tagsUri,
         method: TransportMethod.get,
         headers: buildOllamaHeaders(
@@ -51,12 +53,13 @@ final class OllamaModelCatalogClient {
         cancellation: cancellation,
         responseType: TransportResponseType.json,
       ),
+      decode: (body, _) {
+        final json = decodeOllamaJsonObject(
+          body,
+          responseName: 'model catalog response',
+        );
+        return decodeOllamaInstalledModelsList(json);
+      },
     );
-
-    final json = decodeOllamaJsonObject(
-      response.body,
-      responseName: 'model catalog response',
-    );
-    return decodeOllamaInstalledModelsList(json);
   }
 }
