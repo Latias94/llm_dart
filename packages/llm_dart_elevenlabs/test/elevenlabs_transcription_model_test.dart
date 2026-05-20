@@ -239,6 +239,34 @@ void main() {
         ),
       );
     });
+
+    test('transcribe normalizes media type parameters for filenames', () async {
+      TransportRequest? capturedRequest;
+
+      final model = ElevenLabs(
+        apiKey: 'test-key',
+        transport: _FakeTransportClient(
+          onSend: (request) async {
+            capturedRequest = request;
+            return const TransportResponse(
+              statusCode: 200,
+              body: {
+                'text': 'hello',
+              },
+            );
+          },
+        ),
+      ).transcriptionModel('scribe_v1');
+
+      await transcribe(
+        model: model,
+        audioBytes: utf8.encode('abc'),
+        mediaType: 'Audio/X-WAV; codecs=1',
+      );
+
+      final bodyText = utf8.decode(capturedRequest!.body! as List<int>);
+      expect(bodyText, contains('name="file"; filename="audio.wav"'));
+    });
   });
 }
 

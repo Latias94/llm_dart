@@ -92,5 +92,21 @@ void main() {
       expect(bodyText, contains('name="response_format"'));
       expect(bodyText, contains('json'));
     });
+
+    test('normalizes media type parameters for generated filenames', () {
+      final body = buildOpenAITranscriptionMultipartBody(
+        modelId: 'whisper-1',
+        request: TranscriptionRequest(
+          audioBytes: utf8.encode('abc'),
+          mediaType: 'Audio/MPEG; codecs=mp3',
+        ),
+        options: null,
+        responseFormat: OpenAITranscriptionResponseFormat.json,
+      );
+
+      final bodyText = utf8.decode(body.bytes);
+
+      expect(bodyText, contains('name="file"; filename="audio.mp3"'));
+    });
   });
 }

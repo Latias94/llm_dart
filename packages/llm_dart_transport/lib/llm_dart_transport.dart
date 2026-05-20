@@ -17,6 +17,7 @@ export 'src/http/dio_transport_client.dart';
 export 'src/http/immutable_dio_client_overrides.dart';
 export 'src/http/json_object_response_decoder.dart';
 export 'src/http/log_sanitizer.dart';
+export 'src/http/media_type_filename.dart';
 export 'src/http/middleware_transport_client.dart';
 export 'src/http/ndjson_json_chunk_parser.dart';
 export 'src/http/sse_decoder.dart';

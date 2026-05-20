@@ -55,18 +55,19 @@ TransportMultipartBody buildOpenAITranscriptionMultipartBody({
 }
 
 String buildOpenAITranscriptionFilename(String mediaType) {
-  final normalized = mediaType.split(';').first.trim().toLowerCase();
-  final extension = switch (normalized) {
-    'audio/mpeg' || 'audio/mp3' => 'mp3',
-    'audio/wav' => 'wav',
-    'audio/x-wav' => 'wav',
-    'audio/webm' => 'webm',
-    'audio/mp4' => 'mp4',
-    'audio/m4a' => 'm4a',
-    'audio/ogg' => 'ogg',
-    'audio/flac' => 'flac',
-    _ => 'bin',
-  };
-
-  return 'audio.$extension';
+  return MediaTypeFilename.build(
+    basename: 'audio',
+    mediaType: mediaType,
+    extensionsByMediaType: const {
+      'audio/mpeg': 'mp3',
+      'audio/mp3': 'mp3',
+      'audio/wav': 'wav',
+      'audio/x-wav': 'wav',
+      'audio/webm': 'webm',
+      'audio/mp4': 'mp4',
+      'audio/m4a': 'm4a',
+      'audio/ogg': 'ogg',
+      'audio/flac': 'flac',
+    },
+  );
 }

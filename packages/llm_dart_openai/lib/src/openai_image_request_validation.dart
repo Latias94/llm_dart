@@ -1,4 +1,5 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
+import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 void validateOpenAIImageEditInput(
   ImageGenerationInput input,
@@ -44,15 +45,15 @@ void validateOpenAIImageOutputCompression(
 }
 
 String buildOpenAIImageFilename(String mediaType) {
-  final normalized = mediaType.split(';').first.trim().toLowerCase();
-  final extension = switch (normalized) {
-    'image/png' => 'png',
-    'image/jpeg' => 'jpeg',
-    'image/jpg' => 'jpg',
-    'image/webp' => 'webp',
-    'image/gif' => 'gif',
-    _ => 'bin',
-  };
-
-  return 'image.$extension';
+  return MediaTypeFilename.build(
+    basename: 'image',
+    mediaType: mediaType,
+    extensionsByMediaType: const {
+      'image/png': 'png',
+      'image/jpeg': 'jpeg',
+      'image/jpg': 'jpg',
+      'image/webp': 'webp',
+      'image/gif': 'gif',
+    },
+  );
 }
