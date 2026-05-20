@@ -1,10 +1,8 @@
 import '../common/json_codec_common.dart';
-import '../model/finish_reason.dart';
-import '../model/model_response_metadata.dart';
 import '../stream/language_model_stream_event.dart';
 import 'language_model_stream_content_event_json_codec.dart';
+import 'language_model_stream_core_event_json_codec.dart';
 import 'language_model_stream_tool_event_json_codec.dart';
-import 'serialization_json_support.dart';
 import 'serialization_protocol.dart';
 
 /// JSON codec for provider-owned language model stream events.
@@ -60,35 +58,10 @@ final class LanguageModelStreamEventJsonCodec {
     );
 
     return switch (event) {
-      StartEvent(:final warnings) => {
-          'type': 'start',
-          'warnings': warnings
-              .map(SerializationJsonSupport.encodeModelWarning)
-              .toList(growable: false),
-        },
-      ResponseMetadataEvent(
-        :final responseMetadata,
-        :final responseId,
-        :final timestamp,
-        :final modelId,
-        :final providerMetadata,
-      ) =>
-        {
-          'type': 'response-metadata',
-          ...SerializationJsonSupport.encodeModelResponseMetadata(
-            modelResponseMetadataFrom(
-                  metadata: responseMetadata,
-                  id: responseId,
-                  timestamp: timestamp,
-                  modelId: modelId,
-                ) ??
-                const ModelResponseMetadata(),
-          ),
-          if (providerMetadata != null)
-            'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
-              providerMetadata,
-            ),
-        },
+      StartEvent() ||
+      ResponseMetadataEvent() ||
+      FinishEvent() =>
+        const LanguageModelStreamCoreEventJsonCodec().encode(event),
       TextStartEvent() ||
       TextDeltaEvent() ||
       TextEndEvent() ||
@@ -108,23 +81,6 @@ final class LanguageModelStreamEventJsonCodec {
       SourceEvent() ||
       FileEvent() =>
         const LanguageModelStreamContentEventJsonCodec().encode(event),
-      FinishEvent(
-        :final finishReason,
-        :final rawFinishReason,
-        :final usage,
-        :final providerMetadata,
-      ) =>
-        {
-          'type': 'finish',
-          'finishReason': finishReason.name,
-          if (rawFinishReason != null) 'rawFinishReason': rawFinishReason,
-          if (usage != null)
-            'usage': SerializationJsonSupport.encodeUsageStats(usage),
-          if (providerMetadata != null)
-            'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
-              providerMetadata,
-            ),
-        },
       CustomEvent() ||
       RawChunkEvent() ||
       ErrorEvent() =>
@@ -146,58 +102,14 @@ final class LanguageModelStreamEventJsonCodec {
     if (contentEventCodec.canDecode(type)) {
       return contentEventCodec.decode(map, type: type, path: path);
     }
+    const coreEventCodec = LanguageModelStreamCoreEventJsonCodec();
+    if (coreEventCodec.canDecode(type) || coreEventCodec.canReject(type)) {
+      return coreEventCodec.decode(map, type: type, path: path);
+    }
 
-    return switch (type) {
-      'start' => StartEvent(
-          warnings: asJsonList(map['warnings'], path: '$path.warnings')
-              .asMap()
-              .entries
-              .map(
-                (entry) => SerializationJsonSupport.decodeModelWarning(
-                  entry.value,
-                  path: '$path.warnings[${entry.key}]',
-                ),
-              )
-              .toList(growable: false),
-        ),
-      'response-metadata' => ResponseMetadataEvent(
-          responseMetadata:
-              SerializationJsonSupport.decodeModelResponseMetadataFields(
-            map,
-            path: path,
-          ),
-          providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
-            map['providerMetadata'],
-            path: '$path.providerMetadata',
-          ),
-        ),
-      'tool-output-denied' ||
-      'step-start' ||
-      'step-end' ||
-      'step-finish' ||
-      'abort' =>
-        _throwRuntimeOnlyType(type, path: path),
-      'finish' => FinishEvent(
-          finishReason: FinishReason.values.byName(
-            asJsonString(map['finishReason'], path: '$path.finishReason'),
-          ),
-          rawFinishReason: asNullableJsonString(
-            map['rawFinishReason'],
-            path: '$path.rawFinishReason',
-          ),
-          usage: SerializationJsonSupport.decodeUsageStats(
-            map['usage'],
-            path: '$path.usage',
-          ),
-          providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
-            map['providerMetadata'],
-            path: '$path.providerMetadata',
-          ),
-        ),
-      _ => throw FormatException(
-          'Unsupported language model stream event type "$type" at $path.',
-        ),
-    };
+    throw FormatException(
+      'Unsupported language model stream event type "$type" at $path.',
+    );
   }
 
   void _validateEvents(
@@ -212,16 +124,5 @@ final class LanguageModelStreamEventJsonCodec {
       );
       index += 1;
     }
-  }
-
-  Never _throwRuntimeOnlyType(
-    String type, {
-    required String path,
-  }) {
-    throw StateError(
-      'LanguageModelStreamEventJsonCodec cannot decode runtime-only event type '
-      '"$type" at $path. Provider stream serialization may decode only '
-      'model-call events.',
-    );
   }
 }

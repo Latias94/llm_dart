@@ -7,6 +7,25 @@ void main() {
       const codec = LanguageModelStreamEventJsonCodec();
 
       final encoded = codec.encodeEvents([
+        StartEvent(
+          warnings: const [
+            ModelWarning(
+              type: ModelWarningType.unsupported,
+              message: 'temperature is ignored',
+              feature: 'temperature',
+            ),
+          ],
+        ),
+        ResponseMetadataEvent(
+          responseMetadata: ModelResponseMetadata(
+            id: 'resp_1',
+            timestamp: DateTime.utc(2026, 5, 20, 1, 30),
+            modelId: 'gpt-test',
+          ),
+          providerMetadata: ProviderMetadata.forNamespace('openai', {
+            'itemId': 'msg_1',
+          }),
+        ),
         const ToolInputStartEvent(
           toolCallId: 'tool-1',
           toolName: 'weather',
@@ -39,17 +58,28 @@ void main() {
             output: 'sunny',
           ),
         ),
+        const FinishEvent(
+          finishReason: FinishReason.toolCalls,
+          usage: UsageStats(
+            inputTokens: 3,
+            outputTokens: 5,
+            totalTokens: 8,
+          ),
+        ),
       ]);
 
       final decoded = codec.decodeEvents(encoded);
 
-      expect(decoded, hasLength(6));
-      expect(decoded[0], isA<ToolInputStartEvent>());
-      expect(decoded[1], isA<ToolInputDeltaEvent>());
-      expect(decoded[2], isA<ToolInputEndEvent>());
-      expect(decoded[3], isA<ToolCallEvent>());
-      expect(decoded[4], isA<ToolApprovalRequestEvent>());
-      expect(decoded[5], isA<ToolResultEvent>());
+      expect(decoded, hasLength(9));
+      expect(decoded[0], isA<StartEvent>());
+      expect(decoded[1], isA<ResponseMetadataEvent>());
+      expect(decoded[2], isA<ToolInputStartEvent>());
+      expect(decoded[3], isA<ToolInputDeltaEvent>());
+      expect(decoded[4], isA<ToolInputEndEvent>());
+      expect(decoded[5], isA<ToolCallEvent>());
+      expect(decoded[6], isA<ToolApprovalRequestEvent>());
+      expect(decoded[7], isA<ToolResultEvent>());
+      expect(decoded[8], isA<FinishEvent>());
     });
 
     test('rejects runtime-only tool output denial events', () {
