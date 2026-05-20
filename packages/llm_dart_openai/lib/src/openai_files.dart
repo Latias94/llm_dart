@@ -5,6 +5,7 @@ import 'openai_family_url_support.dart';
 import 'openai_files_models.dart';
 import 'openai_files_options.dart';
 import 'openai_files_transport.dart';
+import 'openai_files_upload_body.dart';
 import 'openai_json_support.dart';
 import 'openai_json_value.dart';
 import 'openai_profile_boundary.dart';
@@ -71,9 +72,10 @@ final class OpenAIFilesClient {
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
+    final body = buildOpenAIFileUploadBody(request);
     return _sendJsonRequest(
       request: _requestSupport.uploadRequest(
-        request: request,
+        body: body,
         timeout: timeout,
         maxRetries: maxRetries,
         cancellation: cancellation,
