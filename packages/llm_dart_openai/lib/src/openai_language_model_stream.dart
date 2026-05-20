@@ -14,37 +14,23 @@ Stream<LanguageModelStreamEvent> decodeOpenAILanguageModelStreamEvents({
   SseJsonChunkParser streamChunkParser = const SseJsonChunkParser(),
 }) async* {
   if (route == OpenAIRequestRoute.responses) {
-    final streamState = OpenAIResponsesStreamState();
-    await for (final chunk in streamChunkParser.parse(
-      stream,
+    yield* decodeJsonSseLanguageModelStream(
+      stream: stream,
+      state: OpenAIResponsesStreamState(),
+      includeRawChunks: includeRawChunks,
       sourceName: 'OpenAI Responses stream',
-    )) {
-      if (includeRawChunks) {
-        yield RawChunkEvent(chunk);
-      }
-      for (final event in responsesCodec.decodeStreamChunk(
-        chunk,
-        streamState,
-      )) {
-        yield event;
-      }
-    }
+      streamChunkParser: streamChunkParser,
+      decodeChunk: responsesCodec.decodeStreamChunk,
+    );
     return;
   }
 
-  final streamState = OpenAIChatCompletionsStreamState();
-  await for (final chunk in streamChunkParser.parse(
-    stream,
+  yield* decodeJsonSseLanguageModelStream(
+    stream: stream,
+    state: OpenAIChatCompletionsStreamState(),
+    includeRawChunks: includeRawChunks,
     sourceName: 'OpenAI Chat Completions stream',
-  )) {
-    if (includeRawChunks) {
-      yield RawChunkEvent(chunk);
-    }
-    for (final event in chatCompletionsCodec.decodeStreamChunk(
-      chunk,
-      streamState,
-    )) {
-      yield event;
-    }
-  }
+    streamChunkParser: streamChunkParser,
+    decodeChunk: chatCompletionsCodec.decodeStreamChunk,
+  );
 }

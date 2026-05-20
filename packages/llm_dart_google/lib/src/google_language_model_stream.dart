@@ -10,23 +10,13 @@ Stream<LanguageModelStreamEvent> decodeGoogleLanguageModelStreamEvents({
       const GoogleGenerateContentStreamCodec(),
   SseJsonChunkParser streamChunkParser = const SseJsonChunkParser(),
 }) async* {
-  final state = GoogleGenerateContentStreamState();
-  await for (final chunk in streamChunkParser.parse(
-    stream,
+  yield* decodeJsonSseLanguageModelStream(
+    stream: stream,
+    state: GoogleGenerateContentStreamState(),
+    includeRawChunks: includeRawChunks,
     sourceName: 'Google GenerateContent stream',
-  )) {
-    if (includeRawChunks) {
-      yield RawChunkEvent(chunk);
-    }
-    for (final event in streamCodec.decodeChunk(
-      chunk,
-      state,
-    )) {
-      yield event;
-    }
-  }
-
-  for (final event in streamCodec.finish(state)) {
-    yield event;
-  }
+    streamChunkParser: streamChunkParser,
+    decodeChunk: streamCodec.decodeChunk,
+    finish: streamCodec.finish,
+  );
 }

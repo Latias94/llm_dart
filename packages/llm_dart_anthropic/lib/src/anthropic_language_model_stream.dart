@@ -9,19 +9,12 @@ Stream<LanguageModelStreamEvent> decodeAnthropicLanguageModelStreamEvents({
   AnthropicStreamCodec streamCodec = const AnthropicStreamCodec(),
   SseJsonChunkParser streamChunkParser = const SseJsonChunkParser(),
 }) async* {
-  final state = AnthropicMessagesStreamState();
-  await for (final chunk in streamChunkParser.parse(
-    stream,
+  yield* decodeJsonSseLanguageModelStream(
+    stream: stream,
+    state: AnthropicMessagesStreamState(),
+    includeRawChunks: includeRawChunks,
     sourceName: 'Anthropic messages stream',
-  )) {
-    if (includeRawChunks) {
-      yield RawChunkEvent(chunk);
-    }
-    for (final event in streamCodec.decodeChunk(
-      chunk,
-      state,
-    )) {
-      yield event;
-    }
-  }
+    streamChunkParser: streamChunkParser,
+    decodeChunk: streamCodec.decodeChunk,
+  );
 }
