@@ -134,6 +134,66 @@ void main() {
       );
     });
 
+    test('rejects duplicate client tool calls while the first is pending', () {
+      expect(
+        () => validateProviderPrompt([
+          AssistantPromptMessage(
+            parts: const [
+              ToolCallPromptPart(
+                toolCallId: 'call-1',
+                toolName: 'weather',
+              ),
+              ToolCallPromptPart(
+                toolCallId: 'call-1',
+                toolName: 'weather',
+              ),
+            ],
+          ),
+        ]),
+        throwsA(
+          isA<ArgumentError>().having(
+            (error) => error.message,
+            'message',
+            contains('already waiting for a tool result'),
+          ),
+        ),
+      );
+    });
+
+    test('rejects mismatched tool result names', () {
+      expect(
+        () => validateProviderPrompt([
+          AssistantPromptMessage(
+            parts: const [
+              ToolCallPromptPart(
+                toolCallId: 'call-1',
+                toolName: 'weather',
+              ),
+            ],
+          ),
+          ToolPromptMessage(
+            toolName: 'weather',
+            parts: [
+              ToolResultPromptPart(
+                toolCallId: 'call-1',
+                toolName: 'search',
+                output: {
+                  'forecast': 'sunny',
+                },
+              ),
+            ],
+          ),
+        ]),
+        throwsA(
+          isA<ArgumentError>().having(
+            (error) => error.message,
+            'message',
+            contains('tool name "search" does not match expected tool'),
+          ),
+        ),
+      );
+    });
+
     test('requires provider approval requests to receive a response', () {
       expect(
         () => validateProviderPrompt([
@@ -157,6 +217,43 @@ void main() {
             (error) => error.message,
             'message',
             contains('missing an approval response'),
+          ),
+        ),
+      );
+    });
+
+    test('rejects provider approval responses with mismatched tool calls', () {
+      expect(
+        () => validateProviderPrompt([
+          AssistantPromptMessage(
+            parts: const [
+              ToolCallPromptPart(
+                toolCallId: 'call-1',
+                toolName: 'mcp.search',
+                providerExecuted: true,
+              ),
+              ToolApprovalRequestPromptPart(
+                approvalId: 'approval-1',
+                toolCallId: 'call-1',
+              ),
+            ],
+          ),
+          ToolPromptMessage(
+            toolName: 'mcp.search',
+            parts: const [
+              ToolApprovalResponsePromptPart(
+                approvalId: 'approval-1',
+                toolCallId: 'call-2',
+                approved: true,
+              ),
+            ],
+          ),
+        ]),
+        throwsA(
+          isA<ArgumentError>().having(
+            (error) => error.message,
+            'message',
+            contains('but the request referenced "call-1"'),
           ),
         ),
       );

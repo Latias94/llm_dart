@@ -1,15 +1,14 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'prompt_tool_state_models.dart';
+import 'prompt_tool_state_tracker.dart';
 import 'prompt_validation_error.dart';
 
 final class PromptToolStateValidator {
   final String context;
-  final Map<String, PromptToolCallState> _seenToolCalls = {};
-  final Map<String, PromptToolCallState> _pendingClientToolCalls = {};
-  final Map<String, PromptApprovalState> _pendingApprovals = {};
+  final PromptToolStateTracker _tracker;
 
-  PromptToolStateValidator(this.context);
+  PromptToolStateValidator(this.context) : _tracker = PromptToolStateTracker();
 
   void recordToolCall(
     ToolCallPromptPart part, {
@@ -31,7 +30,7 @@ final class PromptToolStateValidator {
       partIndex: partIndex,
     );
 
-    if (_pendingClientToolCalls.containsKey(part.toolCallId)) {
+    if (_tracker.pendingClientToolCall(part.toolCallId) != null) {
       throwPromptValidationError(
         context: context,
         messageIndex: messageIndex,
@@ -48,11 +47,7 @@ final class PromptToolStateValidator {
       messageIndex: messageIndex,
       partIndex: partIndex,
     );
-    _seenToolCalls[part.toolCallId] = state;
-
-    if (!part.providerExecuted) {
-      _pendingClientToolCalls[part.toolCallId] = state;
-    }
+    _tracker.recordToolCall(state);
   }
 
   void recordApprovalRequest(
@@ -75,7 +70,7 @@ final class PromptToolStateValidator {
       partIndex: partIndex,
     );
 
-    final toolCall = _seenToolCalls[part.toolCallId];
+    final toolCall = _tracker.seenToolCall(part.toolCallId);
     if (toolCall == null) {
       throwPromptValidationError(
         context: context,
@@ -98,7 +93,7 @@ final class PromptToolStateValidator {
       );
     }
 
-    if (_pendingApprovals.containsKey(part.approvalId)) {
+    if (_tracker.pendingApproval(part.approvalId) != null) {
       throwPromptValidationError(
         context: context,
         messageIndex: messageIndex,
@@ -109,11 +104,13 @@ final class PromptToolStateValidator {
       );
     }
 
-    _pendingApprovals[part.approvalId] = PromptApprovalState(
-      approvalId: part.approvalId,
-      toolCallId: part.toolCallId,
-      messageIndex: messageIndex,
-      partIndex: partIndex,
+    _tracker.recordApprovalRequest(
+      PromptApprovalState(
+        approvalId: part.approvalId,
+        toolCallId: part.toolCallId,
+        messageIndex: messageIndex,
+        partIndex: partIndex,
+      ),
     );
   }
 
@@ -137,7 +134,7 @@ final class PromptToolStateValidator {
       partIndex: partIndex,
     );
 
-    final toolCall = _seenToolCalls[part.toolCallId];
+    final toolCall = _tracker.seenToolCall(part.toolCallId);
     if (toolCall == null || !toolCall.providerExecuted) {
       throwPromptValidationError(
         context: context,
@@ -186,7 +183,7 @@ final class PromptToolStateValidator {
       partIndex: partIndex,
     );
 
-    final pending = _pendingClientToolCalls.remove(part.toolCallId);
+    final pending = _tracker.consumePendingClientToolCall(part.toolCallId);
     if (pending != null) {
       requireMatchingPromptToolName(
         expected: pending.toolName,
@@ -198,7 +195,7 @@ final class PromptToolStateValidator {
       return;
     }
 
-    final toolCall = _seenToolCalls[part.toolCallId];
+    final toolCall = _tracker.seenToolCall(part.toolCallId);
     if (toolCall != null && toolCall.providerExecuted) {
       requireMatchingPromptToolName(
         expected: toolCall.toolName,
@@ -239,7 +236,7 @@ final class PromptToolStateValidator {
       partIndex: partIndex,
     );
 
-    final pending = _pendingApprovals.remove(part.approvalId);
+    final pending = _tracker.consumeApprovalResponse(part.approvalId);
     if (pending == null) {
       throwPromptValidationError(
         context: context,
@@ -267,52 +264,53 @@ final class PromptToolStateValidator {
     int messageIndex,
     String nextMessageName,
   ) {
-    if (_pendingClientToolCalls.isNotEmpty) {
-      final pending = _pendingClientToolCalls.values.first;
+    final pendingToolCall = _tracker.firstPendingClientToolCall;
+    if (pendingToolCall != null) {
       throwPromptValidationError(
         context: context,
         messageIndex: messageIndex,
         partIndex: null,
         message:
             '$nextMessageName cannot appear before a tool message returns a '
-            'result for client tool call "${pending.toolCallId}".',
+            'result for client tool call "${pendingToolCall.toolCallId}".',
       );
     }
 
-    if (_pendingApprovals.isNotEmpty) {
-      final pending = _pendingApprovals.values.first;
+    final pendingApproval = _tracker.firstPendingApproval;
+    if (pendingApproval != null) {
       throwPromptValidationError(
         context: context,
         messageIndex: messageIndex,
         partIndex: null,
         message:
             '$nextMessageName cannot appear before a tool message responds to '
-            'approval request "${pending.approvalId}".',
+            'approval request "${pendingApproval.approvalId}".',
       );
     }
   }
 
   void requireNoPendingAtEnd() {
-    if (_pendingClientToolCalls.isNotEmpty) {
-      final pending = _pendingClientToolCalls.values.first;
+    final pendingToolCall = _tracker.firstPendingClientToolCall;
+    if (pendingToolCall != null) {
       throwPromptValidationError(
         context: context,
-        messageIndex: pending.messageIndex,
-        partIndex: pending.partIndex,
+        messageIndex: pendingToolCall.messageIndex,
+        partIndex: pendingToolCall.partIndex,
         message:
-            'client tool call "${pending.toolCallId}" is missing a tool result.',
+            'client tool call "${pendingToolCall.toolCallId}" is missing a '
+            'tool result.',
       );
     }
 
-    if (_pendingApprovals.isNotEmpty) {
-      final pending = _pendingApprovals.values.first;
+    final pendingApproval = _tracker.firstPendingApproval;
+    if (pendingApproval != null) {
       throwPromptValidationError(
         context: context,
-        messageIndex: pending.messageIndex,
-        partIndex: pending.partIndex,
+        messageIndex: pendingApproval.messageIndex,
+        partIndex: pendingApproval.partIndex,
         message:
-            'approval request "${pending.approvalId}" is missing an approval '
-            'response.',
+            'approval request "${pendingApproval.approvalId}" is missing an '
+            'approval response.',
       );
     }
   }
