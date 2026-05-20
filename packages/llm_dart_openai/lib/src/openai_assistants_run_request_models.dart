@@ -1,6 +1,6 @@
 import 'openai_assistants_message_request_models.dart';
 import 'openai_assistants_response_format_models.dart';
-import 'openai_assistants_thread_lifecycle_models.dart';
+import 'openai_assistants_thread_request_models.dart';
 import 'openai_assistants_tool_models.dart';
 
 final class OpenAICreateRunRequest {
