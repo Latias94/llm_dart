@@ -214,6 +214,41 @@ void main() {
       );
     });
 
+    test('result model facade exports split result family types', () {
+      const handle = AnthropicExecutionFileHandle(
+        type: 'bash_code_execution_output',
+        fileId: 'file_123',
+      );
+
+      const bashResult = AnthropicBashCodeExecutionResult(
+        stdout: 'ok\n',
+        stderr: '',
+        returnCode: 0,
+        fileHandles: [handle],
+      );
+
+      expect(bashResult.toJson(), {
+        'type': 'bash_code_execution_result',
+        'stdout': 'ok\n',
+        'stderr': '',
+        'return_code': 0,
+        'content': [
+          {
+            'type': 'bash_code_execution_output',
+            'file_id': 'file_123',
+          },
+        ],
+      });
+
+      const textEditorResult = AnthropicTextEditorCreateResult(
+        isFileUpdate: true,
+      );
+      expect(textEditorResult.toJson(), {
+        'type': 'text_editor_code_execution_create_result',
+        'is_file_update': true,
+      });
+    });
+
     test('returns null for unrelated custom parts', () {
       final contentPart = const CustomContentPart(
         kind: 'anthropic.result.web_search',
