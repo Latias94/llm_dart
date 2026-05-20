@@ -4,7 +4,9 @@ import 'package:llm_dart_transport/llm_dart_transport.dart';
 import 'http_chat_transport_chunk_json_codec.dart';
 import 'http_chat_transport_resume_state.dart';
 import 'http_chat_transport_stream_error_projection.dart';
+import 'http_chat_transport_stream_execution.dart';
 import 'http_chat_transport_stream_projection.dart';
+import 'http_chat_transport_stream_request.dart';
 
 final class HttpChatTransportStreamClient {
   final TransportClient transport;
@@ -28,35 +30,21 @@ final class HttpChatTransportStreamClient {
     required HttpChatTransportResumeStateClearer clearResumeState,
   }) async* {
     try {
-      final response = await transport.sendStream(
-        TransportRequest(
-          uri: endpoint,
-          method: TransportMethod.post,
-          headers: {
-            ...headers,
-          },
-          body: payload,
-          timeout: requestTimeout,
+      await for (final frame in executeHttpChatTransportStream(
+        transport: transport,
+        request: buildHttpChatTransportStreamRequest(
+          endpoint: endpoint,
+          headers: headers,
+          requestTimeout: requestTimeout,
           maxRetries: maxRetries,
           cancellation: cancellation,
-          responseType: TransportResponseType.plainText,
+          payload: payload,
         ),
-      );
-
-      if (response.statusCode >= 400) {
-        clearResumeState();
-        yield projectHttpChatTransportStatusError(response.statusCode);
-        return;
-      }
-
-      final parser = SseJsonChunkParser(sseDecoder: sseDecoder);
-      await for (final envelope in parser.parse(
-        response.stream,
-        sourceName: 'HTTP chat transport stream',
+        sseDecoder: sseDecoder,
+        chunkCodec: chunkCodec,
       )) {
-        final chunk = chunkCodec.decodeChunk(envelope);
-        final projected = projectHttpChatTransportChunk(
-          chunk: chunk,
+        final projected = _projectFrame(
+          frame: frame,
           state: state,
           clearResumeState: clearResumeState,
         );
@@ -81,5 +69,27 @@ final class HttpChatTransportStreamClient {
         clearResumeState: clearResumeState,
       );
     }
+  }
+
+  HttpChatTransportProjectedChunk _projectFrame({
+    required HttpChatTransportStreamFrame frame,
+    required HttpChatTransportResumeState state,
+    required HttpChatTransportResumeStateClearer clearResumeState,
+  }) {
+    return switch (frame) {
+      HttpChatTransportStreamStatusFailure(:final statusCode) => () {
+          clearResumeState();
+          return HttpChatTransportEmitChunk(
+            projectHttpChatTransportStatusError(statusCode),
+            terminateStream: true,
+          );
+        }(),
+      HttpChatTransportStreamReceivedChunk(:final chunk) =>
+        projectHttpChatTransportChunk(
+          chunk: chunk,
+          state: state,
+          clearResumeState: clearResumeState,
+        ),
+    };
   }
 }
