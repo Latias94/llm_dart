@@ -2,9 +2,9 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'anthropic_api.dart';
+import 'anthropic_language_model_execution.dart';
 import 'anthropic_language_model_request.dart';
 import 'anthropic_language_model_response.dart';
-import 'anthropic_language_model_stream.dart';
 import 'anthropic_language_model_token_count.dart';
 import 'anthropic_language_model_transport.dart';
 import 'anthropic_model_call_support.dart';
@@ -86,29 +86,21 @@ final class AnthropicLanguageModel
       stream: true,
     );
 
-    yield StartEvent(warnings: preparedRequest.warnings);
-
-    try {
-      final response = await transport.sendStream(
-        buildAnthropicLanguageModelTransportRequest(
-          baseUrl: baseUrl,
-          route: AnthropicLanguageModelRoute.messages,
-          callOptions: request.callOptions,
-          stream: true,
-          body: preparedRequest.body,
-          apiKey: apiKey,
-          settings: settings,
-          requestBetas: preparedRequest.betaFeatures,
-        ),
-      );
-
-      yield* decodeAnthropicLanguageModelStreamEvents(
-        stream: response.stream,
-        includeRawChunks: request.options.includeRawChunks,
-      );
-    } catch (error) {
-      yield ErrorEvent(transportErrorToModelError(error));
-    }
+    yield* sendAnthropicLanguageModelStreamCall(
+      transport: transport,
+      request: buildAnthropicLanguageModelTransportRequest(
+        baseUrl: baseUrl,
+        route: AnthropicLanguageModelRoute.messages,
+        callOptions: request.callOptions,
+        stream: true,
+        body: preparedRequest.body,
+        apiKey: apiKey,
+        settings: settings,
+        requestBetas: preparedRequest.betaFeatures,
+      ),
+      warnings: preparedRequest.warnings,
+      includeRawChunks: request.options.includeRawChunks,
+    );
   }
 
   Future<AnthropicTokenCountResult> countTokens(
