@@ -1,24 +1,15 @@
-import 'package:llm_dart_provider/llm_dart_provider.dart'
-    hide
-        ToolApprovalRequestEvent,
-        ToolCallEvent,
-        ToolInputDeltaEvent,
-        ToolInputEndEvent,
-        ToolInputErrorEvent,
-        ToolInputStartEvent,
-        ToolResultEvent;
-
-import '../common/tool_input_stream_state.dart';
 import '../stream/text_stream_event.dart';
 import 'chat_ui_message.dart';
 import 'chat_ui_tool_input_projection.dart';
 import 'chat_ui_tool_part_index.dart';
-import 'chat_ui_tool_part_builder.dart';
+import 'chat_ui_tool_result_projection.dart';
 
 final class ChatUiToolPartStore {
   final ChatUiToolPartIndex _parts;
   late final ChatUiToolInputProjection _inputs =
       ChatUiToolInputProjection(_parts);
+  late final ChatUiToolResultProjection _results =
+      ChatUiToolResultProjection(_parts);
 
   ChatUiToolPartStore(List<ChatUiPart> parts)
       : _parts = ChatUiToolPartIndex(parts);
@@ -53,129 +44,15 @@ final class ChatUiToolPartStore {
   }
 
   void applyApprovalRequest(ToolApprovalRequestEvent event) {
-    _parts.require(
-      event.toolCallId,
-      chunkType: 'tool-approval-request',
-      message:
-          'Received tool-approval-request for missing tool call with ID "${event.toolCallId}". '
-          'Ensure a tool-input-start or tool-call event is applied first.',
-    );
-    _parts.upsert(
-      _buildPart(
-        toolCallId: event.toolCallId,
-        state: ToolUiPartState.approvalRequested,
-        setApproval: true,
-        approval: ToolApprovalUiState(
-          approvalId: event.approvalId,
-        ),
-        callProviderMetadata: event.providerMetadata,
-      ),
-    );
+    _results.applyApprovalRequest(event);
   }
 
   void applyResult(ToolResultEvent event) {
     _inputs.discard(event.toolResult.toolCallId);
-    _parts.require(
-      event.toolResult.toolCallId,
-      chunkType: 'tool-result',
-      message:
-          'Received tool-result for missing tool call with ID "${event.toolResult.toolCallId}". '
-          'Ensure a tool-input-start or tool-call event is applied first.',
-    );
-    _parts.upsert(
-      _buildPart(
-        toolCallId: event.toolResult.toolCallId,
-        toolName: event.toolResult.toolName,
-        state: event.toolResult.toolOutput.denied
-            ? ToolUiPartState.outputDenied
-            : event.toolResult.isError
-                ? ToolUiPartState.outputError
-                : ToolUiPartState.outputAvailable,
-        setOutput: true,
-        output: event.toolResult.output,
-        setToolOutput: true,
-        toolOutput: event.toolResult.toolOutput,
-        setErrorText: true,
-        errorText: event.toolResult.isError
-            ? stringifyStreamingToolValue(event.toolResult.output)
-            : null,
-        preliminary: event.toolResult.preliminary,
-        isDynamic: event.toolResult.isDynamic,
-        resultProviderMetadata: event.providerMetadata,
-      ),
-    );
+    _results.applyResult(event);
   }
 
   void applyOutputDenied(ToolOutputDeniedEvent event) {
-    _parts.require(
-      event.toolCallId,
-      chunkType: 'tool-output-denied',
-      message:
-          'Received tool-output-denied for missing tool call with ID "${event.toolCallId}". '
-          'Ensure a tool-input-start or tool-call event is applied first.',
-    );
-    _parts.upsert(
-      _buildPart(
-        toolCallId: event.toolCallId,
-        state: ToolUiPartState.outputDenied,
-        setOutput: true,
-        output: null,
-        setToolOutput: true,
-        toolOutput: ExecutionDeniedToolOutput(event.reason),
-        resultProviderMetadata: event.providerMetadata,
-      ),
-    );
+    _results.applyOutputDenied(event);
   }
-
-  ToolUiPart _buildPart({
-    required String toolCallId,
-    String? toolName,
-    ToolUiPartState? state,
-    Object? input,
-    bool setInput = false,
-    String? inputText,
-    bool setInputText = false,
-    Object? output,
-    bool setOutput = false,
-    ToolOutput? toolOutput,
-    bool setToolOutput = false,
-    String? errorText,
-    bool setErrorText = false,
-    bool? providerExecuted,
-    bool? isDynamic,
-    bool? preliminary,
-    String? title,
-    bool setTitle = false,
-    ToolApprovalUiState? approval,
-    bool setApproval = false,
-    ProviderMetadata? callProviderMetadata,
-    ProviderMetadata? resultProviderMetadata,
-  }) =>
-      ChatUiToolPartBuilder(
-        current: _parts.get(toolCallId),
-        partial: null,
-      ).build(
-        toolCallId: toolCallId,
-        toolName: toolName,
-        state: state,
-        input: input,
-        setInput: setInput,
-        inputText: inputText,
-        setInputText: setInputText,
-        output: output,
-        setOutput: setOutput,
-        toolOutput: toolOutput,
-        setToolOutput: setToolOutput,
-        errorText: errorText,
-        setErrorText: setErrorText,
-        providerExecuted: providerExecuted,
-        isDynamic: isDynamic,
-        preliminary: preliminary,
-        title: title,
-        setTitle: setTitle,
-        approval: approval,
-        setApproval: setApproval,
-        callProviderMetadata: callProviderMetadata,
-        resultProviderMetadata: resultProviderMetadata,
-      );
 }
