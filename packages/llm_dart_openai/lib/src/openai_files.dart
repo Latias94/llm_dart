@@ -7,7 +7,6 @@ import 'openai_files_models.dart';
 import 'openai_files_options.dart';
 import 'openai_files_transport.dart';
 import 'openai_files_upload_body.dart';
-import 'openai_json_value.dart';
 import 'openai_profile_boundary.dart';
 
 export 'openai_files_models.dart'
@@ -187,8 +186,9 @@ final class OpenAIFilesClient {
       fileId,
       parameterName: 'fileId',
     );
-    final response = await transport.send(
-      _requestSupport.bytesRequest(
+    return sendOpenAIFileDownload(
+      transport: transport,
+      request: _requestSupport.bytesRequest(
         uri: fileContentUri(normalizedFileId),
         method: TransportMethod.get,
         timeout: timeout,
@@ -196,16 +196,7 @@ final class OpenAIFilesClient {
         cancellation: cancellation,
         extraHeaders: headers,
       ),
-    );
-
-    return OpenAIFileDownload(
       fileId: normalizedFileId,
-      bytes: openAIRequiredBytes(
-        response.body,
-        path: 'file_download.body',
-        sourceName: 'OpenAI file download',
-      ),
-      headers: response.headers,
     );
   }
 }
