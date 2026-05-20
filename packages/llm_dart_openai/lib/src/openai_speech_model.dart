@@ -5,6 +5,7 @@ import 'openai_family_profile.dart';
 import 'openai_family_url_support.dart';
 import 'openai_model_describer.dart';
 import 'openai_model_settings.dart';
+import 'openai_non_text_model_support.dart';
 import 'openai_speech_model_body.dart';
 import 'openai_speech_model_request.dart';
 import 'openai_speech_model_response.dart';
@@ -63,8 +64,9 @@ final class OpenAISpeechModel implements SpeechModel, CapabilityDescribedModel {
     );
     warnOpenAISpeechLanguageUnsupported(request, options, warnings);
 
-    final response = await transport.send(
-      buildOpenAISpeechTransportRequest(
+    return sendOpenAIFamilyModelRequest(
+      transport: transport,
+      request: buildOpenAISpeechTransportRequest(
         baseUrl: baseUrl,
         callOptions: request.callOptions,
         body: buildOpenAISpeechRequestBody(
@@ -75,14 +77,13 @@ final class OpenAISpeechModel implements SpeechModel, CapabilityDescribedModel {
         ),
         defaultHeaders: defaultHeaders,
       ),
-    );
-
-    return decodeOpenAISpeechResponse(
-      body: response.body,
-      modelId: modelId,
-      headers: response.headers,
-      outputFormat: outputFormat,
-      warnings: warnings,
+      decode: (body, headers) => decodeOpenAISpeechResponse(
+        body: body,
+        modelId: modelId,
+        headers: headers,
+        outputFormat: outputFormat,
+        warnings: warnings,
+      ),
     );
   }
 }

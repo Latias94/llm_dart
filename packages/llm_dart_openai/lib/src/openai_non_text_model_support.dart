@@ -1,6 +1,12 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
+import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'openai_family_profile.dart';
+
+typedef OpenAIFamilyModelResponseDecoder<T> = T Function(
+  Object? body,
+  Map<String, String> headers,
+);
 
 Map<String, String> buildOpenAIFamilyDefaultHeaders({
   required OpenAIFamilyProfile profile,
@@ -41,6 +47,15 @@ T? resolveOpenAIProviderOptions<T extends ProviderInvocationOptions>(
     parameterName: parameterName,
     expectedTypeName: expectedTypeName,
   );
+}
+
+Future<T> sendOpenAIFamilyModelRequest<T>({
+  required TransportClient transport,
+  required TransportRequest request,
+  required OpenAIFamilyModelResponseDecoder<T> decode,
+}) async {
+  final response = await transport.send(request);
+  return decode(response.body, response.headers);
 }
 
 String? openAIStringOrNull(Object? value) {

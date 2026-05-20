@@ -5,6 +5,7 @@ import 'openai_family_profile.dart';
 import 'openai_family_url_support.dart';
 import 'openai_model_describer.dart';
 import 'openai_model_settings.dart';
+import 'openai_non_text_model_support.dart';
 import 'openai_transcription_model_body.dart';
 import 'openai_transcription_model_request.dart';
 import 'openai_transcription_model_response.dart';
@@ -73,21 +74,21 @@ final class OpenAITranscriptionModel
       responseFormat: responseFormat,
     );
 
-    final response = await transport.send(
-      buildOpenAITranscriptionTransportRequest(
+    return sendOpenAIFamilyModelRequest(
+      transport: transport,
+      request: buildOpenAITranscriptionTransportRequest(
         baseUrl: baseUrl,
         callOptions: request.callOptions,
         multipart: multipart,
         defaultHeaders: defaultHeaders,
         responseFormat: responseFormat,
       ),
-    );
-
-    return decodeOpenAITranscriptionResponse(
-      body: response.body,
-      modelId: modelId,
-      headers: response.headers,
-      responseFormat: responseFormat,
+      decode: (body, headers) => decodeOpenAITranscriptionResponse(
+        body: body,
+        modelId: modelId,
+        headers: headers,
+        responseFormat: responseFormat,
+      ),
     );
   }
 }

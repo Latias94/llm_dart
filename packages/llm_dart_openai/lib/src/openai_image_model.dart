@@ -15,6 +15,7 @@ import 'openai_image_model_transport.dart';
 import 'openai_image_types.dart';
 import 'openai_model_describer.dart';
 import 'openai_model_settings.dart';
+import 'openai_non_text_model_support.dart';
 
 final class OpenAIImageModel implements ImageModel, CapabilityDescribedModel {
   final String apiKey;
@@ -86,8 +87,9 @@ final class OpenAIImageModel implements ImageModel, CapabilityDescribedModel {
       options: options,
     );
 
-    final response = await transport.send(
-      buildOpenAIImageTransportRequest(
+    return sendOpenAIFamilyModelRequest(
+      transport: transport,
+      request: buildOpenAIImageTransportRequest(
         baseUrl: baseUrl,
         route: OpenAIImageRequestRoute.generation,
         callOptions: request.callOptions,
@@ -95,15 +97,14 @@ final class OpenAIImageModel implements ImageModel, CapabilityDescribedModel {
         defaultHeaders: defaultHeaders,
         contentType: 'application/json',
       ),
-    );
-
-    return decodeOpenAIImageResponse(
-      body: response.body,
-      modelId: modelId,
-      headers: response.headers,
-      requestedResponseFormat: shouldIncludeOpenAIImageResponseFormat(modelId)
-          ? (options?.responseFormat ?? OpenAIImageResponseFormat.base64Json)
-          : null,
+      decode: (body, headers) => decodeOpenAIImageResponse(
+        body: body,
+        modelId: modelId,
+        headers: headers,
+        requestedResponseFormat: shouldIncludeOpenAIImageResponseFormat(modelId)
+            ? (options?.responseFormat ?? OpenAIImageResponseFormat.base64Json)
+            : null,
+      ),
     );
   }
 
@@ -121,8 +122,9 @@ final class OpenAIImageModel implements ImageModel, CapabilityDescribedModel {
       options: options,
     );
 
-    final response = await transport.send(
-      buildOpenAIImageTransportRequest(
+    return sendOpenAIFamilyModelRequest(
+      transport: transport,
+      request: buildOpenAIImageTransportRequest(
         baseUrl: baseUrl,
         route: OpenAIImageRequestRoute.edit,
         callOptions: request.callOptions,
@@ -130,13 +132,12 @@ final class OpenAIImageModel implements ImageModel, CapabilityDescribedModel {
         defaultHeaders: defaultHeaders,
         contentType: body.contentType,
       ),
-    );
-
-    return decodeOpenAIImageResponse(
-      body: response.body,
-      modelId: modelId,
-      headers: response.headers,
-      requestedResponseFormat: options?.responseFormat,
+      decode: (body, headers) => decodeOpenAIImageResponse(
+        body: body,
+        modelId: modelId,
+        headers: headers,
+        requestedResponseFormat: options?.responseFormat,
+      ),
     );
   }
 

@@ -9,6 +9,7 @@ import 'openai_embedding_model_response.dart';
 import 'openai_embedding_model_transport.dart';
 import 'openai_model_describer.dart';
 import 'openai_model_settings.dart';
+import 'openai_non_text_model_support.dart';
 
 final class OpenAIEmbeddingModel
     implements EmbeddingModel, CapabilityDescribedModel {
@@ -68,19 +69,19 @@ final class OpenAIEmbeddingModel
       request: request,
       options: options,
     );
-    final response = await transport.send(
-      buildOpenAIEmbeddingTransportRequest(
+    return sendOpenAIFamilyModelRequest(
+      transport: transport,
+      request: buildOpenAIEmbeddingTransportRequest(
         baseUrl: baseUrl,
         request: request,
         body: body,
         defaultHeaders: defaultHeaders,
       ),
-    );
-
-    return decodeOpenAIEmbeddingResponse(
-      body: response.body,
-      modelId: modelId,
-      headers: response.headers,
+      decode: (body, headers) => decodeOpenAIEmbeddingResponse(
+        body: body,
+        modelId: modelId,
+        headers: headers,
+      ),
     );
   }
 }
