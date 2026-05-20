@@ -140,6 +140,23 @@ void main() {
       );
     });
 
+    test('parses payloads through provider-local parser modules', () {
+      final toolCall = GoogleToolCallReplay.fromToolCall(
+        {
+          'id': 'srvtool_1',
+          'toolType': 'google_search',
+          'query': 'Dart SDK',
+        },
+      );
+
+      final parsed = parseGoogleCustomContentPart(
+        toolCall.toCustomContentPart(),
+      );
+
+      expect(parsed, isA<GoogleToolCallCustomPart>());
+      expect((parsed! as GoogleToolCallCustomPart).toolCallId, 'srvtool_1');
+    });
+
     test('parse helpers preserve order and skip non-Google custom parts', () {
       final toolCall = GoogleToolCallReplay.fromToolCall(
         {

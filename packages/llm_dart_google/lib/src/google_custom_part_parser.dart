@@ -1,6 +1,11 @@
-part of 'google_custom_part.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 
-GoogleCustomPart? _parseGoogleCustomPromptPart(PromptPart part) {
+import 'google_custom_part_core.dart';
+import 'google_custom_part_models.dart';
+import 'google_function_response_replay.dart';
+import 'google_server_tool_replay.dart';
+
+GoogleCustomPart? parseGoogleCustomPromptPart(PromptPart part) {
   if (GoogleToolCallReplay.tryParsePromptPart(part) case final replay?) {
     return GoogleToolCallCustomPart(replay);
   }
@@ -17,7 +22,7 @@ GoogleCustomPart? _parseGoogleCustomPromptPart(PromptPart part) {
   return null;
 }
 
-GoogleCustomPart? _parseGoogleCustomContentPart(ContentPart part) {
+GoogleCustomPart? parseGoogleCustomContentPart(ContentPart part) {
   if (GoogleToolCallReplay.tryParseContentPart(part) case final replay?) {
     return GoogleToolCallCustomPart(replay);
   }
@@ -34,7 +39,7 @@ GoogleCustomPart? _parseGoogleCustomContentPart(ContentPart part) {
   return null;
 }
 
-GoogleCustomPart? _parseGoogleCustomEvent(LanguageModelStreamEvent event) {
+GoogleCustomPart? parseGoogleCustomEvent(LanguageModelStreamEvent event) {
   if (GoogleToolCallReplay.tryParseEvent(event) case final replay?) {
     return GoogleToolCallCustomPart(replay);
   }

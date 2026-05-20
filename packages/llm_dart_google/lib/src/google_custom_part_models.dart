@@ -1,4 +1,8 @@
-part of 'google_custom_part.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
+
+import 'google_custom_part_core.dart';
+import 'google_function_response_replay.dart';
+import 'google_server_tool_replay.dart';
 
 final class GoogleToolCallCustomPart extends GoogleCustomPart {
   final GoogleToolCallReplay replay;

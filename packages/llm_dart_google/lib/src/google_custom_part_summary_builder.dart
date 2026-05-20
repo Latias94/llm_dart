@@ -32,6 +32,7 @@ GoogleCustomPartSummary buildGoogleCustomPartSummary(
         title: title,
         baseFields: baseFields,
       ),
+    _ => throw UnsupportedError('Unsupported Google custom part: ${part.kind}'),
   };
 }
 
