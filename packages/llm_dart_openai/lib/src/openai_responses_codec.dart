@@ -1,9 +1,9 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'openai_generate_text_options.dart';
+import 'openai_responses_generate_result_codec.dart';
 import 'openai_responses_request_codec.dart';
 import 'openai_responses_stream_event_codec.dart';
-import 'openai_responses_stream_result_codec.dart';
 import 'openai_responses_stream_state.dart';
 
 export 'openai_responses_stream_state.dart';
