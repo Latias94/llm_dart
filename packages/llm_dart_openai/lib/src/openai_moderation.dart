@@ -2,6 +2,7 @@ import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'openai_family_profile.dart';
 import 'openai_family_url_support.dart';
+import 'openai_moderation_body.dart';
 import 'openai_moderation_models.dart';
 import 'openai_moderation_options.dart';
 import 'openai_moderation_transport.dart';
@@ -50,10 +51,14 @@ final class OpenAIModerationClient {
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
+    final body = buildOpenAIModerationRequestBody(
+      input: input,
+      model: model,
+      settings: settings,
+    );
     final response = await transport.send(
       _requestSupport.moderationRequest(
-        input: input,
-        model: model,
+        body: body,
         timeout: timeout,
         maxRetries: maxRetries,
         cancellation: cancellation,

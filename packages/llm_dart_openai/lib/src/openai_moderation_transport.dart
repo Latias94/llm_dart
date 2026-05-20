@@ -19,8 +19,7 @@ final class OpenAIModerationTransportSupport {
   Uri get moderationUri => Uri.parse('$baseUrl/moderations');
 
   TransportRequest moderationRequest({
-    required Object input,
-    String? model,
+    required Map<String, Object?> body,
     Duration? timeout,
     int? maxRetries,
     TransportCancellation? cancellation,
@@ -30,11 +29,7 @@ final class OpenAIModerationTransportSupport {
       uri: moderationUri,
       method: TransportMethod.post,
       headers: buildHeaders(extraHeaders: extraHeaders),
-      body: {
-        'input': normalizeInput(input),
-        if (resolveModel(model) case final resolvedModel?)
-          'model': resolvedModel,
-      },
+      body: body,
       timeout: timeout,
       maxRetries: maxRetries,
       cancellation: cancellation,
@@ -56,48 +51,6 @@ final class OpenAIModerationTransportSupport {
         'accept': 'application/json',
         if (extraHeaders != null) ...extraHeaders,
       },
-    );
-  }
-
-  String? resolveModel(String? model) {
-    if (model != null) {
-      return model;
-    }
-
-    return settings.defaultModel;
-  }
-
-  Object normalizeInput(Object input) {
-    if (input is String) {
-      return input;
-    }
-
-    if (input is List<String>) {
-      return List<String>.unmodifiable(input);
-    }
-
-    if (input is List) {
-      return List<String>.generate(
-        input.length,
-        (index) {
-          final value = input[index];
-          if (value is! String) {
-            throw ArgumentError.value(
-              input,
-              'input',
-              'Expected moderation input to be a String or List<String>.',
-            );
-          }
-          return value;
-        },
-        growable: false,
-      );
-    }
-
-    throw ArgumentError.value(
-      input,
-      'input',
-      'Expected moderation input to be a String or List<String>.',
     );
   }
 }
