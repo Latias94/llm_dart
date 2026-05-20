@@ -1,16 +1,11 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart' as provider;
 
 import '../stream/text_stream_event.dart';
+import 'text_stream_text_content_event_json_codec.dart';
 
 final class TextStreamContentEventJsonCodec {
   static const Set<String> eventTypes = {
-    'text-start',
-    'text-delta',
-    'text-end',
-    'reasoning-start',
-    'reasoning-delta',
-    'reasoning-end',
-    'reasoning-file',
+    ...TextStreamTextContentEventJsonCodec.eventTypes,
     'source',
     'file',
     'custom',
@@ -24,76 +19,14 @@ final class TextStreamContentEventJsonCodec {
 
   provider.JsonMap encode(TextStreamEvent event) {
     return switch (event) {
-      TextStartEvent(:final id, :final providerMetadata) => {
-          'type': 'text-start',
-          'id': id,
-          if (providerMetadata != null)
-            'providerMetadata':
-                provider.SerializationJsonSupport.encodeProviderMetadata(
-              providerMetadata,
-            ),
-        },
-      TextDeltaEvent(:final id, :final delta, :final providerMetadata) => {
-          'type': 'text-delta',
-          'id': id,
-          'delta': delta,
-          if (providerMetadata != null)
-            'providerMetadata':
-                provider.SerializationJsonSupport.encodeProviderMetadata(
-              providerMetadata,
-            ),
-        },
-      TextEndEvent(:final id, :final providerMetadata) => {
-          'type': 'text-end',
-          'id': id,
-          if (providerMetadata != null)
-            'providerMetadata':
-                provider.SerializationJsonSupport.encodeProviderMetadata(
-              providerMetadata,
-            ),
-        },
-      ReasoningStartEvent(:final id, :final providerMetadata) => {
-          'type': 'reasoning-start',
-          'id': id,
-          if (providerMetadata != null)
-            'providerMetadata':
-                provider.SerializationJsonSupport.encodeProviderMetadata(
-              providerMetadata,
-            ),
-        },
-      ReasoningDeltaEvent(
-        :final id,
-        :final delta,
-        :final providerMetadata,
-      ) =>
-        {
-          'type': 'reasoning-delta',
-          'id': id,
-          'delta': delta,
-          if (providerMetadata != null)
-            'providerMetadata':
-                provider.SerializationJsonSupport.encodeProviderMetadata(
-              providerMetadata,
-            ),
-        },
-      ReasoningEndEvent(:final id, :final providerMetadata) => {
-          'type': 'reasoning-end',
-          'id': id,
-          if (providerMetadata != null)
-            'providerMetadata':
-                provider.SerializationJsonSupport.encodeProviderMetadata(
-              providerMetadata,
-            ),
-        },
-      ReasoningFileEvent(:final file, :final providerMetadata) => {
-          'type': 'reasoning-file',
-          'file': provider.SerializationJsonSupport.encodeGeneratedFile(file),
-          if (providerMetadata != null)
-            'providerMetadata':
-                provider.SerializationJsonSupport.encodeProviderMetadata(
-              providerMetadata,
-            ),
-        },
+      TextStartEvent() ||
+      TextDeltaEvent() ||
+      TextEndEvent() ||
+      ReasoningStartEvent() ||
+      ReasoningDeltaEvent() ||
+      ReasoningEndEvent() ||
+      ReasoningFileEvent() =>
+        const TextStreamTextContentEventJsonCodec().encode(event),
       SourceEvent(:final source) => {
           'type': 'source',
           'source': provider.SerializationJsonSupport.encodeSourceReference(
@@ -140,68 +73,12 @@ final class TextStreamContentEventJsonCodec {
     required String type,
     required String path,
   }) {
+    const textContentCodec = TextStreamTextContentEventJsonCodec();
+    if (textContentCodec.canDecode(type)) {
+      return textContentCodec.decode(map, type: type, path: path);
+    }
+
     return switch (type) {
-      'text-start' => TextStartEvent(
-          id: provider.asJsonString(map['id'], path: '$path.id'),
-          providerMetadata:
-              provider.SerializationJsonSupport.decodeProviderMetadata(
-            map['providerMetadata'],
-            path: '$path.providerMetadata',
-          ),
-        ),
-      'text-delta' => TextDeltaEvent(
-          id: provider.asJsonString(map['id'], path: '$path.id'),
-          delta: provider.asJsonString(map['delta'], path: '$path.delta'),
-          providerMetadata:
-              provider.SerializationJsonSupport.decodeProviderMetadata(
-            map['providerMetadata'],
-            path: '$path.providerMetadata',
-          ),
-        ),
-      'text-end' => TextEndEvent(
-          id: provider.asJsonString(map['id'], path: '$path.id'),
-          providerMetadata:
-              provider.SerializationJsonSupport.decodeProviderMetadata(
-            map['providerMetadata'],
-            path: '$path.providerMetadata',
-          ),
-        ),
-      'reasoning-start' => ReasoningStartEvent(
-          id: provider.asJsonString(map['id'], path: '$path.id'),
-          providerMetadata:
-              provider.SerializationJsonSupport.decodeProviderMetadata(
-            map['providerMetadata'],
-            path: '$path.providerMetadata',
-          ),
-        ),
-      'reasoning-delta' => ReasoningDeltaEvent(
-          id: provider.asJsonString(map['id'], path: '$path.id'),
-          delta: provider.asJsonString(map['delta'], path: '$path.delta'),
-          providerMetadata:
-              provider.SerializationJsonSupport.decodeProviderMetadata(
-            map['providerMetadata'],
-            path: '$path.providerMetadata',
-          ),
-        ),
-      'reasoning-end' => ReasoningEndEvent(
-          id: provider.asJsonString(map['id'], path: '$path.id'),
-          providerMetadata:
-              provider.SerializationJsonSupport.decodeProviderMetadata(
-            map['providerMetadata'],
-            path: '$path.providerMetadata',
-          ),
-        ),
-      'reasoning-file' => ReasoningFileEvent(
-          provider.SerializationJsonSupport.decodeGeneratedFile(
-            map['file'],
-            path: '$path.file',
-          ),
-          providerMetadata:
-              provider.SerializationJsonSupport.decodeProviderMetadata(
-            map['providerMetadata'],
-            path: '$path.providerMetadata',
-          ),
-        ),
       'source' => SourceEvent(
           provider.SerializationJsonSupport.decodeSourceReference(
             map['source'],
