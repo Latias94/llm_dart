@@ -4,7 +4,7 @@ import 'package:llm_dart_transport/llm_dart_transport.dart';
 import 'chat_transport.dart';
 import 'http_chat_transport_chunk_json_codec.dart';
 import 'http_chat_transport_request_json_codec.dart';
-import 'http_chat_transport_request_payload.dart';
+import 'http_chat_transport_request_preparer.dart';
 import 'http_chat_transport_request_support.dart';
 import 'http_chat_transport_resume_state.dart';
 import 'http_chat_transport_stream_client.dart';
@@ -57,59 +57,45 @@ final class HttpChatTransport implements ChatTransport {
 
   @override
   Stream<ChatUiStreamChunk> sendMessages(ChatTransportRequest request) async* {
-    validateSerializableHttpChatRequestOptions(request.options);
-
-    final callOptionsPayload = serializeHttpChatTransportCallOptions(
-      request.options.callOptions,
-      providerOptionsEncoder: providerOptionsEncoder,
-    );
-    final baseRequestTimeout =
-        request.options.callOptions.timeout ?? requestTimeout;
-    final state = HttpChatTransportResumeState(
-      callOptionsPayload: callOptionsPayload,
-      requestTimeout: baseRequestTimeout,
-      maxRetries: request.options.callOptions.maxRetries,
-      cancellation: request.options.callOptions.cancellation,
-    );
+    final requestPreparer = _requestPreparer();
+    final state = requestPreparer.createSendMessagesState(request);
     _resumeStates[request.chatId] = state;
 
-    final baseHeaders = buildHttpChatTransportBaseHeaders(headers);
-    final basePayload = HttpChatTransportRequestPayload(
-      chatId: request.chatId,
-      prompt: request.prompt,
-      generateOptions: request.options.generateOptions,
-      tools: request.options.tools,
-      toolChoice: request.options.toolChoice,
-      callOptions: callOptionsPayload,
-      streamProtocol: streamProtocol,
-      metadata: request.options.metadata,
-    );
-    final preparedRequest = await prepareSendMessagesRequest?.call(
-      HttpChatTransportSendMessagesRequestContext(
-        request: request,
-        endpoint: endpoint,
-        headers: Map.unmodifiable(baseHeaders),
-        requestTimeout: baseRequestTimeout,
-        payload: basePayload,
-      ),
-    );
-    final resolvedPayload = preparedRequest?.payload ?? basePayload;
-    final payload = requestCodec.encodeRequest(resolvedPayload);
-    final resolvedHeaders = preparedRequest?.headers ?? baseHeaders;
-    final resolvedEndpoint = preparedRequest?.endpoint ?? endpoint;
-    final resolvedRequestTimeout =
-        preparedRequest?.overrideRequestTimeout == true
-            ? preparedRequest!.requestTimeout
-            : baseRequestTimeout;
-
-    yield* _sendPayload(
+    final prepared = await requestPreparer.prepareSendMessages(
+      request: request,
       state: state,
-      endpoint: resolvedEndpoint,
-      headers: resolvedHeaders,
-      requestTimeout: resolvedRequestTimeout,
-      maxRetries: state.maxRetries,
-      cancellation: state.cancellation,
-      payload: payload,
+    );
+    yield* _sendPayloadRequest(
+      state: state,
+      prepared: prepared,
+    );
+  }
+
+  HttpChatTransportRequestPreparer _requestPreparer() {
+    return HttpChatTransportRequestPreparer(
+      endpoint: endpoint,
+      headers: headers,
+      requestTimeout: requestTimeout,
+      requestCodec: requestCodec,
+      streamProtocol: streamProtocol,
+      providerOptionsEncoder: providerOptionsEncoder,
+      prepareSendMessagesRequest: prepareSendMessagesRequest,
+      prepareReconnectRequest: prepareReconnectRequest,
+    );
+  }
+
+  Stream<ChatUiStreamChunk> _sendPayloadRequest({
+    required HttpChatTransportResumeState state,
+    required HttpChatTransportPreparedPayloadRequest prepared,
+  }) {
+    return _sendPayload(
+      state: state,
+      endpoint: prepared.endpoint,
+      headers: prepared.headers,
+      requestTimeout: prepared.requestTimeout,
+      maxRetries: prepared.maxRetries,
+      cancellation: prepared.cancellation,
+      payload: prepared.payload,
     );
   }
 
@@ -137,41 +123,16 @@ final class HttpChatTransport implements ChatTransport {
     required HttpChatTransportResumeState state,
     required List<ChatUiStreamChunk> replayChunks,
   }) async* {
-    final baseHeaders = buildHttpChatTransportBaseHeaders(headers);
-    final basePayload = HttpChatTransportReconnectRequestPayload(
+    final prepared = await _requestPreparer().prepareReconnect(
       chatId: chatId,
       resumeToken: resumeToken,
-      callOptions: state.callOptionsPayload,
-      streamProtocol: streamProtocol,
+      state: state,
     );
-    final preparedRequest = await prepareReconnectRequest?.call(
-      HttpChatTransportReconnectRequestContext(
-        chatId: chatId,
-        resumeToken: resumeToken,
-        endpoint: endpoint,
-        headers: Map.unmodifiable(baseHeaders),
-        requestTimeout: state.requestTimeout,
-        payload: basePayload,
-      ),
-    );
-    final resolvedPayload = preparedRequest?.payload ?? basePayload;
-    final payload = requestCodec.encodeReconnectRequest(resolvedPayload);
-    final resolvedHeaders = preparedRequest?.headers ?? baseHeaders;
-    final resolvedEndpoint = preparedRequest?.endpoint ?? endpoint;
-    final resolvedRequestTimeout =
-        preparedRequest?.overrideRequestTimeout == true
-            ? preparedRequest!.requestTimeout
-            : state.requestTimeout;
 
     yield* Stream<ChatUiStreamChunk>.fromIterable(replayChunks);
-    yield* _sendPayload(
+    yield* _sendPayloadRequest(
       state: state,
-      endpoint: resolvedEndpoint,
-      headers: resolvedHeaders,
-      requestTimeout: resolvedRequestTimeout,
-      maxRetries: state.maxRetries,
-      cancellation: state.cancellation,
-      payload: payload,
+      prepared: prepared,
     );
   }
 
