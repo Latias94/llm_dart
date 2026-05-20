@@ -1,13 +1,17 @@
 import 'package:llm_dart_ai/llm_dart_ai.dart';
 
 import 'http_chat_transport_json_support.dart';
+import 'http_chat_transport_provider_tool_options_codec.dart';
 
 final class HttpChatTransportToolJsonCodec {
   final List<ProviderToolOptionsJsonCodec> providerToolOptionsCodecs;
+  late final HttpChatTransportProviderToolOptionsCodec _providerOptionsCodec;
 
-  const HttpChatTransportToolJsonCodec({
+  HttpChatTransportToolJsonCodec({
     this.providerToolOptionsCodecs = const [],
-  });
+  }) : _providerOptionsCodec = HttpChatTransportProviderToolOptionsCodec(
+          codecs: providerToolOptionsCodecs,
+        );
 
   List<HttpChatTransportJsonMap> encodeTools(
     List<FunctionToolDefinition> tools,
@@ -21,7 +25,7 @@ final class HttpChatTransportToolJsonCodec {
           'inputSchema': tool.inputSchema.toJson(),
           if (tool.strict != null) 'strict': tool.strict,
           if (tool.providerOptions case final providerOptions?)
-            'providerOptions': _encodeProviderToolOptions(
+            'providerOptions': _providerOptionsCodec.encode(
               providerOptions,
               path: r'$.data.tools[].providerOptions',
             ),
@@ -118,59 +122,10 @@ final class HttpChatTransportToolJsonCodec {
         map['strict'],
         path: '$path.strict',
       ),
-      providerOptions: _decodeProviderToolOptions(
+      providerOptions: _providerOptionsCodec.decode(
         map['providerOptions'],
         path: '$path.providerOptions',
       ),
-    );
-  }
-
-  HttpChatTransportJsonMap _encodeProviderToolOptions(
-    ProviderToolOptions options, {
-    required String path,
-  }) {
-    for (final codec in providerToolOptionsCodecs) {
-      if (codec.canEncode(options)) {
-        return {
-          'type': codec.type,
-          'data': codec.encode(options),
-        };
-      }
-    }
-
-    throw UnsupportedError(
-      'Cannot serialize providerOptions at $path because no '
-      'ProviderToolOptionsJsonCodec was registered for '
-      '${options.runtimeType}.',
-    );
-  }
-
-  ProviderToolOptions? _decodeProviderToolOptions(
-    Object? value, {
-    required String path,
-  }) {
-    if (value == null) {
-      return null;
-    }
-
-    final map = HttpChatTransportJson.asMap(value, path: path);
-    final type = HttpChatTransportJson.asString(
-      map['type'],
-      path: '$path.type',
-    );
-    final data = HttpChatTransportJson.asMap(
-      map['data'],
-      path: '$path.data',
-    );
-    for (final codec in providerToolOptionsCodecs) {
-      if (codec.type == type) {
-        return codec.decode(data);
-      }
-    }
-
-    throw FormatException(
-      'Unsupported providerOptions type "$type" at $path. Register a '
-      'ProviderToolOptionsJsonCodec for this type.',
     );
   }
 }
