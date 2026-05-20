@@ -1,14 +1,9 @@
-import 'dart:convert';
-
 import 'json_codec_common.dart';
+import 'model_error_kind.dart';
+import 'model_error_normalization.dart';
+import 'model_error_value_support.dart';
 
-enum ModelErrorKind {
-  unknown,
-  provider,
-  transport,
-  validation,
-  stream,
-}
+export 'model_error_kind.dart';
 
 final class ModelError {
   final ModelErrorKind kind;
@@ -41,19 +36,19 @@ final class ModelError {
       return modelError;
     }
 
-    final resolvedKind = kind ?? _inferKind(error);
-    final normalizedDetails = _normalizeDetails(
-      details ?? _defaultDetails(error),
+    final resolvedKind = kind ?? inferModelErrorKind(error);
+    final normalizedDetails = normalizeModelErrorDetails(
+      details ?? defaultModelErrorDetails(error),
     );
 
     return ModelError(
       kind: resolvedKind,
-      message: _extractMessage(error),
-      code: code ?? _extractCode(error),
-      statusCode: statusCode ?? _extractStatusCode(error),
-      isRetryable: isRetryable ?? _extractRetryable(error),
+      message: extractModelErrorMessage(error),
+      code: code ?? extractModelErrorCode(error),
+      statusCode: statusCode ?? extractModelErrorStatusCode(error),
+      isRetryable: isRetryable ?? extractModelErrorRetryable(error),
       details: normalizedDetails,
-      originalType: _extractOriginalType(error),
+      originalType: extractModelErrorOriginalType(error),
     );
   }
 
@@ -125,7 +120,7 @@ final class ModelError {
         other.statusCode == statusCode &&
         other.isRetryable == isRetryable &&
         other.originalType == originalType &&
-        _deepEquals(other.details, details);
+        modelErrorDeepEquals(other.details, details);
   }
 
   @override
@@ -136,7 +131,7 @@ final class ModelError {
         statusCode,
         isRetryable,
         originalType,
-        _deepHash(details),
+        modelErrorDeepHash(details),
       );
 
   @override
@@ -151,237 +146,4 @@ final class ModelError {
         'details: $details'
         ')';
   }
-}
-
-ModelErrorKind _inferKind(Object? error) {
-  return switch (error) {
-    FormatException() || ArgumentError() => ModelErrorKind.validation,
-    StateError() => ModelErrorKind.stream,
-    _ => ModelErrorKind.unknown,
-  };
-}
-
-String _extractMessage(Object? error) {
-  return switch (error) {
-    null => 'Unknown error.',
-    String() when error.trim().isNotEmpty => error,
-    Map() => _extractMapMessage(error) ?? _stringifyStructuredValue(error),
-    List() => _stringifyStructuredValue(error),
-    FormatException(:final message) => message,
-    ArgumentError(:final message) when message != null => message.toString(),
-    _ => '$error',
-  };
-}
-
-String? _extractCode(Object? error) {
-  return switch (error) {
-    Map() => _extractMapString(
-        error,
-        const ['code', 'type', 'errorCode'],
-      ),
-    _ => null,
-  };
-}
-
-int? _extractStatusCode(Object? error) {
-  return switch (error) {
-    Map() => _extractMapInt(
-        error,
-        const ['statusCode', 'status_code', 'httpStatus', 'http_status'],
-      ),
-    _ => null,
-  };
-}
-
-bool? _extractRetryable(Object? error) {
-  return switch (error) {
-    Map() => _extractMapBool(
-        error,
-        const ['isRetryable', 'retryable'],
-      ),
-    _ => null,
-  };
-}
-
-Object? _defaultDetails(Object? error) {
-  return switch (error) {
-    Map() || List() => error,
-    FormatException(
-      :final source,
-      :final offset,
-    ) =>
-      {
-        if (source != null) 'source': _normalizeDetails(source),
-        if (offset != null) 'offset': offset,
-      },
-    ArgumentError(
-      :final name,
-      :final invalidValue,
-    ) =>
-      {
-        if (name != null) 'name': name,
-        if (invalidValue != null)
-          'invalidValue': _normalizeDetails(invalidValue),
-      },
-    _ => null,
-  };
-}
-
-String? _extractOriginalType(Object? error) {
-  return switch (error) {
-    null || String() || Map() || List() || bool() || num() => null,
-    _ => error.runtimeType.toString(),
-  };
-}
-
-Object? _normalizeDetails(Object? value) {
-  if (value == null) {
-    return null;
-  }
-
-  try {
-    return _freezeJsonValue(
-      ensureJsonValue(value, path: r'$.error.details'),
-    );
-  } on FormatException {
-    return '$value';
-  }
-}
-
-String? _extractMapMessage(Map value) {
-  final message = value['message'];
-  if (message is String && message.trim().isNotEmpty) {
-    return message;
-  }
-
-  final error = value['error'];
-  if (error is String && error.trim().isNotEmpty) {
-    return error;
-  }
-
-  return null;
-}
-
-String? _extractMapString(
-  Map value,
-  List<String> keys,
-) {
-  for (final key in keys) {
-    final candidate = value[key];
-    if (candidate is String && candidate.isNotEmpty) {
-      return candidate;
-    }
-  }
-
-  return null;
-}
-
-int? _extractMapInt(
-  Map value,
-  List<String> keys,
-) {
-  for (final key in keys) {
-    final candidate = value[key];
-    if (candidate is int) {
-      return candidate;
-    }
-  }
-
-  return null;
-}
-
-bool? _extractMapBool(
-  Map value,
-  List<String> keys,
-) {
-  for (final key in keys) {
-    final candidate = value[key];
-    if (candidate is bool) {
-      return candidate;
-    }
-  }
-
-  return null;
-}
-
-String _stringifyStructuredValue(Object value) {
-  try {
-    return jsonEncode(value);
-  } on JsonUnsupportedObjectError {
-    return '$value';
-  }
-}
-
-Object? _freezeJsonValue(Object? value) {
-  return switch (value) {
-    List() => List<Object?>.unmodifiable(value.map(_freezeJsonValue)),
-    Map() => Map<String, Object?>.unmodifiable(
-        asJsonMap(value, path: r'$.error.details').map((key, nested) {
-          return MapEntry(key, _freezeJsonValue(nested));
-        }),
-      ),
-    _ => value,
-  };
-}
-
-bool _deepEquals(Object? left, Object? right) {
-  if (identical(left, right)) {
-    return true;
-  }
-
-  if (left is Map && right is Map) {
-    if (left.length != right.length) {
-      return false;
-    }
-
-    for (final entry in left.entries) {
-      if (!right.containsKey(entry.key)) {
-        return false;
-      }
-
-      if (!_deepEquals(entry.value, right[entry.key])) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  if (left is List && right is List) {
-    if (left.length != right.length) {
-      return false;
-    }
-
-    for (var index = 0; index < left.length; index += 1) {
-      if (!_deepEquals(left[index], right[index])) {
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  return left == right;
-}
-
-int _deepHash(Object? value) {
-  return switch (value) {
-    null => 0,
-    Map() => Object.hashAll(
-        value.entries
-            .map(
-              (entry) => (
-                key: entry.key.toString(),
-                hash: Object.hash(
-                  entry.key,
-                  _deepHash(entry.value),
-                ),
-              ),
-            )
-            .toList()
-          ..sort((left, right) => left.key.compareTo(right.key)),
-      ),
-    List() => Object.hashAll(value.map(_deepHash)),
-    _ => value.hashCode,
-  };
 }
