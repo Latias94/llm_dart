@@ -4,6 +4,7 @@ import 'anthropic_api.dart';
 import 'anthropic_code_execution_replay.dart';
 import 'anthropic_file_response.dart';
 import 'anthropic_file_types.dart';
+import 'anthropic_files_client_support.dart';
 import 'anthropic_files_transport.dart';
 import 'anthropic_files_upload_body.dart';
 import 'anthropic_model_settings.dart';
@@ -42,19 +43,19 @@ final class AnthropicFiles {
     Map<String, String>? headers,
   }) async {
     final body = buildAnthropicFileUploadBody(request);
-    final response = await transport.send(
-      _requestSupport.uploadRequest(
+    return sendAnthropicFilesJsonModel(
+      transport: transport,
+      request: _requestSupport.uploadRequest(
         body: body,
         timeout: timeout,
         maxRetries: maxRetries,
         cancellation: cancellation,
         extraHeaders: headers,
       ),
-    );
-
-    return decodeAnthropicFileDescriptorResponse(
-      response.body,
-      responseName: 'file upload',
+      decode: (body) => decodeAnthropicFileDescriptorResponse(
+        body,
+        responseName: 'file upload',
+      ),
     );
   }
 
@@ -89,8 +90,9 @@ final class AnthropicFiles {
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
-    final response = await transport.send(
-      _requestSupport.jsonRequest(
+    return sendAnthropicFilesJsonModel(
+      transport: transport,
+      request: _requestSupport.jsonRequest(
         uri: _requestSupport.fileListUri(
           beforeId: beforeId,
           afterId: afterId,
@@ -102,9 +104,8 @@ final class AnthropicFiles {
         cancellation: cancellation,
         extraHeaders: headers,
       ),
+      decode: decodeAnthropicFileListResponse,
     );
-
-    return decodeAnthropicFileListResponse(response.body);
   }
 
   Uri fileContentUri(String fileId) {
@@ -118,8 +119,9 @@ final class AnthropicFiles {
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
-    final response = await transport.send(
-      _requestSupport.jsonRequest(
+    return sendAnthropicFilesJsonModel(
+      transport: transport,
+      request: _requestSupport.jsonRequest(
         uri: fileUri(fileId),
         method: TransportMethod.get,
         timeout: timeout,
@@ -127,11 +129,10 @@ final class AnthropicFiles {
         cancellation: cancellation,
         extraHeaders: headers,
       ),
-    );
-
-    return decodeAnthropicFileDescriptorResponse(
-      response.body,
-      responseName: 'file metadata',
+      decode: (body) => decodeAnthropicFileDescriptorResponse(
+        body,
+        responseName: 'file metadata',
+      ),
     );
   }
 
@@ -146,8 +147,9 @@ final class AnthropicFiles {
       fileId,
       parameterName: 'fileId',
     );
-    final response = await transport.send(
-      _requestSupport.bytesRequest(
+    return sendAnthropicFileDownload(
+      transport: transport,
+      request: _requestSupport.bytesRequest(
         uri: fileContentUri(normalizedFileId),
         method: TransportMethod.get,
         timeout: timeout,
@@ -155,12 +157,7 @@ final class AnthropicFiles {
         cancellation: cancellation,
         extraHeaders: headers,
       ),
-    );
-
-    return decodeAnthropicFileDownload(
       fileId: normalizedFileId,
-      body: response.body,
-      headers: response.headers,
     );
   }
 
@@ -175,8 +172,9 @@ final class AnthropicFiles {
       fileId,
       parameterName: 'fileId',
     );
-    await transport.send(
-      _requestSupport.deleteRequest(
+    await sendAnthropicFilesDelete(
+      transport: transport,
+      request: _requestSupport.deleteRequest(
         uri: fileUri(normalizedFileId),
         timeout: timeout,
         maxRetries: maxRetries,
