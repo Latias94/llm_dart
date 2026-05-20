@@ -1,8 +1,8 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import 'openai_chat_completions_generate_result_codec.dart';
 import 'openai_chat_completions_request_codec.dart';
 import 'openai_chat_completions_stream_event_codec.dart';
-import 'openai_chat_completions_stream_result_codec.dart';
 import 'openai_chat_completions_stream_state.dart';
 import 'openai_chat_completions_support.dart';
 import 'openai_family_profile.dart';
