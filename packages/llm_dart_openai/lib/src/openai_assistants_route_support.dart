@@ -1,30 +1,28 @@
 import 'openai_assistants_lifecycle_models.dart';
 import 'openai_assistants_message_list_models.dart';
+import 'openai_assistants_route_parameters.dart';
 import 'openai_assistants_run_models.dart';
 import 'openai_assistants_run_step_list_models.dart';
 
 final class OpenAIAssistantsRouteSupport {
   final String baseUrl;
+  final OpenAIAssistantsRouteParameters parameters;
 
   const OpenAIAssistantsRouteSupport({
     required this.baseUrl,
+    this.parameters = const OpenAIAssistantsRouteParameters(),
   });
 
   Uri assistantsUri([OpenAIListAssistantsQuery? query]) {
-    final uri = Uri.parse('$baseUrl/assistants');
-    final queryParameters = query?.toQueryParameters() ?? const {};
-    if (queryParameters.isEmpty) {
-      return uri;
-    }
-    return uri.replace(queryParameters: queryParameters);
+    return openAIAssistantsUriWithQuery(
+      '$baseUrl/assistants',
+      query?.toQueryParameters() ?? const {},
+    );
   }
 
   Uri assistantUri(String assistantId) {
     return Uri.parse(
-      '$baseUrl/assistants/${Uri.encodeComponent(requireAssistantId(
-        assistantId,
-        parameterName: 'assistantId',
-      ))}',
+      '$baseUrl/assistants/${parameters.encodeAssistantId(assistantId)}',
     );
   }
 
@@ -32,10 +30,7 @@ final class OpenAIAssistantsRouteSupport {
 
   Uri threadUri(String threadId) {
     return Uri.parse(
-      '$baseUrl/threads/${Uri.encodeComponent(requireThreadId(
-        threadId,
-        parameterName: 'threadId',
-      ))}',
+      '$baseUrl/threads/${parameters.encodeThreadId(threadId)}',
     );
   }
 
@@ -43,46 +38,28 @@ final class OpenAIAssistantsRouteSupport {
     String threadId, [
     OpenAIListThreadMessagesQuery? query,
   ]) {
-    return _uriWithQuery(
-      '$baseUrl/threads/${Uri.encodeComponent(requireThreadId(
-        threadId,
-        parameterName: 'threadId',
-      ))}/messages',
+    return openAIAssistantsUriWithQuery(
+      '$baseUrl/threads/${parameters.encodeThreadId(threadId)}/messages',
       query?.toQueryParameters() ?? const {},
     );
   }
 
   Uri threadMessageUri(String threadId, String messageId) {
     return Uri.parse(
-      '$baseUrl/threads/${Uri.encodeComponent(requireThreadId(
-        threadId,
-        parameterName: 'threadId',
-      ))}/messages/${Uri.encodeComponent(requireMessageId(
-        messageId,
-        parameterName: 'messageId',
-      ))}',
+      '$baseUrl/threads/${parameters.encodeThreadId(threadId)}/messages/${parameters.encodeMessageId(messageId)}',
     );
   }
 
   Uri threadRunsUri(String threadId, [OpenAIListRunsQuery? query]) {
-    return _uriWithQuery(
-      '$baseUrl/threads/${Uri.encodeComponent(requireThreadId(
-        threadId,
-        parameterName: 'threadId',
-      ))}/runs',
+    return openAIAssistantsUriWithQuery(
+      '$baseUrl/threads/${parameters.encodeThreadId(threadId)}/runs',
       query?.toQueryParameters() ?? const {},
     );
   }
 
   Uri threadRunUri(String threadId, String runId) {
     return Uri.parse(
-      '$baseUrl/threads/${Uri.encodeComponent(requireThreadId(
-        threadId,
-        parameterName: 'threadId',
-      ))}/runs/${Uri.encodeComponent(requireRunId(
-        runId,
-        parameterName: 'runId',
-      ))}',
+      '$baseUrl/threads/${parameters.encodeThreadId(threadId)}/runs/${parameters.encodeRunId(runId)}',
     );
   }
 
@@ -103,30 +80,15 @@ final class OpenAIAssistantsRouteSupport {
     String runId, [
     OpenAIListRunStepsQuery? query,
   ]) {
-    return _uriWithQuery(
-      '$baseUrl/threads/${Uri.encodeComponent(requireThreadId(
-        threadId,
-        parameterName: 'threadId',
-      ))}/runs/${Uri.encodeComponent(requireRunId(
-        runId,
-        parameterName: 'runId',
-      ))}/steps',
+    return openAIAssistantsUriWithQuery(
+      '$baseUrl/threads/${parameters.encodeThreadId(threadId)}/runs/${parameters.encodeRunId(runId)}/steps',
       query?.toQueryParameters() ?? const {},
     );
   }
 
   Uri threadRunStepUri(String threadId, String runId, String stepId) {
     return Uri.parse(
-      '$baseUrl/threads/${Uri.encodeComponent(requireThreadId(
-        threadId,
-        parameterName: 'threadId',
-      ))}/runs/${Uri.encodeComponent(requireRunId(
-        runId,
-        parameterName: 'runId',
-      ))}/steps/${Uri.encodeComponent(requireStepId(
-        stepId,
-        parameterName: 'stepId',
-      ))}',
+      '$baseUrl/threads/${parameters.encodeThreadId(threadId)}/runs/${parameters.encodeRunId(runId)}/steps/${parameters.encodeStepId(stepId)}',
     );
   }
 
@@ -134,78 +96,34 @@ final class OpenAIAssistantsRouteSupport {
     String value, {
     required String parameterName,
   }) {
-    return _requireNonEmptyId(
-      value,
-      parameterName: parameterName,
-      label: 'assistant',
-    );
+    return parameters.requireAssistantId(value, parameterName: parameterName);
   }
 
   String requireThreadId(
     String value, {
     required String parameterName,
   }) {
-    return _requireNonEmptyId(
-      value,
-      parameterName: parameterName,
-      label: 'thread',
-    );
+    return parameters.requireThreadId(value, parameterName: parameterName);
   }
 
   String requireMessageId(
     String value, {
     required String parameterName,
   }) {
-    return _requireNonEmptyId(
-      value,
-      parameterName: parameterName,
-      label: 'thread message',
-    );
+    return parameters.requireMessageId(value, parameterName: parameterName);
   }
 
   String requireRunId(
     String value, {
     required String parameterName,
   }) {
-    return _requireNonEmptyId(
-      value,
-      parameterName: parameterName,
-      label: 'thread run',
-    );
+    return parameters.requireRunId(value, parameterName: parameterName);
   }
 
   String requireStepId(
     String value, {
     required String parameterName,
   }) {
-    return _requireNonEmptyId(
-      value,
-      parameterName: parameterName,
-      label: 'run step',
-    );
+    return parameters.requireStepId(value, parameterName: parameterName);
   }
-
-  String _requireNonEmptyId(
-    String value, {
-    required String parameterName,
-    required String label,
-  }) {
-    final normalized = value.trim();
-    if (normalized.isEmpty) {
-      throw ArgumentError.value(
-        value,
-        parameterName,
-        'Expected a non-empty OpenAI $label ID.',
-      );
-    }
-    return normalized;
-  }
-}
-
-Uri _uriWithQuery(String uri, Map<String, String> queryParameters) {
-  final parsed = Uri.parse(uri);
-  if (queryParameters.isEmpty) {
-    return parsed;
-  }
-  return parsed.replace(queryParameters: queryParameters);
 }
