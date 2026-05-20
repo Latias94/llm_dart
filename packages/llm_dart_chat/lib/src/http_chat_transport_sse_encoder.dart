@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:llm_dart_transport/llm_dart_transport.dart';
+
 import 'http_chat_transport_chunk.dart';
 import 'http_chat_transport_chunk_json_codec.dart';
 
@@ -13,29 +15,22 @@ final class HttpChatTransportSseEncoder {
     this.jsonEncoder = const JsonEncoder(),
   });
 
+  SseJsonFrameEncoder get _frameEncoder {
+    return SseJsonFrameEncoder(jsonEncoder: jsonEncoder);
+  }
+
   String encodeJsonFrame(
     Map<String, Object?> payload, {
     String? event,
     String? id,
     int? retryMilliseconds,
   }) {
-    final buffer = StringBuffer();
-    if (event != null) {
-      buffer.writeln('event: $event');
-    }
-    if (id != null) {
-      buffer.writeln('id: $id');
-    }
-    if (retryMilliseconds != null) {
-      buffer.writeln('retry: $retryMilliseconds');
-    }
-
-    final data = jsonEncoder.convert(payload);
-    for (final line in const LineSplitter().convert(data)) {
-      buffer.writeln('data: $line');
-    }
-    buffer.writeln();
-    return buffer.toString();
+    return _frameEncoder.encodeFrame(
+      payload,
+      event: event,
+      id: id,
+      retryMilliseconds: retryMilliseconds,
+    );
   }
 
   List<int> encodeJsonFrameBytes(
@@ -44,13 +39,11 @@ final class HttpChatTransportSseEncoder {
     String? id,
     int? retryMilliseconds,
   }) {
-    return utf8.encode(
-      encodeJsonFrame(
-        payload,
-        event: event,
-        id: id,
-        retryMilliseconds: retryMilliseconds,
-      ),
+    return _frameEncoder.encodeFrameBytes(
+      payload,
+      event: event,
+      id: id,
+      retryMilliseconds: retryMilliseconds,
     );
   }
 
@@ -84,7 +77,7 @@ final class HttpChatTransportSseEncoder {
     );
   }
 
-  String encodeDoneFrame() => 'data: [DONE]\n\n';
+  String encodeDoneFrame() => _frameEncoder.encodeDoneFrame();
 
   Stream<List<int>> encodeChunkStream(
     Stream<HttpChatTransportChunk> chunks, {
@@ -95,7 +88,7 @@ final class HttpChatTransportSseEncoder {
     }
 
     if (includeDoneFrame) {
-      yield utf8.encode(encodeDoneFrame());
+      yield _frameEncoder.encodeDoneFrameBytes();
     }
   }
 }

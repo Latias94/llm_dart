@@ -21,6 +21,7 @@ export 'src/http/media_type_filename.dart';
 export 'src/http/middleware_transport_client.dart';
 export 'src/http/ndjson_json_chunk_parser.dart';
 export 'src/http/sse_decoder.dart';
+export 'src/http/sse_json_frame_encoder.dart';
 export 'src/http/sse_json_chunk_parser.dart';
 export 'src/http/transport_client.dart';
 export 'src/http/transport_multipart_body.dart';
