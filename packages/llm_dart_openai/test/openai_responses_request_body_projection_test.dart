@@ -1,44 +1,15 @@
 import 'package:llm_dart_openai/llm_dart_openai.dart';
 import 'package:llm_dart_openai/src/openai_responses_request_body_projection.dart';
+import 'package:llm_dart_openai/src/openai_responses_request_context.dart';
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:test/test.dart';
 
 void main() {
   group('OpenAI Responses request body projection', () {
-    test('resolves prompt context from model capabilities and provider options',
-        () {
-      const projection = OpenAIResponsesRequestBodyProjection();
-
-      final defaultContext = projection.resolveContext(
-        modelId: 'gpt-5-mini',
-        providerOptions: const OpenAIGenerateTextOptions(),
-      );
-      expect(defaultContext.isReasoningModel, isTrue);
-      expect(
-          defaultContext.systemMessageMode, OpenAISystemMessageMode.developer);
-      expect(defaultContext.store, isTrue);
-      expect(defaultContext.hasConversation, isFalse);
-
-      final overriddenContext = projection.resolveContext(
-        modelId: 'gpt-5-mini',
-        providerOptions: const OpenAIGenerateTextOptions(
-          conversation: 'conv_1',
-          forceReasoning: false,
-          store: false,
-          systemMessageMode: OpenAISystemMessageMode.system,
-        ),
-      );
-      expect(overriddenContext.isReasoningModel, isFalse);
-      expect(
-          overriddenContext.systemMessageMode, OpenAISystemMessageMode.system);
-      expect(overriddenContext.store, isFalse);
-      expect(overriddenContext.hasConversation, isTrue);
-    });
-
     test('encodes Responses body fields and warnings', () {
       const projection = OpenAIResponsesRequestBodyProjection();
       final warnings = <ModelWarning>[];
-      final context = projection.resolveContext(
+      final context = resolveOpenAIResponsesRequestContext(
         modelId: 'gpt-5-mini',
         providerOptions: const OpenAIGenerateTextOptions(
           conversation: 'conv_1',
@@ -177,7 +148,7 @@ void main() {
     test('auto-includes provider-native tool response fields', () {
       const projection = OpenAIResponsesRequestBodyProjection();
       final warnings = <ModelWarning>[];
-      final context = projection.resolveContext(
+      final context = resolveOpenAIResponsesRequestContext(
         modelId: 'gpt-4.1-mini',
         providerOptions: const OpenAIGenerateTextOptions(
           include: [OpenAIResponsesInclude.webSearchCallActionSources],
@@ -217,7 +188,7 @@ void main() {
     test('warns and drops unsupported service tiers', () {
       const projection = OpenAIResponsesRequestBodyProjection();
       final warnings = <ModelWarning>[];
-      final context = projection.resolveContext(
+      final context = resolveOpenAIResponsesRequestContext(
         modelId: 'gpt-4.1-mini',
         providerOptions: const OpenAIGenerateTextOptions(
           serviceTier: 'flex',

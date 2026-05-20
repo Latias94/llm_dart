@@ -9,16 +9,6 @@ import 'openai_responses_request_context.dart';
 final class OpenAIResponsesRequestBodyProjection {
   const OpenAIResponsesRequestBodyProjection();
 
-  OpenAIResponsesRequestContext resolveContext({
-    required String modelId,
-    required OpenAIGenerateTextOptions providerOptions,
-  }) {
-    return resolveOpenAIResponsesRequestContext(
-      modelId: modelId,
-      providerOptions: providerOptions,
-    );
-  }
-
   Map<String, Object?> encodeBody({
     required String modelId,
     required List<Object?> input,

@@ -4,6 +4,7 @@ import 'openai_generate_text_options.dart';
 import 'openai_responses_mcp_approval_replay_projection.dart';
 import 'openai_responses_native_tool_context.dart';
 import 'openai_responses_request_body_projection.dart';
+import 'openai_responses_request_context.dart';
 import 'openai_responses_request_prompt_codec.dart';
 import 'openai_responses_request_tool_codec.dart';
 
@@ -40,7 +41,7 @@ final class OpenAIResponsesRequestCodec {
   }) {
     final warnings = <ModelWarning>[];
     final input = <Object?>[];
-    final context = bodyProjection.resolveContext(
+    final context = resolveOpenAIResponsesRequestContext(
       modelId: modelId,
       providerOptions: providerOptions,
     );
