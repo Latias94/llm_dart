@@ -1,6 +1,7 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'prompt_tool_state_validation.dart';
+import 'prompt_validation_error.dart';
 
 void validateProviderPrompt(
   List<PromptMessage> prompt, {
@@ -38,10 +39,12 @@ final class _ProviderPromptValidator {
 
   void _validateSystemMessage(int messageIndex) {
     if (_hasNonSystemMessage) {
-      _fail(
-        messageIndex,
-        null,
-        'system messages must appear before user, assistant, or tool messages.',
+      throwPromptValidationError(
+        context: context,
+        messageIndex: messageIndex,
+        partIndex: null,
+        message:
+            'system messages must appear before user, assistant, or tool messages.',
       );
     }
   }
@@ -86,10 +89,12 @@ final class _ProviderPromptValidator {
             partIndex: partIndex,
           );
         case ToolApprovalResponsePromptPart():
-          _fail(
-            messageIndex,
-            partIndex,
-            'tool approval responses must be placed in a tool message.',
+          throwPromptValidationError(
+            context: context,
+            messageIndex: messageIndex,
+            partIndex: partIndex,
+            message:
+                'tool approval responses must be placed in a tool message.',
           );
         case TextPromptPart() ||
               FilePromptPart() ||
@@ -134,24 +139,15 @@ final class _ProviderPromptValidator {
               ReasoningFilePromptPart() ||
               ToolCallPromptPart() ||
               ToolApprovalRequestPromptPart():
-          _fail(
-            messageIndex,
-            partIndex,
-            'tool messages only support tool results, approval responses, '
-            'or provider-native custom replay parts.',
+          throwPromptValidationError(
+            context: context,
+            messageIndex: messageIndex,
+            partIndex: partIndex,
+            message:
+                'tool messages only support tool results, approval responses, '
+                'or provider-native custom replay parts.',
           );
       }
     }
-  }
-
-  Never _fail(
-    int messageIndex,
-    int? partIndex,
-    String message,
-  ) {
-    final path = partIndex == null
-        ? '$context[$messageIndex]'
-        : '$context[$messageIndex].parts[$partIndex]';
-    throw ArgumentError('$path is invalid: $message');
   }
 }

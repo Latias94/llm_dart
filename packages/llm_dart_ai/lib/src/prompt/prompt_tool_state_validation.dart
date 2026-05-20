@@ -1,10 +1,13 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import 'prompt_tool_state_models.dart';
+import 'prompt_validation_error.dart';
+
 final class PromptToolStateValidator {
   final String context;
-  final Map<String, _ToolCallState> _seenToolCalls = {};
-  final Map<String, _ToolCallState> _pendingClientToolCalls = {};
-  final Map<String, _ApprovalState> _pendingApprovals = {};
+  final Map<String, PromptToolCallState> _seenToolCalls = {};
+  final Map<String, PromptToolCallState> _pendingClientToolCalls = {};
+  final Map<String, PromptApprovalState> _pendingApprovals = {};
 
   PromptToolStateValidator(this.context);
 
@@ -13,28 +16,32 @@ final class PromptToolStateValidator {
     required int messageIndex,
     required int partIndex,
   }) {
-    _requireNonEmpty(
+    requireNonEmptyPromptField(
       part.toolCallId,
       'toolCallId',
+      context: context,
       messageIndex: messageIndex,
       partIndex: partIndex,
     );
-    _requireNonEmpty(
+    requireNonEmptyPromptField(
       part.toolName,
       'toolName',
+      context: context,
       messageIndex: messageIndex,
       partIndex: partIndex,
     );
 
     if (_pendingClientToolCalls.containsKey(part.toolCallId)) {
-      _fail(
-        messageIndex,
-        partIndex,
-        'tool call "${part.toolCallId}" is already waiting for a tool result.',
+      throwPromptValidationError(
+        context: context,
+        messageIndex: messageIndex,
+        partIndex: partIndex,
+        message:
+            'tool call "${part.toolCallId}" is already waiting for a tool result.',
       );
     }
 
-    final state = _ToolCallState(
+    final state = PromptToolCallState(
       toolCallId: part.toolCallId,
       toolName: part.toolName,
       providerExecuted: part.providerExecuted,
@@ -53,48 +60,56 @@ final class PromptToolStateValidator {
     required int messageIndex,
     required int partIndex,
   }) {
-    _requireNonEmpty(
+    requireNonEmptyPromptField(
       part.approvalId,
       'approvalId',
+      context: context,
       messageIndex: messageIndex,
       partIndex: partIndex,
     );
-    _requireNonEmpty(
+    requireNonEmptyPromptField(
       part.toolCallId,
       'toolCallId',
+      context: context,
       messageIndex: messageIndex,
       partIndex: partIndex,
     );
 
     final toolCall = _seenToolCalls[part.toolCallId];
     if (toolCall == null) {
-      _fail(
-        messageIndex,
-        partIndex,
-        'approval request "${part.approvalId}" references missing tool call '
-        '"${part.toolCallId}".',
+      throwPromptValidationError(
+        context: context,
+        messageIndex: messageIndex,
+        partIndex: partIndex,
+        message:
+            'approval request "${part.approvalId}" references missing tool call '
+            '"${part.toolCallId}".',
       );
     }
 
     if (!toolCall.providerExecuted) {
-      _fail(
-        messageIndex,
-        partIndex,
-        'approval request "${part.approvalId}" references client-executed '
-        'tool call "${part.toolCallId}".',
+      throwPromptValidationError(
+        context: context,
+        messageIndex: messageIndex,
+        partIndex: partIndex,
+        message:
+            'approval request "${part.approvalId}" references client-executed '
+            'tool call "${part.toolCallId}".',
       );
     }
 
     if (_pendingApprovals.containsKey(part.approvalId)) {
-      _fail(
-        messageIndex,
-        partIndex,
-        'approval request "${part.approvalId}" is already waiting for a '
-        'response.',
+      throwPromptValidationError(
+        context: context,
+        messageIndex: messageIndex,
+        partIndex: partIndex,
+        message:
+            'approval request "${part.approvalId}" is already waiting for a '
+            'response.',
       );
     }
 
-    _pendingApprovals[part.approvalId] = _ApprovalState(
+    _pendingApprovals[part.approvalId] = PromptApprovalState(
       approvalId: part.approvalId,
       toolCallId: part.toolCallId,
       messageIndex: messageIndex,
@@ -107,32 +122,37 @@ final class PromptToolStateValidator {
     required int messageIndex,
     required int partIndex,
   }) {
-    _requireNonEmpty(
+    requireNonEmptyPromptField(
       part.toolCallId,
       'toolCallId',
+      context: context,
       messageIndex: messageIndex,
       partIndex: partIndex,
     );
-    _requireNonEmpty(
+    requireNonEmptyPromptField(
       part.toolName,
       'toolName',
+      context: context,
       messageIndex: messageIndex,
       partIndex: partIndex,
     );
 
     final toolCall = _seenToolCalls[part.toolCallId];
     if (toolCall == null || !toolCall.providerExecuted) {
-      _fail(
-        messageIndex,
-        partIndex,
-        'assistant tool results are only valid for provider-executed tool '
-        'calls. Client tool results must be placed in a tool message.',
+      throwPromptValidationError(
+        context: context,
+        messageIndex: messageIndex,
+        partIndex: partIndex,
+        message:
+            'assistant tool results are only valid for provider-executed tool '
+            'calls. Client tool results must be placed in a tool message.',
       );
     }
 
-    _requireToolNameMatch(
+    requireMatchingPromptToolName(
       expected: toolCall.toolName,
       actual: part.toolName,
+      context: context,
       messageIndex: messageIndex,
       partIndex: partIndex,
     );
@@ -144,30 +164,34 @@ final class PromptToolStateValidator {
     required int messageIndex,
     required int partIndex,
   }) {
-    _requireNonEmpty(
+    requireNonEmptyPromptField(
       part.toolCallId,
       'toolCallId',
+      context: context,
       messageIndex: messageIndex,
       partIndex: partIndex,
     );
-    _requireNonEmpty(
+    requireNonEmptyPromptField(
       part.toolName,
       'toolName',
+      context: context,
       messageIndex: messageIndex,
       partIndex: partIndex,
     );
-    _requireToolNameMatch(
+    requireMatchingPromptToolName(
       expected: messageToolName,
       actual: part.toolName,
+      context: context,
       messageIndex: messageIndex,
       partIndex: partIndex,
     );
 
     final pending = _pendingClientToolCalls.remove(part.toolCallId);
     if (pending != null) {
-      _requireToolNameMatch(
+      requireMatchingPromptToolName(
         expected: pending.toolName,
         actual: part.toolName,
+        context: context,
         messageIndex: messageIndex,
         partIndex: partIndex,
       );
@@ -176,19 +200,22 @@ final class PromptToolStateValidator {
 
     final toolCall = _seenToolCalls[part.toolCallId];
     if (toolCall != null && toolCall.providerExecuted) {
-      _requireToolNameMatch(
+      requireMatchingPromptToolName(
         expected: toolCall.toolName,
         actual: part.toolName,
+        context: context,
         messageIndex: messageIndex,
         partIndex: partIndex,
       );
       return;
     }
 
-    _fail(
-      messageIndex,
-      partIndex,
-      'tool result "${part.toolCallId}" has no matching assistant tool call.',
+    throwPromptValidationError(
+      context: context,
+      messageIndex: messageIndex,
+      partIndex: partIndex,
+      message:
+          'tool result "${part.toolCallId}" has no matching assistant tool call.',
     );
   }
 
@@ -197,36 +224,41 @@ final class PromptToolStateValidator {
     required int messageIndex,
     required int partIndex,
   }) {
-    _requireNonEmpty(
+    requireNonEmptyPromptField(
       part.approvalId,
       'approvalId',
+      context: context,
       messageIndex: messageIndex,
       partIndex: partIndex,
     );
-    _requireNonEmpty(
+    requireNonEmptyPromptField(
       part.toolCallId,
       'toolCallId',
+      context: context,
       messageIndex: messageIndex,
       partIndex: partIndex,
     );
 
     final pending = _pendingApprovals.remove(part.approvalId);
     if (pending == null) {
-      _fail(
-        messageIndex,
-        partIndex,
-        'approval response "${part.approvalId}" has no matching assistant '
-        'approval request.',
+      throwPromptValidationError(
+        context: context,
+        messageIndex: messageIndex,
+        partIndex: partIndex,
+        message:
+            'approval response "${part.approvalId}" has no matching assistant '
+            'approval request.',
       );
     }
 
     if (pending.toolCallId != part.toolCallId) {
-      _fail(
-        messageIndex,
-        partIndex,
-        'approval response "${part.approvalId}" references tool call '
-        '"${part.toolCallId}" but the request referenced '
-        '"${pending.toolCallId}".',
+      throwPromptValidationError(
+        context: context,
+        messageIndex: messageIndex,
+        partIndex: partIndex,
+        message: 'approval response "${part.approvalId}" references tool call '
+            '"${part.toolCallId}" but the request referenced '
+            '"${pending.toolCallId}".',
       );
     }
   }
@@ -237,21 +269,25 @@ final class PromptToolStateValidator {
   ) {
     if (_pendingClientToolCalls.isNotEmpty) {
       final pending = _pendingClientToolCalls.values.first;
-      _fail(
-        messageIndex,
-        null,
-        '$nextMessageName cannot appear before a tool message returns a '
-        'result for client tool call "${pending.toolCallId}".',
+      throwPromptValidationError(
+        context: context,
+        messageIndex: messageIndex,
+        partIndex: null,
+        message:
+            '$nextMessageName cannot appear before a tool message returns a '
+            'result for client tool call "${pending.toolCallId}".',
       );
     }
 
     if (_pendingApprovals.isNotEmpty) {
       final pending = _pendingApprovals.values.first;
-      _fail(
-        messageIndex,
-        null,
-        '$nextMessageName cannot appear before a tool message responds to '
-        'approval request "${pending.approvalId}".',
+      throwPromptValidationError(
+        context: context,
+        messageIndex: messageIndex,
+        partIndex: null,
+        message:
+            '$nextMessageName cannot appear before a tool message responds to '
+            'approval request "${pending.approvalId}".',
       );
     }
   }
@@ -259,96 +295,25 @@ final class PromptToolStateValidator {
   void requireNoPendingAtEnd() {
     if (_pendingClientToolCalls.isNotEmpty) {
       final pending = _pendingClientToolCalls.values.first;
-      _fail(
-        pending.messageIndex,
-        pending.partIndex,
-        'client tool call "${pending.toolCallId}" is missing a tool result.',
+      throwPromptValidationError(
+        context: context,
+        messageIndex: pending.messageIndex,
+        partIndex: pending.partIndex,
+        message:
+            'client tool call "${pending.toolCallId}" is missing a tool result.',
       );
     }
 
     if (_pendingApprovals.isNotEmpty) {
       final pending = _pendingApprovals.values.first;
-      _fail(
-        pending.messageIndex,
-        pending.partIndex,
-        'approval request "${pending.approvalId}" is missing an approval '
-        'response.',
+      throwPromptValidationError(
+        context: context,
+        messageIndex: pending.messageIndex,
+        partIndex: pending.partIndex,
+        message:
+            'approval request "${pending.approvalId}" is missing an approval '
+            'response.',
       );
     }
   }
-
-  void _requireNonEmpty(
-    String value,
-    String fieldName, {
-    required int messageIndex,
-    required int partIndex,
-  }) {
-    if (value.isNotEmpty) {
-      return;
-    }
-
-    _fail(
-      messageIndex,
-      partIndex,
-      '$fieldName must not be empty.',
-    );
-  }
-
-  void _requireToolNameMatch({
-    required String expected,
-    required String actual,
-    required int messageIndex,
-    required int partIndex,
-  }) {
-    if (expected == actual) {
-      return;
-    }
-
-    _fail(
-      messageIndex,
-      partIndex,
-      'tool name "$actual" does not match expected tool "$expected".',
-    );
-  }
-
-  Never _fail(
-    int messageIndex,
-    int? partIndex,
-    String message,
-  ) {
-    final path = partIndex == null
-        ? '$context[$messageIndex]'
-        : '$context[$messageIndex].parts[$partIndex]';
-    throw ArgumentError('$path is invalid: $message');
-  }
-}
-
-final class _ToolCallState {
-  final String toolCallId;
-  final String toolName;
-  final bool providerExecuted;
-  final int messageIndex;
-  final int partIndex;
-
-  const _ToolCallState({
-    required this.toolCallId,
-    required this.toolName,
-    required this.providerExecuted,
-    required this.messageIndex,
-    required this.partIndex,
-  });
-}
-
-final class _ApprovalState {
-  final String approvalId;
-  final String toolCallId;
-  final int messageIndex;
-  final int partIndex;
-
-  const _ApprovalState({
-    required this.approvalId,
-    required this.toolCallId,
-    required this.messageIndex,
-    required this.partIndex,
-  });
 }
