@@ -3,6 +3,7 @@ import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'openai_family_profile.dart';
 import 'openai_family_url_support.dart';
+import 'openai_image_edit_body.dart';
 import 'openai_image_edit_request.dart';
 import 'openai_image_editing.dart';
 import 'openai_image_generation_request.dart';
