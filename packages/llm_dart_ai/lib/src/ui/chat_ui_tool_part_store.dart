@@ -12,16 +12,17 @@ import '../common/tool_input_stream_state.dart';
 import '../stream/text_stream_event.dart';
 import 'chat_ui_message.dart';
 import 'chat_ui_stream_error.dart';
+import 'chat_ui_tool_part_index.dart';
 
 final class ChatUiToolPartStore {
-  final List<ChatUiPart> _parts;
-  final Map<String, int> _partIndexes = {};
+  final ChatUiToolPartIndex _parts;
   final Map<String, StreamingToolInputState> _partialInputs = {};
 
-  ChatUiToolPartStore(this._parts);
+  ChatUiToolPartStore(List<ChatUiPart> parts)
+      : _parts = ChatUiToolPartIndex(parts);
 
   void hydrate(ToolUiPart part, int index) {
-    _partIndexes[part.toolCallId] = index;
+    _parts.hydrate(part, index);
     if (part.state != ToolUiPartState.inputStreaming) {
       return;
     }
@@ -47,7 +48,7 @@ final class ChatUiToolPartStore {
       isDynamic: event.isDynamic,
       title: event.title,
     );
-    _upsert(
+    _parts.upsert(
       _buildPart(
         toolCallId: event.toolCallId,
         toolName: event.toolName,
@@ -74,7 +75,7 @@ final class ChatUiToolPartStore {
   void applyInputDelta(ToolInputDeltaEvent event) {
     final partial = _requirePartialInput(event.toolCallId);
     partial.append(event.delta);
-    _upsert(
+    _parts.upsert(
       _buildPart(
         toolCallId: event.toolCallId,
         state: ToolUiPartState.inputStreaming,
@@ -89,7 +90,7 @@ final class ChatUiToolPartStore {
 
   void applyInputEnd(ToolInputEndEvent event) {
     final partial = _requirePartialInput(event.toolCallId);
-    _upsert(
+    _parts.upsert(
       _buildPart(
         toolCallId: event.toolCallId,
         state: ToolUiPartState.inputAvailable,
@@ -107,7 +108,7 @@ final class ChatUiToolPartStore {
     final partial = _partialInputs.remove(event.toolCallId);
     final input = event.input ?? partial?.input;
     final inputText = partial?.text ?? stringifyStreamingToolValue(input);
-    _upsert(
+    _parts.upsert(
       _buildPart(
         toolCallId: event.toolCallId,
         toolName: event.toolName,
@@ -133,7 +134,7 @@ final class ChatUiToolPartStore {
 
   void applyCall(ToolCallEvent event) {
     _partialInputs.remove(event.toolCall.toolCallId);
-    _upsert(
+    _parts.upsert(
       _buildPart(
         toolCallId: event.toolCall.toolCallId,
         toolName: event.toolCall.toolName,
@@ -150,14 +151,14 @@ final class ChatUiToolPartStore {
   }
 
   void applyApprovalRequest(ToolApprovalRequestEvent event) {
-    _requirePart(
+    _parts.require(
       event.toolCallId,
       chunkType: 'tool-approval-request',
       message:
           'Received tool-approval-request for missing tool call with ID "${event.toolCallId}". '
           'Ensure a tool-input-start or tool-call event is applied first.',
     );
-    _upsert(
+    _parts.upsert(
       _buildPart(
         toolCallId: event.toolCallId,
         state: ToolUiPartState.approvalRequested,
@@ -172,14 +173,14 @@ final class ChatUiToolPartStore {
 
   void applyResult(ToolResultEvent event) {
     _partialInputs.remove(event.toolResult.toolCallId);
-    _requirePart(
+    _parts.require(
       event.toolResult.toolCallId,
       chunkType: 'tool-result',
       message:
           'Received tool-result for missing tool call with ID "${event.toolResult.toolCallId}". '
           'Ensure a tool-input-start or tool-call event is applied first.',
     );
-    _upsert(
+    _parts.upsert(
       _buildPart(
         toolCallId: event.toolResult.toolCallId,
         toolName: event.toolResult.toolName,
@@ -204,14 +205,14 @@ final class ChatUiToolPartStore {
   }
 
   void applyOutputDenied(ToolOutputDeniedEvent event) {
-    _requirePart(
+    _parts.require(
       event.toolCallId,
       chunkType: 'tool-output-denied',
       message:
           'Received tool-output-denied for missing tool call with ID "${event.toolCallId}". '
           'Ensure a tool-input-start or tool-call event is applied first.',
     );
-    _upsert(
+    _parts.upsert(
       _buildPart(
         toolCallId: event.toolCallId,
         state: ToolUiPartState.outputDenied,
@@ -222,47 +223,6 @@ final class ChatUiToolPartStore {
         resultProviderMetadata: event.providerMetadata,
       ),
     );
-  }
-
-  ToolUiPart? _part(String toolCallId) {
-    final index = _partIndexes[toolCallId];
-    if (index == null) {
-      return null;
-    }
-
-    return _parts[index] as ToolUiPart;
-  }
-
-  ToolUiPart _requirePart(
-    String toolCallId, {
-    required String chunkType,
-    required String message,
-  }) {
-    final part = _part(toolCallId);
-    if (part != null) {
-      return part;
-    }
-
-    throw ChatUiStreamError(
-      chunkType: chunkType,
-      chunkId: toolCallId,
-      message: message,
-    );
-  }
-
-  void _upsert(ToolUiPart part) {
-    final index = _partIndexes[part.toolCallId];
-    if (index == null) {
-      _partIndexes[part.toolCallId] = _append(part);
-      return;
-    }
-
-    _parts[index] = part;
-  }
-
-  int _append(ToolUiPart part) {
-    _parts.add(part);
-    return _parts.length - 1;
   }
 
   ToolUiPart _buildPart({
@@ -289,7 +249,7 @@ final class ChatUiToolPartStore {
     ProviderMetadata? callProviderMetadata,
     ProviderMetadata? resultProviderMetadata,
   }) {
-    final current = _part(toolCallId);
+    final current = _parts.get(toolCallId);
     final partial = _partialInputs[toolCallId];
     final resolvedToolName = toolName ?? current?.toolName ?? partial?.toolName;
 
