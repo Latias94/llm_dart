@@ -95,5 +95,26 @@ void main() {
         throwsStateError,
       );
     });
+
+    test('rejects unsupported schema versions', () {
+      const codec = LanguageModelStreamEventJsonCodec();
+
+      expect(
+        () => codec.decodeEvents({
+          'schemaVersion': '2099-01-1',
+          'kind': LanguageModelStreamEventJsonCodec.envelopeKind,
+          'data': {
+            'events': const [],
+          },
+        }),
+        throwsA(
+          isA<FormatException>().having(
+            (error) => error.message,
+            'message',
+            contains('Unsupported llm_dart JSON schema version "2099-01-1"'),
+          ),
+        ),
+      );
+    });
   });
 }

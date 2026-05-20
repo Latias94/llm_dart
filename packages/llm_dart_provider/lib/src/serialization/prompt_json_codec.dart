@@ -2,7 +2,7 @@ import '../prompt/prompt_message.dart';
 import '../common/json_codec_common.dart';
 import '../common/provider_options.dart';
 import 'prompt_part_json_codec.dart';
-import 'serialization_protocol.dart';
+import 'serialization_envelope_json_codec.dart';
 
 final class PromptJsonCodec {
   static const envelopeKind = 'prompt-messages';
@@ -19,25 +19,19 @@ final class PromptJsonCodec {
       );
 
   JsonMap encodeMessages(List<PromptMessage> messages) {
-    return {
-      'schemaVersion': llmDartJsonSchemaVersion,
-      'kind': envelopeKind,
-      'data': {
+    return const SerializationEnvelopeJsonCodec().encode(
+      kind: envelopeKind,
+      data: {
         'messages': messages.map(encodeMessage).toList(growable: false),
       },
-    };
+    );
   }
 
   List<PromptMessage> decodeMessages(Object? envelope) {
-    final root = asJsonMap(envelope, path: r'$');
-    final kind = asJsonString(root['kind'], path: r'$.kind');
-    if (kind != envelopeKind) {
-      throw FormatException(
-        'Expected envelope kind "$envelopeKind", received "$kind".',
-      );
-    }
-
-    final data = asJsonMap(root['data'], path: r'$.data');
+    final data = const SerializationEnvelopeJsonCodec().decode(
+      envelope,
+      expectedKind: envelopeKind,
+    );
     return asJsonList(data['messages'], path: r'$.data.messages')
         .asMap()
         .entries

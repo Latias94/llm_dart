@@ -3,7 +3,7 @@ import '../stream/language_model_stream_event.dart';
 import 'language_model_stream_content_event_json_codec.dart';
 import 'language_model_stream_core_event_json_codec.dart';
 import 'language_model_stream_tool_event_json_codec.dart';
-import 'serialization_protocol.dart';
+import 'serialization_envelope_json_codec.dart';
 
 /// JSON codec for provider-owned language model stream events.
 ///
@@ -20,25 +20,19 @@ final class LanguageModelStreamEventJsonCodec {
       events,
       operation: 'LanguageModelStreamEventJsonCodec.encodeEvents',
     );
-    return {
-      'schemaVersion': llmDartJsonSchemaVersion,
-      'kind': envelopeKind,
-      'data': {
+    return const SerializationEnvelopeJsonCodec().encode(
+      kind: envelopeKind,
+      data: {
         'events': events.map(encodeEvent).toList(growable: false),
       },
-    };
+    );
   }
 
   List<LanguageModelStreamEvent> decodeEvents(Object? envelope) {
-    final root = asJsonMap(envelope, path: r'$');
-    final kind = asJsonString(root['kind'], path: r'$.kind');
-    if (kind != envelopeKind) {
-      throw FormatException(
-        'Expected envelope kind "$envelopeKind", received "$kind".',
-      );
-    }
-
-    final data = asJsonMap(root['data'], path: r'$.data');
+    final data = const SerializationEnvelopeJsonCodec().decode(
+      envelope,
+      expectedKind: envelopeKind,
+    );
     return asJsonList(data['events'], path: r'$.data.events')
         .asMap()
         .entries
