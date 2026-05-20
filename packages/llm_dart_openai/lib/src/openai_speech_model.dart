@@ -5,6 +5,7 @@ import 'openai_family_profile.dart';
 import 'openai_family_url_support.dart';
 import 'openai_model_describer.dart';
 import 'openai_model_settings.dart';
+import 'openai_speech_model_body.dart';
 import 'openai_speech_model_request.dart';
 import 'openai_speech_model_response.dart';
 import 'openai_speech_model_transport.dart';
