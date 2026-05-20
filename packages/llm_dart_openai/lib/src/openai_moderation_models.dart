@@ -1,5 +1,6 @@
 import 'openai_json_support.dart';
 import 'openai_json_value.dart';
+import 'openai_moderation_category_projection.dart';
 
 final class OpenAIModerationCategories {
   final bool hate;
@@ -29,62 +30,40 @@ final class OpenAIModerationCategories {
   });
 
   factory OpenAIModerationCategories.fromJson(Map<String, Object?> json) {
+    final values = OpenAIModerationCategoryValues.fromJson(
+      json,
+      pathPrefix: 'categories',
+      decode: openAIRequiredBool,
+    );
     return OpenAIModerationCategories(
-      hate: openAIRequiredBool(json['hate'], path: 'categories.hate'),
-      hateThreatening: openAIRequiredBool(
-        json['hate/threatening'],
-        path: 'categories.hate/threatening',
-      ),
-      harassment: openAIRequiredBool(
-        json['harassment'],
-        path: 'categories.harassment',
-      ),
-      harassmentThreatening: openAIRequiredBool(
-        json['harassment/threatening'],
-        path: 'categories.harassment/threatening',
-      ),
-      selfHarm: openAIRequiredBool(
-        json['self-harm'],
-        path: 'categories.self-harm',
-      ),
-      selfHarmIntent: openAIRequiredBool(
-        json['self-harm/intent'],
-        path: 'categories.self-harm/intent',
-      ),
-      selfHarmInstructions: openAIRequiredBool(
-        json['self-harm/instructions'],
-        path: 'categories.self-harm/instructions',
-      ),
-      sexual: openAIRequiredBool(json['sexual'], path: 'categories.sexual'),
-      sexualMinors: openAIRequiredBool(
-        json['sexual/minors'],
-        path: 'categories.sexual/minors',
-      ),
-      violence: openAIRequiredBool(
-        json['violence'],
-        path: 'categories.violence',
-      ),
-      violenceGraphic: openAIRequiredBool(
-        json['violence/graphic'],
-        path: 'categories.violence/graphic',
-      ),
+      hate: values.hate,
+      hateThreatening: values.hateThreatening,
+      harassment: values.harassment,
+      harassmentThreatening: values.harassmentThreatening,
+      selfHarm: values.selfHarm,
+      selfHarmIntent: values.selfHarmIntent,
+      selfHarmInstructions: values.selfHarmInstructions,
+      sexual: values.sexual,
+      sexualMinors: values.sexualMinors,
+      violence: values.violence,
+      violenceGraphic: values.violenceGraphic,
     );
   }
 
   Map<String, bool> toJson() {
-    return {
-      'hate': hate,
-      'hate/threatening': hateThreatening,
-      'harassment': harassment,
-      'harassment/threatening': harassmentThreatening,
-      'self-harm': selfHarm,
-      'self-harm/intent': selfHarmIntent,
-      'self-harm/instructions': selfHarmInstructions,
-      'sexual': sexual,
-      'sexual/minors': sexualMinors,
-      'violence': violence,
-      'violence/graphic': violenceGraphic,
-    };
+    return openAIModerationCategoryJson(
+      hate: hate,
+      hateThreatening: hateThreatening,
+      harassment: harassment,
+      harassmentThreatening: harassmentThreatening,
+      selfHarm: selfHarm,
+      selfHarmIntent: selfHarmIntent,
+      selfHarmInstructions: selfHarmInstructions,
+      sexual: sexual,
+      sexualMinors: sexualMinors,
+      violence: violence,
+      violenceGraphic: violenceGraphic,
+    );
   }
 
   Iterable<String> get flaggedCategories sync* {
@@ -124,65 +103,40 @@ final class OpenAIModerationCategoryScores {
   });
 
   factory OpenAIModerationCategoryScores.fromJson(Map<String, Object?> json) {
+    final values = OpenAIModerationCategoryValues.fromJson(
+      json,
+      pathPrefix: 'category_scores',
+      decode: openAIRequiredDouble,
+    );
     return OpenAIModerationCategoryScores(
-      hate: openAIRequiredDouble(json['hate'], path: 'category_scores.hate'),
-      hateThreatening: openAIRequiredDouble(
-        json['hate/threatening'],
-        path: 'category_scores.hate/threatening',
-      ),
-      harassment: openAIRequiredDouble(
-        json['harassment'],
-        path: 'category_scores.harassment',
-      ),
-      harassmentThreatening: openAIRequiredDouble(
-        json['harassment/threatening'],
-        path: 'category_scores.harassment/threatening',
-      ),
-      selfHarm: openAIRequiredDouble(
-        json['self-harm'],
-        path: 'category_scores.self-harm',
-      ),
-      selfHarmIntent: openAIRequiredDouble(
-        json['self-harm/intent'],
-        path: 'category_scores.self-harm/intent',
-      ),
-      selfHarmInstructions: openAIRequiredDouble(
-        json['self-harm/instructions'],
-        path: 'category_scores.self-harm/instructions',
-      ),
-      sexual: openAIRequiredDouble(
-        json['sexual'],
-        path: 'category_scores.sexual',
-      ),
-      sexualMinors: openAIRequiredDouble(
-        json['sexual/minors'],
-        path: 'category_scores.sexual/minors',
-      ),
-      violence: openAIRequiredDouble(
-        json['violence'],
-        path: 'category_scores.violence',
-      ),
-      violenceGraphic: openAIRequiredDouble(
-        json['violence/graphic'],
-        path: 'category_scores.violence/graphic',
-      ),
+      hate: values.hate,
+      hateThreatening: values.hateThreatening,
+      harassment: values.harassment,
+      harassmentThreatening: values.harassmentThreatening,
+      selfHarm: values.selfHarm,
+      selfHarmIntent: values.selfHarmIntent,
+      selfHarmInstructions: values.selfHarmInstructions,
+      sexual: values.sexual,
+      sexualMinors: values.sexualMinors,
+      violence: values.violence,
+      violenceGraphic: values.violenceGraphic,
     );
   }
 
   Map<String, double> toJson() {
-    return {
-      'hate': hate,
-      'hate/threatening': hateThreatening,
-      'harassment': harassment,
-      'harassment/threatening': harassmentThreatening,
-      'self-harm': selfHarm,
-      'self-harm/intent': selfHarmIntent,
-      'self-harm/instructions': selfHarmInstructions,
-      'sexual': sexual,
-      'sexual/minors': sexualMinors,
-      'violence': violence,
-      'violence/graphic': violenceGraphic,
-    };
+    return openAIModerationCategoryJson(
+      hate: hate,
+      hateThreatening: hateThreatening,
+      harassment: harassment,
+      harassmentThreatening: harassmentThreatening,
+      selfHarm: selfHarm,
+      selfHarmIntent: selfHarmIntent,
+      selfHarmInstructions: selfHarmInstructions,
+      sexual: sexual,
+      sexualMinors: sexualMinors,
+      violence: violence,
+      violenceGraphic: violenceGraphic,
+    );
   }
 }
 
