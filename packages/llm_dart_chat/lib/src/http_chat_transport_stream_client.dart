@@ -3,9 +3,8 @@ import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'http_chat_transport_chunk_json_codec.dart';
 import 'http_chat_transport_resume_state.dart';
+import 'http_chat_transport_stream_error_projection.dart';
 import 'http_chat_transport_stream_projection.dart';
-
-typedef HttpChatTransportResumeStateClearer = void Function();
 
 final class HttpChatTransportStreamClient {
   final TransportClient transport;
@@ -46,20 +45,7 @@ final class HttpChatTransportStreamClient {
 
       if (response.statusCode >= 400) {
         clearResumeState();
-        yield ChatUiEventChunk(
-          ErrorEvent(
-            ModelError(
-              kind: ModelErrorKind.transport,
-              message: 'HTTP chat transport request failed.',
-              code: 'http-transport-status',
-              statusCode: response.statusCode,
-              isRetryable: response.statusCode >= 500 ||
-                  response.statusCode == 408 ||
-                  response.statusCode == 409 ||
-                  response.statusCode == 429,
-            ),
-          ),
-        );
+        yield projectHttpChatTransportStatusError(response.statusCode);
         return;
       }
 
@@ -89,11 +75,10 @@ final class HttpChatTransportStreamClient {
         }
       }
     } catch (error) {
-      if (!state.canReconnect) {
-        clearResumeState();
-      }
-      yield ChatUiEventChunk(
-        ErrorEvent(transportErrorToModelError(error)),
+      yield projectHttpChatTransportCaughtError(
+        error: error,
+        state: state,
+        clearResumeState: clearResumeState,
       );
     }
   }
