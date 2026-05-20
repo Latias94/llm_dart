@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:llm_dart_ai/llm_dart_ai.dart';
 
 import 'chat_input.dart';
@@ -12,6 +10,7 @@ import 'chat_session_tool_support.dart';
 import 'chat_tool_output_support.dart';
 import 'chat_transport.dart';
 import 'default_chat_session_active_turn.dart';
+import 'default_chat_session_state_controller.dart';
 import 'default_chat_session_support.dart';
 import 'default_chat_session_transcript.dart';
 import 'default_chat_session_tool_execution.dart';
@@ -22,13 +21,9 @@ final class DefaultChatSession implements ChatSession {
   final ChatOnToolCall? onToolCall;
   late final DefaultChatSessionActiveTurn _activeTurn;
   late final DefaultChatSessionToolExecutionScheduler _toolExecutionScheduler;
-  final StreamController<ChatState> _statesController;
-  final StreamController<DataUiPart<Object?>> _transientDataPartsController;
+  final DefaultChatSessionStateController _stateController;
   final DefaultChatSessionTranscript _transcript;
   final MessageIdGenerator _messageIdGenerator;
-
-  ChatState _state;
-  bool _isDisposed = false;
 
   DefaultChatSession({
     required ChatTransport transport,
@@ -102,43 +97,41 @@ final class DefaultChatSession implements ChatSession {
     required ChatState initialState,
     required List<PromptMessage> initialPrompt,
     MessageIdGenerator? messageIdGenerator,
-  })  : _statesController = StreamController<ChatState>.broadcast(sync: true),
-        _transientDataPartsController =
-            StreamController<DataUiPart<Object?>>.broadcast(sync: true),
+  })  : _stateController = DefaultChatSessionStateController(initialState),
         _messageIdGenerator = messageIdGenerator ??
             sequentialChatMessageId(
               existingIds: initialState.messages.map((message) => message.id),
             ),
         _transcript = DefaultChatSessionTranscript(initialPrompt),
-        _state = initialState {
+        assert(initialState.chatId.isNotEmpty) {
     _activeTurn = DefaultChatSessionActiveTurn(
-      readState: () => _state,
-      emitState: _emitState,
+      readState: () => _stateController.state,
+      emitState: _stateController.emitState,
       upsertAssistantMessage: _upsertAssistantMessage,
       appendAssistantPromptIfPresent: _appendAssistantPromptIfPresent,
-      emitTransientDataPart: _emitTransientDataPart,
+      emitTransientDataPart: _stateController.emitTransientDataPart,
       scheduleAutomaticToolExecution: _maybeScheduleAutomaticToolExecution,
       mapError: chatSessionErrorToModelError,
     );
     _toolExecutionScheduler = DefaultChatSessionToolExecutionScheduler(
       onToolCall: onToolCall,
-      isDisposed: () => _isDisposed,
+      isDisposed: () => _stateController.isDisposed,
       hasActiveTurn: () => _activeTurn.hasActiveTurn,
-      readState: () => _state,
+      readState: () => _stateController.state,
       applyToolOutput: addToolOutput,
     );
     _maybeScheduleAutomaticToolExecution();
   }
 
   @override
-  ChatState get state => _state;
+  ChatState get state => _stateController.state;
 
   @override
-  Stream<ChatState> get states => _statesController.stream;
+  Stream<ChatState> get states => _stateController.states;
 
   @override
   Stream<DataUiPart<Object?>> get transientDataParts =>
-      _transientDataPartsController.stream;
+      _stateController.transientDataParts;
 
   @override
   Future<void> sendMessage(
@@ -152,9 +145,9 @@ final class DefaultChatSession implements ChatSession {
       input,
       messageId: _messageIdGenerator(),
     );
-    _emitState(
-      _state.copyWith(
-        messages: [..._state.messages, userAppend.uiMessage],
+    _stateController.emitState(
+      _stateController.state.copyWith(
+        messages: [..._stateController.state.messages, userAppend.uiMessage],
         status: ChatStatus.submitting,
         error: null,
       ),
@@ -175,18 +168,19 @@ final class DefaultChatSession implements ChatSession {
     _ensureIdle('regenerate');
 
     if (messageId != null &&
-        (_state.messages.isEmpty || _state.messages.last.id != messageId)) {
+        (_stateController.state.messages.isEmpty ||
+            _stateController.state.messages.last.id != messageId)) {
       throw UnsupportedError(
         'Regenerating a non-latest message has not been implemented yet.',
       );
     }
 
     _transcript.removeTrailingAssistantPrompt();
-    final currentMessages =
-        _transcript.removeTrailingAssistantMessage(_state.messages);
+    final currentMessages = _transcript
+        .removeTrailingAssistantMessage(_stateController.state.messages);
 
-    _emitState(
-      _state.copyWith(
+    _stateController.emitState(
+      _stateController.state.copyWith(
         messages: currentMessages,
         status: ChatStatus.submitting,
         error: null,
@@ -205,8 +199,8 @@ final class DefaultChatSession implements ChatSession {
     _ensureIdle('addToolOutput');
 
     final toolOutput = update.toolOutput;
-    final assistantMessage =
-        _transcript.requireLatestAssistantMessage(_state.messages);
+    final assistantMessage = _transcript
+        .requireLatestAssistantMessage(_stateController.state.messages);
     final updatedAssistantMessage = chatUpdateToolPartByCallId(
       assistantMessage,
       update.toolCallId,
@@ -235,10 +229,10 @@ final class DefaultChatSession implements ChatSession {
     _transcript.appendToolOutput(update);
 
     final nextStatus = chatDeriveCompletionStatus(updatedAssistantMessage);
-    _emitState(
-      _state.copyWith(
+    _stateController.emitState(
+      _stateController.state.copyWith(
         messages: _transcript.replaceLatestAssistantMessage(
-          _state.messages,
+          _stateController.state.messages,
           updatedAssistantMessage,
         ),
         status:
@@ -267,24 +261,24 @@ final class DefaultChatSession implements ChatSession {
       return;
     }
 
-    if (_state.status != ChatStatus.awaitingTool &&
-        _state.status != ChatStatus.awaitingApproval) {
+    if (_stateController.state.status != ChatStatus.awaitingTool &&
+        _stateController.state.status != ChatStatus.awaitingApproval) {
       throw StateError(
         'Cannot call addDataPart unless the current assistant turn is active or waiting for tool or approval input.',
       );
     }
 
-    final assistantMessage =
-        _transcript.requireLatestAssistantMessage(_state.messages);
+    final assistantMessage = _transcript
+        .requireLatestAssistantMessage(_stateController.state.messages);
     final updatedAssistantMessage = ChatUiAccumulator(
       messageId: assistantMessage.id,
       seedMessage: assistantMessage,
     ).applyDataPart(part);
 
-    _emitState(
-      _state.copyWith(
+    _stateController.emitState(
+      _stateController.state.copyWith(
         messages: _transcript.replaceLatestAssistantMessage(
-          _state.messages,
+          _stateController.state.messages,
           updatedAssistantMessage,
         ),
         error: null,
@@ -297,8 +291,8 @@ final class DefaultChatSession implements ChatSession {
     _ensureUsable();
     _ensureIdle('respondToolApproval');
 
-    final assistantMessage =
-        _transcript.requireLatestAssistantMessage(_state.messages);
+    final assistantMessage = _transcript
+        .requireLatestAssistantMessage(_stateController.state.messages);
     final pendingTool = chatRequirePendingApprovalToolPart(
       assistantMessage,
       response.approvalId,
@@ -343,10 +337,10 @@ final class DefaultChatSession implements ChatSession {
         chatHasApprovedProviderExecutedTool(updatedAssistantMessage);
 
     if (shouldContinueProviderTurn) {
-      _emitState(
-        _state.copyWith(
+      _stateController.emitState(
+        _stateController.state.copyWith(
           messages: _transcript.replaceLatestAssistantMessage(
-            _state.messages,
+            _stateController.state.messages,
             updatedAssistantMessage,
           ),
           status: ChatStatus.submitting,
@@ -361,10 +355,10 @@ final class DefaultChatSession implements ChatSession {
       );
     }
 
-    _emitState(
-      _state.copyWith(
+    _stateController.emitState(
+      _stateController.state.copyWith(
         messages: _transcript.replaceLatestAssistantMessage(
-          _state.messages,
+          _stateController.state.messages,
           updatedAssistantMessage,
         ),
         status: nextStatus,
@@ -379,24 +373,24 @@ final class DefaultChatSession implements ChatSession {
     _ensureUsable();
     _ensureIdle('resume');
 
-    if (_state.status != ChatStatus.error) {
+    if (_stateController.state.status != ChatStatus.error) {
       throw StateError(
         'Cannot call resume unless the chat session is in the error state.',
       );
     }
 
-    final stream = transport.reconnect(_state.chatId);
+    final stream = transport.reconnect(_stateController.state.chatId);
     if (stream == null) {
       throw StateError(
-        'The configured chat transport does not have reconnect state for chat "${_state.chatId}".',
+        'The configured chat transport does not have reconnect state for chat "${_stateController.state.chatId}".',
       );
     }
 
-    final detachedAssistant =
-        _transcript.detachTrailingAssistantMessage(_state.messages);
+    final detachedAssistant = _transcript
+        .detachTrailingAssistantMessage(_stateController.state.messages);
 
-    _emitState(
-      _state.copyWith(
+    _stateController.emitState(
+      _stateController.state.copyWith(
         messages: detachedAssistant.messages,
         status: ChatStatus.streaming,
         error: null,
@@ -420,8 +414,8 @@ final class DefaultChatSession implements ChatSession {
   @override
   Future<void> clearError() async {
     _ensureUsable();
-    _emitState(
-      _state.copyWith(
+    _stateController.emitState(
+      _stateController.state.copyWith(
         status: ChatStatus.ready,
         error: null,
       ),
@@ -437,21 +431,17 @@ final class DefaultChatSession implements ChatSession {
       );
     }
 
-    return _transcript.snapshot(_state);
+    return _transcript.snapshot(_stateController.state);
   }
 
   @override
   Future<void> dispose() async {
-    if (_isDisposed) {
+    if (_stateController.isDisposed) {
       return;
     }
 
     await _activeTurn.dispose();
-    _isDisposed = true;
-    if (!_transientDataPartsController.isClosed) {
-      await _transientDataPartsController.close();
-    }
-    await _statesController.close();
+    await _stateController.dispose();
   }
 
   Future<void> _runAssistantTurn({
@@ -459,8 +449,8 @@ final class DefaultChatSession implements ChatSession {
     required ChatTransportTrigger trigger,
     ChatUiMessage? seedAssistantMessage,
   }) async {
-    _emitState(
-      _state.copyWith(
+    _stateController.emitState(
+      _stateController.state.copyWith(
         status: ChatStatus.streaming,
         error: null,
       ),
@@ -468,7 +458,7 @@ final class DefaultChatSession implements ChatSession {
 
     final stream = transport.sendMessages(
       ChatTransportRequest(
-        chatId: _state.chatId,
+        chatId: _stateController.state.chatId,
         trigger: trigger,
         prompt: _transcript.prompt,
         options: options,
@@ -495,10 +485,10 @@ final class DefaultChatSession implements ChatSession {
   }
 
   void _upsertAssistantMessage(ChatUiMessage assistantMessage) {
-    _emitState(
-      _state.copyWith(
+    _stateController.emitState(
+      _stateController.state.copyWith(
         messages: _transcript.upsertAssistantMessage(
-          _state.messages,
+          _stateController.state.messages,
           assistantMessage,
         ),
         error: null,
@@ -506,27 +496,12 @@ final class DefaultChatSession implements ChatSession {
     );
   }
 
-  void _emitState(ChatState state) {
-    _state = state;
-    if (!_isDisposed && !_statesController.isClosed) {
-      _statesController.add(state);
-    }
-  }
-
-  void _emitTransientDataPart(DataUiPart<Object?> part) {
-    if (!_isDisposed && !_transientDataPartsController.isClosed) {
-      _transientDataPartsController.add(part);
-    }
-  }
-
   void _maybeScheduleAutomaticToolExecution() {
     _toolExecutionScheduler.maybeSchedule();
   }
 
   void _ensureUsable() {
-    if (_isDisposed) {
-      throw StateError('This chat session has already been disposed.');
-    }
+    _stateController.ensureUsable();
   }
 
   void _ensureIdle(String operation) {
