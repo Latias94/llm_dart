@@ -1,3 +1,4 @@
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 typedef GoogleModelResponseDecoder<T> = T Function(
@@ -10,6 +11,13 @@ Future<T> sendGoogleModelRequest<T>({
   required TransportRequest request,
   required GoogleModelResponseDecoder<T> decode,
 }) async {
-  final response = await transport.send(request);
-  return decode(response.body, response.headers);
+  try {
+    final response = await transport.send(request);
+    return decode(response.body, response.headers);
+  } catch (error, stackTrace) {
+    Error.throwWithStackTrace(
+      normalizeTransportCancellation(error, request.cancellation?.source),
+      stackTrace,
+    );
+  }
 }

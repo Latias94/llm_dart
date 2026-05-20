@@ -27,7 +27,7 @@ Future<void> main() async {
 Future<void> demonstrateStreamingCancellation(core.LanguageModel model) async {
   print('1. streamTextCall(...) cancellation');
 
-  final cancelToken = transport.TransportCancellation();
+  final cancelToken = core.ProviderCancellation();
   var sawVisibleText = false;
   var sawAbortEvent = false;
   var sawCancellationError = false;
@@ -107,7 +107,7 @@ Future<void> demonstrateStreamingCancellation(core.LanguageModel model) async {
 Future<void> demonstrateGenerateCancellation(core.LanguageModel model) async {
   print('2. generateTextCall(...) cancellation');
 
-  final cancelToken = transport.TransportCancellation();
+  final cancelToken = core.ProviderCancellation();
 
   try {
     final future = core.generateTextCall(
@@ -128,6 +128,9 @@ Future<void> demonstrateGenerateCancellation(core.LanguageModel model) async {
 
     final result = await future;
     print('[warning] request completed before cancellation: ${result.text}\n');
+  } on core.ProviderCancelledException catch (error) {
+    print('Caught ProviderCancelledException');
+    print('Reason: ${error.reason ?? error.message}\n');
   } on transport.TransportCancelledException catch (error) {
     print('Caught TransportCancelledException');
     print('Reason: ${error.reason ?? error.message}\n');
@@ -143,7 +146,7 @@ Future<void> demonstrateGenerateCancellation(core.LanguageModel model) async {
 Future<void> demonstrateSharedCancellation(core.LanguageModel model) async {
   print('3. Shared cancellation token');
 
-  final sharedToken = transport.TransportCancellation();
+  final sharedToken = core.ProviderCancellation();
   final prompts = [
     'Write a long explanation of how Flutter builds widgets.',
     'Write a long explanation of how Dart futures are scheduled.',
@@ -194,7 +197,7 @@ Future<void> demonstrateSharedCancellation(core.LanguageModel model) async {
 Future<void> demonstratePreCancelledRequest(core.LanguageModel model) async {
   print('4. Pre-cancelled request');
 
-  final cancelToken = transport.TransportCancellation();
+  final cancelToken = core.ProviderCancellation();
   cancelToken.cancel('The request owner was already disposed');
 
   try {
@@ -229,12 +232,14 @@ bool _isTransportCancelled(core.ModelError error) {
 
 bool _isCancellation(Object error) {
   return error is transport.TransportCancelledException ||
+      error is core.ProviderCancelledException ||
       (error is core.ModelError && _isTransportCancelled(error));
 }
 
 Object? _cancellationReason(Object error) {
   return switch (error) {
     transport.TransportCancelledException(:final reason) => reason,
+    core.ProviderCancelledException(:final reason) => reason,
     core.ModelError(:final message) => message,
     _ => null,
   };

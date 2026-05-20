@@ -48,6 +48,39 @@ void main() {}
       );
     });
 
+    test('reports provider imports inside transport lib files', () async {
+      final repoRoot = await _createTempWorkspace();
+      addTearDown(() async {
+        if (repoRoot.existsSync()) {
+          await repoRoot.delete(recursive: true);
+        }
+      });
+
+      await _writeFile(
+        repoRoot,
+        'packages/llm_dart_transport/lib/src/provider_aware_helper.dart',
+        '''
+import 'package:llm_dart_provider/llm_dart_provider.dart';
+
+void main() {}
+''',
+      );
+
+      final result = await guard.evaluateTransportBoundaryGuards(
+        repoRoot: repoRoot,
+      );
+
+      expect(result.passed, isFalse);
+      expect(
+        result.violations,
+        contains(
+          contains(
+            'transport library files must not import or export package:llm_dart_provider/...',
+          ),
+        ),
+      );
+    });
+
     test('reports provider legacy aliases leaking from the public barrel',
         () async {
       final repoRoot = await _createTempWorkspace();

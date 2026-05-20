@@ -1,5 +1,5 @@
-name: llm_dart_anthropic
-description: Anthropic provider implementations for llm_dart.
+name: llm_dart_provider_utils
+description: Provider implementation utilities for llm_dart adapters.
 version: 0.11.0-alpha.1
 license: MIT
 homepage: https://github.com/Latias94/llm_dart
@@ -11,11 +11,8 @@ environment:
 
 dependencies:
   llm_dart_provider: ^0.11.0-alpha.1
-  llm_dart_provider_utils: ^0.11.0-alpha.1
   llm_dart_transport: ^0.11.0-alpha.1
 
 dev_dependencies:
-  llm_dart_test:
-    path: ../llm_dart_test
   lints: ^6.0.0
   test: ^1.27.0

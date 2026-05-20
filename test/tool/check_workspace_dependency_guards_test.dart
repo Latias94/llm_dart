@@ -412,6 +412,8 @@ dependencies:
     path: ../llm_dart_ai
   llm_dart_provider:
     path: ../llm_dart_provider
+  llm_dart_provider_utils:
+    path: ../llm_dart_provider_utils
   llm_dart_transport:
     path: ../llm_dart_transport
 ''',
@@ -475,9 +477,19 @@ final class ChatController {
 name: llm_dart_transport
 dependencies:
   dio: ^5.9.0
+  logging: ^1.2.0
+''',
+  );
+  await _writeFile(
+    repoRoot,
+    'packages/llm_dart_provider_utils/pubspec.yaml',
+    '''
+name: llm_dart_provider_utils
+dependencies:
   llm_dart_provider:
     path: ../llm_dart_provider
-  logging: ^1.2.0
+  llm_dart_transport:
+    path: ../llm_dart_transport
 ''',
   );
   await _writeFile(
@@ -488,6 +500,8 @@ name: llm_dart_openai
 dependencies:
   llm_dart_provider:
     path: ../llm_dart_provider
+  llm_dart_provider_utils:
+    path: ../llm_dart_provider_utils
   llm_dart_transport:
     path: ../llm_dart_transport
 ''',

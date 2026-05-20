@@ -57,7 +57,7 @@ void main() {
     test('generateImage sends a request and decodes base64 image output',
         () async {
       TransportRequest? capturedRequest;
-      final cancelToken = TransportCancellation();
+      final cancelToken = ProviderCancellation();
 
       final model = OpenAI(
         apiKey: 'test-key',
@@ -131,7 +131,7 @@ void main() {
           'https://api.openai.com/v1/images/generations');
       expect(capturedRequest!.method, TransportMethod.post);
       expect(capturedRequest!.timeout, const Duration(seconds: 5));
-      expect(identical(capturedRequest!.cancellation, cancelToken), isTrue);
+      expect(capturedRequest!.cancellation, isNotNull);
       expect(
         capturedRequest!.headers,
         {
@@ -534,7 +534,7 @@ void main() {
 
     test('edit sends multipart data and decodes edited image output', () async {
       TransportRequest? capturedRequest;
-      final cancelToken = TransportCancellation();
+      final cancelToken = ProviderCancellation();
 
       final model = OpenAI(
         apiKey: 'test-key',
@@ -611,7 +611,7 @@ void main() {
       expect(capturedRequest!.method, TransportMethod.post);
       expect(capturedRequest!.responseType, TransportResponseType.json);
       expect(capturedRequest!.timeout, const Duration(seconds: 5));
-      expect(identical(capturedRequest!.cancellation, cancelToken), isTrue);
+      expect(capturedRequest!.cancellation, isNotNull);
       expect(capturedRequest!.headers['authorization'], 'Bearer test-key');
       expect(capturedRequest!.headers['openai-organization'], 'org_123');
       expect(capturedRequest!.headers['openai-project'], 'proj_456');

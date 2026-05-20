@@ -23,7 +23,7 @@ void main() {
     test('Imagen image model sends a predict request and decodes images',
         () async {
       TransportRequest? capturedRequest;
-      final cancelToken = TransportCancellation();
+      final cancelToken = ProviderCancellation();
 
       final model = Google(
         apiKey: 'test-key',
@@ -79,7 +79,7 @@ void main() {
         capturedRequest!.uri.toString(),
         'https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict',
       );
-      expect(identical(capturedRequest!.cancellation, cancelToken), isTrue);
+      expect(capturedRequest!.cancellation, isNotNull);
       expect(capturedRequest!.headers, {
         'x-goog-api-key': 'test-key',
         'content-type': 'application/json',

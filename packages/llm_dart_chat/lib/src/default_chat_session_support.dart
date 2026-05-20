@@ -1,5 +1,5 @@
 import 'package:llm_dart_ai/llm_dart_ai.dart';
-import 'package:llm_dart_transport/llm_dart_transport.dart'
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart'
     show transportErrorToModelError;
 
 import 'chat_session.dart';

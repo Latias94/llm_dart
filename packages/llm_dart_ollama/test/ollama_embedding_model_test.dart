@@ -20,7 +20,7 @@ void main() {
 
     test('embed sends the Ollama embedding request shape', () async {
       TransportRequest? capturedRequest;
-      final cancelToken = TransportCancellation();
+      final cancelToken = ProviderCancellation();
 
       final model = Ollama(
         apiKey: 'test-key',
@@ -69,7 +69,7 @@ void main() {
         capturedRequest!.uri.toString(),
         'http://localhost:11434/api/embed',
       );
-      expect(identical(capturedRequest!.cancellation, cancelToken), isTrue);
+      expect(capturedRequest!.cancellation, isNotNull);
       expect(capturedRequest!.headers, {
         'content-type': 'application/json',
         'accept': 'application/json',

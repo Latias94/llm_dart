@@ -11,6 +11,7 @@ environment:
 
 dependencies:
   llm_dart_ai: ^0.11.0-alpha.1
+  llm_dart_provider_utils: ^0.11.0-alpha.1
   llm_dart_transport: ^0.11.0-alpha.1
 
 dev_dependencies:

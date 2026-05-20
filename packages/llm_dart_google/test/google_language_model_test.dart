@@ -12,7 +12,7 @@ void main() {
         'generate keeps Google native tools exclusive and surfaces mixed-tool warnings for Gemini 3',
         () async {
       TransportRequest? capturedRequest;
-      final cancelToken = TransportCancellation();
+      final cancelToken = ProviderCancellation();
 
       final model = Google(
         apiKey: 'test-key',
@@ -105,7 +105,7 @@ void main() {
       expect(capturedRequest!.method, TransportMethod.post);
       expect(capturedRequest!.responseType, TransportResponseType.json);
       expect(capturedRequest!.timeout, const Duration(seconds: 5));
-      expect(identical(capturedRequest!.cancellation, cancelToken), isTrue);
+      expect(capturedRequest!.cancellation, isNotNull);
       expect(capturedRequest!.headers['x-goog-api-key'], 'test-key');
       expect(capturedRequest!.headers['x-settings'], '1');
       expect(capturedRequest!.headers['x-call'], '2');

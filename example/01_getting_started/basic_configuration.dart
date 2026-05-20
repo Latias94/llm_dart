@@ -3,6 +3,8 @@
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart'
+    as provider_utils;
 import 'package:llm_dart/transport.dart' as transport;
 import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
@@ -263,7 +265,7 @@ core.ModelError _normalizeError(Object error) {
   }
 
   if (error is transport.TransportException) {
-    return transport.transportErrorToModelError(error);
+    return provider_utils.transportErrorToModelError(error);
   }
 
   return core.ModelError.fromUnknown(error);

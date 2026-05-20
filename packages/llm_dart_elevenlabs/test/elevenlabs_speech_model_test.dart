@@ -22,7 +22,7 @@ void main() {
     test('generateSpeech sends ElevenLabs request shape and decodes audio',
         () async {
       TransportRequest? capturedRequest;
-      final cancelToken = TransportCancellation();
+      final cancelToken = ProviderCancellation();
 
       final model = ElevenLabs(
         apiKey: 'test-key',
@@ -98,7 +98,7 @@ void main() {
       expect(capturedRequest!.method, TransportMethod.post);
       expect(capturedRequest!.responseType, TransportResponseType.bytes);
       expect(capturedRequest!.timeout, const Duration(seconds: 5));
-      expect(identical(capturedRequest!.cancellation, cancelToken), isTrue);
+      expect(capturedRequest!.cancellation, isNotNull);
       expect(
         capturedRequest!.headers,
         {
@@ -193,7 +193,8 @@ void main() {
       );
     });
 
-    test('generateSpeech shared fields override ElevenLabs speech provider fields',
+    test(
+        'generateSpeech shared fields override ElevenLabs speech provider fields',
         () async {
       TransportRequest? capturedRequest;
 
@@ -245,7 +246,8 @@ void main() {
       expect(result.warnings, isEmpty);
     });
 
-    test('generateSpeech falls back to ElevenLabs speech provider fields when shared fields are absent',
+    test(
+        'generateSpeech falls back to ElevenLabs speech provider fields when shared fields are absent',
         () async {
       TransportRequest? capturedRequest;
 

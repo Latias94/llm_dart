@@ -21,7 +21,7 @@ void main() {
     test('generateSpeech sends a single-speaker request and decodes audio',
         () async {
       TransportRequest? capturedRequest;
-      final cancelToken = TransportCancellation();
+      final cancelToken = ProviderCancellation();
 
       final model = Google(
         apiKey: 'test-key',
@@ -93,7 +93,7 @@ void main() {
         capturedRequest!.uri.toString(),
         'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent',
       );
-      expect(identical(capturedRequest!.cancellation, cancelToken), isTrue);
+      expect(capturedRequest!.cancellation, isNotNull);
       expect(capturedRequest!.headers, {
         'x-goog-api-key': 'test-key',
         'content-type': 'application/json',

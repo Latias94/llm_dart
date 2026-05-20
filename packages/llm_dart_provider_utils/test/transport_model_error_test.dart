@@ -1,4 +1,5 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 import 'package:test/test.dart';
 
@@ -7,6 +8,17 @@ void main() {
     test('maps transport cancellation into structured transport error', () {
       final error = transportErrorToModelError(
         const TransportCancelledException('cancelled'),
+      );
+
+      expect(error.kind, ModelErrorKind.transport);
+      expect(error.code, 'transport-cancelled');
+      expect(error.isRetryable, isFalse);
+      expect(error.message, 'cancelled');
+    });
+
+    test('maps provider cancellation into structured transport error', () {
+      final error = transportErrorToModelError(
+        const ProviderCancelledException('cancelled'),
       );
 
       expect(error.kind, ModelErrorKind.transport);

@@ -1,4 +1,5 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'ollama_api.dart';
@@ -20,7 +21,9 @@ TransportRequest buildOllamaChatGenerateTransportRequest({
     body: body,
     timeout: request.callOptions.timeout,
     maxRetries: request.callOptions.maxRetries,
-    cancellation: request.callOptions.cancellation,
+    cancellation: bindProviderCancellationToTransport(
+      request.callOptions.cancellation,
+    ),
     responseType: TransportResponseType.json,
   );
 }
@@ -42,7 +45,9 @@ TransportRequest buildOllamaChatStreamTransportRequest({
     body: body,
     timeout: request.callOptions.timeout,
     maxRetries: request.callOptions.maxRetries,
-    cancellation: request.callOptions.cancellation,
+    cancellation: bindProviderCancellationToTransport(
+      request.callOptions.cancellation,
+    ),
   );
 }
 

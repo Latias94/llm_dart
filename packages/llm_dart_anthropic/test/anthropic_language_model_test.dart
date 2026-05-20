@@ -10,7 +10,7 @@ void main() {
   group('AnthropicLanguageModel', () {
     test('generate maps a messages response to the unified result', () async {
       TransportRequest? capturedRequest;
-      final cancelToken = TransportCancellation();
+      final cancelToken = ProviderCancellation();
 
       final model = Anthropic(
         apiKey: 'test-key',
@@ -109,7 +109,7 @@ void main() {
       expect(capturedRequest!.method, TransportMethod.post);
       expect(capturedRequest!.responseType, TransportResponseType.json);
       expect(capturedRequest!.timeout, const Duration(seconds: 5));
-      expect(identical(capturedRequest!.cancellation, cancelToken), isTrue);
+      expect(capturedRequest!.cancellation, isNotNull);
       expect(capturedRequest!.headers['x-api-key'], 'test-key');
       expect(capturedRequest!.headers['anthropic-version'], '2023-06-01');
       expect(capturedRequest!.headers['accept'], 'application/json');
@@ -191,7 +191,7 @@ void main() {
 
     test('countTokens sends a provider-owned token count request', () async {
       TransportRequest? capturedRequest;
-      final cancellation = TransportCancellation();
+      final cancellation = ProviderCancellation();
 
       final model = Anthropic(
         apiKey: 'test-key',
@@ -277,7 +277,7 @@ void main() {
       expect(capturedRequest!.method, TransportMethod.post);
       expect(capturedRequest!.responseType, TransportResponseType.json);
       expect(capturedRequest!.timeout, const Duration(seconds: 6));
-      expect(identical(capturedRequest!.cancellation, cancellation), isTrue);
+      expect(capturedRequest!.cancellation, isNotNull);
       expect(capturedRequest!.headers['x-api-key'], 'test-key');
       expect(capturedRequest!.headers['anthropic-version'], '2023-06-01');
       expect(capturedRequest!.headers['accept'], 'application/json');

@@ -1,4 +1,5 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'elevenlabs_model_settings.dart';
@@ -35,7 +36,9 @@ TransportRequest buildElevenLabsSpeechTransportRequest({
     body: body,
     timeout: callOptions.timeout,
     maxRetries: callOptions.maxRetries,
-    cancellation: callOptions.cancellation,
+    cancellation: bindProviderCancellationToTransport(
+      callOptions.cancellation,
+    ),
     responseType: TransportResponseType.bytes,
   );
 }

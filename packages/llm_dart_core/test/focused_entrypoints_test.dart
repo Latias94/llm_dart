@@ -16,7 +16,7 @@ void main() {
         name: 'lookup',
         inputSchema: foundation.ToolJsonSchema.object(),
       );
-      final cancellation = foundation.TransportCancellation();
+      final cancellation = foundation.ProviderCancellation();
       final callOptions = foundation.CallOptions(
         cancellation: cancellation,
       );
@@ -26,8 +26,8 @@ void main() {
       expect(tool.name, 'lookup');
       expect(callOptions.cancellation, same(cancellation));
       expect(
-        foundation.TransportCancellation.isCancel(
-          const foundation.TransportCancelledException('stop'),
+        foundation.ProviderCancellation.isCancel(
+          const foundation.ProviderCancelledException('stop'),
         ),
         isTrue,
       );

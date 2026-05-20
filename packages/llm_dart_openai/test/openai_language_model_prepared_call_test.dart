@@ -13,7 +13,7 @@ void main() {
   group('prepareOpenAILanguageModelCall', () {
     test('prepares Responses request body, headers, call options, and warnings',
         () {
-      final cancellation = TransportCancellation();
+      final cancellation = ProviderCancellation();
 
       final preparedCall = prepareOpenAILanguageModelCall(
         request: GenerateTextRequest(
@@ -60,9 +60,7 @@ void main() {
           preparedCall.transportRequest.headers, containsPair('x-extra', '1'));
       expect(preparedCall.transportRequest.timeout, const Duration(seconds: 3));
       expect(preparedCall.transportRequest.maxRetries, 4);
-      expect(
-          identical(preparedCall.transportRequest.cancellation, cancellation),
-          isTrue);
+      expect(preparedCall.transportRequest.cancellation, isNotNull);
 
       final body = preparedCall.transportRequest.body as Map<String, Object?>;
       expect(body, containsPair('model', 'gpt-4.1-mini'));

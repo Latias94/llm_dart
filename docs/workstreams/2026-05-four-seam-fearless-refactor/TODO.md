@@ -17,10 +17,10 @@
 
 ## M2 Provider-utils / transport seam
 
-- [ ] Add explicit provider utility seam/package or internal module.
-- [ ] Move provider-aware stream decode helper out of transport.
-- [ ] Move transport-error-to-model-error mapping out of transport.
-- [ ] Update provider packages and tests.
+- [x] Add explicit provider utility seam/package or internal module.
+- [x] Move provider-aware stream decode helper out of transport.
+- [x] Move transport-error-to-model-error mapping out of transport.
+- [x] Update provider packages and tests.
 
 ## M3 OpenAI provider organization
 

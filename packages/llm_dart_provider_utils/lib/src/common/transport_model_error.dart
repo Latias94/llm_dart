@@ -1,7 +1,5 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
-
-import 'transport_cancellation.dart';
-import 'transport_exception.dart';
+import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 ModelError transportErrorToModelError(Object error) {
   if (error case final ModelError modelError) {
@@ -9,6 +7,16 @@ ModelError transportErrorToModelError(Object error) {
   }
 
   return switch (error) {
+    ProviderCancelledException(:final reason) => ModelError(
+        kind: ModelErrorKind.transport,
+        message: reason?.toString() ?? error.message,
+        code: 'transport-cancelled',
+        isRetryable: false,
+        details: {
+          if (error.reason != null) 'reason': _jsonSafeOrString(error.reason),
+        },
+        originalType: error.runtimeType.toString(),
+      ),
     TransportHttpException() => ModelError(
         kind: ModelErrorKind.transport,
         message: error.message,

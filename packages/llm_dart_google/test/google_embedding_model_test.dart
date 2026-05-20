@@ -23,7 +23,7 @@ void main() {
 
     test('embed sends the single embedding request shape', () async {
       TransportRequest? capturedRequest;
-      final cancelToken = TransportCancellation();
+      final cancelToken = ProviderCancellation();
 
       final model = Google(
         apiKey: 'test-key',
@@ -78,7 +78,7 @@ void main() {
         capturedRequest!.uri.toString(),
         'https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent',
       );
-      expect(identical(capturedRequest!.cancellation, cancelToken), isTrue);
+      expect(capturedRequest!.cancellation, isNotNull);
       expect(capturedRequest!.headers, {
         'x-goog-api-key': 'test-key',
         'content-type': 'application/json',

@@ -11,7 +11,6 @@ environment:
 
 dependencies:
   dio: ^5.9.0
-  llm_dart_provider: ^0.11.0-alpha.1
   logging: ^1.2.0
 
 dev_dependencies:

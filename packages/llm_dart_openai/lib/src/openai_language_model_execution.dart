@@ -1,4 +1,5 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'openai_chat_completions_codec.dart';
@@ -13,15 +14,25 @@ Future<GenerateTextResult> sendOpenAILanguageModelGenerateCall({
   required OpenAIResponsesCodec responsesCodec,
   required OpenAIChatCompletionsCodec chatCompletionsCodec,
 }) async {
-  final response = await transport.send(preparedCall.transportRequest);
+  try {
+    final response = await transport.send(preparedCall.transportRequest);
 
-  return decodeOpenAILanguageModelGenerateResponse(
-    call: preparedCall.call,
-    body: response.body,
-    warnings: preparedCall.warnings,
-    responsesCodec: responsesCodec,
-    chatCompletionsCodec: chatCompletionsCodec,
-  );
+    return decodeOpenAILanguageModelGenerateResponse(
+      call: preparedCall.call,
+      body: response.body,
+      warnings: preparedCall.warnings,
+      responsesCodec: responsesCodec,
+      chatCompletionsCodec: chatCompletionsCodec,
+    );
+  } catch (error, stackTrace) {
+    Error.throwWithStackTrace(
+      normalizeTransportCancellation(
+        error,
+        preparedCall.transportRequest.cancellation?.source,
+      ),
+      stackTrace,
+    );
+  }
 }
 
 Stream<LanguageModelStreamEvent> sendOpenAILanguageModelStreamCall({

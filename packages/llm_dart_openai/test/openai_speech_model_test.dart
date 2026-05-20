@@ -37,7 +37,7 @@ void main() {
     test('generateSpeech sends a bytes request and decodes audio output',
         () async {
       TransportRequest? capturedRequest;
-      final cancelToken = TransportCancellation();
+      final cancelToken = ProviderCancellation();
 
       final model = OpenAI(
         apiKey: 'test-key',
@@ -87,7 +87,7 @@ void main() {
       expect(capturedRequest!.method, TransportMethod.post);
       expect(capturedRequest!.responseType, TransportResponseType.bytes);
       expect(capturedRequest!.timeout, const Duration(seconds: 5));
-      expect(identical(capturedRequest!.cancellation, cancelToken), isTrue);
+      expect(capturedRequest!.cancellation, isNotNull);
       expect(
         capturedRequest!.headers,
         {
@@ -219,7 +219,8 @@ void main() {
       );
     });
 
-    test('generateSpeech falls back to OpenAI speech provider fields when shared fields are absent',
+    test(
+        'generateSpeech falls back to OpenAI speech provider fields when shared fields are absent',
         () async {
       TransportRequest? capturedRequest;
 

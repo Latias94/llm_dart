@@ -6,8 +6,7 @@ void main() {
   group('AI entrypoint', () {
     test('is an explicit alias of the provider-neutral root runtime surface',
         () {
-      final root.TransportCancellation cancellation =
-          ai.TransportCancellation();
+      final root.ProviderCancellation cancellation = ai.ProviderCancellation();
       const ai.GenerateTextOptions aiRequest =
           root.GenerateTextOptions(maxOutputTokens: 32);
 

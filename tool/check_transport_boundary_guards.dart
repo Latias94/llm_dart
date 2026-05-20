@@ -4,6 +4,10 @@ final RegExp _rootOrCoreImportPattern = RegExp(
   r'''^\s*(import|export)\s+['"]package:llm_dart(?:_core)?/[^'"]+['"]''',
 );
 
+final RegExp _providerImportPattern = RegExp(
+  r'''^\s*(import|export)\s+['"]package:llm_dart_provider/[^'"]+['"]''',
+);
+
 final RegExp _transportPublicProviderLeakPattern = RegExp(
   r'ProviderCancellation|ProviderCancelledException',
 );
@@ -84,6 +88,17 @@ Future<void> _collectImportViolations({
     for (var index = 0; index < lines.length; index += 1) {
       final line = lines[index];
       if (!_rootOrCoreImportPattern.hasMatch(line)) {
+        if (_providerImportPattern.hasMatch(line)) {
+          violations.add(
+            '${_displayPath(repoRoot, entity)}:${index + 1}: transport library '
+            'files must not import or export package:llm_dart_provider/...; '
+            'keep provider-aware helpers in llm_dart_provider_utils and keep '
+            'transport dependent only on its own package surface plus Dio and '
+            'logging.',
+          );
+          continue;
+        }
+
         if (_hasDisallowedIoOnlyDirective(
             line, _displayPath(repoRoot, entity))) {
           violations.add(
@@ -100,7 +115,7 @@ Future<void> _collectImportViolations({
         '${_displayPath(repoRoot, entity)}:${index + 1}: transport library '
         'files must not import or export package:llm_dart/... or '
         'package:llm_dart_core/...; keep transport dependent only on its own '
-        'package surface and llm_dart_provider.',
+        'package surface plus Dio and logging.',
       );
     }
   }
@@ -179,8 +194,8 @@ Future<void> main() async {
   if (result.passed) {
     stdout.writeln(
       'transport boundary guard passed: transport lib does not leak root/core '
-      'imports, keeps IO-only code isolated, and the public barrel stays on '
-      'transport-owned names.',
+      'or provider imports, keeps IO-only code isolated, and the public barrel '
+      'stays on transport-owned names.',
     );
     return;
   }

@@ -24,3 +24,22 @@ Validation captured during M1:
 - root boundary guard: passed
 - focused root/provider facade tests: passed
 - `dart analyze .`: passed
+
+## M2 decision: provider-utils owns provider-aware transport helpers
+
+`llm_dart_transport` is now a pure transport Module. Its Interface owns HTTP/SSE/NDJSON, retry, diagnostics, cancellation, and transport exceptions only. Provider-aware helpers moved to the new `llm_dart_provider_utils` Module:
+
+- `transportErrorToModelError`
+- `decodeJsonSseLanguageModelStream`
+- `bindProviderCancellationToTransport`
+
+Rationale: this mirrors Vercel `@ai-sdk/provider-utils` and makes the transport Seam deeper. Transport no longer imports or depends on `llm_dart_provider`; provider Implementations opt into provider-utils when they need provider-stream decoding, error projection, or provider-to-transport cancellation bridging.
+
+Validation captured during M2:
+
+- workspace dependency guard: passed
+- transport boundary guard: passed
+- transport/provider-utils/tool focused tests: passed
+- provider cancellation focused smoke tests: passed
+- `dart analyze .`: passed
+- `git diff --check`: passed

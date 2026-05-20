@@ -24,7 +24,7 @@ void main() {
     test('transcribe sends multipart data and decodes ElevenLabs metadata',
         () async {
       TransportRequest? capturedRequest;
-      final cancelToken = TransportCancellation();
+      final cancelToken = ProviderCancellation();
 
       final model = ElevenLabs(
         apiKey: 'test-key',
@@ -100,7 +100,7 @@ void main() {
       expect(capturedRequest!.method, TransportMethod.post);
       expect(capturedRequest!.responseType, TransportResponseType.json);
       expect(capturedRequest!.timeout, const Duration(seconds: 5));
-      expect(identical(capturedRequest!.cancellation, cancelToken), isTrue);
+      expect(capturedRequest!.cancellation, isNotNull);
       expect(capturedRequest!.headers['xi-api-key'], 'test-key');
       expect(capturedRequest!.headers['x-settings'], '1');
       expect(capturedRequest!.headers['x-request'], 'request-header');

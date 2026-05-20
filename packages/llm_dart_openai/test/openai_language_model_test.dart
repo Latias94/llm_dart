@@ -11,7 +11,7 @@ void main() {
     test('generate maps a Responses API payload to the unified result',
         () async {
       TransportRequest? capturedRequest;
-      final cancelToken = TransportCancellation();
+      final cancelToken = ProviderCancellation();
 
       final model = OpenAI(
         apiKey: 'test-key',
@@ -93,7 +93,7 @@ void main() {
       expect(capturedRequest!.timeout, const Duration(seconds: 5));
       expect(capturedRequest!.maxRetries, 2);
       expect(capturedRequest!.headers['x-test'], '1');
-      expect(identical(capturedRequest!.cancellation, cancelToken), isTrue);
+      expect(capturedRequest!.cancellation, isNotNull);
 
       final requestBody = capturedRequest!.body as Map<String, Object?>;
       expect(requestBody['model'], 'gpt-4.1-mini');

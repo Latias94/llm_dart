@@ -1,5 +1,5 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
-import 'package:llm_dart_transport/llm_dart_transport.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 import 'ollama_chat_request_codec.dart';
 import 'ollama_chat_response_codec.dart';

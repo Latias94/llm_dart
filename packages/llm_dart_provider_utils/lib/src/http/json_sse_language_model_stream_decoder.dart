@@ -1,7 +1,5 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
-
-import 'sse_decoder.dart';
-import 'sse_json_chunk_parser.dart';
+import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 typedef JsonSseLanguageModelStreamChunkDecoder<State>
     = Iterable<LanguageModelStreamEvent> Function(
