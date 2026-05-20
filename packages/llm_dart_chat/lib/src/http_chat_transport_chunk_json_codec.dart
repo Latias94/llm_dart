@@ -1,15 +1,18 @@
 import 'package:llm_dart_ai/llm_dart_ai.dart';
 
 import 'http_chat_transport_chunk.dart';
+import 'http_chat_transport_data_part_json_codec.dart';
 import 'http_chat_transport_json_support.dart';
 
 final class HttpChatTransportChunkJsonCodec {
   static const envelopeKind = 'http-chat-transport-chunk';
 
   final TextStreamEventJsonCodec eventCodec;
+  final HttpChatTransportDataPartJsonCodec dataPartCodec;
 
   const HttpChatTransportChunkJsonCodec({
     this.eventCodec = const TextStreamEventJsonCodec(),
+    this.dataPartCodec = const HttpChatTransportDataPartJsonCodec(),
   });
 
   Map<String, Object?> encodeChunk(HttpChatTransportChunk chunk) {
@@ -53,25 +56,11 @@ final class HttpChatTransportChunkJsonCodec {
         },
       HttpChatTransportDataPartChunk(:final part) => {
           'type': 'data-part',
-          'part': {
-            if (part.id != null) 'id': part.id,
-            'key': part.key,
-            'data': HttpChatTransportJson.ensureValue(
-              part.data,
-              path: r'$.data.part.data',
-            ),
-          },
+          'part': dataPartCodec.encodePart(part, path: r'$.data.part'),
         },
       HttpChatTransportTransientDataPartChunk(:final part) => {
           'type': 'transient-data-part',
-          'part': {
-            if (part.id != null) 'id': part.id,
-            'key': part.key,
-            'data': HttpChatTransportJson.ensureValue(
-              part.data,
-              path: r'$.data.part.data',
-            ),
-          },
+          'part': dataPartCodec.encodePart(part, path: r'$.data.part'),
         },
       HttpChatTransportCheckpointChunk(
         :final resumeToken,
@@ -182,10 +171,10 @@ final class HttpChatTransportChunkJsonCodec {
           eventCodec.decodeEvent(data['event'], path: r'$.data.event'),
         ),
       'data-part' => HttpChatTransportDataPartChunk(
-          _decodeDataPart(data['part'], path: r'$.data.part'),
+          dataPartCodec.decodePart(data['part'], path: r'$.data.part'),
         ),
       'transient-data-part' => HttpChatTransportTransientDataPartChunk(
-          _decodeDataPart(data['part'], path: r'$.data.part'),
+          dataPartCodec.decodePart(data['part'], path: r'$.data.part'),
         ),
       'checkpoint' => HttpChatTransportCheckpointChunk(
           resumeToken: HttpChatTransportJson.asString(
@@ -228,20 +217,5 @@ final class HttpChatTransportChunkJsonCodec {
           'Unsupported HTTP chat transport chunk type "$type".',
         ),
     };
-  }
-
-  DataUiPart<Object?> _decodeDataPart(
-    Object? value, {
-    required String path,
-  }) {
-    final map = HttpChatTransportJson.asMap(value, path: path);
-    return DataUiPart<Object?>(
-      id: HttpChatTransportJson.asNullableString(
-        map['id'],
-        path: '$path.id',
-      ),
-      key: HttpChatTransportJson.asString(map['key'], path: '$path.key'),
-      data: map['data'],
-    );
   }
 }
