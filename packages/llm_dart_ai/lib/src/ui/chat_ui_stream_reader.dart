@@ -6,60 +6,23 @@ import 'chat_ui_message.dart';
 import 'chat_ui_stream_accumulator.dart';
 import 'chat_ui_stream_chunk.dart';
 import 'chat_ui_stream_read_result.dart';
+import 'chat_ui_stream_validation.dart';
 export 'chat_ui_stream_read_result.dart'
     show
         ChatUiStepObservation,
         ChatUiStepObservationPhase,
         ChatUiStreamReadResult;
-
-enum ChatUiMessageMetadataValidationPhase {
-  start,
-  patch,
-  finish,
-}
-
-final class ChatUiMessageMetadataValidationContext {
-  final ChatUiMessageMetadataValidationPhase phase;
-  final String messageId;
-  final Map<String, Object?> currentMetadata;
-  final Map<String, Object?> patch;
-  final Map<String, Object?> nextMetadata;
-
-  ChatUiMessageMetadataValidationContext({
-    required this.phase,
-    required this.messageId,
-    required Map<String, Object?> currentMetadata,
-    required Map<String, Object?> patch,
-    required Map<String, Object?> nextMetadata,
-  })  : currentMetadata = Map.unmodifiable(currentMetadata),
-        patch = Map.unmodifiable(patch),
-        nextMetadata = Map.unmodifiable(nextMetadata);
-}
-
-typedef ChatUiMessageMetadataValidator = void Function(
-  ChatUiMessageMetadataValidationContext context,
-);
-
-final class ChatUiDataPartValidationContext {
-  final ChatUiMessage message;
-  final DataUiPart<Object?> part;
-  final bool isTransient;
-
-  const ChatUiDataPartValidationContext({
-    required this.message,
-    required this.part,
-    required this.isTransient,
-  });
-}
-
-typedef ChatUiDataPartValidator = void Function(
-  ChatUiDataPartValidationContext context,
-);
+export 'chat_ui_stream_validation.dart'
+    show
+        ChatUiDataPartValidationContext,
+        ChatUiDataPartValidator,
+        ChatUiMessageMetadataValidationContext,
+        ChatUiMessageMetadataValidationPhase,
+        ChatUiMessageMetadataValidator;
 
 final class ChatUiStreamReader {
   final ChatUiStreamAccumulator _accumulator;
-  final ChatUiMessageMetadataValidator? _messageMetadataValidator;
-  final ChatUiDataPartValidator? _dataPartValidator;
+  final ChatUiStreamValidator _validator;
   final ChatUiStreamReadSink _readSink = ChatUiStreamReadSink();
 
   bool _isClosed = false;
@@ -71,8 +34,10 @@ final class ChatUiStreamReader {
     ChatUiAccumulatorOptions options = const ChatUiAccumulatorOptions(),
     ChatUiMessageMetadataValidator? messageMetadataValidator,
     ChatUiDataPartValidator? dataPartValidator,
-  })  : _messageMetadataValidator = messageMetadataValidator,
-        _dataPartValidator = dataPartValidator,
+  })  : _validator = ChatUiStreamValidator(
+          messageMetadataValidator: messageMetadataValidator,
+          dataPartValidator: dataPartValidator,
+        ),
         _accumulator = ChatUiStreamAccumulator(
           messageId: messageId,
           role: role,
@@ -225,25 +190,11 @@ final class ChatUiStreamReader {
     required String messageId,
     required Map<String, Object?> patch,
   }) {
-    final validator = _messageMetadataValidator;
-    if (validator == null || patch.isEmpty) {
-      return;
-    }
-
-    final currentMetadata = _accumulator.message.metadata;
-    final nextMetadata = <String, Object?>{
-      ...currentMetadata,
-      ...patch,
-    };
-
-    validator(
-      ChatUiMessageMetadataValidationContext(
-        phase: phase,
-        messageId: messageId,
-        currentMetadata: currentMetadata,
-        patch: patch,
-        nextMetadata: nextMetadata,
-      ),
+    _validator.validateMessageMetadataPatch(
+      phase: phase,
+      message: _accumulator.message,
+      messageId: messageId,
+      patch: patch,
     );
   }
 
@@ -251,17 +202,10 @@ final class ChatUiStreamReader {
     DataUiPart<Object?> part, {
     required bool isTransient,
   }) {
-    final validator = _dataPartValidator;
-    if (validator == null) {
-      return;
-    }
-
-    validator(
-      ChatUiDataPartValidationContext(
-        message: _accumulator.message,
-        part: part,
-        isTransient: isTransient,
-      ),
+    _validator.validateDataPart(
+      part,
+      message: _accumulator.message,
+      isTransient: isTransient,
     );
   }
 }

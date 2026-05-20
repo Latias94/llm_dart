@@ -76,3 +76,4 @@ export 'src/ui/chat_ui_stream_chunk.dart';
 export 'src/ui/chat_ui_stream_error.dart';
 export 'src/ui/chat_ui_stream_projection.dart';
 export 'src/ui/chat_ui_stream_reader.dart';
+export 'src/ui/chat_ui_stream_validation.dart';
