@@ -6,14 +6,13 @@ import 'chat_session_message_support.dart';
 import 'chat_session.dart';
 import 'chat_session_snapshot.dart';
 import 'chat_state.dart';
-import 'chat_session_tool_support.dart';
-import 'chat_tool_output_support.dart';
 import 'chat_transport.dart';
 import 'default_chat_session_active_turn.dart';
 import 'default_chat_session_state_controller.dart';
 import 'default_chat_session_support.dart';
 import 'default_chat_session_transcript.dart';
 import 'default_chat_session_tool_execution.dart';
+import 'default_chat_session_tool_interactions.dart';
 import 'tool_execution_registry.dart';
 
 final class DefaultChatSession implements ChatSession {
@@ -21,6 +20,7 @@ final class DefaultChatSession implements ChatSession {
   final ChatOnToolCall? onToolCall;
   late final DefaultChatSessionActiveTurn _activeTurn;
   late final DefaultChatSessionToolExecutionScheduler _toolExecutionScheduler;
+  late final DefaultChatSessionToolInteractions _toolInteractions;
   final DefaultChatSessionStateController _stateController;
   final DefaultChatSessionTranscript _transcript;
   final MessageIdGenerator _messageIdGenerator;
@@ -104,6 +104,7 @@ final class DefaultChatSession implements ChatSession {
             ),
         _transcript = DefaultChatSessionTranscript(initialPrompt),
         assert(initialState.chatId.isNotEmpty) {
+    _toolInteractions = DefaultChatSessionToolInteractions(_transcript);
     _activeTurn = DefaultChatSessionActiveTurn(
       readState: () => _stateController.state,
       emitState: _stateController.emitState,
@@ -198,58 +199,36 @@ final class DefaultChatSession implements ChatSession {
     _ensureUsable();
     _ensureIdle('addToolOutput');
 
-    final toolOutput = update.toolOutput;
-    final assistantMessage = _transcript
-        .requireLatestAssistantMessage(_stateController.state.messages);
-    final updatedAssistantMessage = chatUpdateToolPartByCallId(
-      assistantMessage,
-      update.toolCallId,
-      (part) => ToolUiPart(
-        toolCallId: part.toolCallId,
-        toolName: part.toolName,
-        state: chatToolOutputState(toolOutput),
-        input: part.input,
-        inputText: part.inputText,
-        output: update.output,
-        toolOutput: toolOutput,
-        errorText: toolOutput.isError
-            ? chatStringifyToolOutputValue(toolOutput)
-            : null,
-        providerExecuted: part.providerExecuted,
-        isDynamic: part.isDynamic,
-        preliminary: false,
-        title: part.title,
-        approval: part.approval,
-        callProviderMetadata: part.callProviderMetadata,
-        resultProviderMetadata: part.resultProviderMetadata,
-      ),
-      requirePendingState: true,
+    final result = _toolInteractions.applyToolOutput(
+      messages: _stateController.state.messages,
+      update: update,
     );
 
-    _transcript.appendToolOutput(update);
-
-    final nextStatus = chatDeriveCompletionStatus(updatedAssistantMessage);
     _stateController.emitState(
       _stateController.state.copyWith(
         messages: _transcript.replaceLatestAssistantMessage(
           _stateController.state.messages,
-          updatedAssistantMessage,
+          result.assistantMessage,
         ),
-        status:
-            nextStatus == ChatStatus.ready ? ChatStatus.submitting : nextStatus,
+        status: result.status,
         error: null,
       ),
     );
 
-    if (nextStatus != ChatStatus.ready) {
+    final continuation = result.continuation;
+    if (continuation == null && result.shouldScheduleAutomaticToolExecution) {
       _maybeScheduleAutomaticToolExecution();
       return Future.value();
     }
 
+    if (continuation == null) {
+      return Future.value();
+    }
+
     return _runAssistantTurn(
-      options: update.options,
-      trigger: ChatTransportTrigger.toolOutput,
-      seedAssistantMessage: updatedAssistantMessage,
+      options: continuation.options,
+      trigger: continuation.trigger,
+      seedAssistantMessage: result.assistantMessage,
     );
   }
 
@@ -291,67 +270,28 @@ final class DefaultChatSession implements ChatSession {
     _ensureUsable();
     _ensureIdle('respondToolApproval');
 
-    final assistantMessage = _transcript
-        .requireLatestAssistantMessage(_stateController.state.messages);
-    final pendingTool = chatRequirePendingApprovalToolPart(
-      assistantMessage,
-      response.approvalId,
-    );
-    final updatedAssistantMessage = chatUpdateToolPartByApprovalId(
-      assistantMessage,
-      response.approvalId,
-      (part) => ToolUiPart(
-        toolCallId: part.toolCallId,
-        toolName: part.toolName,
-        state: response.approved
-            ? ToolUiPartState.approvalResponded
-            : ToolUiPartState.outputDenied,
-        input: part.input,
-        inputText: part.inputText,
-        output: part.output,
-        toolOutput: response.approved
-            ? part.toolOutput
-            : ExecutionDeniedToolOutput(response.reason),
-        errorText: part.errorText,
-        providerExecuted: part.providerExecuted,
-        isDynamic: part.isDynamic,
-        preliminary: part.preliminary,
-        title: part.title,
-        approval: ToolApprovalUiState(
-          approvalId: response.approvalId,
-          approved: response.approved,
-          reason: response.reason,
-        ),
-        callProviderMetadata: part.callProviderMetadata,
-        resultProviderMetadata: part.resultProviderMetadata,
-      ),
-    );
-
-    _transcript.appendToolApprovalResponse(
+    final result = _toolInteractions.applyToolApproval(
+      messages: _stateController.state.messages,
       response: response,
-      pendingTool: pendingTool,
     );
 
-    final nextStatus = chatDeriveCompletionStatus(updatedAssistantMessage);
-    final shouldContinueProviderTurn = nextStatus == ChatStatus.ready &&
-        chatHasApprovedProviderExecutedTool(updatedAssistantMessage);
-
-    if (shouldContinueProviderTurn) {
+    final continuation = result.continuation;
+    if (continuation != null) {
       _stateController.emitState(
         _stateController.state.copyWith(
           messages: _transcript.replaceLatestAssistantMessage(
             _stateController.state.messages,
-            updatedAssistantMessage,
+            result.assistantMessage,
           ),
-          status: ChatStatus.submitting,
+          status: result.status,
           error: null,
         ),
       );
 
       return _runAssistantTurn(
-        options: response.options,
-        trigger: ChatTransportTrigger.toolApproval,
-        seedAssistantMessage: updatedAssistantMessage,
+        options: continuation.options,
+        trigger: continuation.trigger,
+        seedAssistantMessage: result.assistantMessage,
       );
     }
 
@@ -359,13 +299,15 @@ final class DefaultChatSession implements ChatSession {
       _stateController.state.copyWith(
         messages: _transcript.replaceLatestAssistantMessage(
           _stateController.state.messages,
-          updatedAssistantMessage,
+          result.assistantMessage,
         ),
-        status: nextStatus,
+        status: result.status,
         error: null,
       ),
     );
-    _maybeScheduleAutomaticToolExecution();
+    if (result.shouldScheduleAutomaticToolExecution) {
+      _maybeScheduleAutomaticToolExecution();
+    }
   }
 
   @override
