@@ -1,5 +1,6 @@
 import '../stream/text_stream_event.dart';
 import 'chat_ui_content_part_store.dart';
+import 'chat_ui_data_part_store.dart';
 import 'chat_ui_message.dart';
 import 'chat_ui_metadata_store.dart';
 import 'chat_ui_tool_part_store.dart';
@@ -19,8 +20,8 @@ final class ChatUiAccumulator {
   String _messageId;
   final List<ChatUiPart> _parts;
   final Map<String, Object?> _metadata;
-  final Map<String, int> _dataPartIndexes = {};
   final ChatUiContentPartStore _contentParts;
+  final ChatUiDataPartStore _dataParts;
   final ChatUiToolPartStore _toolParts;
   late final ChatUiMetadataStore _metadataStore = ChatUiMetadataStore(
     metadata: _metadata,
@@ -56,6 +57,7 @@ final class ChatUiAccumulator {
         _parts = parts,
         _metadata = metadata,
         _contentParts = ChatUiContentPartStore(parts),
+        _dataParts = ChatUiDataPartStore(parts),
         _toolParts = ChatUiToolPartStore(parts);
 
   ChatUiMessage get message => ChatUiMessage(
@@ -129,7 +131,8 @@ final class ChatUiAccumulator {
   }
 
   ChatUiMessage applyDataPart<T>(DataUiPart<T> part) {
-    return _applyDataPart(part);
+    _dataParts.apply(part);
+    return message;
   }
 
   Stream<ChatUiMessage> project(Stream<TextStreamEvent> events) async* {
@@ -143,24 +146,6 @@ final class ChatUiAccumulator {
     return _parts.length - 1;
   }
 
-  ChatUiMessage _applyDataPart<T>(DataUiPart<T> part) {
-    final dataPartId = part.id;
-    if (dataPartId == null) {
-      _appendPart(part);
-      return message;
-    }
-
-    final identity = _dataPartIdentity(part.key, dataPartId);
-    final index = _dataPartIndexes[identity];
-    if (index == null) {
-      _dataPartIndexes[identity] = _appendPart(part);
-    } else {
-      _parts[index] = part;
-    }
-
-    return message;
-  }
-
   void _hydrateIndexes() {
     _nextStepIndex = _parts.whereType<StepBoundaryUiPart>().length;
 
@@ -171,14 +156,10 @@ final class ChatUiAccumulator {
         continue;
       }
 
-      if (part case DataUiPart(:final id?, :final key)) {
-        _hydrateDataPartIndex(key, id, index);
+      if (part is DataUiPart<Object?>) {
+        _dataParts.hydrate(part, index);
       }
     }
-  }
-
-  void _hydrateDataPartIndex(String key, String id, int index) {
-    _dataPartIndexes[_dataPartIdentity(key, id)] = index;
   }
 
   void _applyReasoningFileEvent(ReasoningFileEvent event) {
@@ -224,8 +205,6 @@ final class ChatUiAccumulator {
     _toolParts.clearStreamingInputs();
   }
 }
-
-String _dataPartIdentity(String key, String id) => '$key\u0000$id';
 
 Stream<ChatUiMessage> projectChatUiMessageStream(
   Stream<TextStreamEvent> events, {
