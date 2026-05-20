@@ -1,110 +1,22 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import 'openai_logprobs.dart';
 import 'openai_native_tools.dart';
+import 'openai_reasoning_options.dart';
 import 'openai_response_format.dart';
+import 'openai_responses_text_options.dart';
+
+export 'openai_logprobs.dart' show OpenAILogProbs;
+export 'openai_reasoning_options.dart'
+    show OpenAIReasoningEffort, mapSharedOpenAIReasoningEffort;
+export 'openai_responses_text_options.dart'
+    show
+        OpenAIPromptCacheRetention,
+        OpenAIResponseTruncation,
+        OpenAIResponsesInclude,
+        OpenAISystemMessageMode;
 
 const Object _unsetOpenAIGenerateTextOption = Object();
-
-enum OpenAIResponseTruncation {
-  auto('auto'),
-  disabled('disabled');
-
-  const OpenAIResponseTruncation(this.value);
-
-  final String value;
-}
-
-enum OpenAIPromptCacheRetention {
-  inMemory('in_memory'),
-  twentyFourHours('24h');
-
-  const OpenAIPromptCacheRetention(this.value);
-
-  final String value;
-}
-
-enum OpenAIResponsesInclude {
-  webSearchCallActionSources('web_search_call.action.sources'),
-  codeInterpreterCallOutputs('code_interpreter_call.outputs'),
-  computerCallOutputImageUrl('computer_call_output.output.image_url'),
-  reasoningEncryptedContent('reasoning.encrypted_content'),
-  fileSearchCallResults('file_search_call.results'),
-  messageInputImageImageUrl('message.input_image.image_url'),
-  messageOutputTextLogprobs('message.output_text.logprobs');
-
-  const OpenAIResponsesInclude(this.value);
-
-  final String value;
-}
-
-enum OpenAISystemMessageMode {
-  system('system'),
-  developer('developer'),
-  remove('remove');
-
-  const OpenAISystemMessageMode(this.value);
-
-  final String value;
-}
-
-enum OpenAIReasoningEffort {
-  none('none'),
-  minimal('minimal'),
-  low('low'),
-  medium('medium'),
-  high('high'),
-  xhigh('xhigh');
-
-  const OpenAIReasoningEffort(this.value);
-
-  final String value;
-}
-
-OpenAIReasoningEffort? mapSharedOpenAIReasoningEffort(
-  GenerateTextReasoningOptions? reasoning, {
-  required List<ModelWarning> warnings,
-}) {
-  if (reasoning == null) {
-    return null;
-  }
-
-  if (reasoning.budgetTokens != null) {
-    warnings.add(
-      const ModelWarning(
-        type: ModelWarningType.unsupported,
-        field: 'options.reasoning.budgetTokens',
-        message:
-            'OpenAI reasoning uses effort levels; budgetTokens is ignored.',
-      ),
-    );
-  }
-
-  if (reasoning.enabled == false) {
-    return OpenAIReasoningEffort.none;
-  }
-
-  return switch (reasoning.effort) {
-    null => null,
-    ReasoningEffort.minimal => OpenAIReasoningEffort.minimal,
-    ReasoningEffort.low => OpenAIReasoningEffort.low,
-    ReasoningEffort.medium => OpenAIReasoningEffort.medium,
-    ReasoningEffort.high => OpenAIReasoningEffort.high,
-  };
-}
-
-final class OpenAILogProbs {
-  static const int responsesMaxTopLogProbs = 20;
-
-  final int? topLogProbs;
-
-  const OpenAILogProbs.enabled() : topLogProbs = null;
-
-  const OpenAILogProbs.top(this.topLogProbs)
-      : assert(topLogProbs != null ? topLogProbs > 0 : false),
-        assert(
-          topLogProbs != null ? topLogProbs <= responsesMaxTopLogProbs : false,
-        );
-}
 
 final class OpenAIGenerateTextOptions implements ProviderInvocationOptions {
   final String? previousResponseId;
