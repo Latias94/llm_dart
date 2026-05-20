@@ -1,77 +1,55 @@
+import '../common/tool_input_stream_store.dart';
 import '../common/tool_input_stream_state.dart';
 import '../stream/text_stream_event.dart';
 import 'chat_ui_message.dart';
 import 'chat_ui_stream_error.dart';
 
 final class ChatUiToolInputStreamStore {
-  final Map<String, StreamingToolInputState> _partialInputs = {};
+  final ToolInputStreamStore _inputs = ToolInputStreamStore(
+    createMissingInputError: _missingToolInputError,
+  );
 
-  StreamingToolInputState? get(String toolCallId) {
-    return _partialInputs[toolCallId];
-  }
+  StreamingToolInputState? get(String toolCallId) => _inputs.get(toolCallId);
 
   void hydrate(ToolUiPart part) {
     if (part.state != ToolUiPartState.inputStreaming) {
       return;
     }
 
-    _partialInputs[part.toolCallId] = StreamingToolInputState(
+    _inputs.hydrate(
+      toolCallId: part.toolCallId,
       toolName: part.toolName,
       providerExecuted: part.providerExecuted,
       isDynamic: part.isDynamic,
       title: part.title,
-      initialText:
-          part.inputText ?? stringifyStreamingToolValue(part.input) ?? '',
+      input: part.input,
+      inputText: part.inputText,
     );
   }
 
-  StreamingToolInputState start(ToolInputStartEvent event) {
-    final partial = StreamingToolInputState(
-      toolName: event.toolName,
-      providerExecuted: event.providerExecuted,
-      isDynamic: event.isDynamic,
-      title: event.title,
-    );
-    _partialInputs[event.toolCallId] = partial;
-    return partial;
-  }
+  StreamingToolInputState start(ToolInputStartEvent event) =>
+      _inputs.start(event);
 
-  StreamingToolInputState appendDelta(ToolInputDeltaEvent event) {
-    final partial = require(event.toolCallId);
-    partial.append(event.delta);
-    return partial;
-  }
+  StreamingToolInputState appendDelta(ToolInputDeltaEvent event) =>
+      _inputs.appendDelta(event);
 
-  StreamingToolInputState end(ToolInputEndEvent event) {
-    final partial = require(event.toolCallId);
-    _partialInputs.remove(event.toolCallId);
-    return partial;
-  }
+  StreamingToolInputState end(ToolInputEndEvent event) => _inputs.end(event);
 
-  StreamingToolInputState? fail(ToolInputErrorEvent event) {
-    return _partialInputs.remove(event.toolCallId);
-  }
+  StreamingToolInputState? fail(ToolInputErrorEvent event) =>
+      _inputs.fail(event);
 
-  void remove(String toolCallId) {
-    _partialInputs.remove(toolCallId);
-  }
+  void remove(String toolCallId) => _inputs.remove(toolCallId);
 
-  void clear() {
-    _partialInputs.clear();
-  }
+  void clear() => _inputs.clear();
 
-  StreamingToolInputState require(String toolCallId) {
-    final value = _partialInputs[toolCallId];
-    if (value != null) {
-      return value;
-    }
+  StreamingToolInputState require(String toolCallId) =>
+      _inputs.require(toolCallId);
+}
 
-    throw ChatUiStreamError(
-      chunkType: 'tool-input-update',
-      chunkId: toolCallId,
-      message:
-          'Received tool-input update for missing tool call with ID "$toolCallId". '
-          'Ensure a "tool-input-start" event is applied before later tool-input events.',
-    );
-  }
+Object _missingToolInputError(String toolCallId) {
+  return ChatUiStreamError(
+    chunkType: 'tool-input-update',
+    chunkId: toolCallId,
+    message: missingToolInputStateError(toolCallId).message,
+  );
 }

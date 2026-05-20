@@ -23,35 +23,28 @@ import 'package:llm_dart_provider/llm_dart_provider.dart'
         ToolInputStartEvent,
         ToolResultEvent;
 
-import '../common/tool_input_stream_state.dart';
+import '../common/tool_input_stream_store.dart';
 import '../stream/text_stream_event.dart';
 import 'generate_text_result_content_buffer.dart';
 
 final class GenerateTextResultToolProjector {
   final GenerateTextResultContentBuffer _content;
-  final Map<String, StreamingToolInputState> _partialToolCalls =
-      <String, StreamingToolInputState>{};
+  final ToolInputStreamStore _inputStreams = ToolInputStreamStore(
+    createMissingInputError: missingToolInputStateError,
+  );
 
   GenerateTextResultToolProjector(this._content);
 
   ProviderMetadata? apply(TextStreamEvent event) {
     switch (event) {
       case ToolInputStartEvent():
-        _partialToolCalls[event.toolCallId] = StreamingToolInputState(
-          toolName: event.toolName,
-          providerExecuted: event.providerExecuted,
-          isDynamic: event.isDynamic,
-          title: event.title,
-          providerMetadata: event.providerMetadata,
-        );
+        _inputStreams.start(event);
         return event.providerMetadata;
       case ToolInputDeltaEvent():
-        final partial = _requirePartialToolCall(event.toolCallId);
-        partial.append(event.delta);
-        partial.mergeProviderMetadata(event.providerMetadata);
+        _inputStreams.appendDelta(event);
         return event.providerMetadata;
       case ToolInputEndEvent():
-        final partial = _requirePartialToolCall(event.toolCallId);
+        final partial = _inputStreams.end(event);
         final providerMetadata = ProviderMetadata.mergeNullable(
           partial.providerMetadata,
           event.providerMetadata,
@@ -69,7 +62,6 @@ final class GenerateTextResultToolProjector {
             providerMetadata: providerMetadata,
           ),
         );
-        _partialToolCalls.remove(event.toolCallId);
         return event.providerMetadata;
       case ToolInputErrorEvent():
         _content.upsertToolCallPart(
@@ -97,7 +89,7 @@ final class GenerateTextResultToolProjector {
             providerMetadata: event.providerMetadata,
           ),
         );
-        _partialToolCalls.remove(event.toolCallId);
+        _inputStreams.fail(event);
         return event.providerMetadata;
       case ToolCallEvent():
         final current = _content.toolCallPart(event.toolCall.toolCallId);
@@ -110,10 +102,10 @@ final class GenerateTextResultToolProjector {
             ),
           ),
         );
-        _partialToolCalls.remove(event.toolCall.toolCallId);
+        _inputStreams.remove(event.toolCall.toolCallId);
         return event.providerMetadata;
       case ToolResultEvent():
-        _partialToolCalls.remove(event.toolResult.toolCallId);
+        _inputStreams.remove(event.toolResult.toolCallId);
         _content.appendToolResultPart(
           ToolResultContentPart(
             event.toolResult,
@@ -133,7 +125,7 @@ final class GenerateTextResultToolProjector {
         );
         return event.providerMetadata;
       case ToolOutputDeniedEvent():
-        _partialToolCalls.remove(event.toolCallId);
+        _inputStreams.remove(event.toolCallId);
         final toolCall = _content.requireToolCallPart(event.toolCallId);
         _content.appendToolResultPart(
           ToolResultContentPart(
@@ -154,17 +146,5 @@ final class GenerateTextResultToolProjector {
           'Expected a tool stream event.',
         );
     }
-  }
-
-  StreamingToolInputState _requirePartialToolCall(String toolCallId) {
-    final value = _partialToolCalls[toolCallId];
-    if (value != null) {
-      return value;
-    }
-
-    throw StateError(
-      'Received tool-input update for missing tool call with ID "$toolCallId". '
-      'Ensure a "tool-input-start" event is applied before later tool-input events.',
-    );
   }
 }
