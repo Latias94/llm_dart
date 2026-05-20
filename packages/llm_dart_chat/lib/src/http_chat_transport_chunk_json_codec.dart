@@ -1,8 +1,11 @@
 import 'package:llm_dart_ai/llm_dart_ai.dart';
 
 import 'http_chat_transport_chunk.dart';
+import 'http_chat_transport_content_chunk_json_codec.dart';
 import 'http_chat_transport_data_part_json_codec.dart';
 import 'http_chat_transport_json_support.dart';
+import 'http_chat_transport_lifecycle_chunk_json_codec.dart';
+import 'http_chat_transport_message_chunk_json_codec.dart';
 
 final class HttpChatTransportChunkJsonCodec {
   static const envelopeKind = 'http-chat-transport-chunk';
@@ -17,89 +20,25 @@ final class HttpChatTransportChunkJsonCodec {
 
   Map<String, Object?> encodeChunk(HttpChatTransportChunk chunk) {
     final data = switch (chunk) {
-      HttpChatTransportTransportStartChunk(
-        :final requestId,
-        :final resumeToken,
-      ) =>
-        {
-          'type': 'transport-start',
-          if (requestId != null) 'requestId': requestId,
-          if (resumeToken != null) 'resumeToken': resumeToken,
-        },
-      HttpChatTransportStartChunk(
-        :final requestId,
-        :final messageId,
-        :final resumeToken,
-      ) =>
-        {
-          'type': 'start',
-          if (requestId != null) 'requestId': requestId,
-          if (messageId != null) 'messageId': messageId,
-          if (resumeToken != null) 'resumeToken': resumeToken,
-        },
-      HttpChatTransportMessageStartChunk(
-        :final messageId,
-        :final metadata,
-      ) =>
-        {
-          'type': 'message-start',
-          'messageId': messageId,
-          if (metadata.isNotEmpty) 'metadata': metadata,
-        },
-      HttpChatTransportMessageMetadataChunk(:final metadata) => {
-          'type': 'message-metadata',
-          'metadata': metadata,
-        },
-      HttpChatTransportEventChunk(:final event) => {
-          'type': 'event',
-          'event': eventCodec.encodeEvent(event),
-        },
-      HttpChatTransportDataPartChunk(:final part) => {
-          'type': 'data-part',
-          'part': dataPartCodec.encodePart(part, path: r'$.data.part'),
-        },
-      HttpChatTransportTransientDataPartChunk(:final part) => {
-          'type': 'transient-data-part',
-          'part': dataPartCodec.encodePart(part, path: r'$.data.part'),
-        },
-      HttpChatTransportCheckpointChunk(
-        :final resumeToken,
-        :final cursor,
-      ) =>
-        {
-          'type': 'checkpoint',
-          'resumeToken': resumeToken,
-          if (cursor != null) 'cursor': cursor,
-        },
-      HttpChatTransportFinishChunk() => {
-          'type': 'finish',
-        },
-      HttpChatTransportMessageFinishChunk(:final metadata) => {
-          'type': 'message-finish',
-          if (metadata.isNotEmpty) 'metadata': metadata,
-        },
-      HttpChatTransportAbortChunk(:final reason) => {
-          'type': 'abort',
-          if (reason != null) 'reason': reason,
-        },
-      HttpChatTransportErrorChunk(
-        :final message,
-        :final code,
-        :final details,
-      ) =>
-        {
-          'type': 'error',
-          'message': message,
-          if (code != null) 'code': code,
-          if (details != null)
-            'details': HttpChatTransportJson.ensureValue(
-              details,
-              path: r'$.details',
-            ),
-        },
-      HttpChatTransportKeepAliveChunk() => {
-          'type': 'keepalive',
-        },
+      HttpChatTransportTransportStartChunk() ||
+      HttpChatTransportStartChunk() ||
+      HttpChatTransportCheckpointChunk() ||
+      HttpChatTransportFinishChunk() ||
+      HttpChatTransportAbortChunk() ||
+      HttpChatTransportErrorChunk() ||
+      HttpChatTransportKeepAliveChunk() =>
+        const HttpChatTransportLifecycleChunkJsonCodec().encode(chunk),
+      HttpChatTransportMessageStartChunk() ||
+      HttpChatTransportMessageMetadataChunk() ||
+      HttpChatTransportMessageFinishChunk() =>
+        const HttpChatTransportMessageChunkJsonCodec().encode(chunk),
+      HttpChatTransportEventChunk() ||
+      HttpChatTransportDataPartChunk() ||
+      HttpChatTransportTransientDataPartChunk() =>
+        HttpChatTransportContentChunkJsonCodec(
+          eventCodec: eventCodec,
+          dataPartCodec: dataPartCodec,
+        ).encode(chunk),
     };
 
     return {
@@ -124,98 +63,26 @@ final class HttpChatTransportChunkJsonCodec {
       path: r'$.data.type',
     );
 
-    return switch (type) {
-      'transport-start' => HttpChatTransportTransportStartChunk(
-          requestId: HttpChatTransportJson.asNullableString(
-            data['requestId'],
-            path: r'$.data.requestId',
-          ),
-          resumeToken: HttpChatTransportJson.asNullableString(
-            data['resumeToken'],
-            path: r'$.data.resumeToken',
-          ),
-        ),
-      'start' => HttpChatTransportStartChunk(
-          requestId: HttpChatTransportJson.asNullableString(
-            data['requestId'],
-            path: r'$.data.requestId',
-          ),
-          messageId: HttpChatTransportJson.asNullableString(
-            data['messageId'],
-            path: r'$.data.messageId',
-          ),
-          resumeToken: HttpChatTransportJson.asNullableString(
-            data['resumeToken'],
-            path: r'$.data.resumeToken',
-          ),
-        ),
-      'message-start' => HttpChatTransportMessageStartChunk(
-          messageId: HttpChatTransportJson.asString(
-            data['messageId'],
-            path: r'$.data.messageId',
-          ),
-          metadata: data['metadata'] == null
-              ? const {}
-              : HttpChatTransportJson.asMap(
-                  data['metadata'],
-                  path: r'$.data.metadata',
-                ),
-        ),
-      'message-metadata' => HttpChatTransportMessageMetadataChunk(
-          metadata: HttpChatTransportJson.asMap(
-            data['metadata'],
-            path: r'$.data.metadata',
-          ),
-        ),
-      'event' => HttpChatTransportEventChunk(
-          eventCodec.decodeEvent(data['event'], path: r'$.data.event'),
-        ),
-      'data-part' => HttpChatTransportDataPartChunk(
-          dataPartCodec.decodePart(data['part'], path: r'$.data.part'),
-        ),
-      'transient-data-part' => HttpChatTransportTransientDataPartChunk(
-          dataPartCodec.decodePart(data['part'], path: r'$.data.part'),
-        ),
-      'checkpoint' => HttpChatTransportCheckpointChunk(
-          resumeToken: HttpChatTransportJson.asString(
-            data['resumeToken'],
-            path: r'$.data.resumeToken',
-          ),
-          cursor: HttpChatTransportJson.asNullableString(
-            data['cursor'],
-            path: r'$.data.cursor',
-          ),
-        ),
-      'finish' => const HttpChatTransportFinishChunk(),
-      'message-finish' => HttpChatTransportMessageFinishChunk(
-          metadata: data['metadata'] == null
-              ? const {}
-              : HttpChatTransportJson.asMap(
-                  data['metadata'],
-                  path: r'$.data.metadata',
-                ),
-        ),
-      'abort' => HttpChatTransportAbortChunk(
-          reason: HttpChatTransportJson.asNullableString(
-            data['reason'],
-            path: r'$.data.reason',
-          ),
-        ),
-      'error' => HttpChatTransportErrorChunk(
-          message: HttpChatTransportJson.asString(
-            data['message'],
-            path: r'$.data.message',
-          ),
-          code: HttpChatTransportJson.asNullableString(
-            data['code'],
-            path: r'$.data.code',
-          ),
-          details: data['details'],
-        ),
-      'keepalive' => const HttpChatTransportKeepAliveChunk(),
-      _ => throw FormatException(
-          'Unsupported HTTP chat transport chunk type "$type".',
-        ),
-    };
+    const lifecycleCodec = HttpChatTransportLifecycleChunkJsonCodec();
+    if (lifecycleCodec.canDecode(type)) {
+      return lifecycleCodec.decode(data, type: type);
+    }
+
+    const messageCodec = HttpChatTransportMessageChunkJsonCodec();
+    if (messageCodec.canDecode(type)) {
+      return messageCodec.decode(data, type: type);
+    }
+
+    final contentCodec = HttpChatTransportContentChunkJsonCodec(
+      eventCodec: eventCodec,
+      dataPartCodec: dataPartCodec,
+    );
+    if (contentCodec.canDecode(type)) {
+      return contentCodec.decode(data, type: type);
+    }
+
+    throw FormatException(
+      'Unsupported HTTP chat transport chunk type "$type".',
+    );
   }
 }
