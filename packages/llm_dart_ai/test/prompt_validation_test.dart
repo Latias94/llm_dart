@@ -259,6 +259,114 @@ void main() {
       );
     });
 
+    test('rejects approval requests without matching tool calls', () {
+      expect(
+        () => validateProviderPrompt([
+          AssistantPromptMessage(
+            parts: const [
+              ToolApprovalRequestPromptPart(
+                approvalId: 'approval-1',
+                toolCallId: 'missing-call',
+              ),
+            ],
+          ),
+        ]),
+        throwsA(
+          isA<ArgumentError>().having(
+            (error) => error.message,
+            'message',
+            contains('references missing tool call "missing-call"'),
+          ),
+        ),
+      );
+    });
+
+    test('rejects approval requests for client-executed tool calls', () {
+      expect(
+        () => validateProviderPrompt([
+          AssistantPromptMessage(
+            parts: const [
+              ToolCallPromptPart(
+                toolCallId: 'call-1',
+                toolName: 'weather',
+              ),
+              ToolApprovalRequestPromptPart(
+                approvalId: 'approval-1',
+                toolCallId: 'call-1',
+              ),
+            ],
+          ),
+        ]),
+        throwsA(
+          isA<ArgumentError>().having(
+            (error) => error.message,
+            'message',
+            contains('references client-executed tool call "call-1"'),
+          ),
+        ),
+      );
+    });
+
+    test('rejects duplicate pending approval requests', () {
+      expect(
+        () => validateProviderPrompt([
+          AssistantPromptMessage(
+            parts: const [
+              ToolCallPromptPart(
+                toolCallId: 'call-1',
+                toolName: 'mcp.search',
+                providerExecuted: true,
+              ),
+              ToolApprovalRequestPromptPart(
+                approvalId: 'approval-1',
+                toolCallId: 'call-1',
+              ),
+              ToolApprovalRequestPromptPart(
+                approvalId: 'approval-1',
+                toolCallId: 'call-1',
+              ),
+            ],
+          ),
+        ]),
+        throwsA(
+          isA<ArgumentError>().having(
+            (error) => error.message,
+            'message',
+            contains('already waiting for a response'),
+          ),
+        ),
+      );
+    });
+
+    test('rejects assistant client tool results', () {
+      expect(
+        () => validateProviderPrompt([
+          AssistantPromptMessage(
+            parts: [
+              const ToolCallPromptPart(
+                toolCallId: 'call-1',
+                toolName: 'weather',
+              ),
+              ToolResultPromptPart(
+                toolCallId: 'call-1',
+                toolName: 'weather',
+                output: {
+                  'forecast': 'sunny',
+                },
+              ),
+            ],
+          ),
+        ]),
+        throwsA(
+          isA<ArgumentError>().having(
+            (error) => error.message,
+            'message',
+            contains('Client tool results must be placed in a tool message'),
+          ),
+        ),
+      );
+    });
+
     test('accepts matching provider approval responses', () {
       validateProviderPrompt([
         AssistantPromptMessage(
