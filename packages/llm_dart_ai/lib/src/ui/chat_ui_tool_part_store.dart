@@ -13,6 +13,7 @@ import '../stream/text_stream_event.dart';
 import 'chat_ui_message.dart';
 import 'chat_ui_stream_error.dart';
 import 'chat_ui_tool_part_index.dart';
+import 'chat_ui_tool_part_builder.dart';
 
 final class ChatUiToolPartStore {
   final ChatUiToolPartIndex _parts;
@@ -248,49 +249,34 @@ final class ChatUiToolPartStore {
     bool setApproval = false,
     ProviderMetadata? callProviderMetadata,
     ProviderMetadata? resultProviderMetadata,
-  }) {
-    final current = _parts.get(toolCallId);
-    final partial = _partialInputs[toolCallId];
-    final resolvedToolName = toolName ?? current?.toolName ?? partial?.toolName;
-
-    if (resolvedToolName == null) {
-      throw ChatUiStreamError(
-        chunkType: 'tool-update',
-        chunkId: toolCallId,
-        message:
-            'Received tool update for missing tool call with ID "$toolCallId". '
-            'Ensure a tool-input-start or tool-call event is applied first.',
+  }) =>
+      ChatUiToolPartBuilder(
+        current: _parts.get(toolCallId),
+        partial: _partialInputs[toolCallId],
+      ).build(
+        toolCallId: toolCallId,
+        toolName: toolName,
+        state: state,
+        input: input,
+        setInput: setInput,
+        inputText: inputText,
+        setInputText: setInputText,
+        output: output,
+        setOutput: setOutput,
+        toolOutput: toolOutput,
+        setToolOutput: setToolOutput,
+        errorText: errorText,
+        setErrorText: setErrorText,
+        providerExecuted: providerExecuted,
+        isDynamic: isDynamic,
+        preliminary: preliminary,
+        title: title,
+        setTitle: setTitle,
+        approval: approval,
+        setApproval: setApproval,
+        callProviderMetadata: callProviderMetadata,
+        resultProviderMetadata: resultProviderMetadata,
       );
-    }
-
-    return ToolUiPart(
-      toolCallId: toolCallId,
-      toolName: resolvedToolName,
-      state: state ?? current?.state ?? ToolUiPartState.inputAvailable,
-      input: setInput ? input : current?.input,
-      inputText: setInputText ? inputText : current?.inputText,
-      output: setOutput ? output : current?.output,
-      toolOutput: setToolOutput ? toolOutput : current?.toolOutput,
-      errorText: setErrorText ? errorText : current?.errorText,
-      providerExecuted: current?.providerExecuted == true ||
-          providerExecuted == true ||
-          partial?.providerExecuted == true,
-      isDynamic: current?.isDynamic == true ||
-          isDynamic == true ||
-          partial?.isDynamic == true,
-      preliminary: preliminary ?? current?.preliminary ?? false,
-      title: setTitle ? title : current?.title ?? partial?.title,
-      approval: setApproval ? approval : current?.approval,
-      callProviderMetadata: ProviderMetadata.mergeNullable(
-        current?.callProviderMetadata,
-        callProviderMetadata,
-      ),
-      resultProviderMetadata: ProviderMetadata.mergeNullable(
-        current?.resultProviderMetadata,
-        resultProviderMetadata,
-      ),
-    );
-  }
 
   StreamingToolInputState _requirePartialInput(String toolCallId) {
     final value = _partialInputs[toolCallId];
