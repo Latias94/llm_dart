@@ -1,6 +1,7 @@
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'anthropic_api.dart';
+import 'anthropic_files_route_support.dart';
 import 'anthropic_model_settings.dart';
 
 final class AnthropicFilesTransportSupport {
@@ -16,36 +17,26 @@ final class AnthropicFilesTransportSupport {
     required this.settings,
   });
 
-  Uri get filesUri => resolveAnthropicUri(baseUrl, 'files');
+  AnthropicFilesRouteSupport get _routes =>
+      AnthropicFilesRouteSupport(baseUrl: baseUrl);
+
+  Uri get filesUri => _routes.filesUri;
 
   Uri fileListUri({
     String? beforeId,
     String? afterId,
     int? limit,
   }) {
-    return _uriWithQuery(
-      filesUri,
-      _buildListQueryParameters(
-        beforeId: beforeId,
-        afterId: afterId,
-        limit: limit,
-      ),
+    return _routes.fileListUri(
+      beforeId: beforeId,
+      afterId: afterId,
+      limit: limit,
     );
   }
 
-  Uri fileUri(String fileId) {
-    return resolveAnthropicUri(
-      baseUrl,
-      'files/${requireFileId(fileId, parameterName: 'fileId')}',
-    );
-  }
+  Uri fileUri(String fileId) => _routes.fileUri(fileId);
 
-  Uri fileContentUri(String fileId) {
-    return resolveAnthropicUri(
-      baseUrl,
-      'files/${requireFileId(fileId, parameterName: 'fileId')}/content',
-    );
-  }
+  Uri fileContentUri(String fileId) => _routes.fileContentUri(fileId);
 
   TransportRequest uploadRequest({
     required TransportMultipartBody body,
@@ -155,42 +146,6 @@ final class AnthropicFilesTransportSupport {
     String fileId, {
     required String parameterName,
   }) {
-    final normalized = fileId.trim();
-    if (normalized.isEmpty) {
-      throw ArgumentError.value(
-        fileId,
-        parameterName,
-        'Expected a non-empty file ID.',
-      );
-    }
-
-    return normalized;
+    return _routes.requireFileId(fileId, parameterName: parameterName);
   }
-}
-
-Map<String, String> _buildListQueryParameters({
-  String? beforeId,
-  String? afterId,
-  int? limit,
-}) {
-  if (limit != null && limit < 1) {
-    throw ArgumentError.value(
-      limit,
-      'limit',
-      'Anthropic file list limit must be >= 1.',
-    );
-  }
-
-  return {
-    if (beforeId != null && beforeId.isNotEmpty) 'before_id': beforeId,
-    if (afterId != null && afterId.isNotEmpty) 'after_id': afterId,
-    if (limit != null) 'limit': '$limit',
-  };
-}
-
-Uri _uriWithQuery(Uri uri, Map<String, String> queryParameters) {
-  if (queryParameters.isEmpty) {
-    return uri;
-  }
-  return uri.replace(queryParameters: queryParameters);
 }
