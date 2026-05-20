@@ -1,17 +1,14 @@
-import 'dart:async';
-
 import 'package:dio/dio.dart';
 import 'package:logging/logging.dart';
 
-import '../common/transport_cancellation.dart';
 import '../common/transport_diagnostics.dart';
 import '../common/transport_exception.dart';
 import '../common/transport_retry.dart';
-import 'dio_cancellation_adapter.dart';
 import 'dio_response_stream.dart';
 import 'dio_transport_diagnostics_support.dart';
 import 'dio_transport_error_mapper.dart';
 import 'dio_transport_response_support.dart';
+import 'dio_transport_retry_executor.dart';
 import 'transport_client.dart';
 
 final class DioTransportClient implements TransportClient {
@@ -22,8 +19,6 @@ final class DioTransportClient implements TransportClient {
   final TransportRetryPolicy _retryPolicy;
   final DioTransportResponseSupport _responseSupport =
       const DioTransportResponseSupport();
-
-  static final Object _retryDelaySentinel = Object();
 
   DioTransportClient({
     Dio? dio,
@@ -55,10 +50,16 @@ final class DioTransportClient implements TransportClient {
     logger: _logger,
     responseSupport: _responseSupport,
   );
+  late final DioTransportRetryExecutor _retryExecutor =
+      DioTransportRetryExecutor(
+    diagnosticsSupport: _diagnosticsSupport,
+    errorMapper: _errorMapper,
+    retryPolicy: _retryPolicy,
+  );
 
   @override
   Future<TransportResponse> send(TransportRequest request) async {
-    return _executeWithRetry(
+    return _retryExecutor.execute(
       request,
       isStreaming: false,
       sendAttempt: (cancelToken) async {
@@ -94,7 +95,7 @@ final class DioTransportClient implements TransportClient {
           headers: headers,
           body: response.data,
         );
-        return _TransportAttemptSuccess(
+        return DioTransportAttemptSuccess(
           value: result,
           response: _diagnosticsSupport.createResponseInfo(
             statusCode: result.statusCode,
@@ -110,7 +111,7 @@ final class DioTransportClient implements TransportClient {
   Future<StreamingTransportResponse> sendStream(
     TransportRequest request,
   ) async {
-    return _executeWithRetry(
+    return _retryExecutor.execute(
       request,
       isStreaming: true,
       sendAttempt: (cancelToken) async {
@@ -151,7 +152,7 @@ final class DioTransportClient implements TransportClient {
           ),
         );
 
-        return _TransportAttemptSuccess(
+        return DioTransportAttemptSuccess(
           value: result,
           response: _diagnosticsSupport.createResponseInfo(
             statusCode: result.statusCode,
@@ -163,175 +164,4 @@ final class DioTransportClient implements TransportClient {
       },
     );
   }
-
-  Future<T> _executeWithRetry<T>(
-    TransportRequest request, {
-    required bool isStreaming,
-    required Future<_TransportAttemptSuccess<T>> Function(
-      CancelToken? cancelToken,
-    ) sendAttempt,
-  }) async {
-    final retryPolicy = _effectiveRetryPolicy(request);
-    final requestInfo = _diagnosticsSupport.createRequestInfo(
-      request,
-      isStreaming: isStreaming,
-      retryPolicy: retryPolicy,
-    );
-    for (var attempt = 1; true; attempt++) {
-      final startedAt = DateTime.now();
-      _diagnosticsSupport.emit(
-        TransportDiagnosticsEvent(
-          kind: TransportDiagnosticsEventKind.requestStart,
-          request: requestInfo,
-          timestamp: startedAt,
-          attempt: attempt,
-        ),
-      );
-
-      try {
-        request.cancellation?.throwIfCancelled();
-        final cancelToken = bindDioCancellation(request.cancellation);
-        final success = await sendAttempt(cancelToken);
-        final finishedAt = DateTime.now();
-        _diagnosticsSupport.emit(
-          TransportDiagnosticsEvent(
-            kind: TransportDiagnosticsEventKind.requestSuccess,
-            request: requestInfo,
-            response: success.response,
-            timestamp: finishedAt,
-            duration: finishedAt.difference(startedAt),
-            attempt: attempt,
-          ),
-        );
-        return success.value;
-      } on DioException catch (error) {
-        final mapped = await _errorMapper.mapDioException(
-          error,
-          uri: request.uri,
-        );
-        final shouldRetry = await _handleFailure(
-          request: request,
-          requestInfo: requestInfo,
-          isStreaming: isStreaming,
-          attempt: attempt,
-          startedAt: startedAt,
-          error: mapped,
-          retryPolicy: retryPolicy,
-        );
-        if (shouldRetry) {
-          continue;
-        }
-        throw mapped;
-      } on TransportException catch (error) {
-        final shouldRetry = await _handleFailure(
-          request: request,
-          requestInfo: requestInfo,
-          isStreaming: isStreaming,
-          attempt: attempt,
-          startedAt: startedAt,
-          error: error,
-          retryPolicy: retryPolicy,
-        );
-        if (shouldRetry) {
-          continue;
-        }
-        rethrow;
-      } catch (error) {
-        final shouldRetry = await _handleFailure(
-          request: request,
-          requestInfo: requestInfo,
-          isStreaming: isStreaming,
-          attempt: attempt,
-          startedAt: startedAt,
-          error: error,
-          retryPolicy: retryPolicy,
-        );
-        if (shouldRetry) {
-          continue;
-        }
-        rethrow;
-      }
-    }
-  }
-
-  Future<bool> _handleFailure({
-    required TransportRequest request,
-    required TransportDiagnosticsRequestInfo requestInfo,
-    required bool isStreaming,
-    required int attempt,
-    required DateTime startedAt,
-    required Object error,
-    required TransportRetryPolicy retryPolicy,
-  }) async {
-    final finishedAt = DateTime.now();
-    _diagnosticsSupport.emit(
-      TransportDiagnosticsEvent(
-        kind: TransportDiagnosticsEventKind.requestFailure,
-        request: requestInfo,
-        response: _diagnosticsSupport.responseInfoFromError(error),
-        error: error,
-        timestamp: finishedAt,
-        duration: finishedAt.difference(startedAt),
-        attempt: attempt,
-      ),
-    );
-
-    final retryContext = TransportRetryContext(
-      request: request,
-      attempt: attempt,
-      isStreaming: isStreaming,
-      error: error,
-    );
-    if (!retryPolicy.shouldRetry(retryContext)) {
-      return false;
-    }
-
-    await _waitForRetryDelay(
-      retryPolicy.delayFor(retryContext),
-      request.cancellation,
-    );
-    return true;
-  }
-
-  TransportRetryPolicy _effectiveRetryPolicy(TransportRequest request) {
-    final maxRetries = request.maxRetries;
-    if (maxRetries == null) {
-      return _retryPolicy;
-    }
-
-    return _retryPolicy.withRequestMaxRetries(maxRetries);
-  }
-
-  Future<void> _waitForRetryDelay(
-    Duration delay,
-    TransportCancellation? cancellation,
-  ) async {
-    if (delay <= Duration.zero) {
-      cancellation?.throwIfCancelled();
-      return;
-    }
-
-    if (cancellation == null) {
-      await Future<void>.delayed(delay);
-      return;
-    }
-
-    final result = await Future.any<Object?>([
-      Future<Object?>.delayed(delay, () => _retryDelaySentinel),
-      cancellation.whenCancelled,
-    ]);
-    if (!identical(result, _retryDelaySentinel)) {
-      throw TransportCancelledException(result);
-    }
-  }
-}
-
-final class _TransportAttemptSuccess<T> {
-  final T value;
-  final TransportDiagnosticsResponseInfo response;
-
-  const _TransportAttemptSuccess({
-    required this.value,
-    required this.response,
-  });
 }
