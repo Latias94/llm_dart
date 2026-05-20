@@ -41,17 +41,3 @@ void validateOpenAIEmbeddingValueCount(
     'OpenAI embedding models support at most $maxEmbeddingsPerCall values per call.',
   );
 }
-
-Map<String, Object?> buildOpenAIEmbeddingRequestBody({
-  required String modelId,
-  required EmbedRequest request,
-  required OpenAIEmbedOptions? options,
-}) {
-  return {
-    'model': modelId,
-    'input': request.values,
-    if (request.dimensions != null) 'dimensions': request.dimensions,
-    'encoding_format': options?.encodingFormat ?? 'float',
-    if (options?.user case final user?) 'user': user,
-  };
-}

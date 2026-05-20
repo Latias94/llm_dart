@@ -3,6 +3,7 @@ import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'openai_family_profile.dart';
 import 'openai_family_url_support.dart';
+import 'openai_embedding_model_body.dart';
 import 'openai_embedding_model_request.dart';
 import 'openai_embedding_model_response.dart';
 import 'openai_embedding_model_transport.dart';
