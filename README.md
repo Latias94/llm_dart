@@ -15,21 +15,16 @@ The repository is currently on the `0.11.0-alpha.x` preview line.
 Breaking changes are still allowed before `1.0.0`, but the model-first surface
 below is the intended direction for new code.
 
-The primary entry path for new code is the short provider factory:
+The primary entry path for new code is the provider-neutral root runtime plus direct provider packages:
 
-- `openai(...).chatModel(...)`
-- `anthropic(...).chatModel(...)`
-- `google(...).chatModel(...)`
-- `deepSeek(...).chatModel(...)`
-- `groq(...).chatModel(...)`
-- `openRouter(...).chatModel(...)`
-- `xai(...).chatModel(...)`
-- `ollama(...).chatModel(...)`
-- `elevenLabs(...).speechModel(...)`
+- `package:llm_dart/llm_dart.dart` or `package:llm_dart/ai.dart` for shared helpers and contracts
+- `package:llm_dart_openai/llm_dart_openai.dart` for `openai(...)`, `deepSeek(...)`, `groq(...)`, `openRouter(...)`, and `xai(...)`
+- `package:llm_dart_anthropic/llm_dart_anthropic.dart` for `anthropic(...)`
+- `package:llm_dart_google/llm_dart_google.dart` for `google(...)`
+- `package:llm_dart_ollama/llm_dart_ollama.dart` for `ollama(...)`
+- `package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart` for `elevenLabs(...)`
 
-The equivalent grouped facade remains available as
-`AI.<provider>(...).chatModel(...)` when you prefer a single namespace, but new
-examples should teach the short factories first.
+The root package intentionally no longer re-exports concrete providers. This keeps the root Module deep and provider-neutral while provider packages remain explicit Adapters.
 
 Within this workspace, the modern shared-capability paths for Ollama and
 ElevenLabs now live in dedicated provider packages:
@@ -42,22 +37,14 @@ ElevenLabs now live in dedicated provider packages:
   `elevenLabs(...).transcriptionModel(...)`, and
   `elevenLabs(...).voices().listVoices()`
 
-For modern code, prefer `package:llm_dart/llm_dart.dart` as the default import.
-`package:llm_dart/ai.dart` remains the explicit equivalent alias when you want a
-named AI-focused shell.
+For modern code, prefer `package:llm_dart/llm_dart.dart` when you need shared helpers and contracts. Import concrete providers from their packages directly.
 
 Recommended entry flow for new code:
 
-- import `package:llm_dart/llm_dart.dart` or `package:llm_dart/ai.dart`
-- create concrete models through `openai(...).chatModel(...)`,
-  `anthropic(...).chatModel(...)`, `embeddingModel(...)`,
-  `imageModel(...)`, `speechModel(...)`, or `transcriptionModel(...)`
-- call shared helpers from the same root import or from
-  `package:llm_dart/core.dart` when you want a narrower shared-runtime import
-- add provider-owned option types, metadata inspection, or lifecycle APIs only
-  at explicit application boundaries
-- use the legacy compatibility import only when migrating older builder-era
-  code
+- import `package:llm_dart/llm_dart.dart` or `package:llm_dart/ai.dart` for shared runtime helpers
+- import one or more direct provider packages for concrete model construction
+- create concrete models through provider package factories such as `openai.openai(...).chatModel(...)`, `anthropic.anthropic(...).chatModel(...)`, `google.google(...).embeddingModel(...)`, `ollama.ollama(...)`, or `elevenlabs.elevenLabs(...)`
+- add provider-owned option types, metadata inspection, or lifecycle APIs only at explicit application boundaries
 
 Ollama and ElevenLabs capability profiles are also available through their
 dedicated packages. For app and Flutter gating, treat the current ElevenLabs
@@ -68,7 +55,7 @@ output as potentially `inferred` rather than as hard guarantees.
 ## Packages
 
 - `llm_dart`
-  - recommended root package for the stable model-first API
+  - provider-neutral root package for shared runtime helpers, contracts, chat, and transport; it does not depend on concrete providers
 - `llm_dart_provider`
   - provider-facing prompt, content, tool, model, response, and stream
     contracts
@@ -155,45 +142,21 @@ resolve unpublished workspace dependencies from this checkout.
 ## Focused Entry Points
 
 - `package:llm_dart/llm_dart.dart`
-  - default modern root entrypoint, equivalent stable surface to `ai.dart`;
-    exposes short provider factories such as `openai(...)` plus the grouped
-    `AI` facade
+  - provider-neutral root entrypoint for shared model contracts, AI helpers, chat, and transport
 - `package:llm_dart/ai.dart`
-  - explicit equivalent alias of the default modern root surface
+  - explicit equivalent provider-neutral AI shell
 - `package:llm_dart/chat.dart`
   - focused pure Dart chat runtime entrypoint over `llm_dart_chat`
-- `package:llm_dart/openai.dart`
-  - focused OpenAI-family provider entrypoint for `openai(...)`,
-    provider-owned options, native tools, and custom content/event parts
-- `package:llm_dart/xai.dart`
-  - focused xAI entrypoint for `xai(...)`, live-search options, and xAI-owned
-    source controls
-- `package:llm_dart/deepseek.dart`
-  - focused DeepSeek entrypoint for `deepSeek(...)` and DeepSeek-owned
-    invocation options
-- `package:llm_dart/openrouter.dart`
-  - focused OpenRouter entrypoint for `openRouter(...)`, online-model routing,
-    and OpenRouter-owned settings
-- `package:llm_dart/groq.dart`
-  - focused Groq entrypoint for `groq(...)` and Groq profile settings
-- `package:llm_dart/phind.dart`
-  - focused Phind entrypoint for `phind(...)` and Phind profile settings
-- `package:llm_dart/google.dart`
-  - focused Google provider entrypoint for `google(...)`, provider-owned
-    options, replay helpers, and custom content/event parts
-- `package:llm_dart/anthropic.dart`
-  - focused Anthropic provider entrypoint for `anthropic(...)` and
-    Anthropic-owned types
-- `package:llm_dart/ollama.dart`
-  - focused Ollama provider entrypoint for `ollama(...)`, local-runtime
-    options, embeddings, and installed-model catalog APIs
-- `package:llm_dart/elevenlabs.dart`
-  - focused ElevenLabs provider entrypoint for `elevenLabs(...)`, speech,
-    transcription, voice catalogs, and audio options
+- `package:llm_dart_openai/llm_dart_openai.dart`
+  - direct OpenAI-family provider package for OpenAI, xAI, DeepSeek, Groq, OpenRouter, Phind, provider-owned options, native tools, and custom parts
+- `package:llm_dart_google/llm_dart_google.dart`
+  - direct Google provider package
+- `package:llm_dart_anthropic/llm_dart_anthropic.dart`
+  - direct Anthropic provider package
 - `package:llm_dart_ollama/llm_dart_ollama.dart`
-  - direct Ollama provider package without depending on root `llm_dart`
+  - direct Ollama provider package
 - `package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart`
-  - direct ElevenLabs provider package without depending on root `llm_dart`
+  - direct ElevenLabs provider package
 - `package:llm_dart/transport.dart`
   - transport abstractions and shared logging primitives re-exported from `llm_dart_transport`
 - `package:llm_dart_transport/dio.dart`
@@ -233,9 +196,10 @@ Other shared capability helpers:
 
 ```dart
 import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 Future<void> main() async {
-  final model = llm.openai(
+  final model = openai.openai(
     apiKey: 'your-openai-key',
   ).chatModel('gpt-4.1-mini');
 
@@ -262,12 +226,15 @@ a typed model contract. Register provider facades, then resolve
 
 ```dart
 import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic;
+import 'package:llm_dart_ollama/llm_dart_ollama.dart' as ollama;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 final registry = llm.ProviderRegistry(
   providers: {
-    'openai': llm.openai(apiKey: 'your-openai-key'),
-    'anthropic': llm.anthropic(apiKey: 'your-anthropic-key'),
-    'ollama': llm.ollama(),
+    'openai': openai.openai(apiKey: 'your-openai-key'),
+    'anthropic': anthropic.anthropic(apiKey: 'your-anthropic-key'),
+    'ollama': ollama.ollama(),
   },
 );
 
@@ -306,9 +273,10 @@ and `streamObject(...)`.
 ```dart
 import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 Future<void> main() async {
-  final model = llm.openai(
+  final model = openai.openai(
     apiKey: 'your-openai-key',
   ).chatModel('gpt-4.1-mini');
 
@@ -343,9 +311,10 @@ typed capability models such as `openai(...).embeddingModel(...)`.
 ```dart
 import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 Future<void> main() async {
-  final model = llm.openai(
+  final model = openai.openai(
     apiKey: 'your-openai-key',
   ).embeddingModel('text-embedding-3-small');
 
@@ -370,9 +339,10 @@ import 'dart:io';
 
 import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 Future<void> main() async {
-  final model = llm.deepSeek(
+  final model = openai.deepSeek(
     apiKey: 'your-deepseek-key',
   ).chatModel('deepseek-reasoner');
 
@@ -413,9 +383,10 @@ re-exports them while providers map them into provider-owned request codecs.
 ```dart
 import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 Future<void> main() async {
-  final model = llm.openai(
+  final model = openai.openai(
     apiKey: 'your-openai-key',
   ).chatModel('gpt-4.1-mini');
 
@@ -495,7 +466,7 @@ import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
 
 Future<void> main() async {
-  final model = llm.anthropic(
+  final model = anthropic.anthropic(
     apiKey: 'your-anthropic-key',
   ).chatModel('claude-sonnet-4-5');
 
@@ -553,7 +524,7 @@ Future<void> main() async {
   final controller = ChatController(
     session: DefaultChatSession(
       transport: DirectChatTransport(
-        model: llm.openai(
+        model: openai.openai(
           apiKey: 'your-openai-key',
         ).chatModel('gpt-4.1-mini'),
       ),
@@ -619,12 +590,10 @@ The default recommendation is now:
 
 Focused provider custom-part helpers:
 
-- `package:llm_dart/openai.dart`
-  - `OpenAICustomPart` and `OpenAICustomPartSummary` for provider-owned custom
-    content parts and stream events
-- `package:llm_dart/google.dart`
-  - `GoogleCustomPart` and `GoogleCustomPartSummary` for provider-owned custom
-    prompt/content parts and stream events
+- `package:llm_dart_openai/llm_dart_openai.dart`
+  - `OpenAICustomPart` and `OpenAICustomPartSummary` for provider-owned custom content parts and stream events
+- `package:llm_dart_google/llm_dart_google.dart`
+  - `GoogleCustomPart` and `GoogleCustomPartSummary` for provider-owned custom prompt/content parts and stream events
 
 ```dart
 import 'package:llm_dart_flutter/llm_dart_flutter.dart';
@@ -694,17 +663,13 @@ final wrappedTransport = transport.MiddlewareTransportClient(
 The unified request shape stays small. Provider-specific features are passed through typed provider options.
 
 Import provider-owned option types and provider factories from focused
-entrypoints such as `package:llm_dart/openai.dart`,
-`package:llm_dart/xai.dart`, `package:llm_dart/openrouter.dart`,
-`package:llm_dart/deepseek.dart`, or `package:llm_dart/google.dart`.
-OpenAI-family providers still share the same internal transport adapter, but
-dedicated focused entrypoints keep application imports provider-shaped.
+direct provider packages such as `package:llm_dart_openai/llm_dart_openai.dart`, `package:llm_dart_google/llm_dart_google.dart`, or `package:llm_dart_anthropic/llm_dart_anthropic.dart`. OpenAI-family providers still share the same internal transport adapter, but application imports stay provider-shaped.
 
 OpenAI Responses example:
 
 ```dart
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/openai.dart' as openai;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 Future<void> main() async {
   final model = openai.openai(
@@ -731,7 +696,7 @@ xAI live search example:
 
 ```dart
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/xai.dart' as xai;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as xai;
 
 Future<void> main() async {
   final model = xai.xai(
@@ -806,13 +771,13 @@ The root builder-era compatibility surface has been removed. Do not import
 `package:llm_dart/models/...`, `package:llm_dart/providers/...`, or legacy
 `package:llm_dart/core/...` subpaths.
 
-Use short provider factories and focused provider entrypoints instead:
+Use direct provider packages instead:
 
 ```dart
-import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
-final model = llm.openai(apiKey: openAIKey).chatModel('gpt-4.1-mini');
+final model = openai.openai(apiKey: openAIKey).chatModel('gpt-4.1-mini');
 final result = await core.generateTextCall(
   model: model,
   messages: [

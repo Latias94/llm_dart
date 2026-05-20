@@ -1,8 +1,7 @@
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
-import 'package:llm_dart/openai.dart' as openai;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 /// OpenAI Image Generation Example
 ///
@@ -32,7 +31,7 @@ Future<void> testDALLE3Generation(String apiKey) async {
   print('🎨 DALL-E 3 Generation:');
 
   try {
-    final imageModel = llm.openai(apiKey: apiKey).imageModel('dall-e-3');
+    final imageModel = openai.openai(apiKey: apiKey).imageModel('dall-e-3');
     print('   🔍 Stable model: ${imageModel.providerId}/${imageModel.modelId}');
 
     print('\n   🖼️  Basic Generation:');
@@ -95,7 +94,7 @@ Future<void> testDALLE2Generation(String apiKey) async {
   print('🎨 DALL-E 2 Generation:');
 
   try {
-    final imageModel = llm.openai(apiKey: apiKey).imageModel('dall-e-2');
+    final imageModel = openai.openai(apiKey: apiKey).imageModel('dall-e-2');
 
     print('   🔢 Multiple Images Generation:');
     const multiPrompt =
@@ -137,7 +136,7 @@ Future<void> testImageEditingHelper(String apiKey) async {
   }
 
   try {
-    final imageModel = llm.openai(apiKey: apiKey).imageModel('gpt-image-1');
+    final imageModel = openai.openai(apiKey: apiKey).imageModel('gpt-image-1');
     final result = await imageModel.edit(
       openai.OpenAIImageEditRequest(
         prompt: 'Turn this image into a clean product hero shot.',

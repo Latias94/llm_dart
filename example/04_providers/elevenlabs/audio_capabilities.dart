@@ -3,7 +3,7 @@
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/elevenlabs.dart' as elevenlabs;
+import 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart' as elevenlabs;
 
 const _voiceId = elevenlabs.elevenLabsDefaultVoiceId;
 const _speechModelId = 'eleven_multilingual_v2';

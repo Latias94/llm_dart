@@ -2,10 +2,9 @@
 
 import 'dart:io';
 
-import 'package:llm_dart/anthropic.dart' as anthropic;
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic;
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
-import 'package:llm_dart/openai.dart' as openai;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 /// File handling has two distinct layers in the current architecture:
 /// - stable prompt-time local file parts for shared chat flows
@@ -56,7 +55,7 @@ Release Notes Draft
 
   try {
     final fileBytes = await sampleFile.readAsBytes();
-    final model = llm.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
+    final model = openai.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
 
     final result = await core.generateTextCall(
       model: model,
@@ -98,7 +97,7 @@ assistant resources, or provider-managed retrieval workflows.
 ''',
   );
 
-  final fileClient = llm.openai(apiKey: apiKey).files();
+  final fileClient = openai.openai(apiKey: apiKey).files();
 
   openai.OpenAIFileObject? uploadedFile;
 
@@ -149,7 +148,7 @@ Keep the integration boundary explicit in application code.
 ''',
   );
 
-  final fileClient = llm.anthropic(apiKey: apiKey).files();
+  final fileClient = anthropic.anthropic(apiKey: apiKey).files();
 
   anthropic.AnthropicFileDescriptor? uploadedFile;
 

@@ -3,8 +3,7 @@
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
-import 'package:llm_dart/openai.dart' as openai;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 /// GPT-5 examples built on the stable OpenAI chat-model facade plus typed
 /// OpenAI provider options.
@@ -129,7 +128,7 @@ Future<void> compareModelVariants(String apiKey) async {
 }
 
 core.LanguageModel _createModel(String apiKey, String modelId) {
-  return llm
+  return openai
       .openai(
         apiKey: apiKey,
       )

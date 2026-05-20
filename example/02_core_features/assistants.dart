@@ -3,8 +3,7 @@
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
-import 'package:llm_dart/openai.dart' as openai;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 /// Assistants remain a provider-owned lifecycle boundary.
 ///
@@ -34,7 +33,7 @@ Future<void> main() async {
 Future<void> demonstrateStableAssistantLikePath(String apiKey) async {
   print('=== Stable Assistant-Like Path ===\n');
 
-  final model = llm.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
+  final model = openai.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
   final result = await core.generateTextCall(
     model: model,
     messages: [

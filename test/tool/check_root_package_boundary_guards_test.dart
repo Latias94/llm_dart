@@ -18,7 +18,8 @@ void main() {
       );
     });
 
-    test('passes when root is only the modern facade shell', () async {
+    test('passes when root is only the provider-neutral facade shell',
+        () async {
       final repoRoot = await _createTempRootLayout();
       addTearDown(() async {
         if (repoRoot.existsSync()) {
@@ -70,7 +71,7 @@ void main() {
         result.violations,
         contains(
           contains(
-            'unexpected top-level directories: builder, core, models, providers',
+            'unexpected top-level directories: builder, core, models, providers, src',
           ),
         ),
       );
@@ -119,7 +120,9 @@ void main() {
       );
       expect(
         result.violations,
-        contains(contains('lib/: unexpected top-level directories: utils')),
+        contains(
+          contains('lib/: unexpected top-level directories: src, utils'),
+        ),
       );
       expect(
         result.violations,
@@ -139,7 +142,7 @@ void main() {
 
       await _writeFile(
         repoRoot,
-        'lib/openai.dart',
+        'lib/ai.dart',
         '''
 library;
 
@@ -221,12 +224,12 @@ export 'package:llm_dart_chat/llm_dart_chat.dart';
       expect(
         result.violations,
         contains(
-          contains('modern aggregator entrypoint must only compose stable'),
+          contains('modern aggregator entrypoint must only compose the stable'),
         ),
       );
     });
 
-    test('reports widened focused provider entrypoints', () async {
+    test('reports deleted root provider entrypoints if they return', () async {
       final repoRoot = await _createTempRootLayout();
       addTearDown(() async {
         if (repoRoot.existsSync()) {
@@ -253,7 +256,7 @@ export 'package:llm_dart_openai/llm_dart_openai.dart';
         result.violations,
         contains(
           contains(
-            'focused root entrypoint must only export its package-owned surface',
+            'unexpected top-level public entry files: openai.dart',
           ),
         ),
       );
@@ -339,7 +342,7 @@ export 'package:llm_dart_chat/llm_dart_chat.dart';
 
       await _writeFile(
         repoRoot,
-        'lib/openai.dart',
+        'lib/ai.dart',
         '''
 library;
 
@@ -370,7 +373,7 @@ final class RootImplementation {}
 
       await _writeFile(
         repoRoot,
-        'lib/openai.dart',
+        'lib/ai.dart',
         '''
 library;
 
@@ -439,7 +442,7 @@ Future<Directory> _createTempRootLayout() async {
   );
 
   await Directory(
-    '${repoRoot.path}${Platform.pathSeparator}lib${Platform.pathSeparator}src${Platform.pathSeparator}facade',
+    '${repoRoot.path}${Platform.pathSeparator}lib',
   ).create(recursive: true);
 
   await _writeFile(
@@ -458,16 +461,8 @@ export 'ai.dart';
     '''
 library;
 
-export 'package:llm_dart_ai/llm_dart_ai.dart';
-
-export 'anthropic.dart';
 export 'core.dart';
-export 'elevenlabs.dart';
-export 'google.dart';
-export 'ollama.dart';
-export 'openai.dart';
 export 'transport.dart';
-export 'src/facade/ai.dart' show AI, anthropic, deepSeek, elevenLabs, google, groq, ollama, openRouter, openai, phind, xai;
 ''',
   );
 
@@ -501,125 +496,10 @@ library;
 export 'core.dart';
 export 'transport.dart';
 export 'package:llm_dart_chat/llm_dart_chat.dart';
-export 'src/facade/ai.dart' show anthropic, deepSeek, google, groq, openRouter, openai, phind, xai;
 ''',
   );
-
-  await _writeFocusedProviderEntrypoints(repoRoot);
 
   return repoRoot;
-}
-
-Future<void> _writeFocusedProviderEntrypoints(Directory repoRoot) async {
-  await _writeFile(
-    repoRoot,
-    'lib/anthropic.dart',
-    '''
-library;
-
-export 'package:llm_dart_anthropic/llm_dart_anthropic.dart' hide anthropic;
-export 'src/facade/ai.dart' show anthropic;
-''',
-  );
-
-  await _writeFile(
-    repoRoot,
-    'lib/google.dart',
-    '''
-library;
-
-export 'package:llm_dart_google/llm_dart_google.dart' hide google;
-export 'src/facade/ai.dart' show google;
-''',
-  );
-
-  await _writeFile(
-    repoRoot,
-    'lib/elevenlabs.dart',
-    '''
-library;
-
-export 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart' hide elevenLabs;
-export 'src/facade/ai.dart' show elevenLabs;
-''',
-  );
-
-  await _writeFile(
-    repoRoot,
-    'lib/ollama.dart',
-    '''
-library;
-
-export 'package:llm_dart_ollama/llm_dart_ollama.dart' hide ollama;
-export 'src/facade/ai.dart' show ollama;
-''',
-  );
-
-  await _writeFile(
-    repoRoot,
-    'lib/openai.dart',
-    '''
-library;
-
-export 'package:llm_dart_openai/llm_dart_openai.dart' hide deepSeek, groq, openRouter, openai, phind, xai;
-export 'src/facade/ai.dart' show openai;
-''',
-  );
-
-  await _writeFile(
-    repoRoot,
-    'lib/groq.dart',
-    '''
-library;
-
-export 'package:llm_dart_openai/llm_dart_openai.dart' show GroqProfile, OpenAI, OpenAIChatModelSettings, OpenAIGenerateTextOptions, OpenAILanguageModel;
-export 'src/facade/ai.dart' show groq;
-''',
-  );
-
-  await _writeFile(
-    repoRoot,
-    'lib/phind.dart',
-    '''
-library;
-
-export 'package:llm_dart_openai/llm_dart_openai.dart' show OpenAI, OpenAIChatModelSettings, OpenAIGenerateTextOptions, OpenAILanguageModel, PhindProfile;
-export 'src/facade/ai.dart' show phind;
-''',
-  );
-
-  await _writeFile(
-    repoRoot,
-    'lib/xai.dart',
-    '''
-library;
-
-export 'package:llm_dart_openai/llm_dart_openai.dart' show OpenAI, OpenAIChatModelSettings, OpenAIGenerateTextOptions, OpenAILanguageModel, XAIProfile, XAIGenerateTextOptions, XAILiveSearchOptions, XAINewsSearchSource, XAIRssSearchSource, XAISearchMode, XAISearchSource, XAIWebSearchSource, XAIXSearchSource;
-export 'src/facade/ai.dart' show xai;
-''',
-  );
-
-  await _writeFile(
-    repoRoot,
-    'lib/deepseek.dart',
-    '''
-library;
-
-export 'package:llm_dart_openai/llm_dart_openai.dart' show DeepSeekGenerateTextOptions, DeepSeekProfile, OpenAI, OpenAIChatModelSettings, OpenAIGenerateTextOptions, OpenAILanguageModel;
-export 'src/facade/ai.dart' show deepSeek;
-''',
-  );
-
-  await _writeFile(
-    repoRoot,
-    'lib/openrouter.dart',
-    '''
-library;
-
-export 'package:llm_dart_openai/llm_dart_openai.dart' show OpenAI, OpenAIChatModelSettings, OpenAIGenerateTextOptions, OpenAILanguageModel, OpenRouterChatModelSettings, OpenRouterGenerateTextOptions, OpenRouterProfile, OpenRouterSearchMode, OpenRouterSearchOptions;
-export 'src/facade/ai.dart' show openRouter;
-''',
-  );
 }
 
 Future<void> _writeFile(

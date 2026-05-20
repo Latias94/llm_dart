@@ -2,8 +2,7 @@
 
 import 'dart:io';
 
-import 'package:llm_dart/llm_dart.dart' as llm;
-import 'package:llm_dart/openai.dart' as openai;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 /// Moderation remains a provider-owned surface.
 ///
@@ -20,7 +19,7 @@ Future<void> main() async {
     return;
   }
 
-  final moderationClient = llm.openai(apiKey: apiKey).moderation(
+  final moderationClient = openai.openai(apiKey: apiKey).moderation(
         settings: const openai.OpenAIModerationSettings(
           defaultModel: 'omni-moderation-latest',
         ),

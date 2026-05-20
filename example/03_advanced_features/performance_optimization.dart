@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 /// Stable performance optimization patterns for shared language models.
 ///
@@ -53,7 +53,7 @@ _TextModelEntry? _resolveBalancedModel() {
   if (openAIKey != null && openAIKey.isNotEmpty) {
     return _TextModelEntry(
       label: 'OpenAI gpt-4o-mini',
-      model: llm
+      model: openai
           .openai(
             apiKey: openAIKey,
           )
@@ -69,7 +69,7 @@ _TextModelEntry? _resolveBalancedModel() {
   if (groqKey != null && groqKey.isNotEmpty) {
     return _TextModelEntry(
       label: 'Groq llama-3.1-8b-instant',
-      model: llm
+      model: openai
           .groq(
             apiKey: groqKey,
           )
@@ -89,7 +89,7 @@ _TextModelEntry? _resolveStreamingModel(_TextModelEntry? fallback) {
   if (groqKey != null && groqKey.isNotEmpty) {
     return _TextModelEntry(
       label: 'Groq llama-3.1-8b-instant',
-      model: llm
+      model: openai
           .groq(
             apiKey: groqKey,
           )

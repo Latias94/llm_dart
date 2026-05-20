@@ -1,8 +1,8 @@
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 Future<void> main() async {
-  final model = llm
+  final model = openai
       .openai(
         apiKey: 'your-openai-key',
       )

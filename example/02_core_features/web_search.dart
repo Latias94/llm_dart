@@ -2,12 +2,11 @@
 
 import 'dart:io';
 
-import 'package:llm_dart/anthropic.dart' as anthropic;
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic;
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
-import 'package:llm_dart/openai.dart' as openai;
-import 'package:llm_dart/openrouter.dart' as openrouter;
-import 'package:llm_dart/xai.dart' as xai;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openrouter;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as xai;
 
 /// Stable web-search examples built on the shared text-call layer.
 ///
@@ -59,7 +58,7 @@ Future<void> runOpenAISearch(String? apiKey) async {
     return;
   }
 
-  final model = llm.openai(apiKey: apiKey).chatModel('gpt-5-mini');
+  final model = openai.openai(apiKey: apiKey).chatModel('gpt-5-mini');
 
   await runSearchCase(
     label: 'OpenAI Responses web search',
@@ -80,7 +79,8 @@ Future<void> runAnthropicSearch(String? apiKey) async {
     return;
   }
 
-  final model = llm.anthropic(apiKey: apiKey).chatModel('claude-sonnet-4-5');
+  final model =
+      anthropic.anthropic(apiKey: apiKey).chatModel('claude-sonnet-4-5');
 
   await runSearchCase(
     label: 'Anthropic native web search',
@@ -110,7 +110,7 @@ Future<void> runXAISearch(String? apiKey) async {
     return;
   }
 
-  final model = llm.xai(apiKey: apiKey).chatModel('grok-3');
+  final model = openai.xai(apiKey: apiKey).chatModel('grok-3');
 
   await runSearchCase(
     label: 'xAI live search',
@@ -137,7 +137,7 @@ Future<void> runOpenRouterSearch(String? apiKey) async {
     return;
   }
 
-  final model = llm
+  final model = openai
       .openRouter(
         apiKey: apiKey,
       )

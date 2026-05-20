@@ -2,11 +2,10 @@
 
 Practical examples for the LLM Dart library, organized by learning path and use case.
 
-For modern examples, the default root import is
-`package:llm_dart/llm_dart.dart`.
+For modern examples, use `package:llm_dart/llm_dart.dart` for shared helpers and import concrete provider packages directly.
 
 When you need runtime provider selection, use `ProviderRegistry` with provider
-facades from `package:llm_dart/llm_dart.dart`. `ModelRegistry` remains a
+facades from direct provider packages. `ModelRegistry` remains a
 low-level compatibility factory registry for custom adapters. When you need
 structured JSON as a first-class app result, prefer `generateObject(...)` and
 `streamObject(...)` over the lower-level structured-output helpers.
@@ -114,8 +113,8 @@ provider directories are explicit boundary appendices.
 Most provider directories now follow one of two roles:
 
 - stable model examples for providers that already have short provider
-  factories such as `openai(...)` or focused provider entrypoints such as
-  `package:llm_dart/openai.dart`
+  factories such as `openai(...)` or direct provider packages such as
+  `package:llm_dart_openai/llm_dart_openai.dart`
 - compatibility or provider-specific residual examples for broader legacy shells
 
 Ollama and ElevenLabs now also have modern shared-capability surfaces in the

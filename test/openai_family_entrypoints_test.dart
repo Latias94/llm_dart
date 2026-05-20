@@ -1,65 +1,61 @@
-import 'package:llm_dart/deepseek.dart' as deepseek;
-import 'package:llm_dart/groq.dart' as groq;
-import 'package:llm_dart/openrouter.dart' as openrouter;
-import 'package:llm_dart/phind.dart' as phind;
-import 'package:llm_dart/xai.dart' as xai;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 import 'package:test/test.dart';
 
 void main() {
-  group('OpenAI-family focused entrypoints', () {
+  group('OpenAI-family package entrypoints', () {
     test('xAI entrypoint exposes xAI facade and typed options', () {
-      final provider = xai.xai(apiKey: 'test-key');
+      final provider = openai.xai(apiKey: 'test-key');
       final model = provider.chatModel(
         'grok-3',
-        settings: const xai.OpenAIChatModelSettings(
+        settings: const openai.OpenAIChatModelSettings(
           headers: {'X-Test': 'xai'},
         ),
       );
-      const options = xai.XAIGenerateTextOptions(
-        search: xai.XAILiveSearchOptions.autoWeb(maxSearchResults: 4),
+      const options = openai.XAIGenerateTextOptions(
+        search: openai.XAILiveSearchOptions.autoWeb(maxSearchResults: 4),
       );
 
-      expect(provider.profile, isA<xai.XAIProfile>());
+      expect(provider.profile, isA<openai.XAIProfile>());
       expect(model.providerId, 'xai');
       expect(options.search?.maxSearchResults, 4);
     });
 
     test('DeepSeek entrypoint exposes DeepSeek facade and typed options', () {
-      final provider = deepseek.deepSeek(apiKey: 'test-key');
+      final provider = openai.deepSeek(apiKey: 'test-key');
       final model = provider.chatModel(
         'deepseek-reasoner',
-        settings: const deepseek.OpenAIChatModelSettings(
+        settings: const openai.OpenAIChatModelSettings(
           headers: {'X-Test': 'deepseek'},
         ),
       );
-      const options = deepseek.DeepSeekGenerateTextOptions(
+      const options = openai.DeepSeekGenerateTextOptions(
         logprobs: true,
         topLogprobs: 3,
       );
 
-      expect(provider.profile, isA<deepseek.DeepSeekProfile>());
+      expect(provider.profile, isA<openai.DeepSeekProfile>());
       expect(model.providerId, 'deepseek');
       expect(options.topLogprobs, 3);
     });
 
     test('OpenRouter entrypoint exposes OpenRouter facade and typed settings',
         () {
-      final provider = openrouter.openRouter(
+      final provider = openai.openRouter(
         apiKey: 'test-key',
         appReferer: 'https://example.com',
         appTitle: 'Example App',
       );
       final model = provider.chatModel(
         'openai/gpt-4o-mini',
-        settings: const openrouter.OpenRouterChatModelSettings(
-          search: openrouter.OpenRouterSearchOptions.onlineModel(),
+        settings: const openai.OpenRouterChatModelSettings(
+          search: openai.OpenRouterSearchOptions.onlineModel(),
         ),
       );
-      const options = openrouter.OpenRouterGenerateTextOptions(
-        search: openrouter.OpenRouterSearchOptions.onlineModel(),
+      const options = openai.OpenRouterGenerateTextOptions(
+        search: openai.OpenRouterSearchOptions.onlineModel(),
       );
 
-      expect(provider.profile, isA<openrouter.OpenRouterProfile>());
+      expect(provider.profile, isA<openai.OpenRouterProfile>());
       expect(model.providerId, 'openrouter');
       expect(
         model.defaultHeaders,
@@ -69,32 +65,32 @@ void main() {
         model.defaultHeaders,
         containsPair('X-OpenRouter-Title', 'Example App'),
       );
-      expect(options.search, isA<openrouter.OpenRouterSearchOptions>());
+      expect(options.search, isA<openai.OpenRouterSearchOptions>());
     });
 
     test('Groq entrypoint exposes Groq facade and common settings', () {
-      final provider = groq.groq(apiKey: 'test-key');
+      final provider = openai.groq(apiKey: 'test-key');
       final model = provider.chatModel(
         'llama-3.3-70b-versatile',
-        settings: const groq.OpenAIChatModelSettings(
+        settings: const openai.OpenAIChatModelSettings(
           headers: {'X-Test': 'groq'},
         ),
       );
 
-      expect(provider.profile, isA<groq.GroqProfile>());
+      expect(provider.profile, isA<openai.GroqProfile>());
       expect(model.providerId, 'groq');
     });
 
     test('Phind entrypoint exposes Phind facade and common settings', () {
-      final provider = phind.phind(apiKey: 'test-key');
+      final provider = openai.phind(apiKey: 'test-key');
       final model = provider.chatModel(
         'Phind-70B',
-        settings: const phind.OpenAIChatModelSettings(
+        settings: const openai.OpenAIChatModelSettings(
           headers: {'X-Test': 'phind'},
         ),
       );
 
-      expect(provider.profile, isA<phind.PhindProfile>());
+      expect(provider.profile, isA<openai.PhindProfile>());
       expect(model.providerId, 'phind');
     });
   });

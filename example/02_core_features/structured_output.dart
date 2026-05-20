@@ -3,7 +3,8 @@
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart_google/llm_dart_google.dart' as google;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 Future<void> main() async {
   print('Structured Output\n');
@@ -23,7 +24,7 @@ Future<void> runOpenAIObjectExample() async {
     return;
   }
 
-  final model = llm.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
+  final model = openai.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
   try {
     final result = await core.generateObject<PersonSummary>(
       model: model,
@@ -69,7 +70,7 @@ Future<void> runOpenAIStreamingObjectExample() async {
     return;
   }
 
-  final model = llm.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
+  final model = openai.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
   try {
     final streamResult = core.streamObject<PersonSummary>(
       model: model,
@@ -119,7 +120,7 @@ Future<void> runOpenAIArrayExample() async {
     return;
   }
 
-  final model = llm.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
+  final model = openai.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
   try {
     final result = await core.generateTextCall<List<String>>(
       model: model,
@@ -154,7 +155,7 @@ Future<void> runOpenAIStreamingArrayExample() async {
     return;
   }
 
-  final model = llm.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
+  final model = openai.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
   try {
     final streamResult = core.streamTextCall<List<String>>(
       model: model,
@@ -190,7 +191,7 @@ Future<void> runGoogleChoiceExample() async {
     return;
   }
 
-  final model = llm.google(apiKey: apiKey).chatModel('gemini-2.5-flash');
+  final model = google.google(apiKey: apiKey).chatModel('gemini-2.5-flash');
   try {
     final result = await core.generateTextCall<String>(
       model: model,

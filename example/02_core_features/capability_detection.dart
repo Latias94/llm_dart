@@ -2,10 +2,10 @@
 
 import 'dart:io';
 
-import 'package:llm_dart/anthropic.dart' as anthropic;
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic;
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/google.dart' as google;
-import 'package:llm_dart/openai.dart' as openai;
+import 'package:llm_dart_google/llm_dart_google.dart' as google;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 const _stableExecutionCallOptions = core.CallOptions(
   timeout: Duration(seconds: 20),

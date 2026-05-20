@@ -4,6 +4,8 @@ import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 const _demoCallOptions = core.CallOptions(
   timeout: Duration(seconds: 20),
@@ -56,12 +58,12 @@ Map<String, core.LanguageModel> createModelsByProvider() {
   final openAIKey = Platform.environment['OPENAI_API_KEY'];
   if (openAIKey != null && openAIKey.isNotEmpty) {
     modelsByProvider['OpenAI'] =
-        llm.openai(apiKey: openAIKey).chatModel('gpt-4.1-mini');
+        openai.openai(apiKey: openAIKey).chatModel('gpt-4.1-mini');
   }
 
   final anthropicKey = Platform.environment['ANTHROPIC_API_KEY'];
   if (anthropicKey != null && anthropicKey.isNotEmpty) {
-    modelsByProvider['Anthropic'] = llm
+    modelsByProvider['Anthropic'] = anthropic
         .anthropic(
           apiKey: anthropicKey,
         )
@@ -70,7 +72,7 @@ Map<String, core.LanguageModel> createModelsByProvider() {
 
   final groqKey = Platform.environment['GROQ_API_KEY'];
   if (groqKey != null && groqKey.isNotEmpty) {
-    modelsByProvider['Groq'] = llm
+    modelsByProvider['Groq'] = openai
         .groq(
           apiKey: groqKey,
         )
@@ -79,7 +81,7 @@ Map<String, core.LanguageModel> createModelsByProvider() {
 
   final deepSeekKey = Platform.environment['DEEPSEEK_API_KEY'];
   if (deepSeekKey != null && deepSeekKey.isNotEmpty) {
-    modelsByProvider['DeepSeek'] = llm
+    modelsByProvider['DeepSeek'] = openai
         .deepSeek(
           apiKey: deepSeekKey,
         )
@@ -88,7 +90,7 @@ Map<String, core.LanguageModel> createModelsByProvider() {
 
   final xaiKey = Platform.environment['XAI_API_KEY'];
   if (xaiKey != null && xaiKey.isNotEmpty) {
-    modelsByProvider['xAI'] = llm.xai(apiKey: xaiKey).chatModel('grok-3');
+    modelsByProvider['xAI'] = openai.xai(apiKey: xaiKey).chatModel('grok-3');
   }
 
   return modelsByProvider;
@@ -258,27 +260,27 @@ Map<String, llm.Provider> createRegistryProviders() {
 
   final openAIKey = Platform.environment['OPENAI_API_KEY'];
   if (openAIKey != null && openAIKey.isNotEmpty) {
-    providers['openai'] = llm.openai(apiKey: openAIKey);
+    providers['openai'] = openai.openai(apiKey: openAIKey);
   }
 
   final anthropicKey = Platform.environment['ANTHROPIC_API_KEY'];
   if (anthropicKey != null && anthropicKey.isNotEmpty) {
-    providers['anthropic'] = llm.anthropic(apiKey: anthropicKey);
+    providers['anthropic'] = anthropic.anthropic(apiKey: anthropicKey);
   }
 
   final groqKey = Platform.environment['GROQ_API_KEY'];
   if (groqKey != null && groqKey.isNotEmpty) {
-    providers['groq'] = llm.groq(apiKey: groqKey);
+    providers['groq'] = openai.groq(apiKey: groqKey);
   }
 
   final deepSeekKey = Platform.environment['DEEPSEEK_API_KEY'];
   if (deepSeekKey != null && deepSeekKey.isNotEmpty) {
-    providers['deepseek'] = llm.deepSeek(apiKey: deepSeekKey);
+    providers['deepseek'] = openai.deepSeek(apiKey: deepSeekKey);
   }
 
   final xaiKey = Platform.environment['XAI_API_KEY'];
   if (xaiKey != null && xaiKey.isNotEmpty) {
-    providers['xai'] = llm.xai(apiKey: xaiKey);
+    providers['xai'] = openai.xai(apiKey: xaiKey);
   }
 
   return providers;

@@ -2,12 +2,12 @@
 
 import 'dart:io';
 
-import 'package:llm_dart/anthropic.dart' as anthropic;
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic;
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/elevenlabs.dart' as elevenlabs;
-import 'package:llm_dart/google.dart' as google;
-import 'package:llm_dart/ollama.dart' as ollama;
-import 'package:llm_dart/openai.dart' as openai;
+import 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart' as elevenlabs;
+import 'package:llm_dart_google/llm_dart_google.dart' as google;
+import 'package:llm_dart_ollama/llm_dart_ollama.dart' as ollama;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 /// Model discovery has two separate roles:
 /// - app-facing inspection of concrete model capability profiles

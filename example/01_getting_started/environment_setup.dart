@@ -1,7 +1,8 @@
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic;
 
 /// Environment setup and configuration examples
 ///
@@ -70,7 +71,7 @@ Future<void> demonstrateEnvironmentVariables() async {
     final openaiKey = Platform.environment['OPENAI_API_KEY'];
     if (openaiKey != null) {
       final openaiModel =
-          llm.openai(apiKey: openaiKey).chatModel('gpt-4.1-mini');
+          openai.openai(apiKey: openaiKey).chatModel('gpt-4.1-mini');
       print('      ✅ OpenAI model configured (${openaiModel.runtimeType})');
     } else {
       print('      ⚠️  OpenAI: Set OPENAI_API_KEY environment variable');
@@ -79,7 +80,7 @@ Future<void> demonstrateEnvironmentVariables() async {
     // Anthropic example
     final anthropicKey = Platform.environment['ANTHROPIC_API_KEY'];
     if (anthropicKey != null) {
-      final anthropicModel = llm
+      final anthropicModel = anthropic
           .anthropic(
             apiKey: anthropicKey,
           )
@@ -520,7 +521,7 @@ core.LanguageModel? createModelForEnvironment(String environment) {
   final apiKey = Platform.environment['OPENAI_API_KEY'];
   if (apiKey == null) return null;
 
-  return llm
+  return openai
       .openai(
         apiKey: apiKey,
       )

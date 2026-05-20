@@ -3,9 +3,10 @@
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/transport.dart' as transport;
 import 'package:llm_dart_transport/dio.dart' as dio;
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 const _openAIBaseUrl = 'https://api.openai.com/v1';
 const _anthropicBaseUrl = 'https://api.anthropic.com/v1';
@@ -80,7 +81,7 @@ Future<void> demonstrateBasicLayeredConfig(String apiKey) async {
 
   try {
     final result = await _runPrompt(
-      model: llm
+      model: openai
           .openai(
             apiKey: apiKey,
             transport: _transportFromConfig(
@@ -119,7 +120,7 @@ Future<void> demonstrateAdvancedLayeredConfig(String apiKey) async {
 
   try {
     final result = await _runPrompt(
-      model: llm
+      model: anthropic
           .anthropic(
             apiKey: apiKey,
             transport: _transportFromConfig(
@@ -196,7 +197,7 @@ Future<void> demonstrateCustomDioClient(String apiKey) async {
       ),
     );
 
-    final model = llm
+    final model = anthropic
         .anthropic(
           apiKey: apiKey,
           transport: transport.DioTransportClient(dio: customDio),
@@ -230,7 +231,7 @@ Future<void> demonstrateTimeoutPriorityInLayeredConfig(String apiKey) async {
     receiveTimeout: Duration(minutes: 5),
   );
 
-  final model = llm
+  final model = openai
       .deepSeek(
         apiKey: apiKey,
         transport: _transportFromConfig(

@@ -3,6 +3,9 @@
 import 'dart:io';
 
 import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic;
+import 'package:llm_dart_google/llm_dart_google.dart' as google;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 Future<void> main() async {
   print('Quick Start\n');
@@ -19,7 +22,7 @@ Future<void> runOpenAIExample() async {
     return;
   }
 
-  final model = llm.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
+  final model = openai.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
   final result = await llm.generateTextCall(
     model: model,
     messages: [
@@ -40,7 +43,8 @@ Future<void> runAnthropicExample() async {
     return;
   }
 
-  final model = llm.anthropic(apiKey: apiKey).chatModel('claude-sonnet-4-5');
+  final model =
+      anthropic.anthropic(apiKey: apiKey).chatModel('claude-sonnet-4-5');
   final result = await llm.generateTextCall(
     model: model,
     messages: [
@@ -60,7 +64,7 @@ Future<void> runGoogleExample() async {
     return;
   }
 
-  final model = llm.google(apiKey: apiKey).chatModel('gemini-2.5-flash');
+  final model = google.google(apiKey: apiKey).chatModel('gemini-2.5-flash');
   final result = await llm.generateTextCall(
     model: model,
     messages: [

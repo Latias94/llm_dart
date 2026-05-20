@@ -3,8 +3,8 @@
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/transport.dart' as transport;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 const _openAIBaseUrl = 'https://api.openai.com/v1';
 const _modelId = 'gpt-4.1-mini';
@@ -205,7 +205,7 @@ core.LanguageModel _openAIModel(
     logger: transport.Logger('timeout_configuration'),
   );
 
-  return llm
+  return openai
       .openai(
         apiKey: apiKey,
         transport: transport.DioTransportClient(dio: dioClient),

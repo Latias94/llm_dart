@@ -1,8 +1,7 @@
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
-import 'package:llm_dart/openai.dart' as openai;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 /// OpenAI Audio Models Example
 ///
@@ -18,8 +17,9 @@ Future<void> main() async {
 
   print('🤖 OpenAI Audio Models Demo\n');
 
-  final speechModel = llm.openai(apiKey: apiKey).speechModel('gpt-4o-mini-tts');
-  final transcriptionModel = llm
+  final speechModel =
+      openai.openai(apiKey: apiKey).speechModel('gpt-4o-mini-tts');
+  final transcriptionModel = openai
       .openai(
         apiKey: apiKey,
       )

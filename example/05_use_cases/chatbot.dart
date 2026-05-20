@@ -3,7 +3,7 @@
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 /// Complete chatbot example built on the stable model API.
 Future<void> main() async {
@@ -31,7 +31,7 @@ Future<void> main() async {
 core.LanguageModel? _resolveChatModel() {
   final groqKey = Platform.environment['GROQ_API_KEY'];
   if (groqKey != null && groqKey.isNotEmpty) {
-    return llm
+    return openai
         .groq(
           apiKey: groqKey,
         )
@@ -40,7 +40,7 @@ core.LanguageModel? _resolveChatModel() {
 
   final openaiKey = Platform.environment['OPENAI_API_KEY'];
   if (openaiKey != null && openaiKey.isNotEmpty) {
-    return llm
+    return openai
         .openai(
           apiKey: openaiKey,
         )

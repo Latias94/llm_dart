@@ -4,8 +4,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
-import 'package:llm_dart/openai.dart' as openai;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 import 'package:llm_dart_provider/llm_dart_provider.dart' as provider;
 
 /// Stable-first advanced tool calling examples.
@@ -27,7 +26,7 @@ Future<void> main() async {
     return;
   }
 
-  final model = llm.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
+  final model = openai.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
 
   await demonstrateNestedToolReplay(model);
   await demonstrateProviderOwnedToolControls(model);

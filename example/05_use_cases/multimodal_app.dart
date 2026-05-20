@@ -2,7 +2,7 @@
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 /// 🎭 Multimodal Application - Text, Image, and Audio Processing
 ///
@@ -118,13 +118,13 @@ EXAMPLES:
       final openaiKey = Platform.environment['OPENAI_API_KEY'];
 
       if (groqKey != null && groqKey.isNotEmpty) {
-        _chatModel = llm
+        _chatModel = openai
             .groq(
               apiKey: groqKey,
             )
             .chatModel('llama-3.3-70b-versatile');
       } else if (openaiKey != null && openaiKey.isNotEmpty) {
-        _chatModel = llm
+        _chatModel = openai
             .openai(
               apiKey: openaiKey,
             )
@@ -143,7 +143,7 @@ EXAMPLES:
 
       if (openaiKey != null && openaiKey.isNotEmpty) {
         try {
-          _imageModel = llm
+          _imageModel = openai
               .openai(
                 apiKey: openaiKey,
               )
@@ -160,7 +160,7 @@ EXAMPLES:
         }
 
         try {
-          _speechModel = llm
+          _speechModel = openai
               .openai(
                 apiKey: openaiKey,
               )

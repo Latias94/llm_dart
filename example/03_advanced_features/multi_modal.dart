@@ -4,8 +4,9 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart' as elevenlabs_pkg;
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 /// Stable multimodal processing examples built on shared prompt parts and
 /// shared media helpers.
@@ -42,7 +43,7 @@ Future<void> main() async {
 Future<void> demonstrateImageAnalysis(String apiKey) async {
   print('Image analysis:');
 
-  final model = llm
+  final model = openai
       .openai(
         apiKey: apiKey,
       )
@@ -116,7 +117,7 @@ Future<void> demonstrateImageAnalysis(String apiKey) async {
 Future<void> demonstrateImageGeneration(String apiKey) async {
   print('Image generation:');
 
-  final model = llm
+  final model = openai
       .openai(
         apiKey: apiKey,
       )
@@ -151,12 +152,12 @@ Future<void> demonstrateAudioProcessing(
 ) async {
   print('Audio processing:');
 
-  final speechModel = llm
+  final speechModel = openai
       .openai(
         apiKey: openAIKey,
       )
       .speechModel('gpt-4o-mini-tts');
-  final transcriptionModel = llm
+  final transcriptionModel = openai
       .openai(
         apiKey: openAIKey,
       )
@@ -207,13 +208,13 @@ Future<void> demonstrateDocumentProcessing(
 
   final core.LanguageModel model;
   if (anthropicKey != null && anthropicKey.isNotEmpty) {
-    model = llm
+    model = anthropic
         .anthropic(
           apiKey: anthropicKey,
         )
         .chatModel('claude-sonnet-4-5');
   } else {
-    model = llm
+    model = openai
         .openai(
           apiKey: openAIKey,
         )
@@ -277,7 +278,7 @@ Recommendations:
 Future<void> demonstrateMultiModalConversation(String apiKey) async {
   print('Multi-modal conversation:');
 
-  final model = llm
+  final model = openai
       .openai(
         apiKey: apiKey,
       )

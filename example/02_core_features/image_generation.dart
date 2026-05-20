@@ -3,9 +3,8 @@
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/google.dart' as google;
-import 'package:llm_dart/llm_dart.dart' as llm;
-import 'package:llm_dart/openai.dart' as openai;
+import 'package:llm_dart_google/llm_dart_google.dart' as google;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 /// Stable image generation example across OpenAI and Google image models.
 ///
@@ -41,7 +40,7 @@ List<_ImageDemoEntry> _collectImageModels() {
     entries.add(
       _ImageDemoEntry(
         label: 'OpenAI DALL-E 3',
-        model: llm
+        model: openai
             .openai(
               apiKey: openAIKey,
             )
@@ -66,7 +65,7 @@ List<_ImageDemoEntry> _collectImageModels() {
     entries.add(
       _ImageDemoEntry(
         label: 'Google Gemini Image',
-        model: llm
+        model: google
             .google(
               apiKey: googleKey,
             )

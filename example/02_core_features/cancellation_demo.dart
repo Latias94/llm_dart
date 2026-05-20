@@ -4,8 +4,8 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/transport.dart' as transport;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 Future<void> main() async {
   final apiKey = Platform.environment['OPENAI_API_KEY'];
@@ -14,7 +14,7 @@ Future<void> main() async {
     return;
   }
 
-  final model = llm.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
+  final model = openai.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
 
   print('Cancellation with the stable shared text-call surface.\n');
 

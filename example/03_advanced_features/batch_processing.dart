@@ -3,7 +3,7 @@ import 'dart:collection';
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 /// Stable batch processing patterns for shared text-generation models.
 ///
@@ -47,7 +47,7 @@ _BatchModelEntry? _resolveBatchModel() {
   if (groqKey != null && groqKey.isNotEmpty) {
     return _BatchModelEntry(
       label: 'Groq llama-3.1-8b-instant',
-      model: llm
+      model: openai
           .groq(
             apiKey: groqKey,
           )
@@ -63,7 +63,7 @@ _BatchModelEntry? _resolveBatchModel() {
   if (openAIKey != null && openAIKey.isNotEmpty) {
     return _BatchModelEntry(
       label: 'OpenAI gpt-4o-mini',
-      model: llm
+      model: openai
           .openai(
             apiKey: openAIKey,
           )

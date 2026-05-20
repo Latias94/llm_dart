@@ -1,8 +1,7 @@
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/google.dart' as google;
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart_google/llm_dart_google.dart' as google;
 
 /// Google Image Generation Examples
 ///
@@ -40,7 +39,7 @@ Future<void> demonstrateGeminiImageGeneration(String apiKey) async {
   print('=' * 50);
 
   try {
-    final imageModel = llm
+    final imageModel = google
         .google(
           apiKey: apiKey,
         )
@@ -109,7 +108,7 @@ Future<void> demonstrateImagenGeneration(String apiKey) async {
   print('=' * 50);
 
   try {
-    final imageModel = llm
+    final imageModel = google
         .google(
           apiKey: apiKey,
         )
@@ -172,7 +171,7 @@ Future<void> demonstrateImageEditingHelpers(String apiKey) async {
   }
 
   try {
-    final imageModel = llm
+    final imageModel = google
         .google(
           apiKey: apiKey,
         )

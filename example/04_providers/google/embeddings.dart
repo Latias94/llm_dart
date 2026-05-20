@@ -2,8 +2,7 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/google.dart' as google;
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart_google/llm_dart_google.dart' as google;
 
 /// Google Embeddings Examples
 ///
@@ -210,7 +209,7 @@ Future<void> demonstrateSemanticSimilarity(String apiKey) async {
 }
 
 core.EmbeddingModel _createEmbeddingModel(String apiKey) {
-  return llm
+  return google
       .google(
         apiKey: apiKey,
       )

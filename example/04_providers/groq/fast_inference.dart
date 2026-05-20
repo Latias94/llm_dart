@@ -3,7 +3,7 @@
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 /// Groq Fast Inference - Ultra-Speed AI Demonstration
 ///
@@ -183,7 +183,7 @@ Future<void> demonstrateParallelProcessing(String apiKey) async {
 }
 
 core.LanguageModel _createGroqModel(String apiKey) {
-  return llm.groq(apiKey: apiKey).chatModel('llama-3.1-8b-instant');
+  return openai.groq(apiKey: apiKey).chatModel('llama-3.1-8b-instant');
 }
 
 Future<core.GenerateTextCallResult<Never>> _generateText(

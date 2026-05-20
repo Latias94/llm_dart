@@ -2,7 +2,8 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart_google/llm_dart_google.dart' as google;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 /// Stable semantic search implementation using shared embedding models.
 ///
@@ -40,7 +41,7 @@ _EmbeddingModelEntry? _resolveEmbeddingModel() {
   if (openAIKey != null && openAIKey.isNotEmpty) {
     return _EmbeddingModelEntry(
       label: 'OpenAI text-embedding-3-small',
-      model: llm
+      model: openai
           .openai(
             apiKey: openAIKey,
           )
@@ -52,7 +53,7 @@ _EmbeddingModelEntry? _resolveEmbeddingModel() {
   if (googleKey != null && googleKey.isNotEmpty) {
     return _EmbeddingModelEntry(
       label: 'Google text-embedding-004',
-      model: llm
+      model: google
           .google(
             apiKey: googleKey,
           )

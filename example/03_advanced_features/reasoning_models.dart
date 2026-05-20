@@ -3,8 +3,9 @@
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/google.dart' as google;
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart_google/llm_dart_google.dart' as google;
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 Future<void> main() async {
   await runAnthropicReasoning();
@@ -19,7 +20,8 @@ Future<void> runAnthropicReasoning() async {
     return;
   }
 
-  final model = llm.anthropic(apiKey: apiKey).chatModel('claude-sonnet-4-5');
+  final model =
+      anthropic.anthropic(apiKey: apiKey).chatModel('claude-sonnet-4-5');
   final result = await core.generateTextCall(
     model: model,
     prompt: [
@@ -39,7 +41,7 @@ Future<void> runDeepSeekReasoningStream() async {
     return;
   }
 
-  final model = llm.deepSeek(apiKey: apiKey).chatModel('deepseek-reasoner');
+  final model = openai.deepSeek(apiKey: apiKey).chatModel('deepseek-reasoner');
 
   print('DeepSeek reasoning stream');
   final stream = core.streamTextCall(
@@ -72,7 +74,7 @@ Future<void> runGoogleReasoning() async {
     return;
   }
 
-  final model = llm.google(apiKey: apiKey).chatModel('gemini-2.5-flash');
+  final model = google.google(apiKey: apiKey).chatModel('gemini-2.5-flash');
   final result = await core.generateTextCall(
     model: model,
     prompt: [

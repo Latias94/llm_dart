@@ -4,9 +4,9 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/transport.dart' as transport;
 import 'package:llm_dart_provider/llm_dart_provider.dart' as provider;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 /// Stable-first error handling examples centered on `ModelError`.
 ///
@@ -95,7 +95,8 @@ Future<void> demonstrateAuthenticationFailure() async {
   print('=== Authentication Failure ===\n');
 
   try {
-    final model = llm.openai(apiKey: 'invalid-key').chatModel('gpt-4.1-mini');
+    final model =
+        openai.openai(apiKey: 'invalid-key').chatModel('gpt-4.1-mini');
     await core.generateTextCall(
       model: model,
       messages: [
@@ -118,7 +119,7 @@ Future<void> demonstrateNetworkFailure() async {
   print('=== Network Failure ===\n');
 
   try {
-    final model = llm
+    final model = openai
         .openai(
           apiKey: 'not-used',
           baseUrl: 'https://unreachable-host.invalid/v1',
@@ -153,7 +154,7 @@ Future<void> demonstrateTimeoutFailure() async {
   }
 
   try {
-    final model = llm.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
+    final model = openai.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
 
     await core.generateTextCall(
       model: model,

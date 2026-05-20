@@ -1,4 +1,7 @@
 import 'package:llm_dart/ai.dart' as ai;
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic_pkg;
+import 'package:llm_dart_google/llm_dart_google.dart' as google_pkg;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai_pkg;
 import 'package:llm_dart_test/llm_dart_test.dart';
 import 'package:test/test.dart';
 
@@ -6,7 +9,7 @@ void main() {
   group('provider prompt normalization integration', () {
     test('OpenAI Responses receives normalized user messages', () async {
       ai.TransportRequest? capturedRequest;
-      final model = ai
+      final model = openai_pkg
           .openai(
             apiKey: 'test-key',
             transport: FakeTransportClient(
@@ -67,7 +70,7 @@ void main() {
 
     test('Google receives normalized system and user messages', () async {
       ai.TransportRequest? capturedRequest;
-      final model = ai
+      final model = google_pkg
           .google(
             apiKey: 'test-key',
             transport: FakeTransportClient(
@@ -133,7 +136,7 @@ void main() {
 
     test('Anthropic receives normalized system and user messages', () async {
       ai.TransportRequest? capturedRequest;
-      final model = ai
+      final model = anthropic_pkg
           .anthropic(
             apiKey: 'test-key',
             transport: FakeTransportClient(

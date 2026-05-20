@@ -1,4 +1,4 @@
-import 'package:llm_dart/anthropic.dart' as anthropic;
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic;
 import 'package:llm_dart/core.dart' as core;
 
 /// Demonstrates Anthropic prompt caching on the modern model-first API.

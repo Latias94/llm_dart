@@ -141,34 +141,6 @@ void main() {
       expect(result.violations, contains(contains('removed ai() helper')));
     });
 
-    test('reports grouped AI facade usage in default examples', () async {
-      final repoRoot = await _createTempWorkspace();
-      addTearDown(() async {
-        if (repoRoot.existsSync()) {
-          await repoRoot.delete(recursive: true);
-        }
-      });
-
-      await _writeFile(
-        repoRoot,
-        'example/02_core_features/streaming_chat.dart',
-        '''
-import 'package:llm_dart/llm_dart.dart' as llm;
-
-void main() {
-  llm.AI.openai(apiKey: 'test');
-}
-''',
-      );
-
-      final result = await guard.evaluateExampleApiGuards(
-        repoRoot: repoRoot,
-      );
-
-      expect(result.passed, isFalse);
-      expect(result.violations, contains(contains('grouped AI facade')));
-    });
-
     test('reports provider prompt message types in default examples', () async {
       final repoRoot = await _createTempWorkspace();
       addTearDown(() async {
@@ -406,7 +378,7 @@ Future<Directory> _createTempWorkspace() async {
     repoRoot,
     'example/01_getting_started/focused.dart',
     '''
-import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart/ai.dart';
 
 void main() {}
 ''',

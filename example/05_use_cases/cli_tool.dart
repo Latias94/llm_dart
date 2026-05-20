@@ -3,7 +3,8 @@
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 /// CLI example using the stable model API.
 Future<void> main(List<String> arguments) async {
@@ -130,19 +131,19 @@ ENVIRONMENT VARIABLES:
         if (apiKey == null || apiKey.isEmpty) {
           throw Exception('OPENAI_API_KEY environment variable not set');
         }
-        return llm.openai(apiKey: apiKey).chatModel(_model);
+        return openai.openai(apiKey: apiKey).chatModel(_model);
       case 'groq':
         final apiKey = Platform.environment['GROQ_API_KEY'];
         if (apiKey == null || apiKey.isEmpty) {
           throw Exception('GROQ_API_KEY environment variable not set');
         }
-        return llm.groq(apiKey: apiKey).chatModel(_model);
+        return openai.groq(apiKey: apiKey).chatModel(_model);
       case 'anthropic':
         final apiKey = Platform.environment['ANTHROPIC_API_KEY'];
         if (apiKey == null || apiKey.isEmpty) {
           throw Exception('ANTHROPIC_API_KEY environment variable not set');
         }
-        return llm.anthropic(apiKey: apiKey).chatModel(_model);
+        return anthropic.anthropic(apiKey: apiKey).chatModel(_model);
       default:
         throw Exception(
           'Unknown provider: $_provider. Supported: openai, groq, anthropic',

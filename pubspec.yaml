@@ -1,5 +1,5 @@
 name: llm_dart
-description: A modular Dart library for AI provider interactions with unified interface for OpenAI, Anthropic, Google, DeepSeek, Ollama, xAI, Groq, ElevenLabs and more.
+description: Provider-neutral Dart AI runtime interfaces and helpers for composing llm_dart provider packages.
 version: 0.11.0-alpha.1
 license: MIT
 homepage: https://github.com/Latias94/llm_dart
@@ -15,20 +15,25 @@ environment:
   sdk: '>=3.5.0 <4.0.0'
 
 dependencies:
-  llm_dart_anthropic: ^0.11.0-alpha.1
   llm_dart_ai: ^0.11.0-alpha.1
   llm_dart_chat: ^0.11.0-alpha.1
-  llm_dart_elevenlabs: ^0.11.0-alpha.1
-  llm_dart_google: ^0.11.0-alpha.1
-  llm_dart_ollama: ^0.11.0-alpha.1
-  llm_dart_openai: ^0.11.0-alpha.1
   llm_dart_provider: ^0.11.0-alpha.1
   llm_dart_transport: ^0.11.0-alpha.1
 
 dev_dependencies:
-  test: ^1.27.0
+  llm_dart_anthropic:
+    path: packages/llm_dart_anthropic
   llm_dart_core:
     path: packages/llm_dart_core
+  llm_dart_elevenlabs:
+    path: packages/llm_dart_elevenlabs
+  llm_dart_google:
+    path: packages/llm_dart_google
+  llm_dart_ollama:
+    path: packages/llm_dart_ollama
+  llm_dart_openai:
+    path: packages/llm_dart_openai
   llm_dart_test:
     path: packages/llm_dart_test
   lints: ^6.0.0
+  test: ^1.27.0

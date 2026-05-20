@@ -3,7 +3,7 @@
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 Future<void> main() async {
   final apiKey = Platform.environment['DEEPSEEK_API_KEY'];
@@ -12,7 +12,7 @@ Future<void> main() async {
     return;
   }
 
-  final model = llm.deepSeek(apiKey: apiKey).chatModel('deepseek-reasoner');
+  final model = openai.deepSeek(apiKey: apiKey).chatModel('deepseek-reasoner');
 
   print('Streaming response:\n');
 

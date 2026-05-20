@@ -1,10 +1,10 @@
 // ignore_for_file: avoid_print
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/elevenlabs.dart' as elevenlabs;
-import 'package:llm_dart/google.dart' as google;
-import 'package:llm_dart/ollama.dart' as ollama;
-import 'package:llm_dart/openai.dart' as openai;
+import 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart' as elevenlabs;
+import 'package:llm_dart_google/llm_dart_google.dart' as google;
+import 'package:llm_dart_ollama/llm_dart_ollama.dart' as ollama;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 /// Focused model and lifecycle factories.
 ///

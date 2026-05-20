@@ -2,10 +2,10 @@
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:mcp_dart/mcp_dart.dart';
 
 import '../shared/mcp_tool_bridge.dart';
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 /// HTTP LLM Integration - real AI agents with HTTP MCP tools.
 ///
@@ -258,7 +258,7 @@ Future<core.GenerateTextResult> _runToolEnabledPrompt({
 }
 
 core.LanguageModel _createOpenAIModel(String apiKey) {
-  return llm.openai(apiKey: apiKey).chatModel('gpt-4o-mini');
+  return openai.openai(apiKey: apiKey).chatModel('gpt-4o-mini');
 }
 
 class McpConnection {

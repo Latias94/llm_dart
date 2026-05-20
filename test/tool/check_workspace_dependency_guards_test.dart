@@ -344,12 +344,12 @@ Future<Directory> _createTempWorkspace() async {
     '''
 name: llm_dart
 dependencies:
-  llm_dart_core:
-    path: packages/llm_dart_core
   llm_dart_ai:
     path: packages/llm_dart_ai
-  llm_dart_openai:
-    path: packages/llm_dart_openai
+  llm_dart_chat:
+    path: packages/llm_dart_chat
+  llm_dart_provider:
+    path: packages/llm_dart_provider
   llm_dart_transport:
     path: packages/llm_dart_transport
 ''',

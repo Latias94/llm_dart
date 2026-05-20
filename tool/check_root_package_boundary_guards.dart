@@ -1,30 +1,16 @@
 import 'dart:io';
 
-const Set<String> _allowedRootTopLevelDirectories = {
-  'src',
-};
+const Set<String> _allowedRootTopLevelDirectories = {};
 
 const Set<String> _allowedRootTopLevelFiles = {
   'ai.dart',
-  'anthropic.dart',
   'chat.dart',
   'core.dart',
-  'deepseek.dart',
-  'elevenlabs.dart',
-  'google.dart',
-  'groq.dart',
   'llm_dart.dart',
-  'ollama.dart',
-  'openai.dart',
-  'openrouter.dart',
-  'phind.dart',
   'transport.dart',
-  'xai.dart',
 };
 
-const Set<String> _allowedRootSrcTopLevelDirectories = {
-  'facade',
-};
+const Set<String> _allowedRootSrcTopLevelDirectories = {};
 
 const Set<String> _allowedRootSrcTopLevelFiles = {};
 
@@ -48,15 +34,8 @@ const List<String> _expectedDefaultRootEntrypointDirectives = [
 
 const List<String> _expectedModernAggregatorEntrypointDirectives = [
   'library;',
-  "export 'package:llm_dart_ai/llm_dart_ai.dart';",
-  "export 'anthropic.dart';",
   "export 'core.dart';",
-  "export 'elevenlabs.dart';",
-  "export 'google.dart';",
-  "export 'ollama.dart';",
-  "export 'openai.dart';",
   "export 'transport.dart';",
-  "export 'src/facade/ai.dart' show AI, anthropic, deepSeek, elevenLabs, google, groq, ollama, openRouter, openai, phind, xai;",
 ];
 
 const Map<String, List<String>> _expectedFocusedRootEntrypointDirectives = {
@@ -74,57 +53,6 @@ const Map<String, List<String>> _expectedFocusedRootEntrypointDirectives = {
     "export 'core.dart';",
     "export 'transport.dart';",
     "export 'package:llm_dart_chat/llm_dart_chat.dart';",
-    "export 'src/facade/ai.dart' show anthropic, deepSeek, google, groq, openRouter, openai, phind, xai;",
-  ],
-  'lib/anthropic.dart': [
-    'library;',
-    "export 'package:llm_dart_anthropic/llm_dart_anthropic.dart' hide anthropic;",
-    "export 'src/facade/ai.dart' show anthropic;",
-  ],
-  'lib/google.dart': [
-    'library;',
-    "export 'package:llm_dart_google/llm_dart_google.dart' hide google;",
-    "export 'src/facade/ai.dart' show google;",
-  ],
-  'lib/elevenlabs.dart': [
-    'library;',
-    "export 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart' hide elevenLabs;",
-    "export 'src/facade/ai.dart' show elevenLabs;",
-  ],
-  'lib/ollama.dart': [
-    'library;',
-    "export 'package:llm_dart_ollama/llm_dart_ollama.dart' hide ollama;",
-    "export 'src/facade/ai.dart' show ollama;",
-  ],
-  'lib/openai.dart': [
-    'library;',
-    "export 'package:llm_dart_openai/llm_dart_openai.dart' hide deepSeek, groq, openRouter, openai, phind, xai;",
-    "export 'src/facade/ai.dart' show openai;",
-  ],
-  'lib/groq.dart': [
-    'library;',
-    "export 'package:llm_dart_openai/llm_dart_openai.dart' show GroqProfile, OpenAI, OpenAIChatModelSettings, OpenAIGenerateTextOptions, OpenAILanguageModel;",
-    "export 'src/facade/ai.dart' show groq;",
-  ],
-  'lib/phind.dart': [
-    'library;',
-    "export 'package:llm_dart_openai/llm_dart_openai.dart' show OpenAI, OpenAIChatModelSettings, OpenAIGenerateTextOptions, OpenAILanguageModel, PhindProfile;",
-    "export 'src/facade/ai.dart' show phind;",
-  ],
-  'lib/xai.dart': [
-    'library;',
-    "export 'package:llm_dart_openai/llm_dart_openai.dart' show OpenAI, OpenAIChatModelSettings, OpenAIGenerateTextOptions, OpenAILanguageModel, XAIProfile, XAIGenerateTextOptions, XAILiveSearchOptions, XAINewsSearchSource, XAIRssSearchSource, XAISearchMode, XAISearchSource, XAIWebSearchSource, XAIXSearchSource;",
-    "export 'src/facade/ai.dart' show xai;",
-  ],
-  'lib/deepseek.dart': [
-    'library;',
-    "export 'package:llm_dart_openai/llm_dart_openai.dart' show DeepSeekGenerateTextOptions, DeepSeekProfile, OpenAI, OpenAIChatModelSettings, OpenAIGenerateTextOptions, OpenAILanguageModel;",
-    "export 'src/facade/ai.dart' show deepSeek;",
-  ],
-  'lib/openrouter.dart': [
-    'library;',
-    "export 'package:llm_dart_openai/llm_dart_openai.dart' show OpenAI, OpenAIChatModelSettings, OpenAIGenerateTextOptions, OpenAILanguageModel, OpenRouterChatModelSettings, OpenRouterGenerateTextOptions, OpenRouterProfile, OpenRouterSearchMode, OpenRouterSearchOptions;",
-    "export 'src/facade/ai.dart' show openRouter;",
   ],
 };
 
@@ -238,7 +166,6 @@ Future<void> _collectLayoutViolations({
 
   final srcDir = Directory.fromUri(libDir.uri.resolve('src/'));
   if (!srcDir.existsSync()) {
-    violations.add('lib/src/: directory is missing.');
     return;
   }
 
@@ -323,8 +250,8 @@ Future<void> _collectModernAggregatorEntrypointViolations({
   }
 
   violations.add(
-    'lib/ai.dart: modern aggregator entrypoint must only compose stable '
-    'root entrypoints and optional AI namespace. Found directives: '
+    'lib/ai.dart: modern aggregator entrypoint must only compose the stable '
+    'provider-neutral core entrypoint. Found directives: '
     '${directives.join(' ')}. Expected directives: '
     '${_expectedModernAggregatorEntrypointDirectives.join(' ')}.',
   );

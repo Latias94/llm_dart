@@ -4,7 +4,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/google.dart' as google;
+import 'package:llm_dart_google/llm_dart_google.dart' as google;
 
 const _googleSpeechModelId = 'gemini-2.5-flash-preview-tts';
 

@@ -3,8 +3,8 @@
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/transport.dart' as transport;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 /// Basic configuration examples using the stable model API.
 ///
@@ -173,7 +173,7 @@ Future<void> testInvalidApiKey() async {
 
 Future<void> testInvalidModel(String apiKey) async {
   try {
-    final model = llm.openai(apiKey: apiKey).chatModel('invalid-model-name');
+    final model = openai.openai(apiKey: apiKey).chatModel('invalid-model-name');
     await core.generateTextCall(
       model: model,
       messages: [
@@ -254,7 +254,7 @@ Future<void> demonstrateTimeoutSettings(String apiKey) async {
 }
 
 core.LanguageModel _openAIModel(String apiKey) {
-  return llm.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
+  return openai.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
 }
 
 core.ModelError _normalizeError(Object error) {

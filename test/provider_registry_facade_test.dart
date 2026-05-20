@@ -1,4 +1,9 @@
 import 'package:llm_dart/llm_dart.dart';
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic_pkg;
+import 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart' as elevenlabs_pkg;
+import 'package:llm_dart_google/llm_dart_google.dart' as google_pkg;
+import 'package:llm_dart_ollama/llm_dart_ollama.dart' as ollama_pkg;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai_pkg;
 import 'package:test/test.dart';
 
 void main() {
@@ -6,12 +11,12 @@ void main() {
     test('registers root provider facades for dynamic model lookup', () {
       final registry = ProviderRegistry(
         providers: {
-          'anthropic': anthropic(apiKey: 'test-key'),
-          'elevenlabs': elevenLabs(apiKey: 'test-key'),
-          'google': google(apiKey: 'test-key'),
-          'ollama': ollama(),
-          'openai': openai(apiKey: 'test-key'),
-          'openrouter': openRouter(apiKey: 'test-key'),
+          'anthropic': anthropic_pkg.anthropic(apiKey: 'test-key'),
+          'elevenlabs': elevenlabs_pkg.elevenLabs(apiKey: 'test-key'),
+          'google': google_pkg.google(apiKey: 'test-key'),
+          'ollama': ollama_pkg.ollama(),
+          'openai': openai_pkg.openai(apiKey: 'test-key'),
+          'openrouter': openai_pkg.openRouter(apiKey: 'test-key'),
         },
       );
 
@@ -72,10 +77,10 @@ void main() {
     });
 
     test('preserves typed provider settings on direct provider facades', () {
-      final provider = google(apiKey: 'test-key');
+      final provider = google_pkg.google(apiKey: 'test-key');
       final model = provider.chatModel(
         'gemini-2.5-flash',
-        settings: const GoogleChatModelSettings(),
+        settings: const google_pkg.GoogleChatModelSettings(),
       );
 
       expect(model.providerId, 'google');

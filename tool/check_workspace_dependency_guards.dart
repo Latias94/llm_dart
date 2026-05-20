@@ -62,13 +62,8 @@ const Set<String> _appFacingUserInputBoundaryPaths = {
 
 const Map<String, Set<String>> _allowedRuntimeDependenciesByPackage = {
   'llm_dart': {
-    'llm_dart_anthropic',
     'llm_dart_ai',
     'llm_dart_chat',
-    'llm_dart_elevenlabs',
-    'llm_dart_google',
-    'llm_dart_ollama',
-    'llm_dart_openai',
     'llm_dart_provider',
     'llm_dart_transport',
   },

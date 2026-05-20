@@ -1,10 +1,12 @@
 import 'package:llm_dart/chat.dart' as chat;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai_pkg;
 import 'package:test/test.dart';
 
 void main() {
   group('Root chat entrypoint', () {
     test('exports the pure Dart chat runtime and model factories', () async {
-      final model = chat.openai(apiKey: 'test-key').chatModel('gpt-5-mini');
+      final model =
+          openai_pkg.openai(apiKey: 'test-key').chatModel('gpt-5-mini');
       final transport = chat.DirectChatTransport(model: model);
       final session = chat.DefaultChatSession(transport: transport);
       const options = chat.ChatRequestOptions(

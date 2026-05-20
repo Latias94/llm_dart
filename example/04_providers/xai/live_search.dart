@@ -3,7 +3,7 @@
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/xai.dart' as xai;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as xai;
 
 /// xAI live search examples using the stable `xai(...).chatModel(...)` API.
 ///

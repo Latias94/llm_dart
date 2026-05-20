@@ -3,11 +3,11 @@
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/deepseek.dart' as deepseek;
-import 'package:llm_dart/groq.dart' as groq;
-import 'package:llm_dart/openai.dart' as openai;
-import 'package:llm_dart/openrouter.dart' as openrouter;
-import 'package:llm_dart/xai.dart' as xai;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as deepseek;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as groq;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openrouter;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as xai;
 
 const _togetherBaseUrl = 'https://api.together.xyz/v1';
 const _togetherModelId = 'meta-llama/Llama-3-70b-chat-hf';

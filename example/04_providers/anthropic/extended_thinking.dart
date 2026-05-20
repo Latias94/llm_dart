@@ -2,9 +2,8 @@
 
 import 'dart:io';
 
-import 'package:llm_dart/anthropic.dart' as anthropic;
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic;
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
 
 /// 🟣 Anthropic Extended Thinking - Access Claude's Reasoning Process
 ///
@@ -362,7 +361,7 @@ Provide a comprehensive comparison with examples.
 }
 
 core.LanguageModel _createAnthropicModel(String apiKey) {
-  return llm
+  return anthropic
       .anthropic(
         apiKey: apiKey,
       )

@@ -5,7 +5,7 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/elevenlabs.dart' as elevenlabs;
+import 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart' as elevenlabs;
 
 /// App-owned realtime audio orchestration.
 ///

@@ -4,8 +4,9 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart_ollama/llm_dart_ollama.dart' as ollama_pkg;
+import 'package:llm_dart_google/llm_dart_google.dart' as google;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 const _demoCallOptions = core.CallOptions(
   timeout: Duration(seconds: 20),
@@ -46,7 +47,7 @@ List<_EmbeddingDemoEntry> _collectEmbeddingModels() {
     entries.add(
       _EmbeddingDemoEntry(
         label: 'OpenAI text-embedding-3-small',
-        model: llm
+        model: openai
             .openai(
               apiKey: openAIKey,
             )
@@ -60,7 +61,7 @@ List<_EmbeddingDemoEntry> _collectEmbeddingModels() {
     entries.add(
       _EmbeddingDemoEntry(
         label: 'Google text-embedding-004',
-        model: llm
+        model: google
             .google(
               apiKey: googleKey,
             )

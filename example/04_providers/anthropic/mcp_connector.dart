@@ -3,9 +3,8 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:llm_dart/anthropic.dart' as anthropic;
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic;
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
 
 /// Anthropic MCP connector examples built on the stable Anthropic chat model
 /// facade plus typed provider-owned MCP options.
@@ -151,7 +150,7 @@ Future<void> demonstrateMcpWithAuthentication(String apiKey) async {
 }
 
 core.LanguageModel _createAnthropicModel(String apiKey) {
-  return llm
+  return anthropic
       .anthropic(
         apiKey: apiKey,
       )

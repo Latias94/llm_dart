@@ -3,8 +3,7 @@
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
-import 'package:llm_dart/openai.dart' as openai;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 import 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart' as elevenlabs_pkg;
 
 /// Stable audio processing example built on shared speech/transcription helpers.
@@ -62,7 +61,7 @@ List<_SpeechDemoEntry> _collectSpeechModels() {
     entries.add(
       _SpeechDemoEntry(
         label: 'OpenAI gpt-4o-mini-tts',
-        model: llm
+        model: openai
             .openai(
               apiKey: openAIKey,
             )
@@ -105,7 +104,7 @@ List<_TranscriptionDemoEntry> _collectTranscriptionModels() {
     entries.add(
       _TranscriptionDemoEntry(
         label: 'OpenAI whisper-1',
-        model: llm
+        model: openai
             .openai(
               apiKey: openAIKey,
             )

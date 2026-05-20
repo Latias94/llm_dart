@@ -3,7 +3,7 @@
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 /// OpenAI multimodal prompt examples using the stable shared prompt-part model.
 ///
@@ -224,7 +224,7 @@ void explainStableBoundary() {
 }
 
 core.LanguageModel _model(String apiKey) {
-  return llm
+  return openai
       .openai(
         apiKey: apiKey,
       )

@@ -24,8 +24,6 @@ final RegExp _llmBuilderPattern = RegExp(r'\bLLMBuilder\s*\(');
 
 final RegExp _removedAiHelperPattern = RegExp(r'(^|[^\w.])ai\s*\(');
 
-final RegExp _groupedFacadePattern = RegExp(r'\bllm\s*\.\s*AI\b');
-
 final RegExp _providerPromptTypePattern = RegExp(
   r'\b(?:PromptMessage|UserPromptMessage|SystemPromptMessage|'
   r'AssistantPromptMessage|ToolPromptMessage|PromptPart|PromptRole)\b',
@@ -79,8 +77,8 @@ Future<ExampleApiGuardResult> evaluateExampleApiGuards({
           violations.add(
             '$path:${index + 1}: $violation. '
             'Default examples should teach model-first entrypoints and '
-            'focused modern barrels; move provider-native material to focused '
-            'provider entrypoints instead of legacy root subpaths.',
+            'direct provider package imports; move provider-native material to '
+            'provider-owned packages instead of root provider facades.',
           );
         }
       }
@@ -139,9 +137,6 @@ String? _findLegacyApiViolation(String line) {
   }
   if (_removedAiHelperPattern.hasMatch(line)) {
     return 'removed ai() helper usage found';
-  }
-  if (_groupedFacadePattern.hasMatch(line)) {
-    return 'grouped AI facade usage found';
   }
   return null;
 }
@@ -243,7 +238,7 @@ Future<void> main() async {
     stdout.writeln(
       'example API guard passed: default examples avoid legacy.dart, '
       'LLMBuilder(), legacy provider/model/core subpaths, the removed '
-      'ai() helper, grouped AI facade usage, and provider prompt surfaces in '
+      'ai() helper and provider prompt surfaces in '
       'app-facing text calls.',
     );
     return;

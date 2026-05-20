@@ -1,23 +1,21 @@
-import 'package:llm_dart/ai.dart' as modern;
-import 'package:llm_dart/anthropic.dart' as anthropic_entry;
-import 'package:llm_dart/google.dart' as google_entry;
-import 'package:llm_dart/openai.dart' as openai_entry;
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic_entry;
+import 'package:llm_dart_google/llm_dart_google.dart' as google_entry;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai_entry;
 import 'package:test/test.dart';
 
 void main() {
-  group('Modern Root Facade', () {
-    test(
-        'short factories create refactored OpenAI, Google, and Anthropic models',
+  group('Provider-neutral root with direct provider packages', () {
+    test('direct provider packages create OpenAI, Google, and Anthropic models',
         () {
       final openaiModel =
-          modern.openai(apiKey: 'test-key').chatModel('gpt-5-mini');
+          openai_entry.openai(apiKey: 'test-key').chatModel('gpt-5-mini');
       final googleModel =
-          modern.google(apiKey: 'test-key').chatModel('gemini-2.5-flash');
-      final anthropicModel = modern.AI
+          google_entry.google(apiKey: 'test-key').chatModel('gemini-2.5-flash');
+      final anthropicModel = anthropic_entry
           .anthropic(apiKey: 'test-key')
           .chatModel('claude-sonnet-4-5');
       final shortcutModel =
-          modern.openai(apiKey: 'test-key').chatModel('gpt-5-mini');
+          openai_entry.openai(apiKey: 'test-key').chatModel('gpt-5-mini');
 
       expect(openaiModel, isA<openai_entry.OpenAILanguageModel>());
       expect(openaiModel.providerId, 'openai');
@@ -53,18 +51,18 @@ void main() {
     });
 
     test(
-        'short factories expose OpenAI-family profile convenience constructors',
+        'OpenAI package exposes OpenAI-family profile convenience constructors',
         () {
-      final openRouterProvider = modern.openRouter(apiKey: 'test-key');
-      final deepSeekProvider = modern.deepSeek(apiKey: 'test-key');
-      final groqProvider = modern.groq(apiKey: 'test-key');
-      final xaiProvider = modern.xai(apiKey: 'test-key');
-      final phindProvider = modern.phind(apiKey: 'test-key');
-      final openRouterShortcut = modern.openRouter(apiKey: 'test-key');
-      final deepSeekShortcut = modern.deepSeek(apiKey: 'test-key');
-      final groqShortcut = modern.groq(apiKey: 'test-key');
-      final xaiShortcut = modern.xai(apiKey: 'test-key');
-      final phindShortcut = modern.phind(apiKey: 'test-key');
+      final openRouterProvider = openai_entry.openRouter(apiKey: 'test-key');
+      final deepSeekProvider = openai_entry.deepSeek(apiKey: 'test-key');
+      final groqProvider = openai_entry.groq(apiKey: 'test-key');
+      final xaiProvider = openai_entry.xai(apiKey: 'test-key');
+      final phindProvider = openai_entry.phind(apiKey: 'test-key');
+      final openRouterShortcut = openai_entry.openRouter(apiKey: 'test-key');
+      final deepSeekShortcut = openai_entry.deepSeek(apiKey: 'test-key');
+      final groqShortcut = openai_entry.groq(apiKey: 'test-key');
+      final xaiShortcut = openai_entry.xai(apiKey: 'test-key');
+      final phindShortcut = openai_entry.phind(apiKey: 'test-key');
 
       expect(openRouterProvider.profile, isA<openai_entry.OpenRouterProfile>());
       expect(openRouterShortcut.profile, isA<openai_entry.OpenRouterProfile>());

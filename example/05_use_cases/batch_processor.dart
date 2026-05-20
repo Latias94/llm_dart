@@ -6,7 +6,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 /// Batch processing example using the stable model API.
 Future<void> main(List<String> arguments) async {
@@ -132,7 +132,7 @@ OUTPUT FORMAT (JSONL):
       throw StateError('GROQ_API_KEY environment variable not set');
     }
 
-    _model = llm
+    _model = openai
         .groq(
           apiKey: groqKey,
         )
