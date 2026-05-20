@@ -1,10 +1,10 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
+import 'google_language_model_execution.dart';
 import 'google_language_model_request.dart';
 import 'google_language_model_response.dart';
 import 'google_language_model_support.dart';
-import 'google_language_model_stream.dart';
 import 'google_language_model_transport.dart';
 import 'google_model_call_support.dart';
 import 'google_model_describer.dart';
@@ -81,27 +81,19 @@ final class GoogleLanguageModel
       settings: settings,
     );
 
-    yield StartEvent(warnings: preparedRequest.warnings);
-
-    try {
-      final response = await transport.sendStream(
-        buildGoogleLanguageModelTransportRequest(
-          baseUrl: baseUrl,
-          modelId: modelId,
-          request: request,
-          stream: true,
-          body: preparedRequest.body,
-          apiKey: apiKey,
-          settings: settings,
-        ),
-      );
-
-      yield* decodeGoogleLanguageModelStreamEvents(
-        stream: response.stream,
-        includeRawChunks: request.options.includeRawChunks,
-      );
-    } catch (error) {
-      yield ErrorEvent(transportErrorToModelError(error));
-    }
+    yield* sendGoogleLanguageModelStreamCall(
+      transport: transport,
+      request: buildGoogleLanguageModelTransportRequest(
+        baseUrl: baseUrl,
+        modelId: modelId,
+        request: request,
+        stream: true,
+        body: preparedRequest.body,
+        apiKey: apiKey,
+        settings: settings,
+      ),
+      warnings: preparedRequest.warnings,
+      includeRawChunks: request.options.includeRawChunks,
+    );
   }
 }
