@@ -1,26 +1,10 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'openai_generate_text_options.dart';
-import 'openai_model_capabilities.dart';
 import 'openai_request_format_codec.dart';
 import 'openai_responses_include_options.dart';
 import 'openai_responses_openai_compatibility.dart';
-
-final class OpenAIResponsesRequestContext {
-  final OpenAIModelCapabilities capabilities;
-  final bool isReasoningModel;
-  final bool store;
-  final bool hasConversation;
-  final OpenAISystemMessageMode systemMessageMode;
-
-  const OpenAIResponsesRequestContext({
-    required this.capabilities,
-    required this.isReasoningModel,
-    required this.store,
-    required this.hasConversation,
-    required this.systemMessageMode,
-  });
-}
+import 'openai_responses_request_context.dart';
 
 final class OpenAIResponsesRequestBodyProjection {
   const OpenAIResponsesRequestBodyProjection();
@@ -29,19 +13,9 @@ final class OpenAIResponsesRequestBodyProjection {
     required String modelId,
     required OpenAIGenerateTextOptions providerOptions,
   }) {
-    final capabilities = getOpenAIModelCapabilities(modelId);
-    final isReasoningModel =
-        providerOptions.forceReasoning ?? capabilities.isReasoningModel;
-
-    return OpenAIResponsesRequestContext(
-      capabilities: capabilities,
-      isReasoningModel: isReasoningModel,
-      store: providerOptions.store ?? true,
-      hasConversation: providerOptions.conversation != null,
-      systemMessageMode: providerOptions.systemMessageMode ??
-          (isReasoningModel
-              ? OpenAISystemMessageMode.developer
-              : capabilities.systemMessageMode),
+    return resolveOpenAIResponsesRequestContext(
+      modelId: modelId,
+      providerOptions: providerOptions,
     );
   }
 
