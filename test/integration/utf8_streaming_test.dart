@@ -128,10 +128,7 @@ void main() {
       expect(decoder.bufferedByteCount, equals(0));
     });
 
-    test('UTF-8 stream decoder handles malformed sequences gracefully', () {
-      final decoder = Utf8StreamDecoder();
-
-      // Test invalid UTF-8 sequences
+    test('UTF-8 stream decoder reports malformed sequences by default', () {
       final invalidSequences = [
         [0xFF, 0xFE], // Invalid start bytes
         [0xC0, 0x80], // Overlong encoding
@@ -139,10 +136,22 @@ void main() {
       ];
 
       for (final sequence in invalidSequences) {
-        // Should not throw, just return empty or handle gracefully
-        expect(() => decoder.decode(sequence), returnsNormally);
-        decoder.reset(); // Reset for next test
+        final decoder = Utf8StreamDecoder();
+        expect(
+          () {
+            decoder.decode(sequence);
+            decoder.flush();
+          },
+          throwsA(isA<FormatException>()),
+        );
       }
+    });
+
+    test('UTF-8 stream decoder can replace malformed sequences explicitly', () {
+      final decoder = Utf8StreamDecoder(allowMalformed: true);
+
+      expect(decoder.decode([0xFF, 0xFE]), '\u{FFFD}\u{FFFD}');
+      expect(decoder.flush(), '');
     });
 
     test('UTF-8 stream decoder performance with large text', () {

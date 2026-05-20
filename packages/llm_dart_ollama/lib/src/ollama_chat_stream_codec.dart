@@ -21,24 +21,10 @@ final class OllamaChatStreamCodec {
     Stream<List<int>> stream, {
     required bool includeRawChunks,
   }) async* {
-    final utf8Decoder = Utf8StreamDecoder();
     final state = OllamaChatStreamState();
-    await for (final chunk in stream) {
-      final decoded = utf8Decoder.decode(chunk);
-      if (decoded.isEmpty) continue;
+    await for (final decoded in stream.decodeUtf8Stream()) {
       for (final event in decodeText(
         decoded,
-        state,
-        includeRawChunks: includeRawChunks,
-      )) {
-        yield event;
-      }
-    }
-
-    final remaining = utf8Decoder.flush();
-    if (remaining.isNotEmpty) {
-      for (final event in decodeText(
-        '$remaining\n',
         state,
         includeRawChunks: includeRawChunks,
       )) {

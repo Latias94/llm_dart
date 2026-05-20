@@ -618,6 +618,43 @@ void main() {
       expect(rawChunks.first.raw, containsPair('done', false));
     });
 
+    test('stream rebuilds split UTF-8 bytes through transport decoder',
+        () async {
+      final model = Ollama(
+        transport: _FakeTransportClient(
+          onSendStream: (request) async {
+            final line = jsonEncode({
+              'model': 'llama3.2',
+              'done': true,
+              'done_reason': 'stop',
+              'message': {
+                'content': '你好',
+              },
+            });
+            final bytes = utf8.encode(line);
+
+            return StreamingTransportResponse(
+              statusCode: 200,
+              stream: Stream.fromIterable([
+                bytes.sublist(0, bytes.length - 1),
+                bytes.sublist(bytes.length - 1),
+              ]),
+            );
+          },
+        ),
+      ).chatModel('llama3.2');
+
+      final events = await streamText(
+        model: model,
+        prompt: [
+          UserPromptMessage.text('Say hello.'),
+        ],
+      ).toList();
+
+      final textDelta = events.whereType<TextDeltaEvent>().single;
+      expect(textDelta.delta, '你好');
+    });
+
     test('language model rejects incompatible provider options', () async {
       final model = Ollama(
         transport: const _FakeTransportClient(),

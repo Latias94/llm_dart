@@ -68,7 +68,7 @@ void main() {
       expect(result1 + result2, equals(text));
     });
 
-    test('flush returns remaining buffered content', () {
+    test('flush reports incomplete trailing sequences by default', () {
       final text = '你好';
       final bytes = utf8.encode(text);
 
@@ -77,10 +77,16 @@ void main() {
       final result1 = decoder.decode(incomplete);
       expect(result1, equals(''));
 
-      // Flush should return the incomplete character if possible
-      // or empty if truly incomplete
-      final flushed = decoder.flush();
-      expect(flushed, equals(''));
+      expect(() => decoder.flush(), throwsA(isA<FormatException>()));
+    });
+
+    test('flush can replace incomplete trailing sequences explicitly', () {
+      final tolerantDecoder = Utf8StreamDecoder(allowMalformed: true);
+      final bytes = utf8.encode('你好');
+
+      tolerantDecoder.decode(bytes.sublist(0, 2));
+
+      expect(tolerantDecoder.flush(), equals('\u{FFFD}'));
     });
 
     test('reset clears internal buffer', () {
