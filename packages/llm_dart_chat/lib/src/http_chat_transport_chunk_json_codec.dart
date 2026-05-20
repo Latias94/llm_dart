@@ -3,6 +3,7 @@ import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'http_chat_transport_chunk.dart';
 import 'http_chat_transport_content_chunk_json_codec.dart';
 import 'http_chat_transport_data_part_json_codec.dart';
+import 'http_chat_transport_envelope_json_codec.dart';
 import 'http_chat_transport_json_support.dart';
 import 'http_chat_transport_lifecycle_chunk_json_codec.dart';
 import 'http_chat_transport_message_chunk_json_codec.dart';
@@ -41,23 +42,17 @@ final class HttpChatTransportChunkJsonCodec {
         ).encode(chunk),
     };
 
-    return {
-      'schemaVersion': llmDartJsonSchemaVersion,
-      'kind': envelopeKind,
-      'data': data,
-    };
+    return const HttpChatTransportEnvelopeJsonCodec().encode(
+      kind: envelopeKind,
+      data: data,
+    );
   }
 
   HttpChatTransportChunk decodeChunk(Object? envelope) {
-    final root = HttpChatTransportJson.asMap(envelope, path: r'$');
-    final kind = HttpChatTransportJson.asString(root['kind'], path: r'$.kind');
-    if (kind != envelopeKind) {
-      throw FormatException(
-        'Expected envelope kind "$envelopeKind", received "$kind".',
-      );
-    }
-
-    final data = HttpChatTransportJson.asMap(root['data'], path: r'$.data');
+    final data = const HttpChatTransportEnvelopeJsonCodec().decode(
+      envelope,
+      expectedKind: envelopeKind,
+    );
     final type = HttpChatTransportJson.asString(
       data['type'],
       path: r'$.data.type',

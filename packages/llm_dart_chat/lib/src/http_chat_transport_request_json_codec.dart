@@ -1,6 +1,7 @@
 import 'package:llm_dart_ai/llm_dart_ai.dart';
 
 import 'http_chat_transport_call_options_json_codec.dart';
+import 'http_chat_transport_envelope_json_codec.dart';
 import 'http_chat_transport_generate_options_json_codec.dart';
 import 'http_chat_transport_json_support.dart';
 import 'http_chat_transport_request_payload.dart';
@@ -26,10 +27,9 @@ final class HttpChatTransportRequestJsonCodec {
     const generateOptionsCodec = HttpChatTransportGenerateOptionsJsonCodec();
     const callOptionsCodec = HttpChatTransportCallOptionsJsonCodec();
 
-    return {
-      'schemaVersion': llmDartJsonSchemaVersion,
-      'kind': envelopeKind,
-      'data': {
+    return const HttpChatTransportEnvelopeJsonCodec().encode(
+      kind: envelopeKind,
+      data: {
         'chatId': request.chatId,
         'prompt': promptCodec.encodeMessages(request.prompt),
         'generateOptions': generateOptionsCodec.encode(
@@ -44,7 +44,7 @@ final class HttpChatTransportRequestJsonCodec {
         'streamProtocol': request.streamProtocol.wireValue,
         if (request.metadata.isNotEmpty) 'metadata': request.metadata,
       },
-    };
+    );
   }
 
   HttpChatTransportRequestPayload decodeRequest(Object? envelope) {
@@ -54,15 +54,10 @@ final class HttpChatTransportRequestJsonCodec {
     const generateOptionsCodec = HttpChatTransportGenerateOptionsJsonCodec();
     const callOptionsCodec = HttpChatTransportCallOptionsJsonCodec();
 
-    final root = HttpChatTransportJson.asMap(envelope, path: r'$');
-    final kind = HttpChatTransportJson.asString(root['kind'], path: r'$.kind');
-    if (kind != envelopeKind) {
-      throw FormatException(
-        'Expected envelope kind "$envelopeKind", received "$kind".',
-      );
-    }
-
-    final data = HttpChatTransportJson.asMap(root['data'], path: r'$.data');
+    final data = const HttpChatTransportEnvelopeJsonCodec().decode(
+      envelope,
+      expectedKind: envelopeKind,
+    );
     return HttpChatTransportRequestPayload(
       chatId: HttpChatTransportJson.asString(
         data['chatId'],
@@ -106,10 +101,9 @@ final class HttpChatTransportRequestJsonCodec {
   ) {
     const callOptionsCodec = HttpChatTransportCallOptionsJsonCodec();
 
-    return {
-      'schemaVersion': llmDartJsonSchemaVersion,
-      'kind': reconnectEnvelopeKind,
-      'data': {
+    return const HttpChatTransportEnvelopeJsonCodec().encode(
+      kind: reconnectEnvelopeKind,
+      data: {
         'chatId': request.chatId,
         'resumeToken': request.resumeToken,
         if (!request.callOptions.isEmpty)
@@ -117,7 +111,7 @@ final class HttpChatTransportRequestJsonCodec {
         'streamProtocol': request.streamProtocol.wireValue,
         if (request.metadata.isNotEmpty) 'metadata': request.metadata,
       },
-    };
+    );
   }
 
   HttpChatTransportReconnectRequestPayload decodeReconnectRequest(
@@ -125,15 +119,10 @@ final class HttpChatTransportRequestJsonCodec {
   ) {
     const callOptionsCodec = HttpChatTransportCallOptionsJsonCodec();
 
-    final root = HttpChatTransportJson.asMap(envelope, path: r'$');
-    final kind = HttpChatTransportJson.asString(root['kind'], path: r'$.kind');
-    if (kind != reconnectEnvelopeKind) {
-      throw FormatException(
-        'Expected envelope kind "$reconnectEnvelopeKind", received "$kind".',
-      );
-    }
-
-    final data = HttpChatTransportJson.asMap(root['data'], path: r'$.data');
+    final data = const HttpChatTransportEnvelopeJsonCodec().decode(
+      envelope,
+      expectedKind: reconnectEnvelopeKind,
+    );
     return HttpChatTransportReconnectRequestPayload(
       chatId: HttpChatTransportJson.asString(
         data['chatId'],

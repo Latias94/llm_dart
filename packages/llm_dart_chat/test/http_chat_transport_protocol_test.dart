@@ -197,6 +197,33 @@ void main() {
       );
     });
 
+    test('rejects unsupported request schema versions', () {
+      const codec = HttpChatTransportRequestJsonCodec();
+
+      expect(
+        () => codec.decodeRequest({
+          'schemaVersion': '2099-01-1',
+          'kind': HttpChatTransportRequestJsonCodec.envelopeKind,
+          'data': {
+            'chatId': 'chat-1',
+            'prompt': const PromptJsonCodec().encodeMessages([
+              UserPromptMessage.text('Hello'),
+            ]),
+            'generateOptions': <String, Object?>{},
+          },
+        }),
+        throwsA(
+          isA<FormatException>().having(
+            (error) => error.message,
+            'message',
+            contains(
+              'Unsupported HTTP chat transport schema version "2099-01-1"',
+            ),
+          ),
+        ),
+      );
+    });
+
     test('round-trips reconnect request payloads', () {
       const codec = HttpChatTransportRequestJsonCodec();
       final encoded = codec.encodeReconnectRequest(
@@ -372,6 +399,29 @@ void main() {
       });
 
       expect(decoded[12], isA<HttpChatTransportKeepAliveChunk>());
+    });
+
+    test('rejects unsupported chunk schema versions', () {
+      const codec = HttpChatTransportChunkJsonCodec();
+
+      expect(
+        () => codec.decodeChunk({
+          'schemaVersion': '2099-01-1',
+          'kind': HttpChatTransportChunkJsonCodec.envelopeKind,
+          'data': const {
+            'type': 'keepalive',
+          },
+        }),
+        throwsA(
+          isA<FormatException>().having(
+            (error) => error.message,
+            'message',
+            contains(
+              'Unsupported HTTP chat transport schema version "2099-01-1"',
+            ),
+          ),
+        ),
+      );
     });
   });
 
