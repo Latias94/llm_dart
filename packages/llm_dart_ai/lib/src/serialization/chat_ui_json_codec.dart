@@ -1,6 +1,7 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import '../ui/chat_ui_message.dart';
+import 'ai_serialization_envelope_json_codec.dart';
 import 'chat_ui_metadata_json_codec.dart';
 import 'chat_ui_part_json_codec.dart';
 
@@ -10,25 +11,19 @@ final class ChatUiJsonCodec {
   const ChatUiJsonCodec();
 
   JsonMap encodeMessages(List<ChatUiMessage> messages) {
-    return {
-      'schemaVersion': llmDartJsonSchemaVersion,
-      'kind': envelopeKind,
-      'data': {
+    return const AiSerializationEnvelopeJsonCodec().encode(
+      kind: envelopeKind,
+      data: {
         'messages': messages.map(encodeMessage).toList(growable: false),
       },
-    };
+    );
   }
 
   List<ChatUiMessage> decodeMessages(Object? envelope) {
-    final root = asJsonMap(envelope, path: r'$');
-    final kind = asJsonString(root['kind'], path: r'$.kind');
-    if (kind != envelopeKind) {
-      throw FormatException(
-        'Expected envelope kind "$envelopeKind", received "$kind".',
-      );
-    }
-
-    final data = asJsonMap(root['data'], path: r'$.data');
+    final data = const AiSerializationEnvelopeJsonCodec().decode(
+      envelope,
+      expectedKind: envelopeKind,
+    );
     return asJsonList(data['messages'], path: r'$.data.messages')
         .asMap()
         .entries

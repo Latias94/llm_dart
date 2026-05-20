@@ -312,5 +312,28 @@ void main() {
       ]);
       expect(metadata['customFlag'], 'preserved');
     });
+
+    test('rejects unsupported schema versions', () {
+      const codec = ChatUiJsonCodec();
+
+      expect(
+        () => codec.decodeMessages({
+          'schemaVersion': '2099-01-1',
+          'kind': ChatUiJsonCodec.envelopeKind,
+          'data': {
+            'messages': const [],
+          },
+        }),
+        throwsA(
+          isA<FormatException>().having(
+            (error) => error.message,
+            'message',
+            contains(
+              'Unsupported llm_dart AI JSON schema version "2099-01-1"',
+            ),
+          ),
+        ),
+      );
+    });
   });
 }

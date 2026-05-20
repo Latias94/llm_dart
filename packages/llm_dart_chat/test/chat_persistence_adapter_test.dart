@@ -80,6 +80,33 @@ void main() {
       expect(store.snapshots.containsKey('chat-3'), isFalse);
       expect(await adapter.loadSnapshot('chat-3'), isNull);
     });
+
+    test('rejects unsupported snapshot schema versions', () {
+      const codec = ChatSessionSnapshotJsonCodec();
+
+      expect(
+        () => codec.decodeSnapshot({
+          'schemaVersion': '2099-01-1',
+          'kind': ChatSessionSnapshotJsonCodec.envelopeKind,
+          'data': {
+            'chatId': 'chat-1',
+            'prompt': const PromptJsonCodec().encodeMessages([]),
+            'messages': const ChatUiJsonCodec().encodeMessages([]),
+            'status': ChatStatus.ready.name,
+            'error': null,
+          },
+        }),
+        throwsA(
+          isA<FormatException>().having(
+            (error) => error.message,
+            'message',
+            contains(
+              'Unsupported chat session snapshot schema version "2099-01-1"',
+            ),
+          ),
+        ),
+      );
+    });
   });
 }
 

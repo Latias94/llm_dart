@@ -1,6 +1,7 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart' as provider;
 
 import '../stream/text_stream_event.dart';
+import 'ai_serialization_envelope_json_codec.dart';
 import 'text_stream_content_event_json_codec.dart';
 import 'text_stream_lifecycle_event_json_codec.dart';
 import 'text_stream_tool_event_json_codec.dart';
@@ -16,25 +17,19 @@ final class TextStreamEventJsonCodec {
   const TextStreamEventJsonCodec();
 
   provider.JsonMap encodeEvents(List<TextStreamEvent> events) {
-    return {
-      'schemaVersion': provider.llmDartJsonSchemaVersion,
-      'kind': envelopeKind,
-      'data': {
+    return const AiSerializationEnvelopeJsonCodec().encode(
+      kind: envelopeKind,
+      data: {
         'events': events.map(encodeEvent).toList(growable: false),
       },
-    };
+    );
   }
 
   List<TextStreamEvent> decodeEvents(Object? envelope) {
-    final root = provider.asJsonMap(envelope, path: r'$');
-    final kind = provider.asJsonString(root['kind'], path: r'$.kind');
-    if (kind != envelopeKind) {
-      throw FormatException(
-        'Expected envelope kind "$envelopeKind", received "$kind".',
-      );
-    }
-
-    final data = provider.asJsonMap(root['data'], path: r'$.data');
+    final data = const AiSerializationEnvelopeJsonCodec().decode(
+      envelope,
+      expectedKind: envelopeKind,
+    );
     return provider
         .asJsonList(data['events'], path: r'$.data.events')
         .asMap()

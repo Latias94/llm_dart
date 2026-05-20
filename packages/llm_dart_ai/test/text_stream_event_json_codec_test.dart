@@ -55,5 +55,28 @@ void main() {
       );
       expect(decoded[5], isA<ai.AbortEvent>());
     });
+
+    test('rejects unsupported schema versions', () {
+      const codec = ai.TextStreamEventJsonCodec();
+
+      expect(
+        () => codec.decodeEvents({
+          'schemaVersion': '2099-01-1',
+          'kind': ai.TextStreamEventJsonCodec.envelopeKind,
+          'data': {
+            'events': const [],
+          },
+        }),
+        throwsA(
+          isA<FormatException>().having(
+            (error) => error.message,
+            'message',
+            contains(
+              'Unsupported llm_dart AI JSON schema version "2099-01-1"',
+            ),
+          ),
+        ),
+      );
+    });
   });
 }
