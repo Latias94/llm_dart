@@ -154,6 +154,49 @@ void main() {
       expect(state.canReconnect, isTrue);
       expect(cleared, isFalse);
     });
+
+    test('labels malformed SSE payload errors with transport source', () async {
+      final state = _resumeState();
+      var cleared = false;
+
+      final client = HttpChatTransportStreamClient(
+        transport: FakeTransportClient(
+          onSendStream: (_) async => StreamingTransportResponse(
+            statusCode: 200,
+            stream: Stream.fromIterable([
+              utf8.encode('data: {"broken":\n\n'),
+            ]),
+          ),
+        ),
+        sseDecoder: const DefaultSseDecoder(),
+        chunkCodec: const HttpChatTransportChunkJsonCodec(),
+      );
+
+      final event = await client
+          .sendPayload(
+            state: state,
+            endpoint: Uri.parse('https://example.com/chat'),
+            headers: const {},
+            requestTimeout: null,
+            maxRetries: null,
+            cancellation: null,
+            payload: const {},
+            clearResumeState: () => cleared = true,
+          )
+          .where((chunk) => chunk is ChatUiEventChunk)
+          .cast<ChatUiEventChunk>()
+          .map((chunk) => chunk.event)
+          .single;
+
+      expect(event, isA<ErrorEvent>());
+      final error = (event as ErrorEvent).error;
+      expect(error.code, 'transport-response-format');
+      expect(
+        error.message,
+        contains('HTTP chat transport stream API returned invalid JSON'),
+      );
+      expect(cleared, isTrue);
+    });
   });
 }
 

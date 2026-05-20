@@ -64,7 +64,10 @@ final class HttpChatTransportStreamClient {
       }
 
       final parser = SseJsonChunkParser(sseDecoder: sseDecoder);
-      await for (final envelope in parser.parse(response.stream)) {
+      await for (final envelope in parser.parse(
+        response.stream,
+        sourceName: 'HTTP chat transport stream',
+      )) {
         final chunk = chunkCodec.decodeChunk(envelope);
         final projected = projectHttpChatTransportChunk(
           chunk: chunk,

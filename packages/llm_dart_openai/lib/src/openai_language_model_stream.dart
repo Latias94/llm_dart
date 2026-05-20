@@ -15,7 +15,10 @@ Stream<LanguageModelStreamEvent> decodeOpenAILanguageModelStreamEvents({
 }) async* {
   if (route == OpenAIRequestRoute.responses) {
     final streamState = OpenAIResponsesStreamState();
-    await for (final chunk in streamChunkParser.parse(stream)) {
+    await for (final chunk in streamChunkParser.parse(
+      stream,
+      sourceName: 'OpenAI Responses stream',
+    )) {
       if (includeRawChunks) {
         yield RawChunkEvent(chunk);
       }
@@ -30,7 +33,10 @@ Stream<LanguageModelStreamEvent> decodeOpenAILanguageModelStreamEvents({
   }
 
   final streamState = OpenAIChatCompletionsStreamState();
-  await for (final chunk in streamChunkParser.parse(stream)) {
+  await for (final chunk in streamChunkParser.parse(
+    stream,
+    sourceName: 'OpenAI Chat Completions stream',
+  )) {
     if (includeRawChunks) {
       yield RawChunkEvent(chunk);
     }

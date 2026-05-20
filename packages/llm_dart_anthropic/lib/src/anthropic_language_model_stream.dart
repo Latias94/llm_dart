@@ -10,7 +10,10 @@ Stream<LanguageModelStreamEvent> decodeAnthropicLanguageModelStreamEvents({
   SseJsonChunkParser streamChunkParser = const SseJsonChunkParser(),
 }) async* {
   final state = AnthropicMessagesStreamState();
-  await for (final chunk in streamChunkParser.parse(stream)) {
+  await for (final chunk in streamChunkParser.parse(
+    stream,
+    sourceName: 'Anthropic messages stream',
+  )) {
     if (includeRawChunks) {
       yield RawChunkEvent(chunk);
     }
