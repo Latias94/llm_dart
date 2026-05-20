@@ -7,6 +7,7 @@ import 'elevenlabs_shared.dart';
 import 'elevenlabs_speech_model_request.dart';
 import 'elevenlabs_speech_model_response.dart';
 import 'elevenlabs_speech_model_transport.dart';
+import 'elevenlabs_speech_request_policy.dart';
 
 /// Package-owned modern ElevenLabs speech model surface.
 final class ElevenLabsSpeechModel
