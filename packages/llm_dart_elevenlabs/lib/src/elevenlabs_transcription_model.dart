@@ -2,6 +2,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'elevenlabs_model_describer.dart';
+import 'elevenlabs_model_call_support.dart';
 import 'elevenlabs_model_settings.dart';
 import 'elevenlabs_shared.dart';
 import 'elevenlabs_transcription_model_request.dart';
@@ -57,8 +58,9 @@ final class ElevenLabsTranscriptionModel
       options: options,
     );
 
-    final response = await transport.send(
-      buildElevenLabsTranscriptionTransportRequest(
+    return sendElevenLabsModelRequest(
+      transport: transport,
+      request: buildElevenLabsTranscriptionTransportRequest(
         baseUrl: baseUrl,
         callOptions: request.callOptions,
         multipart: multipart,
@@ -66,12 +68,11 @@ final class ElevenLabsTranscriptionModel
         settings: settings,
         options: options,
       ),
-    );
-
-    return decodeElevenLabsTranscriptionResponse(
-      body: response.body,
-      modelId: modelId,
-      headers: response.headers,
+      decode: (body, headers) => decodeElevenLabsTranscriptionResponse(
+        body: body,
+        modelId: modelId,
+        headers: headers,
+      ),
     );
   }
 }

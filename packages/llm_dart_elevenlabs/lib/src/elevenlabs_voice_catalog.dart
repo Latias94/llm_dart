@@ -1,5 +1,6 @@
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
+import 'elevenlabs_model_call_support.dart';
 import 'elevenlabs_shared.dart';
 import 'elevenlabs_voice_catalog_models.dart';
 
@@ -34,8 +35,9 @@ final class ElevenLabsVoiceCatalogClient {
     TransportCancellation? cancellation,
     Map<String, String>? headers,
   }) async {
-    final response = await transport.send(
-      TransportRequest(
+    return sendElevenLabsModelRequest(
+      transport: transport,
+      request: TransportRequest(
         uri: voicesUri,
         method: TransportMethod.get,
         headers: {
@@ -49,12 +51,13 @@ final class ElevenLabsVoiceCatalogClient {
         cancellation: cancellation,
         responseType: TransportResponseType.json,
       ),
+      decode: (body, _) {
+        final json = decodeElevenLabsJsonObject(
+          body,
+          responseName: 'voice catalog',
+        );
+        return decodeElevenLabsVoiceList(json);
+      },
     );
-
-    final json = decodeElevenLabsJsonObject(
-      response.body,
-      responseName: 'voice catalog',
-    );
-    return decodeElevenLabsVoiceList(json);
   }
 }

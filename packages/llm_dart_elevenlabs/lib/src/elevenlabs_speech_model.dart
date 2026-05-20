@@ -2,6 +2,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'elevenlabs_model_describer.dart';
+import 'elevenlabs_model_call_support.dart';
 import 'elevenlabs_model_settings.dart';
 import 'elevenlabs_shared.dart';
 import 'elevenlabs_speech_model_request.dart';
@@ -63,8 +64,9 @@ final class ElevenLabsSpeechModel
     final outputFormat = resolveElevenLabsSpeechOutputFormat(
       request.outputFormat ?? options?.outputFormat,
     );
-    final response = await transport.send(
-      buildElevenLabsSpeechTransportRequest(
+    return sendElevenLabsModelRequest(
+      transport: transport,
+      request: buildElevenLabsSpeechTransportRequest(
         baseUrl: baseUrl,
         voiceId: voiceId,
         outputFormat: outputFormat,
@@ -79,14 +81,13 @@ final class ElevenLabsSpeechModel
         settings: settings,
         options: options,
       ),
-    );
-
-    return decodeElevenLabsSpeechResponse(
-      body: response.body,
-      modelId: modelId,
-      headers: response.headers,
-      outputFormat: outputFormat,
-      warnings: warnings,
+      decode: (body, headers) => decodeElevenLabsSpeechResponse(
+        body: body,
+        modelId: modelId,
+        headers: headers,
+        outputFormat: outputFormat,
+        warnings: warnings,
+      ),
     );
   }
 }
