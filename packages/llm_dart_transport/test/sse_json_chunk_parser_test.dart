@@ -81,10 +81,10 @@ void main() {
         ]),
       ),
       emitsError(
-        isA<FormatException>().having(
+        isA<TransportResponseFormatException>().having(
           (error) => error.message,
           'message',
-          contains('JSON object SSE payload'),
+          contains('SSE stream chunk API returned JSON that is not an object'),
         ),
       ),
     );
@@ -99,7 +99,39 @@ void main() {
           utf8.encode('data: {"broken":\n\n'),
         ]),
       ),
-      emitsError(isA<FormatException>()),
+      emitsError(
+        isA<TransportResponseFormatException>().having(
+          (error) => error.message,
+          'message',
+          contains('SSE stream chunk API returned invalid JSON'),
+        ),
+      ),
+    );
+  });
+
+  test('SseJsonChunkParser supports custom source names for errors', () {
+    const parser = SseJsonChunkParser();
+
+    expect(
+      parser.parse(
+        Stream.fromIterable([
+          utf8.encode('data: <html>bad gateway</html>\n\n'),
+        ]),
+        sourceName: 'Provider events',
+      ),
+      emitsError(
+        isA<TransportResponseFormatException>()
+            .having(
+              (error) => error.message,
+              'message',
+              contains('Provider events API returned HTML page'),
+            )
+            .having(
+              (error) => error.responseBody,
+              'responseBody',
+              '<html>bad gateway</html>',
+            ),
+      ),
     );
   });
 }

@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'json_object_response_decoder.dart';
 import 'sse_decoder.dart';
 
 final class SseJsonChunkParser {
@@ -11,6 +12,7 @@ final class SseJsonChunkParser {
 
   Stream<Map<String, Object?>> parse(
     Stream<List<int>> byteStream, {
+    String sourceName = 'SSE stream chunk',
     bool Function(SseFrame frame)? shouldSkipFrame,
   }) async* {
     final frames = sseDecoder.decode(utf8.decoder.bind(byteStream));
@@ -20,27 +22,14 @@ final class SseJsonChunkParser {
         continue;
       }
 
-      yield _decodeJsonObjectFrame(frame.data);
+      yield JsonObjectResponseDecoder.decode(
+        frame.data,
+        sourceName: sourceName,
+      );
     }
   }
 
   static bool _defaultShouldSkipFrame(SseFrame frame) {
     return frame.data.isEmpty || frame.data == '[DONE]';
-  }
-
-  static Map<String, Object?> _decodeJsonObjectFrame(String data) {
-    final decoded = jsonDecode(data);
-    if (decoded is Map<String, Object?>) {
-      return decoded;
-    }
-
-    if (decoded is Map) {
-      return Map<String, Object?>.from(decoded);
-    }
-
-    throw FormatException(
-      'Expected a JSON object SSE payload but received ${decoded.runtimeType}.',
-      data,
-    );
   }
 }
