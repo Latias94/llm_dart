@@ -6,6 +6,7 @@ import 'google_language_model_response.dart';
 import 'google_language_model_support.dart';
 import 'google_language_model_stream.dart';
 import 'google_language_model_transport.dart';
+import 'google_model_call_support.dart';
 import 'google_model_describer.dart';
 import 'google_model_settings.dart';
 
@@ -53,8 +54,9 @@ final class GoogleLanguageModel
       settings: settings,
     );
 
-    final response = await transport.send(
-      buildGoogleLanguageModelTransportRequest(
+    return sendGoogleModelRequest(
+      transport: transport,
+      request: buildGoogleLanguageModelTransportRequest(
         baseUrl: baseUrl,
         modelId: modelId,
         request: request,
@@ -63,11 +65,10 @@ final class GoogleLanguageModel
         apiKey: apiKey,
         settings: settings,
       ),
-    );
-
-    return decodeGoogleLanguageModelGenerateResponse(
-      body: response.body,
-      warnings: preparedRequest.warnings,
+      decode: (body, _) => decodeGoogleLanguageModelGenerateResponse(
+        body: body,
+        warnings: preparedRequest.warnings,
+      ),
     );
   }
 

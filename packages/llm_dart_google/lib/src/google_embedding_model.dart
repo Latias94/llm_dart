@@ -4,6 +4,7 @@ import 'package:llm_dart_transport/llm_dart_transport.dart';
 import 'google_embedding_model_request.dart';
 import 'google_embedding_model_response.dart';
 import 'google_embedding_model_transport.dart';
+import 'google_model_call_support.dart';
 import 'google_model_describer.dart';
 import 'google_model_settings.dart';
 
@@ -61,8 +62,9 @@ final class GoogleEmbeddingModel
       request: request,
       options: options,
     );
-    final response = await transport.send(
-      buildGoogleEmbeddingTransportRequest(
+    return sendGoogleModelRequest(
+      transport: transport,
+      request: buildGoogleEmbeddingTransportRequest(
         baseUrl: baseUrl,
         modelId: modelId,
         request: request,
@@ -71,13 +73,12 @@ final class GoogleEmbeddingModel
         apiKey: apiKey,
         settings: settings,
       ),
-    );
-
-    return decodeGoogleEmbeddingResponse(
-      body: response.body,
-      batch: batch,
-      modelId: modelId,
-      headers: response.headers,
+      decode: (body, headers) => decodeGoogleEmbeddingResponse(
+        body: body,
+        batch: batch,
+        modelId: modelId,
+        headers: headers,
+      ),
     );
   }
 }

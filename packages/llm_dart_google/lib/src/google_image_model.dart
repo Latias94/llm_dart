@@ -9,6 +9,7 @@ import 'google_image_model_capabilities.dart';
 import 'google_image_model_options_resolution.dart';
 import 'google_image_model_response.dart';
 import 'google_image_model_transport.dart';
+import 'google_model_call_support.dart';
 import 'google_model_describer.dart';
 import 'google_model_settings.dart';
 
@@ -87,8 +88,9 @@ final class GoogleImageModel implements ImageModel, CapabilityDescribedModel {
       settings: settings,
     );
 
-    final response = await transport.send(
-      buildGoogleImageTransportRequest(
+    return sendGoogleModelRequest(
+      transport: transport,
+      request: buildGoogleImageTransportRequest(
         baseUrl: baseUrl,
         modelId: modelId,
         route: route,
@@ -97,13 +99,12 @@ final class GoogleImageModel implements ImageModel, CapabilityDescribedModel {
         apiKey: apiKey,
         settings: settings,
       ),
-    );
-
-    return decodeGoogleImageResponse(
-      body: response.body,
-      modelId: modelId,
-      route: route,
-      headers: response.headers,
+      decode: (body, headers) => decodeGoogleImageResponse(
+        body: body,
+        modelId: modelId,
+        route: route,
+        headers: headers,
+      ),
     );
   }
 
@@ -117,8 +118,9 @@ final class GoogleImageModel implements ImageModel, CapabilityDescribedModel {
       settings: settings,
     );
 
-    final response = await transport.send(
-      buildGoogleImageTransportRequest(
+    return sendGoogleModelRequest(
+      transport: transport,
+      request: buildGoogleImageTransportRequest(
         baseUrl: baseUrl,
         modelId: modelId,
         route: GoogleImageRequestRoute.generateContent,
@@ -127,13 +129,12 @@ final class GoogleImageModel implements ImageModel, CapabilityDescribedModel {
         apiKey: apiKey,
         settings: settings,
       ),
-    );
-
-    return decodeGoogleImageResponse(
-      body: response.body,
-      modelId: modelId,
-      route: GoogleImageRequestRoute.generateContent,
-      headers: response.headers,
+      decode: (body, headers) => decodeGoogleImageResponse(
+        body: body,
+        modelId: modelId,
+        route: GoogleImageRequestRoute.generateContent,
+        headers: headers,
+      ),
     );
   }
 

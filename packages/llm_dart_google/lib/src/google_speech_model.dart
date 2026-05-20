@@ -1,6 +1,7 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
+import 'google_model_call_support.dart';
 import 'google_model_describer.dart';
 import 'google_model_settings.dart';
 import 'google_speech_model_body.dart';
@@ -50,8 +51,9 @@ final class GoogleSpeechModel implements SpeechModel, CapabilityDescribedModel {
     validateGoogleSpeechRequest(request, options);
     final warnings = buildGoogleSpeechRequestWarnings(request);
 
-    final response = await transport.send(
-      buildGoogleSpeechTransportRequest(
+    return sendGoogleModelRequest(
+      transport: transport,
+      request: buildGoogleSpeechTransportRequest(
         baseUrl: baseUrl,
         modelId: modelId,
         callOptions: request.callOptions,
@@ -63,13 +65,12 @@ final class GoogleSpeechModel implements SpeechModel, CapabilityDescribedModel {
         apiKey: apiKey,
         settings: settings,
       ),
-    );
-
-    return decodeGoogleSpeechResponse(
-      body: response.body,
-      modelId: modelId,
-      headers: response.headers,
-      warnings: warnings,
+      decode: (body, headers) => decodeGoogleSpeechResponse(
+        body: body,
+        modelId: modelId,
+        headers: headers,
+        warnings: warnings,
+      ),
     );
   }
 }
