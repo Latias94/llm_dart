@@ -1,6 +1,7 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
+import 'google_image_edit_body.dart';
 import 'google_image_edit_request.dart';
 import 'google_image_editing.dart';
 import 'google_image_generation_request.dart';
