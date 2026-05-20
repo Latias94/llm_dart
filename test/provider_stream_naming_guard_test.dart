@@ -278,7 +278,7 @@ void main() {
       ).readAsStringSync();
       final toolOutputCodec = File(
         'packages/llm_dart_provider/lib/src/serialization/'
-        'serialization_tool_output_json_codec.dart',
+        'serialization_tool_output_part_json_codec.dart',
       ).readAsStringSync();
 
       expect(options, contains('ProviderReplayPromptPartOptions'));
