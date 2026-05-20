@@ -5,6 +5,7 @@ import 'ollama_api.dart';
 import 'ollama_chat_request_codec.dart';
 import 'ollama_chat_response_codec.dart';
 import 'ollama_chat_stream_codec.dart';
+import 'ollama_language_model_execution.dart';
 import 'ollama_language_model_request.dart';
 import 'ollama_language_model_response.dart';
 import 'ollama_language_model_stream.dart';
@@ -95,27 +96,17 @@ final class OllamaLanguageModel
       request: request,
       stream: true,
     );
-    yield* startOllamaChatStream(preparedRequest: preparedRequest);
-
-    try {
-      final response = await transport.sendStream(
-        buildOllamaChatStreamTransportRequest(
-          baseUrl: baseUrl,
-          request: request,
-          body: preparedRequest.body,
-          defaultHeaders: defaultHeaders,
-        ),
-      );
-
-      await for (final event in decodeOllamaChatStreamResponse(
-        stream: response.stream,
-        streamCodec: _streamCodec,
-        includeRawChunks: request.options.includeRawChunks,
-      )) {
-        yield event;
-      }
-    } catch (error) {
-      yield ollamaChatStreamErrorEvent(error);
-    }
+    yield* sendOllamaChatStreamCall(
+      transport: transport,
+      request: buildOllamaChatStreamTransportRequest(
+        baseUrl: baseUrl,
+        request: request,
+        body: preparedRequest.body,
+        defaultHeaders: defaultHeaders,
+      ),
+      preparedRequest: preparedRequest,
+      streamCodec: _streamCodec,
+      includeRawChunks: request.options.includeRawChunks,
+    );
   }
 }
