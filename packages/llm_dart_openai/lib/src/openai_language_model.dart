@@ -4,9 +4,8 @@ import 'package:llm_dart_transport/llm_dart_transport.dart';
 import 'openai_chat_completions_codec.dart';
 import 'openai_family_profile.dart';
 import 'openai_family_url_support.dart';
+import 'openai_language_model_execution.dart';
 import 'openai_language_model_prepared_call.dart';
-import 'openai_language_model_response.dart';
-import 'openai_language_model_stream.dart';
 import 'openai_model_settings.dart';
 import 'openai_model_describer.dart';
 import 'openai_provider_support.dart';
@@ -78,12 +77,9 @@ final class OpenAILanguageModel
       responsesCodec: _codec,
       chatCompletionsCodec: _chatCompletionsCodec,
     );
-    final response = await transport.send(preparedCall.transportRequest);
-
-    return decodeOpenAILanguageModelGenerateResponse(
-      call: preparedCall.call,
-      body: response.body,
-      warnings: preparedCall.warnings,
+    return sendOpenAILanguageModelGenerateCall(
+      transport: transport,
+      preparedCall: preparedCall,
       responsesCodec: _codec,
       chatCompletionsCodec: _chatCompletionsCodec,
     );
@@ -104,22 +100,12 @@ final class OpenAILanguageModel
       chatCompletionsCodec: _chatCompletionsCodec,
     );
 
-    yield StartEvent(warnings: preparedCall.warnings);
-
-    try {
-      final response = await transport.sendStream(
-        preparedCall.transportRequest,
-      );
-
-      yield* decodeOpenAILanguageModelStreamEvents(
-        route: preparedCall.call.route,
-        stream: response.stream,
-        includeRawChunks: request.options.includeRawChunks,
-        responsesCodec: _codec,
-        chatCompletionsCodec: _chatCompletionsCodec,
-      );
-    } catch (error) {
-      yield ErrorEvent(transportErrorToModelError(error));
-    }
+    yield* sendOpenAILanguageModelStreamCall(
+      transport: transport,
+      preparedCall: preparedCall,
+      includeRawChunks: request.options.includeRawChunks,
+      responsesCodec: _codec,
+      chatCompletionsCodec: _chatCompletionsCodec,
+    );
   }
 }
