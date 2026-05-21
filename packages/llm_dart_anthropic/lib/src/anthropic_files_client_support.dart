@@ -1,3 +1,4 @@
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'anthropic_file_response.dart';
@@ -8,8 +9,11 @@ Future<T> sendAnthropicFilesJsonModel<T>({
   required TransportRequest request,
   required T Function(Object? body) decode,
 }) async {
-  final response = await transport.send(request);
-  return decode(response.body);
+  return sendProviderModelRequest(
+    transport: transport,
+    request: request,
+    decode: (body, _) => decode(body),
+  );
 }
 
 Future<AnthropicFileDownload> sendAnthropicFileDownload({
@@ -17,11 +21,14 @@ Future<AnthropicFileDownload> sendAnthropicFileDownload({
   required TransportRequest request,
   required String fileId,
 }) async {
-  final response = await transport.send(request);
-  return decodeAnthropicFileDownload(
-    fileId: fileId,
-    body: response.body,
-    headers: response.headers,
+  return sendProviderModelRequest(
+    transport: transport,
+    request: request,
+    decode: (body, headers) => decodeAnthropicFileDownload(
+      fileId: fileId,
+      body: body,
+      headers: headers,
+    ),
   );
 }
 
@@ -29,5 +36,9 @@ Future<void> sendAnthropicFilesDelete({
   required TransportClient transport,
   required TransportRequest request,
 }) async {
-  await transport.send(request);
+  await sendProviderModelRequest(
+    transport: transport,
+    request: request,
+    decode: (_, __) {},
+  );
 }

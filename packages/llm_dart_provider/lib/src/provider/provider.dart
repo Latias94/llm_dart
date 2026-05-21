@@ -3,9 +3,12 @@ import '../model/image_model.dart';
 import '../model/language_model.dart';
 import '../model/speech_model.dart';
 import '../model/transcription_model.dart';
+import 'provider_specification.dart';
 
 abstract interface class Provider {
   String get providerId;
+
+  ProviderSpecification get specification;
 }
 
 abstract interface class ProviderModelFacetSupport implements Provider {

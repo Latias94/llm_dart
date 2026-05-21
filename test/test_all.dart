@@ -12,8 +12,6 @@ import 'utils/utf8_stream_decoder_test.dart' as utf8_decoder_tests;
 // Tool tests
 import 'tool/bootstrap_workspace_pubspec_overrides_test.dart'
     as bootstrap_overrides_tool_tests;
-import 'tool/check_core_compatibility_shell_guard_test.dart'
-    as core_compatibility_shell_guard_tool_tests;
 import 'tool/check_example_api_guards_test.dart'
     as example_api_guard_tool_tests;
 import 'tool/check_openai_provider_layout_guard_test.dart'
@@ -51,7 +49,6 @@ void main() {
 
     group('Tool Tests', () {
       bootstrap_overrides_tool_tests.main();
-      core_compatibility_shell_guard_tool_tests.main();
       example_api_guard_tool_tests.main();
       openai_provider_layout_guard_tool_tests.main();
       pub_version_availability_tool_tests.main();

@@ -133,8 +133,8 @@ void main() {
     });
 
     test('rejects OpenAI tool options on compatible provider profiles', () {
-      const codec = OpenAIChatCompletionsRequestToolCodec(
-        providerNamespace: 'deepseek',
+      final codec = OpenAIChatCompletionsRequestToolCodec.forProfile(
+        const DeepSeekProfile(),
       );
 
       expect(

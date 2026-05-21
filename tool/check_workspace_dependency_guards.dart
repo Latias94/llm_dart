@@ -48,10 +48,22 @@ final RegExp _providerSpecificationUiLayerPattern = RegExp(
   r'\b(ChatUi|CustomUiPart|HttpChatTransport|ChatMessageMapper)\b',
 );
 
+final RegExp _providerDirectTransportCallPattern = RegExp(
+  r'\btransport\.send(?:Stream)?\s*\(',
+);
+
 final RegExp _providerPromptSurfacePattern = RegExp(
   r'\b(SystemPromptMessage|UserPromptMessage|AssistantPromptMessage|'
   r'ToolPromptMessage|PromptMessage|PromptPart)\b',
 );
+
+const Set<String> _providerImplementationPackageNames = {
+  'llm_dart_anthropic',
+  'llm_dart_elevenlabs',
+  'llm_dart_google',
+  'llm_dart_ollama',
+  'llm_dart_openai',
+};
 
 const Set<String> _appFacingUserInputBoundaryPaths = {
   'packages/llm_dart_chat/lib/src/chat_input.dart',
@@ -85,10 +97,6 @@ const Map<String, Set<String>> _allowedRuntimeDependenciesByPackage = {
     'llm_dart_provider',
     'llm_dart_provider_utils',
     'llm_dart_transport',
-  },
-  'llm_dart_core': {
-    'llm_dart_ai',
-    'llm_dart_provider',
   },
   'llm_dart_flutter': {
     'flutter',
@@ -167,6 +175,11 @@ Future<WorkspaceDependencyGuardResult> evaluateWorkspaceDependencyGuards({
   );
   await _collectAppFacingPromptBoundaryViolations(
     repoRoot: resolvedRepoRoot,
+    violations: violations,
+  );
+  await _collectProviderTransportCallBoundaryViolations(
+    repoRoot: resolvedRepoRoot,
+    packagesDir: packagesDir,
     violations: violations,
   );
   await _collectProviderSpecificationUiLayerViolations(
@@ -315,6 +328,50 @@ bool _isDefaultChatSessionAppFacingConstructorLine(
   }
 
   return false;
+}
+
+Future<void> _collectProviderTransportCallBoundaryViolations({
+  required Directory repoRoot,
+  required Directory packagesDir,
+  required List<String> violations,
+}) async {
+  for (final packageName in _providerImplementationPackageNames) {
+    final packageLibDir = Directory.fromUri(
+      packagesDir.uri.resolve('$packageName/lib/'),
+    );
+    if (!packageLibDir.existsSync()) {
+      continue;
+    }
+
+    await for (final entity in packageLibDir.list(recursive: true)) {
+      if (entity is! File || !entity.path.endsWith('.dart')) {
+        continue;
+      }
+
+      final displayPath = _displayPath(repoRoot, entity).replaceAll('\\', '/');
+      final lines = await entity.readAsLines();
+      for (var index = 0; index < lines.length; index += 1) {
+        final line = lines[index];
+        final trimmed = line.trim();
+        if (trimmed.startsWith('//') || trimmed.startsWith('///')) {
+          continue;
+        }
+
+        if (!_providerDirectTransportCallPattern.hasMatch(line)) {
+          continue;
+        }
+
+        violations.add(
+          '$displayPath:${index + 1}: provider package implementation files '
+          'must not call transport.send/transport.sendStream directly. Route '
+          'provider model-call execution through llm_dart_provider_utils '
+          'sendProviderModelRequest or sendProviderLanguageModelStreamRequest '
+          'so cancellation normalization and transport-to-model error '
+          'projection stay in one tested seam.',
+        );
+      }
+    }
+  }
 }
 
 Future<void> _collectProviderSpecificationUiLayerViolations({
@@ -510,7 +567,8 @@ Future<void> main() async {
       'workspace dependency guard passed: no package implementation files '
       'import package:llm_dart/... and no workspace pubspec policies were '
       'violated, provider contract method names are SDK-aligned, and '
-      'app-facing chat input surfaces stay on ModelMessage.',
+      'app-facing chat input surfaces stay on ModelMessage, and provider '
+      'transport calls stay behind provider-utils.',
     );
     return;
   }

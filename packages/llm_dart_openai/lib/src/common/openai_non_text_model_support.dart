@@ -54,16 +54,12 @@ Future<T> sendOpenAIFamilyModelRequest<T>({
   required TransportClient transport,
   required TransportRequest request,
   required OpenAIFamilyModelResponseDecoder<T> decode,
-}) async {
-  try {
-    final response = await transport.send(request);
-    return decode(response.body, response.headers);
-  } catch (error, stackTrace) {
-    Error.throwWithStackTrace(
-      normalizeTransportCancellation(error, request.cancellation?.source),
-      stackTrace,
-    );
-  }
+}) {
+  return sendProviderModelRequest(
+    transport: transport,
+    request: request,
+    decode: decode,
+  );
 }
 
 String? openAIStringOrNull(Object? value) {

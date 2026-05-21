@@ -56,6 +56,78 @@ void main() {
       expect(decoded[5], isA<ai.AbortEvent>());
     });
 
+    test('composes provider model-call codec for shared stream vocabulary', () {
+      const aiCodec = ai.TextStreamEventJsonCodec();
+      const providerCodec = provider.LanguageModelStreamEventJsonCodec();
+
+      final aiEvent = ai.ToolCallEvent(
+        toolCall: const provider.ToolCallContent(
+          toolCallId: 'call-1',
+          toolName: 'weather',
+          input: {
+            'city': 'London',
+          },
+        ),
+        providerMetadata: provider.ProviderMetadata.forNamespace('openai', {
+          'itemId': 'item-1',
+        }),
+      );
+      final providerEvent = provider.ToolCallEvent(
+        toolCall: const provider.ToolCallContent(
+          toolCallId: 'call-1',
+          toolName: 'weather',
+          input: {
+            'city': 'London',
+          },
+        ),
+        providerMetadata: provider.ProviderMetadata.forNamespace('openai', {
+          'itemId': 'item-1',
+        }),
+      );
+
+      expect(aiCodec.encodeEvent(aiEvent),
+          providerCodec.encodeEvent(providerEvent));
+
+      final decoded =
+          aiCodec.decodeEvent(providerCodec.encodeEvent(providerEvent));
+      expect(
+        decoded,
+        isA<ai.ToolCallEvent>()
+            .having(
+              (event) => event.toolCall.toolCallId,
+              'toolCallId',
+              'call-1',
+            )
+            .having(
+              (event) => event.providerMetadata!['openai'],
+              'provider metadata',
+              containsPair('itemId', 'item-1'),
+            ),
+      );
+    });
+
+    test('keeps runtime-only events out of provider stream serialization', () {
+      const aiCodec = ai.TextStreamEventJsonCodec();
+      const providerCodec = provider.LanguageModelStreamEventJsonCodec();
+
+      final runtimeOnly = aiCodec.encodeEvent(
+        const ai.ToolOutputDeniedEvent(
+          toolCallId: 'call-1',
+          reason: 'requires user approval',
+        ),
+      );
+
+      expect(runtimeOnly['type'], 'tool-output-denied');
+      expect(
+        aiCodec.decodeEvent(runtimeOnly),
+        isA<ai.ToolOutputDeniedEvent>(),
+      );
+      expect(
+        () => providerCodec.decodeEvent(runtimeOnly),
+        throwsStateError,
+      );
+    });
+
     test('rejects unsupported schema versions', () {
       const codec = ai.TextStreamEventJsonCodec();
 

@@ -10,6 +10,7 @@ import 'output_spec_foundation.dart';
 import 'output_spec_strategy.dart';
 import 'output_stream_projection.dart';
 import 'output_stream_result.dart';
+import 'text_generation_runtime_request.dart';
 
 Future<GenerateObjectResult<T>> generateObject<T>({
   required LanguageModel model,
@@ -100,21 +101,35 @@ Future<GenerateOutputResult<T>> generateOutput<T>({
     options: options,
     runnerName: 'generateOutput',
   );
-
-  final result = await generateText(
+  final runtime = TextGenerationRuntimeRequest(
     model: model,
     prompt: prompt,
     messages: messages,
     tools: tools,
     toolChoice: toolChoice,
-    options: withOutputResponseFormat(
-      options,
-      outputSpec.responseFormat,
-    ),
+    options: options,
     callOptions: callOptions,
     functionToolExecutor: functionToolExecutor,
     maxSteps: maxSteps,
     stopWhen: stopWhen,
+  );
+  final outputRuntime = runtime.withOptions(
+    withOutputResponseFormat(
+      runtime.options,
+      outputSpec.responseFormat,
+    ),
+  );
+
+  final result = await generateText(
+    model: outputRuntime.model,
+    prompt: outputRuntime.prompt,
+    tools: outputRuntime.tools,
+    toolChoice: outputRuntime.toolChoice,
+    options: outputRuntime.options,
+    callOptions: outputRuntime.callOptions,
+    functionToolExecutor: outputRuntime.functionToolExecutor,
+    maxSteps: outputRuntime.maxSteps,
+    stopWhen: outputRuntime.stopWhen,
   );
 
   return parseGenerateOutputResult(
@@ -141,25 +156,39 @@ Stream<OutputStreamEvent<T>> streamOutput<T>({
     options: options,
     runnerName: 'streamOutput',
   );
+  final runtime = TextGenerationRuntimeRequest(
+    model: model,
+    prompt: prompt,
+    messages: messages,
+    tools: tools,
+    toolChoice: toolChoice,
+    options: options,
+    callOptions: callOptions,
+    functionToolExecutor: functionToolExecutor,
+    maxSteps: maxSteps,
+    stopWhen: stopWhen,
+  );
+  final outputRuntime = runtime.withOptions(
+    withOutputResponseFormat(
+      runtime.options,
+      outputSpec.responseFormat,
+    ),
+  );
 
   final accumulator = GenerateTextResultAccumulator();
   final projection = OutputStreamProjection<T>(
     outputSpec: outputSpec,
   );
   final events = streamText(
-    model: model,
-    prompt: prompt,
-    messages: messages,
-    tools: tools,
-    toolChoice: toolChoice,
-    options: withOutputResponseFormat(
-      options,
-      outputSpec.responseFormat,
-    ),
-    callOptions: callOptions,
-    functionToolExecutor: functionToolExecutor,
-    maxSteps: maxSteps,
-    stopWhen: stopWhen,
+    model: outputRuntime.model,
+    prompt: outputRuntime.prompt,
+    tools: outputRuntime.tools,
+    toolChoice: outputRuntime.toolChoice,
+    options: outputRuntime.options,
+    callOptions: outputRuntime.callOptions,
+    functionToolExecutor: outputRuntime.functionToolExecutor,
+    maxSteps: outputRuntime.maxSteps,
+    stopWhen: outputRuntime.stopWhen,
   );
 
   await for (final event in events) {

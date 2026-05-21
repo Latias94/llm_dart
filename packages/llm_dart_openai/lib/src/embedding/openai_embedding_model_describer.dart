@@ -1,6 +1,5 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
-import '../provider/openai_family_capability_policy.dart';
 import '../provider/openai_family_profile.dart';
 
 ModelCapabilityProfile describeOpenAIEmbeddingModel(
@@ -42,4 +41,4 @@ ModelCapabilityProfile describeOpenAIEmbeddingModel(
 }
 
 CapabilityConfidence _familyFeatureConfidence(OpenAIFamilyProfile profile) =>
-    openAIFamilyCapabilityPolicyFor(profile).sharedFeatureConfidence;
+    profile.capabilityPolicy.sharedFeatureConfidence;

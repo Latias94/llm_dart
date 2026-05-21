@@ -37,6 +37,41 @@ final class Anthropic implements LanguageModelProvider {
   String get providerId => 'anthropic';
 
   @override
+  ProviderSpecification get specification => ProviderSpecification(
+        providerId: providerId,
+        modelFacets: const {
+          ProviderModelFacet.language,
+        },
+        capabilities: [
+          const CapabilityDescriptor(
+            id: ModelCapabilityFeatureIds.languageStreaming,
+          ),
+          const CapabilityDescriptor(
+            id: ModelCapabilityFeatureIds.languageFunctionTools,
+          ),
+          const CapabilityDescriptor(
+            id: ModelCapabilityFeatureIds.languageStructuredOutput,
+          ),
+        ],
+        supportedInputShapes: [
+          ProviderInputShapeDescriptor(
+            modelKind: ModelCapabilityKind.language,
+            shapeId: ProviderInputShapeIds.text,
+          ),
+          ProviderInputShapeDescriptor(
+            modelKind: ModelCapabilityKind.language,
+            shapeId: ProviderInputShapeIds.image,
+            mediaTypes: const ['image/*'],
+          ),
+          ProviderInputShapeDescriptor(
+            modelKind: ModelCapabilityKind.language,
+            shapeId: ProviderInputShapeIds.file,
+            mediaTypes: const ['application/pdf', 'text/*'],
+          ),
+        ],
+      );
+
+  @override
   AnthropicLanguageModel languageModel(
     String modelId, {
     AnthropicChatModelSettings settings = const AnthropicChatModelSettings(),

@@ -33,12 +33,12 @@ For new code, prefer:
 
 These two files are intentionally boundary-oriented. They now explain when
 stable `chatModel(...)` usage is sufficient and when raw OpenAI response
-lifecycle APIs still require the provider-specific compatibility surface in
-`package:llm_dart/providers/openai/openai.dart`.
+lifecycle APIs require OpenAI-owned helpers from
+`package:llm_dart_openai/llm_dart_openai.dart`.
 
-They are no longer meant to teach the broad `legacy.dart` barrel as the
-default path. The old `buildOpenAIResponses()` helper is now framed as frozen
-migration ergonomics, not as the main architecture.
+They are no longer meant to teach broad root compatibility imports. The old
+`buildOpenAIResponses()` helper should be treated as frozen migration
+ergonomics, not as the main architecture.
 
 ## Setup
 

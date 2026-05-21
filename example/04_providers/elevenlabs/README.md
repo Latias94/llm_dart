@@ -92,35 +92,15 @@ export ELEVENLABS_API_KEY="your-elevenlabs-api-key"
 dart run audio_capabilities.dart
 ```
 
-## Compatibility Boundary
-
-### Provider-Specific Compatibility Surface
-
-```dart
-import 'package:llm_dart/providers/elevenlabs/elevenlabs.dart'
-    as elevenlabs_compat;
-
-final audioProvider = elevenlabs_compat.createElevenLabsProvider(
-  apiKey: 'your-key',
-  voiceId: 'JBFqnCBsd6RMkjVDRZzb',
-  stability: 0.7,
-  similarityBoost: 0.9,
-);
-
-// Use this shell only for residual streaming, realtime, or broad audio flows.
-```
-
-This still works, but it should be treated as a transitional shell above the
-package-owned modern ElevenLabs models rather than the target architecture for
-shared-capability app code.
+## Provider-Owned Boundary
 
 The important distinction is:
 
 - use `elevenLabs(...).speechModel(...)` and `transcriptionModel(...)` for
   stable app-facing media flows
 - use `elevenLabs(...).voices().listVoices()` for voice-picker UI
-- use `providers/elevenlabs/elevenlabs.dart` only when you really need
-  realtime/session behavior or broader audio shell methods
+- keep realtime/session behavior or broader audio shell methods as future
+  provider-package work rather than reviving removed root provider subpaths
 
 ## What Is Not Being Forced Into The Shared Surface
 

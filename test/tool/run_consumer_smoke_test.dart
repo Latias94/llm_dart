@@ -68,7 +68,6 @@ void main() {
             'llm_dart_ai',
             'llm_dart_anthropic',
             'llm_dart_chat',
-            'llm_dart_core',
             'llm_dart_elevenlabs',
             'llm_dart_google',
             'llm_dart_ollama',

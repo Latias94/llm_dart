@@ -9,12 +9,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added the internal `TextGenerationRuntimeRequest` seam in `llm_dart_ai` so
+  `GenerateTextRunner`, `StreamTextRunner`, structured-output helpers, and
+  text-call helpers share one prompt/options/tool-loop request shape.
+- Added versioned `ProviderSpecification` declarations to provider facades so
+  provider id, supported model facets, capabilities, and input shapes are
+  discoverable from one provider-owned contract.
 - Added provider-declared model facet support so `ProviderRegistry` can report
   profile-specific model kinds instead of relying only on concrete provider
   class interfaces.
 
 ### Changed
 
+- Removed the historical `llm_dart_core` package from the workspace package
+  graph. Import the owning package or root focused entrypoint instead:
+  `package:llm_dart/core.dart`, `package:llm_dart_ai/llm_dart_ai.dart`, or
+  `package:llm_dart_provider/llm_dart_provider.dart`.
+- AI runtime full-stream JSON now composes provider model-call event JSON from
+  the provider codec; `llm_dart_ai` keeps only runtime-owned lifecycle event
+  serialization.
+- Provider implementation packages now share provider-utils transport call
+  helpers for send/stream cancellation normalization, `StartEvent` emission,
+  and transport-to-model error projection.
+- OpenAI language-model routing now flows through route-specific Responses and
+  Chat Completions adapters instead of one central route switch helper set.
 - OpenAI-family compatible providers such as OpenRouter, DeepSeek, Groq, xAI,
   and Phind now register as language-model providers only unless their profile
   explicitly supports another model facet.
@@ -28,6 +46,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `OpenAIFamilyProfile` on the language-model path, so profile types remain
   the source of provider-family behaviour even when a profile customizes its
   provider id.
+- OpenAI-family route selection, invocation option resolution, capability
+  policy, Chat Completions request policy, and tool-option acceptance are now
+  owned by `OpenAIFamilyProfile`; custom OpenAI-compatible endpoints should use
+  `OpenAICompatibleProfile` instead of mutating an `OpenAIProfile`.
 - Google language-model request and capability policy now routes through an
   internal model-family policy seam, concentrating Gemini, Gemini 3, and Gemma
   request differences while preserving the public typed options.
@@ -50,18 +72,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   encoding, assistant replay projection, tool replay projection, and replay
   metadata helpers while preserving public typed options and wire output.
 
+### Breaking Changes
+
+- `llm_dart_core` has been deleted rather than kept as a deprecated
+  compatibility shell.
+- `Provider` implementations must now expose `ProviderSpecification`.
+- Root legacy builder/provider/model import paths remain removed; do not
+  migrate new code to `package:llm_dart/legacy.dart`,
+  `package:llm_dart/providers/...`, `package:llm_dart/models/...`, or root
+  builder subpaths.
+
 ## [0.11.0-alpha.1] - 2026-05-12
 
 This alpha moves new application code toward the model-first API:
 `openai(...).chatModel(...)` and other short provider factories plus the shared
-helpers from `package:llm_dart/core.dart`. The grouped
-`AI.<provider>(...)` facade remains available from the root entrypoints when
-you prefer one namespace.
+helpers from `package:llm_dart/core.dart` and direct provider packages.
 
 Most apps should continue depending on the root `llm_dart` package. The new
 split packages are available when you want smaller direct dependencies,
 provider-specific entrypoints, or custom provider implementation contracts.
-Older builder-era code should migrate through `package:llm_dart/legacy.dart`.
+Older builder-era code should migrate directly to focused provider factories
+and typed provider options.
 
 ### Added
 
@@ -109,8 +140,8 @@ Older builder-era code should migrate through `package:llm_dart/legacy.dart`.
 - HTTP chat transport payloads now serialize common `CallOptions` fields such
   as timeout, headers, and max retries, while typed provider options can be
   encoded with an explicit transport encoder.
-- Older core imports remain available, but new code should prefer the root
-  model API or the focused packages directly.
+- Historical core-package imports should move to the root focused entrypoints
+  or the owning split packages directly.
 - Provider-specific features now use typed provider options, focused provider
   entrypoints, or provider helper clients instead of broad shared option bags.
 - The MCP examples now use the current `mcp_dart` 2.x package and document the
@@ -157,8 +188,8 @@ Older builder-era code should migrate through `package:llm_dart/legacy.dart`.
   `<provider>(...).chatModel(...)`, `embeddingModel(...)`, `imageModel(...)`,
   `speechModel(...)`, or `transcriptionModel(...)`.
 - Removed the deprecated `ai()` helper from the legacy root compatibility
-  entrypoint. Use `LLMBuilder()` for compatibility builder code or short
-  provider factories such as `openai(...).chatModel(...)` for modern code.
+  entrypoint. Use short provider factories such as
+  `openai(...).chatModel(...)` for modern code.
 - Removed deprecated builder web-search helpers. Use provider-owned search
   options such as `OpenAIGenerateTextOptions`, `AnthropicGenerateTextOptions`,
   `XAIGenerateTextOptions`, or `OpenRouterChatModelSettings`.
@@ -180,15 +211,14 @@ Older builder-era code should migrate through `package:llm_dart/legacy.dart`.
   when you still need them.
 - Removed the grouped `AI` namespace from focused provider and chat entrypoints
   such as `package:llm_dart/openai.dart`, `google.dart`, `xai.dart`, and
-  `chat.dart`. Import `package:llm_dart/llm_dart.dart` or
-  `package:llm_dart/ai.dart` when you want `AI.<provider>(...)`.
+  `chat.dart`. Import direct provider packages instead.
 
 ### Migration Notes
 
 - For new chat/text generation, start with `<provider>(...).chatModel(...)`
   plus `generateTextCall(...)` or `streamTextCall(...)`.
-- Replace `ai()` with `LLMBuilder()` when staying on the compatibility builder
-  surface.
+- Replace `ai()` and builder-era configuration with focused provider factories
+  and typed provider options.
 - Replace old direct `model.generate(request)` calls with
   `generateText(model: ..., prompt: ...)` for app code, or
   `model.doGenerate(request)` only inside provider/adaptor code.
@@ -207,8 +237,8 @@ Older builder-era code should migrate through `package:llm_dart/legacy.dart`.
   options passed through `CallOptions.providerOptions`.
 - Move provider file identity hints from `ProviderMetadata` to
   `FileProviderReferenceData(ProviderReference.forProvider(...))`.
-- For compatibility builder code, import `package:llm_dart/legacy.dart` or
-  the focused builder path explicitly.
+- For compatibility builder code, rewrite to focused provider factories rather
+  than importing removed legacy or builder paths.
 - See `docs/migration/0.11-sdk-aligned.md` for the release-facing migration
   guide and
   `docs/workstreams/2026-05-sdk-aligned-fearless-refactor/01-boundaries-and-migration.md`
@@ -216,13 +246,7 @@ Older builder-era code should migrate through `package:llm_dart/legacy.dart`.
 
 ### Still Available
 
-- `package:llm_dart/legacy.dart` remains the explicit compatibility import.
-- `LLMBuilder()` remains available for builder-era migrations.
-- `createProvider(...)` remains available without raw extension bags.
-- Non-deprecated root provider constructors such as `createOpenAIProvider(...)`
-  and `createGoogleProvider(...)` remain available for compatibility code.
-- `AI.<provider>(...)` remains as a supported grouped facade from the root
-  modern entrypoints.
+- Focused provider package factories remain the preferred construction path.
 
 ## [0.10.7] - 2026-03-26
 

@@ -1,4 +1,5 @@
 import 'provider.dart';
+import 'provider_specification.dart';
 
 final class ProviderModelFacetSupportResolver {
   const ProviderModelFacetSupportResolver();
@@ -7,6 +8,7 @@ final class ProviderModelFacetSupportResolver {
     return provider is LanguageModelProvider &&
         _declaresSupport(
           provider,
+          ProviderModelFacet.language,
           (support) => support.supportsLanguageModels,
         );
   }
@@ -15,6 +17,7 @@ final class ProviderModelFacetSupportResolver {
     return provider is EmbeddingModelProvider &&
         _declaresSupport(
           provider,
+          ProviderModelFacet.embedding,
           (support) => support.supportsEmbeddingModels,
         );
   }
@@ -23,6 +26,7 @@ final class ProviderModelFacetSupportResolver {
     return provider is ImageModelProvider &&
         _declaresSupport(
           provider,
+          ProviderModelFacet.image,
           (support) => support.supportsImageModels,
         );
   }
@@ -31,6 +35,7 @@ final class ProviderModelFacetSupportResolver {
     return provider is SpeechModelProvider &&
         _declaresSupport(
           provider,
+          ProviderModelFacet.speech,
           (support) => support.supportsSpeechModels,
         );
   }
@@ -39,14 +44,19 @@ final class ProviderModelFacetSupportResolver {
     return provider is TranscriptionModelProvider &&
         _declaresSupport(
           provider,
+          ProviderModelFacet.transcription,
           (support) => support.supportsTranscriptionModels,
         );
   }
 
   static bool _declaresSupport(
     Provider provider,
+    ProviderModelFacet facet,
     bool Function(ProviderModelFacetSupport support) readSupport,
   ) {
+    if (!provider.specification.supportsModelFacet(facet)) {
+      return false;
+    }
     if (provider is ProviderModelFacetSupport) {
       return readSupport(provider);
     }

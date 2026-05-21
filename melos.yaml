@@ -14,7 +14,7 @@ scripts:
     description: Ensure package implementation files do not import the root llm_dart package.
   guard:root:
     run: dart --suppress-analytics run tool/check_root_package_boundary_guards.dart
-    description: Ensure the root package keeps the frozen public entrypoint and compatibility-shell boundary.
+    description: Ensure the root package keeps the frozen public entrypoint boundary.
   analyze:
     run: |
       dart --suppress-analytics run tool/check_workspace_dependency_guards.dart

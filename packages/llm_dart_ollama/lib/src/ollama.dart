@@ -40,6 +40,40 @@ final class Ollama implements LanguageModelProvider, EmbeddingModelProvider {
   String get providerId => 'ollama';
 
   @override
+  ProviderSpecification get specification => ProviderSpecification(
+        providerId: providerId,
+        modelFacets: const {
+          ProviderModelFacet.language,
+          ProviderModelFacet.embedding,
+        },
+        capabilities: [
+          const CapabilityDescriptor(
+            id: ModelCapabilityFeatureIds.languageStreaming,
+          ),
+          const CapabilityDescriptor(
+            id: ModelCapabilityFeatureIds.languageFunctionTools,
+            confidence: CapabilityConfidence.inferred,
+          ),
+        ],
+        supportedInputShapes: [
+          ProviderInputShapeDescriptor(
+            modelKind: ModelCapabilityKind.language,
+            shapeId: ProviderInputShapeIds.text,
+          ),
+          ProviderInputShapeDescriptor(
+            modelKind: ModelCapabilityKind.language,
+            shapeId: ProviderInputShapeIds.image,
+            mediaTypes: const ['image/*'],
+            confidence: CapabilityConfidence.inferred,
+          ),
+          ProviderInputShapeDescriptor(
+            modelKind: ModelCapabilityKind.embedding,
+            shapeId: ProviderInputShapeIds.text,
+          ),
+        ],
+      );
+
+  @override
   OllamaLanguageModel languageModel(
     String modelId, {
     OllamaChatModelSettings settings = const OllamaChatModelSettings(),

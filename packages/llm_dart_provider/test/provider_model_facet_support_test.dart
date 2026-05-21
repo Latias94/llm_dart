@@ -25,6 +25,16 @@ void main() {
       expect(resolver.supportsTranscriptionModels(provider), isTrue);
     });
 
+    test('requires provider specification to declare matching facets', () {
+      const provider = _SpecificationLimitedProvider('limited');
+
+      expect(resolver.supportsLanguageModels(provider), isTrue);
+      expect(resolver.supportsEmbeddingModels(provider), isFalse);
+      expect(resolver.supportsImageModels(provider), isFalse);
+      expect(resolver.supportsSpeechModels(provider), isFalse);
+      expect(resolver.supportsTranscriptionModels(provider), isFalse);
+    });
+
     test('respects explicit provider model facet support', () {
       const provider = _DeclaredFacetProvider(
         'declared',
@@ -59,6 +69,22 @@ final class _PlainProvider implements Provider {
   final String providerId;
 
   const _PlainProvider(this.providerId);
+
+  @override
+  ProviderSpecification get specification => _providerSpecification(
+        providerId,
+        const {},
+      );
+}
+
+ProviderSpecification _providerSpecification(
+  String providerId,
+  Iterable<ProviderModelFacet> facets,
+) {
+  return ProviderSpecification(
+    providerId: providerId,
+    modelFacets: facets,
+  );
 }
 
 final class _ImplicitAllModelProvider
@@ -72,6 +98,18 @@ final class _ImplicitAllModelProvider
   final String providerId;
 
   const _ImplicitAllModelProvider(this.providerId);
+
+  @override
+  ProviderSpecification get specification => _providerSpecification(
+        providerId,
+        const {
+          ProviderModelFacet.language,
+          ProviderModelFacet.embedding,
+          ProviderModelFacet.image,
+          ProviderModelFacet.speech,
+          ProviderModelFacet.transcription,
+        },
+      );
 
   @override
   LanguageModel languageModel(String modelId) => throw UnimplementedError();
@@ -127,6 +165,18 @@ final class _DeclaredFacetProvider
   });
 
   @override
+  ProviderSpecification get specification => _providerSpecification(
+        providerId,
+        const {
+          ProviderModelFacet.language,
+          ProviderModelFacet.embedding,
+          ProviderModelFacet.image,
+          ProviderModelFacet.speech,
+          ProviderModelFacet.transcription,
+        },
+      );
+
+  @override
   LanguageModel languageModel(String modelId) => throw UnimplementedError();
 
   @override
@@ -151,6 +201,18 @@ final class _FacetOnlyProvider implements ProviderModelFacetSupport {
   const _FacetOnlyProvider(this.providerId);
 
   @override
+  ProviderSpecification get specification => _providerSpecification(
+        providerId,
+        const {
+          ProviderModelFacet.language,
+          ProviderModelFacet.embedding,
+          ProviderModelFacet.image,
+          ProviderModelFacet.speech,
+          ProviderModelFacet.transcription,
+        },
+      );
+
+  @override
   bool get supportsLanguageModels => true;
 
   @override
@@ -164,4 +226,42 @@ final class _FacetOnlyProvider implements ProviderModelFacetSupport {
 
   @override
   bool get supportsTranscriptionModels => true;
+}
+
+final class _SpecificationLimitedProvider
+    implements
+        LanguageModelProvider,
+        EmbeddingModelProvider,
+        ImageModelProvider,
+        SpeechModelProvider,
+        TranscriptionModelProvider {
+  @override
+  final String providerId;
+
+  const _SpecificationLimitedProvider(this.providerId);
+
+  @override
+  ProviderSpecification get specification => _providerSpecification(
+        providerId,
+        const {
+          ProviderModelFacet.language,
+        },
+      );
+
+  @override
+  LanguageModel languageModel(String modelId) => throw UnimplementedError();
+
+  @override
+  EmbeddingModel embeddingModel(String modelId) => throw UnimplementedError();
+
+  @override
+  ImageModel imageModel(String modelId) => throw UnimplementedError();
+
+  @override
+  SpeechModel speechModel(String modelId) => throw UnimplementedError();
+
+  @override
+  TranscriptionModel transcriptionModel(String modelId) {
+    throw UnimplementedError();
+  }
 }

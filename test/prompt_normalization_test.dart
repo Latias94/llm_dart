@@ -1,5 +1,5 @@
 import 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
-import 'package:llm_dart_core/llm_dart_core.dart';
+import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:llm_dart_google/llm_dart_google.dart';
 import 'package:llm_dart_openai/src/chat_completions/openai_chat_completions_codec.dart';
 import 'package:llm_dart_openai/src/common/openai_options.dart';

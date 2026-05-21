@@ -7,8 +7,9 @@ The default modern entry path for new code is
 short provider factories such as `openai(...).chatModel(...)` and the shared
 helpers in `package:llm_dart/core.dart`.
 
-The grouped `AI.<provider>(...).chatModel(...)` facade remains available from
-the root modern entrypoints when you prefer one namespace.
+Concrete provider factories now come from direct provider packages such as
+`package:llm_dart_openai/llm_dart_openai.dart`; the root package stays
+provider-neutral.
 
 If the provider choice is data-driven, build a `ProviderRegistry` from the root
 modern entrypoint instead of falling back to the legacy builder or the

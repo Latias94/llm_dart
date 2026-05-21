@@ -41,6 +41,37 @@ final class ElevenLabs
   String get providerId => 'elevenlabs';
 
   @override
+  ProviderSpecification get specification => ProviderSpecification(
+        providerId: providerId,
+        modelFacets: const {
+          ProviderModelFacet.speech,
+          ProviderModelFacet.transcription,
+        },
+        capabilities: [
+          const CapabilityDescriptor(
+            id: ModelCapabilityFeatureIds.speechVoiceSelection,
+          ),
+          const CapabilityDescriptor(
+            id: ModelCapabilityFeatureIds.speechOutputFormat,
+          ),
+          const CapabilityDescriptor(
+            id: ModelCapabilityFeatureIds.transcriptionLanguageHints,
+          ),
+        ],
+        supportedInputShapes: [
+          ProviderInputShapeDescriptor(
+            modelKind: ModelCapabilityKind.speech,
+            shapeId: ProviderInputShapeIds.text,
+          ),
+          ProviderInputShapeDescriptor(
+            modelKind: ModelCapabilityKind.transcription,
+            shapeId: ProviderInputShapeIds.audio,
+            mediaTypes: const ['audio/*', 'video/*'],
+          ),
+        ],
+      );
+
+  @override
   ElevenLabsSpeechModel speechModel(
     String modelId, {
     ElevenLabsSpeechModelSettings settings =

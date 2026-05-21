@@ -11,10 +11,9 @@ import 'package:llm_dart_openai/llm_dart_openai.dart' as xai;
 
 const _togetherBaseUrl = 'https://api.together.xyz/v1';
 const _togetherModelId = 'meta-llama/Llama-3-70b-chat-hf';
-const _togetherProfile = openai.OpenAIProfile(
+const _togetherProfile = openai.OpenAICompatibleProfile(
   providerId: 'together-ai',
   defaultBaseUrl: _togetherBaseUrl,
-  supportsResponsesApi: false,
 );
 
 /// Stable OpenAI-family profile examples.

@@ -1,9 +1,30 @@
+import '../chat_completions/openai_chat_completions_deepseek_policy.dart';
+import '../chat_completions/openai_chat_completions_request_policy.dart';
+import 'deepseek_option_resolver.dart';
+import 'openai_family_capability_core.dart';
+import 'openai_family_option_resolver_base.dart';
+import 'openai_family_route_policy.dart';
+import 'openai_family_common_option_resolver.dart';
+import 'openrouter_capability_policy.dart';
+import 'openrouter_option_resolver.dart';
+import 'deepseek_capability_policy.dart';
+import 'xai_capability_policy.dart';
+import 'xai_option_resolver.dart';
+
 abstract interface class OpenAIFamilyProfile {
   String get providerId;
 
   String get defaultBaseUrl;
 
-  bool get supportsResponsesApi;
+  OpenAIFamilyRoutePolicy get routePolicy;
+
+  OpenAIFamilyOptionResolver get optionResolver;
+
+  OpenAIFamilyCapabilityPolicy get capabilityPolicy;
+
+  OpenAIChatCompletionsRequestPolicy get chatCompletionsRequestPolicy;
+
+  bool get supportsOpenAIToolOptions;
 
   Map<String, String> buildHeaders({
     required String apiKey,
@@ -73,14 +94,29 @@ class _BearerAuthOpenAIFamilyProfile implements OpenAIFamilyProfile {
   @override
   final String defaultBaseUrl;
 
-  @override
-  final bool supportsResponsesApi;
-
   const _BearerAuthOpenAIFamilyProfile({
     required this.providerId,
     required this.defaultBaseUrl,
-    required this.supportsResponsesApi,
   });
+
+  @override
+  OpenAIFamilyRoutePolicy get routePolicy =>
+      const OpenAIChatCompletionsOnlyRoutePolicy();
+
+  @override
+  OpenAIFamilyOptionResolver get optionResolver =>
+      const CommonOpenAIOptionResolver();
+
+  @override
+  OpenAIFamilyCapabilityPolicy get capabilityPolicy =>
+      const CompatibleOpenAICapabilityPolicy();
+
+  @override
+  OpenAIChatCompletionsRequestPolicy get chatCompletionsRequestPolicy =>
+      const CompatibleChatCompletionsRequestPolicy();
+
+  @override
+  bool get supportsOpenAIToolOptions => false;
 
   @override
   Map<String, String> buildHeaders({
@@ -98,7 +134,28 @@ final class OpenAIProfile extends _BearerAuthOpenAIFamilyProfile {
   const OpenAIProfile({
     super.providerId = 'openai',
     super.defaultBaseUrl = 'https://api.openai.com/v1',
-    super.supportsResponsesApi = true,
+  });
+
+  @override
+  OpenAIFamilyRoutePolicy get routePolicy =>
+      const OpenAIResponsesFirstRoutePolicy();
+
+  @override
+  OpenAIFamilyCapabilityPolicy get capabilityPolicy =>
+      const OpenAICapabilityPolicy();
+
+  @override
+  OpenAIChatCompletionsRequestPolicy get chatCompletionsRequestPolicy =>
+      const OpenAIChatCompletionsOpenAIRequestPolicy();
+
+  @override
+  bool get supportsOpenAIToolOptions => true;
+}
+
+final class OpenAICompatibleProfile extends _BearerAuthOpenAIFamilyProfile {
+  const OpenAICompatibleProfile({
+    required super.providerId,
+    required super.defaultBaseUrl,
   });
 }
 
@@ -112,8 +169,15 @@ final class OpenRouterProfile extends _BearerAuthOpenAIFamilyProfile {
     super.defaultBaseUrl = 'https://openrouter.ai/api/v1',
   }) : super(
           providerId: 'openrouter',
-          supportsResponsesApi: false,
         );
+
+  @override
+  OpenAIFamilyOptionResolver get optionResolver =>
+      const OpenRouterOptionResolver();
+
+  @override
+  OpenAIFamilyCapabilityPolicy get capabilityPolicy =>
+      const OpenRouterCapabilityPolicy();
 
   @override
   Map<String, String> buildHeaders({
@@ -134,8 +198,19 @@ final class DeepSeekProfile extends _BearerAuthOpenAIFamilyProfile {
     super.defaultBaseUrl = 'https://api.deepseek.com/v1',
   }) : super(
           providerId: 'deepseek',
-          supportsResponsesApi: false,
         );
+
+  @override
+  OpenAIFamilyOptionResolver get optionResolver =>
+      const DeepSeekOptionResolver();
+
+  @override
+  OpenAIFamilyCapabilityPolicy get capabilityPolicy =>
+      const DeepSeekCapabilityPolicy();
+
+  @override
+  OpenAIChatCompletionsRequestPolicy get chatCompletionsRequestPolicy =>
+      const DeepSeekChatCompletionsRequestPolicy();
 }
 
 final class GroqProfile extends _BearerAuthOpenAIFamilyProfile {
@@ -143,7 +218,6 @@ final class GroqProfile extends _BearerAuthOpenAIFamilyProfile {
     super.defaultBaseUrl = 'https://api.groq.com/openai/v1',
   }) : super(
           providerId: 'groq',
-          supportsResponsesApi: false,
         );
 }
 
@@ -152,8 +226,14 @@ final class XAIProfile extends _BearerAuthOpenAIFamilyProfile {
     super.defaultBaseUrl = 'https://api.x.ai/v1',
   }) : super(
           providerId: 'xai',
-          supportsResponsesApi: false,
         );
+
+  @override
+  OpenAIFamilyOptionResolver get optionResolver => const XAIOptionResolver();
+
+  @override
+  OpenAIFamilyCapabilityPolicy get capabilityPolicy =>
+      const XAICapabilityPolicy();
 }
 
 final class PhindProfile extends _BearerAuthOpenAIFamilyProfile {
@@ -161,6 +241,5 @@ final class PhindProfile extends _BearerAuthOpenAIFamilyProfile {
     super.defaultBaseUrl = 'https://api.phind.com/v1',
   }) : super(
           providerId: 'phind',
-          supportsResponsesApi: false,
         );
 }

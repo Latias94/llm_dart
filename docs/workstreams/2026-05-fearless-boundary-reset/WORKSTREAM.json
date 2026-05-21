@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "slug": "2026-05-fearless-boundary-reset",
+  "title": "Fearless Boundary Reset",
+  "status": "closed",
+  "updated": "2026-05-21",
+  "scope_kind": "execution",
+  "problem": "The package split is mostly correct, but shallow compatibility modules, heavy OpenAI routing, duplicated provider/runtime stream vocabulary, and repeated provider transport choreography still blur the deepest seams.",
+  "authoritative_docs": [
+    {
+      "role": "design",
+      "path": "docs/workstreams/2026-05-fearless-boundary-reset/DESIGN.md"
+    },
+    {
+      "role": "execution",
+      "path": "docs/workstreams/2026-05-fearless-boundary-reset/TODO.md"
+    },
+    {
+      "role": "milestones",
+      "path": "docs/workstreams/2026-05-fearless-boundary-reset/MILESTONES.md"
+    },
+    {
+      "role": "gates",
+      "path": "docs/workstreams/2026-05-fearless-boundary-reset/EVIDENCE_AND_GATES.md"
+    },
+    {
+      "role": "handoff",
+      "path": "docs/workstreams/2026-05-fearless-boundary-reset/HANDOFF.md"
+    }
+  ],
+  "closed_at": "2026-05-21 21:12 +08:00",
+  "first_task": null,
+  "gates": [
+    "dart --suppress-analytics test packages/llm_dart_openai/test/openai_language_model_test.dart packages/llm_dart_openai/test/openai_responses_codec_test.dart packages/llm_dart_openai/test/openai_responses_stream_codec_test.dart packages/llm_dart_openai/test/openai_responses_lifecycle_client_test.dart",
+    "dart --suppress-analytics run tool/check_workspace_dependency_guards.dart",
+    "dart --suppress-analytics run tool/check_root_package_boundary_guards.dart",
+    "git diff --check"
+  ],
+  "evidence": [
+    {
+      "task": "FBR-020",
+      "path": "docs/workstreams/2026-05-fearless-boundary-reset/EVIDENCE_AND_GATES.md",
+      "summary": "OpenAI route adapter proof passed targeted tests, package tests, analyze, dependency guards, root guard, and git diff --check."
+    },
+    {
+      "task": "FBR-030",
+      "path": "docs/workstreams/2026-05-fearless-boundary-reset/EVIDENCE_AND_GATES.md",
+      "summary": "OpenAI-family route selection, option resolution, capability policy, Chat Completions request policy, and OpenAI tool-option acceptance are now owned by OpenAIFamilyProfile; targeted tests, OpenAI package tests, analyze, guards, and git diff --check passed."
+    },
+    {
+      "task": "FBR-040",
+      "path": "docs/workstreams/2026-05-fearless-boundary-reset/EVIDENCE_AND_GATES.md",
+      "summary": "Provider transport kit passed provider-utils tests, OpenAI/Google/Anthropic targeted regressions, broader provider package tests, analyze, dependency guards, root guard, and git diff --check."
+    },
+    {
+      "task": "FBR-050",
+      "path": "docs/workstreams/2026-05-fearless-boundary-reset/EVIDENCE_AND_GATES.md",
+      "summary": "Provider transport guardrails passed focused guard tests, workspace dependency guard, root boundary guard, analyze, and git diff --check."
+    },
+    {
+      "task": "FBR-060",
+      "path": "docs/workstreams/2026-05-fearless-boundary-reset/EVIDENCE_AND_GATES.md",
+      "summary": "Breaking compatibility exit deleted llm_dart_core from the package graph and passed focused migration tests, release/test orchestration tests, analyze, root/workspace/transport guards, and git diff --check."
+    },
+    {
+      "task": "FBR-070",
+      "path": "docs/workstreams/2026-05-fearless-boundary-reset/EVIDENCE_AND_GATES.md",
+      "summary": "Provider specification seam freeze added ProviderSpecification, required Provider.specification, updated registry/facet support, and passed provider/provider-facade tests, analyze, guards, and git diff --check."
+    },
+    {
+      "task": "FBR-080",
+      "path": "docs/workstreams/2026-05-fearless-boundary-reset/EVIDENCE_AND_GATES.md",
+      "summary": "Stream vocabulary composition deleted duplicate AI content/tool stream codecs, delegated model-call event JSON to the provider codec through the bridge, and passed AI/provider stream tests, package tests, analyze, guards, and git diff --check."
+    },
+    {
+      "task": "FBR-090",
+      "path": "docs/workstreams/2026-05-fearless-boundary-reset/EVIDENCE_AND_GATES.md",
+      "summary": "Runtime helper option consolidation added TextGenerationRuntimeRequest, moved generate/stream/output/text-call option plumbing through the internal runtime request seam, and passed targeted runtime tests, full AI package tests, analyze, guards, and git diff --check."
+    },
+    {
+      "task": "FBR-100",
+      "path": "docs/workstreams/2026-05-fearless-boundary-reset/EVIDENCE_AND_GATES.md",
+      "summary": "Migration docs and examples now document the breaking architecture line, direct provider package imports, llm_dart_core deletion, provider specifications, and focused runtime facades; analyze, guards, and git diff --check passed."
+    },
+    {
+      "task": "FBR-110",
+      "path": "docs/workstreams/2026-05-fearless-boundary-reset/EVIDENCE_AND_GATES.md",
+      "summary": "Final closeout passed analyzer, OpenAI package tests, workspace/root/transport guards, and git diff --check; TODO, MILESTONES, HANDOFF, DESIGN, and WORKSTREAM.json now mark the lane closed."
+    }
+  ],
+  "adr_refs": [],
+  "continue_policy": {
+    "default_action": "closed",
+    "notes": "The lane is closed. Suggested follow-ons are non-blocking: public object-style runtime request API, removal of thin historical OpenAI-family wrapper helpers after downstream audit, and release hardening."
+  }
+}

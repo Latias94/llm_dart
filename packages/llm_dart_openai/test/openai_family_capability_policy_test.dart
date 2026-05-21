@@ -1,4 +1,4 @@
-import 'package:llm_dart_openai/src/provider/openai_family_capability_policy.dart';
+import 'package:llm_dart_openai/src/provider/openai_family_capability_core.dart';
 import 'package:llm_dart_openai/src/provider/openai_family_profile.dart';
 import 'package:llm_dart_openai/src/provider/openai_model_capabilities.dart';
 import 'package:llm_dart_openai/src/provider/openai_model_settings.dart';
@@ -10,7 +10,7 @@ import 'package:test/test.dart';
 void main() {
   group('OpenAI-family capability policy', () {
     test('describes DeepSeek reasoner provider-native reasoning', () {
-      final policy = openAIFamilyCapabilityPolicyFor(const DeepSeekProfile());
+      final policy = const DeepSeekProfile().capabilityPolicy;
       final input = _input(
         modelId: 'deepseek-reasoner',
         usesResponsesApi: false,
@@ -29,7 +29,7 @@ void main() {
     });
 
     test('describes OpenRouter online routing from resolved settings', () {
-      final policy = openAIFamilyCapabilityPolicyFor(const OpenRouterProfile());
+      final policy = const OpenRouterProfile().capabilityPolicy;
       final features = policy.providerLanguageFeatures(
         providerId: 'openrouter',
         input: _input(
@@ -46,7 +46,7 @@ void main() {
     });
 
     test('describes xAI live search and shared source output', () {
-      final policy = openAIFamilyCapabilityPolicyFor(const XAIProfile());
+      final policy = const XAIProfile().capabilityPolicy;
       final input = _input(modelId: 'grok-3');
 
       expect(

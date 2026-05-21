@@ -1,3 +1,4 @@
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'openai_files_models.dart';
@@ -10,9 +11,12 @@ Future<T> sendOpenAIFilesJsonModel<T>({
   required String responseName,
   required T Function(Map<String, Object?> json) decode,
 }) async {
-  final response = await transport.send(request);
-  return decode(
-    decodeOpenAIJsonObject(response.body, responseName: responseName),
+  return sendProviderModelRequest(
+    transport: transport,
+    request: request,
+    decode: (body, _) => decode(
+      decodeOpenAIJsonObject(body, responseName: responseName),
+    ),
   );
 }
 
@@ -21,14 +25,17 @@ Future<OpenAIFileDownload> sendOpenAIFileDownload({
   required TransportRequest request,
   required String fileId,
 }) async {
-  final response = await transport.send(request);
-  return OpenAIFileDownload(
-    fileId: fileId,
-    bytes: openAIRequiredBytes(
-      response.body,
-      path: 'file_download.body',
-      sourceName: 'OpenAI file download',
+  return sendProviderModelRequest(
+    transport: transport,
+    request: request,
+    decode: (body, headers) => OpenAIFileDownload(
+      fileId: fileId,
+      bytes: openAIRequiredBytes(
+        body,
+        path: 'file_download.body',
+        sourceName: 'OpenAI file download',
+      ),
+      headers: headers,
     ),
-    headers: response.headers,
   );
 }

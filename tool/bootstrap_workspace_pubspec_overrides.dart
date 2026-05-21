@@ -37,7 +37,6 @@ final class WorkspaceBootstrapResult {
 const List<String> publishableWorkspacePackages = [
   'llm_dart_provider',
   'llm_dart_ai',
-  'llm_dart_core',
   'llm_dart_transport',
   'llm_dart_provider_utils',
   'llm_dart_chat',

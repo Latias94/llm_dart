@@ -44,6 +44,65 @@ final class Google
   String get providerId => 'google';
 
   @override
+  ProviderSpecification get specification => ProviderSpecification(
+        providerId: providerId,
+        modelFacets: const {
+          ProviderModelFacet.language,
+          ProviderModelFacet.embedding,
+          ProviderModelFacet.image,
+          ProviderModelFacet.speech,
+        },
+        capabilities: [
+          const CapabilityDescriptor(
+            id: ModelCapabilityFeatureIds.languageStreaming,
+          ),
+          const CapabilityDescriptor(
+            id: ModelCapabilityFeatureIds.languageFunctionTools,
+          ),
+          const CapabilityDescriptor(
+            id: ModelCapabilityFeatureIds.languageStructuredOutput,
+          ),
+          const CapabilityDescriptor(
+            id: ModelCapabilityFeatureIds.embeddingBatch,
+          ),
+        ],
+        supportedInputShapes: [
+          ProviderInputShapeDescriptor(
+            modelKind: ModelCapabilityKind.language,
+            shapeId: ProviderInputShapeIds.text,
+          ),
+          ProviderInputShapeDescriptor(
+            modelKind: ModelCapabilityKind.language,
+            shapeId: ProviderInputShapeIds.image,
+            mediaTypes: const ['image/*'],
+          ),
+          ProviderInputShapeDescriptor(
+            modelKind: ModelCapabilityKind.language,
+            shapeId: ProviderInputShapeIds.file,
+            mediaTypes: const ['application/pdf', 'text/*'],
+            confidence: CapabilityConfidence.inferred,
+          ),
+          ProviderInputShapeDescriptor(
+            modelKind: ModelCapabilityKind.embedding,
+            shapeId: ProviderInputShapeIds.text,
+          ),
+          ProviderInputShapeDescriptor(
+            modelKind: ModelCapabilityKind.image,
+            shapeId: ProviderInputShapeIds.text,
+          ),
+          ProviderInputShapeDescriptor(
+            modelKind: ModelCapabilityKind.image,
+            shapeId: ProviderInputShapeIds.image,
+            mediaTypes: const ['image/*'],
+          ),
+          ProviderInputShapeDescriptor(
+            modelKind: ModelCapabilityKind.speech,
+            shapeId: ProviderInputShapeIds.text,
+          ),
+        ],
+      );
+
+  @override
   GoogleLanguageModel languageModel(
     String modelId, {
     GoogleChatModelSettings settings = const GoogleChatModelSettings(),

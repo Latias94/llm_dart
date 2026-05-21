@@ -9,7 +9,7 @@ ResolvedOpenAIChatModelSettings resolveOpenAIModelSettingsForProfile(
   OpenAIFamilyProfile profile,
   ProviderModelOptions settings,
 ) {
-  return openAIFamilyOptionResolverFor(profile).resolveModelSettings(settings);
+  return profile.optionResolver.resolveModelSettings(settings);
 }
 
 String withOpenRouterOnlineModel(String modelId) {

@@ -4,12 +4,9 @@ import '../common/replay_stream_channel.dart';
 import 'package:llm_dart_provider/llm_dart_provider.dart' hide ErrorEvent;
 
 import '../prompt/model_message.dart';
-import '../prompt/prompt_normalization.dart';
 import '../stream/text_stream_event.dart';
 import 'generate_text_run_result.dart';
 import 'generate_text_runner_support.dart';
-import 'generate_text_step_continuation_resolver.dart';
-import 'generate_text_step_planner.dart';
 import 'generate_text_stop_condition.dart';
 import 'generate_text_step_result.dart';
 import 'stream_result_foundation.dart';
@@ -19,60 +16,65 @@ import 'stream_text_run_lifecycle.dart';
 import 'stream_text_run_result.dart';
 import 'stream_text_run_state.dart';
 import 'stream_text_step_executor.dart';
+import 'text_generation_runtime_request.dart';
 
 export 'stream_text_run_result.dart' show StreamTextRunResult;
 
 final class StreamTextRunner {
-  final LanguageModel model;
-  final List<PromptMessage> prompt;
-  final List<FunctionToolDefinition> tools;
-  final ToolChoice? toolChoice;
-  final GenerateTextOptions options;
-  final CallOptions callOptions;
-  final GenerateTextFunctionToolExecutor? functionToolExecutor;
-  final int maxSteps;
-  final List<GenerateTextStopCondition> stopWhen;
-  final GenerateTextOnStepStart? onStepStart;
-  final GenerateTextOnStepFinish? onStepFinish;
-  final GenerateTextOnToolStart? onToolStart;
-  final GenerateTextOnToolFinish? onToolFinish;
-  final GenerateTextOnFinish? onFinish;
+  static const _runnerName = 'StreamTextRunner';
+
+  final TextGenerationRuntimeRequest _runtime;
   final StreamTextOnChunk? onChunk;
-  final GenerateTextOnError? onError;
+
+  StreamTextRunner._({
+    required TextGenerationRuntimeRequest runtime,
+    this.onChunk,
+  }) : _runtime = runtime {
+    _runtime.validateForRunner(
+      runnerName: _runnerName,
+      validateInitialPrompt: true,
+    );
+  }
 
   StreamTextRunner({
-    required this.model,
+    required LanguageModel model,
     List<PromptMessage>? prompt,
     List<ModelMessage>? messages,
     List<FunctionToolDefinition> tools = const [],
-    this.toolChoice,
-    this.options = const GenerateTextOptions(),
-    this.callOptions = const CallOptions(),
-    this.functionToolExecutor,
-    this.maxSteps = 8,
+    ToolChoice? toolChoice,
+    GenerateTextOptions options = const GenerateTextOptions(),
+    CallOptions callOptions = const CallOptions(),
+    GenerateTextFunctionToolExecutor? functionToolExecutor,
+    int maxSteps = 8,
     Iterable<GenerateTextStopCondition> stopWhen = const [],
-    this.onStepStart,
-    this.onStepFinish,
-    this.onToolStart,
-    this.onToolFinish,
-    this.onFinish,
-    this.onChunk,
-    this.onError,
-  })  : stopWhen = List.unmodifiable(stopWhen),
-        prompt = resolveProviderPrompt(
-          prompt: prompt,
-          messages: messages,
-        ),
-        tools = List.unmodifiable(tools) {
-    GenerateTextStepPlanner.validatePromptForRunner(
-      runnerName: 'StreamTextRunner',
-      prompt: this.prompt,
-    );
-    GenerateTextStepPlanner.validateMaxSteps(
-      runnerName: 'StreamTextRunner',
-      maxSteps: maxSteps,
-    );
-  }
+    GenerateTextOnStepStart? onStepStart,
+    GenerateTextOnStepFinish? onStepFinish,
+    GenerateTextOnToolStart? onToolStart,
+    GenerateTextOnToolFinish? onToolFinish,
+    GenerateTextOnFinish? onFinish,
+    StreamTextOnChunk? onChunk,
+    GenerateTextOnError? onError,
+  }) : this._(
+          runtime: TextGenerationRuntimeRequest(
+            model: model,
+            prompt: prompt,
+            messages: messages,
+            tools: tools,
+            toolChoice: toolChoice,
+            options: options,
+            callOptions: callOptions,
+            functionToolExecutor: functionToolExecutor,
+            maxSteps: maxSteps,
+            stopWhen: stopWhen,
+            onStepStart: onStepStart,
+            onStepFinish: onStepFinish,
+            onToolStart: onToolStart,
+            onToolFinish: onToolFinish,
+            onFinish: onFinish,
+            onError: onError,
+          ),
+          onChunk: onChunk,
+        );
 
   StreamTextRunResult run() {
     final streamResult =
@@ -98,50 +100,33 @@ final class StreamTextRunner {
     required ReplayStreamChannel<GenerateTextStepResult> stepChannel,
   }) async {
     final state = StreamTextRunState();
-    var promptHistory = List<PromptMessage>.from(prompt);
-    final planner = GenerateTextStepPlanner(
-      runnerName: 'StreamTextRunner',
-      model: model,
-      tools: tools,
-      toolChoice: toolChoice,
-      options: options,
-      callOptions: callOptions,
-      maxSteps: maxSteps,
-    );
-    final declaredToolNames = planner.declaredToolNames;
-    final continuationResolver = GenerateTextStepContinuationResolver(
-      declaredToolNames: declaredToolNames,
-      functionToolExecutor: functionToolExecutor,
-      onToolStart: onToolStart,
-      onToolFinish: onToolFinish,
-      stopConditions: stopWhen,
-      runnerName: 'StreamTextRunner',
-    );
+    var promptHistory = _runtime.createPromptHistory();
+    final stepContext = _runtime.createStepContext(runnerName: _runnerName);
     var streamClosed = false;
     final emitter = StreamTextEventEmitter(
       streamResult: streamResult,
       onChunk: onChunk,
     );
     final stepExecutor = StreamTextStepExecutor(
-      model: model,
-      callOptions: callOptions,
+      model: _runtime.model,
+      callOptions: _runtime.callOptions,
       emitter: emitter,
       stepId: _stepId,
     );
     final lifecycle = StreamTextRunLifecycle(
       emitter: emitter,
       stepChannel: stepChannel,
-      onStepFinish: onStepFinish,
-      onFinish: onFinish,
+      onStepFinish: _runtime.onStepFinish,
+      onFinish: _runtime.onFinish,
       stepId: _stepId,
-      providerId: model.providerId,
-      modelId: model.modelId,
+      providerId: _runtime.model.providerId,
+      modelId: _runtime.model.modelId,
     );
 
     try {
       await emitter.add(const RunStartEvent());
       while (true) {
-        final plan = planner.planNextStep(
+        final plan = stepContext.planner.planNextStep(
           promptHistory: promptHistory,
           previousSteps: state.previousSteps,
         );
@@ -154,14 +139,14 @@ final class StreamTextRunner {
               accumulator: accumulator,
             );
           },
-          onStepStart: () async => onStepStart?.call(plan.startEvent),
+          onStepStart: () async => _runtime.onStepStart?.call(plan.startEvent),
           markStepOpen: state.markActiveStepOpen,
-          throwIfCancelled: _throwIfCancelled,
+          throwIfCancelled: _runtime.throwIfCancelled,
         );
         var step = execution.step;
         state.addOrReplaceStep(step);
 
-        final continuation = await continuationResolver.resolve(
+        final continuation = await stepContext.continuationResolver.resolve(
           step: step,
           promptHistory: promptHistory,
           finishStep: (step) async {
@@ -175,7 +160,7 @@ final class StreamTextRunner {
               execution.accumulator,
             );
           },
-          throwIfCancelled: _throwIfCancelled,
+          throwIfCancelled: _runtime.throwIfCancelled,
         );
         if (!continuation.shouldContinue) {
           break;
@@ -189,7 +174,10 @@ final class StreamTextRunner {
       if (isProviderCancellation(error)) {
         await lifecycle.finishAbortedRun(
           state,
-          reason: providerCancellationReason(callOptions.cancellation, error),
+          reason: providerCancellationReason(
+            _runtime.callOptions.cancellation,
+            error,
+          ),
         );
         return;
       }
@@ -210,7 +198,7 @@ final class StreamTextRunner {
     Object error,
     StackTrace stackTrace,
   ) async {
-    final callback = onError;
+    final callback = _runtime.onError;
     if (callback == null) {
       return (error, stackTrace);
     }
@@ -221,10 +209,6 @@ final class StreamTextRunner {
     } catch (callbackError, callbackStackTrace) {
       return (callbackError, callbackStackTrace);
     }
-  }
-
-  void _throwIfCancelled() {
-    callOptions.cancellation?.throwIfCancelled();
   }
 }
 
@@ -247,23 +231,25 @@ StreamTextRunResult streamTextRun({
   StreamTextOnChunk? onChunk,
   GenerateTextOnError? onError,
 }) {
-  return StreamTextRunner(
-    model: model,
-    prompt: prompt,
-    messages: messages,
-    tools: tools,
-    toolChoice: toolChoice,
-    options: options,
-    callOptions: callOptions,
-    functionToolExecutor: functionToolExecutor,
-    maxSteps: maxSteps,
-    stopWhen: stopWhen,
-    onStepStart: onStepStart,
-    onStepFinish: onStepFinish,
-    onToolStart: onToolStart,
-    onToolFinish: onToolFinish,
-    onFinish: onFinish,
+  return StreamTextRunner._(
+    runtime: TextGenerationRuntimeRequest(
+      model: model,
+      prompt: prompt,
+      messages: messages,
+      tools: tools,
+      toolChoice: toolChoice,
+      options: options,
+      callOptions: callOptions,
+      functionToolExecutor: functionToolExecutor,
+      maxSteps: maxSteps,
+      stopWhen: stopWhen,
+      onStepStart: onStepStart,
+      onStepFinish: onStepFinish,
+      onToolStart: onToolStart,
+      onToolFinish: onToolFinish,
+      onFinish: onFinish,
+      onError: onError,
+    ),
     onChunk: onChunk,
-    onError: onError,
   ).run();
 }

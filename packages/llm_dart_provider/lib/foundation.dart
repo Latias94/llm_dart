@@ -31,6 +31,7 @@ export 'src/model/speech_model.dart';
 export 'src/model/transcription_model.dart';
 export 'src/prompt/prompt_message.dart';
 export 'src/provider/provider.dart';
+export 'src/provider/provider_specification.dart';
 export 'src/provider/provider_registry.dart';
 export 'src/serialization/prompt_json_codec.dart';
 export 'src/serialization/language_model_stream_event_json_codec.dart';

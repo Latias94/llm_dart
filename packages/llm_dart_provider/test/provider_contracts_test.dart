@@ -2,6 +2,134 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:test/test.dart';
 
 void main() {
+  group('ProviderSpecification', () {
+    test('describes versioned provider facets and supported input shapes', () {
+      final specification = ProviderSpecification(
+        providerId: 'openai',
+        modelFacets: const {
+          ProviderModelFacet.language,
+          ProviderModelFacet.image,
+        },
+        capabilities: [
+          const CapabilityDescriptor(
+            id: ModelCapabilityFeatureIds.languageStreaming,
+          ),
+        ],
+        providerFeatures: const [
+          ProviderFeatureDescriptor(
+            providerId: 'openai',
+            featureId: 'responses',
+          ),
+        ],
+        supportedInputShapes: [
+          ProviderInputShapeDescriptor(
+            modelKind: ModelCapabilityKind.language,
+            shapeId: ProviderInputShapeIds.text,
+          ),
+          ProviderInputShapeDescriptor(
+            modelKind: ModelCapabilityKind.language,
+            shapeId: ProviderInputShapeIds.file,
+            mediaTypes: const ['application/pdf'],
+          ),
+        ],
+      );
+
+      expect(specification.version, ProviderSpecificationVersion.v1);
+      expect(specification.supportsModelFacet(ProviderModelFacet.language),
+          isTrue);
+      expect(specification.supportsModelFacet(ProviderModelFacet.embedding),
+          isFalse);
+      expect(
+        specification.supportsCapability(
+          ModelCapabilityFeatureIds.languageStreaming,
+        ),
+        isTrue,
+      );
+      expect(
+        specification.supportsInputShape(
+          modelKind: ModelCapabilityKind.language,
+          shapeId: ProviderInputShapeIds.file,
+        ),
+        isTrue,
+      );
+      expect(
+        specification
+            .inputShape(
+              modelKind: ModelCapabilityKind.language,
+              shapeId: ProviderInputShapeIds.file,
+            )!
+            .mediaTypes,
+        {'application/pdf'},
+      );
+      expect(
+        specification.inputShapesFor(ModelCapabilityKind.language),
+        hasLength(2),
+      );
+    });
+
+    test('validates provider identity and keeps collections immutable', () {
+      expect(
+        () => ProviderSpecification(providerId: 'OpenAI'),
+        throwsA(isA<ArgumentError>()),
+      );
+
+      final specification = ProviderSpecification(
+        providerId: 'openai',
+        modelFacets: const {
+          ProviderModelFacet.language,
+        },
+        capabilities: [
+          const CapabilityDescriptor(
+            id: ModelCapabilityFeatureIds.languageStreaming,
+          ),
+        ],
+        providerFeatures: const [
+          ProviderFeatureDescriptor(
+            providerId: 'openai',
+            featureId: 'responses',
+          ),
+        ],
+        supportedInputShapes: [
+          ProviderInputShapeDescriptor(
+            modelKind: ModelCapabilityKind.language,
+            shapeId: ProviderInputShapeIds.text,
+          ),
+        ],
+      );
+
+      expect(
+        () => specification.modelFacets.add(ProviderModelFacet.embedding),
+        throwsUnsupportedError,
+      );
+      expect(
+        () => specification.capabilities.add(
+          const CapabilityDescriptor(
+            id: ModelCapabilityFeatureIds.languageFunctionTools,
+          ),
+        ),
+        throwsUnsupportedError,
+      );
+      expect(
+        () => specification.providerFeatures.add(
+          const ProviderFeatureDescriptor(
+            providerId: 'openai',
+            featureId: 'files',
+          ),
+        ),
+        throwsUnsupportedError,
+      );
+      expect(
+        () => specification.supportedInputShapes.add(
+          ProviderInputShapeDescriptor(
+            modelKind: ModelCapabilityKind.language,
+            shapeId: ProviderInputShapeIds.file,
+          ),
+        ),
+        throwsUnsupportedError,
+      );
+    });
+  });
+
   group('ProviderMetadata', () {
     test('builds namespaced metadata and deep merges payloads', () {
       final left = ProviderMetadata.forNamespace('openai', {

@@ -1,24 +1,19 @@
 import 'dart:convert';
 
-import 'package:llm_dart_openai/src/chat_completions/openai_chat_completions_codec.dart';
-import 'package:llm_dart_openai/src/language/openai_language_model_call_routing.dart';
-import 'package:llm_dart_openai/src/language/openai_language_model_stream.dart';
-import 'package:llm_dart_openai/src/responses/openai_responses_codec.dart';
+import 'package:llm_dart_openai/src/chat_completions/openai_chat_completions_language_model_route_adapter.dart';
+import 'package:llm_dart_openai/src/responses/openai_responses_language_model_route_adapter.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('decodeOpenAILanguageModelStreamEvents', () {
+  group('OpenAI language model route stream adapters', () {
     test('labels malformed Responses SSE payloads with source', () {
       expect(
-        decodeOpenAILanguageModelStreamEvents(
-          route: OpenAIRequestRoute.responses,
+        const OpenAIResponsesLanguageModelRouteAdapter().decodeStreamEvents(
           stream: Stream.fromIterable([
             utf8.encode('data: {"broken":\n\n'),
           ]),
           includeRawChunks: false,
-          responsesCodec: const OpenAIResponsesCodec(),
-          chatCompletionsCodec: const OpenAIChatCompletionsCodec(),
         ),
         emitsError(
           isA<TransportResponseFormatException>().having(
@@ -32,14 +27,12 @@ void main() {
 
     test('labels malformed Chat Completions SSE payloads with source', () {
       expect(
-        decodeOpenAILanguageModelStreamEvents(
-          route: OpenAIRequestRoute.chatCompletions,
+        const OpenAIChatCompletionsLanguageModelRouteAdapter()
+            .decodeStreamEvents(
           stream: Stream.fromIterable([
             utf8.encode('data: ["not","object"]\n\n'),
           ]),
           includeRawChunks: false,
-          responsesCodec: const OpenAIResponsesCodec(),
-          chatCompletionsCodec: const OpenAIChatCompletionsCodec(),
         ),
         emitsError(
           isA<TransportResponseFormatException>().having(

@@ -1,5 +1,7 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:llm_dart_openai/llm_dart_openai.dart';
+import 'package:llm_dart_openai/src/provider/openai_family_route_policy.dart';
+import 'package:llm_dart_openai/src/provider/resolved_openai_chat_settings.dart';
 import 'package:llm_dart_test/llm_dart_test.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 import 'package:test/test.dart';
@@ -11,7 +13,12 @@ void main() {
 
       expect(profile.providerId, 'openai');
       expect(profile.defaultBaseUrl, 'https://api.openai.com/v1');
-      expect(profile.supportsResponsesApi, isTrue);
+      expect(
+        profile.routePolicy.resolveLanguageModelRoute(
+          const ResolvedOpenAIChatModelSettings(),
+        ),
+        OpenAIRequestRoute.responses,
+      );
       expect(
         profile.buildHeaders(
           apiKey: 'test-key',
@@ -32,6 +39,14 @@ void main() {
         String providerId,
         String defaultBaseUrl,
       })>[
+        (
+          profile: OpenAICompatibleProfile(
+            providerId: 'together-ai',
+            defaultBaseUrl: 'https://api.together.xyz/v1',
+          ),
+          providerId: 'together-ai',
+          defaultBaseUrl: 'https://api.together.xyz/v1',
+        ),
         (
           profile: OpenRouterProfile(),
           providerId: 'openrouter',
@@ -62,7 +77,12 @@ void main() {
       for (final entry in cases) {
         expect(entry.profile.providerId, entry.providerId);
         expect(entry.profile.defaultBaseUrl, entry.defaultBaseUrl);
-        expect(entry.profile.supportsResponsesApi, isFalse);
+        expect(
+          entry.profile.routePolicy.resolveLanguageModelRoute(
+            const ResolvedOpenAIChatModelSettings(),
+          ),
+          OpenAIRequestRoute.chatCompletions,
+        );
         expect(
           entry.profile.buildHeaders(
             apiKey: 'test-key',

@@ -26,7 +26,6 @@ final class WorkspacePackageTestTarget {
 const dartPackageTestDirectories = [
   'packages/llm_dart_provider',
   'packages/llm_dart_ai',
-  'packages/llm_dart_core',
   'packages/llm_dart_transport',
   'packages/llm_dart_provider_utils',
   'packages/llm_dart_chat',

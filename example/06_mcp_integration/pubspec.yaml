@@ -20,8 +20,6 @@ dependency_overrides:
     path: ../../packages/llm_dart_anthropic
   llm_dart_chat:
     path: ../../packages/llm_dart_chat
-  llm_dart_core:
-    path: ../../packages/llm_dart_core
   llm_dart_elevenlabs:
     path: ../../packages/llm_dart_elevenlabs
   llm_dart_google:

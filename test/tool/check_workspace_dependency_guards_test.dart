@@ -280,6 +280,60 @@ final class ChatInput {
       );
     });
 
+    test('reports direct provider transport send choreography', () async {
+      final repoRoot = await _createTempWorkspace();
+      addTearDown(() async {
+        if (repoRoot.existsSync()) {
+          await repoRoot.delete(recursive: true);
+        }
+      });
+
+      await _writeFile(
+        repoRoot,
+        'packages/llm_dart_openai/lib/src/bad_transport_call.dart',
+        '''
+import 'package:llm_dart_transport/llm_dart_transport.dart';
+
+Future<Object?> bad(TransportClient transport, TransportRequest request) async {
+  final response = await transport.send(request);
+  return response.body;
+}
+
+Stream<List<int>> badStream(
+  TransportClient transport,
+  TransportRequest request,
+) async* {
+  final response = await transport.sendStream(request);
+  yield* response.stream;
+}
+''',
+      );
+
+      final result = await guard.evaluateWorkspaceDependencyGuards(
+        repoRoot: repoRoot,
+      );
+
+      expect(result.passed, isFalse);
+      expect(
+        result.violations,
+        contains(
+          contains(
+            'provider package implementation files must not call transport.send',
+          ),
+        ),
+      );
+      expect(
+        result.violations
+            .where(
+              (violation) => violation.contains(
+                'bad_transport_call.dart',
+              ),
+            )
+            .toList(),
+        hasLength(2),
+      );
+    });
+
     test(
         'reports provider prompts in DefaultChatSession app-facing constructor',
         () async {
@@ -352,18 +406,6 @@ dependencies:
     path: packages/llm_dart_provider
   llm_dart_transport:
     path: packages/llm_dart_transport
-''',
-  );
-  await _writeFile(
-    repoRoot,
-    'packages/llm_dart_core/pubspec.yaml',
-    '''
-name: llm_dart_core
-dependencies:
-  llm_dart_ai:
-    path: ../llm_dart_ai
-  llm_dart_provider:
-    path: ../llm_dart_provider
 ''',
   );
   await _writeFile(

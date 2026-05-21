@@ -5,6 +5,7 @@ import 'openai_chat_completions_request_tool_codec.dart';
 import 'openai_chat_completions_tool_prompt_projection.dart';
 import 'openai_chat_completions_user_prompt_encoder.dart';
 import '../language/openai_generate_text_options.dart';
+import '../provider/openai_family_profile.dart';
 
 final class OpenAIChatCompletionsPromptCodec {
   final String providerNamespace;
@@ -14,6 +15,15 @@ final class OpenAIChatCompletionsPromptCodec {
     this.providerNamespace = 'openai',
     this.toolCodec = const OpenAIChatCompletionsRequestToolCodec(),
   });
+
+  factory OpenAIChatCompletionsPromptCodec.forProfile(
+    OpenAIFamilyProfile profile,
+  ) {
+    return OpenAIChatCompletionsPromptCodec(
+      providerNamespace: profile.providerId,
+      toolCodec: OpenAIChatCompletionsRequestToolCodec.forProfile(profile),
+    );
+  }
 
   List<Map<String, Object?>> encodePromptMessage(
     PromptMessage message,

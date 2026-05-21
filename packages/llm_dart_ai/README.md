@@ -18,6 +18,12 @@ This package owns app-facing orchestration built on top of provider contracts:
   - object-first convenience wrappers for common JSON-schema workflows
 - shared chat UI message, mapping, and stream JSON helpers
 
+The runtime implementation intentionally keeps the public helper signatures
+ergonomic while routing shared prompt normalization, tools, stop conditions,
+callbacks, cancellation checks, and structured-output option derivation through
+one internal text-generation runtime request seam. That is the AI-runtime
+boundary; provider packages should not duplicate this orchestration.
+
 ## Stream Boundaries
 
 `llm_dart_ai` owns the app-facing full stream, `TextStreamEvent`.
@@ -64,6 +70,11 @@ observation and replay data, not ordinary request customization.
 
 It intentionally depends on `llm_dart_provider` only. Provider packages should
 implement the provider contracts without depending on this runtime package.
+
+The removed historical `llm_dart_core` package is not the owner of these
+runtime APIs anymore. Import `package:llm_dart_ai/llm_dart_ai.dart` directly
+for framework-neutral runtime helpers, or use `package:llm_dart/core.dart`
+when you want the root facade re-export.
 
 Use `llm_dart_ai` when you want framework-neutral generation utilities. Use
 `llm_dart_chat` for chat session state and transport orchestration.

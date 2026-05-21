@@ -9,17 +9,17 @@ Stream<LanguageModelStreamEvent> sendGoogleLanguageModelStreamCall({
   required TransportRequest request,
   required List<ModelWarning> warnings,
   required bool includeRawChunks,
-}) async* {
-  yield StartEvent(warnings: warnings);
-
-  try {
-    final response = await transport.sendStream(request);
-
-    yield* decodeGoogleLanguageModelStreamEvents(
-      stream: response.stream,
-      includeRawChunks: includeRawChunks,
-    );
-  } catch (error) {
-    yield ErrorEvent(transportErrorToModelError(error));
-  }
+}) {
+  return sendProviderLanguageModelStreamRequest(
+    transport: transport,
+    request: request,
+    warnings: warnings,
+    includeRawChunks: includeRawChunks,
+    decode: ({required stream, required includeRawChunks}) {
+      return decodeGoogleLanguageModelStreamEvents(
+        stream: stream,
+        includeRawChunks: includeRawChunks,
+      );
+    },
+  );
 }

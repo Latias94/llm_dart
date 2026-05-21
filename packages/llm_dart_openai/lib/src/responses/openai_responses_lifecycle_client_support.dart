@@ -1,3 +1,4 @@
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import '../common/openai_json_support.dart';
@@ -17,8 +18,9 @@ Future<T> sendOpenAIResponsesLifecycleJsonModel<T>({
   Map<String, String>? headers,
   bool contentType = false,
 }) async {
-  final response = await transport.send(
-    requestSupport.jsonRequest(
+  return sendProviderModelRequest(
+    transport: transport,
+    request: requestSupport.jsonRequest(
       uri: uri,
       method: method,
       extraHeaders: headers,
@@ -28,9 +30,10 @@ Future<T> sendOpenAIResponsesLifecycleJsonModel<T>({
       maxRetries: maxRetries,
       cancellation: cancellation,
     ),
-  );
-
-  return decode(
-    decodeOpenAIJsonObject(response.body, responseName: responseName),
+    decode: (body, _) {
+      return decode(
+        decodeOpenAIJsonObject(body, responseName: responseName),
+      );
+    },
   );
 }

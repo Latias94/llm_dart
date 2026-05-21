@@ -1,4 +1,5 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'ollama_chat_request_codec.dart';
@@ -11,18 +12,18 @@ Stream<LanguageModelStreamEvent> sendOllamaChatStreamCall({
   required OllamaPreparedChatRequest preparedRequest,
   required OllamaChatStreamCodec streamCodec,
   required bool includeRawChunks,
-}) async* {
-  yield* startOllamaChatStream(preparedRequest: preparedRequest);
-
-  try {
-    final response = await transport.sendStream(request);
-
-    yield* decodeOllamaChatStreamResponse(
-      stream: response.stream,
-      streamCodec: streamCodec,
-      includeRawChunks: includeRawChunks,
-    );
-  } catch (error) {
-    yield ollamaChatStreamErrorEvent(error);
-  }
+}) {
+  return sendProviderLanguageModelStreamRequest(
+    transport: transport,
+    request: request,
+    warnings: preparedRequest.warnings,
+    includeRawChunks: includeRawChunks,
+    decode: ({required stream, required includeRawChunks}) {
+      return decodeOllamaChatStreamResponse(
+        stream: stream,
+        streamCodec: streamCodec,
+        includeRawChunks: includeRawChunks,
+      );
+    },
+  );
 }

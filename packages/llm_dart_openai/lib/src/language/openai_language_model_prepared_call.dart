@@ -1,21 +1,23 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
-import '../chat_completions/openai_chat_completions_codec.dart';
 import '../provider/openai_family_profile.dart';
 import 'openai_language_model_call_routing.dart';
-import 'openai_language_model_request.dart';
-import 'openai_language_model_transport.dart';
-import '../responses/openai_responses_codec.dart';
+import 'openai_language_model_route_adapter.dart';
+import 'openai_language_model_route_adapters.dart';
+import '../provider/openai_provider_support.dart';
 import '../provider/resolved_openai_chat_settings.dart';
+import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 final class PreparedOpenAILanguageModelCall {
   final ResolvedOpenAILanguageModelCall call;
+  final OpenAILanguageModelRouteAdapter routeAdapter;
   final TransportRequest transportRequest;
   final List<ModelWarning> warnings;
 
   const PreparedOpenAILanguageModelCall({
     required this.call,
+    required this.routeAdapter,
     required this.transportRequest,
     required this.warnings,
   });
@@ -29,8 +31,7 @@ PreparedOpenAILanguageModelCall prepareOpenAILanguageModelCall({
   required String apiKey,
   required ResolvedOpenAIChatModelSettings settings,
   required bool stream,
-  required OpenAIResponsesCodec responsesCodec,
-  required OpenAIChatCompletionsCodec chatCompletionsCodec,
+  required OpenAILanguageModelRouteAdapters routeAdapters,
 }) {
   final call = resolveOpenAILanguageModelCall(
     request: request,
@@ -38,25 +39,33 @@ PreparedOpenAILanguageModelCall prepareOpenAILanguageModelCall({
     profile: profile,
     settings: settings,
   );
-  final preparedRequest = encodeOpenAILanguageModelRequest(
+  final routeAdapter = routeAdapters.resolve(call.route);
+  final preparedRequest = routeAdapter.encodeRequest(
     call: call,
     request: request,
     stream: stream,
-    responsesCodec: responsesCodec,
-    chatCompletionsCodec: chatCompletionsCodec,
   );
 
   return PreparedOpenAILanguageModelCall(
     call: call,
-    transportRequest: buildOpenAILanguageModelTransportRequest(
-      baseUrl: baseUrl,
-      route: call.route,
-      request: request,
-      stream: stream,
+    routeAdapter: routeAdapter,
+    transportRequest: TransportRequest(
+      uri: routeAdapter.resolveUri(baseUrl),
+      method: TransportMethod.post,
+      headers: buildOpenAIRequestHeaders(
+        profile: profile,
+        apiKey: apiKey,
+        settings: settings,
+        stream: stream,
+        extraHeaders: request.callOptions.headers,
+      ),
       body: preparedRequest.body,
-      profile: profile,
-      apiKey: apiKey,
-      settings: settings,
+      timeout: request.callOptions.timeout,
+      maxRetries: request.callOptions.maxRetries,
+      cancellation: bindProviderCancellationToTransport(
+        request.callOptions.cancellation,
+      ),
+      responseType: TransportResponseType.json,
     ),
     warnings: preparedRequest.warnings,
   );

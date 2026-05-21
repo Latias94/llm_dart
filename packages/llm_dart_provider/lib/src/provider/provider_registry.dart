@@ -6,6 +6,7 @@ import '../model/speech_model.dart';
 import '../model/transcription_model.dart';
 import 'provider.dart';
 import 'provider_model_facet_support.dart';
+import 'provider_specification.dart';
 
 final class ProviderRegistry {
   static const _facetSupport = ProviderModelFacetSupportResolver();
@@ -17,6 +18,11 @@ final class ProviderRegistry {
   }) : _providers = _normalizeProviders(providers);
 
   List<String> get providerIds => _sortedProviderIds(_providers);
+
+  List<ProviderSpecification> get providerSpecifications =>
+      List<ProviderSpecification>.unmodifiable(
+        providerIds.map((providerId) => _providers[providerId]!.specification),
+      );
 
   List<String> get languageProviderIds => _sortedProviderIds(
         _providersBySupport(_facetSupport.supportsLanguageModels),
@@ -70,6 +76,10 @@ final class ProviderRegistry {
       providerId: providerId,
       availableProviderIds: providerIds,
     );
+  }
+
+  ProviderSpecification providerSpecification(String providerId) {
+    return provider(providerId).specification;
   }
 
   LanguageModel languageModel(String reference) {
@@ -174,12 +184,24 @@ final class ProviderRegistry {
         entry.value.providerId,
         parameterName: 'provider.providerId',
       );
+      ModelReference.validateProviderId(
+        entry.value.specification.providerId,
+        parameterName: 'provider.specification.providerId',
+      );
       if (entry.value.providerId != providerId) {
         throw ArgumentError.value(
           entry.value.providerId,
           'providers',
           'Expected provider.providerId to match the registry key '
               '"$providerId".',
+        );
+      }
+      if (entry.value.specification.providerId != providerId) {
+        throw ArgumentError.value(
+          entry.value.specification.providerId,
+          'providers',
+          'Expected provider.specification.providerId to match the registry '
+              'key "$providerId".',
         );
       }
       normalized[providerId] = entry.value;

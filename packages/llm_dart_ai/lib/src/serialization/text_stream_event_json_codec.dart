@@ -1,10 +1,10 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart' as provider;
 
+import '../stream/provider_to_text_stream_event.dart';
 import '../stream/text_stream_event.dart';
+import '../stream/text_stream_event_to_provider.dart';
 import 'ai_serialization_envelope_json_codec.dart';
-import 'text_stream_content_event_json_codec.dart';
 import 'text_stream_lifecycle_event_json_codec.dart';
-import 'text_stream_tool_event_json_codec.dart';
 
 /// JSON codec for AI runtime full-stream events.
 ///
@@ -47,37 +47,14 @@ final class TextStreamEventJsonCodec {
     return switch (event) {
       RunStartEvent() ||
       RunFinishEvent() ||
-      StartEvent() ||
-      ResponseMetadataEvent() ||
       StepStartEvent() ||
       StepFinishEvent() ||
-      FinishEvent() ||
+      ToolOutputDeniedEvent() ||
       AbortEvent() =>
         const TextStreamLifecycleEventJsonCodec().encode(event),
-      TextStartEvent() ||
-      TextDeltaEvent() ||
-      TextEndEvent() ||
-      ReasoningStartEvent() ||
-      ReasoningDeltaEvent() ||
-      ReasoningEndEvent() ||
-      ReasoningFileEvent() =>
-        const TextStreamContentEventJsonCodec().encode(event),
-      ToolInputStartEvent() ||
-      ToolInputDeltaEvent() ||
-      ToolInputEndEvent() ||
-      ToolInputErrorEvent() ||
-      ToolCallEvent() ||
-      ToolResultEvent() ||
-      ToolApprovalRequestEvent() ||
-      ToolOutputDeniedEvent() =>
-        const TextStreamToolEventJsonCodec().encode(event),
-      SourceEvent() ||
-      FileEvent() =>
-        const TextStreamContentEventJsonCodec().encode(event),
-      CustomEvent() ||
-      RawChunkEvent() ||
-      ErrorEvent() =>
-        const TextStreamContentEventJsonCodec().encode(event),
+      _ => const provider.LanguageModelStreamEventJsonCodec().encodeEvent(
+          textStreamEventToProvider(event),
+        ),
     };
   }
 
@@ -87,21 +64,16 @@ final class TextStreamEventJsonCodec {
   }) {
     final map = provider.asJsonMap(value, path: path);
     final type = provider.asJsonString(map['type'], path: '$path.type');
-    const toolEventCodec = TextStreamToolEventJsonCodec();
-    if (toolEventCodec.canDecode(type)) {
-      return toolEventCodec.decode(map, type: type, path: path);
-    }
-    const contentEventCodec = TextStreamContentEventJsonCodec();
-    if (contentEventCodec.canDecode(type)) {
-      return contentEventCodec.decode(map, type: type, path: path);
-    }
     const lifecycleEventCodec = TextStreamLifecycleEventJsonCodec();
     if (lifecycleEventCodec.canDecode(type)) {
       return lifecycleEventCodec.decode(map, type: type, path: path);
     }
 
-    throw FormatException(
-      'Unsupported text stream event type "$type" at $path.',
+    return textStreamEventFromProvider(
+      const provider.LanguageModelStreamEventJsonCodec().decodeEvent(
+        map,
+        path: path,
+      ),
     );
   }
 }

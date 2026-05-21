@@ -1,5 +1,5 @@
-/// Internal runtime utilities exposed only for compatibility shims and focused
-/// tests while `llm_dart_core` is being reduced to a compatibility layer.
+/// Internal runtime utilities exposed only for focused package tests and
+/// migration-era tooling that must bridge provider/runtime internals.
 library;
 
 export 'src/common/partial_json.dart';

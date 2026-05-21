@@ -1,14 +1,9 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
-import '../provider/openai_family_option_resolver.dart';
 import '../provider/openai_family_profile.dart';
+import '../provider/openai_family_route_policy.dart';
 import '../provider/resolved_openai_chat_settings.dart';
 import '../provider/resolved_openai_options.dart';
-
-enum OpenAIRequestRoute {
-  responses,
-  chatCompletions,
-}
 
 final class ResolvedOpenAILanguageModelCall {
   final OpenAIRequestRoute route;
@@ -43,9 +38,7 @@ ResolvedOpenAILanguageModelCall resolveOpenAILanguageModelCall({
   );
 
   return ResolvedOpenAILanguageModelCall(
-    route: settings.common.useResponsesApi && profile.supportsResponsesApi
-        ? OpenAIRequestRoute.responses
-        : OpenAIRequestRoute.chatCompletions,
+    route: profile.routePolicy.resolveLanguageModelRoute(settings),
     requestModelId: requestModelId,
     providerOptions: providerOptions,
   );
@@ -56,7 +49,7 @@ ResolvedOpenAIGenerateTextOptions _resolveOpenAIProviderOptions({
   required OpenAIFamilyProfile profile,
   required ResolvedOpenAIChatModelSettings settings,
 }) {
-  return openAIFamilyOptionResolverFor(profile).resolveInvocationOptions(
+  return profile.optionResolver.resolveInvocationOptions(
     options: request.callOptions.providerOptions,
     sharedResponseFormat: request.options.responseFormat,
     modelSettings: settings,
@@ -69,7 +62,7 @@ String _resolveOpenAIRequestModelId({
   required ResolvedOpenAIChatModelSettings settings,
   required ResolvedOpenAIGenerateTextOptions providerOptions,
 }) {
-  return openAIFamilyOptionResolverFor(profile).resolveRequestModelId(
+  return profile.optionResolver.resolveRequestModelId(
     modelId: modelId,
     modelSettings: settings,
     invocationOptions: providerOptions,

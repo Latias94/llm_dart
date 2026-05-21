@@ -41,7 +41,7 @@ dart run http_examples/simple_stream_client.dart
 | File | Description | API Key Required |
 |------|-------------|------------------|
 | `mcp_concept_demo.dart` | Concept walkthrough and architecture notes | ❌ |
-| `shared/mcp_tool_bridge.dart` | Shared bridge from MCP tools/results to `llm_dart/core.dart` | ❌ |
+| `shared/mcp_tool_bridge.dart` | Shared bridge from MCP tools/results to the root `core.dart` runtime facade | ❌ |
 | `stdio_examples/client.dart` | Direct stdio MCP client without an LLM | ❌ |
 | `stdio_examples/llm_client.dart` | Primary `generateText(...)` + MCP stdio tools | ✅ |
 | `http_examples/client.dart` | Direct HTTP MCP client without an LLM | ❌ |

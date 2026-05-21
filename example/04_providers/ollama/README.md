@@ -108,27 +108,7 @@ dart run advanced_features.dart
 dart run thinking_example.dart
 ```
 
-## Compatibility Boundary
-
-### Provider-Specific Compatibility Surface
-
-```dart
-import 'package:llm_dart/providers/ollama/ollama.dart' as ollama_compat;
-
-final provider = ollama_compat.createOllamaProvider(
-  baseUrl: 'http://localhost:11434',
-  model: 'llama3.2',
-  numGpu: 1,
-  numThread: 8,
-  keepAlive: '10m',
-);
-
-// Use this shell only for residual `/api/generate` completion flows.
-```
-
-This still works, but it should be read as a transitional shell above the
-package-owned modern Ollama models rather than the target architecture for
-shared-capability app code.
+## Provider-Owned Boundary
 
 The important distinction is:
 
@@ -136,9 +116,8 @@ The important distinction is:
   app-facing code
 - use `ollama(...).catalog().listModels()` for installed-model picker or local
   diagnostics UI
-- use `providers/ollama/ollama.dart` only when you need `/api/generate` or
-  broader compatibility surfaces that are still outside the dedicated package
-  surface
+- keep `/api/generate` or broader local-runtime controls as future
+  provider-package work rather than reviving removed root provider subpaths
 
 ## What Is Not Being Forced Into The Shared Surface
 

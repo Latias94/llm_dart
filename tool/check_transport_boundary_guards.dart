@@ -113,7 +113,7 @@ Future<void> _collectImportViolations({
 
       violations.add(
         '${_displayPath(repoRoot, entity)}:${index + 1}: transport library '
-        'files must not import or export package:llm_dart/... or '
+        'files must not import or export package:llm_dart/... or deleted '
         'package:llm_dart_core/...; keep transport dependent only on its own '
         'package surface plus Dio and logging.',
       );

@@ -1,28 +1,26 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
 
-import '../chat_completions/openai_chat_completions_codec.dart';
 import '../provider/openai_family_profile.dart';
 import '../provider/openai_family_url_support.dart';
 import 'openai_language_model_execution.dart';
 import 'openai_language_model_prepared_call.dart';
+import 'openai_language_model_route_adapters.dart';
 import '../provider/openai_model_settings.dart';
 import '../provider/openai_model_describer.dart';
 import '../provider/openai_provider_support.dart';
 import '../provider/openrouter_options.dart';
 import '../provider/resolved_openai_chat_settings.dart';
-import '../responses/openai_responses_codec.dart';
 
 final class OpenAILanguageModel
     implements LanguageModel, CapabilityDescribedModel {
-  static const OpenAIResponsesCodec _codec = OpenAIResponsesCodec();
   final String apiKey;
   final String baseUrl;
   final OpenAIFamilyProfile profile;
   final TransportClient transport;
   final ResolvedOpenAIChatModelSettings settings;
-  late final OpenAIChatCompletionsCodec _chatCompletionsCodec =
-      OpenAIChatCompletionsCodec.forProfile(profile);
+  late final OpenAILanguageModelRouteAdapters _routeAdapters =
+      OpenAILanguageModelRouteAdapters.forProfile(profile);
 
   @override
   final String modelId;
@@ -74,14 +72,11 @@ final class OpenAILanguageModel
       apiKey: apiKey,
       settings: settings,
       stream: false,
-      responsesCodec: _codec,
-      chatCompletionsCodec: _chatCompletionsCodec,
+      routeAdapters: _routeAdapters,
     );
     return sendOpenAILanguageModelGenerateCall(
       transport: transport,
       preparedCall: preparedCall,
-      responsesCodec: _codec,
-      chatCompletionsCodec: _chatCompletionsCodec,
     );
   }
 
@@ -96,16 +91,13 @@ final class OpenAILanguageModel
       apiKey: apiKey,
       settings: settings,
       stream: true,
-      responsesCodec: _codec,
-      chatCompletionsCodec: _chatCompletionsCodec,
+      routeAdapters: _routeAdapters,
     );
 
     yield* sendOpenAILanguageModelStreamCall(
       transport: transport,
       preparedCall: preparedCall,
       includeRawChunks: request.options.includeRawChunks,
-      responsesCodec: _codec,
-      chatCompletionsCodec: _chatCompletionsCodec,
     );
   }
 }

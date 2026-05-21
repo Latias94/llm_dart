@@ -17,7 +17,8 @@ void main() {
       );
     });
 
-    test('reports root or core imports inside transport lib files', () async {
+    test('reports root or deleted core imports inside transport lib files',
+        () async {
       final repoRoot = await _createTempWorkspace();
       addTearDown(() async {
         if (repoRoot.existsSync()) {

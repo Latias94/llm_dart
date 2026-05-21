@@ -15,7 +15,7 @@ final class TextStreamLifecycleEventJsonCodec {
       'step-start' ||
       'step-end' ||
       'step-finish' ||
-      'finish' ||
+      'tool-output-denied' ||
       'abort' =>
         true,
       _ => false,
@@ -80,18 +80,15 @@ final class TextStreamLifecycleEventJsonCodec {
           'type': 'step-end',
           if (stepId != null) 'stepId': stepId,
         },
-      FinishEvent(
-        :final finishReason,
-        :final rawFinishReason,
-        :final usage,
+      ToolOutputDeniedEvent(
+        :final toolCallId,
+        :final reason,
         :final providerMetadata,
       ) =>
         {
-          'type': 'finish',
-          'finishReason': finishReason.name,
-          if (rawFinishReason != null) 'rawFinishReason': rawFinishReason,
-          if (usage != null)
-            'usage': provider.SerializationJsonSupport.encodeUsageStats(usage),
+          'type': 'tool-output-denied',
+          'toolCallId': toolCallId,
+          if (reason != null) 'reason': reason,
           if (providerMetadata != null)
             'providerMetadata':
                 provider.SerializationJsonSupport.encodeProviderMetadata(
@@ -179,20 +176,14 @@ final class TextStreamLifecycleEventJsonCodec {
             path: '$path.stepId',
           ),
         ),
-      'finish' => FinishEvent(
-          finishReason: provider.FinishReason.values.byName(
-            provider.asJsonString(
-              map['finishReason'],
-              path: '$path.finishReason',
-            ),
+      'tool-output-denied' => ToolOutputDeniedEvent(
+          toolCallId: provider.asJsonString(
+            map['toolCallId'],
+            path: '$path.toolCallId',
           ),
-          rawFinishReason: provider.asNullableJsonString(
-            map['rawFinishReason'],
-            path: '$path.rawFinishReason',
-          ),
-          usage: provider.SerializationJsonSupport.decodeUsageStats(
-            map['usage'],
-            path: '$path.usage',
+          reason: provider.asNullableJsonString(
+            map['reason'],
+            path: '$path.reason',
           ),
           providerMetadata:
               provider.SerializationJsonSupport.decodeProviderMetadata(

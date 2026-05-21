@@ -294,13 +294,6 @@ List<ReleaseReadinessStep> buildReleaseReadinessSteps(
           'Move implementation ownership out of root compatibility areas or update the boundary guard intentionally.',
     ),
     const ReleaseReadinessStep(
-      name: 'Core compatibility shell guard',
-      executable: 'dart',
-      arguments: ['run', 'tool/check_core_compatibility_shell_guard.dart'],
-      failureHint:
-          'Keep llm_dart_core as a compatibility shell and move new implementation ownership to focused packages.',
-    ),
-    const ReleaseReadinessStep(
       name: 'Provider replay metadata guard',
       executable: 'dart',
       arguments: ['run', 'tool/check_provider_replay_metadata_guards.dart'],

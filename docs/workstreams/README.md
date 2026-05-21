@@ -53,7 +53,7 @@
     user prompt normalization, metadata/options separation, provider utility
     consolidation, and root legacy exit; the reopened phase now tracks the
     provider-object registry, OpenAI-family decoupling, typed option policy,
-    and `llm_dart_core` posture.
+    and the historical `llm_dart_core` posture.
 - [2026-05-root-legacy-prompt-options-breaking-line](2026-05-root-legacy-prompt-options-breaking-line/README.md)
   - Closed breaking-line workstream that removed root legacy implementation
     ownership, converged app-facing prompts on `llm_dart_ai`, removed ordinary
@@ -74,3 +74,9 @@
     non-text provider contracts use implementation-facing methods, prompt
     input customization moves out of `ProviderMetadata`, and root legacy
     compatibility stops shaping new architecture decisions.
+- [2026-05-fearless-boundary-reset](2026-05-fearless-boundary-reset/DESIGN.md)
+  - Closed fearless boundary-reset workstream that turned the Vercel AI SDK
+    layering lessons into deeper Dart-native seams for OpenAI route/profile
+    policy, provider transport execution, the removed `llm_dart_core` package,
+    provider specification contracts, runtime stream vocabulary composition,
+    and AI runtime helper request state.

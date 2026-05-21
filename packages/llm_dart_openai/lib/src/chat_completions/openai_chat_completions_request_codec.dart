@@ -29,12 +29,9 @@ final class OpenAIChatCompletionsRequestCodec {
     this.profile,
   });
 
-  OpenAIChatCompletionsRequestPolicy get _requestPolicy => switch (profile) {
-        final profile? => openAIChatCompletionsRequestPolicyForProfile(
-            profile,
-          ),
-        null => openAIChatCompletionsRequestPolicyFor(providerNamespace),
-      };
+  OpenAIChatCompletionsRequestPolicy get _requestPolicy =>
+      profile?.chatCompletionsRequestPolicy ??
+      const OpenAIChatCompletionsOpenAIRequestPolicy();
 
   OpenAIChatCompletionsRequest encodeRequest({
     required String modelId,
@@ -46,12 +43,14 @@ final class OpenAIChatCompletionsRequestCodec {
     required bool stream,
   }) {
     const requestOptionsCodec = OpenAIChatCompletionsRequestOptionsCodec();
-    final promptCodec = OpenAIChatCompletionsPromptCodec(
-      providerNamespace: providerNamespace,
-    );
-    final toolCodec = OpenAIChatCompletionsRequestToolCodec(
-      providerNamespace: providerNamespace,
-    );
+    final promptCodec = profile == null
+        ? OpenAIChatCompletionsPromptCodec(providerNamespace: providerNamespace)
+        : OpenAIChatCompletionsPromptCodec.forProfile(profile!);
+    final toolCodec = profile == null
+        ? OpenAIChatCompletionsRequestToolCodec.legacy(
+            providerNamespace: providerNamespace,
+          )
+        : OpenAIChatCompletionsRequestToolCodec.forProfile(profile!);
     final requestPolicy = _requestPolicy;
 
     requestOptionsCodec.validateUnsupportedProviderOptions(providerOptions);

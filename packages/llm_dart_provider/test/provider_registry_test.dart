@@ -65,6 +65,32 @@ void main() {
       );
     });
 
+    test('exposes provider specifications in sorted registry order', () {
+      final registry = ProviderRegistry(
+        providers: {
+          'openai': _LanguageOnlyProvider('openai'),
+          'ollama': _EmbeddingOnlyProvider('ollama'),
+        },
+      );
+
+      expect(
+        registry.providerSpecifications.map((spec) => spec.providerId),
+        ['ollama', 'openai'],
+      );
+      expect(
+        registry.providerSpecification('openai').supportsModelFacet(
+              ProviderModelFacet.language,
+            ),
+        isTrue,
+      );
+      expect(
+        registry.providerSpecification('ollama').supportsModelFacet(
+              ProviderModelFacet.embedding,
+            ),
+        isTrue,
+      );
+    });
+
     test('honors provider-declared facet support', () {
       final registry = ProviderRegistry(
         providers: {
@@ -208,7 +234,64 @@ void main() {
         ),
       );
     });
+
+    test('requires registry key and provider specification identity to match',
+        () {
+      expect(
+        () => ProviderRegistry(
+          providers: {
+            'openai': _MismatchedSpecificationProvider('openai', 'openrouter'),
+          },
+        ),
+        throwsA(
+          isA<ArgumentError>()
+              .having((error) => error.name, 'name', 'providers')
+              .having(
+                (error) => error.invalidValue,
+                'invalidValue',
+                'openrouter',
+              ),
+        ),
+      );
+    });
   });
+}
+
+ProviderSpecification _providerSpecification(
+  String providerId,
+  Iterable<ProviderModelFacet> facets,
+) {
+  return ProviderSpecification(
+    providerId: providerId,
+    modelFacets: facets,
+    supportedInputShapes: [
+      if (facets.contains(ProviderModelFacet.language))
+        ProviderInputShapeDescriptor(
+          modelKind: ModelCapabilityKind.language,
+          shapeId: ProviderInputShapeIds.text,
+        ),
+      if (facets.contains(ProviderModelFacet.embedding))
+        ProviderInputShapeDescriptor(
+          modelKind: ModelCapabilityKind.embedding,
+          shapeId: ProviderInputShapeIds.text,
+        ),
+      if (facets.contains(ProviderModelFacet.image))
+        ProviderInputShapeDescriptor(
+          modelKind: ModelCapabilityKind.image,
+          shapeId: ProviderInputShapeIds.text,
+        ),
+      if (facets.contains(ProviderModelFacet.speech))
+        ProviderInputShapeDescriptor(
+          modelKind: ModelCapabilityKind.speech,
+          shapeId: ProviderInputShapeIds.text,
+        ),
+      if (facets.contains(ProviderModelFacet.transcription))
+        ProviderInputShapeDescriptor(
+          modelKind: ModelCapabilityKind.transcription,
+          shapeId: ProviderInputShapeIds.audio,
+        ),
+    ],
+  );
 }
 
 final class _AllModelProvider
@@ -222,6 +305,18 @@ final class _AllModelProvider
   final String providerId;
 
   _AllModelProvider(this.providerId);
+
+  @override
+  ProviderSpecification get specification => _providerSpecification(
+        providerId,
+        const {
+          ProviderModelFacet.language,
+          ProviderModelFacet.embedding,
+          ProviderModelFacet.image,
+          ProviderModelFacet.speech,
+          ProviderModelFacet.transcription,
+        },
+      );
 
   @override
   LanguageModel languageModel(String modelId) {
@@ -256,6 +351,14 @@ final class _LanguageOnlyProvider implements LanguageModelProvider {
   const _LanguageOnlyProvider(this.providerId);
 
   @override
+  ProviderSpecification get specification => _providerSpecification(
+        providerId,
+        const {
+          ProviderModelFacet.language,
+        },
+      );
+
+  @override
   LanguageModel languageModel(String modelId) {
     return _FakeLanguageModel(providerId, modelId);
   }
@@ -266,6 +369,14 @@ final class _EmbeddingOnlyProvider implements EmbeddingModelProvider {
   final String providerId;
 
   const _EmbeddingOnlyProvider(this.providerId);
+
+  @override
+  ProviderSpecification get specification => _providerSpecification(
+        providerId,
+        const {
+          ProviderModelFacet.embedding,
+        },
+      );
 
   @override
   EmbeddingModel embeddingModel(String modelId) {
@@ -282,6 +393,15 @@ final class _LimitedFacetProvider
   final String providerId;
 
   const _LimitedFacetProvider(this.providerId);
+
+  @override
+  ProviderSpecification get specification => _providerSpecification(
+        providerId,
+        const {
+          ProviderModelFacet.language,
+          ProviderModelFacet.embedding,
+        },
+      );
 
   @override
   bool get supportsLanguageModels => true;
@@ -306,6 +426,31 @@ final class _LimitedFacetProvider
   @override
   EmbeddingModel embeddingModel(String modelId) {
     return _FakeEmbeddingModel(providerId, modelId);
+  }
+}
+
+final class _MismatchedSpecificationProvider implements LanguageModelProvider {
+  @override
+  final String providerId;
+
+  final String specificationProviderId;
+
+  const _MismatchedSpecificationProvider(
+    this.providerId,
+    this.specificationProviderId,
+  );
+
+  @override
+  ProviderSpecification get specification => _providerSpecification(
+        specificationProviderId,
+        const {
+          ProviderModelFacet.language,
+        },
+      );
+
+  @override
+  LanguageModel languageModel(String modelId) {
+    return _FakeLanguageModel(providerId, modelId);
   }
 }
 

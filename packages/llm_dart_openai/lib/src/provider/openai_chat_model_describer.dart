@@ -1,7 +1,8 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
-import 'openai_family_capability_policy.dart';
+import 'openai_family_capability_core.dart';
 import 'openai_family_profile.dart';
+import 'openai_family_route_policy.dart';
 import 'openai_model_capabilities.dart';
 import 'openai_model_settings.dart';
 import 'openai_provider_support.dart';
@@ -32,8 +33,9 @@ ModelCapabilityProfile describeOpenAIChatModel(
   );
   final capabilities = getOpenAIModelCapabilities(modelId);
   final usesResponsesApi =
-      resolvedSettings.common.useResponsesApi && profile.supportsResponsesApi;
-  final capabilityPolicy = openAIFamilyCapabilityPolicyFor(profile);
+      profile.routePolicy.resolveLanguageModelRoute(resolvedSettings) ==
+          OpenAIRequestRoute.responses;
+  final capabilityPolicy = profile.capabilityPolicy;
   final confidence = capabilityPolicy.sharedFeatureConfidence;
   final capabilityInput = OpenAIFamilyCapabilityInput(
     modelId: modelId,

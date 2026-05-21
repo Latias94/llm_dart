@@ -1,43 +1,21 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
-import 'openai_chat_completions_deepseek_policy.dart';
 import 'openai_chat_completions_openai_compatibility.dart';
 import 'openai_chat_completions_request_policy_core.dart';
-import '../provider/openai_family_profile.dart';
 import '../language/openai_generate_text_options.dart';
 import '../provider/resolved_openai_options.dart';
 
 export 'openai_chat_completions_request_policy_core.dart'
     show OpenAIChatCompletionsRequestPolicy;
 
-OpenAIChatCompletionsRequestPolicy openAIChatCompletionsRequestPolicyFor(
-  String providerNamespace,
-) {
-  return switch (providerNamespace) {
-    'deepseek' => const DeepSeekChatCompletionsRequestPolicy(),
-    'openai' => const _OpenAIChatCompletionsRequestPolicy(),
-    _ => const _CompatibleChatCompletionsRequestPolicy(),
-  };
-}
-
-OpenAIChatCompletionsRequestPolicy openAIChatCompletionsRequestPolicyForProfile(
-  OpenAIFamilyProfile profile,
-) {
-  return switch (profile) {
-    DeepSeekProfile() => const DeepSeekChatCompletionsRequestPolicy(),
-    OpenAIProfile() => const _OpenAIChatCompletionsRequestPolicy(),
-    _ => const _CompatibleChatCompletionsRequestPolicy(),
-  };
-}
-
-final class _CompatibleChatCompletionsRequestPolicy
+final class CompatibleChatCompletionsRequestPolicy
     extends OpenAIChatCompletionsRequestPolicy {
-  const _CompatibleChatCompletionsRequestPolicy();
+  const CompatibleChatCompletionsRequestPolicy();
 }
 
-final class _OpenAIChatCompletionsRequestPolicy
+final class OpenAIChatCompletionsOpenAIRequestPolicy
     extends OpenAIChatCompletionsRequestPolicy {
-  const _OpenAIChatCompletionsRequestPolicy();
+  const OpenAIChatCompletionsOpenAIRequestPolicy();
 
   @override
   void addProviderRequestFields({

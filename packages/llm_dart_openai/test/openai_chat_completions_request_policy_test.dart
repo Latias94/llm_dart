@@ -1,6 +1,6 @@
 import 'package:llm_dart_openai/src/provider/deepseek_options.dart';
-import 'package:llm_dart_openai/src/chat_completions/openai_chat_completions_request_policy.dart';
 import 'package:llm_dart_openai/src/language/openai_generate_text_options.dart';
+import 'package:llm_dart_openai/src/provider/openai_family_profile.dart';
 import 'package:llm_dart_openai/src/provider/resolved_openai_options.dart';
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:test/test.dart';
@@ -8,7 +8,7 @@ import 'package:test/test.dart';
 void main() {
   group('OpenAI chat completions request policy', () {
     test('projects DeepSeek provider-native request fields', () {
-      final policy = openAIChatCompletionsRequestPolicyFor('deepseek');
+      final policy = const DeepSeekProfile().chatCompletionsRequestPolicy;
       final body = <String, Object?>{};
 
       policy.addProviderRequestFields(
@@ -37,7 +37,7 @@ void main() {
     });
 
     test('drops unsupported DeepSeek reasoner fields with warnings', () {
-      final policy = openAIChatCompletionsRequestPolicyFor('deepseek');
+      final policy = const DeepSeekProfile().chatCompletionsRequestPolicy;
       final body = <String, Object?>{
         'logprobs': true,
         'top_logprobs': 2,

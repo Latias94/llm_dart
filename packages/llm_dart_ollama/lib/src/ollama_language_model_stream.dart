@@ -1,7 +1,5 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
-import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
-import 'ollama_chat_request_codec.dart';
 import 'ollama_chat_response_codec.dart';
 import 'ollama_chat_stream_codec.dart';
 
@@ -20,14 +18,4 @@ Stream<LanguageModelStreamEvent> decodeOllamaChatStreamResponse({
     stream,
     includeRawChunks: includeRawChunks,
   );
-}
-
-Stream<LanguageModelStreamEvent> startOllamaChatStream({
-  required OllamaPreparedChatRequest preparedRequest,
-}) async* {
-  yield StartEvent(warnings: preparedRequest.warnings);
-}
-
-LanguageModelStreamEvent ollamaChatStreamErrorEvent(Object error) {
-  return ErrorEvent(transportErrorToModelError(error));
 }

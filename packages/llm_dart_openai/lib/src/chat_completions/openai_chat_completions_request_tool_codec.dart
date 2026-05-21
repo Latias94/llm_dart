@@ -1,13 +1,33 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import '../provider/openai_family_profile.dart';
 import '../tools/openai_tool_options.dart';
 import '../tools/openai_tool_output_encoding.dart';
 
 final class OpenAIChatCompletionsRequestToolCodec {
   final String providerNamespace;
+  final bool supportsOpenAIToolOptions;
 
-  const OpenAIChatCompletionsRequestToolCodec({
+  const OpenAIChatCompletionsRequestToolCodec()
+      : providerNamespace = 'openai',
+        supportsOpenAIToolOptions = true;
+
+  factory OpenAIChatCompletionsRequestToolCodec.forProfile(
+    OpenAIFamilyProfile profile,
+  ) {
+    return OpenAIChatCompletionsRequestToolCodec._(
+      providerNamespace: profile.providerId,
+      supportsOpenAIToolOptions: profile.supportsOpenAIToolOptions,
+    );
+  }
+
+  const OpenAIChatCompletionsRequestToolCodec.legacy({
     this.providerNamespace = 'openai',
+  }) : supportsOpenAIToolOptions = providerNamespace == 'openai';
+
+  const OpenAIChatCompletionsRequestToolCodec._({
+    required this.providerNamespace,
+    required this.supportsOpenAIToolOptions,
   });
 
   List<Map<String, Object?>> encodeTools(
@@ -38,7 +58,7 @@ final class OpenAIChatCompletionsRequestToolCodec {
       return null;
     }
 
-    if (providerNamespace != 'openai') {
+    if (!supportsOpenAIToolOptions) {
       throw ArgumentError.value(
         tool.providerOptions,
         'tool.providerOptions',

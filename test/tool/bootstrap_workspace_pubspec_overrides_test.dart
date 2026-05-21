@@ -27,25 +27,15 @@ void main() {
         '''
 name: llm_dart
 dependencies:
+  llm_dart_ai: ^0.11.0-alpha.1
   llm_dart_provider: ^0.11.0-alpha.1
   external_dep: ^1.0.0
 dev_dependencies:
-  llm_dart_core: ^0.11.0-alpha.1
   llm_dart_test:
     path: packages/llm_dart_test
 ''',
       );
 
-      await _writePackagePubspec(
-        tempDir,
-        packageDirectory: 'packages/llm_dart_core',
-        content: '''
-name: llm_dart_core
-dependencies:
-  llm_dart_ai: ^0.11.0-alpha.1
-  llm_dart_provider: ^0.11.0-alpha.1
-''',
-      );
       await _writePackagePubspec(
         tempDir,
         packageDirectory: 'packages/llm_dart_ai',
@@ -68,7 +58,7 @@ name: llm_dart_provider
         content: '''
 name: llm_dart_chat
 dependencies:
-  llm_dart_core: ^0.11.0-alpha.1
+  llm_dart_ai: ^0.11.0-alpha.1
 ''',
       );
       await _writePackagePubspec(
@@ -90,17 +80,12 @@ dependencies:
         'llm_dart',
         'llm_dart_ai',
         'llm_dart_chat',
-        'llm_dart_core',
         'llm_dart_test',
       ]);
 
       final rootOverrides = await File.fromUri(
         tempDir.uri.resolve('pubspec_overrides.yaml'),
       ).readAsString();
-      expect(
-        rootOverrides,
-        contains('path: packages/llm_dart_core'),
-      );
       expect(
         rootOverrides,
         contains('path: packages/llm_dart_test'),
@@ -123,25 +108,9 @@ dependencies:
         contains('path: ../llm_dart_provider'),
       );
 
-      final coreOverrides = await File.fromUri(
-        tempDir.uri.resolve('packages/llm_dart_core/pubspec_overrides.yaml'),
-      ).readAsString();
-      expect(
-        coreOverrides,
-        contains('path: ../llm_dart_provider'),
-      );
-      expect(
-        coreOverrides,
-        contains('path: ../llm_dart_ai'),
-      );
-
       final chatOverrides = await File.fromUri(
         tempDir.uri.resolve('packages/llm_dart_chat/pubspec_overrides.yaml'),
       ).readAsString();
-      expect(
-        chatOverrides,
-        contains('path: ../llm_dart_core'),
-      );
       expect(
         chatOverrides,
         contains('path: ../llm_dart_provider'),
@@ -162,13 +131,7 @@ dependencies:
   http: ^1.0.0
 ''',
       );
-      await _writePackagePubspec(
-        tempDir,
-        packageDirectory: 'packages/llm_dart_core',
-        content: '''
-name: llm_dart_core
-''',
-      );
+      await Directory.fromUri(tempDir.uri.resolve('packages/')).create();
 
       final result = await generateWorkspacePubspecOverrides(
         repoRoot: tempDir,

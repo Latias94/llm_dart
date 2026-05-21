@@ -26,6 +26,12 @@ The primary entry path for new code is the provider-neutral root runtime plus di
 
 The root package intentionally no longer re-exports concrete providers. This keeps the root Module deep and provider-neutral while provider packages remain explicit Adapters.
 
+The historical `llm_dart_core` package and builder-era root compatibility
+surfaces have been removed from the active package graph. Treat older imports
+such as `package:llm_dart_core/...`, `package:llm_dart/legacy.dart`,
+`package:llm_dart/providers/...`, and root `builder` / `models` subpaths as
+migration warnings, not supported targets for new code.
+
 Within this workspace, the modern shared-capability paths for Ollama and
 ElevenLabs now live in dedicated provider packages:
 
@@ -62,8 +68,6 @@ output as potentially `inferred` rather than as hard guarantees.
 - `llm_dart_ai`
   - framework-neutral generation helpers, shared chat UI projection, runners,
     result accumulation, and structured output utilities
-- `llm_dart_core`
-  - compatibility package for historical core imports
 - `llm_dart_transport`
   - HTTP, SSE, and shared logging primitives
 - `llm_dart_chat`
@@ -166,9 +170,9 @@ resolve unpublished workspace dependencies from this checkout.
 
 ## Quick Start
 
-Use the default modern root entrypoint plus the shared core request model.
+Use the default modern root entrypoint plus the shared runtime request model.
 Most applications should stay on this layer until they have a concrete need for
-provider-owned options, remote lifecycle APIs, or compatibility-only flows.
+provider-owned options or remote lifecycle APIs.
 
 Current text-call layering:
 
@@ -195,7 +199,7 @@ Other shared capability helpers:
 - `transcribe(...)`
 
 ```dart
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 Future<void> main() async {
@@ -203,11 +207,11 @@ Future<void> main() async {
     apiKey: 'your-openai-key',
   ).chatModel('gpt-4.1-mini');
 
-  final result = await llm.generateTextCall(
+  final result = await core.generateTextCall(
     model: model,
     messages: [
-      llm.SystemModelMessage.text('You are concise.'),
-      llm.UserModelMessage.text('Explain Dart in one sentence.'),
+      core.SystemModelMessage.text('You are concise.'),
+      core.UserModelMessage.text('Explain Dart in one sentence.'),
     ],
   );
 
@@ -225,12 +229,12 @@ a typed model contract. Register provider facades, then resolve
 `provider:modelId` references against the model facet you need.
 
 ```dart
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic;
 import 'package:llm_dart_ollama/llm_dart_ollama.dart' as ollama;
 import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
-final registry = llm.ProviderRegistry(
+final registry = core.ProviderRegistry(
   providers: {
     'openai': openai.openai(apiKey: 'your-openai-key'),
     'anthropic': anthropic.anthropic(apiKey: 'your-anthropic-key'),
@@ -244,6 +248,9 @@ final model = registry.languageModel('openai:gpt-4.1-mini');
 Use direct provider facades for the simplest path, and use the registry only
 when the choice really is dynamic. `ModelRegistry` remains available only for
 low-level adapters that already own independent per-kind model factories.
+`ProviderRegistry` reads each provider's `ProviderSpecification`, so custom
+provider facades must declare their provider id, supported facets, and input
+shapes instead of relying only on marker interfaces.
 
 ## Provider-Owned Helper Boundaries
 
@@ -271,7 +278,6 @@ Shared structured generation now lives above the main text-call layer through
 and `streamObject(...)`.
 
 ```dart
-import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
@@ -309,7 +315,6 @@ application code uses `embed(...)` / `embedMany(...)`, while providers expose
 typed capability models such as `openai(...).embeddingModel(...)`.
 
 ```dart
-import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
@@ -337,7 +342,6 @@ The shared streaming boundary is `TextStreamEvent`.
 ```dart
 import 'dart:io';
 
-import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
@@ -381,7 +385,6 @@ Tool definitions live in `llm_dart_provider`, and `package:llm_dart/core.dart`
 re-exports them while providers map them into provider-owned request codecs.
 
 ```dart
-import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
@@ -462,8 +465,8 @@ by that provider's wire format are sent back to the model.
 Reasoning is part of the common result and stream model, but replay fidelity remains provider-owned.
 
 ```dart
-import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic;
 
 Future<void> main() async {
   final model = anthropic.anthropic(
@@ -494,8 +497,8 @@ import 'package:llm_dart/chat.dart';
 ```
 
 This entrypoint re-exports `DefaultChatSession`, `DirectChatTransport`,
-`HttpChatTransport`, `ChatRequestOptions`, `ChatMessageMapper`, and the stable
-provider factories without pulling Flutter adapters into the root package
+`HttpChatTransport`, `ChatRequestOptions`, and `ChatMessageMapper` without
+pulling Flutter adapters or concrete provider factories into the root package
 surface.
 
 `ChatMessageMapper` now lives in `package:llm_dart_ai/llm_dart_ai.dart` as
@@ -517,7 +520,7 @@ persistence helpers. The root `package:llm_dart/chat.dart` entrypoint stays
 pure Dart and does not re-export Flutter-only types.
 
 ```dart
-import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 import 'package:llm_dart_flutter/llm_dart_flutter.dart';
 
 Future<void> main() async {

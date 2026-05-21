@@ -80,10 +80,9 @@ for (final model in providers) {
 import 'package:llm_dart/core.dart' as core;
 import 'package:llm_dart/openai.dart' as openai;
 
-const togetherProfile = openai.OpenAIProfile(
+const togetherProfile = openai.OpenAICompatibleProfile(
   providerId: 'together-ai',
   defaultBaseUrl: 'https://api.together.xyz/v1',
-  supportsResponsesApi: false,
 );
 
 final model = openai.openai(

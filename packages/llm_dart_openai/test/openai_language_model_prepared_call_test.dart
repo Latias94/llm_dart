@@ -1,9 +1,8 @@
-import 'package:llm_dart_openai/src/chat_completions/openai_chat_completions_codec.dart';
 import 'package:llm_dart_openai/src/provider/openai_family_profile.dart';
-import 'package:llm_dart_openai/src/language/openai_language_model_call_routing.dart';
+import 'package:llm_dart_openai/src/provider/openai_family_route_policy.dart';
 import 'package:llm_dart_openai/src/language/openai_language_model_prepared_call.dart';
+import 'package:llm_dart_openai/src/language/openai_language_model_route_adapters.dart';
 import 'package:llm_dart_openai/src/common/openai_options.dart';
-import 'package:llm_dart_openai/src/responses/openai_responses_codec.dart';
 import 'package:llm_dart_openai/src/provider/resolved_openai_chat_settings.dart';
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:llm_dart_transport/llm_dart_transport.dart';
@@ -40,11 +39,13 @@ void main() {
           common: OpenAIChatModelSettings(),
         ),
         stream: false,
-        responsesCodec: const OpenAIResponsesCodec(),
-        chatCompletionsCodec: const OpenAIChatCompletionsCodec(),
+        routeAdapters: OpenAILanguageModelRouteAdapters.forProfile(
+          const OpenAIProfile(),
+        ),
       );
 
       expect(preparedCall.call.route, OpenAIRequestRoute.responses);
+      expect(preparedCall.routeAdapter.route, OpenAIRequestRoute.responses);
       expect(preparedCall.transportRequest.uri.toString(),
           'https://api.openai.test/v1/responses');
       expect(preparedCall.transportRequest.method, TransportMethod.post);
@@ -89,11 +90,14 @@ void main() {
           ),
         ),
         stream: true,
-        responsesCodec: const OpenAIResponsesCodec(),
-        chatCompletionsCodec: const OpenAIChatCompletionsCodec(),
+        routeAdapters: OpenAILanguageModelRouteAdapters.forProfile(
+          const OpenAIProfile(),
+        ),
       );
 
       expect(preparedCall.call.route, OpenAIRequestRoute.chatCompletions);
+      expect(
+          preparedCall.routeAdapter.route, OpenAIRequestRoute.chatCompletions);
       expect(preparedCall.transportRequest.uri.toString(),
           'https://api.openai.test/v1/chat/completions');
       expect(

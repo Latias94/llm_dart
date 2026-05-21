@@ -720,7 +720,6 @@ ConsumerSmokePaths buildConsumerSmokePaths(Directory repoRoot) {
         'llm_dart_ai',
         'llm_dart_anthropic',
         'llm_dart_chat',
-        'llm_dart_core',
         'llm_dart_elevenlabs',
         'llm_dart_flutter',
         'llm_dart_google',
@@ -787,7 +786,6 @@ ${_dependencyEntries([
         'llm_dart_ai',
         'llm_dart_anthropic',
         'llm_dart_chat',
-        'llm_dart_core',
         'llm_dart_elevenlabs',
         'llm_dart_google',
         'llm_dart_ollama',
@@ -799,7 +797,6 @@ ${_dependencyEntries([
         'llm_dart_ai',
         'llm_dart_anthropic',
         'llm_dart_chat',
-        'llm_dart_core',
         'llm_dart_elevenlabs',
         'llm_dart_google',
         'llm_dart_ollama',
@@ -1071,7 +1068,6 @@ import 'package:llm_dart/llm_dart.dart' as llm;
 import 'package:llm_dart_ai/llm_dart_ai.dart' as ai;
 import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic;
 import 'package:llm_dart_chat/llm_dart_chat.dart' as chat;
-import 'package:llm_dart_core/llm_dart_core.dart' as compat_core;
 import 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart' as elevenlabs;
 import 'package:llm_dart_google/llm_dart_google.dart' as google;
 import 'package:llm_dart_ollama/llm_dart_ollama.dart' as ollama;
@@ -1104,7 +1100,7 @@ void main() {
       elevenlabs.elevenLabs(apiKey: 'test').speechModel('eleven_multilingual_v2');
   final chatInput = chat.ChatInput.text('hello');
   final cancellation = transport.TransportCancellation()..cancel('smoke');
-  final mapped = const compat_core.ChatMessageMapper();
+  final mapped = const ai.ChatMessageMapper();
   final callOptions = const provider.CallOptions();
 
   if (prompts.length != 2 ||

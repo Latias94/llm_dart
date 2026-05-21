@@ -14,7 +14,6 @@ void main() {
         containsAll([
           'llm_dart_provider',
           'llm_dart_ai',
-          'llm_dart_core',
           'llm_dart_transport',
           'llm_dart_provider_utils',
           'llm_dart_chat',
@@ -26,7 +25,7 @@ void main() {
           'llm_dart_flutter',
         ]),
       );
-      expect(targets.length, 12);
+      expect(targets.length, 11);
     });
 
     test('uses dart test for Dart packages', () {
