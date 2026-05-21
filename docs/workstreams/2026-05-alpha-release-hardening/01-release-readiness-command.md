@@ -20,7 +20,9 @@ The first version orchestrates the checks that are already proven:
 
 - `dart run tool/check_workspace_dependency_guards.dart`
 - `dart run tool/check_root_package_boundary_guards.dart`
-- `dart run tool/check_core_compatibility_shell_guard.dart`
+- `dart run tool/check_provider_replay_metadata_guards.dart`
+- `dart run tool/check_openai_provider_layout_guard.dart`
+- `dart run tool/check_provider_metadata_namespace_guards.dart`
 - `dart run tool/check_transport_boundary_guards.dart`
 - `dart run tool/check_test_legacy_import_guards.dart`
 - `dart run tool/check_example_api_guards.dart`

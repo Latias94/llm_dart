@@ -46,7 +46,10 @@ Goals:
 Acceptance criteria:
 
 - every publishable package has reviewed `pubspec.yaml`, README, and changelog
-- `llm_dart_core` is described as a compatibility shell
+- the deleted `llm_dart_core` package is absent from the publishable graph and
+  documented only as a removed migration source
+- `llm_dart_provider_utils` is described as a provider-implementation utility
+  package, not as an application-facing runtime
 - `llm_dart_provider` is described as the shared provider/UI/serialization
   contract owner for the first alpha
 - publish order is documented in both release docs and the readiness command
@@ -55,8 +58,8 @@ Current status:
 
 - the publish order is documented in the previous workstream's release
   readiness checklist
-- root and core package descriptions have already been corrected for the
-  compatibility-shell role
+- root package descriptions point to focused root and direct provider
+  entrypoints; the historical core package has been removed
 - `02-package-metadata-and-publish-order.md` now records the alpha.1
   dependency-aware publish order, package ownership audit, and
   `llm_dart_test` non-publishable status
@@ -66,13 +69,16 @@ Current status:
   unless the publish dry-run or version check is explicitly skipped
 - root README links have been cleaned to repository-relative paths, and public
   package README language no longer references the internal reference repo
+- after the fearless boundary reset, the publish order was rebaselined to
+  remove `llm_dart_core` and include `llm_dart_provider_utils`
 
 ## M3 - Clean Consumer Smoke
 
 Goals:
 
 - validate real consumer import and dependency behavior outside the repository
-- cover modern root, focused packages, compatibility core, legacy, and Flutter
+- cover modern root, focused packages, provider utility dependency resolution,
+  and Flutter
 
 Acceptance criteria:
 
@@ -89,6 +95,8 @@ Current status:
   resolution, analyzes them, runs no-key smoke coverage, and removes them
 - after publish, repeat clean consumer smoke against pub.dev versions without
   local path overrides
+- post-boundary-reset consumer smoke still needs one fresh full readiness run
+  before publish execution
 
 ## M4 - Alpha Publish Execution
 
@@ -116,3 +124,5 @@ Current status:
 - the 2026-05-15 audit fixed package-root fixture lookup for OpenAI,
   Anthropic, and Google fixture contract tests before the final green run
 - actual publishing has not started
+- because the package graph changed after the 2026-05-15 full gate, a fresh
+  full `dart run tool/release_readiness.dart` run is required before publishing

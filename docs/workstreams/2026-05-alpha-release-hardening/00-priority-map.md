@@ -8,7 +8,9 @@ The release gate should cover:
 
 - workspace dependency guards
 - root boundary guards
-- core compatibility shell guard
+- provider replay metadata guard
+- OpenAI provider layout guard
+- provider metadata namespace guard
 - transport boundary guard
 - test legacy-import guard
 - package analysis
@@ -27,7 +29,8 @@ architecture:
 
 - package descriptions describe current ownership, not historical ownership
 - README files point new users to modern focused entrypoints
-- compatibility packages and barrels are described as compatibility surfaces
+- deleted compatibility packages and barrels are documented only as removed
+  migration sources
 - changelogs name breaking paths and replacements
 - dependency constraints match the publish order
 - `publish_to: none` remains limited to non-publishable helper packages
@@ -45,12 +48,10 @@ Clean consumers should verify:
 - focused provider package imports
 - `llm_dart_provider`, `llm_dart_ai`, `llm_dart_transport`, and
   `llm_dart_chat`
-- `package:llm_dart/legacy.dart`
 - `llm_dart_flutter` with a provider package
 
 The smoke tests should avoid network calls. They should construct models,
-typed options, shared contracts, chat/controller adapters, and legacy builder
-chains.
+typed options, shared contracts, and chat/controller adapters.
 
 ## Priority 3 - Freeze Publish Order
 
@@ -58,8 +59,8 @@ Publishing should follow dependency direction:
 
 1. `llm_dart_provider`
 2. `llm_dart_ai`
-3. `llm_dart_core`
-4. `llm_dart_transport`
+3. `llm_dart_transport`
+4. `llm_dart_provider_utils`
 5. `llm_dart_chat`
 6. `llm_dart_openai`
 7. `llm_dart_google`
@@ -81,7 +82,7 @@ The release should not be considered complete until:
 
 - pub.dev package pages render expected metadata
 - dependency resolution works without local overrides
-- modern root, focused packages, Flutter, and legacy compatibility imports
+- modern root, focused packages, and Flutter adapter imports
   compile in clean consumers
 - release notes point users to the migration matrix
 

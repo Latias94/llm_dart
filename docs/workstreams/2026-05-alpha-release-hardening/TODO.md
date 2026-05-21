@@ -26,6 +26,19 @@
 - [x] Confirm `llm_dart_test` remains non-publishable
 - [x] Add pub.dev target-version availability preflight
 
+## Post-Boundary-Reset Rebaseline
+
+- [x] ARH-100 [owner=codex] Rebaseline release-hardening docs after
+  `llm_dart_core` deletion and `llm_dart_provider_utils` publication.
+- [x] ARH-110 [owner=codex] Audit package graph, public root entrypoints, and
+  migration docs for stale core/legacy guidance.
+- [x] ARH-120 [owner=codex] Run a fast release-readiness gate after the
+  fearless boundary reset and record the generated report path.
+- [x] ARH-130 [owner=codex] Run targeted tooling tests plus focused publish
+  dry-run smoke for the changed package graph.
+- [x] ARH-140 [owner=codex] Run the full release-readiness gate and record
+  current publish/no-publish decision evidence.
+
 ## Consumer Smoke Validation
 
 - [x] Decide whether consumer smoke is manual-only for alpha.1 or automated in

@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "slug": "2026-05-alpha-release-hardening",
+  "title": "Alpha Release Hardening",
+  "status": "active",
+  "updated": "2026-05-21",
+  "scope_kind": "release-hardening",
+  "problem": "The alpha release gate must be rebaselined after the fearless boundary reset removed llm_dart_core, promoted llm_dart_provider_utils into the publishable graph, and tightened root/provider/runtime boundaries.",
+  "authoritative_docs": [
+    {
+      "role": "design",
+      "path": "docs/workstreams/2026-05-alpha-release-hardening/README.md"
+    },
+    {
+      "role": "priority-map",
+      "path": "docs/workstreams/2026-05-alpha-release-hardening/00-priority-map.md"
+    },
+    {
+      "role": "release-command",
+      "path": "docs/workstreams/2026-05-alpha-release-hardening/01-release-readiness-command.md"
+    },
+    {
+      "role": "package-order",
+      "path": "docs/workstreams/2026-05-alpha-release-hardening/02-package-metadata-and-publish-order.md"
+    },
+    {
+      "role": "post-reset-audit",
+      "path": "docs/workstreams/2026-05-alpha-release-hardening/04-post-boundary-reset-release-rebaseline-2026-05-21.md"
+    },
+    {
+      "role": "gates",
+      "path": "docs/workstreams/2026-05-alpha-release-hardening/EVIDENCE_AND_GATES.md"
+    },
+    {
+      "role": "execution",
+      "path": "docs/workstreams/2026-05-alpha-release-hardening/TODO.md"
+    },
+    {
+      "role": "handoff",
+      "path": "docs/workstreams/2026-05-alpha-release-hardening/HANDOFF.md"
+    }
+  ],
+  "first_task": "Publish packages in dependency order",
+  "gates": [
+    "dart --suppress-analytics test test/tool/release_readiness_test.dart test/tool/run_workspace_publish_dry_run_test.dart test/tool/run_consumer_smoke_test.dart test/tool/check_transport_boundary_guards_test.dart",
+    "dart --suppress-analytics run tool/run_workspace_publish_dry_run.dart --package=llm_dart_provider_utils --package=llm_dart_chat --package=llm_dart",
+    "dart --suppress-analytics run tool/release_readiness.dart",
+    "git diff --check"
+  ],
+  "evidence": [
+    {
+      "task": "ARH-120",
+      "path": "build/release_readiness_post_fbr_fast.md",
+      "summary": "Fast release readiness after the boundary reset passed guards and analyzer, and printed the updated publish order without llm_dart_core."
+    },
+    {
+      "task": "ARH-130",
+      "path": "docs/workstreams/2026-05-alpha-release-hardening/EVIDENCE_AND_GATES.md",
+      "summary": "Targeted tooling tests passed, and focused publish dry-runs for provider_utils, chat, and root passed with only expected local override hints."
+    },
+    {
+      "task": "ARH-140",
+      "path": "build/release_readiness_post_fbr_full.md",
+      "summary": "Full release readiness passed after the boundary reset: guards, analyze, tests, package tests, consumer smoke, publish dry-runs for 12 packages, and pub.dev version availability."
+    }
+  ],
+  "adr_refs": [],
+  "continue_policy": {
+    "default_action": "wait-for-publish-approval",
+    "notes": "The branch is locally release-ready. Publish only after explicit maintainer approval, then run post-publish consumer smoke against pub.dev versions."
+  }
+}

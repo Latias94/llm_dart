@@ -17,7 +17,7 @@ Prepare and publish the `0.11.0-alpha.x` line with confidence that:
 
 - the focused packages resolve and analyze outside the monorepo
 - the root facade remains a good default entrypoint
-- `legacy.dart` remains an explicit compatibility rail
+- historical root/core compatibility imports stay removed and guarded
 - package metadata and README guidance match the implemented ownership model
 - release validation is repeatable without relying on memory or chat history
 
@@ -40,6 +40,8 @@ This workstream should:
 - validate clean Dart and Flutter consumers
 - check package names, versions, dependency order, metadata, README language,
   changelog entries, and migration docs
+- rebaseline the release checklist after the fearless boundary reset removed
+  `llm_dart_core` and made `llm_dart_provider_utils` a real publishable seam
 - document publish sequencing and post-publish verification
 - fix release blockers discovered by those gates
 
@@ -50,11 +52,7 @@ This workstream should not:
 - keep splitting compatibility files by size
 - redesign provider/model data structures without a concrete release blocker
 - add new provider features
-- remove `legacy.dart`
-- create `llm_dart_legacy`
-- recreate a broad provider bucket after the dedicated Ollama and ElevenLabs
-  split
-- delete `llm_dart_core`
+- recreate `legacy.dart`, `llm_dart_core`, or a broad compatibility bucket
 - broaden shared abstractions for reference-repository parity
 
 Those may be valid future workstreams, but only after alpha release feedback or
@@ -96,6 +94,11 @@ dependency override mistakes are caught outside the monorepo.
 Freeze the dependency-aware publish order and the expected local override
 hints before running publication.
 
+After the boundary reset, the publish order excludes the deleted
+`llm_dart_core` package and includes the now-public
+`llm_dart_provider_utils` package between transport and chat/provider
+adapters.
+
 ### P2 - Post-Publish Verification
 
 After publishing, repeat clean consumer checks against pub.dev versions and
@@ -111,6 +114,11 @@ record any alpha feedback as targeted follow-up work.
   - Current branch release-readiness audit, fixture-path fix record, final
     13-step release gate evidence, publish dry-run evidence, pub.dev version
     availability, and publish-order confirmation.
+- [04-post-boundary-reset-release-rebaseline-2026-05-21.md](04-post-boundary-reset-release-rebaseline-2026-05-21.md)
+  - Rebaseline after the fearless boundary reset: package graph, publish
+    order, API surface drift, and fresh validation evidence.
+- [EVIDENCE_AND_GATES.md](EVIDENCE_AND_GATES.md)
+  - Current post-reset release gate evidence and remaining publish blockers.
 - [MILESTONES.md](MILESTONES.md)
   - Milestones and acceptance criteria.
 - [TODO.md](TODO.md)
