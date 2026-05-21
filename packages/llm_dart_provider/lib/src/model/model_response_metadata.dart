@@ -77,9 +77,8 @@ ModelResponseMetadata? modelResponseMetadataFrom({
     id: metadata.id ?? id,
     timestamp: metadata.timestamp ?? timestamp,
     modelId: metadata.modelId ?? modelId,
-    headers: metadata.headers.isNotEmpty
-        ? metadata.headers
-        : headers ?? const {},
+    headers:
+        metadata.headers.isNotEmpty ? metadata.headers : headers ?? const {},
   );
 }
 

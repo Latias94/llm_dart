@@ -36,9 +36,7 @@ final class GenerateTextResultLifecycle {
       id: previous?.id,
       timestamp: previous?.timestamp,
       modelId: previous?.modelId,
-      headers: previous?.headers.isNotEmpty == true
-          ? previous?.headers
-          : null,
+      headers: previous?.headers.isNotEmpty == true ? previous?.headers : null,
     );
     mergeProviderMetadata(providerMetadata);
   }
