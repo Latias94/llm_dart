@@ -1,15 +1,14 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'deepseek_options.dart';
+import 'openai_family_invocation_options.dart';
 import 'openai_family_option_resolver_base.dart';
 import '../language/openai_family_shared_response_format.dart';
 import '../language/openai_generate_text_options.dart';
 import 'openai_model_settings.dart';
-import 'openai_provider_options_bag.dart';
 import 'openrouter_options.dart';
 import 'resolved_openai_chat_settings.dart';
 import 'resolved_openai_options.dart';
-import 'xai_options.dart';
 
 class CommonOpenAIOptionResolver extends OpenAIFamilyOptionResolver {
   const CommonOpenAIOptionResolver();
@@ -45,7 +44,7 @@ class CommonOpenAIOptionResolver extends OpenAIFamilyOptionResolver {
     required ResponseFormat? sharedResponseFormat,
     required ResolvedOpenAIChatModelSettings modelSettings,
   }) {
-    final common = resolveCommonInvocationOptions(options);
+    final common = resolveCommonOpenAIGenerateTextInvocationOptions(options);
 
     return ResolvedOpenAIGenerateTextOptions(
       common: mergeOpenAIFamilyCommonOptions(
@@ -63,28 +62,6 @@ class CommonOpenAIOptionResolver extends OpenAIFamilyOptionResolver {
     required ResolvedOpenAIGenerateTextOptions invocationOptions,
   }) {
     return modelId;
-  }
-
-  OpenAIGenerateTextOptions resolveCommonInvocationOptions(
-    ProviderInvocationOptions? options,
-  ) {
-    if (options == null) {
-      return const OpenAIGenerateTextOptions();
-    }
-
-    if (typedProviderOptionsFromInvocationOptions(options)
-        case OpenAIGenerateTextOptions()) {
-      return resolveOpenAIGenerateTextOptionsFromInvocation(options);
-    }
-
-    if (providerOptionsBagFromInvocationOptions(options) != null &&
-        typedProviderOptionsFromInvocationOptions(options) == null) {
-      return resolveOpenAIGenerateTextOptionsFromInvocation(options);
-    }
-
-    throwWrongOpenAIFamilyProviderOptions(
-      typedProviderOptionsFromInvocationOptions(options) ?? options,
-    );
   }
 }
 
@@ -123,36 +100,4 @@ OpenAIGenerateTextOptions mergeOpenAIFamilyCommonOptions({
   }
 
   return common;
-}
-
-Never throwWrongOpenAIFamilyProviderOptions(ProviderInvocationOptions options) {
-  if (options is DeepSeekGenerateTextOptions) {
-    throw ArgumentError.value(
-      options,
-      'providerOptions',
-      'DeepSeekGenerateTextOptions are only valid for DeepSeek language models.',
-    );
-  }
-
-  if (options is OpenRouterGenerateTextOptions) {
-    throw ArgumentError.value(
-      options,
-      'providerOptions',
-      'OpenRouterGenerateTextOptions are only valid for OpenRouter language models.',
-    );
-  }
-
-  if (options is XAIGenerateTextOptions) {
-    throw ArgumentError.value(
-      options,
-      'providerOptions',
-      'XAIGenerateTextOptions are only valid for xAI language models.',
-    );
-  }
-
-  throw ArgumentError.value(
-    options,
-    'providerOptions',
-    'Expected OpenAIGenerateTextOptions or profile-specific OpenAI-family provider options.',
-  );
 }

@@ -1,9 +1,9 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'openai_family_common_option_resolver.dart';
+import 'openai_family_invocation_options.dart';
 import 'openrouter_model_id_policy.dart';
 import 'openrouter_options.dart';
-import 'openai_provider_options_bag.dart';
 import 'resolved_openai_chat_settings.dart';
 import 'resolved_openai_options.dart';
 
@@ -31,7 +31,7 @@ final class OpenRouterOptionResolver extends CommonOpenAIOptionResolver {
     required ResolvedOpenAIChatModelSettings modelSettings,
   }) {
     final openRouterOptions =
-        resolveOpenRouterGenerateTextOptionsFromInvocation(options);
+        resolveOpenRouterGenerateTextInvocationOptions(options);
     if (openRouterOptions != null) {
       return ResolvedOpenAIGenerateTextOptions(
         common: mergeOpenAIFamilyCommonOptions(

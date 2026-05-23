@@ -41,6 +41,11 @@
     request-builder, stream-parser, replay, and native-helper hotspots while
     keeping provider-native features provider-owned and delaying any public
     provider utility package until repeated stable duplication proves it.
+- [2026-05-openai-family-policy-hub-split](2026-05-openai-family-policy-hub-split/README.md)
+  - Closed provider-internal refactor that split the OpenAI family policy
+    hub and compatibility bag monolith into feature-local modules while
+    preserving typed options, profile-specific behavior, and the public
+    `llm_dart_openai` facade.
 - [2026-05-provider-fixture-contracts](2026-05-provider-fixture-contracts/README.md)
   - Active provider-owned fixture and golden contract workstream for request
     encoding, stream event projection, tool replay, and provider metadata.

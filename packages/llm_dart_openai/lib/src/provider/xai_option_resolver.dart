@@ -1,7 +1,7 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'openai_family_common_option_resolver.dart';
-import 'openai_provider_options_bag.dart';
+import 'openai_family_invocation_options.dart';
 import 'resolved_openai_chat_settings.dart';
 import 'resolved_openai_options.dart';
 
@@ -14,7 +14,7 @@ final class XAIOptionResolver extends CommonOpenAIOptionResolver {
     required ResponseFormat? sharedResponseFormat,
     required ResolvedOpenAIChatModelSettings modelSettings,
   }) {
-    final xaiOptions = resolveXAIGenerateTextOptionsFromInvocation(options);
+    final xaiOptions = resolveXAIGenerateTextInvocationOptions(options);
     if (xaiOptions != null) {
       return ResolvedOpenAIGenerateTextOptions(
         common: mergeOpenAIFamilyCommonOptions(

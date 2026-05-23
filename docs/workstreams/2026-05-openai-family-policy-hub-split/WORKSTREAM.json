@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "slug": "2026-05-openai-family-policy-hub-split",
+  "title": "OpenAI Family Policy Hub Split",
+  "status": "closed",
+  "updated": "2026-05-23",
+  "scope_kind": "provider-internal-refactor",
+  "problem": "The llm_dart_openai package still centralizes typed option resolution and compatibility bag parsing in one large policy hub, which makes feature-specific OpenAI-family behavior harder to split and audit.",
+  "authoritative_docs": [
+    {
+      "role": "design",
+      "path": "docs/workstreams/2026-05-openai-family-policy-hub-split/README.md"
+    },
+    {
+      "role": "execution",
+      "path": "docs/workstreams/2026-05-openai-family-policy-hub-split/TODO.md"
+    },
+    {
+      "role": "milestones",
+      "path": "docs/workstreams/2026-05-openai-family-policy-hub-split/MILESTONES.md"
+    },
+    {
+      "role": "gates",
+      "path": "docs/workstreams/2026-05-openai-family-policy-hub-split/EVIDENCE_AND_GATES.md"
+    },
+    {
+      "role": "handoff",
+      "path": "docs/workstreams/2026-05-openai-family-policy-hub-split/HANDOFF.md"
+    }
+  ],
+  "closed_at": "2026-05-23",
+  "first_task": null,
+  "gates": [
+    "dart --suppress-analytics test packages/llm_dart_openai/test/openai_family_option_resolver_test.dart",
+    "dart --suppress-analytics test packages/llm_dart_openai/test/openai_language_model_test.dart packages/llm_dart_openai/test/openai_embedding_model_test.dart packages/llm_dart_openai/test/openai_image_model_test.dart packages/llm_dart_openai/test/openai_speech_model_test.dart packages/llm_dart_openai/test/openai_transcription_model_test.dart",
+    "dart --suppress-analytics analyze packages/llm_dart_openai",
+    "dart --suppress-analytics run tool/check_workspace_dependency_guards.dart",
+    "dart --suppress-analytics run tool/check_root_package_boundary_guards.dart",
+    "git diff --check"
+  ],
+  "evidence": [
+    {
+      "task": "OPH-110",
+      "path": "packages/llm_dart_openai/lib/src/provider/openai_provider_options_bag_generate_text.dart",
+      "summary": "Generate-text and OpenAI-family typed option compatibility helpers were split into a dedicated part file without changing the public facade or resolver behavior."
+    },
+    {
+      "task": "OPH-210..OPH-250",
+      "path": "packages/llm_dart_openai/lib/src/provider/openai_provider_options_bag_non_text.dart",
+      "summary": "Embedding, image, speech, and transcription option compatibility helpers were split into a non-text part file; focused OpenAI tests, package analysis, workspace/root guards, and git diff --check passed."
+    },
+    {
+      "task": "OPH-310..OPH-330",
+      "path": "packages/llm_dart_openai/lib/src/provider/openai_family_invocation_options.dart",
+      "summary": "OpenAI-family resolvers now use a resolver-facing invocation options seam; ProviderOptionsBag remains documented as the public compatibility bridge while typed option classes are the preferred path."
+    }
+  ],
+  "adr_refs": [],
+  "continue_policy": {
+    "default_action": "closed",
+    "notes": "The OpenAI-family policy hub split is complete. Optional follow-on: decide whether remaining public ProviderOptionsBag helper functions should be deprecated in a later breaking line or kept as long-term compatibility encode/decode helpers."
+  }
+}
