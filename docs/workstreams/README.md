@@ -41,6 +41,11 @@
     request-builder, stream-parser, replay, and native-helper hotspots while
     keeping provider-native features provider-owned and delaying any public
     provider utility package until repeated stable duplication proves it.
+- [2026-05-provider-options-seam-deepening](2026-05-provider-options-seam-deepening/README.md)
+  - Closed provider-contract refactor that deepened the `llm_dart_provider`
+    provider options seam by separating JSON bag transport, typed invocation
+    options, prompt/tool options, replay options, and resolver policy while
+    preserving the stable public provider contract.
 - [2026-05-openai-family-policy-hub-split](2026-05-openai-family-policy-hub-split/README.md)
   - Closed provider-internal refactor that split the OpenAI family policy
     hub and compatibility bag monolith into feature-local modules while

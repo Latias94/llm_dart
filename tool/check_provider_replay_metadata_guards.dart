@@ -79,19 +79,61 @@ Future<void> _collectProviderOptionsViolations({
     return;
   }
 
-  final source = await file.readAsString();
-  if (!source.contains('providerReplayMetadataFromOptions')) {
+  final sources = await _readProviderOptionsLibrarySources(
+    repoRoot: repoRoot,
+    entrypoint: file,
+    violations: violations,
+  );
+  if (sources.isEmpty) {
+    return;
+  }
+
+  final replayHelperCount = sources.values.fold<int>(
+    0,
+    (count, source) =>
+        count + 'providerReplayMetadataFromOptions'.allMatches(source).length,
+  );
+  if (replayHelperCount != 1) {
     violations.add(
       '$_providerOptionsPath: replay metadata must expose the single '
       'providerReplayMetadataFromOptions extraction helper.',
     );
   }
-  if (source.contains('mergeProviderReplayMetadata')) {
+  if (sources.values
+      .any((source) => source.contains('mergeProviderReplayMetadata'))) {
     violations.add(
       '$_providerOptionsPath: remove mergeProviderReplayMetadata; replay '
       'metadata extraction must stay a single explicit helper.',
     );
   }
+}
+
+Future<Map<String, String>> _readProviderOptionsLibrarySources({
+  required Directory repoRoot,
+  required File entrypoint,
+  required List<String> violations,
+}) async {
+  final sources = <String, String>{};
+  final entrypointSource = await entrypoint.readAsString();
+  sources[_displayPath(repoRoot, entrypoint)] = entrypointSource;
+
+  final partPattern = RegExp(
+    r'''^\s*part\s+['"]([^'"]+)['"]\s*;''',
+    multiLine: true,
+  );
+  for (final match in partPattern.allMatches(entrypointSource)) {
+    final partPath = match.group(1)!;
+    final partFile = File.fromUri(entrypoint.uri.resolve(partPath));
+    if (!partFile.existsSync()) {
+      violations.add('provider replay metadata guard failed: missing '
+          '${_displayPath(repoRoot, partFile)}.');
+      continue;
+    }
+
+    sources[_displayPath(repoRoot, partFile)] = await partFile.readAsString();
+  }
+
+  return sources;
 }
 
 Future<void> _collectRuntimeContinuationViolations({
@@ -159,6 +201,15 @@ int _lineNumber(String source, int offset) {
     }
   }
   return line;
+}
+
+String _displayPath(Directory repoRoot, File file) {
+  final repoPath = repoRoot.absolute.path.replaceAll('\\', '/');
+  final filePath = file.absolute.path.replaceAll('\\', '/');
+  if (filePath.startsWith('$repoPath/')) {
+    return filePath.substring(repoPath.length + 1);
+  }
+  return filePath;
 }
 
 Future<void> _collectProviderRequestCodecViolations({

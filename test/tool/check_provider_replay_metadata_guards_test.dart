@@ -124,6 +124,61 @@ ProviderMetadata? mergeProviderReplayMetadata({providerOptions}) => null;
         contains('mergeProviderReplayMetadata'),
       );
     });
+
+    test('allows provider options facade to expose replay helper from a part',
+        () async {
+      final temp = await Directory.systemTemp.createTemp(
+        'provider_replay_guard_part_',
+      );
+      addTearDown(() async {
+        if (temp.existsSync()) {
+          await temp.delete(recursive: true);
+        }
+      });
+
+      await _writeFile(
+        temp,
+        'packages/llm_dart_ai/lib/src/model/generate_text_runner_support.dart',
+        'final ok = TextPromptPart("replay", providerOptions: replayOptions);',
+      );
+      for (final path in [
+        'packages/llm_dart_openai/lib/src/responses/openai_responses_codec.dart',
+        'packages/llm_dart_google/lib/src/google_generate_content_codec.dart',
+        'packages/llm_dart_anthropic/lib/src/anthropic_messages_codec.dart',
+      ]) {
+        await _writeFile(temp, path, 'final ok = part.providerOptions;');
+      }
+      await _writeFile(
+        temp,
+        'packages/llm_dart_provider/lib/src/common/provider_options.dart',
+        '''
+part 'provider_replay_prompt_part_options.dart';
+''',
+      );
+      await _writeFile(
+        temp,
+        'packages/llm_dart_provider/lib/src/common/provider_replay_prompt_part_options.dart',
+        '''
+part of 'provider_options.dart';
+
+ProviderMetadata? providerReplayMetadataFromOptions(options) => null;
+''',
+      );
+      await _writeFile(
+        temp,
+        'packages/llm_dart_anthropic/lib/src/anthropic_code_execution_replay.dart',
+        '''
+final options = ProviderReplayPromptPartOptions.fromMetadata(metadata);
+final replay = providerReplayMetadataFromOptions(part.providerOptions);
+''',
+      );
+
+      final result = await guard.evaluateProviderReplayMetadataGuards(
+        repoRoot: temp,
+      );
+
+      expect(result.violations, isEmpty);
+    });
   });
 }
 

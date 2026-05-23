@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "slug": "2026-05-provider-options-seam-deepening",
+  "title": "Provider Options Seam Deepening",
+  "status": "closed",
+  "updated": "2026-05-23",
+  "scope_kind": "provider-contract-refactor",
+  "problem": "The llm_dart_provider provider_options module owns JSON bag transport, typed invocation options, prompt-part options, tool options, replay options, resolver helpers, and bag JSON internals in one shallow implementation module.",
+  "authoritative_docs": [
+    {
+      "role": "design",
+      "path": "docs/workstreams/2026-05-provider-options-seam-deepening/README.md"
+    },
+    {
+      "role": "execution",
+      "path": "docs/workstreams/2026-05-provider-options-seam-deepening/TODO.md"
+    },
+    {
+      "role": "milestones",
+      "path": "docs/workstreams/2026-05-provider-options-seam-deepening/MILESTONES.md"
+    },
+    {
+      "role": "gates",
+      "path": "docs/workstreams/2026-05-provider-options-seam-deepening/EVIDENCE_AND_GATES.md"
+    },
+    {
+      "role": "handoff",
+      "path": "docs/workstreams/2026-05-provider-options-seam-deepening/HANDOFF.md"
+    }
+  ],
+  "closed_at": "2026-05-23",
+  "first_task": null,
+  "gates": [
+    "dart analyze packages/llm_dart_provider",
+    "dart test packages/llm_dart_provider/test/provider_contracts_test.dart",
+    "dart test packages/llm_dart_provider/test/prompt_part_provider_options_json_codec_test.dart",
+    "dart run tool/check_workspace_dependency_guards.dart",
+    "dart run tool/check_provider_replay_metadata_guards.dart",
+    "dart run tool/check_provider_metadata_namespace_guards.dart",
+    "git diff --check"
+  ],
+  "evidence": [
+    {
+      "task": "POS-010",
+      "path": "docs/workstreams/2026-05-provider-options-seam-deepening/01-provider-option-symbol-audit.md",
+      "summary": "Provider option symbols were classified into bag transport, typed invocation, prompt-part replay, tool options, and internal JSON support before implementation split work started."
+    },
+    {
+      "task": "POS-020",
+      "path": "packages/llm_dart_provider/lib/src/common/provider_options_bag.dart",
+      "summary": "ProviderOptionsBag and JSON bag validation, merge, freeze, equality, and hashing helpers moved into a focused bag transport part while preserving the public provider_options.dart facade."
+    },
+    {
+      "task": "POS-030",
+      "path": "packages/llm_dart_provider/lib/src/common/provider_invocation_options.dart",
+      "summary": "Typed invocation contracts, bundle helpers, typed-to-bag projection, and model/invocation resolver helpers moved into a focused invocation options part."
+    },
+    {
+      "task": "POS-040",
+      "path": "packages/llm_dart_provider/lib/src/common/provider_replay_prompt_part_options.dart",
+      "summary": "Prompt-part, tool, and replay option contracts were split into focused parts; replay metadata extraction remains explicit and guard-covered."
+    },
+    {
+      "task": "POS-050",
+      "path": "docs/workstreams/2026-05-provider-options-seam-deepening/EVIDENCE_AND_GATES.md",
+      "summary": "Provider package analysis, provider package tests, workspace dependency guard, provider replay metadata guard, provider metadata namespace guard, replay guard unit test, and git diff --check passed."
+    }
+  ],
+  "evidence_notes": [
+    "POS-010 audit completed and recorded in 01-provider-option-symbol-audit.md.",
+    "POS-020 through POS-040 completed as a facade-preserving part-file split.",
+    "POS-050 full gate set passed on 2026-05-23."
+  ],
+  "adr_refs": [],
+  "continue_policy": {
+    "default_action": "closed",
+    "notes": "Provider Options Seam Deepening is complete. Any future move from part files to separate importable libraries should be opened as a new lane because the current goal preserved the stable provider_options.dart public entrypoint."
+  }
+}
