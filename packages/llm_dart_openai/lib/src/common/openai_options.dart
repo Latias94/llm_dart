@@ -3,7 +3,6 @@ export '../language/openai_generate_text_options.dart';
 export '../image/openai_image_options.dart';
 export '../image/openai_image_types.dart';
 export '../provider/openai_model_settings.dart';
-export '../provider/openai_provider_options_bag.dart';
 export '../language/openai_prompt_part_options.dart';
 export '../speech/openai_speech_options.dart';
 export '../tools/openai_tool_options.dart';

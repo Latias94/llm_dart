@@ -119,3 +119,10 @@ Status: closed on 2026-05-23 after OPH-010 through OPH-450 were completed and
 validated. Remaining long-term deprecation posture for public
 `ProviderOptionsBag` helper functions is a follow-on decision, not a blocker
 for this policy-hub split.
+
+## Post-Close Note
+
+The public barrel exports were later narrowed so the `ProviderOptionsBag`
+compatibility bridge stays internal to the package. The follow-on question is
+now whether the remaining helper functions should be deprecated in a separate
+breaking-line lane or left as internal compatibility helpers only.

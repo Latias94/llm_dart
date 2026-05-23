@@ -13,7 +13,6 @@ export 'src/image/openai_image_model.dart';
 export 'src/language/openai_language_model.dart';
 export 'src/moderation/openai_moderation.dart';
 export 'src/provider/openai_model_describer.dart';
-export 'src/provider/openai_provider_options_bag.dart';
 export 'src/speech/openai_speech_model.dart';
 export 'src/tools/openai_native_tools.dart';
 export 'src/common/openai_options.dart';

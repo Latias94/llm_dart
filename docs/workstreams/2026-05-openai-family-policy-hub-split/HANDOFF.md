@@ -30,9 +30,9 @@ Completed slices:
 - added
   `packages/llm_dart_openai/lib/src/provider/openai_family_invocation_options.dart`
   as the resolver-facing invocation option seam
-- documented `openai_provider_options_bag.dart` as the public compatibility
-  bridge for existing `ProviderOptionsBag` callers, with typed option classes
-  as the preferred path for new code
+- kept `openai_provider_options_bag.dart` available for internal compatibility
+  payload encoding/decoding, while the public barrels stopped re-exporting it
+  in the alpha line
 - kept the public `llm_dart_openai` facade unchanged
 - validated the split with focused OpenAI tests, package analysis, workspace
   dependency guard, root boundary guard, and `git diff --check`
@@ -48,3 +48,10 @@ This is not a blocker for the current policy-hub split.
 
 - Keep `ProviderOptionsBag` behavior stable until the new boundary is in place.
 - Do not widen the package graph or introduce a new package yet.
+
+## Post-Close Note
+
+The compatibility bridge was later removed from the public barrel exports
+because the package is still in alpha and there were no external consumers to
+preserve. Internal package code and tests can still import the source library
+directly.

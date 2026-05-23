@@ -52,12 +52,12 @@
     {
       "task": "OPH-310..OPH-330",
       "path": "packages/llm_dart_openai/lib/src/provider/openai_family_invocation_options.dart",
-      "summary": "OpenAI-family resolvers now use a resolver-facing invocation options seam; ProviderOptionsBag remains documented as the public compatibility bridge while typed option classes are the preferred path."
+      "summary": "OpenAI-family resolvers now use a resolver-facing invocation options seam; the compatibility bag bridge stays available to internal package code while typed option classes remain the preferred path."
     }
   ],
   "adr_refs": [],
   "continue_policy": {
     "default_action": "closed",
-    "notes": "The OpenAI-family policy hub split is complete. Optional follow-on: decide whether remaining public ProviderOptionsBag helper functions should be deprecated in a later breaking line or kept as long-term compatibility encode/decode helpers."
+    "notes": "The OpenAI-family policy hub split is complete. Follow-on: the public barrels no longer re-export the ProviderOptionsBag compatibility bridge, and any further deprecation/removal of the remaining helper functions should be handled in a separate breaking-line lane if needed."
   }
 }

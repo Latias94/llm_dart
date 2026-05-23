@@ -1,9 +1,9 @@
-/// Compatibility bridge for OpenAI-family `ProviderOptionsBag` values.
+/// Internal compatibility bridge for OpenAI-family `ProviderOptionsBag` values.
 ///
 /// New provider and runtime code should prefer typed option classes such as
 /// `OpenAIGenerateTextOptions`, `OpenAIImageOptions`, and provider-specific
-/// profile options. This library remains exported so existing
-/// `ProviderOptionsBag` callers can encode/decode compatibility payloads.
+/// profile options. This library stays available for internal compatibility
+/// payload encoding/decoding.
 library;
 
 import 'package:llm_dart_provider/llm_dart_provider.dart';
