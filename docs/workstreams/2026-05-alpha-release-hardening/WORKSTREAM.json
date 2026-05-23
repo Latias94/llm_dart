@@ -3,7 +3,7 @@
   "slug": "2026-05-alpha-release-hardening",
   "title": "Alpha Release Hardening",
   "status": "active",
-  "updated": "2026-05-21",
+  "updated": "2026-05-23",
   "scope_kind": "release-hardening",
   "problem": "The alpha release gate must be rebaselined after the fearless boundary reset removed llm_dart_core, promoted llm_dart_provider_utils into the publishable graph, and tightened root/provider/runtime boundaries.",
   "authoritative_docs": [
@@ -62,6 +62,11 @@
       "task": "ARH-140",
       "path": "build/release_readiness_post_fbr_full.md",
       "summary": "Full release readiness passed after the boundary reset: guards, analyze, tests, package tests, consumer smoke, publish dry-runs for 12 packages, and pub.dev version availability."
+    },
+    {
+      "task": "ARH-150",
+      "path": "build/release_readiness_post_provider_options_split_full.md",
+      "summary": "Full release readiness passed after the provider options seam split and the provider stream naming guard test was updated to follow provider_options.dart part files."
     }
   ],
   "adr_refs": [],

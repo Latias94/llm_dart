@@ -269,9 +269,9 @@ void main() {
     });
 
     test('provider replay metadata is explicit typed prompt options only', () {
-      final options = File(
+      final options = _readLibraryWithParts(
         'packages/llm_dart_provider/lib/src/common/provider_options.dart',
-      ).readAsStringSync();
+      );
       final promptPartCodec = File(
         'packages/llm_dart_provider/lib/src/serialization/'
         'prompt_part_json_codec.dart',
@@ -328,4 +328,22 @@ String _sliceBefore(String content, String marker) {
   }
 
   return content.substring(0, index);
+}
+
+String _readLibraryWithParts(String path) {
+  final file = File(path);
+  final source = file.readAsStringSync();
+  final sources = <String>[source];
+
+  final partPattern = RegExp(
+    r'''^\s*part\s+['"]([^'"]+)['"]\s*;''',
+    multiLine: true,
+  );
+  for (final match in partPattern.allMatches(source)) {
+    final partPath = match.group(1)!;
+    final partFile = File.fromUri(file.absolute.uri.resolve(partPath));
+    sources.add(partFile.readAsStringSync());
+  }
+
+  return sources.join('\n');
 }

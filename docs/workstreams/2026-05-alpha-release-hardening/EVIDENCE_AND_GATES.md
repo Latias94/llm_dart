@@ -1,7 +1,7 @@
 # Alpha Release Hardening — Evidence And Gates
 
 Status: Active
-Last updated: 2026-05-21
+Last updated: 2026-05-23
 
 ## Required Post-Reset Gates
 
@@ -155,3 +155,71 @@ Decision:
   boundary reset.
 - Next action is publish execution in the documented dependency order, then
   `dart --suppress-analytics run tool/run_consumer_smoke.dart --published`.
+
+## ARH-150 — Post Provider Options Split Release Readiness
+
+Context:
+
+- The provider options seam was split after ARH-140.
+- The first full release-readiness run exposed a stale workspace-test
+  assumption in `test/provider_stream_naming_guard_test.dart`: it read only
+  `provider_options.dart` and did not follow the new `part` files.
+- The test now reads the provider options library facade and its `part` files,
+  preserving the original guard intent that replay metadata stays explicit
+  typed prompt options only.
+
+Commands:
+
+```powershell
+dart --suppress-analytics test test/tool/release_readiness_test.dart test/tool/run_workspace_publish_dry_run_test.dart test/tool/run_consumer_smoke_test.dart test/tool/check_transport_boundary_guards_test.dart
+dart --suppress-analytics run tool/run_workspace_publish_dry_run.dart --package=llm_dart_provider_utils --package=llm_dart_chat --package=llm_dart
+dart --suppress-analytics test test/provider_stream_naming_guard_test.dart
+dart --suppress-analytics test
+dart --suppress-analytics run tool/release_readiness.dart --report=build/release_readiness_post_provider_options_split_full.md
+git diff --check
+```
+
+Result: passed.
+
+Report:
+
+- `build/release_readiness_post_provider_options_split_full.md`
+
+Step evidence:
+
+| Step | Status | Elapsed |
+| --- | --- | ---: |
+| Workspace dependency guards | passed | 1.255s |
+| Root package boundary guards | passed | 310ms |
+| Provider replay metadata guard | passed | 258ms |
+| OpenAI provider layout guard | passed | 250ms |
+| Provider metadata namespace guard | passed | 453ms |
+| Transport boundary guard | passed | 310ms |
+| Test legacy-import guard | passed | 274ms |
+| Example API guard | passed | 373ms |
+| Workspace analysis | passed | 2.890s |
+| Workspace tests | passed | 3.149s |
+| Workspace package tests | passed | 30.059s |
+| Consumer smoke | passed | 54.288s |
+| Workspace publish dry-run | passed | 3m 15s |
+| Pub version availability | passed | 5.412s |
+
+Publish dry-run evidence:
+
+- Passed for 12 package(s).
+- All packages reported 0 warnings.
+- Remaining hints were expected local workspace override hints where package
+  dependencies are not yet published.
+
+Pub version availability:
+
+- Focused packages are available as new packages at `0.11.0-alpha.1`.
+- Root `llm_dart` is available as a new version at `0.11.0-alpha.1`; latest
+  published root version at the check time was `0.10.7`.
+
+Decision:
+
+- The branch is locally release-ready after the provider options seam split.
+- The workstream remains active because actual publishing has not started.
+- Next action remains explicit maintainer approval for publish execution in
+  dependency order, followed by published-version consumer smoke.

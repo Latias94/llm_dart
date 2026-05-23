@@ -1,7 +1,7 @@
 # Alpha Release Hardening — Handoff
 
 Status: Active
-Last updated: 2026-05-21
+Last updated: 2026-05-23
 
 ## Current State
 
@@ -29,6 +29,11 @@ now rebaselined around the new package graph:
 - Ran the full release gate:
   `dart --suppress-analytics run tool/release_readiness.dart --report=build/release_readiness_post_fbr_full.md`
   — passed 14/14 steps in 6m 41s.
+- After the provider options seam split, fixed the provider stream naming
+  guard test to read `provider_options.dart` plus its `part` files and reran
+  the full release gate:
+  `dart --suppress-analytics run tool/release_readiness.dart --report=build/release_readiness_post_provider_options_split_full.md`
+  — passed 14/14 steps in 4m 54s.
 
 ## Next Task
 
@@ -59,4 +64,5 @@ with `--proxy=http://127.0.0.1:10809`.
 ## Publish Posture
 
 The branch is locally release-ready after the package graph changed. It is not
-published yet.
+published yet. The latest local readiness evidence is
+`build/release_readiness_post_provider_options_split_full.md`.
