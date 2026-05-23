@@ -1,6 +1,7 @@
 import '../common/json_codec_common.dart';
 import '../stream/language_model_stream_event.dart';
-import 'serialization_json_support.dart';
+import 'serialization_metadata_support.dart';
+import 'serialization_tool_support.dart';
 
 final class LanguageModelStreamToolLifecycleEventJsonCodec {
   static const Set<String> eventTypes = {
@@ -17,18 +18,20 @@ final class LanguageModelStreamToolLifecycleEventJsonCodec {
     return switch (event) {
       ToolCallEvent(:final toolCall, :final providerMetadata) => {
           'type': 'tool-call',
-          'toolCall': SerializationJsonSupport.encodeToolCallContent(toolCall),
+          'toolCall': SerializationToolSupport.encodeToolCallContent(toolCall),
           if (providerMetadata != null)
-            'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
+            'providerMetadata':
+                SerializationMetadataSupport.encodeProviderMetadata(
               providerMetadata,
             ),
         },
       ToolResultEvent(:final toolResult, :final providerMetadata) => {
           'type': 'tool-result',
           'toolResult':
-              SerializationJsonSupport.encodeToolResultContent(toolResult),
+              SerializationToolSupport.encodeToolResultContent(toolResult),
           if (providerMetadata != null)
-            'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
+            'providerMetadata':
+                SerializationMetadataSupport.encodeProviderMetadata(
               providerMetadata,
             ),
         },
@@ -42,7 +45,8 @@ final class LanguageModelStreamToolLifecycleEventJsonCodec {
           'approvalId': approvalId,
           'toolCallId': toolCallId,
           if (providerMetadata != null)
-            'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
+            'providerMetadata':
+                SerializationMetadataSupport.encodeProviderMetadata(
               providerMetadata,
             ),
         },
@@ -61,21 +65,21 @@ final class LanguageModelStreamToolLifecycleEventJsonCodec {
   }) {
     return switch (type) {
       'tool-call' => ToolCallEvent(
-          toolCall: SerializationJsonSupport.decodeToolCallContent(
+          toolCall: SerializationToolSupport.decodeToolCallContent(
             map['toolCall'],
             path: '$path.toolCall',
           ),
-          providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
+          providerMetadata: SerializationMetadataSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
         ),
       'tool-result' => ToolResultEvent(
-          toolResult: SerializationJsonSupport.decodeToolResultContent(
+          toolResult: SerializationToolSupport.decodeToolResultContent(
             map['toolResult'],
             path: '$path.toolResult',
           ),
-          providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
+          providerMetadata: SerializationMetadataSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
@@ -86,7 +90,7 @@ final class LanguageModelStreamToolLifecycleEventJsonCodec {
             map['toolCallId'],
             path: '$path.toolCallId',
           ),
-          providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
+          providerMetadata: SerializationMetadataSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),

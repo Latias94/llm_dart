@@ -1,0 +1,84 @@
+{
+  "model": "llama3.2-vision",
+  "messages": [
+    {
+      "role": "system",
+      "content": "Use concise local answers."
+    },
+    {
+      "role": "user",
+      "content": "Summarize the local fixture input.",
+      "images": [
+        "Zml4dHVyZS1pbWFnZQ=="
+      ]
+    },
+    {
+      "role": "assistant",
+      "content": "",
+      "thinking": "Need weather data.",
+      "tool_calls": [
+        {
+          "type": "function",
+          "function": {
+            "index": 0,
+            "name": "weather",
+            "arguments": {
+              "city": "Hong Kong"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "role": "tool",
+      "tool_name": "weather",
+      "content": "[{\"type\":\"text\",\"text\":\"Forecast ready.\"},{\"type\":\"json\",\"value\":{\"temperatureC\":26,\"condition\":\"Cloudy\"}},{\"type\":\"custom\",\"kind\":\"ollama-note\",\"data\":{\"source\":\"fixture\"}}]"
+    }
+  ],
+  "stream": false,
+  "options": {
+    "temperature": 0.2,
+    "top_p": 0.8,
+    "top_k": 40,
+    "num_predict": 128,
+    "seed": 1234,
+    "stop": [
+      "END"
+    ],
+    "num_ctx": 4096
+  },
+  "format": {
+    "type": "object",
+    "properties": {
+      "summary": {
+        "type": "string"
+      }
+    },
+    "required": [
+      "summary"
+    ]
+  },
+  "tools": [
+    {
+      "type": "function",
+      "function": {
+        "name": "weather",
+        "description": "Get current weather.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "city": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "city"
+          ]
+        }
+      }
+    }
+  ],
+  "keep_alive": "10m",
+  "raw": false,
+  "think": true
+}

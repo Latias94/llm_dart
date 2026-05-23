@@ -1,7 +1,8 @@
 import '../common/json_codec_common.dart';
 import '../common/provider_options.dart';
 import '../prompt/prompt_message.dart';
-import 'serialization_json_support.dart';
+import 'serialization_metadata_support.dart';
+import 'serialization_tool_support.dart';
 
 final class PromptToolPartJsonCodec {
   const PromptToolPartJsonCodec();
@@ -45,7 +46,7 @@ final class PromptToolPartJsonCodec {
           'type': 'tool-result',
           'toolCallId': toolCallId,
           'toolName': toolName,
-          'toolOutput': SerializationJsonSupport.encodeToolOutput(
+          'toolOutput': SerializationToolSupport.encodeToolOutput(
             toolOutput,
             encodeProviderOptions: encodeProviderOptions,
           ),
@@ -91,7 +92,7 @@ final class PromptToolPartJsonCodec {
                 path: '$path.providerExecuted',
               ) ??
               false,
-          isDynamic: SerializationJsonSupport.decodeDynamicFlag(
+          isDynamic: SerializationMetadataSupport.decodeDynamicFlag(
             map,
             path: path,
           ),
@@ -107,7 +108,7 @@ final class PromptToolPartJsonCodec {
           toolCallId: asJsonString(map['toolCallId'], path: '$path.toolCallId'),
           toolName: asJsonString(map['toolName'], path: '$path.toolName'),
           toolOutput: map.containsKey('toolOutput')
-              ? SerializationJsonSupport.decodeToolOutput(
+              ? SerializationToolSupport.decodeToolOutput(
                   map['toolOutput'],
                   path: '$path.toolOutput',
                   decodeProviderOptions: decodeProviderOptions,

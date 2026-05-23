@@ -1,6 +1,6 @@
 import '../common/json_codec_common.dart';
 import '../stream/language_model_stream_event.dart';
-import 'serialization_json_support.dart';
+import 'serialization_metadata_support.dart';
 
 final class LanguageModelStreamToolInputEventJsonCodec {
   static const Set<String> eventTypes = {
@@ -32,7 +32,8 @@ final class LanguageModelStreamToolInputEventJsonCodec {
           'isDynamic': isDynamic,
           if (title != null) 'title': title,
           if (providerMetadata != null)
-            'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
+            'providerMetadata':
+                SerializationMetadataSupport.encodeProviderMetadata(
               providerMetadata,
             ),
         },
@@ -46,7 +47,8 @@ final class LanguageModelStreamToolInputEventJsonCodec {
           'toolCallId': toolCallId,
           'delta': delta,
           if (providerMetadata != null)
-            'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
+            'providerMetadata':
+                SerializationMetadataSupport.encodeProviderMetadata(
               providerMetadata,
             ),
         },
@@ -54,7 +56,8 @@ final class LanguageModelStreamToolInputEventJsonCodec {
           'type': 'tool-input-end',
           'toolCallId': toolCallId,
           if (providerMetadata != null)
-            'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
+            'providerMetadata':
+                SerializationMetadataSupport.encodeProviderMetadata(
               providerMetadata,
             ),
         },
@@ -78,7 +81,8 @@ final class LanguageModelStreamToolInputEventJsonCodec {
           'isDynamic': isDynamic,
           if (title != null) 'title': title,
           if (providerMetadata != null)
-            'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
+            'providerMetadata':
+                SerializationMetadataSupport.encodeProviderMetadata(
               providerMetadata,
             ),
         },
@@ -107,12 +111,12 @@ final class LanguageModelStreamToolInputEventJsonCodec {
                 path: '$path.providerExecuted',
               ) ??
               false,
-          isDynamic: SerializationJsonSupport.decodeDynamicFlag(
+          isDynamic: SerializationMetadataSupport.decodeDynamicFlag(
             map,
             path: path,
           ),
           title: asNullableJsonString(map['title'], path: '$path.title'),
-          providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
+          providerMetadata: SerializationMetadataSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
@@ -123,7 +127,7 @@ final class LanguageModelStreamToolInputEventJsonCodec {
             path: '$path.toolCallId',
           ),
           delta: asJsonString(map['delta'], path: '$path.delta'),
-          providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
+          providerMetadata: SerializationMetadataSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
@@ -133,7 +137,7 @@ final class LanguageModelStreamToolInputEventJsonCodec {
             map['toolCallId'],
             path: '$path.toolCallId',
           ),
-          providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
+          providerMetadata: SerializationMetadataSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
@@ -151,12 +155,12 @@ final class LanguageModelStreamToolInputEventJsonCodec {
                 path: '$path.providerExecuted',
               ) ??
               false,
-          isDynamic: SerializationJsonSupport.decodeDynamicFlag(
+          isDynamic: SerializationMetadataSupport.decodeDynamicFlag(
             map,
             path: path,
           ),
           title: asNullableJsonString(map['title'], path: '$path.title'),
-          providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
+          providerMetadata: SerializationMetadataSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),

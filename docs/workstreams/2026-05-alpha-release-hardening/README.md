@@ -11,9 +11,13 @@ release-hardening phase: prove the package graph, automate the release gate,
 validate clean consumers, and fix only issues that block publishing or
 migration.
 
+Status: closed as local release hardening on 2026-05-23. Actual `pub publish`
+execution remains an explicit maintainer-approved external follow-on.
+
 ## Goal
 
-Prepare and publish the `0.11.0-alpha.x` line with confidence that:
+Prepare the `0.11.0-alpha.x` line for maintainer-approved publication with
+confidence that:
 
 - the focused packages resolve and analyze outside the monorepo
 - the root facade remains a good default entrypoint
@@ -68,7 +72,8 @@ The workstream is complete when:
 - package versions and publish order are verified
 - release notes and migration guidance cover the breaking preview
 - clean consumer validation passes for Dart and Flutter
-- the alpha publish sequence is ready to execute or has been executed
+- the alpha publish sequence is ready to execute after explicit maintainer
+  approval
 - post-publish verification steps are documented
 
 ## Tracks
@@ -101,8 +106,9 @@ adapters.
 
 ### P2 - Post-Publish Verification
 
-After publishing, repeat clean consumer checks against pub.dev versions and
-record any alpha feedback as targeted follow-up work.
+After explicit maintainer-approved publishing, repeat clean consumer checks
+against pub.dev versions and record any alpha feedback as targeted follow-up
+work.
 
 ## Documents
 
@@ -118,7 +124,7 @@ record any alpha feedback as targeted follow-up work.
   - Rebaseline after the fearless boundary reset: package graph, publish
     order, API surface drift, and fresh validation evidence.
 - [EVIDENCE_AND_GATES.md](EVIDENCE_AND_GATES.md)
-  - Current post-reset release gate evidence and remaining publish blockers.
+  - Closed local release-hardening evidence and external publish follow-on.
 - [MILESTONES.md](MILESTONES.md)
   - Milestones and acceptance criteria.
 - [TODO.md](TODO.md)

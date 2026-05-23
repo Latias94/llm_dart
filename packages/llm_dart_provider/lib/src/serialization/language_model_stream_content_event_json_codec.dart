@@ -1,6 +1,7 @@
 import '../common/json_codec_common.dart';
 import '../stream/language_model_stream_event.dart';
-import 'serialization_json_support.dart';
+import 'serialization_media_support.dart';
+import 'serialization_metadata_support.dart';
 
 final class LanguageModelStreamContentEventJsonCodec {
   static const Set<String> eventTypes = {
@@ -28,7 +29,8 @@ final class LanguageModelStreamContentEventJsonCodec {
           'type': 'text-start',
           'id': id,
           if (providerMetadata != null)
-            'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
+            'providerMetadata':
+                SerializationMetadataSupport.encodeProviderMetadata(
               providerMetadata,
             ),
         },
@@ -37,7 +39,8 @@ final class LanguageModelStreamContentEventJsonCodec {
           'id': id,
           'delta': delta,
           if (providerMetadata != null)
-            'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
+            'providerMetadata':
+                SerializationMetadataSupport.encodeProviderMetadata(
               providerMetadata,
             ),
         },
@@ -45,7 +48,8 @@ final class LanguageModelStreamContentEventJsonCodec {
           'type': 'text-end',
           'id': id,
           if (providerMetadata != null)
-            'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
+            'providerMetadata':
+                SerializationMetadataSupport.encodeProviderMetadata(
               providerMetadata,
             ),
         },
@@ -53,7 +57,8 @@ final class LanguageModelStreamContentEventJsonCodec {
           'type': 'reasoning-start',
           'id': id,
           if (providerMetadata != null)
-            'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
+            'providerMetadata':
+                SerializationMetadataSupport.encodeProviderMetadata(
               providerMetadata,
             ),
         },
@@ -62,7 +67,8 @@ final class LanguageModelStreamContentEventJsonCodec {
           'id': id,
           'delta': delta,
           if (providerMetadata != null)
-            'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
+            'providerMetadata':
+                SerializationMetadataSupport.encodeProviderMetadata(
               providerMetadata,
             ),
         },
@@ -70,27 +76,30 @@ final class LanguageModelStreamContentEventJsonCodec {
           'type': 'reasoning-end',
           'id': id,
           if (providerMetadata != null)
-            'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
+            'providerMetadata':
+                SerializationMetadataSupport.encodeProviderMetadata(
               providerMetadata,
             ),
         },
       ReasoningFileEvent(:final file, :final providerMetadata) => {
           'type': 'reasoning-file',
-          'file': SerializationJsonSupport.encodeGeneratedFile(file),
+          'file': SerializationMediaSupport.encodeGeneratedFile(file),
           if (providerMetadata != null)
-            'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
+            'providerMetadata':
+                SerializationMetadataSupport.encodeProviderMetadata(
               providerMetadata,
             ),
         },
       SourceEvent(:final source) => {
           'type': 'source',
-          'source': SerializationJsonSupport.encodeSourceReference(source),
+          'source': SerializationMediaSupport.encodeSourceReference(source),
         },
       FileEvent(:final file, :final providerMetadata) => {
           'type': 'file',
-          'file': SerializationJsonSupport.encodeGeneratedFile(file),
+          'file': SerializationMediaSupport.encodeGeneratedFile(file),
           if (providerMetadata != null)
-            'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
+            'providerMetadata':
+                SerializationMetadataSupport.encodeProviderMetadata(
               providerMetadata,
             ),
         },
@@ -99,7 +108,8 @@ final class LanguageModelStreamContentEventJsonCodec {
           'kind': kind,
           'data': ensureJsonValue(data, path: r'$.custom.data'),
           if (providerMetadata != null)
-            'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
+            'providerMetadata':
+                SerializationMetadataSupport.encodeProviderMetadata(
               providerMetadata,
             ),
         },
@@ -109,7 +119,7 @@ final class LanguageModelStreamContentEventJsonCodec {
         },
       ErrorEvent(:final error) => {
           'type': 'error',
-          'error': SerializationJsonSupport.encodeModelError(error),
+          'error': SerializationMetadataSupport.encodeModelError(error),
         },
       _ => throw ArgumentError.value(
           event,
@@ -127,7 +137,7 @@ final class LanguageModelStreamContentEventJsonCodec {
     return switch (type) {
       'text-start' => TextStartEvent(
           id: asJsonString(map['id'], path: '$path.id'),
-          providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
+          providerMetadata: SerializationMetadataSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
@@ -135,21 +145,21 @@ final class LanguageModelStreamContentEventJsonCodec {
       'text-delta' => TextDeltaEvent(
           id: asJsonString(map['id'], path: '$path.id'),
           delta: asJsonString(map['delta'], path: '$path.delta'),
-          providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
+          providerMetadata: SerializationMetadataSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
         ),
       'text-end' => TextEndEvent(
           id: asJsonString(map['id'], path: '$path.id'),
-          providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
+          providerMetadata: SerializationMetadataSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
         ),
       'reasoning-start' => ReasoningStartEvent(
           id: asJsonString(map['id'], path: '$path.id'),
-          providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
+          providerMetadata: SerializationMetadataSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
@@ -157,40 +167,40 @@ final class LanguageModelStreamContentEventJsonCodec {
       'reasoning-delta' => ReasoningDeltaEvent(
           id: asJsonString(map['id'], path: '$path.id'),
           delta: asJsonString(map['delta'], path: '$path.delta'),
-          providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
+          providerMetadata: SerializationMetadataSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
         ),
       'reasoning-end' => ReasoningEndEvent(
           id: asJsonString(map['id'], path: '$path.id'),
-          providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
+          providerMetadata: SerializationMetadataSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
         ),
       'reasoning-file' => ReasoningFileEvent(
-          SerializationJsonSupport.decodeGeneratedFile(
+          SerializationMediaSupport.decodeGeneratedFile(
             map['file'],
             path: '$path.file',
           ),
-          providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
+          providerMetadata: SerializationMetadataSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
         ),
       'source' => SourceEvent(
-          SerializationJsonSupport.decodeSourceReference(
+          SerializationMediaSupport.decodeSourceReference(
             map['source'],
             path: '$path.source',
           ),
         ),
       'file' => FileEvent(
-          SerializationJsonSupport.decodeGeneratedFile(
+          SerializationMediaSupport.decodeGeneratedFile(
             map['file'],
             path: '$path.file',
           ),
-          providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
+          providerMetadata: SerializationMetadataSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
@@ -198,14 +208,14 @@ final class LanguageModelStreamContentEventJsonCodec {
       'custom' => CustomEvent(
           kind: asJsonString(map['kind'], path: '$path.kind'),
           data: map['data'],
-          providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
+          providerMetadata: SerializationMetadataSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
         ),
       'raw-chunk' => RawChunkEvent(map['raw']),
       'error' => ErrorEvent(
-          SerializationJsonSupport.decodeModelError(
+          SerializationMetadataSupport.decodeModelError(
             _requireValue(map['error'], path: '$path.error'),
             path: '$path.error',
           ),

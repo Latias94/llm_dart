@@ -1,0 +1,32 @@
+[
+  {
+    "type": "unsupported",
+    "message": "Ollama reasoning is a provider toggle; shared reasoning.effort is ignored.",
+    "feature": "options.reasoning.effort",
+    "field": "options.reasoning.effort"
+  },
+  {
+    "type": "unsupported",
+    "message": "Ollama reasoning is a provider toggle; shared reasoning.budgetTokens is ignored.",
+    "feature": "options.reasoning.budgetTokens",
+    "field": "options.reasoning.budgetTokens"
+  },
+  {
+    "type": "compatibility",
+    "message": "Ollama providerOptions.reasoning overrides shared options.reasoning.",
+    "feature": "options.reasoning",
+    "field": "options.reasoning"
+  },
+  {
+    "type": "compatibility",
+    "message": "Ollama only supports the shared JSON schema body. responseFormat name, description, and strict are ignored.",
+    "feature": "options.responseFormat",
+    "field": "options.responseFormat"
+  },
+  {
+    "type": "compatibility",
+    "message": "Ollama does not support explicit toolChoice control. Declared tools remain available for provider-side automatic selection.",
+    "feature": "toolChoice",
+    "field": "toolChoice"
+  }
+]

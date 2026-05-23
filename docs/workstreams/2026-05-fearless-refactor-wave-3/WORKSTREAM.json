@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "slug": "2026-05-fearless-refactor-wave-3",
+  "title": "Fearless Refactor Wave 3",
+  "status": "closed",
+  "updated": "2026-05-23",
+  "scope_kind": "architecture-refactor",
+  "problem": "Five post-alpha local-hardening refactor candidates still need deeper modules and stronger locality across chat session turns, OpenAI-family options, provider fixtures, serialization protocols, and root legacy classification.",
+  "authoritative_docs": [
+    {
+      "role": "design",
+      "path": "docs/workstreams/2026-05-fearless-refactor-wave-3/DESIGN.md"
+    },
+    {
+      "role": "execution",
+      "path": "docs/workstreams/2026-05-fearless-refactor-wave-3/TODO.md"
+    },
+    {
+      "role": "milestones",
+      "path": "docs/workstreams/2026-05-fearless-refactor-wave-3/MILESTONES.md"
+    },
+    {
+      "role": "gates",
+      "path": "docs/workstreams/2026-05-fearless-refactor-wave-3/EVIDENCE_AND_GATES.md"
+    },
+    {
+      "role": "handoff",
+      "path": "docs/workstreams/2026-05-fearless-refactor-wave-3/HANDOFF.md"
+    }
+  ],
+  "closed_at": "2026-05-23",
+  "first_task": null,
+  "gates": [
+    "dart analyze tool/check_root_package_boundary_guards.dart tool/root_legacy_classification.dart test/tool/check_root_package_boundary_guards_test.dart",
+    "dart test test/tool/check_root_package_boundary_guards_test.dart test/tool/check_example_api_guards_test.dart test/tool/check_test_legacy_import_guards_test.dart",
+    "dart run tool/check_workspace_dependency_guards.dart",
+    "dart run tool/check_root_package_boundary_guards.dart",
+    "dart run tool/check_example_api_guards.dart",
+    "dart run tool/check_test_legacy_import_guards.dart",
+    "git diff --check"
+  ],
+  "evidence": [
+    "docs/workstreams/2026-05-fearless-refactor-wave-3/EVIDENCE_AND_GATES.md"
+  ],
+  "adr_refs": [],
+  "continue_policy": {
+    "default_action": "closed",
+    "notes": "The local architecture-refactor lane is complete. Open a follow-on only if new root-facing classification, release, or publish-side work is explicitly requested."
+  }
+}

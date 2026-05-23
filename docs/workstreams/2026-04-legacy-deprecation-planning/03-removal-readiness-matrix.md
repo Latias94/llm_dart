@@ -5,6 +5,10 @@
 Turn the policy into a concrete readiness table for the main remaining legacy
 surface groups.
 
+> Historical snapshot. The current root legacy classification lives in
+> `docs/workstreams/2026-05-fearless-refactor-wave-3/06-root-legacy-classification.md`
+> and `tool/root_legacy_classification.dart`.
+
 ## Matrix
 
 | Surface | Current posture | Earliest next action | Earliest removal window | Blockers |

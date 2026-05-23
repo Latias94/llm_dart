@@ -2,7 +2,7 @@ import '../common/json_codec_common.dart';
 import '../model/finish_reason.dart';
 import '../model/model_response_metadata.dart';
 import '../stream/language_model_stream_event.dart';
-import 'serialization_json_support.dart';
+import 'serialization_metadata_support.dart';
 
 final class LanguageModelStreamCoreEventJsonCodec {
   static const Set<String> eventTypes = {
@@ -30,7 +30,7 @@ final class LanguageModelStreamCoreEventJsonCodec {
       StartEvent(:final warnings) => {
           'type': 'start',
           'warnings': warnings
-              .map(SerializationJsonSupport.encodeModelWarning)
+              .map(SerializationMetadataSupport.encodeModelWarning)
               .toList(growable: false),
         },
       ResponseMetadataEvent(
@@ -42,7 +42,7 @@ final class LanguageModelStreamCoreEventJsonCodec {
       ) =>
         {
           'type': 'response-metadata',
-          ...SerializationJsonSupport.encodeModelResponseMetadata(
+          ...SerializationMetadataSupport.encodeModelResponseMetadata(
             modelResponseMetadataFrom(
                   metadata: responseMetadata,
                   id: responseId,
@@ -52,7 +52,8 @@ final class LanguageModelStreamCoreEventJsonCodec {
                 const ModelResponseMetadata(),
           ),
           if (providerMetadata != null)
-            'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
+            'providerMetadata':
+                SerializationMetadataSupport.encodeProviderMetadata(
               providerMetadata,
             ),
         },
@@ -67,9 +68,10 @@ final class LanguageModelStreamCoreEventJsonCodec {
           'finishReason': finishReason.name,
           if (rawFinishReason != null) 'rawFinishReason': rawFinishReason,
           if (usage != null)
-            'usage': SerializationJsonSupport.encodeUsageStats(usage),
+            'usage': SerializationMetadataSupport.encodeUsageStats(usage),
           if (providerMetadata != null)
-            'providerMetadata': SerializationJsonSupport.encodeProviderMetadata(
+            'providerMetadata':
+                SerializationMetadataSupport.encodeProviderMetadata(
               providerMetadata,
             ),
         },
@@ -92,7 +94,7 @@ final class LanguageModelStreamCoreEventJsonCodec {
               .asMap()
               .entries
               .map(
-                (entry) => SerializationJsonSupport.decodeModelWarning(
+                (entry) => SerializationMetadataSupport.decodeModelWarning(
                   entry.value,
                   path: '$path.warnings[${entry.key}]',
                 ),
@@ -101,11 +103,11 @@ final class LanguageModelStreamCoreEventJsonCodec {
         ),
       'response-metadata' => ResponseMetadataEvent(
           responseMetadata:
-              SerializationJsonSupport.decodeModelResponseMetadataFields(
+              SerializationMetadataSupport.decodeModelResponseMetadataFields(
             map,
             path: path,
           ),
-          providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
+          providerMetadata: SerializationMetadataSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),
@@ -118,11 +120,11 @@ final class LanguageModelStreamCoreEventJsonCodec {
             map['rawFinishReason'],
             path: '$path.rawFinishReason',
           ),
-          usage: SerializationJsonSupport.decodeUsageStats(
+          usage: SerializationMetadataSupport.decodeUsageStats(
             map['usage'],
             path: '$path.usage',
           ),
-          providerMetadata: SerializationJsonSupport.decodeProviderMetadata(
+          providerMetadata: SerializationMetadataSupport.decodeProviderMetadata(
             map['providerMetadata'],
             path: '$path.providerMetadata',
           ),

@@ -52,6 +52,8 @@
 ## Publish Execution
 
 - [x] Run final release-readiness command
-- [ ] Publish packages in dependency order
-- [ ] Re-run clean consumer smoke against pub.dev versions
-- [ ] Record alpha release feedback and decide the next targeted workstream
+- [x] Split publish execution into a maintainer-approved follow-on outside this
+      local hardening lane
+- [x] Record post-publish consumer smoke as a required follow-on gate after
+      packages are actually published
+- [x] Record alpha release feedback triage as a post-publish follow-on

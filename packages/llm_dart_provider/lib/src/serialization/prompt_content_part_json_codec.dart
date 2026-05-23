@@ -2,7 +2,7 @@ import '../common/json_codec_common.dart';
 import '../common/provider_options.dart';
 import '../content/file_data.dart';
 import '../prompt/prompt_message.dart';
-import 'serialization_json_support.dart';
+import 'serialization_media_support.dart';
 
 final class PromptContentPartJsonCodec {
   const PromptContentPartJsonCodec();
@@ -22,7 +22,7 @@ final class PromptContentPartJsonCodec {
           'type': 'file',
           'mediaType': mediaType,
           if (filename != null) 'filename': filename,
-          'data': SerializationJsonSupport.encodeFileData(data),
+          'data': SerializationMediaSupport.encodeFileData(data),
         },
       ImagePromptPart(
         :final mediaType,
@@ -31,7 +31,7 @@ final class PromptContentPartJsonCodec {
         {
           'type': 'image',
           'mediaType': mediaType,
-          'data': SerializationJsonSupport.encodeFileData(data),
+          'data': SerializationMediaSupport.encodeFileData(data),
         },
       ReasoningPromptPart(:final text) => {
           'type': 'reasoning',
@@ -46,7 +46,7 @@ final class PromptContentPartJsonCodec {
           'type': 'reasoning-file',
           'mediaType': mediaType,
           if (filename != null) 'filename': filename,
-          'data': SerializationJsonSupport.encodeFileData(data),
+          'data': SerializationMediaSupport.encodeFileData(data),
         },
       CustomPromptPart(:final kind, :final data) => {
           'type': 'custom',
@@ -110,18 +110,18 @@ final class PromptContentPartJsonCodec {
     JsonMap map, {
     required String path,
   }) {
-    return SerializationJsonSupport.decodeFileData(
+    return SerializationMediaSupport.decodeFileData(
           map['data'],
           path: '$path.data',
         ) ??
         fileDataFromLegacy(
-          uri: SerializationJsonSupport.decodeUri(
+          uri: SerializationMediaSupport.decodeUri(
             map['uri'],
             path: '$path.uri',
           ),
           bytes: map.containsKey('data')
               ? null
-              : SerializationJsonSupport.decodeBytes(
+              : SerializationMediaSupport.decodeBytes(
                   map['bytes'],
                   path: '$path.bytes',
                 ),

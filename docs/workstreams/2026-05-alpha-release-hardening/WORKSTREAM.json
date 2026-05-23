@@ -2,7 +2,7 @@
   "schema_version": 1,
   "slug": "2026-05-alpha-release-hardening",
   "title": "Alpha Release Hardening",
-  "status": "active",
+  "status": "closed",
   "updated": "2026-05-23",
   "scope_kind": "release-hardening",
   "problem": "The alpha release gate must be rebaselined after the fearless boundary reset removed llm_dart_core, promoted llm_dart_provider_utils into the publishable graph, and tightened root/provider/runtime boundaries.",
@@ -40,7 +40,8 @@
       "path": "docs/workstreams/2026-05-alpha-release-hardening/HANDOFF.md"
     }
   ],
-  "first_task": "Publish packages in dependency order",
+  "closed_at": "2026-05-23",
+  "first_task": null,
   "gates": [
     "dart --suppress-analytics test test/tool/release_readiness_test.dart test/tool/run_workspace_publish_dry_run_test.dart test/tool/run_consumer_smoke_test.dart test/tool/check_transport_boundary_guards_test.dart",
     "dart --suppress-analytics run tool/run_workspace_publish_dry_run.dart --package=llm_dart_provider_utils --package=llm_dart_chat --package=llm_dart",
@@ -71,7 +72,7 @@
   ],
   "adr_refs": [],
   "continue_policy": {
-    "default_action": "wait-for-publish-approval",
-    "notes": "The branch is locally release-ready. Publish only after explicit maintainer approval, then run post-publish consumer smoke against pub.dev versions."
+    "default_action": "closed",
+    "notes": "The local release-hardening lane is complete. External follow-on: publish only after explicit maintainer approval, then run post-publish consumer smoke against pub.dev versions and record alpha feedback."
   }
 }

@@ -193,3 +193,7 @@ What remains open before a wider deprecation wave:
   root `llm_dart` facade
 - decide whether the first multi-package alpha publish sequence should stay
   manual or gain dedicated release automation
+
+This phase is now a historical planning record. The current root legacy
+classification and facade posture are captured in the Wave 3 architecture
+workstream and the root boundary guard decision table.

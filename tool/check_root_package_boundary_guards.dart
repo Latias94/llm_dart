@@ -1,16 +1,14 @@
 import 'dart:io';
 
-const Set<String> _allowedRootTopLevelDirectories = {};
+import 'root_legacy_classification.dart';
 
-const Set<String> _allowedRootTopLevelFiles = {
-  'ai.dart',
-  'chat.dart',
-  'core.dart',
-  'llm_dart.dart',
-  'transport.dart',
-};
+final Set<String> _allowedRootTopLevelDirectories =
+    rootLegacyAllowedTopLevelDirectories;
 
-const Set<String> _allowedRootSrcTopLevelDirectories = {};
+final Set<String> _allowedRootTopLevelFiles = rootLegacyAllowedTopLevelFiles;
+
+final Set<String> _allowedRootSrcTopLevelDirectories =
+    rootLegacyAllowedSrcTopLevelDirectories;
 
 const Set<String> _allowedRootSrcTopLevelFiles = {};
 
@@ -27,34 +25,8 @@ final RegExp _topLevelImplementationPattern = RegExp(
   r'(class|mixin|enum|extension|typedef)\s+',
 );
 
-const List<String> _expectedDefaultRootEntrypointDirectives = [
-  'library;',
-  "export 'ai.dart';",
-];
-
-const List<String> _expectedModernAggregatorEntrypointDirectives = [
-  'library;',
-  "export 'core.dart';",
-  "export 'transport.dart';",
-];
-
-const Map<String, List<String>> _expectedFocusedRootEntrypointDirectives = {
-  'lib/core.dart': [
-    'library;',
-    "export 'package:llm_dart_ai/llm_dart_ai.dart';",
-  ],
-  'lib/transport.dart': [
-    'library;',
-    "export 'core.dart';",
-    "export 'package:llm_dart_transport/llm_dart_transport.dart';",
-  ],
-  'lib/chat.dart': [
-    'library;',
-    "export 'core.dart';",
-    "export 'transport.dart';",
-    "export 'package:llm_dart_chat/llm_dart_chat.dart';",
-  ],
-};
+final Map<String, List<String>> _expectedRootEntrypointDirectives =
+    rootLegacyExpectedEntrypointDirectives;
 
 final class RootPackageBoundaryGuardResult {
   final List<String> violations;
@@ -223,14 +195,16 @@ Future<void> _collectDefaultRootEntrypointViolations({
 
   final directives = await _readPublicDirectives(rootEntrypoint);
 
-  if (_listEquals(directives, _expectedDefaultRootEntrypointDirectives)) {
+  final expectedDirectives =
+      _expectedRootEntrypointDirectives['lib/llm_dart.dart']!;
+  if (_listEquals(directives, expectedDirectives)) {
     return;
   }
 
   violations.add(
     'lib/llm_dart.dart: default root entrypoint must only export ai.dart. '
     'Found directives: ${directives.join(' ')}. Expected directives: '
-    '${_expectedDefaultRootEntrypointDirectives.join(' ')}.',
+    '${expectedDirectives.join(' ')}.',
   );
 }
 
@@ -245,7 +219,8 @@ Future<void> _collectModernAggregatorEntrypointViolations({
   }
 
   final directives = await _readPublicDirectives(entrypoint);
-  if (_listEquals(directives, _expectedModernAggregatorEntrypointDirectives)) {
+  final expectedDirectives = _expectedRootEntrypointDirectives['lib/ai.dart']!;
+  if (_listEquals(directives, expectedDirectives)) {
     return;
   }
 
@@ -253,7 +228,7 @@ Future<void> _collectModernAggregatorEntrypointViolations({
     'lib/ai.dart: modern aggregator entrypoint must only compose the stable '
     'provider-neutral core entrypoint. Found directives: '
     '${directives.join(' ')}. Expected directives: '
-    '${_expectedModernAggregatorEntrypointDirectives.join(' ')}.',
+    '${expectedDirectives.join(' ')}.',
   );
 }
 
@@ -261,7 +236,9 @@ Future<void> _collectFocusedRootEntrypointViolations({
   required Directory repoRoot,
   required List<String> violations,
 }) async {
-  for (final entry in _expectedFocusedRootEntrypointDirectives.entries) {
+  for (final entry in _expectedRootEntrypointDirectives.entries.where(
+    (entry) => entry.key != 'lib/llm_dart.dart' && entry.key != 'lib/ai.dart',
+  )) {
     final entrypoint = File.fromUri(repoRoot.uri.resolve(entry.key));
     if (!entrypoint.existsSync()) {
       violations.add('${entry.key}: focused root entrypoint is missing.');

@@ -1,24 +1,5 @@
 part of 'openai_provider_options_bag.dart';
 
-OpenAIGenerateTextOptions resolveOpenAIGenerateTextOptionsFromInvocation(
-  ProviderInvocationOptions? options,
-) {
-  final typed = resolveProviderInvocationOptions<OpenAIGenerateTextOptions>(
-    options,
-    parameterName: 'providerOptions',
-    expectedTypeName: 'OpenAIGenerateTextOptions',
-  );
-  final bagOptions = parseOpenAIGenerateTextOptionsBag(
-    providerOptionsBagFromInvocationOptions(options),
-    namespace: openAIProviderOptionsNamespace,
-  );
-
-  return mergeOpenAIGenerateTextOptions(
-    base: bagOptions,
-    override: typed,
-  );
-}
-
 OpenAIGenerateTextOptions parseOpenAIGenerateTextOptionsBag(
   ProviderOptionsBag? bag, {
   String namespace = openAIProviderOptionsNamespace,
@@ -148,69 +129,6 @@ OpenAIGenerateTextOptions parseOpenAIGenerateTextOptionsBag(
   );
 }
 
-OpenAIGenerateTextOptions mergeOpenAIGenerateTextOptions({
-  required OpenAIGenerateTextOptions base,
-  OpenAIGenerateTextOptions? override,
-}) {
-  if (override == null) {
-    return base;
-  }
-
-  return base.copyWith(
-    previousResponseId: override.previousResponseId ?? base.previousResponseId,
-    conversation: override.conversation ?? base.conversation,
-    store: override.store ?? base.store,
-    parallelToolCalls: override.parallelToolCalls ?? base.parallelToolCalls,
-    serviceTier: override.serviceTier ?? base.serviceTier,
-    verbosity: override.verbosity ?? base.verbosity,
-    instructions: override.instructions ?? base.instructions,
-    maxToolCalls: override.maxToolCalls ?? base.maxToolCalls,
-    metadata: override.metadata ?? base.metadata,
-    truncation: override.truncation ?? base.truncation,
-    user: override.user ?? base.user,
-    systemMessageMode: override.systemMessageMode ?? base.systemMessageMode,
-    reasoningEffort: override.reasoningEffort ?? base.reasoningEffort,
-    maxCompletionTokens:
-        override.maxCompletionTokens ?? base.maxCompletionTokens,
-    forceReasoning: override.forceReasoning ?? base.forceReasoning,
-    logprobs: override.logprobs ?? base.logprobs,
-    include: override.include ?? base.include,
-    promptCacheKey: override.promptCacheKey ?? base.promptCacheKey,
-    promptCacheRetention:
-        override.promptCacheRetention ?? base.promptCacheRetention,
-    safetyIdentifier: override.safetyIdentifier ?? base.safetyIdentifier,
-    builtInTools: override.builtInTools ?? base.builtInTools,
-    responseFormat: override.responseFormat ?? base.responseFormat,
-  );
-}
-
-DeepSeekGenerateTextOptions? resolveDeepSeekGenerateTextOptionsFromInvocation(
-  ProviderInvocationOptions? options,
-) {
-  final typedOptions = typedProviderOptionsFromInvocationOptions(options);
-  final typed =
-      typedOptions is DeepSeekGenerateTextOptions ? typedOptions : null;
-  final bag = providerOptionsBagFromInvocationOptions(options);
-  final bagOptions = parseDeepSeekGenerateTextOptionsBag(bag);
-
-  if (typed == null) {
-    return bagOptions;
-  }
-
-  final commonFromBag = parseOpenAIGenerateTextOptionsBag(bag);
-  return DeepSeekGenerateTextOptions(
-    common: mergeOpenAIGenerateTextOptions(
-      base: commonFromBag,
-      override: typed.common,
-    ),
-    logprobs: typed.logprobs ?? bagOptions?.logprobs,
-    topLogprobs: typed.topLogprobs ?? bagOptions?.topLogprobs,
-    frequencyPenalty: typed.frequencyPenalty ?? bagOptions?.frequencyPenalty,
-    presencePenalty: typed.presencePenalty ?? bagOptions?.presencePenalty,
-    responseFormat: typed.responseFormat ?? bagOptions?.responseFormat,
-  );
-}
-
 ProviderOptionsBag? openAIGenerateTextOptionsToProviderOptionsBag(
   OpenAIGenerateTextOptions options, {
   String namespace = openAIProviderOptionsNamespace,
@@ -296,30 +214,6 @@ DeepSeekGenerateTextOptions? parseDeepSeekGenerateTextOptionsBag(
   );
 }
 
-OpenRouterGenerateTextOptions?
-    resolveOpenRouterGenerateTextOptionsFromInvocation(
-  ProviderInvocationOptions? options,
-) {
-  final typedOptions = typedProviderOptionsFromInvocationOptions(options);
-  final typed =
-      typedOptions is OpenRouterGenerateTextOptions ? typedOptions : null;
-  final bag = providerOptionsBagFromInvocationOptions(options);
-  final bagOptions = parseOpenRouterGenerateTextOptionsBag(bag);
-
-  if (typed == null) {
-    return bagOptions;
-  }
-
-  final commonFromBag = parseOpenAIGenerateTextOptionsBag(bag);
-  return OpenRouterGenerateTextOptions(
-    common: mergeOpenAIGenerateTextOptions(
-      base: commonFromBag,
-      override: typed.common,
-    ),
-    search: typed.search ?? bagOptions?.search,
-  );
-}
-
 OpenRouterGenerateTextOptions? parseOpenRouterGenerateTextOptionsBag(
   ProviderOptionsBag? bag,
 ) {
@@ -339,28 +233,6 @@ OpenRouterGenerateTextOptions? parseOpenRouterGenerateTextOptionsBag(
   return OpenRouterGenerateTextOptions(
     common: common,
     search: search,
-  );
-}
-
-XAIGenerateTextOptions? resolveXAIGenerateTextOptionsFromInvocation(
-  ProviderInvocationOptions? options,
-) {
-  final typedOptions = typedProviderOptionsFromInvocationOptions(options);
-  final typed = typedOptions is XAIGenerateTextOptions ? typedOptions : null;
-  final bag = providerOptionsBagFromInvocationOptions(options);
-  final bagOptions = parseXAIGenerateTextOptionsBag(bag);
-
-  if (typed == null) {
-    return bagOptions;
-  }
-
-  final commonFromBag = parseOpenAIGenerateTextOptionsBag(bag);
-  return XAIGenerateTextOptions(
-    common: mergeOpenAIGenerateTextOptions(
-      base: commonFromBag,
-      override: typed.common,
-    ),
-    search: typed.search ?? bagOptions?.search,
   );
 }
 

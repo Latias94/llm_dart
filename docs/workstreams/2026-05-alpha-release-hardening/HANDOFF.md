@@ -1,6 +1,6 @@
 # Alpha Release Hardening — Handoff
 
-Status: Active
+Status: Closed
 Last updated: 2026-05-23
 
 ## Current State
@@ -35,7 +35,7 @@ now rebaselined around the new package graph:
   `dart --suppress-analytics run tool/release_readiness.dart --report=build/release_readiness_post_provider_options_split_full.md`
   — passed 14/14 steps in 4m 54s.
 
-## Next Task
+## Follow-On Outside This Lane
 
 Publish only after explicit maintainer approval, in this dependency order:
 
@@ -66,3 +66,7 @@ with `--proxy=http://127.0.0.1:10809`.
 The branch is locally release-ready after the package graph changed. It is not
 published yet. The latest local readiness evidence is
 `build/release_readiness_post_provider_options_split_full.md`.
+
+This workstream is closed as the local release-hardening lane. Actual
+publishing and published-version smoke are external side-effect steps that
+should be run only after explicit maintainer approval.

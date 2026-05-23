@@ -1,6 +1,6 @@
 # Alpha Release Hardening — Evidence And Gates
 
-Status: Active
+Status: Closed
 Last updated: 2026-05-23
 
 ## Required Post-Reset Gates
@@ -220,6 +220,29 @@ Pub version availability:
 Decision:
 
 - The branch is locally release-ready after the provider options seam split.
-- The workstream remains active because actual publishing has not started.
-- Next action remains explicit maintainer approval for publish execution in
-  dependency order, followed by published-version consumer smoke.
+- Actual publishing is split out of this local hardening lane because it
+  requires explicit maintainer approval and external pub.dev side effects.
+- Next action outside this lane remains explicit maintainer approval for
+  publish execution in dependency order, followed by published-version consumer
+  smoke.
+
+## Closeout
+
+Status: closed on 2026-05-23.
+
+Closeout basis:
+
+- The release-readiness automation exists and has current green evidence.
+- Package metadata, publish order, publish dry-run, consumer smoke, and pub.dev
+  version availability are validated for `0.11.0-alpha.1`.
+- The latest full local gate passed after the provider options seam split.
+- No local hardening task remains before external publish execution.
+
+Follow-on outside this lane:
+
+1. Publish packages in the documented dependency order after explicit
+   maintainer approval.
+2. Run `dart --suppress-analytics run tool/run_consumer_smoke.dart --published`
+   against pub.dev versions.
+3. Record alpha feedback and open a targeted follow-on lane if publication or
+   consumer smoke exposes issues.

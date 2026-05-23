@@ -93,10 +93,10 @@ Current status:
   release-readiness command
 - the command creates temporary consumer projects, validates path dependency
   resolution, analyzes them, runs no-key smoke coverage, and removes them
-- after publish, repeat clean consumer smoke against pub.dev versions without
-  local path overrides
-- post-boundary-reset consumer smoke still needs one fresh full readiness run
-  before publish execution
+- the post-provider-options-split full readiness run passed on 2026-05-23,
+  including clean consumer smoke with local path overrides
+- after explicit maintainer-approved publishing, repeat clean consumer smoke
+  against pub.dev versions without local path overrides
 
 ## M4 - Alpha Publish Execution
 
@@ -123,6 +123,11 @@ Current status:
   package(s), and pub.dev version availability
 - the 2026-05-15 audit fixed package-root fixture lookup for OpenAI,
   Anthropic, and Google fixture contract tests before the final green run
-- actual publishing has not started
-- because the package graph changed after the 2026-05-15 full gate, a fresh
-  full `dart run tool/release_readiness.dart` run is required before publishing
+- a full local release-readiness run passed again on 2026-05-23 after the
+  provider options seam split; the run covered all 14 release steps, including
+  workspace package tests, consumer smoke, publish dry-runs for 12 package(s),
+  and pub.dev version availability
+- actual publishing has not started and is split into an explicit
+  maintainer-approved external follow-on
+- after publishing, run published-version consumer smoke and triage alpha
+  feedback into targeted follow-on work

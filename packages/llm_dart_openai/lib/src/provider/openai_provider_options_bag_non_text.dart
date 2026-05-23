@@ -1,27 +1,5 @@
 part of 'openai_provider_options_bag.dart';
 
-OpenAIEmbedOptions? resolveOpenAIEmbedOptionsFromInvocation(
-  ProviderInvocationOptions? options,
-) {
-  final typed = resolveProviderInvocationOptions<OpenAIEmbedOptions>(
-    options,
-    parameterName: 'request.callOptions.providerOptions',
-    expectedTypeName: 'OpenAIEmbedOptions for OpenAI-family embedding models',
-  );
-  final bagOptions = parseOpenAIEmbedOptionsBag(
-    providerOptionsBagFromInvocationOptions(options),
-  );
-
-  if (typed == null) {
-    return bagOptions;
-  }
-
-  return OpenAIEmbedOptions(
-    encodingFormat: typed.encodingFormat ?? bagOptions?.encodingFormat,
-    user: typed.user ?? bagOptions?.user,
-  );
-}
-
 OpenAIEmbedOptions? parseOpenAIEmbedOptionsBag(ProviderOptionsBag? bag) {
   final values = bag?.namespace(openAIProviderOptionsNamespace);
   if (values == null || values.isEmpty) {
@@ -54,34 +32,6 @@ ProviderOptionsBag? openAIEmbedOptionsToProviderOptionsBag(
     'encoding_format': options.encodingFormat,
     'user': options.user,
   });
-}
-
-OpenAIImageOptions? resolveOpenAIImageOptionsFromInvocation(
-  ProviderInvocationOptions? options,
-) {
-  final typed = resolveProviderInvocationOptions<OpenAIImageOptions>(
-    options,
-    parameterName: 'request.callOptions.providerOptions',
-    expectedTypeName: 'OpenAIImageOptions for OpenAI-family image models',
-  );
-  final bagOptions = parseOpenAIImageOptionsBag(
-    providerOptionsBagFromInvocationOptions(options),
-  );
-
-  if (typed == null) {
-    return bagOptions;
-  }
-
-  return OpenAIImageOptions(
-    style: typed.style ?? bagOptions?.style,
-    quality: typed.quality ?? bagOptions?.quality,
-    background: typed.background ?? bagOptions?.background,
-    moderation: typed.moderation ?? bagOptions?.moderation,
-    outputFormat: typed.outputFormat ?? bagOptions?.outputFormat,
-    outputCompression: typed.outputCompression ?? bagOptions?.outputCompression,
-    responseFormat: typed.responseFormat ?? bagOptions?.responseFormat,
-    user: typed.user ?? bagOptions?.user,
-  );
 }
 
 OpenAIImageOptions? parseOpenAIImageOptionsBag(ProviderOptionsBag? bag) {
@@ -166,30 +116,6 @@ ProviderOptionsBag? openAIImageOptionsToProviderOptionsBag(
   });
 }
 
-OpenAISpeechOptions? resolveOpenAISpeechOptionsFromInvocation(
-  ProviderInvocationOptions? options,
-) {
-  final typed = resolveProviderInvocationOptions<OpenAISpeechOptions>(
-    options,
-    parameterName: 'request.callOptions.providerOptions',
-    expectedTypeName: 'OpenAISpeechOptions for OpenAI-family speech models',
-  );
-  final bagOptions = parseOpenAISpeechOptionsBag(
-    providerOptionsBagFromInvocationOptions(options),
-  );
-
-  if (typed == null) {
-    return bagOptions;
-  }
-
-  return OpenAISpeechOptions(
-    outputFormat: typed.outputFormat ?? bagOptions?.outputFormat,
-    instructions: typed.instructions ?? bagOptions?.instructions,
-    speed: typed.speed ?? bagOptions?.speed,
-    language: typed.language ?? bagOptions?.language,
-  );
-}
-
 OpenAISpeechOptions? parseOpenAISpeechOptionsBag(ProviderOptionsBag? bag) {
   final values = bag?.namespace(openAIProviderOptionsNamespace);
   if (values == null || values.isEmpty) {
@@ -237,37 +163,6 @@ ProviderOptionsBag? openAISpeechOptionsToProviderOptionsBag(
     'speed': options.speed,
     'language': options.language,
   });
-}
-
-OpenAITranscriptionOptions? resolveOpenAITranscriptionOptionsFromInvocation(
-  ProviderInvocationOptions? options,
-) {
-  final typed = resolveProviderInvocationOptions<OpenAITranscriptionOptions>(
-    options,
-    parameterName: 'request.callOptions.providerOptions',
-    expectedTypeName:
-        'OpenAITranscriptionOptions for OpenAI-family transcription models',
-  );
-  final bagOptions = parseOpenAITranscriptionOptionsBag(
-    providerOptionsBagFromInvocationOptions(options),
-  );
-
-  if (typed == null) {
-    return bagOptions;
-  }
-
-  return OpenAITranscriptionOptions(
-    include: typed.include.isNotEmpty
-        ? typed.include
-        : bagOptions?.include ?? const [],
-    language: typed.language ?? bagOptions?.language,
-    prompt: typed.prompt ?? bagOptions?.prompt,
-    temperature: typed.temperature ?? bagOptions?.temperature,
-    responseFormat: typed.responseFormat ?? bagOptions?.responseFormat,
-    timestampGranularities: typed.timestampGranularities.isNotEmpty
-        ? typed.timestampGranularities
-        : bagOptions?.timestampGranularities ?? const [],
-  );
 }
 
 OpenAITranscriptionOptions? parseOpenAITranscriptionOptionsBag(

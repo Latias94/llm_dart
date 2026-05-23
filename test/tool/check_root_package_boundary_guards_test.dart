@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:test/test.dart';
 
 import '../../tool/check_root_package_boundary_guards.dart' as guard;
+import '../../tool/root_legacy_classification.dart' as classification;
 
 void main() {
   group('check_root_package_boundary_guards', () {
@@ -15,6 +16,62 @@ void main() {
         result.violations,
         isEmpty,
         reason: result.violations.join('\n'),
+      );
+    });
+
+    test('exposes the current root legacy surface classification', () {
+      final keepFiles = classification.rootLegacySurfaceDecisions
+          .where((decision) =>
+              decision.status == classification.RootLegacySurfaceStatus.keep)
+          .map((decision) => decision.rootTopLevelFile)
+          .whereType<String>()
+          .toSet();
+
+      expect(
+        keepFiles,
+        {
+          'llm_dart.dart',
+          'ai.dart',
+          'core.dart',
+          'transport.dart',
+          'chat.dart',
+        },
+      );
+
+      final removeSurfaces = classification.rootLegacySurfaceDecisions
+          .where((decision) =>
+              decision.status == classification.RootLegacySurfaceStatus.remove)
+          .map((decision) => decision.surface)
+          .toSet();
+
+      expect(
+        removeSurfaces,
+        containsAll({
+          'legacy barrel',
+          'builder-era root directory',
+          'legacy model root directory',
+          'legacy provider root directory',
+          'legacy root core subpaths',
+          'root implementation internals',
+          'root bootstrap internals',
+          'root compatibility internals',
+          'root config internals',
+        }),
+      );
+
+      final documentSurfaces = classification.rootLegacySurfaceDecisions
+          .where((decision) =>
+              decision.status ==
+              classification.RootLegacySurfaceStatus.document)
+          .map((decision) => decision.surface)
+          .toSet();
+
+      expect(
+        documentSurfaces,
+        {
+          'provider-facing PromptMessage input',
+          'generateObject and streamObject helpers',
+        },
       );
     });
 

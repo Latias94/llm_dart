@@ -23,10 +23,11 @@
     preserving typed provider options, capability profiles, provider-native
     helpers, and OpenAI-family profiles.
 - [2026-05-alpha-release-hardening](2026-05-alpha-release-hardening/README.md)
-  - Active release-hardening workstream that turns the completed architecture
-    split into a publishable `0.11.0-alpha.x` line through repeatable guards,
-    package tests, clean consumer smoke, publish dry-runs, and publish-order
-    validation.
+  - Closed local release-hardening workstream that turned the completed
+    architecture split into a publishable `0.11.0-alpha.x` line through
+    repeatable guards, package tests, clean consumer smoke, publish dry-runs,
+    and publish-order validation; actual `pub publish` remains an explicit
+    maintainer-approved external step.
 - [2026-05-modern-unified-interface](2026-05-modern-unified-interface/README.md)
   - Closed product-interface workstream that made the model-first API,
     dynamic model selection, object generation, and modern examples the
@@ -36,6 +37,11 @@
     for alpha handoff, release gates, legacy/root/core containment, and
     evidence-based `llm_dart_provider_utils` extraction; currently waiting on
     the maintainer release posture decision for `0.11.0-alpha.1`.
+- [2026-05-fearless-refactor-wave-3](2026-05-fearless-refactor-wave-3/DESIGN.md)
+  - Closed post-local-hardening refactor workstream that deepened chat session
+    turn lifecycle, OpenAI-family option compatibility, provider fixture
+    parity, serialization protocol families, and root legacy classification
+    while preserving public behavior.
 - [2026-05-provider-implementation-kit-and-codec-boundaries](2026-05-provider-implementation-kit-and-codec-boundaries/README.md)
   - Active provider-internal architecture workstream that reduces large codec,
     request-builder, stream-parser, replay, and native-helper hotspots while
