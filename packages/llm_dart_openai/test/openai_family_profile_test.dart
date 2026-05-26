@@ -133,6 +133,45 @@ void main() {
       );
     });
 
+    test('OpenAI-family provider descriptors own provider specification', () {
+      final openAI = OpenAI(
+        apiKey: 'test-key',
+        transport: const _FakeTransportClient(),
+      );
+      final openRouter = OpenAI(
+        apiKey: 'test-key',
+        profile: const OpenRouterProfile(),
+        transport: const _FakeTransportClient(),
+      );
+
+      expect(openAI.providerDescriptor.providerId, 'openai');
+      expect(openAI.specification.modelFacets, {
+        ProviderModelFacet.language,
+        ProviderModelFacet.embedding,
+        ProviderModelFacet.image,
+        ProviderModelFacet.speech,
+        ProviderModelFacet.transcription,
+      });
+      expect(
+        openAI.specification.supportsInputShape(
+          modelKind: ModelCapabilityKind.transcription,
+          shapeId: ProviderInputShapeIds.audio,
+        ),
+        isTrue,
+      );
+      expect(
+        openRouter.specification.modelFacets,
+        {ProviderModelFacet.language},
+      );
+      expect(
+        openRouter.specification.supportsInputShape(
+          modelKind: ModelCapabilityKind.image,
+          shapeId: ProviderInputShapeIds.text,
+        ),
+        isFalse,
+      );
+    });
+
     test('OpenAI factory normalizes compatible profile base urls', () async {
       TransportRequest? capturedRequest;
 

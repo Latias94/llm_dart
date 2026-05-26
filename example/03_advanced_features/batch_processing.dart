@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:io';
 
-import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart_ai/llm_dart_ai.dart' as core;
 import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 /// Stable batch processing patterns for shared text-generation models.

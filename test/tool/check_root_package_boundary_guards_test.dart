@@ -33,6 +33,7 @@ void main() {
           'llm_dart.dart',
           'ai.dart',
           'core.dart',
+          'provider_authoring.dart',
           'transport.dart',
           'chat.dart',
         },
@@ -268,7 +269,7 @@ export 'openai.dart';
         '''
 library;
 
-export 'package:llm_dart_ai/llm_dart_ai.dart';
+export 'package:llm_dart_ai/app.dart';
 export 'package:llm_dart_chat/llm_dart_chat.dart';
 ''',
       );
@@ -529,7 +530,17 @@ export 'transport.dart';
     '''
 library;
 
-export 'package:llm_dart_ai/llm_dart_ai.dart';
+export 'package:llm_dart_ai/app.dart';
+''',
+  );
+
+  await _writeFile(
+    repoRoot,
+    'lib/provider_authoring.dart',
+    '''
+library;
+
+export 'package:llm_dart_ai/provider_authoring.dart';
 ''',
   );
 

@@ -2,4 +2,4 @@
 /// serialization, runtime helpers, and UI projection.
 library;
 
-export 'package:llm_dart_ai/llm_dart_ai.dart';
+export 'package:llm_dart_ai/app.dart';

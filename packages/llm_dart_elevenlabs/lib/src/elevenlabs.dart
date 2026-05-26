@@ -3,6 +3,7 @@ import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import 'elevenlabs_api_options.dart';
 import 'elevenlabs_model_settings.dart';
+import 'elevenlabs_provider_descriptor.dart';
 import 'elevenlabs_shared.dart';
 import 'elevenlabs_speech_model.dart';
 import 'elevenlabs_transcription_model.dart';
@@ -38,38 +39,13 @@ final class ElevenLabs
         transport = transport ?? DioTransportClient();
 
   @override
-  String get providerId => 'elevenlabs';
+  String get providerId => providerDescriptor.providerId;
+
+  ElevenLabsProviderDescriptor get providerDescriptor =>
+      const ElevenLabsProviderDescriptor();
 
   @override
-  ProviderSpecification get specification => ProviderSpecification(
-        providerId: providerId,
-        modelFacets: const {
-          ProviderModelFacet.speech,
-          ProviderModelFacet.transcription,
-        },
-        capabilities: [
-          const CapabilityDescriptor(
-            id: ModelCapabilityFeatureIds.speechVoiceSelection,
-          ),
-          const CapabilityDescriptor(
-            id: ModelCapabilityFeatureIds.speechOutputFormat,
-          ),
-          const CapabilityDescriptor(
-            id: ModelCapabilityFeatureIds.transcriptionLanguageHints,
-          ),
-        ],
-        supportedInputShapes: [
-          ProviderInputShapeDescriptor(
-            modelKind: ModelCapabilityKind.speech,
-            shapeId: ProviderInputShapeIds.text,
-          ),
-          ProviderInputShapeDescriptor(
-            modelKind: ModelCapabilityKind.transcription,
-            shapeId: ProviderInputShapeIds.audio,
-            mediaTypes: const ['audio/*', 'video/*'],
-          ),
-        ],
-      );
+  ProviderSpecification get specification => providerDescriptor.specification;
 
   @override
   ElevenLabsSpeechModel speechModel(

@@ -1,5 +1,8 @@
 library;
 
+export 'package:llm_dart_provider/llm_dart_provider.dart'
+    show ProviderModelFacet;
+
 export 'src/google.dart';
 export 'src/google_custom_part.dart';
 export 'src/google_custom_part_summary.dart';
@@ -11,6 +14,7 @@ export 'src/google_image_editing.dart';
 export 'src/google_language_model.dart';
 export 'src/google_model_describer.dart';
 export 'src/google_options.dart';
+export 'src/google_provider_descriptor.dart';
 export 'src/google_response_format.dart';
 export 'src/google_result_codec.dart';
 export 'src/google_speech_model.dart';

@@ -50,6 +50,7 @@ void main() {
       expect(error.code, 'transport-http');
       expect(error.statusCode, 502);
       expect(error.isRetryable, isTrue);
+      expect(error.originalType, 'TransportHttpException');
       expect(
         error.details,
         {

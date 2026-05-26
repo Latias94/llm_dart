@@ -49,11 +49,21 @@ const List<RootLegacySurfaceDecision> rootLegacySurfaceDecisions = [
   RootLegacySurfaceDecision(
     surface: 'focused core facade',
     status: RootLegacySurfaceStatus.keep,
-    replacement: 'package:llm_dart_ai/llm_dart_ai.dart',
+    replacement: 'package:llm_dart_ai/app.dart',
     rootTopLevelFile: 'core.dart',
     expectedDirectives: [
       'library;',
-      "export 'package:llm_dart_ai/llm_dart_ai.dart';",
+      "export 'package:llm_dart_ai/app.dart';",
+    ],
+  ),
+  RootLegacySurfaceDecision(
+    surface: 'provider-authoring root facade',
+    status: RootLegacySurfaceStatus.keep,
+    replacement: 'package:llm_dart_ai/provider_authoring.dart',
+    rootTopLevelFile: 'provider_authoring.dart',
+    expectedDirectives: [
+      'library;',
+      "export 'package:llm_dart_ai/provider_authoring.dart';",
     ],
   ),
   RootLegacySurfaceDecision(

@@ -5,7 +5,7 @@ void main() {
   group('LLM Dart Library Entry Point', () {
     group('Library exports', () {
       test('shared core exports are available', () {
-        expect(UserPromptMessage, isA<Type>());
+        expect(UserModelMessage, isA<Type>());
         expect(GenerateTextOptions, isA<Type>());
         expect(CallOptions, isA<Type>());
         expect(JsonSchema, isA<Type>());

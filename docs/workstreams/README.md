@@ -42,6 +42,11 @@
     turn lifecycle, OpenAI-family option compatibility, provider fixture
     parity, serialization protocol families, and root legacy classification
     while preserving public behavior.
+- [2026-05-core-seam-fearless-refactor](2026-05-core-seam-fearless-refactor/DESIGN.md)
+  - Closed breaking architecture workstream that deepened the remaining core
+    module interfaces across app-facing text generation requests, error
+    taxonomy, stream vocabulary composition, provider descriptors, provider
+    call execution, and app/provider-authoring entrypoints.
 - [2026-05-provider-implementation-kit-and-codec-boundaries](2026-05-provider-implementation-kit-and-codec-boundaries/README.md)
   - Active provider-internal architecture workstream that reduces large codec,
     request-builder, stream-parser, replay, and native-helper hotspots while

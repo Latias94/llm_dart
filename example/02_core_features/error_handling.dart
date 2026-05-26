@@ -4,6 +4,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/provider_authoring.dart' as authoring;
 import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart'
     as provider_utils;
 import 'package:llm_dart/transport.dart' as transport;
@@ -358,7 +359,9 @@ final class _StaticTextLanguageModel implements core.LanguageModel {
   String get modelId => 'static-text';
 
   @override
-  Future<core.GenerateTextResult> doGenerate(core.GenerateTextRequest request) {
+  Future<core.GenerateTextResult> doGenerate(
+    authoring.GenerateTextRequest request,
+  ) {
     return Future.value(
       core.GenerateTextResult(
         content: [
@@ -371,7 +374,7 @@ final class _StaticTextLanguageModel implements core.LanguageModel {
 
   @override
   Stream<provider.LanguageModelStreamEvent> doStream(
-    core.GenerateTextRequest request,
+    authoring.GenerateTextRequest request,
   ) {
     return const Stream.empty();
   }
@@ -397,7 +400,9 @@ final class _FlakyLanguageModel implements core.LanguageModel {
   String get modelId => 'flaky-model';
 
   @override
-  Future<core.GenerateTextResult> doGenerate(core.GenerateTextRequest request) {
+  Future<core.GenerateTextResult> doGenerate(
+    authoring.GenerateTextRequest request,
+  ) {
     _attempts += 1;
     if (_attempts <= failuresBeforeSuccess) {
       throw failureFactory();
@@ -415,7 +420,7 @@ final class _FlakyLanguageModel implements core.LanguageModel {
 
   @override
   Stream<provider.LanguageModelStreamEvent> doStream(
-    core.GenerateTextRequest request,
+    authoring.GenerateTextRequest request,
   ) {
     return const Stream.empty();
   }

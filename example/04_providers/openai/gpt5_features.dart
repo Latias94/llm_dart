@@ -2,7 +2,7 @@
 
 import 'dart:io';
 
-import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart_ai/llm_dart_ai.dart' as core;
 import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 /// GPT-5 examples built on the stable OpenAI chat-model facade plus typed

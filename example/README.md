@@ -2,7 +2,11 @@
 
 Practical examples for the LLM Dart library, organized by learning path and use case.
 
-For modern examples, use `package:llm_dart/llm_dart.dart` for shared helpers and import concrete provider packages directly.
+For modern app examples, use `package:llm_dart/llm_dart.dart` or
+`package:llm_dart/core.dart` for app-facing helpers and import concrete
+provider packages directly. Use `package:llm_dart/provider_authoring.dart` only
+for custom provider implementations or tests that intentionally exercise
+provider prompt/request/stream contracts.
 
 When you need runtime provider selection, use `ProviderRegistry` with provider
 facades from direct provider packages. `ModelRegistry` remains a
@@ -22,6 +26,8 @@ Recommended default route:
 - spend most new app work in the stable examples under `02_core_features/`
 - treat provider directories as focused provider-native appendices rather than
   the default learning path
+- keep `ModelMessage` on app-facing examples and `PromptMessage` on
+  provider-authoring examples
 - do not use the removed root legacy barrel, builder, model, provider, or
   legacy core subpaths in new examples
 

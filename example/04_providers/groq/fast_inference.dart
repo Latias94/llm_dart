@@ -2,7 +2,7 @@
 
 import 'dart:io';
 
-import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart_ai/llm_dart_ai.dart' as core;
 import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
 /// Groq Fast Inference - Ultra-Speed AI Demonstration

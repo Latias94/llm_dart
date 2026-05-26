@@ -6,6 +6,7 @@ import 'generate_text_runner.dart';
 import 'generate_text_runner_support.dart';
 import 'generate_text_stop_condition.dart';
 import 'stream_text_runner.dart';
+import 'text_generation_request.dart';
 
 export 'package:llm_dart_provider/llm_dart_provider.dart'
     show
@@ -33,25 +34,32 @@ Future<GenerateTextResult> generateText({
   GenerateTextOnFinish? onFinish,
   GenerateTextOnError? onError,
 }) async {
-  final runResult = await runTextGeneration(
-    model: model,
-    prompt: prompt,
-    messages: messages,
-    tools: tools,
-    toolChoice: toolChoice,
-    options: options,
-    callOptions: callOptions,
-    functionToolExecutor: functionToolExecutor,
-    maxSteps: maxSteps,
-    stopWhen: stopWhen,
-    onStepStart: onStepStart,
-    onStepFinish: onStepFinish,
-    onToolStart: onToolStart,
-    onToolFinish: onToolFinish,
-    onFinish: onFinish,
-    onError: onError,
+  return generateTextForRequest(
+    TextGenerationRequest.resolve(
+      model: model,
+      prompt: prompt,
+      messages: messages,
+      tools: tools,
+      toolChoice: toolChoice,
+      options: options,
+      callOptions: callOptions,
+      functionToolExecutor: functionToolExecutor,
+      maxSteps: maxSteps,
+      stopWhen: stopWhen,
+      onStepStart: onStepStart,
+      onStepFinish: onStepFinish,
+      onToolStart: onToolStart,
+      onToolFinish: onToolFinish,
+      onFinish: onFinish,
+      onError: onError,
+    ),
   );
+}
 
+Future<GenerateTextResult> generateTextForRequest(
+  TextGenerationRequest request,
+) async {
+  final runResult = await runTextGenerationRequest(request);
   return runResult.lastStep.result;
 }
 
@@ -74,23 +82,35 @@ Stream<TextStreamEvent> streamText({
   StreamTextOnChunk? onChunk,
   GenerateTextOnError? onError,
 }) {
-  return streamTextRun(
-    model: model,
-    prompt: prompt,
-    messages: messages,
-    tools: tools,
-    toolChoice: toolChoice,
-    options: options,
-    callOptions: callOptions,
-    functionToolExecutor: functionToolExecutor,
-    maxSteps: maxSteps,
-    stopWhen: stopWhen,
-    onStepStart: onStepStart,
-    onStepFinish: onStepFinish,
-    onToolStart: onToolStart,
-    onToolFinish: onToolFinish,
-    onFinish: onFinish,
+  return streamTextForRequest(
+    TextGenerationRequest.resolve(
+      model: model,
+      prompt: prompt,
+      messages: messages,
+      tools: tools,
+      toolChoice: toolChoice,
+      options: options,
+      callOptions: callOptions,
+      functionToolExecutor: functionToolExecutor,
+      maxSteps: maxSteps,
+      stopWhen: stopWhen,
+      onStepStart: onStepStart,
+      onStepFinish: onStepFinish,
+      onToolStart: onToolStart,
+      onToolFinish: onToolFinish,
+      onFinish: onFinish,
+      onError: onError,
+    ),
     onChunk: onChunk,
-    onError: onError,
+  );
+}
+
+Stream<TextStreamEvent> streamTextForRequest(
+  TextGenerationRequest request, {
+  StreamTextOnChunk? onChunk,
+}) {
+  return streamTextRunRequest(
+    request,
+    onChunk: onChunk,
   ).eventStream;
 }

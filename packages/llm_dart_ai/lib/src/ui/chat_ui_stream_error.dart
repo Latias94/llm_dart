@@ -1,5 +1,5 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart'
-    show ModelError, ModelErrorKind;
+    show ModelError, ModelException, modelErrorFrom;
 
 /// Error thrown when a chat UI stream contains invalid or out-of-sequence
 /// chunks.
@@ -20,15 +20,17 @@ final class ChatUiStreamError implements Exception {
   });
 
   ModelError toModelError() {
-    return ModelError(
-      kind: ModelErrorKind.stream,
-      message: message,
-      code: 'chat-ui-stream',
-      details: {
-        'chunkType': chunkType,
-        'chunkId': chunkId,
-      },
-      originalType: runtimeType.toString(),
+    return modelErrorFrom(
+      ModelException.stream(
+        message: message,
+        code: 'chat-ui-stream',
+        details: {
+          'chunkType': chunkType,
+          'chunkId': chunkId,
+        },
+        cause: this,
+        originalType: runtimeType.toString(),
+      ),
     );
   }
 

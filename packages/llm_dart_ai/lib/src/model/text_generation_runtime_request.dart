@@ -6,6 +6,7 @@ import 'generate_text_runner_support.dart';
 import 'generate_text_step_continuation_resolver.dart';
 import 'generate_text_step_planner.dart';
 import 'generate_text_stop_condition.dart';
+import 'text_generation_request.dart';
 
 final class TextGenerationRuntimeStepContext {
   final GenerateTextStepPlanner planner;
@@ -57,6 +58,29 @@ final class TextGenerationRuntimeRequest {
         ),
         tools = List.unmodifiable(tools),
         stopWhen = List.unmodifiable(stopWhen);
+
+  factory TextGenerationRuntimeRequest.fromRequest(
+    TextGenerationRequest request,
+  ) {
+    return TextGenerationRuntimeRequest(
+      model: request.model,
+      prompt: request.prompt,
+      messages: request.messages,
+      tools: request.tools,
+      toolChoice: request.toolChoice,
+      options: request.options,
+      callOptions: request.callOptions,
+      functionToolExecutor: request.functionToolExecutor,
+      maxSteps: request.maxSteps,
+      stopWhen: request.stopWhen,
+      onStepStart: request.onStepStart,
+      onStepFinish: request.onStepFinish,
+      onToolStart: request.onToolStart,
+      onToolFinish: request.onToolFinish,
+      onFinish: request.onFinish,
+      onError: request.onError,
+    );
+  }
 
   TextGenerationRuntimeRequest withOptions(
     GenerateTextOptions options,

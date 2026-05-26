@@ -1,8 +1,7 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart' as provider;
 
-import '../stream/provider_to_text_stream_event.dart';
 import '../stream/text_stream_event.dart';
-import '../stream/text_stream_event_to_provider.dart';
+import '../stream/text_stream_event_provider_bridge.dart';
 import 'ai_serialization_envelope_json_codec.dart';
 import 'text_stream_lifecycle_event_json_codec.dart';
 

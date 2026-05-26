@@ -8,6 +8,12 @@ void main() {
       final model = provider.chatModel('gemini-2.5-flash');
 
       expect(provider, isA<google.Google>());
+      expect(provider.providerDescriptor.providerId, 'google');
+      expect(
+          provider.specification.supportsModelFacet(
+            google.ProviderModelFacet.embedding,
+          ),
+          isTrue);
       expect(model.providerId, 'google');
       expect(model.modelId, 'gemini-2.5-flash');
     });

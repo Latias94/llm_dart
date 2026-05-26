@@ -9,6 +9,12 @@ void main() {
       final transcriptionModel = provider.transcriptionModel('scribe_v1');
 
       expect(provider, isA<elevenlabs_pkg.ElevenLabs>());
+      expect(provider.providerDescriptor.providerId, 'elevenlabs');
+      expect(
+          provider.specification.supportsModelFacet(
+            elevenlabs_pkg.ProviderModelFacet.speech,
+          ),
+          isTrue);
       expect(speechModel.providerId, 'elevenlabs');
       expect(transcriptionModel.providerId, 'elevenlabs');
     });

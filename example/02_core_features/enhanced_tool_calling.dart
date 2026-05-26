@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart/provider_authoring.dart' as authoring;
 import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 import 'package:llm_dart_provider/llm_dart_provider.dart' as provider;
 
@@ -444,13 +445,15 @@ final class _UnusedLanguageModel implements core.LanguageModel {
   String get modelId => 'unused';
 
   @override
-  Future<core.GenerateTextResult> doGenerate(core.GenerateTextRequest request) {
+  Future<core.GenerateTextResult> doGenerate(
+    authoring.GenerateTextRequest request,
+  ) {
     throw StateError('This model should never be called.');
   }
 
   @override
   Stream<provider.LanguageModelStreamEvent> doStream(
-    core.GenerateTextRequest request,
+    authoring.GenerateTextRequest request,
   ) {
     return const Stream.empty();
   }

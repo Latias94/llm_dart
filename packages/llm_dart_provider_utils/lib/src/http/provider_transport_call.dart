@@ -15,6 +15,40 @@ typedef ProviderLanguageModelStreamDecoder = Stream<LanguageModelStreamEvent>
   required bool includeRawChunks,
 });
 
+final class ProviderCallKit {
+  final TransportClient transport;
+
+  const ProviderCallKit({
+    required this.transport,
+  });
+
+  Future<T> sendModelRequest<T>({
+    required TransportRequest request,
+    required ProviderModelResponseDecoder<T> decode,
+  }) {
+    return sendProviderModelRequest(
+      transport: transport,
+      request: request,
+      decode: decode,
+    );
+  }
+
+  Stream<LanguageModelStreamEvent> sendLanguageModelStreamRequest({
+    required TransportRequest request,
+    required List<ModelWarning> warnings,
+    required bool includeRawChunks,
+    required ProviderLanguageModelStreamDecoder decode,
+  }) {
+    return sendProviderLanguageModelStreamRequest(
+      transport: transport,
+      request: request,
+      warnings: warnings,
+      includeRawChunks: includeRawChunks,
+      decode: decode,
+    );
+  }
+}
+
 Future<T> sendProviderModelRequest<T>({
   required TransportClient transport,
   required TransportRequest request,

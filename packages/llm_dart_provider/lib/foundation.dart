@@ -9,6 +9,8 @@ export 'src/common/json_schema.dart';
 export 'src/common/json_codec_common.dart';
 export 'src/common/call_options.dart';
 export 'src/common/model_error.dart';
+export 'src/common/model_error_projection.dart';
+export 'src/common/model_exception.dart';
 export 'src/common/model_warning.dart';
 export 'src/common/provider_cancellation.dart';
 export 'src/common/provider_metadata.dart';

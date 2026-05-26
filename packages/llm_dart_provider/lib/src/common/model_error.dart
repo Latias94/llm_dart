@@ -2,6 +2,7 @@ import 'json_codec_common.dart';
 import 'model_error_kind.dart';
 import 'model_error_normalization.dart';
 import 'model_error_value_support.dart';
+import 'model_exception.dart';
 
 export 'model_error_kind.dart';
 
@@ -34,6 +35,19 @@ final class ModelError {
   }) {
     if (error case final ModelError modelError) {
       return modelError;
+    }
+
+    if (error case final ModelException exception) {
+      return ModelError(
+        kind: kind ?? exception.kind,
+        message: exception.message,
+        code: code ?? exception.code,
+        statusCode: statusCode ?? exception.statusCode,
+        isRetryable: isRetryable ?? exception.isRetryable,
+        details: normalizeModelErrorDetails(details ?? exception.details),
+        originalType:
+            exception.originalType ?? exception.runtimeType.toString(),
+      );
     }
 
     final resolvedKind = kind ?? inferModelErrorKind(error);

@@ -5,7 +5,7 @@ import 'generate_text_runner_support.dart';
 import 'generate_text_stop_condition.dart';
 import 'language_model.dart';
 import 'output_spec.dart';
-import 'text_generation_runtime_request.dart';
+import 'text_generation_request.dart';
 import 'text_call_result.dart';
 
 Future<GenerateTextCallResult<T>> generateTextCall<T>({
@@ -21,31 +21,31 @@ Future<GenerateTextCallResult<T>> generateTextCall<T>({
   int maxSteps = 8,
   Iterable<GenerateTextStopCondition> stopWhen = const [],
 }) async {
-  final runtime = TextGenerationRuntimeRequest(
-    model: model,
-    prompt: prompt,
-    messages: messages,
-    tools: tools,
-    toolChoice: toolChoice,
-    options: options,
-    callOptions: callOptions,
-    functionToolExecutor: functionToolExecutor,
-    maxSteps: maxSteps,
-    stopWhen: stopWhen,
+  return generateTextCallForRequest<T>(
+    TextGenerationRequest.resolve(
+      model: model,
+      prompt: prompt,
+      messages: messages,
+      tools: tools,
+      toolChoice: toolChoice,
+      options: options,
+      callOptions: callOptions,
+      functionToolExecutor: functionToolExecutor,
+      maxSteps: maxSteps,
+      stopWhen: stopWhen,
+    ),
+    outputSpec: outputSpec,
   );
+}
 
+Future<GenerateTextCallResult<T>> generateTextCallForRequest<T>(
+  TextGenerationRequest request, {
+  OutputSpec<T>? outputSpec,
+}) async {
   if (outputSpec case final spec?) {
-    final outputResult = await generateOutput(
-      model: runtime.model,
-      prompt: runtime.prompt,
+    final outputResult = await generateOutputForRequest(
+      request,
       outputSpec: spec,
-      tools: runtime.tools,
-      toolChoice: runtime.toolChoice,
-      options: runtime.options,
-      callOptions: runtime.callOptions,
-      functionToolExecutor: runtime.functionToolExecutor,
-      maxSteps: runtime.maxSteps,
-      stopWhen: runtime.stopWhen,
     );
     return createGenerateTextCallResult<T>(
       result: outputResult.result,
@@ -54,17 +54,7 @@ Future<GenerateTextCallResult<T>> generateTextCall<T>({
     );
   }
 
-  final result = await generateText(
-    model: runtime.model,
-    prompt: runtime.prompt,
-    tools: runtime.tools,
-    toolChoice: runtime.toolChoice,
-    options: runtime.options,
-    callOptions: runtime.callOptions,
-    functionToolExecutor: runtime.functionToolExecutor,
-    maxSteps: runtime.maxSteps,
-    stopWhen: runtime.stopWhen,
-  );
+  final result = await generateTextForRequest(request);
 
   return createGenerateTextCallResult<T>(
     result: result,
@@ -85,47 +75,37 @@ StreamTextCallResult<T> streamTextCall<T>({
   int maxSteps = 8,
   Iterable<GenerateTextStopCondition> stopWhen = const [],
 }) {
-  final runtime = TextGenerationRuntimeRequest(
-    model: model,
-    prompt: prompt,
-    messages: messages,
-    tools: tools,
-    toolChoice: toolChoice,
-    options: options,
-    callOptions: callOptions,
-    functionToolExecutor: functionToolExecutor,
-    maxSteps: maxSteps,
-    stopWhen: stopWhen,
+  return streamTextCallForRequest<T>(
+    TextGenerationRequest.resolve(
+      model: model,
+      prompt: prompt,
+      messages: messages,
+      tools: tools,
+      toolChoice: toolChoice,
+      options: options,
+      callOptions: callOptions,
+      functionToolExecutor: functionToolExecutor,
+      maxSteps: maxSteps,
+      stopWhen: stopWhen,
+    ),
+    outputSpec: outputSpec,
   );
+}
 
+StreamTextCallResult<T> streamTextCallForRequest<T>(
+  TextGenerationRequest request, {
+  OutputSpec<T>? outputSpec,
+}) {
   if (outputSpec case final spec?) {
     return StreamTextCallResult<T>.structured(
-      streamOutputResult(
-        model: runtime.model,
-        prompt: runtime.prompt,
+      streamOutputResultForRequest(
+        request,
         outputSpec: spec,
-        tools: runtime.tools,
-        toolChoice: runtime.toolChoice,
-        options: runtime.options,
-        callOptions: runtime.callOptions,
-        functionToolExecutor: runtime.functionToolExecutor,
-        maxSteps: runtime.maxSteps,
-        stopWhen: runtime.stopWhen,
       ),
     );
   }
 
   return StreamTextCallResult<T>.raw(
-    streamText(
-      model: runtime.model,
-      prompt: runtime.prompt,
-      tools: runtime.tools,
-      toolChoice: runtime.toolChoice,
-      options: runtime.options,
-      callOptions: runtime.callOptions,
-      functionToolExecutor: runtime.functionToolExecutor,
-      maxSteps: runtime.maxSteps,
-      stopWhen: runtime.stopWhen,
-    ),
+    streamTextForRequest(request),
   );
 }

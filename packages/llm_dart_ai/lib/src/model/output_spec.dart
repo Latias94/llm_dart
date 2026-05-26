@@ -2,8 +2,11 @@ export 'output_runner.dart'
     show
         generateObject,
         generateOutput,
+        generateOutputForRequest,
         streamObject,
         streamOutput,
+        streamOutputForRequest,
+        streamOutputResultForRequest,
         streamOutputResult;
 export 'output_spec_foundation.dart';
 export 'output_spec_strategy.dart';

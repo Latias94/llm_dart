@@ -10,6 +10,7 @@ import 'output_spec_foundation.dart';
 import 'output_spec_strategy.dart';
 import 'output_stream_projection.dart';
 import 'output_stream_result.dart';
+import 'text_generation_request.dart';
 import 'text_generation_runtime_request.dart';
 
 Future<GenerateObjectResult<T>> generateObject<T>({
@@ -28,23 +29,25 @@ Future<GenerateObjectResult<T>> generateObject<T>({
   int maxSteps = 8,
   Iterable<GenerateTextStopCondition> stopWhen = const [],
 }) {
-  return generateOutput<T>(
-    model: model,
-    prompt: prompt,
-    messages: messages,
+  return generateOutputForRequest<T>(
+    TextGenerationRequest.resolve(
+      model: model,
+      prompt: prompt,
+      messages: messages,
+      tools: tools,
+      toolChoice: toolChoice,
+      options: options,
+      callOptions: callOptions,
+      functionToolExecutor: functionToolExecutor,
+      maxSteps: maxSteps,
+      stopWhen: stopWhen,
+    ),
     outputSpec: ObjectOutputSpec<T>(
       schema: schema,
       name: name,
       description: description,
       decode: decode ?? _identityObjectDecoder<T>,
     ),
-    tools: tools,
-    toolChoice: toolChoice,
-    options: options,
-    callOptions: callOptions,
-    functionToolExecutor: functionToolExecutor,
-    maxSteps: maxSteps,
-    stopWhen: stopWhen,
   );
 }
 
@@ -64,23 +67,25 @@ StreamObjectResult<T> streamObject<T>({
   int maxSteps = 8,
   Iterable<GenerateTextStopCondition> stopWhen = const [],
 }) {
-  return streamOutputResult<T>(
-    model: model,
-    prompt: prompt,
-    messages: messages,
+  return streamOutputResultForRequest<T>(
+    TextGenerationRequest.resolve(
+      model: model,
+      prompt: prompt,
+      messages: messages,
+      tools: tools,
+      toolChoice: toolChoice,
+      options: options,
+      callOptions: callOptions,
+      functionToolExecutor: functionToolExecutor,
+      maxSteps: maxSteps,
+      stopWhen: stopWhen,
+    ),
     outputSpec: ObjectOutputSpec<T>(
       schema: schema,
       name: name,
       description: description,
       decode: decode ?? _identityObjectDecoder<T>,
     ),
-    tools: tools,
-    toolChoice: toolChoice,
-    options: options,
-    callOptions: callOptions,
-    functionToolExecutor: functionToolExecutor,
-    maxSteps: maxSteps,
-    stopWhen: stopWhen,
   );
 }
 
@@ -97,22 +102,32 @@ Future<GenerateOutputResult<T>> generateOutput<T>({
   int maxSteps = 8,
   Iterable<GenerateTextStopCondition> stopWhen = const [],
 }) async {
+  return generateOutputForRequest<T>(
+    TextGenerationRequest.resolve(
+      model: model,
+      prompt: prompt,
+      messages: messages,
+      tools: tools,
+      toolChoice: toolChoice,
+      options: options,
+      callOptions: callOptions,
+      functionToolExecutor: functionToolExecutor,
+      maxSteps: maxSteps,
+      stopWhen: stopWhen,
+    ),
+    outputSpec: outputSpec,
+  );
+}
+
+Future<GenerateOutputResult<T>> generateOutputForRequest<T>(
+  TextGenerationRequest request, {
+  required OutputSpec<T> outputSpec,
+}) async {
   validateOutputRunnerOptions(
-    options: options,
+    options: request.options,
     runnerName: 'generateOutput',
   );
-  final runtime = TextGenerationRuntimeRequest(
-    model: model,
-    prompt: prompt,
-    messages: messages,
-    tools: tools,
-    toolChoice: toolChoice,
-    options: options,
-    callOptions: callOptions,
-    functionToolExecutor: functionToolExecutor,
-    maxSteps: maxSteps,
-    stopWhen: stopWhen,
-  );
+  final runtime = TextGenerationRuntimeRequest.fromRequest(request);
   final outputRuntime = runtime.withOptions(
     withOutputResponseFormat(
       runtime.options,
@@ -120,16 +135,24 @@ Future<GenerateOutputResult<T>> generateOutput<T>({
     ),
   );
 
-  final result = await generateText(
-    model: outputRuntime.model,
-    prompt: outputRuntime.prompt,
-    tools: outputRuntime.tools,
-    toolChoice: outputRuntime.toolChoice,
-    options: outputRuntime.options,
-    callOptions: outputRuntime.callOptions,
-    functionToolExecutor: outputRuntime.functionToolExecutor,
-    maxSteps: outputRuntime.maxSteps,
-    stopWhen: outputRuntime.stopWhen,
+  final result = await generateTextForRequest(
+    TextGenerationRequest.fromPrompt(
+      model: outputRuntime.model,
+      prompt: outputRuntime.prompt,
+      tools: outputRuntime.tools,
+      toolChoice: outputRuntime.toolChoice,
+      options: outputRuntime.options,
+      callOptions: outputRuntime.callOptions,
+      functionToolExecutor: outputRuntime.functionToolExecutor,
+      maxSteps: outputRuntime.maxSteps,
+      stopWhen: outputRuntime.stopWhen,
+      onStepStart: outputRuntime.onStepStart,
+      onStepFinish: outputRuntime.onStepFinish,
+      onToolStart: outputRuntime.onToolStart,
+      onToolFinish: outputRuntime.onToolFinish,
+      onFinish: outputRuntime.onFinish,
+      onError: outputRuntime.onError,
+    ),
   );
 
   return parseGenerateOutputResult(
@@ -152,22 +175,32 @@ Stream<OutputStreamEvent<T>> streamOutput<T>({
   int maxSteps = 8,
   Iterable<GenerateTextStopCondition> stopWhen = const [],
 }) async* {
+  yield* streamOutputForRequest<T>(
+    TextGenerationRequest.resolve(
+      model: model,
+      prompt: prompt,
+      messages: messages,
+      tools: tools,
+      toolChoice: toolChoice,
+      options: options,
+      callOptions: callOptions,
+      functionToolExecutor: functionToolExecutor,
+      maxSteps: maxSteps,
+      stopWhen: stopWhen,
+    ),
+    outputSpec: outputSpec,
+  );
+}
+
+Stream<OutputStreamEvent<T>> streamOutputForRequest<T>(
+  TextGenerationRequest request, {
+  required OutputSpec<T> outputSpec,
+}) async* {
   validateOutputRunnerOptions(
-    options: options,
+    options: request.options,
     runnerName: 'streamOutput',
   );
-  final runtime = TextGenerationRuntimeRequest(
-    model: model,
-    prompt: prompt,
-    messages: messages,
-    tools: tools,
-    toolChoice: toolChoice,
-    options: options,
-    callOptions: callOptions,
-    functionToolExecutor: functionToolExecutor,
-    maxSteps: maxSteps,
-    stopWhen: stopWhen,
-  );
+  final runtime = TextGenerationRuntimeRequest.fromRequest(request);
   final outputRuntime = runtime.withOptions(
     withOutputResponseFormat(
       runtime.options,
@@ -179,16 +212,24 @@ Stream<OutputStreamEvent<T>> streamOutput<T>({
   final projection = OutputStreamProjection<T>(
     outputSpec: outputSpec,
   );
-  final events = streamText(
-    model: outputRuntime.model,
-    prompt: outputRuntime.prompt,
-    tools: outputRuntime.tools,
-    toolChoice: outputRuntime.toolChoice,
-    options: outputRuntime.options,
-    callOptions: outputRuntime.callOptions,
-    functionToolExecutor: outputRuntime.functionToolExecutor,
-    maxSteps: outputRuntime.maxSteps,
-    stopWhen: outputRuntime.stopWhen,
+  final events = streamTextForRequest(
+    TextGenerationRequest.fromPrompt(
+      model: outputRuntime.model,
+      prompt: outputRuntime.prompt,
+      tools: outputRuntime.tools,
+      toolChoice: outputRuntime.toolChoice,
+      options: outputRuntime.options,
+      callOptions: outputRuntime.callOptions,
+      functionToolExecutor: outputRuntime.functionToolExecutor,
+      maxSteps: outputRuntime.maxSteps,
+      stopWhen: outputRuntime.stopWhen,
+      onStepStart: outputRuntime.onStepStart,
+      onStepFinish: outputRuntime.onStepFinish,
+      onToolStart: outputRuntime.onToolStart,
+      onToolFinish: outputRuntime.onToolFinish,
+      onFinish: outputRuntime.onFinish,
+      onError: outputRuntime.onError,
+    ),
   );
 
   await for (final event in events) {
@@ -216,7 +257,7 @@ Stream<OutputStreamEvent<T>> streamOutput<T>({
     );
   } catch (error, stackTrace) {
     yield OutputErrorEvent<T>(
-      ModelError.fromUnknown(
+      modelErrorFrom(
         error,
         kind: ModelErrorKind.validation,
       ),
@@ -239,18 +280,32 @@ StreamOutputResult<T> streamOutputResult<T>({
   Iterable<GenerateTextStopCondition> stopWhen = const [],
 }) {
   return createStreamOutputResult<T>(
-    streamOutput(
-      model: model,
-      prompt: prompt,
-      messages: messages,
+    streamOutputForRequest(
+      TextGenerationRequest.resolve(
+        model: model,
+        prompt: prompt,
+        messages: messages,
+        tools: tools,
+        toolChoice: toolChoice,
+        options: options,
+        callOptions: callOptions,
+        functionToolExecutor: functionToolExecutor,
+        maxSteps: maxSteps,
+        stopWhen: stopWhen,
+      ),
       outputSpec: outputSpec,
-      tools: tools,
-      toolChoice: toolChoice,
-      options: options,
-      callOptions: callOptions,
-      functionToolExecutor: functionToolExecutor,
-      maxSteps: maxSteps,
-      stopWhen: stopWhen,
+    ),
+  );
+}
+
+StreamOutputResult<T> streamOutputResultForRequest<T>(
+  TextGenerationRequest request, {
+  required OutputSpec<T> outputSpec,
+}) {
+  return createStreamOutputResult<T>(
+    streamOutputForRequest(
+      request,
+      outputSpec: outputSpec,
     ),
   );
 }

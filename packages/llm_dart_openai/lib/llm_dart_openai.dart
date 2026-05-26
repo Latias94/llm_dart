@@ -7,6 +7,7 @@ export 'src/custom_parts/openai_custom_part_summary.dart';
 export 'src/provider/deepseek_options.dart';
 export 'src/embedding/openai_embedding_model.dart';
 export 'src/provider/openai_family_profile.dart';
+export 'src/provider/openai_family_provider_descriptor.dart';
 export 'src/files/openai_files.dart';
 export 'src/image/openai_image_editing.dart';
 export 'src/image/openai_image_model.dart';

@@ -64,7 +64,7 @@ Future<GenerateOutputResult<T>> parseGenerateOutputResult<T>({
       output: output,
     );
   } catch (error) {
-    throw ModelError.fromUnknown(
+    throw modelErrorFrom(
       error,
       kind: ModelErrorKind.validation,
       details: structuredOutputErrorDetails(

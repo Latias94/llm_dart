@@ -3,7 +3,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart_ai/llm_dart_ai.dart' as core;
 import 'package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart' as elevenlabs_pkg;
 import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic;
 import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;

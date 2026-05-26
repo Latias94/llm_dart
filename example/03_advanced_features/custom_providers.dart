@@ -3,7 +3,7 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart_ai/llm_dart_ai.dart' as core;
 import 'package:llm_dart_provider/llm_dart_provider.dart' as provider;
 
 /// Custom language-model examples built on the stable `LanguageModel` contract.

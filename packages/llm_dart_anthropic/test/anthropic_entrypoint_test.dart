@@ -8,6 +8,12 @@ void main() {
       final model = provider.chatModel('claude-sonnet-4-5');
 
       expect(provider, isA<anthropic.Anthropic>());
+      expect(provider.providerDescriptor.providerId, 'anthropic');
+      expect(
+          provider.specification.supportsModelFacet(
+            anthropic.ProviderModelFacet.language,
+          ),
+          isTrue);
       expect(model.providerId, 'anthropic');
       expect(model.modelId, 'claude-sonnet-4-5');
     });

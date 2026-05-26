@@ -3,7 +3,7 @@ import 'package:llm_dart_transport/llm_dart_transport.dart';
 
 import '../embedding/openai_embedding_model.dart';
 import 'openai_family_profile.dart';
-import 'openai_family_route_policy.dart';
+import 'openai_family_provider_descriptor.dart';
 import 'openai_family_url_support.dart';
 import '../assistants/openai_assistants_client.dart';
 import '../assistants/openai_assistants_transport.dart';
@@ -12,7 +12,6 @@ import '../image/openai_image_model.dart';
 import '../language/openai_language_model.dart';
 import '../moderation/openai_moderation.dart';
 import 'openai_model_settings.dart';
-import 'resolved_openai_chat_settings.dart';
 import '../responses/openai_responses_lifecycle.dart';
 import '../speech/openai_speech_model.dart';
 import '../transcription/openai_transcription_model.dart';
@@ -138,76 +137,14 @@ final class OpenAI
   OpenAIFamilyModelFacetSupport get modelFacetSupport =>
       modelFacetSupportForOpenAIFamilyProfile(profile);
 
-  @override
-  ProviderSpecification get specification => ProviderSpecification(
-        providerId: providerId,
-        modelFacets: [
-          ProviderModelFacet.language,
-          if (modelFacetSupport.embedding) ProviderModelFacet.embedding,
-          if (modelFacetSupport.image) ProviderModelFacet.image,
-          if (modelFacetSupport.speech) ProviderModelFacet.speech,
-          if (modelFacetSupport.transcription) ProviderModelFacet.transcription,
-        ],
-        capabilities: [
-          const CapabilityDescriptor(
-            id: ModelCapabilityFeatureIds.languageStreaming,
-          ),
-          const CapabilityDescriptor(
-            id: ModelCapabilityFeatureIds.languageFunctionTools,
-          ),
-          CapabilityDescriptor(
-            id: ModelCapabilityFeatureIds.languageStructuredOutput,
-            confidence: profile.routePolicy.resolveLanguageModelRoute(
-                      ResolvedOpenAIChatModelSettings(),
-                    ) ==
-                    OpenAIRequestRoute.responses
-                ? CapabilityConfidence.known
-                : CapabilityConfidence.inferred,
-          ),
-        ],
-        supportedInputShapes: [
-          ProviderInputShapeDescriptor(
-            modelKind: ModelCapabilityKind.language,
-            shapeId: ProviderInputShapeIds.text,
-          ),
-          ProviderInputShapeDescriptor(
-            modelKind: ModelCapabilityKind.language,
-            shapeId: ProviderInputShapeIds.image,
-            mediaTypes: const ['image/*'],
-            confidence: CapabilityConfidence.inferred,
-          ),
-          ProviderInputShapeDescriptor(
-            modelKind: ModelCapabilityKind.language,
-            shapeId: ProviderInputShapeIds.file,
-            mediaTypes: const ['application/pdf', 'text/*'],
-            confidence: profile.providerId == 'openai'
-                ? CapabilityConfidence.known
-                : CapabilityConfidence.inferred,
-          ),
-          if (modelFacetSupport.image)
-            ProviderInputShapeDescriptor(
-              modelKind: ModelCapabilityKind.image,
-              shapeId: ProviderInputShapeIds.text,
-            ),
-          if (modelFacetSupport.image)
-            ProviderInputShapeDescriptor(
-              modelKind: ModelCapabilityKind.image,
-              shapeId: ProviderInputShapeIds.image,
-              mediaTypes: const ['image/*'],
-            ),
-          if (modelFacetSupport.speech)
-            ProviderInputShapeDescriptor(
-              modelKind: ModelCapabilityKind.speech,
-              shapeId: ProviderInputShapeIds.text,
-            ),
-          if (modelFacetSupport.transcription)
-            ProviderInputShapeDescriptor(
-              modelKind: ModelCapabilityKind.transcription,
-              shapeId: ProviderInputShapeIds.audio,
-              mediaTypes: const ['audio/*', 'video/*'],
-            ),
-        ],
+  OpenAIFamilyProviderDescriptor get providerDescriptor =>
+      OpenAIFamilyProviderDescriptor(
+        profile: profile,
+        modelFacetSupport: modelFacetSupport,
       );
+
+  @override
+  ProviderSpecification get specification => providerDescriptor.specification;
 
   @override
   bool get supportsLanguageModels => modelFacetSupport.language;

@@ -58,9 +58,11 @@ export 'src/model/generate_text_runner_support.dart'
 export 'src/model/generate_text_stop_condition.dart';
 export 'src/model/generate_text_step_result.dart';
 export 'src/model/generate_text_step_start_event.dart';
-export 'src/model/language_model.dart' show generateText, streamText;
+export 'src/model/language_model.dart'
+    show generateText, generateTextForRequest, streamText, streamTextForRequest;
 export 'src/model/output_spec.dart';
 export 'src/model/stream_text_runner.dart';
+export 'src/model/text_generation_request.dart';
 export 'src/model/text_call.dart';
 export 'src/model/transcribe.dart';
 export 'src/prompt/model_message.dart';

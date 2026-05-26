@@ -9,6 +9,12 @@ void main() {
       final embeddingModel = provider.embeddingModel('nomic-embed-text');
 
       expect(provider, isA<ollama_pkg.Ollama>());
+      expect(provider.providerDescriptor.providerId, 'ollama');
+      expect(
+          provider.specification.supportsModelFacet(
+            ollama_pkg.ProviderModelFacet.embedding,
+          ),
+          isTrue);
       expect(chatModel.providerId, 'ollama');
       expect(embeddingModel.providerId, 'ollama');
     });

@@ -3,7 +3,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart_ai/llm_dart_ai.dart' as core;
 import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic;
 
 /// Anthropic streaming tool-calling examples built on the stable shared stream

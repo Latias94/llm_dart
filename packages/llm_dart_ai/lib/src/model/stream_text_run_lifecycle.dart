@@ -103,7 +103,7 @@ final class StreamTextRunLifecycle {
     if (!streamClosed) {
       await emitter.add(
         ErrorEvent(
-          ModelError.fromUnknown(error),
+          modelErrorFrom(error),
         ),
       );
       await emitter.add(

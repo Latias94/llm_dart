@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "slug": "2026-05-core-seam-fearless-refactor",
+  "title": "Core Seam Fearless Refactor",
+  "status": "closed",
+  "updated": "2026-05-27",
+  "scope_kind": "architecture-refactor",
+  "problem": "The package graph is sound, but several core module interfaces remain shallow across text generation requests, errors, stream vocabulary, provider descriptors, provider call execution, and app/provider-authoring entrypoints.",
+  "authoritative_docs": [
+    {
+      "role": "design",
+      "path": "docs/workstreams/2026-05-core-seam-fearless-refactor/DESIGN.md"
+    },
+    {
+      "role": "execution",
+      "path": "docs/workstreams/2026-05-core-seam-fearless-refactor/TODO.md"
+    },
+    {
+      "role": "milestones",
+      "path": "docs/workstreams/2026-05-core-seam-fearless-refactor/MILESTONES.md"
+    },
+    {
+      "role": "gates",
+      "path": "docs/workstreams/2026-05-core-seam-fearless-refactor/EVIDENCE_AND_GATES.md"
+    },
+    {
+      "role": "handoff",
+      "path": "docs/workstreams/2026-05-core-seam-fearless-refactor/HANDOFF.md"
+    }
+  ],
+  "first_task": null,
+  "gates": [
+    "dart --suppress-analytics test packages/llm_dart_ai/test/text_generation_request_test.dart packages/llm_dart_ai/test/generate_text_runner_test.dart packages/llm_dart_ai/test/stream_text_runner_test.dart packages/llm_dart_ai/test/output_spec_test.dart packages/llm_dart_ai/test/text_call_test.dart",
+    "dart --suppress-analytics analyze packages/llm_dart_ai",
+    "dart --suppress-analytics run tool/check_workspace_dependency_guards.dart",
+    "dart --suppress-analytics run tool/check_root_package_boundary_guards.dart"
+  ],
+  "evidence": [
+    "docs/workstreams/2026-05-core-seam-fearless-refactor/EVIDENCE_AND_GATES.md"
+  ],
+  "adr_refs": [],
+  "continue_policy": {
+    "default_action": "continue",
+    "notes": "Continue through CSR-020 first, then execute each seam slice in TODO order. Split a follow-on only when a candidate becomes independently large enough to need separate closeout."
+  }
+}

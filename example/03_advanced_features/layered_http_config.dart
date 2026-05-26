@@ -2,7 +2,7 @@
 
 import 'dart:io';
 
-import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart_ai/llm_dart_ai.dart' as core;
 import 'package:llm_dart/transport.dart' as transport;
 import 'package:llm_dart_transport/dio.dart' as dio;
 import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic;

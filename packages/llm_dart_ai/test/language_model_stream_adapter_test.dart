@@ -27,6 +27,15 @@ void main() {
     });
 
     test('rejects runtime-only AI events when converting back to provider', () {
+      expect(isProviderLanguageModelStreamEvent(const ai.TextEndEvent(id: 't')),
+          isTrue);
+      expect(
+        isProviderLanguageModelStreamEvent(
+          const ai.StepStartEvent(stepId: 'step-1'),
+        ),
+        isFalse,
+      );
+
       expect(
         () => textStreamEventToProvider(
           const ai.StepStartEvent(stepId: 'step-1'),

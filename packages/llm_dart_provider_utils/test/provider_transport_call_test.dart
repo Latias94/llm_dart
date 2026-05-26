@@ -8,6 +8,32 @@ import 'package:test/test.dart';
 
 void main() {
   group('sendProviderModelRequest', () {
+    test('ProviderCallKit sends model requests through the same policy',
+        () async {
+      final kit = ProviderCallKit(
+        transport: _FakeTransportClient(
+          sendHandler: (request) async => TransportResponse(
+            statusCode: 200,
+            headers: const {'x-model': 'ok'},
+            body: {'value': request.uri.path},
+          ),
+        ),
+      );
+
+      final result = await kit.sendModelRequest<String>(
+        request: TransportRequest(
+          method: TransportMethod.post,
+          uri: Uri.parse('https://example.test/models'),
+        ),
+        decode: (body, headers) {
+          final map = body! as Map<String, Object?>;
+          return '${headers['x-model']}:${map['value']}';
+        },
+      );
+
+      expect(result, 'ok:/models');
+    });
+
     test('sends transport request and decodes body plus headers', () async {
       final request = _jsonRequest();
       final transport = _FakeTransportClient(
@@ -63,6 +89,35 @@ void main() {
   });
 
   group('sendProviderLanguageModelStreamRequest', () {
+    test('ProviderCallKit streams with shared start and error projection',
+        () async {
+      final kit = ProviderCallKit(
+        transport: _FakeTransportClient(
+          sendStreamHandler: (_) async => throw TransportHttpException(
+            'bad gateway',
+            statusCode: 502,
+          ),
+        ),
+      );
+
+      final events = await kit
+          .sendLanguageModelStreamRequest(
+            request: TransportRequest(
+              method: TransportMethod.post,
+              uri: Uri.parse('https://example.test/stream'),
+            ),
+            warnings: const [],
+            includeRawChunks: false,
+            decode: ({required stream, required includeRawChunks}) async* {},
+          )
+          .toList();
+
+      expect(events.first, isA<StartEvent>());
+      final error = (events.last as ErrorEvent).error;
+      expect(error.kind, ModelErrorKind.transport);
+      expect(error.statusCode, 502);
+    });
+
     test('emits StartEvent before decoded stream events', () async {
       final request = _jsonRequest();
       final warning = const ModelWarning(

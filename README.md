@@ -15,9 +15,14 @@ The repository is currently on the `0.11.0-alpha.x` preview line.
 Breaking changes are still allowed before `1.0.0`, but the model-first surface
 below is the intended direction for new code.
 
-The primary entry path for new code is the provider-neutral root runtime plus direct provider packages:
+The primary entry path for new code is the app-facing provider-neutral root
+runtime plus direct provider packages:
 
-- `package:llm_dart/llm_dart.dart` or `package:llm_dart/ai.dart` for shared helpers and contracts
+- `package:llm_dart/llm_dart.dart`, `package:llm_dart/ai.dart`, or
+  `package:llm_dart/core.dart` for app-facing helpers, `ModelMessage`, chat,
+  and transport
+- `package:llm_dart/provider_authoring.dart` for custom provider
+  implementations or advanced provider-contract tests
 - `package:llm_dart_openai/llm_dart_openai.dart` for `openai(...)`, `deepSeek(...)`, `groq(...)`, `openRouter(...)`, and `xai(...)`
 - `package:llm_dart_anthropic/llm_dart_anthropic.dart` for `anthropic(...)`
 - `package:llm_dart_google/llm_dart_google.dart` for `google(...)`
@@ -43,11 +48,14 @@ ElevenLabs now live in dedicated provider packages:
   `elevenLabs(...).transcriptionModel(...)`, and
   `elevenLabs(...).voices().listVoices()`
 
-For modern code, prefer `package:llm_dart/llm_dart.dart` when you need shared helpers and contracts. Import concrete providers from their packages directly.
+For modern app code, prefer `package:llm_dart/llm_dart.dart` when you need
+shared helpers and contracts. Import concrete providers from their packages
+directly, and import provider-authoring contracts only at custom provider
+boundaries.
 
 Recommended entry flow for new code:
 
-- import `package:llm_dart/llm_dart.dart` or `package:llm_dart/ai.dart` for shared runtime helpers
+- import `package:llm_dart/llm_dart.dart` or `package:llm_dart/ai.dart` for app-facing runtime helpers
 - import one or more direct provider packages for concrete model construction
 - create concrete models through provider package factories such as `openai.openai(...).chatModel(...)`, `anthropic.anthropic(...).chatModel(...)`, `google.google(...).embeddingModel(...)`, `ollama.ollama(...)`, or `elevenlabs.elevenLabs(...)`
 - add provider-owned option types, metadata inspection, or lifecycle APIs only at explicit application boundaries
@@ -61,13 +69,18 @@ output as potentially `inferred` rather than as hard guarantees.
 ## Packages
 
 - `llm_dart`
-  - provider-neutral root package for shared runtime helpers, contracts, chat, and transport; it does not depend on concrete providers
+  - provider-neutral root package for app-facing runtime helpers, chat, and
+    transport; it does not depend on concrete providers
 - `llm_dart_provider`
   - provider-facing prompt, content, tool, model, response, and stream
     contracts
 - `llm_dart_ai`
-  - framework-neutral generation helpers, shared chat UI projection, runners,
-    result accumulation, and structured output utilities
+  - framework-neutral app runtime helpers, shared chat UI projection, runners,
+    result accumulation, provider-authoring compatibility exports, and
+    structured output utilities
+- `llm_dart_provider_utils`
+  - provider-authoring call kit for shared transport execution, streaming,
+    cancellation, and error projection policy
 - `llm_dart_transport`
   - HTTP, SSE, and shared logging primitives
 - `llm_dart_chat`
@@ -146,9 +159,21 @@ resolve unpublished workspace dependencies from this checkout.
 ## Focused Entry Points
 
 - `package:llm_dart/llm_dart.dart`
-  - provider-neutral root entrypoint for shared model contracts, AI helpers, chat, and transport
+  - provider-neutral root entrypoint for app-facing model contracts, AI helpers, chat, and transport
 - `package:llm_dart/ai.dart`
-  - explicit equivalent provider-neutral AI shell
+  - explicit equivalent provider-neutral app shell
+- `package:llm_dart/core.dart`
+  - narrow app-facing runtime facade over `package:llm_dart_ai/app.dart`
+- `package:llm_dart/provider_authoring.dart`
+  - explicit root facade for custom provider implementations and provider prompt/request/stream contracts
+- `package:llm_dart_ai/app.dart`
+  - framework-neutral app runtime helpers that accept `ModelMessage` through `messages:`
+- `package:llm_dart_ai/provider_authoring.dart`
+  - AI runtime compatibility plus provider contracts for provider authors and low-level tests
+- `package:llm_dart_provider/provider_authoring.dart`
+  - provider-only contracts for provider implementations that should not depend on the AI runtime package
+- `package:llm_dart_provider_utils/provider_call_kit.dart`
+  - direct provider-utils entrypoint for request, response, stream, cancellation, and error policy
 - `package:llm_dart/chat.dart`
   - focused pure Dart chat runtime entrypoint over `llm_dart_chat`
 - `package:llm_dart_openai/llm_dart_openai.dart`
@@ -170,7 +195,7 @@ resolve unpublished workspace dependencies from this checkout.
 
 ## Quick Start
 
-Use the default modern root entrypoint plus the shared runtime request model.
+Use the default modern root entrypoint plus the shared app message model.
 Most applications should stay on this layer until they have a concrete need for
 provider-owned options or remote lifecycle APIs.
 
@@ -501,8 +526,8 @@ This entrypoint re-exports `DefaultChatSession`, `DirectChatTransport`,
 pulling Flutter adapters or concrete provider factories into the root package
 surface.
 
-`ChatMessageMapper` now lives in `package:llm_dart_ai/llm_dart_ai.dart` as
-part of the shared UI/runtime layer, and remains available from
+`ChatMessageMapper` now lives in `package:llm_dart_ai/app.dart` as part of the
+shared UI/runtime layer, and remains available from
 `package:llm_dart/core.dart`, `package:llm_dart/chat.dart`, and
 `package:llm_dart_flutter/llm_dart_flutter.dart` through re-exports.
 
@@ -584,7 +609,7 @@ chat layer.
 
 The default recommendation is now:
 
-- import `ChatMessageMapper` from `package:llm_dart_ai/llm_dart_ai.dart` or
+- import `ChatMessageMapper` from `package:llm_dart_ai/app.dart` or
   any entrypoint that re-exports it
 - keep provider-specific UI metadata inspection in app code by reading
   `ProviderMetadata` namespaces from mapped messages or parts

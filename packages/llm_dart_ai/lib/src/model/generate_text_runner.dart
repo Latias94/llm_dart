@@ -7,6 +7,7 @@ import 'generate_text_run_state.dart';
 import 'generate_text_runner_support.dart';
 import 'generate_text_stop_condition.dart';
 import 'generate_text_step_result.dart';
+import 'text_generation_request.dart';
 import 'text_generation_runtime_request.dart';
 
 final class GenerateTextRunner {
@@ -17,6 +18,9 @@ final class GenerateTextRunner {
   GenerateTextRunner._(this._runtime) {
     _runtime.validateForRunner(runnerName: _runnerName);
   }
+
+  GenerateTextRunner.fromRequest(TextGenerationRequest request)
+      : this._(TextGenerationRuntimeRequest.fromRequest(request));
 
   GenerateTextRunner({
     required LanguageModel model,
@@ -35,8 +39,8 @@ final class GenerateTextRunner {
     GenerateTextOnToolFinish? onToolFinish,
     GenerateTextOnFinish? onFinish,
     GenerateTextOnError? onError,
-  }) : this._(
-          TextGenerationRuntimeRequest(
+  }) : this.fromRequest(
+          TextGenerationRequest.resolve(
             model: model,
             prompt: prompt,
             messages: messages,
@@ -143,8 +147,8 @@ Future<GenerateTextRunResult> runTextGeneration({
   GenerateTextOnFinish? onFinish,
   GenerateTextOnError? onError,
 }) {
-  return GenerateTextRunner._(
-    TextGenerationRuntimeRequest(
+  return runTextGenerationRequest(
+    TextGenerationRequest.resolve(
       model: model,
       prompt: prompt,
       messages: messages,
@@ -162,5 +166,11 @@ Future<GenerateTextRunResult> runTextGeneration({
       onFinish: onFinish,
       onError: onError,
     ),
-  ).run();
+  );
+}
+
+Future<GenerateTextRunResult> runTextGenerationRequest(
+  TextGenerationRequest request,
+) {
+  return GenerateTextRunner.fromRequest(request).run();
 }

@@ -5,6 +5,7 @@ import 'google_embedding_model.dart';
 import 'google_image_model.dart';
 import 'google_language_model.dart';
 import 'google_model_settings.dart';
+import 'google_provider_descriptor.dart';
 import 'google_speech_model.dart';
 
 /// Creates a Google provider facade.
@@ -41,66 +42,13 @@ final class Google
         transport = transport ?? DioTransportClient();
 
   @override
-  String get providerId => 'google';
+  String get providerId => providerDescriptor.providerId;
+
+  GoogleProviderDescriptor get providerDescriptor =>
+      const GoogleProviderDescriptor();
 
   @override
-  ProviderSpecification get specification => ProviderSpecification(
-        providerId: providerId,
-        modelFacets: const {
-          ProviderModelFacet.language,
-          ProviderModelFacet.embedding,
-          ProviderModelFacet.image,
-          ProviderModelFacet.speech,
-        },
-        capabilities: [
-          const CapabilityDescriptor(
-            id: ModelCapabilityFeatureIds.languageStreaming,
-          ),
-          const CapabilityDescriptor(
-            id: ModelCapabilityFeatureIds.languageFunctionTools,
-          ),
-          const CapabilityDescriptor(
-            id: ModelCapabilityFeatureIds.languageStructuredOutput,
-          ),
-          const CapabilityDescriptor(
-            id: ModelCapabilityFeatureIds.embeddingBatch,
-          ),
-        ],
-        supportedInputShapes: [
-          ProviderInputShapeDescriptor(
-            modelKind: ModelCapabilityKind.language,
-            shapeId: ProviderInputShapeIds.text,
-          ),
-          ProviderInputShapeDescriptor(
-            modelKind: ModelCapabilityKind.language,
-            shapeId: ProviderInputShapeIds.image,
-            mediaTypes: const ['image/*'],
-          ),
-          ProviderInputShapeDescriptor(
-            modelKind: ModelCapabilityKind.language,
-            shapeId: ProviderInputShapeIds.file,
-            mediaTypes: const ['application/pdf', 'text/*'],
-            confidence: CapabilityConfidence.inferred,
-          ),
-          ProviderInputShapeDescriptor(
-            modelKind: ModelCapabilityKind.embedding,
-            shapeId: ProviderInputShapeIds.text,
-          ),
-          ProviderInputShapeDescriptor(
-            modelKind: ModelCapabilityKind.image,
-            shapeId: ProviderInputShapeIds.text,
-          ),
-          ProviderInputShapeDescriptor(
-            modelKind: ModelCapabilityKind.image,
-            shapeId: ProviderInputShapeIds.image,
-            mediaTypes: const ['image/*'],
-          ),
-          ProviderInputShapeDescriptor(
-            modelKind: ModelCapabilityKind.speech,
-            shapeId: ProviderInputShapeIds.text,
-          ),
-        ],
-      );
+  ProviderSpecification get specification => providerDescriptor.specification;
 
   @override
   GoogleLanguageModel languageModel(

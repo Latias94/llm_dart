@@ -16,6 +16,7 @@ import 'stream_text_run_lifecycle.dart';
 import 'stream_text_run_result.dart';
 import 'stream_text_run_state.dart';
 import 'stream_text_step_executor.dart';
+import 'text_generation_request.dart';
 import 'text_generation_runtime_request.dart';
 
 export 'stream_text_run_result.dart' show StreamTextRunResult;
@@ -36,6 +37,14 @@ final class StreamTextRunner {
     );
   }
 
+  StreamTextRunner.fromRequest({
+    required TextGenerationRequest request,
+    StreamTextOnChunk? onChunk,
+  }) : this._(
+          runtime: TextGenerationRuntimeRequest.fromRequest(request),
+          onChunk: onChunk,
+        );
+
   StreamTextRunner({
     required LanguageModel model,
     List<PromptMessage>? prompt,
@@ -54,8 +63,8 @@ final class StreamTextRunner {
     GenerateTextOnFinish? onFinish,
     StreamTextOnChunk? onChunk,
     GenerateTextOnError? onError,
-  }) : this._(
-          runtime: TextGenerationRuntimeRequest(
+  }) : this.fromRequest(
+          request: TextGenerationRequest.resolve(
             model: model,
             prompt: prompt,
             messages: messages,
@@ -231,8 +240,8 @@ StreamTextRunResult streamTextRun({
   StreamTextOnChunk? onChunk,
   GenerateTextOnError? onError,
 }) {
-  return StreamTextRunner._(
-    runtime: TextGenerationRuntimeRequest(
+  return streamTextRunRequest(
+    TextGenerationRequest.resolve(
       model: model,
       prompt: prompt,
       messages: messages,
@@ -250,6 +259,16 @@ StreamTextRunResult streamTextRun({
       onFinish: onFinish,
       onError: onError,
     ),
+    onChunk: onChunk,
+  );
+}
+
+StreamTextRunResult streamTextRunRequest(
+  TextGenerationRequest request, {
+  StreamTextOnChunk? onChunk,
+}) {
+  return StreamTextRunner.fromRequest(
+    request: request,
     onChunk: onChunk,
   ).run();
 }

@@ -7,6 +7,7 @@ import 'ollama_embedding_model.dart';
 import 'ollama_language_model.dart';
 import 'ollama_model_catalog.dart';
 import 'ollama_model_settings.dart';
+import 'ollama_provider_descriptor.dart';
 
 /// Creates an Ollama provider facade for local chat, embeddings, and catalog APIs.
 Ollama ollama({
@@ -37,41 +38,13 @@ final class Ollama implements LanguageModelProvider, EmbeddingModelProvider {
         transport = transport ?? DioTransportClient();
 
   @override
-  String get providerId => 'ollama';
+  String get providerId => providerDescriptor.providerId;
+
+  OllamaProviderDescriptor get providerDescriptor =>
+      const OllamaProviderDescriptor();
 
   @override
-  ProviderSpecification get specification => ProviderSpecification(
-        providerId: providerId,
-        modelFacets: const {
-          ProviderModelFacet.language,
-          ProviderModelFacet.embedding,
-        },
-        capabilities: [
-          const CapabilityDescriptor(
-            id: ModelCapabilityFeatureIds.languageStreaming,
-          ),
-          const CapabilityDescriptor(
-            id: ModelCapabilityFeatureIds.languageFunctionTools,
-            confidence: CapabilityConfidence.inferred,
-          ),
-        ],
-        supportedInputShapes: [
-          ProviderInputShapeDescriptor(
-            modelKind: ModelCapabilityKind.language,
-            shapeId: ProviderInputShapeIds.text,
-          ),
-          ProviderInputShapeDescriptor(
-            modelKind: ModelCapabilityKind.language,
-            shapeId: ProviderInputShapeIds.image,
-            mediaTypes: const ['image/*'],
-            confidence: CapabilityConfidence.inferred,
-          ),
-          ProviderInputShapeDescriptor(
-            modelKind: ModelCapabilityKind.embedding,
-            shapeId: ProviderInputShapeIds.text,
-          ),
-        ],
-      );
+  ProviderSpecification get specification => providerDescriptor.specification;
 
   @override
   OllamaLanguageModel languageModel(

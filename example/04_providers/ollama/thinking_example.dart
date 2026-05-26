@@ -2,7 +2,7 @@
 
 import 'dart:io';
 
-import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart_ai/llm_dart_ai.dart' as core;
 import 'package:llm_dart_ollama/llm_dart_ollama.dart' as ollama_pkg;
 
 /// Local Ollama reasoning on the modern Ollama package surface.

@@ -4,7 +4,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:llm_dart_anthropic/llm_dart_anthropic.dart' as anthropic;
-import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart_ai/llm_dart_ai.dart' as core;
 
 /// Anthropic MCP connector examples built on the stable Anthropic chat model
 /// facade plus typed provider-owned MCP options.
