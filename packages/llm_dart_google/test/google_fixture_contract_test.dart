@@ -1,9 +1,11 @@
-import 'dart:convert';
-import 'dart:io';
-
 import 'package:llm_dart_google/llm_dart_google.dart';
 import 'package:llm_dart_provider/llm_dart_provider.dart';
+import 'package:llm_dart_test/llm_dart_test.dart';
 import 'package:test/test.dart';
+
+final googleFixtures = ProviderCodecContractRunner.forWorkspacePackage(
+  'llm_dart_google',
+);
 
 void main() {
   group('Google fixture contracts', () {
@@ -11,7 +13,7 @@ void main() {
       final request = buildGoogleGenerateContentFixtureRequest();
 
       expect(request.warnings, isEmpty);
-      expectJsonFixture(
+      googleFixtures.expectJsonFixture(
         'google/generate_content_request_body_golden.json',
         request.body,
       );
@@ -20,9 +22,9 @@ void main() {
     test('GenerateContent stream events match golden fixture', () {
       final events = buildGoogleGenerateContentStreamFixtureEvents();
 
-      expectJsonFixture(
+      googleFixtures.expectLanguageModelStreamEventsFixture(
         'google/generate_content_stream_events_golden.json',
-        const LanguageModelStreamEventJsonCodec().encodeEvents(events),
+        events,
       );
     });
   });
@@ -350,23 +352,4 @@ List<LanguageModelStreamEvent> buildGoogleGenerateContentStreamFixtureEvents() {
 
   events.addAll(codec.finish(state));
   return events;
-}
-
-void expectJsonFixture(String relativePath, Object? actual) {
-  final fixture = readJsonFixture(relativePath);
-  expect(actual, fixture);
-}
-
-Object? readJsonFixture(String relativePath) {
-  for (final basePath in const [
-    'packages/llm_dart_google/test/fixtures',
-    'test/fixtures',
-  ]) {
-    final file = File('$basePath/$relativePath');
-    if (file.existsSync()) {
-      return jsonDecode(file.readAsStringSync()) as Object?;
-    }
-  }
-
-  throw FileSystemException('Fixture not found.', relativePath);
 }

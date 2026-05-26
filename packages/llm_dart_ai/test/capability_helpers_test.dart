@@ -111,6 +111,21 @@ void main() {
       );
     });
 
+    test('rejects batches larger than the model contract', () async {
+      final model = _RecordingEmbeddingModel(
+        result: EmbedResult(embeddings: const []),
+        maxEmbeddingsPerCall: 1,
+      );
+
+      await expectLater(
+        () => embedMany(
+          model: model,
+          values: const ['a', 'b'],
+        ),
+        throwsArgumentError,
+      );
+    });
+
     test('rejects model results with the wrong batch count', () async {
       final model = _RecordingEmbeddingModel(
         result: EmbedResult(
@@ -190,6 +205,44 @@ void main() {
         throwsArgumentError,
       );
     });
+
+    test('rejects edit inputs when a described model lacks image editing',
+        () async {
+      final model = _DescribedImageModel(
+        capabilityProfile: ModelCapabilityProfile(
+          providerId: 'test',
+          modelId: 'image-test-model',
+          kind: ModelCapabilityKind.image,
+        ),
+      );
+
+      await expectLater(
+        () => generateImage(
+          model: model,
+          prompt: 'Edit a cat.',
+          files: const [
+            ImageGenerationInput.bytes([1, 2, 3]),
+          ],
+        ),
+        throwsUnsupportedError,
+      );
+    });
+
+    test('rejects image counts larger than the model contract', () async {
+      final model = _RecordingImageModel(
+        result: ImageGenerationResult(images: const []),
+        maxImagesPerCall: 1,
+      );
+
+      await expectLater(
+        () => generateImage(
+          model: model,
+          prompt: 'Draw cats.',
+          count: 2,
+        ),
+        throwsArgumentError,
+      );
+    });
   });
 
   group('generateSpeech', () {
@@ -218,6 +271,30 @@ void main() {
       expect(model.lastRequest?.instructions, 'Speak clearly.');
       expect(model.lastRequest?.speed, 1.1);
       expect(model.lastRequest?.language, 'en');
+    });
+
+    test('rejects voice selection when a described model lacks it', () async {
+      final model = _DescribedSpeechModel(
+        capabilityProfile: ModelCapabilityProfile(
+          providerId: 'test',
+          modelId: 'speech-test-model',
+          kind: ModelCapabilityKind.speech,
+          sharedFeatures: const [
+            CapabilityDescriptor(
+              id: ModelCapabilityFeatureIds.speechOutputFormat,
+            ),
+          ],
+        ),
+      );
+
+      await expectLater(
+        () => generateSpeech(
+          model: model,
+          text: 'Hello world.',
+          voice: 'alloy',
+        ),
+        throwsUnsupportedError,
+      );
     });
   });
 
@@ -255,6 +332,26 @@ void main() {
         throwsArgumentError,
       );
     });
+
+    test('TranscribeRequest freezes audio input before provider projection',
+        () async {
+      final model = _RecordingTranscriptionModel(
+        result: const TranscriptionResult(text: 'hello world'),
+      );
+      final audio = [1, 2, 3];
+
+      final request = TranscribeRequest(
+        model: model,
+        audioBytes: audio,
+        mediaType: 'audio/wav',
+      );
+      audio.add(4);
+
+      await transcribeForRequest(request);
+
+      expect(request.audioBytes, [1, 2, 3]);
+      expect(model.lastRequest?.audioBytes, [1, 2, 3]);
+    });
   });
 }
 
@@ -270,8 +367,8 @@ final class _RecordingEmbeddingModel implements EmbeddingModel {
 
   _RecordingEmbeddingModel({
     required this.result,
-  })  : maxEmbeddingsPerCall = null,
-        supportsParallelCalls = true;
+    this.maxEmbeddingsPerCall,
+  }) : supportsParallelCalls = true;
 
   @override
   String get modelId => 'embed-test-model';
@@ -295,7 +392,8 @@ final class _RecordingImageModel implements ImageModel {
 
   _RecordingImageModel({
     required this.result,
-  }) : maxImagesPerCall = null;
+    this.maxImagesPerCall,
+  });
 
   @override
   String get modelId => 'image-test-model';
@@ -308,6 +406,34 @@ final class _RecordingImageModel implements ImageModel {
     ImageGenerationRequest request,
   ) async {
     lastRequest = request;
+    return result;
+  }
+}
+
+final class _DescribedImageModel
+    implements ImageModel, CapabilityDescribedModel {
+  final ImageGenerationResult result;
+
+  @override
+  final ModelCapabilityProfile capabilityProfile;
+
+  _DescribedImageModel({
+    required this.capabilityProfile,
+  }) : result = ImageGenerationResult(images: const []);
+
+  @override
+  int? get maxImagesPerCall => null;
+
+  @override
+  String get modelId => capabilityProfile.modelId;
+
+  @override
+  String get providerId => capabilityProfile.providerId;
+
+  @override
+  Future<ImageGenerationResult> doGenerate(
+    ImageGenerationRequest request,
+  ) async {
     return result;
   }
 }
@@ -331,6 +457,31 @@ final class _RecordingSpeechModel implements SpeechModel {
     SpeechGenerationRequest request,
   ) async {
     lastRequest = request;
+    return result;
+  }
+}
+
+final class _DescribedSpeechModel
+    implements SpeechModel, CapabilityDescribedModel {
+  final SpeechGenerationResult result;
+
+  @override
+  final ModelCapabilityProfile capabilityProfile;
+
+  _DescribedSpeechModel({
+    required this.capabilityProfile,
+  }) : result = const SpeechGenerationResult(audioBytes: [1, 2, 3]);
+
+  @override
+  String get modelId => capabilityProfile.modelId;
+
+  @override
+  String get providerId => capabilityProfile.providerId;
+
+  @override
+  Future<SpeechGenerationResult> doGenerate(
+    SpeechGenerationRequest request,
+  ) async {
     return result;
   }
 }

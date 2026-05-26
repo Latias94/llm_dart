@@ -1,65 +1,39 @@
 import 'provider.dart';
+import 'provider_capability_gate.dart';
 import 'provider_specification.dart';
 
 final class ProviderModelFacetSupportResolver {
   const ProviderModelFacetSupportResolver();
 
   bool supportsLanguageModels(Provider? provider) {
-    return provider is LanguageModelProvider &&
-        _declaresSupport(
-          provider,
-          ProviderModelFacet.language,
-          (support) => support.supportsLanguageModels,
-        );
+    return _allowsModelFacet(provider, ProviderModelFacet.language);
   }
 
   bool supportsEmbeddingModels(Provider? provider) {
-    return provider is EmbeddingModelProvider &&
-        _declaresSupport(
-          provider,
-          ProviderModelFacet.embedding,
-          (support) => support.supportsEmbeddingModels,
-        );
+    return _allowsModelFacet(provider, ProviderModelFacet.embedding);
   }
 
   bool supportsImageModels(Provider? provider) {
-    return provider is ImageModelProvider &&
-        _declaresSupport(
-          provider,
-          ProviderModelFacet.image,
-          (support) => support.supportsImageModels,
-        );
+    return _allowsModelFacet(provider, ProviderModelFacet.image);
   }
 
   bool supportsSpeechModels(Provider? provider) {
-    return provider is SpeechModelProvider &&
-        _declaresSupport(
-          provider,
-          ProviderModelFacet.speech,
-          (support) => support.supportsSpeechModels,
-        );
+    return _allowsModelFacet(provider, ProviderModelFacet.speech);
   }
 
   bool supportsTranscriptionModels(Provider? provider) {
-    return provider is TranscriptionModelProvider &&
-        _declaresSupport(
-          provider,
-          ProviderModelFacet.transcription,
-          (support) => support.supportsTranscriptionModels,
-        );
+    return _allowsModelFacet(provider, ProviderModelFacet.transcription);
   }
 
-  static bool _declaresSupport(
-    Provider provider,
+  static bool _allowsModelFacet(
+    Provider? provider,
     ProviderModelFacet facet,
-    bool Function(ProviderModelFacetSupport support) readSupport,
   ) {
-    if (!provider.specification.supportsModelFacet(facet)) {
+    if (provider == null) {
       return false;
     }
-    if (provider is ProviderModelFacetSupport) {
-      return readSupport(provider);
-    }
-    return true;
+    return ProviderCapabilityGate.forProvider(provider)
+        .modelFacet(facet)
+        .allowed;
   }
 }

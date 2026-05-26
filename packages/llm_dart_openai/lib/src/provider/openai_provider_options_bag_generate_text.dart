@@ -133,31 +133,17 @@ ProviderOptionsBag? openAIGenerateTextOptionsToProviderOptionsBag(
   OpenAIGenerateTextOptions options, {
   String namespace = openAIProviderOptionsNamespace,
 }) {
-  return ProviderOptionsBag.forProvider(namespace, {
-    'previous_response_id': options.previousResponseId,
-    'conversation': options.conversation,
-    'store': options.store,
-    'parallel_tool_calls': options.parallelToolCalls,
-    'service_tier': options.serviceTier,
-    'verbosity': options.verbosity,
-    'instructions': options.instructions,
-    'max_tool_calls': options.maxToolCalls,
-    'metadata': options.metadata,
-    'truncation': options.truncation?.value,
-    'user': options.user,
-    'system_message_mode': options.systemMessageMode?.value,
-    'reasoning_effort': options.reasoningEffort?.value,
-    'max_completion_tokens': options.maxCompletionTokens,
-    'force_reasoning': options.forceReasoning,
-    'logprobs': _encodeOpenAILogProbs(options.logprobs),
-    'include': options.include
-        ?.map((include) => include.value)
-        .toList(growable: false),
-    'prompt_cache_key': options.promptCacheKey,
-    'prompt_cache_retention': options.promptCacheRetention?.value,
-    'safety_identifier': options.safetyIdentifier,
-    'response_format': options.responseFormat?.toJsonSchema(),
-  });
+  if (namespace == openAIProviderOptionsNamespace) {
+    final bag = options.toProviderOptionsBag();
+    return bag.isEmpty ? null : bag;
+  }
+
+  final values =
+      options.toProviderOptionsBag().namespace(openAIProviderOptionsNamespace);
+  return ProviderOptionsBag.forProvider(
+    namespace,
+    values ?? const {},
+  );
 }
 
 DeepSeekGenerateTextOptions? parseDeepSeekGenerateTextOptionsBag(

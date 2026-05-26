@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:llm_dart_test/llm_dart_test.dart';
@@ -49,5 +51,97 @@ void main() {
     expect(model.lastRequest, isNotNull);
     expect(model.lastStreamRequest, isNotNull);
     expect(model.lastRequest!.prompt.single, isA<UserPromptMessage>());
+  });
+
+  group('ProviderCodecContractRunner', () {
+    test('compares JSON fixtures by value', () {
+      final temp = Directory.systemTemp.createTempSync(
+        'llm_dart_fixture_contract_',
+      );
+      addTearDown(() => temp.deleteSync(recursive: true));
+      File('${temp.path}/request.json').writeAsStringSync(
+        jsonEncode({
+          'body': {
+            'messages': [
+              {'role': 'user', 'content': 'Hello'},
+            ],
+          },
+        }),
+      );
+
+      final runner = ProviderCodecContractRunner(
+        fixtureRoots: [temp.path],
+        label: 'test-provider',
+      );
+
+      runner.expectJsonFixture('request.json', {
+        'body': {
+          'messages': [
+            {'role': 'user', 'content': 'Hello'},
+          ],
+        },
+      });
+    });
+
+    test('throws a contract mismatch with fixture context', () {
+      final temp = Directory.systemTemp.createTempSync(
+        'llm_dart_fixture_contract_',
+      );
+      addTearDown(() => temp.deleteSync(recursive: true));
+      File('${temp.path}/request.json').writeAsStringSync(
+        jsonEncode({'ok': true}),
+      );
+
+      final runner = ProviderCodecContractRunner(
+        fixtureRoots: [temp.path],
+        label: 'test-provider',
+      );
+
+      expect(
+        () => runner.expectJsonFixture('request.json', {'ok': false}),
+        throwsA(
+          isA<ProviderCodecFixtureMismatch>()
+              .having(
+                (error) => error.relativePath,
+                'relativePath',
+                'request.json',
+              )
+              .having(
+                (error) => error.toString(),
+                'message',
+                contains('test-provider'),
+              ),
+        ),
+      );
+    });
+
+    test('projects language model stream events before fixture comparison', () {
+      final temp = Directory.systemTemp.createTempSync(
+        'llm_dart_fixture_contract_',
+      );
+      addTearDown(() => temp.deleteSync(recursive: true));
+      File('${temp.path}/stream.json').writeAsStringSync(
+        jsonEncode({
+          'schemaVersion': '2026-03-1',
+          'kind': 'text-stream-events',
+          'data': {
+            'events': [
+              {'type': 'start', 'warnings': <Object?>[]},
+              {'type': 'finish', 'finishReason': 'stop'},
+            ],
+          },
+        }),
+      );
+
+      final runner = ProviderCodecContractRunner(
+        fixtureRoots: [temp.path],
+        label: 'test-provider',
+      );
+
+      runner.expectLanguageModelStreamEventsFixture('stream.json', [
+        StartEvent(),
+        const FinishEvent(finishReason: FinishReason.stop),
+      ]);
+    });
   });
 }

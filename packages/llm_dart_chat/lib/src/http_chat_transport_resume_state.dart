@@ -2,6 +2,8 @@ import 'package:llm_dart_ai/llm_dart_ai.dart';
 
 import 'http_chat_transport_request_payload.dart';
 
+typedef HttpChatTransportResumeStateClearer = void Function();
+
 final class HttpChatTransportResumeState {
   final HttpChatTransportCallOptionsPayload callOptionsPayload;
   final Duration? requestTimeout;

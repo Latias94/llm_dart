@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "slug": "2026-05-remaining-boundary-fearless-refactor",
+  "title": "Remaining Boundary Fearless Refactor",
+  "status": "complete",
+  "updated": "2026-05-27",
+  "scope_kind": "architecture-refactor",
+  "problem": "After the core seam refactor, remaining shallow seams are concentrated in provider codec contracts, non-text app requests, capability enforcement, chat turn/transport protocol, provider options policy, and serialization registry decisions.",
+  "authoritative_docs": [
+    {
+      "role": "design",
+      "path": "docs/workstreams/2026-05-remaining-boundary-fearless-refactor/DESIGN.md"
+    },
+    {
+      "role": "execution",
+      "path": "docs/workstreams/2026-05-remaining-boundary-fearless-refactor/TODO.md"
+    },
+    {
+      "role": "milestones",
+      "path": "docs/workstreams/2026-05-remaining-boundary-fearless-refactor/MILESTONES.md"
+    },
+    {
+      "role": "gates",
+      "path": "docs/workstreams/2026-05-remaining-boundary-fearless-refactor/EVIDENCE_AND_GATES.md"
+    },
+    {
+      "role": "handoff",
+      "path": "docs/workstreams/2026-05-remaining-boundary-fearless-refactor/HANDOFF.md"
+    }
+  ],
+  "first_task": null,
+  "gates": [
+    "dart --suppress-analytics test packages/llm_dart_openai/test/openai_fixture_contract_test.dart packages/llm_dart_anthropic/test/anthropic_fixture_contract_test.dart",
+    "dart --suppress-analytics analyze .",
+    "dart --suppress-analytics run tool/check_workspace_dependency_guards.dart",
+    "dart --suppress-analytics run tool/check_root_package_boundary_guards.dart",
+    "dart --suppress-analytics run tool/check_example_api_guards.dart"
+  ],
+  "evidence": [
+    "docs/workstreams/2026-05-remaining-boundary-fearless-refactor/EVIDENCE_AND_GATES.md"
+  ],
+  "adr_refs": [],
+  "continue_policy": {
+    "default_action": "closed",
+      "notes": "Closed on 2026-05-27. All RBF tasks completed; final analyze, boundary guards, example guard, and diff whitespace gate passed."
+  }
+}

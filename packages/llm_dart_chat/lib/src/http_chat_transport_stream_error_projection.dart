@@ -3,8 +3,6 @@ import 'package:llm_dart_provider_utils/llm_dart_provider_utils.dart';
 
 import 'http_chat_transport_resume_state.dart';
 
-typedef HttpChatTransportResumeStateClearer = void Function();
-
 ChatUiEventChunk projectHttpChatTransportStatusError(
   int statusCode,
 ) {

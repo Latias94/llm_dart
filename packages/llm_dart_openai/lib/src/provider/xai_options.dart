@@ -1,6 +1,7 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import '../language/openai_generate_text_options.dart';
+import 'openai_provider_options_namespaces.dart';
 
 enum XAISearchMode {
   off('off'),
@@ -173,7 +174,8 @@ final class XAILiveSearchOptions {
   }
 }
 
-final class XAIGenerateTextOptions implements ProviderInvocationOptions {
+final class XAIGenerateTextOptions
+    implements ProviderInvocationOptionsBagProjection {
   final OpenAIGenerateTextOptions common;
   final XAILiveSearchOptions? search;
 
@@ -181,4 +183,15 @@ final class XAIGenerateTextOptions implements ProviderInvocationOptions {
     this.common = const OpenAIGenerateTextOptions(),
     this.search,
   });
+
+  @override
+  ProviderOptionsBag toProviderOptionsBag() {
+    return ProviderOptionsBag.mergeNullable(
+          common.toProviderOptionsBag(),
+          ProviderOptionsBag.forProvider(xaiProviderOptionsNamespace, {
+            'search': search?.toJson(),
+          }),
+        ) ??
+        ProviderOptionsBag.empty;
+  }
 }

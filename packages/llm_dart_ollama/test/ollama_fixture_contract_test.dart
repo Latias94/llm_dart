@@ -1,23 +1,27 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:llm_dart_ollama/llm_dart_ollama.dart';
 import 'package:llm_dart_ollama/src/ollama_chat_request_codec.dart';
 import 'package:llm_dart_ollama/src/ollama_chat_response_codec.dart';
 import 'package:llm_dart_ollama/src/ollama_chat_stream_codec.dart';
 import 'package:llm_dart_provider/llm_dart_provider.dart';
+import 'package:llm_dart_test/llm_dart_test.dart';
 import 'package:test/test.dart';
+
+final ollamaFixtures = ProviderCodecContractRunner.forWorkspacePackage(
+  'llm_dart_ollama',
+);
 
 void main() {
   group('Ollama fixture contracts', () {
     test('Chat request body matches golden fixture', () async {
       final prepared = await buildOllamaChatFixtureRequest();
 
-      expectJsonFixture(
+      ollamaFixtures.expectJsonFixture(
         'ollama/chat_request_body_golden.json',
         prepared.body,
       );
-      expectJsonFixture(
+      ollamaFixtures.expectJsonFixture(
         'ollama/chat_request_warnings_golden.json',
         prepared.warnings
             .map(SerializationJsonSupport.encodeModelWarning)
@@ -28,9 +32,9 @@ void main() {
     test('Chat stream events match golden fixture', () {
       final events = buildOllamaChatStreamFixtureEvents();
 
-      expectJsonFixture(
+      ollamaFixtures.expectLanguageModelStreamEventsFixture(
         'ollama/chat_stream_events_golden.json',
-        const LanguageModelStreamEventJsonCodec().encodeEvents(events),
+        events,
       );
     });
   });
@@ -201,25 +205,6 @@ List<LanguageModelStreamEvent> buildOllamaChatStreamFixtureEvents() {
   }
 
   return events;
-}
-
-void expectJsonFixture(String relativePath, Object? actual) {
-  final fixture = readJsonFixture(relativePath);
-  expect(actual, fixture);
-}
-
-Object? readJsonFixture(String relativePath) {
-  for (final basePath in const [
-    'packages/llm_dart_ollama/test/fixtures',
-    'test/fixtures',
-  ]) {
-    final file = File('$basePath/$relativePath');
-    if (file.existsSync()) {
-      return jsonDecode(file.readAsStringSync()) as Object?;
-    }
-  }
-
-  throw FileSystemException('Fixture not found.', relativePath);
 }
 
 void _checkFixtureBinaryRequest({

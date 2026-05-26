@@ -1,16 +1,18 @@
-import 'dart:convert';
-import 'dart:io';
-
 import 'package:llm_dart_anthropic/llm_dart_anthropic.dart';
 import 'package:llm_dart_provider/llm_dart_provider.dart';
+import 'package:llm_dart_test/llm_dart_test.dart';
 import 'package:test/test.dart';
+
+final anthropicFixtures = ProviderCodecContractRunner.forWorkspacePackage(
+  'llm_dart_anthropic',
+);
 
 void main() {
   group('Anthropic fixture contracts', () {
     test('Messages request body matches golden fixture', () {
       final request = buildMessagesRequest();
 
-      expectJsonFixture(
+      anthropicFixtures.expectJsonFixture(
         'anthropic/messages_request_body_golden.json',
         request.body,
       );
@@ -19,7 +21,7 @@ void main() {
     test('Messages request metadata matches golden fixture', () {
       final request = buildMessagesRequest();
 
-      expectJsonFixture(
+      anthropicFixtures.expectJsonFixture(
         'anthropic/messages_request_metadata_golden.json',
         encodeRequestMetadata(request),
       );
@@ -29,7 +31,7 @@ void main() {
       final request = buildReplayRequest();
 
       expect(request.warnings, isEmpty);
-      expectJsonFixture(
+      anthropicFixtures.expectJsonFixture(
         'anthropic/messages_replay_request_body_golden.json',
         request.body,
       );
@@ -261,9 +263,9 @@ void main() {
         events.addAll(codec.decodeChunk(chunk, state));
       }
 
-      expectJsonFixture(
+      anthropicFixtures.expectLanguageModelStreamEventsFixture(
         'anthropic/messages_stream_events_golden.json',
-        const LanguageModelStreamEventJsonCodec().encodeEvents(events),
+        events,
       );
     });
   });
@@ -539,23 +541,4 @@ Map<String, Object?> encodeRequestMetadata(AnthropicMessagesRequest request) {
         SerializationJsonSupport.encodeModelWarning(warning),
     ],
   };
-}
-
-void expectJsonFixture(String relativePath, Object? actual) {
-  final fixture = readJsonFixture(relativePath);
-  expect(actual, fixture);
-}
-
-Object? readJsonFixture(String relativePath) {
-  for (final basePath in const [
-    'packages/llm_dart_anthropic/test/fixtures',
-    'test/fixtures',
-  ]) {
-    final file = File('$basePath/$relativePath');
-    if (file.existsSync()) {
-      return jsonDecode(file.readAsStringSync()) as Object?;
-    }
-  }
-
-  throw FileSystemException('Fixture not found.', relativePath);
 }

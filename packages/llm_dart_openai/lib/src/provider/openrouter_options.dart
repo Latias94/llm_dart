@@ -2,6 +2,7 @@ import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import '../language/openai_generate_text_options.dart';
 import 'openai_model_settings.dart';
+import 'openai_provider_options_namespaces.dart';
 
 enum OpenRouterSearchMode {
   onlineModel,
@@ -24,7 +25,8 @@ final class OpenRouterChatModelSettings implements ProviderModelOptions {
   });
 }
 
-final class OpenRouterGenerateTextOptions implements ProviderInvocationOptions {
+final class OpenRouterGenerateTextOptions
+    implements ProviderInvocationOptionsBagProjection {
   final OpenAIGenerateTextOptions common;
   final OpenRouterSearchOptions? search;
 
@@ -32,4 +34,18 @@ final class OpenRouterGenerateTextOptions implements ProviderInvocationOptions {
     this.common = const OpenAIGenerateTextOptions(),
     this.search,
   });
+
+  @override
+  ProviderOptionsBag toProviderOptionsBag() {
+    return ProviderOptionsBag.mergeNullable(
+          common.toProviderOptionsBag(),
+          ProviderOptionsBag.forProvider(openRouterProviderOptionsNamespace, {
+            'search': switch (search?.mode) {
+              OpenRouterSearchMode.onlineModel => {'mode': 'online_model'},
+              null => null,
+            },
+          }),
+        ) ??
+        ProviderOptionsBag.empty;
+  }
 }

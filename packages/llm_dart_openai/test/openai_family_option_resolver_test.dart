@@ -7,6 +7,7 @@ import 'package:llm_dart_openai/src/language/openai_response_format.dart';
 import 'package:llm_dart_openai/src/provider/openrouter_options.dart';
 import 'package:llm_dart_openai/src/provider/openai_provider_options_bag.dart';
 import 'package:llm_dart_openai/src/provider/resolved_openai_chat_settings.dart';
+import 'package:llm_dart_openai/src/speech/openai_speech_options.dart';
 import 'package:llm_dart_openai/src/provider/xai_options.dart';
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 import 'package:test/test.dart';
@@ -111,6 +112,66 @@ void main() {
           'store': true,
           'reasoning_effort': 'high',
           'include': ['reasoning.encrypted_content'],
+        },
+      });
+    });
+
+    test('projects typed profile options into provider option namespaces', () {
+      final deepseekBag = providerOptionsBagFromInvocationOptions(
+        const DeepSeekGenerateTextOptions(
+          common: OpenAIGenerateTextOptions(
+            user: 'user_123',
+            logprobs: OpenAILogProbs.top(3),
+          ),
+          logprobs: true,
+          topLogprobs: 5,
+          frequencyPenalty: 0.2,
+        ),
+      )!;
+
+      expect(deepseekBag.toJsonMap(), {
+        'openai': {
+          'user': 'user_123',
+          'logprobs': {'top_logprobs': 3},
+        },
+        'deepseek': {
+          'logprobs': true,
+          'top_logprobs': 5,
+          'frequency_penalty': 0.2,
+        },
+      });
+
+      final openRouterBag = providerOptionsBagFromInvocationOptions(
+        const OpenRouterGenerateTextOptions(
+          common: OpenAIGenerateTextOptions(serviceTier: 'flex'),
+          search: OpenRouterSearchOptions.onlineModel(),
+        ),
+      )!;
+
+      expect(openRouterBag.toJsonMap(), {
+        'openai': {
+          'service_tier': 'flex',
+        },
+        'openrouter': {
+          'search': {'mode': 'online_model'},
+        },
+      });
+    });
+
+    test('projects typed non-text options into the OpenAI namespace', () {
+      final bag = providerOptionsBagFromInvocationOptions(
+        const OpenAISpeechOptions(
+          outputFormat: 'wav',
+          instructions: 'Speak calmly.',
+          speed: 1.2,
+        ),
+      )!;
+
+      expect(bag.toJsonMap(), {
+        'openai': {
+          'output_format': 'wav',
+          'instructions': 'Speak calmly.',
+          'speed': 1.2,
         },
       });
     });

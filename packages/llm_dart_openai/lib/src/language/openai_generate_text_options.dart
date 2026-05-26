@@ -5,6 +5,7 @@ import '../tools/openai_native_tools.dart';
 import 'openai_reasoning_options.dart';
 import 'openai_response_format.dart';
 import '../responses/openai_responses_text_options.dart';
+import '../provider/openai_provider_options_namespaces.dart';
 
 export 'openai_logprobs.dart' show OpenAILogProbs;
 export 'openai_reasoning_options.dart'
@@ -18,7 +19,8 @@ export '../responses/openai_responses_text_options.dart'
 
 const Object _unsetOpenAIGenerateTextOption = Object();
 
-final class OpenAIGenerateTextOptions implements ProviderInvocationOptions {
+final class OpenAIGenerateTextOptions
+    implements ProviderInvocationOptionsBagProjection {
   final String? previousResponseId;
   final String? conversation;
   final bool? store;
@@ -66,6 +68,35 @@ final class OpenAIGenerateTextOptions implements ProviderInvocationOptions {
     this.builtInTools,
     this.responseFormat,
   });
+
+  @override
+  ProviderOptionsBag toProviderOptionsBag() {
+    return ProviderOptionsBag.forProvider(openAIProviderOptionsNamespace, {
+          'previous_response_id': previousResponseId,
+          'conversation': conversation,
+          'store': store,
+          'parallel_tool_calls': parallelToolCalls,
+          'service_tier': serviceTier,
+          'verbosity': verbosity,
+          'instructions': instructions,
+          'max_tool_calls': maxToolCalls,
+          'metadata': metadata,
+          'truncation': truncation?.value,
+          'user': user,
+          'system_message_mode': systemMessageMode?.value,
+          'reasoning_effort': reasoningEffort?.value,
+          'max_completion_tokens': maxCompletionTokens,
+          'force_reasoning': forceReasoning,
+          'logprobs': _encodeOpenAILogProbs(logprobs),
+          'include':
+              include?.map((value) => value.value).toList(growable: false),
+          'prompt_cache_key': promptCacheKey,
+          'prompt_cache_retention': promptCacheRetention?.value,
+          'safety_identifier': safetyIdentifier,
+          'response_format': responseFormat?.toJsonSchema(),
+        }) ??
+        ProviderOptionsBag.empty;
+  }
 
   OpenAIGenerateTextOptions copyWith({
     Object? previousResponseId = _unsetOpenAIGenerateTextOption,
@@ -167,4 +198,16 @@ final class OpenAIGenerateTextOptions implements ProviderInvocationOptions {
           : responseFormat as OpenAIJsonSchemaResponseFormat?,
     );
   }
+}
+
+Object? _encodeOpenAILogProbs(OpenAILogProbs? value) {
+  if (value == null) {
+    return null;
+  }
+
+  return value.topLogProbs == null
+      ? true
+      : {
+          'top_logprobs': value.topLogProbs,
+        };
 }

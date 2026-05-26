@@ -199,7 +199,7 @@ void main() {
           isA<ArgumentError>().having(
             (error) => error.message,
             'message',
-            contains('at most 2048 values per call'),
+            contains('accepts at most 2048'),
           ),
         ),
       );

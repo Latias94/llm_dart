@@ -1,12 +1,14 @@
-import 'dart:convert';
-import 'dart:io';
-
 import 'package:llm_dart_openai/llm_dart_openai.dart';
 import 'package:llm_dart_openai/src/chat_completions/openai_chat_completions_codec.dart';
 import 'package:llm_dart_openai/src/responses/openai_responses_codec.dart';
 import 'package:llm_dart_openai/src/provider/resolved_openai_options.dart';
 import 'package:llm_dart_provider/llm_dart_provider.dart';
+import 'package:llm_dart_test/llm_dart_test.dart';
 import 'package:test/test.dart';
+
+final openAIFixtures = ProviderCodecContractRunner.forWorkspacePackage(
+  'llm_dart_openai',
+);
 
 void main() {
   group('OpenAI fixture contracts', () {
@@ -152,7 +154,7 @@ void main() {
       );
 
       expect(request.warnings, isEmpty);
-      expectJsonFixture(
+      openAIFixtures.expectJsonFixture(
         'openai/responses_request_body_golden.json',
         request.body,
       );
@@ -255,7 +257,7 @@ void main() {
       );
 
       expect(request.warnings, isEmpty);
-      expectJsonFixture(
+      openAIFixtures.expectJsonFixture(
         'openai/chat_completions_request_body_golden.json',
         request.body,
       );
@@ -409,9 +411,9 @@ void main() {
         events.addAll(codec.decodeStreamChunk(chunk, state));
       }
 
-      expectJsonFixture(
+      openAIFixtures.expectLanguageModelStreamEventsFixture(
         'openai/responses_stream_events_golden.json',
-        const LanguageModelStreamEventJsonCodec().encodeEvents(events),
+        events,
       );
     });
 
@@ -528,29 +530,10 @@ void main() {
         events.addAll(codec.decodeStreamChunk(chunk, state));
       }
 
-      expectJsonFixture(
+      openAIFixtures.expectLanguageModelStreamEventsFixture(
         'openai/chat_completions_stream_events_golden.json',
-        const LanguageModelStreamEventJsonCodec().encodeEvents(events),
+        events,
       );
     });
   });
-}
-
-void expectJsonFixture(String relativePath, Object? actual) {
-  final fixture = readJsonFixture(relativePath);
-  expect(actual, fixture);
-}
-
-Object? readJsonFixture(String relativePath) {
-  for (final basePath in const [
-    'packages/llm_dart_openai/test/fixtures',
-    'test/fixtures',
-  ]) {
-    final file = File('$basePath/$relativePath');
-    if (file.existsSync()) {
-      return jsonDecode(file.readAsStringSync()) as Object?;
-    }
-  }
-
-  throw FileSystemException('Fixture not found.', relativePath);
 }

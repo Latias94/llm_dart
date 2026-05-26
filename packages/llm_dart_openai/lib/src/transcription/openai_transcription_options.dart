@@ -1,5 +1,7 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
+import '../provider/openai_provider_options_namespaces.dart';
+
 enum OpenAITranscriptionResponseFormat {
   json('json'),
   text('text'),
@@ -21,7 +23,8 @@ enum OpenAITranscriptionTimestampGranularity {
   final String value;
 }
 
-final class OpenAITranscriptionOptions implements ProviderInvocationOptions {
+final class OpenAITranscriptionOptions
+    implements ProviderInvocationOptionsBagProjection {
   final List<String> include;
   final String? language;
   final String? prompt;
@@ -37,4 +40,21 @@ final class OpenAITranscriptionOptions implements ProviderInvocationOptions {
     this.responseFormat,
     this.timestampGranularities = const [],
   });
+
+  @override
+  ProviderOptionsBag toProviderOptionsBag() {
+    return ProviderOptionsBag.forProvider(openAIProviderOptionsNamespace, {
+          'include': include.isEmpty ? null : include,
+          'language': language,
+          'prompt': prompt,
+          'temperature': temperature,
+          'response_format': responseFormat?.value,
+          'timestamp_granularities': timestampGranularities.isEmpty
+              ? null
+              : timestampGranularities
+                  .map((granularity) => granularity.value)
+                  .toList(growable: false),
+        }) ??
+        ProviderOptionsBag.empty;
+  }
 }

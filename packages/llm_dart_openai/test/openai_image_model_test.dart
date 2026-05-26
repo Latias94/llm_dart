@@ -526,7 +526,7 @@ void main() {
           isA<ArgumentError>().having(
             (error) => error.message,
             'message',
-            contains('at most 1 generated images per call'),
+            contains('can generate at most 1'),
           ),
         ),
       );

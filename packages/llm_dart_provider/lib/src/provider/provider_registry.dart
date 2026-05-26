@@ -5,6 +5,7 @@ import '../model/model_reference.dart';
 import '../model/speech_model.dart';
 import '../model/transcription_model.dart';
 import 'provider.dart';
+import 'provider_capability_gate.dart';
 import 'provider_model_facet_support.dart';
 import 'provider_specification.dart';
 
@@ -80,6 +81,10 @@ final class ProviderRegistry {
 
   ProviderSpecification providerSpecification(String providerId) {
     return provider(providerId).specification;
+  }
+
+  ProviderCapabilityGate providerCapabilityGate(String providerId) {
+    return ProviderCapabilityGate.forProvider(provider(providerId));
   }
 
   LanguageModel languageModel(String reference) {

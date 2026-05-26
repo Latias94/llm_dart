@@ -3,42 +3,24 @@ import 'package:llm_dart_ai/llm_dart_ai.dart';
 typedef ChatSessionSnapshotJsonMap = Map<String, Object?>;
 
 final class ChatSessionSnapshotEnvelopeJsonCodec {
+  static const _codec = VersionedJsonEnvelopeCodec(
+    unsupportedSchemaVersionDescription: 'chat session snapshot schema version',
+  );
+
   const ChatSessionSnapshotEnvelopeJsonCodec();
 
   ChatSessionSnapshotJsonMap encode({
     required String kind,
     required ChatSessionSnapshotJsonMap data,
   }) {
-    return {
-      'schemaVersion': llmDartJsonSchemaVersion,
-      'kind': kind,
-      'data': data,
-    };
+    return _codec.encode(kind: kind, data: data);
   }
 
   ChatSessionSnapshotJsonMap decode(
     Object? envelope, {
     required String expectedKind,
   }) {
-    final root = chatSessionSnapshotJsonMap(envelope, path: r'$');
-    final schemaVersion = chatSessionSnapshotJsonString(
-      root['schemaVersion'],
-      path: r'$.schemaVersion',
-    );
-    if (schemaVersion != llmDartJsonSchemaVersion) {
-      throw FormatException(
-        'Unsupported chat session snapshot schema version "$schemaVersion".',
-      );
-    }
-
-    final kind = chatSessionSnapshotJsonString(root['kind'], path: r'$.kind');
-    if (kind != expectedKind) {
-      throw FormatException(
-        'Expected envelope kind "$expectedKind", received "$kind".',
-      );
-    }
-
-    return chatSessionSnapshotJsonMap(root['data'], path: r'$.data');
+    return _codec.decode(envelope, expectedKind: expectedKind);
   }
 }
 

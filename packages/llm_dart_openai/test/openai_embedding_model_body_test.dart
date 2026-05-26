@@ -2,6 +2,7 @@ import 'package:llm_dart_ai/llm_dart_ai.dart';
 import 'package:llm_dart_openai/src/embedding/openai_embedding_model_body.dart';
 import 'package:llm_dart_openai/src/embedding/openai_embedding_model_request.dart';
 import 'package:llm_dart_openai/src/embedding/openai_embedding_options.dart';
+import 'package:llm_dart_openai/src/language/openai_generate_text_options.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -72,6 +73,23 @@ void main() {
 
       expect(body['encoding_format'], 'base64');
       expect(body['user'], 'user_bag');
+    });
+
+    test('rejects language provider options for embedding models', () {
+      expect(
+        () => resolveOpenAIEmbeddingProviderOptions(
+          const CallOptions(
+            providerOptions: OpenAIGenerateTextOptions(user: 'user_123'),
+          ),
+        ),
+        throwsA(
+          isA<ArgumentError>().having(
+            (error) => error.message,
+            'message',
+            contains('OpenAIEmbedOptions for OpenAI-family embedding models'),
+          ),
+        ),
+      );
     });
   });
 }

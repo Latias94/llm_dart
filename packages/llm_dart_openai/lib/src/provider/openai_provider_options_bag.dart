@@ -16,16 +16,14 @@ import '../language/openai_response_format.dart';
 import '../speech/openai_speech_options.dart';
 import '../transcription/openai_transcription_options.dart';
 import 'deepseek_options.dart';
+import 'openai_provider_options_namespaces.dart';
 import 'openrouter_options.dart';
 import 'xai_options.dart';
 
+export 'openai_provider_options_namespaces.dart';
+
 part 'openai_provider_options_bag_generate_text.dart';
 part 'openai_provider_options_bag_non_text.dart';
-
-const openAIProviderOptionsNamespace = 'openai';
-const deepSeekProviderOptionsNamespace = 'deepseek';
-const openRouterProviderOptionsNamespace = 'openrouter';
-const xaiProviderOptionsNamespace = 'xai';
 
 OpenAILogProbs? _parseOpenAILogProbs(
   Object? value, {
@@ -38,18 +36,6 @@ OpenAILogProbs? _parseOpenAILogProbs(
     Map() => _parseOpenAILogProbsObject(value, path: path),
     _ => throw FormatException('Expected bool, int, or JSON object at $path.'),
   };
-}
-
-Object? _encodeOpenAILogProbs(OpenAILogProbs? value) {
-  if (value == null) {
-    return null;
-  }
-
-  return value.topLogProbs == null
-      ? true
-      : {
-          'top_logprobs': value.topLogProbs,
-        };
 }
 
 OpenAILogProbs _parseOpenAILogProbsObject(

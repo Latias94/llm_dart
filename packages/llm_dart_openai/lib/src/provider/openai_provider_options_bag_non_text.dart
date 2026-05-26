@@ -28,10 +28,8 @@ OpenAIEmbedOptions? parseOpenAIEmbedOptionsBag(ProviderOptionsBag? bag) {
 ProviderOptionsBag? openAIEmbedOptionsToProviderOptionsBag(
   OpenAIEmbedOptions options,
 ) {
-  return ProviderOptionsBag.forProvider(openAIProviderOptionsNamespace, {
-    'encoding_format': options.encodingFormat,
-    'user': options.user,
-  });
+  final bag = options.toProviderOptionsBag();
+  return bag.isEmpty ? null : bag;
 }
 
 OpenAIImageOptions? parseOpenAIImageOptionsBag(ProviderOptionsBag? bag) {
@@ -104,16 +102,8 @@ OpenAIImageOptions? parseOpenAIImageOptionsBag(ProviderOptionsBag? bag) {
 ProviderOptionsBag? openAIImageOptionsToProviderOptionsBag(
   OpenAIImageOptions options,
 ) {
-  return ProviderOptionsBag.forProvider(openAIProviderOptionsNamespace, {
-    'style': options.style?.value,
-    'quality': options.quality?.value,
-    'background': options.background?.value,
-    'moderation': options.moderation?.value,
-    'output_format': options.outputFormat?.value,
-    'output_compression': options.outputCompression,
-    'response_format': options.responseFormat?.value,
-    'user': options.user,
-  });
+  final bag = options.toProviderOptionsBag();
+  return bag.isEmpty ? null : bag;
 }
 
 OpenAISpeechOptions? parseOpenAISpeechOptionsBag(ProviderOptionsBag? bag) {
@@ -157,12 +147,8 @@ OpenAISpeechOptions? parseOpenAISpeechOptionsBag(ProviderOptionsBag? bag) {
 ProviderOptionsBag? openAISpeechOptionsToProviderOptionsBag(
   OpenAISpeechOptions options,
 ) {
-  return ProviderOptionsBag.forProvider(openAIProviderOptionsNamespace, {
-    'output_format': options.outputFormat,
-    'instructions': options.instructions,
-    'speed': options.speed,
-    'language': options.language,
-  });
+  final bag = options.toProviderOptionsBag();
+  return bag.isEmpty ? null : bag;
 }
 
 OpenAITranscriptionOptions? parseOpenAITranscriptionOptionsBag(
@@ -220,18 +206,8 @@ OpenAITranscriptionOptions? parseOpenAITranscriptionOptionsBag(
 ProviderOptionsBag? openAITranscriptionOptionsToProviderOptionsBag(
   OpenAITranscriptionOptions options,
 ) {
-  return ProviderOptionsBag.forProvider(openAIProviderOptionsNamespace, {
-    'include': options.include.isEmpty ? null : options.include,
-    'language': options.language,
-    'prompt': options.prompt,
-    'temperature': options.temperature,
-    'response_format': options.responseFormat?.value,
-    'timestamp_granularities': options.timestampGranularities.isEmpty
-        ? null
-        : options.timestampGranularities
-            .map((granularity) => granularity.value)
-            .toList(growable: false),
-  });
+  final bag = options.toProviderOptionsBag();
+  return bag.isEmpty ? null : bag;
 }
 
 bool _isEmptyOpenAIOptions(OpenAIGenerateTextOptions options) {

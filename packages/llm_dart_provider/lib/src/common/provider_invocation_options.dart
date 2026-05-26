@@ -56,9 +56,14 @@ ProviderOptionsBag? providerOptionsBagFromInvocationOptions(
             ? typedOptions.toProviderOptionsBag()
             : null,
       ),
-    ProviderInvocationOptionsBagProjection() => options.toProviderOptionsBag(),
+    ProviderInvocationOptionsBagProjection() =>
+      _nonEmptyProviderOptionsBag(options.toProviderOptionsBag()),
     _ => null,
   };
+}
+
+ProviderOptionsBag? _nonEmptyProviderOptionsBag(ProviderOptionsBag bag) {
+  return bag.isEmpty ? null : bag;
 }
 
 /// Returns the typed provider options carried by invocation options.

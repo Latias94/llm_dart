@@ -1,8 +1,10 @@
 import 'package:llm_dart_provider/llm_dart_provider.dart';
 
 import 'openai_image_types.dart';
+import '../provider/openai_provider_options_namespaces.dart';
 
-final class OpenAIImageOptions implements ProviderInvocationOptions {
+final class OpenAIImageOptions
+    implements ProviderInvocationOptionsBagProjection {
   final OpenAIImageStyle? style;
   final OpenAIImageQuality? quality;
   final OpenAIImageBackground? background;
@@ -22,4 +24,19 @@ final class OpenAIImageOptions implements ProviderInvocationOptions {
     this.responseFormat,
     this.user,
   });
+
+  @override
+  ProviderOptionsBag toProviderOptionsBag() {
+    return ProviderOptionsBag.forProvider(openAIProviderOptionsNamespace, {
+          'style': style?.value,
+          'quality': quality?.value,
+          'background': background?.value,
+          'moderation': moderation?.value,
+          'output_format': outputFormat?.value,
+          'output_compression': outputCompression,
+          'response_format': responseFormat?.value,
+          'user': user,
+        }) ??
+        ProviderOptionsBag.empty;
+  }
 }

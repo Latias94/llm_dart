@@ -91,6 +91,28 @@ void main() {
       );
     });
 
+    test('exposes descriptor-backed capability gates', () {
+      final registry = ProviderRegistry(
+        providers: {
+          'openai': _LanguageOnlyProvider('openai'),
+        },
+      );
+
+      final gate = registry.providerCapabilityGate('openai');
+
+      expect(gate.modelFacet(ProviderModelFacet.language).allowed, isTrue);
+      expect(gate.modelFacet(ProviderModelFacet.embedding).allowed, isFalse);
+      expect(
+        gate
+            .inputShape(
+              modelKind: ModelCapabilityKind.language,
+              shapeId: ProviderInputShapeIds.text,
+            )
+            .allowed,
+        isTrue,
+      );
+    });
+
     test('honors provider-declared facet support', () {
       final registry = ProviderRegistry(
         providers: {

@@ -894,6 +894,162 @@ void main() {
     });
   });
 
+  group('Capability gates', () {
+    test('separates hard requirements from affordance checks', () {
+      final gate = ProviderCapabilityGate.forSpecification(
+        ProviderSpecification(
+          providerId: 'openai',
+          modelFacets: const {
+            ProviderModelFacet.language,
+          },
+          capabilities: const [
+            CapabilityDescriptor(
+              id: ModelCapabilityFeatureIds.languageStreaming,
+            ),
+            CapabilityDescriptor(
+              id: ModelCapabilityFeatureIds.languageReasoningOutput,
+              confidence: CapabilityConfidence.inferred,
+            ),
+            CapabilityDescriptor(
+              id: ModelCapabilityFeatureIds.languageAudioInput,
+              confidence: CapabilityConfidence.unknown,
+            ),
+          ],
+          providerFeatures: const [
+            ProviderFeatureDescriptor(
+              providerId: 'openai',
+              featureId: 'responses',
+              confidence: CapabilityConfidence.userProvided,
+            ),
+          ],
+          supportedInputShapes: [
+            ProviderInputShapeDescriptor(
+              modelKind: ModelCapabilityKind.language,
+              shapeId: ProviderInputShapeIds.text,
+            ),
+            ProviderInputShapeDescriptor(
+              modelKind: ModelCapabilityKind.language,
+              shapeId: ProviderInputShapeIds.image,
+              mediaTypes: const ['image/*'],
+              confidence: CapabilityConfidence.inferred,
+            ),
+          ],
+        ),
+      );
+
+      expect(
+        gate
+            .sharedCapability(ModelCapabilityFeatureIds.languageStreaming)
+            .allowed,
+        isTrue,
+      );
+      expect(
+        gate
+            .sharedCapability(
+              ModelCapabilityFeatureIds.languageReasoningOutput,
+            )
+            .allowed,
+        isFalse,
+      );
+      expect(
+        gate
+            .sharedCapability(
+              ModelCapabilityFeatureIds.languageReasoningOutput,
+              mode: CapabilityGateMode.affordance,
+            )
+            .allowed,
+        isTrue,
+      );
+      expect(
+        gate
+            .sharedCapability(
+              ModelCapabilityFeatureIds.languageAudioInput,
+              mode: CapabilityGateMode.affordance,
+            )
+            .allowed,
+        isFalse,
+      );
+      expect(gate.providerFeature('openai', 'responses').allowed, isTrue);
+      expect(
+        gate
+            .inputShape(
+              modelKind: ModelCapabilityKind.language,
+              shapeId: ProviderInputShapeIds.image,
+              mediaType: 'image/png',
+            )
+            .allowed,
+        isFalse,
+      );
+      expect(
+        gate
+            .inputShape(
+              modelKind: ModelCapabilityKind.language,
+              shapeId: ProviderInputShapeIds.image,
+              mediaType: 'image/png',
+              mode: CapabilityGateMode.affordance,
+            )
+            .allowed,
+        isTrue,
+      );
+      expect(
+        gate
+            .inputShape(
+              modelKind: ModelCapabilityKind.language,
+              shapeId: ProviderInputShapeIds.image,
+              mediaType: 'text/plain',
+              mode: CapabilityGateMode.affordance,
+            )
+            .allowed,
+        isFalse,
+      );
+    });
+
+    test('gates concrete model capability profiles', () {
+      final gate = ModelCapabilityGate(
+        ModelCapabilityProfile(
+          providerId: 'openai',
+          modelId: 'gpt-4.1-mini',
+          kind: ModelCapabilityKind.language,
+          sharedFeatures: const [
+            CapabilityDescriptor(
+              id: ModelCapabilityFeatureIds.languageStreaming,
+            ),
+            CapabilityDescriptor(
+              id: ModelCapabilityFeatureIds.languageReasoningOutput,
+              confidence: CapabilityConfidence.inferred,
+            ),
+          ],
+        ),
+      );
+
+      expect(gate.modelKind(ModelCapabilityKind.language).allowed, isTrue);
+      expect(gate.modelKind(ModelCapabilityKind.image).allowed, isFalse);
+      expect(
+        gate
+            .sharedCapability(ModelCapabilityFeatureIds.languageStreaming)
+            .allowed,
+        isTrue,
+      );
+      expect(
+        gate
+            .sharedCapability(
+              ModelCapabilityFeatureIds.languageReasoningOutput,
+            )
+            .allowed,
+        isFalse,
+      );
+      expect(
+        gate
+            .sharedCapability(
+              ModelCapabilityFeatureIds.languageReasoningOutput,
+              mode: CapabilityGateMode.affordance,
+            )
+            .confidence,
+        CapabilityConfidence.inferred,
+      );
+    });
+  });
+
   group('CallOptions and ProviderCancellation', () {
     test('resolves typed provider invocation options', () {
       final options = _TestProviderOptions();
