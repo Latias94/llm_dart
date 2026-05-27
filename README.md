@@ -8,6 +8,151 @@
 Modular Dart library for LLM providers with a stable model-first API,
 provider-owned typed options, and a Flutter-friendly chat session layer.
 
+## Start Here
+
+Most applications use two layers:
+
+- `llm_dart` for provider-neutral messages, result helpers, chat runtime, and
+  transport contracts
+- one provider package for concrete models, such as `llm_dart_openai`,
+  `llm_dart_anthropic`, `llm_dart_google`, `llm_dart_ollama`, or
+  `llm_dart_elevenlabs`
+
+For an OpenAI-family app, start with:
+
+```yaml
+dependencies:
+  llm_dart: ^0.11.0-alpha.1
+  llm_dart_openai: ^0.11.0-alpha.1
+```
+
+Provider package cheat sheet:
+
+| Need | Add package | Factory | Example model |
+| --- | --- | --- | --- |
+| OpenAI | `llm_dart_openai` | `openai.openai(...)` | `gpt-4.1-mini` |
+| DeepSeek | `llm_dart_openai` | `openai.deepSeek(...)` | `deepseek-chat` |
+| OpenRouter | `llm_dart_openai` | `openai.openRouter(...)` | `openai/gpt-4o-mini` |
+| Groq | `llm_dart_openai` | `openai.groq(...)` | `llama-3.3-70b-versatile` |
+| xAI | `llm_dart_openai` | `openai.xai(...)` | `grok-3` |
+| Anthropic | `llm_dart_anthropic` | `anthropic.anthropic(...)` | `claude-sonnet-4-5` |
+| Google | `llm_dart_google` | `google.google(...)` | `gemini-2.5-flash` |
+| Ollama | `llm_dart_ollama` | `ollama.ollama(...)` | `llama3.2` |
+| ElevenLabs | `llm_dart_elevenlabs` | `elevenlabs.elevenLabs(...)` | `eleven_multilingual_v2` |
+
+Then make your first request:
+
+```dart
+import 'dart:io';
+
+import 'package:llm_dart/llm_dart.dart' as llm;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
+
+Future<void> main() async {
+  final apiKey = Platform.environment['OPENAI_API_KEY'];
+  if (apiKey == null || apiKey.isEmpty) {
+    throw StateError('Set OPENAI_API_KEY before running this example.');
+  }
+
+  final model = openai.openai(apiKey: apiKey).chatModel('gpt-4.1-mini');
+
+  final result = await llm.generateTextCall(
+    model: model,
+    messages: [
+      llm.SystemModelMessage.text('You answer in one short paragraph.'),
+      llm.UserModelMessage.text('What is llm_dart for?'),
+    ],
+  );
+
+  print(result.text);
+}
+```
+
+Switch providers by changing only the provider factory and model id:
+
+```dart
+final openAI = openai.openai(apiKey: openAIKey).chatModel('gpt-4.1-mini');
+final deepSeek = openai.deepSeek(apiKey: deepSeekKey).chatModel('deepseek-chat');
+final openRouter = openai
+    .openRouter(apiKey: openRouterKey)
+    .chatModel('openai/gpt-4o-mini');
+```
+
+Common next steps:
+
+The snippets below assume the imports from the first example plus a concrete
+`model` and API-key strings.
+
+```dart
+// Streaming text.
+final stream = llm.streamTextCall(
+  model: model,
+  messages: [llm.UserModelMessage.text('Write a three-line launch plan.')],
+);
+
+await for (final event in stream) {
+  if (event is llm.TextDeltaEvent) {
+    stdout.write(event.delta);
+  }
+}
+
+// Structured output.
+final titleResult = await llm.generateObject<String>(
+  model: model,
+  messages: [llm.UserModelMessage.text('Return JSON with a short title.')],
+  schema: llm.JsonSchema.object(
+    properties: const {
+      'title': {'type': 'string'},
+    },
+    required: const ['title'],
+  ),
+  decode: (json) => json['title']! as String,
+);
+print(titleResult.output);
+
+// Embeddings.
+final embeddingModel = openai
+    .openai(apiKey: apiKey)
+    .embeddingModel('text-embedding-3-small');
+final embedding = await llm.embed(
+  model: embeddingModel,
+  value: 'Dart is productive for client and server apps.',
+);
+print(embedding.embedding.length);
+```
+
+For provider-specific features, keep the shared call shape and pass typed
+provider options only at the request boundary:
+
+```dart
+final searched = await llm.generateTextCall(
+  model: model,
+  messages: [
+    llm.UserModelMessage.text('Search the web and summarize recent Dart news.'),
+  ],
+  callOptions: const llm.CallOptions(
+    providerOptions: openai.OpenAIGenerateTextOptions(
+      builtInTools: [openai.OpenAIWebSearchTool()],
+    ),
+  ),
+);
+
+print(searched.text);
+```
+
+Runnable examples in this repository:
+
+| Task | File |
+| --- | --- |
+| First text request across OpenAI, Anthropic, and Google | [quick_start.dart](example/01_getting_started/quick_start.dart) |
+| Basic chat history and response metadata | [chat_basics.dart](example/02_core_features/chat_basics.dart) |
+| Streaming text and reasoning deltas | [streaming_chat.dart](example/02_core_features/streaming_chat.dart) |
+| Structured JSON output | [structured_output.dart](example/02_core_features/structured_output.dart) |
+| Tool calling | [tool_calling.dart](example/02_core_features/tool_calling.dart) |
+| Web search | [web_search.dart](example/02_core_features/web_search.dart) |
+| Embeddings | [embeddings_stable.dart](example/02_core_features/embeddings_stable.dart) |
+| Flutter chat controller | [flutter_integration.dart](packages/llm_dart_flutter/example/flutter_integration.dart) |
+
 ## Status
 
 The repository is currently on the `0.11.0-alpha.x` preview line.
@@ -107,17 +252,21 @@ on `llm_dart_openai` directly without adding the root `llm_dart` package.
 
 ## Installation
 
+The root package is provider-neutral, so add at least one provider package
+alongside it. For the common OpenAI-family path:
+
 ```yaml
 dependencies:
   llm_dart: ^0.11.0-alpha.1
+  llm_dart_openai: ^0.11.0-alpha.1
 ```
 
 For a focused dependency set, depend on the package boundary you actually use:
 
 ```yaml
 dependencies:
-  llm_dart_openai: ^0.11.0-alpha.1
   llm_dart_ai: ^0.11.0-alpha.1
+  llm_dart_openai: ^0.11.0-alpha.1
 ```
 
 `llm_dart_ai` is needed only when you want the shared helper calls such as
