@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "release": "0.11.0-alpha.2-candidate",
+  "release": "0.11.0-alpha.1",
   "status": "release_ready",
   "publishAction": "manual_maintainer_approval_required",
   "generatedFrom": [
