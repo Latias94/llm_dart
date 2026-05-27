@@ -1,8 +1,9 @@
 {
   "schemaVersion": 1,
   "release": "0.11.0-alpha.1",
-  "status": "release_ready",
-  "publishAction": "manual_maintainer_approval_required",
+  "status": "published",
+  "publishAction": "published",
+  "publishedAt": "2026-05-27",
   "generatedFrom": [
     "docs/migration/0.11-sdk-aligned.md",
     "CHANGELOG.md",
