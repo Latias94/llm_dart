@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 0.11 alpha is the first release of the SDK-aligned architecture. It moves the library from the old builder-first compatibility shell to a model-first API: apps construct a concrete model from a provider package, then call shared runtime helpers from `llm_dart`.
 
-This is a large breaking alpha, not a patch-style upgrade. Compared with `v0.10.7`, the release spans 1092 non-merge commits, 2104 changed files, about 250k additions, and about 77k deletions. Most users should plan a deliberate migration instead of expecting old builder code to keep compiling unchanged.
+This is a large breaking alpha, not a patch-style upgrade. The main migration work is around package boundaries, imports, model construction, provider-specific options, and the move away from builder-era root APIs. Most users should plan a deliberate migration instead of expecting old builder code to keep compiling unchanged.
 
 The refactor follows the same boundary idea that makes mature SDKs such as the Vercel AI SDK approachable: app code uses a small provider-neutral surface, while provider-specific features stay in typed provider-owned options.
 
