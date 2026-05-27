@@ -2,7 +2,6 @@
 repo-ref/
 docs/
 tool/
-packages/
 build/
 coverage/
 *.log
