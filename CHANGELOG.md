@@ -84,15 +84,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.11.0-alpha.1] - 2026-05-12
 
-This alpha moves new application code toward the model-first API:
-`openai(...).chatModel(...)` and other short provider factories plus the shared
-helpers from `package:llm_dart/core.dart` and direct provider packages.
+If you are coming from 0.10.x, this release is a shape change, not just a
+feature bump. The default path now starts from short provider factories such
+as `openai(...).chatModel(...)`, with shared helpers in
+`package:llm_dart/core.dart` and provider-native types living in the owning
+packages. The old builder-first root surface is no longer the center of
+gravity.
 
-Most apps should continue depending on the root `llm_dart` package. The new
-split packages are available when you want smaller direct dependencies,
-provider-specific entrypoints, or custom provider implementation contracts.
-Older builder-era code should migrate directly to focused provider factories
-and typed provider options.
+Most apps should still depend on the root `llm_dart` package. Use the split
+packages when you want smaller direct dependencies, provider-specific
+entrypoints, or custom provider implementation contracts. Older builder-era
+code should move to focused provider factories and typed provider options.
 
 ### Added
 

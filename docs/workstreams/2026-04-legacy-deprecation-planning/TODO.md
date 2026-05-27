@@ -106,8 +106,20 @@ Current staging status:
 
 ## Explicitly Deferred
 
-- [ ] Deprecate `LLMBuilder` before common task-oriented migration recipes exist
-- [ ] Remove `legacy.dart` before the builder and root-provider migration story
-  is complete
-- [ ] Remove broad root provider constructors before the first leaf-removal
-  window lands
+These are policy constraints, not open implementation TODOs for this historical
+lane. They should be reopened only in a new explicit breaking workstream after
+release posture, migration recipes, and user feedback justify the cut.
+
+- Do not deprecate `LLMBuilder` before common task-oriented migration recipes
+  exist and the maintainer intentionally opens a trunk deprecation window.
+- Do not remove `legacy.dart` before the builder and root-provider migration
+  story is complete.
+- Do not remove broad root provider constructors before the first leaf-removal
+  window lands.
+
+## Closeout
+
+- [x] Reclassify this workstream as a historical planning record after the Wave
+      3 root legacy classification became the current authority.
+- [x] Move trunk-removal candidates out of unchecked TODO form and into
+      explicit future-lane policy constraints.

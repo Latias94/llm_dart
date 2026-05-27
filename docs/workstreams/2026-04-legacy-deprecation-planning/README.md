@@ -131,6 +131,11 @@ This phase should explicitly avoid:
 
 ## Current Status
 
+Closed as a historical planning record on 2026-05-24. This lane no longer owns
+current root legacy classification or trunk-removal execution. The current
+classification lives in the Wave 3 architecture workstream and the root
+boundary guard decision table.
+
 The workstream has now moved beyond general policy and inventory.
 
 What is now written down:
@@ -183,7 +188,7 @@ What is now also landed on this branch:
 - the repository now also has a concrete workspace publish dry-run command:
   `dart run tool/run_workspace_publish_dry_run.dart`
 
-What remains open before a wider deprecation wave:
+External follow-ons before any wider deprecation wave:
 
 - decide whether maintainers are ready to actually open the default
   `0.11.0-alpha.1` breaking-preview vehicle for wave 1

@@ -217,3 +217,28 @@ Current status:
 - the next honest implementation slice is now clear: either execute the
   conservative wave-1 leaf removals in a breaking branch or deliberately defer
   them, but do not reopen the trunk-level architecture debate
+
+## M6 - Historical Closeout
+
+Goals:
+
+- stop presenting this planning lane as an active implementation lane
+- keep the root legacy trunk constraints visible without making them look like
+  safe immediate TODOs
+- point future root legacy decisions at the current Wave 3 classification
+
+Acceptance criteria:
+
+- workstream index marks this lane closed/historical
+- TODO has no unchecked pseudo-tasks for intentionally deferred trunk removals
+- current root legacy authority points to the Wave 3 classification and guard
+  decision table
+
+Current status:
+
+- this lane is closed as a historical planning record
+- `LLMBuilder`, `legacy.dart`, and broad root provider constructor changes are
+  future explicit breaking-lane decisions, not current cleanup tasks
+- the current root legacy classification lives in
+  `docs/workstreams/2026-05-fearless-refactor-wave-3/06-root-legacy-classification.md`
+  and `tool/root_legacy_classification.dart`

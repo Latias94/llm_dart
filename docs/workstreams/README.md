@@ -12,10 +12,10 @@
     worthwhile gaps versus `repo-ref/ai`, completed model-centric capability
     discovery, and ended with an explicit closure/freeze decision.
 - [2026-04-legacy-deprecation-planning](2026-04-legacy-deprecation-planning/README.md)
-  - Active planning workstream that inventories the remaining legacy root
-    surface, defines deprecation policy and release windows, and sequences the
-    migration away from compatibility-era helpers without dropping provider
-    value or breaking users by surprise.
+  - Closed historical planning workstream that inventoried the legacy root
+    surface, defined deprecation policy and release windows, and prepared the
+    first conservative breaking-preview removal slice. Current root legacy
+    classification now lives in the Wave 3 architecture workstream.
 - [2026-05-provider-ai-runtime-split](2026-05-provider-ai-runtime-split/README.md)
   - Architecture-complete breaking-refactor workstream that split provider
     specifications from AI runtime orchestration, redesigned shared file/tool
@@ -47,6 +47,11 @@
     module interfaces across app-facing text generation requests, error
     taxonomy, stream vocabulary composition, provider descriptors, provider
     call execution, and app/provider-authoring entrypoints.
+- [2026-05-remaining-boundary-fearless-refactor](2026-05-remaining-boundary-fearless-refactor/DESIGN.md)
+  - Active breaking architecture workstream for the remaining boundary
+    candidates after the core seam refactor: provider codec contracts,
+    capability enforcement, non-text request seams, chat transport protocol,
+    provider options policy, and serialization registry posture.
 - [2026-05-provider-implementation-kit-and-codec-boundaries](2026-05-provider-implementation-kit-and-codec-boundaries/README.md)
   - Active provider-internal architecture workstream that reduces large codec,
     request-builder, stream-parser, replay, and native-helper hotspots while
