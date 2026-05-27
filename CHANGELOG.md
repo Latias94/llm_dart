@@ -2,253 +2,139 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Added
+## [0.11.0-alpha.1] - 2026-05-27
 
-- Added the internal `TextGenerationRuntimeRequest` seam in `llm_dart_ai` so
-  `GenerateTextRunner`, `StreamTextRunner`, structured-output helpers, and
-  text-call helpers share one prompt/options/tool-loop request shape.
-- Added versioned `ProviderSpecification` declarations to provider facades so
-  provider id, supported model facets, capabilities, and input shapes are
-  discoverable from one provider-owned contract.
-- Added provider-declared model facet support so `ProviderRegistry` can report
-  profile-specific model kinds instead of relying only on concrete provider
-  class interfaces.
+0.11 alpha is the first release of the SDK-aligned architecture. It moves the library from the old builder-first compatibility shell to a model-first API: apps construct a concrete model from a provider package, then call shared runtime helpers from `llm_dart`.
 
-### Changed
+This is a large breaking alpha, not a patch-style upgrade. Compared with `v0.10.7`, the release spans 1092 non-merge commits, 2104 changed files, about 250k additions, and about 77k deletions. Most users should plan a deliberate migration instead of expecting old builder code to keep compiling unchanged.
 
-- Removed the historical `llm_dart_core` package from the workspace package
-  graph. Import the owning package or root focused entrypoint instead:
-  `package:llm_dart/core.dart`, `package:llm_dart_ai/llm_dart_ai.dart`, or
-  `package:llm_dart_provider/llm_dart_provider.dart`.
-- AI runtime full-stream JSON now composes provider model-call event JSON from
-  the provider codec; `llm_dart_ai` keeps only runtime-owned lifecycle event
-  serialization.
-- Provider implementation packages now share provider-utils transport call
-  helpers for send/stream cancellation normalization, `StartEvent` emission,
-  and transport-to-model error projection.
-- OpenAI language-model routing now flows through route-specific Responses and
-  Chat Completions adapters instead of one central route switch helper set.
-- OpenAI-family compatible providers such as OpenRouter, DeepSeek, Groq, xAI,
-  and Phind now register as language-model providers only unless their profile
-  explicitly supports another model facet.
-- OpenAI-family model capability descriptions now route through a profile-owned
-  capability policy seam instead of keeping profile-specific rules inline in
-  the public describer.
-- OpenAI-family Chat Completions request encoding now delegates OpenAI and
-  DeepSeek provider-specific request-field policy to an internal policy seam
-  while preserving the public typed options.
-- OpenAI-family Chat Completions now resolve request policy from
-  `OpenAIFamilyProfile` on the language-model path, so profile types remain
-  the source of provider-family behaviour even when a profile customizes its
-  provider id.
-- OpenAI-family route selection, invocation option resolution, capability
-  policy, Chat Completions request policy, and tool-option acceptance are now
-  owned by `OpenAIFamilyProfile`; custom OpenAI-compatible endpoints should use
-  `OpenAICompatibleProfile` instead of mutating an `OpenAIProfile`.
-- Google language-model request and capability policy now routes through an
-  internal model-family policy seam, concentrating Gemini, Gemini 3, and Gemma
-  request differences while preserving the public typed options.
-- Ollama chat request encoding now routes through deeper internal options
-  policy, prompt projection, and binary prompt encoding modules while
-  preserving the public typed options and wire output.
-- Anthropic Messages request option encoding now routes through deeper internal
-  thinking policy, beta feature inference, and token-count projection modules
-  while preserving the public typed options, beta headers, and wire output.
-- OpenAI Responses prompt conversion now routes through deeper internal user
-  media encoding, assistant replay projection, tool message projection, and
-  replay policy modules while preserving public typed options and wire output.
-- OpenAI Responses stream event decoding now routes through deeper internal
-  text/reasoning lifecycle, output item, source annotation, custom event, and
-  MCP projection modules while preserving public stream event behaviour.
-- Anthropic Messages result decoding now routes through deeper internal
-  content, tool-result replay, and metadata projection modules while
-  preserving public result behaviour.
-- Google prompt projection now routes through deeper internal user binary
-  encoding, assistant replay projection, tool replay projection, and replay
-  metadata helpers while preserving public typed options and wire output.
+The refactor follows the same boundary idea that makes mature SDKs such as the Vercel AI SDK approachable: app code uses a small provider-neutral surface, while provider-specific features stay in typed provider-owned options.
 
-### Breaking Changes
+### Start Here
 
-- `llm_dart_core` has been deleted rather than kept as a deprecated
-  compatibility shell.
-- `Provider` implementations must now expose `ProviderSpecification`.
-- Root legacy builder/provider/model import paths remain removed; do not
-  migrate new code to `package:llm_dart/legacy.dart`,
-  `package:llm_dart/providers/...`, `package:llm_dart/models/...`, or root
-  builder subpaths.
+Most apps now install the root runtime plus at least one provider package:
 
-## [0.11.0-alpha.1] - 2026-05-12
+```yaml
+dependencies:
+  llm_dart: ^0.11.0-alpha.1
+  llm_dart_openai: ^0.11.0-alpha.1
+```
 
-If you are coming from 0.10.x, this release is a shape change, not just a
-feature bump. The default path now starts from short provider factories such
-as `openai(...).chatModel(...)`, with shared helpers in
-`package:llm_dart/core.dart` and provider-native types living in the owning
-packages. The old builder-first root surface is no longer the center of
-gravity.
+```dart
+import 'package:llm_dart/core.dart' as core;
+import 'package:llm_dart_openai/llm_dart_openai.dart' as openai;
 
-Most apps should still depend on the root `llm_dart` package. Use the split
-packages when you want smaller direct dependencies, provider-specific
-entrypoints, or custom provider implementation contracts. Older builder-era
-code should move to focused provider factories and typed provider options.
+Future<void> main() async {
+  final model = openai.openai(
+    apiKey: 'your-openai-key',
+  ).chatModel('gpt-4.1-mini');
+
+  final result = await core.generateTextCall(
+    model: model,
+    messages: [
+      core.SystemModelMessage.text('You are concise.'),
+      core.UserModelMessage.text('Explain Dart in one sentence.'),
+    ],
+  );
+
+  print(result.text);
+}
+```
+
+Provider-specific features are still available, but they now sit at the provider boundary:
+
+```dart
+final result = await core.generateTextCall(
+  model: model,
+  messages: [
+    core.UserModelMessage.text('Search for recent Dart SDK news.'),
+  ],
+  callOptions: const core.CallOptions(
+    providerOptions: openai.OpenAIGenerateTextOptions(
+      builtInTools: [openai.OpenAIWebSearchTool()],
+    ),
+  ),
+);
+```
+
+### Package Shape
+
+| Need | Package or entrypoint |
+| --- | --- |
+| App-facing runtime helpers | `package:llm_dart/llm_dart.dart` or `package:llm_dart/core.dart` |
+| Framework-neutral AI helpers only | `package:llm_dart_ai/app.dart` |
+| Provider implementation contracts | `package:llm_dart/provider_authoring.dart` |
+| OpenAI, DeepSeek, Groq, OpenRouter, xAI, Phind | `package:llm_dart_openai/llm_dart_openai.dart` |
+| Anthropic | `package:llm_dart_anthropic/llm_dart_anthropic.dart` |
+| Google | `package:llm_dart_google/llm_dart_google.dart` |
+| Ollama | `package:llm_dart_ollama/llm_dart_ollama.dart` |
+| ElevenLabs | `package:llm_dart_elevenlabs/llm_dart_elevenlabs.dart` |
+| Pure Dart chat sessions | `package:llm_dart/chat.dart` or `llm_dart_chat` |
+| Flutter chat adapters | `llm_dart_flutter` |
+| HTTP/SSE transport primitives | `llm_dart_transport` |
 
 ### Added
 
-- Added focused packages for users who want direct access to provider
-  contracts, generation helpers, chat sessions, transport, Flutter adapters, or
-  provider-specific APIs.
-- Added `ModelRegistry` for runtime model selection across provider facades.
-- Added `generateObject(...)` and `streamObject(...)` as object-first wrappers
-  over the shared structured-output runtime.
-- Added request-scoped `CallOptions.maxRetries`, transport request retries,
-  transport diagnostics body snapshots, and `MiddlewareTransportClient` for
-  custom fetch-style transport hooks.
-- Added runner telemetry callbacks for chunk and error handling in multi-step
-  generation helpers.
-- Added short root provider factories such as `openai(...)`,
-  `anthropic(...)`, and `google(...)` as the primary ergonomic root
-  construction path.
-- Added the same short factories to the focused OpenAI-family, Google, and
-  Anthropic packages so split-package users can use the model-first path
-  without depending on the root facade.
-- Added dedicated `llm_dart_ollama` and `llm_dart_elevenlabs` packages with
-  `ollama(...)` and `elevenLabs(...)` short factories.
-- Added focused root entrypoints `package:llm_dart/ollama.dart` and
-  `package:llm_dart/elevenlabs.dart`.
-- Added focused root entrypoints for xAI, DeepSeek, OpenRouter, Groq, and
-  Phind so OpenAI-family profiles can be imported from provider-shaped paths
-  instead of the broad OpenAI-family entrypoint.
-- Added OpenRouter app attribution header support through
-  `OpenRouterProfile(appReferer: ..., appTitle: ...)` and root
-  `openRouter(...)` parameters.
-- Added model capability profiles for modern Ollama and ElevenLabs models in
-  their dedicated provider packages.
-- Added updated app and Flutter examples that show the model-first path,
-  provider-owned options, capability-gated UI, and the pure Dart chat runtime.
-
-### Changed
-
-- The root `llm_dart` package is now the recommended entrypoint for the stable
-  model API.
-- Split the previous combined Ollama and ElevenLabs provider bucket into dedicated
-  Ollama and ElevenLabs provider packages.
-- Moved the shared chat UI message, mapper, stream reader, and chat UI JSON
-  helpers into `llm_dart_ai` so provider packages stay on provider contracts
-  only.
-- HTTP chat transport payloads now serialize common `CallOptions` fields such
-  as timeout, headers, and max retries, while typed provider options can be
-  encoded with an explicit transport encoder.
-- Historical core-package imports should move to the root focused entrypoints
-  or the owning split packages directly.
-- Provider-specific features now use typed provider options, focused provider
-  entrypoints, or provider helper clients instead of broad shared option bags.
-- The MCP examples now use the current `mcp_dart` 2.x package and document the
-  run-from-package commands for stdio and HTTP transports.
-- Hardened `LanguageModel` as a provider implementation contract. Direct
-  provider implementations now use `doGenerate(...)` and `doStream(...)`;
-  user-facing generation should flow through `generateText(...)`,
-  `streamText(...)`, `generateTextCall(...)`, `streamTextCall(...)`, or
-  advanced runner helpers from `llm_dart_ai`.
-- Added shared generation options for presence penalty, frequency penalty,
-  seed, reasoning configuration, and raw stream chunk inclusion where providers
-  can expose it.
-- Tightened provider package dependencies so concrete provider packages do not
-  depend on AI runtime, chat, Flutter, root, or core compatibility packages at
-  runtime.
-- Clarified the provider options versus provider metadata boundary. Input-side
-  provider features use typed provider options; `ProviderMetadata` is reserved
-  for output observations, raw response details, and replay data.
-- Deferred a public `llm_dart_provider_utils` package until repeated provider
-  helper usage proves a stable cross-provider utility boundary.
+- Split the monolithic surface into focused packages for app runtime, provider contracts, transport, chat, Flutter adapters, and provider-specific APIs.
+- Added model-first provider factories such as `openai(...).chatModel(...)`, `anthropic(...).chatModel(...)`, `google(...).chatModel(...)`, `ollama(...)`, and `elevenLabs(...)`.
+- Added OpenAI-family factories for `deepSeek(...)`, `groq(...)`, `openRouter(...)`, `xai(...)`, and `phind(...)`.
+- Added `ProviderRegistry` for runtime lookup such as `registry.languageModel('openai:gpt-4.1-mini')`.
+- Added app-facing text helpers: `generateTextCall(...)`, `streamTextCall(...)`, `generateText(...)`, `streamText(...)`, and advanced runner helpers for multi-step tool loops.
+- Added structured output helpers: `generateObject(...)`, `streamObject(...)`, `generateOutput(...)`, and `streamOutput(...)`.
+- Added shared helpers for embeddings, image generation, speech generation, and transcription where the provider exposes the matching model facet.
+- Added typed provider options for provider-native features such as OpenAI hosted tools, xAI live search, Anthropic extended thinking, Anthropic MCP, Anthropic prompt caching, Google options, and OpenRouter attribution headers.
+- Added pure Dart chat runtime and Flutter chat adapters that project shared stream events into UI-friendly messages.
+- Added transport controls through `CallOptions`, including timeout, headers, cancellation, `maxRetries`, and middleware-style transport wrapping.
 
 ### Fixed
 
-- Fixed legacy direct DeepSeek, Groq, and xAI provider tool-result replay so
-  OpenAI-compatible chat-completions requests send `role: tool` messages with
-  matching `tool_call_id` values after assistant `tool_calls`.
-- Exported `CancellationHelper` from `package:llm_dart/core.dart` so
-  cancellation examples and new app code no longer need the older
-  `core/cancellation.dart` subpath import.
-- Tool result replay now preserves explicit `ToolOutput` values, including
-  text, JSON, error, denied, multimodal, and provider-native content payloads,
-  across prompt codecs, stream JSON, chat sessions, UI snapshots, local tool
-  callbacks, and provider replay where supported. Older `output` / `isError`
-  payloads continue to decode for compatibility.
-- Denied approval reasons are now visible in shared chat UI state and
-  persistence snapshots as denied tool output, while provider request replay
-  continues to follow each provider's native approval protocol.
-- Accepted `dynamic` as a JSON alias for Dart `isDynamic` tool flags in prompt,
-  stream, and Chat UI codecs for easier interop with AI SDK-style payloads.
+- Added OpenRouter support and OpenRouter app attribution options, addressing [#30](https://github.com/Latias94/llm_dart/issues/30).
+- Fixed DeepSeek/OpenAI-compatible tool-result replay so tool responses are sent as `role: tool` with matching `tool_call_id`, addressing [#31](https://github.com/Latias94/llm_dart/issues/31).
+- Preserved explicit `ToolOutput` values across prompt codecs, streams, chat sessions, UI snapshots, local tool callbacks, and provider replay where the provider supports it.
+- Preserved denied tool-approval reasons in shared chat UI state and persistence snapshots.
+- Accepted `dynamic` as a JSON alias for Dart `isDynamic` tool flags to improve interop with AI SDK-style payloads.
+- Exported cancellation helpers from modern app-facing entrypoints so examples no longer need removed `core/*` subpath imports.
 
 ### Breaking Changes
 
-- Removed deprecated preset helper aliases. Use
-  `<provider>(...).chatModel(...)`, `embeddingModel(...)`, `imageModel(...)`,
-  `speechModel(...)`, or `transcriptionModel(...)`.
-- Removed the deprecated `ai()` helper from the legacy root compatibility
-  entrypoint. Use short provider factories such as
-  `openai(...).chatModel(...)` for modern code.
-- Removed deprecated builder web-search helpers. Use provider-owned search
-  options such as `OpenAIGenerateTextOptions`, `AnthropicGenerateTextOptions`,
-  `XAIGenerateTextOptions`, or `OpenRouterChatModelSettings`.
-- Removed `CompatWebSearchPresets` from the legacy compatibility surface. Use
-  provider-owned typed search options for modern code, or construct
-  `WebSearchConfig` directly when maintaining old builder-era compatibility
-  code.
-- Removed the raw `extensions` escape hatch from `createProvider(...)`.
-  Provider-specific behavior should now use typed provider options or focused
-  provider APIs.
-- Removed legacy global defaults and utility surfaces such as
-  `ProviderDefaults`, `CapabilityUtils`, `ProviderRegistry`, `ConfigUtils`, and
-  root `utils/*` re-exports. Use model capability profiles,
-  `LLMProviderRegistry`, focused provider defaults, and `llm_dart_transport`
-  utilities instead.
-- Removed the deprecated `CancelToken` alias. Use `TransportCancellation`.
-- Removed provider-specific root model re-exports and compatibility-only
-  wrapper entrypoints. Import those APIs from their focused compatibility paths
-  when you still need them.
-- Removed the grouped `AI` namespace from focused provider and chat entrypoints
-  such as `package:llm_dart/openai.dart`, `google.dart`, `xai.dart`, and
-  `chat.dart`. Import direct provider packages instead.
+- Removed the old builder-first root compatibility surface. Do not import `package:llm_dart/legacy.dart`, `package:llm_dart/providers/...`, `package:llm_dart/models/...`, `package:llm_dart/builder/...`, or old `package:llm_dart/core/...` subpaths.
+- Removed `llm_dart_core`. Use `package:llm_dart/core.dart`, `package:llm_dart_ai/app.dart`, or `package:llm_dart_provider/...` depending on the layer you are writing.
+- The root `llm_dart` package no longer bundles concrete providers. Add direct provider packages explicitly, such as `llm_dart_openai` or `llm_dart_anthropic`.
+- Removed deprecated preset helper aliases and the old `ai()` helper. Use `<provider>(...).chatModel(...)`, `embeddingModel(...)`, `imageModel(...)`, `speechModel(...)`, or `transcriptionModel(...)`.
+- Removed builder-era web-search helpers and raw extension bags. Use typed provider options such as `OpenAIGenerateTextOptions`, `AnthropicGenerateTextOptions`, `XAIGenerateTextOptions`, or Google provider options.
+- App code should call shared helpers such as `generateTextCall(...)` and `streamTextCall(...)`. Provider implementations and low-level adapters own `LanguageModel.doGenerate(...)` and `LanguageModel.doStream(...)`.
+- Request-side provider customization moved to typed provider options. Keep `ProviderMetadata` for output observations, raw provider details, and replay metadata.
+- Provider file identity hints moved to `FileProviderReferenceData` with `ProviderReference`; do not use `ProviderMetadata` as a request input bag.
 
-### Migration Notes
+### Migration Table
 
-- For new chat/text generation, start with `<provider>(...).chatModel(...)`
-  plus `generateTextCall(...)` or `streamTextCall(...)`.
-- Replace `ai()` and builder-era configuration with focused provider factories
-  and typed provider options.
-- Replace old direct `model.generate(request)` calls with
-  `generateText(model: ..., prompt: ...)` for app code, or
-  `model.doGenerate(request)` only inside provider/adaptor code.
-- Replace old direct `model.stream(request)` calls with
-  `streamText(...)` for app/runtime code, `streamTextRun(...).eventStream`
-  when step/run observation is needed, or
-  `model.doStream(request)` only inside provider/adaptor code.
-- For embeddings, images, speech, and transcription, use the model-specific
-  factories on `<provider>(...)` plus the shared helpers from
-  `package:llm_dart/core.dart`.
-- For provider-specific controls, import the focused provider entrypoint such
-  as `package:llm_dart/openai.dart`, `package:llm_dart/xai.dart`,
-  `package:llm_dart/openrouter.dart`, `package:llm_dart/google.dart`, or
-  `package:llm_dart/anthropic.dart`.
-- Move request configuration that used provider metadata into typed provider
-  options passed through `CallOptions.providerOptions`.
-- Move provider file identity hints from `ProviderMetadata` to
-  `FileProviderReferenceData(ProviderReference.forProvider(...))`.
-- For compatibility builder code, rewrite to focused provider factories rather
-  than importing removed legacy or builder paths.
-- See `docs/migration/0.11-sdk-aligned.md` for the release-facing migration
-  guide and
-  `docs/workstreams/2026-05-sdk-aligned-fearless-refactor/01-boundaries-and-migration.md`
-  for the architecture boundary record.
+| 0.10-era code | 0.11 alpha path |
+| --- | --- |
+| `LLMBuilder` or builder preset helpers | `<provider>(...).chatModel(...)` plus shared runtime helpers |
+| `ai()` helper | direct provider factory such as `openai(...)` |
+| `package:llm_dart_core/...` | `package:llm_dart/core.dart` for app code |
+| root provider/model/builder imports | direct provider package imports |
+| provider-specific builder toggles | typed provider options in `CallOptions.providerOptions` |
+| app calls directly to `model.generate(...)` | `generateTextCall(...)`, `streamTextCall(...)`, `generateText(...)`, or `streamText(...)` |
+| request data in `ProviderMetadata` | typed provider options or `FileProviderReferenceData` |
+| broad root utility imports | focused packages such as `llm_dart_transport`, `llm_dart_chat`, or `llm_dart_flutter` |
 
-### Still Available
+### Migration And Examples
 
-- Focused provider package factories remain the preferred construction path.
+- [0.11 migration guide](docs/migration/0.11-sdk-aligned.md)
+- [README Start Here](README.md#start-here)
+- [Quick start example](example/01_getting_started/quick_start.dart)
+- [Structured output example](example/02_core_features/structured_output.dart)
+- [Streaming example](example/02_core_features/streaming_chat.dart)
+- [Tool calling example](example/02_core_features/tool_calling.dart)
+- [Anthropic prompt caching example](example/02_core_features/message_builder_cache.dart)
+- [OpenAI provider examples](example/04_providers/openai/README.md)
+- [Flutter chat example](packages/llm_dart_flutter/example/flutter_integration.dart)
+- [Package boundary design notes](docs/workstreams/2026-05-sdk-aligned-fearless-refactor/01-boundaries-and-migration.md)
 
 ## [0.10.7] - 2026-03-26
 
