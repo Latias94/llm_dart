@@ -1,0 +1,41 @@
+{
+  "uri": "https://api.elevenlabs.io/v1/text-to-speech/voice_default?output_format=pcm_44100&enable_logging=false&optimize_streaming_latency=2",
+  "method": "post",
+  "responseType": "bytes",
+  "headers": {
+    "xi-api-key": "test-key",
+    "x-settings": "1",
+    "content-type": "application/json",
+    "accept": "application/octet-stream",
+    "x-request": "request-header"
+  },
+  "body": {
+    "text": "Hello world.",
+    "model_id": "eleven_multilingual_v2",
+    "voice_settings": {
+      "stability": 0.8,
+      "similarity_boost": 0.9,
+      "style": 1.0,
+      "speed": 1.1,
+      "use_speaker_boost": false
+    },
+    "language_code": "en",
+    "pronunciation_dictionary_locators": [
+      {
+        "pronunciation_dictionary_id": "dict_1",
+        "version_id": "v1"
+      }
+    ],
+    "seed": 7,
+    "previous_text": "Earlier text.",
+    "next_text": "Later text.",
+    "previous_request_ids": [
+      "req_prev"
+    ],
+    "next_request_ids": [
+      "req_next"
+    ],
+    "apply_text_normalization": "off",
+    "apply_language_text_normalization": true
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "schema_version": 1,
+  "slug": "2026-05-pre-release-boundary-freeze",
+  "title": "Pre-Release Boundary Freeze",
+  "status": "complete",
+  "updated": "2026-05-27",
+  "scope_kind": "release-boundary-refactor",
+  "problem": "After core and remaining boundary refactors, release-facing evidence and user-visible contracts need frozen seams before alpha publish.",
+  "authoritative_docs": [
+    {
+      "role": "design",
+      "path": "docs/workstreams/2026-05-pre-release-boundary-freeze/DESIGN.md"
+    },
+    {
+      "role": "execution",
+      "path": "docs/workstreams/2026-05-pre-release-boundary-freeze/TODO.md"
+    },
+    {
+      "role": "milestones",
+      "path": "docs/workstreams/2026-05-pre-release-boundary-freeze/MILESTONES.md"
+    },
+    {
+      "role": "gates",
+      "path": "docs/workstreams/2026-05-pre-release-boundary-freeze/EVIDENCE_AND_GATES.md"
+    },
+    {
+      "role": "handoff",
+      "path": "docs/workstreams/2026-05-pre-release-boundary-freeze/HANDOFF.md"
+    }
+  ],
+  "first_task": null,
+  "gates": [
+    "dart --suppress-analytics run tool/check_release_ledger.dart",
+    "dart --suppress-analytics run tool/check_app_facade_exports.dart",
+    "dart --suppress-analytics analyze .",
+    "dart --suppress-analytics run tool/check_workspace_dependency_guards.dart",
+    "dart --suppress-analytics run tool/check_root_package_boundary_guards.dart",
+    "dart --suppress-analytics run tool/check_example_api_guards.dart",
+    "git diff --check"
+  ],
+  "evidence": [
+    "docs/workstreams/2026-05-pre-release-boundary-freeze/EVIDENCE_AND_GATES.md"
+  ],
+  "adr_refs": [],
+  "continue_policy": {
+    "default_action": "closed",
+    "notes": "All five requested freeze seams and final gates are complete. Publishing remains a manual maintainer-approved step."
+  }
+}

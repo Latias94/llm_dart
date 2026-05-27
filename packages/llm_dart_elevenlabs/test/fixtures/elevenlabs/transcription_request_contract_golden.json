@@ -1,0 +1,25 @@
+{
+  "uri": "https://api.elevenlabs.io/v1/speech-to-text?enable_logging=false",
+  "method": "post",
+  "responseType": "json",
+  "headers": {
+    "xi-api-key": "test-key",
+    "x-settings": "1",
+    "x-request": "request-header",
+    "accept": "application/json"
+  },
+  "multipart": {
+    "file": {
+      "filename": "audio.mp3",
+      "contentType": "audio/mpeg",
+      "text": "abc"
+    },
+    "model_id": "scribe_v1",
+    "language_code": "en",
+    "tag_audio_events": "false",
+    "num_speakers": "2",
+    "timestamps_granularity": "character",
+    "diarize": "true",
+    "file_format": "pcm_s16le_16"
+  }
+}

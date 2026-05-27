@@ -4,6 +4,7 @@ import 'http_chat_transport_call_options_json_codec.dart';
 import 'http_chat_transport_envelope_json_codec.dart';
 import 'http_chat_transport_generate_options_json_codec.dart';
 import 'http_chat_transport_json_support.dart';
+import 'http_chat_transport_protocol_policy.dart';
 import 'http_chat_transport_request_payload.dart';
 import 'http_chat_transport_tool_json_codec.dart';
 import 'http_chat_transport_stream_protocol.dart';
@@ -85,7 +86,8 @@ final class HttpChatTransportRequestJsonCodec {
             value,
             path: r'$.data.streamProtocol',
           ),
-        null => HttpChatTransportStreamProtocol.eventStreamV1,
+        null =>
+          HttpChatTransportProtocolPolicy.legacyRequestFallbackStreamProtocol,
       },
       metadata: data['metadata'] == null
           ? const {}
@@ -144,7 +146,8 @@ final class HttpChatTransportRequestJsonCodec {
             value,
             path: r'$.data.streamProtocol',
           ),
-        null => HttpChatTransportStreamProtocol.eventStreamV1,
+        null =>
+          HttpChatTransportProtocolPolicy.legacyRequestFallbackStreamProtocol,
       },
       metadata: data['metadata'] == null
           ? const {}

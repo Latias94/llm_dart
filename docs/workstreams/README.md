@@ -48,10 +48,14 @@
     taxonomy, stream vocabulary composition, provider descriptors, provider
     call execution, and app/provider-authoring entrypoints.
 - [2026-05-remaining-boundary-fearless-refactor](2026-05-remaining-boundary-fearless-refactor/DESIGN.md)
-  - Active breaking architecture workstream for the remaining boundary
+  - Closed breaking architecture workstream for the remaining boundary
     candidates after the core seam refactor: provider codec contracts,
     capability enforcement, non-text request seams, chat transport protocol,
     provider options policy, and serialization registry posture.
+- [2026-05-pre-release-boundary-freeze](2026-05-pre-release-boundary-freeze/DESIGN.md)
+  - Closed pre-release boundary-freeze workstream for release ledger evidence,
+    provider fixture coverage, app facade export contract, HTTP chat transport
+    protocol policy, and OpenAI Responses projection ownership indexing.
 - [2026-05-provider-implementation-kit-and-codec-boundaries](2026-05-provider-implementation-kit-and-codec-boundaries/README.md)
   - Active provider-internal architecture workstream that reduces large codec,
     request-builder, stream-parser, replay, and native-helper hotspots while

@@ -1,6 +1,7 @@
 import 'package:llm_dart_ai/llm_dart_ai.dart';
 
 import 'http_chat_transport_chunk.dart';
+import 'http_chat_transport_protocol_policy.dart';
 import 'http_chat_transport_server_projection.dart';
 import 'http_chat_transport_sse_encoder.dart';
 import 'http_chat_transport_stream_protocol.dart';
@@ -34,7 +35,7 @@ final class HttpChatTransportServerAdapter {
   Stream<HttpChatTransportChunk> encodeUiChunkStream({
     required Stream<ChatUiStreamChunk> stream,
     HttpChatTransportStreamProtocol streamProtocol =
-        HttpChatTransportStreamProtocol.uiMessageStreamV2,
+        HttpChatTransportProtocolPolicy.defaultStreamProtocol,
     String? requestId,
     String? defaultMessageId,
     String? resumeToken,
@@ -53,7 +54,7 @@ final class HttpChatTransportServerAdapter {
   Stream<HttpChatTransportChunk> encodeEventStream({
     required Stream<TextStreamEvent> eventStream,
     HttpChatTransportStreamProtocol streamProtocol =
-        HttpChatTransportStreamProtocol.uiMessageStreamV2,
+        HttpChatTransportProtocolPolicy.defaultStreamProtocol,
     String? requestId,
     String? messageId,
     String? resumeToken,
@@ -81,7 +82,7 @@ final class HttpChatTransportServerAdapter {
   Stream<List<int>> encodeUiSseStream({
     required Stream<ChatUiStreamChunk> stream,
     HttpChatTransportStreamProtocol streamProtocol =
-        HttpChatTransportStreamProtocol.uiMessageStreamV2,
+        HttpChatTransportProtocolPolicy.defaultStreamProtocol,
     String? requestId,
     String? messageId,
     String? resumeToken,
@@ -104,7 +105,7 @@ final class HttpChatTransportServerAdapter {
   Stream<List<int>> encodeEventSseStream({
     required Stream<TextStreamEvent> eventStream,
     HttpChatTransportStreamProtocol streamProtocol =
-        HttpChatTransportStreamProtocol.uiMessageStreamV2,
+        HttpChatTransportProtocolPolicy.defaultStreamProtocol,
     String? requestId,
     String? messageId,
     String? resumeToken,

@@ -1,6 +1,7 @@
 import 'package:llm_dart_ai/llm_dart_ai.dart';
 
 import 'http_chat_transport_json_support.dart';
+import 'http_chat_transport_protocol_policy.dart';
 import 'http_chat_transport_stream_protocol.dart';
 
 final class HttpChatTransportCallOptionsPayload {
@@ -95,7 +96,7 @@ final class HttpChatTransportRequestPayload {
     List<FunctionToolDefinition> tools = const [],
     this.toolChoice,
     this.callOptions = HttpChatTransportCallOptionsPayload.empty,
-    this.streamProtocol = HttpChatTransportStreamProtocol.uiMessageStreamV2,
+    this.streamProtocol = HttpChatTransportProtocolPolicy.defaultStreamProtocol,
     Map<String, Object?> metadata = const {},
   })  : prompt = List.unmodifiable(prompt),
         tools = List.unmodifiable(tools),
@@ -115,7 +116,7 @@ final class HttpChatTransportReconnectRequestPayload {
     required this.chatId,
     required this.resumeToken,
     this.callOptions = HttpChatTransportCallOptionsPayload.empty,
-    this.streamProtocol = HttpChatTransportStreamProtocol.uiMessageStreamV2,
+    this.streamProtocol = HttpChatTransportProtocolPolicy.defaultStreamProtocol,
     Map<String, Object?> metadata = const {},
   }) : metadata = Map.unmodifiable(
           HttpChatTransportJson.ensureMap(metadata, path: r'$.metadata'),

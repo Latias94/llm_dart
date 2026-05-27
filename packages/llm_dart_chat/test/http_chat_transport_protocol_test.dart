@@ -5,6 +5,48 @@ import 'package:llm_dart_chat/src/http_chat_transport_protocol_impl.dart'
 import 'package:test/test.dart';
 
 void main() {
+  group('HttpChatTransportProtocolPolicy', () {
+    test('freezes supported stream protocol posture', () {
+      expect(
+        HttpChatTransportProtocolPolicy.defaultStreamProtocol,
+        HttpChatTransportStreamProtocol.uiMessageStreamV2,
+      );
+      expect(
+        HttpChatTransportProtocolPolicy.legacyRequestFallbackStreamProtocol,
+        HttpChatTransportStreamProtocol.eventStreamV1,
+      );
+      expect(
+        HttpChatTransportProtocolPolicy.supportedStreamProtocols,
+        const [
+          HttpChatTransportStreamProtocol.eventStreamV1,
+          HttpChatTransportStreamProtocol.uiMessageStreamV2,
+        ],
+      );
+    });
+
+    test('new send and reconnect payloads default to v2', () {
+      final send = HttpChatTransportRequestPayload(
+        chatId: 'chat-1',
+        prompt: [
+          UserPromptMessage.text('Hello'),
+        ],
+      );
+      final reconnect = HttpChatTransportReconnectRequestPayload(
+        chatId: 'chat-1',
+        resumeToken: 'resume-1',
+      );
+
+      expect(
+        send.streamProtocol,
+        HttpChatTransportProtocolPolicy.defaultStreamProtocol,
+      );
+      expect(
+        reconnect.streamProtocol,
+        HttpChatTransportProtocolPolicy.defaultStreamProtocol,
+      );
+    });
+  });
+
   group('HttpChatTransportRequestJsonCodec', () {
     test(
         'round-trips prompt, generate options, call options, metadata, and stream protocol',
@@ -193,7 +235,25 @@ void main() {
 
       expect(
         decoded.streamProtocol,
-        HttpChatTransportStreamProtocol.eventStreamV1,
+        HttpChatTransportProtocolPolicy.legacyRequestFallbackStreamProtocol,
+      );
+    });
+
+    test('decodes legacy reconnect payloads without stream protocol as v1', () {
+      const codec = HttpChatTransportRequestJsonCodec();
+
+      final decoded = codec.decodeReconnectRequest({
+        'schemaVersion': llmDartJsonSchemaVersion,
+        'kind': HttpChatTransportRequestJsonCodec.reconnectEnvelopeKind,
+        'data': {
+          'chatId': 'chat-1',
+          'resumeToken': 'resume-1',
+        },
+      });
+
+      expect(
+        decoded.streamProtocol,
+        HttpChatTransportProtocolPolicy.legacyRequestFallbackStreamProtocol,
       );
     });
 

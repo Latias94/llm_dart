@@ -1,0 +1,172 @@
+{
+  "schemaVersion": 1,
+  "status": "frozen_for_alpha",
+  "policy": "Do not remove app facade symbols during the alpha freeze. Additions require updating this manifest, migration notes, and the guard evidence.",
+  "rootEntrypoints": [
+    {
+      "path": "lib/llm_dart.dart",
+      "role": "default modern root facade",
+      "directives": [
+        "library;",
+        "export 'ai.dart';"
+      ]
+    },
+    {
+      "path": "lib/core.dart",
+      "role": "focused app runtime facade",
+      "directives": [
+        "library;",
+        "export 'package:llm_dart_ai/app.dart';"
+      ]
+    },
+    {
+      "path": "lib/provider_authoring.dart",
+      "role": "provider implementation facade",
+      "directives": [
+        "library;",
+        "export 'package:llm_dart_ai/provider_authoring.dart';"
+      ]
+    }
+  ],
+  "appEntrypoint": {
+    "path": "packages/llm_dart_ai/lib/app.dart",
+    "providerFoundationExport": "package:llm_dart_provider/foundation.dart",
+    "providerFoundationExportGroups": [
+      {
+        "name": "invocation-controls",
+        "symbols": [
+          "CallOptions",
+          "GenerateTextOptions",
+          "GenerateTextReasoningOptions",
+          "ProviderCancellation",
+          "ProviderCancelledException",
+          "ReasoningEffort",
+          "ResponseFormat",
+          "UsageStats"
+        ]
+      },
+      {
+        "name": "capability-discovery",
+        "symbols": [
+          "CapabilityConfidence",
+          "CapabilityDescribedModel",
+          "CapabilityDescriptor",
+          "CapabilityGateDecision",
+          "CapabilityGateMode",
+          "ModelCapabilityFeatureIds",
+          "ModelCapabilityGate",
+          "ModelCapabilityKind",
+          "ModelCapabilityProfile",
+          "Provider",
+          "ProviderCapabilityGate",
+          "ProviderFeatureDescriptor",
+          "ProviderInputShapeDescriptor",
+          "ProviderInputShapeIds",
+          "ProviderModelFacet",
+          "ProviderRegistry",
+          "ProviderSpecification",
+          "ProviderSpecificationVersion"
+        ]
+      },
+      {
+        "name": "model-contracts",
+        "symbols": [
+          "EmbeddingModel",
+          "ImageModel",
+          "LanguageModel",
+          "ModelReference",
+          "ProviderModelOptions",
+          "SpeechModel",
+          "TranscriptionModel"
+        ]
+      },
+      {
+        "name": "content-and-files",
+        "symbols": [
+          "ContentPart",
+          "CustomContentPart",
+          "FileBytesData",
+          "FileContentPart",
+          "FileData",
+          "FileProviderReferenceData",
+          "FileTextData",
+          "FileUrlData",
+          "GeneratedFile",
+          "GeneratedImage",
+          "ImageGenerationInput",
+          "ReasoningContentPart",
+          "ReasoningFileContentPart",
+          "SourceContentPart",
+          "SourceReference",
+          "SourceReferenceKind",
+          "TextContentPart"
+        ]
+      },
+      {
+        "name": "tool-contracts",
+        "symbols": [
+          "AutoToolChoice",
+          "ContentToolOutput",
+          "CustomToolOutputContentPart",
+          "ErrorJsonToolOutput",
+          "ErrorTextToolOutput",
+          "ExecutionDeniedToolOutput",
+          "FileToolOutputContentPart",
+          "FunctionToolDefinition",
+          "JsonToolOutput",
+          "NoneToolChoice",
+          "RequiredToolChoice",
+          "SpecificToolChoice",
+          "TextToolOutput",
+          "ToolApprovalRequestContent",
+          "ToolApprovalRequestContentPart",
+          "ToolCallContent",
+          "ToolCallContentPart",
+          "ToolChoice",
+          "ToolDefinition",
+          "ToolJsonSchema",
+          "ToolOutput",
+          "ToolOutputContentPart",
+          "ToolResultContent",
+          "ToolResultContentPart"
+        ]
+      },
+      {
+        "name": "results-and-diagnostics",
+        "symbols": [
+          "FinishReason",
+          "GenerateTextResult",
+          "ImageGenerationResult",
+          "ModelError",
+          "ModelErrorKind",
+          "ModelException",
+          "ModelResponseMetadata",
+          "ModelWarning",
+          "ModelWarningType",
+          "SpeechGenerationResult",
+          "TranscriptionResult",
+          "TranscriptionSegment",
+          "modelErrorFrom"
+        ]
+      },
+      {
+        "name": "provider-options-and-metadata",
+        "symbols": [
+          "JsonSchema",
+          "ProviderInvocationOptions",
+          "ProviderInvocationOptionsBagProjection",
+          "ProviderInvocationOptionsBundle",
+          "ProviderMetadata",
+          "ProviderOptionsBag",
+          "ProviderPromptPartOptions",
+          "ProviderReference",
+          "ProviderToolOptions",
+          "providerInvocationOptions",
+          "providerOptionsBagFromInvocationOptions",
+          "providerOptionsNamespaceFromInvocationOptions",
+          "typedProviderOptionsFromInvocationOptions"
+        ]
+      }
+    ]
+  }
+}

@@ -23,5 +23,7 @@ export 'http_chat_transport_request_payload.dart'
         HttpChatTransportCallOptionsPayload,
         HttpChatTransportReconnectRequestPayload,
         HttpChatTransportRequestPayload;
+export 'http_chat_transport_protocol_policy.dart'
+    show HttpChatTransportProtocolPolicy;
 export 'http_chat_transport_stream_protocol.dart'
     show HttpChatTransportStreamProtocol;
