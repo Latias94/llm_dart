@@ -8,7 +8,8 @@
     "CHANGELOG.md",
     "docs/workstreams/2026-05-core-seam-fearless-refactor/WORKSTREAM.json",
     "docs/workstreams/2026-05-remaining-boundary-fearless-refactor/WORKSTREAM.json",
-    "docs/workstreams/2026-05-pre-release-boundary-freeze/WORKSTREAM.json"
+    "docs/workstreams/2026-05-pre-release-boundary-freeze/WORKSTREAM.json",
+    "docs/workstreams/2026-05-final-prepublish-refactor-closeout/WORKSTREAM.json"
   ],
   "publishablePackages": [
     {
@@ -85,6 +86,12 @@
       "path": "docs/workstreams/2026-05-pre-release-boundary-freeze/WORKSTREAM.json",
       "expectedStatus": "complete",
       "releaseRole": "completed release freeze evidence"
+    },
+    {
+      "slug": "2026-05-final-prepublish-refactor-closeout",
+      "path": "docs/workstreams/2026-05-final-prepublish-refactor-closeout/WORKSTREAM.json",
+      "expectedStatus": "complete",
+      "releaseRole": "completed final prepublish closeout lane"
     }
   ],
   "requiredGates": [
@@ -150,6 +157,13 @@
       "reviewWindow": "post-alpha breaking line",
       "releaseBlocking": false,
       "reason": "late symbol removal would add migration risk; release freezes a manifest instead"
+    },
+    {
+      "id": "runtime-context-and-agent-surface",
+      "owner": "llm_dart_ai and llm_dart_chat",
+      "reviewWindow": "after alpha feedback proves a Dart-native context or public agent shape across runtime, approval, telemetry, and chat",
+      "releaseBlocking": false,
+      "reason": "runtime event and tool-loop ownership is closed; public context and agent abstractions are future feature policy, not unresolved coupling"
     }
   ]
 }

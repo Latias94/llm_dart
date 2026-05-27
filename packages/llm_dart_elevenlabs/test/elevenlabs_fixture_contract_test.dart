@@ -11,6 +11,7 @@ void main() {
     'llm_dart_elevenlabs',
     label: 'ElevenLabs fixture contract',
   );
+  const transportProjector = ProviderTransportContractProjector();
 
   group('ElevenLabs fixture contract', () {
     test('locks speech request transport contract', () async {
@@ -83,7 +84,7 @@ void main() {
 
       fixtures.expectJsonFixture(
         'elevenlabs/speech_request_contract_golden.json',
-        _transportRequestJson(capturedRequest!),
+        transportProjector.requestJson(capturedRequest!),
       );
     });
 
@@ -136,76 +137,16 @@ void main() {
 
       fixtures.expectJsonFixture(
         'elevenlabs/transcription_request_contract_golden.json',
-        _multipartTransportRequestJson(capturedRequest!),
+        transportProjector.multipartRequestJson(
+          capturedRequest!,
+          headerNames: const [
+            'xi-api-key',
+            'x-settings',
+            'x-request',
+            'accept',
+          ],
+        ),
       );
     });
   });
-}
-
-Map<String, Object?> _transportRequestJson(TransportRequest request) {
-  return {
-    'uri': request.uri.toString(),
-    'method': request.method.name,
-    'responseType': request.responseType.name,
-    'headers': request.headers,
-    'body': request.body,
-  };
-}
-
-Map<String, Object?> _multipartTransportRequestJson(TransportRequest request) {
-  return {
-    'uri': request.uri.toString(),
-    'method': request.method.name,
-    'responseType': request.responseType.name,
-    'headers': {
-      'xi-api-key': request.headers['xi-api-key'],
-      'x-settings': request.headers['x-settings'],
-      'x-request': request.headers['x-request'],
-      'accept': request.headers['accept'],
-    },
-    'multipart': _multipartFields(request),
-  };
-}
-
-Map<String, Object?> _multipartFields(TransportRequest request) {
-  final contentType = request.headers['content-type'];
-  final boundary = RegExp(r'boundary=([^;]+)').firstMatch(contentType!)![1]!;
-  final body = utf8.decode(request.body! as List<int>);
-  final fields = <String, Object?>{};
-
-  for (final rawPart in body.split('--$boundary')) {
-    final part = rawPart.trim();
-    if (part.isEmpty || part == '--') {
-      continue;
-    }
-
-    final sections = part.split('\r\n\r\n');
-    if (sections.length != 2) {
-      continue;
-    }
-
-    final headerLines = sections.first.split('\r\n');
-    final content = sections.last.replaceFirst(RegExp(r'\r\n--$'), '');
-    final disposition = headerLines.firstWhere(
-      (line) => line.startsWith('Content-Disposition:'),
-    );
-    final name = RegExp(r'name="([^"]+)"').firstMatch(disposition)![1]!;
-    final filename = RegExp(r'filename="([^"]+)"').firstMatch(disposition)?[1];
-
-    if (filename == null) {
-      fields[name] = content;
-      continue;
-    }
-
-    final contentTypeLine = headerLines.firstWhere(
-      (line) => line.startsWith('Content-Type:'),
-    );
-    fields[name] = {
-      'filename': filename,
-      'contentType': contentTypeLine.substring('Content-Type:'.length).trim(),
-      'text': content,
-    };
-  }
-
-  return fields;
 }

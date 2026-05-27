@@ -144,4 +144,84 @@ void main() {
       ]);
     });
   });
+
+  group('ProviderTransportContractProjector', () {
+    test('projects deterministic transport request JSON', () {
+      const projector = ProviderTransportContractProjector();
+
+      final request = TransportRequest(
+        uri: Uri.parse('https://example.com/v1/test'),
+        method: TransportMethod.post,
+        headers: const {
+          'authorization': 'Bearer test',
+        },
+        body: const {
+          'ok': true,
+        },
+      );
+
+      expect(projector.requestJson(request), {
+        'uri': 'https://example.com/v1/test',
+        'method': 'post',
+        'responseType': 'json',
+        'headers': {
+          'authorization': 'Bearer test',
+        },
+        'body': {
+          'ok': true,
+        },
+      });
+    });
+
+    test('projects multipart fields without exposing random boundary', () {
+      const projector = ProviderTransportContractProjector();
+      const boundary = 'fixture-boundary';
+      final body = utf8.encode(
+        '--$boundary\r\n'
+        'Content-Disposition: form-data; name="model_id"\r\n'
+        '\r\n'
+        'scribe_v1\r\n'
+        '--$boundary\r\n'
+        'Content-Disposition: form-data; name="file"; filename="audio.mp3"\r\n'
+        'Content-Type: audio/mpeg\r\n'
+        '\r\n'
+        'abc\r\n'
+        '--$boundary--\r\n',
+      );
+
+      final request = TransportRequest(
+        uri: Uri.parse('https://example.com/v1/transcribe'),
+        method: TransportMethod.post,
+        headers: const {
+          'content-type': 'multipart/form-data; boundary=$boundary',
+          'accept': 'application/json',
+          'authorization': 'Bearer hidden',
+        },
+        body: body,
+      );
+
+      expect(
+        projector.multipartRequestJson(
+          request,
+          headerNames: const ['accept'],
+        ),
+        {
+          'uri': 'https://example.com/v1/transcribe',
+          'method': 'post',
+          'responseType': 'json',
+          'headers': {
+            'accept': 'application/json',
+          },
+          'multipart': {
+            'model_id': 'scribe_v1',
+            'file': {
+              'filename': 'audio.mp3',
+              'contentType': 'audio/mpeg',
+              'text': 'abc',
+            },
+          },
+        },
+      );
+    });
+  });
 }

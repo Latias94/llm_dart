@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "slug": "2026-05-final-prepublish-refactor-closeout",
+  "title": "Final Prepublish Refactor Closeout",
+  "status": "complete",
+  "updated": "2026-05-27",
+  "scope_kind": "prepublish-architecture-closeout",
+  "problem": "Four final architecture cleanups remain valuable before publish: context/ADR indexing, runtime event/tool-loop closeout, provider test-only fixture support, and scenario-family test splitting.",
+  "authoritative_docs": [
+    {
+      "role": "design",
+      "path": "docs/workstreams/2026-05-final-prepublish-refactor-closeout/DESIGN.md"
+    },
+    {
+      "role": "execution",
+      "path": "docs/workstreams/2026-05-final-prepublish-refactor-closeout/TODO.md"
+    },
+    {
+      "role": "milestones",
+      "path": "docs/workstreams/2026-05-final-prepublish-refactor-closeout/MILESTONES.md"
+    },
+    {
+      "role": "gates",
+      "path": "docs/workstreams/2026-05-final-prepublish-refactor-closeout/EVIDENCE_AND_GATES.md"
+    },
+    {
+      "role": "handoff",
+      "path": "docs/workstreams/2026-05-final-prepublish-refactor-closeout/HANDOFF.md"
+    }
+  ],
+  "first_task": null,
+  "gates": [
+    "dart --suppress-analytics run tool/check_release_ledger.dart",
+    "dart --suppress-analytics analyze .",
+    "dart --suppress-analytics run tool/check_workspace_dependency_guards.dart",
+    "dart --suppress-analytics run tool/check_root_package_boundary_guards.dart",
+    "dart --suppress-analytics run tool/check_example_api_guards.dart",
+    "dart --suppress-analytics run tool/check_app_facade_exports.dart",
+    "git diff --check"
+  ],
+  "evidence": [
+    "docs/workstreams/2026-05-final-prepublish-refactor-closeout/EVIDENCE_AND_GATES.md"
+  ],
+  "adr_refs": [
+    "docs/adr/0001-root-app-runtime-provider-seams.md",
+    "docs/adr/0002-provider-native-features-stay-provider-owned.md",
+    "docs/adr/0003-release-state-is-ledger-guarded.md",
+    "docs/adr/0004-registries-require-repeated-adapters.md"
+  ],
+  "continue_policy": {
+    "default_action": "closed",
+    "notes": "All four requested final prepublish refactors are implemented. Release gates passed and publishing remains manual maintainer-approved work."
+  }
+}

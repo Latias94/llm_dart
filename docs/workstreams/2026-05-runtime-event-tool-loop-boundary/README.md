@@ -217,3 +217,7 @@ This workstream should not:
 - [39-closure-audit.md](39-closure-audit.md)
   - Final prompt-to-artifact audit for the provider/runtime/chat architecture
     line and the documented deferrals that are not release blockers.
+- [40-release-closeout-reconciliation.md](40-release-closeout-reconciliation.md)
+  - Final prepublish reconciliation confirming that the workstream is closed,
+    release-facing deferrals are non-blocking, and no runtime ownership
+    redesign remains before publish.

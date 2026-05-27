@@ -56,6 +56,11 @@
   - Closed pre-release boundary-freeze workstream for release ledger evidence,
     provider fixture coverage, app facade export contract, HTTP chat transport
     protocol policy, and OpenAI Responses projection ownership indexing.
+- [2026-05-final-prepublish-refactor-closeout](2026-05-final-prepublish-refactor-closeout/DESIGN.md)
+  - Closed final prepublish architecture closeout for project context and ADR
+    indexing, runtime event/tool-loop status reconciliation, provider
+    test-only fixture support, and scenario-family test splitting before
+    maintainer-approved publish.
 - [2026-05-provider-implementation-kit-and-codec-boundaries](2026-05-provider-implementation-kit-and-codec-boundaries/README.md)
   - Active provider-internal architecture workstream that reduces large codec,
     request-builder, stream-parser, replay, and native-helper hotspots while
@@ -90,7 +95,7 @@
     request-side metadata inputs, and froze provider options plus
     structured-result direction before a stable public line.
 - [2026-05-runtime-event-tool-loop-boundary](2026-05-runtime-event-tool-loop-boundary/README.md)
-  - Active next breaking architecture line for splitting provider model-call
+  - Closed next breaking architecture line for splitting provider model-call
     streaming from AI runtime full-stream orchestration, then freezing one
     Dart-native v2 surface for generation results, tool loops, structured
     output, UI projection, and chat transport.
